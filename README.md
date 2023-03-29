@@ -30,6 +30,6 @@
 
 # Questions
 
-- [ ] Type of feed id
-- [ ] Type of entity id
-- [ ] Type of tag id
+- [x] Type of feed id: UUID
+- [x] Type of entity id: UUID
+- [x] Type of tag id: UUID
