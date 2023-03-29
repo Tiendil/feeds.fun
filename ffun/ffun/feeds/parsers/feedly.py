@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET  # noqa
 from typing import Generator
 
-from .entities import Feed
+from ..entities import Feed
 
 
 def _extract_body(data: str) -> ET.Element:
