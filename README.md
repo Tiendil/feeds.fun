@@ -63,3 +63,7 @@ poetry run yoyo apply
 poetry run yoyo new -m "name" ./ffun/????/migrations
 
 ```
+
+```
+psql -h localhost -U ffun ffun
+```

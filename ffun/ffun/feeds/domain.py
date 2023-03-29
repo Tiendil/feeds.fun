@@ -1,11 +1,12 @@
 
 
+from . import operations
 from .entities import Feed
-from .operations import save_feeds
 from .parsers.feedly import extract_feeds
 
 
-async def parse_opml(data: str) -> list[Feed]:
-    feeds = extract_feeds(data)
+def parse_opml(data: str) -> list[Feed]:
+    return extract_feeds(data)
 
-    await save_feeds(feeds)
+
+save_feeds = operations.save_feeds
