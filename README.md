@@ -17,17 +17,19 @@
 ## Functionality
 
 - [ ] FEEDS
-  - [x] cli: import opml file
+  - [x] save feeds to DB
+  - [x] get next feed to load
+  - [x] mark feed as loaded
 - [ ] LIBRARY
-  - [ ] store entities by ids
+  - [x] store entities by ids
   - [ ] get entities by list of ids
 - [ ] LOADER
-  - [ ] cli: load feeds from FEEDS, parse and store in STORAGE
+  - [x] load feeds from FEEDS, parse and store in LIBRARY
 - [ ] ONTOLOGY
   - [ ] store tags for entities
   - [ ] get tags for entities
 - [ ] LIBRARIAN
-  - [ ] cli: get unprocessed entities from STORAGE, ask GPT to classify them, store tags in ONTOLOGY
+  - [ ] cli: get unprocessed entities from LIBRARY, ask GPT to classify them, store tags in ONTOLOGY
 - [ ] VIEWER
   - [ ] scores are hardcoded in configs
   - [ ] HTTP API: get feeds
@@ -37,6 +39,9 @@
   - [ ] list of latest entities sorted by score and date
 - [ ] Core
   - [ ] logging
+- [ ] CLI
+  - [x] load opml
+  - [x] load feeds
 
 # Questions
 
