@@ -5,6 +5,7 @@ import pathlib
 from ffun.application.application import with_app
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
+from ffun.parsers import domain as p_domain
 
 from ..application import app
 
@@ -20,6 +21,6 @@ def load_opml(path: pathlib.Path) -> None:
     with path.open() as f:
         raw_data = f.read()
 
-    feeds = f_domain.parse_opml(raw_data)
+    feeds = p_domain.parse_opml(raw_data)
 
     asyncio.run(run(feeds))

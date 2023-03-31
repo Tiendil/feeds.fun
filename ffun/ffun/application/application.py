@@ -1,10 +1,13 @@
-
 import contextlib
+import logging
 
 import fastapi
 from ffun.core import postgresql
 
 _app = None
+
+
+logger = logging.getLogger(__name__)
 
 
 async def initialize_postgresql() -> None:
@@ -20,12 +23,14 @@ async def deinitialize_postgresql() -> None:
     await postgresql.destroy_pool()
 
 
-def initialize(app: fastapi.FastAPI) -> fastapi.FastAPI:
-
-    return app
+def initialize_logging() -> None:
+    logging.basicConfig(level=logging.INFO)
+    logger.info('Logging initialized')
 
 
 def create_app():
+
+    initialize_logging()
 
     app = fastapi.FastAPI()
 

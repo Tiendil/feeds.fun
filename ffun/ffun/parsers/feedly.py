@@ -1,7 +1,8 @@
+import uuid
 import xml.etree.ElementTree as ET  # noqa
 from typing import Generator
 
-from ..entities import Feed
+from ffun.feeds.entities import Feed
 
 
 def _extract_body(data: str) -> ET.Element:
@@ -41,7 +42,8 @@ def extract_feeds(data: str) -> list[Feed]:
 def extract_feeds_records(body: ET.Element) -> Generator[Feed, None, None]:
     for outline in body:
         if outline.attrib.get('type') == 'rss':
-            yield Feed(url=outline.attrib['xmlUrl'])
+            yield Feed(id=uuid.uuid4(),
+                       url=outline.attrib['xmlUrl'])
             continue
 
         yield from extract_feeds_records(outline)

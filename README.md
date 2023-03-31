@@ -17,13 +17,13 @@
 ## Functionality
 
 - [ ] FEEDS
-  - [ ] cli: import opml file
-- [ ] STORAGE
+  - [x] cli: import opml file
+- [ ] LIBRARY
   - [ ] store entities by ids
   - [ ] get entities by list of ids
 - [ ] LOADER
   - [ ] cli: load feeds from FEEDS, parse and store in STORAGE
-- [ ] LIBRARY
+- [ ] ONTOLOGY
   - [ ] store tags for entities
   - [ ] get tags for entities
 - [ ] LIBRARIAN
@@ -44,6 +44,11 @@
 - [x] Type of entity id: UUID
 - [x] Type of tag id: UUID
 
+# Public MVP
+
+- [ ] Sentry for backend
+- [ ] Sentry for frontend
+
 # Backlog:
 
 - [ ] personalized names for feeds
@@ -60,10 +65,15 @@ cd ./ffun
 
 poetry run yoyo apply
 
+poetry run yoyo rollback --all
+
 poetry run yoyo new -m "name" ./ffun/????/migrations
+
+poetry run ffun load-opml ../fixtures/feedly.opml
 
 ```
 
 ```
 psql -h localhost -U ffun ffun
+
 ```
