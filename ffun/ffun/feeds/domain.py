@@ -1,12 +1,8 @@
 
 
 from . import operations
-from .entities import Feed
-from .parsers.feedly import extract_feeds
-
-
-def parse_opml(data: str) -> list[Feed]:
-    return extract_feeds(data)
-
 
 save_feeds = operations.save_feeds
+
+get_next_feeds_to_load = operations.get_next_feeds_to_load
+mark_feed_as_loaded = operations.mark_feed_as_loaded
