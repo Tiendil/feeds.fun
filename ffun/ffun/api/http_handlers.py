@@ -11,4 +11,4 @@ router = fastapi.APIRouter()
 async def api_get_feeds(request: entities.GetFeedsRequest) -> entities.GetFeedsResponse:
     feeds = await f_domain.get_all_feeds()
 
-    return entities.GetFeedsResponse(feeds=[entities.Feed.parse_obj(feed) for feed in feeds])
+    return entities.GetFeedsResponse(feeds=[entities.Feed.from_internal(feed) for feed in feeds])

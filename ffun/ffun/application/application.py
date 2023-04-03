@@ -2,6 +2,7 @@ import contextlib
 import logging
 
 import fastapi
+from fastapi.middleware.cors import CORSMiddleware
 from ffun.api import http_handlers
 from ffun.core import postgresql
 
@@ -39,6 +40,14 @@ def create_app():
     app.on_event("shutdown")(deinitialize_postgresql)
 
     app.include_router(http_handlers.router)
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost", "http://localhost:5173"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     return app
 

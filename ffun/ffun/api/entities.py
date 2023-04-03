@@ -3,12 +3,21 @@ import datetime
 import uuid
 
 from ffun.core import api
+from ffun.feeds import entities as f_entities
 
 
 class Feed(api.Base):
     id: uuid.UUID
     url: str
-    loaded_at: datetime.datetime
+    loadedAt: datetime.datetime
+
+    @classmethod
+    def from_internal(cls, feed: f_entities.Feed) -> 'Feed':
+        return cls(
+            id=feed.id,
+            url=feed.url,
+            loadedAt=feed.loaded_at,
+        )
 
 
 ##################
