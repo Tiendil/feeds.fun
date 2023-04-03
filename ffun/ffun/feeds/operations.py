@@ -51,8 +51,21 @@ async def get_next_feeds_to_load(number: int) -> list[Feed]:
 async def mark_feed_as_loaded(feed_id: uuid.UUID) -> None:
     sql = '''
     UPDATE f_feeds
-    SET loaded_at = NOW()
+    SET loaded_at = NOW(),
+        updated_at = NOW()
     WHERE id = %(id)s
     '''
 
     await execute(sql, {'id': feed_id})
+
+
+async def get_all_feeds() -> list[Feed]:
+    sql = '''
+    SELECT *
+    FROM f_feeds
+    ORDER BY created_at ASC
+    '''
+
+    rows = await execute(sql)
+
+    return [row_to_feed(row) for row in rows]
