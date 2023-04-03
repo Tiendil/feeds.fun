@@ -2,6 +2,7 @@ import contextlib
 import logging
 
 import fastapi
+from ffun.api import http_handlers
 from ffun.core import postgresql
 
 _app = None
@@ -36,6 +37,8 @@ def create_app():
 
     app.on_event("startup")(initialize_postgresql)
     app.on_event("shutdown")(deinitialize_postgresql)
+
+    app.include_router(http_handlers.router)
 
     return app
 
