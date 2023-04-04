@@ -22,12 +22,6 @@ class Feed(api.Base):
 
 
 class Entry(api.Base):
-    id: uuid.UUID
-    feed_id: uuid.UUID
-    title: str
-    url: str
-    publishedAt: datetime.datetime
-    catalogedAt: datetime.datetime
 
     @classmethod
     def from_internal(cls, entry: l_entities.Entry) -> 'Entry':

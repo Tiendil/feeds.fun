@@ -26,7 +26,7 @@ def apply_step(conn):
 
 def rollback_step(conn):
     cursor = conn.cursor()
-    cursor.execute(f"DROP TABLE f_feeds")
+    cursor.execute('DROP TABLE f_feeds')
 
 
 steps = [step(apply_step, rollback_step)]
