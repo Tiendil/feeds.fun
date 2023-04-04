@@ -6,9 +6,17 @@ import router from './router'
 
 import FeedsList from "./components/FeedsList.vue";
 
+import ValueUrl from "./values/URL.vue";
+import ValueFeedId from "./values/FeedId.vue";
+import ValueDateTime from "./values/DateTime.vue";
+
 const app = createApp(App)
 
 app.component("FeedsList", FeedsList);
+
+app.component("ValueUrl", ValueUrl);
+app.component("ValueFeedId", ValueFeedId);
+app.component("ValueDateTime", ValueDateTime);
 
 app.use(createPinia())
 app.use(router)
