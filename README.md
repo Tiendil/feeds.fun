@@ -35,7 +35,7 @@
   - [ ] HTTP API: get feeds
   - [ ] HTTP API: get entities sort by score and date
 - [ ] Frontend GUI
-  - [ ] list of feeds
+  - [x] list of feeds
   - [ ] list of latest entities sorted by score and date
 - [ ] Core
   - [ ] logging
@@ -51,6 +51,8 @@
 
 # Public MVP
 
+- [ ] multiple users
+- [ ] http base auth for multiple users
 - [ ] Sentry for backend
 - [ ] Sentry for frontend
 

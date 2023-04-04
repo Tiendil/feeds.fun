@@ -42,7 +42,7 @@ async def catalog_entries(entries: Iterable[Entry]) -> None:
 sql_select_entries = '''SELECT * FROM l_entries WHERE id = ANY(%(ids)s)'''
 
 
-async def get_entries(ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, Entry|None]:
+async def get_entries_by_ids(ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, Entry|None]:
     rows = await execute(sql_select_entries, {'ids': ids})
 
     result: dict[uuid.UUID, Entry|None] = {id: None for id in ids}
@@ -51,3 +51,13 @@ async def get_entries(ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, Entry|None]:
         result[row['id']] = row_to_entry(row)
 
     return result
+
+
+async def get_entries_by_filter(feeds_ids: Iterable[uuid.UUID],
+                                limit: int) -> list[Entry]:
+    sql = '''SELECT * FROM l_entries WHERE feed_id = ANY(%(feeds_ids)s) ORDER BY cataloged_at DESC LIMIT %(limit)s'''
+
+    rows = await execute(sql, {'feeds_ids': feeds_ids,
+                               'limit': limit})
+
+    return [row_to_entry(row) for row in rows]

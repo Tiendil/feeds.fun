@@ -5,6 +5,13 @@ export function toFeedId(id: string): FeedId {
     return id as FeedId;
 }
 
+
+export type EntryId = string & { readonly __brand: unique symbol };
+
+export function toEntryId(id: string): EntryId {
+    return id as EntryId;
+}
+
 export type URL = string & { readonly __brand: unique symbol };
 
 export function toURL(url: string): URL {
@@ -22,4 +29,26 @@ export function feedFromJSON({ id, url, loadedAt }: { id: string, url: string, l
     return { id: toFeedId(id),
              url: toURL(url),
              loadedAt: new Date(loadedAt) };
+}
+
+
+export type Entry = {
+    readonly id: EntryId;
+    readonly feedId: FeedId;
+    readonly title: string;
+    readonly url: URL;
+    readonly publishedAt: Date;
+    readonly catalogedAt: Date;
+}
+
+
+export function entryFromJSON({ id, feedId, title, url, publishedAt, catalogedAt }:
+                              { id: string, feedId: string, title: string, url: string,
+                                publishedAt: string, catalogedAt: string }): Entry {
+    return { id: toEntryId(id),
+             feedId: toFeedId(feedId),
+             title,
+             url: toURL(url),
+             publishedAt: new Date(publishedAt),
+             catalogedAt: new Date(catalogedAt) };
 }

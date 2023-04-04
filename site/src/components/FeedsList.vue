@@ -9,7 +9,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr v-for="(feed, index) in feeds">
+      <tr v-for="feed in feeds">
         <td><value-feed-id :value="feed.id"/></td>
         <td><value-url :value="feed.url"/></td>
         <td><value-date-time :value="feed.loadedAt"/></td>
