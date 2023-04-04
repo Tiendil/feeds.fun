@@ -1,9 +1,22 @@
 <template>
-  <ul style="list-style-type: none; margin: 0; padding: 0">
-    <li v-for="(feed, index) in feeds">
-      {{index}} - {{feed}}
-    </li>
-  </ul>
+
+  <table>
+    <thead>
+      <tr>
+        <th>id</th>
+        <th>url</th>
+        <th>loaded at</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="(feed, index) in feeds">
+        <td><value-feed-id :value="feed.id"/></td>
+        <td><value-url :value="feed.url"/></td>
+        <td><value-date-time :value="feed.loadedAt"/></td>
+      </tr>
+    </tbody>
+  </table>
+
 </template>
 
 <script lang="ts" setup>
