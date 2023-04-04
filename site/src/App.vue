@@ -3,7 +3,8 @@
         <div class="wrapper">
             <nav>
               <router-link :to="{ name: 'main' }">FeedsFun</router-link> |
-              <router-link :to="{ name: 'feeds' }">feeds</router-link>
+              <router-link :to="{ name: 'feeds' }">feeds</router-link> |
+              <router-link :to="{ name: 'entries' }">entries</router-link>
             </nav>
         </div>
     </header>

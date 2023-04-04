@@ -1,11 +1,21 @@
 <template>
-  <a :href="value" target="_blank">{{value}}</a>
+  <a :href="value" target="_blank">{{renderedText}}</a>
 </template>
 
 <script lang="ts" setup>
-  import * as t from "@/logic/types";
+import { computed } from "vue";
+import * as t from "@/logic/types";
 
-  defineProps<{ value: t.URL }>();
+const properties = defineProps<{ value: t.URL,
+                                 text: string|null}>();
+
+const renderedText = computed(() => {
+    if (properties.text) {
+        return properties.text;
+    }
+
+    return properties.value;
+});
 
 </script>
 

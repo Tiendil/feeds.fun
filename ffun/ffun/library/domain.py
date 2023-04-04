@@ -6,4 +6,5 @@ from . import operations
 from .entities import Entry
 
 catalog_entries = operations.catalog_entries
-get_entries = operations.get_entries
+get_entries_by_ids = operations.get_entries_by_ids
+get_entries_by_filter = operations.get_entries_by_filter
