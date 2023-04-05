@@ -46,6 +46,7 @@
   - [ ] normalized tags use `-` instead `_`. Why? Should we ban one of these charracters?
 - [ ] Improvements
   - [ ] use structlog
+  - [ ] search for unprocessed entries and reprocess them periodically
 
 # Questions
 
