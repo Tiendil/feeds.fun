@@ -1,4 +1,4 @@
-
+import datetime
 import logging
 import uuid
 from typing import Any, Iterable
@@ -58,6 +58,20 @@ async def get_entries_by_filter(feeds_ids: Iterable[uuid.UUID],
     sql = '''SELECT * FROM l_entries WHERE feed_id = ANY(%(feeds_ids)s) ORDER BY cataloged_at DESC LIMIT %(limit)s'''
 
     rows = await execute(sql, {'feeds_ids': feeds_ids,
+                               'limit': limit})
+
+    return [row_to_entry(row) for row in rows]
+
+
+async def get_new_entries(from_time: datetime.datetime, limit: int = 1000) -> list[Entry]:
+    sql = '''
+    SELECT * FROM l_entries
+    WHERE cataloged_at > %(from_time)s
+    ORDER BY cataloged_at ASC
+    LIMIT %(limit)s
+    '''
+
+    rows = await execute(sql, {'from_time': from_time,
                                'limit': limit})
 
     return [row_to_entry(row) for row in rows]

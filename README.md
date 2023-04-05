@@ -42,6 +42,10 @@
 - [ ] CLI
   - [x] load opml
   - [x] load feeds
+- [ ] Bugs
+  - [ ] normalized tags use `-` instead `_`. Why? Should we ban one of these charracters?
+- [ ] Improvements
+  - [ ] use structlog
 
 # Questions
 

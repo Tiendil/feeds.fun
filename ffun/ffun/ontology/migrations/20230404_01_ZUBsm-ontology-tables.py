@@ -27,7 +27,7 @@ def apply_step(conn):
     cursor = conn.cursor()
     cursor.execute(sql_create_tags_table)
     cursor.execute(sql_create_relations_table)
-    cursor.execute(sql_create_relations_entry_id_index)
+    cursor.execute(sql_create_relations_entry_id_tag_id_index)
 
 
 def rollback_step(conn):
