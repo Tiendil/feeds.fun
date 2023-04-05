@@ -1,7 +1,8 @@
 
 import uuid
+from typing import Iterable
 
-import bidict
+from bidict import bidict
 
 from . import operations
 
@@ -19,7 +20,7 @@ async def get_id_by_tag(tag: str) -> int:
     return tag_id
 
 
-async def get_ids_by_tags(tags: list[str]) -> dict[str, int]:
+async def get_ids_by_tags(tags: Iterable[str]) -> dict[str, int]:
     return {tag: await get_id_by_tag(tag) for tag in tags}
 
 
@@ -46,8 +47,8 @@ async def get_tags_by_ids(ids: list[int]) -> dict[int, str]:
     return result
 
 
-async def apply_tags(entry_id: uuid.UUID,
-                     tags: list[str]) -> None:
+async def apply_tags_to_entry(entry_id: uuid.UUID,
+                              tags: Iterable[str]) -> None:
 
     tags_ids = await get_ids_by_tags(tags)
 

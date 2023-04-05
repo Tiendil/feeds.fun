@@ -3,8 +3,8 @@ import logging
 import uuid
 from typing import Iterable
 
-import bidict
 import psycopg
+from bidict import bidict
 from ffun.core.postgresql import execute
 
 logger = logging.getLogger(__name__)
