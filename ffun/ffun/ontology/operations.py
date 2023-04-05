@@ -55,7 +55,7 @@ async def get_or_create_id_by_tag(tag: str) -> int:
 
 
 async def get_tags_by_ids(tags_ids: list[int]) -> dict[int, str]:
-    sql = 'SELECT name FROM o_tags WHERE id = ANY(%(tags_ids)s)'
+    sql = 'SELECT * FROM o_tags WHERE id = ANY(%(tags_ids)s)'
     rows = await execute(sql, {'tags_ids': tags_ids})
     return {row['id']: row['name'] for row in rows}
 
@@ -68,3 +68,22 @@ async def apply_tags(entry_id: uuid.UUID, tags_ids: Iterable[int]) -> None:
 
     for tag_id in tags_ids:
         await execute(sql, {'entry_id': entry_id, 'tag_id': tag_id})
+
+
+async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:
+    sql = '''SELECT * FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)'''
+
+    rows = await execute(sql, {'entries_ids': entries_ids})
+
+    result: dict[uuid.UUID, set[int]] = {}
+
+    for row in rows:
+        entry_id = row['entry_id']
+        tag_id = row['tag_id']
+
+        if entry_id not in result:
+            result[entry_id] = set()
+
+        result[entry_id].add(tag_id)
+
+    return result

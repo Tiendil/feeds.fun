@@ -24,7 +24,7 @@ async def get_ids_by_tags(tags: Iterable[str]) -> dict[str, int]:
     return {tag: await get_id_by_tag(tag) for tag in tags}
 
 
-async def get_tags_by_ids(ids: list[int]) -> dict[int, str]:
+async def get_tags_by_ids(ids: Iterable[int]) -> dict[int, str]:
     result = {}
 
     tags_to_request = []
@@ -53,3 +53,17 @@ async def apply_tags_to_entry(entry_id: uuid.UUID,
     tags_ids = await get_ids_by_tags(tags)
 
     await operations.apply_tags(entry_id, tags_ids.values())
+
+
+async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[str]]:
+    tags_ids = await operations.get_tags_for_entries(entries_ids)
+
+    all_tags = set()
+
+    for tags in tags_ids.values():
+        all_tags.update(tags)
+
+    tags_mapping = await get_tags_by_ids(all_tags)
+
+    return {entry_id: {tags_mapping[tag_id] for tag_id in tags}
+            for entry_id, tags in tags_ids.items()}

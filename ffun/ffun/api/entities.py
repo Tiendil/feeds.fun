@@ -1,6 +1,6 @@
-
 import datetime
 import uuid
+from typing import Iterable
 
 from ffun.core import api
 from ffun.feeds import entities as f_entities
@@ -22,14 +22,24 @@ class Feed(api.Base):
 
 
 class Entry(api.Base):
+    id: uuid.UUID
+    feed_id: uuid.UUID
+    title: str
+    url: str
+    tags: list[str]
+    publishedAt: datetime.datetime
+    catalogedAt: datetime.datetime
 
     @classmethod
-    def from_internal(cls, entry: l_entities.Entry) -> 'Entry':
+    def from_internal(cls,
+                      entry: l_entities.Entry,
+                      tags: Iterable[str]) -> 'Entry':
         return cls(
             id=entry.id,
             feed_id=entry.feed_id,
             title=entry.title,
             url=entry.external_url,
+            tags=list(tags),
             publishedAt=entry.published_at,
             catalogedAt=entry.cataloged_at,
         )

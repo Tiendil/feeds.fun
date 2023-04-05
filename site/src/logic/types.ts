@@ -37,18 +37,20 @@ export type Entry = {
     readonly feedId: FeedId;
     readonly title: string;
     readonly url: URL;
+    readonly tags: string[];
     readonly publishedAt: Date;
     readonly catalogedAt: Date;
 }
 
 
-export function entryFromJSON({ id, feedId, title, url, publishedAt, catalogedAt }:
-                              { id: string, feedId: string, title: string, url: string,
+export function entryFromJSON({ id, feedId, title, url, tags, publishedAt, catalogedAt }:
+                              { id: string, feedId: string, title: string, url: string, tags: string[],
                                 publishedAt: string, catalogedAt: string }): Entry {
     return { id: toEntryId(id),
              feedId: toFeedId(feedId),
              title,
              url: toURL(url),
+             tags: tags,
              publishedAt: new Date(publishedAt),
              catalogedAt: new Date(catalogedAt) };
 }
