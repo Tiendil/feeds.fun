@@ -55,6 +55,10 @@ async def apply_tags_to_entry(entry_id: uuid.UUID,
     await operations.apply_tags(entry_id, tags_ids.values())
 
 
+async def get_tags_ids_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:
+    return await operations.get_tags_for_entries(entries_ids)
+
+
 async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[str]]:
     tags_ids = await operations.get_tags_for_entries(entries_ids)
 
