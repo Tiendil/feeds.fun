@@ -67,6 +67,7 @@
 - [ ] names for feeds
 - [ ] display feed for each entry
 - [ ] filter by single feed
+- [ ] flexible gui layout? aka flex css, etc.
 
 # Public MVP
 
