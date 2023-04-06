@@ -45,6 +45,8 @@
 - [ ] Improvements
   - [ ] use structlog
   - [ ] search for unprocessed entries and reprocess them periodically
+  - [ ] move scoring & sorting out of backend?
+  - [ ] run console commands constantly in backgroud?
 
 # Questions
 
@@ -53,7 +55,7 @@
 - [x] Type of tag id: UUID
 - [ ] How to choose how many entries show in view?
 
-# Public MVP
+# Closed MVP
 
 - [ ] multiple users
 - [ ] http base auth for multiple users
@@ -62,6 +64,15 @@
 - [ ] metrics for frontend
 - [ ] telegram channel of other platform
 - [ ] close openapi stand at base auth
+- [ ] names for feeds
+- [ ] display feed for each entry
+- [ ] filter by single feed
+
+# Public MVP
+
+- [ ] blog?
+- [ ] some styles?
+- [ ] minor mobile support?
 
 # Backlog:
 
