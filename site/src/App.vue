@@ -2,14 +2,17 @@
 <div class="container">
   <div class="nav-panel">
     <h2>Feeds For Fun</h2>
-    <nav>
-      <router-link :to="{ name: 'feeds' }">feeds</router-link> |
-      <router-link :to="{ name: 'entries' }">entries</router-link>
-    </nav>
+
+    <ul style="list-style-type: none; margin: 0; padding: 0">
+      <li>
+        <strong>I am looking at</strong> <main-mode-switcher/>
+      </li>
+    </ul>
+
   </div>
 
   <div class="main-content">
-    <h1>Main Content</h1>
+    <h2>{{mainModeTitle()}}</h2>
     <router-view />
   </div>
 </div>
@@ -18,6 +21,23 @@
 
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
+import { useGlobalSettingsStore } from "@/stores/globalSettings";
+import * as e from "@/logic/enums";
+
+const globalSettings = useGlobalSettingsStore();
+
+function mainModeTitle() {
+    if (globalSettings.mainPanelMode === e.MainPanelMode.Feeds) {
+        return "Feeds";
+    }
+    else if (globalSettings.mainPanelMode === e.MainPanelMode.News) {
+        return "News";
+    }
+    else {
+        throw new Error("Unknown MainPanelMode");
+    }
+}
+
 </script>
 
 <style scoped>

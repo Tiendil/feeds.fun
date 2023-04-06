@@ -47,6 +47,7 @@
   - [ ] search for unprocessed entries and reprocess them periodically
   - [ ] move scoring & sorting out of backend?
   - [ ] run console commands constantly in backgroud?
+  - [ ] save global settings on backend?
 
 # Questions
 
