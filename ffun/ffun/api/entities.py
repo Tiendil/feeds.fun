@@ -27,19 +27,22 @@ class Entry(api.Base):
     title: str
     url: str
     tags: list[str]
+    score: int
     publishedAt: datetime.datetime
     catalogedAt: datetime.datetime
 
     @classmethod
     def from_internal(cls,
                       entry: l_entities.Entry,
-                      tags: Iterable[str]) -> 'Entry':
+                      tags: Iterable[str],
+                      score: int) -> 'Entry':
         return cls(
             id=entry.id,
             feed_id=entry.feed_id,
             title=entry.title,
             url=entry.external_url,
             tags=list(tags),
+            score=score,
             publishedAt=entry.published_at,
             catalogedAt=entry.cataloged_at,
         )

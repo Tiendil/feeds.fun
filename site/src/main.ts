@@ -12,6 +12,7 @@ import ValueUrl from "./values/URL.vue";
 import ValueFeedId from "./values/FeedId.vue";
 import ValueDateTime from "./values/DateTime.vue";
 import ValueTag from "./values/Tag.vue";
+import ValueScore from "./values/Score.vue";
 
 const app = createApp(App)
 
@@ -23,6 +24,7 @@ app.component("ValueUrl", ValueUrl);
 app.component("ValueFeedId", ValueFeedId);
 app.component("ValueDateTime", ValueDateTime);
 app.component("ValueTag", ValueTag);
+app.component("ValueScore", ValueScore);
 
 app.use(createPinia())
 app.use(router)

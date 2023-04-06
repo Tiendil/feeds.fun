@@ -60,6 +60,9 @@
 - [ ] http base auth for multiple users
 - [ ] Sentry for backend
 - [ ] Sentry for frontend
+- [ ] metrics for frontend
+- [ ] telegram channel of other platform
+- [ ] close openapi stand at base auth
 
 # Backlog:
 

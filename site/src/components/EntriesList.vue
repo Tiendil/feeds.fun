@@ -3,6 +3,7 @@
   <table>
     <thead>
       <tr>
+        <th>score</th>
         <th>title</th>
         <th>tags</th>
         <th>published at</th>
@@ -11,6 +12,7 @@
     </thead>
     <tbody>
       <tr v-for="entry in entries">
+        <td><value-score :value="entry.score"/></td>
         <td><value-url :value="entry.url" :text="entry.title"/></td>
         <td><tags-list :tags="entry.tags"/></td>
         <td><value-date-time :value="entry.publishedAt"/></td>

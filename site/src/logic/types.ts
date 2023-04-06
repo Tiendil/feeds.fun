@@ -38,19 +38,21 @@ export type Entry = {
     readonly title: string;
     readonly url: URL;
     readonly tags: string[];
+    readonly score: number;
     readonly publishedAt: Date;
     readonly catalogedAt: Date;
 }
 
 
-export function entryFromJSON({ id, feedId, title, url, tags, publishedAt, catalogedAt }:
-                              { id: string, feedId: string, title: string, url: string, tags: string[],
+export function entryFromJSON({ id, feedId, title, url, tags, score, publishedAt, catalogedAt }:
+                              { id: string, feedId: string, title: string, url: string, tags: string[], score: number,
                                 publishedAt: string, catalogedAt: string }): Entry {
     return { id: toEntryId(id),
              feedId: toFeedId(feedId),
              title,
              url: toURL(url),
              tags: tags,
+             score: score,
              publishedAt: new Date(publishedAt),
              catalogedAt: new Date(catalogedAt) };
 }
