@@ -26,19 +26,17 @@
 - [ ] LOADER
   - [x] load feeds from FEEDS, parse and store in LIBRARY
 - [ ] ONTOLOGY
-  - [ ] store tags for entities
-  - [ ] get tags for entities
+  - [x] store tags for entities
+  - [x] get tags for entities
 - [ ] LIBRARIAN
   - [ ] cli: get unprocessed entities from LIBRARY, ask GPT to classify them, store tags in ONTOLOGY
 - [ ] VIEWER
-  - [ ] scores are hardcoded in configs
-  - [ ] HTTP API: get feeds
-  - [ ] HTTP API: get entities sort by score and date
+  - [x] scores are hardcoded in configs
+  - [x] HTTP API: get feeds
+  - [x] HTTP API: get entities sort by score and date
 - [ ] Frontend GUI
   - [x] list of feeds
-  - [ ] list of latest entities sorted by score and date
-- [ ] Core
-  - [ ] logging
+  - [x] list of latest entities sorted by score and date
 - [ ] CLI
   - [x] load opml
   - [x] load feeds
@@ -53,6 +51,7 @@
 - [x] Type of feed id: UUID
 - [x] Type of entity id: UUID
 - [x] Type of tag id: UUID
+- [ ] How to choose how many entries show in view?
 
 # Public MVP
 
