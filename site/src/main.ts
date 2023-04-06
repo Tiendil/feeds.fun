@@ -7,6 +7,7 @@ import router from './router'
 import FeedsList from "./components/FeedsList.vue";
 import EntriesList from "./components/EntriesList.vue";
 import TagsList from "./components/TagsList.vue";
+import MainModeSwitcher from "./components/MainModeSwitcher.vue";
 
 import ValueUrl from "./values/URL.vue";
 import ValueFeedId from "./values/FeedId.vue";
@@ -19,6 +20,7 @@ const app = createApp(App)
 app.component("FeedsList", FeedsList);
 app.component("EntriesList", EntriesList);
 app.component("TagsList", TagsList);
+app.component("MainModeSwitcher", MainModeSwitcher);
 
 app.component("ValueUrl", ValueUrl);
 app.component("ValueFeedId", ValueFeedId);
