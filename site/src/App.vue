@@ -15,7 +15,9 @@
       </li>
 
       <li class="config-menu-item">
-        Sorted by score
+        Sorted by
+        <config-selector :values="e.EntriesOrderProperties"
+                         v-model:property="globalSettings.entriesOrder"/>
       </li>
 
       <li class="config-menu-item">
@@ -44,7 +46,7 @@ function mainModeTitle() {
     if (globalSettings.mainPanelMode === e.MainPanelMode.Feeds) {
         return "Feeds";
     }
-    else if (globalSettings.mainPanelMode === e.MainPanelMode.News) {
+    else if (globalSettings.mainPanelMode === e.MainPanelMode.Entries) {
         return "News";
     }
     else {

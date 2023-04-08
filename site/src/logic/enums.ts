@@ -7,13 +7,13 @@ export type AnyEnum = {
 
 
 export enum MainPanelMode {
-  News = "news",
+  Entries = "entries",
   Feeds = "feeds",
 }
 
 
 export const MainPanelModeTexts = {
-    [MainPanelMode.News]: "news",
+    [MainPanelMode.Entries]: "news",
     [MainPanelMode.Feeds]: "feeds",
 }
 
@@ -32,7 +32,7 @@ export enum LastEntriesPeriod {
 
 
 // Map preserves the order of the keys
-export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, {text: string}>([
+export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, {text: string, seconds: number}>([
     [LastEntriesPeriod.Hour1, {text: "1 hour", seconds: c.hour}],
     [LastEntriesPeriod.Hour3, {text: "3 hours", seconds: 3 * c.hour}],
     [LastEntriesPeriod.Hour6, {text: "6 hours", seconds: 6 * c.hour}],
@@ -42,4 +42,18 @@ export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, {text: str
     [LastEntriesPeriod.Week, {text: "1 week", seconds: c.week }],
     [LastEntriesPeriod.Week2, {text: "2 weeks", seconds: 2 * c.week }],
     [LastEntriesPeriod.Month1, {text: "1 month", seconds: c.month }]
+]);
+
+
+export enum EntriesOrder {
+    score = "score",
+    published = "published",
+    cataloged = "cataloged"
+};
+
+
+export const EntriesOrderProperties = new Map<EntriesOrder, {text: string, field: string}>([
+    [EntriesOrder.score, {text: "score", field: "score"}],
+    [EntriesOrder.published, {text: "published", field: "publishedAt"}],
+    [EntriesOrder.cataloged, {text: "cataloged", field: "catalogedAt"}],
 ]);

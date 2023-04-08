@@ -11,7 +11,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr v-for="entry in entries">
+      <tr v-for="entry in entries" :key="entry.id">
         <td><value-score :value="entry.score"/></td>
         <td><value-url :value="entry.url" :text="entry.title"/></td>
         <td><tags-list :tags="entry.tags"/></td>
@@ -24,7 +24,7 @@
 </template>
 
 <script lang="ts" setup>
-
+import { computed } from "vue";
 import * as t from "@/logic/types";
 
 defineProps<{ entries: Array[t.Entry]}>();
