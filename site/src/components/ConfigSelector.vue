@@ -20,8 +20,6 @@ const emit = defineEmits(["update:property"]);
 
 
 function updateProperty(event) {
-    // properties.property = event.target.value;
-
     emit('update:property', event.target.value);
 }
 
