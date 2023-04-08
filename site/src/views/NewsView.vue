@@ -1,5 +1,5 @@
 <template>
-<entries-list :entries="sortedEntries"/>
+<entries-list :entries="sortedEntries" :time-field="timeField"/>
 </template>
 
 <script lang="ts" setup>
@@ -17,13 +17,17 @@ const entries = computedAsync(async () => {
 }, null);
 
 
+const timeField = computed(() => {
+    return e.EntriesOrderProperties.get(globalSettings.entriesOrder).timeField;
+});
+
 const sortedEntries = computed(() => {
     if (entries.value === null) {
         return null;
     }
 
     return entries.value.slice().sort((a, b) => {
-        const field = e.EntriesOrderProperties.get(globalSettings.entriesOrder).field;
+        const field = e.EntriesOrderProperties.get(globalSettings.entriesOrder).orderField;
 
         if (a[field] < b[field]) {
             return 1;
