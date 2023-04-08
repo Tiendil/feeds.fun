@@ -2,6 +2,7 @@ import datetime
 import uuid
 from typing import Iterable
 
+import pydantic
 from ffun.core import api
 from ffun.feeds import entities as f_entities
 from ffun.library import entities as l_entities
@@ -61,7 +62,13 @@ class GetFeedsResponse(api.APISuccess):
 
 
 class GetEntriesRequest(api.APIRequest):
-    pass
+    period: datetime.timedelta|None = None
+
+    @pydantic.validator('period')
+    def validate_period(cls, v):
+        if v is not None and v.total_seconds() < 0:
+            raise ValueError('period must be positive')
+        return v
 
 
 class GetEntriesResponse(api.APISuccess):

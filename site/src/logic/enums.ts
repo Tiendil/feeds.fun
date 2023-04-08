@@ -1,11 +1,10 @@
+import * as c from "@/logic/constants";
+
+
 export type AnyEnum = {
   [key in keyof any]: string | number;
 }
 
-
-export type AnyEnumText = {
-  [key in keyof any]: string;
-}
 
 export enum MainPanelMode {
   News = "news",
@@ -33,13 +32,14 @@ export enum LastEntriesPeriod {
 
 
 // Map preserves the order of the keys
-export const LastEntriesPeriodTexts = new Map<LastEntriesPeriod, string>([
-    [LastEntriesPeriod.Hour1, "1 hour"],
-    [LastEntriesPeriod.Hour3, "3 hours"],
-    [LastEntriesPeriod.Hour6, "6 hours"],
-    [LastEntriesPeriod.Hour12, "12 hours"],
-    [LastEntriesPeriod.Day1, "1 day"],
-    [LastEntriesPeriod.Day3, "3 days"],
-    [LastEntriesPeriod.Week, "1 week"],
-    [LastEntriesPeriod.Week2, "2 weeks"],
-    [LastEntriesPeriod.Month1, "1 month"]]);
+export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, {text: string}>([
+    [LastEntriesPeriod.Hour1, {text: "1 hour", seconds: c.hour}],
+    [LastEntriesPeriod.Hour3, {text: "3 hours", seconds: 3 * c.hour}],
+    [LastEntriesPeriod.Hour6, {text: "6 hours", seconds: 6 * c.hour}],
+    [LastEntriesPeriod.Hour12, {text: "12 hours", seconds: 12 * c.hour }],
+    [LastEntriesPeriod.Day1, {text: "1 day", seconds: c.day }],
+    [LastEntriesPeriod.Day3, {text: "3 days", seconds: 3 * c.day }],
+    [LastEntriesPeriod.Week, {text: "1 week", seconds: c.week }],
+    [LastEntriesPeriod.Week2, {text: "2 weeks", seconds: 2 * c.week }],
+    [LastEntriesPeriod.Month1, {text: "1 month", seconds: c.month }]
+]);

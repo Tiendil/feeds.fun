@@ -23,6 +23,7 @@ async def api_get_entries(request: entities.GetEntriesRequest) -> entities.GetEn
 
     # TODO: limit
     entries = await l_domain.get_entries_by_filter(feeds_ids=[feed.id for feed in feeds],
+                                                   period=request.period,
                                                    limit=10000)
 
     entries_ids = [entry.id for entry in entries]

@@ -54,10 +54,20 @@ async def get_entries_by_ids(ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, Entry|
 
 
 async def get_entries_by_filter(feeds_ids: Iterable[uuid.UUID],
+                                period: datetime.timedelta|None,
                                 limit: int) -> list[Entry]:
-    sql = '''SELECT * FROM l_entries WHERE feed_id = ANY(%(feeds_ids)s) ORDER BY cataloged_at DESC LIMIT %(limit)s'''
+
+    if period is None:
+        period = datetime.timedelta(days=100 * 365)
+
+    sql = '''
+    SELECT * FROM l_entries
+    WHERE feed_id = ANY(%(feeds_ids)s) AND cataloged_at > NOW() - %(period)s
+    ORDER BY cataloged_at DESC
+    LIMIT %(limit)s'''
 
     rows = await execute(sql, {'feeds_ids': feeds_ids,
+                               'period': period,
                                'limit': limit})
 
     return [row_to_entry(row) for row in rows]

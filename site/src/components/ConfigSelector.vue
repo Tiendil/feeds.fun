@@ -1,10 +1,10 @@
 <template>
 
     <select @change="updateProperty($event)">
-      <option v-for="[value, text] of texts"
+      <option v-for="[value, props] of values"
               :value="value"
               :selected="value === property">
-        {{text}}
+        {{props.text}}
       </option>
     </select>
 
@@ -13,8 +13,7 @@
 <script lang="ts" setup>
 import * as e from "@/logic/enums";
 
-const properties = defineProps<{options: e.AnyEnum,
-                                texts: e.AnyEnumText,
+const properties = defineProps<{values: any,
                                 property: string}>();
 
 const emit = defineEmits(["update:property"]);
