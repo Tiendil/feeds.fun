@@ -3,9 +3,21 @@
   <div class="nav-panel">
     <h2>Feeds For Fun</h2>
 
-    <ul style="list-style-type: none; margin: 0; padding: 0">
-      <li>
-        <strong>I am looking at</strong> <main-mode-switcher/>
+    <ul class="config-menu">
+      <li class="config-menu-item">
+        I am looking for <main-mode-switcher/>
+      </li>
+
+      <li class="config-menu-item">
+        For the last day
+      </li>
+
+      <li class="config-menu-item">
+        Sorted by score
+      </li>
+
+      <li class="config-menu-item">
+        show already read
       </li>
     </ul>
 
@@ -48,7 +60,7 @@ function mainModeTitle() {
   }
 
   .nav-panel {
-    width: 10em;
+    width: 10rem;
     flex-shrink: 0;
     background-color: #f0f0f0;
     padding: 1rem;
@@ -57,6 +69,16 @@ function mainModeTitle() {
   .main-content {
     flex-grow: 1;
     padding: 1rem;
-}
+  }
+
+  .config-menu {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+  }
+
+  .config-menu-item {
+      margin-bottom: 1rem;
+  }
 
 </style>
