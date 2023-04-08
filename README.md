@@ -70,6 +70,7 @@
 - [ ] filter by single feed
 - [ ] flexible gui layout? aka flex css, etc.
 - [ ] favicon
+- [ ] config-menu should change accoring main-mode
 
 # Public MVP
 
