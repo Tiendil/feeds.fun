@@ -10,8 +10,7 @@
 
       <li class="config-menu-item">
         For the last
-        <config-selector :options="e.LastEntriesPeriod"
-                         :texts="e.LastEntriesPeriodTexts"
+        <config-selector :values="e.LastEntriesPeriodProperties"
                          v-model:property="globalSettings.lastEntriesPeriod"/>
       </li>
 

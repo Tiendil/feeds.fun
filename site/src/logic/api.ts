@@ -33,8 +33,8 @@ export async function getFeeds() {
 }
 
 
-export async function getEntries() {
-    const response = await post({url: API_GET_ENTRIES, data: {}});
+export async function getEntries({period}: {period: number}) {
+    const response = await post({url: API_GET_ENTRIES, data: {period: period}});
 
     const entries = [];
 
@@ -44,5 +44,4 @@ export async function getEntries() {
     }
 
     return entries;
-
 }
