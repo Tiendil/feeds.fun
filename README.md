@@ -72,6 +72,7 @@
 - [ ] favicon
 - [ ] config-menu should change accoring main-mode
 - [ ] tooltip for last entries period about top limit of how many entries can be retrieved
+- [ ] do not show all entries in one page by default (only on scroll)
 
 # Public MVP
 
