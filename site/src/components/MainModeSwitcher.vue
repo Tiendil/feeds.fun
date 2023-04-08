@@ -1,16 +1,20 @@
 <template>
 
-<a href="#" @click="switchMainMode()">{{globalSettings.mainPanelMode}}</a>
+<a href="#" @click="switchMainMode()">{{text}}</a>
 
 </template>
 
 <script lang="ts" setup>
-
+import { computed } from "vue";
 import { useRouter } from 'vue-router'
 import { useGlobalSettingsStore } from "@/stores/globalSettings";
 import * as e from "@/logic/enums";
 
 const globalSettings = useGlobalSettingsStore();
+
+const text = computed(() => {
+    return e.MainPanelModeTexts[globalSettings.mainPanelMode];
+});
 
 const router = useRouter();
 

@@ -71,6 +71,7 @@
 - [ ] flexible gui layout? aka flex css, etc.
 - [ ] favicon
 - [ ] config-menu should change accoring main-mode
+- [ ] tooltip for last entries period about top limit of how many entries can be retrieved
 
 # Public MVP
 
