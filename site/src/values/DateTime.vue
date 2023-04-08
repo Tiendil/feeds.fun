@@ -1,16 +1,22 @@
 <template>
-    {{ renderedDateTime }}
+    {{ text }}
 </template>
 
 <script lang="ts" setup>
 import { computed } from "vue";
+import * as u from "@/logic/utils";
 
 const properties = defineProps<{
     value: Date;
+    reversed: boolean;
 }>();
 
-const renderedDateTime = computed(() => {
-    return properties.value.toLocaleString();
+const text = computed(() => {
+    if (!properties.reversed) {
+        return properties.value.toLocaleString();
+    } else {
+        return u.timeSince(properties.value);
+    }
 });
 </script>
 

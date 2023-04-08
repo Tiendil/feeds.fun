@@ -52,8 +52,8 @@ export enum EntriesOrder {
 };
 
 
-export const EntriesOrderProperties = new Map<EntriesOrder, {text: string, field: string}>([
-    [EntriesOrder.score, {text: "score", field: "score"}],
-    [EntriesOrder.published, {text: "published", field: "publishedAt"}],
-    [EntriesOrder.cataloged, {text: "cataloged", field: "catalogedAt"}],
+export const EntriesOrderProperties = new Map<EntriesOrder, {text: string, orderField: string, timeField}>([
+    [EntriesOrder.score, {text: "score", orderField: "score", timeField: "catalogedAt"}],
+    [EntriesOrder.published, {text: "published", orderField: "publishedAt", timeField: "publishedAt"}],
+    [EntriesOrder.cataloged, {text: "cataloged", orderField: "catalogedAt", timeField: "catalogedAt"}],
 ]);
