@@ -1,5 +1,7 @@
 <template>
-<entries-list :entries="sortedEntries" :time-field="timeField"/>
+<entries-list :entries="sortedEntries"
+              :time-field="timeField"
+              :show-tags="globalSettings.showEntriesTags"/>
 </template>
 
 <script lang="ts" setup>

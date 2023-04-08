@@ -7,10 +7,12 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     const mainPanelMode = ref(e.MainPanelMode.Entries);
     const lastEntriesPeriod = ref(e.LastEntriesPeriod.Month1);
     const entriesOrder = ref(e.EntriesOrder.score);
+    const showEntriesTags = ref(true);
 
     return {
         mainPanelMode,
         lastEntriesPeriod,
-        entriesOrder
+        entriesOrder,
+        showEntriesTags
     };
 });

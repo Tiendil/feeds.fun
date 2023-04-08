@@ -21,7 +21,13 @@
       </li>
 
       <li class="config-menu-item">
-        show already read
+        Show tags: <config-flag v-model:flag="globalSettings.showEntriesTags"
+                                on-text="yes"
+                                off-text="no"/>
+      </li>
+
+      <li class="config-menu-item">
+        Show already read
       </li>
     </ul>
 
