@@ -8,6 +8,7 @@ import FeedsList from "./components/FeedsList.vue";
 import EntriesList from "./components/EntriesList.vue";
 import TagsList from "./components/TagsList.vue";
 import MainModeSwitcher from "./components/MainModeSwitcher.vue";
+import ConfigSelector from "./components/ConfigSelector.vue";
 
 import ValueUrl from "./values/URL.vue";
 import ValueFeedId from "./values/FeedId.vue";
@@ -21,6 +22,7 @@ app.component("FeedsList", FeedsList);
 app.component("EntriesList", EntriesList);
 app.component("TagsList", TagsList);
 app.component("MainModeSwitcher", MainModeSwitcher);
+app.component("ConfigSelector", ConfigSelector);
 
 app.component("ValueUrl", ValueUrl);
 app.component("ValueFeedId", ValueFeedId);

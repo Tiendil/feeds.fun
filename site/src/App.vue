@@ -9,7 +9,10 @@
       </li>
 
       <li class="config-menu-item">
-        For the last day
+        For the last
+        <config-selector :options="e.LastEntriesPeriod"
+                         :texts="e.LastEntriesPeriodTexts"
+                         v-model:property="globalSettings.lastEntriesPeriod"/>
       </li>
 
       <li class="config-menu-item">
