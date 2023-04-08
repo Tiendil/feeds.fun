@@ -20,9 +20,9 @@ const router = useRouter();
 
 function switchMainMode() {
     if (globalSettings.mainPanelMode === e.MainPanelMode.Feeds) {
-        globalSettings.mainPanelMode = e.MainPanelMode.News;
+        globalSettings.mainPanelMode = e.MainPanelMode.Entries;
     }
-    else if (globalSettings.mainPanelMode === e.MainPanelMode.News) {
+    else if (globalSettings.mainPanelMode === e.MainPanelMode.Entries) {
         globalSettings.mainPanelMode = e.MainPanelMode.Feeds;
     }
     else {
