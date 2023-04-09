@@ -10,6 +10,7 @@ import TagsList from "./components/TagsList.vue";
 import MainModeSwitcher from "./components/MainModeSwitcher.vue";
 import ConfigSelector from "./components/ConfigSelector.vue";
 import ConfigFlag from "./components/ConfigFlag.vue";
+import EntryForList from "./components/EntryForList.vue";
 
 import ValueUrl from "./values/URL.vue";
 import ValueFeedId from "./values/FeedId.vue";
@@ -25,6 +26,7 @@ app.component("TagsList", TagsList);
 app.component("MainModeSwitcher", MainModeSwitcher);
 app.component("ConfigSelector", ConfigSelector);
 app.component("ConfigFlag", ConfigFlag);
+app.component("EntryForList", EntryForList);
 
 app.component("ValueUrl", ValueUrl);
 app.component("ValueFeedId", ValueFeedId);

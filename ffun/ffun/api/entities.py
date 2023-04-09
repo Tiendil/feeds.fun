@@ -31,12 +31,14 @@ class Entry(api.Base):
     score: int
     publishedAt: datetime.datetime
     catalogedAt: datetime.datetime
+    body: str|None = None
 
     @classmethod
     def from_internal(cls,
                       entry: l_entities.Entry,
                       tags: Iterable[str],
-                      score: int) -> 'Entry':
+                      score: int,
+                      with_body: bool = False) -> 'Entry':
         return cls(
             id=entry.id,
             feed_id=entry.feed_id,
@@ -46,6 +48,7 @@ class Entry(api.Base):
             score=score,
             publishedAt=entry.published_at,
             catalogedAt=entry.cataloged_at,
+            body=entry.body if with_body else None
         )
 
 
@@ -73,3 +76,11 @@ class GetEntriesRequest(api.APIRequest):
 
 class GetEntriesResponse(api.APISuccess):
     entries: list[Entry]
+
+
+class GetEntryRequest(api.APIRequest):
+    id: uuid.UUID
+
+
+class GetEntryResponse(api.APISuccess):
+    entry: Entry

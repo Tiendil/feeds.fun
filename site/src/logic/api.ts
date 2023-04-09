@@ -6,6 +6,7 @@ const ENTRY_POINT = 'http://127.0.0.1:8000'
 
 const API_GET_FEEDS = `${ENTRY_POINT}/api/get-feeds`;
 const API_GET_ENTRIES = `${ENTRY_POINT}/api/get-entries`;
+const API_GET_ENTRY = `${ENTRY_POINT}/api/get-entry`;
 
 
 async function post({url, data}: {url: string, data: any}) {
@@ -44,4 +45,11 @@ export async function getEntries({period}: {period: number}) {
     }
 
     return entries;
+}
+
+
+export async function getEntry({entryId}: {entryId: t.EntryId}) {
+    const response = await post({url: API_GET_ENTRY, data: {id: entryId}});
+
+    return t.entryFromJSON(response.entry);
 }
