@@ -16,12 +16,14 @@
       <tags-list :tags="entry.tags"/>
     </template>
 
-    <template v-if="showBody">
-      <br/>
-      <h2>{{entry.title}}</h2>
-      <p v-if="fullEntry === null">loading...</p>
-      <div v-if="fullEntry !== null" v-html="purifiedBody"/>
-    </template>
+    <div v-if="showBody" style="display: flex; justify-content: center;">
+      <div style="max-width: 50rem;">
+        <h2>{{entry.title}}</h2>
+        <p v-if="fullEntry === null">loading...</p>
+        <div v-if="fullEntry !== null"
+             v-html="purifiedBody"/>
+      </div>
+    </div>
   </div>
 
   <div style="flex-shrink: 0; width: 1rem; left-padding: 0.25rem;">
@@ -69,7 +71,7 @@ const purifiedBody = computed(() => {
 
 <style scoped>
   .container {
-    display: flex;
+      display: flex;
   }
 
   .container :deep(img) {
