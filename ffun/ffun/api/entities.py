@@ -64,7 +64,7 @@ class GetFeedsResponse(api.APISuccess):
     feeds: list[Feed]
 
 
-class GetEntriesRequest(api.APIRequest):
+class GetLastEntriesRequest(api.APIRequest):
     period: datetime.timedelta|None = None
 
     @pydantic.validator('period')
@@ -74,13 +74,13 @@ class GetEntriesRequest(api.APIRequest):
         return v
 
 
-class GetEntriesResponse(api.APISuccess):
+class GetLastEntriesResponse(api.APISuccess):
     entries: list[Entry]
 
 
-class GetEntryRequest(api.APIRequest):
-    id: uuid.UUID
+class GetEntriesByIdsRequest(api.APIRequest):
+    ids: list[uuid.UUID]
 
 
-class GetEntryResponse(api.APISuccess):
-    entry: Entry
+class GetEntriesByIdsResponse(api.APISuccess):
+    entries: list[Entry]

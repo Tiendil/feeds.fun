@@ -52,7 +52,9 @@ const fullEntry = computedAsync(async () => {
     if (!showBody.value) {
         return null;
     }
-    return await api.getEntry({entryId: properties.entry.id});
+    const entries = await api.getEntriesByIds({ids: [properties.entry.id]});
+
+    return entries[0];
 }, null);
 
 

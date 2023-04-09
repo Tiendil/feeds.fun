@@ -1,7 +1,10 @@
 
+from typing import Iterable
+
 import fastapi
 from ffun.feeds import domain as f_domain
 from ffun.library import domain as l_domain
+from ffun.library import entities as l_entities
 from ffun.ontology import domain as o_domain
 from ffun.scores import domain as s_domain
 
@@ -17,15 +20,7 @@ async def api_get_feeds(request: entities.GetFeedsRequest) -> entities.GetFeedsR
     return entities.GetFeedsResponse(feeds=[entities.Feed.from_internal(feed) for feed in feeds])
 
 
-@router.post('/api/get-entries')
-async def api_get_entries(request: entities.GetEntriesRequest) -> entities.GetEntriesResponse:
-    feeds = await f_domain.get_all_feeds()
-
-    # TODO: limit
-    entries = await l_domain.get_entries_by_filter(feeds_ids=[feed.id for feed in feeds],
-                                                   period=request.period,
-                                                   limit=10000)
-
+async def _external_entries(entries: Iterable[l_entities.Entry], with_body: bool) -> list[entities.Entry]:
     entries_ids = [entry.id for entry in entries]
 
     tags = await o_domain.get_tags_for_entries(entries_ids)
@@ -38,41 +33,41 @@ async def api_get_entries(request: entities.GetEntriesRequest) -> entities.GetEn
 
     entries = [entities.Entry.from_internal(entry=entry,
                                             tags=tags.get(entry.id, ()),
-                                            score=scores.get(entry.id, 0))
+                                            score=scores.get(entry.id, 0),
+                                            with_body=with_body)
                for entry in entries]
 
     entries.sort(key=lambda entry: entry.score, reverse=True)
 
-    return entities.GetEntriesResponse(entries=entries)
+    return entries
 
 
-@router.post('/api/get-entry')
-async def api_get_entry(request: entities.GetEntryRequest) -> entities.GetEntryResponse:
-    # TODO: check if belongs to user?
+@router.post('/api/get-last-entries')
+async def api_get_last_entries(request: entities.GetLastEntriesRequest) -> entities.GetLastEntriesResponse:
+    feeds = await f_domain.get_all_feeds()
 
-    entries_ids = [request.id]
+    # TODO: limit
+    entries = await l_domain.get_entries_by_filter(feeds_ids=[feed.id for feed in feeds],
+                                                   period=request.period,
+                                                   limit=10000)
 
-    entries = await l_domain.get_entries_by_ids(entries_ids)
+    external_entries = await _external_entries(entries, with_body=False)
 
-    if not entries or entries[request.id] is None:
-        # TODO: better error
-        raise fastapi.HTTPException(status_code=404, detail='Entry not found')
+    return entities.GetLastEntriesResponse(entries=external_entries)
 
-    entry = entries[request.id]
 
-    assert entry
+@router.post('/api/get-entries-by-ids')
+async def api_get_entries_by_ids(request: entities.GetEntriesByIdsRequest) -> entities.GetEntriesByIdsResponse:
+    # TODO: check if belongs to user
 
-    tags = await o_domain.get_tags_for_entries(entries_ids)
+    if len(request.ids) > 10:
+        # TODO: better error processing
+        raise fastapi.HTTPException(status_code=400, detail='Too many ids')
 
-    tags_ids = await o_domain.get_tags_ids_for_entries(entries_ids)
+    entries = await l_domain.get_entries_by_ids(request.ids)
 
-    rules = await s_domain.get_rules()
+    found_entries = [entry for entry in entries.values() if entry is not None]
 
-    scores = s_domain.get_scores(rules, tags_ids)
+    external_entries = await _external_entries(found_entries, with_body=True)
 
-    entry = entities.Entry.from_internal(entry=entry,
-                                         tags=tags.get(entry.id, ()),
-                                         score=scores.get(entry.id, 0),
-                                         with_body=True)
-
-    return entities.GetEntryResponse(entry=entry)
+    return entities.GetEntriesByIdsResponse(entries=external_entries)
