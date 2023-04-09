@@ -1,5 +1,6 @@
 <template>
-<div style="display: flex;">
+<div class="container">
+
   <div style="flex-shrink: 0; width: 2rem; text-align: right; padding-right: 0.25rem;">
     <value-score :value="entry.score" class="entity-for-list-score"/>
   </div>
@@ -48,6 +49,9 @@ function timeFor(entry: t.Entry): Date {
 }
 
 const fullEntry = computedAsync(async () => {
+    if (!showBody.value) {
+        return null;
+    }
     return await api.getEntry({entryId: properties.entry.id});
 }, null);
 
@@ -61,4 +65,13 @@ const purifiedBody = computed(() => {
 
 </script>
 
-<style></style>
+<style scoped>
+  .container {
+    display: flex;
+  }
+
+  .container :deep(img) {
+     max-width: 100%;
+     height: auto;
+  }
+</style>

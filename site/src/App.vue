@@ -64,7 +64,7 @@ function mainModeTitle() {
 
 <style scoped>
 
-.container {
+  .container {
     display: flex;
     height: 100vh;
   }
