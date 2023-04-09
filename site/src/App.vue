@@ -66,7 +66,6 @@ function mainModeTitle() {
 
   .container {
     display: flex;
-    height: 100vh;
   }
 
   .nav-panel {
