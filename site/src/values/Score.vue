@@ -1,5 +1,7 @@
 <template>
-  {{renderedText}}
+<div>
+{{renderedText}}
+</div>
 </template>
 
 <script lang="ts" setup>

@@ -41,12 +41,13 @@ export type Entry = {
     readonly score: number;
     readonly publishedAt: Date;
     readonly catalogedAt: Date;
+    readonly body: string|null;
 }
 
 
-export function entryFromJSON({ id, feedId, title, url, tags, score, publishedAt, catalogedAt }:
+export function entryFromJSON({ id, feedId, title, url, tags, score, publishedAt, catalogedAt, body }:
                               { id: string, feedId: string, title: string, url: string, tags: string[], score: number,
-                                publishedAt: string, catalogedAt: string }): Entry {
+                                publishedAt: string, catalogedAt: string, body: string|null }): Entry {
     return { id: toEntryId(id),
              feedId: toFeedId(feedId),
              title,
@@ -54,5 +55,6 @@ export function entryFromJSON({ id, feedId, title, url, tags, score, publishedAt
              tags: tags,
              score: score,
              publishedAt: new Date(publishedAt),
-             catalogedAt: new Date(catalogedAt) };
+             catalogedAt: new Date(catalogedAt),
+             body: body }
 }

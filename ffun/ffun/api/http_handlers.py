@@ -44,3 +44,35 @@ async def api_get_entries(request: entities.GetEntriesRequest) -> entities.GetEn
     entries.sort(key=lambda entry: entry.score, reverse=True)
 
     return entities.GetEntriesResponse(entries=entries)
+
+
+@router.post('/api/get-entry')
+async def api_get_entry(request: entities.GetEntryRequest) -> entities.GetEntryResponse:
+    # TODO: check if belongs to user?
+
+    entries_ids = [request.id]
+
+    entries = await l_domain.get_entries_by_ids(entries_ids)
+
+    if not entries or entries[request.id] is None:
+        # TODO: better error
+        raise fastapi.HTTPException(status_code=404, detail='Entry not found')
+
+    entry = entries[request.id]
+
+    assert entry
+
+    tags = await o_domain.get_tags_for_entries(entries_ids)
+
+    tags_ids = await o_domain.get_tags_ids_for_entries(entries_ids)
+
+    rules = await s_domain.get_rules()
+
+    scores = s_domain.get_scores(rules, tags_ids)
+
+    entry = entities.Entry.from_internal(entry=entry,
+                                         tags=tags.get(entry.id, ()),
+                                         score=scores.get(entry.id, 0),
+                                         with_body=True)
+
+    return entities.GetEntryResponse(entry=entry)
