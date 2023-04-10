@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import MainView from '../views/MainView.vue'
 import FeedsView from '../views/FeedsView.vue'
 import NewsView from '../views/NewsView.vue'
+import * as e from "@/logic/enums";
 
 // lazy view loading does not work with router.push function
 // first attempt to router.push into not loaded view, will cause its loading, but will not change components
@@ -16,12 +17,12 @@ const router = createRouter({
     },
     {
       path: '/feeds',
-      name: 'feeds',
+      name: e.MainPanelMode.Feeds,
       component: FeedsView
     },
     {
       path: '/news',
-      name: 'news',
+      name: e.MainPanelMode.Entries,
       component: NewsView
     },
 
