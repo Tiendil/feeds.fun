@@ -4,6 +4,7 @@ import pydantic
 
 
 class Settings(pydantic.BaseSettings):  # type: ignore
+    loaders_number: int = 5
     minimum_period: datetime.timedelta = datetime.timedelta(minutes=10)
 
     class Config:

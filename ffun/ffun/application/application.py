@@ -44,8 +44,7 @@ async def use_api(app: fastapi.FastAPI):
 @contextlib.asynccontextmanager
 async def use_loader(app: fastapi.FastAPI):
     logger.info('Feeds Loader enabled')
-    app.state.feeds_loader = FeedsLoader(loaders_number=1,
-                                         name='ffun_feeds_loader',
+    app.state.feeds_loader = FeedsLoader(name='ffun_feeds_loader',
                                          delay_between_runs=1)
 
     app.state.feeds_loader.start()
