@@ -42,12 +42,12 @@ async def save_feeds(feeds: list[Feed]) -> None:
 @run_in_transaction
 async def get_next_feeds_to_load(execute: ExecuteType,
                                  number: int,
-                                 loaded_before: datetime.timedelta) -> list[Feed]:
+                                 loaded_before: datetime.datetime) -> list[Feed]:
     sql = '''
     SELECT *
     FROM f_feeds
-    WHERE load_attempted_at <= %(loaded_before)s
-    ORDER BY load_attempted_at ASC
+    WHERE load_attempted_at IS NULL OR load_attempted_at <= %(loaded_before)s
+    ORDER BY load_attempted_at ASC NULLS FIRST
     LIMIT %(number)s
     FOR UPDATE SKIP LOCKED
     '''

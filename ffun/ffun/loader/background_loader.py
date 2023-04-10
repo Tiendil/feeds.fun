@@ -20,7 +20,7 @@ class FeedsLoader(InfiniteTask):
 
     async def single_run(self) -> None:
         feeds = await f_domain.get_next_feeds_to_load(number=self._loaders_number,
-                                                      loaded_before=datetime.datetime.now() - settings.minimum_period)
+                                                      loaded_before=datetime.datetime.utcnow() - settings.minimum_period)
 
         # TODO: run concurrently
         for feed in feeds:

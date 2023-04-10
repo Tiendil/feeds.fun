@@ -82,6 +82,8 @@ class InfiniteTask:
             try:
                 await self._run_requested.wait()
 
+                self._run_requested.clear()
+
                 logger.debug('running background task %s', self._name)
 
                 await self.single_run()
