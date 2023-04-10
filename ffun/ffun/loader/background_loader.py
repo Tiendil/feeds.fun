@@ -1,10 +1,12 @@
 
+import datetime
 import logging
 
 from ffun.core.background_tasks import InfiniteTask
 from ffun.feeds import domain as f_domain
 from ffun.library import domain as l_domain
 from ffun.loader import domain
+from ffun.loader.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +19,8 @@ class FeedsLoader(InfiniteTask):
         self._loaders_number = loaders_number
 
     async def single_run(self) -> None:
-        # TODO: filter out recently loaded feeds
-        # TODO: filter our concurrently loaded feeds
-        feeds = await f_domain.get_next_feeds_to_load(number=self._loaders_number)
+        feeds = await f_domain.get_next_feeds_to_load(number=self._loaders_number,
+                                                      loaded_before=datetime.datetime.now() - settings.minimum_period)
 
         # TODO: run concurrently
         for feed in feeds:

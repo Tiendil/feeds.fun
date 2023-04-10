@@ -8,4 +8,5 @@ import pydantic
 class Feed(pydantic.BaseModel):
     id: uuid.UUID
     url: str
-    loaded_at: datetime.datetime = datetime.datetime.min
+    load_attempted_at: datetime.datetime|None = None
+    loaded_at: datetime.datetime|None = None

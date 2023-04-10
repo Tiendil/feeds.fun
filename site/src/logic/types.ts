@@ -21,14 +21,14 @@ export function toURL(url: string): URL {
 export type Feed = {
     readonly id: FeedId;
     readonly url: URL;
-    readonly loadedAt: Date;
+    readonly loadedAt: Date|null;
 };
 
 
 export function feedFromJSON({ id, url, loadedAt }: { id: string, url: string, loadedAt: string }): Feed {
     return { id: toFeedId(id),
              url: toURL(url),
-             loadedAt: new Date(loadedAt) };
+             loadedAt: loadedAt !== null ? new Date(loadedAt) : null };
 }
 
 

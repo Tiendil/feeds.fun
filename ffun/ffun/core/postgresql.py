@@ -1,6 +1,8 @@
+
 import asyncio
 import contextlib
-from typing import Any, AsyncGenerator, Protocol
+import functools
+from typing import Any, AsyncGenerator, Callable, Protocol
 
 import psycopg
 import psycopg_pool
@@ -103,3 +105,12 @@ async def transaction(autocommit: bool = False) -> AsyncGenerator[ExecuteType, N
 async def execute(command: str, arguments: SQL_ARGUMENTS|None = None) -> DB_RESULT:
     async with transaction(autocommit=True) as execute:
         return await execute(command, arguments)
+
+
+def run_in_transaction(func: Callable[..., Any]) -> Callable[..., Any]:
+    @functools.wraps(func)
+    async def wrapper(*argv: Any, **kwargs: Any) -> Any:
+        async with transaction() as execute:
+            return await func(execute, *argv, **kwargs)
+
+    return wrapper
