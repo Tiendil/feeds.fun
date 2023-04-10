@@ -24,6 +24,7 @@ def row_to_entry(row: dict[str, Any]) -> Entry:
 
 
 async def catalog_entries(entries: Iterable[Entry]) -> None:
+
     for entry in entries:
         try:
             await execute(sql_insert_entry,
@@ -36,7 +37,15 @@ async def catalog_entries(entries: Iterable[Entry]) -> None:
                            'external_tags': list(entry.external_tags),
                            'published_at': entry.published_at})
         except psycopg.errors.UniqueViolation as e:
-            logger.warning('unique violation while saving entry %s', e)
+            logger.warning('racing is possible: unique violation while saving entry %s', e)
+
+
+async def check_stored_entries_by_external_ids(external_ids: Iterable[str]) -> set[str]:
+    sql = 'SELECT external_id FROM l_entries WHERE external_id = ANY(%(external_ids)s)'
+
+    rows = await execute(sql, {'external_ids': external_ids})
+
+    return {row['external_id'] for row in rows}
 
 
 sql_select_entries = '''SELECT * FROM l_entries WHERE id = ANY(%(ids)s)'''
