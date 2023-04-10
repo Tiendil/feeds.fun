@@ -6,8 +6,8 @@
   </div>
 
   <div style="flex-grow: 1;">
-    <a href="#" style="text-decoration: none;" v-if="!showBody" @click="showBody = true">&#9660;</a>
-    <a href="#" style="text-decoration: none;" v-if="showBody" @click="showBody = false">&#9650;</a>
+    <a href="#" style="text-decoration: none;" v-if="!showBody" @click.prevent="showBody = true">&#9660;</a>
+    <a href="#" style="text-decoration: none;" v-if="showBody" @click.prevent="showBody = false">&#9650;</a>
 
     <value-url :value="entry.url" :text="entry.title" class="entity"/>
 
