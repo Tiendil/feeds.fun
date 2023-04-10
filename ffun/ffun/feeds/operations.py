@@ -1,9 +1,10 @@
 
+import datetime
 import logging
 import uuid
 
 import psycopg
-from ffun.core.postgresql import execute
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 
 from .entities import Feed
 
@@ -13,12 +14,13 @@ logger = logging.getLogger(__name__)
 def row_to_feed(row: dict) -> Feed:
     return Feed(id=row['id'],
                 url=row['url'],
+                load_attempted_at=row['load_attempted_at'],
                 loaded_at=row['loaded_at'])
 
 
 sql_insert_feed = '''
-INSERT INTO f_feeds (id, url, loaded_at)
-VALUES (%(id)s, %(url)s, %(loaded_at)s)
+INSERT INTO f_feeds (id, url)
+VALUES (%(id)s, %(url)s)
 ON CONFLICT (id) DO NOTHING
 '''
 
@@ -29,21 +31,37 @@ async def save_feeds(feeds: list[Feed]) -> None:
         try:
             await execute(sql_insert_feed,
                           {'id': feed.id,
-                           'url': feed.url,
-                           'loaded_at': feed.loaded_at})
+                           'url': feed.url})
         except psycopg.errors.UniqueViolation as e:
             logger.warning('unique violation while saving feed %s', e)
 
 
-async def get_next_feeds_to_load(number: int) -> list[Feed]:
+@run_in_transaction
+async def get_next_feeds_to_load(execute: ExecuteType,
+                                 number: int,
+                                 loaded_before: datetime.timedelta) -> list[Feed]:
     sql = '''
     SELECT *
     FROM f_feeds
-    ORDER BY loaded_at ASC
+    WHERE load_attempted_at <= %(loaded_before)s
+    ORDER BY load_attempted_at ASC
     LIMIT %(number)s
+    FOR UPDATE SKIP LOCKED
     '''
 
-    rows = await execute(sql, {'number': number})
+    rows = await execute(sql, {'number': number,
+                               'loaded_before': loaded_before})
+
+    ids = [row['id'] for row in rows]
+
+    sql = '''
+    UPDATE f_feeds
+    SET load_attempted_at = NOW(),
+        updated_at = NOW()
+    WHERE id = ANY(%(ids)s)
+    '''
+
+    await execute(sql, {'ids': ids})
 
     return [row_to_feed(row) for row in rows]
 

@@ -11,7 +11,7 @@ from ffun.library import entities as l_entities
 class Feed(api.Base):
     id: uuid.UUID
     url: str
-    loadedAt: datetime.datetime
+    loadedAt: datetime.datetime|None
 
     @classmethod
     def from_internal(cls, feed: f_entities.Feed) -> 'Feed':

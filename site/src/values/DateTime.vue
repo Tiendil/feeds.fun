@@ -12,6 +12,10 @@ const properties = defineProps<{
 }>();
 
 const text = computed(() => {
+    if (properties.value === null) {
+        return "—";
+    }
+
     if (!properties.reversed) {
         return properties.value.toLocaleString();
     } else {

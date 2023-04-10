@@ -72,7 +72,9 @@ def create_app(api: bool, loader: bool, librarian: bool):
                     use_api(app) if api else contextlib.nullcontext(),
                     use_loader(app) if loader else contextlib.nullcontext(),
                     use_librarian(app) if librarian else contextlib.nullcontext()):
+            await app.router.startup()
             yield
+            await app.router.shutdown()
 
     app = fastapi.FastAPI(lifespan=lifespan)
 
@@ -87,7 +89,9 @@ def create_app(api: bool, loader: bool, librarian: bool):
     return app
 
 
-def prepare_app(api: bool, loader: bool, librarian: bool):
+def prepare_app(api: bool = False,
+                loader: bool = False,
+                librarian: bool = False):
     global _app
 
     _app = create_app(api=api, loader=loader, librarian=librarian)
@@ -98,12 +102,11 @@ def get_app():
 
 
 @contextlib.asynccontextmanager
-async def with_app():
+async def with_app(**kwargs):
+
+    prepare_app(**kwargs)
 
     app = get_app()
 
-    await app.router.startup()
-
-    yield app
-
-    await app.router.shutdown()
+    async with app.router.lifespan_context(app):
+        yield app
