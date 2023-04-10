@@ -8,6 +8,8 @@ sql_create_feeds_table = '''
 CREATE TABLE f_feeds (
     id UUID PRIMARY KEY,
     url TEXT NOT NULL UNIQUE,
+    state INTEGER NOT NULL,
+    last_error INTEGER NULL DEFAULT NULL,
     loaded_at TIMESTAMP WITH TIME ZONE NULL DEFAULT NULL,
     load_attempted_at TIMESTAMP WITH TIME ZONE NULL DEFAULT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
