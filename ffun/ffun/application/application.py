@@ -3,8 +3,9 @@ import logging
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
-from ffun.api import http_handlers
+from ffun.api import http_handlers as api_http_handlers
 from ffun.core import postgresql
+from ffun.loader.background_loader import FeedsLoader
 
 _app = None
 
@@ -12,7 +13,13 @@ _app = None
 logger = logging.getLogger(__name__)
 
 
-async def initialize_postgresql() -> None:
+def initialize_logging() -> None:
+    logging.basicConfig(level=logging.INFO)
+    logger.info('Logging initialized')
+
+
+@contextlib.asynccontextmanager
+async def use_postgresql():
     await postgresql.prepare_pool(name='ffun_pool',
                                   dsn='postgresql://ffun:ffun@localhost/ffun',
                                   min_size=20,
@@ -20,26 +27,54 @@ async def initialize_postgresql() -> None:
                                   timeout=1,
                                   num_workers=1)
 
-
-async def deinitialize_postgresql() -> None:
-    await postgresql.destroy_pool()
-
-
-def initialize_logging() -> None:
-    logging.basicConfig(level=logging.INFO)
-    logger.info('Logging initialized')
+    try:
+        yield
+    finally:
+        await postgresql.destroy_pool()
 
 
-def create_app():
+@contextlib.asynccontextmanager
+async def use_api(app: fastapi.FastAPI):
+    logger.info('API enabled')
+    app.include_router(api_http_handlers.router)
 
+    yield
+
+
+@contextlib.asynccontextmanager
+async def use_loader(app: fastapi.FastAPI):
+    logger.info('Feeds Loader enabled')
+    app.state.feeds_loader = FeedsLoader(loaders_number=1,
+                                         name='ffun_feeds_loader',
+                                         delay_between_runs=1)
+
+    app.state.feeds_loader.start()
+
+    try:
+        yield
+    finally:
+        await app.state.feeds_loader.stop()
+
+
+@contextlib.asynccontextmanager
+async def use_librarian(app: fastapi.FastAPI):
+    logger.info('Librarian enabled')
+    raise NotImplementedError()
+    yield
+
+
+def create_app(api: bool, loader: bool, librarian: bool):
     initialize_logging()
 
-    app = fastapi.FastAPI()
+    @contextlib.asynccontextmanager
+    async def lifespan(app: fastapi.FastAPI):
+        async with (use_postgresql(),
+                    use_api(app) if api else contextlib.nullcontext(),
+                    use_loader(app) if loader else contextlib.nullcontext(),
+                    use_librarian(app) if librarian else contextlib.nullcontext()):
+            yield
 
-    app.on_event("startup")(initialize_postgresql)
-    app.on_event("shutdown")(deinitialize_postgresql)
-
-    app.include_router(http_handlers.router)
+    app = fastapi.FastAPI(lifespan=lifespan)
 
     app.add_middleware(
         CORSMiddleware,
@@ -52,12 +87,13 @@ def create_app():
     return app
 
 
-def get_app():
+def prepare_app(api: bool, loader: bool, librarian: bool):
     global _app
 
-    if _app is None:
-        _app = create_app()
+    _app = create_app(api=api, loader=loader, librarian=librarian)
 
+
+def get_app():
     return _app
 
 
