@@ -6,7 +6,7 @@ import uuid
 import psycopg
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 
-from .entities import Feed
+from .entities import Feed, FeedError, FeedState
 
 logger = logging.getLogger(__name__)
 
@@ -14,13 +14,15 @@ logger = logging.getLogger(__name__)
 def row_to_feed(row: dict) -> Feed:
     return Feed(id=row['id'],
                 url=row['url'],
+                state=FeedState(row['state']),
+                last_error=FeedError(row['last_error']) if row['last_error'] else None,
                 load_attempted_at=row['load_attempted_at'],
                 loaded_at=row['loaded_at'])
 
 
 sql_insert_feed = '''
-INSERT INTO f_feeds (id, url)
-VALUES (%(id)s, %(url)s)
+INSERT INTO f_feeds (id, url, state)
+VALUES (%(id)s, %(url)s, %(state)s)
 ON CONFLICT (id) DO NOTHING
 '''
 
@@ -31,7 +33,8 @@ async def save_feeds(feeds: list[Feed]) -> None:
         try:
             await execute(sql_insert_feed,
                           {'id': feed.id,
-                           'url': feed.url})
+                           'url': feed.url,
+                           'state': feed.state})
         except psycopg.errors.UniqueViolation as e:
             logger.warning('unique violation while saving feed %s', e)
 
@@ -69,12 +72,29 @@ async def get_next_feeds_to_load(execute: ExecuteType,
 async def mark_feed_as_loaded(feed_id: uuid.UUID) -> None:
     sql = '''
     UPDATE f_feeds
-    SET loaded_at = NOW(),
+    SET state = %(state)s,
+        last_error = NULL,
+        loaded_at = NOW(),
         updated_at = NOW()
     WHERE id = %(id)s
     '''
 
-    await execute(sql, {'id': feed_id})
+    await execute(sql, {'id': feed_id,
+                        'state': FeedState.loaded})
+
+
+async def mark_feed_as_failed(feed_id: uuid.UUID, state: FeedState, error: FeedError) -> None:
+    sql = '''
+    UPDATE f_feeds
+    SET state = %(state)s,
+        last_error = %(error)s,
+        updated_at = NOW()
+    WHERE id = %(id)s
+    '''
+
+    await execute(sql, {'id': feed_id,
+                        'state': state,
+                        'error': error})
 
 
 async def get_all_feeds() -> list[Feed]:

@@ -24,13 +24,4 @@ class FeedsLoader(InfiniteTask):
 
         # TODO: run concurrently
         for feed in feeds:
-            logger.info("Loading feed %s", feed)
-
-            entries = await domain.load_feed(feed=feed)
-
-            # TODO: store only new entries
-            await l_domain.catalog_entries(entries=entries)
-
-            await f_domain.mark_feed_as_loaded(feed.id)
-
-            logger.info("Loaded %s entries", len(entries))
+            await domain.process_feed(feed)

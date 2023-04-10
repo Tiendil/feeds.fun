@@ -11,6 +11,8 @@ from ffun.library import entities as l_entities
 class Feed(api.Base):
     id: uuid.UUID
     url: str
+    state: str
+    lastError: str|None = None
     loadedAt: datetime.datetime|None
 
     @classmethod
@@ -18,6 +20,8 @@ class Feed(api.Base):
         return cls(
             id=feed.id,
             url=feed.url,
+            state=feed.state.name,
+            lastError=feed.last_error.name if feed.last_error else None,
             loadedAt=feed.loaded_at,
         )
 
