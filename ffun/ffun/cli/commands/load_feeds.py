@@ -1,11 +1,9 @@
 
 import asyncio
 import logging
-import pathlib
 
 from ffun.application.application import with_app
 from ffun.feeds import domain as f_domain
-from ffun.feeds.entities import Feed
 from ffun.library import domain as l_domain
 from ffun.loader import domain as load_domain
 
