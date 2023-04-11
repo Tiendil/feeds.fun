@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import logging
 
@@ -5,6 +6,7 @@ import fastapi
 from fastapi.middleware.cors import CORSMiddleware
 from ffun.api import http_handlers as api_http_handlers
 from ffun.core import postgresql
+from ffun.library.background_librarian import create_background_processors
 from ffun.loader.background_loader import FeedsLoader
 
 _app = None
@@ -58,8 +60,17 @@ async def use_loader(app: fastapi.FastAPI):
 @contextlib.asynccontextmanager
 async def use_librarian(app: fastapi.FastAPI):
     logger.info('Librarian enabled')
-    raise NotImplementedError()
-    yield
+
+    app.state.entries_processors = create_background_processors()
+
+    for processor in app.state.entries_processors:
+        processor.start()
+
+    try:
+        yield
+    finally:
+        asyncio.gather(*[processor.stop() for processor in app.state.entries_processors],
+                       return_exceptions=True)
 
 
 def create_app(api: bool, loader: bool, librarian: bool):
