@@ -17,8 +17,8 @@ CREATE TABLE l_entries (
     external_url TEXT NOT NULL,
     external_tags TEXT[] NOT NULL,
     published_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    cataloged_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    cataloged_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 )
 '''
 
@@ -36,7 +36,7 @@ CREATE TABLE l_entry_process_info (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     processed_at TIMESTAMP WITH TIME ZONE NULL,
 
-    PRIMARY KEY (processor_id, entity_id)
+    PRIMARY KEY (processor_id, entry_id)
 )
 '''
 

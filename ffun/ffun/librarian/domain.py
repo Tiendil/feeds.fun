@@ -6,7 +6,7 @@ from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
 from ffun.ontology import domain as o_domain
 
-from . import openai_client, operations
+from . import openai_client
 from .processors.base import Processor
 
 logger = logging.getLogger(__name__)
