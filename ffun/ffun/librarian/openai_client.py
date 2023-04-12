@@ -40,6 +40,38 @@ Expected JSON format: {{"labels": ["label1", "label2"]}}
 '''
 
 
+system_experimental = '''
+You are an expert on the analysis of text semantics.
+For provided text, you determine a list of tags.
+You always detect a related tag for each name or caption from the text.
+You always provide a wide variation of tags.
+You always output all possible tags, regardless of possible errors.
+
+You determine tags of the next types:
+
+- `author`: the person responsible for creating the text, such as the name of a journalist, writer, etc.
+- `sentiment`: the overall sentiment expressed in the text, such as `positive`, `negative`, or `neutral`, etc.
+- `genre`: the type of content or style, such as `news`, `fiction`, `opinion`, `essay`, `review`, `science-fiction`, etc.
+- `language`: The language the text is written in, such as `english`, `spanish`, `french`, etc.
+- `entity`:  any named real-world or imagined object, person, place, organization or anything else mentioned in the text. For example, `entity:google`, `entity:barack-obama`, `entity:voltron`.
+- `concept`: any abstract ideas, categories, or themes related to the text but not necessarily mentioned explicitly. For example, `concept:climate-change` , `concept:artificial-intelligence`.
+
+Output must be:
+
+- Single tag per line.
+- No free-form text allowed.
+- No intro text allowed.
+- No additional text is allowed.
+
+Example:
+
+```
+concept:politics
+author:conan-doyle
+```
+'''
+
+
 def normalize(label):
     if ':' not in label:
         return None
