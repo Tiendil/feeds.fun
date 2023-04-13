@@ -5,6 +5,7 @@ from ffun.core.background_tasks import InfiniteTask
 from ffun.library import domain as l_domain
 
 from . import domain
+from .processor.native_tags import Processor as NativeTagsProcessor
 from .processors.base import Processor
 from .processors.domain import Processor as DomainProcessor
 
@@ -32,7 +33,8 @@ class ProcessorInfo:
         return self._concurrency
 
 
-processors = [ProcessorInfo(id=1, processor=DomainProcessor(name='domain'), concurrency=1)]
+processors = [ProcessorInfo(id=1, processor=DomainProcessor(name='domain'), concurrency=1),
+              ProcessorInfo(id=2, processor=NativeTagsProcessor(name='native_tags'), concurrency=1)]
 
 
 class EntriesProcessor(InfiniteTask):

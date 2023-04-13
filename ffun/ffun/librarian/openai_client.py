@@ -14,128 +14,55 @@ cli = typer.Typer()
 
 openai.api_key = settings.openai.api_key
 
-# TODO: how to reflect dates in ontology, but only dates from text, not dates of publication?
-# TODO: split humand languages with programming languages
-# TODO platform:youtube is it about any video on youtube, or about youtube itself? What about source:youtube?
-# TODO: "topic:programming-language" vs "topic:programming-languages". GPT must generate lables only in singular form?
-# TODO: author иногда определяется криво. Не как автора статьи, а как автор цитаты или автор того, на что статья ссылается.
-# TODO: if we add specific tag, like "product:recident-evil-2", we should add more general tag like "product:recident-evil" too.
 
-types = ["topic", "author", "genre", "language", "country", "city", "organization", "person", "event", "work", "product", "author", "platform", "sentiment", "audience", "purpose", "region", "source", "industry", "licence", "book", "programming_language", "framework", "library", "tool", "platform", "development_methodology", "software_architecture", "design_pattern", "algorithm", "data_structure", "file_format", "protocol", "software_license", "operating_system", "software_category", "software"]
+async def prepare_requests(system, text, model, total_tokens, max_return_tokens):
+    # high estimation on base of
+    # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
+    additional_tokens_per_message = 10
 
+    ###############################
+    # TODO: detect full model name
+    # TODO: move out of this function
+    full_model_name = model
+    encoding = tiktoken.encoding_for_model(full_model_name)
+    ###############################
 
-system = f'''You will act as an expert on the classification of texts. For received HTML, you should assign labels/tags in the format `<type>:<categoty>`. For example, `topic:politics`, `author:conan_doyle`. Labels should be normalized, allowed characters for labels: `[a-z0-9_]`.
+    system_tokens = (additional_tokens_per_message +
+                     len(encoding.encode('system')) +
+                     len(encoding.encode(system)))
 
-You will give answers only in strict JSON format. No free-form text allowed. No intro text allowed. No additional text is allowed. Only JSON.
+    text_tokens = (additional_tokens_per_message +
+                   len(encoding.encode('user')) +
+                   len(encoding.encode(text)))
 
-Allowed types are: {types}.
+    tokens_per_chunk = total_tokens - system_tokens - max_return_tokens
 
-No other types are allowed.
+    if text_tokens <= tokens_per_chunk:
+        yield [{'role': 'system', 'content': system},
+               {'role': 'user', 'content': text}]
 
-You can return an empty list if you are unsure about the labels. It is not an error.
+    # TODO: should we split text on chunks with intersections?
+    # TODO: what to do with the last small chunks?
+    expected_chunks_number = text_tokens // tokens_per_chunk + 1
 
-In case of an error, you should return a JSON object with an "error" field. For example: {{"error": "some error message"}}.
+    for i in range(expected_chunks_number):
+        start = i * tokens_per_chunk
+        end = (i + 1) * tokens_per_chunk
 
-Expected JSON format: {{"labels": ["label1", "label2"]}}
-'''
+        yield [{'role': 'system', 'content': system},
+               {'role': 'user', 'content': text[start:end]}]
 
-
-system_experimental = '''
-You are an expert on the analysis of text semantics.
-For provided text, you determine a list of tags.
-You always detect a related tag for each name or caption from the text.
-You always provide a wide variation of tags.
-You always output all possible tags, regardless of possible errors.
-
-You determine tags of the next types:
-
-- `author`: the person responsible for creating the text, such as the name of a journalist, writer, etc.
-- `sentiment`: the overall sentiment expressed in the text, such as `positive`, `negative`, or `neutral`, etc.
-- `genre`: the type of content or style, such as `news`, `fiction`, `opinion`, `essay`, `review`, `science-fiction`, etc.
-- `language`: The language the text is written in, such as `english`, `spanish`, `french`, etc.
-- `entity`:  any named real-world or imagined object, person, place, organization or anything else mentioned in the text. For example, `entity:google`, `entity:barack-obama`, `entity:voltron`.
-- `concept`: any abstract ideas, categories, or themes related to the text but not necessarily mentioned explicitly. For example, `concept:climate-change` , `concept:artificial-intelligence`.
-
-Output must be:
-
-- Single tag per line.
-- No free-form text allowed.
-- No intro text allowed.
-- No additional text is allowed.
-
-Example:
-
-```
-concept:politics
-author:conan-doyle
-```
-'''
-
-gpt_3_5_experimental = '''
-You are an expert on the analysis of text semantics.
-For provided text, you determine a list of best tags to describe the text.
-You always provide significant tags for topics.
-You always provide significant tags for mentioned entities and concepts.
-If a topic has a meta topic you add it too.
-You add an explanation for each tag.
-
-Output must be:
-
-- Single tag per line.
-- No free-form text allowed.
-- No intro text allowed.
-- No additional text is allowed.
-
-Output example:
-
-```
-topics:
-1. amazon: because the text is about amazon
-...
-19. lord-of-the-rings: because the text is about amazon
-
-meta-topics:
-1. corporations: because amazon is a corporation
-...
-15. middle-earth: because the lord-of-the-rings is about middle-earth
-
-related-topics:
-
-1. tolkien: because tolkien is the author of lord-of-the-rings
-...
-15. fantasy: because it is the genre of the lord-of-the-rings
-
-mentions:
-1. politics: because recent politics events are mentioned in the text
-...
-20. conan-doyle: because conan-doyle is mentioned in the text
-```
-'''
-
-
-def normalize(label):
-    if ':' not in label:
-        return None
-
-    type, category = label.split(':', 1)
-
-    return f'{slugify(type)}:{slugify(category)}'
-
-
-def is_valid_tag(label):
-    if label is None:
-        return False
-
-    if ':' not in label:
-        return False
-
-    type, _ = label.split(':')
-
-    return type in types
 
 
 # TODO: can we continue chat, without restarting it?
-async def get_labels_by_html(article):
+async def get_labels_by_html(text,
+                             model,
+                             total_tokens,
+                             max_return_tokens,
+                             temperature=0,
+                             top_p=0,
+                             presence_penalty=0,
+                             frequency_penalty=0):
 
     n = 3000
 

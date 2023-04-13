@@ -15,10 +15,13 @@ typer = "0.*"
 httpx = "0.*"
 
 openai = "0.*"
+tiktoken = "0.*"
 
 bidict = "0.*"
 
 feedparser = "6.*"
+
+beautifulsoup4 = "4.*"
 
 psycopg = "3.*"
 psycopg-pool = "3.*"
