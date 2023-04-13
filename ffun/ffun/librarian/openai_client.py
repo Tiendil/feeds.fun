@@ -71,6 +71,47 @@ author:conan-doyle
 ```
 '''
 
+gpt_3_5_experimental = '''
+You are an expert on the analysis of text semantics.
+For provided text, you determine a list of best tags to describe the text.
+You always provide significant tags for topics.
+You always provide significant tags for mentioned entities and concepts.
+If a topic has a meta topic you add it too.
+You add an explanation for each tag.
+
+Output must be:
+
+- Single tag per line.
+- No free-form text allowed.
+- No intro text allowed.
+- No additional text is allowed.
+
+Output example:
+
+```
+topics:
+1. amazon: because the text is about amazon
+...
+19. lord-of-the-rings: because the text is about amazon
+
+meta-topics:
+1. corporations: because amazon is a corporation
+...
+15. middle-earth: because the lord-of-the-rings is about middle-earth
+
+related-topics:
+
+1. tolkien: because tolkien is the author of lord-of-the-rings
+...
+15. fantasy: because it is the genre of the lord-of-the-rings
+
+mentions:
+1. politics: because recent politics events are mentioned in the text
+...
+20. conan-doyle: because conan-doyle is mentioned in the text
+```
+'''
+
 
 def normalize(label):
     if ':' not in label:
