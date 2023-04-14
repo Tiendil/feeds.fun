@@ -79,7 +79,8 @@ def _extract_tags(data: Any) -> set[str]:
     return set()
 
 
-trash_system_tags = {'meta-topics',
+trash_system_tags = {'topics',
+                     'meta-topics',
                      'high-level-topics',
                      'low-level-topics',
                      'related-topics',
