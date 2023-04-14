@@ -2,6 +2,7 @@ import asyncio
 import functools
 import json
 import logging
+import math
 
 import async_lru
 import openai
@@ -51,9 +52,11 @@ async def prepare_requests(system, text, model, total_tokens, max_return_tokens)
     # TODO: what to do with the last small chunks?
     expected_chunks_number = text_tokens // tokens_per_chunk + 1
 
+    expected_chunk_size = int(math.floor(len(text) / expected_chunks_number))
+
     for i in range(expected_chunks_number):
-        start = i * tokens_per_chunk
-        end = (i + 1) * tokens_per_chunk
+        start = i * expected_chunk_size
+        end = (i + 1) * expected_chunk_size
 
         messages.append([{'role': 'system', 'content': system},
                          {'role': 'user', 'content': text[start:end]}])
