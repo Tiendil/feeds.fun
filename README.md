@@ -8,6 +8,7 @@
 - [ ] move scoring & sorting out of backend?
 - [ ] run console commands constantly in backgroud?
 - [ ] save global settings on backend?
+- [ ] smart tags ordering in gui (by popularity? by module of score?)
 
 # Closed MVP
 
