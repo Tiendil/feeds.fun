@@ -1,7 +1,10 @@
 <template>
 <entries-list :entries="sortedEntries"
               :time-field="timeField"
-              :show-tags="globalSettings.showEntriesTags"/>
+              :show-tags="globalSettings.showEntriesTags"
+              :showFromStart=100
+              :showPerPage=50
+              />
 </template>
 
 <script lang="ts" setup>
