@@ -1,12 +1,14 @@
 <template>
 
+[{{tagsNumber}}]
+
 <template v-for="tag of displayedTags">
     <value-tag :value="tag"/>&nbsp;
 </template>
 
-<a href="#" v-if="canShowAll" @click="showAll=true">more</a>
+<a href="#" v-if="canShowAll" @click.prevent="showAll=true">more</a>
 
-<a href="#" v-if="canHide" @click="showAll=false">hide</a>
+<a href="#" v-if="canHide" @click.prevent="showAll=false">hide</a>
 
 </template>
 
@@ -17,6 +19,10 @@ const showAll = ref(false);
 const showLimit = ref(5);
 
 const properties = defineProps<{ tags: string[]}>();
+
+const tagsNumber = computed(() => {
+    return properties.tags.length;
+});
 
 const displayedTags = computed(() => {
     if (showAll.value) {

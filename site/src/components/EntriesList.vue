@@ -18,7 +18,12 @@
   <a href="#"
      style="text-decoration: none;"
      v-if="canShowMore"
-     @click.prevent="showAll()">all</a>
+     @click.prevent="showAll()">all</a> |
+
+  <a href="#"
+     style="text-decoration: none;"
+     v-if="canHide"
+     @click.prevent="hideAll()">hide</a>
 
 </template>
 
@@ -46,6 +51,17 @@ function showAll() {
     }
     showEntries.value = properties.entries.length;
 }
+
+function hideAll() {
+    showEntries.value = properties.showFromStart;
+}
+
+const canHide = computed(() => {
+    if (properties.entries == null) {
+        return false;
+    }
+    return showEntries.value > properties.showFromStart;
+});
 
 const entriesToShow = computed(() => {
     if (properties.entries == null) {
