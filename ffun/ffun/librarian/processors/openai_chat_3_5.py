@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 from ffun.library.entities import Entry
 from slugify import slugify
 
+from .. import openai_client as oc
 from ..settings import settings
 from . import base
 
@@ -33,12 +34,13 @@ For each category, you provide 30 tags.
 
 Categories are topics, meta-topics, high-level-topics, low-level-topics, related-topics, indirect-topics, mentions, indirect-mentions.
 
-Normalize tags and output them as JSON.\
+Tags are only in English. Normalize tags and output them as JSON.\
 '''
 
 
+# add url to allow chatGPT decide on domain
 def entry_to_text(entry: Entry) -> str:
-    return f'title: {entry.title}\n\n{entry.text}'
+    return f'<h1>{entry.title}</h1><a href="{entry.external_url}">full article</a>{entry.body}'
 
 
 def clear_text(text: str) -> str:
@@ -50,9 +52,10 @@ def clear_text(text: str) -> str:
     for tag in soup():
         if tag.name in {'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'p', 'li', 'ul', 'ol'}:
             continue
+
         tag.unwrap()
 
-    simplified_html = soup.get_text()
+    simplified_html = str(soup)
 
     cleaned_text = re.sub(r'\s+', ' ', simplified_html)
 
@@ -60,6 +63,10 @@ def clear_text(text: str) -> str:
 
 
 def _extract_tags(data: Any) -> set[str]:
+    if not data:
+        # no tags if [], {}, ''
+        return set()
+
     if isinstance(data, list):
         return set.union(*(_extract_tags(item) for item in data))
 
@@ -72,35 +79,78 @@ def _extract_tags(data: Any) -> set[str]:
     return set()
 
 
+trash_system_tags = {'meta-topics',
+                     'high-level-topics',
+                     'low-level-topics',
+                     'related-topics',
+                     'indirect-topics',
+                     'mentions',
+                     'indirect-mentions'}
+
 # TODO: process errors
 # TODO: try to fix broken JSON
-def extract_tags(text: str) -> set[str]:
+
+def extract_tags_from_valid_json(text: str) -> set[str]:
     data = json.loads(text)
-    return _extract_tags(data)
+    tags = _extract_tags(data)
+    return tags - trash_system_tags
 
 
-def normalize_tag(tag: str) -> str:
-    return slugify(tag,
-                   entities=True,
-                   decimal=True,
-                   hexadecimal=True,
-                   max_length=0,
-                   word_boundary=False,
-                   save_order=True,
-                   separator='-',
-                   stopwords=(),
-                   regex_pattern=None,
-                   lowercase=True,
-                   replacements=(),
-                   allow_unicode=False)
+def extract_tags_from_invalid_json(text: str) -> set[str]:
+    logger.warning('Try to extract tags from an invalid JSON: %s', text)
+
+    # search all strings, believing that
+    parts = text.split('"')
+
+    tags: set[str] = set()
+
+    is_tag = False
+
+    while parts:
+        value = parts.pop(0)
+
+        if is_tag:
+            tags.add(value)
+
+        is_tag = not is_tag
+
+    logger.warning('Tags extracted: %s', tags)
+
+    return tags
 
 
-def normalize_tags(tags: set[str]) -> set[str]:
-    return {normalize_tag(tag) for tag in tags}
+def extract_tags(text: str) -> set[str]:
+    try:
+        return extract_tags_from_valid_json(text)
+    except json.decoder.JSONDecodeError:
+        return extract_tags_from_invalid_json(text)
 
 
 class Processor(base.Processor):
     __slots__ = ()
 
     async def process(self, entry: Entry) -> set[str]:
-        pass
+        dirty_text = entry_to_text(entry)
+
+        text = clear_text(dirty_text)
+
+        model = 'gpt-3.5-turbo'
+        total_tokens = 4096
+        max_return_tokens = 1024
+
+        messages = await oc.prepare_requests(system=system,
+                                             text=text,
+                                             model=model,
+                                             total_tokens=total_tokens,
+                                             max_return_tokens=max_return_tokens)
+
+        results = await oc.multiple_requests(model=model,
+                                             messages=messages,
+                                             max_return_tokens=max_return_tokens)
+
+        tags = set()
+
+        for result in results:
+            tags |= extract_tags(result)
+
+        return tags

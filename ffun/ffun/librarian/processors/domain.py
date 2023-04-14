@@ -27,7 +27,7 @@ class Processor(base.Processor):
         tags = set()
 
         while domain:
-            tags.add(f'domain-name:{domain}')
+            tags.add(f'network-domain:{domain}')
 
             if "." not in domain:
                 break

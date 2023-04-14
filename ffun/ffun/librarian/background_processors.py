@@ -5,9 +5,10 @@ from ffun.core.background_tasks import InfiniteTask
 from ffun.library import domain as l_domain
 
 from . import domain
-from .processor.native_tags import Processor as NativeTagsProcessor
 from .processors.base import Processor
 from .processors.domain import Processor as DomainProcessor
+from .processors.native_tags import Processor as NativeTagsProcessor
+from .processors.openai_chat_3_5 import Processor as OpenAIChat35Processor
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,8 @@ class ProcessorInfo:
 
 
 processors = [ProcessorInfo(id=1, processor=DomainProcessor(name='domain'), concurrency=1),
-              ProcessorInfo(id=2, processor=NativeTagsProcessor(name='native_tags'), concurrency=1)]
+              ProcessorInfo(id=2, processor=NativeTagsProcessor(name='native_tags'), concurrency=1),
+              ProcessorInfo(id=3, processor=OpenAIChat35Processor(name='openai_chat_3_5'), concurrency=1)]
 
 
 class EntriesProcessor(InfiniteTask):

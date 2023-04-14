@@ -23,6 +23,8 @@ feedparser = "6.*"
 
 beautifulsoup4 = "4.*"
 
+async-lru = "2.*"
+
 psycopg = "3.*"
 psycopg-pool = "3.*"
 yoyo-migrations = "8.*"
