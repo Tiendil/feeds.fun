@@ -39,7 +39,7 @@ async def prepare_requests(system, text, model, total_tokens, max_return_tokens)
                    len(encoding.encode('user')) +
                    len(encoding.encode(text)))
 
-    tokens_per_chunk = total_tokens - system_tokens - max_return_tokens
+    tokens_per_chunk = total_tokens - system_tokens - max_return_tokens - additional_tokens_per_message
 
     if text_tokens <= tokens_per_chunk:
         return [[{'role': 'system', 'content': system},
