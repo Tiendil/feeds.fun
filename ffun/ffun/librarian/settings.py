@@ -3,7 +3,6 @@ import pydantic
 
 class OpenAI(pydantic.BaseModel):  # type: ignore
     api_key: str
-    model: str = 'gpt-3.5-turbo'
 
 
 class Settings(pydantic.BaseSettings):  # type: ignore

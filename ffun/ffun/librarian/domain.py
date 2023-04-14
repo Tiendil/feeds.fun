@@ -6,59 +6,25 @@ from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
 from ffun.ontology import domain as o_domain
 
-from . import openai_client, operations
-
-_processors = [1]
+from . import openai_client, tags
+from .processors.base import Processor
 
 logger = logging.getLogger(__name__)
 
 
-async def discover_tags_for_entry(processor_id, entry: Entry) -> None:
+# TODO: save processing errors in the database
+async def process_entry(processor_id: int, processor: Processor, entry: Entry) -> None:
+    logger.info(f'dicover tags for entry {entry.id} for processor {processor_id}')
 
-    logging.info(f'dicover tags for entry {entry.id} for processor {processor_id}')
+    found_tags = await processor.process(entry)
 
-    if processor_id not in _processors:
-        raise ValueError(f'Invalid processor id: {processor_id}')
+    normalized_tags = tags.normalize_tags(found_tags)
 
-    await operations.mark_as_processed(processor_id=processor_id,
-                                       entry_id=entry.id,
-                                       processed_at=None,
-                                       cataloged_at=entry.cataloged_at)
+    logger.info('tags found: %s', normalized_tags)
 
-    tags = await openai_client.get_labels_by_html(entry.body)
+    await o_domain.apply_tags_to_entry(entry.id, normalized_tags)
 
-    logging.info('tags found: %s', tags)
+    await l_domain.mark_entry_as_processed(processor_id=processor_id,
+                                           entry_id=entry.id)
 
-    await o_domain.apply_tags_to_entry(entry.id, tags)
-
-    await operations.mark_as_processed(processor_id=processor_id,
-                                       entry_id=entry.id,
-                                       processed_at=datetime.datetime.now(),
-                                       cataloged_at=entry.cataloged_at)
-
-
-async def process_new_entries(processor_id: int) -> None:
-
-    logging.info(f'Processing new entries for processor {processor_id}')
-
-    if processor_id not in _processors:
-        raise ValueError(f'Invalid processor id: {processor_id}')
-
-    while True:
-        border = await operations.get_last_entry_date(processor_id)
-
-        logging.info(f'Getting new entries for processor {processor_id} with border {border}')
-
-        entries = await l_domain.get_new_entries(border)
-
-        if not entries:
-            logging.info('No new entries found')
-            break
-
-        logging.info('Found %s new entries', len(entries))
-
-        for entry in entries:
-            await discover_tags_for_entry(processor_id, entry)
-
-
-# TODO: process_failed_entries
+    logger.info('entry %s processed with processor %s', entry.id, processor_id)

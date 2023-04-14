@@ -94,3 +94,34 @@ async def get_new_entries(from_time: datetime.datetime, limit: int = 1000) -> li
                                'limit': limit})
 
     return [row_to_entry(row) for row in rows]
+
+
+async def mark_entry_as_processed(
+        entry_id: uuid.UUID, processor_id: int
+) -> None:
+    sql = '''
+    INSERT INTO l_entry_process_info (entry_id, processor_id, processed_at)
+    VALUES (%(entry_id)s, %(processor_id)s, NOW())
+    ON CONFLICT (entry_id, processor_id)
+    DO UPDATE SET processed_at = NOW(),
+                  updated_at = NOW()
+    '''
+
+    await execute(sql, {'processor_id': processor_id,
+                        'entry_id': entry_id})
+
+
+async def get_entries_to_process(processor_id: int, number: int) -> list[Entry]:
+    sql = '''
+    SELECT * FROM l_entries
+    LEFT JOIN l_entry_process_info ON l_entries.id = l_entry_process_info.entry_id AND
+                                      l_entry_process_info.processor_id = %(processor_id)s
+    WHERE l_entry_process_info.processed_at IS NULL
+    ORDER BY l_entries.cataloged_at DESC
+    LIMIT %(number)s
+    '''
+
+    rows = await execute(sql, {'processor_id': processor_id,
+                               'number': number})
+
+    return [row_to_entry(row) for row in rows]

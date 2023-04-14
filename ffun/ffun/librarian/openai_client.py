@@ -1,7 +1,11 @@
+import asyncio
+import functools
 import json
 import logging
 
+import async_lru
 import openai
+import tiktoken
 import typer
 from slugify import slugify
 
@@ -14,102 +18,89 @@ cli = typer.Typer()
 
 openai.api_key = settings.openai.api_key
 
-# TODO: how to reflect dates in ontology, but only dates from text, not dates of publication?
-# TODO: split humand languages with programming languages
-# TODO platform:youtube is it about any video on youtube, or about youtube itself? What about source:youtube?
-# TODO: "topic:programming-language" vs "topic:programming-languages". GPT must generate lables only in singular form?
-# TODO: author иногда определяется криво. Не как автора статьи, а как автор цитаты или автор того, на что статья ссылается.
-# TODO: if we add specific tag, like "product:recident-evil-2", we should add more general tag like "product:recident-evil" too.
 
-types = ["topic", "author", "genre", "language", "country", "city", "organization", "person", "event", "work", "product", "author", "platform", "sentiment", "audience", "purpose", "region", "source", "industry", "licence", "book", "programming_language", "framework", "library", "tool", "platform", "development_methodology", "software_architecture", "design_pattern", "algorithm", "data_structure", "file_format", "protocol", "software_license", "operating_system", "software_category", "software"]
+@async_lru.alru_cache()
+async def get_encoding(model):
+    return tiktoken.encoding_for_model(model)
 
 
-system = f'''You will act as an expert on the classification of texts. For received HTML, you should assign labels/tags in the format `<type>:<categoty>`. For example, `topic:politics`, `author:conan_doyle`. Labels should be normalized, allowed characters for labels: `[a-z0-9_]`.
+async def prepare_requests(system, text, model, total_tokens, max_return_tokens):
+    # high estimation on base of
+    # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
+    additional_tokens_per_message = 10
 
-You will give answers only in strict JSON format. No free-form text allowed. No intro text allowed. No additional text is allowed. Only JSON.
+    encoding = await get_encoding(model)
 
-Allowed types are: {types}.
+    system_tokens = (additional_tokens_per_message +
+                     len(encoding.encode('system')) +
+                     len(encoding.encode(system)))
 
-No other types are allowed.
+    text_tokens = (additional_tokens_per_message +
+                   len(encoding.encode('user')) +
+                   len(encoding.encode(text)))
 
-You can return an empty list if you are unsure about the labels. It is not an error.
+    tokens_per_chunk = total_tokens - system_tokens - max_return_tokens
 
-In case of an error, you should return a JSON object with an "error" field. For example: {{"error": "some error message"}}.
+    if text_tokens <= tokens_per_chunk:
+        return [[{'role': 'system', 'content': system},
+                 {'role': 'user', 'content': text}]]
 
-Expected JSON format: {{"labels": ["label1", "label2"]}}
-'''
+    messages = []
 
+    # TODO: should we split text on chunks with intersections?
+    # TODO: what to do with the last small chunks?
+    expected_chunks_number = text_tokens // tokens_per_chunk + 1
 
-def normalize(label):
-    if ':' not in label:
-        return None
+    for i in range(expected_chunks_number):
+        start = i * tokens_per_chunk
+        end = (i + 1) * tokens_per_chunk
 
-    type, category = label.split(':', 1)
+        messages.append([{'role': 'system', 'content': system},
+                         {'role': 'user', 'content': text[start:end]}])
 
-    return f'{slugify(type)}:{slugify(category)}'
-
-
-def is_valid_tag(label):
-    if label is None:
-        return False
-
-    if ':' not in label:
-        return False
-
-    type, _ = label.split(':')
-
-    return type in types
+    return messages
 
 
-# TODO: can we continue chat, without restarting it?
-async def get_labels_by_html(article):
+async def request(model,  # noqa
+                  messages,
+                  max_tokens,
+                  temperature,
+                  top_p,
+                  presence_penalty,
+                  frequency_penalty):
+    answer = await openai.ChatCompletion.acreate(model=model,
+                                                 temperature=temperature,
+                                                 max_tokens=max_tokens,
+                                                 top_p=top_p,
+                                                 presence_penalty=presence_penalty,
+                                                 frequency_penalty=frequency_penalty,
+                                                 messages=messages)
 
-    n = 3000
+    content = answer['choices'][0]['message']['content']
 
-    labels = set()
+    return content
 
-    while article:
-        messages = [{"role": "system", "content": system},
-                    {"role": "assistant", "content": 'html: ' + article[:n]}]
 
-        article = article[n:]
+async def multiple_requests(model,  # noqa
+                            messages,
+                            max_return_tokens,
+                            temperature=0,
+                            top_p=0,
+                            presence_penalty=0,
+                            frequency_penalty=0):
 
-        print('Send request to OpenAI...')
+    # TODO: rewrite to gather
+    results = []
 
-        try:
-            response = await openai.ChatCompletion.acreate(model=settings.openai.model,
-                                                           temperature=0,
-                                                           max_tokens=1000,
-                                                           messages=messages)
-        except Exception:
-            logger.exception('openAI request error')
-            return None
+    for request_messages in messages:
+        result = await request(model=model,
+                               messages=request_messages,
+                               max_tokens=max_return_tokens,
+                               temperature=temperature,
+                               top_p=top_p,
+                               presence_penalty=presence_penalty,
+                               frequency_penalty=frequency_penalty)
 
-        content = response['choices'][0]['message']['content']
+        results.append(result)
 
-        try:
-            answer = json.loads(content)
-        except json.decoder.JSONDecodeError:
-            logger.exception('OpenAI returned invalid JSON: %s', content)
-            continue
-
-        try:
-            new_labels = answer['labels']
-        except KeyError:
-            logger.exception('wrong labels format. better to improve GPT configuration')
-            continue
-
-        if not isinstance(new_labels, (list, set)):
-            logger.error('wrong labels format %s. better to improve GPT configuration', new_labels)
-            continue
-
-        for l in new_labels:
-            if not isinstance(l, str):
-                logger.error('wrong labels format "%s". better to improve GPT configuration', l)
-                continue
-
-            labels.add(l)
-
-    normalized_labels = {normalize(l) for l in labels}
-
-    return {l for l in normalized_labels if is_valid_tag(l)}
+    return results

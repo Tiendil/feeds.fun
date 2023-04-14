@@ -1,7 +1,7 @@
 <template>
 
   <ul style="list-style-type: none; margin: 0; padding: 0;">
-    <li v-for="entry in entries"
+    <li v-for="entry in entriesToShow"
         :key="entry.id"
         style="margin-bottom: 0.25rem;">
       <entry-for-list :entry="entry"
@@ -9,6 +9,21 @@
                       :show-tags="showTags"/>
     </li>
   </ul>
+
+  <a href="#"
+     style="text-decoration: none;"
+     v-if="canShowMore"
+     @click.prevent="showMore()">next {{showPerPage}}</a> |
+
+  <a href="#"
+     style="text-decoration: none;"
+     v-if="canShowMore"
+     @click.prevent="showAll()">all</a> |
+
+  <a href="#"
+     style="text-decoration: none;"
+     v-if="canHide"
+     @click.prevent="hideAll()">hide</a>
 
 </template>
 
@@ -19,7 +34,48 @@ import { computedAsync } from "@vueuse/core";
 
 const properties = defineProps<{ entries: Array[t.Entry],
                                  timeField: string,
-                                 showTags: boolean}>();
+                                 showTags: boolean,
+                                 showFromStart: number,
+                                 showPerPage: number}>();
+
+const showEntries = ref(properties.showFromStart);
+
+
+function showMore() {
+    showEntries.value += properties.showPerPage;
+}
+
+function showAll() {
+    if (properties.entries == null) {
+        return;
+    }
+    showEntries.value = properties.entries.length;
+}
+
+function hideAll() {
+    showEntries.value = properties.showFromStart;
+}
+
+const canHide = computed(() => {
+    if (properties.entries == null) {
+        return false;
+    }
+    return showEntries.value > properties.showFromStart;
+});
+
+const entriesToShow = computed(() => {
+    if (properties.entries == null) {
+        return [];
+    }
+    return properties.entries.slice(0, showEntries.value);
+});
+
+const canShowMore = computed(() => {
+    if (properties.entries == null) {
+        return false;
+    }
+    return showEntries.value < properties.entries.length;
+});
 
 function timeFor(entry: t.Entry): Date {
   return entry[properties.timeField];
