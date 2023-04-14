@@ -30,8 +30,7 @@ const preparedTags = computed(() => {
     const values = [];
 
     for (const tag of properties.tags) {
-        const [type_, value] = tag.split(":");
-        values.push(value);
+        values.push(tag);
     }
 
     values.sort();
