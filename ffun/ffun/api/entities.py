@@ -6,6 +6,7 @@ import pydantic
 from ffun.core import api
 from ffun.feeds import entities as f_entities
 from ffun.library import entities as l_entities
+from ffun.scores import entities as s_entities
 
 
 class Feed(api.Base):
@@ -61,6 +62,15 @@ class Rule(api.Base):
     tags: list[str]
     score: int
     createdAt: datetime.datetime
+
+    @classmethod
+    def from_internal(cls, rule: s_entities.Rule, tags_mapping: dict[int, str]) -> 'Rule':
+        return cls(
+            id=rule.id,
+            tags={tags_mapping[tag_id] for tag_id in rule.tags},
+            score=rule.score,
+            createdAt=rule.created_at,
+        )
 
 
 ##################

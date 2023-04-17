@@ -40,17 +40,14 @@ async def create_rule(user_id: uuid.UUID, tags: Iterable[int], score: int) -> No
         logger.warning('Rule already exists: %s', key)
 
 
-async def delete_rule(user_id: uuid.UUID, tags: Iterable[int]) -> None:
-
-    tags = normalize_tags(tags)
-    key = ','.join(map(str, tags))
+async def delete_rule(user_id: uuid.UUID, rule_id: uuid.UUID) -> None:
 
     sql = '''
         DELETE FROM s_rules
-        WHERE user_id = %(user_id)s AND key = %(key)s
+        WHERE user_id = %(user_id)s AND id = %(rule_id)s
         '''
 
-    await execute(sql, {'user_id': user_id, 'key': key})
+    await execute(sql, {'user_id': user_id, 'rule_id': rule_id})
 
 
 async def get_rules(user_id: uuid.UUID) -> list[Rule]:

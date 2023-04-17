@@ -9,6 +9,7 @@ from ffun.ontology import domain as o_domain
 from ffun.scores import domain as s_domain
 
 from . import entities
+from .dependencies import User
 
 router = fastapi.APIRouter()
 
@@ -74,15 +75,34 @@ async def api_get_entries_by_ids(request: entities.GetEntriesByIdsRequest) -> en
 
 
 @router.post('/api/create-rule')
-async def api_create_rule(request: entities.CreateRuleRequest) -> entities.CreateRuleResponse:
-    pass
+async def api_create_rule(request: entities.CreateRuleRequest, user: User) -> entities.CreateRuleResponse:
+    tags_ids = o_domain.get_ids_by_tags(request.tags)
+
+    await s_domain.create_rule(user_id=user.id,
+                               tags=set(tags_ids.values()),
+                               score=request.score)
+
+    return entities.CreateRuleResponse()
 
 
 @router.post('/api/delete-rule')
-async def api_delete_rule(request: entities.DeleteRuleRequest) -> entities.DeleteRuleResponse:
-    pass
+async def api_delete_rule(request: entities.DeleteRuleRequest, user: User) -> entities.DeleteRuleResponse:
+    await s_domain.delete_rule(user_id=user.id, rule_id=request.id)
+
+    return entities.DeleteRuleResponse()
 
 
 @router.post('/api/get-rules')
-async def api_get_rules(request: entities.GetRulesRequest) -> entities.GetRulesResponse:
-    pass
+async def api_get_rules(request: entities.GetRulesRequest, user: User) -> entities.GetRulesResponse:
+    rules = await s_domain.get_rules(user_id=user.id)
+
+    all_tags = set()
+
+    for rule in rules:
+        all_tags.update(rule.tags)
+
+    tags_mapping = await o_domain.get_tags_by_ids(all_tags)
+
+    external_rules = [entities.Rule.from_internal(rule=rule, tags_mapping=tags_mapping) for rule in rules]
+
+    return entities.GetRulesResponse(rules=external_rules)

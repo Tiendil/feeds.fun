@@ -24,6 +24,7 @@
 # Closed MVP
 
 - [ ] multiple users
+- [ ] every api endpoint must required auth
 - [ ] http base auth for multiple users
 - [ ] Sentry for backend
 - [ ] Sentry for frontend
