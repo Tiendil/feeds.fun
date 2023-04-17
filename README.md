@@ -10,6 +10,17 @@
 - [ ] save global settings on backend?
 - [ ] smart tags ordering in gui (by popularity? by module of score?)
 
+## Scoring
+
+- [ ] store rules in db
+- [ ] score on loading entries or in browser?
+- [ ] score with number
+- [ ] mute filters
+- [ ] gui for creating new scoring rules
+- [ ] list scoring rules
+- [ ] get info about score for entry
+- [ ] get filtered our entries
+
 # Closed MVP
 
 - [ ] multiple users
