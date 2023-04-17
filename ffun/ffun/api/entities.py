@@ -56,6 +56,13 @@ class Entry(api.Base):
         )
 
 
+class Rule(api.Base):
+    id: uuid.UUID
+    tags: list[str]
+    score: int
+    createdAt: datetime.datetime
+
+
 ##################
 # Request/Response
 ##################
@@ -88,3 +95,28 @@ class GetEntriesByIdsRequest(api.APIRequest):
 
 class GetEntriesByIdsResponse(api.APISuccess):
     entries: list[Entry]
+
+
+class CreateRuleRequest(api.APIRequest):
+    tags: list[str]
+    score: int
+
+
+class CreateRuleResponse(api.APISuccess):
+    pass
+
+
+class DeleteRuleRequest(api.APIRequest):
+    id: uuid.UUID
+
+
+class DeleteRuleResponse(api.APISuccess):
+    pass
+
+
+class GetRulesRequest(api.APIRequest):
+    pass
+
+
+class GetRulesResponse(api.APISuccess):
+    rules: list[Rule]

@@ -41,6 +41,7 @@
 
 # Public MVP
 
+- [ ] refactor API endpoints / names
 - [ ] blog?
 - [ ] some styles?
 - [ ] minor mobile support?

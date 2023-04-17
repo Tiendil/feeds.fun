@@ -71,3 +71,18 @@ async def api_get_entries_by_ids(request: entities.GetEntriesByIdsRequest) -> en
     external_entries = await _external_entries(found_entries, with_body=True)
 
     return entities.GetEntriesByIdsResponse(entries=external_entries)
+
+
+@router.post('/api/create-rule')
+async def api_create_rule(request: entities.CreateRuleRequest) -> entities.CreateRuleResponse:
+    pass
+
+
+@router.post('/api/delete-rule')
+async def api_delete_rule(request: entities.DeleteRuleRequest) -> entities.DeleteRuleResponse:
+    pass
+
+
+@router.post('/api/get-rules')
+async def api_get_rules(request: entities.GetRulesRequest) -> entities.GetRulesResponse:
+    pass
