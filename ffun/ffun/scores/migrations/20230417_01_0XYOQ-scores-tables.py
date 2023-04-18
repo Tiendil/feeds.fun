@@ -30,7 +30,7 @@ CREATE UNIQUE INDEX idx_s_rules_user_id ON s_rules (user_id, key);
 def apply_step(conn):
     cursor = conn.cursor()
     cursor.execute(sql_create_rules_table)
-    cursor.execute(sql_create_users_index)
+    cursor.execute(sql_users_key_index)
 
 
 def rollback_step(conn):

@@ -9,6 +9,7 @@
 - [ ] run console commands constantly in backgroud?
 - [ ] save global settings on backend?
 - [ ] smart tags ordering in gui (by popularity? by module of score?)
+- [ ] fix `network-domain-www-theatlantic-com`
 
 ## Scoring
 

@@ -53,7 +53,7 @@ async def delete_rule(user_id: uuid.UUID, rule_id: uuid.UUID) -> None:
 async def get_rules(user_id: uuid.UUID) -> list[Rule]:
 
     sql = '''
-    SELECT id*
+    SELECT *
     FROM s_rules
     WHERE user_id = %(user_id)s
     '''
