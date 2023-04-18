@@ -11,6 +11,7 @@
 - [ ] smart tags ordering in gui (by popularity? by module of score?)
 - [ ] fix `network-domain-www-theatlantic-com`
 - [ ] reduce amount the size of answers from backend
+- [ ] common mechanism to refresh lists of news, feeds, rules on their changes
 
 ## Scoring
 

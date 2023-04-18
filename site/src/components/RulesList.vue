@@ -1,5 +1,4 @@
 <template>
-
   <table>
     <thead>
       <tr>
@@ -16,6 +15,9 @@
             <value-tag :value="tag"/>&nbsp;
           </template>
         </td>
+        <td>
+          <a href="#" @click.prevent="deleteRule(rule.id)">delete</a>
+        </td>
       </tr>
     </tbody>
   </table>
@@ -24,8 +26,16 @@
 
 <script lang="ts" setup>
 import * as t from "@/logic/types";
+import * as api from "@/logic/api";
+import * as e from "@/logic/enums";
 
 defineProps<{ rules: Array[t.Rule]}>();
+
+
+async function deleteRule(id: t.RuleId) {
+    await api.deleteRule({id: id});
+
+}
 
 </script>
 
