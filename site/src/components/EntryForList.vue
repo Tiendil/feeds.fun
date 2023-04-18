@@ -65,7 +65,10 @@ const purifiedBody = computed(() => {
         return "";
     }
     return DOMPurify.sanitize(fullEntry.value.body);
-});
+    });
+
+
+
 
 </script>
 

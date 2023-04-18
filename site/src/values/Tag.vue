@@ -7,6 +7,8 @@
 
 const properties = defineProps<{value: string}>();
 
+const emit = defineEmits(["tag:selected", "tag:deselected"]);
+
 const selected = ref(false);
 
 const classes = computed(() => {
@@ -18,7 +20,14 @@ const classes = computed(() => {
 
 function switchSelection() {
     selected.value = !selected.value;
+
+    if (selected.value) {
+        emit('tag:selected', properties.value);
+    } else {
+        emit('tag:deselected', properties.value);
+    }
 }
+
 
 </script>
 

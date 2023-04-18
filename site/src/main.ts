@@ -11,6 +11,7 @@ import MainModeSwitcher from "./components/MainModeSwitcher.vue";
 import ConfigSelector from "./components/ConfigSelector.vue";
 import ConfigFlag from "./components/ConfigFlag.vue";
 import EntryForList from "./components/EntryForList.vue";
+import ScoreRuleConstructor from "./components/ScoreRuleConstructor.vue";
 
 import ValueUrl from "./values/URL.vue";
 import ValueFeedId from "./values/FeedId.vue";
@@ -27,6 +28,7 @@ app.component("MainModeSwitcher", MainModeSwitcher);
 app.component("ConfigSelector", ConfigSelector);
 app.component("ConfigFlag", ConfigFlag);
 app.component("EntryForList", EntryForList);
+app.component("ScoreRuleConstructor", ScoreRuleConstructor);
 
 app.component("ValueUrl", ValueUrl);
 app.component("ValueFeedId", ValueFeedId);
