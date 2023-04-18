@@ -6,7 +6,7 @@
     import { computed, ref } from "vue";
 
 const properties = defineProps<{value: string,
-                                selected: bool}>();
+                                selected?: bool}>();
 
 const emit = defineEmits(["tag:clicked"]);
 

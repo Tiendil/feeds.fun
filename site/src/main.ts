@@ -6,8 +6,8 @@ import router from './router'
 
 import FeedsList from "./components/FeedsList.vue";
 import EntriesList from "./components/EntriesList.vue";
+import RulesList from "./components/RulesList.vue";
 import TagsList from "./components/TagsList.vue";
-import MainModeSwitcher from "./components/MainModeSwitcher.vue";
 import ConfigSelector from "./components/ConfigSelector.vue";
 import ConfigFlag from "./components/ConfigFlag.vue";
 import EntryForList from "./components/EntryForList.vue";
@@ -23,8 +23,8 @@ const app = createApp(App)
 
 app.component("FeedsList", FeedsList);
 app.component("EntriesList", EntriesList);
+app.component("RulesList", RulesList);
 app.component("TagsList", TagsList);
-app.component("MainModeSwitcher", MainModeSwitcher);
 app.component("ConfigSelector", ConfigSelector);
 app.component("ConfigFlag", ConfigFlag);
 app.component("EntryForList", EntryForList);
