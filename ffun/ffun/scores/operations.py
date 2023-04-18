@@ -12,8 +12,8 @@ from .entities import Rule
 logger = logging.getLogger(__name__)
 
 
-def normalize_tags(tags: Iterable[int]) -> tuple[int, ...]:
-    return tuple(sorted(tags))
+def normalize_tags(tags: Iterable[int]) -> list[int]:
+    return list(sorted(tags))
 
 
 def row_to_rule(row: dict) -> Rule:
@@ -30,12 +30,12 @@ async def create_rule(user_id: uuid.UUID, tags: Iterable[int], score: int) -> No
     key = ','.join(map(str, tags))
 
     sql = '''
-        INSERT INTO s_rules (user_id, tags, key, score)
-        VALUES (%(user_id)s, %(tags)s, %(key)s, %(score)s)
+        INSERT INTO s_rules (id, user_id, tags, key, score)
+        VALUES (%(id)s, %(user_id)s, %(tags)s, %(key)s, %(score)s)
         '''
 
     try:
-        await execute(sql, {'user_id': user_id, 'tags': tags, 'key': key, 'score': score})
+        await execute(sql, {'id': uuid.uuid4(), 'user_id': user_id, 'tags': tags, 'key': key, 'score': score})
     except psycopg.errors.UniqueViolation:
         logger.warning('Rule already exists: %s', key)
 

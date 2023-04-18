@@ -1,33 +1,25 @@
 <template>
-    <div :class="classes" @click.prevent="switchSelection()">{{value}}</div>
+    <div :class="classes" @click.prevent="onClick()">{{value}}</div>
 </template>
 
 <script lang="ts" setup>
     import { computed, ref } from "vue";
 
-const properties = defineProps<{value: string}>();
+const properties = defineProps<{value: string,
+                                selected: bool}>();
 
-const emit = defineEmits(["tag:selected", "tag:deselected"]);
-
-const selected = ref(false);
+const emit = defineEmits(["tag:clicked"]);
 
 const classes = computed(() => {
     return {
         "tag": true,
-        "selected": selected.value
+        "selected": properties.selected
     };
 });
 
-function switchSelection() {
-    selected.value = !selected.value;
-
-    if (selected.value) {
-        emit('tag:selected', properties.value);
-    } else {
-        emit('tag:deselected', properties.value);
-    }
+function onClick() {
+    emit('tag:clicked', properties.value);
 }
-
 
 </script>
 

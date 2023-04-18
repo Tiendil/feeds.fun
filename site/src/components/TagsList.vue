@@ -1,16 +1,17 @@
 <template>
 <div>
 
-  <score-rule-constructor v-if="selectedTags.length > 0"
-                          :tags="selectedTags"/>
+  <rule-constructor v-if="selectedTagsList.length > 0"
+                    :tags="selectedTagsList"
+                    @rule-constructor:created="onRuleCreated"/>
 
 [{{tagsNumber}}]
 
 <template v-for="tag of displayedTags"
           :key="tag">
   <value-tag :value="tag"
-             @tag:selected="onTagSelected"
-             @tag:deselected="onTagDeselected"/>&nbsp;
+             :selected="!!selectedTags[tag]"
+             @tag:clicked="onTagClicked"/>&nbsp;
 </template>
 
 <a href="#" v-if="canShowAll" @click.prevent="showAll=true">more</a>
@@ -25,7 +26,7 @@ import { computed, ref } from "vue";
 const showAll = ref(false);
 const showLimit = ref(5);
 
-const selectedTags = ref<string[]>([]);
+const selectedTags = ref<{ [key: string]: boolean }>({});
 
 const properties = defineProps<{ tags: string[]}>();
 
@@ -61,13 +62,31 @@ const canHide = computed(() => {
     return showAll.value && showLimit.value < preparedTags.value.length;
 });
 
-function onTagSelected(tag: string) {
-    selectedTags.value.push(tag);
-    showAll.value = true;
+function onTagClicked(tag: string) {
+    if (!!selectedTags.value[tag]) {
+        delete selectedTags.value[tag];
+    }
+    else {
+        selectedTags.value[tag] = true;
+        showAll.value = true;
+    }
 }
 
-function onTagDeselected(tag: string) {
-    selectedTags.value = selectedTags.value.filter(x => x !== tag);
+const selectedTagsList = computed(() => {
+    const values = [];
+
+    for (const tag in selectedTags.value) {
+        values.push(tag);
+    }
+
+    values.sort();
+
+    return values;
+});
+
+
+function onRuleCreated() {
+    selectedTags.value = {};
 }
 
 

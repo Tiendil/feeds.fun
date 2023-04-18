@@ -25,6 +25,7 @@
 
 # Closed MVP
 
+- [ ] cache erros and display them somehow in gui
 - [ ] multiple users
 - [ ] every api endpoint must required auth
 - [ ] http base auth for multiple users

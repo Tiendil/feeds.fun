@@ -7,6 +7,9 @@ const ENTRY_POINT = 'http://127.0.0.1:8000'
 const API_GET_FEEDS = `${ENTRY_POINT}/api/get-feeds`;
 const API_GET_LAST_ENTRIES = `${ENTRY_POINT}/api/get-last-entries`;
 const API_GET_ENTRIES_BY_IDS = `${ENTRY_POINT}/api/get-entries-by-ids`;
+const API_CREATE_RULE = `${ENTRY_POINT}/api/create-rule`;
+const API_DELETE_RULE = `${ENTRY_POINT}/api/delete-rule`;
+const API_GET_RULES = `${ENTRY_POINT}/api/get-rules`;
 
 
 async function post({url, data}: {url: string, data: any}) {
@@ -59,4 +62,30 @@ export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
     }
 
     return entries;
+}
+
+
+export async function createRule({tags, score}: {tags: string[], score: number}) {
+    const response = await post({url: API_CREATE_RULE, data: {tags: tags, score: score}});
+    return response;
+}
+
+
+export async function deleteRule({id}: {id: t.RuleId}) {
+    const response = await post({url: API_DELETE_RULE, data: {id: id}});
+    return response;
+}
+
+
+export async function getRules() {
+    const response = await post({url: API_GET_RULES, data: {}});
+
+    const rules = [];
+
+    for (let rawRule of response.rules) {
+        const rule = t.ruleFromJSON(rawRule);
+        rules.push(rule);
+    }
+
+    return rules;
 }
