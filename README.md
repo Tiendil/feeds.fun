@@ -19,9 +19,8 @@
 - [x] score on loading entries or in browser?
 - [x] score with number
 - [x] gui for creating new scoring rules
-- [ ] list scoring rules
+- [x] list scoring rules
 - [ ] get info about score for entry
-- [ ] get filtered our entries
 - [ ] edit rule score
 
 # Closed MVP
