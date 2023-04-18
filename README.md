@@ -14,14 +14,14 @@
 
 ## Scoring
 
-- [ ] store rules in db
-- [ ] score on loading entries or in browser?
-- [ ] score with number
-- [ ] mute filters
-- [ ] gui for creating new scoring rules
+- [x] store rules in db
+- [x] score on loading entries or in browser?
+- [x] score with number
+- [x] gui for creating new scoring rules
 - [ ] list scoring rules
 - [ ] get info about score for entry
 - [ ] get filtered our entries
+- [ ] edit rule score
 
 # Closed MVP
 
