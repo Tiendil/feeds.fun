@@ -59,3 +59,8 @@ export const EntriesOrderProperties = new Map<EntriesOrder, {text: string, order
     [EntriesOrder.published, {text: "published", orderField: "publishedAt", timeField: "publishedAt"}],
     [EntriesOrder.cataloged, {text: "cataloged", orderField: "catalogedAt", timeField: "catalogedAt"}],
 ]);
+
+
+export enum Marker {
+    read = "read"
+};

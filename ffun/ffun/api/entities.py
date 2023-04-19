@@ -1,4 +1,5 @@
 import datetime
+import enum
 import uuid
 from typing import Iterable
 
@@ -6,7 +7,16 @@ import pydantic
 from ffun.core import api
 from ffun.feeds import entities as f_entities
 from ffun.library import entities as l_entities
+from ffun.markers import entities as m_entities
 from ffun.scores import entities as s_entities
+
+
+class Marker(str, enum.Enum):
+    read = 'read'
+
+    @classmethod
+    def from_internal(cls, marker: m_entities.Marker) -> 'Marker':
+        return cls(marker.name)
 
 
 class Feed(api.Base):
@@ -33,6 +43,7 @@ class Entry(api.Base):
     title: str
     url: str
     tags: list[str]
+    markers: list[Marker] = []
     score: int
     publishedAt: datetime.datetime
     catalogedAt: datetime.datetime
@@ -42,6 +53,7 @@ class Entry(api.Base):
     def from_internal(cls,
                       entry: l_entities.Entry,
                       tags: Iterable[str],
+                      markers: Iterable[Marker],
                       score: int,
                       with_body: bool = False) -> 'Entry':
         return cls(
@@ -50,6 +62,7 @@ class Entry(api.Base):
             title=entry.title,
             url=entry.external_url,
             tags=list(tags),
+            markers=list(markers),
             score=score,
             publishedAt=entry.published_at,
             catalogedAt=entry.cataloged_at,
@@ -148,3 +161,13 @@ class GetScoreDetailsRequest(api.APIRequest):
 
 class GetScoreDetailsResponse(api.APISuccess):
     rules: list[Rule]
+
+
+class SetMarkerRequest(api.APIRequest):
+    entryId: uuid.UUID
+    marker: Marker
+
+
+class RemoveMarkerRequest(api.APIRequest):
+    entryId: uuid.UUID
+    marker: Marker

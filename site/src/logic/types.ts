@@ -1,3 +1,5 @@
+import * as e from "@/logic/enums";
+
 
 export type FeedId = string & { readonly __brand: unique symbol };
 
@@ -50,6 +52,7 @@ export type Entry = {
     readonly title: string;
     readonly url: URL;
     readonly tags: string[];
+    readonly markers: e.Marker[];
     readonly score: number;
     readonly publishedAt: Date;
     readonly catalogedAt: Date;
@@ -57,18 +60,20 @@ export type Entry = {
 }
 
 
-export function entryFromJSON({ id, feedId, title, url, tags, score, publishedAt, catalogedAt, body }:
-                              { id: string, feedId: string, title: string, url: string, tags: string[], score: number,
+export function entryFromJSON({ id, feedId, title, url, tags, markers, score, publishedAt, catalogedAt, body }:
+                              { id: string, feedId: string, title: string, url: string, tags: string[],
+                                markers: string[], score: number,
                                 publishedAt: string, catalogedAt: string, body: string|null }): Entry {
     return { id: toEntryId(id),
              feedId: toFeedId(feedId),
              title,
              url: toURL(url),
              tags: tags,
+             markers: markers.map(m => e.Marker[m]),
              score: score,
              publishedAt: new Date(publishedAt),
              catalogedAt: new Date(catalogedAt),
-             body: body }
+             body: body };
 }
 
 

@@ -1,6 +1,7 @@
 import * as _ from "lodash";
 import axios from "axios";
 import * as t from "@/logic/types";
+import * as e from "@/logic/enums";
 
 const ENTRY_POINT = 'http://127.0.0.1:8000'
 
@@ -12,6 +13,8 @@ const API_DELETE_RULE = `${ENTRY_POINT}/api/delete-rule`;
 const API_UPDATE_RULE = `${ENTRY_POINT}/api/update-rule`;
 const API_GET_RULES = `${ENTRY_POINT}/api/get-rules`;
 const API_GET_SCORE_DETAILS = `${ENTRY_POINT}/api/get-score-details`;
+const API_SET_MARKER = `${ENTRY_POINT}/api/set-marker`;
+const API_REMOVE_MARKER = `${ENTRY_POINT}/api/remove-marker`;
 
 
 async function post({url, data}: {url: string, data: any}) {
@@ -110,4 +113,14 @@ export async function getScoreDetails({entryId}: {entryId: t.EntryId}) {
     }
 
     return rules;
+}
+
+
+export async function setMarker({entryId, marker}: {entryId: t.EntryId, marker: e.Marker}) {
+    await post({url: API_SET_MARKER, data: {entryId: entryId, marker: marker}});
+}
+
+
+export async function removeMarker({entryId, marker}: {entryId: t.EntryId, marker: e.Marker}) {
+    await post({url: API_REMOVE_MARKER, data: {entryId: entryId, marker: marker}});
 }
