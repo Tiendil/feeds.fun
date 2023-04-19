@@ -130,3 +130,11 @@ class GetRulesRequest(api.APIRequest):
 
 class GetRulesResponse(api.APISuccess):
     rules: list[Rule]
+
+
+class GetScoreDetailsRequest(api.APIRequest):
+    entryId: uuid.UUID
+
+
+class GetScoreDetailsResponse(api.APISuccess):
+    rules: list[Rule]

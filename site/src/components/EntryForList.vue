@@ -2,7 +2,9 @@
 <div class="container">
 
   <div style="flex-shrink: 0; width: 2rem; text-align: right; padding-right: 0.25rem;">
-    <value-score :value="entry.score" class="entity-for-list-score"/>
+    <value-score :value="entry.score"
+                 :entry-id="entry.id"
+                 class="entity-for-list-score"/>
   </div>
 
   <div style="flex-grow: 1;">

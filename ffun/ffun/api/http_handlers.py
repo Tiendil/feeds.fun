@@ -8,6 +8,7 @@ from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
 from ffun.ontology import domain as o_domain
 from ffun.scores import domain as s_domain
+from ffun.scores import entities as s_entities
 
 from . import entities
 from .dependencies import User
@@ -99,10 +100,7 @@ async def api_delete_rule(request: entities.DeleteRuleRequest, user: User) -> en
     return entities.DeleteRuleResponse()
 
 
-@router.post('/api/get-rules')
-async def api_get_rules(request: entities.GetRulesRequest, user: User) -> entities.GetRulesResponse:
-    rules = await s_domain.get_rules(user_id=user.id)
-
+async def _prepare_rules(rules: Iterable[s_entities.Rule]) -> list[entities.Rule]:
     all_tags = set()
 
     for rule in rules:
@@ -112,4 +110,29 @@ async def api_get_rules(request: entities.GetRulesRequest, user: User) -> entiti
 
     external_rules = [entities.Rule.from_internal(rule=rule, tags_mapping=tags_mapping) for rule in rules]
 
+    return external_rules
+
+
+@router.post('/api/get-rules')
+async def api_get_rules(request: entities.GetRulesRequest, user: User) -> entities.GetRulesResponse:
+    rules = await s_domain.get_rules(user_id=user.id)
+
+    external_rules = await _prepare_rules(rules)
+
     return entities.GetRulesResponse(rules=external_rules)
+
+
+@router.post('/api/get-score-details')
+async def api_get_score_details(request: entities.GetScoreDetailsRequest, user: User) -> entities.GetScoreDetailsResponse:
+
+    entry_id = request.entryId
+
+    rules = await s_domain.get_rules(user.id)
+
+    tags_ids = await o_domain.get_tags_ids_for_entries([entry_id])
+
+    rules = s_domain.get_score_rules(rules, tags_ids.get(entry_id, set()))
+
+    external_rules = await _prepare_rules(rules)
+
+    return entities.GetScoreDetailsResponse(rules=external_rules)

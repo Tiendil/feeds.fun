@@ -10,6 +10,7 @@ const API_GET_ENTRIES_BY_IDS = `${ENTRY_POINT}/api/get-entries-by-ids`;
 const API_CREATE_RULE = `${ENTRY_POINT}/api/create-rule`;
 const API_DELETE_RULE = `${ENTRY_POINT}/api/delete-rule`;
 const API_GET_RULES = `${ENTRY_POINT}/api/get-rules`;
+const API_GET_SCORE_DETAILS = `${ENTRY_POINT}/api/get-score-details`;
 
 
 async function post({url, data}: {url: string, data: any}) {
@@ -79,6 +80,20 @@ export async function deleteRule({id}: {id: t.RuleId}) {
 
 export async function getRules() {
     const response = await post({url: API_GET_RULES, data: {}});
+
+    const rules = [];
+
+    for (let rawRule of response.rules) {
+        const rule = t.ruleFromJSON(rawRule);
+        rules.push(rule);
+    }
+
+    return rules;
+}
+
+
+export async function getScoreDetails({entryId}: {entryId: t.EntryId}) {
+    const response = await post({url: API_GET_SCORE_DETAILS, data: {entryId: entryId}});
 
     const rules = [];
 

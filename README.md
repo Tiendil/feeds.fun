@@ -20,7 +20,7 @@
 - [x] score with number
 - [x] gui for creating new scoring rules
 - [x] list scoring rules
-- [ ] get info about score for entry
+- [x] get info about score for entry
 - [ ] edit rule score
 
 # Closed MVP
