@@ -17,7 +17,7 @@ CREATE TABLE m_markers (
 '''
 
 sql_users_markers_index = '''
-CREATE UNIQUE INDEX idx_m_markers_user_id_marker_entry_id ON s_rules (user_id, marker, entry_id);
+CREATE UNIQUE INDEX idx_m_markers_user_id_marker_entry_id ON m_markers (user_id, entry_id, marker);
 '''
 
 

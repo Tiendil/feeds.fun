@@ -168,6 +168,14 @@ class SetMarkerRequest(api.APIRequest):
     marker: Marker
 
 
+class SetMarkerResponse(api.APISuccess):
+    pass
+
+
 class RemoveMarkerRequest(api.APIRequest):
     entryId: uuid.UUID
     marker: Marker
+
+
+class RemoveMarkerResponse(api.APISuccess):
+    pass
