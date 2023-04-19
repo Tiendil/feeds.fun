@@ -18,6 +18,9 @@ class Marker(str, enum.Enum):
     def from_internal(cls, marker: m_entities.Marker) -> 'Marker':
         return cls(marker.name)
 
+    def to_internal(self) -> m_entities.Marker:
+        return m_entities.Marker[self.value]
+
 
 class Feed(api.Base):
     id: uuid.UUID

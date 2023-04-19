@@ -156,13 +156,13 @@ async def api_get_score_details(request: entities.GetScoreDetailsRequest, user: 
 
 @router.post('/api/set-marker')
 async def api_set_marker(request: entities.SetMarkerRequest, user: User) -> entities.SetMarkerResponse:
-    await m_domain.set_marker(user_id=user.id, entry_id=request.entryId, marker=request.marker)
+    await m_domain.set_marker(user_id=user.id, entry_id=request.entryId, marker=request.marker.to_internal())
 
     return entities.SetMarkerResponse()
 
 
 @router.post('/api/remove-marker')
 async def api_remove_marker(request: entities.RemoveMarkerRequest, user: User) -> entities.RemoveMarkerResponse:
-    await m_domain.remove_marker(user_id=user.id, entry_id=request.entryId, marker=request.marker)
+    await m_domain.remove_marker(user_id=user.id, entry_id=request.entryId, marker=request.marker.to_internal())
 
     return entities.RemoveMarkerResponse()

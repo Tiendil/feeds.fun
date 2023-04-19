@@ -42,7 +42,7 @@ async def get_markers(user_id: uuid.UUID, entries_ids: Iterable[uuid.UUID]) -> d
 
     for row in results:
         entry_id = row["entry_id"]
-        marker = row["marker"]
+        marker = Marker(row["marker"])
 
         if entry_id not in result:
             result[entry_id] = set()

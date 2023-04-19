@@ -15,6 +15,7 @@ import RuleConstructor from "./components/RuleConstructor.vue";
 import RuleScoreUpdater from "./components/RuleScoreUpdater.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
+import InputMarker from "./inputs/Marker.vue";
 
 import ValueUrl from "./values/URL.vue";
 import ValueFeedId from "./values/FeedId.vue";
@@ -35,6 +36,7 @@ app.component("RuleConstructor", RuleConstructor);
 app.component("RuleScoreUpdater", RuleScoreUpdater);
 
 app.component("ScoreSelector", ScoreSelector);
+app.component("InputMarker", InputMarker);
 
 app.component("ValueUrl", ValueUrl);
 app.component("ValueFeedId", ValueFeedId);
