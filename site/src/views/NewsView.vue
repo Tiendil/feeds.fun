@@ -17,6 +17,8 @@ import { useGlobalSettingsStore } from "@/stores/globalSettings";
 
 const globalSettings = useGlobalSettingsStore();
 
+globalSettings.mainPanelMode = e.MainPanelMode.Entries;
+
 const entries = computedAsync(async () => {
     return await api.getLastEntries({period: e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod).seconds});
 }, null);
