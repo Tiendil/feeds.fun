@@ -45,6 +45,10 @@
       </template>
     </ul>
 
+    <hr/>
+
+    <a href="#" @click="globalSettings.dataVersion += 1">Reload</a>
+
   </div>
 
   <div class="main-content">
