@@ -10,8 +10,9 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
     const mainPanelMode = ref(e.MainPanelMode.Entries);
     const lastEntriesPeriod = ref(e.LastEntriesPeriod.Month1);
-    const entriesOrder = ref(e.EntriesOrder.score);
+    const entriesOrder = ref(e.EntriesOrder.Score);
     const showEntriesTags = ref(true);
+    const showRead = ref(true);
 
     watch(mainPanelMode, (newValue, oldValue) => {
         router.push({ name: mainPanelMode.value, params: {} });
@@ -21,6 +22,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
         mainPanelMode,
         lastEntriesPeriod,
         entriesOrder,
-        showEntriesTags
+        showEntriesTags,
+        showRead
     };
 });

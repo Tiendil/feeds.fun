@@ -11,13 +11,11 @@
     <a href="#" style="text-decoration: none;" v-if="!showBody" @click.prevent="showBody = true">&#9660;</a>
     <a href="#" style="text-decoration: none;" v-if="showBody" @click.prevent="showBody = false">&#9650;</a>
 
-    {{entry.markers}}
-
     <value-url :value="entry.url" :text="purifiedTitle" class="entity"/>
 
     |
 
-    <input-marker :marker="e.Marker.read"
+    <input-marker :marker="e.Marker.Read"
                   :entry="entry"
                   on-text="read"
                   off-text="not read"/>

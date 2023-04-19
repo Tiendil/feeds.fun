@@ -48,19 +48,24 @@ export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, {text: str
 
 
 export enum EntriesOrder {
-    score = "score",
-    published = "published",
-    cataloged = "cataloged"
+    Score = "score",
+    Published = "published",
+    Cataloged = "cataloged"
 };
 
 
 export const EntriesOrderProperties = new Map<EntriesOrder, {text: string, orderField: string, timeField}>([
-    [EntriesOrder.score, {text: "score", orderField: "score", timeField: "catalogedAt"}],
-    [EntriesOrder.published, {text: "published", orderField: "publishedAt", timeField: "publishedAt"}],
-    [EntriesOrder.cataloged, {text: "cataloged", orderField: "catalogedAt", timeField: "catalogedAt"}],
+    [EntriesOrder.Score, {text: "score", orderField: "score", timeField: "catalogedAt"}],
+    [EntriesOrder.Published, {text: "published", orderField: "publishedAt", timeField: "publishedAt"}],
+    [EntriesOrder.Cataloged, {text: "cataloged", orderField: "catalogedAt", timeField: "catalogedAt"}],
 ]);
 
 
 export enum Marker {
-    read = "read"
+    Read = "read"
+};
+
+
+export const reverseMarker = {
+    "read": Marker.Read
 };

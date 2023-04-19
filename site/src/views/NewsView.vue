@@ -1,5 +1,5 @@
 <template>
-<entries-list :entries="sortedEntries"
+<entries-list :entries="displayedEntries"
               :time-field="timeField"
               :show-tags="globalSettings.showEntriesTags"
               :showFromStart=100
@@ -28,12 +28,20 @@ const timeField = computed(() => {
     return e.EntriesOrderProperties.get(globalSettings.entriesOrder).timeField;
 });
 
-const sortedEntries = computed(() => {
+const displayedEntries = computed(() => {
     if (entries.value === null) {
         return null;
     }
 
-    return entries.value.slice().sort((a, b) => {
+    let processedEntries = entries.value.slice();
+
+    if (!globalSettings.showRead) {
+        processedEntries = processedEntries.filter((entry) => {
+            return !entry.markers.includes(e.Marker.Read);
+        });
+    }
+
+    return processedEntries.sort((a, b) => {
         const field = e.EntriesOrderProperties.get(globalSettings.entriesOrder).orderField;
 
         if (a[field] < b[field]) {

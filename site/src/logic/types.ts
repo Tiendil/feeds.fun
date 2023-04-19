@@ -69,7 +69,7 @@ export function entryFromJSON({ id, feedId, title, url, tags, markers, score, pu
              title,
              url: toURL(url),
              tags: tags,
-             markers: markers.map(m => e.Marker[m]),
+             markers: markers.map(m => e.reverseMarker[m]),
              score: score,
              publishedAt: new Date(publishedAt),
              catalogedAt: new Date(catalogedAt),
