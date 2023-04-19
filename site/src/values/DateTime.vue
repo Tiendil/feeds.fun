@@ -8,7 +8,7 @@ import * as u from "@/logic/utils";
 
 const properties = defineProps<{
     value: Date;
-    reversed: boolean;
+    reversed?: boolean;
 }>();
 
 const text = computed(() => {

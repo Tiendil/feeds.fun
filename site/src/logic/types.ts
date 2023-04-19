@@ -12,6 +12,13 @@ export function toEntryId(id: string): EntryId {
     return id as EntryId;
 }
 
+
+export type RuleId = string & { readonly __brand: unique symbol };
+
+export function toRuleId(id: string): RuleId {
+    return id as RuleId;
+}
+
 export type URL = string & { readonly __brand: unique symbol };
 
 export function toURL(url: string): URL {
@@ -62,4 +69,21 @@ export function entryFromJSON({ id, feedId, title, url, tags, score, publishedAt
              publishedAt: new Date(publishedAt),
              catalogedAt: new Date(catalogedAt),
              body: body }
+}
+
+
+export type Rule = {
+    readonly id: RuleId;
+    readonly tags: string[];
+    readonly score: number;
+    readonly createdAt: Date;
+}
+
+
+export function ruleFromJSON({ id, tags, score, createdAt }:
+                             { id: string, tags: string[], score: number, createdAt: string }): Rule {
+    return { id: toRuleId(id),
+             tags: tags,
+             score: score,
+             createdAt: new Date(createdAt) };
 }

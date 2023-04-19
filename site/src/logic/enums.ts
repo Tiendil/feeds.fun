@@ -7,15 +7,17 @@ export type AnyEnum = {
 
 
 export enum MainPanelMode {
-  Entries = "entries",
-  Feeds = "feeds",
+    Entries = "entries",
+    Feeds = "feeds",
+    Rules = "rules",
 }
 
 
-export const MainPanelModeTexts = {
-    [MainPanelMode.Entries]: "news",
-    [MainPanelMode.Feeds]: "feeds",
-}
+export const MainPanelModeProperties = new Map<MainPanelMode, {text: string}>([
+    [MainPanelMode.Entries, {text: "news"}],
+    [MainPanelMode.Feeds, {text: "feeds"}],
+    [MainPanelMode.Rules, {text: "rules"}]
+]);
 
 
 export enum LastEntriesPeriod {
