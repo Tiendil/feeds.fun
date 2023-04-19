@@ -9,7 +9,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     const router = useRouter();
 
     const mainPanelMode = ref(e.MainPanelMode.Entries);
-    const lastEntriesPeriod = ref(e.LastEntriesPeriod.Month1);
+    const lastEntriesPeriod = ref(e.LastEntriesPeriod.Day1);
     const entriesOrder = ref(e.EntriesOrder.Score);
     const showEntriesTags = ref(true);
     const showRead = ref(true);
