@@ -5,30 +5,42 @@
 
     <ul class="config-menu">
       <li class="config-menu-item">
-        I am looking for <main-mode-switcher/>
+        Looking for
+        <config-selector :values="e.MainPanelModeProperties"
+                         v-model:property="globalSettings.mainPanelMode"/>
       </li>
 
-      <li class="config-menu-item">
-        For the last
-        <config-selector :values="e.LastEntriesPeriodProperties"
-                         v-model:property="globalSettings.lastEntriesPeriod"/>
-      </li>
+      <template v-if="globalSettings.mainPanelMode == e.MainPanelMode.Entries">
 
-      <li class="config-menu-item">
-        Sorted by
-        <config-selector :values="e.EntriesOrderProperties"
-                         v-model:property="globalSettings.entriesOrder"/>
-      </li>
+        <li class="config-menu-item">
+          For the last
+          <config-selector :values="e.LastEntriesPeriodProperties"
+                           v-model:property="globalSettings.lastEntriesPeriod"/>
+        </li>
 
-      <li class="config-menu-item">
-        Show tags: <config-flag v-model:flag="globalSettings.showEntriesTags"
-                                on-text="yes"
-                                off-text="no"/>
-      </li>
+        <li class="config-menu-item">
+          Sorted by
+          <config-selector :values="e.EntriesOrderProperties"
+                           v-model:property="globalSettings.entriesOrder"/>
+        </li>
 
-      <li class="config-menu-item">
+        <li class="config-menu-item">
+          Show tags: <config-flag v-model:flag="globalSettings.showEntriesTags"
+                                  on-text="yes"
+                                  off-text="no"/>
+        </li>
+
+        <li class="config-menu-item">
         Show already read
       </li>
+
+      </template>
+
+      <template v-if="globalSettings.mainPanelMode == e.MainPanelMode.Feeds">
+      </template>
+
+      <template v-if="globalSettings.mainPanelMode == e.MainPanelMode.Rules">
+      </template>
     </ul>
 
   </div>
@@ -54,6 +66,9 @@ function mainModeTitle() {
     }
     else if (globalSettings.mainPanelMode === e.MainPanelMode.Entries) {
         return "News";
+}
+    else if (globalSettings.mainPanelMode === e.MainPanelMode.Rules) {
+        return "Rules";
     }
     else {
         throw new Error("Unknown MainPanelMode");

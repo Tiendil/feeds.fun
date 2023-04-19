@@ -1,18 +1,21 @@
 
 # MVP
 
-- [ ] scoring
-- [ ] scoring rules editing
+- [x] scoring
+- [x] scoring rules editing
 - [ ] use structlog
 - [ ] search for unprocessed entries and reprocess them periodically
-- [ ] move scoring & sorting out of backend?
-- [ ] run console commands constantly in backgroud?
 - [ ] save global settings on backend?
 - [ ] smart tags ordering in gui (by popularity? by module of score?)
+- [ ] fix `network-domain-www-theatlantic-com`
+- [ ] reduce amount the size of answers from backend
+- [ ] common mechanism to refresh lists of news, feeds, rules on their changes
 
 # Closed MVP
 
+- [ ] cache erros and display them somehow in gui
 - [ ] multiple users
+- [ ] every api endpoint must required auth
 - [ ] http base auth for multiple users
 - [ ] Sentry for backend
 - [ ] Sentry for frontend
@@ -30,6 +33,7 @@
 
 # Public MVP
 
+- [ ] refactor API endpoints / names
 - [ ] blog?
 - [ ] some styles?
 - [ ] minor mobile support?

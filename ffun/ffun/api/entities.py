@@ -6,6 +6,7 @@ import pydantic
 from ffun.core import api
 from ffun.feeds import entities as f_entities
 from ffun.library import entities as l_entities
+from ffun.scores import entities as s_entities
 
 
 class Feed(api.Base):
@@ -56,6 +57,22 @@ class Entry(api.Base):
         )
 
 
+class Rule(api.Base):
+    id: uuid.UUID
+    tags: list[str]
+    score: int
+    createdAt: datetime.datetime
+
+    @classmethod
+    def from_internal(cls, rule: s_entities.Rule, tags_mapping: dict[int, str]) -> 'Rule':
+        return cls(
+            id=rule.id,
+            tags={tags_mapping[tag_id] for tag_id in rule.tags},
+            score=rule.score,
+            createdAt=rule.created_at,
+        )
+
+
 ##################
 # Request/Response
 ##################
@@ -88,3 +105,46 @@ class GetEntriesByIdsRequest(api.APIRequest):
 
 class GetEntriesByIdsResponse(api.APISuccess):
     entries: list[Entry]
+
+
+class CreateRuleRequest(api.APIRequest):
+    tags: list[str]
+    score: int
+
+
+class CreateRuleResponse(api.APISuccess):
+    pass
+
+
+class DeleteRuleRequest(api.APIRequest):
+    id: uuid.UUID
+
+
+class DeleteRuleResponse(api.APISuccess):
+    pass
+
+
+class UpdateRuleRequest(api.APIRequest):
+    id: uuid.UUID
+    tags: list[str]
+    score: int
+
+
+class UpdateRuleResponse(api.APISuccess):
+    pass
+
+
+class GetRulesRequest(api.APIRequest):
+    pass
+
+
+class GetRulesResponse(api.APISuccess):
+    rules: list[Rule]
+
+
+class GetScoreDetailsRequest(api.APIRequest):
+    entryId: uuid.UUID
+
+
+class GetScoreDetailsResponse(api.APISuccess):
+    rules: list[Rule]
