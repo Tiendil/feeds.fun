@@ -15,7 +15,7 @@ const globalSettings = useGlobalSettingsStore();
 globalSettings.mainPanelMode = e.MainPanelMode.Feeds;
 
 const feeds = computedAsync(async () => {
-    return await api.getFeeds();
+    return await api.getFeeds({dataVersion: globalSettings.dataVersion});
 }, null);
 
 </script>
