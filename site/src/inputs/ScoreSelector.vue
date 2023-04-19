@@ -16,7 +16,8 @@ import * as api from "@/logic/api";
 
 const properties = withDefaults(defineProps<{scores?: number[],
                                              modelValue: number}>(),
-                                {scores: [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610],
+                                {scores: [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610,
+                                          -1, -2, -3, -5, -8, -13, -21, -34, -55, -89, -144, -233, -377, -610],
                                  modelValue: 1});
 
 const emit = defineEmits(["update:modelValue"]);
