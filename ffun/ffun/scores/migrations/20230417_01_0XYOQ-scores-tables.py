@@ -23,7 +23,7 @@ CREATE TABLE s_rules (
 '''
 
 sql_users_key_index = '''
-CREATE UNIQUE INDEX idx_s_rules_user_id ON s_rules (user_id, key);
+CREATE UNIQUE INDEX idx_s_rules_user_id_key ON s_rules (user_id, key);
 '''
 
 

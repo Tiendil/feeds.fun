@@ -11,7 +11,14 @@
     <a href="#" style="text-decoration: none;" v-if="!showBody" @click.prevent="showBody = true">&#9660;</a>
     <a href="#" style="text-decoration: none;" v-if="showBody" @click.prevent="showBody = false">&#9650;</a>
 
-    <value-url :value="entry.url" :text="entry.title" class="entity"/>
+    <value-url :value="entry.url" :text="purifiedTitle" class="entity"/>
+
+    |
+
+    <input-marker :marker="e.Marker.Read"
+                  :entry="entry"
+                  on-text="read"
+                  off-text="not read"/>
 
     <template v-if="showTags">
       <br/>
@@ -38,6 +45,7 @@
 <script lang="ts" setup>
 import { computed, ref } from "vue";
 import * as t from "@/logic/types";
+import * as e from "@/logic/enums";
 import { computedAsync } from "@vueuse/core";
 import * as api from "@/logic/api";
 import DOMPurify from "dompurify";
@@ -62,15 +70,17 @@ const fullEntry = computedAsync(async () => {
 }, null);
 
 
+const purifiedTitle = computed(() => {
+    // TODO: remove emojis?
+    return DOMPurify.sanitize(properties.entry.title, {ALLOWED_TAGS: []});
+});
+
 const purifiedBody = computed(() => {
     if (fullEntry.value === null) {
         return "";
     }
     return DOMPurify.sanitize(fullEntry.value.body);
-    });
-
-
-
+});
 
 </script>
 

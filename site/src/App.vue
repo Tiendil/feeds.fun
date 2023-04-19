@@ -31,8 +31,10 @@
         </li>
 
         <li class="config-menu-item">
-        Show already read
-      </li>
+        Show already read: <config-flag v-model:flag="globalSettings.showRead"
+                                        on-text="yes"
+                                        off-text="no"/>
+        </li>
 
       </template>
 
@@ -42,6 +44,10 @@
       <template v-if="globalSettings.mainPanelMode == e.MainPanelMode.Rules">
       </template>
     </ul>
+
+    <hr/>
+
+    <a href="#" @click="globalSettings.dataVersion += 1">Reload</a>
 
   </div>
 

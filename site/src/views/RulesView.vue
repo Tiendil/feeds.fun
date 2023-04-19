@@ -15,7 +15,7 @@ const globalSettings = useGlobalSettingsStore();
 globalSettings.mainPanelMode = e.MainPanelMode.Rules;
 
 const rules = computedAsync(async () => {
-    return await api.getRules();
+    return await api.getRules({dataVersion: globalSettings.dataVersion});
 }, null);
 
 </script>

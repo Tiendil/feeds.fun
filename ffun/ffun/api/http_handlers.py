@@ -6,6 +6,7 @@ import fastapi
 from ffun.feeds import domain as f_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
+from ffun.markers import domain as m_domain
 from ffun.ontology import domain as o_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
@@ -32,6 +33,8 @@ async def _external_entries(entries: Iterable[l_entities.Entry],
 
     tags_ids = await o_domain.get_tags_ids_for_entries(entries_ids)
 
+    markers = await m_domain.get_markers(user_id=user_id, entries_ids=entries_ids)
+
     rules = await s_domain.get_rules(user_id)
 
     external_entries = []
@@ -39,8 +42,11 @@ async def _external_entries(entries: Iterable[l_entities.Entry],
     for entry in entries:
         score = s_domain.get_score(rules, tags_ids.get(entry.id, set()))
 
+        external_markers = [entities.Marker.from_internal(marker) for marker in markers.get(entry.id, ())]
+
         entry = entities.Entry.from_internal(entry=entry,
                                              tags=tags.get(entry.id, ()),
+                                             markers=external_markers,
                                              score=score,
                                              with_body=with_body)
 
@@ -146,3 +152,17 @@ async def api_get_score_details(request: entities.GetScoreDetailsRequest, user: 
     external_rules = await _prepare_rules(rules)
 
     return entities.GetScoreDetailsResponse(rules=external_rules)
+
+
+@router.post('/api/set-marker')
+async def api_set_marker(request: entities.SetMarkerRequest, user: User) -> entities.SetMarkerResponse:
+    await m_domain.set_marker(user_id=user.id, entry_id=request.entryId, marker=request.marker.to_internal())
+
+    return entities.SetMarkerResponse()
+
+
+@router.post('/api/remove-marker')
+async def api_remove_marker(request: entities.RemoveMarkerRequest, user: User) -> entities.RemoveMarkerResponse:
+    await m_domain.remove_marker(user_id=user.id, entry_id=request.entryId, marker=request.marker.to_internal())
+
+    return entities.RemoveMarkerResponse()
