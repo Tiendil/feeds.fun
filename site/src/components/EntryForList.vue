@@ -11,7 +11,7 @@
     <a href="#" style="text-decoration: none;" v-if="!showBody" @click.prevent="showBody = true">&#9660;</a>
     <a href="#" style="text-decoration: none;" v-if="showBody" @click.prevent="showBody = false">&#9650;</a>
 
-    <value-url :value="entry.url" :text="entry.title" class="entity"/>
+    <value-url :value="entry.url" :text="purifiedTitle" class="entity"/>
 
     <template v-if="showTags">
       <br/>
@@ -61,6 +61,11 @@ const fullEntry = computedAsync(async () => {
     return entries[0];
 }, null);
 
+
+const purifiedTitle = computed(() => {
+    // TODO: remove emojis?
+    return DOMPurify.sanitize(properties.entry.title, {ALLOWED_TAGS: []});
+});
 
 const purifiedBody = computed(() => {
     if (fullEntry.value === null) {
