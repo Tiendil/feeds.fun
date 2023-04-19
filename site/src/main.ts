@@ -13,6 +13,8 @@ import ConfigFlag from "./components/ConfigFlag.vue";
 import EntryForList from "./components/EntryForList.vue";
 import RuleConstructor from "./components/RuleConstructor.vue";
 
+import ScoreSelector from "./inputs/ScoreSelector.vue";
+
 import ValueUrl from "./values/URL.vue";
 import ValueFeedId from "./values/FeedId.vue";
 import ValueDateTime from "./values/DateTime.vue";
@@ -29,6 +31,8 @@ app.component("ConfigSelector", ConfigSelector);
 app.component("ConfigFlag", ConfigFlag);
 app.component("EntryForList", EntryForList);
 app.component("RuleConstructor", RuleConstructor);
+
+app.component("ScoreSelector", ScoreSelector);
 
 app.component("ValueUrl", ValueUrl);
 app.component("ValueFeedId", ValueFeedId);

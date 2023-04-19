@@ -100,6 +100,16 @@ async def api_delete_rule(request: entities.DeleteRuleRequest, user: User) -> en
     return entities.DeleteRuleResponse()
 
 
+@router.post('/api/update-rule')
+async def api_delete_rule(request: entities.UpdateRuleRequest, user: User) -> entities.UpdateRuleResponse:
+
+    tags_ids = o_domain.get_ids_by_tags(request.tags)
+
+    await s_domain.update_rule(user_id=user.id, rule_id=request.id, score=request.score, tags=tags_ids.values())
+
+    return entities.UpdateRuleResponse()
+
+
 async def _prepare_rules(rules: Iterable[s_entities.Rule]) -> list[entities.Rule]:
     all_tags = set()
 

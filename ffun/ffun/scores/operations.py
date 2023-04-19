@@ -50,6 +50,20 @@ async def delete_rule(user_id: uuid.UUID, rule_id: uuid.UUID) -> None:
     await execute(sql, {'user_id': user_id, 'rule_id': rule_id})
 
 
+async def update_rule(user_id: uuid.UUID, rule_id: uuid.UUID, tags: Iterable[int], score: int) -> None:
+
+    tags = normalize_tags(tags)
+    key = ','.join(map(str, tags))
+
+    sql = '''
+    UPDATE s_rules
+    SET tags = %(tags)s, key = %(key)s, score = %(score)s
+    WHERE user_id = %(user_id)s AND id = %(rule_id)s
+    '''
+
+    await execute(sql, {'user_id': user_id, 'rule_id': rule_id, 'tags': tags, 'key': key, 'score': score})
+
+
 async def get_rules(user_id: uuid.UUID) -> list[Rule]:
 
     sql = '''

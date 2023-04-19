@@ -25,3 +25,4 @@ def get_score_rules(rules: list[entities.Rule], tags: set[int]) -> list[entities
 create_rule = operations.create_rule
 delete_rule = operations.delete_rule
 get_rules = operations.get_rules
+update_rule = operations.update_rule

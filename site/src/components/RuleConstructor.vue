@@ -1,5 +1,5 @@
 <template>
-<div class="score-rule-constructor">
+<div class="rule-constructor">
 
 <p>
 Select tags to score news by them.
@@ -13,15 +13,9 @@ Select tags to score news by them.
 
 <br/>
 
-    <select v-model="currentScore">
-      <option v-for="score of scores"
-              :value="score"
-              :selected="currentScore === score">
-        {{score}}
-      </option>
-    </select>
+<score-selector v-model="currentScore"/>
 
-    &nbsp;
+&nbsp;
 
   <a href="#" v-if="canCreateRule" @click.prevent="createRule()">create rule</a>
 
@@ -51,7 +45,7 @@ async function createRule() {
 </script>
 
 <style scoped>
-.score-rule-constructor {
+.rule-constructor {
     padding: 0.25rem;
     margin: 0.25rem;
     border: 1px solid #ccc;

@@ -124,6 +124,16 @@ class DeleteRuleResponse(api.APISuccess):
     pass
 
 
+class UpdateRuleRequest(api.APIRequest):
+    id: uuid.UUID
+    tags: list[str]
+    score: int
+
+
+class UpdateRuleResponse(api.APISuccess):
+    pass
+
+
 class GetRulesRequest(api.APIRequest):
     pass
 
