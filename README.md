@@ -3,6 +3,7 @@
 
 - [x] scoring
 - [x] scoring rules editing
+- [ ] do not run openai on the old entries
 - [ ] use structlog
 - [ ] search for unprocessed entries and reprocess them periodically
 - [ ] save global settings on backend?
