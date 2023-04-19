@@ -8,7 +8,11 @@
     </thead>
     <tbody>
       <tr v-for="rule in rules">
-        <td>{{rule.score}}</td>
+        <td>
+          <rule-score-updater :score="rule.score"
+                              :rule-id="rule.id"
+                              :tags="rule.tags"/>
+        </td>
         <td>
           <template v-for="tag of rule.tags"
                     :key="tag">

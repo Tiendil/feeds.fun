@@ -9,6 +9,7 @@ const API_GET_LAST_ENTRIES = `${ENTRY_POINT}/api/get-last-entries`;
 const API_GET_ENTRIES_BY_IDS = `${ENTRY_POINT}/api/get-entries-by-ids`;
 const API_CREATE_RULE = `${ENTRY_POINT}/api/create-rule`;
 const API_DELETE_RULE = `${ENTRY_POINT}/api/delete-rule`;
+const API_UPDATE_RULE = `${ENTRY_POINT}/api/update-rule`;
 const API_GET_RULES = `${ENTRY_POINT}/api/get-rules`;
 const API_GET_SCORE_DETAILS = `${ENTRY_POINT}/api/get-score-details`;
 
@@ -74,6 +75,12 @@ export async function createRule({tags, score}: {tags: string[], score: number})
 
 export async function deleteRule({id}: {id: t.RuleId}) {
     const response = await post({url: API_DELETE_RULE, data: {id: id}});
+    return response;
+}
+
+
+export async function updateRule({id, tags, score}: {id: t.RuleId, tags: string[], score: number}) {
+    const response = await post({url: API_UPDATE_RULE, data: {id: id, tags: tags, score: score}});
     return response;
 }
 

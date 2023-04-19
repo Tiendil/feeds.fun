@@ -1,27 +1,15 @@
 
 # MVP
 
-- [ ] scoring
-- [ ] scoring rules editing
+- [x] scoring
+- [x] scoring rules editing
 - [ ] use structlog
 - [ ] search for unprocessed entries and reprocess them periodically
-- [ ] move scoring & sorting out of backend?
-- [ ] run console commands constantly in backgroud?
 - [ ] save global settings on backend?
 - [ ] smart tags ordering in gui (by popularity? by module of score?)
 - [ ] fix `network-domain-www-theatlantic-com`
 - [ ] reduce amount the size of answers from backend
 - [ ] common mechanism to refresh lists of news, feeds, rules on their changes
-
-## Scoring
-
-- [x] store rules in db
-- [x] score on loading entries or in browser?
-- [x] score with number
-- [x] gui for creating new scoring rules
-- [x] list scoring rules
-- [x] get info about score for entry
-- [ ] edit rule score
 
 # Closed MVP
 

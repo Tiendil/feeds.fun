@@ -23,8 +23,6 @@ const emit = defineEmits(["update:modelValue"]);
 
 function updateSelected(event) {
     const newScore = Number(event.target.value);
-    console.log("updateSelected", newScore);
-    // properties.modelValue = newScore;
     emit("update:modelValue", newScore);
 }
 

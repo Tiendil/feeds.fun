@@ -12,6 +12,7 @@ import ConfigSelector from "./components/ConfigSelector.vue";
 import ConfigFlag from "./components/ConfigFlag.vue";
 import EntryForList from "./components/EntryForList.vue";
 import RuleConstructor from "./components/RuleConstructor.vue";
+import RuleScoreUpdater from "./components/RuleScoreUpdater.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 
@@ -31,6 +32,7 @@ app.component("ConfigSelector", ConfigSelector);
 app.component("ConfigFlag", ConfigFlag);
 app.component("EntryForList", EntryForList);
 app.component("RuleConstructor", RuleConstructor);
+app.component("RuleScoreUpdater", RuleScoreUpdater);
 
 app.component("ScoreSelector", ScoreSelector);
 
