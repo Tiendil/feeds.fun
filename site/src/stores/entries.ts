@@ -70,9 +70,27 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     requestedEntriesTimer.start();
 
+    async function setMarker({entryId, marker}: {entryId: t.EntryId, marker: t.Marker}) {
+        await api.setMarker({entryId: entryId, marker: marker});
+
+        if (entryId in entries.value) {
+            entries.value[entryId].setMarker(marker);
+        }
+    }
+
+    async function removeMarker({entryId, marker}: {entryId: t.EntryId, marker: t.Marker}) {
+        await api.removeMarker({entryId: entryId, marker: marker});
+
+        if (entryId in entries.value) {
+            entries.value[entryId].removeMarker(marker);
+        }
+    }
+
     return {
         entries,
         entriesReport,
         requestFullEntry,
+        setMarker,
+        removeMarker,
     };
 });
