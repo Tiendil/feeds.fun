@@ -1,4 +1,4 @@
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRouter } from 'vue-router'
 import { defineStore } from "pinia";
 
@@ -22,6 +22,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
                 entry.body = entries.value[entry.id].body;
             }
         }
+
         entries.value[entry.id] = entry;
     }
 
@@ -29,6 +30,8 @@ export const useEntriesStore = defineStore("entriesStore", () => {
         const period = e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod).seconds;
         const loadedEntries = await api.getLastEntries({period: period,
                                                         dataVersion: globalSettings.dataVersion});
+
+
 
         const report = [];
 
@@ -40,6 +43,24 @@ export const useEntriesStore = defineStore("entriesStore", () => {
         return report;
 
     }, []);
+
+    const reportTagsCount = computed(() => {
+        const tagsCount = {};
+
+        for (const entryId of entriesReport.value) {
+            const entry = entries.value[entryId];
+
+            for (const tag of entry.tags) {
+                if (tag in tagsCount) {
+                    tagsCount[tag] += 1;
+                } else {
+                    tagsCount[tag] = 1;
+                }
+            }
+        }
+
+        return tagsCount;
+    });
 
     function requestFullEntry({entryId}: {entryId: t.EntryId}) {
 
@@ -89,6 +110,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     return {
         entries,
         entriesReport,
+        reportTagsCount,
         requestFullEntry,
         setMarker,
         removeMarker,

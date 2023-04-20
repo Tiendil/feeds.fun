@@ -22,6 +22,9 @@
 
 <script lang="ts" setup>
 import { computed, ref } from "vue";
+import { useEntriesStore } from "@/stores/entries";
+
+const entriesStore = useEntriesStore();
 
 const showAll = ref(false);
 const showLimit = ref(5);
@@ -49,7 +52,28 @@ const preparedTags = computed(() => {
         values.push(tag);
     }
 
-    values.sort();
+    values.sort((a, b) => {
+        const aCount = entriesStore.reportTagsCount[a];
+        const bCount = entriesStore.reportTagsCount[b];
+
+        if (aCount > bCount) {
+            return -1;
+        }
+
+        if (aCount < bCount) {
+            return 1;
+        }
+
+        if (a > b) {
+            return 1;
+        }
+
+        if (a < b) {
+            return -1;
+        }
+
+        return 0;
+    });
 
     return values;
 });
