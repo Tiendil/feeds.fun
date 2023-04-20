@@ -13,6 +13,10 @@
 - [ ] common mechanism to refresh lists of news, feeds, rules on their changes
 - [ ] statistics about tags
 
+# Errors
+
+- [ ] This model's maximum context length is 4097 tokens. However, you requested 4140 tokens (3116 in the messages, 1024 in the completion)
+
 # Closed MVP
 
 - [ ] cache erros and display them somehow in gui
