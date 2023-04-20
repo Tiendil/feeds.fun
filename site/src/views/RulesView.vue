@@ -1,4 +1,9 @@
 <template>
+    <h2>
+      Rules
+      <span v-if="rules">[{{rules.length}}]</span>
+    </h2>
+
     <rules-list :rules="rules" />
 </template>
 

@@ -1,5 +1,11 @@
 <template>
-    <feeds-list :feeds="feeds" />
+  <h2>
+    Feeds
+    <span v-if="feeds">
+      [{{ feeds.length }}]
+    </span>
+  </h2>
+<feeds-list :feeds="feeds" />
 </template>
 
 <script lang="ts" setup>
