@@ -1,9 +1,15 @@
 <template>
-    <div :class="classes" @click.prevent="onClick()">{{value}}</div>
+<div :class="classes"
+     @click.prevent="onClick()">
+    [{{count}}] {{value}}
+</div>
 </template>
 
 <script lang="ts" setup>
-    import { computed, ref } from "vue";
+import { computed, ref } from "vue";
+import { useEntriesStore } from "@/stores/entries";
+
+const entriesStore = useEntriesStore();
 
 const properties = defineProps<{value: string,
                                 selected?: bool}>();
@@ -15,6 +21,10 @@ const classes = computed(() => {
         "tag": true,
         "selected": properties.selected
     };
+});
+
+const count = computed(() => {
+    return entriesStore.reportTagsCount[properties.value];
 });
 
 function onClick() {
