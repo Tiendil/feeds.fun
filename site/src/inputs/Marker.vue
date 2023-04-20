@@ -17,32 +17,26 @@ import { computed, ref } from "vue";
 import * as api from "@/logic/api";
 import * as e from "@/logic/enums";
 import * as t from "@/logic/types";
+import { useEntriesStore } from "@/stores/entries";
+
+const entriesStore = useEntriesStore();
 
 const properties = defineProps<{marker: e.Marker,
-                                entry: t.Entry,
+                                entryId: t.EntryId,
                                 onText: string,
                                 offText: string}>();
 
-const newHas = ref(null);
-
 const hasMarker = computed(() => {
-    if (newHas.value !== null) {
-        return newHas.value;
-    }
-
-    return properties.entry.markers.includes(properties.marker);
+    return entriesStore.entries[properties.entryId].hasMarker(properties.marker);
 });
 
-function mark() {
-    newHas.value = true;
-    api.setMarker({entryId: properties.entry.id, marker: properties.marker});
+async function mark() {
+    await entriesStore.setMarker({entryId: properties.entryId, marker: properties.marker});
 }
 
-function unmark() {
-    newHas.value = false;
-    api.removeMarker({entryId: properties.entry.id, marker: properties.marker});
+async function unmark() {
+    await entriesStore.removeMarker({entryId: properties.entryId, marker: properties.marker});
 }
-
 
 </script>
 
