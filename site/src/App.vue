@@ -52,7 +52,6 @@
   </div>
 
   <div class="main-content">
-    <h2>{{mainModeTitle()}}</h2>
     <router-view />
   </div>
 </div>
@@ -65,21 +64,6 @@ import { useGlobalSettingsStore } from "@/stores/globalSettings";
 import * as e from "@/logic/enums";
 
 const globalSettings = useGlobalSettingsStore();
-
-function mainModeTitle() {
-    if (globalSettings.mainPanelMode === e.MainPanelMode.Feeds) {
-        return "Feeds";
-    }
-    else if (globalSettings.mainPanelMode === e.MainPanelMode.Entries) {
-        return "News";
-}
-    else if (globalSettings.mainPanelMode === e.MainPanelMode.Rules) {
-        return "Rules";
-    }
-    else {
-        throw new Error("Unknown MainPanelMode");
-    }
-}
 
 </script>
 
