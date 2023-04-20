@@ -1,4 +1,9 @@
 <template>
+<h2>
+  News
+
+  <span v-if="displayedEntries.length > 0">[{{displayedEntries.length}}]</span>
+</h2>
 <entries-list :entriesIds="displayedEntries"
               :time-field="timeField"
               :show-tags="globalSettings.showEntriesTags"
