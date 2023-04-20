@@ -16,7 +16,7 @@
     |
 
     <input-marker :marker="e.Marker.Read"
-                  :entry="entry"
+                  :entry-id="entryId"
                   on-text="read"
                   off-text="not read"/>
 

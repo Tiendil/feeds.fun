@@ -74,6 +74,18 @@ export class Entry {
         this.body = body;
     }
 
+    setMarker(marker: e.Marker): void {
+        if (!this.hasMarker(marker)) {
+            this.markers.push(marker);
+        }
+    }
+
+    removeMarker(marker: e.Marker): void {
+        if (this.hasMarker(marker)) {
+            this.markers.splice(this.markers.indexOf(marker), 1);
+        }
+    }
+
     hasMarker(marker: e.Marker): boolean {
         return this.markers.includes(marker);
     }
