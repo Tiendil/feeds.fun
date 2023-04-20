@@ -1,12 +1,10 @@
 <template>
-<<<<<<< HEAD
-=======
 <h2>
   News
 
   <span v-if="displayedEntries.length > 0">[{{displayedEntries.length}}]</span>
 </h2>
->>>>>>> feature/frontend-entities-storage
+
 <entries-list :entriesIds="displayedEntries"
               :time-field="timeField"
               :show-tags="globalSettings.showEntriesTags"
