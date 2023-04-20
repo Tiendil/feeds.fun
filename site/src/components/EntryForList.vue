@@ -28,8 +28,8 @@
     <div v-if="showBody" style="display: flex; justify-content: center;">
       <div style="max-width: 50rem;">
         <h2>{{entry.title}}</h2>
-        <p v-if="fullEntry === null">loading...</p>
-        <div v-if="fullEntry !== null"
+        <p v-if="entry.body === null">loading...</p>
+        <div v-if="entry.body !== null"
              v-html="purifiedBody"/>
       </div>
     </div>
@@ -49,37 +49,33 @@ import * as e from "@/logic/enums";
 import { computedAsync } from "@vueuse/core";
 import * as api from "@/logic/api";
 import DOMPurify from "dompurify";
+import { useEntriesStore } from "@/stores/entries";
 
-const properties = defineProps<{ entry: t.Entry,
+const entriesStore = useEntriesStore();
+
+const properties = defineProps<{ entryId: t.EntryId,
                                  timeField: string,
                                  showTags: boolean}>();
+
+const entry = computed(() => entriesStore.entries.value[properties.entryId]);
 
 const showBody = ref(false);
 
 function timeFor(entry: t.Entry): Date {
-  return entry[properties.timeField];
+  return entry.value[properties.timeField];
 }
-
-const fullEntry = computedAsync(async () => {
-    if (!showBody.value) {
-        return null;
-    }
-    const entries = await api.getEntriesByIds({ids: [properties.entry.id]});
-
-    return entries[0];
-}, null);
-
 
 const purifiedTitle = computed(() => {
     // TODO: remove emojis?
-    return DOMPurify.sanitize(properties.entry.title, {ALLOWED_TAGS: []});
+    return DOMPurify.sanitize(entry.value.title, {ALLOWED_TAGS: []});
 });
 
 const purifiedBody = computed(() => {
-    if (fullEntry.value === null) {
+    if (entry.value.body === null) {
+        entriesStore.requestFullEntry(entry.value.id);
         return "";
     }
-    return DOMPurify.sanitize(fullEntry.value.body);
+    return DOMPurify.sanitize(entry.value.body);
 });
 
 </script>

@@ -56,7 +56,11 @@ export type Entry = {
     readonly score: number;
     readonly publishedAt: Date;
     readonly catalogedAt: Date;
-    readonly body: string|null;
+    body: string|null;
+
+    hasMarker(marker: e.Marker): boolean {
+        return this.markers.includes(marker);
+    }
 }
 
 
