@@ -38,10 +38,11 @@ function onClick() {
   display: inline-block;
   cursor: pointer;
   padding: 0.25rem;
+  white-space: nowrap;
 }
 
 .tag.selected {
-  background-color: #eee;
+  background-color: #c1c1ff;
 }
 
 </style>
