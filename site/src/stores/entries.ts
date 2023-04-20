@@ -4,6 +4,8 @@ import { defineStore } from "pinia";
 
 import * as t from "@/logic/types";
 import * as e from "@/logic/enums";
+import * as api from "@/logic/api";
+import { Timer } from "@/logic/timer";
 import { computedAsync } from "@vueuse/core";
 import { useGlobalSettingsStore } from "@/stores/globalSettings";
 
@@ -25,8 +27,8 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     const entriesReport = computedAsync(async () => {
         const period = e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod).seconds;
-        loadedEntries = await api.getLastEntries({period: period,
-                                                  dataVersion: globalSettings.dataVersion});
+        const loadedEntries = await api.getLastEntries({period: period,
+                                                        dataVersion: globalSettings.dataVersion});
 
         const report = [];
 
@@ -65,6 +67,8 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     }
 
     const requestedEntriesTimer = new Timer(loadFullEntries, 1000);
+
+    requestedEntriesTimer.start();
 
     return {
         entries,

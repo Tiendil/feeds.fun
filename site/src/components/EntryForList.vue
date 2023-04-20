@@ -8,7 +8,7 @@
   </div>
 
   <div style="flex-grow: 1;">
-    <a href="#" style="text-decoration: none;" v-if="!showBody" @click.prevent="showBody = true">&#9660;</a>
+    <a href="#" style="text-decoration: none;" v-if="!showBody" @click.prevent="displayBody()">&#9660;</a>
     <a href="#" style="text-decoration: none;" v-if="showBody" @click.prevent="showBody = false">&#9650;</a>
 
     <value-url :value="entry.url" :text="purifiedTitle" class="entity"/>
@@ -27,7 +27,7 @@
 
     <div v-if="showBody" style="display: flex; justify-content: center;">
       <div style="max-width: 50rem;">
-        <h2>{{entry.title}}</h2>
+        <h2>{{purifiedTitle}}</h2>
         <p v-if="entry.body === null">loading...</p>
         <div v-if="entry.body !== null"
              v-html="purifiedBody"/>
@@ -36,7 +36,7 @@
   </div>
 
   <div style="flex-shrink: 0; width: 1rem; left-padding: 0.25rem;">
-    <value-date-time :value="timeFor(entry)" :reversed="true"/>
+    <value-date-time :value="timeFor()" :reversed="true"/>
   </div>
 
 </div>
@@ -47,7 +47,6 @@ import { computed, ref } from "vue";
 import * as t from "@/logic/types";
 import * as e from "@/logic/enums";
 import { computedAsync } from "@vueuse/core";
-import * as api from "@/logic/api";
 import DOMPurify from "dompurify";
 import { useEntriesStore } from "@/stores/entries";
 
@@ -57,12 +56,23 @@ const properties = defineProps<{ entryId: t.EntryId,
                                  timeField: string,
                                  showTags: boolean}>();
 
-const entry = computed(() => entriesStore.entries.value[properties.entryId]);
+const entry = computed(() => {
+    if (properties.entryId in entriesStore.entries) {
+        return entriesStore.entries[properties.entryId];
+    }
+
+    return null;
+});
 
 const showBody = ref(false);
 
-function timeFor(entry: t.Entry): Date {
+function timeFor(): Date {
   return entry.value[properties.timeField];
+}
+
+function displayBody() {
+    showBody.value = true;
+    entriesStore.requestFullEntry({entryId: entry.value.id});
 }
 
 const purifiedTitle = computed(() => {
@@ -72,7 +82,6 @@ const purifiedTitle = computed(() => {
 
 const purifiedBody = computed(() => {
     if (entry.value.body === null) {
-        entriesStore.requestFullEntry(entry.value.id);
         return "";
     }
     return DOMPurify.sanitize(entry.value.body);
