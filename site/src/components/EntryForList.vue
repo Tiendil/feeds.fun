@@ -11,7 +11,11 @@
     <a href="#" style="text-decoration: none;" v-if="!showBody" @click.prevent="displayBody()">&#9660;</a>
     <a href="#" style="text-decoration: none;" v-if="showBody" @click.prevent="showBody = false">&#9650;</a>
 
-    <value-url :value="entry.url" :text="purifiedTitle" class="entity"/>
+    <a :href="entry.url"
+       target="_blank"
+       @click="onTitleClick()">
+      {{purifiedTitle}}
+    </a>
 
     |
 
@@ -86,6 +90,10 @@ const purifiedBody = computed(() => {
     }
     return DOMPurify.sanitize(entry.value.body);
 });
+
+async function onTitleClick() {
+    await entriesStore.setMarker({entryId: properties.entryId, marker: e.Marker.Read});
+}
 
 </script>
 
