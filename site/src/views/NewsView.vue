@@ -1,5 +1,5 @@
 <template>
-<entries-list :entries="displayedEntries"
+<entries-list :entriesIds="displayedEntries"
               :time-field="timeField"
               :show-tags="globalSettings.showEntriesTags"
               :showFromStart=100
@@ -14,42 +14,39 @@ import * as api from "@/logic/api";
 import * as t from "@/logic/types";
 import * as e from "@/logic/enums";
 import { useGlobalSettingsStore } from "@/stores/globalSettings";
+import { useEntriesStore } from "@/stores/entries";
 
 const globalSettings = useGlobalSettingsStore();
+const entriesStore = useEntriesStore();
 
 globalSettings.mainPanelMode = e.MainPanelMode.Entries;
-
-const entries = computedAsync(async () => {
-    return await api.getLastEntries({period: e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod).seconds,
-                                     dataVersion: globalSettings.dataVersion});
-}, null);
-
 
 const timeField = computed(() => {
     return e.EntriesOrderProperties.get(globalSettings.entriesOrder).timeField;
 });
 
 const displayedEntries = computed(() => {
-    if (entries.value === null) {
-        return null;
-    }
+    const entries = entriesStore.entries;
 
-    let processedEntries = entries.value.slice();
+    let processedEntries = entriesStore.entriesReport.slice();
 
     if (!globalSettings.showRead) {
-        processedEntries = processedEntries.filter((entry) => {
-            return !entry.markers.includes(e.Marker.Read);
+        processedEntries = processedEntries.filter((entryId) => {
+            return !entries[entryId].hasMarker(e.Marker.Read);
         });
     }
 
     return processedEntries.sort((a, b) => {
         const field = e.EntriesOrderProperties.get(globalSettings.entriesOrder).orderField;
 
-        if (a[field] < b[field]) {
+        const entryA = entries[a];
+        const entryB = entries[b];
+
+        if (entryA[field] < entryB[field]) {
             return 1;
         }
 
-        if (a[field] > b[field]) {
+        if (entryA[field] > entryB[field]) {
             return -1;
         }
 

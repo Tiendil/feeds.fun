@@ -46,7 +46,7 @@ export function feedFromJSON({ id, url, state, lastError, loadedAt }:
 }
 
 
-export type Entry = {
+export class Entry {
     readonly id: EntryId;
     readonly feedId: FeedId;
     readonly title: string;
@@ -56,7 +56,39 @@ export type Entry = {
     readonly score: number;
     readonly publishedAt: Date;
     readonly catalogedAt: Date;
-    readonly body: string|null;
+    body: string|null;
+
+    constructor({ id, feedId, title, url, tags, markers, score, publishedAt, catalogedAt, body }:
+                { id: EntryId, feedId: FeedId, title: string, url: URL, tags: string[],
+                  markers: e.Marker[], score: number,
+                  publishedAt: Date, catalogedAt: Date, body: string|null }) {
+        this.id = id;
+        this.feedId = feedId;
+        this.title = title;
+        this.url = url;
+        this.tags = tags;
+        this.markers = markers;
+        this.score = score;
+        this.publishedAt = publishedAt;
+        this.catalogedAt = catalogedAt;
+        this.body = body;
+    }
+
+    setMarker(marker: e.Marker): void {
+        if (!this.hasMarker(marker)) {
+            this.markers.push(marker);
+        }
+    }
+
+    removeMarker(marker: e.Marker): void {
+        if (this.hasMarker(marker)) {
+            this.markers.splice(this.markers.indexOf(marker), 1);
+        }
+    }
+
+    hasMarker(marker: e.Marker): boolean {
+        return this.markers.includes(marker);
+    }
 }
 
 
@@ -64,16 +96,16 @@ export function entryFromJSON({ id, feedId, title, url, tags, markers, score, pu
                               { id: string, feedId: string, title: string, url: string, tags: string[],
                                 markers: string[], score: number,
                                 publishedAt: string, catalogedAt: string, body: string|null }): Entry {
-    return { id: toEntryId(id),
-             feedId: toFeedId(feedId),
-             title,
-             url: toURL(url),
-             tags: tags,
-             markers: markers.map(m => e.reverseMarker[m]),
-             score: score,
-             publishedAt: new Date(publishedAt),
-             catalogedAt: new Date(catalogedAt),
-             body: body };
+    return new Entry({ id: toEntryId(id),
+                       feedId: toFeedId(feedId),
+                       title,
+                       url: toURL(url),
+                       tags: tags,
+                       markers: markers.map(m => e.reverseMarker[m]),
+                       score: score,
+                       publishedAt: new Date(publishedAt),
+                       catalogedAt: new Date(catalogedAt),
+                       body: body });
 }
 
 

@@ -1,10 +1,10 @@
 <template>
 
   <ul style="list-style-type: none; margin: 0; padding: 0;">
-    <li v-for="entry in entriesToShow"
-        :key="entry.id"
+    <li v-for="entryId in entriesToShow"
+        :key="entryId"
         style="margin-bottom: 0.25rem;">
-      <entry-for-list :entry="entry"
+      <entry-for-list :entryId="entryId"
                       :time-field="timeField"
                       :show-tags="showTags"/>
     </li>
@@ -32,7 +32,7 @@ import { computed, ref } from "vue";
 import * as t from "@/logic/types";
 import { computedAsync } from "@vueuse/core";
 
-const properties = defineProps<{ entries: Array[t.Entry],
+const properties = defineProps<{ entriesIds: Array[t.EntryId],
                                  timeField: string,
                                  showTags: boolean,
                                  showFromStart: number,
@@ -46,10 +46,10 @@ function showMore() {
 }
 
 function showAll() {
-    if (properties.entries == null) {
+    if (properties.entriesIDs == null) {
         return;
     }
-    showEntries.value = properties.entries.length;
+    showEntries.value = properties.entriesIds.length;
 }
 
 function hideAll() {
@@ -57,29 +57,26 @@ function hideAll() {
 }
 
 const canHide = computed(() => {
-    if (properties.entries == null) {
+    if (properties.entriesIds == null) {
         return false;
     }
     return showEntries.value > properties.showFromStart;
 });
 
 const entriesToShow = computed(() => {
-    if (properties.entries == null) {
+    if (properties.entriesIds == null) {
         return [];
     }
-    return properties.entries.slice(0, showEntries.value);
+    return properties.entriesIds.slice(0, showEntries.value);
 });
 
 const canShowMore = computed(() => {
-    if (properties.entries == null) {
+    if (properties.entriesIds == null) {
         return false;
     }
-    return showEntries.value < properties.entries.length;
+    return showEntries.value < properties.entriesIds.length;
 });
 
-function timeFor(entry: t.Entry): Date {
-  return entry[properties.timeField];
-}
 
 </script>
 
