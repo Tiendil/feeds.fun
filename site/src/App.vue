@@ -49,6 +49,11 @@
 
     <a href="#" @click="globalSettings.dataVersion += 1">Reload</a>
 
+    <hr/>
+
+    <tags-filter v-if="globalSettings.mainPanelMode == e.MainPanelMode.Entries"
+                 :tags="entriesStore.reportTagsCount"/>
+
   </div>
 
   <div class="main-content">
@@ -61,9 +66,11 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 import { useGlobalSettingsStore } from "@/stores/globalSettings";
+import { useEntriesStore } from "@/stores/entries";
 import * as e from "@/logic/enums";
 
 const globalSettings = useGlobalSettingsStore();
+const entriesStore = useEntriesStore();
 
 </script>
 

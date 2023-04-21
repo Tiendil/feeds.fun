@@ -8,7 +8,7 @@ Select tags to score news by them.
   <template v-for="tag of tags"
             :key="tag">
     <value-tag :value="tag"
-               :selected="true"/>&nbsp;
+               mode="required"/>&nbsp;
 </template>
 
 <br/>

@@ -13,6 +13,8 @@ import ConfigFlag from "./components/ConfigFlag.vue";
 import EntryForList from "./components/EntryForList.vue";
 import RuleConstructor from "./components/RuleConstructor.vue";
 import RuleScoreUpdater from "./components/RuleScoreUpdater.vue";
+import TagsFilter from "./components/TagsFilter.vue";
+import TagsFilterElement from "./components/TagsFilterElement.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -34,6 +36,8 @@ app.component("ConfigFlag", ConfigFlag);
 app.component("EntryForList", EntryForList);
 app.component("RuleConstructor", RuleConstructor);
 app.component("RuleScoreUpdater", RuleScoreUpdater);
+app.component("TagsFilter", TagsFilter);
+app.component("TagsFilterElement", TagsFilterElement);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);
