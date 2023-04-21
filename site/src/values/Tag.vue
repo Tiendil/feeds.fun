@@ -1,7 +1,13 @@
 <template>
 <div :class="classes"
      @click.prevent="onClick()">
-    [{{count}}] {{value}}
+
+  <slot name="start">
+  </slot>
+
+  <span v-if="count">[{{count}}]</span>
+
+  {{value}}
 </div>
 </template>
 
@@ -12,19 +18,21 @@ import { useEntriesStore } from "@/stores/entries";
 const entriesStore = useEntriesStore();
 
 const properties = defineProps<{value: string,
-                                selected?: bool}>();
+                                count?: number|null,
+                                mode?: string|null}>();
 
 const emit = defineEmits(["tag:clicked"]);
 
 const classes = computed(() => {
-    return {
-        "tag": true,
-        "selected": properties.selected
+    const result = {
+        "tag": true
     };
-});
 
-const count = computed(() => {
-    return entriesStore.reportTagsCount[properties.value];
+    if (properties.mode) {
+        result[properties.mode] = true;
+    }
+
+    return result;
 });
 
 function onClick() {
@@ -38,10 +46,19 @@ function onClick() {
   display: inline-block;
   cursor: pointer;
   padding: 0.25rem;
+  white-space: nowrap;
 }
 
 .tag.selected {
-  background-color: #eee;
+  background-color: #ccccff;
+}
+
+.tag.required {
+  background-color: #ccffcc;
+}
+
+.tag.excluded {
+  background-color: #ffcccc;
 }
 
 </style>

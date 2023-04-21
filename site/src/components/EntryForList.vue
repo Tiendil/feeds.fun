@@ -81,7 +81,13 @@ function displayBody() {
 
 const purifiedTitle = computed(() => {
     // TODO: remove emojis?
-    return DOMPurify.sanitize(entry.value.title, {ALLOWED_TAGS: []});
+    let title = DOMPurify.sanitize(entry.value.title, {ALLOWED_TAGS: []});
+
+    if (title.length === 0) {
+        title = "No title";
+    }
+
+    return title;
 });
 
 const purifiedBody = computed(() => {

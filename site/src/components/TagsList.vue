@@ -5,16 +5,14 @@
                     :tags="selectedTagsList"
                     @rule-constructor:created="onRuleCreated"/>
 
-[{{tagsNumber}}]
-
 <template v-for="tag of displayedTags"
           :key="tag">
   <value-tag :value="tag"
-             :selected="!!selectedTags[tag]"
+             :mode="!!selectedTags[tag] ? 'selected' : null"
              @tag:clicked="onTagClicked"/>&nbsp;
 </template>
 
-<a href="#" v-if="canShowAll" @click.prevent="showAll=true">more</a>
+<a href="#" v-if="canShowAll" @click.prevent="showAll=true">{{tagsNumber - showLimit}} more</a>
 
 <a href="#" v-if="canHide" @click.prevent="showAll=false">hide</a>
 </div>
