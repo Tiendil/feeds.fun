@@ -49,6 +49,7 @@ export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, {text: str
 
 export enum EntriesOrder {
     Score = "score",
+    ScoreToZero = "score-to-zero",
     Published = "published",
     Cataloged = "cataloged"
 };
@@ -56,6 +57,7 @@ export enum EntriesOrder {
 
 export const EntriesOrderProperties = new Map<EntriesOrder, {text: string, orderField: string, timeField}>([
     [EntriesOrder.Score, {text: "score", orderField: "score", timeField: "catalogedAt"}],
+    [EntriesOrder.ScoreToZero, {text: "score ~ 0", orderField: "scoreToZero", timeField: "catalogedAt"}],
     [EntriesOrder.Published, {text: "published", orderField: "publishedAt", timeField: "publishedAt"}],
     [EntriesOrder.Cataloged, {text: "cataloged", orderField: "catalogedAt", timeField: "catalogedAt"}],
 ]);

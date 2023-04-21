@@ -77,14 +77,14 @@ export const useEntriesStore = defineStore("entriesStore", () => {
         report = report.sort((a, b) => {
             const field = e.EntriesOrderProperties.get(globalSettings.entriesOrder).orderField;
 
-            const entryA = entries.value[a];
-            const entryB = entries.value[b];
+            const valueA = entries.value[a][field];
+            const valueB = entries.value[b][field];
 
-            if (entryA[field] < entryB[field]) {
+            if (valueA < valueB) {
                 return 1;
             }
 
-            if (entryA[field] > entryB[field]) {
+            if (valueA > valueB) {
                 return -1;
             }
 
