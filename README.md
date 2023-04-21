@@ -6,12 +6,10 @@
 - [ ] do not run openai on the old entries
 - [ ] use structlog
 - [ ] search for unprocessed entries and reprocess them periodically
-- [ ] save global settings on backend?
-- [ ] smart tags ordering in gui (by popularity? by module of score?)
+- [x] smart tags ordering in gui (by popularity? by module of score?)
 - [ ] fix `network-domain-www-theatlantic-com`
-- [ ] reduce amount the size of answers from backend
 - [ ] common mechanism to refresh lists of news, feeds, rules on their changes
-- [ ] statistics about tags
+- [x] statistics about tags
 
 # Errors
 
@@ -37,6 +35,7 @@
 - [ ] tooltip for last entries period about top limit of how many entries can be retrieved
 - [ ] do not show all entries in one page by default (only on scroll)
 - [ ] Tag: unicode-in-caption or too-much-unicode-in-caption
+- [ ] reduce amount the size of answers from backend
 
 # Public MVP
 
@@ -44,6 +43,7 @@
 - [ ] blog?
 - [ ] some styles?
 - [ ] minor mobile support?
+- [ ] save global settings on backend?
 
 # Backlog:
 
