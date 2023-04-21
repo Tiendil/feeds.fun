@@ -36,6 +36,7 @@
 - [ ] do not show all entries in one page by default (only on scroll)
 - [ ] Tag: unicode-in-caption or too-much-unicode-in-caption
 - [ ] reduce amount the size of answers from backend
+- [ ] in the news list highlight tags that are used in rules
 
 # Public MVP
 
