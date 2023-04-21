@@ -1,7 +1,8 @@
 <template>
 <div :class="classes"
      @click.prevent="onClick()">
-    [{{count}}] {{value}}
+  <span v-if="count">[{{count}}]</span>
+  {{value}}
 </div>
 </template>
 
@@ -12,6 +13,7 @@ import { useEntriesStore } from "@/stores/entries";
 const entriesStore = useEntriesStore();
 
 const properties = defineProps<{value: string,
+                                count?: number|null,
                                 selected?: bool}>();
 
 const emit = defineEmits(["tag:clicked"]);
@@ -21,10 +23,6 @@ const classes = computed(() => {
         "tag": true,
         "selected": properties.selected
     };
-});
-
-const count = computed(() => {
-    return entriesStore.reportTagsCount[properties.value];
 });
 
 function onClick() {

@@ -5,6 +5,7 @@
         style="overflow: hidden; text-overflow: ellipsis;"
         :key="tag">
       <value-tag :value="tag"
+                 :count="tags[tag]"
                  :selected="!!selectedTags[tag]"
                  @tag:clicked="onTagClicked"/>
     </li>
