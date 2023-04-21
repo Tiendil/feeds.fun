@@ -2,12 +2,19 @@
 <div>
   <ul style="list-style: none; padding: 0; margin: 0;">
     <li v-for="tag of displayedTags"
-        style="overflow: hidden; text-overflow: ellipsis;"
+        class="filter-element"
         :key="tag">
-      <value-tag :value="tag"
+       <value-tag :value="tag"
                  :count="tags[tag]"
                  :selected="!!selectedTags[tag]"
-                 @tag:clicked="onTagClicked"/>
+                  @tag:clicked="onTagClicked">
+         <template #start>
+           <div v-if="!!selectedTags[tag]" style="display: inline-block; margin-right: 0.25rem;">
+             <a v-if="entriesStore.requiredTags[tag]" href="#" @click.prevent="switchToExcluded(tag)">[X]</a>
+             <a v-if="entriesStore.excludedTags[tag]" href="#" @click.prevent="switchToRequired(tag)">[V]</a>
+           </div>
+         </template>
+       </value-tag>
     </li>
   </ul>
 </div>
@@ -62,11 +69,21 @@ const displayedTags = computed(() => {
 
 function onTagClicked(tag: string) {
     if (!!selectedTags.value[tag]) {
-        delete selectedTags.value[tag];
+        entriesStore.resetTag({tag: tag});
+        selectedTags.value[tag] = false;
     }
     else {
+        entriesStore.requireTag({tag: tag});
         selectedTags.value[tag] = true;
     }
+}
+
+function switchToExcluded(tag: string) {
+    entriesStore.excludeTag({tag: tag});
+}
+
+function switchToRequired(tag: stirng) {
+    entriesStore.requireTag({tag: tag});
 }
 
 const selectedTagsList = computed(() => {
@@ -84,4 +101,15 @@ const selectedTagsList = computed(() => {
 
 </script>
 
-<style></style>
+<style scoped>
+  .filter-element {
+      overflow: hidden;
+      white-space: nowrap;
+  }
+
+  .filter-element value-tag {
+      overflow: hidden;
+      text-overflow: ellipsis;
+  }
+
+</style>

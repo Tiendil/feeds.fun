@@ -1,7 +1,12 @@
 <template>
 <div :class="classes"
      @click.prevent="onClick()">
+
+  <slot name="start">
+  </slot>
+
   <span v-if="count">[{{count}}]</span>
+
   {{value}}
 </div>
 </template>
