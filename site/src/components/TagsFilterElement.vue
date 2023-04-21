@@ -8,7 +8,7 @@
 
   <value-tag :value="tag"
              :count="count"
-             :selected="selected"
+             :mode="mode"
              @tag:clicked="onTagClicked">
   </value-tag>
 </li>
@@ -25,6 +25,20 @@ const properties = defineProps<{ tag: string,
                                  selected: boolean }>();
 
 const emit = defineEmits(["tag:clicked"]);
+
+const mode = computed(() => {
+    if (entriesStore.requiredTags[properties.tag]) {
+        return "required";
+    }
+    else if (entriesStore.excludedTags[properties.tag]) {
+        return "excluded";
+    }
+    else if (properties.selected) {
+        return "selected";
+    }
+
+    return null;
+});
 
 function onTagClicked(tag: string) {
     if (properties.selected) {

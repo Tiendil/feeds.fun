@@ -19,15 +19,20 @@ const entriesStore = useEntriesStore();
 
 const properties = defineProps<{value: string,
                                 count?: number|null,
-                                selected?: bool}>();
+                                mode?: string|null}>();
 
 const emit = defineEmits(["tag:clicked"]);
 
 const classes = computed(() => {
-    return {
-        "tag": true,
-        "selected": properties.selected
+    const result = {
+        "tag": true
     };
+
+    if (properties.mode) {
+        result[properties.mode] = true;
+    }
+
+    return result;
 });
 
 function onClick() {
@@ -45,7 +50,15 @@ function onClick() {
 }
 
 .tag.selected {
-  background-color: #c1c1ff;
+  background-color: #ccccff;
+}
+
+.tag.required {
+  background-color: #ccffcc;
+}
+
+.tag.excluded {
+  background-color: #ffcccc;
 }
 
 </style>

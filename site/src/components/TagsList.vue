@@ -8,7 +8,7 @@
 <template v-for="tag of displayedTags"
           :key="tag">
   <value-tag :value="tag"
-             :selected="!!selectedTags[tag]"
+             :mode="!!selectedTags[tag] ? 'selected' : null"
              @tag:clicked="onTagClicked"/>&nbsp;
 </template>
 
