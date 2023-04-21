@@ -54,6 +54,7 @@ export class Entry {
     readonly tags: string[];
     readonly markers: e.Marker[];
     readonly score: number;
+    readonly scoreToZero: number;
     readonly publishedAt: Date;
     readonly catalogedAt: Date;
     body: string|null;
@@ -72,6 +73,8 @@ export class Entry {
         this.publishedAt = publishedAt;
         this.catalogedAt = catalogedAt;
         this.body = body;
+
+        this.scoreToZero = -Math.abs(score);
     }
 
     setMarker(marker: e.Marker): void {
