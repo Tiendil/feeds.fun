@@ -2,10 +2,10 @@
 <h2>
   News
 
-  <span v-if="displayedEntries.length > 0">[{{displayedEntries.length}}]</span>
+  <span v-if="entriesNumber > 0">[{{entriesNumber}}]</span>
 </h2>
 
-<entries-list :entriesIds="displayedEntries"
+<entries-list :entriesIds="entriesStore.entriesReport"
               :time-field="timeField"
               :show-tags="globalSettings.showEntriesTags"
               :showFromStart=100
@@ -27,37 +27,12 @@ const entriesStore = useEntriesStore();
 
 globalSettings.mainPanelMode = e.MainPanelMode.Entries;
 
-const timeField = computed(() => {
-    return e.EntriesOrderProperties.get(globalSettings.entriesOrder).timeField;
+const entriesNumber = computed(() => {
+    return entriesStore.entriesReport.length;
 });
 
-const displayedEntries = computed(() => {
-    const entries = entriesStore.entries;
-
-    let processedEntries = entriesStore.entriesReport.slice();
-
-    if (!globalSettings.showRead) {
-        processedEntries = processedEntries.filter((entryId) => {
-            return !entries[entryId].hasMarker(e.Marker.Read);
-        });
-    }
-
-    return processedEntries.sort((a, b) => {
-        const field = e.EntriesOrderProperties.get(globalSettings.entriesOrder).orderField;
-
-        const entryA = entries[a];
-        const entryB = entries[b];
-
-        if (entryA[field] < entryB[field]) {
-            return 1;
-        }
-
-        if (entryA[field] > entryB[field]) {
-            return -1;
-        }
-
-        return 0;
-    });
+const timeField = computed(() => {
+    return e.EntriesOrderProperties.get(globalSettings.entriesOrder).timeField;
 });
 
 </script>

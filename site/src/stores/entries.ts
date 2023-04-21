@@ -26,7 +26,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
         entries.value[entry.id] = entry;
     }
 
-    const entriesReport = computedAsync(async () => {
+    const loadedEntriesReport = computedAsync(async () => {
         const period = e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod).seconds;
         const loadedEntries = await api.getLastEntries({period: period,
                                                         dataVersion: globalSettings.dataVersion});
@@ -42,6 +42,35 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
         return report;
 
+    }, []);
+
+    const entriesReport = computedAsync(async () => {
+        let report = loadedEntriesReport.value.slice();
+
+        if (!globalSettings.showRead) {
+            report = report.filter((entryId) => {
+                return !entries.value[entryId].hasMarker(e.Marker.Read);
+            });
+        }
+
+        report = report.sort((a, b) => {
+            const field = e.EntriesOrderProperties.get(globalSettings.entriesOrder).orderField;
+
+            const entryA = entries.value[a];
+            const entryB = entries.value[b];
+
+            if (entryA[field] < entryB[field]) {
+                return 1;
+            }
+
+            if (entryA[field] > entryB[field]) {
+                return -1;
+            }
+
+            return 0;
+        });
+
+        return report;
     }, []);
 
     const reportTagsCount = computed(() => {

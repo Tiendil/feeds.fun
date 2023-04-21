@@ -27,9 +27,8 @@ const displayedTags = computed(() => {
 
     let values = Object.keys(properties.tags);
 
-    values = values.filter((tag) => {
-        return properties.tags[tag] > 1;
-    });
+    // TODO: move to configs or even to the side panel
+    values = values.slice(0, 100);
 
     if (values.length === 0) {
         return [];
