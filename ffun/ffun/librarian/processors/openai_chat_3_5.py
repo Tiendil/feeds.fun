@@ -4,9 +4,9 @@ import textwrap
 from typing import Any
 
 import openai
-import structlog
 import typer
 from bs4 import BeautifulSoup
+from ffun.core import logging
 from ffun.library.entities import Entry
 from slugify import slugify
 
@@ -14,7 +14,7 @@ from .. import openai_client as oc
 from ..settings import settings
 from . import base
 
-logger = structlog.getLogger(__name__)
+logger = logging.get_module_logger()
 
 
 openai.api_key = settings.openai.api_key

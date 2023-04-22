@@ -3,13 +3,13 @@ import uuid
 from typing import Iterable
 
 import psycopg
-import structlog
 from bidict import bidict
+from ffun.core import logging
 from ffun.core.postgresql import execute
 
 from .entities import Rule
 
-logger = structlog.getLogger(__name__)
+logger = logging.get_module_logger()
 
 
 def normalize_tags(tags: Iterable[int]) -> list[int]:

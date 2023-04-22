@@ -1,7 +1,7 @@
 
 import datetime
 
-import structlog
+from ffun.core import logging
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
 from ffun.ontology import domain as o_domain
@@ -9,7 +9,7 @@ from ffun.ontology import domain as o_domain
 from . import openai_client, tags
 from .processors.base import Processor
 
-logger = structlog.getLogger(__name__)
+logger = logging.get_module_logger()
 
 
 # TODO: save processing errors in the database

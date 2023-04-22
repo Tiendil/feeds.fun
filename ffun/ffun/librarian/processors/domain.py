@@ -1,11 +1,11 @@
 from urllib.parse import urlparse
 
-import structlog
+from ffun.core import logging
 from ffun.library.entities import Entry
 
 from . import base
 
-logger = structlog.getLogger(__name__)
+logger = logging.get_module_logger()
 
 
 class Processor(base.Processor):

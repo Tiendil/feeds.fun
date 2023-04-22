@@ -1,9 +1,9 @@
 import asyncio
 from typing import Any
 
-import structlog
+from . import logging
 
-logger = structlog.getLogger(__name__)
+logger = logging.get_module_logger()
 
 
 class InfiniteTask:

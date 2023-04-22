@@ -1,6 +1,8 @@
 import datetime
 import enum
+import inspect
 import logging
+import os
 import uuid
 from typing import Any, Iterable
 
@@ -101,9 +103,7 @@ def processors_list():
         structlog.processors.add_log_level,
         structlog.processors.StackInfoRenderer(),
         structlog.dev.set_exc_info,
-        # structlog.stdlib.add_logger_name,
         structlog.processors.TimeStamper(fmt="ISO", utc=True, key="timestamp"),
-        # structlog.processors.UnicodeDecoder(),
         create_formatter(),
         structlog.dev.ConsoleRenderer() if settings.renderer == Renderer.console else None,
         structlog.processors.JSONRenderer() if settings.renderer == Renderer.json else None,
@@ -118,4 +118,10 @@ def initialize() -> None:
         wrapper_class=structlog.make_filtering_bound_logger(settings.structlog_level),
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),
-        cache_logger_on_first_use=False)
+        cache_logger_on_first_use=True)
+
+
+def get_module_logger():
+    caller_frame = inspect.currentframe().f_back
+    module = inspect.getmodule(caller_frame)
+    return structlog.get_logger(module=module.__name__)

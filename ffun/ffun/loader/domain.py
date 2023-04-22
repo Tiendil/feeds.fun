@@ -1,11 +1,11 @@
 import httpx
-import structlog
+from ffun.core import logging
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedError, FeedState
 from ffun.library import domain as l_domain
 from ffun.parsers.domain import parse_feed
 
-logger = structlog.getLogger(__name__)
+logger = logging.get_module_logger()
 
 
 async def process_feed(feed: Feed) -> None:

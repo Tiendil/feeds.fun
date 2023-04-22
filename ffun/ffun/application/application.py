@@ -2,7 +2,6 @@ import asyncio
 import contextlib
 
 import fastapi
-import structlog
 from fastapi.middleware.cors import CORSMiddleware
 from ffun.api import http_handlers as api_http_handlers
 from ffun.core import logging, postgresql
@@ -12,7 +11,7 @@ from ffun.loader.background_loader import FeedsLoader
 _app = None
 
 
-logger = structlog.get_logger(__name__)
+logger = logging.get_module_logger()
 
 
 @contextlib.asynccontextmanager

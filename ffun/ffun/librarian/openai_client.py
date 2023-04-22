@@ -5,14 +5,14 @@ import math
 
 import async_lru
 import openai
-import structlog
 import tiktoken
 import typer
+from ffun.core import logging
 from slugify import slugify
 
 from .settings import settings
 
-logger = structlog.getLogger(__name__)
+logger = logging.get_module_logger()
 
 cli = typer.Typer()
 

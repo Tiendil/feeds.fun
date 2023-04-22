@@ -3,12 +3,12 @@ import uuid
 from typing import Any, Iterable
 
 import psycopg
-import structlog
+from ffun.core import logging
 from ffun.core.postgresql import execute
 
 from .entities import Entry
 
-logger = structlog.getLogger(__name__)
+logger = logging.get_module_logger()
 
 
 sql_insert_entry = '''

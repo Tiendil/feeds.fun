@@ -3,12 +3,12 @@ import datetime
 import uuid
 
 import psycopg
-import structlog
+from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 
 from .entities import Feed, FeedError, FeedState
 
-logger = structlog.getLogger(__name__)
+logger = logging.get_module_logger()
 
 
 def row_to_feed(row: dict) -> Feed:

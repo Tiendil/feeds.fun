@@ -1,9 +1,6 @@
-import structlog
 from ffun.library.entities import Entry
 
 from . import base
-
-logger = structlog.getLogger(__name__)
 
 
 # TODO: normalize tags

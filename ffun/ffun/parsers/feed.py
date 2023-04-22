@@ -3,10 +3,10 @@ import uuid
 from typing import Any, Iterable
 
 import feedparser
-import structlog
+from ffun.core import logging
 from ffun.library.entities import Entry
 
-logger = structlog.get_logger(__name__)
+logger = logging.get_module_logger()
 
 
 def _parse_tags(tags: Iterable[dict[str, Any]]) -> set[str]:
