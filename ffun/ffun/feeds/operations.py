@@ -1,14 +1,14 @@
 
 import datetime
-import logging
 import uuid
 
 import psycopg
+import structlog
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 
 from .entities import Feed, FeedError, FeedState
 
-logger = logging.getLogger(__name__)
+logger = structlog.getLogger(__name__)
 
 
 def row_to_feed(row: dict) -> Feed:
@@ -35,8 +35,8 @@ async def save_feeds(feeds: list[Feed]) -> None:
                           {'id': feed.id,
                            'url': feed.url,
                            'state': feed.state})
-        except psycopg.errors.UniqueViolation as e:
-            logger.warning('unique violation while saving feed %s', e)
+        except psycopg.errors.UniqueViolation:
+            logger.warning('unique_violation_while_saving_feed', feed_id=feed.id)
 
 
 @run_in_transaction

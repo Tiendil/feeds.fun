@@ -1,13 +1,13 @@
 import asyncio
 import datetime
-import logging
 
+import structlog
 from ffun.core.background_tasks import InfiniteTask
 from ffun.feeds import domain as f_domain
 from ffun.loader import domain
 from ffun.loader.settings import settings
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class FeedsLoader(InfiniteTask):

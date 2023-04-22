@@ -1,13 +1,13 @@
 
-import logging
 import uuid
 from typing import Iterable
 
 import psycopg
+import structlog
 from bidict import bidict
 from ffun.core.postgresql import execute
 
-logger = logging.getLogger(__name__)
+logger = structlog.getLogger(__name__)
 
 
 async def get_tags_mappig() -> bidict[str, int]:

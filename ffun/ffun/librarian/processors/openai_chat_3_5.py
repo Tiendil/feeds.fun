@@ -1,10 +1,10 @@
 import json
-import logging
 import re
 import textwrap
 from typing import Any
 
 import openai
+import structlog
 import typer
 from bs4 import BeautifulSoup
 from ffun.library.entities import Entry
@@ -14,13 +14,10 @@ from .. import openai_client as oc
 from ..settings import settings
 from . import base
 
-logger = logging.getLogger(__name__)
+logger = structlog.getLogger(__name__)
 
 
 openai.api_key = settings.openai.api_key
-
-
-logger = logging.getLogger(__name__)
 
 
 # TODO: "programming-language" vs "programming-languages".
@@ -98,7 +95,7 @@ def extract_tags_from_valid_json(text: str) -> set[str]:
 
 
 def extract_tags_from_invalid_json(text: str) -> set[str]:
-    logger.warning('Try to extract tags from an invalid JSON: %s', text)
+    logger.warning('try_to_extract_tags_from_an_invalid_ json', broken_source=text)
 
     # search all strings, believing that
     parts = text.split('"')
@@ -115,7 +112,7 @@ def extract_tags_from_invalid_json(text: str) -> set[str]:
 
         is_tag = not is_tag
 
-    logger.warning('Tags extracted: %s', tags)
+    logger.info('tags_extracted', tags=tags)
 
     return tags
 

@@ -1,18 +1,18 @@
 import asyncio
 import functools
 import json
-import logging
 import math
 
 import async_lru
 import openai
+import structlog
 import tiktoken
 import typer
 from slugify import slugify
 
 from .settings import settings
 
-logger = logging.getLogger(__name__)
+logger = structlog.getLogger(__name__)
 
 cli = typer.Typer()
 

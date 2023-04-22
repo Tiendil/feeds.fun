@@ -1,13 +1,13 @@
-import logging
 import uuid
 from typing import Iterable
 
 import psycopg
+import structlog
 from ffun.core.postgresql import execute
 
 from .entities import Marker
 
-logger = logging.getLogger(__name__)
+logger = structlog.getLogger(__name__)
 
 
 async def set_marker(user_id: uuid.UUID, marker: Marker, entry_id: uuid.UUID) -> None:

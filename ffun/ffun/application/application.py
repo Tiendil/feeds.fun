@@ -1,23 +1,18 @@
 import asyncio
 import contextlib
-import logging
 
 import fastapi
+import structlog
 from fastapi.middleware.cors import CORSMiddleware
 from ffun.api import http_handlers as api_http_handlers
-from ffun.core import postgresql
+from ffun.core import logging, postgresql
 from ffun.librarian.background_processors import create_background_processors
 from ffun.loader.background_loader import FeedsLoader
 
 _app = None
 
 
-logger = logging.getLogger(__name__)
-
-
-def initialize_logging() -> None:
-    logging.basicConfig(level=logging.INFO)
-    logger.info('Logging initialized')
+logger = structlog.get_logger(__name__)
 
 
 @contextlib.asynccontextmanager
@@ -37,7 +32,7 @@ async def use_postgresql():
 
 @contextlib.asynccontextmanager
 async def use_api(app: fastapi.FastAPI):
-    logger.info('API enabled')
+    logger.info('api_enabled')
     app.include_router(api_http_handlers.router)
 
     yield
@@ -45,7 +40,7 @@ async def use_api(app: fastapi.FastAPI):
 
 @contextlib.asynccontextmanager
 async def use_loader(app: fastapi.FastAPI):
-    logger.info('Feeds Loader enabled')
+    logger.info('feeds_loader_enabled')
     app.state.feeds_loader = FeedsLoader(name='ffun_feeds_loader',
                                          delay_between_runs=1)
 
@@ -59,7 +54,7 @@ async def use_loader(app: fastapi.FastAPI):
 
 @contextlib.asynccontextmanager
 async def use_librarian(app: fastapi.FastAPI):
-    logger.info('Librarian enabled')
+    logger.info('librarian_enabled')
 
     app.state.entries_processors = create_background_processors()
 
@@ -74,7 +69,7 @@ async def use_librarian(app: fastapi.FastAPI):
 
 
 def create_app(api: bool, loader: bool, librarian: bool):
-    initialize_logging()
+    logging.initialize()
 
     @contextlib.asynccontextmanager
     async def lifespan(app: fastapi.FastAPI):

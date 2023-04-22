@@ -1,15 +1,15 @@
 
-import logging
 import uuid
 from typing import Iterable
 
 import psycopg
+import structlog
 from bidict import bidict
 from ffun.core.postgresql import execute
 
 from .entities import Rule
 
-logger = logging.getLogger(__name__)
+logger = structlog.getLogger(__name__)
 
 
 def normalize_tags(tags: Iterable[int]) -> list[int]:
@@ -37,7 +37,7 @@ async def create_rule(user_id: uuid.UUID, tags: Iterable[int], score: int) -> No
     try:
         await execute(sql, {'id': uuid.uuid4(), 'user_id': user_id, 'tags': tags, 'key': key, 'score': score})
     except psycopg.errors.UniqueViolation:
-        logger.warning('Rule already exists: %s', key)
+        logger.warning('rule_already_exists', key=key)
 
 
 async def delete_rule(user_id: uuid.UUID, rule_id: uuid.UUID) -> None:

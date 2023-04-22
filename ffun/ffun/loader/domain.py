@@ -1,12 +1,11 @@
-import logging
-
 import httpx
+import structlog
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedError, FeedState
 from ffun.library import domain as l_domain
 from ffun.parsers.domain import parse_feed
 
-logger = logging.getLogger(__name__)
+logger = structlog.getLogger(__name__)
 
 
 async def process_feed(feed: Feed) -> None:
@@ -17,7 +16,7 @@ async def process_feed(feed: Feed) -> None:
         async with httpx.AsyncClient() as client:
             response = await client.get(feed.url, follow_redirects=True)
     except Exception:
-        logging.exception('Error while loading feed %s', feed)
+        logger.exception('error_while_loading_feed', feed=feed)
         await f_domain.mark_feed_as_failed(feed.id,
                                            state=FeedState.damaged,
                                            error=FeedError.network_unknown)
@@ -26,7 +25,7 @@ async def process_feed(feed: Feed) -> None:
     try:
         content = response.content.decode(response.encoding)
     except Exception:
-        logging.exception('Error while loading feed %s', feed)
+        logger.exception('error_while_decoding_feed', feed=feed)
         await f_domain.mark_feed_as_failed(feed.id,
                                            state=FeedState.damaged,
                                            error=FeedError.parsing_encoding_error)
@@ -35,7 +34,7 @@ async def process_feed(feed: Feed) -> None:
     try:
         entries = parse_feed(feed.id, content)
     except Exception:
-        logging.exception('Error while loading feed %s', feed)
+        logger.exception('error_while_parsing_feed', feed=feed)
         await f_domain.mark_feed_as_failed(feed.id,
                                            state=FeedState.damaged,
                                            error=FeedError.parsing_format_error)
@@ -52,4 +51,4 @@ async def process_feed(feed: Feed) -> None:
 
     await f_domain.mark_feed_as_loaded(feed.id)
 
-    logger.info("Loaded %s entries, stored entries: %s", len(entries), len(entries_to_store))
+    logger.info("entries_loaded", loaded_number=len(entries), stored_number=len(entries_to_store))

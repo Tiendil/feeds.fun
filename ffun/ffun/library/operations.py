@@ -1,14 +1,14 @@
 import datetime
-import logging
 import uuid
 from typing import Any, Iterable
 
 import psycopg
+import structlog
 from ffun.core.postgresql import execute
 
 from .entities import Entry
 
-logger = logging.getLogger(__name__)
+logger = structlog.getLogger(__name__)
 
 
 sql_insert_entry = '''
@@ -36,8 +36,8 @@ async def catalog_entries(entries: Iterable[Entry]) -> None:
                            'external_url': entry.external_url,
                            'external_tags': list(entry.external_tags),
                            'published_at': entry.published_at})
-        except psycopg.errors.UniqueViolation as e:
-            logger.warning('racing is possible: unique violation while saving entry %s', e)
+        except psycopg.errors.UniqueViolation:
+            logger.warning('racing_is_possible_unique_violation_while_saving_entry', entry_id=entry.id)
 
 
 async def check_stored_entries_by_external_ids(external_ids: Iterable[str]) -> set[str]:

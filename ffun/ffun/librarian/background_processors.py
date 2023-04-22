@@ -1,6 +1,6 @@
 import asyncio
-import logging
 
+import structlog
 from ffun.core.background_tasks import InfiniteTask
 from ffun.library import domain as l_domain
 
@@ -10,7 +10,7 @@ from .processors.domain import Processor as DomainProcessor
 from .processors.native_tags import Processor as NativeTagsProcessor
 from .processors.openai_chat_3_5 import Processor as OpenAIChat35Processor
 
-logger = logging.getLogger(__name__)
+logger = structlog.getLogger(__name__)
 
 
 class ProcessorInfo:
