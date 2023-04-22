@@ -10,7 +10,7 @@ logger = structlog.getLogger(__name__)
 
 async def process_feed(feed: Feed) -> None:
 
-    logger.info("Loading feed %s", feed)
+    logger.info("loading_feed", **feed.dict())
 
     try:
         async with httpx.AsyncClient() as client:
