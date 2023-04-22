@@ -8,8 +8,14 @@ import pydantic
 import structlog
 
 
+class Renderer(str, enum.Enum):
+    console = "console"
+    json = "json"
+
+
 class Settings(pydantic.BaseSettings):  # type: ignore
     log_evel: str = "INFO"
+    renderer: Renderer = Renderer.console
 
     class Config:
         env_nested_delimiter: str = "__"
@@ -99,7 +105,8 @@ def processors_list():
         structlog.processors.TimeStamper(fmt="ISO", utc=True, key="timestamp"),
         # structlog.processors.UnicodeDecoder(),
         create_formatter(),
-        structlog.dev.ConsoleRenderer()
+        structlog.dev.ConsoleRenderer() if settings.renderer == Renderer.console else None,
+        structlog.processors.JSONRenderer() if settings.renderer == Renderer.json else None,
     ]
 
     return [p for p in processors_list if p is not None]
