@@ -1,5 +1,6 @@
 import datetime
 import enum
+import functools
 import inspect
 import logging
 import os
@@ -8,6 +9,7 @@ from typing import Any, Iterable
 
 import pydantic
 import structlog
+from structlog.contextvars import bound_contextvars
 
 
 class Renderer(str, enum.Enum):
@@ -119,8 +121,8 @@ def create_formatter():
 def processors_list():
 
     processors_list = [
-        info_extracter,
         structlog.contextvars.merge_contextvars,
+        info_extracter,
         structlog.processors.add_log_level,
         structlog.processors.StackInfoRenderer(),
         structlog.dev.set_exc_info,
@@ -146,3 +148,24 @@ def get_module_logger():
     caller_frame = inspect.currentframe().f_back
     module = inspect.getmodule(caller_frame)
     return structlog.get_logger(module=module.__name__)
+
+
+def bound_function(skip=()):
+
+    def wrapper(func):
+        @functools.wraps(func)
+        def wrapped(**kwargs):
+            with bound_contextvars(**{k: v for k, v in kwargs.items() if k not in skip}):
+                return func(**kwargs)
+
+        @functools.wraps(func)
+        async def async_wrapped(**kwargs):
+            with bound_contextvars(**{k: v for k, v in kwargs.items() if k not in skip}):
+                return await func(**kwargs)
+
+        if inspect.iscoroutinefunction(func):
+            return async_wrapped
+
+        return wrapped
+
+    return wrapper

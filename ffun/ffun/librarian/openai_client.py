@@ -107,7 +107,8 @@ async def multiple_requests(model,  # noqa
     # TODO: rewrite to gather
     results = []
 
-    for request_messages in messages:
+    for i, request_messages in enumerate(messages):
+        logger.info('request', number=i, total=len(messages))
         result = await request(model=model,
                                messages=request_messages,
                                max_tokens=max_return_tokens,

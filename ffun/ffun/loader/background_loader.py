@@ -22,6 +22,6 @@ class FeedsLoader(InfiniteTask):
         feeds = await f_domain.get_next_feeds_to_load(number=self._loaders_number,
                                                       loaded_before=datetime.datetime.utcnow() - settings.minimum_period)
 
-        tasks = [domain.process_feed(feed) for feed in feeds]
+        tasks = [domain.process_feed(feed=feed) for feed in feeds]
 
         await asyncio.gather(*tasks, return_exceptions=True)

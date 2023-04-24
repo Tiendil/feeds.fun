@@ -97,25 +97,24 @@ async def parse_content(feed_id: uuid.UUID, content: str) -> list[l_entities.Ent
         raise errors.LoadError(feed_error_code=FeedError.parsing_format_error) from e
 
 
+@logging.bound_function()
 async def process_feed(feed: Feed) -> None:
 
-    logger.info("loading_feed", feed=feed)
+    logger.info("loading_feed")
 
-    with bound_contextvars(feed_url=feed.url,
-                           feed_id=feed.id):
-        try:
-            response = await load_content(feed.url)
-            content = await decode_content(response)
-            entries = parse_feed(feed.id, content)
-        except errors.LoadError as e:
-            await f_domain.mark_feed_as_failed(feed.id,
-                                               state=FeedState.damaged,
-                                               error=e.feed_error_code)
-            return
+    try:
+        response = await load_content(feed.url)
+        content = await decode_content(response)
+        entries = parse_feed(feed.id, content)
+    except errors.LoadError as e:
+        await f_domain.mark_feed_as_failed(feed.id,
+                                           state=FeedState.damaged,
+                                           error=e.feed_error_code)
+        return
 
     external_ids = [entry.external_id for entry in entries]
 
-    stored_entries_external_ids  = await l_domain.check_stored_entries_by_external_ids(external_ids)
+    stored_entries_external_ids = await l_domain.check_stored_entries_by_external_ids(external_ids)
 
     entries_to_store = [entry for entry in entries
                         if entry.external_id not in stored_entries_external_ids]

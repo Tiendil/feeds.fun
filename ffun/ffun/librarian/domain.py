@@ -13,6 +13,7 @@ logger = logging.get_module_logger()
 
 
 # TODO: save processing errors in the database
+@logging.bound_function(skip=('processor',))
 async def process_entry(processor_id: int, processor: Processor, entry: Entry) -> None:
     logger.info('dicover_tags', entry=entry, processor_id=processor_id)
 

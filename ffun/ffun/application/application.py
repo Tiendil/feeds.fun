@@ -16,17 +16,21 @@ logger = logging.get_module_logger()
 
 @contextlib.asynccontextmanager
 async def use_postgresql():
+    logger.info('initialize_postgresql')
     await postgresql.prepare_pool(name='ffun_pool',
                                   dsn='postgresql://ffun:ffun@localhost/ffun',
                                   min_size=20,
                                   max_size=None,
                                   timeout=1,
                                   num_workers=1)
+    logger.info('postgresql_initialized')
 
     try:
         yield
     finally:
+        logger.info('deinitialize_postgresql')
         await postgresql.destroy_pool()
+        logger.info('postgresql_deinitialized')
 
 
 @contextlib.asynccontextmanager
@@ -34,7 +38,11 @@ async def use_api(app: fastapi.FastAPI):
     logger.info('api_enabled')
     app.include_router(api_http_handlers.router)
 
+    logger.info('api_initialized')
+
     yield
+
+    logger.info('api_deinitialized')
 
 
 @contextlib.asynccontextmanager
@@ -45,10 +53,14 @@ async def use_loader(app: fastapi.FastAPI):
 
     app.state.feeds_loader.start()
 
+    logger.info('feeds_loader_initialized')
+
     try:
         yield
     finally:
+        logger.info('deinitialize_feeds_loader')
         await app.state.feeds_loader.stop()
+        logger.info('feeds_loader_deinitialized')
 
 
 @contextlib.asynccontextmanager
@@ -60,15 +72,21 @@ async def use_librarian(app: fastapi.FastAPI):
     for processor in app.state.entries_processors:
         processor.start()
 
+    logger.info('librarian_initialized')
+
     try:
         yield
     finally:
-        asyncio.gather(*[processor.stop() for processor in app.state.entries_processors],
-                       return_exceptions=True)
+        logger.info('deinitialize_librarian')
+        await asyncio.gather(*[processor.stop() for processor in app.state.entries_processors],
+                             return_exceptions=True)
+        logger.info('librarian_deinitialized')
 
 
 def create_app(api: bool, loader: bool, librarian: bool):
     logging.initialize()
+
+    logger.info('create_app')
 
     @contextlib.asynccontextmanager
     async def lifespan(app: fastapi.FastAPI):
@@ -89,6 +107,8 @@ def create_app(api: bool, loader: bool, librarian: bool):
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    logger.info('app_created')
 
     return app
 
