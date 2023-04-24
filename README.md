@@ -8,6 +8,9 @@
 - [ ] fix `network-domain-www-theatlantic-com`
 - [ ] common mechanism to refresh lists of news, feeds, rules on their changes
 - [x] statistics about tags
+- [ ] feeds on a user level (not global)
+- [ ] add feed throught gui
+- [ ] import opml throught gui
 
 # Errors
 
