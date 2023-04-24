@@ -4,8 +4,7 @@
 - [x] scoring
 - [x] scoring rules editing
 - [ ] do not run openai on the old entries
-- [ ] use structlog
-- [ ] search for unprocessed entries and reprocess them periodically
+- [x] use structlog
 - [x] smart tags ordering in gui (by popularity? by module of score?)
 - [ ] fix `network-domain-www-theatlantic-com`
 - [ ] common mechanism to refresh lists of news, feeds, rules on their changes
@@ -45,6 +44,7 @@
 - [ ] some styles?
 - [ ] minor mobile support?
 - [ ] save global settings on backend?
+- [ ] search for unprocessed entries and reprocess them periodically
 
 # Backlog:
 

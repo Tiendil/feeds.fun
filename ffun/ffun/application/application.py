@@ -1,80 +1,92 @@
 import asyncio
 import contextlib
-import logging
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
 from ffun.api import http_handlers as api_http_handlers
-from ffun.core import postgresql
+from ffun.core import logging, postgresql
 from ffun.librarian.background_processors import create_background_processors
 from ffun.loader.background_loader import FeedsLoader
 
 _app = None
 
 
-logger = logging.getLogger(__name__)
-
-
-def initialize_logging() -> None:
-    logging.basicConfig(level=logging.INFO)
-    logger.info('Logging initialized')
+logger = logging.get_module_logger()
 
 
 @contextlib.asynccontextmanager
 async def use_postgresql():
+    logger.info('initialize_postgresql')
     await postgresql.prepare_pool(name='ffun_pool',
                                   dsn='postgresql://ffun:ffun@localhost/ffun',
                                   min_size=20,
                                   max_size=None,
                                   timeout=1,
                                   num_workers=1)
+    logger.info('postgresql_initialized')
 
     try:
         yield
     finally:
+        logger.info('deinitialize_postgresql')
         await postgresql.destroy_pool()
+        logger.info('postgresql_deinitialized')
 
 
 @contextlib.asynccontextmanager
 async def use_api(app: fastapi.FastAPI):
-    logger.info('API enabled')
+    logger.info('api_enabled')
     app.include_router(api_http_handlers.router)
 
+    logger.info('api_initialized')
+
     yield
+
+    logger.info('api_deinitialized')
 
 
 @contextlib.asynccontextmanager
 async def use_loader(app: fastapi.FastAPI):
-    logger.info('Feeds Loader enabled')
+    logger.info('feeds_loader_enabled')
     app.state.feeds_loader = FeedsLoader(name='ffun_feeds_loader',
                                          delay_between_runs=1)
 
     app.state.feeds_loader.start()
 
+    logger.info('feeds_loader_initialized')
+
     try:
         yield
     finally:
+        logger.info('deinitialize_feeds_loader')
         await app.state.feeds_loader.stop()
+        logger.info('feeds_loader_deinitialized')
 
 
 @contextlib.asynccontextmanager
 async def use_librarian(app: fastapi.FastAPI):
-    logger.info('Librarian enabled')
+    logger.info('librarian_enabled')
 
     app.state.entries_processors = create_background_processors()
 
     for processor in app.state.entries_processors:
         processor.start()
 
+    logger.info('librarian_initialized')
+
     try:
         yield
     finally:
-        asyncio.gather(*[processor.stop() for processor in app.state.entries_processors],
-                       return_exceptions=True)
+        logger.info('deinitialize_librarian')
+        await asyncio.gather(*[processor.stop() for processor in app.state.entries_processors],
+                             return_exceptions=True)
+        logger.info('librarian_deinitialized')
 
 
 def create_app(api: bool, loader: bool, librarian: bool):
-    initialize_logging()
+    logging.initialize()
+
+    logger.info('create_app')
 
     @contextlib.asynccontextmanager
     async def lifespan(app: fastapi.FastAPI):
@@ -95,6 +107,8 @@ def create_app(api: bool, loader: bool, librarian: bool):
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    logger.info('app_created')
 
     return app
 

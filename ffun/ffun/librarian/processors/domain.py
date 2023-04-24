@@ -1,11 +1,11 @@
-import logging
 from urllib.parse import urlparse
 
+from ffun.core import logging
 from ffun.library.entities import Entry
 
 from . import base
 
-logger = logging.getLogger(__name__)
+logger = logging.get_module_logger()
 
 
 class Processor(base.Processor):
@@ -19,7 +19,7 @@ class Processor(base.Processor):
             parsed_url = urlparse(entry.external_url)
         except Exception:
             # TODO: log error somewhere, link it to the entry
-            logger.exception("Failed to parse URL: %s", entry.external_url)
+            logger.exception("failed_to_parse_url", url=entry.external_url)
             return set()
 
         domain = parsed_url.netloc

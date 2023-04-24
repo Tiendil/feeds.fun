@@ -1,10 +1,6 @@
-import logging
-
 from ffun.library.entities import Entry
 
 from . import base
-
-logger = logging.getLogger(__name__)
 
 
 # TODO: normalize tags

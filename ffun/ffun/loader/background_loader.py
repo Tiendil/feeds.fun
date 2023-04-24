@@ -1,13 +1,13 @@
 import asyncio
 import datetime
-import logging
 
+from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
 from ffun.feeds import domain as f_domain
 from ffun.loader import domain
 from ffun.loader.settings import settings
 
-logger = logging.getLogger(__name__)
+logger = logging.get_module_logger()
 
 
 class FeedsLoader(InfiniteTask):
@@ -22,6 +22,6 @@ class FeedsLoader(InfiniteTask):
         feeds = await f_domain.get_next_feeds_to_load(number=self._loaders_number,
                                                       loaded_before=datetime.datetime.utcnow() - settings.minimum_period)
 
-        tasks = [domain.process_feed(feed) for feed in feeds]
+        tasks = [domain.process_feed(feed=feed) for feed in feeds]
 
         await asyncio.gather(*tasks, return_exceptions=True)

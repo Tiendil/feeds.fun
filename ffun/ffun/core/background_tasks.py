@@ -1,8 +1,9 @@
 import asyncio
-import logging
 from typing import Any
 
-logger = logging.getLogger(__name__)
+from . import logging
+
+logger = logging.get_module_logger()
 
 
 class InfiniteTask:
@@ -76,7 +77,7 @@ class InfiniteTask:
         self._stop_requested = False
 
     async def _run(self) -> None:
-        logger.info('start background task %s', self._name)
+        logger.info('start_background_task', task_name=self._name)
 
         while not self._stop_requested:
             try:
@@ -84,16 +85,16 @@ class InfiniteTask:
 
                 self._run_requested.clear()
 
-                logger.debug('running background task %s', self._name)
+                logger.debug('running_background_task', task_name=self._name)
 
                 await self.single_run()
 
                 if self._stop_requested:
-                    logger.info('stop background task %s', self._name)
+                    logger.info('stop_background_task', task_name=self._name)
                     break
 
             except Exception:
-                logger.exception('error in background task %s', self._name)
+                logger.exception('error_in_background_task', task_name=self._name)
 
                 # something bad happened with the infrastructure
                 # there are now points in continue working
