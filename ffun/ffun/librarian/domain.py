@@ -14,7 +14,7 @@ logger = logging.get_module_logger()
 
 # TODO: save processing errors in the database
 async def process_entry(processor_id: int, processor: Processor, entry: Entry) -> None:
-    logger.info('dicover_tags', entry_id=entry.id, processor_id=processor_id)
+    logger.info('dicover_tags', entry=entry, processor_id=processor_id)
 
     found_tags = await processor.process(entry)
 

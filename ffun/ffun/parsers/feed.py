@@ -23,10 +23,6 @@ def _parse_tags(tags: Iterable[dict[str, Any]]) -> set[str]:
 
 
 def _should_skip(entry: Any) -> bool:
-    if entry.get('id') is None:
-        logger.warning('feed_does_not_has_id_field')
-        return True
-
     if entry.get('link') is None:
         logger.warning('feed_does_not_has_link_field')
         return True

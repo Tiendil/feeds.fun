@@ -89,6 +89,26 @@ class ProcessorFormatter:
         return event_dict
 
 
+def info_extracter(_, __, event_dict: dict[str, Any]) -> dict[str, Any]:
+    replaced = False
+
+    for key, value in list(event_dict.items()):
+        if not hasattr(value, "log_info"):
+            continue
+
+        for k, v in value.log_info().items():
+            event_dict[f'{key}_{k}'] = v
+
+        del event_dict[key]
+
+        replaced = True
+
+    if not replaced:
+        return event_dict
+
+    return info_extracter(_, __, event_dict)
+
+
 def create_formatter():
     formatters = [DateFormatter(),
                   UUIDFormatter(),
@@ -99,6 +119,7 @@ def create_formatter():
 def processors_list():
 
     processors_list = [
+        info_extracter,
         structlog.contextvars.merge_contextvars,
         structlog.processors.add_log_level,
         structlog.processors.StackInfoRenderer(),
