@@ -3,7 +3,6 @@
 
 - [x] scoring
 - [x] scoring rules editing
-- [ ] do not run openai on the old entries
 - [x] use structlog
 - [x] smart tags ordering in gui (by popularity? by module of score?)
 - [ ] fix `network-domain-www-theatlantic-com`
@@ -45,6 +44,8 @@
 - [ ] minor mobile support?
 - [ ] save global settings on backend?
 - [ ] search for unprocessed entries and reprocess them periodically
+- [ ] do not run openai on the old entries
+
 
 # Backlog:
 
