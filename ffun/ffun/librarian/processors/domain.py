@@ -8,6 +8,25 @@ from . import base
 logger = logging.get_module_logger()
 
 
+def domain_to_parts(domain: str) -> list[str]:
+
+    if domain.startswith("www."):
+        domain = domain[4:]
+
+    parts = []
+
+    while domain:
+        if "." not in domain:
+            parts.append(f'top-level-domain-{domain}')
+            break
+
+        parts.append(domain)
+
+        domain = domain.split(".", 1)[1]
+
+    return parts
+
+
 class Processor(base.Processor):
     __slots__ = ()
 
@@ -24,14 +43,4 @@ class Processor(base.Processor):
 
         domain = parsed_url.netloc
 
-        tags = set()
-
-        while domain:
-            tags.add(f'network-domain:{domain}')
-
-            if "." not in domain:
-                break
-
-            domain = domain.split(".", 1)[1]
-
-        return tags
+        return set(domain_to_parts(domain))
