@@ -29,6 +29,8 @@ psycopg = "3.*"
 psycopg-pool = "3.*"
 yoyo-migrations = "8.*"
 
+structlog = "23.*"
+
 [tool.poetry.dev-dependencies]
 
 pytest = "6.*"

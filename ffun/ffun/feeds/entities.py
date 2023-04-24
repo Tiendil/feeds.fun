@@ -14,9 +14,18 @@ class FeedState(int, enum.Enum):
 class FeedError(int, enum.Enum):
     network_unknown = 1000
 
+    network_no_address_associated_with_hostname = 1001
+    network_name_or_service_not_known = 1002
+    network_certificate_verify_failed = 1003
+    network_connection_timeout = 1004
+    network_read_timeout = 1005
+    network_illegal_request_line = 1006
+
     parsing_unknown = 2000
-    parsing_encoding_error = 2001
+    parsing_base_error = 2001
     parsing_format_error = 2002
+
+    parsing_unicode_decode_error = 2003
 
 
 class Feed(pydantic.BaseModel):
@@ -26,3 +35,9 @@ class Feed(pydantic.BaseModel):
     last_error: FeedError|None = None
     load_attempted_at: datetime.datetime|None = None
     loaded_at: datetime.datetime|None = None
+
+    def log_info(self):
+        return {'id': self.id,
+                'state': self.state,
+                'url': self.url,
+                'last_error': self.last_error}

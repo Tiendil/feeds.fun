@@ -1,10 +1,12 @@
 import datetime
-import logging
 import uuid
 from typing import Any, Iterable
 
 import feedparser
+from ffun.core import logging
 from ffun.library.entities import Entry
+
+logger = logging.get_module_logger()
 
 
 def _parse_tags(tags: Iterable[dict[str, Any]]) -> set[str]:
@@ -21,12 +23,8 @@ def _parse_tags(tags: Iterable[dict[str, Any]]) -> set[str]:
 
 
 def _should_skip(entry: Any) -> bool:
-    if entry.get('id') is None:
-        logging.warning('Feed does not has "id" field')
-        return True
-
     if entry.get('link') is None:
-        logging.warning('Feed does not has "link" field')
+        logger.warning('feed_does_not_has_link_field')
         return True
 
     return False
