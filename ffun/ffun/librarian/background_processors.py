@@ -36,7 +36,7 @@ class ProcessorInfo:
 
 processors = [ProcessorInfo(id=1, processor=DomainProcessor(name='domain'), concurrency=1),
               ProcessorInfo(id=2, processor=NativeTagsProcessor(name='native_tags'), concurrency=1),
-              ProcessorInfo(id=3, processor=OpenAIChat35Processor(name='openai_chat_3_5'), concurrency=25)]
+              ProcessorInfo(id=3, processor=OpenAIChat35Processor(name='openai_chat_3_5'), concurrency=5)]
 
 
 class EntriesProcessor(InfiniteTask):
