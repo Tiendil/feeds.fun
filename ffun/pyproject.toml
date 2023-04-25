@@ -31,6 +31,8 @@ yoyo-migrations = "8.*"
 
 structlog = "23.*"
 
+yarl = "1.*"
+
 [tool.poetry.dev-dependencies]
 
 pytest = "6.*"

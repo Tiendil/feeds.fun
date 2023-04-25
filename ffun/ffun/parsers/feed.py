@@ -4,7 +4,8 @@ from typing import Any, Iterable
 
 import feedparser
 from ffun.core import logging
-from ffun.library.entities import Entry
+
+from .entities import EntryInfo, FeedInfo
 
 logger = logging.get_module_logger()
 
@@ -39,11 +40,18 @@ def _extract_published_at(entry: Any) -> datetime.datetime:
     return datetime.datetime.now()
 
 
-def parse_feed(feed_id: uuid.UUID, content: str) -> list[Entry]:
+def parse_feed(content: str, original_url: str) -> FeedInfo|None:
 
     channel = feedparser.parse(content)
 
-    entries: list[Entry] = []
+    if channel.version == '' and not channel.entries:
+        return None
+
+    feed_info = FeedInfo(url=original_url,
+                         base_url=channel.feed.get('link', ''),
+                         title=channel.feed.get('title', ''),
+                         description=channel.feed.get('description', ''),
+                         entries=[])
 
     for entry in channel.entries:
         # TODO: remove all tags from title
@@ -58,14 +66,12 @@ def parse_feed(feed_id: uuid.UUID, content: str) -> list[Entry]:
 
         published_at = _extract_published_at(entry)
 
-        entries.append(Entry(id=uuid.uuid4(),
-                             feed_id=feed_id,
-                             title=entry.get('title', ''),
-                             body=entry.get('description', ''),
-                             external_id=url,  # TODO: normalize url
-                             external_url=url,
-                             external_tags=_parse_tags(entry.get('tags', ())),
-                             published_at=published_at,
-                             cataloged_at=now))
+        feed_info.entries.append(EntryInfo(title=entry.get('title', ''),
+                                           body=entry.get('description', ''),
+                                           external_id=url,  # TODO: normalize url
+                                           external_url=url,
+                                           external_tags=_parse_tags(entry.get('tags', ())),
+                                           published_at=published_at,
+                                           cataloged_at=now))
 
-    return entries
+    return feed_info
