@@ -15,6 +15,7 @@ const API_GET_RULES = `${ENTRY_POINT}/api/get-rules`;
 const API_GET_SCORE_DETAILS = `${ENTRY_POINT}/api/get-score-details`;
 const API_SET_MARKER = `${ENTRY_POINT}/api/set-marker`;
 const API_REMOVE_MARKER = `${ENTRY_POINT}/api/remove-marker`;
+const API_DISCOVER_FEEDS = `${ENTRY_POINT}/api/discover-feeds`;
 
 
 async function post({url, data}: {url: string, data: any}) {
@@ -123,4 +124,18 @@ export async function setMarker({entryId, marker}: {entryId: t.EntryId, marker: 
 
 export async function removeMarker({entryId, marker}: {entryId: t.EntryId, marker: e.Marker}) {
     await post({url: API_REMOVE_MARKER, data: {entryId: entryId, marker: marker}});
+}
+
+
+export async function discoverFeeds({url}: {url: string}) {
+    const response = await post({url: API_DISCOVER_FEEDS, data: {url: url}});
+
+    const feeds = [];
+
+    for (let rawFeed of response.feeds) {
+        const feed = t.feedInfoFromJSON(rawFeed);
+        feeds.push(feed);
+    }
+
+    return feeds;
 }

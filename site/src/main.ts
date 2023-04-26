@@ -15,6 +15,7 @@ import RuleConstructor from "./components/RuleConstructor.vue";
 import RuleScoreUpdater from "./components/RuleScoreUpdater.vue";
 import TagsFilter from "./components/TagsFilter.vue";
 import TagsFilterElement from "./components/TagsFilterElement.vue";
+import DiscoveryForm from "./components/DiscoveryForm.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -38,6 +39,7 @@ app.component("RuleConstructor", RuleConstructor);
 app.component("RuleScoreUpdater", RuleScoreUpdater);
 app.component("TagsFilter", TagsFilter);
 app.component("TagsFilterElement", TagsFilterElement);
+app.component("DiscoveryForm", DiscoveryForm);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);

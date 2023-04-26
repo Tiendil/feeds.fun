@@ -3,6 +3,7 @@ import MainView from '../views/MainView.vue'
 import FeedsView from '../views/FeedsView.vue'
 import NewsView from '../views/NewsView.vue'
 import RulesView from '../views/RulesView.vue'
+import DiscoveryView from '../views/DiscoveryView.vue'
 import * as e from "@/logic/enums";
 
 // lazy view loading does not work with router.push function
@@ -30,6 +31,11 @@ const router = createRouter({
       path: '/rules',
       name: e.MainPanelMode.Rules,
       component: RulesView
+    },
+    {
+      path: '/discovery',
+      name: e.MainPanelMode.Discovery,
+      component: DiscoveryView
     },
 
   ]

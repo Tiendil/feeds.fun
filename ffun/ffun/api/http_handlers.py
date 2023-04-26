@@ -171,11 +171,11 @@ async def api_remove_marker(request: entities.RemoveMarkerRequest, user: User) -
 
 @router.post('/api/discover-feeds')
 async def api_discover_feeds(request: entities.DiscoverFeedsRequest) -> entities.DiscoverFeedsResponse:
-    feeds = await fd_domain.discover(request.url)
+    feeds = await fd_domain.discover(url=request.url)
 
     for feed in feeds:
         # TODO: should we limit entities number there?
-        feed.entities = feed.entities[:3]
+        feed.entries = feed.entries[:3]
 
     external_feeds = [entities.FeedInfo.from_internal(feed) for feed in feeds]
 

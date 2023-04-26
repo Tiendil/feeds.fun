@@ -93,18 +93,14 @@ class Rule(api.Base):
 class EntryInfo(api.Base):
     title: str
     body: str
-    external_id: str
-    external_url: str
-    external_tags: set[str]
+    url: str
     published_at: datetime.datetime
 
     @classmethod
     def from_internal(cls, entry: p_entities.EntryInfo) -> 'EntryInfo':
         return cls(title=entry.title,
                    body=entry.body,
-                   external_id=entry.external_id,
-                   external_url=entry.external_url,
-                   external_tags=entry.external_tags,
+                   url=entry.external_url,
                    published_at=entry.published_at)
 
 
