@@ -17,6 +17,10 @@
     <div v-for="feed in foundFeeds"
          :key="feed.url">
       <feed-info :feed="feed"/>
+
+      <button v-if="!addedFeeds[feed.url]"
+              @click.prevent="addFeed(feed.url)">Add</button>
+      <p v-else>Feed added</p>
       <hr/>
     </div>
   </div>
@@ -37,6 +41,8 @@ const search = ref("");
 const loading = ref(false);
 
 const searhedUrl = ref("");
+
+const addedFeeds = ref({});
 
 const foundFeeds = computedAsync(async () => {
     if (searhedUrl.value === "") {
@@ -59,6 +65,12 @@ const foundFeeds = computedAsync(async () => {
     return feeds;
 }, []);
 
+
+async function addFeed(url: string) {
+    addedFeeds.value[url] = true;
+
+    await api.addFeed({url: url});
+}
 
 </script>
 

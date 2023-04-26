@@ -144,7 +144,7 @@ async def discover(url: str, stop: bool = False) -> list[p_entities.FeedInfo]:
 
 
 async def check_if_feed(url: str) -> p_entities.FeedInfo|None:
-    feeds = await discover(url, stop=True)
+    feeds = await discover(url=url, stop=True)
 
     if not feeds:
         return None

@@ -16,6 +16,7 @@ const API_GET_SCORE_DETAILS = `${ENTRY_POINT}/api/get-score-details`;
 const API_SET_MARKER = `${ENTRY_POINT}/api/set-marker`;
 const API_REMOVE_MARKER = `${ENTRY_POINT}/api/remove-marker`;
 const API_DISCOVER_FEEDS = `${ENTRY_POINT}/api/discover-feeds`;
+const API_ADD_FEED = `${ENTRY_POINT}/api/add-feed`;
 
 
 async function post({url, data}: {url: string, data: any}) {
@@ -138,4 +139,9 @@ export async function discoverFeeds({url}: {url: string}) {
     }
 
     return feeds;
+}
+
+
+export async function addFeed({url}: {url: string}) {
+    await post({url: API_ADD_FEED, data: {url: url}});
 }
