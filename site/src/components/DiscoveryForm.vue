@@ -14,7 +14,11 @@
   <div v-else-if="loading">Searching for feeds…</div>
 
   <div v-else>
-    {{foundFeeds}}
+    <div v-for="feed in foundFeeds"
+         :key="feed.url">
+      <feed-info :feed="feed"/>
+      <hr/>
+    </div>
   </div>
 
 </div>

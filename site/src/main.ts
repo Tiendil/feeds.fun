@@ -16,6 +16,8 @@ import RuleScoreUpdater from "./components/RuleScoreUpdater.vue";
 import TagsFilter from "./components/TagsFilter.vue";
 import TagsFilterElement from "./components/TagsFilterElement.vue";
 import DiscoveryForm from "./components/DiscoveryForm.vue";
+import FeedInfo from "./components/FeedInfo.vue";
+import EntryInfo from "./components/EntryInfo.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -40,6 +42,8 @@ app.component("RuleScoreUpdater", RuleScoreUpdater);
 app.component("TagsFilter", TagsFilter);
 app.component("TagsFilterElement", TagsFilterElement);
 app.component("DiscoveryForm", DiscoveryForm);
+app.component("FeedInfo", FeedInfo);
+app.component("EntryInfo", EntryInfo);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);
