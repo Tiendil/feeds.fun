@@ -93,15 +93,14 @@ async def decode_content(response: httpx.Response) -> str:
 async def parse_content(content: str, original_url: str) -> p_entities.FeedInfo:
     try:
         feed_info = parse_feed(content, original_url=original_url)
-
-        if feed_info is None:
-            raise errors.LoadError(feed_error_code=FeedError.parsing_feed_content_not_found)
-
-        return feed_info
-
     except Exception as e:
         logger.exception('error_while_parsing_feed')
         raise errors.LoadError(feed_error_code=FeedError.parsing_format_error) from e
+
+    if feed_info is None:
+        raise errors.LoadError(feed_error_code=FeedError.parsing_feed_content_not_found)
+
+    return feed_info
 
 
 @logging.bound_function()
