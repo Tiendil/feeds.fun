@@ -4,6 +4,7 @@ from typing import Iterable
 
 import fastapi
 from ffun.feeds import domain as f_domain
+from ffun.feeds import entities as f_entities
 from ffun.feeds_discoverer import domain as fd_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
@@ -19,7 +20,7 @@ router = fastapi.APIRouter()
 
 
 @router.post('/api/get-feeds')
-async def api_get_feeds(request: entities.GetFeedsRequest) -> entities.GetFeedsResponse:
+async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entities.GetFeedsResponse:
     feeds = await f_domain.get_all_feeds()
 
     return entities.GetFeedsResponse(feeds=[entities.Feed.from_internal(feed) for feed in feeds])
@@ -170,7 +171,7 @@ async def api_remove_marker(request: entities.RemoveMarkerRequest, user: User) -
 
 
 @router.post('/api/discover-feeds')
-async def api_discover_feeds(request: entities.DiscoverFeedsRequest) -> entities.DiscoverFeedsResponse:
+async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User) -> entities.DiscoverFeedsResponse:
     feeds = await fd_domain.discover(url=request.url)
 
     for feed in feeds:
@@ -180,3 +181,20 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest) -> entities
     external_feeds = [entities.FeedInfo.from_internal(feed) for feed in feeds]
 
     return entities.DiscoverFeedsResponse(feeds=external_feeds)
+
+
+@router.post('/api/add-feed')
+async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities.AddFeedResponse:
+    feed_info = await fd_domain.check_if_feed(url=request.url)
+
+    if feed_info is None:
+        raise fastapi.HTTPException(status_code=400, detail='Not a feed')
+
+    feed = f_entities.Feed(id=uuid.uuid4(),
+                           url=feed_info.url,
+                           title=feed_info.title,
+                           description=feed_info.description)
+
+    await f_domain.save_feeds([feed])
+
+    return entities.AddFeedResponse()

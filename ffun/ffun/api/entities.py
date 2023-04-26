@@ -222,3 +222,11 @@ class DiscoverFeedsRequest(api.APIRequest):
 
 class DiscoverFeedsResponse(api.APISuccess):
     feeds: list[FeedInfo]
+
+
+class AddFeedRequest(api.APIRequest):
+    url: str
+
+
+class AddFeedResponse(api.APISuccess):
+    pass

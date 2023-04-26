@@ -26,6 +26,7 @@ sql_insert_feed = '''
 INSERT INTO f_feeds (id, url, state, title, description)
 VALUES (%(id)s, %(url)s, %(state)s, %(title)s, %(description)s)
 ON CONFLICT (id) DO NOTHING
+ON CONFLICT (url) DO NOTHING
 '''
 
 
