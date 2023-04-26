@@ -17,12 +17,14 @@ def row_to_feed(row: dict) -> Feed:
                 state=FeedState(row['state']),
                 last_error=FeedError(row['last_error']) if row['last_error'] else None,
                 load_attempted_at=row['load_attempted_at'],
-                loaded_at=row['loaded_at'])
+                loaded_at=row['loaded_at'],
+                title=row['title'],
+                description=row['description'])
 
 
 sql_insert_feed = '''
-INSERT INTO f_feeds (id, url, state)
-VALUES (%(id)s, %(url)s, %(state)s)
+INSERT INTO f_feeds (id, url, state, title, description)
+VALUES (%(id)s, %(url)s, %(state)s, %(title)s, %(description)s)
 ON CONFLICT (id) DO NOTHING
 '''
 
@@ -34,7 +36,9 @@ async def save_feeds(feeds: list[Feed]) -> None:
             await execute(sql_insert_feed,
                           {'id': feed.id,
                            'url': feed.url,
-                           'state': feed.state})
+                           'state': feed.state,
+                           'title': feed.title,
+                           'description': feed.description})
         except psycopg.errors.UniqueViolation:
             logger.warning('unique_violation_while_saving_feed', feed_id=feed.id)
 
@@ -67,6 +71,20 @@ async def get_next_feeds_to_load(execute: ExecuteType,
     await execute(sql, {'ids': ids})
 
     return [row_to_feed(row) for row in rows]
+
+
+async def update_feed_info(feed_id: uuid.UUID, title: str, description: str) -> None:
+    sql = '''
+    UPDATE f_feeds
+    SET title = %(title)s,
+        description = %(description)s,
+        updated_at = NOW()
+    WHERE id = %(id)s
+    '''
+
+    await execute(sql, {'id': feed_id,
+                        'title': title,
+                        'description': description})
 
 
 async def mark_feed_as_loaded(feed_id: uuid.UUID) -> None:

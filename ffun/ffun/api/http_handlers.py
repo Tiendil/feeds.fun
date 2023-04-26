@@ -4,6 +4,7 @@ from typing import Iterable
 
 import fastapi
 from ffun.feeds import domain as f_domain
+from ffun.feeds_discoverer import domain as fd_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
 from ffun.markers import domain as m_domain
@@ -166,3 +167,16 @@ async def api_remove_marker(request: entities.RemoveMarkerRequest, user: User) -
     await m_domain.remove_marker(user_id=user.id, entry_id=request.entryId, marker=request.marker.to_internal())
 
     return entities.RemoveMarkerResponse()
+
+
+@router.post('/api/discover-feeds')
+async def api_discover_feeds(request: entities.DiscoverFeedsRequest) -> entities.DiscoverFeedsResponse:
+    feeds = await fd_domain.discover(request.url)
+
+    for feed in feeds:
+        # TODO: should we limit entities number there?
+        feed.entities = feed.entities[:3]
+
+    external_feeds = [entities.FeedInfo.from_internal(feed) for feed in feeds]
+
+    return entities.DiscoverFeedsResponse(feeds=external_feeds)

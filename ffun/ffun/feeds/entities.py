@@ -24,8 +24,8 @@ class FeedError(int, enum.Enum):
     parsing_unknown = 2000
     parsing_base_error = 2001
     parsing_format_error = 2002
-
     parsing_unicode_decode_error = 2003
+    parsing_feed_content_not_found = 2004
 
 
 class Feed(pydantic.BaseModel):
@@ -35,6 +35,9 @@ class Feed(pydantic.BaseModel):
     last_error: FeedError|None = None
     load_attempted_at: datetime.datetime|None = None
     loaded_at: datetime.datetime|None = None
+
+    title: str|None
+    description: str|None
 
     def log_info(self):
         return {'id': self.id,

@@ -62,8 +62,6 @@ def parse_feed(content: str, original_url: str) -> FeedInfo|None:
 
         url = entry.get('link')
 
-        now = datetime.datetime.now()
-
         published_at = _extract_published_at(entry)
 
         feed_info.entries.append(EntryInfo(title=entry.get('title', ''),
@@ -71,7 +69,6 @@ def parse_feed(content: str, original_url: str) -> FeedInfo|None:
                                            external_id=url,  # TODO: normalize url
                                            external_url=url,
                                            external_tags=_parse_tags(entry.get('tags', ())),
-                                           published_at=published_at,
-                                           cataloged_at=now))
+                                           published_at=published_at))
 
     return feed_info

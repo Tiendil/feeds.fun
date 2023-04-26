@@ -10,7 +10,6 @@ class EntryInfo(pydantic.BaseModel):
     external_url: str
     external_tags: set[str]
     published_at: datetime.datetime
-    cataloged_at: datetime.datetime
 
     def log_info(self):
         return {'title': self.title,

@@ -2,7 +2,7 @@ import ssl
 import uuid
 
 import httpx
-from ffun.core import logging
+from ffun.core import logging, utils
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedError, FeedState
 from ffun.library import domain as l_domain
@@ -92,7 +92,13 @@ async def decode_content(response: httpx.Response) -> str:
 
 async def parse_content(content: str, original_url: str) -> p_entities.FeedInfo:
     try:
-        return parse_feed(content, original_url=original_url)
+        feed_info = parse_feed(content, original_url=original_url)
+
+        if feed_info is None:
+            raise errors.LoadError(feed_error_code=FeedError.parsing_feed_content_not_found)
+
+        return feed_info
+
     except Exception as e:
         logger.exception('error_while_parsing_feed')
         raise errors.LoadError(feed_error_code=FeedError.parsing_format_error) from e
@@ -113,6 +119,11 @@ async def process_feed(feed: Feed) -> None:
                                            error=e.feed_error_code)
         return
 
+    if feed_info.title != feed.title or feed_info.description != feed.description:
+        await f_domain.update_feed_info(feed.id,
+                                        title=feed_info.title,
+                                        description=feed_info.description)
+
     entries = feed_info.entries
 
     external_ids = [entry.external_id for entry in entries]
@@ -124,6 +135,7 @@ async def process_feed(feed: Feed) -> None:
 
     prepared_entries = [l_entities.Entry(feed_id=feed.id,
                                          id=uuid.uuid4(),
+                                         cataloged_at=utils.now(),
                                          **entry_info.dict())
                         for entry_info in entries_to_store]
 
