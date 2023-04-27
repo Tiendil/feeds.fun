@@ -137,7 +137,7 @@ async def process_feed(feed: Feed) -> None:
 
     external_ids = [entry.external_id for entry in entries]
 
-    stored_entries_external_ids = await l_domain.check_stored_entries_by_external_ids(external_ids)
+    stored_entries_external_ids = await l_domain.check_stored_entries_by_external_ids(feed.id, external_ids)
 
     entries_to_store = [entry for entry in entries
                         if entry.external_id not in stored_entries_external_ids]
