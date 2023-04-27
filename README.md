@@ -11,6 +11,7 @@
 - [x] add feed throught gui
 - [x] import opml throught gui
 - [x] common way of processing HTTP errors
+- [ ] remove/unlink feed for user
 - [ ] common mechanism to refresh lists of news, feeds, rules on their changes
 - [ ] simple (or not) users management
 
