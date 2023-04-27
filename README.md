@@ -6,12 +6,13 @@
 - [x] use structlog
 - [x] smart tags ordering in gui (by popularity? by module of score?)
 - [x] fix `network-domain-www-theatlantic-com`
-- [ ] common mechanism to refresh lists of news, feeds, rules on their changes
 - [x] statistics about tags
-- [ ] feeds on a user level (not global)
-- [ ] add feed throught gui
-- [ ] import opml throught gui
-- [ ] common way of processing HTTP errors
+- [x] feeds on a user level (not global)
+- [x] add feed throught gui
+- [x] import opml throught gui
+- [x] common way of processing HTTP errors
+- [ ] common mechanism to refresh lists of news, feeds, rules on their changes
+- [ ] simple (or not) users management
 
 # Errors
 
