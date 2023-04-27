@@ -6,6 +6,7 @@ import fastapi
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
 from ffun.feeds_discoverer import domain as fd_domain
+from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
 from ffun.markers import domain as m_domain
@@ -21,7 +22,10 @@ router = fastapi.APIRouter()
 
 @router.post('/api/get-feeds')
 async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entities.GetFeedsResponse:
-    feeds = await f_domain.get_all_feeds()
+
+    linked_feeds_ids = await fl_domain.get_linked_feeds(user.id)
+
+    feeds = await f_domain.get_feeds(linked_feeds_ids)
 
     return entities.GetFeedsResponse(feeds=[entities.Feed.from_internal(feed) for feed in feeds])
 
@@ -61,10 +65,11 @@ async def _external_entries(entries: Iterable[l_entities.Entry],
 
 @router.post('/api/get-last-entries')
 async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: User) -> entities.GetLastEntriesResponse:
-    feeds = await f_domain.get_all_feeds()
+
+    linked_feeds_ids = await fl_domain.get_linked_feeds(user.id)
 
     # TODO: limit
-    entries = await l_domain.get_entries_by_filter(feeds_ids=[feed.id for feed in feeds],
+    entries = await l_domain.get_entries_by_filter(feeds_ids=linked_feeds_ids,
                                                    period=request.period,
                                                    limit=10000)
 
@@ -195,6 +200,9 @@ async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities
                            title=feed_info.title,
                            description=feed_info.description)
 
-    await f_domain.save_feeds([feed])
+    real_feeds_ids = await f_domain.save_feeds([feed])
+
+    for feed_id in real_feeds_ids:
+        await fl_domain.add_link(user_id=user.id, feed_id=feed_id)
 
     return entities.AddFeedResponse()

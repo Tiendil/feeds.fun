@@ -16,12 +16,12 @@ from . import errors
 logger = logging.get_module_logger()
 
 
-async def load_content(url: str) -> httpx.Response:
+async def load_content(url: str) -> httpx.Response:  # noqa: CCR001, C901 # pylint: disable=R0912, R0915
     error_code = FeedError.network_unknown
 
     try:
         async with httpx.AsyncClient() as client:
-            return await client.get(url, follow_redirects=True)
+            response = await client.get(url, follow_redirects=True)
     except httpx.RemoteProtocolError as e:
         message = str(e)
 
@@ -74,6 +74,13 @@ async def load_content(url: str) -> httpx.Response:
         logger.exception('error_while_loading_feed')
         raise errors.LoadError(feed_error_code=error_code) from e
 
+    if response.status_code != 200:
+        logger.warning('network_non_200_status_code', status_code=response.status_code)
+        error_code = FeedError.network_non_200_status_code
+        raise errors.LoadError(feed_error_code=error_code)
+
+    return response
+
 
 async def decode_content(response: httpx.Response) -> str:
 
@@ -99,6 +106,9 @@ async def parse_content(content: str, original_url: str) -> p_entities.FeedInfo:
 
     if feed_info is None:
         raise errors.LoadError(feed_error_code=FeedError.parsing_feed_content_not_found)
+
+    if not feed_info.entries:
+        raise errors.LoadError(feed_error_code=FeedError.protocol_no_entries_in_feed)
 
     return feed_info
 

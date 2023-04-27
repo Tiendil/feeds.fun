@@ -32,6 +32,10 @@ export enum LastEntriesPeriod {
     Week = "week",
     Week2 = "week2",
     Month1 = "month",
+    Month3 = "month3",
+    Month6 = "month6",
+    Year1 = "year1",
+    AllTime = "alltime",
 }
 
 
@@ -45,7 +49,11 @@ export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, {text: str
     [LastEntriesPeriod.Day3, {text: "3 days", seconds: 3 * c.day }],
     [LastEntriesPeriod.Week, {text: "1 week", seconds: c.week }],
     [LastEntriesPeriod.Week2, {text: "2 weeks", seconds: 2 * c.week }],
-    [LastEntriesPeriod.Month1, {text: "1 month", seconds: c.month }]
+    [LastEntriesPeriod.Month1, {text: "1 month", seconds: c.month }],
+    [LastEntriesPeriod.Month3, {text: "3 months", seconds: 3 * c.month }],
+    [LastEntriesPeriod.Month6, {text: "6 months", seconds: 6 * c.month }],
+    [LastEntriesPeriod.Year1, {text: "1 year", seconds: c.year }],
+    [LastEntriesPeriod.AllTime, {text: "all time", seconds: c.infinity }],
 ]);
 
 

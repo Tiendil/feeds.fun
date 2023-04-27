@@ -44,7 +44,7 @@ def parse_feed(content: str, original_url: str) -> FeedInfo|None:
 
     channel = feedparser.parse(content)
 
-    if channel.version == '' and not channel.entries:
+    if getattr(channel, 'version', '') == '' and not channel.entries:
         return None
 
     feed_info = FeedInfo(url=original_url,
