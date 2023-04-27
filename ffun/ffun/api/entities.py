@@ -8,6 +8,7 @@ from ffun.core import api
 from ffun.feeds import entities as f_entities
 from ffun.library import entities as l_entities
 from ffun.markers import entities as m_entities
+from ffun.parsers import entities as p_entities
 from ffun.scores import entities as s_entities
 
 
@@ -87,6 +88,37 @@ class Rule(api.Base):
             score=rule.score,
             createdAt=rule.created_at,
         )
+
+
+class EntryInfo(api.Base):
+    title: str
+    body: str
+    url: str
+    published_at: datetime.datetime
+
+    @classmethod
+    def from_internal(cls, entry: p_entities.EntryInfo) -> 'EntryInfo':
+        return cls(title=entry.title,
+                   body=entry.body,
+                   url=entry.external_url,
+                   published_at=entry.published_at)
+
+
+class FeedInfo(api.Base):
+    url: str
+    base_url: str
+    title: str
+    description: str
+
+    entries: list[EntryInfo]
+
+    @classmethod
+    def from_internal(cls, feed: p_entities.FeedInfo) -> 'FeedInfo':
+        return cls(url=feed.url,
+                   base_url=feed.base_url,
+                   title=feed.title,
+                   description=feed.description,
+                   entries=[EntryInfo.from_internal(entry) for entry in feed.entries])
 
 
 ##################
@@ -181,4 +213,28 @@ class RemoveMarkerRequest(api.APIRequest):
 
 
 class RemoveMarkerResponse(api.APISuccess):
+    pass
+
+
+class DiscoverFeedsRequest(api.APIRequest):
+    url: str
+
+
+class DiscoverFeedsResponse(api.APISuccess):
+    feeds: list[FeedInfo]
+
+
+class AddFeedRequest(api.APIRequest):
+    url: str
+
+
+class AddFeedResponse(api.APISuccess):
+    pass
+
+
+class AddOpmlRequest(api.APIRequest):
+    content: str
+
+
+class AddOpmlResponse(api.APISuccess):
     pass

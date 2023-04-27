@@ -40,10 +40,19 @@ async def catalog_entries(entries: Iterable[Entry]) -> None:
             logger.warning('racing_is_possible_unique_violation_while_saving_entry', entry_id=entry.id)
 
 
-async def check_stored_entries_by_external_ids(external_ids: Iterable[str]) -> set[str]:
-    sql = 'SELECT external_id FROM l_entries WHERE external_id = ANY(%(external_ids)s)'
+# we must controll unique constraint on entries by pair feed + id because
+# 1. we can not guarantee that there will be no duplicates of feeds
+#    (can not guarantee perfect normalization of urls, etc)
+# 2. someone can damage database by infecting with wrong entries from faked feed
+async def check_stored_entries_by_external_ids(feed_id: uuid.UUID, external_ids: Iterable[str]) -> set[str]:
+    sql = '''
+    SELECT external_id
+    FROM l_entries
+    WHERE feed_id = %(feed_id)s AND external_id = ANY(%(external_ids)s)
+    '''
 
-    rows = await execute(sql, {'external_ids': external_ids})
+    rows = await execute(sql, {'external_ids': external_ids,
+                               'feed_id': feed_id})
 
     return {row['external_id'] for row in rows}
 

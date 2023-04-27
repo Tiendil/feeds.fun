@@ -127,3 +127,37 @@ export function ruleFromJSON({ id, tags, score, createdAt }:
              score: score,
              createdAt: new Date(createdAt) };
 }
+
+
+export type EntryInfo = {
+    readonly title: string;
+    readonly body: string;
+    readonly url: URL;
+    readonly publishedAt: Date;
+}
+
+
+export function entryInfoFromJSON({ title, body, url, publishedAt }:
+                                  { title: string, body: string, url: string, publishedAt: string }): EntryInfo {
+    return { title,
+             body,
+             url: toURL(url),
+             publishedAt: new Date(publishedAt) };
+}
+
+
+export type FeedInfo = {
+    readonly url: URL;
+    readonly title: string;
+    readonly description: string;
+    readonly entries: EntryInfo[];
+};
+
+
+export function feedInfoFromJSON({ url, title, description, entries }:
+                                 { url: string, title: string, description: string, entries: any[] }): FeedInfo {
+    return { url: toURL(url),
+             title,
+             description,
+             entries: entries.map(entryInfoFromJSON) };
+}

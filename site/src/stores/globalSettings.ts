@@ -19,12 +19,17 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
         router.push({ name: mainPanelMode.value, params: {} });
     });
 
+    function updateDataVersion() {
+        dataVersion.value++;
+    }
+
     return {
         mainPanelMode,
         lastEntriesPeriod,
         entriesOrder,
         showEntriesTags,
         showRead,
-        dataVersion
+        dataVersion,
+        updateDataVersion
     };
 });

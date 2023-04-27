@@ -2,11 +2,12 @@ import ssl
 import uuid
 
 import httpx
-from ffun.core import logging
+from ffun.core import logging, utils
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedError, FeedState
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
+from ffun.parsers import entities as p_entities
 from ffun.parsers.domain import parse_feed
 from structlog.contextvars import bound_contextvars
 
@@ -15,12 +16,12 @@ from . import errors
 logger = logging.get_module_logger()
 
 
-async def load_content(url: str) -> httpx.Response:
+async def load_content(url: str) -> httpx.Response:  # noqa: CCR001, C901 # pylint: disable=R0912, R0915
     error_code = FeedError.network_unknown
 
     try:
         async with httpx.AsyncClient() as client:
-            return await client.get(url, follow_redirects=True)
+            response = await client.get(url, follow_redirects=True)
     except httpx.RemoteProtocolError as e:
         message = str(e)
 
@@ -73,6 +74,13 @@ async def load_content(url: str) -> httpx.Response:
         logger.exception('error_while_loading_feed')
         raise errors.LoadError(feed_error_code=error_code) from e
 
+    if response.status_code != 200:
+        logger.warning('network_non_200_status_code', status_code=response.status_code)
+        error_code = FeedError.network_non_200_status_code
+        raise errors.LoadError(feed_error_code=error_code)
+
+    return response
+
 
 async def decode_content(response: httpx.Response) -> str:
 
@@ -89,12 +97,20 @@ async def decode_content(response: httpx.Response) -> str:
         raise errors.LoadError(feed_error_code=error_code) from e
 
 
-async def parse_content(feed_id: uuid.UUID, content: str) -> list[l_entities.Entry]:
+async def parse_content(content: str, original_url: str) -> p_entities.FeedInfo:
     try:
-        return parse_feed(feed_id, content)
+        feed_info = parse_feed(content, original_url=original_url)
     except Exception as e:
         logger.exception('error_while_parsing_feed')
         raise errors.LoadError(feed_error_code=FeedError.parsing_format_error) from e
+
+    if feed_info is None:
+        raise errors.LoadError(feed_error_code=FeedError.parsing_feed_content_not_found)
+
+    if not feed_info.entries:
+        raise errors.LoadError(feed_error_code=FeedError.protocol_no_entries_in_feed)
+
+    return feed_info
 
 
 @logging.bound_function()
@@ -105,21 +121,36 @@ async def process_feed(feed: Feed) -> None:
     try:
         response = await load_content(feed.url)
         content = await decode_content(response)
-        entries = parse_feed(feed.id, content)
+        feed_info = await parse_content(content, original_url=feed.url)
     except errors.LoadError as e:
         await f_domain.mark_feed_as_failed(feed.id,
                                            state=FeedState.damaged,
                                            error=e.feed_error_code)
         return
 
+    if feed_info.title != feed.title or feed_info.description != feed.description:
+        await f_domain.update_feed_info(feed.id,
+                                        title=feed_info.title,
+                                        description=feed_info.description)
+
+    entries = feed_info.entries
+
     external_ids = [entry.external_id for entry in entries]
 
-    stored_entries_external_ids = await l_domain.check_stored_entries_by_external_ids(external_ids)
+    stored_entries_external_ids = await l_domain.check_stored_entries_by_external_ids(feed.id, external_ids)
 
     entries_to_store = [entry for entry in entries
                         if entry.external_id not in stored_entries_external_ids]
 
-    await l_domain.catalog_entries(entries=entries_to_store)
+    prepared_entries = [l_entities.Entry(feed_id=feed.id,
+                                         id=uuid.uuid4(),
+                                         cataloged_at=utils.now(),
+                                         **entry_info.dict())
+                        for entry_info in entries_to_store]
+
+    await l_domain.catalog_entries(entries=prepared_entries)
+
+    # TODO: update title & description here if they are changed
 
     await f_domain.mark_feed_as_loaded(feed.id)
 

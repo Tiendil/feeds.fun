@@ -11,6 +11,7 @@
 - [ ] feeds on a user level (not global)
 - [ ] add feed throught gui
 - [ ] import opml throught gui
+- [ ] common way of processing HTTP errors
 
 # Errors
 
@@ -57,6 +58,7 @@
 - [ ] personalized names for tags
 - [ ] normalize urls for feeds
 - [ ] normalize urls for entities
+- [ ] do not run processors for entries with duplicated content
 
 
 # Commands
