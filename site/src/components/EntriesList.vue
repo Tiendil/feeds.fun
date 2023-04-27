@@ -1,30 +1,38 @@
 <template>
+<div>
+  <template v-if="entriesToShow.length == 0">
+    <p>No news found</p>
+  </template>
 
-  <ul style="list-style-type: none; margin: 0; padding: 0;">
-    <li v-for="entryId in entriesToShow"
-        :key="entryId"
-        style="margin-bottom: 0.25rem;">
-      <entry-for-list :entryId="entryId"
-                      :time-field="timeField"
-                      :show-tags="showTags"/>
-    </li>
-  </ul>
+  <template v-else>
 
-  <a href="#"
-     style="text-decoration: none;"
-     v-if="canShowMore"
-     @click.prevent="showMore()">next {{showPerPage}}</a> |
+    <ul style="list-style-type: none; margin: 0; padding: 0;">
+      <li v-for="entryId in entriesToShow"
+          :key="entryId"
+          style="margin-bottom: 0.25rem;">
+        <entry-for-list :entryId="entryId"
+                        :time-field="timeField"
+                        :show-tags="showTags"/>
+      </li>
+    </ul>
 
-  <a href="#"
-     style="text-decoration: none;"
-     v-if="canShowMore"
-     @click.prevent="showAll()">all</a> |
+    <a href="#"
+       style="text-decoration: none;"
+       v-if="canShowMore"
+       @click.prevent="showMore()">next {{showPerPage}}</a> |
 
-  <a href="#"
-     style="text-decoration: none;"
-     v-if="canHide"
+    <a href="#"
+       style="text-decoration: none;"
+       v-if="canShowMore"
+       @click.prevent="showAll()">all</a> |
+
+    <a href="#"
+       style="text-decoration: none;"
+       v-if="canHide"
      @click.prevent="hideAll()">hide</a>
 
+  </template>
+</div>
 </template>
 
 <script lang="ts" setup>

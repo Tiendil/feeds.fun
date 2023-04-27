@@ -4,10 +4,14 @@ from typing import Iterable
 
 import fastapi
 from ffun.feeds import domain as f_domain
+from ffun.feeds import entities as f_entities
+from ffun.feeds_discoverer import domain as fd_domain
+from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
 from ffun.markers import domain as m_domain
 from ffun.ontology import domain as o_domain
+from ffun.parsers import domain as p_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 
@@ -18,8 +22,11 @@ router = fastapi.APIRouter()
 
 
 @router.post('/api/get-feeds')
-async def api_get_feeds(request: entities.GetFeedsRequest) -> entities.GetFeedsResponse:
-    feeds = await f_domain.get_all_feeds()
+async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entities.GetFeedsResponse:
+
+    linked_feeds_ids = await fl_domain.get_linked_feeds(user.id)
+
+    feeds = await f_domain.get_feeds(linked_feeds_ids)
 
     return entities.GetFeedsResponse(feeds=[entities.Feed.from_internal(feed) for feed in feeds])
 
@@ -59,10 +66,11 @@ async def _external_entries(entries: Iterable[l_entities.Entry],
 
 @router.post('/api/get-last-entries')
 async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: User) -> entities.GetLastEntriesResponse:
-    feeds = await f_domain.get_all_feeds()
+
+    linked_feeds_ids = await fl_domain.get_linked_feeds(user.id)
 
     # TODO: limit
-    entries = await l_domain.get_entries_by_filter(feeds_ids=[feed.id for feed in feeds],
+    entries = await l_domain.get_entries_by_filter(feeds_ids=linked_feeds_ids,
                                                    period=request.period,
                                                    limit=10000)
 
@@ -166,3 +174,53 @@ async def api_remove_marker(request: entities.RemoveMarkerRequest, user: User) -
     await m_domain.remove_marker(user_id=user.id, entry_id=request.entryId, marker=request.marker.to_internal())
 
     return entities.RemoveMarkerResponse()
+
+
+@router.post('/api/discover-feeds')
+async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User) -> entities.DiscoverFeedsResponse:
+    feeds = await fd_domain.discover(url=request.url)
+
+    for feed in feeds:
+        # TODO: should we limit entities number there?
+        feed.entries = feed.entries[:3]
+
+    external_feeds = [entities.FeedInfo.from_internal(feed) for feed in feeds]
+
+    return entities.DiscoverFeedsResponse(feeds=external_feeds)
+
+
+async def _add_feeds(feed_infos: list[entities.FeedInfo], user: User) -> None:
+
+    feeds = [f_entities.Feed(id=uuid.uuid4(),
+                             url=feed_info.url,
+                             title=feed_info.title,
+                             description=feed_info.description)
+             for feed_info in feed_infos]
+
+    real_feeds_ids = await f_domain.save_feeds(feeds)
+
+    for feed_id in real_feeds_ids:
+        await fl_domain.add_link(user_id=user.id, feed_id=feed_id)
+
+
+@router.post('/api/add-feed')
+async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities.AddFeedResponse:
+    feed_info = await fd_domain.check_if_feed(url=request.url)
+
+    if feed_info is None:
+        raise fastapi.HTTPException(status_code=400, detail='Not a feed')
+
+    await _add_feeds([feed_info], user)
+
+    return entities.AddFeedResponse()
+
+
+@router.post('/api/add-opml')
+async def api_add_opml(request: entities.AddOpmlRequest,
+                       user: User) -> entities.AddOpmlResponse:
+
+    feed_infos = p_domain.parse_opml(request.content)
+
+    await _add_feeds(feed_infos, user)
+
+    return entities.AddOpmlResponse()

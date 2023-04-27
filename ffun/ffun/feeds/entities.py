@@ -20,12 +20,16 @@ class FeedError(int, enum.Enum):
     network_connection_timeout = 1004
     network_read_timeout = 1005
     network_illegal_request_line = 1006
+    network_non_200_status_code = 1007
 
     parsing_unknown = 2000
     parsing_base_error = 2001
     parsing_format_error = 2002
-
     parsing_unicode_decode_error = 2003
+    parsing_feed_content_not_found = 2004
+
+    protocol_unknown = 3000
+    protocol_no_entries_in_feed = 3001
 
 
 class Feed(pydantic.BaseModel):
@@ -35,6 +39,9 @@ class Feed(pydantic.BaseModel):
     last_error: FeedError|None = None
     load_attempted_at: datetime.datetime|None = None
     loaded_at: datetime.datetime|None = None
+
+    title: str|None
+    description: str|None
 
     def log_info(self):
         return {'id': self.id,

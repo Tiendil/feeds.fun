@@ -1,6 +1,7 @@
 
 import datetime
 import uuid
+from typing import Iterable
 
 import psycopg
 from ffun.core import logging
@@ -17,26 +18,41 @@ def row_to_feed(row: dict) -> Feed:
                 state=FeedState(row['state']),
                 last_error=FeedError(row['last_error']) if row['last_error'] else None,
                 load_attempted_at=row['load_attempted_at'],
-                loaded_at=row['loaded_at'])
+                loaded_at=row['loaded_at'],
+                title=row['title'],
+                description=row['description'])
 
 
-sql_insert_feed = '''
-INSERT INTO f_feeds (id, url, state)
-VALUES (%(id)s, %(url)s, %(state)s)
-ON CONFLICT (id) DO NOTHING
-'''
+async def save_feeds(feeds: list[Feed]) -> list[uuid.UUID]:
 
+    sql = '''
+    INSERT INTO f_feeds (id, url, state, title, description)
+    VALUES (%(id)s, %(url)s, %(state)s, %(title)s, %(description)s)
+    '''
 
-async def save_feeds(feeds: list[Feed]) -> None:
+    real_ids = []
 
     for feed in feeds:
         try:
-            await execute(sql_insert_feed,
+            await execute(sql,
                           {'id': feed.id,
                            'url': feed.url,
-                           'state': feed.state})
+                           'state': feed.state,
+                           'title': feed.title,
+                           'description': feed.description})
+
+            real_ids.append(feed.id)
         except psycopg.errors.UniqueViolation:
             logger.warning('unique_violation_while_saving_feed', feed_id=feed.id)
+
+            result = await execute('SELECT id FROM f_feeds WHERE url = %(url)s', {'url': feed.url})
+
+            if not result:
+                raise NotImplementedError('something went wrong')
+
+            real_ids.append(result[0]['id'])
+
+    return real_ids
 
 
 @run_in_transaction
@@ -69,6 +85,20 @@ async def get_next_feeds_to_load(execute: ExecuteType,
     return [row_to_feed(row) for row in rows]
 
 
+async def update_feed_info(feed_id: uuid.UUID, title: str, description: str) -> None:
+    sql = '''
+    UPDATE f_feeds
+    SET title = %(title)s,
+        description = %(description)s,
+        updated_at = NOW()
+    WHERE id = %(id)s
+    '''
+
+    await execute(sql, {'id': feed_id,
+                        'title': title,
+                        'description': description})
+
+
 async def mark_feed_as_loaded(feed_id: uuid.UUID) -> None:
     sql = '''
     UPDATE f_feeds
@@ -97,13 +127,13 @@ async def mark_feed_as_failed(feed_id: uuid.UUID, state: FeedState, error: FeedE
                         'error': error})
 
 
-async def get_all_feeds() -> list[Feed]:
+async def get_feeds(ids: Iterable[uuid.UUID]) -> list[Feed]:
     sql = '''
     SELECT *
     FROM f_feeds
-    ORDER BY created_at ASC
+    WHERE id = ANY(%(ids)s)
     '''
 
-    rows = await execute(sql)
+    rows = await execute(sql, {'ids': list(ids)})
 
     return [row_to_feed(row) for row in rows]

@@ -1,19 +1,19 @@
 import asyncio
 
 import typer
-import uvicorn
 from ffun.application.application import with_app
 
 app = typer.Typer()
 
 
 # TODO: cleanup
-async def run_experiment() -> None:
+async def run_experiment(url: str) -> None:
+    from ffun.feeds_discoverer import domain as fd_domain
     async with with_app():
-        # add temporary code here
-        pass
+        feeds = await fd_domain.discover(url=url)
+        print(feeds)
 
 
 @app.command()
-def experiment() -> None:
-    asyncio.run(run_experiment())
+def experiment(url: str) -> None:
+    asyncio.run(run_experiment(url=url))
