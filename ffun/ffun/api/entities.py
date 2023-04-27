@@ -230,3 +230,11 @@ class AddFeedRequest(api.APIRequest):
 
 class AddFeedResponse(api.APISuccess):
     pass
+
+
+class AddOpmlRequest(api.APIRequest):
+    content: str
+
+
+class AddOpmlResponse(api.APISuccess):
+    pass

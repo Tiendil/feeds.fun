@@ -18,6 +18,7 @@ import TagsFilterElement from "./components/TagsFilterElement.vue";
 import DiscoveryForm from "./components/DiscoveryForm.vue";
 import FeedInfo from "./components/FeedInfo.vue";
 import EntryInfo from "./components/EntryInfo.vue";
+import OpmlUpload from "./components/OPMLUpload.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -44,6 +45,7 @@ app.component("TagsFilterElement", TagsFilterElement);
 app.component("DiscoveryForm", DiscoveryForm);
 app.component("FeedInfo", FeedInfo);
 app.component("EntryInfo", EntryInfo);
+app.component("OpmlUpload", OpmlUpload);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);

@@ -725,14 +725,14 @@ files = [
 
 [[package]]
 name = "openai"
-version = "0.27.4"
+version = "0.27.5"
 description = "Python client library for the OpenAI API"
 category = "main"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-0.27.4-py3-none-any.whl", hash = "sha256:3b82c867d531e1fd2003d9de2131e1c4bfd4c70b1a3149e0543a555b30807b70"},
-    {file = "openai-0.27.4.tar.gz", hash = "sha256:9f9d27d26e62c6068f516c0729449954b5ef6994be1a6cbfe7dbefbc84423a04"},
+    {file = "openai-0.27.5-py3-none-any.whl", hash = "sha256:5b2121d8c0a4350626096fa482306d12e246a83b992530d54fd474f309f2882c"},
+    {file = "openai-0.27.5.tar.gz", hash = "sha256:75778ca05759c77dde704985ee16976ba58804212f10e61f44356e68ffb8390e"},
 ]
 
 [package.dependencies]
@@ -919,6 +919,21 @@ files = [
 cli = ["click (>=5.0)"]
 
 [[package]]
+name = "python-multipart"
+version = "0.0.6"
+description = "A streaming multipart parser for Python"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "python_multipart-0.0.6-py3-none-any.whl", hash = "sha256:ee698bab5ef148b0a760751c261902cd096e57e10558e11aca17646b74ee1c18"},
+    {file = "python_multipart-0.0.6.tar.gz", hash = "sha256:e9925a80bb668529f1b67c7fdb0a5dacdd7cbfc6fb0bff3ea443fe22bdd62132"},
+]
+
+[package.extras]
+dev = ["atomicwrites (==1.2.1)", "attrs (==19.2.0)", "coverage (==6.5.0)", "hatch", "invoke (==1.7.3)", "more-itertools (==4.3.0)", "pbr (==4.3.0)", "pluggy (==1.0.0)", "py (==1.11.0)", "pytest (==7.2.0)", "pytest-cov (==4.0.0)", "pytest-timeout (==2.1.0)", "pyyaml (==5.1)"]
+
+[[package]]
 name = "pyyaml"
 version = "6.0"
 description = "YAML parser and emitter for Python"
@@ -1040,14 +1055,14 @@ files = [
 
 [[package]]
 name = "requests"
-version = "2.28.2"
+version = "2.29.0"
 description = "Python HTTP for Humans."
 category = "main"
 optional = false
-python-versions = ">=3.7, <4"
+python-versions = ">=3.7"
 files = [
-    {file = "requests-2.28.2-py3-none-any.whl", hash = "sha256:64299f4909223da747622c030b781c0d7811e359c37124b4bd368fb8c6518baa"},
-    {file = "requests-2.28.2.tar.gz", hash = "sha256:98b1b2782e3c6c4904938b84c0eb932721069dfdb9134313beff7c83c2df24bf"},
+    {file = "requests-2.29.0-py3-none-any.whl", hash = "sha256:e8f3c9be120d3333921d213eef078af392fba3933ab7ed2d1cba3b56f2568c3b"},
+    {file = "requests-2.29.0.tar.gz", hash = "sha256:f2e34a75f4749019bb0e3effb66683630e4ffeaf75819fb51bebef1bf5aef059"},
 ]
 
 [package.dependencies]
@@ -1619,4 +1634,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "520abbbdffc54651062bdd33d8ff6c3a2a5d7997db37264afd0f9c253cbc5e3e"
+content-hash = "e558c1916323f79c295fb1d86cc85a658cb39e2f81f442e69fd0f646c576bc8d"

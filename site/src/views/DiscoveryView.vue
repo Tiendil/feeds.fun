@@ -2,7 +2,9 @@
   <h2>
     Discovery
   </h2>
-<discovery-form/>
+  <opml-upload/>
+  <hr/>
+  <discovery-form/>
 </template>
 
 <script lang="ts" setup>

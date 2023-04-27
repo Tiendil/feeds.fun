@@ -33,6 +33,8 @@ structlog = "23.*"
 
 yarl = "1.*"
 
+python-multipart = "0.*"
+
 [tool.poetry.dev-dependencies]
 
 pytest = "6.*"

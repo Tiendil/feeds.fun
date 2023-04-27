@@ -27,6 +27,8 @@ const entriesStore = useEntriesStore();
 
 globalSettings.mainPanelMode = e.MainPanelMode.Entries;
 
+globalSettings.updateDataVersion();
+
 const entriesNumber = computed(() => {
     return entriesStore.entriesReport.length;
 });
