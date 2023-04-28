@@ -1,6 +1,12 @@
 <template>
 <div class="container">
 
+  <div style="flex-shrink: 0; width: 5rem; left-padding: 0.25rem;">
+    <a href="#" @click.prevent="unsubscribe()">
+      unsubscribe
+    </a>
+  </div>
+
   <div style="flex-shrink: 0; width: 1rem; left-padding: 0.25rem;">
     <value-date-time :value="feed.loadedAt" :reversed="true"/>
   </div>
@@ -30,6 +36,7 @@
 import { computed, ref } from "vue";
 import * as t from "@/logic/types";
 import * as e from "@/logic/enums";
+import * as api from "@/logic/api";
 import { computedAsync } from "@vueuse/core";
 import DOMPurify from "dompurify";
 import { useGlobalSettingsStore } from "@/stores/globalSettings";
@@ -62,6 +69,10 @@ const purifiedDescription = computed(() => {
 const isOk = computed(() => {
     return properties.feed.state === "loaded";
 });
+
+async function unsubscribe() {
+    await api.unsubscribe({feedId: properties.feed.id});
+}
 
 </script>
 

@@ -242,3 +242,11 @@ class AddOpmlRequest(api.APIRequest):
 
 class AddOpmlResponse(api.APISuccess):
     pass
+
+
+class UnsubscribeRequest(api.APIRequest):
+    feedId: uuid.UUID
+
+
+class UnsubscribeResponse(api.APISuccess):
+    pass
