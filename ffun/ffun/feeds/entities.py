@@ -21,6 +21,7 @@ class FeedError(int, enum.Enum):
     network_read_timeout = 1005
     network_illegal_request_line = 1006
     network_non_200_status_code = 1007
+    network_disconection_without_response = 1008
 
     parsing_unknown = 2000
     parsing_base_error = 2001
