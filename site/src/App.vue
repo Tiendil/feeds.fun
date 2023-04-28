@@ -39,6 +39,9 @@
       </template>
 
       <template v-if="globalSettings.mainPanelMode == e.MainPanelMode.Feeds">
+        Show descriptions: <config-flag v-model:flag="globalSettings.showFeedsDescriptions"
+                                        on-text="yes"
+                                        off-text="no"/>
       </template>
 
       <template v-if="globalSettings.mainPanelMode == e.MainPanelMode.Rules">

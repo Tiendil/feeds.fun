@@ -18,6 +18,7 @@ const API_REMOVE_MARKER = `${ENTRY_POINT}/api/remove-marker`;
 const API_DISCOVER_FEEDS = `${ENTRY_POINT}/api/discover-feeds`;
 const API_ADD_FEED = `${ENTRY_POINT}/api/add-feed`;
 const API_ADD_OPML = `${ENTRY_POINT}/api/add-opml`;
+const API_UNSUBSCRIBE = `${ENTRY_POINT}/api/unsubscribe`;
 
 
 async function post({url, data}: {url: string, data: any}) {
@@ -150,4 +151,9 @@ export async function addFeed({url}: {url: string}) {
 
 export async function addOPML({content}: {content: string}) {
     await post({url: API_ADD_OPML, data: {content: content}});
+}
+
+
+export async function unsubscribe({feedId}: {feedId: t.FeedId}) {
+    await post({url: API_UNSUBSCRIBE, data: {feedId: feedId}});
 }

@@ -1,46 +1,39 @@
 <template>
+<div>
+  <template v-if="feeds === null || sortedFeeds.length == 0">
+    <p>No feeds</p>
+  </template>
 
-  <table>
-    <thead>
-      <tr>
-        <th>id</th>
-        <th>state</th>
-        <th>url</th>
-        <th>loaded at</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="feed in feeds">
-        <td><value-feed-id :value="feed.id"/></td>
-        <td>{{feedState(feed)}}</td>
-        <td><value-url :value="feed.url"/></td>
-        <td>
-          <value-date-time v-if="feed.loadedAt !== null" :value="feed.loadedAt"/>
-          <span v-else>—</span>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <template v-else>
+
+    <ul style="list-style-type: none; margin: 0; padding: 0;">
+      <li v-for="feed in sortedFeeds"
+          :key="feed.id"
+          style="margin-bottom: 0.25rem;">
+        <feed-for-list :feed="feed"/>
+      </li>
+    </ul>
+
+  </template>
+</div>
 
 </template>
 
 <script lang="ts" setup>
+import { computed, ref, onUnmounted, watch } from "vue";
 import * as t from "@/logic/types";
 
-defineProps<{ feeds: Array[t.Feed]}>();
+const properties = defineProps<{ feeds: Array[t.Feed]}>();
 
-function feedState(feed: t.Feed) {
-    if (feed.state === "not_loaded") {
-        return "loading";
-    } else if (feed.state === "loaded") {
-        return "loaded";
-    } else if (feed.state === "damaged") {
-        return feed.lastError;
-    } else {
-        return "unknown";
-    }
-}
+const sortedFeeds = computed(() => {
+    return properties.feeds.sort((a, b) => {
+        if (a.title < b.title) return -1;
+        if (a.title > b.title) return 1;
+        return 0;
+    });
+});
 
 </script>
 
-<style></style>
+<style scoped>
+</style>

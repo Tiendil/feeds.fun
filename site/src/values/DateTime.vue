@@ -7,7 +7,7 @@ import { computed } from "vue";
 import * as u from "@/logic/utils";
 
 const properties = defineProps<{
-    value: Date;
+    value: Date|null;
     reversed?: boolean;
 }>();
 
