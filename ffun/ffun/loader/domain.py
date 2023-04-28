@@ -30,6 +30,9 @@ async def load_content(url: str) -> httpx.Response:  # noqa: CCR001, C901 # pyli
             #       for example `http://gopractice.ru/feed/` tries to redirect to use HTTP/0.9
             logger.warning('network_illegal_request_line')
             error_code = FeedError.network_illegal_request_line
+        elif 'Server disconnected without sending a response' in message:
+            logger.warning('network_disconection_without_response')
+            error_code = FeedError.network_disconection_without_response
         else:
             logger.exception('remote_protocol_error_while_loading_feed')
 
