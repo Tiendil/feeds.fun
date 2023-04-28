@@ -29,6 +29,8 @@ export function toURL(url: string): URL {
 
 export type Feed = {
     readonly id: FeedId;
+    readonly title: string|null;
+    readonly description: string|null;
     readonly url: URL;
     readonly state: string;
     readonly lastError: string|null;
@@ -36,9 +38,12 @@ export type Feed = {
 };
 
 
-export function feedFromJSON({ id, url, state, lastError, loadedAt }:
-                             { id: string, url: string, state: string, lastError: string|null, loadedAt: string }): Feed {
+export function feedFromJSON({ id, title, description, url, state, lastError, loadedAt }:
+                             { id: string, title: string, description: string, url: string,
+                               state: string, lastError: string|null, loadedAt: string }): Feed {
     return { id: toFeedId(id),
+             title: title !== null ? title : null,
+             description: description !== null ? description : null,
              url: toURL(url),
              state: state,
              lastError: lastError,

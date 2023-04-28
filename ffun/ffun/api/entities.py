@@ -25,6 +25,8 @@ class Marker(str, enum.Enum):
 
 class Feed(api.Base):
     id: uuid.UUID
+    title: str|None
+    description: str|None
     url: str
     state: str
     lastError: str|None = None
@@ -34,6 +36,8 @@ class Feed(api.Base):
     def from_internal(cls, feed: f_entities.Feed) -> 'Feed':
         return cls(
             id=feed.id,
+            title=feed.title,
+            description=feed.description,
             url=feed.url,
             state=feed.state.name,
             lastError=feed.last_error.name if feed.last_error else None,
@@ -237,4 +241,12 @@ class AddOpmlRequest(api.APIRequest):
 
 
 class AddOpmlResponse(api.APISuccess):
+    pass
+
+
+class UnsubscribeRequest(api.APIRequest):
+    feedId: uuid.UUID
+
+
+class UnsubscribeResponse(api.APISuccess):
     pass

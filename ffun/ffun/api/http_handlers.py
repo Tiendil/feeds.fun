@@ -224,3 +224,10 @@ async def api_add_opml(request: entities.AddOpmlRequest,
     await _add_feeds(feed_infos, user)
 
     return entities.AddOpmlResponse()
+
+
+@router.post('/api/unsubscribe')
+async def api_unsubscribe(request: entities.UnsubscribeRequest, user: User) -> entities.UnsubscribeResponse:
+    await fl_domain.remove_link(user_id=user.id, feed_id=request.feedId)
+
+    return entities.UnsubscribeResponse()
