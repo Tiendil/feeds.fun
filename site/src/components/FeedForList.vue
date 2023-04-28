@@ -72,6 +72,7 @@ const isOk = computed(() => {
 
 async function unsubscribe() {
     await api.unsubscribe({feedId: properties.feed.id});
+    globalSettings.updateDataVersion();
 }
 
 </script>
