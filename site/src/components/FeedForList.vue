@@ -17,8 +17,10 @@
   <div style="flex-grow: 1;">
     <value-url :value="feed.url"
                :text="purifiedTitle"/>
-    <br/>
-    <div v-html="purifiedDescription"/>
+    <template v-if="globalSettings.showFeedsDescriptions">
+      <br/>
+      <div v-html="purifiedDescription"/>
+    </template>
   </div>
 
 </div>
@@ -30,9 +32,9 @@ import * as t from "@/logic/types";
 import * as e from "@/logic/enums";
 import { computedAsync } from "@vueuse/core";
 import DOMPurify from "dompurify";
-import { useEntriesStore } from "@/stores/entries";
+import { useGlobalSettingsStore } from "@/stores/globalSettings";
 
-const entriesStore = useEntriesStore();
+const globalSettings = useGlobalSettingsStore();
 
 const properties = defineProps<{ feed: t.Feed}>();
 
