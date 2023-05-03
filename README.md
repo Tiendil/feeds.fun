@@ -18,6 +18,7 @@
 # Errors
 
 - [ ] This model's maximum context length is 4097 tokens. However, you requested 4140 tokens (3116 in the messages, 1024 in the completion)
+- [ ] Tags normalization breaks `c#` tag to `c`
 
 # Closed MVP
 
