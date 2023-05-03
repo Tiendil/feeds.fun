@@ -90,8 +90,7 @@ trash_system_tags = {'topics',
 
 def extract_tags_from_valid_json(text: str) -> set[str]:
     data = json.loads(text)
-    tags = _extract_tags(data)
-    return tags - trash_system_tags
+    return _extract_tags(data)
 
 
 def extract_tags_from_invalid_json(text: str) -> set[str]:
@@ -119,9 +118,11 @@ def extract_tags_from_invalid_json(text: str) -> set[str]:
 
 def extract_tags(text: str) -> set[str]:
     try:
-        return extract_tags_from_valid_json(text)
+        tags = extract_tags_from_valid_json(text)
     except json.decoder.JSONDecodeError:
-        return extract_tags_from_invalid_json(text)
+        tags = extract_tags_from_invalid_json(text)
+
+    return tags - trash_system_tags
 
 
 class Processor(base.Processor):
