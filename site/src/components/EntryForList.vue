@@ -14,6 +14,8 @@
                   on-text="read"
                   off-text="new!"/>
 
+    ·
+
     <a href="#" style="text-decoration: none;" v-if="!showBody" @click.prevent="displayBody()">&#9660;</a>
     <a href="#" style="text-decoration: none;" v-if="showBody" @click.prevent="showBody = false">&#9650;</a>
 
