@@ -1,11 +1,12 @@
 <template>
 <div :class="classes"
+     :title="tooltip"
      @click.prevent="onClick()">
 
   <slot name="start">
   </slot>
 
-  <span v-if="count">[{{count}}]</span>
+  <span v-if="countMode == 'prefix'">[{{count}}]</span>
 
   {{value}}
 </div>
@@ -19,6 +20,7 @@ const entriesStore = useEntriesStore();
 
 const properties = defineProps<{value: string,
                                 count?: number|null,
+                                countMode?: string|null,
                                 mode?: string|null}>();
 
 const emit = defineEmits(["tag:clicked"]);
@@ -38,6 +40,13 @@ const classes = computed(() => {
 function onClick() {
     emit('tag:clicked', properties.value);
 }
+
+const tooltip = computed(() => {
+    if (properties.countMode == 'tooltip' && properties.count) {
+        return `articles with the tag: ${properties.count}`;
+    }
+    return '';
+});
 
 </script>
 
