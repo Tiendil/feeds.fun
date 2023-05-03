@@ -9,6 +9,8 @@
           :key="tag">
   <value-tag :value="tag"
              :mode="!!selectedTags[tag] ? 'selected' : null"
+             :count="entriesStore.reportTagsCount[tag]"
+             count-mode="tooltip"
              @tag:clicked="onTagClicked"/>&nbsp;
 </template>
 

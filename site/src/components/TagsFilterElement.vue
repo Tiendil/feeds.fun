@@ -8,6 +8,7 @@
 
   <value-tag :value="tag"
              :count="count"
+             count-mode="prefix"
              :mode="mode"
              @tag:clicked="onTagClicked">
   </value-tag>
