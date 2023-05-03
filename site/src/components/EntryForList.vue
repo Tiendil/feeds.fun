@@ -8,6 +8,12 @@
   </div>
 
   <div style="flex-grow: 1;">
+
+    <input-marker :marker="e.Marker.Read"
+                  :entry-id="entryId"
+                  on-text="read"
+                  off-text="new!"/>
+
     <a href="#" style="text-decoration: none;" v-if="!showBody" @click.prevent="displayBody()">&#9660;</a>
     <a href="#" style="text-decoration: none;" v-if="showBody" @click.prevent="showBody = false">&#9650;</a>
 
@@ -16,13 +22,6 @@
        @click="onTitleClick()">
       {{purifiedTitle}}
     </a>
-
-    |
-
-    <input-marker :marker="e.Marker.Read"
-                  :entry-id="entryId"
-                  on-text="read"
-                  off-text="not read"/>
 
     <template v-if="showTags">
       <br/>
