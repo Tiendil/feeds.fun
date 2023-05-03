@@ -41,6 +41,7 @@
 - [ ] Tag: unicode-in-caption or too-much-unicode-in-caption
 - [ ] reduce amount the size of answers from backend
 - [ ] in the news list highlight tags that are used in rules
+- [ ] likes/dislikes for entries => propose rules/tags on base of them
 
 # Public MVP
 
