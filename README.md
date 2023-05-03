@@ -61,6 +61,7 @@
 - [ ] normalize urls for feeds
 - [ ] normalize urls for entities
 - [ ] do not run processors for entries with duplicated content
+- [ ] contact https://karl-voit.at/ about the tags?
 
 
 # Commands
