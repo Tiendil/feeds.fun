@@ -52,6 +52,7 @@ function tagComparator(a, b) {
     return 0;
 }
 
+
 const displayedSelectedTags = computed(() => {
     let values = Object.keys(selectedTags.value);
 
@@ -76,10 +77,10 @@ const displayedTags = computed(() => {
         return selectedTags.value[tag] !== true;
     });
 
+    values.sort(tagComparator);
+
     // TODO: move to configs or even to the side panel
     values = values.slice(0, 100);
-
-    values.sort(tagComparator);
 
     return values;
 });
