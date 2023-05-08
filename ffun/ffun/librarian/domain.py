@@ -6,7 +6,7 @@ from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
 from ffun.ontology import domain as o_domain
 
-from . import openai_client, tags
+from . import errors, openai_client, tags
 from .processors.base import Processor
 
 logger = logging.get_module_logger()
@@ -25,6 +25,8 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
         logger.info('tags_found', tags=normalized_tags)
 
         await o_domain.apply_tags_to_entry(entry.id, normalized_tags)
+    except errors.SkipAndContinueLater:
+        pass
     except Exception:
         logger.exception('unexpected_error_in_processor')
         raise
