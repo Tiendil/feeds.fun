@@ -10,6 +10,7 @@ import typer
 from ffun.core import logging
 from slugify import slugify
 
+from . import errors
 from .settings import settings
 
 logger = logging.get_module_logger()
@@ -63,12 +64,27 @@ async def prepare_requests(system, text, model, total_tokens, max_return_tokens)
                 expected_chunks_number=expected_chunks_number,
                 expected_chunk_size=expected_chunk_size)
 
-    for i in range(expected_chunks_number):
-        start = i * expected_chunk_size
-        end = (i + 1) * expected_chunk_size
+    offset = 0
+    current_chunk_size = expected_chunk_size
+
+    # expected_chunk_size is not accurate,
+    # because tokens have different length in charactets
+    # => number of characters to send is depends on type of part of the text,
+    #    where they were taken from
+    while offset < len(text):
+        expected_chunk = text[offset:offset + current_chunk_size]
+
+        expected_text_tokens = additional_tokens_per_message + len(encoding.encode(expected_chunk))
+
+        if expected_text_tokens > tokens_per_chunk:
+            current_chunk_size = math.ceil(current_chunk_size * 0.95)
+            continue
 
         messages.append([{'role': 'system', 'content': system},
-                         {'role': 'user', 'content': text[start:end]}])
+                         {'role': 'user', 'content': expected_chunk}])
+
+        offset += current_chunk_size
+        current_chunk_size = expected_chunk_size
 
     return messages
 
@@ -81,13 +97,17 @@ async def request(model,  # noqa
                   presence_penalty,
                   frequency_penalty):
     logger.info('request_openai')
-    answer = await openai.ChatCompletion.acreate(model=model,
-                                                 temperature=temperature,
-                                                 max_tokens=max_tokens,
-                                                 top_p=top_p,
-                                                 presence_penalty=presence_penalty,
-                                                 frequency_penalty=frequency_penalty,
-                                                 messages=messages)
+    try:
+        answer = await openai.ChatCompletion.acreate(model=model,
+                                                     temperature=temperature,
+                                                     max_tokens=max_tokens,
+                                                     top_p=top_p,
+                                                     presence_penalty=presence_penalty,
+                                                     frequency_penalty=frequency_penalty,
+                                                     messages=messages)
+    except openai.error.RateLimitError as e:
+        logger.warning('openai_rate_limit', message=str(e))
+        raise errors.SkipAndContinueLater(message=str(e)) from e
 
     content = answer['choices'][0]['message']['content']
 
