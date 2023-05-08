@@ -106,7 +106,7 @@ async def request(model,  # noqa
                                                      frequency_penalty=frequency_penalty,
                                                      messages=messages)
     except openai.error.RateLimitError as e:
-        logger.warning('openai_rate_limit', str(e))
+        logger.warning('openai_rate_limit', message=str(e))
         raise errors.SkipAndContinueLater(message=str(e)) from e
 
     content = answer['choices'][0]['message']['content']
