@@ -10,6 +10,7 @@ import typer
 from ffun.core import logging
 from slugify import slugify
 
+from . import errors
 from .settings import settings
 
 logger = logging.get_module_logger()
@@ -96,13 +97,17 @@ async def request(model,  # noqa
                   presence_penalty,
                   frequency_penalty):
     logger.info('request_openai')
-    answer = await openai.ChatCompletion.acreate(model=model,
-                                                 temperature=temperature,
-                                                 max_tokens=max_tokens,
-                                                 top_p=top_p,
-                                                 presence_penalty=presence_penalty,
-                                                 frequency_penalty=frequency_penalty,
-                                                 messages=messages)
+    try:
+        answer = await openai.ChatCompletion.acreate(model=model,
+                                                     temperature=temperature,
+                                                     max_tokens=max_tokens,
+                                                     top_p=top_p,
+                                                     presence_penalty=presence_penalty,
+                                                     frequency_penalty=frequency_penalty,
+                                                     messages=messages)
+    except openai.error.RateLimitError as e:
+        logger.warning('openai_rate_limit', str(e))
+        raise errors.SkipAndContinueLater(message=str(e)) from e
 
     content = answer['choices'][0]['message']['content']
 
