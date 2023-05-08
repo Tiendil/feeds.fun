@@ -17,15 +17,19 @@ logger = logging.get_module_logger()
 async def process_entry(processor_id: int, processor: Processor, entry: Entry) -> None:
     logger.info('dicover_tags', entry=entry, processor_id=processor_id)
 
-    found_tags = await processor.process(entry)
+    try:
+        found_tags = await processor.process(entry)
 
-    normalized_tags = tags.normalize_tags(found_tags)
+        normalized_tags = tags.normalize_tags(found_tags)
 
-    logger.info('tags_found', tags=normalized_tags)
+        logger.info('tags_found', tags=normalized_tags)
 
-    await o_domain.apply_tags_to_entry(entry.id, normalized_tags)
-
-    await l_domain.mark_entry_as_processed(processor_id=processor_id,
-                                           entry_id=entry.id)
+        await o_domain.apply_tags_to_entry(entry.id, normalized_tags)
+    except Exception:
+        logger.exception('unexpected_error_in_processor')
+        raise
+    finally:
+        await l_domain.mark_entry_as_processed(processor_id=processor_id,
+                                               entry_id=entry.id)
 
     logger.info('entry_processed')
