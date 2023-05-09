@@ -15,6 +15,7 @@
 - [x] common mechanism to refresh lists of news, feeds, rules on their changes
 - [ ] simple (or not) users management
 - [ ] mark entriy processed with status: error/success
+- [ ] exit faster on ctrl+c
 
 # Errors
 
