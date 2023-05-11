@@ -15,7 +15,6 @@
 - [x] common mechanism to refresh lists of news, feeds, rules on their changes
 - [ ] simple (or not) users management
 - [x] mark entriy processed with status: error/success
-- [ ] exit faster on ctrl+c
 
 # Errors
 
@@ -66,6 +65,7 @@
 - [ ] normalize urls for entities
 - [ ] do not run processors for entries with duplicated content
 - [ ] contact https://karl-voit.at/ about the tags?
+- [ ] exit faster on ctrl+c. Need some way to stop background processors but do not affect ongoing DB requests, etc.
 
 
 # Commands
