@@ -28,6 +28,7 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
     except errors.SkipAndContinueLater:
         pass
     except Exception:
+        await o_domain.apply_tags_to_entry(entry.id, {f'processor-{processor_id}-error'})
         logger.exception('unexpected_error_in_processor')
         raise
     finally:
