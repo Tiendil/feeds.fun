@@ -110,7 +110,7 @@ async def mark_entry_as_processed(
         entry_id: uuid.UUID, processor_id: int, state: ProcessedState, error: str|None) -> None:
     sql = '''
     INSERT INTO l_entry_process_info (entry_id, processor_id, processed_at, state, last_error)
-    VALUES (%(entry_id)s, %(processor_id)s, NOW(), %(state)s, %(last_error)s
+    VALUES (%(entry_id)s, %(processor_id)s, NOW(), %(state)s, %(last_error)s)
     ON CONFLICT (entry_id, processor_id)
     DO UPDATE SET processed_at = NOW(),
                   updated_at = NOW(),
