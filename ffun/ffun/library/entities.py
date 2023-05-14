@@ -1,8 +1,14 @@
-
 import datetime
+import enum
 import uuid
 
 import pydantic
+
+
+class ProcessedState(int, enum.Enum):
+    success = 1
+    error = 2
+    retry_later = 3
 
 
 class Entry(pydantic.BaseModel):

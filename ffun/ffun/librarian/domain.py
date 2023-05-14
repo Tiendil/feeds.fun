@@ -3,7 +3,7 @@ import datetime
 
 from ffun.core import logging
 from ffun.library import domain as l_domain
-from ffun.library.entities import Entry
+from ffun.library.entities import Entry, ProcessedState
 from ffun.ontology import domain as o_domain
 
 from . import errors, openai_client, tags
@@ -26,13 +26,23 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
 
         await o_domain.apply_tags_to_entry(entry.id, normalized_tags)
     except errors.SkipAndContinueLater:
-        pass
-    except Exception:
-        await o_domain.apply_tags_to_entry(entry.id, {f'processor-{processor_id}-error'})
+        logger.warning('processor_requested_to_skip_entry')
+        await l_domain.mark_entry_as_processed(processor_id=processor_id,
+                                               entry_id=entry.id,
+                                               state=ProcessedState.retry_later,
+                                               error=None)
+    except Exception as e:
+        await l_domain.mark_entry_as_processed(processor_id=processor_id,
+                                               entry_id=entry.id,
+                                               state=ProcessedState.error,
+                                               error=str(e))
         logger.exception('unexpected_error_in_processor')
         raise
-    finally:
+    else:
+        logger.info('processor_successed')
         await l_domain.mark_entry_as_processed(processor_id=processor_id,
-                                               entry_id=entry.id)
+                                               entry_id=entry.id,
+                                               state=ProcessedState.success,
+                                               error=None)
 
     logger.info('entry_processed')
