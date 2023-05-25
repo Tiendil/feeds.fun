@@ -15,6 +15,7 @@
 - [x] common mechanism to refresh lists of news, feeds, rules on their changes
 - [ ] simple (or not) users management
 - [x] mark entriy processed with status: error/success
+- [ ] load only feeds that are need at least by one user
 
 # Errors
 
