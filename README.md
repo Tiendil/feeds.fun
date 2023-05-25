@@ -4,6 +4,10 @@
 - [ ] default mode should use single user
 - [ ] landing page
 - [ ] protect only required views
+- [ ] login widget
+- [ ] logout button
+- [ ] remove side panel from landing / main page
+- [ ] stylize landing page
 
 # MVP
 
