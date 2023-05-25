@@ -8,9 +8,13 @@ from ..application import app
 @app.command()
 def server(api: bool = False,
            loader: bool = False,
-           librarian: bool = False) -> None:
+           librarian: bool = False,
+           supertokens: bool = False) -> None:
 
-    prepare_app(api=api, loader=loader, librarian=librarian)
+    prepare_app(api=api,
+                loader=loader,
+                librarian=librarian,
+                supertokens=supertokens)
 
     application = get_app()
 

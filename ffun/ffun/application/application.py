@@ -4,9 +4,12 @@ import contextlib
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
 from ffun.api import http_handlers as api_http_handlers
+from ffun.auth.supertokens import use_supertokens
 from ffun.core import logging, postgresql
 from ffun.librarian.background_processors import create_background_processors
 from ffun.loader.background_loader import FeedsLoader
+
+from .settings import settings
 
 _app = None
 
@@ -83,19 +86,38 @@ async def use_librarian(app: fastapi.FastAPI):
         logger.info('librarian_deinitialized')
 
 
-def create_app(api: bool, loader: bool, librarian: bool):
+def create_app(api: bool,  # noqa: CCR001
+               loader: bool,
+               librarian: bool,
+               supertokens: bool):
     logging.initialize()
 
     logger.info('create_app')
 
     @contextlib.asynccontextmanager
     async def lifespan(app: fastapi.FastAPI):
-        async with (use_postgresql(),
-                    use_api(app) if api else contextlib.nullcontext(),
-                    use_loader(app) if loader else contextlib.nullcontext(),
-                    use_librarian(app) if librarian else contextlib.nullcontext()):
+        async with contextlib.AsyncExitStack() as stack:
+            if supertokens:
+                await stack.enter_async_context(use_supertokens(app,
+                                                                app_name=settings.name,
+                                                                api_domain=f'http://{settings.domain}:8000',
+                                                                website_domain=f'http://{settings.domain}:5173'))
+
+            await stack.enter_async_context(use_postgresql())
+
+            if api:
+                await stack.enter_async_context(use_api(app))
+
+            if loader:
+                await stack.enter_async_context(use_loader(app))
+
+            if librarian:
+                await stack.enter_async_context(use_librarian(app))
+
             await app.router.startup()
+
             yield
+
             await app.router.shutdown()
 
     app = fastapi.FastAPI(lifespan=lifespan)
@@ -115,10 +137,11 @@ def create_app(api: bool, loader: bool, librarian: bool):
 
 def prepare_app(api: bool = False,
                 loader: bool = False,
-                librarian: bool = False):
+                librarian: bool = False,
+                supertokens: bool = False):
     global _app
 
-    _app = create_app(api=api, loader=loader, librarian=librarian)
+    _app = create_app(api=api, loader=loader, librarian=librarian, supertokens=supertokens)
 
 
 def get_app():

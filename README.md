@@ -1,4 +1,10 @@
 
+# Supertokens
+
+- [ ] default mode should use single user
+- [ ] landing page
+- [ ] protect only required views
+
 # MVP
 
 - [x] scoring
