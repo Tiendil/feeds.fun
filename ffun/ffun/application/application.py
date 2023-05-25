@@ -4,7 +4,7 @@ import contextlib
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
 from ffun.api import http_handlers as api_http_handlers
-from ffun.auth.supertokens import use_supertokens
+from ffun.auth import supertokens as st
 from ffun.core import logging, postgresql
 from ffun.librarian.background_processors import create_background_processors
 from ffun.loader.background_loader import FeedsLoader
@@ -98,10 +98,10 @@ def create_app(api: bool,  # noqa: CCR001
     async def lifespan(app: fastapi.FastAPI):
         async with contextlib.AsyncExitStack() as stack:
             if supertokens:
-                await stack.enter_async_context(use_supertokens(app,
-                                                                app_name=settings.name,
-                                                                api_domain=f'http://{settings.domain}:8000',
-                                                                website_domain=f'http://{settings.domain}:5173'))
+                await stack.enter_async_context(st.use_supertokens(app,
+                                                                   app_name=settings.name,
+                                                                   api_domain=f'http://{settings.domain}:8000',
+                                                                   website_domain=f'http://{settings.domain}:5173'))
 
             await stack.enter_async_context(use_postgresql())
 
@@ -121,6 +121,8 @@ def create_app(api: bool,  # noqa: CCR001
             await app.router.shutdown()
 
     app = fastapi.FastAPI(lifespan=lifespan)
+
+    st.add_middlewares(app)
 
     app.add_middleware(
         CORSMiddleware,

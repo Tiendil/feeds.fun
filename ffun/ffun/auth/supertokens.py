@@ -51,3 +51,7 @@ async def use_supertokens(app: fastapi.FastAPI,
     logger.info('supertokens_initialized')
 
     yield
+
+
+def add_middlewares(app: FastAPI) -> None:
+    app.add_middleware(get_middleware())

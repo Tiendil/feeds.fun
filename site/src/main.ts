@@ -20,6 +20,7 @@ import FeedInfo from "./components/FeedInfo.vue";
 import EntryInfo from "./components/EntryInfo.vue";
 import OpmlUpload from "./components/OPMLUpload.vue";
 import FeedForList from "./components/FeedForList.vue";
+import SupertokensLogin from "./components/SupertokensLogin.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -29,6 +30,8 @@ import ValueFeedId from "./values/FeedId.vue";
 import ValueDateTime from "./values/DateTime.vue";
 import ValueTag from "./values/Tag.vue";
 import ValueScore from "./values/Score.vue";
+
+import { useSupertokens } from "@/stores/supertokens";
 
 const app = createApp(App)
 
@@ -48,6 +51,7 @@ app.component("FeedInfo", FeedInfo);
 app.component("EntryInfo", EntryInfo);
 app.component("OpmlUpload", OpmlUpload);
 app.component("FeedForList", FeedForList);
+app.component("SupertokensLogin", SupertokensLogin);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);
@@ -62,3 +66,12 @@ app.use(createPinia())
 app.use(router)
 
 app.mount('#app')
+
+
+const supertokens = useSupertokens();
+
+// TODO: parametrize
+
+supertokens.init({apiDomain: "http://127.0.0.1:8000",
+                  apiBasePath: "/auth",
+                  appName: "Feeds Fun"});

@@ -8,6 +8,7 @@
 - [ ] logout button
 - [ ] remove side panel from landing / main page
 - [ ] stylize landing page
+- [ ] resend magic link
 
 # MVP
 
