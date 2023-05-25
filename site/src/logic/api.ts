@@ -3,22 +3,22 @@ import axios from "axios";
 import * as t from "@/logic/types";
 import * as e from "@/logic/enums";
 
-const ENTRY_POINT = 'http://127.0.0.1:8000'
+const ENTRY_POINT = '/api'
 
-const API_GET_FEEDS = `${ENTRY_POINT}/api/get-feeds`;
-const API_GET_LAST_ENTRIES = `${ENTRY_POINT}/api/get-last-entries`;
-const API_GET_ENTRIES_BY_IDS = `${ENTRY_POINT}/api/get-entries-by-ids`;
-const API_CREATE_RULE = `${ENTRY_POINT}/api/create-rule`;
-const API_DELETE_RULE = `${ENTRY_POINT}/api/delete-rule`;
-const API_UPDATE_RULE = `${ENTRY_POINT}/api/update-rule`;
-const API_GET_RULES = `${ENTRY_POINT}/api/get-rules`;
-const API_GET_SCORE_DETAILS = `${ENTRY_POINT}/api/get-score-details`;
-const API_SET_MARKER = `${ENTRY_POINT}/api/set-marker`;
-const API_REMOVE_MARKER = `${ENTRY_POINT}/api/remove-marker`;
-const API_DISCOVER_FEEDS = `${ENTRY_POINT}/api/discover-feeds`;
-const API_ADD_FEED = `${ENTRY_POINT}/api/add-feed`;
-const API_ADD_OPML = `${ENTRY_POINT}/api/add-opml`;
-const API_UNSUBSCRIBE = `${ENTRY_POINT}/api/unsubscribe`;
+const API_GET_FEEDS = `${ENTRY_POINT}/get-feeds`;
+const API_GET_LAST_ENTRIES = `${ENTRY_POINT}/get-last-entries`;
+const API_GET_ENTRIES_BY_IDS = `${ENTRY_POINT}/get-entries-by-ids`;
+const API_CREATE_RULE = `${ENTRY_POINT}/create-rule`;
+const API_DELETE_RULE = `${ENTRY_POINT}/delete-rule`;
+const API_UPDATE_RULE = `${ENTRY_POINT}/update-rule`;
+const API_GET_RULES = `${ENTRY_POINT}/get-rules`;
+const API_GET_SCORE_DETAILS = `${ENTRY_POINT}/get-score-details`;
+const API_SET_MARKER = `${ENTRY_POINT}/set-marker`;
+const API_REMOVE_MARKER = `${ENTRY_POINT}/remove-marker`;
+const API_DISCOVER_FEEDS = `${ENTRY_POINT}/discover-feeds`;
+const API_ADD_FEED = `${ENTRY_POINT}/add-feed`;
+const API_ADD_OPML = `${ENTRY_POINT}/add-opml`;
+const API_UNSUBSCRIBE = `${ENTRY_POINT}/unsubscribe`;
 
 
 async function post({url, data}: {url: string, data: any}) {
