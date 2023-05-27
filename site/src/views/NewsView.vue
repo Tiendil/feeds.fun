@@ -1,5 +1,5 @@
 <template>
-<h2>
+<h2 style="margin-top: 0;">
   News
 
   <span v-if="entriesNumber > 0">[{{entriesNumber}}]</span>

@@ -1,5 +1,5 @@
 <template>
-    <h2>
+    <h2 style="margin-top: 0;">
       Rules
       <span v-if="rules">[{{rules.length}}]</span>
     </h2>

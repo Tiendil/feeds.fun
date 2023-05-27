@@ -1,5 +1,5 @@
 <template>
-  <h2>
+  <h2 style="margin-top: 0;">
     Feeds
     <span v-if="feeds">
       [{{ feeds.length }}]
