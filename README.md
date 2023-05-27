@@ -9,6 +9,7 @@
 - [ ] remove side panel from landing / main page
 - [ ] stylize landing page
 - [ ] resend magic link
+- [ ] email field should react on enter
 
 # MVP
 
