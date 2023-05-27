@@ -79,6 +79,7 @@
 - [ ] do not run processors for entries with duplicated content
 - [ ] contact https://karl-voit.at/ about the tags?
 - [ ] exit faster on ctrl+c. Need some way to stop background processors but do not affect ongoing DB requests, etc.
+- [ ] resend magic link counter is controlled on client (shoud be on backend?) and reseted after page refresh.
 
 
 # Commands

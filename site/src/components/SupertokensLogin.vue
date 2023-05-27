@@ -44,7 +44,7 @@ import { useSupertokens } from "@/stores/supertokens";
 
 const supertokens = useSupertokens();
 
-const requested = ref(false);
+const requested = ref(supertokens.hasInitialMagicLinkBeenSent());
 
 const counting = ref(false);
 

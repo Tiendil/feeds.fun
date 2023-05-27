@@ -7,6 +7,7 @@ import Session from 'supertokens-web-js/recipe/session';
 import Passwordless from 'supertokens-web-js/recipe/passwordless'
 import { createCode } from "supertokens-web-js/recipe/passwordless";
 import { resendCode } from "supertokens-web-js/recipe/passwordless";
+import { getLoginAttemptInfo } from "supertokens-web-js/recipe/passwordless";
 
 
 export const useSupertokens = defineStore("supertokens", () => {
@@ -78,11 +79,16 @@ export const useSupertokens = defineStore("supertokens", () => {
         }
     }
 
+    async function hasInitialMagicLinkBeenSent() {
+        return await getLoginAttemptInfo() !== undefined;
+    }
+
     return {
         init,
         sendMagicLink,
         resendMagicLink,
         isLoggedIn,
         logout,
+        hasInitialMagicLinkBeenSent,
     };
 });
