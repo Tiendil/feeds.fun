@@ -5,9 +5,7 @@ import { defineStore } from "pinia";
 import SuperTokens from 'supertokens-web-js';
 import Session from 'supertokens-web-js/recipe/session';
 import Passwordless from 'supertokens-web-js/recipe/passwordless'
-import { createCode } from "supertokens-web-js/recipe/passwordless";
-import { resendCode } from "supertokens-web-js/recipe/passwordless";
-import { getLoginAttemptInfo } from "supertokens-web-js/recipe/passwordless";
+import * as passwordless from "supertokens-web-js/recipe/passwordless";
 
 
 export const useSupertokens = defineStore("supertokens", () => {
@@ -27,21 +25,24 @@ export const useSupertokens = defineStore("supertokens", () => {
         });
     }
 
+    function processError(err: any) {
+        console.log(err);
+        if (err.isSuperTokensGeneralError === true) {
+            window.alert(err.message);
+        }
+    }
+
 
     async function sendMagicLink(email: string) {
         try {
-            let response = await createCode({
+            let response = await passwordless.createCode({
                 email
             });
 
-            window.alert("Please check your email for the magic link");
+            return response.status === "OK";
         } catch (err: any) {
-            console.log(err);
-            if (err.isSuperTokensGeneralError === true) {
-                // this may be a custom error message sent from the API by you,
-                // or if the input email / phone number is not valid.
-                window.alert(err.message);
-            }
+            processError(err);
+            return false;
         }
     }
 
@@ -54,33 +55,54 @@ export const useSupertokens = defineStore("supertokens", () => {
 
     async function logout() {
         await Session.signOut();
-        window.location.href = "/";
     }
 
     async function resendMagicLink() {
         try {
-            let response = await resendCode();
+            let response = await passwordless.resendCode();
 
-            if (response.status === "RESTART_FLOW_ERROR") {
+            if (response.status === "OK") {
+                return true;
+            } else if (response.status === "RESTART_FLOW_ERROR") {
                 // this can happen if the user has already successfully logged in into
                 // another device whilst also trying to login to this one.
-                window.alert("Login failed. Please try again");
-                window.location.assign("/auth")
+                return false;
             } else {
-                // Magic link resent successfully.
-                window.alert("Please check your email for the magic link");
+                return false;
             }
         } catch (err: any) {
-            console.log(err);
-            if (err.isSuperTokensGeneralError === true) {
-                // this may be a custom error message sent from the API by you.
-                window.alert(err.message);
-            }
+            processError(err);
+            return false;
         }
     }
 
     async function hasInitialMagicLinkBeenSent() {
-        return await getLoginAttemptInfo() !== undefined;
+        return await passwordless.getLoginAttemptInfo() !== undefined;
+    }
+
+    async function handleMagicLinkClicked({onSignUp, onSignIn, onSignFailed}:
+                                          {onSignUp: () => void, onSignIn: () => void, onSignFailed: () => void}) {
+        try {
+            let response = await passwordless.consumeCode();
+
+            console.log(response);
+
+            if (response.status === "OK") {
+                if (response.createdNewUser) {
+                    await onSignUp();
+                } else {
+                    await onSignIn();
+                }
+            } else {
+                await onSignFailed();
+            }
+        } catch (err: any) {
+            processError(err);
+        }
+    }
+
+    async function clearLoginAttempt() {
+        await passwordless.clearLoginAttemptInfo();
     }
 
     return {
@@ -90,5 +112,7 @@ export const useSupertokens = defineStore("supertokens", () => {
         isLoggedIn,
         logout,
         hasInitialMagicLinkBeenSent,
+        handleMagicLinkClicked,
+        clearLoginAttempt
     };
 });
