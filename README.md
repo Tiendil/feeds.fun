@@ -16,6 +16,7 @@
 - [ ] check admin gui
 - [ ] invite link
 - [ ] self-hosted supertokens
+- [ ] change user email
 
 # MVP
 
