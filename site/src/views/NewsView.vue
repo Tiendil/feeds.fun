@@ -1,5 +1,11 @@
 <template>
 <side-panel-layout>
+
+  <template #side-footer>
+    <tags-filter v-if="globalSettings.mainPanelMode == e.MainPanelMode.Entries"
+                 :tags="entriesStore.reportTagsCount"/>
+  </template>
+
   <template #main-header>
     <h2 style="margin-top: 0;">
       News

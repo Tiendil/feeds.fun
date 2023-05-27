@@ -56,11 +56,9 @@
 
     <a href="#" @click="globalSettings.dataVersion += 1">Reload</a>
 
-    <hr/>
+    <hr v-if="hasSideFooter"/>
 
-    <tags-filter v-if="globalSettings.mainPanelMode == e.MainPanelMode.Entries"
-                 :tags="entriesStore.reportTagsCount"/>
-
+    <slot name="side-footer"></slot>
   </div>
 
   <div class="main-content">
@@ -80,6 +78,7 @@
 </template>
 
 <script lang="ts" setup>
+import { ref, computed, useSlots } from 'vue';
 import { useRouter, RouterLink, RouterView } from 'vue-router'
 import { useGlobalSettingsStore } from "@/stores/globalSettings";
 import { useEntriesStore } from "@/stores/entries";
@@ -92,10 +91,17 @@ const supertokens = useSupertokens();
 
 const router = useRouter();
 
+const slots = useSlots()
+
 async function logout() {
     await supertokens.logout();
     router.push({ name: 'main', params: {} });
 }
+
+const hasSideFooter = computed(() => {
+    return !!slots['side-footer'];
+});
+
 </script>
 
 <style scoped>
