@@ -76,6 +76,6 @@ const supertokens = useSupertokens();
 
 // TODO: parametrize
 
-supertokens.init({apiDomain: "http://127.0.0.1:8000",
+supertokens.init({apiDomain: "http://localhost:8000",
                   apiBasePath: "/auth",
                   appName: "Feeds Fun"});

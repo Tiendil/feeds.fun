@@ -13,6 +13,7 @@ export const useSupertokens = defineStore("supertokens", () => {
     function init({apiDomain, apiBasePath, appName}:
                   {apiDomain: string, apiBasePath: string, appName: string}) {
         SuperTokens.init({
+            // enableDebugLogs: true,
             appInfo: {
                 apiDomain: apiDomain,
                 apiBasePath: apiBasePath,
@@ -26,7 +27,6 @@ export const useSupertokens = defineStore("supertokens", () => {
     }
 
     function processError(err: any) {
-        console.log(err);
         if (err.isSuperTokensGeneralError === true) {
             window.alert(err.message);
         }
@@ -55,6 +55,8 @@ export const useSupertokens = defineStore("supertokens", () => {
 
     async function logout() {
         await Session.signOut();
+        // TODO: why we should do this?
+        await passwordless.clearLoginAttemptInfo();
     }
 
     async function resendMagicLink() {
@@ -84,8 +86,6 @@ export const useSupertokens = defineStore("supertokens", () => {
                                           {onSignUp: () => void, onSignIn: () => void, onSignFailed: () => void}) {
         try {
             let response = await passwordless.consumeCode();
-
-            console.log(response);
 
             if (response.status === "OK") {
                 if (response.createdNewUser) {

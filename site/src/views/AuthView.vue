@@ -13,6 +13,7 @@ import { useRouter } from "vue-router";
 import { useGlobalSettingsStore } from "@/stores/globalSettings";
 import { useSupertokens } from "@/stores/supertokens";
 import { computedAsync } from "@vueuse/core";
+import { computed, ref, onBeforeMount } from "vue";
 
 const globalSettings = useGlobalSettingsStore();
 
@@ -28,30 +29,30 @@ function goToWorkspace() {
     router.push({ name: globalSettings.mainPanelMode, params: {} });
 }
 
-if (await supertokens.isLoggedIn()) {
-    goToWorkspace();
-}
-
-else {
-
-    async function onSignIn() {
+onBeforeMount(async () => {
+    if (await supertokens.isLoggedIn()) {
         goToWorkspace();
     }
 
-    async function onSignFailed() {
-        await supertokens.clearLoginAttempt();
-    }
-
-    if (supertokens.hasInitialMagicLinkBeenSent()) {
-        supertokens.handleMagicLinkClicked({onSignUp: onSignIn,
-                                            onSignIn: onSignIn,
-                                            onSignFailed: onSignFailed});
-    }
     else {
+
+        async function onSignIn() {
+            goToWorkspace();
+        }
+
+        async function onSignFailed() {
+            await supertokens.clearLoginAttempt();
+        }
+
+        if (supertokens.hasInitialMagicLinkBeenSent()) {
+            await supertokens.handleMagicLinkClicked({onSignUp: onSignIn,
+                                                      onSignIn: onSignIn,
+                                                      onSignFailed: onSignFailed});
+        }
+        else {
+        }
     }
-}
-
-
+});
 </script>
 
 <style></style>

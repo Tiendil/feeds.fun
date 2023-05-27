@@ -6,8 +6,7 @@ import pydantic
 class Supertokens(pydantic.BaseModel):  # type: ignore
     connection_uri: str = "https://try.supertokens.com"
     api_key: str = "fake-api-key"
-    # TODO?
-    mode = 'asgi' # use wsgi if you are running using gunicorn
+    mode = 'asgi'
 
 
 class Settings(pydantic.BaseSettings):  # type: ignore
