@@ -1,6 +1,33 @@
 <template>
 <side-panel-layout>
 
+  <template #side-menu>
+    <li class="config-menu-item">
+      For the last
+      <config-selector :values="e.LastEntriesPeriodProperties"
+                       v-model:property="globalSettings.lastEntriesPeriod"/>
+    </li>
+
+    <li class="config-menu-item">
+      Sorted by
+      <config-selector :values="e.EntriesOrderProperties"
+                       v-model:property="globalSettings.entriesOrder"/>
+    </li>
+
+    <li class="config-menu-item">
+      Show tags: <config-flag v-model:flag="globalSettings.showEntriesTags"
+                              on-text="yes"
+                              off-text="no"/>
+    </li>
+
+    <li class="config-menu-item">
+      Show already read: <config-flag v-model:flag="globalSettings.showRead"
+                                      on-text="yes"
+                                      off-text="no"/>
+    </li>
+
+  </template>
+
   <template #side-footer>
     <tags-filter v-if="globalSettings.mainPanelMode == e.MainPanelMode.Entries"
                  :tags="entriesStore.reportTagsCount"/>

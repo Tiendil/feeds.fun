@@ -1,5 +1,13 @@
 <template>
 <side-panel-layout>
+  <template #side-menu>
+    <li class="config-menu-item">
+      Show descriptions: <config-flag v-model:flag="globalSettings.showFeedsDescriptions"
+                                      on-text="yes"
+                                      off-text="no"/>
+    </li>
+  </template>
+
   <template #main-header>
   <h2 style="margin-top: 0;">
     Feeds

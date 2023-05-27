@@ -14,42 +14,8 @@
                          v-model:property="globalSettings.mainPanelMode"/>
       </li>
 
-      <template v-if="globalSettings.mainPanelMode == e.MainPanelMode.Entries">
+      <slot name="side-menu"></slot>
 
-        <li class="config-menu-item">
-          For the last
-          <config-selector :values="e.LastEntriesPeriodProperties"
-                           v-model:property="globalSettings.lastEntriesPeriod"/>
-        </li>
-
-        <li class="config-menu-item">
-          Sorted by
-          <config-selector :values="e.EntriesOrderProperties"
-                           v-model:property="globalSettings.entriesOrder"/>
-        </li>
-
-        <li class="config-menu-item">
-          Show tags: <config-flag v-model:flag="globalSettings.showEntriesTags"
-                                  on-text="yes"
-                                  off-text="no"/>
-        </li>
-
-        <li class="config-menu-item">
-        Show already read: <config-flag v-model:flag="globalSettings.showRead"
-                                        on-text="yes"
-                                        off-text="no"/>
-        </li>
-
-      </template>
-
-      <template v-if="globalSettings.mainPanelMode == e.MainPanelMode.Feeds">
-        Show descriptions: <config-flag v-model:flag="globalSettings.showFeedsDescriptions"
-                                        on-text="yes"
-                                        off-text="no"/>
-      </template>
-
-      <template v-if="globalSettings.mainPanelMode == e.MainPanelMode.Rules">
-      </template>
     </ul>
 
     <hr v-if="reload"/>
@@ -133,7 +99,7 @@ const hasSideFooter = computed(() => {
       padding: 0;
   }
 
-  .config-menu-item {
+  :deep(.config-menu-item) {
       margin-bottom: 1rem;
   }
 
