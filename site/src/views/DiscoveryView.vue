@@ -1,10 +1,19 @@
 <template>
-  <h2>
-    Discovery
-  </h2>
+
+<side-panel-layout>
+  <template #main-header>
+    <h2>Discovery</h2>
+  </template>
+
+  <template #main-footer>
+  </template>
+
   <opml-upload/>
   <hr/>
   <discovery-form/>
+
+</side-panel-layout>
+
 </template>
 
 <script lang="ts" setup>

@@ -1,14 +1,19 @@
 <template>
 
+<wide-layout>
+  <template #header>
     <h1>Feeds Fun</h1>
+  </template>
 
-    <div v-if="isLoggedIn">
-      <button @click="goToWorkspace()">Go To Feeds</button>
-    </div>
+  <div v-if="isLoggedIn">
+    <button @click="goToWorkspace()">Go To Feeds</button>
+  </div>
 
-    <div v-else>
-      <supertokens-login/>
-    </div>
+  <div v-else>
+    <supertokens-login/>
+  </div>
+
+</wide-layout>
 
 </template>
 

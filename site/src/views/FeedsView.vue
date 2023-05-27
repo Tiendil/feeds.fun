@@ -1,11 +1,20 @@
 <template>
+<side-panel-layout>
+  <template #main-header>
   <h2 style="margin-top: 0;">
     Feeds
     <span v-if="feeds">
       [{{ feeds.length }}]
     </span>
   </h2>
-<feeds-list :feeds="feeds" />
+  </template>
+
+  <template #main-footer>
+  </template>
+
+  <feeds-list :feeds="feeds" />
+</side-panel-layout>
+
 </template>
 
 <script lang="ts" setup>

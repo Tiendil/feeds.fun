@@ -1,16 +1,22 @@
 <template>
-<h2 style="margin-top: 0;">
-  News
+<side-panel-layout>
+  <template #main-header>
+    <h2 style="margin-top: 0;">
+      News
+      <span v-if="entriesNumber > 0">[{{entriesNumber}}]</span>
+    </h2>
+  </template>
 
-  <span v-if="entriesNumber > 0">[{{entriesNumber}}]</span>
-</h2>
+  <template #main-footer>
+  </template>
 
-<entries-list :entriesIds="entriesStore.entriesReport"
-              :time-field="timeField"
-              :show-tags="globalSettings.showEntriesTags"
-              :showFromStart=100
-              :showPerPage=50
-              />
+  <entries-list :entriesIds="entriesStore.entriesReport"
+                :time-field="timeField"
+                :show-tags="globalSettings.showEntriesTags"
+                :showFromStart=100
+                :showPerPage=50
+                />
+</side-panel-layout>
 </template>
 
 <script lang="ts" setup>

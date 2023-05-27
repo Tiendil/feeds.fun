@@ -31,6 +31,9 @@ import ValueDateTime from "./values/DateTime.vue";
 import ValueTag from "./values/Tag.vue";
 import ValueScore from "./values/Score.vue";
 
+import WideLayout from "./layouts/WideLayout.vue";
+import SidePanelLayout from "./layouts/SidePanelLayout.vue";
+
 import { useSupertokens } from "@/stores/supertokens";
 
 import VueCountdown from '@chenfengyuan/vue-countdown';
@@ -63,6 +66,9 @@ app.component("ValueFeedId", ValueFeedId);
 app.component("ValueDateTime", ValueDateTime);
 app.component("ValueTag", ValueTag);
 app.component("ValueScore", ValueScore);
+
+app.component("WideLayout", WideLayout);
+app.component("SidePanelLayout", SidePanelLayout);
 
 app.component('vue-countdown', VueCountdown);
 
