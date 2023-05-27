@@ -13,6 +13,7 @@
 - [ ] change gui and display notification right after press button "send email". Do not wait for backend response.
 - [ ] check admin gui
 - [ ] invite link
+- [ ] protect frontend views with auth check
 
 # MVP
 
