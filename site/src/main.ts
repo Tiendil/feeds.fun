@@ -33,6 +33,8 @@ import ValueScore from "./values/Score.vue";
 
 import { useSupertokens } from "@/stores/supertokens";
 
+import VueCountdown from '@chenfengyuan/vue-countdown';
+
 const app = createApp(App)
 
 app.component("FeedsList", FeedsList);
@@ -61,6 +63,8 @@ app.component("ValueFeedId", ValueFeedId);
 app.component("ValueDateTime", ValueDateTime);
 app.component("ValueTag", ValueTag);
 app.component("ValueScore", ValueScore);
+
+app.component('vue-countdown', VueCountdown);
 
 app.use(createPinia())
 app.use(router)

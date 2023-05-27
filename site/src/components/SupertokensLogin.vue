@@ -1,14 +1,33 @@
 <template>
 <div>
-  <input type="email"
-         v-model="email"
-         placeholder="your-account-email@example.com"/>
 
-  <button @click.prevent="login()">Login</button>
+  <template v-if="!requested">
+    <input type="email"
+           v-model="email"
+           placeholder="your-account-email@example.com"/>
 
-  <p v-if="requested">
-    Email with login link has been sent to your email address.
-  </p>
+    <button @click.prevent="login()">Login</button>
+  </template>
+
+  <template v-else>
+    <p>
+      Email with login link has been sent to <strong>{{email}}</strong>
+    </p>
+
+    <button type="button" class="btn btn-primary" :disabled="counting" @click="startCountdown">
+      <vue-countdown v-if="counting"
+                     :time="resendAfter"
+                     @end="onCountdownEnd"
+                     v-slot="{ totalSeconds }">
+        Resend the email in {{ totalSeconds }} seconds.
+      </vue-countdown>
+      <span v-else @click.prevent="resend()">Resend email</span>
+    </button>
+
+    <br/><br/>
+
+    <button @click.prevent="requested = false">Change email</button>
+  </template>
 
 </div>
 </template>
@@ -27,6 +46,8 @@ const supertokens = useSupertokens();
 
 const requested = ref(false);
 
+const counting = ref(false);
+
 const email = ref("");
 
 async function login() {
@@ -34,7 +55,18 @@ async function login() {
     await supertokens.sendMagicLink(email.value);
 
     requested.value = true;
+    counting.value = true;
+}
 
+async function resend() {
+    await supertokens.resendMagicLink();
+    counting.value = true;
+}
+
+const resendAfter = 6 * 1000;
+
+function onCountdownEnd() {
+      counting.value = false;
 }
 
 </script>

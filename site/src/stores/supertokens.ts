@@ -6,6 +6,7 @@ import SuperTokens from 'supertokens-web-js';
 import Session from 'supertokens-web-js/recipe/session';
 import Passwordless from 'supertokens-web-js/recipe/passwordless'
 import { createCode } from "supertokens-web-js/recipe/passwordless";
+import { resendCode } from "supertokens-web-js/recipe/passwordless";
 
 
 export const useSupertokens = defineStore("supertokens", () => {
@@ -55,9 +56,32 @@ export const useSupertokens = defineStore("supertokens", () => {
         window.location.href = "/";
     }
 
+    async function resendMagicLink() {
+        try {
+            let response = await resendCode();
+
+            if (response.status === "RESTART_FLOW_ERROR") {
+                // this can happen if the user has already successfully logged in into
+                // another device whilst also trying to login to this one.
+                window.alert("Login failed. Please try again");
+                window.location.assign("/auth")
+            } else {
+                // Magic link resent successfully.
+                window.alert("Please check your email for the magic link");
+            }
+        } catch (err: any) {
+            console.log(err);
+            if (err.isSuperTokensGeneralError === true) {
+                // this may be a custom error message sent from the API by you.
+                window.alert(err.message);
+            }
+        }
+    }
+
     return {
         init,
         sendMagicLink,
+        resendMagicLink,
         isLoggedIn,
         logout,
     };
