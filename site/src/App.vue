@@ -1,7 +1,11 @@
 <template>
 <div class="container">
   <div class="nav-panel">
-    <h2>Feeds For Fun</h2>
+    <h2 style="margin-top: 0; margin-bottom: 0;">Feeds For Fun</h2>
+
+    <a href="#" @click.prevent="logout()">logout</a>
+
+    <hr/>
 
     <ul class="config-menu">
       <li class="config-menu-item">
@@ -67,13 +71,22 @@
 
 
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+import { useRouter, RouterLink, RouterView } from 'vue-router'
 import { useGlobalSettingsStore } from "@/stores/globalSettings";
 import { useEntriesStore } from "@/stores/entries";
+import { useSupertokens } from "@/stores/supertokens";
 import * as e from "@/logic/enums";
 
 const globalSettings = useGlobalSettingsStore();
 const entriesStore = useEntriesStore();
+const supertokens = useSupertokens();
+
+const router = useRouter();
+
+async function logout() {
+    await supertokens.logout();
+    router.push({ name: 'main', params: {} });
+}
 
 </script>
 
