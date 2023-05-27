@@ -14,6 +14,7 @@
 - [ ] check admin gui
 - [ ] invite link
 - [ ] protect frontend views with auth check
+- [ ] process `401 (Unauthorized)` for API calls
 
 # MVP
 
