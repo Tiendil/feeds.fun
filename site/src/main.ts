@@ -79,26 +79,3 @@ const supertokens = useSupertokens();
 supertokens.init({apiDomain: "http://127.0.0.1:8000",
                   apiBasePath: "/auth",
                   appName: "Feeds Fun"});
-
-
-if (await supertokens.isLoggedIn()) {
-    console.log("Already logged in");
-}
-
-else {
-
-    async function onSignIn() {
-    }
-
-
-    async function onSignFailed() {
-        await supertokens.clearLoginAttempt();
-    }
-
-
-    if (supertokens.hasInitialMagicLinkBeenSent()) {
-        supertokens.handleMagicLinkClicked({onSignUp: onSignIn,
-                                            onSignIn: onSignIn,
-                                            onSignFailed: onSignFailed});
-    }
-}

@@ -98,8 +98,7 @@ def create_app(api: bool,  # noqa: CCR001
     async def lifespan(app: fastapi.FastAPI):
         async with contextlib.AsyncExitStack() as stack:
             if supertokens:
-                await stack.enter_async_context(st.use_supertokens(app,
-                                                                   app_name=settings.name,
+                await stack.enter_async_context(st.use_supertokens(app_name=settings.name,
                                                                    api_domain=f'http://{settings.domain}:8000',
                                                                    website_domain=f'http://{settings.domain}:5173'))
 
