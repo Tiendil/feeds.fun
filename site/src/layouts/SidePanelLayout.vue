@@ -86,7 +86,7 @@ const router = useRouter();
 const slots = useSlots()
 
 
-const properties = withDefaults(defineProps<{reload: bool}>(),
+const properties = withDefaults(defineProps<{reload?: bool}>(),
                                 {reload: true});
 
 async function logout() {
