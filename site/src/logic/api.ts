@@ -21,12 +21,25 @@ const API_ADD_OPML = `${ENTRY_POINT}/add-opml`;
 const API_UNSUBSCRIBE = `${ENTRY_POINT}/unsubscribe`;
 
 
+let _onSessionLost: () => void = () => {};
+
+
+export function init({onSessionLost}: {onSessionLost: () => void}) {
+    _onSessionLost = onSessionLost;
+}
+
+
 async function post({url, data}: {url: string, data: any}) {
     try {
         const response = await axios.post(url, data);
         return response.data;
     } catch (error) {
         console.log(error);
+
+        if (error.response.status === 401) {
+            await _onSessionLost();
+        }
+
         throw error;
     }
 }

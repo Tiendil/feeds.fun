@@ -87,3 +87,14 @@ supertokens.init({apiDomain: "http://localhost:8000",
                   appName: "Feeds Fun",
                   // TODO: increase to 1 minute
                   resendAfter: 6 * 1000});
+
+
+async function onSessionLost() {
+    await supertokens.logout();
+    router.push({ name: 'main', params: {} });
+}
+
+
+import * as api from "@/logic/api";
+
+api.init({onSessionLost: onSessionLost});
