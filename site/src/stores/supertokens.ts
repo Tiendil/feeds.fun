@@ -10,8 +10,13 @@ import * as passwordless from "supertokens-web-js/recipe/passwordless";
 
 export const useSupertokens = defineStore("supertokens", () => {
 
-    function init({apiDomain, apiBasePath, appName}:
-                  {apiDomain: string, apiBasePath: string, appName: string}) {
+    const allowResendAfter = ref(60 * 1000);
+
+    function init({apiDomain, apiBasePath, appName, resendAfter}:
+                  {apiDomain: string, apiBasePath: string, appName: string, resendAfter: number}) {
+
+        allowResendAfter.value = resendAfter;
+
         SuperTokens.init({
             // enableDebugLogs: true,
             appInfo: {
@@ -106,6 +111,8 @@ export const useSupertokens = defineStore("supertokens", () => {
     }
 
     return {
+        allowResendAfter,
+
         init,
         sendMagicLink,
         resendMagicLink,

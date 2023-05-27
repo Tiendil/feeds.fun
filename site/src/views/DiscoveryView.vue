@@ -1,6 +1,6 @@
 <template>
 
-<side-panel-layout :reload="false">
+<side-panel-layout :reload-button="false">
 
   <template #main-header>
     Discovery

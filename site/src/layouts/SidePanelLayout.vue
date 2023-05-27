@@ -41,9 +41,9 @@
 
     </ul>
 
-    <hr v-if="reload"/>
+    <hr v-if="reloadButton"/>
 
-    <a v-if="reload"
+    <a v-if="reloadButton"
        href="#"
        @click="globalSettings.dataVersion += 1">Reload</a>
 
@@ -71,7 +71,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, useSlots } from 'vue';
+import { ref, computed, useSlots, onMounted } from 'vue';
 import { useRouter, RouterLink, RouterView } from 'vue-router'
 import { useGlobalSettingsStore } from "@/stores/globalSettings";
 import { useEntriesStore } from "@/stores/entries";
@@ -86,8 +86,10 @@ const router = useRouter();
 const slots = useSlots()
 
 
-const properties = withDefaults(defineProps<{reload?: bool}>(),
-                                {reload: true});
+const properties = withDefaults(defineProps<{reloadButton?: bool,
+                                             loginRequired?: bool}>(),
+                                {reload: true,
+                                 loginRequired: true});
 
 async function logout() {
     await supertokens.logout();
@@ -103,6 +105,11 @@ function hasSideMenuItem(index: number) {
     return !!slots[`side-menu-item-${index}`];
 }
 
+onMounted(async () => {
+    if (properties.loginRequired && !(await supertokens.isLoggedIn())) {
+        router.push({ name: 'main', params: {} });
+    }
+});
 
 </script>
 

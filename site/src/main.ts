@@ -84,4 +84,6 @@ const supertokens = useSupertokens();
 
 supertokens.init({apiDomain: "http://localhost:8000",
                   apiBasePath: "/auth",
-                  appName: "Feeds Fun"});
+                  appName: "Feeds Fun",
+                  // TODO: increase to 1 minute
+                  resendAfter: 6 * 1000});

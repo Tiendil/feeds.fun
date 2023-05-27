@@ -16,7 +16,7 @@
 
     <button type="button" class="btn btn-primary" :disabled="counting" @click="startCountdown">
       <vue-countdown v-if="counting"
-                     :time="resendAfter"
+                     :time="supertokens.allowResendAfter"
                      @end="onCountdownEnd"
                      v-slot="{ totalSeconds }">
         Resend the email in {{ totalSeconds }} seconds.
@@ -75,9 +75,6 @@ async function resend() {
 
     await onEmailSend(success);
 }
-
-// TODO: increase to 1 minute
-const resendAfter = 6 * 1000;
 
 function onCountdownEnd() {
       counting.value = false;
