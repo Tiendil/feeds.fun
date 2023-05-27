@@ -1,20 +1,21 @@
 
 # Supertokens
 
-- [ ] default mode should use single user
-- [ ] landing page
-- [ ] protect only required views
-- [ ] login widget
-- [ ] logout button
-- [ ] remove side panel from landing / main page
+- [x] landing page
+- [x] protect only required views
+- [x] login widget
+- [x] logout button
+- [x] remove side panel from landing / main page
+- [x] resend magic link
+- [x] protect frontend views with auth check
+- [x] process `401 (Unauthorized)` for API calls
 - [ ] stylize landing page
-- [ ] resend magic link
+- [ ] default mode should use single user
 - [ ] email field should react on enter
 - [ ] change gui and display notification right after press button "send email". Do not wait for backend response.
 - [ ] check admin gui
 - [ ] invite link
-- [ ] protect frontend views with auth check
-- [ ] process `401 (Unauthorized)` for API calls
+- [ ] self-hosted supertokens
 
 # MVP
 
