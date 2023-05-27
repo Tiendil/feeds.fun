@@ -2,7 +2,9 @@
   <div class="container">
     <div class="main-content">
       <header>
-        <slot name="header"></slot>
+        <h1>
+          <slot name="header"></slot>
+        </h1>
       </header>
 
       <main>

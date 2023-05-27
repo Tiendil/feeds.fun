@@ -31,10 +31,8 @@
   </template>
 
   <template #main-header>
-    <h2 style="margin-top: 0;">
-      News
-      <span v-if="entriesNumber > 0">[{{entriesNumber}}]</span>
-    </h2>
+    News
+    <span v-if="entriesNumber > 0">[{{entriesNumber}}]</span>
   </template>
 
   <template #main-footer>

@@ -54,7 +54,9 @@
 
   <div class="main-content">
     <header>
-      <slot name="main-header"></slot>
+      <h2 style="margin-top: 0;">
+        <slot name="main-header"></slot>
+      </h2>
     </header>
 
     <main>

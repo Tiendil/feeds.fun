@@ -1,10 +1,8 @@
 <template>
 <side-panel-layout>
   <template #main-header>
-    <h2 style="margin-top: 0;">
-      Rules
-      <span v-if="rules">[{{rules.length}}]</span>
-    </h2>
+    Rules
+    <span v-if="rules">[{{rules.length}}]</span>
   </template>
 
   <rules-list :rules="rules" />

@@ -2,7 +2,7 @@
 
 <wide-layout>
   <template #header>
-    <h1>Feeds Fun</h1>
+    Feeds Fun
   </template>
 
   <div v-if="isLoggedIn">

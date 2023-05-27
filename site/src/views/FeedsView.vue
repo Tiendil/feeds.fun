@@ -7,12 +7,10 @@
   </template>
 
   <template #main-header>
-  <h2 style="margin-top: 0;">
     Feeds
     <span v-if="feeds">
       [{{ feeds.length }}]
     </span>
-  </h2>
   </template>
 
   <template #main-footer>
