@@ -52,9 +52,11 @@
       </template>
     </ul>
 
-    <hr/>
+    <hr v-if="reload"/>
 
-    <a href="#" @click="globalSettings.dataVersion += 1">Reload</a>
+    <a v-if="reload"
+       href="#"
+       @click="globalSettings.dataVersion += 1">Reload</a>
 
     <hr v-if="hasSideFooter"/>
 
@@ -90,8 +92,11 @@ const entriesStore = useEntriesStore();
 const supertokens = useSupertokens();
 
 const router = useRouter();
-
 const slots = useSlots()
+
+
+const properties = withDefaults(defineProps<{reload: bool}>(),
+                                {reload: true});
 
 async function logout() {
     await supertokens.logout();

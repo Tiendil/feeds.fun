@@ -1,6 +1,7 @@
 <template>
 
-<side-panel-layout>
+<side-panel-layout :reload="false">
+
   <template #main-header>
     <h2>Discovery</h2>
   </template>
