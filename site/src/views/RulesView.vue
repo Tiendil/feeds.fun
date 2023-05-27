@@ -7,9 +7,6 @@
     </h2>
   </template>
 
-  <template #main-footer>
-  </template>
-
   <rules-list :rules="rules" />
 </side-panel-layout>
 </template>

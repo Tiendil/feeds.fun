@@ -14,7 +14,30 @@
                          v-model:property="globalSettings.mainPanelMode"/>
       </li>
 
-      <slot name="side-menu"></slot>
+      <li v-if="hasSideMenuItem(1)"
+          class="config-menu-item">
+        <slot name="side-menu-item-1"></slot>
+      </li>
+
+      <li v-if="hasSideMenuItem(2)"
+          class="config-menu-item">
+        <slot name="side-menu-item-2"></slot>
+      </li>
+
+      <li v-if="hasSideMenuItem(3)"
+          class="config-menu-item">
+        <slot name="side-menu-item-3"></slot>
+      </li>
+
+      <li v-if="hasSideMenuItem(4)"
+          class="config-menu-item">
+        <slot name="side-menu-item-4"></slot>
+      </li>
+
+      <li v-if="hasSideMenuItem(5)"
+          class="config-menu-item">
+        <slot name="side-menu-item-5"></slot>
+      </li>
 
     </ul>
 
@@ -72,6 +95,12 @@ async function logout() {
 const hasSideFooter = computed(() => {
     return !!slots['side-footer'];
 });
+
+
+function hasSideMenuItem(index: number) {
+    return !!slots[`side-menu-item-${index}`];
+}
+
 
 </script>
 

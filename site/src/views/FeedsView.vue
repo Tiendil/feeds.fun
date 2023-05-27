@@ -1,11 +1,9 @@
 <template>
 <side-panel-layout>
-  <template #side-menu>
-    <li class="config-menu-item">
-      Show descriptions: <config-flag v-model:flag="globalSettings.showFeedsDescriptions"
-                                      on-text="yes"
-                                      off-text="no"/>
-    </li>
+  <template #side-menu-item-1>
+    Show descriptions: <config-flag v-model:flag="globalSettings.showFeedsDescriptions"
+                                    on-text="yes"
+                                    off-text="no"/>
   </template>
 
   <template #main-header>

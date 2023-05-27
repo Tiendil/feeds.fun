@@ -1,31 +1,28 @@
 <template>
 <side-panel-layout>
 
-  <template #side-menu>
-    <li class="config-menu-item">
-      For the last
-      <config-selector :values="e.LastEntriesPeriodProperties"
-                       v-model:property="globalSettings.lastEntriesPeriod"/>
-    </li>
+  <template #side-menu-item-1>
+    For the last
+    <config-selector :values="e.LastEntriesPeriodProperties"
+                     v-model:property="globalSettings.lastEntriesPeriod"/>
+  </template>
 
-    <li class="config-menu-item">
-      Sorted by
-      <config-selector :values="e.EntriesOrderProperties"
-                       v-model:property="globalSettings.entriesOrder"/>
-    </li>
+  <template #side-menu-item-2>
+    Sorted by
+    <config-selector :values="e.EntriesOrderProperties"
+                     v-model:property="globalSettings.entriesOrder"/>
+  </template>
 
-    <li class="config-menu-item">
-      Show tags: <config-flag v-model:flag="globalSettings.showEntriesTags"
-                              on-text="yes"
-                              off-text="no"/>
-    </li>
+  <template #side-menu-item-3>
+    Show tags: <config-flag v-model:flag="globalSettings.showEntriesTags"
+                            on-text="yes"
+                            off-text="no"/>
+  </template>
 
-    <li class="config-menu-item">
-      Show already read: <config-flag v-model:flag="globalSettings.showRead"
-                                      on-text="yes"
-                                      off-text="no"/>
-    </li>
-
+  <template #side-menu-item-4>
+    Show already read: <config-flag v-model:flag="globalSettings.showRead"
+                                    on-text="yes"
+                                    off-text="no"/>
   </template>
 
   <template #side-footer>

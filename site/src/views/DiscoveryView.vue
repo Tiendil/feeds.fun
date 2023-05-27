@@ -6,11 +6,10 @@
     <h2>Discovery</h2>
   </template>
 
-  <template #main-footer>
-  </template>
-
   <opml-upload/>
+
   <hr/>
+
   <discovery-form/>
 
 </side-panel-layout>
