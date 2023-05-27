@@ -11,6 +11,8 @@
 - [ ] resend magic link
 - [ ] email field should react on enter
 - [ ] change gui and display notification right after press button "send email". Do not wait for backend response.
+- [ ] check admin gui
+- [ ] invite link
 
 # MVP
 
