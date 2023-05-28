@@ -11,7 +11,7 @@
 - [x] process `401 (Unauthorized)` for API calls
 - [x] stylize landing page
 - [x] default mode should use single user
-- [ ] test switching between modes
+- [x] test switching between modes
 - [ ] email field should react on enter
 - [ ] change gui and display notification right after press button "send email". Do not wait for backend response.
 - [ ] check admin gui
