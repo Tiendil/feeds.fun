@@ -19,6 +19,7 @@
 - [x] self-hosted supertokens
 - [ ] change user email
 - [ ] test API keys for supertokens
+- [ ] close todos
 
 # MVP
 
