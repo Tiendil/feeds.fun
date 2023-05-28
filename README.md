@@ -21,6 +21,11 @@
 - [ ] test API keys for supertokens
 - [ ] close todos
 - [ ] move to common functions: isLoggedIn
+- [ ] how to run migrations for backend container?
+- [ ] make `docker compose up -d` working — fix containers start order
+- [ ] fix cli `server` to support reload
+      https://www.uvicorn.org/settings/#reloading-without-watchfiles
+      https://github.com/tiangolo/fastapi/issues/1495
 
 # MVP
 
