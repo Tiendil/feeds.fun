@@ -1,5 +1,3 @@
-import * as utils from "@/logic/utils";
-
 
 export enum AuthMode {
     SingleUser = 'single_user',
@@ -7,7 +5,7 @@ export enum AuthMode {
 }
 
 
-export const authMode = utils.getKeyByValue(AuthMode, import.meta.env.VITE_AUTH_MODE, AuthMode.SingleUser);
+export const authMode = import.meta.env.VITE_FFUN_AUTH_MODE;
 
 
-// 59da1b8f-c0c4-416f-908d-85daecfb1726
+console.log('settings.authMode', authMode);

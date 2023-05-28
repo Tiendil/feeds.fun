@@ -48,3 +48,22 @@ services:
 
     networks:
       ffun_network: {}
+
+  frontend:
+    build:
+      context: ./
+      dockerfile: ./docker/frontend/Dockerfile
+
+    command: "npm run dev -- --host 0.0.0.0"
+
+    volumes:
+      - ${PWD}/site:/repository
+
+    environment:
+      VITE_FFUN_AUTH_MODE: "${FFUN_AUTH_MODE}"
+
+    ports:
+      - "5173:5173"
+
+    networks:
+      ffun_network: {}

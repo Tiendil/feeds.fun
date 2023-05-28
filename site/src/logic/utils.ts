@@ -38,8 +38,3 @@ export function timeSince(date) {
 
     return `${yearsPast}y`;
 }
-
-
-export function getKeyByValue(object: any, value: any, defaultValue: any) {
-    return _.findKey(object, (o) => o === value) || defaultValue;
-}

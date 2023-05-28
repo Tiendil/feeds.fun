@@ -49,6 +49,7 @@ import { computedAsync } from "@vueuse/core";
 import DOMPurify from "dompurify";
 import { useEntriesStore } from "@/stores/entries";
 import { useSupertokens } from "@/stores/supertokens";
+import * as settings from "@/logic/settings";
 
 const supertokens = useSupertokens();
 
@@ -94,6 +95,10 @@ async function onChangeEmail() {
 }
 
 onMounted(async () => {
+    if (settings.authMode === settings.AuthMode.SingleUser) {
+        return true;
+    }
+
     requested.value = await supertokens.hasInitialMagicLinkBeenSent();
 });
 
