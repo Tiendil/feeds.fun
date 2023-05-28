@@ -10,7 +10,7 @@
 - [x] protect frontend views with auth check
 - [x] process `401 (Unauthorized)` for API calls
 - [x] stylize landing page
-- [ ] default mode should use single user
+- [x] default mode should use single user
 - [ ] test switching between modes
 - [ ] email field should react on enter
 - [ ] change gui and display notification right after press button "send email". Do not wait for backend response.
@@ -26,6 +26,7 @@
 - [ ] fix cli `server` to support reload
       https://www.uvicorn.org/settings/#reloading-without-watchfiles
       https://github.com/tiangolo/fastapi/issues/1495
+- [ ] add `.env` to gitignore
 
 # MVP
 
