@@ -9,7 +9,7 @@
 - [x] resend magic link
 - [x] protect frontend views with auth check
 - [x] process `401 (Unauthorized)` for API calls
-- [ ] stylize landing page
+- [x] stylize landing page
 - [ ] default mode should use single user
 - [ ] email field should react on enter
 - [ ] change gui and display notification right after press button "send email". Do not wait for backend response.

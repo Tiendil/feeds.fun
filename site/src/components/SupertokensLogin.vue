@@ -2,6 +2,14 @@
 <div>
 
   <template v-if="!requested">
+    <p>
+      Will send you an email with a login link.
+    </p>
+
+    <p>
+      If you don't have an account, one will be created.
+    </p>
+
     <input type="email"
            v-model="email"
            placeholder="your-account-email@example.com"/>

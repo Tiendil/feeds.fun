@@ -25,12 +25,24 @@
 <style scoped>
 
   .container {
-    display: flex;
+      display: flex;
+      justify-content: center;
+      /* align-items: center; */
+      height: 100vh;
   }
 
   .main-content {
-    flex-grow: 1;
+    /* flex-grow: 1; */
+
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: center;
+    text-align: center;
+    width: 50%;
+    /* margin-bottom: 50vh; */
     padding: 1rem;
+    max-width: 960px;
   }
 
 </style>
