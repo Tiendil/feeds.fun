@@ -19,7 +19,7 @@ services:
     image: postgres:15-bullseye
 
     volumes:
-      - ffun_postgresql_data:/data
+      - ffun_postgresql_data:/var/lib/postgresql/data
       - ./docker/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
 
     environment:
