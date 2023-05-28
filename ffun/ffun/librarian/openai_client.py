@@ -8,7 +8,6 @@ import openai
 import tiktoken
 import typer
 from ffun.core import logging
-from slugify import slugify
 
 from . import errors
 from .settings import settings

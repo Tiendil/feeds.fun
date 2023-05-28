@@ -37,6 +37,8 @@ python-multipart = "0.*"
 
 supertokens-python = "0.*"
 
+python-slugify = "8.*"
+
 [tool.poetry.dev-dependencies]
 
 pytest = "6.*"

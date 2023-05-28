@@ -20,8 +20,9 @@ logger = logging.get_module_logger()
 @contextlib.asynccontextmanager
 async def use_postgresql():
     logger.info('initialize_postgresql')
+    # TODO: move to settings
     await postgresql.prepare_pool(name='ffun_pool',
-                                  dsn='postgresql://ffun:ffun@localhost/ffun',
+                                  dsn='postgresql://ffun:ffun@postgresql/ffun',
                                   min_size=20,
                                   max_size=None,
                                   timeout=1,

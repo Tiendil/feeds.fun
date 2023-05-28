@@ -7,15 +7,12 @@ from ..application import app
 
 @app.command()
 def server(api: bool = False,
-           loader: bool = False,
-           librarian: bool = False,
            supertokens: bool = False) -> None:
 
     prepare_app(api=api,
-                loader=loader,
-                librarian=librarian,
                 supertokens=supertokens)
 
     application = get_app()
 
-    uvicorn.run(application)
+    # TODO: move uvicorn out of here
+    uvicorn.run(application, host="0.0.0.0")

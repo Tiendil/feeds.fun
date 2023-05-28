@@ -24,8 +24,9 @@ services:
 
     environment:
       POSTGRES_MULTIPLE_DATABASES: ffun,supertokens
-      POSTGRES_USER: ffun
-      POSTGRES_PASSWORD: ffun
+      POSTGRES_DB: default
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
 
     ports:
       - "5432:5432"
@@ -35,6 +36,10 @@ services:
 
   supertokens:
     image: registry.supertokens.io/supertokens/supertokens-postgresql
+
+    depends_on:
+      postgresql:
+        condition: service_started
 
     environment:
       POSTGRESQL_DATABASE_NAME: "supertokens"
@@ -49,10 +54,40 @@ services:
     networks:
       ffun_network: {}
 
+  backend:
+    build:
+      context: ./
+      dockerfile: ./docker/backend/Dockerfile
+
+    depends_on:
+      postgresql:
+        condition: service_started
+      supertokens:
+        condition: service_started
+
+    command: "poetry run ffun server --api --supertokens"
+
+    volumes:
+      - ${PWD}/ffun:/repository
+
+    environment:
+      FFUN_AUTH_MODE: "${FFUN_AUTH_MODE}"
+
+    ports:
+      - "8000:8000"
+
+    networks:
+      ffun_network: {}
+
+
   frontend:
     build:
       context: ./
       dockerfile: ./docker/frontend/Dockerfile
+
+    depends_on:
+      backend:
+        condition: service_started
 
     command: "npm run dev -- --host 0.0.0.0"
 
