@@ -39,7 +39,7 @@ def custom_email_deliver(original_implementation: EmailDeliveryOverrideInput) ->
 async def use_supertokens(app_name: str,
                           api_domain: str,
                           website_domain: str,
-                          api_base_path: str = "/auth",
+                          api_base_path: str = "/supertokens",
                           website_base_path: str = "/auth"):
     logger.info('supertokens_enabled')
 

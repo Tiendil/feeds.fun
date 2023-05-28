@@ -15,7 +15,7 @@ class SingleUser(pydantic.BaseModel):  # type: ignore
 
 
 class Supertokens(pydantic.BaseModel):  # type: ignore
-    connection_uri: str = "http://localhost:3567"
+    connection_uri: str = "http://supertokens:3567"
     api_key: str = "fake-api-key"
     mode = 'asgi'
 

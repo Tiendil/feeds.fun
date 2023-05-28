@@ -86,8 +86,8 @@ if (settings.authMode === settings.AuthMode.Supertokens) {
 
     // TODO: parametrize
 
-    supertokens.init({apiDomain: "http://localhost:8000",
-                      apiBasePath: "/auth",
+    supertokens.init({apiDomain: "http://localhost:5173",
+                      apiBasePath: "/supertokens",
                       appName: "Feeds Fun",
                       // TODO: increase to 1 minute
                       resendAfter: 6 * 1000});
