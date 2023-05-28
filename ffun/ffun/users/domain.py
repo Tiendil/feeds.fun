@@ -3,9 +3,6 @@ import uuid
 from . import errors, operations
 from .entities import Service, User
 
-# first_user_id = uuid.UUID('59da1b8f-c0c4-416f-908d-85daecfb1726')
-
-
 add_mapping = operations.add_mapping
 get_mapping = operations.get_mapping
 
