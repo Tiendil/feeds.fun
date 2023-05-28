@@ -17,6 +17,7 @@
 - [ ] invite link
 - [x] self-hosted supertokens
 - [ ] change user email
+- [ ] test API keys for supertokens
 
 # MVP
 
