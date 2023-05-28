@@ -15,7 +15,7 @@
 - [ ] change gui and display notification right after press button "send email". Do not wait for backend response.
 - [ ] check admin gui
 - [ ] invite link
-- [ ] self-hosted supertokens
+- [x] self-hosted supertokens
 - [ ] change user email
 
 # MVP
