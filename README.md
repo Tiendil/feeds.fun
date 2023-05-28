@@ -48,6 +48,10 @@
 - [ ] load only feeds that are need at least by one user
 - [ ] test running dev project from scratch (without preixisting DBs)
 
+# Deployment
+
+- [ ] parametrize all connection/server -related settings
+
 # Errors
 
 - [x] This model's maximum context length is 4097 tokens. However, you requested 4140 tokens (3116 in the messages, 1024 in the completion)
