@@ -22,6 +22,7 @@ import { useGlobalSettingsStore } from "@/stores/globalSettings";
 import { useSupertokens } from "@/stores/supertokens";
 import { computedAsync } from "@vueuse/core";
 import { computed, ref, onBeforeMount } from "vue";
+import * as settings from "@/logic/settings";
 
 const globalSettings = useGlobalSettingsStore();
 
@@ -30,6 +31,10 @@ const supertokens = useSupertokens();
 const router = useRouter();
 
 const isLoggedIn = computedAsync(async () => {
+    if (settings.authMode === settings.AuthMode.SingleUser) {
+        return true;
+    }
+
     return await supertokens.isLoggedIn();
 });
 
@@ -38,27 +43,30 @@ function goToWorkspace() {
 }
 
 onBeforeMount(async () => {
+    if (settings.authMode === settings.AuthMode.SingleUser) {
+        goToWorkspace();
+        return;
+    }
+
     if (await supertokens.isLoggedIn()) {
+        goToWorkspace();
+        return;
+    }
+
+    async function onSignIn() {
         goToWorkspace();
     }
 
+    async function onSignFailed() {
+        await supertokens.clearLoginAttempt();
+    }
+
+    if (supertokens.hasInitialMagicLinkBeenSent()) {
+        await supertokens.handleMagicLinkClicked({onSignUp: onSignIn,
+                                                  onSignIn: onSignIn,
+                                                  onSignFailed: onSignFailed});
+    }
     else {
-
-        async function onSignIn() {
-            goToWorkspace();
-        }
-
-        async function onSignFailed() {
-            await supertokens.clearLoginAttempt();
-        }
-
-        if (supertokens.hasInitialMagicLinkBeenSent()) {
-            await supertokens.handleMagicLinkClicked({onSignUp: onSignIn,
-                                                      onSignIn: onSignIn,
-                                                      onSignFailed: onSignFailed});
-        }
-        else {
-        }
     }
 });
 </script>

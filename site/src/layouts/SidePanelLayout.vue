@@ -77,6 +77,7 @@ import { useGlobalSettingsStore } from "@/stores/globalSettings";
 import { useEntriesStore } from "@/stores/entries";
 import { useSupertokens } from "@/stores/supertokens";
 import * as e from "@/logic/enums";
+import * as settings from "@/logic/settings";
 
 const globalSettings = useGlobalSettingsStore();
 const entriesStore = useEntriesStore();
@@ -88,10 +89,15 @@ const slots = useSlots()
 
 const properties = withDefaults(defineProps<{reloadButton?: bool,
                                              loginRequired?: bool}>(),
-                                {reload: true,
+                                {reloadButton: true,
                                  loginRequired: true});
 
 async function logout() {
+    if (settings.authMode === settings.AuthMode.SingleUser) {
+        alert("You can't logout in single user mode");
+        return;
+    }
+
     await supertokens.logout();
     router.push({ name: 'main', params: {} });
 }
@@ -106,7 +112,15 @@ function hasSideMenuItem(index: number) {
 }
 
 onMounted(async () => {
-    if (properties.loginRequired && !(await supertokens.isLoggedIn())) {
+    if (!properties.loginRequired) {
+        return;
+    }
+
+    if (settings.authMode === settings.AuthMode.SingleUser) {
+        return;
+    }
+
+    if (!(await supertokens.isLoggedIn())) {
         router.push({ name: 'main', params: {} });
     }
 });

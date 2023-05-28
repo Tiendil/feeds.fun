@@ -20,6 +20,7 @@
 - [ ] change user email
 - [ ] test API keys for supertokens
 - [ ] close todos
+- [ ] move to common functions: isLoggedIn
 
 # MVP
 

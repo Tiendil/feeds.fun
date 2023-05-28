@@ -77,24 +77,32 @@ app.use(router)
 
 app.mount('#app')
 
+import * as api from "@/logic/api";
+import * as settings from "@/logic/settings";
 
-const supertokens = useSupertokens();
+if (settings.authMode === settings.AuthMode.Supertokens) {
 
-// TODO: parametrize
+    const supertokens = useSupertokens();
 
-supertokens.init({apiDomain: "http://localhost:8000",
-                  apiBasePath: "/auth",
-                  appName: "Feeds Fun",
-                  // TODO: increase to 1 minute
-                  resendAfter: 6 * 1000});
+    // TODO: parametrize
 
+    supertokens.init({apiDomain: "http://localhost:8000",
+                      apiBasePath: "/auth",
+                      appName: "Feeds Fun",
+                      // TODO: increase to 1 minute
+                      resendAfter: 6 * 1000});
+}
+
+else if (settings.authMode === settings.AuthMode.SingleUser) {
+}
+
+else {
+    throw `Unknown auth mode: ${settings.authMode}`;
+}
 
 async function onSessionLost() {
     await supertokens.logout();
     router.push({ name: 'main', params: {} });
 }
-
-
-import * as api from "@/logic/api";
 
 api.init({onSessionLost: onSessionLost});

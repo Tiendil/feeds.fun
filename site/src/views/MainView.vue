@@ -59,6 +59,7 @@ import { useRouter } from "vue-router";
 import { useGlobalSettingsStore } from "@/stores/globalSettings";
 import { useSupertokens } from "@/stores/supertokens";
 import { computedAsync } from "@vueuse/core";
+import * as settings from "@/logic/settings";
 
 const globalSettings = useGlobalSettingsStore();
 
@@ -67,6 +68,10 @@ const supertokens = useSupertokens();
 const router = useRouter();
 
 const isLoggedIn = computedAsync(async () => {
+    if (settings.authMode === settings.AuthMode.SingleUser) {
+        return true;
+    }
+
     return await supertokens.isLoggedIn();
 });
 

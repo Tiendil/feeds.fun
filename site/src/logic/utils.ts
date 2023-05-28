@@ -1,3 +1,4 @@
+import _ from 'lodash';
 
 
 export function timeSince(date) {
@@ -36,4 +37,9 @@ export function timeSince(date) {
     const yearsPast = Math.floor(monthsPast / 12);
 
     return `${yearsPast}y`;
+}
+
+
+export function getKeyByValue(object: any, value: any, defaultValue: any) {
+    return _.findKey(object, (o) => o === value) || defaultValue;
 }
