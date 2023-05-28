@@ -11,22 +11,23 @@
 - [x] process `401 (Unauthorized)` for API calls
 - [x] stylize landing page
 - [x] default mode should use single user
+- [x] self-hosted supertokens
 - [x] test switching between modes
+- [x] run migrations for backend container
 - [ ] email field should react on enter
 - [ ] change gui and display notification right after press button "send email". Do not wait for backend response.
 - [ ] check admin gui
 - [ ] invite link
-- [x] self-hosted supertokens
 - [ ] change user email
 - [ ] test API keys for supertokens
 - [ ] close todos
 - [ ] move to common functions: isLoggedIn
-- [ ] how to run migrations for backend container?
 - [ ] make `docker compose up -d` working — fix containers start order
 - [ ] fix cli `server` to support reload
       https://www.uvicorn.org/settings/#reloading-without-watchfiles
       https://github.com/tiangolo/fastapi/issues/1495
 - [ ] add `.env` to gitignore
+- [ ] remove building duplicated containers
 
 # MVP
 

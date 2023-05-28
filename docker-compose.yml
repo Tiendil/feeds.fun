@@ -54,6 +54,23 @@ services:
     networks:
       ffun_network: {}
 
+  backend-migrations:
+    build:
+      context: ./
+      dockerfile: ./docker/backend/Dockerfile
+
+    depends_on:
+      postgresql:
+        condition: service_started
+
+    command: "poetry run yoyo apply"
+
+    volumes:
+      - ${PWD}/ffun:/repository
+
+    networks:
+      ffun_network: {}
+
   backend:
     build:
       context: ./
@@ -64,6 +81,8 @@ services:
         condition: service_started
       supertokens:
         condition: service_started
+      backend-migrations:
+        condition: service_completed_successfully
 
     command: "poetry run ffun server --api --supertokens"
 
