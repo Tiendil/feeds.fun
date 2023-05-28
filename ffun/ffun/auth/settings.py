@@ -4,7 +4,7 @@ import pydantic
 
 
 class Supertokens(pydantic.BaseModel):  # type: ignore
-    connection_uri: str = "https://try.supertokens.com"
+    connection_uri: str = "http://localhost:3567"
     api_key: str = "fake-api-key"
     mode = 'asgi'
 

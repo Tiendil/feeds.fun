@@ -35,6 +35,7 @@
 - [ ] simple (or not) users management
 - [x] mark entriy processed with status: error/success
 - [ ] load only feeds that are need at least by one user
+- [ ] test running dev project from scratch (without preixisting DBs)
 
 # Errors
 

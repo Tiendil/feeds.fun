@@ -20,14 +20,31 @@ services:
 
     volumes:
       - ffun_postgresql_data:/data
+      - ./docker/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
 
     environment:
+      POSTGRES_MULTIPLE_DATABASES: ffun,supertokens
       POSTGRES_USER: ffun
       POSTGRES_PASSWORD: ffun
-      POSTGRES_DB: ffun
 
     ports:
       - "5432:5432"
+
+    networks:
+      ffun_network: {}
+
+  supertokens:
+    image: registry.supertokens.io/supertokens/supertokens-postgresql
+
+    environment:
+      POSTGRESQL_DATABASE_NAME: "supertokens"
+      POSTGRESQL_USER: "supertokens"
+      POSTGRESQL_PASSWORD: "supertokens"
+      POSTGRESQL_HOST: "postgresql"
+      POSTGRESQL_PORT: "5432"
+
+    ports:
+      - "3567:3567"
 
     networks:
       ffun_network: {}
