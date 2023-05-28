@@ -21,7 +21,7 @@ class Supertokens(pydantic.BaseModel):  # type: ignore
 
 
 class Settings(pydantic.BaseSettings):  # type: ignore
-    auth_mode: AuthMode = AuthMode.single_user
+    mode: AuthMode = AuthMode.single_user
     single_user: SingleUser = SingleUser()
     supertokens: Supertokens = Supertokens()
 

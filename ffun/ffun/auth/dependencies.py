@@ -19,12 +19,12 @@ async def _single_user() -> u_entities.User:
                                              settings.single_user.external_id)
 
 
-if settings.auth_mode == AuthMode.single_user:
+if settings.mode == AuthMode.single_user:
     user = fastapi.Depends(_single_user)
-elif settings.auth_mode == AuthMode.supertokens:
+elif settings.mode == AuthMode.supertokens:
     user = fastapi.Depends(_supertokens_user)
 else:
-    raise NotImplementedError(f"AuthMode {settings.auth_mode} not implemented")
+    raise NotImplementedError(f"AuthMode {settings.mode} not implemented")
 
 
 User = Annotated[u_entities.User, user]
