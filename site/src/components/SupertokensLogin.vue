@@ -10,11 +10,14 @@
       If you don't have an account, one will be created.
     </p>
 
-    <input type="email"
-           v-model="email"
-           placeholder="your-account-email@example.com"/>
+    <form @submit.prevent="login()">
+      <input type="email"
+             v-model="email"
+             required
+             placeholder="your-account-email@example.com"/>
+      <button type="submit">Login</button>
+    </form>
 
-    <button @click.prevent="login()">Login</button>
   </template>
 
   <template v-else>
