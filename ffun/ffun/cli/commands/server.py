@@ -7,10 +7,14 @@ from ..application import app
 
 @app.command()
 def server(api: bool = False,
-           supertokens: bool = False) -> None:
+           supertokens: bool = False,
+           loader: bool = False,
+           librarian: bool = False) -> None:
 
     prepare_app(api=api,
-                supertokens=supertokens)
+                supertokens=supertokens,
+                loader=loader,
+                librarian=librarian)
 
     application = get_app()
 

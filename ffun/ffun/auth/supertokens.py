@@ -10,8 +10,8 @@ from supertokens_python import (InputAppInfo, SupertokensConfig,
 from supertokens_python.framework.fastapi import get_middleware
 from supertokens_python.ingredients.emaildelivery.types import \
     EmailDeliveryConfig
-from supertokens_python.recipe import (dashboard, passwordless, session,
-                                       usermetadata)
+from supertokens_python.recipe import (dashboard, emailverification,
+                                       passwordless, session, usermetadata)
 from supertokens_python.recipe.passwordless import ContactEmailOnlyConfig
 from supertokens_python.recipe.passwordless.types import (
     EmailDeliveryOverrideInput, EmailTemplateVars)
@@ -58,6 +58,7 @@ async def use_supertokens(app_name: str,
         ),
         framework='fastapi',
         recipe_list=[
+            emailverification.init(mode='REQUIRED'),
             session.init(),
             passwordless.init(
                 flow_type="MAGIC_LINK",

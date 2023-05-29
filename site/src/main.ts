@@ -90,7 +90,7 @@ if (settings.authMode === settings.AuthMode.Supertokens) {
                       apiBasePath: "/supertokens",
                       appName: "Feeds Fun",
                       // TODO: increase to 1 minute
-                      resendAfter: 6 * 1000});
+                      resendAfter: 60 * 1000});
 }
 
 else if (settings.authMode === settings.AuthMode.SingleUser) {

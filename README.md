@@ -17,7 +17,8 @@
 - [x] email field should react on enter
 - [x] change gui and display notification right after press button "send email". Do not wait for backend response.
 - [x] move to common functions: isLoggedIn
-- [ ] check admin gui
+- [x] check admin gui
+- [ ] logout redirects with delay
 - [ ] invite link
 - [ ] change user email
 - [ ] test API keys for supertokens
@@ -27,6 +28,7 @@
       https://www.uvicorn.org/settings/#reloading-without-watchfiles
       https://github.com/tiangolo/fastapi/issues/1495
 - [ ] remove building duplicated containers
+- [ ] Warning: 'ffun' is an entry point defined in pyproject.toml, but it's not installed as a script.
 
 # MVP
 
