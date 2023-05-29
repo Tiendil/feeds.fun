@@ -14,7 +14,7 @@
 - [x] self-hosted supertokens
 - [x] test switching between modes
 - [x] run migrations for backend container
-- [ ] email field should react on enter
+- [x] email field should react on enter
 - [ ] change gui and display notification right after press button "send email". Do not wait for backend response.
 - [ ] check admin gui
 - [ ] invite link
