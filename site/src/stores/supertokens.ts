@@ -1,14 +1,22 @@
 import { ref, watch } from "vue";
 import { useRouter } from 'vue-router'
 import { defineStore } from "pinia";
-
+import { Timer } from "@/logic/timer";
 import SuperTokens from 'supertokens-web-js';
 import Session from 'supertokens-web-js/recipe/session';
 import Passwordless from 'supertokens-web-js/recipe/passwordless'
 import * as passwordless from "supertokens-web-js/recipe/passwordless";
-
+import { computedAsync } from "@vueuse/core";
 
 export const useSupertokens = defineStore("supertokens", () => {
+
+    const isLoggedIn = ref(null);
+
+    async function refresh() {
+        isLoggedIn.value = await Session.doesSessionExist();
+    }
+
+    const refresher = new Timer(refresh, 1000);
 
     const allowResendAfter = ref(60 * 1000);
 
@@ -29,9 +37,13 @@ export const useSupertokens = defineStore("supertokens", () => {
                 Passwordless.init(),
             ],
         });
+
+        refresher.start();
     }
 
-    function processError(err: any) {
+    async function processError(err: any) {
+        await refresh();
+
         if (err.isSuperTokensGeneralError === true) {
             window.alert(err.message);
         }
@@ -46,27 +58,24 @@ export const useSupertokens = defineStore("supertokens", () => {
 
             return response.status === "OK";
         } catch (err: any) {
-            processError(err);
+            await processError(err);
             return false;
         }
-    }
-
-    async function isLoggedIn() {
-        if (await Session.doesSessionExist()) {
-            return true;
-        }
-        return false;
     }
 
     async function logout() {
         await Session.signOut();
         // TODO: why we should do this?
         await passwordless.clearLoginAttemptInfo();
+
+        await refresh();
     }
 
     async function resendMagicLink() {
         try {
             let response = await passwordless.resendCode();
+
+            tick.value += 1;
 
             if (response.status === "OK") {
                 return true;
@@ -78,7 +87,7 @@ export const useSupertokens = defineStore("supertokens", () => {
                 return false;
             }
         } catch (err: any) {
-            processError(err);
+            await processError(err);
             return false;
         }
     }
@@ -92,6 +101,8 @@ export const useSupertokens = defineStore("supertokens", () => {
         try {
             let response = await passwordless.consumeCode();
 
+            await refresh();
+
             if (response.status === "OK") {
                 if (response.createdNewUser) {
                     await onSignUp();
@@ -102,7 +113,7 @@ export const useSupertokens = defineStore("supertokens", () => {
                 await onSignFailed();
             }
         } catch (err: any) {
-            processError(err);
+            await processError(err);
         }
     }
 

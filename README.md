@@ -18,10 +18,11 @@
 - [x] change gui and display notification right after press button "send email". Do not wait for backend response.
 - [x] move to common functions: isLoggedIn
 - [x] check admin gui
-- [ ] logout redirects with delay
+- [x] logout redirects with delay
+- [x] login redirects with delay (shows resend form)
+- [x] test API keys for supertokens
 - [ ] invite link
 - [ ] change user email
-- [ ] test API keys for supertokens
 - [ ] close todos
 - [ ] make `docker compose up -d` working — fix containers start order
 - [ ] fix cli `server` to support reload

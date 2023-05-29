@@ -5,7 +5,11 @@
     Feeds Fun
   </template>
 
-  <div v-if="globalState.isLoggedIn">
+  <div v-if="!linkProcessed">
+    Checking login status...
+  </div>
+
+  <div v-else-if="globalState.isLoggedIn">
     <button @click="goToWorkspace()">Go To Feeds</button>
   </div>
 
@@ -32,17 +36,14 @@ const supertokens = useSupertokens();
 
 const router = useRouter();
 
+const linkProcessed = ref(false);
+
 function goToWorkspace() {
     router.push({ name: globalSettings.mainPanelMode, params: {} });
 }
 
 onBeforeMount(async () => {
-    if (settings.authMode === settings.AuthMode.SingleUser) {
-        goToWorkspace();
-        return;
-    }
-
-    if (await supertokens.isLoggedIn()) {
+    if (globalState.isLoggedIn) {
         goToWorkspace();
         return;
     }
@@ -59,8 +60,10 @@ onBeforeMount(async () => {
         await supertokens.handleMagicLinkClicked({onSignUp: onSignIn,
                                                   onSignIn: onSignIn,
                                                   onSignFailed: onSignFailed});
+        linkProcessed.value = true;
     }
     else {
+        linkProcessed.value = true;
     }
 });
 </script>
