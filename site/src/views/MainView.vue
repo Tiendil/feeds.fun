@@ -5,7 +5,7 @@
     Feeds Fun
   </template>
 
-  <div v-if="isLoggedIn">
+  <div v-if="globalState.isLoggedIn">
     <p>You have already logged in.</p>
     <button @click="goToWorkspace()">Go To Feeds</button>
   </div>
@@ -47,7 +47,7 @@
       </ul>
     </li>
     <li>Will be open-sourced.</li>
-    <li>Will be self-hosted. If you don't want to use centralized service.</li>
+    <li>Will be self-hosted. If you don&apos;t want to use centralized service.</li>
   </ul>
 
 </wide-layout>
@@ -58,22 +58,16 @@
 import { useRouter } from "vue-router";
 import { useGlobalSettingsStore } from "@/stores/globalSettings";
 import { useSupertokens } from "@/stores/supertokens";
+import { useGlobalState } from "@/stores/globalState";
 import { computedAsync } from "@vueuse/core";
 import * as settings from "@/logic/settings";
 
 const globalSettings = useGlobalSettingsStore();
+const globalState = useGlobalState();
 
 const supertokens = useSupertokens();
 
 const router = useRouter();
-
-const isLoggedIn = computedAsync(async () => {
-    if (settings.authMode === settings.AuthMode.SingleUser) {
-        return true;
-    }
-
-    return await supertokens.isLoggedIn();
-});
 
 function goToWorkspace() {
     router.push({ name: globalSettings.mainPanelMode, params: {} });

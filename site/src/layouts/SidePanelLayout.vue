@@ -71,9 +71,10 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, useSlots, onMounted } from 'vue';
+    import { ref, computed, useSlots, onMounted, watch, watchEffect } from 'vue';
 import { useRouter, RouterLink, RouterView } from 'vue-router'
 import { useGlobalSettingsStore } from "@/stores/globalSettings";
+import { useGlobalState } from "@/stores/globalState";
 import { useEntriesStore } from "@/stores/entries";
 import { useSupertokens } from "@/stores/supertokens";
 import * as e from "@/logic/enums";
@@ -82,6 +83,7 @@ import * as settings from "@/logic/settings";
 const globalSettings = useGlobalSettingsStore();
 const entriesStore = useEntriesStore();
 const supertokens = useSupertokens();
+const globalState = useGlobalState();
 
 const router = useRouter();
 const slots = useSlots()
@@ -111,16 +113,17 @@ function hasSideMenuItem(index: number) {
     return !!slots[`side-menu-item-${index}`];
 }
 
-onMounted(async () => {
+
+watchEffect(() => {
     if (!properties.loginRequired) {
         return;
     }
 
-    if (settings.authMode === settings.AuthMode.SingleUser) {
+    if (globalState.isLoggedIn === null) {
         return;
     }
 
-    if (!(await supertokens.isLoggedIn())) {
+    if (!globalState.isLoggedIn) {
         router.push({ name: 'main', params: {} });
     }
 });

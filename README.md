@@ -16,17 +16,16 @@
 - [x] run migrations for backend container
 - [x] email field should react on enter
 - [x] change gui and display notification right after press button "send email". Do not wait for backend response.
+- [x] move to common functions: isLoggedIn
 - [ ] check admin gui
 - [ ] invite link
 - [ ] change user email
 - [ ] test API keys for supertokens
 - [ ] close todos
-- [ ] move to common functions: isLoggedIn
 - [ ] make `docker compose up -d` working — fix containers start order
 - [ ] fix cli `server` to support reload
       https://www.uvicorn.org/settings/#reloading-without-watchfiles
       https://github.com/tiangolo/fastapi/issues/1495
-- [ ] add `.env` to gitignore
 - [ ] remove building duplicated containers
 
 # MVP

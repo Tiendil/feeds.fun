@@ -5,7 +5,7 @@
     Feeds Fun
   </template>
 
-  <div v-if="isLoggedIn">
+  <div v-if="globalState.isLoggedIn">
     <button @click="goToWorkspace()">Go To Feeds</button>
   </div>
 
@@ -20,23 +20,17 @@
 import { useRouter } from "vue-router";
 import { useGlobalSettingsStore } from "@/stores/globalSettings";
 import { useSupertokens } from "@/stores/supertokens";
+import { useGlobalState } from "@/stores/globalState";
 import { computedAsync } from "@vueuse/core";
 import { computed, ref, onBeforeMount } from "vue";
 import * as settings from "@/logic/settings";
 
 const globalSettings = useGlobalSettingsStore();
+const globalState = useGlobalState();
 
 const supertokens = useSupertokens();
 
 const router = useRouter();
-
-const isLoggedIn = computedAsync(async () => {
-    if (settings.authMode === settings.AuthMode.SingleUser) {
-        return true;
-    }
-
-    return await supertokens.isLoggedIn();
-});
 
 function goToWorkspace() {
     router.push({ name: globalSettings.mainPanelMode, params: {} });
