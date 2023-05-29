@@ -7,7 +7,7 @@
     </p>
 
     <p>
-      If you don't have an account, one will be created.
+      If you don&apos;t have an account, one will be created.
     </p>
 
     <form @submit.prevent="login()">
@@ -62,30 +62,37 @@ const counting = ref(false);
 
 const email = ref("");
 
-async function onEmailSend(success) {
+async function afterEmailSend(success) {
     if (success) {
-        window.alert("Please check your email for the magic link");
-        requested.value = true;
-        counting.value = true;
+        return
     }
-    else {
-        window.alert("Something went wrong. Please try again.");
-        requested.value = false;
-        counting.value = false;
-        await supertokens.clearLoginAttempt();
-    }
+
+    window.alert("Something went wrong. Please try again.");
+    requested.value = false;
+    counting.value = false;
+    await supertokens.clearLoginAttempt();
+}
+
+function beforeEmailSend() {
+    window.alert("Please check your email for the magic link");
+    requested.value = true;
+    counting.value = true;
 }
 
 async function login() {
+    beforeEmailSend();
+
     const success = await supertokens.sendMagicLink(email.value);
 
-    await onEmailSend(success);
+    await afterEmailSend(success);
 }
 
 async function resend() {
+    beforeEmailSend();
+
     const success = await supertokens.resendMagicLink();
 
-    await onEmailSend(success);
+    await afterEmailSend(success);
 }
 
 function onCountdownEnd() {
