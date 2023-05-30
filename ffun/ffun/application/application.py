@@ -20,12 +20,11 @@ async def use_postgresql():
     logger.info('initialize_postgresql')
     # TODO: move to settings
     await postgresql.prepare_pool(name='ffun_pool',
-                                  dsn='postgresql://ffun:ffun@postgresql/ffun',
-                                  # dsn='postgresql://ffun:ffun@localhost/ffun',
-                                  min_size=20,
-                                  max_size=None,
-                                  timeout=0.1,
-                                  num_workers=1)
+                                  dsn=settings.postgresql.dsn,
+                                  min_size=settings.postgresql.pool_min_size,
+                                  max_size=settings.postgresql.pool_max_size,
+                                  timeout=settings.postgresql.pool_timeout,
+                                  num_workers=settings.postgresql.pool_num_workers)
     logger.info('postgresql_initialized')
 
     try:
