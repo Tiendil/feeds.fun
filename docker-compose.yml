@@ -84,6 +84,7 @@ services:
 
     volumes:
       - ${PWD}/ffun:/repository
+      - ${PWD}/.env:/repository/.env
 
     networks:
       ffun_network: {}
@@ -105,9 +106,9 @@ services:
 
     volumes:
       - ${PWD}/ffun:/repository
+      - ${PWD}/.env:/repository/.env
 
     environment:
-      FFUN_AUTH_MODE: "${FFUN_AUTH_MODE}"
       FFUN_ENABLE_API: "${FFUN_ENABLE_API:-True}"
       FFUN_ENABLE_SUPERTOKENS: "${FFUN_ENABLE_SUPERTOKENS:-True}"
 
@@ -117,6 +118,24 @@ services:
     networks:
       ffun_network: {}
 
+  backend-utils:
+    build:
+      context: ./
+      dockerfile: ./docker/backend/Dockerfile
+
+    depends_on:
+      postgresql:
+        condition: service_started
+
+    volumes:
+      - ${PWD}/ffun:/repository
+      - ${PWD}/.env:/repository/.env
+
+    networks:
+      ffun_network: {}
+
+    profiles:
+      - dev
 
   frontend:
     build:
