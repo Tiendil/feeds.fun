@@ -21,8 +21,6 @@
 - [x] logout redirects with delay
 - [x] login redirects with delay (shows resend form)
 - [x] test API keys for supertokens
-- [ ] invite link
-- [ ] change user email
 - [ ] close todos
 - [ ] make `docker compose up -d` working — fix containers start order
 - [ ] fix cli `server` to support reload
@@ -96,6 +94,8 @@
 
 # Backlog:
 
+- [ ] change user email
+- [ ] invite link https://supertokens.com/docs/passwordless/common-customizations/disable-sign-up/passwordless-via-invite-link
 - [ ] personalized names for feeds
 - [ ] personalized names for tags
 - [ ] personalized names for tags
