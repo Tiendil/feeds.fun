@@ -1,9 +1,9 @@
 import datetime
 
-import pydantic
+from ffun.core.settings import BaseSettings
 
 
-class Settings(pydantic.BaseSettings):  # type: ignore
+class Settings(BaseSettings):  # type: ignore
     name: str = "Feeds Fun"
     domain: str = "localhost"
 
@@ -11,10 +11,7 @@ class Settings(pydantic.BaseSettings):  # type: ignore
     enable_supertokens: bool = False
 
     class Config:
-        env_nested_delimiter: str = "__"
-        env_file: str = ".env"
         env_prefix = "FFUN_"
-        extra: str = "allow"
 
 
 settings = Settings()

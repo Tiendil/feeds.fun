@@ -9,6 +9,7 @@ from .processors.base import Processor
 from .processors.domain import Processor as DomainProcessor
 from .processors.native_tags import Processor as NativeTagsProcessor
 from .processors.openai_chat_3_5 import Processor as OpenAIChat35Processor
+from .settings import settings
 
 logger = logging.get_module_logger()
 
@@ -35,8 +36,10 @@ class ProcessorInfo:
 
 
 processors = [ProcessorInfo(id=1, processor=DomainProcessor(name='domain'), concurrency=1),
-              ProcessorInfo(id=2, processor=NativeTagsProcessor(name='native_tags'), concurrency=1),
-              ProcessorInfo(id=3, processor=OpenAIChat35Processor(name='openai_chat_3_5'), concurrency=15)]
+              ProcessorInfo(id=2, processor=NativeTagsProcessor(name='native_tags'), concurrency=1)]
+
+if settings.openai.enabled:
+    processors.append(ProcessorInfo(id=3, processor=OpenAIChat35Processor(name='openai_chat_3_5'), concurrency=15))
 
 
 class EntriesProcessor(InfiniteTask):

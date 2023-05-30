@@ -3,6 +3,7 @@ import enum
 import uuid
 
 import pydantic
+from ffun.core.settings import BaseSettings
 
 
 class AuthMode(str, enum.Enum):
@@ -20,16 +21,13 @@ class Supertokens(pydantic.BaseModel):  # type: ignore
     mode = 'asgi'
 
 
-class Settings(pydantic.BaseSettings):  # type: ignore
+class Settings(BaseSettings):  # type: ignore
     mode: AuthMode = AuthMode.single_user
     single_user: SingleUser = SingleUser()
     supertokens: Supertokens = Supertokens()
 
     class Config:
-        env_nested_delimiter: str = "__"
-        env_file: str = ".env"
         env_prefix = "FFUN_AUTH_"
-        extra: str = "allow"
 
 
 settings = Settings()
