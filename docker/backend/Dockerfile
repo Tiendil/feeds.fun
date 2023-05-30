@@ -4,7 +4,9 @@ WORKDIR /repository
 
 RUN pip install poetry
 
-COPY ./ffun/pyproject.toml ./ffun/poetry.lock* ./
+# copied code will be replaced by mounted volume in docker-compose
+# but we need to copy it to install cli utils from pyproject.toml
+COPY ./ffun ./
 
 RUN poetry install --no-interaction --no-ansi
 

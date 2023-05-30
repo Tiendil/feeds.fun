@@ -26,7 +26,7 @@
 - [x] fix cli `server` to support reload
       https://www.uvicorn.org/settings/#reloading-without-watchfiles
       https://github.com/tiangolo/fastapi/issues/1495
-- [ ] Warning: 'ffun' is an entry point defined in pyproject.toml, but it's not installed as a script.
+- [x] Warning: 'ffun' is an entry point defined in pyproject.toml, but it's not installed as a script.
 
 # MVP
 
