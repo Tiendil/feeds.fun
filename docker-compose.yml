@@ -101,13 +101,15 @@ services:
       backend-migrations:
         condition: service_completed_successfully
 
-    command: "poetry run ffun server --api --supertokens"
+    command: "poetry run uvicorn ffun.application.application:app --host 0.0.0.0 --port 8000 --workers 1 --reload"
 
     volumes:
       - ${PWD}/ffun:/repository
 
     environment:
       FFUN_AUTH_MODE: "${FFUN_AUTH_MODE}"
+      FFUN_ENABLE_API: "${FFUN_ENABLE_API:-True}"
+      FFUN_ENABLE_SUPERTOKENS: "${FFUN_ENABLE_SUPERTOKENS:-True}"
 
     ports:
       - "8000:8000"

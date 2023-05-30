@@ -2,11 +2,12 @@ import pydantic
 
 
 class OpenAI(pydantic.BaseModel):  # type: ignore
-    api_key: str
+    enabled: bool = False
+    api_key: str = 'fake-api-key'
 
 
 class Settings(pydantic.BaseSettings):  # type: ignore
-    openai: OpenAI
+    openai: OpenAI = OpenAI()
 
     class Config:
         env_nested_delimiter: str = "__"
