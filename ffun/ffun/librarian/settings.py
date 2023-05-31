@@ -1,18 +1,17 @@
 import pydantic
+from ffun.core.settings import BaseSettings
 
 
 class OpenAI(pydantic.BaseModel):  # type: ignore
-    api_key: str
+    enabled: bool = False
+    api_key: str = 'fake-api-key'
 
 
-class Settings(pydantic.BaseSettings):  # type: ignore
-    openai: OpenAI
+class Settings(BaseSettings):  # type: ignore
+    openai: OpenAI = OpenAI()
 
     class Config:
-        env_nested_delimiter: str = "__"
-        env_file: str = ".env"
         env_prefix = "FFUN_LIBRARIAN_"
-        extra: str = "allow"
 
 
 settings = Settings()

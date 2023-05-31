@@ -1,10 +1,19 @@
 <template>
-  <h2>
+
+<side-panel-layout :reload-button="false">
+
+  <template #main-header>
     Discovery
-  </h2>
+  </template>
+
   <opml-upload/>
+
   <hr/>
+
   <discovery-form/>
+
+</side-panel-layout>
+
 </template>
 
 <script lang="ts" setup>

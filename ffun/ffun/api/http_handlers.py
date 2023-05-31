@@ -3,6 +3,7 @@ import uuid
 from typing import Iterable
 
 import fastapi
+from ffun.auth.dependencies import User
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
 from ffun.feeds_discoverer import domain as fd_domain
@@ -16,7 +17,6 @@ from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 
 from . import entities
-from .dependencies import User
 
 router = fastapi.APIRouter()
 

@@ -13,11 +13,13 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@chenfengyuan/vue-countdown": "^2.1.1",
     "@vueuse/core": "^9.13.0",
     "axios": "^1.3.4",
     "dompurify": "^3.0.1",
     "pinia": "^2.0.32",
     "set-interval-async": "^3.0.3",
+    "supertokens-web-js": "^0.5.0",
     "vue": "^3.2.47",
     "vue-router": "^4.1.6"
   },

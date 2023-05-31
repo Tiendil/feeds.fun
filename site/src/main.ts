@@ -20,6 +20,7 @@ import FeedInfo from "./components/FeedInfo.vue";
 import EntryInfo from "./components/EntryInfo.vue";
 import OpmlUpload from "./components/OPMLUpload.vue";
 import FeedForList from "./components/FeedForList.vue";
+import SupertokensLogin from "./components/SupertokensLogin.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -29,6 +30,13 @@ import ValueFeedId from "./values/FeedId.vue";
 import ValueDateTime from "./values/DateTime.vue";
 import ValueTag from "./values/Tag.vue";
 import ValueScore from "./values/Score.vue";
+
+import WideLayout from "./layouts/WideLayout.vue";
+import SidePanelLayout from "./layouts/SidePanelLayout.vue";
+
+import { useSupertokens } from "@/stores/supertokens";
+
+import VueCountdown from '@chenfengyuan/vue-countdown';
 
 const app = createApp(App)
 
@@ -48,6 +56,7 @@ app.component("FeedInfo", FeedInfo);
 app.component("EntryInfo", EntryInfo);
 app.component("OpmlUpload", OpmlUpload);
 app.component("FeedForList", FeedForList);
+app.component("SupertokensLogin", SupertokensLogin);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);
@@ -58,7 +67,39 @@ app.component("ValueDateTime", ValueDateTime);
 app.component("ValueTag", ValueTag);
 app.component("ValueScore", ValueScore);
 
+app.component("WideLayout", WideLayout);
+app.component("SidePanelLayout", SidePanelLayout);
+
+app.component('vue-countdown', VueCountdown);
+
 app.use(createPinia())
 app.use(router)
 
 app.mount('#app')
+
+import * as api from "@/logic/api";
+import * as settings from "@/logic/settings";
+
+if (settings.authMode === settings.AuthMode.Supertokens) {
+
+    const supertokens = useSupertokens();
+
+    supertokens.init({apiDomain: `http://${settings.appDomain}:${settings.appPort}`,
+                      apiBasePath: settings.authSupertokensApiBasePath,
+                      appName: settings.appName,
+                      resendAfter: settings.authSupertokensResendAfter});
+}
+
+else if (settings.authMode === settings.AuthMode.SingleUser) {
+}
+
+else {
+    throw `Unknown auth mode: ${settings.authMode}`;
+}
+
+async function onSessionLost() {
+    await supertokens.logout();
+    router.push({ name: 'main', params: {} });
+}
+
+api.init({onSessionLost: onSessionLost});
