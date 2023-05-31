@@ -18,7 +18,6 @@ logger = logging.get_module_logger()
 @contextlib.asynccontextmanager
 async def use_postgresql():
     logger.info('initialize_postgresql')
-    # TODO: move to settings
     await postgresql.prepare_pool(name='ffun_pool',
                                   dsn=settings.postgresql.dsn,
                                   min_size=settings.postgresql.pool_min_size,
@@ -63,9 +62,12 @@ def create_app():  # noqa: CCR001
             await stack.enter_async_context(use_postgresql())
 
             if settings.enable_supertokens:
-                await stack.enter_async_context(st.use_supertokens(app_name=settings.name,
-                                                                   api_domain=f'http://{settings.domain}:8000',
-                                                                   website_domain=f'http://{settings.domain}:5173'))
+                api_domain = f'http://{settings.app_domain}:{settings.api_port}'
+                website_domain = f'http://{settings.app_domain}:{settings.app_port}'
+
+                await stack.enter_async_context(st.use_supertokens(app_name=settings.app_name,
+                                                                   api_domain=api_domain,
+                                                                   website_domain=website_domain))
 
             if settings.enable_api:
                 await stack.enter_async_context(use_api(app))

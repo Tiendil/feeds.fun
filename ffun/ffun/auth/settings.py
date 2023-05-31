@@ -20,6 +20,9 @@ class Supertokens(pydantic.BaseModel):  # type: ignore
     api_key: str = "nn4PGU5rJ3tEe9if4zEJ"  # this is a fake key for tests
     mode = 'asgi'
 
+    api_base_path: str = "/supertokens"
+    website_base_path: str = "/auth"
+
 
 class Settings(BaseSettings):  # type: ignore
     mode: AuthMode = AuthMode.single_user

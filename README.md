@@ -46,6 +46,7 @@
 - [x] mark entriy processed with status: error/success
 - [ ] load only feeds that are need at least by one user
 - [ ] test running dev project from scratch (without preixisting DBs)
+- [ ] fix rendering of feeds list, when feeds are not enough for one page
 
 # Deployment
 

@@ -13,8 +13,11 @@ class PostgreSQL(pydantic.BaseModel):
 
 
 class Settings(BaseSettings):  # type: ignore
-    name: str = "Feeds Fun"
-    domain: str = "localhost"
+    app_name: str = "Feeds Fun"
+    app_domain: str = "localhost"
+    app_port: int = 5173
+
+    api_port: int = 5174
 
     enable_api: bool = False
     enable_supertokens: bool = False

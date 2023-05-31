@@ -84,13 +84,10 @@ if (settings.authMode === settings.AuthMode.Supertokens) {
 
     const supertokens = useSupertokens();
 
-    // TODO: parametrize
-
-    supertokens.init({apiDomain: "http://localhost:5173",
-                      apiBasePath: "/supertokens",
-                      appName: "Feeds Fun",
-                      // TODO: increase to 1 minute
-                      resendAfter: 60 * 1000});
+    supertokens.init({apiDomain: `http://${settings.appDomain}:${settings.appPort}`,
+                      apiBasePath: settings.authSupertokensApiBasePath,
+                      appName: settings.appName,
+                      resendAfter: settings.authSupertokensResendAfter});
 }
 
 else if (settings.authMode === settings.AuthMode.SingleUser) {
