@@ -65,7 +65,7 @@ export const useSupertokens = defineStore("supertokens", () => {
 
     async function logout() {
         await Session.signOut();
-        // TODO: why we should do this?
+
         await passwordless.clearLoginAttemptInfo();
 
         await refresh();

@@ -21,7 +21,7 @@
 - [x] logout redirects with delay
 - [x] login redirects with delay (shows resend form)
 - [x] test API keys for supertokens
-- [ ] close todos
+- [x] close todos
 - [x] make `docker compose up -d` working — fix containers start order
 - [x] fix cli `server` to support reload
       https://www.uvicorn.org/settings/#reloading-without-watchfiles
