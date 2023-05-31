@@ -19,15 +19,143 @@ services:
     image: postgres:15-bullseye
 
     volumes:
-      - ffun_postgresql_data:/data
+      - ffun_postgresql_data:/var/lib/postgresql/data
+      - ./docker/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
 
     environment:
-      POSTGRES_USER: ffun
-      POSTGRES_PASSWORD: ffun
-      POSTGRES_DB: ffun
+      POSTGRES_MULTIPLE_DATABASES: ffun,supertokens
+      POSTGRES_DB: default
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
 
     ports:
       - "5432:5432"
+
+    networks:
+      ffun_network: {}
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+
+  supertokens:
+    image: registry.supertokens.io/supertokens/supertokens-postgresql
+
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+    environment:
+      POSTGRESQL_DATABASE_NAME: "supertokens"
+      POSTGRESQL_USER: "supertokens"
+      POSTGRESQL_PASSWORD: "supertokens"
+      POSTGRESQL_HOST: "postgresql"
+      POSTGRESQL_PORT: "5432"
+      API_KEYS: "${FFUN_AUTH_SUPER_TOKENS_API_KEY:-nn4PGU5rJ3tEe9if4zEJ}"
+
+    ports:
+      - "3567:3567"
+
+    networks:
+      ffun_network: {}
+
+    healthcheck:
+      test: >
+        bash -c 'exec 3<>/dev/tcp/127.0.0.1/3567 &&
+                 echo -e "GET /hello HTTP/1.1\r\nhost: 127.0.0.1:3567\r\nConnection: close\r\n\r\n" >&3 &&
+                 cat <&3 | grep "Hello"'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  backend-migrations:
+    build:
+      context: ./
+      dockerfile: ./docker/backend/Dockerfile
+
+    depends_on:
+      postgresql:
+        condition: service_started
+
+    command: "poetry run yoyo apply"
+
+    volumes:
+      - ${PWD}/ffun:/repository
+      - ${PWD}/.env:/repository/.env
+
+    networks:
+      ffun_network: {}
+
+  backend:
+    build:
+      context: ./
+      dockerfile: ./docker/backend/Dockerfile
+
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      supertokens:
+        condition: service_healthy
+      backend-migrations:
+        condition: service_completed_successfully
+
+    command: "poetry run uvicorn ffun.application.application:app --host 0.0.0.0 --port 8000 --workers 1 --reload"
+
+    volumes:
+      - ${PWD}/ffun:/repository
+      - ${PWD}/.env:/repository/.env
+
+    environment:
+      FFUN_ENABLE_API: "${FFUN_ENABLE_API:-True}"
+      FFUN_ENABLE_SUPERTOKENS: "${FFUN_ENABLE_SUPERTOKENS:-True}"
+
+    ports:
+      - "8000:8000"
+
+    networks:
+      ffun_network: {}
+
+  backend-utils:
+    build:
+      context: ./
+      dockerfile: ./docker/backend/Dockerfile
+
+    depends_on:
+      postgresql:
+        condition: service_started
+
+    volumes:
+      - ${PWD}/ffun:/repository
+      - ${PWD}/.env:/repository/.env
+
+    networks:
+      ffun_network: {}
+
+    profiles:
+      - dev
+
+  frontend:
+    build:
+      context: ./
+      dockerfile: ./docker/frontend/Dockerfile
+
+    depends_on:
+      backend:
+        condition: service_started
+
+    command: "npm run dev -- --host 0.0.0.0"
+
+    volumes:
+      - ${PWD}/site:/repository
+
+    environment:
+      VITE_FFUN_AUTH_MODE: "${FFUN_AUTH_MODE}"
+
+    ports:
+      - "5173:5173"
 
     networks:
       ffun_network: {}

@@ -1,11 +1,24 @@
 <template>
-  <h2>
+<side-panel-layout>
+  <template #side-menu-item-1>
+    Show descriptions: <config-flag v-model:flag="globalSettings.showFeedsDescriptions"
+                                    on-text="yes"
+                                    off-text="no"/>
+  </template>
+
+  <template #main-header>
     Feeds
     <span v-if="feeds">
       [{{ feeds.length }}]
     </span>
-  </h2>
-<feeds-list :feeds="feeds" />
+  </template>
+
+  <template #main-footer>
+  </template>
+
+  <feeds-list :feeds="feeds" />
+</side-panel-layout>
+
 </template>
 
 <script lang="ts" setup>

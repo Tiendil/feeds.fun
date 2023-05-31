@@ -13,9 +13,14 @@
 - [x] common way of processing HTTP errors
 - [x] remove/unlink feed for user
 - [x] common mechanism to refresh lists of news, feeds, rules on their changes
-- [ ] simple (or not) users management
+- [x] simple (or not) users management
 - [x] mark entriy processed with status: error/success
-- [ ] load only feeds that are need at least by one user
+- [ ] test running dev project from scratch (without preixisting DBs)
+- [ ] fix rendering of feeds list, when feeds are not enough for one page
+
+# Deployment
+
+- [ ] parametrize all connection/server -related settings
 
 # Errors
 
@@ -59,6 +64,9 @@
 
 # Backlog:
 
+- [ ] load only feeds that are need at least by one user
+- [ ] change user email
+- [ ] invite link https://supertokens.com/docs/passwordless/common-customizations/disable-sign-up/passwordless-via-invite-link
 - [ ] personalized names for feeds
 - [ ] personalized names for tags
 - [ ] personalized names for tags
@@ -67,7 +75,8 @@
 - [ ] do not run processors for entries with duplicated content
 - [ ] contact https://karl-voit.at/ about the tags?
 - [ ] exit faster on ctrl+c. Need some way to stop background processors but do not affect ongoing DB requests, etc.
-
+- [ ] resend magic link counter is controlled on client (shoud be on backend?) and reseted after page refresh.
+- [ ] remove building duplicated containers
 
 # Commands
 

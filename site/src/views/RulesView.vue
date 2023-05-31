@@ -1,10 +1,12 @@
 <template>
-    <h2>
-      Rules
-      <span v-if="rules">[{{rules.length}}]</span>
-    </h2>
+<side-panel-layout>
+  <template #main-header>
+    Rules
+    <span v-if="rules">[{{rules.length}}]</span>
+  </template>
 
-    <rules-list :rules="rules" />
+  <rules-list :rules="rules" />
+</side-panel-layout>
 </template>
 
 <script lang="ts" setup>
