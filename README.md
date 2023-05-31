@@ -1,33 +1,4 @@
 
-# Supertokens
-
-- [x] landing page
-- [x] protect only required views
-- [x] login widget
-- [x] logout button
-- [x] remove side panel from landing / main page
-- [x] resend magic link
-- [x] protect frontend views with auth check
-- [x] process `401 (Unauthorized)` for API calls
-- [x] stylize landing page
-- [x] default mode should use single user
-- [x] self-hosted supertokens
-- [x] test switching between modes
-- [x] run migrations for backend container
-- [x] email field should react on enter
-- [x] change gui and display notification right after press button "send email". Do not wait for backend response.
-- [x] move to common functions: isLoggedIn
-- [x] check admin gui
-- [x] logout redirects with delay
-- [x] login redirects with delay (shows resend form)
-- [x] test API keys for supertokens
-- [x] close todos
-- [x] make `docker compose up -d` working — fix containers start order
-- [x] fix cli `server` to support reload
-      https://www.uvicorn.org/settings/#reloading-without-watchfiles
-      https://github.com/tiangolo/fastapi/issues/1495
-- [x] Warning: 'ffun' is an entry point defined in pyproject.toml, but it's not installed as a script.
-
 # MVP
 
 - [x] scoring
@@ -42,9 +13,8 @@
 - [x] common way of processing HTTP errors
 - [x] remove/unlink feed for user
 - [x] common mechanism to refresh lists of news, feeds, rules on their changes
-- [ ] simple (or not) users management
+- [x] simple (or not) users management
 - [x] mark entriy processed with status: error/success
-- [ ] load only feeds that are need at least by one user
 - [ ] test running dev project from scratch (without preixisting DBs)
 - [ ] fix rendering of feeds list, when feeds are not enough for one page
 
@@ -94,6 +64,7 @@
 
 # Backlog:
 
+- [ ] load only feeds that are need at least by one user
 - [ ] change user email
 - [ ] invite link https://supertokens.com/docs/passwordless/common-customizations/disable-sign-up/passwordless-via-invite-link
 - [ ] personalized names for feeds
