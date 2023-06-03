@@ -17,6 +17,7 @@ class Settings(BaseSettings):  # type: ignore
     app_domain: str = "localhost"
     app_port: int = 5173
 
+    # TODO: fix duplicated config?
     api_port: int = 5174
 
     enable_api: bool = False
