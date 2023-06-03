@@ -5,6 +5,10 @@
 - [ ] Sentry for backend
 - [ ] Sentry for frontend
 
+# Errors
+
+- [ ] when login, frontend too fast colls `/supertokens/session/refresh`. Possibly it is because too fast refresh of login state.
+
 
 # Closed MVP
 
