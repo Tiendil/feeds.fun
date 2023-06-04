@@ -38,20 +38,20 @@ class ProcessorInfo:
 processors = []
 
 if settings.domain_processor.enabled:
-    processors.append(ProcessorInfo(id=settings.domain_processor.id,
-                                    processor=DomainProcessor(name=settings.domain_processor.name),
+    processors.append(ProcessorInfo(id=1,
+                                    processor=DomainProcessor(name='domain'),
                                     concurrency=settings.domain_processor.workers))
 
 
 if settings.native_tags_processor.enabled:
-    processors.append(ProcessorInfo(id=settings.native_tags_processor.id,
-                                    processor=NativeTagsProcessor(name=settings.native_tags_processor.name),
+    processors.append(ProcessorInfo(id=2,
+                                    processor=NativeTagsProcessor(name="native_tags"),
                                     concurrency=settings.native_tags_processor.workers))
 
 
 if settings.openai_chat_35_processor.enabled:
-    processors.append(ProcessorInfo(id=settings.openai_chat_35_processor.id,
-                                    processor=OpenAIChat35Processor(name=settings.openai_chat_35_processor.name,
+    processors.append(ProcessorInfo(id=3,
+                                    processor=OpenAIChat35Processor(name="openai_chat_3_5",
                                                                     api_key=settings.openai_chat_35_processor.api_key),
                                     concurrency=settings.openai_chat_35_processor.workers))
 

@@ -3,8 +3,6 @@ from ffun.core.settings import BaseSettings
 
 
 class BaseProcessor(pydantic.BaseModel):  # type: ignore
-    id: int
-    name: str
     enabled: bool = False
     workers: int = 1
 
@@ -22,9 +20,9 @@ class OpenAIChat35Processor(BaseProcessor):  # type: ignore
 
 
 class Settings(BaseSettings):  # type: ignore
-    domain_processor: DomainProcessor = DomainProcessor(id=1, name='domain', enabled=True)
-    native_tags_processor: NativeTagsProcessor = NativeTagsProcessor(id=2, enabled=True)
-    openai_chat_35_processor: OpenAIChat35Processor = OpenAIChat35Processor(id=3)
+    domain_processor: DomainProcessor = DomainProcessor(enabled=True)
+    native_tags_processor: NativeTagsProcessor = NativeTagsProcessor(enabled=True)
+    openai_chat_35_processor: OpenAIChat35Processor = OpenAIChat35Processor()
 
     class Config:
         env_prefix = "FFUN_LIBRARIAN_"
