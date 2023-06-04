@@ -55,7 +55,8 @@ async def prepare_pool(name: str,
                        min_size: int,
                        max_size: int|None,
                        timeout: float,
-                       num_workers: int) -> None:
+                       num_workers: int,
+                       max_lifetime: int) -> None:
     global POOL
 
     if POOL is not None:
@@ -64,6 +65,7 @@ async def prepare_pool(name: str,
     POOL = psycopg_pool.AsyncConnectionPool(dsn,
                                             min_size=min_size,
                                             max_size=max_size,
+                                            max_lifetime=max_lifetime,
                                             timeout=timeout,
                                             connection_class=PGPAsyncConnection,
                                             num_workers=num_workers,
