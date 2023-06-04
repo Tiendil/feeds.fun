@@ -3,7 +3,6 @@ import re
 import textwrap
 from typing import Any
 
-import openai
 import typer
 from bs4 import BeautifulSoup
 from ffun.core import logging
@@ -11,13 +10,9 @@ from ffun.library.entities import Entry
 from slugify import slugify
 
 from .. import openai_client as oc
-from ..settings import settings
 from . import base
 
 logger = logging.get_module_logger()
-
-
-openai.api_key = settings.openai.api_key
 
 
 # TODO: "programming-language" vs "programming-languages".
@@ -126,7 +121,14 @@ def extract_tags(text: str) -> set[str]:
 
 
 class Processor(base.Processor):
-    __slots__ = ()
+    __slots__ = ('api_key',)
+
+    def __init__(self, api_key: str, **kwargs: Any):
+        super().__init__(**kwargs)
+        self.api_key = api_key
+
+        # TODO: we need support multiple api keys
+        oc.init(self.api_key)
 
     async def process(self, entry: Entry) -> set[str]:
         dirty_text = entry_to_text(entry)
