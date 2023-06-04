@@ -24,7 +24,9 @@ services:
 
     environment:
       POSTGRES_MULTIPLE_DATABASES: ffun,supertokens
-      POSTGRES_DB: default
+      # set to root because of the bug in pg_isready (?) it
+      # it looks like it expect the DB name be the same as the POSTGRES_USER
+      POSTGRES_DB: root
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
 
