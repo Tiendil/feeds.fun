@@ -8,7 +8,7 @@ class PostgreSQL(pydantic.BaseModel):
     dsn: str = 'postgresql://ffun:ffun@postgresql/ffun'
     pool_min_size: int = 20
     pool_max_size: int|None = None
-    pool_timeout: float = 0.1
+    pool_timeout: float = 1
     pool_num_workers: int = 1
 
 
