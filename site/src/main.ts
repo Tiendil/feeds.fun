@@ -84,7 +84,7 @@ if (settings.authMode === settings.AuthMode.Supertokens) {
 
     const supertokens = useSupertokens();
 
-    supertokens.init({apiDomain: `http://${settings.appDomain}:${settings.appPort}`,
+    supertokens.init({apiDomain: `${settings.appProtocol}://${settings.appDomain}:${settings.appPort}`,
                       apiBasePath: settings.authSupertokensApiBasePath,
                       appName: settings.appName,
                       resendAfter: settings.authSupertokensResendAfter});
