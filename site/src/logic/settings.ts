@@ -17,6 +17,7 @@ export const authSupertokensResendAfter = import.meta.env.VITE_FFUN_AUTH_SUPERTO
 console.log('settings.appName', appName);
 console.log('settings.appDomain', appDomain);
 console.log('settings.appPort', appPort);
+console.log('settings.appProtocol', appProtocol);
 
 console.log('settings.authMode', authMode);
 console.log('settings.authSupertokensApiBasePath', authSupertokensApiBasePath);
