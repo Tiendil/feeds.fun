@@ -10,14 +10,17 @@ import typer
 from ffun.core import logging
 
 from . import errors
-from .settings import settings
 
 logger = logging.get_module_logger()
 
 cli = typer.Typer()
 
 
-openai.api_key = settings.openai.api_key
+# TODO: we need to use multiple api keys
+#       it looks like python client supports it as undocumented feature
+#       and there are some tasks/PRs in openapi repo to support it right
+def init(api_key: str):
+    openai.api_key = api_key
 
 
 @async_lru.alru_cache()
