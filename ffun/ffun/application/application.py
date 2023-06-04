@@ -23,7 +23,8 @@ async def use_postgresql():
                                   min_size=settings.postgresql.pool_min_size,
                                   max_size=settings.postgresql.pool_max_size,
                                   timeout=settings.postgresql.pool_timeout,
-                                  num_workers=settings.postgresql.pool_num_workers)
+                                  num_workers=settings.postgresql.pool_num_workers,
+                                  max_lifetime=settings.postgresql.pool_max_lifetime)
     logger.info('postgresql_initialized')
 
     try:
