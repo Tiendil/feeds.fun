@@ -6,8 +6,11 @@ from typing import Any, AsyncGenerator, Callable, Protocol
 
 import psycopg
 import psycopg_pool
+from ffun.core import logging
 from psycopg.pq import ExecStatus
 from psycopg.rows import dict_row
+
+logger = logging.get_module_logger()
 
 POOL: psycopg_pool.AsyncConnectionPool = None
 
@@ -48,6 +51,24 @@ class PGPAsyncConnection(psycopg.AsyncConnection):   # type: ignore
         # set prepare_threshold to None because we can use connection pool (pgbouncer/RDSPRoxy)
         # details: https://www.psycopg.org/psycopg3/docs/advanced/prepare.html
         self.prepare_threshold = None
+
+
+async def pool_refresher(delay: int) -> None:
+    logger.info("start pool refresher")
+
+    try:
+        while True:
+            await asyncio.sleep(delay)
+
+            if POOL is None:
+                continue
+
+            logger.info("refresh pool")
+
+            await POOL.check()
+    except asyncio.CancelledError:
+        logger.info("Pool refresher is stopped")
+        return
 
 
 async def prepare_pool(name: str,
