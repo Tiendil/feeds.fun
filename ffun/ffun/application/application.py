@@ -27,6 +27,8 @@ async def use_postgresql():
                                   max_lifetime=settings.postgresql.pool_max_lifetime)
     logger.info('postgresql_initialized')
 
+    refresher = asyncio.create_task(postgresql.pool_refresher(settings.postgresql.pool_check_period), name='poll_refresher')
+
     try:
         await postgresql.execute('''SELECT 1''')
     except Exception as e:
@@ -36,7 +38,11 @@ async def use_postgresql():
         yield
     finally:
         logger.info('deinitialize_postgresql')
+
+        refresher.cancel()
+
         await postgresql.destroy_pool()
+
         logger.info('postgresql_deinitialized')
 
 

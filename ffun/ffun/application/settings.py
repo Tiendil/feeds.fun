@@ -11,6 +11,7 @@ class PostgreSQL(pydantic.BaseModel):
     pool_timeout: float = 1
     pool_num_workers: int = 1
     pool_max_lifetime: int = 9 * 60
+    pool_check_period: int = 60
 
 
 class Settings(BaseSettings):  # type: ignore
