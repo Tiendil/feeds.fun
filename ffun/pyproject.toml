@@ -39,10 +39,13 @@ supertokens-python = "0.*"
 
 python-slugify = "8.*"
 
+sentry-sdk = "1.*"
+
 [tool.poetry.dev-dependencies]
 
 pytest = "6.*"
 
 
 [tool.poetry.scripts]
+
 ffun = "ffun.cli.cli:app"

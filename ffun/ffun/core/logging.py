@@ -3,12 +3,12 @@ import enum
 import functools
 import inspect
 import logging
-import os
 import uuid
 from typing import Any, Iterable
 
 import pydantic
 import structlog
+from sentry_sdk import capture_message
 from structlog.contextvars import bound_contextvars
 
 
@@ -118,7 +118,24 @@ def create_formatter():
     return ProcessorFormatter(formatters)
 
 
-def processors_list():
+def log_errors_to_sentry(_, __, event_dict: dict[str, Any]) -> dict[str, Any]:
+    if event_dict.get('sentry_skip'):
+        return event_dict
+
+    if event_dict.get('level', '').upper() != 'ERROR':
+        return event_dict
+
+    capture_message(event_dict["event"])
+
+    return event_dict
+
+
+def processors_list(use_sentry: bool):
+
+    sentry_processor = None
+
+    if use_sentry:
+        sentry_processor = log_errors_to_sentry
 
     processors_list = [
         structlog.contextvars.merge_contextvars,
@@ -126,6 +143,7 @@ def processors_list():
         structlog.processors.add_log_level,
         structlog.processors.StackInfoRenderer(),
         structlog.dev.set_exc_info,
+        sentry_processor,
         structlog.processors.TimeStamper(fmt="ISO", utc=True, key="timestamp"),
         create_formatter(),
         structlog.dev.ConsoleRenderer() if settings.renderer == Renderer.console else None,
@@ -135,9 +153,9 @@ def processors_list():
     return [p for p in processors_list if p is not None]
 
 
-def initialize() -> None:
+def initialize(use_sentry: bool) -> None:
     structlog.configure(
-        processors=processors_list(),
+        processors=processors_list(use_sentry=use_sentry),
         wrapper_class=structlog.make_filtering_bound_logger(settings.structlog_level),
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),

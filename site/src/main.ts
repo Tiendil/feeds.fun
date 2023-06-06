@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import * as Sentry from "@sentry/vue";
 
 import App from './App.vue'
 import router from './router'
@@ -74,6 +75,18 @@ app.component('vue-countdown', VueCountdown);
 
 app.use(createPinia())
 app.use(router)
+
+if (settings.sentryEnable) {
+    Sentry.init({
+        app,
+        dsn: settings.sentryDsn,
+        environment: settings.environment,
+        sampleRate: settings.sentrySampleRate,
+        attachStacktrace: true,
+        enableTracing: false,
+        integrations: []
+    });
+}
 
 app.mount('#app')
 
