@@ -113,6 +113,8 @@ services:
     environment:
       FFUN_ENABLE_API: "${FFUN_ENABLE_API:-True}"
       FFUN_ENABLE_SUPERTOKENS: "${FFUN_ENABLE_SUPERTOKENS:-True}"
+      FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
+      FFUN_SENTRY__DSN: "${FFUN_SENTRY__DSN:-not-secified}"
 
     ports:
       - "8000:8000"

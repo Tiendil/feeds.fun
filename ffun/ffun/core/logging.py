@@ -10,6 +10,7 @@ from typing import Any, Iterable
 import pydantic
 import structlog
 from structlog.contextvars import bound_contextvars
+from structlog_sentry import SentryProcessor
 
 
 class Renderer(str, enum.Enum):
@@ -118,7 +119,16 @@ def create_formatter():
     return ProcessorFormatter(formatters)
 
 
-def processors_list():
+def processors_list(use_sentry: bool):
+
+    sentry_processor = None
+
+    if use_sentry:
+        sentry_processor = SentryProcessor(
+            level=logging.WARNING,
+            event_level=logging.ERROR,
+            tag_keys=[],
+        )
 
     processors_list = [
         structlog.contextvars.merge_contextvars,
@@ -126,6 +136,7 @@ def processors_list():
         structlog.processors.add_log_level,
         structlog.processors.StackInfoRenderer(),
         structlog.dev.set_exc_info,
+        sentry_processor,
         structlog.processors.TimeStamper(fmt="ISO", utc=True, key="timestamp"),
         create_formatter(),
         structlog.dev.ConsoleRenderer() if settings.renderer == Renderer.console else None,
@@ -135,9 +146,9 @@ def processors_list():
     return [p for p in processors_list if p is not None]
 
 
-def initialize() -> None:
+def initialize(use_sentry: bool) -> None:
     structlog.configure(
-        processors=processors_list(),
+        processors=processors_list(use_sentry=use_sentry),
         wrapper_class=structlog.make_filtering_bound_logger(settings.structlog_level),
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),
