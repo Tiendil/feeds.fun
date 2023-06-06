@@ -5,7 +5,7 @@ import fastapi
 from fastapi.middleware.cors import CORSMiddleware
 from ffun.api import http_handlers as api_http_handlers
 from ffun.auth import supertokens as st
-from ffun.core import logging, postgresql
+from ffun.core import logging, middlewares, postgresql, sentry
 from ffun.librarian.background_processors import create_background_processors
 from ffun.loader.background_loader import FeedsLoader
 
@@ -58,8 +58,24 @@ async def use_api(app: fastapi.FastAPI):
     logger.info('api_deinitialized')
 
 
+@contextlib.asynccontextmanager
+async def use_sentry():
+    logger.info('sentry_enabled')
+
+    sentry.initialize(dsn=settings.sentry.dsn,
+                      sample_rate=settings.sentry.sample_rate,
+                      traces_sample_rate=settings.sentry.traces_sample_rate,
+                      environment=settings.environment)
+
+    logger.info('sentry_initialized')
+
+    yield
+
+    logger.info('sentry_disabled')
+
+
 def create_app():  # noqa: CCR001
-    logging.initialize()
+    logging.initialize(use_sentry=settings.enable_sentry)
 
     logger.info('create_app')
 
@@ -67,6 +83,9 @@ def create_app():  # noqa: CCR001
     async def lifespan(app: fastapi.FastAPI):
         async with contextlib.AsyncExitStack() as stack:
             await stack.enter_async_context(use_postgresql())
+
+            if settings.enable_sentry:
+                await stack.enter_async_context(use_sentry())
 
             if settings.enable_supertokens:
                 api_domain = f'http://{settings.app_domain}:{settings.api_port}'
@@ -87,7 +106,11 @@ def create_app():  # noqa: CCR001
 
     app = fastapi.FastAPI(lifespan=lifespan)
 
+    middlewares.initialize_error_processors(app)
+
     st.add_middlewares(app)
+
+    app.middleware('http')(middlewares.final_errors_middleware)
 
     app.add_middleware(
         CORSMiddleware,
