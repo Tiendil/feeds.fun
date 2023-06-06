@@ -933,7 +933,7 @@ wandb = ["numpy", "openpyxl (>=3.0.7)", "pandas (>=1.2.3)", "pandas-stubs (>=1.1
 name = "packaging"
 version = "23.1"
 description = "Core utilities for Python packages"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -1576,23 +1576,6 @@ tests = ["coverage[toml]", "freezegun (>=0.2.8)", "pretend", "pytest (>=6.0)", "
 typing = ["mypy", "rich", "twisted"]
 
 [[package]]
-name = "structlog-sentry"
-version = "2.0.2"
-description = "Sentry integration for structlog"
-category = "main"
-optional = false
-python-versions = ">=3.7,<4.0"
-files = [
-    {file = "structlog_sentry-2.0.2-py3-none-any.whl", hash = "sha256:a56e8ea4cf193558ba8a600fe4d8932642c186193e4a20bf720b0ac8ebc8ad2b"},
-    {file = "structlog_sentry-2.0.2.tar.gz", hash = "sha256:9790227e2284586b1202c066cec962c4f42c46ee9a3e0159c8c459a30384494c"},
-]
-
-[package.dependencies]
-packaging = "*"
-sentry-sdk = "*"
-structlog = "*"
-
-[[package]]
 name = "supertokens-python"
 version = "0.14.2"
 description = "SuperTokens SDK for Python"
@@ -2228,4 +2211,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "990cf439758e111ae78b59cbaf7f2d5dd1803b15b507c08833d745b8578977c8"
+content-hash = "eadf61f5624fb02935d66e2a007042cc5c5df7a2e9c943803b2f3d65369f58b7"

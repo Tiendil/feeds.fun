@@ -3,14 +3,13 @@ import enum
 import functools
 import inspect
 import logging
-import os
 import uuid
 from typing import Any, Iterable
 
 import pydantic
 import structlog
+from sentry_sdk import capture_message
 from structlog.contextvars import bound_contextvars
-from structlog_sentry import SentryProcessor
 
 
 class Renderer(str, enum.Enum):
@@ -119,16 +118,24 @@ def create_formatter():
     return ProcessorFormatter(formatters)
 
 
+def log_errors_to_sentry(_, __, event_dict: dict[str, Any]) -> dict[str, Any]:
+    if event_dict.get('sentry_skip'):
+        return event_dict
+
+    if event_dict.get('level', '').upper() != 'ERROR':
+        return event_dict
+
+    capture_message(event_dict["event"])
+
+    return event_dict
+
+
 def processors_list(use_sentry: bool):
 
     sentry_processor = None
 
     if use_sentry:
-        sentry_processor = SentryProcessor(
-            level=logging.WARNING,
-            event_level=logging.ERROR,
-            tag_keys=[],
-        )
+        sentry_processor = log_errors_to_sentry
 
     processors_list = [
         structlog.contextvars.merge_contextvars,

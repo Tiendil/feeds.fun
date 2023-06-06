@@ -5,7 +5,7 @@ import fastapi
 from fastapi.middleware.cors import CORSMiddleware
 from ffun.api import http_handlers as api_http_handlers
 from ffun.auth import supertokens as st
-from ffun.core import logging, postgresql, sentry
+from ffun.core import logging, middlewares, postgresql, sentry
 from ffun.librarian.background_processors import create_background_processors
 from ffun.loader.background_loader import FeedsLoader
 
@@ -106,7 +106,11 @@ def create_app():  # noqa: CCR001
 
     app = fastapi.FastAPI(lifespan=lifespan)
 
+    middlewares.initialize_error_processors(app)
+
     st.add_middlewares(app)
+
+    app.middleware('http')(middlewares.final_errors_middleware)
 
     app.add_middleware(
         CORSMiddleware,
