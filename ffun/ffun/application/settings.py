@@ -18,13 +18,14 @@ class Sentry(pydantic.BaseModel):
     dsn: str = ''
     sample_rate: float = 1.0
     traces_sample_rate: float = 1.0
-    environment: str = 'local'
 
 
 class Settings(BaseSettings):  # type: ignore
     app_name: str = "Feeds Fun"
     app_domain: str = "localhost"
     app_port: int = 5173
+
+    environment: str = 'local'
 
     # TODO: fix duplicated config?
     api_port: int = 5174

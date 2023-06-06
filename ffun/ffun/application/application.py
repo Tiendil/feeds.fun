@@ -65,7 +65,7 @@ async def use_sentry():
     sentry.initialize(dsn=settings.sentry.dsn,
                       sample_rate=settings.sentry.sample_rate,
                       traces_sample_rate=settings.sentry.traces_sample_rate,
-                      environment=settings.sentry.environment)
+                      environment=settings.environment)
 
     logger.info('sentry_initialized')
 

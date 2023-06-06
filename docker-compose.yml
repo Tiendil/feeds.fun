@@ -114,7 +114,7 @@ services:
       FFUN_ENABLE_API: "${FFUN_ENABLE_API:-True}"
       FFUN_ENABLE_SUPERTOKENS: "${FFUN_ENABLE_SUPERTOKENS:-True}"
       FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
-      FFUN_SENTRY__DSN: "${FFUN_SENTRY__DSN:-not-secified}"
+      FFUN_SENTRY__DSN: "${FFUN_SENTRY__DSN:-not-specified}"
 
     ports:
       - "8000:8000"
@@ -157,6 +157,10 @@ services:
 
     environment:
       VITE_FFUN_AUTH_MODE: "${FFUN_AUTH_MODE}"
+
+      VITE_FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
+
+      VITE_FFUN_SENTRY_DSN: "${FFUN_SENTRY__DSN:-not-specified}"
 
     ports:
       - "5173:5173"
