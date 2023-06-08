@@ -24,6 +24,11 @@ router = fastapi.APIRouter()
 logger = logging.get_module_logger()
 
 
+@router.post('/api/error')
+async def api_error() -> None:
+    raise Exception('test_error')
+
+
 @router.post('/api/get-feeds')
 async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entities.GetFeedsResponse:
 
