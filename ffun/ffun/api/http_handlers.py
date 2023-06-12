@@ -14,7 +14,7 @@ from ffun.library import entities as l_entities
 from ffun.markers import domain as m_domain
 from ffun.ontology import domain as o_domain
 from ffun.parsers import domain as p_domain
-from ffun.predefined_feeds import domain as pf_domain
+from ffun.predefined_feeds import domain as fc_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 
@@ -242,20 +242,20 @@ async def api_unsubscribe(request: entities.UnsubscribeRequest, user: User) -> e
     return entities.UnsubscribeResponse()
 
 
-@router.post('/api/get-predefined-feeds')
-async def api_get_predefined_feeds(request: entities.GetPredefinedFeedsRequest, user: User) -> entities.GetPredefinedFeedsResponse:
-    collections = await pf_domain.get_collections()
+@router.post('/api/get-feeds-collections')
+async def api_get_feeds_collections(request: entities.GetFeedsCollectionsRequest, user: User) -> entities.GetFeedsCollectionsResponse:
+    collections = await fc_domain.get_collections()
 
-    return entities.GetPredefinedFeedsResponse(collections=collections)
+    return entities.GetFeedsCollectionsResponse(collections=collections)
 
 
-@router.post('/api/use-predefined-feeds')
-async def api_use_predefined_feeds(request: entities.UsePredefinedFeedsRequest, user: User) -> entities.UsePredefinedFeedsResponse:
+@router.post('/api/subscribe-to-feeds-collections')
+async def api_subscribe_to_feeds_collections(request: entities.SubscribeToFeedsCollections, user: User) -> entities.SubscribeToFeedsCollectionsResponse:
 
     feeds = []
 
     for collection in request.collections:
-        feed_urls = pf_domain.get_feeds_for_collecton(collection)
+        feed_urls = fc_domain.get_feeds_for_collecton(collection)
 
         for feed_url in feed_urls:
             feeds.append(f_entities.Feed(id=uuid.uuid4(),
@@ -270,4 +270,4 @@ async def api_use_predefined_feeds(request: entities.UsePredefinedFeedsRequest, 
 
     await _add_feeds(feeds, request.user)
 
-    return entities.UsePredefinedFeedsResponse()
+    return entities.SubscribeToFeedsCollectionsResponse()

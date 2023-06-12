@@ -38,6 +38,8 @@
   <template #main-footer>
   </template>
 
+  <feeds-collections/>
+
   <entries-list :entriesIds="entriesStore.entriesReport"
                 :time-field="timeField"
                 :show-tags="globalSettings.showEntriesTags"
