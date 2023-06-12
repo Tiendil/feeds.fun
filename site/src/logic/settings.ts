@@ -16,7 +16,7 @@ export const authMode = import.meta.env.VITE_FFUN_AUTH_MODE || AuthMode.SingleUs
 export const authSupertokensApiBasePath = import.meta.env.VITE_FFUN_AUTH_SUPERTOKENS_API_BASE_PATH || "/supertokens";
 export const authSupertokensResendAfter = import.meta.env.VITE_FFUN_AUTH_SUPERTOKENS_RESEND_AFTER || 60 * 1000;
 
-export const sentryEnable = import.meta.env.VITE_FFUN_ENABLE_SENTRY || false;
+export const sentryEnable = (import.meta.env.VITE_FFUN_ENABLE_SENTRY == 'True') || false;
 
 export const sentryDsn = import.meta.env.VITE_FFUN_SENTRY_DSN || "not-secified";
 export const sentrySampleRate = import.meta.env.VITE_FFUN_SENTRY_SAMPLE_RATE || 1.0;

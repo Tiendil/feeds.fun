@@ -7,6 +7,7 @@ from ffun.auth.dependencies import User
 from ffun.core import logging
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
+from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_discoverer import domain as fd_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
@@ -14,7 +15,6 @@ from ffun.library import entities as l_entities
 from ffun.markers import domain as m_domain
 from ffun.ontology import domain as o_domain
 from ffun.parsers import domain as p_domain
-from ffun.predefined_feeds import domain as fc_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 
@@ -244,13 +244,13 @@ async def api_unsubscribe(request: entities.UnsubscribeRequest, user: User) -> e
 
 @router.post('/api/get-feeds-collections')
 async def api_get_feeds_collections(request: entities.GetFeedsCollectionsRequest, user: User) -> entities.GetFeedsCollectionsResponse:
-    collections = await fc_domain.get_collections()
+    collections = list(fc_domain.get_collections())
 
     return entities.GetFeedsCollectionsResponse(collections=collections)
 
 
 @router.post('/api/subscribe-to-feeds-collections')
-async def api_subscribe_to_feeds_collections(request: entities.SubscribeToFeedsCollections, user: User) -> entities.SubscribeToFeedsCollectionsResponse:
+async def api_subscribe_to_feeds_collections(request: entities.SubscribeToFeedsCollectionsRequest, user: User) -> entities.SubscribeToFeedsCollectionsResponse:
 
     feeds = []
 

@@ -258,11 +258,11 @@ class GetFeedsCollectionsRequest(api.APIRequest):
 
 
 class GetFeedsCollectionsResponse(api.APISuccess):
-    collections: list[fc_entities.Coolection]
+    collections: list[fc_entities.Collection]
 
 
 class SubscribeToFeedsCollectionsRequest(api.APIRequest):
-    collections: list[fc_entities.Coolection]
+    collections: list[fc_entities.Collection]
 
 
 class SubscribeToFeedsCollectionsResponse(api.APISuccess):
