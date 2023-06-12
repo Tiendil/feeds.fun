@@ -268,6 +268,6 @@ async def api_subscribe_to_feeds_collections(request: entities.SubscribeToFeedsC
     for feed_id in real_feeds_ids:
         await fl_domain.add_link(user_id=user.id, feed_id=feed_id)
 
-    await _add_feeds(feeds, request.user)
+    await _add_feeds(feeds, user)
 
     return entities.SubscribeToFeedsCollectionsResponse()

@@ -5,14 +5,14 @@
   <p>Try to subscribe for one or all predefined feeds collections that we are prepairing for you!</p>
 
   <template v-for="item in collections">
-    <input type="checkbox" :id="item" :name="item" :value="item" checked>
+    <input type="checkbox" :id="item" :name="item" :value="item" v-model="selectedCollections" checked>
     <label :for="item">{{item}}</label>
     <br>
   </template>
 
   <br/>
 
-  <button @click="subscribe">Subscribe</button>
+  <button @click="subscribe()">Subscribe</button>
 
 </div>
 </template>
@@ -27,9 +27,23 @@ import DOMPurify from "dompurify";
 import { useEntriesStore } from "@/stores/entries";
 
 
+const selectedCollections = ref<string[]>([]);
+
+
 const collections = computedAsync(async () => {
-    return await api.getFeedsCollections();
+    const collections = await api.getFeedsCollections();
+
+    for (const collectionId of collections) {
+        selectedCollections.value.push(collectionId);
+    }
+
+    return collections;
 });
+
+
+async function subscribe() {
+    await api.subscribeToFeedsCollections({collectionsIds: selectedCollections.value});
+}
 
 
 </script>
