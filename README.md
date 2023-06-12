@@ -1,15 +1,4 @@
 
-# Deployment
-
-- [ ] parametrize all connection/server -related settings
-- [ ] Sentry for backend
-- [ ] Sentry for frontend
-
-# Errors
-
-- [ ] when login, frontend too fast colls `/supertokens/session/refresh`. Possibly it is because too fast refresh of login state.
-
-
 # Closed MVP
 
 - [ ] prepare preset lists of feeds to help new users to start
@@ -41,6 +30,10 @@
 - [ ] remove fixtures from the history
 - [ ] test running dev project from scratch (without preixisting DBs)
 - [ ] refactor API endpoints / names
+
+# Errors
+
+- [ ] when login, frontend too fast colls `/supertokens/session/refresh`. Possibly it is because too fast refresh of login state.
 
 # Backlog
 
