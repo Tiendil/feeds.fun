@@ -9,6 +9,7 @@ from ffun.feeds import entities as f_entities
 from ffun.library import entities as l_entities
 from ffun.markers import entities as m_entities
 from ffun.parsers import entities as p_entities
+from ffun.predefined_feeds import entities as pf_entities
 from ffun.scores import entities as s_entities
 
 
@@ -249,4 +250,20 @@ class UnsubscribeRequest(api.APIRequest):
 
 
 class UnsubscribeResponse(api.APISuccess):
+    pass
+
+
+class GetPredefinedFeedsRequest(api.APIRequest):
+    pass
+
+
+class GetPredefinedFeedsResponse(api.APISuccess):
+    collections: list[pf_entities.Coolection]
+
+
+class UsePredefinedFeedsRequest(api.APIRequest):
+    collections: list[pf_entities.Coolection]
+
+
+class UsePredefinedFeedsResponse(api.APISuccess):
     pass
