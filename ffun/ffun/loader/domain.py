@@ -47,6 +47,9 @@ async def load_content(url: str) -> httpx.Response:  # noqa: CCR001, C901 # pyli
         elif '[Errno -5]' in message:
             logger.warning('no_address_associated_with_hostname')
             error_code = FeedError.network_no_address_associated_with_hostname
+        elif message == '':
+            logger.warning('undetected_connection_error')
+            error_code = FeedError.network_undetected_connection_error
         else:
             logger.exception('connection_error_while_loading_feed')
 
