@@ -1,9 +1,5 @@
 <template>
 <div>
-  <p>It looks like you have no news to read.</p>
-
-  <p>Try to subscribe for one or all predefined feeds collections that we are prepairing for you!</p>
-
   <template v-for="item in collections">
     <input type="checkbox" :id="item" :name="item" :value="item" v-model="selectedCollections" checked>
     <label :for="item">{{item}}</label>
@@ -13,7 +9,6 @@
   <br/>
 
   <button @click="subscribe()">Subscribe</button>
-
 </div>
 </template>
 
