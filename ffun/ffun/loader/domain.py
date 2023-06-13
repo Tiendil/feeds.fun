@@ -76,6 +76,11 @@ async def load_content(url: str) -> httpx.Response:  # noqa: CCR001, C901 # pyli
         error_code = FeedError.network_read_timeout
         raise errors.LoadError(feed_error_code=error_code) from e
 
+    except httpx.UnsupportedProtocol as e:
+        logger.warning('network_unsupported_protocol')
+        error_code = FeedError.network_unsupported_protocol
+        raise errors.LoadError(feed_error_code=error_code) from e
+
     except Exception as e:
         logger.exception('error_while_loading_feed')
         raise errors.LoadError(feed_error_code=error_code) from e
