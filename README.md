@@ -11,7 +11,7 @@
   - [ ] fill about
   - [ ] fill tags/topics
 - [ ] readme
-- [ ] license
+- [x] license
 - [x] remove fixtures from the history
 - [ ] test running dev project from scratch (without preixisting DBs)
 - [ ] refactor API endpoints / names
