@@ -107,8 +107,12 @@ async def request(model,  # noqa
                                                      presence_penalty=presence_penalty,
                                                      frequency_penalty=frequency_penalty,
                                                      messages=messages)
+    # https://platform.openai.com/docs/guides/error-codes/api-errors
     except openai.error.RateLimitError as e:
         logger.warning('openai_rate_limit', message=str(e))
+        raise errors.SkipAndContinueLater(message=str(e)) from e
+    except openai.error.APIError as e:
+        logger.error('openai_api_error', message=str(e))
         raise errors.SkipAndContinueLater(message=str(e)) from e
 
     content = answer['choices'][0]['message']['content']
