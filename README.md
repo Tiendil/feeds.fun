@@ -3,9 +3,7 @@
 
 - [x] prepare preset lists of feeds to help new users to start
 - [ ] better tags format. For example `raw:text`, `person:name`, `domain:the-tale.org`
-- [ ] fix rendering of feeds list, when feeds are not enough for one page
 - [ ] telegram channel or other platform
-- [ ] filter by single feed (like a tag?)
 
 # Open Source
 
@@ -22,6 +20,8 @@
 
 # Public MVP
 
+- [ ] fix rendering of feeds list, when feeds are not enough for one page
+- [ ] filter by single feed (like a tag?)
 - [ ] reduce amount the size of answers from backend
 - [ ] favicon
 - [ ] openapi key per user
