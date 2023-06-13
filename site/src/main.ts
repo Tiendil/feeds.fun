@@ -22,6 +22,7 @@ import EntryInfo from "./components/EntryInfo.vue";
 import OpmlUpload from "./components/OPMLUpload.vue";
 import FeedForList from "./components/FeedForList.vue";
 import SupertokensLogin from "./components/SupertokensLogin.vue";
+import FeedsCollections from "./components/FeedsCollections.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -58,6 +59,7 @@ app.component("EntryInfo", EntryInfo);
 app.component("OpmlUpload", OpmlUpload);
 app.component("FeedForList", FeedForList);
 app.component("SupertokensLogin", SupertokensLogin);
+app.component("FeedsCollections", FeedsCollections);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);

@@ -11,6 +11,7 @@ export enum MainPanelMode {
     Feeds = "feeds",
     Rules = "rules",
     Discovery = "discovery",
+    Collections = "collections",
 }
 
 
@@ -19,6 +20,7 @@ export const MainPanelModeProperties = new Map<MainPanelMode, {text: string}>([
     [MainPanelMode.Feeds, {text: "feeds"}],
     [MainPanelMode.Rules, {text: "rules"}],
     [MainPanelMode.Discovery, {text: "discovery"}],
+    [MainPanelMode.Collections, {text: "collections"}],
 ]);
 
 

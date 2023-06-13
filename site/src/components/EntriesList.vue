@@ -1,10 +1,6 @@
 <template>
 <div>
-  <template v-if="entriesToShow.length == 0">
-    <p>No news found</p>
-  </template>
-
-  <template v-else>
+  <template v-if="entriesToShow.length > 0">
 
     <ul style="list-style-type: none; margin: 0; padding: 0;">
       <li v-for="entryId in entriesToShow"

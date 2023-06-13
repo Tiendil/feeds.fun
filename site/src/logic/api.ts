@@ -19,6 +19,8 @@ const API_DISCOVER_FEEDS = `${ENTRY_POINT}/discover-feeds`;
 const API_ADD_FEED = `${ENTRY_POINT}/add-feed`;
 const API_ADD_OPML = `${ENTRY_POINT}/add-opml`;
 const API_UNSUBSCRIBE = `${ENTRY_POINT}/unsubscribe`;
+const API_GET_FEEDS_COLLECTIONS = `${ENTRY_POINT}/get-feeds-collections`;
+const API_SUBSCRIBE_TO_FEEDS_COLLECTIONS = `${ENTRY_POINT}/subscribe-to-feeds-collections`;
 
 
 let _onSessionLost: () => void = () => {};
@@ -169,4 +171,16 @@ export async function addOPML({content}: {content: string}) {
 
 export async function unsubscribe({feedId}: {feedId: t.FeedId}) {
     await post({url: API_UNSUBSCRIBE, data: {feedId: feedId}});
+}
+
+
+export async function getFeedsCollections() {
+    const response = await post({url: API_GET_FEEDS_COLLECTIONS, data: {}});
+
+    return response.collections;
+}
+
+
+export async function subscribeToFeedsCollections({collectionsIds}: {collectionsIds: t.FeedsCollectionId[]}) {
+    await post({url: API_SUBSCRIBE_TO_FEEDS_COLLECTIONS, data: {collections: collectionsIds}});
 }

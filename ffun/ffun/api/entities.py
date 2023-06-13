@@ -6,6 +6,7 @@ from typing import Iterable
 import pydantic
 from ffun.core import api
 from ffun.feeds import entities as f_entities
+from ffun.feeds_collections import entities as fc_entities
 from ffun.library import entities as l_entities
 from ffun.markers import entities as m_entities
 from ffun.parsers import entities as p_entities
@@ -249,4 +250,20 @@ class UnsubscribeRequest(api.APIRequest):
 
 
 class UnsubscribeResponse(api.APISuccess):
+    pass
+
+
+class GetFeedsCollectionsRequest(api.APIRequest):
+    pass
+
+
+class GetFeedsCollectionsResponse(api.APISuccess):
+    collections: list[fc_entities.Collection]
+
+
+class SubscribeToFeedsCollectionsRequest(api.APIRequest):
+    collections: list[fc_entities.Collection]
+
+
+class SubscribeToFeedsCollectionsResponse(api.APISuccess):
     pass
