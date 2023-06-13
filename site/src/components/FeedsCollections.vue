@@ -20,9 +20,11 @@ import * as api from "@/logic/api";
 import { computedAsync } from "@vueuse/core";
 import DOMPurify from "dompurify";
 import { useEntriesStore } from "@/stores/entries";
-
+import { useGlobalSettingsStore } from "@/stores/globalSettings";
 
 const selectedCollections = ref<string[]>([]);
+
+const globalSettings = useGlobalSettingsStore();
 
 
 const collections = computedAsync(async () => {
@@ -38,6 +40,7 @@ const collections = computedAsync(async () => {
 
 async function subscribe() {
     await api.subscribeToFeedsCollections({collectionsIds: selectedCollections.value});
+    globalSettings.updateDataVersion();
 }
 
 

@@ -19,6 +19,8 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     const requiredTags = ref({});
     const excludedTags = ref({});
 
+    const firstTimeEntriesLoading = ref(true);
+
     function registerEntry(entry) {
         if (entry.id in entries.value) {
             if (entry.body === null && entries.value[entry.id].body !== null) {
@@ -42,6 +44,8 @@ export const useEntriesStore = defineStore("entriesStore", () => {
             registerEntry(entry);
             report.push(entry.id);
         }
+
+        firstTimeEntriesLoading.value = false;
 
         return report;
 
@@ -184,5 +188,6 @@ export const useEntriesStore = defineStore("entriesStore", () => {
         resetTag,
         requiredTags,
         excludedTags,
+        firstTimeEntriesLoading,
     };
 });

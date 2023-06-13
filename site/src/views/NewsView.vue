@@ -38,11 +38,11 @@
   <template #main-footer>
   </template>
 
-  <p>It looks like you have no news to read.</p>
-
-  <p>Try to subscribe for the feeds collections that we are preparing for you!</p>
-
-  <feeds-collections/>
+  <template v-if="!hasEntries && !entriesStore.firstTimeEntriesLoading">
+    <p>It looks like you have no news to read.</p>
+    <p>Try to subscribe for the feeds collections that we are preparing for you!</p>
+    <feeds-collections/>
+  </template>
 
   <entries-list :entriesIds="entriesStore.entriesReport"
                 :time-field="timeField"
@@ -71,6 +71,10 @@ globalSettings.updateDataVersion();
 
 const entriesNumber = computed(() => {
     return entriesStore.entriesReport.length;
+});
+
+const hasEntries = computed(() => {
+    return entriesNumber.value > 0;
 });
 
 const timeField = computed(() => {
