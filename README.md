@@ -1,24 +1,11 @@
 
 # Closed MVP
 
-- [ ] prepare preset lists of feeds to help new users to start
+- [x] prepare preset lists of feeds to help new users to start
+- [ ] better tags format. For example `raw:text`, `person:name`, `domain:the-tale.org`
 - [ ] fix rendering of feeds list, when feeds are not enough for one page
-- [ ] cache erros and display them somehow in gui
-- [ ] telegram channel of other platform
-- [ ] names for feeds
-- [ ] display feed for each entry
-- [ ] filter by single feed
-- [ ] tooltip for last entries period about top limit of how many entries can be retrieved
-- [ ] in the news list highlight tags that are used in rules
-
-# Public MVP
-
-- [ ] reduce amount the size of answers from backend
-- [ ] favicon
-- [ ] openapi key per user
-- [ ] blog
-- [ ] some styles
-- [ ] search for unprocessed entries and reprocess them periodically
+- [ ] telegram channel or other platform
+- [ ] filter by single feed (like a tag?)
 
 # Open Source
 
@@ -31,6 +18,21 @@
 - [ ] test running dev project from scratch (without preixisting DBs)
 - [ ] refactor API endpoints / names
 - [ ] update `commands` section in README
+
+
+# Public MVP
+
+- [ ] reduce amount the size of answers from backend
+- [ ] favicon
+- [ ] openapi key per user
+- [ ] blog
+- [ ] some styles
+- [ ] search for unprocessed entries and reprocess them periodically
+- [ ] cache erros and display them somehow in gui
+- [ ] names for feeds
+- [ ] display feed for each entry
+- [ ] tooltip for last entries period about top limit of how many entries can be retrieved
+- [ ] in the news list highlight tags that are used in rules
 
 # Errors
 
