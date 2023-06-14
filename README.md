@@ -13,7 +13,7 @@
 - [ ] readme
 - [x] license
 - [x] remove fixtures from the history
-- [ ] test running dev project from scratch (without preixisting DBs)
+- [x] test running dev project from scratch (without preixisting DBs)
 - [ ] refactor API endpoints / names
 - [ ] update `commands` section in README
 
