@@ -7,9 +7,9 @@
 
 # Open Source
 
-- [ ] fill side panel of GitHub repository
-  - [ ] fill about
-  - [ ] fill tags/topics
+- [x] fill side panel of GitHub repository
+  - [x] fill about
+  - [x] fill tags/topics
 - [ ] readme
 - [x] license
 - [x] remove fixtures from the history
