@@ -37,6 +37,8 @@
 
 # Errors
 
+- [ ] engine does not see feeds from medium.com
+- [ ] engine does not see feed in format from medium.com, for example: https://ajmmertens.medium.com/feed
 - [ ] when login, frontend too fast colls `/supertokens/session/refresh`. Possibly it is because too fast refresh of login state.
 
 # Backlog
