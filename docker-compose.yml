@@ -21,6 +21,7 @@ services:
     volumes:
       - ffun_postgresql_data:/var/lib/postgresql/data
       - ./docker/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./docker/postgresql/healthcheck.sh:/healthcheck.sh
 
     environment:
       POSTGRES_MULTIPLE_DATABASES: ffun,supertokens
@@ -37,7 +38,7 @@ services:
       ffun_network: {}
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
+      test: "/healthcheck.sh"
       interval: 1s
       timeout: 5s
       retries: 10
@@ -80,7 +81,7 @@ services:
 
     depends_on:
       postgresql:
-        condition: service_started
+        condition: service_healthy
 
     command: "poetry run yoyo apply"
 
