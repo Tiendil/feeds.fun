@@ -16,6 +16,7 @@
 - [x] test running dev project from scratch (without preixisting DBs)
 - [ ] refactor API endpoints / names
 - [ ] update `commands` section in README
+- [ ] move TODOs from README to GitHub issues
 
 
 # Public MVP
