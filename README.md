@@ -17,6 +17,7 @@
 - [ ] refactor API endpoints / names
 - [ ] update `commands` section in README
 - [ ] move TODOs from README to GitHub issues
+- [ ] link to repository on site
 
 
 # Public MVP
