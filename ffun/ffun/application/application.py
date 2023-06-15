@@ -103,7 +103,8 @@ def create_app():  # noqa: CCR001
 
                 await stack.enter_async_context(st.use_supertokens(app_name=settings.app_name,
                                                                    api_domain=api_domain,
-                                                                   website_domain=website_domain))
+                                                                   website_domain=website_domain,
+                                                                   cookie_secure=(settings.app_port == 443)))
 
             if settings.enable_api:
                 await stack.enter_async_context(use_api(app))

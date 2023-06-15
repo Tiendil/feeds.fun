@@ -39,6 +39,7 @@ def custom_email_deliver(original_implementation: EmailDeliveryOverrideInput) ->
 async def use_supertokens(app_name: str,
                           api_domain: str,
                           website_domain: str,
+                          cookie_secure: bool,
                           api_base_path: str = settings.supertokens.api_base_path,
                           website_base_path: str = settings.supertokens.website_base_path):
     logger.info('supertokens_enabled')
@@ -59,7 +60,7 @@ async def use_supertokens(app_name: str,
         framework='fastapi',
         recipe_list=[
             emailverification.init(mode='REQUIRED'),
-            session.init(),
+            session.init(cookie_secure=cookie_secure),
             passwordless.init(
                 flow_type="MAGIC_LINK",
                 contact_config=ContactEmailOnlyConfig(),
