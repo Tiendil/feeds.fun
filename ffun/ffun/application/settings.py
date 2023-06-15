@@ -27,7 +27,6 @@ class Settings(BaseSettings):  # type: ignore
 
     environment: str = 'local'
 
-    # TODO: fix duplicated config?
     api_port: int = 5174
 
     enable_api: bool = False
