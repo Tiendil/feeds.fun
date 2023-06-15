@@ -74,6 +74,16 @@ async def use_sentry():
     logger.info('sentry_disabled')
 
 
+def smart_url(domain, port):
+    if port == 80:
+        return f'http://{domain}'
+
+    if port == 443:
+        return f'https://{domain}'
+
+    return f'http://{domain}:{port}'
+
+
 def create_app():  # noqa: CCR001
     logging.initialize(use_sentry=settings.enable_sentry)
 
@@ -88,8 +98,8 @@ def create_app():  # noqa: CCR001
                 await stack.enter_async_context(use_sentry())
 
             if settings.enable_supertokens:
-                api_domain = f'http://{settings.app_domain}:{settings.api_port}'
-                website_domain = f'http://{settings.app_domain}:{settings.app_port}'
+                api_domain = smart_url(settings.app_domain, settings.api_port)
+                website_domain = smart_url(settings.app_domain, settings.app_port)
 
                 await stack.enter_async_context(st.use_supertokens(app_name=settings.app_name,
                                                                    api_domain=api_domain,
