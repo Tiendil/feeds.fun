@@ -14,7 +14,6 @@
 - [x] license
 - [x] remove fixtures from the history
 - [x] test running dev project from scratch (without preixisting DBs)
-- [ ] refactor API endpoints / names
 - [ ] update `commands` section in README
 - [ ] move TODOs from README to GitHub issues
 - [ ] link to repository on site
@@ -44,6 +43,7 @@
 
 # Backlog
 
+- [ ] refactor API endpoints / names
 - [ ] save global settings on backend
 - [ ] minor mobile support
 - [ ] load only feeds that are need at least by one user
