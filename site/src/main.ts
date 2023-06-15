@@ -95,11 +95,26 @@ app.mount('#app')
 import * as api from "@/logic/api";
 import * as settings from "@/logic/settings";
 
+
+// must be copy of smart_url from backend
+function smartUrl(domain: string, port: number) {
+    if (port === 80) {
+        return `http://${domain}`;
+    }
+
+    if (port === 443) {
+        return `https://${domain}`;
+    }
+
+    return `http://${domain}:${port}`;
+}
+
+
 if (settings.authMode === settings.AuthMode.Supertokens) {
 
     const supertokens = useSupertokens();
 
-    supertokens.init({apiDomain: `${settings.appProtocol}://${settings.appDomain}:${settings.appPort}`,
+    supertokens.init({apiDomain: smartUrl(settings.appDomain, settings.appPort),
                       apiBasePath: settings.authSupertokensApiBasePath,
                       appName: settings.appName,
                       resendAfter: settings.authSupertokensResendAfter});

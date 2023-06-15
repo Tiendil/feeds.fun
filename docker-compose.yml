@@ -160,7 +160,6 @@ services:
       VITE_FFUN_AUTH_MODE: "${FFUN_AUTH_MODE}"
       VITE_FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
       VITE_FFUN_SENTRY_DSN: "${FFUN_SENTRY__DSN:-not-specified}"
-      VITE_FFUN_APP_PROTOCOL: "http"
 
     ports:
       - "5173:5173"

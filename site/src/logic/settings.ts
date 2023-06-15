@@ -8,7 +8,6 @@ export enum AuthMode {
 export const appName = import.meta.env.VITE_FFUN_APP_NAME || "Feeds Fun";
 export const appDomain = import.meta.env.VITE_FFUN_APP_DOMAIN || "localhost";
 export const appPort = import.meta.env.VITE_FFUN_APP_PORT || "5173";
-export const appProtocol = import.meta.env.VITE_FFUN_APP_PROTOCOL || "https";
 
 export const environment = import.meta.env.VITE_FFUN_ENVIRONMENT || "local";
 
@@ -24,7 +23,6 @@ export const sentrySampleRate = import.meta.env.VITE_FFUN_SENTRY_SAMPLE_RATE || 
 console.log('settings.appName', appName);
 console.log('settings.appDomain', appDomain);
 console.log('settings.appPort', appPort);
-console.log('settings.appProtocol', appProtocol);
 
 console.log('settings.environment', environment);
 
