@@ -20,6 +20,8 @@ export const sentryEnable = (import.meta.env.VITE_FFUN_ENABLE_SENTRY == 'True') 
 export const sentryDsn = import.meta.env.VITE_FFUN_SENTRY_DSN || "not-secified";
 export const sentrySampleRate = import.meta.env.VITE_FFUN_SENTRY_SAMPLE_RATE || 1.0;
 
+export const githubRepo = import.meta.env.VITE_FFUN_GITHUB_REPO || "https://github.com/Tiendil/smart-imports";
+
 console.log('settings.appName', appName);
 console.log('settings.appDomain', appDomain);
 console.log('settings.appPort', appPort);
@@ -33,3 +35,5 @@ console.log('settings.authSupertokensResendAfter', authSupertokensResendAfter);
 console.log('settings.sentryEnable', sentryEnable);
 console.log('settings.sentryDsn', sentryDsn);
 console.log('settings.sentrySampleRate', sentrySampleRate);
+
+console.log('settings.githubRepo', githubRepo);

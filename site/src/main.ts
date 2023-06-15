@@ -39,6 +39,8 @@ import SidePanelLayout from "./layouts/SidePanelLayout.vue";
 import { useSupertokens } from "@/stores/supertokens";
 
 import VueCountdown from '@chenfengyuan/vue-countdown';
+import GithubButton from 'vue-github-button'
+
 
 const app = createApp(App)
 
@@ -74,6 +76,7 @@ app.component("WideLayout", WideLayout);
 app.component("SidePanelLayout", SidePanelLayout);
 
 app.component('vue-countdown', VueCountdown);
+app.component('github-button', GithubButton);
 
 app.use(createPinia())
 app.use(router)
