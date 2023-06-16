@@ -20,8 +20,7 @@ export const sentryEnable = (import.meta.env.VITE_FFUN_ENABLE_SENTRY == 'True') 
 export const sentryDsn = import.meta.env.VITE_FFUN_SENTRY_DSN || "not-secified";
 export const sentrySampleRate = import.meta.env.VITE_FFUN_SENTRY_SAMPLE_RATE || 1.0;
 
-// todo: replace default url
-export const githubRepo = import.meta.env.VITE_FFUN_GITHUB_REPO || "https://github.com/Tiendil/smart-imports";
+export const githubRepo = import.meta.env.VITE_FFUN_GITHUB_REPO || "https://github.com/Tiendil/feeds.fun";
 
 console.log('settings.appName', appName);
 console.log('settings.appDomain', appDomain);
