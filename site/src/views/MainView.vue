@@ -15,13 +15,8 @@
   </div>
 
   <br/>
-  <github-button :href="settings.githubRepo + '/subscription'">Watch</github-button>
-  &nbsp;
-  <github-button :href="settings.githubRepo" data-show-count="true">Star</github-button>
-  &nbsp;
-  <github-button :href="settings.githubRepo + '/issues'" data-show-count="true">Issue</github-button>
-  &nbsp;
-  <github-button :href="settings.githubRepo + '/discussions'" data-show-count="true">Discuss</github-button>
+
+  <ffun-github-buttons :repository="settings.githubRepo"/>
 
   <h2>What is it?</h2>
 
