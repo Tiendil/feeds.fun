@@ -22,7 +22,7 @@ git clone git@github.com:Tiendil/feeds.fun.git
 
 cd ./feeds.fun
 
-docker-compose up
+docker compose up -d
 ```
 
 Then open http://localhost:5173/ in your browser.
