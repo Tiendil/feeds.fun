@@ -23,6 +23,7 @@ import OpmlUpload from "./components/OPMLUpload.vue";
 import FeedForList from "./components/FeedForList.vue";
 import SupertokensLogin from "./components/SupertokensLogin.vue";
 import FeedsCollections from "./components/FeedsCollections.vue";
+import FfunGithubButtons from "./components/FfunGithubButtons.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -39,6 +40,8 @@ import SidePanelLayout from "./layouts/SidePanelLayout.vue";
 import { useSupertokens } from "@/stores/supertokens";
 
 import VueCountdown from '@chenfengyuan/vue-countdown';
+import GithubButton from 'vue-github-button'
+
 
 const app = createApp(App)
 
@@ -60,6 +63,7 @@ app.component("OpmlUpload", OpmlUpload);
 app.component("FeedForList", FeedForList);
 app.component("SupertokensLogin", SupertokensLogin);
 app.component("FeedsCollections", FeedsCollections);
+app.component("FfunGithubButtons", FfunGithubButtons);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);
@@ -74,6 +78,7 @@ app.component("WideLayout", WideLayout);
 app.component("SidePanelLayout", SidePanelLayout);
 
 app.component('vue-countdown', VueCountdown);
+app.component('github-button', GithubButton);
 
 app.use(createPinia())
 app.use(router)

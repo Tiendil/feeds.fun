@@ -14,6 +14,10 @@
     <supertokens-login/>
   </div>
 
+  <br/>
+
+  <ffun-github-buttons :repository="settings.githubRepo"/>
+
   <h2>What is it?</h2>
 
   <ul style="text-align: left;">

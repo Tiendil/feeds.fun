@@ -3,8 +3,6 @@
   <div class="nav-panel">
     <h2 style="margin-top: 0; margin-bottom: 0;">Feeds For Fun</h2>
 
-    <a href="#" @click.prevent="logout()">logout</a>
-
     <hr/>
 
     <ul class="config-menu">
@@ -53,11 +51,19 @@
   </div>
 
   <div class="main-content">
-    <header>
-      <h2 style="margin-top: 0;">
+    <header style="padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="margin-top: 0; margin-bottom: 0;">
         <slot name="main-header"></slot>
       </h2>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; width: auto;">
+        <ffun-github-buttons :repository="settings.githubRepo" style="margin-top: 0.3rem;"/>
+        &nbsp;|&nbsp;
+        <a href="#" @click.prevent="logout()">logout</a>
+      </div>
     </header>
+
+    <hr/>
 
     <main>
       <slot></slot>
@@ -137,7 +143,7 @@ watchEffect(() => {
   }
 
   .nav-panel {
-    width: 10rem;
+    width: 11rem;
     flex-shrink: 0;
     background-color: #f0f0f0;
     padding: 1rem;
@@ -146,6 +152,7 @@ watchEffect(() => {
   .main-content {
     flex-grow: 1;
     padding: 1rem;
+    padding-top: 0;
   }
 
   .config-menu {
