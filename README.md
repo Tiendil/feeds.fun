@@ -27,6 +27,25 @@ docker compose up -d
 
 Then open http://localhost:5173/ in your browser.
 
+## Advanced configuration
+
+All possible configs you can find in `settings.py` files.
+
+Create `.env` in the root folder.
+
+```
+# Uncomment to enable supertokens auth: https://supertokens.com/
+
+# FFUN_AUTH_MODE="supertokens"
+
+# Uncomment and set the key to generate tags with OpenAI API
+# ChatGPT is the main source of usable tags for news
+# => You want these settings if you plan to self-host feeds.fun
+
+# FFUN_LIBRARIAN_OPENAI_CHAT_35_PROCESSOR__ENABLED="True"
+# FFUN_LIBRARIAN_OPENAI_CHAT_35_PROCESSOR__API_KEY="<your key>"
+```
+
 # Self-hosting
 
 There are no ready-to-use docker images or PyPi/NPM packages yet.
