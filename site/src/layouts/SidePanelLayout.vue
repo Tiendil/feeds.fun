@@ -1,7 +1,7 @@
 <template>
 <div class="container">
   <div class="nav-panel">
-    <h2 style="margin-top: 0; margin-bottom: 0;">Feeds For Fun</h2>
+    <h2 style="margin-top: 0; margin-bottom: 0;">Feeds Fun</h2>
 
     <hr/>
 
