@@ -21,37 +21,27 @@
   <h2>What is it?</h2>
 
   <ul style="text-align: left;">
-    <li>Web-based RSS reader.</li>
-    <li>For each news entry automatically adds tags. With the help of AI, of course.</li>
-    <li>You create rules to score articles by tags.</li>
-    <li>You filter recent articles by tags and sort by score.</li>
-    <li>
-      You are in control of what you read:
-      <ul>
-        <li>no black box recommendations algorithms</li>
-        <li>no "smart" reordering of your news</li>
-        <li>no advertisements</li>
-        <li>no selling of your data</li>
-      </ul>
-    </li>
+    <li>Web-based news reader. Self-hosted, if it is your way.</li>
+    <li>Automatically assigns tags to news entries.</li>
+    <li>You create rules to score news by tags.</li>
+    <li>Then filter and sort news how you want.</li>
+  </ul>
+
+  <h2>You are in control</h2>
+
+  <ul style="text-align: left;">
+    <li>No black box recommendation algorithms.</li>
+    <li>No "smart" reordering of your news.</li>
+    <li>No ads.</li>
+    <li>No selling of your data.</li>
   </ul>
 
   <h2>What will it become?</h2>
 
   <ul style="text-align: left;">
     <li>Will become much prettier.</li>
-    <li>
-      Will collecting not only RSS but any news feeds:
-      <ul>
-        <li>news from social networks</li>
-        <li>GitHub stars activity</li>
-        <li>Steam games releases</li>
-        <li>new scientific papers</li>
-        <li>etc.</li>
-      </ul>
-    </li>
-    <li>Will be open-sourced.</li>
-    <li>Will be self-hosted. If you don&apos;t want to use centralized service.</li>
+    <li>Will collect not only RSS/ATOM but any news feeds, including private if you allow.</li>
+    <li>Will suggest new rules to score & new feeds, if you allow.</li>
   </ul>
 
 </wide-layout>
