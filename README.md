@@ -11,7 +11,7 @@ I've subscribed to many news feeds and want to read only news interesting to me.
 
 Plus, it is nice to access news from any device.
 
-I did not find an open-source solution that suited my needs. So I decided to create my own.
+I did not find an open-source solution that suited my needs => decided to create my own.
 
 Also, it is an excellent opportunity to learn and use new AI technologies.
 
