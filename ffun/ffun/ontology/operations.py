@@ -6,6 +6,7 @@ import psycopg
 from bidict import bidict
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.ontology.entities import TagProperty
 
 logger = logging.get_module_logger()
 
@@ -60,7 +61,6 @@ async def get_tags_by_ids(tags_ids: list[int]) -> dict[int, str]:
     return {row['id']: row['uid'] for row in rows}
 
 
-@run_in_transaction
 async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: int, tags_ids: Iterable[int]) -> None:
     sql_relations = '''
     INSERT INTO o_relations (entry_id, tag_id)
@@ -80,6 +80,21 @@ async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: in
 
     for row in result:
         await execute(sql_register_processor, {'relation_id': row['id'], 'processor_id': processor_id})
+
+
+async def apply_tags_properties(execute: ExecuteType, processor_id: int, properties: Iterable[TagProperty]) -> None:
+
+    sql = '''
+    INSERT INTO o_tags_properties (tag_id, type, value, processor_id)
+    VALUES (%(tag_id)s, %(type)s, %(value)s, %(processor_id)s)
+    ON CONFLICT (tag_id, type, processor_id) DO UPDATE SET value = %(value)s
+    '''
+
+    for property in properties:
+        await execute(sql, {'tag_id': property.tag_id,
+                            'type': property.type,
+                            'value': property.value,
+                            'processor_id': processor_id})
 
 
 async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:

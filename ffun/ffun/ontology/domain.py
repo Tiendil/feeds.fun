@@ -3,13 +3,15 @@ import uuid
 from typing import Iterable
 
 from bidict import bidict
+from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
 
 from . import operations
+from .entities import Tag, TagProperty
 
 _tags_cache: bidict[str, int] = bidict()
 
 
-async def get_id_by_tag(tag: str) -> int:
+async def get_id_by_uid(tag: str) -> int:
     if tag in _tags_cache:
         return _tags_cache[tag]
 
@@ -20,8 +22,8 @@ async def get_id_by_tag(tag: str) -> int:
     return tag_id
 
 
-async def get_ids_by_tags(tags: Iterable[str]) -> dict[str, int]:
-    return {tag: await get_id_by_tag(tag) for tag in tags}
+async def get_ids_by_uids(tags: Iterable[str]) -> dict[str, int]:
+    return {tag: await get_id_by_uid(tag) for tag in tags}
 
 
 async def get_tags_by_ids(ids: Iterable[int]) -> dict[int, str]:
@@ -49,11 +51,20 @@ async def get_tags_by_ids(ids: Iterable[int]) -> dict[int, str]:
 
 async def apply_tags_to_entry(entry_id: uuid.UUID,
                               processor_id: int,
-                              tags: Iterable[str]) -> None:
+                              tags: Iterable[Tag]) -> None:
 
-    tags_ids = await get_ids_by_tags(tags)
+    uids = {tag.uid for tag in tags}
 
-    await operations.apply_tags(entry_id, processor_id, tags_ids.values())
+    uids_to_ids = await get_ids_by_uids(uids)
+
+    properties = []
+
+    for tag in tags:
+        properties.extend(tag.build_properties_for(uids_to_ids[tag.uid]))
+
+    async with transaction() as execute:
+        await operations.apply_tags(execute, entry_id, processor_id, uids_to_ids.values())
+        await operations.apply_tags_properties(execute, processor_id, properties)
 
 
 async def get_tags_ids_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:
