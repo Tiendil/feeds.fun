@@ -53,14 +53,14 @@ async def apply_tags_to_entry(entry_id: uuid.UUID,
                               processor_id: int,
                               tags: Iterable[ProcessorTag]) -> None:
 
-    uids = {utils.build_uid_for_raw_tag(tag.raw_uid) for tag in tags}
+    raw_to_uids = {tag.raw_uid: utils.build_uid_for_raw_tag(tag.raw_uid) for tag in tags}
 
-    uids_to_ids = await get_ids_by_uids(uids)
+    uids_to_ids = await get_ids_by_uids(raw_to_uids.values())
 
     properties = []
 
     for tag in tags:
-        properties.extend(tag.build_properties_for(uids_to_ids[tag.uid]))
+        properties.extend(tag.build_properties_for(uids_to_ids[raw_to_uids[tag.raw_uid]]))
 
     async with transaction() as execute:
         await operations.apply_tags(execute, entry_id, processor_id, uids_to_ids.values())
