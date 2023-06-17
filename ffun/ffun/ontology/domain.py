@@ -48,11 +48,12 @@ async def get_tags_by_ids(ids: Iterable[int]) -> dict[int, str]:
 
 
 async def apply_tags_to_entry(entry_id: uuid.UUID,
+                              processor_id: int,
                               tags: Iterable[str]) -> None:
 
     tags_ids = await get_ids_by_tags(tags)
 
-    await operations.apply_tags(entry_id, tags_ids.values())
+    await operations.apply_tags(entry_id, processor_id, tags_ids.values())
 
 
 async def get_tags_ids_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:

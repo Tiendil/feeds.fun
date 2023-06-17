@@ -5,7 +5,7 @@ from typing import Iterable
 import psycopg
 from bidict import bidict
 from ffun.core import logging
-from ffun.core.postgresql import execute
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 
 logger = logging.get_module_logger()
 
@@ -60,14 +60,26 @@ async def get_tags_by_ids(tags_ids: list[int]) -> dict[int, str]:
     return {row['id']: row['uid'] for row in rows}
 
 
-async def apply_tags(entry_id: uuid.UUID, tags_ids: Iterable[int]) -> None:
-    sql = '''
+@run_in_transaction
+async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: int, tags_ids: Iterable[int]) -> None:
+    sql_relations = '''
     INSERT INTO o_relations (entry_id, tag_id)
     VALUES (%(entry_id)s, %(tag_id)s)
     ON CONFLICT (entry_id, tag_id) DO NOTHING'''
 
     for tag_id in tags_ids:
-        await execute(sql, {'entry_id': entry_id, 'tag_id': tag_id})
+        await execute(sql_relations, {'entry_id': entry_id, 'tag_id': tag_id})
+
+    result = await execute('SELECT id FROM o_relations WHERE entry_id = %(entry_id)s AND tag_id = ANY(%(tags_ids)s)',
+                           {'entry_id': entry_id, 'tags_ids': list(tags_ids)})
+
+    sql_register_processor = '''
+    INSERT INTO o_relations_processors (relation_id, processor_id)
+    VALUES (%(relation_id)s, %(processor_id)s)
+    ON CONFLICT (relation_id, processor_id) DO NOTHING'''
+
+    for row in result:
+        await execute(sql_register_processor, {'relation_id': row['id'], 'processor_id': processor_id})
 
 
 async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:
