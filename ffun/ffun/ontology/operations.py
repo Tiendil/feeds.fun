@@ -11,13 +11,13 @@ logger = logging.get_module_logger()
 
 
 async def get_tags_mappig() -> bidict[str, int]:
-    sql = 'SELECT id, name FROM o_tags'
+    sql = 'SELECT id, uid FROM o_tags'
     rows = await execute(sql)
-    return bidict.bidict({row['name']: row['id'] for row in rows})
+    return bidict.bidict({row['uid']: row['id'] for row in rows})
 
 
 async def get_id_by_tag(tag: str) -> int|None:
-    sql = 'SELECT id FROM o_tags WHERE name = %(tag)s'
+    sql = 'SELECT id FROM o_tags WHERE uid = %(tag)s'
     rows = await execute(sql, {'tag': tag})
 
     if not rows:
@@ -28,9 +28,9 @@ async def get_id_by_tag(tag: str) -> int|None:
 
 async def register_tag(tag: str) -> int:
     sql = '''
-    INSERT INTO o_tags (name)
+    INSERT INTO o_tags (uid)
     VALUES (%(tag)s)
-    ON CONFLICT (name) DO NOTHING
+    ON CONFLICT (uid) DO NOTHING
     RETURNING id'''
 
     rows = await execute(sql, {'tag': tag})
@@ -57,7 +57,7 @@ async def get_or_create_id_by_tag(tag: str) -> int:
 async def get_tags_by_ids(tags_ids: list[int]) -> dict[int, str]:
     sql = 'SELECT * FROM o_tags WHERE id = ANY(%(tags_ids)s)'
     rows = await execute(sql, {'tags_ids': tags_ids})
-    return {row['id']: row['name'] for row in rows}
+    return {row['id']: row['uid'] for row in rows}
 
 
 async def apply_tags(entry_id: uuid.UUID, tags_ids: Iterable[int]) -> None:
