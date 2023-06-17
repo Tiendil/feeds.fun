@@ -78,3 +78,11 @@ List of all backend utils:
 ```
 ./bin/backend-utils.sh poetry run yoyo --help
 ```
+
+Pay attention. There are different directories layouts in the docker containers which work under `./bin/backend-utils.sh` => paths for migrations should be with only a single `ffun` directory.
+
+Example:
+
+```
+./bin/backend-utils.sh poetry run yoyo new --message "rename-tags-names-to-uid" ./ffun/ontology/migrations/
+```
