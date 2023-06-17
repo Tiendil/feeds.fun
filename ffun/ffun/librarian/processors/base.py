@@ -1,4 +1,5 @@
 from ffun.library.entities import Entry
+from ffun.ontology.entities import ProcessorTag
 
 
 class Processor:
@@ -11,5 +12,5 @@ class Processor:
     def name(self) -> str:
         return self._name
 
-    async def process(self, entry: Entry) -> set[str]:
+    async def process(self, entry: Entry) -> list[ProcessorTag]:
         raise NotImplementedError

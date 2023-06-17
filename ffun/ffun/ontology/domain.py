@@ -5,8 +5,8 @@ from typing import Iterable
 from bidict import bidict
 from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
 
-from . import operations
-from .entities import Tag, TagProperty
+from . import operations, utils
+from .entities import ProcessorTag, TagProperty
 
 _tags_cache: bidict[str, int] = bidict()
 
@@ -51,9 +51,9 @@ async def get_tags_by_ids(ids: Iterable[int]) -> dict[int, str]:
 
 async def apply_tags_to_entry(entry_id: uuid.UUID,
                               processor_id: int,
-                              tags: Iterable[Tag]) -> None:
+                              tags: Iterable[ProcessorTag]) -> None:
 
-    uids = {tag.uid for tag in tags}
+    uids = {utils.build_uid_for_raw_tag(tag.raw_uid) for tag in tags}
 
     uids_to_ids = await get_ids_by_uids(uids)
 
