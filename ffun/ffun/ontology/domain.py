@@ -3,13 +3,16 @@ import uuid
 from typing import Iterable
 
 from bidict import bidict
+from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
 
-from . import operations
+from . import operations, utils
+from .entities import (ProcessorTag, Tag, TagCategory, TagProperty,
+                       TagPropertyType)
 
 _tags_cache: bidict[str, int] = bidict()
 
 
-async def get_id_by_tag(tag: str) -> int:
+async def get_id_by_uid(tag: str) -> int:
     if tag in _tags_cache:
         return _tags_cache[tag]
 
@@ -20,8 +23,8 @@ async def get_id_by_tag(tag: str) -> int:
     return tag_id
 
 
-async def get_ids_by_tags(tags: Iterable[str]) -> dict[str, int]:
-    return {tag: await get_id_by_tag(tag) for tag in tags}
+async def get_ids_by_uids(tags: Iterable[str]) -> dict[str, int]:
+    return {tag: await get_id_by_uid(tag) for tag in tags}
 
 
 async def get_tags_by_ids(ids: Iterable[int]) -> dict[int, str]:
@@ -48,11 +51,22 @@ async def get_tags_by_ids(ids: Iterable[int]) -> dict[int, str]:
 
 
 async def apply_tags_to_entry(entry_id: uuid.UUID,
-                              tags: Iterable[str]) -> None:
+                              processor_id: int,
+                              tags: Iterable[ProcessorTag]) -> None:
 
-    tags_ids = await get_ids_by_tags(tags)
+    raw_to_uids = {tag.raw_uid: utils.build_uid_for_raw_tag(tag.raw_uid) for tag in tags}
 
-    await operations.apply_tags(entry_id, tags_ids.values())
+    uids_to_ids = await get_ids_by_uids(raw_to_uids.values())
+
+    properties = []
+
+    for tag in tags:
+        properties.extend(tag.build_properties_for(uids_to_ids[raw_to_uids[tag.raw_uid]],
+                                                   processor_id=processor_id))
+
+    async with transaction() as execute:
+        await operations.apply_tags(execute, entry_id, processor_id, uids_to_ids.values())
+        await operations.apply_tags_properties(execute, properties)
 
 
 async def get_tags_ids_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:
@@ -71,3 +85,35 @@ async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, 
 
     return {entry_id: {tags_mapping[tag_id] for tag_id in tags}
             for entry_id, tags in tags_ids.items()}
+
+
+async def get_tags_info(tags_ids: Iterable[int]) -> dict[int, Tag]:  # noqa: CCR001
+    # we expect that properties will be sorted by date from the newest to the oldest
+    properties = await operations.get_tags_properties(tags_ids)
+
+    info = {}
+
+    # TODO: implement more complex merging
+    for property in properties:
+        if property.tag_id not in info:
+            info[property.tag_id] = Tag(id=property.tag_id)
+
+        tag = info[property.tag_id]
+
+        if property.type == TagPropertyType.tag_name:
+            if tag.name is None:
+                tag.name = property.value
+            continue
+
+        if property.type == TagPropertyType.link:
+            if tag.link is None:
+                tag.link = property.value
+            continue
+
+        if property.type == TagPropertyType.categories:
+            tag.categories.update(TagCategory(cat) for cat in property.value.split(','))
+            continue
+
+        raise NotImplementedError(f'Unknown property type: {property.type}')
+
+    return info

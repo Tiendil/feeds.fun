@@ -7,6 +7,7 @@ import typer
 from bs4 import BeautifulSoup
 from ffun.core import logging
 from ffun.library.entities import Entry
+from ffun.ontology.entities import ProcessorTag, TagCategory
 from slugify import slugify
 
 from .. import openai_client as oc
@@ -130,7 +131,9 @@ class Processor(base.Processor):
         # TODO: we need support multiple api keys
         oc.init(self.api_key)
 
-    async def process(self, entry: Entry) -> set[str]:
+    async def process(self, entry: Entry) -> list[ProcessorTag]:
+        tags: list[ProcessorTag] = []
+
         dirty_text = entry_to_text(entry)
 
         text = clear_text(dirty_text)
@@ -149,9 +152,9 @@ class Processor(base.Processor):
                                              messages=messages,
                                              max_return_tokens=max_return_tokens)
 
-        tags = set()
-
         for result in results:
-            tags |= extract_tags(result)
+            for raw_tag in extract_tags(result):
+                tags.append(ProcessorTag(raw_uid=raw_tag,
+                                         name=raw_tag))
 
         return tags

@@ -21,6 +21,7 @@ const API_ADD_OPML = `${ENTRY_POINT}/add-opml`;
 const API_UNSUBSCRIBE = `${ENTRY_POINT}/unsubscribe`;
 const API_GET_FEEDS_COLLECTIONS = `${ENTRY_POINT}/get-feeds-collections`;
 const API_SUBSCRIBE_TO_FEEDS_COLLECTIONS = `${ENTRY_POINT}/subscribe-to-feeds-collections`;
+const API_GET_TAGS_INFO = `${ENTRY_POINT}/get-tags-info`;
 
 
 let _onSessionLost: () => void = () => {};
@@ -183,4 +184,19 @@ export async function getFeedsCollections() {
 
 export async function subscribeToFeedsCollections({collectionsIds}: {collectionsIds: t.FeedsCollectionId[]}) {
     await post({url: API_SUBSCRIBE_TO_FEEDS_COLLECTIONS, data: {collections: collectionsIds}});
+}
+
+
+export async function getTagsInfo({uids}: {uids: string[]}) {
+    const response = await post({url: API_GET_TAGS_INFO, data: {uids: uids}});
+
+    const tags = {};
+
+    for (let uid in response.tags) {
+        const rawTag = response.tags[uid];
+        const tag = t.tagInfoFromJSON(rawTag);
+        tags[uid] = tag;
+    }
+
+    return tags;
 }

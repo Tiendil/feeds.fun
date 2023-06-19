@@ -27,6 +27,14 @@ docker compose up -d
 
 Then open http://localhost:5173/ in your browser.
 
+This will start the API server and frontend, but not workers to process feeds.
+
+To start workers, run:
+
+```
+./bin/backend-utils.sh poetry run ffun workers --librarian --loader
+```
+
 ## Advanced configuration
 
 All possible configs you can find in `settings.py` files.
@@ -53,3 +61,28 @@ There are no ready-to-use docker images or PyPi/NPM packages yet.
 But they will be.
 
 For now, use [docker-compose.yml](docker-compose.yml) as an example.
+
+
+# Development
+
+## Utils
+
+List of all backend utils:
+
+```
+./bin/backend-utils.sh poetry run ffun --help
+```
+
+## DB migrations
+
+```
+./bin/backend-utils.sh poetry run yoyo --help
+```
+
+Pay attention. There are different directories layouts in the docker containers which work under `./bin/backend-utils.sh` => paths for migrations should be with only a single `ffun` directory.
+
+Example:
+
+```
+./bin/backend-utils.sh poetry run yoyo new --message "rename-tags-names-to-uid" ./ffun/ontology/migrations/
+```

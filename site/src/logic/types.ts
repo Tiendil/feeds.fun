@@ -166,3 +166,28 @@ export function feedInfoFromJSON({ url, title, description, entries }:
              description,
              entries: entries.map(entryInfoFromJSON) };
 }
+
+
+export type TagInfo = {
+    readonly uid: string;
+    readonly name: string|null;
+    readonly link: string|null;
+    readonly categories: string[];
+};
+
+
+export function tagInfoFromJSON({ uid, name, link, categories }:
+                                { uid: string, name: string|null, link: string|null, categories: string[] }): TagInfo {
+    return { uid,
+             name: name,
+             link: link,
+             categories };
+}
+
+
+export function noInfoTag(uid: string): TagInfo {
+    return { uid,
+             name: null,
+             link: null,
+             categories: [] };
+}

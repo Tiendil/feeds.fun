@@ -107,7 +107,7 @@ async def api_get_entries_by_ids(request: entities.GetEntriesByIdsRequest, user:
 
 @router.post('/api/create-rule')
 async def api_create_rule(request: entities.CreateRuleRequest, user: User) -> entities.CreateRuleResponse:
-    tags_ids = await o_domain.get_ids_by_tags(request.tags)
+    tags_ids = await o_domain.get_ids_by_uids(request.tags)
 
     await s_domain.create_rule(user_id=user.id,
                                tags=set(tags_ids.values()),
@@ -126,7 +126,7 @@ async def api_delete_rule(request: entities.DeleteRuleRequest, user: User) -> en
 @router.post('/api/update-rule')
 async def api_update_rule(request: entities.UpdateRuleRequest, user: User) -> entities.UpdateRuleResponse:
 
-    tags_ids = await o_domain.get_ids_by_tags(request.tags)
+    tags_ids = await o_domain.get_ids_by_uids(request.tags)
 
     await s_domain.update_rule(user_id=user.id, rule_id=request.id, score=request.score, tags=tags_ids.values())
 
@@ -271,3 +271,18 @@ async def api_subscribe_to_feeds_collections(request: entities.SubscribeToFeedsC
     await _add_feeds(feeds, user)
 
     return entities.SubscribeToFeedsCollectionsResponse()
+
+
+@router.post('/api/get-tags-info')
+async def api_get_tags_info(request: entities.GetTagsInfoRequest, user: User) -> entities.GetTagsInfoResponse:
+
+    tags_ids = await o_domain.get_ids_by_uids(request.uids)
+
+    info = await o_domain.get_tags_info(tags_ids.values())
+
+    tags_info = {}
+
+    for uid in request.uids:
+        tags_info[uid] = entities.TagInfo.from_internal(info[tags_ids[uid]], uid)
+
+    return entities.GetTagsInfoResponse(tags=tags_info)

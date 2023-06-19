@@ -24,6 +24,7 @@ import FeedForList from "./components/FeedForList.vue";
 import SupertokensLogin from "./components/SupertokensLogin.vue";
 import FeedsCollections from "./components/FeedsCollections.vue";
 import FfunGithubButtons from "./components/FfunGithubButtons.vue";
+import FfunTag from "./components/FfunTag.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -31,7 +32,6 @@ import InputMarker from "./inputs/Marker.vue";
 import ValueUrl from "./values/URL.vue";
 import ValueFeedId from "./values/FeedId.vue";
 import ValueDateTime from "./values/DateTime.vue";
-import ValueTag from "./values/Tag.vue";
 import ValueScore from "./values/Score.vue";
 
 import WideLayout from "./layouts/WideLayout.vue";
@@ -64,6 +64,7 @@ app.component("FeedForList", FeedForList);
 app.component("SupertokensLogin", SupertokensLogin);
 app.component("FeedsCollections", FeedsCollections);
 app.component("FfunGithubButtons", FfunGithubButtons);
+app.component("FfunTag", FfunTag);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);
@@ -71,7 +72,6 @@ app.component("InputMarker", InputMarker);
 app.component("ValueUrl", ValueUrl);
 app.component("ValueFeedId", ValueFeedId);
 app.component("ValueDateTime", ValueDateTime);
-app.component("ValueTag", ValueTag);
 app.component("ValueScore", ValueScore);
 
 app.component("WideLayout", WideLayout);

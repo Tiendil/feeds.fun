@@ -6,7 +6,7 @@ from ffun.library import domain as l_domain
 from ffun.library.entities import Entry, ProcessedState
 from ffun.ontology import domain as o_domain
 
-from . import errors, openai_client, tags
+from . import errors, openai_client
 from .processors.base import Processor
 
 logger = logging.get_module_logger()
@@ -18,13 +18,11 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
     logger.info('dicover_tags', entry=entry, processor_id=processor_id)
 
     try:
-        found_tags = await processor.process(entry)
+        tags = await processor.process(entry)
 
-        normalized_tags = tags.normalize_tags(found_tags)
+        logger.info('tags_found', tags=tags)
 
-        logger.info('tags_found', tags=normalized_tags)
-
-        await o_domain.apply_tags_to_entry(entry.id, normalized_tags)
+        await o_domain.apply_tags_to_entry(entry.id, processor_id, tags)
     except errors.SkipAndContinueLater:
         logger.warning('processor_requested_to_skip_entry')
         await l_domain.mark_entry_as_processed(processor_id=processor_id,

@@ -16,7 +16,7 @@
         <td>
           <template v-for="tag of rule.tags"
                     :key="tag">
-            <value-tag :value="tag"/>&nbsp;
+            <ffun-tag :uid="tag"/>&nbsp;
           </template>
         </td>
         <td>

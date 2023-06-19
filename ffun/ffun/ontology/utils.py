@@ -3,15 +3,20 @@ import re
 
 from slugify import slugify
 
-# extended regex from slugify for allow_unicode=False case
-# changes:
-# . — dot is required for tags with domain names
-# # — hash is required for tags like c#
-# + — hash is required for tags like c++
-DISALLOWED_CHARS_PATTERN = re.compile(r'[^-a-zA-Z0-9.#+]+')
+DISALLOWED_CHARS_PATTERN = re.compile(r'[^-a-zA-Z0-9]+')
 
 
-def normalize_tag(tag: str) -> str:
+_replacements = {
+    '#': '-sharp-',  # c# -> c-sharp
+    '+': '-plus-',  # c++ -> c-plus-plus
+    '.': '-dot-',  # .net -> dot-net
+}
+
+
+def build_uid_for_raw_tag(tag: str) -> str:
+    for substring, replacement in _replacements.items():
+        tag = tag.replace(substring, replacement)
+
     return slugify(tag,
                    entities=True,
                    decimal=True,
@@ -25,7 +30,3 @@ def normalize_tag(tag: str) -> str:
                    lowercase=True,
                    replacements=(),
                    allow_unicode=False)
-
-
-def normalize_tags(tags: set[str]) -> set[str]:
-    return {normalize_tag(tag) for tag in tags}
