@@ -7,11 +7,8 @@ import * as e from "@/logic/enums";
 import * as api from "@/logic/api";
 import { Timer } from "@/logic/timer";
 import { computedAsync } from "@vueuse/core";
-import { useGlobalSettingsStore } from "@/stores/globalSettings";
 
 export const useTagsStore = defineStore("tagsStore", () => {
-
-    const globalSettings = useGlobalSettingsStore();
 
     const tags = ref({});
     const requestedTags = ref({});

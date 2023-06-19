@@ -183,3 +183,11 @@ export function tagInfoFromJSON({ uid, name, link, categories }:
              link: link,
              categories };
 }
+
+
+export function noInfoTag(uid: string): TagInfo {
+    return { uid,
+             name: null,
+             link: null,
+             categories: [] };
+}
