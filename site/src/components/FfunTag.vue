@@ -10,8 +10,12 @@
 
   {{tagInfo.name}}
 
-  <a v-if="tagInfo.link" :href="tagInfo.link" target="_blank">
-    ->
+  <a v-if="tagInfo.link"
+     :href="tagInfo.link"
+     target="_blank"
+     @click.stop=""
+     rel="noopener noreferrer">
+    LINK
   </a>
 </div>
 </template>
