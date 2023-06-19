@@ -14,8 +14,9 @@
      :href="tagInfo.link"
      target="_blank"
      @click.stop=""
+     style="text-decoration: none;"
      rel="noopener noreferrer">
-    LINK
+    &#8599;
   </a>
 </div>
 </template>
