@@ -60,7 +60,7 @@ const classes = computed(() => {
 });
 
 function onClick() {
-    emit('tag:clicked', properties.value);
+    emit('tag:clicked', properties.uid);
 }
 
 const tooltip = computed(() => {
