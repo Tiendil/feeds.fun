@@ -9,6 +9,7 @@ from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.library import entities as l_entities
 from ffun.markers import entities as m_entities
+from ffun.ontology import entities as o_entities
 from ffun.parsers import entities as p_entities
 from ffun.scores import entities as s_entities
 
@@ -124,6 +125,20 @@ class FeedInfo(api.Base):
                    title=feed.title,
                    description=feed.description,
                    entries=[EntryInfo.from_internal(entry) for entry in feed.entries])
+
+
+class TagInfo(api.Base):
+    uid: str
+    name: str
+    link: str|None
+    categories: set[o_entities.TagCategory]
+
+    @classmethod
+    def from_internal(cls, tag: o_entities.Tag, uid: str) -> 'TagInfo':
+        return cls(uid=uid,
+                   name=tag.name,
+                   link=tag.link,
+                   categories=tag.categories)
 
 
 ##################
@@ -267,3 +282,11 @@ class SubscribeToFeedsCollectionsRequest(api.APIRequest):
 
 class SubscribeToFeedsCollectionsResponse(api.APISuccess):
     pass
+
+
+class GetTagsInfoRequest(api.APIRequest):
+    uids = set[str]
+
+
+class GetTagsInfoResponse(api.APISuccess):
+    tags: dict[str, TagInfo]

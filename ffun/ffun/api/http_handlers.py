@@ -271,3 +271,18 @@ async def api_subscribe_to_feeds_collections(request: entities.SubscribeToFeedsC
     await _add_feeds(feeds, user)
 
     return entities.SubscribeToFeedsCollectionsResponse()
+
+
+@router.post('/api/get-tags-info')
+async def api_get_tags_info(request: entities.GetTagsInfoRequest, user: User) -> entities.GetTagsInfoResponse:
+
+    tags_ids = await o_domain.get_ids_by_uids(request.uids)
+
+    info = await o_domain.get_tags_info(tags_ids.values())
+
+    tags_info = {}
+
+    for uid in request.uids:
+        tags_info[uid] = entities.TagInfo.from_internal(info[tags_ids[uid]], uid)
+
+    return entities.GetTagsInfoResponse(tags=tags_info)

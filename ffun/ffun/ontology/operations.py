@@ -6,7 +6,7 @@ import psycopg
 from bidict import bidict
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
-from ffun.ontology.entities import TagProperty
+from ffun.ontology.entities import Tag, TagProperty, TagPropertyType
 
 logger = logging.get_module_logger()
 
@@ -82,11 +82,11 @@ async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: in
         await execute(sql_register_processor, {'relation_id': row['id'], 'processor_id': processor_id})
 
 
-async def apply_tags_properties(execute: ExecuteType, processor_id: int, properties: Iterable[TagProperty]) -> None:
+async def apply_tags_properties(execute: ExecuteType, properties: Iterable[TagProperty]) -> None:
 
     sql = '''
-    INSERT INTO o_tags_properties (tag_id, type, value, processor_id)
-    VALUES (%(tag_id)s, %(type)s, %(value)s, %(processor_id)s)
+    INSERT INTO o_tags_properties (tag_id, type, value, processor_id, created_at)
+    VALUES (%(tag_id)s, %(type)s, %(value)s, %(processor_id)s, %(created_at)s)
     ON CONFLICT (tag_id, type, processor_id) DO UPDATE SET value = %(value)s
     '''
 
@@ -94,7 +94,8 @@ async def apply_tags_properties(execute: ExecuteType, processor_id: int, propert
         await execute(sql, {'tag_id': property.tag_id,
                             'type': property.type,
                             'value': property.value,
-                            'processor_id': processor_id})
+                            'processor_id': property.processor_id,
+                            'created_at': property.created_at})
 
 
 async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:
@@ -114,3 +115,14 @@ async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, 
         result[entry_id].add(tag_id)
 
     return result
+
+
+async def get_tags_properties(tags_ids: Iterable[int]) -> list[TagProperty]:
+    result = await execute('SELECT * FROM o_tags_properties WHERE tag_id = ANY(%(tags_ids)s) ORDER BY created_at DESC',
+                           {'tags_ids': tags_ids})
+
+    return [TagProperty(tag_id=row['tag_id'],
+                        type=TagPropertyType(row['type']),
+                        value=row['value'],
+                        processor_id=row['processor_id'],
+                        created_at=row['created_at']) for row in result]

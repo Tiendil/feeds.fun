@@ -6,7 +6,7 @@ from bidict import bidict
 from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
 
 from . import operations, utils
-from .entities import ProcessorTag, TagProperty
+from .entities import ProcessorTag, Tag, TagProperty, TagPropertyType
 
 _tags_cache: bidict[str, int] = bidict()
 
@@ -60,11 +60,12 @@ async def apply_tags_to_entry(entry_id: uuid.UUID,
     properties = []
 
     for tag in tags:
-        properties.extend(tag.build_properties_for(uids_to_ids[raw_to_uids[tag.raw_uid]]))
+        properties.extend(tag.build_properties_for(uids_to_ids[raw_to_uids[tag.raw_uid]],
+                                                   processor_id=processor_id))
 
     async with transaction() as execute:
         await operations.apply_tags(execute, entry_id, processor_id, uids_to_ids.values())
-        await operations.apply_tags_properties(execute, processor_id, properties)
+        await operations.apply_tags_properties(execute, properties)
 
 
 async def get_tags_ids_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:
@@ -83,3 +84,33 @@ async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, 
 
     return {entry_id: {tags_mapping[tag_id] for tag_id in tags}
             for entry_id, tags in tags_ids.items()}
+
+
+async def get_tags_info(tags_ids: Iterable[int]) -> dict[int, Tag]:  # noqa: CCR001
+    # we expect that properties will be sorted by date from the newest to the oldest
+    properties = await operations.get_tags_properties(tags_ids)
+
+    info = {}
+
+    # TODO: implement more complex merging
+    for property in properties:
+        if property.tag_id not in info:
+            info[property.tag_id] = Tag(id=property.tag_id)
+
+        tag = info[property.tag_id]
+
+        if property.type == TagPropertyType.tag_name and tag.name is None:
+            tag.name = property.value
+            continue
+
+        if property.type == TagPropertyType.link and tag.link is None:
+            tag.link = property.value
+            continue
+
+        if property.type == TagPropertyType.category:
+            tag.category.update(property.value.split(','))
+            continue
+
+        raise NotImplementedError(f'Unknown property type: {property.type}')
+
+    return info

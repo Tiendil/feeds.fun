@@ -1,6 +1,8 @@
+import datetime
 import enum
 
 import pydantic
+from ffun.core import utils
 
 
 class TagPropertyType(int, enum.Enum):
@@ -18,6 +20,8 @@ class TagProperty(pydantic.BaseModel):
     tag_id: int
     type: TagPropertyType
     value: str
+    processor_id: int
+    created_at: datetime.datetime
 
 
 class ProcessorTag(pydantic.BaseModel):
@@ -27,23 +31,38 @@ class ProcessorTag(pydantic.BaseModel):
     link: str|None = None
     categories: set[TagCategory] = pydantic.Field(default_factory=set)
 
-    def build_properties_for(self, tag_id: int) -> list[TagProperty]:
+    def build_properties_for(self, tag_id: int, processor_id: int) -> list[TagProperty]:
         properties = []
+
+        created_at = utils.now()
 
         if self.name:
             properties.append(TagProperty(tag_id=tag_id,
                                           type=TagPropertyType.tag_name,
-                                          value=self.name))
+                                          value=self.name,
+                                          processor_id=processor_id,
+                                          created_at=created_at))
 
         if self.link:
             properties.append(TagProperty(tag_id=tag_id,
                                           type=TagPropertyType.link,
-                                          value=self.link))
+                                          value=self.link,
+                                          processor_id=processor_id,
+                                          created_at=created_at))
 
         if self.categories:
             categories_dump = ",".join(sorted(c.value for c in self.categories))
             properties.append(TagProperty(tag_id=tag_id,
                                           type=TagPropertyType.category,
-                                          value=categories_dump))
+                                          value=categories_dump,
+                                          processor_id=processor_id,
+                                          created_at=created_at))
 
         return properties
+
+
+class Tag(pydantic.BaseModel):
+    id: int
+    name: str|None = None
+    link: str|None = None
+    categories: set[TagCategory] = pydantic.Field(default_factory=set)
