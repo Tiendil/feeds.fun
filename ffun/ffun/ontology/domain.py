@@ -6,7 +6,8 @@ from bidict import bidict
 from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
 
 from . import operations, utils
-from .entities import ProcessorTag, Tag, TagProperty, TagPropertyType
+from .entities import (ProcessorTag, Tag, TagCategory, TagProperty,
+                       TagPropertyType)
 
 _tags_cache: bidict[str, int] = bidict()
 
@@ -99,16 +100,18 @@ async def get_tags_info(tags_ids: Iterable[int]) -> dict[int, Tag]:  # noqa: CCR
 
         tag = info[property.tag_id]
 
-        if property.type == TagPropertyType.tag_name and tag.name is None:
-            tag.name = property.value
+        if property.type == TagPropertyType.tag_name:
+            if tag.name is None:
+                tag.name = property.value
             continue
 
-        if property.type == TagPropertyType.link and tag.link is None:
-            tag.link = property.value
+        if property.type == TagPropertyType.link:
+            if tag.link is None:
+                tag.link = property.value
             continue
 
         if property.type == TagPropertyType.categories:
-            tag.categories.update(property.value.split(','))
+            tag.categories.update(TagCategory(cat) for cat in property.value.split(','))
             continue
 
         raise NotImplementedError(f'Unknown property type: {property.type}')
