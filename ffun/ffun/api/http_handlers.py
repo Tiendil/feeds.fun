@@ -107,7 +107,7 @@ async def api_get_entries_by_ids(request: entities.GetEntriesByIdsRequest, user:
 
 @router.post('/api/create-rule')
 async def api_create_rule(request: entities.CreateRuleRequest, user: User) -> entities.CreateRuleResponse:
-    tags_ids = await o_domain.get_ids_by_tags(request.tags)
+    tags_ids = await o_domain.get_ids_by_uids(request.tags)
 
     await s_domain.create_rule(user_id=user.id,
                                tags=set(tags_ids.values()),
@@ -126,7 +126,7 @@ async def api_delete_rule(request: entities.DeleteRuleRequest, user: User) -> en
 @router.post('/api/update-rule')
 async def api_update_rule(request: entities.UpdateRuleRequest, user: User) -> entities.UpdateRuleResponse:
 
-    tags_ids = await o_domain.get_ids_by_tags(request.tags)
+    tags_ids = await o_domain.get_ids_by_uids(request.tags)
 
     await s_domain.update_rule(user_id=user.id, rule_id=request.id, score=request.score, tags=tags_ids.values())
 
