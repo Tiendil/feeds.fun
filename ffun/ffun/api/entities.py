@@ -285,7 +285,7 @@ class SubscribeToFeedsCollectionsResponse(api.APISuccess):
 
 
 class GetTagsInfoRequest(api.APIRequest):
-    uids = set[str]
+    uids: set[str]
 
 
 class GetTagsInfoResponse(api.APISuccess):

@@ -37,7 +37,7 @@ const tagInfo = computed(() => {
 
     tagsStore.requestTagInfo({tagUid: properties.uid});
 
-    return t.noTagInfo(properties.uid);
+    return t.noInfoTag(properties.uid);
 });
 
 const emit = defineEmits(["tag:clicked"]);

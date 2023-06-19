@@ -7,8 +7,8 @@ Select tags to score news by them.
 
   <template v-for="tag of tags"
             :key="tag">
-    <value-tag :value="tag"
-               mode="required"/>&nbsp;
+    <ffun-tag :uid="tag"
+              mode="required"/>&nbsp;
 </template>
 
 <br/>

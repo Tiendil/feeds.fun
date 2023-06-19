@@ -8,7 +8,7 @@ from ffun.core import utils
 class TagPropertyType(int, enum.Enum):
     tag_name = 1  # "name" is reserved
     link = 2
-    category = 3
+    categories = 3
 
 
 class TagCategory(str, enum.Enum):

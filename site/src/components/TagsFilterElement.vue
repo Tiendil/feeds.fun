@@ -6,12 +6,12 @@
     <a v-if="entriesStore.excludedTags[tag]" href="#" @click.prevent="switchToRequired(tag)">[V]</a>
   </div>
 
-  <value-tag :value="tag"
-             :count="count"
-             count-mode="prefix"
-             :mode="mode"
-             @tag:clicked="onTagClicked">
-  </value-tag>
+  <ffun-tag :uid="tag"
+            :count="count"
+            count-mode="prefix"
+            :mode="mode"
+            @tag:clicked="onTagClicked">
+  </ffun-tag>
 </li>
 </template>
 

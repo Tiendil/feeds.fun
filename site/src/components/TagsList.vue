@@ -5,13 +5,13 @@
                     :tags="selectedTagsList"
                     @rule-constructor:created="onRuleCreated"/>
 
-  <value-tag v-for="tag of displayedTags"
-             :key="tag"
-             :value="tag"
-             :mode="!!selectedTags[tag] ? 'selected' : null"
-             :count="entriesStore.reportTagsCount[tag]"
-             count-mode="tooltip"
-             @tag:clicked="onTagClicked"/>
+  <ffun-tag v-for="tag of displayedTags"
+            :key="tag"
+            :uid="tag"
+            :mode="!!selectedTags[tag] ? 'selected' : null"
+            :count="entriesStore.reportTagsCount[tag]"
+            count-mode="tooltip"
+            @tag:clicked="onTagClicked"/>
 
   <a href="#" v-if="canShowAll" @click.prevent="showAll=true">{{tagsNumber - showLimit}} more</a>
 

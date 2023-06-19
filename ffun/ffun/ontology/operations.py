@@ -119,7 +119,7 @@ async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, 
 
 async def get_tags_properties(tags_ids: Iterable[int]) -> list[TagProperty]:
     result = await execute('SELECT * FROM o_tags_properties WHERE tag_id = ANY(%(tags_ids)s) ORDER BY created_at DESC',
-                           {'tags_ids': tags_ids})
+                           {'tags_ids': list(tags_ids)})
 
     return [TagProperty(tag_id=row['tag_id'],
                         type=TagPropertyType(row['type']),

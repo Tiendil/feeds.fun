@@ -107,8 +107,8 @@ async def get_tags_info(tags_ids: Iterable[int]) -> dict[int, Tag]:  # noqa: CCR
             tag.link = property.value
             continue
 
-        if property.type == TagPropertyType.category:
-            tag.category.update(property.value.split(','))
+        if property.type == TagPropertyType.categories:
+            tag.categories.update(property.value.split(','))
             continue
 
         raise NotImplementedError(f'Unknown property type: {property.type}')
