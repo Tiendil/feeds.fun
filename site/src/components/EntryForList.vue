@@ -21,7 +21,8 @@
 
     <a :href="entry.url"
        target="_blank"
-       @click="onTitleClick()">
+       @click="onTitleClick()"
+       rel="noopener noreferrer">
       {{purifiedTitle}}
     </a>
 

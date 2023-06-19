@@ -1,5 +1,5 @@
 <template>
-  <a :href="value" target="_blank">{{renderedText}}</a>
+  <a :href="value" target="_blank" rel="noopener noreferrer">{{renderedText}}</a>
 </template>
 
 <script lang="ts" setup>

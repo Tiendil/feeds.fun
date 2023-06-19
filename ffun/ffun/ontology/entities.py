@@ -53,7 +53,7 @@ class ProcessorTag(pydantic.BaseModel):
         if self.categories:
             categories_dump = ",".join(sorted(c.value for c in self.categories))
             properties.append(TagProperty(tag_id=tag_id,
-                                          type=TagPropertyType.category,
+                                          type=TagPropertyType.categories,
                                           value=categories_dump,
                                           processor_id=processor_id,
                                           created_at=created_at))
