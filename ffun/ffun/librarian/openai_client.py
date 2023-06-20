@@ -93,6 +93,7 @@ async def prepare_requests(system, text, model, total_tokens, max_return_tokens)
 
 async def request(model,  # noqa
                   messages,
+                  function,
                   max_tokens,
                   temperature,
                   top_p,
@@ -106,7 +107,9 @@ async def request(model,  # noqa
                                                      top_p=top_p,
                                                      presence_penalty=presence_penalty,
                                                      frequency_penalty=frequency_penalty,
-                                                     messages=messages)
+                                                     messages=messages,
+                                                     functions=[function],
+                                                     function_call={'name': function['name']},)
     # https://platform.openai.com/docs/guides/error-codes/api-errors
     except openai.error.RateLimitError as e:
         logger.warning('openai_rate_limit', message=str(e))
@@ -115,15 +118,20 @@ async def request(model,  # noqa
         logger.error('openai_api_error', message=str(e))
         raise errors.SkipAndContinueLater(message=str(e)) from e
 
-    content = answer['choices'][0]['message']['content']
+    # content = answer['choices'][0]['message']['content']
+
+    print(answer)
+
+    arguments = json.loads(answer['choices'][0]['message']['function_call']['arguments'])
 
     logger.info('openai_response')
 
-    return content
+    return arguments
 
 
 async def multiple_requests(model,  # noqa
                             messages,
+                            function,
                             max_return_tokens,
                             temperature=0,
                             top_p=0,
@@ -137,6 +145,7 @@ async def multiple_requests(model,  # noqa
         logger.info('request', number=i, total=len(messages))
         result = await request(model=model,
                                messages=request_messages,
+                               function=function,
                                max_tokens=max_return_tokens,
                                temperature=temperature,
                                top_p=top_p,
