@@ -16,6 +16,14 @@ Categories are topics, meta-topics, high-level-topics, low-level-topics, related
 Tags are only in English. Normalize tags and output them as JSON.\
 '''
 
+system_2 = '''\
+You are an expert on the analysis of text semantics.
+For provided text, you determine a list of best tags to describe the text.
+For each category, you provide at least 30 tags.
+
+Tags are only in English.\
+'''
+
 
 tags = {
     "type": "array",
@@ -28,7 +36,7 @@ tags = {
 
 
 # JSON Schema
-function = {
+function_1 = {
     "name": "register_tags_for_text",
     "description": "Saves detected tags in the database.",
     "parameters": {
@@ -58,19 +66,53 @@ function = {
 }
 
 
+function_2 = {
+    "name": "register_tags_for_text",
+    "description": "Saves detected tags in the database.",
+    "parameters": {
+        "type": "object",
+        "description": "tags per category",
+        "properties": {
+            "topics": tags,
+            "meta-topics": tags,
+            "high-level-topics": tags,
+            "low-level-topics": tags,
+            "related-topics": tags,
+            "indirect-topics": tags,
+            "mentions": tags,
+            "indirect-mentions": tags,
+            # "persons": tags,
+            # "organizations": tags,
+            # "locations": tags,
+            # "events": tags,
+            # "dates": tags,
+            # "books": tags,
+            # "movies": tags,
+            # "games": tags,
+            # "software": tags,
+        }
+    }
+}
+
+
 async def run_experiment() -> None:
     import pprint
 
     from ffun.librarian import openai_client as oc
     from ffun.librarian.settings import settings
 
-    from .x import text
+    from .x import text as text_1
+    from .y import text as text_2
 
     oc.init(settings.openai_chat_35_processor.api_key)
 
     model = 'gpt-3.5-turbo-16k'
     total_tokens = 16 * 1024
     max_return_tokens = 2 * 1024
+
+    system = system_2
+    function = function_2
+    text = text_2
 
     # TODO: add tokens from function
     messages = await oc.prepare_requests(system=system,
