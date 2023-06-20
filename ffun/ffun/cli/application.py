@@ -6,6 +6,47 @@ from ffun.application.application import with_app
 app = typer.Typer()
 
 
+# categories = [
+#     "topics",
+#     "meta-topics",
+#     "high-level-topics",
+#     "low-level-topics",
+#     "related-topics",
+#     "indirect-topics",
+#     "mentions",
+#     "indirect-mentions",
+#     "persons",
+#     "organizations",
+#     "locations",
+#     "events",
+#     "dates",
+#     "movies",
+#     "games",
+#     "software",
+#     "books",
+# ]
+
+categories = [
+    "topic",
+    "meta-topic",
+    "high-level-topic",
+    "low-level-topic",
+    "related-topic",
+    "indirect-topic",
+    "mention",
+    "indirect-mention",
+    "person",
+    "organization",
+    "location",
+    "event",
+    "date",
+    "movie",
+    "game",
+    "software",
+    "book",
+]
+
+
 system = [
     "You are an expert on the analysis of text semantics.",
     "For provided text, you determine a list of best tags to describe the text.",
@@ -27,6 +68,7 @@ system_3 = [
     "You are an expert on text semantics.",
     "For provided text, you determine a list of it's topics and mentioned entities.",
     # "For each category, you provide at least 3 items.",
+    # f"Topics are {', '.join(categories)}.",
     "You provide topics for each category.",
     "Output only in English.",
 ]
@@ -39,49 +81,6 @@ tags = {
     "items": {
         "type": "string",
         "description": "name of the tag"
-    }
-}
-
-
-categories = [
-    "topics",
-    "meta-topics",
-    "high-level-topics",
-    "low-level-topics",
-    "related-topics",
-    "indirect-topics",
-    "mentions",
-    "indirect-mentions",
-    "persons",
-    "organizations",
-    "locations",
-    "events",
-    "dates",
-    "movies",
-    "games",
-    "software",
-    "books",
-]
-
-
-# JSON Schema
-function_1 = {
-    "name": "register_tags_for_text",
-    "description": "Saves detected tags in the database.",
-    "parameters": {
-        "type": "object",
-        "description": "parameters of the function",
-        "properties": {
-            "tags": {
-                "type": "object",
-                "description": "tags by category",
-                "properties": {category: tags for category in categories}
-            },
-            "explanation": {
-                "type": "string",
-                "description": "your comment"
-            }
-        }
     }
 }
 
@@ -117,7 +116,7 @@ function_3 = {
                         "category": {
                             "type": "string",
                             "description": "category of the topic",
-                            "enum": categories
+                            # "enum": categories
                         }
                     }
                 }
@@ -135,6 +134,7 @@ async def run_experiment() -> None:
 
     from .x import text as text_1
     from .y import text as text_2
+    from .z import text as text_3
 
     oc.init(settings.openai_chat_35_processor.api_key)
 
@@ -144,7 +144,7 @@ async def run_experiment() -> None:
 
     system = system_3
     function = function_3
-    text = text_2
+    text = text_3
 
     print(function)
 
