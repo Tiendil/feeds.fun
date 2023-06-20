@@ -138,9 +138,9 @@ class Processor(base.Processor):
 
         text = clear_text(dirty_text)
 
-        model = 'gpt-3.5-turbo'
-        total_tokens = 4096
-        max_return_tokens = 1024
+        model = 'gpt-3.5-turbo-16k'
+        total_tokens = 16 * 1024
+        max_return_tokens = 2 * 1024
 
         messages = await oc.prepare_requests(system=system,
                                              text=text,
