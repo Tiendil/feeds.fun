@@ -6,26 +6,6 @@ from ffun.application.application import with_app
 app = typer.Typer()
 
 
-# categories = [
-#     "topics",
-#     "meta-topics",
-#     "high-level-topics",
-#     "low-level-topics",
-#     "related-topics",
-#     "indirect-topics",
-#     "mentions",
-#     "indirect-mentions",
-#     "persons",
-#     "organizations",
-#     "locations",
-#     "events",
-#     "dates",
-#     "movies",
-#     "games",
-#     "software",
-#     "books",
-# ]
-
 categories = [
     "topic",
     "meta-topic",
@@ -55,23 +35,25 @@ system = [
     "Tags are only in English. Normalize tags and output them as JSON.",
 ]
 
-system_2 = [
-    "You are an expert on the analysis of text semantics.",
-    "For provided text, you determine a list of best tags to describe the text.",
-    "You provide tags to describe text from different points of view.",
-    "For each category, you provide at least 30 tags.",
-    "Tags are only in English.",
-]
+system_2 = (
+    "You are an expert on the analysis of text semantics. "
+    "For provided text, you determine a list of best tags to describe the text. "
+    "You provide tags to describe text from different points of view. "
+    "For each category, you provide at least 30 tags. "
+    "Tags are only in English."
+)
 
 
-system_3 = [
-    "You are an expert on text semantics.",
-    "For provided text, you determine a list of it's topics and mentioned entities.",
-    # "For each category, you provide at least 3 items.",
-    # f"Topics are {', '.join(categories)}.",
-    "You provide topics for each category.",
-    "Output only in English.",
-]
+system_3 = (
+    "You are an expert on text semantics. "
+    # "You are a moderator of Wikipedia. "
+    # "You a professor. "
+    # "You have a PhD. "
+    "For provided text, you determine a list of it's topics and mentioned entities. "
+    "You provide topics to describe text from different points of view. "
+    # " Output only in English."
+    "All topics must be in English."
+)
 
 
 
@@ -132,6 +114,7 @@ async def run_experiment() -> None:
     from ffun.librarian import openai_client as oc
     from ffun.librarian.settings import settings
 
+    from .q import text as text_4
     from .x import text as text_1
     from .y import text as text_2
     from .z import text as text_3
@@ -144,12 +127,12 @@ async def run_experiment() -> None:
 
     system = system_3
     function = function_3
-    text = text_3
+    text = text_4
 
     print(function)
 
     # TODO: add tokens from function
-    messages = await oc.prepare_requests(system='\n'.join(system),
+    messages = await oc.prepare_requests(system=system,
                                          text=text,
                                          model=model,
                                          total_tokens=total_tokens,
