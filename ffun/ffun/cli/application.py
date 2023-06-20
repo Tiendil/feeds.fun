@@ -49,7 +49,8 @@ system_3 = (
     # "You are a moderator of Wikipedia. "
     # "You a professor. "
     # "You have a PhD. "
-    "For provided text, you determine a list of it's topics and mentioned entities. "
+    # "For provided text, you determine a list of it's topics and mentioned entities. "
+    "For provided text, you determine topics and mentioned entities. "
     "You provide topics to describe text from different points of view. "
     # " Output only in English."
     "All topics must be in English."
@@ -108,6 +109,23 @@ function_3 = {
 }
 
 
+function_4 = {
+    "name": "register_topics",
+    "description": "Saves detected topics in the database.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "topics": {
+                "type": "object",
+                "description": "mapping of topics to categories, where key is topic and value is category",
+                "properties": {
+                }
+            }
+        }
+    }
+}
+
+
 async def run_experiment() -> None:
     import pprint
 
@@ -127,7 +145,7 @@ async def run_experiment() -> None:
 
     system = system_3
     function = function_3
-    text = text_4
+    text = text_2
 
     print(function)
 
