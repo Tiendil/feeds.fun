@@ -6,23 +6,31 @@ from ffun.application.application import with_app
 app = typer.Typer()
 
 
-system = '''\
-You are an expert on the analysis of text semantics.
-For provided text, you determine a list of best tags to describe the text.
-For each category, you provide 30 tags.
+system = [
+    "You are an expert on the analysis of text semantics.",
+    "For provided text, you determine a list of best tags to describe the text.",
+    "For each category, you provide 30 tags.",
+    "Categories are topics, meta-topics, high-level-topics, low-level-topics, related-topics, indirect-topics, mentions, indirect-mentions.",
+    "Tags are only in English. Normalize tags and output them as JSON.",
+]
 
-Categories are topics, meta-topics, high-level-topics, low-level-topics, related-topics, indirect-topics, mentions, indirect-mentions.
+system_2 = [
+    "You are an expert on the analysis of text semantics.",
+    "For provided text, you determine a list of best tags to describe the text.",
+    "You provide tags to describe text from different points of view.",
+    "For each category, you provide at least 30 tags.",
+    "Tags are only in English.",
+]
 
-Tags are only in English. Normalize tags and output them as JSON.\
-'''
 
-system_2 = '''\
-You are an expert on the analysis of text semantics.
-For provided text, you determine a list of best tags to describe the text.
-For each category, you provide at least 30 tags.
+system_3 = [
+    "You are an expert on text semantics.",
+    "For provided text, you determine a list of it's topics and mentioned entities.",
+    # "For each category, you provide at least 3 items.",
+    "You provide topics for each category.",
+    "Output only in English.",
+]
 
-Tags are only in English.\
-'''
 
 
 tags = {
@@ -33,6 +41,27 @@ tags = {
         "description": "name of the tag"
     }
 }
+
+
+categories = [
+    "topics",
+    "meta-topics",
+    "high-level-topics",
+    "low-level-topics",
+    "related-topics",
+    "indirect-topics",
+    "mentions",
+    "indirect-mentions",
+    "persons",
+    "organizations",
+    "locations",
+    "events",
+    "dates",
+    "movies",
+    "games",
+    "software",
+    "books",
+]
 
 
 # JSON Schema
@@ -46,16 +75,7 @@ function_1 = {
             "tags": {
                 "type": "object",
                 "description": "tags by category",
-                "properties": {
-                    "topics": tags,
-                    "meta-topics": tags,
-                    "high-level-topics": tags,
-                    "low-level-topics": tags,
-                    "related-topics": tags,
-                    "indirect-topics": tags,
-                    "mentions": tags,
-                    "indirect-mentions": tags
-                }
+                "properties": {category: tags for category in categories}
             },
             "explanation": {
                 "type": "string",
@@ -72,24 +92,36 @@ function_2 = {
     "parameters": {
         "type": "object",
         "description": "tags per category",
+        "properties": {category: tags for category in categories}
+    }
+}
+
+
+function_3 = {
+    "name": "register_topics",
+    "description": "Saves detected topics in the database.",
+    "parameters": {
+        "type": "object",
         "properties": {
-            "topics": tags,
-            "meta-topics": tags,
-            "high-level-topics": tags,
-            "low-level-topics": tags,
-            "related-topics": tags,
-            "indirect-topics": tags,
-            "mentions": tags,
-            "indirect-mentions": tags,
-            # "persons": tags,
-            # "organizations": tags,
-            # "locations": tags,
-            # "events": tags,
-            # "dates": tags,
-            # "books": tags,
-            # "movies": tags,
-            # "games": tags,
-            # "software": tags,
+            "topics": {
+                "type": "array",
+                "description": "list of topics",
+                "items": {
+                    "type": "object",
+                    "description": "topic",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "name of the topic"
+                        },
+                        "category": {
+                            "type": "string",
+                            "description": "category of the topic",
+                            "enum": categories
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -110,12 +142,14 @@ async def run_experiment() -> None:
     total_tokens = 16 * 1024
     max_return_tokens = 2 * 1024
 
-    system = system_2
-    function = function_2
+    system = system_3
+    function = function_3
     text = text_2
 
+    print(function)
+
     # TODO: add tokens from function
-    messages = await oc.prepare_requests(system=system,
+    messages = await oc.prepare_requests(system='\n'.join(system),
                                          text=text,
                                          model=model,
                                          total_tokens=total_tokens,
