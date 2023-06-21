@@ -62,6 +62,7 @@ system_3 = (
     "For provided text, you determine topics and mentioned entities. "
     # "For provided text, you determine list of topics. "
     "You provide topics to describe text from different points of view. "
+    "You provide at least 30 topics for each text. "
     # " Output only in English."
     "All topics must be in English."
 )
@@ -135,7 +136,11 @@ async def run_experiment() -> None:
     from ffun.librarian import openai_client as oc
     from ffun.librarian.settings import settings
 
+    from .p import text as text_6
     from .q import text as text_4
+    from .r import text as text_7
+    from .t import text as text_8
+    from .w import text as text_5
     from .x import text as text_1
     from .y import text as text_2
     from .z import text as text_3
@@ -148,7 +153,7 @@ async def run_experiment() -> None:
 
     system = system_3
     function = function_3
-    text = text_4
+    text = text_7
 
     # print(function)
 
