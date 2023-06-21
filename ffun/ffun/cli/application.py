@@ -30,6 +30,7 @@ categories = [
     "industry",
     "activity",
     "genre",
+    "work"
 ]
 
 
@@ -45,13 +46,15 @@ system_2 = (
     "You are an expert on the analysis of text semantics. "
     "For provided text, you determine a list of best tags to describe the text. "
     "You provide tags to describe text from different points of view. "
+    # "For each category, you provide at least 30 tags. "
     "For each category, you provide at least 30 tags. "
     "Tags are only in English."
 )
 
 
 system_3 = (
-    "You are an expert on text semantics. "
+    # "You are an expert on text semantics. "
+    "You are an expert on text analysis. "
     # "You are an expert in text semantics. "
     # "You are an expert librarian. "
     # "You classify text for a library. "
@@ -62,11 +65,10 @@ system_3 = (
     "For provided text, you determine topics and mentioned entities. "
     # "For provided text, you determine list of topics. "
     "You provide topics to describe text from different points of view. "
-    "You provide at least 30 topics for each text. "
-    # " Output only in English."
-    "All topics must be in English."
+    # "You MUST provide at least 30 topics for each text. "
+    "You MUST provide 100 topics for the text. "
+    "All topics MUST be in English."
 )
-
 
 
 tags = {
@@ -103,6 +105,10 @@ function_3 = {
                     "type": "object",
                     "description": "topic",
                     "properties": {
+                        "number": {
+                            "type": "integer",
+                            "description": "number of the topic in the list"
+                        },
                         "name": {
                             "type": "string",
                             "description": "name of the topic"
@@ -153,7 +159,7 @@ async def run_experiment() -> None:
 
     system = system_3
     function = function_3
-    text = text_7
+    text = text_8
 
     # print(function)
 
