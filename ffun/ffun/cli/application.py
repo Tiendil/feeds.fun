@@ -2,6 +2,7 @@ import asyncio
 
 import typer
 from ffun.application.application import with_app
+from tabulate import tabulate
 
 app = typer.Typer()
 
@@ -28,6 +29,7 @@ categories = [
     "phenomenon",
     "industry",
     "activity",
+    "genre",
 ]
 
 
@@ -58,6 +60,7 @@ system_3 = (
     # "You have a PhD. "
     # "For provided text, you determine a list of it's topics and mentioned entities. "
     "For provided text, you determine topics and mentioned entities. "
+    # "For provided text, you determine list of topics. "
     "You provide topics to describe text from different points of view. "
     # " Output only in English."
     "All topics must be in English."
@@ -107,25 +110,18 @@ function_3 = {
                             "type": "string",
                             "description": "category of the topic",
                             "enum": categories
-                        }
+                        },
+
+                        "meta-topic-level-1": {
+                            "type": "string",
+                            "description": "level 1 meta-topic of the topic"
+                        },
+
+                        "meta-topic-level-2": {
+                            "type": "string",
+                            "description": "level 2 meta-topic of the topic"
+                        },
                     }
-                }
-            }
-        }
-    }
-}
-
-
-function_4 = {
-    "name": "register_topics",
-    "description": "Saves detected topics in the database.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "topics": {
-                "type": "object",
-                "description": "mapping of topics to categories, where key is topic and value is category",
-                "properties": {
                 }
             }
         }
@@ -154,7 +150,7 @@ async def run_experiment() -> None:
     function = function_3
     text = text_4
 
-    print(function)
+    # print(function)
 
     # TODO: add tokens from function
     messages = await oc.prepare_requests(system=system,
@@ -168,7 +164,9 @@ async def run_experiment() -> None:
                                          function=function,
                                          max_return_tokens=max_return_tokens)
 
-    pprint.pprint(results[0])
+    # pprint.pprint(results[0])
+
+    print(tabulate(results[0]['topics'], headers="keys"))
 
 
 @app.command()

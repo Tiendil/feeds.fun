@@ -41,6 +41,8 @@ python-slugify = "8.*"
 
 sentry-sdk = "1.*"
 
+tabulate = "0.*"
+
 [tool.poetry.dev-dependencies]
 
 pytest = "6.*"
