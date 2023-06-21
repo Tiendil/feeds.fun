@@ -109,6 +109,7 @@ function_3 = {
                             "type": "integer",
                             "description": "number of the topic in the list"
                         },
+                        # TODO: rename to topic?
                         "name": {
                             "type": "string",
                             "description": "name of the topic"
@@ -118,6 +119,8 @@ function_3 = {
                             "description": "category of the topic",
                             "enum": categories
                         },
+
+                        # TODO: add something to transalte long topics into short ones
 
                         "meta-topic-level-1": {
                             "type": "string",
