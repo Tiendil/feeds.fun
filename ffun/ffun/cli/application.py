@@ -120,7 +120,7 @@ function_3 = {
                         "meta-topic-level-2": {
                             "type": "string",
                             "description": "level 2 meta-topic of the topic"
-                        },
+                        }
                     }
                 }
             }
