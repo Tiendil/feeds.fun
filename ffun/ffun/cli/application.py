@@ -7,14 +7,15 @@ app = typer.Typer()
 
 
 categories = [
-    "topic",
-    "meta-topic",
-    "high-level-topic",
-    "low-level-topic",
-    "related-topic",
-    "indirect-topic",
-    "mention",
-    "indirect-mention",
+    # "topic",
+    # "meta-topic",
+    # "high-level-topic",
+    # "low-level-topic",
+    # "related-topic",
+    # "indirect-topic",
+    # "mention",
+    # "indirect-mention",
+    "concept",
     "person",
     "organization",
     "location",
@@ -24,6 +25,9 @@ categories = [
     "game",
     "software",
     "book",
+    "phenomenon",
+    "industry",
+    "activity",
 ]
 
 
@@ -46,6 +50,9 @@ system_2 = (
 
 system_3 = (
     "You are an expert on text semantics. "
+    # "You are an expert in text semantics. "
+    # "You are an expert librarian. "
+    # "You classify text for a library. "
     # "You are a moderator of Wikipedia. "
     # "You a professor. "
     # "You have a PhD. "
@@ -99,7 +106,7 @@ function_3 = {
                         "category": {
                             "type": "string",
                             "description": "category of the topic",
-                            # "enum": categories
+                            "enum": categories
                         }
                     }
                 }
@@ -145,7 +152,7 @@ async def run_experiment() -> None:
 
     system = system_3
     function = function_3
-    text = text_2
+    text = text_4
 
     print(function)
 
