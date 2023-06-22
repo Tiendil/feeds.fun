@@ -100,6 +100,8 @@ function_3 = {
                             "type": "string",
                         },
 
+                        # TODO: add flag is-main-topic?
+
                         # "category-1": {
                         #     "type": "string",
                         # },
@@ -162,6 +164,12 @@ async def run_experiment() -> None:
     system = system_3
     function = function_3
     text = text_8
+
+    # TODO:
+    # - text_2 — no distrupted technology
+    # - topics vs entities
+    # - text_4 "procedurally generating" -> "proecedurall generation" — "use full termins"?
+    # - text_6 "kickstarter money" -> "kickstarter"
 
     # TODO: add tokens from function
     messages = await oc.prepare_requests(system=system,
