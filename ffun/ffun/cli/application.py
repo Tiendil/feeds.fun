@@ -128,7 +128,8 @@ function_3 = {
                         },
 
                         # "a-lot-of-related-categories": {
-                        "long-list-of-related-categories": {
+                        # "long-list-of-related-categories": {
+                        "five-related-categories": {
                             "type": "array",
                             "items": {
                                 "type": "string",
