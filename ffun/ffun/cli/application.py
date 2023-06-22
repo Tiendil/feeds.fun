@@ -115,12 +115,19 @@ function_3 = {
                             "type": "string",
                         },
 
-                        "sub-category": {
-                            "type": "string",
-                        },
+                        # "sub-category": {
+                        #     "type": "string",
+                        # },
 
                         "meta-category": {
                             "type": "string",
+                        },
+
+                        "related-categories": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                            }
                         },
                     }
                 }
