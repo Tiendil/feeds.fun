@@ -30,7 +30,8 @@ categories = [
     "industry",
     "activity",
     "genre",
-    "work"
+    "work",
+    "entity",
 ]
 
 
@@ -38,7 +39,12 @@ system_3 = (
     "You are an expert on text analysis. "
     "For provided text, you determine topics and mentioned entities. "
     # "For provided text, you determine list of topics. "
-    "You provide topics to describe text from different points of view. "
+    # "You provide topics to describe text from different points of view. "
+    # "You provide topics to describe text from professional point of view. "
+    "You describe text from professional point of view. "
+    "You describe text in multiple levels of abstraction. "
+    # "You provide mentioned entities to describe text from professional point of view. "
+    # "You provide topics and mentioned entities to describe text from professional point of view. "
     # "You MUST provide at least 30 topics for each text. "
     "You MUST provide 100 topics for the text. "
     "All topics MUST be in English."
@@ -58,31 +64,65 @@ function_3 = {
                     "type": "object",
                     "description": "topic",
                     "properties": {
-                        "number": {
-                            "type": "integer",
-                            "description": "number of the topic in the list"
-                        },
+                        # "number": {
+                        #     "type": "integer",
+                        #     "description": "number of the topic in the list"
+                        # },
+
                         "topic": {
                             "type": "string",
                             "description": "name of the topic"
                         },
+
+                        # "type": {
+                        #     "type": "string",
+                        #     "description": "type of the topic",
+                        #     # "enum": categories
+                        # },
+
                         "category": {
                             "type": "string",
                             "description": "category of the topic",
-                            "enum": categories
+                            # "enum": categories
                         },
+
+                        "sub-category": {
+                            "type": "string",
+                            "description": "sub-category of the topic",
+                            # "enum": categories
+                        },
+
+                        # "mete-level": {
+                        #     "type": "integer",
+                        #     "description": "mete-level of the topic"
+                        # },
 
                         # TODO: add something to transalte long topics into short ones
 
-                        "meta-topic-level-1": {
-                            "type": "string",
-                            "description": "level 1 meta-topic of the topic"
-                        },
+                        # "meta-topic-level-1": {
+                        #     "type": "string",
+                        #     "description": "level 1 meta-topic of the topic"
+                        # },
 
-                        "meta-topic-level-2": {
-                            "type": "string",
-                            "description": "level 2 meta-topic of the topic"
-                        }
+                        # "meta-topic-level-2": {
+                        #     "type": "string",
+                        #     "description": "level 2 meta-topic of the topic"
+                        # }
+
+                        # "meta-topic": {
+                        #     "type": "string",
+                        #     "description": "meta-topic of the topic"
+                        # },
+
+                        # "meta-mete-topic": {
+                        #     "type": "string",
+                        #     "description": "meta-mete-topic of the topic"
+                        # },
+
+                        # "related-topic": {
+                        #     "type": "string",
+                        #     "description": "related topic to the topic"
+                        # }
                     }
                 }
             }
@@ -113,7 +153,7 @@ async def run_experiment() -> None:
     max_return_tokens = 2 * 1024
 
     system = system_3
-    function = function_2
+    function = function_3
     text = text_8
 
     # TODO: add tokens from function
