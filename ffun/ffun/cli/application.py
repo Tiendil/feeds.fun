@@ -45,27 +45,6 @@ system_3 = (
 )
 
 
-tags = {
-    "type": "array",
-    "description": "list of tags",
-    "items": {
-        "type": "string",
-        "description": "name of the tag"
-    }
-}
-
-
-function_2 = {
-    "name": "register_tags_for_text",
-    "description": "Saves detected tags in the database.",
-    "parameters": {
-        "type": "object",
-        "description": "tags per category",
-        "properties": {category: tags for category in categories}
-    }
-}
-
-
 function_3 = {
     "name": "register_topics",
     "description": "Saves detected topics in the database.",
@@ -134,7 +113,7 @@ async def run_experiment() -> None:
     max_return_tokens = 2 * 1024
 
     system = system_3
-    function = function_3
+    function = function_2
     text = text_8
 
     # TODO: add tokens from function
@@ -148,8 +127,6 @@ async def run_experiment() -> None:
                                          messages=messages,
                                          function=function,
                                          max_return_tokens=max_return_tokens)
-
-    # pprint.pprint(results[0])
 
     print(tabulate(results[0]['topics'], headers="keys"))
 
