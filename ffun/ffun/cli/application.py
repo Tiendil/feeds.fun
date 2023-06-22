@@ -45,6 +45,16 @@ system_3 = (
 )
 
 
+tags = {
+    "type": "array",
+    "description": "list of tags",
+    "items": {
+        "type": "string",
+        "description": "name of the tag"
+    }
+}
+
+
 function_2 = {
     "name": "register_tags_for_text",
     "description": "Saves detected tags in the database.",
