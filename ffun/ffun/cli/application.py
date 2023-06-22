@@ -51,6 +51,7 @@ system_3 = (
 )
 
 
+# ATTENTION: order of fields is important
 function_3 = {
     "name": "register_topics",
     "description": "Saves entities of the text.",
@@ -126,12 +127,17 @@ function_3 = {
                             "type": "string",
                         },
 
-                        "related-categories": {
+                        # "a-lot-of-related-categories": {
+                        "long-list-of-related-categories": {
                             "type": "array",
                             "items": {
                                 "type": "string",
                             }
                         },
+
+                        # "full-name": {
+                        #     "type": "string",
+                        # },
                     }
                 }
             }
