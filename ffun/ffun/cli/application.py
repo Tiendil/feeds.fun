@@ -34,34 +34,8 @@ categories = [
 ]
 
 
-system = [
-    "You are an expert on the analysis of text semantics.",
-    "For provided text, you determine a list of best tags to describe the text.",
-    "For each category, you provide 30 tags.",
-    "Categories are topics, meta-topics, high-level-topics, low-level-topics, related-topics, indirect-topics, mentions, indirect-mentions.",
-    "Tags are only in English. Normalize tags and output them as JSON.",
-]
-
-system_2 = (
-    "You are an expert on the analysis of text semantics. "
-    "For provided text, you determine a list of best tags to describe the text. "
-    "You provide tags to describe text from different points of view. "
-    # "For each category, you provide at least 30 tags. "
-    "For each category, you provide at least 30 tags. "
-    "Tags are only in English."
-)
-
-
 system_3 = (
-    # "You are an expert on text semantics. "
     "You are an expert on text analysis. "
-    # "You are an expert in text semantics. "
-    # "You are an expert librarian. "
-    # "You classify text for a library. "
-    # "You are a moderator of Wikipedia. "
-    # "You a professor. "
-    # "You have a PhD. "
-    # "For provided text, you determine a list of it's topics and mentioned entities. "
     "For provided text, you determine topics and mentioned entities. "
     # "For provided text, you determine list of topics. "
     "You provide topics to describe text from different points of view. "
@@ -69,16 +43,6 @@ system_3 = (
     "You MUST provide 100 topics for the text. "
     "All topics MUST be in English."
 )
-
-
-tags = {
-    "type": "array",
-    "description": "list of tags",
-    "items": {
-        "type": "string",
-        "description": "name of the tag"
-    }
-}
 
 
 function_2 = {
@@ -109,8 +73,7 @@ function_3 = {
                             "type": "integer",
                             "description": "number of the topic in the list"
                         },
-                        # TODO: rename to topic?
-                        "name": {
+                        "topic": {
                             "type": "string",
                             "description": "name of the topic"
                         },
@@ -163,8 +126,6 @@ async def run_experiment() -> None:
     system = system_3
     function = function_3
     text = text_8
-
-    # print(function)
 
     # TODO: add tokens from function
     messages = await oc.prepare_requests(system=system,
