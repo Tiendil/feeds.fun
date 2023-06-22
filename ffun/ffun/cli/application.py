@@ -47,6 +47,7 @@ system_3 = (
     "Entity name must be explicitly undestandable without text context. "
     "You MUST provide 100 entities for the text. "
     "All entities MUST be in English."
+    # TODO: ask to generate only in plural form
 )
 
 
