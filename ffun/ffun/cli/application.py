@@ -37,92 +37,91 @@ categories = [
 
 system_3 = (
     "You are an expert on text analysis. "
-    "For provided text, you determine topics and mentioned entities. "
-    # "For provided text, you determine list of topics. "
-    # "You provide topics to describe text from different points of view. "
-    # "You provide topics to describe text from professional point of view. "
+    # "For provided text, you determine topics and mentioned entities. "
+    "For provided text, you describe mentioned entities. "
+    # "For provided text, you determine topics. "
+    # "For provided text, you determine topics and mentions. " ???
     "You describe text from professional point of view. "
     "You describe text in multiple levels of abstraction. "
-    # "You provide mentioned entities to describe text from professional point of view. "
-    # "You provide topics and mentioned entities to describe text from professional point of view. "
-    # "You MUST provide at least 30 topics for each text. "
-    "You MUST provide 100 topics for the text. "
-    "All topics MUST be in English."
+    # "You provide entities without ambiguous meaning. "
+    "Entity name must be explicitly undestandable without text context. "
+    "You MUST provide 100 entities for the text. "
+    "All entities MUST be in English."
 )
 
 
 function_3 = {
     "name": "register_topics",
-    "description": "Saves detected topics in the database.",
+    "description": "Saves entities of the text.",
     "parameters": {
         "type": "object",
         "properties": {
-            "topics": {
+            # "topics": {
+            #     "type": "array",
+            #     "description": "list of topics",
+            #     "items": {
+            #         "type": "object",
+            #         "properties": {
+            #             "topic": {
+            #                 "type": "string",
+            #             },
+
+            #             "category-1": {
+            #                 "type": "string",
+            #             },
+
+            #             "category-2": {
+            #                 "type": "string",
+            #             },
+
+            #             "category-3": {
+            #                 "type": "string",
+            #             },
+
+            #             # "category": {
+            #             #     "type": "string",
+            #             # },
+
+            #             # "sub-category": {
+            #             #     "type": "string",
+            #             # },
+            #         }
+            #     },
+            # },
+
+            "entities": {
                 "type": "array",
-                "description": "list of topics",
+                "description": "list of entities",
                 "items": {
                     "type": "object",
-                    "description": "topic",
                     "properties": {
-                        # "number": {
-                        #     "type": "integer",
-                        #     "description": "number of the topic in the list"
-                        # },
-
-                        "topic": {
+                        "entity": {
                             "type": "string",
-                            "description": "name of the topic"
                         },
 
-                        # "type": {
+                        # "category-1": {
                         #     "type": "string",
-                        #     "description": "type of the topic",
-                        #     # "enum": categories
+                        # },
+
+                        # "category-2": {
+                        #     "type": "string",
+                        # },
+
+                        # "category-3": {
+                        #     "type": "string",
                         # },
 
                         "category": {
                             "type": "string",
-                            "description": "category of the topic",
-                            # "enum": categories
                         },
 
                         "sub-category": {
                             "type": "string",
-                            "description": "sub-category of the topic",
-                            # "enum": categories
                         },
 
-                        # "mete-level": {
-                        #     "type": "integer",
-                        #     "description": "mete-level of the topic"
-                        # },
-
-                        # TODO: add something to transalte long topics into short ones
-
-                        # "meta-topic-level-1": {
-                        #     "type": "string",
-                        #     "description": "level 1 meta-topic of the topic"
-                        # },
-
-                        # "meta-topic-level-2": {
-                        #     "type": "string",
-                        #     "description": "level 2 meta-topic of the topic"
-                        # }
-
-                        # "meta-topic": {
-                        #     "type": "string",
-                        #     "description": "meta-topic of the topic"
-                        # },
-
-                        # "meta-mete-topic": {
-                        #     "type": "string",
-                        #     "description": "meta-mete-topic of the topic"
-                        # },
-
-                        # "related-topic": {
-                        #     "type": "string",
-                        #     "description": "related topic to the topic"
-                        # }
+                        "meta-category": {
+                            "type": "string",
+                        },
                     }
                 }
             }
@@ -168,7 +167,9 @@ async def run_experiment() -> None:
                                          function=function,
                                          max_return_tokens=max_return_tokens)
 
-    print(tabulate(results[0]['topics'], headers="keys"))
+    # print(tabulate(results[0]['topics'], headers="keys"))
+
+    print(tabulate(results[0]['entities'], headers="keys"))
 
 
 @app.command()
