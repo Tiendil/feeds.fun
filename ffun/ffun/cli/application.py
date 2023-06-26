@@ -7,47 +7,15 @@ from tabulate import tabulate
 app = typer.Typer()
 
 
-categories = [
-    # "topic",
-    # "meta-topic",
-    # "high-level-topic",
-    # "low-level-topic",
-    # "related-topic",
-    # "indirect-topic",
-    # "mention",
-    # "indirect-mention",
-    "concept",
-    "person",
-    "organization",
-    "location",
-    "event",
-    "date",
-    "movie",
-    "game",
-    "software",
-    "book",
-    "phenomenon",
-    "industry",
-    "activity",
-    "genre",
-    "work",
-    "entity",
-]
-
-
+# TODO: topics vs entities
 system_3 = (
     "You are an expert on text analysis. "
-    # "For provided text, you determine topics and mentioned entities. "
     "For provided text, you describe mentioned entities. "
-    # "For provided text, you determine topics. "
-    # "For provided text, you determine topics and mentions. " ???
     "You describe text from professional point of view. "
     "You describe text in multiple levels of abstraction. "
-    # "You provide entities without ambiguous meaning. "
     "Entity name must be explicitly undestandable without text context. "
     "You MUST provide 100 entities for the text. "
     "All entities MUST be in English."
-    # TODO: ask to generate only in plural form
 )
 
 
@@ -58,38 +26,6 @@ function_3 = {
     "parameters": {
         "type": "object",
         "properties": {
-            # "topics": {
-            #     "type": "array",
-            #     "description": "list of topics",
-            #     "items": {
-            #         "type": "object",
-            #         "properties": {
-            #             "topic": {
-            #                 "type": "string",
-            #             },
-
-            #             "category-1": {
-            #                 "type": "string",
-            #             },
-
-            #             "category-2": {
-            #                 "type": "string",
-            #             },
-
-            #             "category-3": {
-            #                 "type": "string",
-            #             },
-
-            #             # "category": {
-            #             #     "type": "string",
-            #             # },
-
-            #             # "sub-category": {
-            #             #     "type": "string",
-            #             # },
-            #         }
-            #     },
-            # },
 
             "entities": {
                 "type": "array",
@@ -101,44 +37,20 @@ function_3 = {
                             "type": "string",
                         },
 
-                        # TODO: add flag is-main-topic?
-
-                        # "category-1": {
-                        #     "type": "string",
-                        # },
-
-                        # "category-2": {
-                        #     "type": "string",
-                        # },
-
-                        # "category-3": {
-                        #     "type": "string",
-                        # },
-
                         "category": {
                             "type": "string",
                         },
-
-                        # "sub-category": {
-                        #     "type": "string",
-                        # },
 
                         "meta-category": {
                             "type": "string",
                         },
 
-                        # "a-lot-of-related-categories": {
-                        # "long-list-of-related-categories": {
                         "five-related-categories": {
                             "type": "array",
                             "items": {
                                 "type": "string",
                             }
-                        },
-
-                        # "full-name": {
-                        #     "type": "string",
-                        # },
+                        }
                     }
                 }
             }
