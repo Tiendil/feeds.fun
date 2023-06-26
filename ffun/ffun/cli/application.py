@@ -85,7 +85,6 @@ async def run_experiment() -> None:
     text = text_2
 
     # TODO:
-    # - text_2 — no distrupted technology
     # - topics vs entities
     # - text_4 "procedurally generating" -> "proecedurall generation" — "use full termins"?
     # - text_6 "kickstarter money" -> "kickstarter"
