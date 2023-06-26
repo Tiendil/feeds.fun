@@ -78,11 +78,11 @@ async def run_experiment() -> None:
 
     model = 'gpt-3.5-turbo-16k'
     total_tokens = 16 * 1024
-    max_return_tokens = 2 * 1024
+    max_return_tokens = 4 * 1024
 
     system = system_3
     function = function_3
-    text = text_8
+    text = text_2
 
     # TODO:
     # - text_2 — no distrupted technology
