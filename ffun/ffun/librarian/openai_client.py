@@ -120,8 +120,6 @@ async def request(model,  # noqa
 
     # content = answer['choices'][0]['message']['content']
 
-    print(answer)
-
     arguments = json.loads(answer['choices'][0]['message']['function_call']['arguments'])
 
     logger.info('openai_response')

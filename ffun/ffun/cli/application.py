@@ -49,10 +49,17 @@ function_3 = {
                             "items": {
                                 "type": "string",
                             }
-                        }
+                        },
+
+                        "tags": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                            }
+                        },
                     }
                 }
-            }
+            },
         }
     }
 }
@@ -81,13 +88,15 @@ async def run_experiment() -> None:
 
     system = system_3
     function = function_3
-    text = text_8
+    text = text_4
 
     # TODO:
     # - text_3 — no "emacs" tag
     # - text_4 — Dungeons & Dragons Players Handbook -> Dungeons & Dragons
     # - text_6 "kickstarter money" -> "kickstarter"
     # - text_8 Binding of Isaac style -> Binding of Isaac
+    # - text_1 - too long topics
+    # - text_4 - bad with tags
 
     # TODO: add tokens from function
     messages = await oc.prepare_requests(system=system,
@@ -101,9 +110,12 @@ async def run_experiment() -> None:
                                          function=function,
                                          max_return_tokens=max_return_tokens)
 
-    # print(tabulate(results[0]['topics'], headers="keys"))
+    # print(results[0])
+
+    # print('----------')
 
     print(tabulate(results[0]['topics'], headers="keys"))
+
 
 
 @app.command()
