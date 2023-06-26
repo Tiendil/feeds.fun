@@ -7,33 +7,32 @@ from tabulate import tabulate
 app = typer.Typer()
 
 
-# TODO: topics vs entities
 system_3 = (
     "You are an expert on text analysis. "
-    "For provided text, you describe mentioned entities. "
+    "For provided text, you describe mentioned topics. "
     "You describe text from professional point of view. "
     "You describe text in multiple levels of abstraction. "
-    "Entity name must be explicitly undestandable without text context. "
-    "You MUST provide 100 entities for the text. "
-    "All entities MUST be in English."
+    "Topic name must be explicitly undestandable without text context. "
+    "You MUST provide 100 topics for the text. "
+    "All topics MUST be in English."
 )
 
 
 # ATTENTION: order of fields is important
 function_3 = {
     "name": "register_topics",
-    "description": "Saves entities of the text.",
+    "description": "Saves topics of the text.",
     "parameters": {
         "type": "object",
         "properties": {
 
-            "entities": {
+            "topics": {
                 "type": "array",
-                "description": "list of entities",
+                "description": "list of topics",
                 "items": {
                     "type": "object",
                     "properties": {
-                        "entity": {
+                        "topic": {
                             "type": "string",
                         },
 
@@ -82,12 +81,13 @@ async def run_experiment() -> None:
 
     system = system_3
     function = function_3
-    text = text_2
+    text = text_8
 
     # TODO:
-    # - topics vs entities
-    # - text_4 "procedurally generating" -> "proecedurall generation" — "use full termins"?
+    # - text_3 — no "emacs" tag
+    # - text_4 — Dungeons & Dragons Players Handbook -> Dungeons & Dragons
     # - text_6 "kickstarter money" -> "kickstarter"
+    # - text_8 Binding of Isaac style -> Binding of Isaac
 
     # TODO: add tokens from function
     messages = await oc.prepare_requests(system=system,
@@ -103,7 +103,7 @@ async def run_experiment() -> None:
 
     # print(tabulate(results[0]['topics'], headers="keys"))
 
-    print(tabulate(results[0]['entities'], headers="keys"))
+    print(tabulate(results[0]['topics'], headers="keys"))
 
 
 @app.command()
