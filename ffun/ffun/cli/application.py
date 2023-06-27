@@ -14,8 +14,11 @@ system_3 = (
     # "You describe text in multiple levels of abstraction. "
     "You fully describe text in multiple levels of abstraction. "
     # "Topic name must be explicitly undestandable without text context. "
+    # "You MUST shorten topic by removing unnecessary words. "
+    # "You MUST shorten topics by removing unnecessary words, for example: `important non-important -> `important`. "
     # "You MUST provide 100 topics for the text. "
-    "You MUST provide 30 topics for the text started from most relevant. "
+    # "For each compound topic you MUST provide a topic for each its part. "
+    "You MUST provide 100 topics for the text started from most relevant. "
     "All topics MUST be in English."
 )
 
@@ -46,38 +49,12 @@ function_3 = {
                             "type": "string",
                         },
 
-                        # "ten-tags-about-topic": {
-                        # "general-topics": {
-                        #     "type": "array",
-                        #     "items": {
-                        #         "type": "string",
-                        #     }
-                        # },
-
-                        # "all-sub-topics": {
-                        #     "type": "array",
-                        #     "items": {
-                        #         "type": "string",
-                        #     }
-                        # },
-
-                        # "five-related-tags": {
-                        # "three-related-tags": {
-                        # "three-most-related-tags": {
                         "five-most-related-topics": {
-                        # "three-most-related-topics": {
                             "type": "array",
                             "items": {
                                 "type": "string",
                             }
                         },
-
-                        # "tags-to-describe-topic": {
-                        #     "type": "array",
-                        #     "items": {
-                        #         "type": "string",
-                        #     }
-                        # },
                     }
                 }
             },
@@ -109,7 +86,7 @@ async def run_experiment() -> None:
 
     system = system_3
     function = function_3
-    text = text_8
+    text = text_6
 
     # todo:
     # - text_3?
