@@ -49,7 +49,8 @@ function_3 = {
                             "type": "string",
                         },
 
-                        "five-most-related-topics": {
+                        # "five-most-related-topics": {
+                        "five-most-related-tags": {
                             "type": "array",
                             "items": {
                                 "type": "string",
@@ -86,19 +87,10 @@ async def run_experiment() -> None:
 
     system = system_3
     function = function_3
-    text = text_6
+    text = text_8
 
     # todo:
-    # - text_3?
-    # - text_6? artificial_life
-
-    # todo:
-    # - text_3 — no "emacs" tag
-    # - text_4 — dungeons & dragons players handbook -> dungeons & dragons
-    # - text_6 "kickstarter money" -> "kickstarter"
-    # - text_8 binding of isaac style -> binding of isaac
-    # - text_1 - too long topics
-    # - text_4 - bad with tags
+    # - text_4?
 
     # todo: add tokens from function
     messages = await oc.prepare_requests(system=system,
