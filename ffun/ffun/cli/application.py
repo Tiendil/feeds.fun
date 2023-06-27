@@ -11,8 +11,9 @@ system_3 = (
     "You are an expert on text analysis. "
     "For provided text, you describe mentioned topics. "
     "You describe text from professional point of view. "
-    "You describe text in multiple levels of abstraction. "
-    "Topic name must be explicitly undestandable without text context. "
+    # "You describe text in multiple levels of abstraction. "
+    "You fully describe text in multiple levels of abstraction. "
+    # "Topic name must be explicitly undestandable without text context. "
     "You MUST provide 100 topics for the text. "
     "All topics MUST be in English."
 )
@@ -44,19 +45,37 @@ function_3 = {
                             "type": "string",
                         },
 
-                        "five-related-categories": {
+                        # "ten-tags-about-topic": {
+                        # "general-topics": {
+                        #     "type": "array",
+                        #     "items": {
+                        #         "type": "string",
+                        #     }
+                        # },
+
+                        # "all-sub-topics": {
+                        #     "type": "array",
+                        #     "items": {
+                        #         "type": "string",
+                        #     }
+                        # },
+
+                        # "five-related-tags": {
+                        # "three-related-tags": {
+                        # "three-most-related-tags": {
+                        "five-most-related-topics": {
                             "type": "array",
                             "items": {
                                 "type": "string",
                             }
                         },
 
-                        "tags": {
-                            "type": "array",
-                            "items": {
-                                "type": "string",
-                            }
-                        },
+                        # "tags-to-describe-topic": {
+                        #     "type": "array",
+                        #     "items": {
+                        #         "type": "string",
+                        #     }
+                        # },
                     }
                 }
             },
@@ -88,17 +107,20 @@ async def run_experiment() -> None:
 
     system = system_3
     function = function_3
-    text = text_4
+    text = text_2
 
-    # TODO:
+    # todo:
+    # - text_1 — too long answer
+
+    # todo:
     # - text_3 — no "emacs" tag
-    # - text_4 — Dungeons & Dragons Players Handbook -> Dungeons & Dragons
+    # - text_4 — dungeons & dragons players handbook -> dungeons & dragons
     # - text_6 "kickstarter money" -> "kickstarter"
-    # - text_8 Binding of Isaac style -> Binding of Isaac
+    # - text_8 binding of isaac style -> binding of isaac
     # - text_1 - too long topics
     # - text_4 - bad with tags
 
-    # TODO: add tokens from function
+    # todo: add tokens from function
     messages = await oc.prepare_requests(system=system,
                                          text=text,
                                          model=model,
@@ -111,6 +133,10 @@ async def run_experiment() -> None:
                                          max_return_tokens=max_return_tokens)
 
     # print(results[0])
+
+    # print('----------')
+
+    # print(results[0]['tags'])
 
     # print('----------')
 
