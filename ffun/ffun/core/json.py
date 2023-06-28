@@ -7,7 +7,7 @@ def finish_json(text: str, empty_value: str|None = '""') -> str:  # pylint: disa
     text = text.strip()
 
     if text[-1] == ',':
-        text += empty_value
+        text = text[:-1]
 
     if text[-1] == ':':
         text += empty_value
@@ -44,6 +44,8 @@ def finish_json(text: str, empty_value: str|None = '""') -> str:  # pylint: disa
             continue
 
     # fix
+
+    # print(stack)
 
     while stack:
         c = stack.pop()
