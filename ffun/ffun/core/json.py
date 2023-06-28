@@ -1,8 +1,16 @@
 import json
 
 
-def finish_json(text: str) -> str:
+def finish_json(text: str, empty_value: str|None = '""') -> str:  # pylint: disable=too-many-branches # noqa: C901, CCR001
     stack = []
+
+    text = text.strip()
+
+    if text[-1] == ',':
+        text += empty_value
+
+    if text[-1] == ':':
+        text += empty_value
 
     for c in text:
         if c == '{':
@@ -47,6 +55,9 @@ def finish_json(text: str) -> str:
 
 def loads_with_fix(text: str):
     try:
+        print('------')
+        print(text)
+        print('------')
         return json.loads(finish_json(text))
     except json.JSONDecodeError:
         return json.loads(finish_json(text))
