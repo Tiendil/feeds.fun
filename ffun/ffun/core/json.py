@@ -78,3 +78,44 @@ def loads_with_fix(text: str):
         return json.loads(finish_json(text))
     except json.JSONDecodeError:
         return json.loads(finish_json(text))
+
+
+def extract_tags_from_random_json(data: Any) -> set[str]:
+    if not data:
+        # no tags if [], {}, ''
+        return set()
+
+    if isinstance(data, list):
+        return set.union(*(_extract_tags(item) for item in data))
+
+    if isinstance(data, dict):
+        return set.union(*(extract_tags_from_random_json(key)|extract_tags_from_random_json(value)
+                           for key, value in data.items()))
+
+    if isinstance(data, str):
+        return {data}
+
+    return set()
+
+
+def extract_tags_from_invalid_json(text: str) -> set[str]:
+    logger.warning('try_to_extract_tags_from_an_invalid_ json', broken_source=text)
+
+    # search all strings, believing that
+    parts = text.split('"')
+
+    tags: set[str] = set()
+
+    is_tag = False
+
+    while parts:
+        value = parts.pop(0)
+
+        if is_tag:
+            tags.add(value)
+
+        is_tag = not is_tag
+
+    logger.info('tags_extracted', tags=tags)
+
+    return tags

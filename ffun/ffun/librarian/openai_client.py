@@ -117,13 +117,12 @@ async def request(model,  # noqa
         logger.error('openai_api_error', message=str(e))
         raise errors.SkipAndContinueLater(message=str(e)) from e
 
-    # content = answer['choices'][0]['message']['content']
-
-    arguments = json.loads_with_fix(answer['choices'][0]['message']['function_call']['arguments'])
-
     logger.info('openai_response')
 
-    return arguments
+    if function:
+        return answer['choices'][0]['message']['function_call']['arguments']
+
+    return answer['choices'][0]['message']['content']
 
 
 async def multiple_requests(model,  # noqa
