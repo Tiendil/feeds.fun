@@ -11,14 +11,8 @@ system_3 = (
     "You are an expert on text analysis. "
     "For provided text, you describe mentioned topics. "
     "You describe text from professional point of view. "
-    # "You describe text in multiple levels of abstraction. "
     "You fully describe text in multiple levels of abstraction. "
-    # "Topic name must be explicitly undestandable without text context. "
-    # "You MUST shorten topic by removing unnecessary words. "
-    # "You MUST shorten topics by removing unnecessary words, for example: `important non-important -> `important`. "
-    # "You MUST provide 100 topics for the text. "
-    # "For each compound topic you MUST provide a topic for each its part. "
-    "You MUST provide 100 topics for the text started from most relevant. "
+    "You MUST provide 100 topics for the text starting from the most relevant. "
     "All topics MUST be in English."
 )
 
@@ -49,24 +43,24 @@ function_3 = {
                             "type": "string",
                         },
 
-                        # "five-most-related-topics": {
-                        "five-most-related-tags": {
+                        # "five-most-related-tags-for-topic-in-text": {
+                        # "five-most-related-tags": {
+                        "five-most-related-tags-in-context": {
                             "type": "array",
                             "items": {
                                 "type": "string",
                             }
-                        },
+                        }
                     }
                 }
-            },
+            }
         }
     }
 }
 
 
 async def run_experiment() -> None:
-    import pprint
-
+    from ffun.core import json
     from ffun.librarian import openai_client as oc
     from ffun.librarian.settings import settings
 
@@ -87,10 +81,11 @@ async def run_experiment() -> None:
 
     system = system_3
     function = function_3
-    text = text_8
+    text = text_1
 
     # todo:
     # - text_4?
+    # - text_6?
 
     # todo: add tokens from function
     messages = await oc.prepare_requests(system=system,
@@ -113,7 +108,6 @@ async def run_experiment() -> None:
     # print('----------')
 
     print(tabulate(results[0]['topics'], headers="keys"))
-
 
 
 @app.command()
