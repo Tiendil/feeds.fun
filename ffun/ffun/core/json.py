@@ -43,21 +43,36 @@ def finish_json(text: str, empty_value: str|None = '""') -> str:  # pylint: disa
             stack.append(c)
             continue
 
-    pairs = {'{': '}',
-             '[': ']',
-             '"': '"'}
+    # fix
 
-    for c in reversed(stack):
-        text += pairs[c]
+    while stack:
+        c = stack.pop()
+
+        if c == '{':
+            text += '}'
+            continue
+
+        if c == '[':
+            text += ']'
+            continue
+
+        if c == '"':
+            text += '"'
+
+            if stack[-1] == '{':
+                text += f": {empty_value}"
+                continue
+
+            continue
 
     return text
 
 
 def loads_with_fix(text: str):
     try:
-        print('------')
-        print(text)
-        print('------')
+        # print('------')
+        # print(text)
+        # print('------')
         return json.loads(finish_json(text))
     except json.JSONDecodeError:
         return json.loads(finish_json(text))
