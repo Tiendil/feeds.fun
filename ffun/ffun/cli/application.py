@@ -45,7 +45,8 @@ function_3 = {
 
                         # "five-most-related-tags-for-topic-in-text": {
                         # "five-most-related-tags": {
-                        "five-most-related-tags-in-context": {
+                        # "five-most-related-tags-in-context": {
+                        "five-most-related-tags-for-text": {
                             "type": "array",
                             "items": {
                                 "type": "string",
@@ -81,7 +82,7 @@ async def run_experiment() -> None:
 
     system = system_3
     function = function_3
-    text = text_1
+    text = text_8
 
     # todo:
     # - text_4?
