@@ -1,13 +1,12 @@
 import asyncio
 import functools
-import json
 import math
 
 import async_lru
 import openai
 import tiktoken
 import typer
-from ffun.core import logging
+from ffun.core import json, logging
 
 from . import errors
 
@@ -120,9 +119,7 @@ async def request(model,  # noqa
 
     # content = answer['choices'][0]['message']['content']
 
-    print(answer)
-
-    arguments = json.loads(answer['choices'][0]['message']['function_call']['arguments'])
+    arguments = json.loads_with_fix(answer['choices'][0]['message']['function_call']['arguments'])
 
     logger.info('openai_response')
 
