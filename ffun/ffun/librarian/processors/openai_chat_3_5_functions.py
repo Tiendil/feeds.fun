@@ -107,11 +107,15 @@ def extract_tags(text: str) -> set[str]:
 
 
 class Processor(base.Processor):
-    __slots__ = ('api_key',)
+    __slots__ = ('api_key', 'model')
 
-    def __init__(self, api_key: str, **kwargs: Any):
+    def __init__(self,
+                 api_key: str,
+                 model: str,
+                 **kwargs: Any):
         super().__init__(**kwargs)
         self.api_key = api_key
+        self.model = model
 
         # TODO: we need support multiple api keys
         oc.init(self.api_key)
@@ -123,20 +127,19 @@ class Processor(base.Processor):
 
         text = core_text.clear_text(dirty_text)
 
-        model = 'gpt-3.5-turbo-16k'
         total_tokens = 16 * 1024
         max_return_tokens = 4 * 1024
 
         # todo: add tokens from function
         messages = await oc.prepare_requests(system=system,
                                              text=text,
-                                             model=model,
+                                             model=self.model,
                                              function=function,
                                              total_tokens=total_tokens,
                                              max_return_tokens=max_return_tokens)
 
         # TODO: specify concreate model
-        results = await oc.multiple_requests(model=model,
+        results = await oc.multiple_requests(model=self.model,
                                              messages=messages,
                                              function=function,
                                              max_return_tokens=max_return_tokens,

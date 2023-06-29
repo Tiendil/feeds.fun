@@ -17,10 +17,12 @@ class NativeTagsProcessor(BaseProcessor):  # type: ignore
 
 class OpenAIChat35Processor(BaseProcessor):  # type: ignore
     api_key: str = 'fake-api-key'
+    model: str = 'gpt-3.5-turbo-16k-0613'
 
 
 class OpenAIChat35ProcessorFunctions(BaseProcessor):  # type: ignore
     api_key: str = 'fake-api-key'
+    model: str = 'gpt-3.5-turbo-16k-0613'
 
 
 class Settings(BaseSettings):  # type: ignore
