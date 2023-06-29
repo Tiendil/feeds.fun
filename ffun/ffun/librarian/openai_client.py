@@ -117,6 +117,13 @@ async def request(model,  # noqa
                   presence_penalty,
                   frequency_penalty):
     logger.info('request_openai')
+
+    arguments = {}
+
+    if function is not None:
+        arguments['functions'] = [function]
+        arguments['function_call'] = {'name': function['name']}
+
     try:
         answer = await openai.ChatCompletion.acreate(model=model,
                                                      temperature=temperature,
@@ -125,8 +132,7 @@ async def request(model,  # noqa
                                                      presence_penalty=presence_penalty,
                                                      frequency_penalty=frequency_penalty,
                                                      messages=messages,
-                                                     functions=[function],
-                                                     function_call={'name': function['name']},)
+                                                     **arguments)
     # https://platform.openai.com/docs/guides/error-codes/api-errors
     except openai.error.RateLimitError as e:
         logger.warning('openai_rate_limit', message=str(e))

@@ -20,7 +20,10 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
     try:
         tags = await processor.process(entry)
 
-        logger.info('tags_found', tags=tags)
+        tags_for_log = [tag.raw_uid for tag in tags]
+        tags_for_log.sort()
+
+        logger.info('tags_found', tags=tags_for_log)
 
         await o_domain.apply_tags_to_entry(entry.id, processor_id, tags)
     except errors.SkipAndContinueLater:

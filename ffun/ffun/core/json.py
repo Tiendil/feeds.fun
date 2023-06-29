@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 
 def finish_json(text: str, empty_value: str|None = '""') -> str:  # pylint: disable=too-many-branches # noqa: C901, CCR001
@@ -86,7 +87,7 @@ def extract_tags_from_random_json(data: Any) -> set[str]:
         return set()
 
     if isinstance(data, list):
-        return set.union(*(_extract_tags(item) for item in data))
+        return set.union(*(extract_tags_from_random_json(item) for item in data))
 
     if isinstance(data, dict):
         return set.union(*(extract_tags_from_random_json(key)|extract_tags_from_random_json(value)

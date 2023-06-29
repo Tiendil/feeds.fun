@@ -61,10 +61,10 @@ if settings.openai_chat_35_processor.enabled:
 
 if settings.openai_chat_35_functions_processor.enabled:
     processors.append(ProcessorInfo(id=4,
-                                    processor=OpenAIChat35Processor(name="openai_chat_3_5_functions",
-                                                                    api_key=settings.openai_chat_35_processor_functions.api_key,
-                                                                    model=settings.openai_chat_35_processor_functions.model),
-                                    concurrency=settings.openai_chat_35_processor_functions.workers))
+                                    processor=OpenAIChat35FunctionsProcessor(name="openai_chat_3_5_functions",
+                                                                             api_key=settings.openai_chat_35_functions_processor.api_key,
+                                                                             model=settings.openai_chat_35_functions_processor.model),
+                                    concurrency=settings.openai_chat_35_functions_processor.workers))
 
 
 class EntriesProcessor(InfiniteTask):
