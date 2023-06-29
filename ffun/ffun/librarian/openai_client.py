@@ -153,10 +153,10 @@ async def multiple_requests(model,  # noqa
                             messages,
                             function,
                             max_return_tokens,
-                            temperature=1,
-                            top_p=0,
-                            presence_penalty=1,
-                            frequency_penalty=0):
+                            temperature,
+                            top_p,
+                            presence_penalty,
+                            frequency_penalty):
 
     # TODO: rewrite to gather
     results = []
