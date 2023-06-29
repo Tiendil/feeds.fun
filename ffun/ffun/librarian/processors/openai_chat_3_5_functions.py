@@ -130,7 +130,6 @@ class Processor(base.Processor):
         total_tokens = 16 * 1024
         max_return_tokens = 4 * 1024
 
-        # todo: add tokens from function
         messages = await oc.prepare_requests(system=system,
                                              text=text,
                                              model=self.model,
@@ -138,7 +137,6 @@ class Processor(base.Processor):
                                              total_tokens=total_tokens,
                                              max_return_tokens=max_return_tokens)
 
-        # TODO: specify concreate model
         results = await oc.multiple_requests(model=self.model,
                                              messages=messages,
                                              function=function,
