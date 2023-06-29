@@ -1,12 +1,13 @@
 import asyncio
 import functools
+import json
 import math
 
 import async_lru
 import openai
 import tiktoken
 import typer
-from ffun.core import json, logging
+from ffun.core import logging
 
 from . import errors
 
@@ -27,7 +28,12 @@ async def get_encoding(model):
     return tiktoken.encoding_for_model(model)
 
 
-async def prepare_requests(system, text, model, total_tokens, max_return_tokens):  # pylint: disable=R0914
+async def prepare_requests(system,  # pylint: disable=R0914
+                           text,
+                           model,
+                           function,
+                           total_tokens,
+                           max_return_tokens):
     # high estimation on base of
     # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
     logger.info('prepare_requests')
@@ -44,7 +50,19 @@ async def prepare_requests(system, text, model, total_tokens, max_return_tokens)
                    len(encoding.encode('user')) +
                    len(encoding.encode(text)))
 
-    tokens_per_chunk = total_tokens - system_tokens - max_return_tokens - additional_tokens_per_message
+    # rough estimation, because we don't know how exactly openai counts tokens for functions
+    if function:
+        function_tokens = (additional_tokens_per_message +
+                           len(encoding.encode('function')) +
+                           len(encoding.encode(json.dumps(function))))
+    else:
+        function_tokens = 0
+
+    tokens_per_chunk = (total_tokens -
+                        system_tokens -
+                        max_return_tokens -
+                        function_tokens -
+                        additional_tokens_per_message)
 
     if text_tokens <= tokens_per_chunk:
         logger.info('single_chunk_text')

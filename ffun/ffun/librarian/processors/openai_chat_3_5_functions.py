@@ -131,6 +131,7 @@ class Processor(base.Processor):
         messages = await oc.prepare_requests(system=system,
                                              text=text,
                                              model=model,
+                                             function=function,
                                              total_tokens=total_tokens,
                                              max_return_tokens=max_return_tokens)
 
