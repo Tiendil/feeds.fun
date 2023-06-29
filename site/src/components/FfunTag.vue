@@ -65,7 +65,7 @@ function onClick() {
 
 const tooltip = computed(() => {
     if (properties.countMode == 'tooltip' && properties.count) {
-        return `articles with the tag: ${properties.count}`;
+        return `articles with the tag: ${properties.count} (${properties.uid})`;
     }
     return '';
 });

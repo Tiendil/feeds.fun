@@ -9,6 +9,8 @@ from .processors.base import Processor
 from .processors.domain import Processor as DomainProcessor
 from .processors.native_tags import Processor as NativeTagsProcessor
 from .processors.openai_chat_3_5 import Processor as OpenAIChat35Processor
+from .processors.openai_chat_3_5_functions import \
+    Processor as OpenAIChat35FunctionsProcessor
 from .settings import settings
 
 logger = logging.get_module_logger()
@@ -52,8 +54,17 @@ if settings.native_tags_processor.enabled:
 if settings.openai_chat_35_processor.enabled:
     processors.append(ProcessorInfo(id=3,
                                     processor=OpenAIChat35Processor(name="openai_chat_3_5",
-                                                                    api_key=settings.openai_chat_35_processor.api_key),
+                                                                    api_key=settings.openai_chat_35_processor.api_key,
+                                                                    model=settings.openai_chat_35_processor.model),
                                     concurrency=settings.openai_chat_35_processor.workers))
+
+
+if settings.openai_chat_35_functions_processor.enabled:
+    processors.append(ProcessorInfo(id=4,
+                                    processor=OpenAIChat35FunctionsProcessor(name="openai_chat_3_5_functions",
+                                                                             api_key=settings.openai_chat_35_functions_processor.api_key,
+                                                                             model=settings.openai_chat_35_functions_processor.model),
+                                    concurrency=settings.openai_chat_35_functions_processor.workers))
 
 
 class EntriesProcessor(InfiniteTask):

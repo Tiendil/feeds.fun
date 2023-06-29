@@ -28,7 +28,12 @@ async def get_encoding(model):
     return tiktoken.encoding_for_model(model)
 
 
-async def prepare_requests(system, text, model, total_tokens, max_return_tokens):  # pylint: disable=R0914
+async def prepare_requests(system,  # pylint: disable=R0914
+                           text,
+                           model,
+                           function,
+                           total_tokens,
+                           max_return_tokens):
     # high estimation on base of
     # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
     logger.info('prepare_requests')
@@ -45,7 +50,19 @@ async def prepare_requests(system, text, model, total_tokens, max_return_tokens)
                    len(encoding.encode('user')) +
                    len(encoding.encode(text)))
 
-    tokens_per_chunk = total_tokens - system_tokens - max_return_tokens - additional_tokens_per_message
+    # rough estimation, because we don't know how exactly openai counts tokens for functions
+    if function:
+        function_tokens = (additional_tokens_per_message +
+                           len(encoding.encode('function')) +
+                           len(encoding.encode(json.dumps(function))))
+    else:
+        function_tokens = 0
+
+    tokens_per_chunk = (total_tokens -
+                        system_tokens -
+                        max_return_tokens -
+                        function_tokens -
+                        additional_tokens_per_message)
 
     if text_tokens <= tokens_per_chunk:
         logger.info('single_chunk_text')
@@ -93,12 +110,20 @@ async def prepare_requests(system, text, model, total_tokens, max_return_tokens)
 
 async def request(model,  # noqa
                   messages,
+                  function,
                   max_tokens,
                   temperature,
                   top_p,
                   presence_penalty,
                   frequency_penalty):
     logger.info('request_openai')
+
+    arguments = {}
+
+    if function is not None:
+        arguments['functions'] = [function]
+        arguments['function_call'] = {'name': function['name']}
+
     try:
         answer = await openai.ChatCompletion.acreate(model=model,
                                                      temperature=temperature,
@@ -106,7 +131,8 @@ async def request(model,  # noqa
                                                      top_p=top_p,
                                                      presence_penalty=presence_penalty,
                                                      frequency_penalty=frequency_penalty,
-                                                     messages=messages)
+                                                     messages=messages,
+                                                     **arguments)
     # https://platform.openai.com/docs/guides/error-codes/api-errors
     except openai.error.RateLimitError as e:
         logger.warning('openai_rate_limit', message=str(e))
@@ -115,20 +141,22 @@ async def request(model,  # noqa
         logger.error('openai_api_error', message=str(e))
         raise errors.SkipAndContinueLater(message=str(e)) from e
 
-    content = answer['choices'][0]['message']['content']
-
     logger.info('openai_response')
 
-    return content
+    if function:
+        return answer['choices'][0]['message']['function_call']['arguments']
+
+    return answer['choices'][0]['message']['content']
 
 
 async def multiple_requests(model,  # noqa
                             messages,
+                            function,
                             max_return_tokens,
-                            temperature=0,
-                            top_p=0,
-                            presence_penalty=0,
-                            frequency_penalty=0):
+                            temperature,
+                            top_p,
+                            presence_penalty,
+                            frequency_penalty):
 
     # TODO: rewrite to gather
     results = []
@@ -137,6 +165,7 @@ async def multiple_requests(model,  # noqa
         logger.info('request', number=i, total=len(messages))
         result = await request(model=model,
                                messages=request_messages,
+                               function=function,
                                max_tokens=max_return_tokens,
                                temperature=temperature,
                                top_p=top_p,
