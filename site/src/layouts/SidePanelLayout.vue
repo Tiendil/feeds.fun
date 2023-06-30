@@ -2,17 +2,12 @@
 <div class="container">
   <div class="nav-panel">
     <h2 style="margin-top: 0; margin-bottom: 0;">
-      <a href="/" style="text-decoration: none; color: black;">
-        Feeds Fun
-      </a>
+      <slot name="main-header"></slot>
     </h2>
 
     <hr/>
 
     <ul class="config-menu">
-      <li class="config-menu-item">
-        Looking for {{e.MainPanelModeProperties.get(globalSettings.mainPanelMode).text}}
-      </li>
 
       <li v-if="hasSideMenuItem(1)"
           class="config-menu-item">
@@ -54,18 +49,23 @@
 
   <div class="main-content">
     <header style="padding-top: 1rem; display: flex; align-items: center;">
-      <h2 style="margin-top: 0; margin-bottom: 0; min-width: 10rem;">
-        <slot name="main-header"></slot>
-      </h2>
-
       <div style="display: flex; align-items: center; margin-right: auto;">
         <ul style="list-style-type: none; margin: 0; padding: 0;">
+
+          <li style="display: inline-block; margin-right: 0.5rem;">
+            <a href="#"
+               @click.prevent="router.push({ name: 'main', params: {} })"
+               style=" text-decoration: none;">Home</a>
+          </li>
+
           <li v-for="[mode, props] of e.MainPanelModeProperties"
               :key="mode"
               style="display: inline-block; margin-right: 0.5rem;">
             <a v-if="globalSettings.mainPanelMode !== mode"
                href="#"
-               @click.prevent="router.push({ name: mode, params: {} })">{{ props.text }}
+               @click.prevent="router.push({ name: mode, params: {} })"
+               style=" text-decoration: none;">
+              {{ props.text }}
             </a>
 
             <span v-else>{{ props.text }}</span>

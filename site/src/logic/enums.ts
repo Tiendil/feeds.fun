@@ -16,11 +16,11 @@ export enum MainPanelMode {
 
 
 export const MainPanelModeProperties = new Map<MainPanelMode, {text: string}>([
-    [MainPanelMode.Entries, {text: "news"}],
-    [MainPanelMode.Feeds, {text: "feeds"}],
-    [MainPanelMode.Rules, {text: "rules"}],
-    [MainPanelMode.Discovery, {text: "discovery"}],
-    [MainPanelMode.Collections, {text: "collections"}],
+    [MainPanelMode.Entries, {text: "News"}],
+    [MainPanelMode.Feeds, {text: "Feeds"}],
+    [MainPanelMode.Rules, {text: "Rules"}],
+    [MainPanelMode.Discovery, {text: "Discovery"}],
+    [MainPanelMode.Collections, {text: "Collections"}],
 ]);
 
 
