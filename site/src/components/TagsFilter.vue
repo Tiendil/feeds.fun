@@ -79,7 +79,10 @@ const displayedSelectedTags = computed(() => {
 });
 
 const totalTags = computed(() => {
-    return Object.keys(properties.tags).length;
+    // TODO: this is not correct, because selected tags are treated differently
+    //       depending on their status: required or excluded.
+    //       => value is not accurate, but it is ok for now
+    return Object.keys(properties.tags).length + Object.keys(selectedTags.value).length;
 });
 
 const displayedTags = computed(() => {
