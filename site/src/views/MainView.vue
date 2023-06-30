@@ -7,7 +7,7 @@
 
   <div v-if="globalState.isLoggedIn">
     <p>You have already logged in.</p>
-    <button @click="goToWorkspace()">Go To Feeds</button>
+    <button @click.prevent="goToWorkspace()">Go To Feeds</button>
   </div>
 
   <div v-else>

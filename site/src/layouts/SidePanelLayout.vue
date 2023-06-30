@@ -11,9 +11,7 @@
 
     <ul class="config-menu">
       <li class="config-menu-item">
-        Looking for
-        <config-selector :values="e.MainPanelModeProperties"
-                         v-model:property="globalSettings.mainPanelMode"/>
+        Looking for {{e.MainPanelModeProperties.get(globalSettings.mainPanelMode).text}}
       </li>
 
       <li v-if="hasSideMenuItem(1)"
@@ -55,12 +53,27 @@
   </div>
 
   <div class="main-content">
-    <header style="padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
-      <h2 style="margin-top: 0; margin-bottom: 0;">
+    <header style="padding-top: 1rem; display: flex; align-items: center;">
+      <h2 style="margin-top: 0; margin-bottom: 0; min-width: 10rem;">
         <slot name="main-header"></slot>
       </h2>
 
-      <div style="display: flex; justify-content: space-between; align-items: center; width: auto;">
+      <div style="display: flex; align-items: center; margin-right: auto;">
+        <ul style="list-style-type: none; margin: 0; padding: 0;">
+          <li v-for="[mode, props] of e.MainPanelModeProperties"
+              :key="mode"
+              style="display: inline-block; margin-right: 0.5rem;">
+            <a v-if="globalSettings.mainPanelMode !== mode"
+               href="#"
+               @click.prevent="router.push({ name: mode, params: {} })">{{ props.text }}
+            </a>
+
+            <span v-else>{{ props.text }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <div style="display: flex; align-items: center; margin-left: 1rem;">
         <ffun-github-buttons :repository="settings.githubRepo" style="margin-top: 0.3rem;"/>
         &nbsp;|&nbsp;
         <a href="#" @click.prevent="logout()">logout</a>
