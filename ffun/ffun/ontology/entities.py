@@ -6,7 +6,6 @@ from ffun.core import utils
 
 
 class TagPropertyType(int, enum.Enum):
-    tag_name = 1  # "name" is reserved
     link = 2
     categories = 3
 
@@ -35,13 +34,6 @@ class ProcessorTag(pydantic.BaseModel):
         properties = []
 
         created_at = utils.now()
-
-        if self.name:
-            properties.append(TagProperty(tag_id=tag_id,
-                                          type=TagPropertyType.tag_name,
-                                          value=self.name,
-                                          processor_id=processor_id,
-                                          created_at=created_at))
 
         if self.link:
             properties.append(TagProperty(tag_id=tag_id,
