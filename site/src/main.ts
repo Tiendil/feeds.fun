@@ -25,6 +25,7 @@ import SupertokensLogin from "./components/SupertokensLogin.vue";
 import FeedsCollections from "./components/FeedsCollections.vue";
 import FfunGithubButtons from "./components/FfunGithubButtons.vue";
 import FfunTag from "./components/FfunTag.vue";
+import SimplePagination from "./components/SimplePagination.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -65,6 +66,7 @@ app.component("SupertokensLogin", SupertokensLogin);
 app.component("FeedsCollections", FeedsCollections);
 app.component("FfunGithubButtons", FfunGithubButtons);
 app.component("FfunTag", FfunTag);
+app.component("SimplePagination", SimplePagination);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);

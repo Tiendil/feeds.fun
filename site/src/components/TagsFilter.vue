@@ -1,7 +1,7 @@
 <template>
 <div>
 
-  <ul v-if="displayedTags.length > 0" style="list-style: none; padding: 0; margin: 0;">
+  <ul v-if="displayedSelectedTags.length > 0" style="list-style: none; padding: 0; margin: 0;">
     <tags-filter-element v-for="tag of displayedSelectedTags"
                          :key="tag"
                          :tag="tag"
@@ -20,6 +20,14 @@
                          @tag:selected="onTagSelected"
                          @tag:deselected="onTagDeselected"/>
   </ul>
+
+  <hr/>
+
+  <simple-pagination :showFromStart="showFromStart"
+                     :showPerPage="10"
+                     :total="totalTags"
+                     :counterOnNewLine="true"
+                     v-model:showEntries="showEntries"/>
 </div>
 </template>
 
@@ -29,6 +37,10 @@ import { computed, ref } from "vue";
 const selectedTags = ref<{ [key: string]: boolean }>({});
 
 const properties = defineProps<{ tags: {[key: string]: number} }>();
+
+const showFromStart = ref(25);
+
+const showEntries = ref(showFromStart.value);
 
 
 function tagComparator(a, b) {
@@ -54,7 +66,6 @@ function tagComparator(a, b) {
     return 0;
 }
 
-
 const displayedSelectedTags = computed(() => {
     let values = Object.keys(selectedTags.value);
 
@@ -65,6 +76,13 @@ const displayedSelectedTags = computed(() => {
     values.sort(tagComparator);
 
     return values;
+});
+
+const totalTags = computed(() => {
+    // TODO: this is not correct, because selected tags are treated differently
+    //       depending on their status: required or excluded.
+    //       => value is not accurate, but it is ok for now
+    return Object.keys(properties.tags).length + Object.keys(selectedTags.value).length;
 });
 
 const displayedTags = computed(() => {
@@ -81,8 +99,7 @@ const displayedTags = computed(() => {
 
     values.sort(tagComparator);
 
-    // TODO: move to configs or even to the side panel
-    values = values.slice(0, 100);
+    values = values.slice(0, showEntries.value);
 
     return values;
 });
