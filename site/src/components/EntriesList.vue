@@ -12,9 +12,12 @@
       </li>
     </ul>
 
+    <hr/>
+
     <simple-pagination :showFromStart="showFromStart"
                        :showPerPage="showPerPage"
                        :total="entriesIds.length"
+                       :counterOnNewLine="false"
                        v-model:showEntries="showEntries"/>
   </template>
 </div>

@@ -1,16 +1,19 @@
 <template>
-<hr/>
+<div>
+  <button v-if="canShowMore"
+          @click.prevent="showMore()">next {{realShowPerPage}}</button>
 
-<button v-if="canShowMore"
-        @click.prevent="showMore()">next {{realShowPerPage}}</button>
+  <span v-if="canShowMore && canHide"> | </span>
 
-<span v-if="canShowMore && canHide"> | </span>
+  <button v-if="canHide"
+          @click.prevent="hideAll()">hide</button>
 
-<button v-if="canHide"
-        @click.prevent="hideAll()">hide all</button>
+  <div v-if="counterOnNewLine" style="line-height: 0.5rem;">
+    &nbsp;
+  </div>
 
-shown {{showEntries}} / {{total}}
-
+  shown {{realShowEntries}} / {{total}}
+</div>
 </template>
 
 <script lang="ts" setup>
@@ -20,12 +23,14 @@ import { computedAsync } from "@vueuse/core";
 
 const properties = defineProps<{ showFromStart: number,
                                  showPerPage: number,
-                                 total: number}>();
+                                 total: number,
+                                 counterOnNewLine: boolean }>()
 
 const showEntries = ref(properties.showFromStart);
 
 const emit = defineEmits(["update:showEntries"]);
 
+emit('update:showEntries', showEntries.value);
 
 function showMore() {
     showEntries.value += properties.showPerPage;
@@ -43,15 +48,20 @@ function hideAll() {
 }
 
 const realShowPerPage = computed(() => {
-    return Math.min(properties.showPerPage, properties.total - showEntries.value);
+    return Math.min(properties.showPerPage,
+                    properties.total - showEntries.value);
+});
+
+const realShowEntries = computed(() => {
+    const size = Math.min(showEntries.value, properties.total);
+
+    emit('update:showEntries', size);
+
+    return size;
 });
 
 const canHide = computed(() => {
     return showEntries.value > properties.showFromStart;
-});
-
-const entriesToShow = computed(() => {
-    return properties.entriesIds.slice(0, showEntries.value);
 });
 
 const canShowMore = computed(() => {
