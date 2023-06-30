@@ -47,8 +47,8 @@
   <entries-list :entriesIds="entriesStore.entriesReport"
                 :time-field="timeField"
                 :show-tags="globalSettings.showEntriesTags"
-                :showFromStart=100
-                :showPerPage=50
+                :showFromStart=25
+                :showPerPage=25
                 />
 </side-panel-layout>
 </template>
