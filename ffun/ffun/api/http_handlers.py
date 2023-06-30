@@ -1,8 +1,12 @@
 
 import uuid
-from typing import Iterable
+from typing import Any, Iterable
 
 import fastapi
+import pkg_resources
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.openapi.utils import get_openapi
+from fastapi.responses import HTMLResponse, JSONResponse
 from ffun.auth.dependencies import User
 from ffun.core import logging
 from ffun.feeds import domain as f_domain
@@ -286,3 +290,59 @@ async def api_get_tags_info(request: entities.GetTagsInfoRequest, user: User) ->
         tags_info[uid] = entities.TagInfo.from_internal(info[tags_ids[uid]], uid)
 
     return entities.GetTagsInfoResponse(tags=tags_info)
+
+
+#######################
+# Swagger documentation
+#######################
+
+swagger_ui_api_parameters: dict[str, Any] = {
+    "defaultModelsExpandDepth": -1,
+    "defaultModelExpandDepth": 10,
+}
+
+
+swagger_title = 'Feeds Fun API'
+
+
+swagger_description = """
+Greetings!
+
+Welcome to the documentation for the Feeds Fun API.
+
+Please note that the project is currently in its early stages of development, and as such, the API may undergo significant changes. We appreciate your understanding and patience during this phase.
+
+At present, our documentation does not include information regarding authentication. If you wish to utilize API from [feeds.fun](https://feeds.fun), we recommend referring to the [supertokens](https://supertokens.com/) documentation for guidance on this matter. We'll improve this aspect of the documentation in the future.
+
+For additional resources, please visit the following links:
+
+- [Feeds Fun Website](https://feeds.fun)
+- [GitHub Repository](https://github.com/Tiendil/feeds.fun)
+
+Thank you for your interest in the Feeds Fun API. We look forward to your contributions and feedback.
+
+"""
+
+
+@router.get('/api/openapi.json', include_in_schema=False)
+async def openapi(request: fastapi.Request) -> JSONResponse:
+
+    content = get_openapi(
+        title='Feeds Fun API',
+        version=pkg_resources.get_distribution("ffun").version,
+        description=swagger_description,
+        routes=request.app.routes,
+    )
+
+    return JSONResponse(content=content)
+
+
+@router.get('/api/docs', include_in_schema=False)
+async def docs(request: fastapi.Request) -> HTMLResponse:
+    openapi_url = request.scope.get("root_path", "") + '/api/openapi.json'
+
+    return get_swagger_ui_html(
+        openapi_url=openapi_url,
+        title=swagger_title,
+        swagger_ui_parameters=swagger_ui_api_parameters
+    )

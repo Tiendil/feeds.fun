@@ -70,6 +70,12 @@
 
             <span v-else>{{ props.text }}</span>
           </li>
+
+          <li style="display: inline-block; margin-right: 0.5rem;">
+            <a href="/api/docs"
+               target="_blank"
+               style=" text-decoration: none;">API&#8599;</a>
+          </li>
         </ul>
       </div>
 

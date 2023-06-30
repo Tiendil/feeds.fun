@@ -114,7 +114,10 @@ def create_app():  # noqa: CCR001
 
             await app.router.shutdown()
 
-    app = fastapi.FastAPI(lifespan=lifespan)
+    app = fastapi.FastAPI(lifespan=lifespan,
+                          docs_url=None,
+                          redoc_url=None,
+                          openapi_url=None,)
 
     middlewares.initialize_error_processors(app)
 
