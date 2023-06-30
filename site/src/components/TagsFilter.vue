@@ -1,7 +1,7 @@
 <template>
 <div>
 
-  <ul v-if="displayedTags.length > 0" style="list-style: none; padding: 0; margin: 0;">
+  <ul v-if="displayedSelectedTags.length > 0" style="list-style: none; padding: 0; margin: 0;">
     <tags-filter-element v-for="tag of displayedSelectedTags"
                          :key="tag"
                          :tag="tag"
