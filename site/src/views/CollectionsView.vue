@@ -1,5 +1,5 @@
 <template>
-<side-panel-layout>
+<side-panel-layout :reload-button="false">
 
   <template #main-header>
     Collections

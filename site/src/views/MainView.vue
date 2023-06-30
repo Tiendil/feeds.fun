@@ -7,7 +7,7 @@
 
   <div v-if="globalState.isLoggedIn">
     <p>You have already logged in.</p>
-    <button @click="goToWorkspace()">Go To Feeds</button>
+    <button @click.prevent="goToWorkspace()">Go To Feeds</button>
   </div>
 
   <div v-else>
@@ -55,6 +55,7 @@ import { useSupertokens } from "@/stores/supertokens";
 import { useGlobalState } from "@/stores/globalState";
 import { computedAsync } from "@vueuse/core";
 import * as settings from "@/logic/settings";
+import * as e from "@/logic/enums";
 
 const globalSettings = useGlobalSettingsStore();
 const globalState = useGlobalState();
@@ -64,7 +65,7 @@ const supertokens = useSupertokens();
 const router = useRouter();
 
 function goToWorkspace() {
-    router.push({ name: globalSettings.mainPanelMode, params: {} });
+    router.push({ name: e.MainPanelMode.Entries, params: {} });
 }
 
 </script>

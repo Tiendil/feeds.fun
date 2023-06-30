@@ -1,5 +1,5 @@
 <template>
-<side-panel-layout>
+<side-panel-layout :reload-button="false">
   <template #main-header>
     Rules
     <span v-if="rules">[{{rules.length}}]</span>

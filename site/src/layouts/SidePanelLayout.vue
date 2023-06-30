@@ -1,16 +1,13 @@
 <template>
 <div class="container">
   <div class="nav-panel">
-    <h2 style="margin-top: 0; margin-bottom: 0;">Feeds Fun</h2>
+    <h2 style="margin-top: 0; margin-bottom: 0;">
+      <slot name="main-header"></slot>
+    </h2>
 
     <hr/>
 
     <ul class="config-menu">
-      <li class="config-menu-item">
-        Looking for
-        <config-selector :values="e.MainPanelModeProperties"
-                         v-model:property="globalSettings.mainPanelMode"/>
-      </li>
 
       <li v-if="hasSideMenuItem(1)"
           class="config-menu-item">
@@ -51,12 +48,32 @@
   </div>
 
   <div class="main-content">
-    <header style="padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
-      <h2 style="margin-top: 0; margin-bottom: 0;">
-        <slot name="main-header"></slot>
-      </h2>
+    <header style="padding-top: 1rem; display: flex; align-items: center;">
+      <div style="display: flex; align-items: center; margin-right: auto;">
+        <ul style="list-style-type: none; margin: 0; padding: 0;">
 
-      <div style="display: flex; justify-content: space-between; align-items: center; width: auto;">
+          <li style="display: inline-block; margin-right: 0.5rem;">
+            <a href="#"
+               @click.prevent="router.push({ name: 'main', params: {} })"
+               style=" text-decoration: none;">Home</a>
+          </li>
+
+          <li v-for="[mode, props] of e.MainPanelModeProperties"
+              :key="mode"
+              style="display: inline-block; margin-right: 0.5rem;">
+            <a v-if="globalSettings.mainPanelMode !== mode"
+               href="#"
+               @click.prevent="router.push({ name: mode, params: {} })"
+               style=" text-decoration: none;">
+              {{ props.text }}
+            </a>
+
+            <span v-else>{{ props.text }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <div style="display: flex; align-items: center; margin-left: 1rem;">
         <ffun-github-buttons :repository="settings.githubRepo" style="margin-top: 0.3rem;"/>
         &nbsp;|&nbsp;
         <a href="#" @click.prevent="logout()">logout</a>
