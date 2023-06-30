@@ -1,16 +1,14 @@
 <template>
 <li class="filter-element">
 
-  <div v-if="selected" style="display: inline-block; margin-right: 0.25rem;">
-    <a v-if="entriesStore.requiredTags[tag]" href="#" @click.prevent="switchToExcluded(tag)">[X]</a>
-    <a v-if="entriesStore.excludedTags[tag]" href="#" @click.prevent="switchToRequired(tag)">[V]</a>
-  </div>
-
   <ffun-tag :uid="tag"
             :count="count"
-            count-mode="prefix"
+            :count-mode="countMode"
             :mode="mode"
             @tag:clicked="onTagClicked">
+    <template #start>
+      <a v-if="selected" href="#" @click.prevent="deselect(tag)">[X]</a>
+    </template>
   </ffun-tag>
 </li>
 </template>
@@ -25,7 +23,15 @@ const properties = defineProps<{ tag: string,
                                  count: number,
                                  selected: boolean }>();
 
-const emit = defineEmits(["tag:clicked"]);
+const emit = defineEmits(["tag:selected", "tag:deselected"]);
+
+const countMode = computed(() => {
+    if (properties.selected) {
+        return "no";
+    }
+
+    return "prefix";
+});
 
 const mode = computed(() => {
     if (entriesStore.requiredTags[properties.tag]) {
@@ -42,22 +48,28 @@ const mode = computed(() => {
 });
 
 function onTagClicked(tag: string) {
-    if (properties.selected) {
-        entriesStore.resetTag({tag: tag});
+
+    if (entriesStore.requiredTags[properties.tag]) {
+        switchToExcluded(tag);
     }
     else {
-        entriesStore.requireTag({tag: tag});
+        switchToRequired(tag);
     }
-
-    emit('tag:clicked', properties.tag);
 }
 
 function switchToExcluded(tag: string) {
     entriesStore.excludeTag({tag: tag});
+    emit('tag:selected', properties.tag);
 }
 
 function switchToRequired(tag: stirng) {
     entriesStore.requireTag({tag: tag});
+    emit('tag:selected', properties.tag);
+}
+
+function deselect(tag: stirng) {
+    entriesStore.resetTag({tag: tag});
+    emit('tag:deselected', properties.tag);
 }
 
 </script>

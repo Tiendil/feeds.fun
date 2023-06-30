@@ -7,7 +7,8 @@
                          :tag="tag"
                          :count="tags[tag] ?? 0"
                          :selected="true"
-                         @tag:clicked="onTagClicked"/>
+                         @tag:selected="onTagSelected"
+                         @tag:deselected="onTagDeselected"/>
   </ul>
 
   <ul v-if="displayedTags.length > 0" style="list-style: none; padding: 0; margin: 0;">
@@ -16,7 +17,8 @@
                          :tag="tag"
                          :count="tags[tag]"
                          :selected="false"
-                         @tag:clicked="onTagClicked"/>
+                         @tag:selected="onTagSelected"
+                         @tag:deselected="onTagDeselected"/>
   </ul>
 </div>
 </template>
@@ -85,13 +87,13 @@ const displayedTags = computed(() => {
     return values;
 });
 
-function onTagClicked(tag: string) {
-    if (!!selectedTags.value[tag]) {
-        selectedTags.value[tag] = false;
-    }
-    else {
-        selectedTags.value[tag] = true;
-    }
+function onTagSelected(tag: string) {
+    selectedTags.value[tag] = true;
+}
+
+
+function onTagDeselected(tag: string) {
+    selectedTags.value[tag] = false;
 }
 
 </script>
