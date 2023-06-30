@@ -50,7 +50,6 @@ class Processor(base.Processor):
 
         for subdomain in domain_to_parts(domain):
             tags.append(ProcessorTag(raw_uid=subdomain,
-                                     name=subdomain,
                                      link=parsed_url.scheme + "://" + subdomain,
                                      categories={TagCategory.network_domain}))
 

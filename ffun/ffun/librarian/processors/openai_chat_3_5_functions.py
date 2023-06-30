@@ -148,7 +148,6 @@ class Processor(base.Processor):
 
         for result in results:
             for raw_tag in extract_tags(result):
-                tags.append(ProcessorTag(raw_uid=raw_tag,
-                                         name=raw_tag))
+                tags.append(ProcessorTag(raw_uid=raw_tag))
 
         return tags

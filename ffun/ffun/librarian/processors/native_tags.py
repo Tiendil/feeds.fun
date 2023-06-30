@@ -12,7 +12,6 @@ class Processor(base.Processor):
 
         for external_tag in entry.external_tags:
             tags.append(ProcessorTag(raw_uid=external_tag,
-                                     name=external_tag,
                                      categories={TagCategory.feed_tag}))
 
         return tags

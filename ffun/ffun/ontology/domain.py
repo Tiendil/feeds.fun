@@ -4,8 +4,9 @@ from typing import Iterable
 
 from bidict import bidict
 from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
+from ffun.tags import converters
 
-from . import operations, utils
+from . import operations
 from .entities import (ProcessorTag, Tag, TagCategory, TagProperty,
                        TagPropertyType)
 
@@ -54,7 +55,7 @@ async def apply_tags_to_entry(entry_id: uuid.UUID,
                               processor_id: int,
                               tags: Iterable[ProcessorTag]) -> None:
 
-    raw_to_uids = {tag.raw_uid: utils.build_uid_for_raw_tag(tag.raw_uid) for tag in tags}
+    raw_to_uids = {tag.raw_uid: converters.normalize(tag.raw_uid) for tag in tags}
 
     uids_to_ids = await get_ids_by_uids(raw_to_uids.values())
 
@@ -91,19 +92,15 @@ async def get_tags_info(tags_ids: Iterable[int]) -> dict[int, Tag]:  # noqa: CCR
     # we expect that properties will be sorted by date from the newest to the oldest
     properties = await operations.get_tags_properties(tags_ids)
 
-    info = {}
+    tags_by_ids = await get_tags_by_ids(tags_ids)
+
+    info = {tag_id: Tag(id=tag_id,
+                        name=converters.verbose(tags_by_ids[tag_id]))
+            for tag_id in tags_ids}
 
     # TODO: implement more complex merging
     for property in properties:
-        if property.tag_id not in info:
-            info[property.tag_id] = Tag(id=property.tag_id)
-
         tag = info[property.tag_id]
-
-        if property.type == TagPropertyType.tag_name:
-            if tag.name is None:
-                tag.name = property.value
-            continue
 
         if property.type == TagPropertyType.link:
             if tag.link is None:
