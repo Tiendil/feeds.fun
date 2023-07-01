@@ -43,6 +43,8 @@ sentry-sdk = "1.*"
 
 tabulate = "0.*"
 
+cryptography = "41.*"
+
 [tool.poetry.dev-dependencies]
 
 pytest = "6.*"

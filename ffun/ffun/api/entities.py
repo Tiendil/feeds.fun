@@ -12,6 +12,7 @@ from ffun.markers import entities as m_entities
 from ffun.ontology import entities as o_entities
 from ffun.parsers import entities as p_entities
 from ffun.scores import entities as s_entities
+from ffun.user_settings import types as us_types
 
 
 class Marker(str, enum.Enum):
@@ -139,6 +140,42 @@ class TagInfo(api.Base):
                    name=tag.name,
                    link=tag.link,
                    categories=tag.categories)
+
+
+class UserSettingKind(str, enum.Enum):
+    openai_api_key = 'openai_api_key'
+    openai_max_tokens_in_month = 'openai_max_tokens_in_month'
+
+    @classmethod
+    def from_internal(cls, kind: int) -> 'UserSettingKind':
+        from ffun.application.user_settings import UserSetting
+        real_kind = UserSetting(kind)
+        return UserSettingKind(real_kind.name)
+
+    def to_internal(self) -> int:
+        from ffun.application.user_settings import UserSetting
+        return getattr(UserSetting, self.name)
+
+
+class UserSetting(api.Base):
+    kind: UserSettingKind
+    type: us_types.TypeId  # should not differ between front & back => no need to convert
+    value: str|int|float|bool
+    name: str
+
+    @classmethod
+    def from_internal(cls, kind: int, value: str|int|float|bool) -> 'UserSetting':
+        from ffun.application.user_settings import UserSetting
+        from ffun.user_settings.values import user_settings
+
+        real_kind = UserSetting(kind)
+
+        real_setting = user_settings.get(real_kind)
+
+        return cls(kind=UserSettingKind.from_internal(real_kind),
+                   type=real_setting.type.id,
+                   value=value,
+                   name=real_setting.name)
 
 
 ##################
@@ -290,3 +327,20 @@ class GetTagsInfoRequest(api.APIRequest):
 
 class GetTagsInfoResponse(api.APISuccess):
     tags: dict[str, TagInfo]
+
+
+class GetUserSettingsRequest(api.APIRequest):
+    pass
+
+
+class GetUserSettingsResponse(api.APISuccess):
+    settings: list[UserSetting]
+
+
+class SetUserSettingRequest(api.APIRequest):
+    kind: UserSettingKind
+    value: str|int|float|bool
+
+
+class SetUserSettingResponse(api.APISuccess):
+    pass

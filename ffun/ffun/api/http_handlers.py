@@ -21,6 +21,7 @@ from ffun.ontology import domain as o_domain
 from ffun.parsers import domain as p_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
+from ffun.user_settings import domain as us_domain
 
 from . import entities
 
@@ -290,6 +291,32 @@ async def api_get_tags_info(request: entities.GetTagsInfoRequest, user: User) ->
         tags_info[uid] = entities.TagInfo.from_internal(info[tags_ids[uid]], uid)
 
     return entities.GetTagsInfoResponse(tags=tags_info)
+
+###############
+# user settings
+###############
+
+@router.post('/api/get-user-settings')
+async def api_get_user_settings(request: entities.GetUserSettingsRequest, user: User) -> entities.GetUserSettingsResponse:
+    from ffun.application.user_settings import UserSetting
+
+    values = await us_domain.load_settings(user_id=user.id,
+                                           kinds=UserSetting)
+
+    result_values = [entities.UserSetting.from_internal(kind, value)
+                     for kind, value in values.items()]
+
+    return entities.GetUserSettingsResponse(settings=result_values)
+
+
+@router.post('/api/set-user-setting')
+async def api_set_user_setting(request: entities.SetUserSettingRequest, user: User) -> entities.SetUserSettingResponse:
+
+    await us_domain.save_setting(user_id=user.id,
+                                 kind=request.kind.to_internal(),
+                                 value=request.value)
+
+    return entities.SetUserSettingResponse()
 
 
 #######################
