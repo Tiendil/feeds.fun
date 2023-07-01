@@ -4,23 +4,17 @@ import json
 import math
 
 import async_lru
-import openai
 import tiktoken
 import typer
 from ffun.core import logging
+
+import openai
 
 from . import errors
 
 logger = logging.get_module_logger()
 
 cli = typer.Typer()
-
-
-# TODO: we need to use multiple api keys
-#       it looks like python client supports it as undocumented feature
-#       and there are some tasks/PRs in openapi repo to support it right
-def init(api_key: str):
-    openai.api_key = api_key
 
 
 @async_lru.alru_cache()
@@ -108,7 +102,8 @@ async def prepare_requests(system,  # pylint: disable=R0914
     return messages
 
 
-async def request(model,  # noqa
+async def request(api_key,  # noqa
+                  model,
                   messages,
                   function,
                   max_tokens,
@@ -125,7 +120,8 @@ async def request(model,  # noqa
         arguments['function_call'] = {'name': function['name']}
 
     try:
-        answer = await openai.ChatCompletion.acreate(model=model,
+        answer = await openai.ChatCompletion.acreate(api_key=api_key,
+                                                     model=model,
                                                      temperature=temperature,
                                                      max_tokens=max_tokens,
                                                      top_p=top_p,
@@ -136,10 +132,10 @@ async def request(model,  # noqa
     # https://platform.openai.com/docs/guides/error-codes/api-errors
     except openai.error.RateLimitError as e:
         logger.warning('openai_rate_limit', message=str(e))
-        raise errors.SkipAndContinueLater(message=str(e)) from e
+        raise errors.TemporaryError(message=str(e)) from e
     except openai.error.APIError as e:
         logger.error('openai_api_error', message=str(e))
-        raise errors.SkipAndContinueLater(message=str(e)) from e
+        raise errors.TemporaryError(message=str(e)) from e
 
     logger.info('openai_response')
 
@@ -149,7 +145,8 @@ async def request(model,  # noqa
     return answer['choices'][0]['message']['content']
 
 
-async def multiple_requests(model,  # noqa
+async def multiple_requests(api_key,  # noqa
+                            model,
                             messages,
                             function,
                             max_return_tokens,
@@ -163,7 +160,8 @@ async def multiple_requests(model,  # noqa
 
     for i, request_messages in enumerate(messages):
         logger.info('request', number=i, total=len(messages))
-        result = await request(model=model,
+        result = await request(api_key=api_key,
+                               model=model,
                                messages=request_messages,
                                function=function,
                                max_tokens=max_return_tokens,
