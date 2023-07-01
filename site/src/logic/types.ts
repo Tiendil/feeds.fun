@@ -198,13 +198,19 @@ export type UserSetting = {
     readonly type: string;
     value: string|number|boolean;
     readonly name: string;
+    readonly description: string;
 }
 
 
-export function userSettingFromJSON({ kind, type, value, name }:
-                                    { kind: string, type: string, value: string|number|boolean, name: string }): UserSetting {
+export function userSettingFromJSON({ kind, type, value, name, description }:
+                                    { kind: string,
+                                      type: string,
+                                      value: string|number|boolean,
+                                      name: string,
+                                      description: string }): UserSetting {
     return { kind,
              type,
              value,
-             name };
+             name,
+             description};
 }

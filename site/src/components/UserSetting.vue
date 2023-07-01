@@ -5,7 +5,7 @@
       <span>{{setting.name}}:</span>
       &nbsp;
       <input v-if="editing" type="input" v-model="value" />
-      <span v-else>{{setting.value}}</span>
+      <span v-else>{{verboseValue}}</span>
     </label>
 
     &nbsp;
@@ -47,6 +47,26 @@ const setting = computed(() => {
     }
 
     return globalSettings.userSettings[properties.kind];
+});
+
+
+const verboseValue = computed(() => {
+    const v = setting.value.value;
+    const type = setting.value.type;
+
+    if (v == null) {
+        return '—'
+    }
+
+    if (type == 'secret') {
+        return '********';
+    }
+
+    if (type == 'boolean') {
+        return v ? 'Yes' : 'No';
+    }
+
+    return v;
 });
 
 
