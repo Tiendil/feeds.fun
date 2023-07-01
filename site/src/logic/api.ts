@@ -210,8 +210,8 @@ export async function getUserSettings() {
     const settings = {};
 
     for (let rawSetting of response.settings) {
-        const etting = t.userSettingFromJSON(rawSetting);
-        settings[setting.key] = setting;
+        const setting = t.userSettingFromJSON(rawSetting);
+        settings[setting.kind] = setting;
     }
 
     return settings;
