@@ -13,12 +13,18 @@ class UserSetting(int, enum.Enum):
 
 user_settings.add(Value(key=UserSetting.openai_api_key,
                         name="OpenAI API Key",
-                        type=types.Secret()))
+                        type=types.Secret(),
+                        default=None,
+                        description="TODO"))
 
 user_settings.add(Value(key=UserSetting.openai_max_tokens_in_month,
                         name="OpenAI Max Tokens in Month",
-                        type=types.Integer()))
+                        type=types.Integer(),
+                        default=1000000,
+                        description="TODO"))
 
 user_settings.add(Value(key=UserSetting.openai_do_not_want_to_participate,
                         name="Do not want to participate with OpenAI keys",
-                        type=types.Boolean()))
+                        type=types.Boolean(),
+                        default=False,
+                        description="TODO"))

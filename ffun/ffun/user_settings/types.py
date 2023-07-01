@@ -1,3 +1,6 @@
+
+# TODO: rename this module, because mypy does not support name `types`
+
 import enum
 from typing import Any
 

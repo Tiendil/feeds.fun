@@ -5,7 +5,9 @@
     Settings
   </template>
 
+  !
   {{globalSettings.userSettings}}
+  !
 
 </side-panel-layout>
 </template>
@@ -17,7 +19,6 @@ import * as api from "@/logic/api";
 import * as t from "@/logic/types";
 import * as e from "@/logic/enums";
 import { useGlobalSettingsStore } from "@/stores/globalSettings";
-import { useEntriesStore } from "@/stores/entries";
 
 const globalSettings = useGlobalSettingsStore();
 

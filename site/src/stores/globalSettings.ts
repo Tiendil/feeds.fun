@@ -4,6 +4,7 @@ import { defineStore } from "pinia";
 import { computedAsync } from "@vueuse/core";
 
 import * as e from "@/logic/enums";
+import * as api from "@/logic/api";
 
 export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 

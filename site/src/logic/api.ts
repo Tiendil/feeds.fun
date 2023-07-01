@@ -204,9 +204,6 @@ export async function getTagsInfo({uids}: {uids: string[]}) {
 }
 
 
-// const API_GET_USER_SETTINGS = `${ENTRY_POINT}/get-user-settings`;
-// const API_SET_USER_SETTING = `${ENTRY_POINT}/set-user-setting`;
-
 export async function getUserSettings() {
     const response = await post({url: API_GET_USER_SETTINGS, data: {}});
 

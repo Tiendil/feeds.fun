@@ -299,12 +299,19 @@ async def api_get_tags_info(request: entities.GetTagsInfoRequest, user: User) ->
 @router.post('/api/get-user-settings')
 async def api_get_user_settings(request: entities.GetUserSettingsRequest, user: User) -> entities.GetUserSettingsResponse:
     from ffun.application.user_settings import UserSetting
+    from ffun.user_settings.values import user_settings
 
     values = await us_domain.load_settings(user_id=user.id,
-                                           kinds=UserSetting)
+                                           kinds=[int(kind) for kind in UserSetting])
 
-    result_values = [entities.UserSetting.from_internal(kind, value)
-                     for kind, value in values.items()]
+    result_values = []
+
+    for kind in UserSetting:
+        if kind in values:
+            result_values.append(entities.UserSetting.from_internal(kind, values[kind]))
+            continue
+
+        result_values.append(entities.UserSetting.from_internal(kind, user_settings.get(kind).default))
 
     return entities.GetUserSettingsResponse(settings=result_values)
 

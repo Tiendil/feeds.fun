@@ -145,6 +145,7 @@ class TagInfo(api.Base):
 class UserSettingKind(str, enum.Enum):
     openai_api_key = 'openai_api_key'
     openai_max_tokens_in_month = 'openai_max_tokens_in_month'
+    openai_do_not_want_to_participate = 'openai_do_not_want_to_participate'
 
     @classmethod
     def from_internal(cls, kind: int) -> 'UserSettingKind':
@@ -160,8 +161,10 @@ class UserSettingKind(str, enum.Enum):
 class UserSetting(api.Base):
     kind: UserSettingKind
     type: us_types.TypeId  # should not differ between front & back => no need to convert
-    value: str|int|float|bool
+    value: str|int|float|bool|None
     name: str
+    default: str|int|bool|None
+    description: str|None
 
     @classmethod
     def from_internal(cls, kind: int, value: str|int|float|bool) -> 'UserSetting':
@@ -175,7 +178,9 @@ class UserSetting(api.Base):
         return cls(kind=UserSettingKind.from_internal(real_kind),
                    type=real_setting.type.id,
                    value=value,
-                   name=real_setting.name)
+                   name=real_setting.name,
+                   default=real_setting.default,
+                   description=real_setting.description)
 
 
 ##################

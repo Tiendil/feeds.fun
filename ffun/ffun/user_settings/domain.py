@@ -1,5 +1,5 @@
 import uuid
-from typing import Any
+from typing import Any, Iterable
 
 from . import operations
 from .values import user_settings
