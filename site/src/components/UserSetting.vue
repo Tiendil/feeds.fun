@@ -53,6 +53,7 @@ const setting = computed(() => {
 async function save() {
     await api.setUserSetting({kind: properties.kind,
                               value: value.value});
+    globalSettings.updateDataVersion();
     editing.value = false;
 }
 

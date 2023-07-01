@@ -33,7 +33,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
     // backend side settings
     const userSettings = computedAsync(async () => {
-        return await api.getUserSettings();
+        return await api.getUserSettings({dataVersion: dataVersion.value});
     }, null);
 
     return {
