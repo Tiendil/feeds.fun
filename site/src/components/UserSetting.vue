@@ -2,7 +2,7 @@
 <div style="margin-bottom: 1rem;">
 
     <label>
-      <span>{{setting.name}}:</span>
+      <strong>{{setting.name}}:</strong>
       &nbsp;
       <input v-if="editing" type="input" v-model="value" />
       <span v-else>{{verboseValue}}</span>
@@ -20,7 +20,8 @@
       <button @click.prevent="cancel()">Cancel</button>
     </template>
 
-    <p v-if="setting.description">{{setting.description}}</p>
+    <div v-if="setting.description"
+         v-html="setting.description"/>
 
 </div>
 </template>

@@ -3,6 +3,7 @@ import enum
 import uuid
 from typing import Iterable
 
+import markdown
 import pydantic
 from ffun.core import api
 from ffun.feeds import entities as f_entities
@@ -178,7 +179,7 @@ class UserSetting(api.Base):
                    type=real_setting.type.id,
                    value=value,
                    name=real_setting.name,
-                   description=real_setting.description)
+                   description=markdown.markdown(real_setting.description) if real_setting.description else None)
 
 
 ##################

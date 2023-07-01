@@ -45,6 +45,8 @@ tabulate = "0.*"
 
 cryptography = "41.*"
 
+markdown = "3.*"
+
 [tool.poetry.dev-dependencies]
 
 pytest = "6.*"

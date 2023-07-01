@@ -19,9 +19,9 @@ Because, for now, our service is free to use and OpenAI API costs money, we poli
 Here's how your key will be used:
 
 - Your key will be used only to process your feeds. We will not use it for any other purposes.
-- You can establish a limit on the maximum number of tokens that can be used in a month. This allows you to regulate your monthly spending on the OpenAI API.
+- You can establish a limit on the maximum number of tokens that can be used in a month. This allows you to regulate your monthly spendings on the OpenAI API.
 - If multiple users are subscribed to a single feed, we'll use a key with fewer usages in the current month.
-- If a user who lacks a key is subscribed to a feed and the feed's news already have tags, the user will be able to see these tags.
+- If a user who lacks a key is subscribed to a feed and the feed's news already have tags, the user will see these tags.
 - You can find API key usage statistics at this page.
 
 The more users set up the key, the cheaper it will be for everyone.
