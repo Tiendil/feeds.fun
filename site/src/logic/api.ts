@@ -22,6 +22,8 @@ const API_UNSUBSCRIBE = `${ENTRY_POINT}/unsubscribe`;
 const API_GET_FEEDS_COLLECTIONS = `${ENTRY_POINT}/get-feeds-collections`;
 const API_SUBSCRIBE_TO_FEEDS_COLLECTIONS = `${ENTRY_POINT}/subscribe-to-feeds-collections`;
 const API_GET_TAGS_INFO = `${ENTRY_POINT}/get-tags-info`;
+const API_GET_USER_SETTINGS = `${ENTRY_POINT}/get-user-settings`;
+const API_SET_USER_SETTING = `${ENTRY_POINT}/set-user-setting`;
 
 
 let _onSessionLost: () => void = () => {};
@@ -199,4 +201,26 @@ export async function getTagsInfo({uids}: {uids: string[]}) {
     }
 
     return tags;
+}
+
+
+// const API_GET_USER_SETTINGS = `${ENTRY_POINT}/get-user-settings`;
+// const API_SET_USER_SETTING = `${ENTRY_POINT}/set-user-setting`;
+
+export async function getUserSettings() {
+    const response = await post({url: API_GET_USER_SETTINGS, data: {}});
+
+    const settings = {};
+
+    for (let rawSetting of response.settings) {
+        const etting = t.userSettingFromJSON(rawSetting);
+        settings[setting.key] = setting;
+    }
+
+    return settings;
+}
+
+
+export async function setUserSetting({kind, value}: {kind: string, value: string|number|boolean}) {
+    await post({url: API_SET_USER_SETTING, data: {kind: kind, value: value}});
 }

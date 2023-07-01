@@ -191,3 +191,20 @@ export function noInfoTag(uid: string): TagInfo {
              link: null,
              categories: [] };
 }
+
+
+export type UserSetting = {
+    readonly kind: string;
+    readonly type: string;
+    value: string|number|boolean;
+    readonly name: string;
+}
+
+
+export function userSettingFromJSON({ kind, type, value, name }:
+                                    { kind: string, type: string, value: string|number|boolean, name: string }): UserSetting {
+    return { kind,
+             type,
+             value,
+             name };
+}

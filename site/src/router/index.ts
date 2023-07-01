@@ -6,6 +6,7 @@ import NewsView from '../views/NewsView.vue'
 import RulesView from '../views/RulesView.vue'
 import DiscoveryView from '../views/DiscoveryView.vue'
 import CollectionsView from '../views/CollectionsView.vue'
+import SettingsView from '../views/SettingsView.vue'
 import * as e from "@/logic/enums";
 
 // lazy view loading does not work with router.push function
@@ -48,7 +49,12 @@ const router = createRouter({
             path: '/collections',
             name: e.MainPanelMode.Collections,
             component: CollectionsView
-        }
+        },
+        {
+            path: '/settings',
+            name: e.MainPanelMode.Settings,
+            component: SettingsView
+        },
     ]
 })
 
