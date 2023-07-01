@@ -5,9 +5,8 @@
     Settings
   </template>
 
-  !
-  {{globalSettings.userSettings}}
-  !
+  <user-setting v-for="(value, kind) of globalSettings.userSettings"
+                :kind="kind"/>
 
 </side-panel-layout>
 </template>
