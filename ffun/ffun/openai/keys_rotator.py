@@ -146,8 +146,6 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, reserved_tokens: int):
         log.warning('no_key_found_for_feed')
         raise errors.NoKeyFoundForFeed()
 
-    # TODO: what in case of errors?
-
     key_usage = entities.APIKeyUsage(user_id=found_user_id,
                                      api_key=users[found_user_id].get(UserSetting.openai_api_key),
                                      used=None)
@@ -166,7 +164,6 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, reserved_tokens: int):
     except Exception:
         log.info('mark_key_as_unknown_because_of_error', user_id=key_usage.user_id)
         _keys_statuses[key_usage.api_key] = entities.KeyStatus.unknown
-        # TODO: track errors like `quota exceeded`
         raise
     finally:
         log.info('convert_reserved_to_used',
