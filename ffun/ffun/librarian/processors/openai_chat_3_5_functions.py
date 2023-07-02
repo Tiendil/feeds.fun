@@ -113,7 +113,6 @@ class Processor(base.Processor):
     __slots__ = ('api_key', 'model')
 
     def __init__(self,
-                 api_key: str,
                  model: str,
                  **kwargs: Any):
         super().__init__(**kwargs)

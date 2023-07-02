@@ -2,6 +2,7 @@ import contextlib
 import uuid
 
 from ffun.feeds_links import domain as fl_domain
+from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
 
 from . import client, entities, errors
@@ -42,6 +43,7 @@ async def _filter_out_users_with_wrong_keys(users):
 async def api_key_for_feed_entry(feed_id: uuid.UUID, reserved_tokens: int):
     # TODO: in general, openai module should not depends on application
     #       do something with that
+    from ffun.application.resources import Resource
     from ffun.application.user_settings import UserSetting
 
     # find all users who read feed
@@ -57,28 +59,44 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, reserved_tokens: int):
              for user_id, settings in users.items()
              if settings.get(UserSetting.openai_api_key)}
 
-    # filter out not working keys
+    # filter out users with not working keys
     users = await _filter_out_users_with_wrong_keys(users)
 
-    # TODO: filter out overused keys
-    # TODO: sort by minimal usage
+    # filter out users with overused keys
 
-    keys = [settings[UserSetting.openai_api_key]
-            for settings in users.values()]
+    interval_started_at = r_domain.month_interval_start()
 
-    # raise if no api keys found
-    if not keys:
+    resources = await r_domain.load_resources(user_ids=users.keys(),
+                                              kind=Resource.openai_tokens,
+                                              interval_started_at=interval_started_at)
+
+    users = {user_id: settings
+             for user_id, settings in users.items()
+             if resources[user_id].total + reserved_tokens <= settings.get(UserSetting.openai_max_tokens_in_month)}
+
+    # sort by minimal usage
+    candidate_user_ids = sorted(users.keys(),
+                                key=lambda user_id: resources[user_id].total)
+
+    found_user_id = None
+
+    for user_id in candidate_user_ids:
+        if await r_domain.try_to_reserve(user_id=user_id,
+                                         kind=Resource.openai_tokens,
+                                         interval_started_at=interval_started_at,
+                                         reserved=reserved_tokens,
+                                         limit=users[user_id].get(UserSetting.openai_max_tokens_in_month)):
+            found_user_id = user_id
+            break
+    else:
         # TODO: test behaviour
         raise errors.NoKeyFoundForFeed()
 
-    # choose first
-
-    api_key = keys[0]
-
-    # TODO: reserve usage
+    # TODO: what in case of errors?
 
     try:
-        yield api_key
+        yield users[found_user_id].get(UserSetting.openai_api_key)
+        # TODO: track errors like `quota exceeded`
     finally:
         # TODO: fix usage
         pass

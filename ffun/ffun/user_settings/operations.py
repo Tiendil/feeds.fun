@@ -15,7 +15,8 @@ async def save_setting(user_id: uuid.UUID,
         INSERT INTO us_settings (user_id, kind, value)
         VALUES (%(user_id)s, %(kind)s, %(value)s)
         ON CONFLICT (user_id, kind)
-        DO UPDATE SET value = %(value)s
+        DO UPDATE SET value = %(value)s,
+                      updated_at = NOW()
     """
 
     await execute(sql, {'user_id': user_id,
