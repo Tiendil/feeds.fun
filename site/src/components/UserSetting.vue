@@ -55,16 +55,16 @@ const verboseValue = computed(() => {
     const v = setting.value.value;
     const type = setting.value.type;
 
-    if (v == null) {
+    if (type == 'boolean') {
+        return v ? 'Yes' : 'No';
+    }
+
+    if (v == null || v == '') {
         return '—'
     }
 
     if (type == 'secret') {
         return '********';
-    }
-
-    if (type == 'boolean') {
-        return v ? 'Yes' : 'No';
     }
 
     return v;

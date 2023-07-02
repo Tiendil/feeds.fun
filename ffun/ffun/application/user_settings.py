@@ -43,7 +43,7 @@ The default limit is calculated based on an estimation that should prevent your 
 user_settings.add(Value(key=UserSetting.openai_api_key,
                         name="OpenAI API key",
                         type=types.Secret(),
-                        default=None,
+                        default='',
                         description=description_openai_api_key))
 
 user_settings.add(Value(key=UserSetting.openai_max_tokens_in_month,

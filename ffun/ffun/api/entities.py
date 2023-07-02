@@ -1,7 +1,7 @@
 import datetime
 import enum
 import uuid
-from typing import Iterable
+from typing import Any, Iterable
 
 import markdown
 import pydantic
@@ -14,6 +14,7 @@ from ffun.ontology import entities as o_entities
 from ffun.parsers import entities as p_entities
 from ffun.scores import entities as s_entities
 from ffun.user_settings import types as us_types
+from ffun.user_settings.values import user_settings
 
 
 class Marker(str, enum.Enum):
@@ -162,14 +163,13 @@ class UserSettingKind(str, enum.Enum):
 class UserSetting(api.Base):
     kind: UserSettingKind
     type: us_types.TypeId  # should not differ between front & back => no need to convert
-    value: None|bool|int|str
+    value: Any
     name: str
     description: str|None
 
     @classmethod
     def from_internal(cls, kind: int, value: str|int|float|bool) -> 'UserSetting':
         from ffun.application.user_settings import UserSetting
-        from ffun.user_settings.values import user_settings
 
         real_kind = UserSetting(kind)
 
@@ -177,7 +177,7 @@ class UserSetting(api.Base):
 
         return cls(kind=UserSettingKind.from_internal(real_kind),
                    type=real_setting.type.id,
-                   value=value,
+                   value=real_setting.type.normalize(value),
                    name=real_setting.name,
                    description=markdown.markdown(real_setting.description) if real_setting.description else None)
 
@@ -343,7 +343,22 @@ class GetUserSettingsResponse(api.APISuccess):
 
 class SetUserSettingRequest(api.APIRequest):
     kind: UserSettingKind
-    value: str|int|float|bool
+    value: None|bool|int|str
+
+    @pydantic.root_validator
+    def validate_value(cls, values):
+        from ffun.application.user_settings import UserSetting
+
+        kind = values.get('kind').to_internal()
+        value = values.get('value')
+
+        real_kind = UserSetting(kind)
+
+        real_setting = user_settings.get(real_kind)
+
+        values['value'] = real_setting.type.normalize(value)
+
+        return values
 
 
 class SetUserSettingResponse(api.APISuccess):

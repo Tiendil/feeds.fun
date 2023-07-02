@@ -1,5 +1,6 @@
 
 # TODO: rename this module, because mypy does not support name `types`
+# TODO: refactor to use pydantic instead of custom types
 
 import enum
 from typing import Any
@@ -25,6 +26,9 @@ class Type:
     def deserialize(self, data: str) -> Any:
         raise NotImplementedError()
 
+    def normalize(self, value: Any) -> Any:
+        raise NotImplementedError()
+
 
 class Integer(Type):
     id = TypeId.integer
@@ -34,6 +38,12 @@ class Integer(Type):
 
     def deserialize(self, data: str) -> int:
         return int(data)
+
+    def normalize(self, value: Any) -> int:
+        if value == '':
+            return 0
+
+        return int(value)
 
 
 class String(Type):
@@ -45,6 +55,9 @@ class String(Type):
     def deserialize(self, data: str) -> str:
         return data
 
+    def normalize(self, value: Any) -> str:
+        return str(value)
+
 
 class Boolean(Type):
     id = TypeId.boolean
@@ -55,15 +68,22 @@ class Boolean(Type):
     def deserialize(self, data: str) -> bool:
         return data == 'true'
 
+    def normalize(self, value: Any) -> bool:
+        return value == 'true'
+
 
 class Secret(Type):
     id = TypeId.secret
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.fernet = Fernet(settings.secret_key)
 
     def serialize(self, value: str) -> str:
-        return self.fernet.encrypt(value)
+        return self.fernet.encrypt(value.encode()).decode()
 
     def deserialize(self, data: str) -> str:
-        return self.fernet.decrypt(data)
+        return self.fernet.decrypt(data.encode()).decode()
+
+    def normalize(self, value: Any) -> str:
+        return str(value)
