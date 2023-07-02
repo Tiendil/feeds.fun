@@ -133,6 +133,9 @@ async def request(api_key,  # noqa
     except openai.error.RateLimitError as e:
         logger.warning('openai_rate_limit', message=str(e))
         raise errors.TemporaryError(message=str(e)) from e
+    except openai.error.ServiceUnavailableError as e:
+        logger.warning('openai_service_unavailable', message=str(e))
+        raise errors.TemporaryError(message=str(e)) from e
     except openai.error.APIError as e:
         logger.error('openai_api_error', message=str(e))
         raise errors.TemporaryError(message=str(e)) from e
