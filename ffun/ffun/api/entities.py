@@ -398,3 +398,11 @@ class GetResourceHistoryRequest(api.APIRequest):
 
 class GetResourceHistoryResponse(api.APISuccess):
     history: list[ResourceHistoryRecord]
+
+
+class GetInfoRequest(api.APIRequest):
+    pass
+
+
+class GetInfoResponse(api.APISuccess):
+    userId: uuid.UUID

@@ -1,6 +1,14 @@
 <template>
 <side-panel-layout :reload-button="false">
 
+  <h2>Info</h2>
+
+  <ul>
+    <li><strong>User id</strong>: {{ userId }}</li>
+  </ul>
+
+  <h2>Settings</h2>
+
   <template #main-header>
     Settings
   </template>
@@ -83,6 +91,14 @@ function raughPercents(total: number) {
 
     return (total / limit * 100).toFixed(5);
 }
+
+const userId = computed(() => {
+    if(globalSettings.info == null) {
+        return '—';
+    }
+
+    return globalSettings.info.userId;
+});
 
 </script>
 

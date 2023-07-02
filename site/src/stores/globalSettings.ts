@@ -36,6 +36,11 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
         return await api.getUserSettings({dataVersion: dataVersion.value});
     }, null);
 
+
+    const info = computedAsync(async () => {
+        return await api.getInfo({dataVersion: dataVersion.value});
+    }, null);
+
     return {
         mainPanelMode,
         lastEntriesPeriod,
@@ -45,6 +50,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
         dataVersion,
         updateDataVersion,
         showFeedsDescriptions,
-        userSettings
+        userSettings,
+        info
     };
 });

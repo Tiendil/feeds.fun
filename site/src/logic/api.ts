@@ -25,6 +25,7 @@ const API_GET_TAGS_INFO = `${ENTRY_POINT}/get-tags-info`;
 const API_GET_USER_SETTINGS = `${ENTRY_POINT}/get-user-settings`;
 const API_SET_USER_SETTING = `${ENTRY_POINT}/set-user-setting`;
 const API_GET_RESOURCE_HISTORY = `${ENTRY_POINT}/get-resource-history`;
+const API_GET_INFO = `${ENTRY_POINT}/get-info`;
 
 
 let _onSessionLost: () => void = () => {};
@@ -235,4 +236,11 @@ export async function getResourceHistory({kind}: {kind: string}) {
     }
 
     return history;
+}
+
+
+export async function getInfo() {
+    const response = await post({url: API_GET_INFO, data: {}});
+
+    return response;
 }

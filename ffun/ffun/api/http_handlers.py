@@ -303,6 +303,10 @@ async def api_get_resource_history(request: entities.GetResourceHistoryRequest, 
                                                         for resource in history])
 
 
+@router.post('/api/get-info')
+async def api_get_info(request: entities.GetInfoRequest, user: User) -> entities.GetInfoResponse:
+    return entities.GetInfoResponse(userId=user.id)
+
 ###############
 # user settings
 ###############
