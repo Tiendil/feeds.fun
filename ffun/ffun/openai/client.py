@@ -10,7 +10,7 @@ from ffun.core import logging
 
 import openai
 
-from . import errors
+from . import entities, errors
 
 logger = logging.get_module_logger()
 
@@ -173,3 +173,15 @@ async def multiple_requests(api_key,  # noqa
         results.append(result)
 
     return results
+
+
+async def check_api_key(api_key) -> entities.KeyStatus:
+    try:
+        # TODO: check if it is ok to use Model.list
+        await openai.Model.list(api_key=api_key)
+    except openai.error.AuthenticationError:
+        return entities.KeyStatus.broken
+    except Exception:
+        return entities.KeyStatus.unknown
+
+    return entities.KeyStatus.works
