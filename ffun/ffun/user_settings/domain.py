@@ -19,3 +19,13 @@ async def load_settings(user_id: uuid.UUID,
 
      return {kind: user_settings.get(kind).type.deserialize(value)
              for kind, value in values.items()}
+
+
+async def load_settings_for_users(user_ids: Iterable[uuid.UUID],
+                                  kinds: Iterable[int]) -> dict[uuid.UUID, Any]:
+
+    values = await operations.load_settings_for_users(user_ids, kinds)
+
+    return {user_id: {kind: user_settings.get(kind).type.deserialize(value)
+                      for kind, value in user_values.items()}
+            for user_id, user_values in values.items()}

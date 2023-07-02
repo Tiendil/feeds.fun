@@ -35,3 +35,13 @@ async def get_linked_feeds(user_id: uuid.UUID) -> list[uuid.UUID]:
     result = await execute(sql, {"user_id": user_id})
 
     return [row["feed_id"] for row in result]
+
+
+async def get_linked_users(feed_id: uuid.UUID) -> list[uuid.UUID]:
+    sql = """
+        SELECT user_id FROM fl_links WHERE feed_id = %(feed_id)s
+    """
+
+    result = await execute(sql, {"feed_id": feed_id})
+
+    return [row["user_id"] for row in result]

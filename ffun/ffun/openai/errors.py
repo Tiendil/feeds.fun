@@ -8,3 +8,7 @@ class Error(errors.Error):
 
 class TemporaryError(Error):
     pass
+
+
+class NoKeyFoundForFeed(Error):
+    pass

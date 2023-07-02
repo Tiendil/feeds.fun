@@ -23,22 +23,37 @@ async def save_setting(user_id: uuid.UUID,
                         'value': value})
 
 
-async def load_settings(user_id: uuid.UUID,
-                        kinds: Iterable[int]) -> dict[int, str]:
+async def load_settings_for_users(user_ids: Iterable[uuid.UUID],
+                                  kinds: Iterable[int]) -> dict[uuid.UUID, Any]:
 
     sql = """
         SELECT *
         FROM us_settings
-        WHERE user_id = %(user_id)s
+        WHERE user_id = ANY(%(user_ids)s)
         AND kind = ANY(%(kinds)s)
     """
 
-    result = await execute(sql, {'user_id': user_id,
+    result = await execute(sql, {'user_ids': user_ids,
                                  'kinds': kinds})
 
     values = {}
 
     for row in result:
-        values[row['kind']] = row['value']
+        user_id = row['user_id']
+        kind = row['kind']
+        value = row['value']
+
+        if user_id not in values:
+            values[user_id] = {}
+
+        values[user_id][kind] = value
 
     return values
+
+
+async def load_settings(user_id: uuid.UUID,
+                        kinds: Iterable[int]) -> dict[int, str]:
+
+    values = await load_settings_for_users([user_id], kinds)
+
+    return values[user_id] if user_id in values else {}

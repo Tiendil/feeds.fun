@@ -59,14 +59,13 @@ class Processor(base.Processor):
     __slots__ = ('api_key', 'model')
 
     def __init__(self,
-                 api_key: str,
                  model: str,
                  **kwargs: Any):
         super().__init__(**kwargs)
-        self.api_key = api_key
         self.model = model
 
     async def process(self, entry: Entry) -> list[ProcessorTag]:
+        raise NotImplementedError('broken, sync with openai_chat_3_5_functions')
         tags: list[ProcessorTag] = []
 
         dirty_text = entry_to_text(entry)

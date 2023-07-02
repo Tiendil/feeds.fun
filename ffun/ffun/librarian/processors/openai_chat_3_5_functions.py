@@ -12,6 +12,7 @@ from ffun.library.entities import Entry
 from ffun.ontology.entities import ProcessorTag, TagCategory
 from ffun.openai import client as oai_client
 from ffun.openai import errors as oai_errors
+from ffun.openai.keys_rotator import api_key_for_feed_entry
 from slugify import slugify
 
 from . import base
@@ -116,7 +117,6 @@ class Processor(base.Processor):
                  model: str,
                  **kwargs: Any):
         super().__init__(**kwargs)
-        self.api_key = api_key
         self.model = model
 
     async def process(self, entry: Entry) -> list[ProcessorTag]:
@@ -137,16 +137,22 @@ class Processor(base.Processor):
                                                      max_return_tokens=max_return_tokens)
 
         try:
-            results = await oai_client.multiple_requests(api_key=self.api_key,
-                                                         model=self.model,
-                                                         messages=messages,
-                                                         function=function,
-                                                         max_return_tokens=max_return_tokens,
-                                                         temperature=1,
-                                                         top_p=0,
-                                                         presence_penalty=1,
-                                                         frequency_penalty=0)
+            async with api_key_for_feed_entry(entry.feed_id, len(messages) * total_tokens) as api_key:
+                results = await oai_client.multiple_requests(api_key=api_key,
+                                                             model=self.model,
+                                                             messages=messages,
+                                                             function=function,
+                                                             max_return_tokens=max_return_tokens,
+                                                             temperature=1,
+                                                             top_p=0,
+                                                             presence_penalty=1,
+                                                             frequency_penalty=0)
+                # TODO: calculate real tokens
         except oai_errors.TemporaryError as e:
+            raise errors.SkipAndContinueLater(message=str(e)) from e
+
+        except oai_errors.NoKeyFoundForFeed as e:
+            # TODO: possibly, we should set different timeouts for reprocessing entries
             raise errors.SkipAndContinueLater(message=str(e)) from e
 
         for result in results:
