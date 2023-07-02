@@ -13,8 +13,8 @@
   <p>Token usage for your OpenAI key per month.</p>
 
   <ul>
-    <li><strong>Used tokens</strong>: the number of tokens used in success requests.</li>
-    <li><strong>Reserved tokens</strong>: the number of tokens reserved for requests that were not processed correctly.</li>
+    <li><strong>Used tokens</strong>: the number of tokens in processed requests.</li>
+    <li><strong>Reserved tokens</strong>: the number of tokens reserved for requests that currently are processing or were not processed correctly.</li>
     <li><strong>Total tokens</strong>: the total number of tokens used in the month. Should be not less than the actual used tokens, but can be bigger because we reserve more tokens than actually use.</li>
   </ul>
 

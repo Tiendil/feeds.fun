@@ -158,7 +158,7 @@ class Processor(base.Processor):
             raise errors.SkipAndContinueLater(message=str(e)) from e
 
         for result in results:
-            for raw_tag in extract_tags(result):
+            for raw_tag in extract_tags(result.content):
                 tags.append(ProcessorTag(raw_uid=raw_tag))
 
         return tags

@@ -159,7 +159,7 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, reserved_tokens: int):
 
         yield key_usage
 
-        used_tokens = key_usage.used
+        used_tokens = key_usage.used_tokens
 
         log.info('key_used', user_id=key_usage.user_id, used_tokens=used_tokens)
 
