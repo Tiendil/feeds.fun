@@ -12,6 +12,7 @@ from ffun.library import entities as l_entities
 from ffun.markers import entities as m_entities
 from ffun.ontology import entities as o_entities
 from ffun.parsers import entities as p_entities
+from ffun.resources import entities as r_entities
 from ffun.scores import entities as s_entities
 from ffun.user_settings import types as us_types
 from ffun.user_settings.values import user_settings
@@ -180,6 +181,32 @@ class UserSetting(api.Base):
                    value=real_setting.type.normalize(value),
                    name=real_setting.name,
                    description=markdown.markdown(real_setting.description) if real_setting.description else None)
+
+
+class ResourceKind(str, enum.Enum):
+    openai_tokens = 'openai_tokens'
+
+    @classmethod
+    def from_internal(cls, kind: int) -> 'ResourceKind':
+        from ffun.application.resources import Resource
+        real_kind = Resource(kind)
+        return ResourceKind(real_kind.name)
+
+    def to_internal(self) -> int:
+        from ffun.application.resources import Resource
+        return getattr(Resource, self.name)
+
+
+class ResourceHistoryRecord(pydantic.BaseModel):
+    interval_started_at: datetime.datetime
+    used: int
+    reserved: int
+
+    @classmethod
+    def from_internal(cls, record: r_entities.Resource) -> 'ResourceHistoryRecord':
+        return cls(interval_started_at=record.interval_started_at,
+                   used=record.used,
+                   reserved=record.reserved)
 
 
 ##################
@@ -363,3 +390,11 @@ class SetUserSettingRequest(api.APIRequest):
 
 class SetUserSettingResponse(api.APISuccess):
     pass
+
+
+class GetResourceHistoryRequest(api.APIRequest):
+    kind: ResourceKind
+
+
+class GetResourceHistoryResponse(api.APISuccess):
+    history: list[ResourceHistoryRecord]

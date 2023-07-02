@@ -19,6 +19,7 @@ from ffun.library import entities as l_entities
 from ffun.markers import domain as m_domain
 from ffun.ontology import domain as o_domain
 from ffun.parsers import domain as p_domain
+from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 from ffun.user_settings import domain as us_domain
@@ -291,6 +292,16 @@ async def api_get_tags_info(request: entities.GetTagsInfoRequest, user: User) ->
         tags_info[uid] = entities.TagInfo.from_internal(info[tags_ids[uid]], uid)
 
     return entities.GetTagsInfoResponse(tags=tags_info)
+
+
+@router.post('/api/get-resource-history')
+async def api_get_resource_history(request: entities.GetResourceHistoryRequest, user: User) -> entities.GetResourceHistoryResponse:
+    history = await r_domain.load_resource_history(user_id=user.id,
+                                                   kind=request.kind.to_internal())
+
+    return entities.GetResourceHistoryResponse(history=[entities.ResourceHistoryRecord.from_internal(resource)
+                                                        for resource in history])
+
 
 ###############
 # user settings

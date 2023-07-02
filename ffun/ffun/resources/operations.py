@@ -111,3 +111,17 @@ async def convert_reserved_to_used(user_id: uuid.UUID,
                         'interval_started_at': interval_started_at,
                         'used': used,
                         'reserved': reserved})
+
+
+async def load_resource_history(user_id: uuid.UUID,
+                                kind: int) -> list[Resource]:
+    sql = """
+        SELECT * FROM r_resources
+        WHERE user_id = %(user_id)s AND kind = %(kind)s
+        ORDER BY interval_started_at DESC
+    """
+
+    results = await execute(sql, {'user_id': user_id,
+                                  'kind': kind})
+
+    return [row_to_entry(row) for row in results]
