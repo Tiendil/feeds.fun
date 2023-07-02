@@ -214,3 +214,29 @@ export function userSettingFromJSON({ kind, type, value, name, description }:
              name,
              description};
 }
+
+
+export class ResourceHistoryRecord = {
+    readonly intervalStartedAt: Date;
+    readonly used: number;
+    readonly reserved: number;
+
+    constructor({ intervalStartedAt, used, reserved }:
+                { intervalStartedAt: Date, used: number, reserved: number }) {
+        this.intervalStartedAt = intervalStartedAt;
+        this.used = used;
+        this.reserved = reserved;
+    }
+
+    total(): number {
+        return this.used + this.reserved;
+    }
+}
+
+
+export function resourceHistoryRecordFromJSON({ intervalStartedAt, used, reserved }:
+                                              { intervalStartedAt: string, used: number, reserved: number }): ResourceHistoryRecord {
+    return new ResourceHistoryRecord({ intervalStartedAt: new Date(intervalStartedAt),
+                                       used,
+                                       reserved });
+}

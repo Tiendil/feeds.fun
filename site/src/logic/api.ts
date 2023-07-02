@@ -24,6 +24,7 @@ const API_SUBSCRIBE_TO_FEEDS_COLLECTIONS = `${ENTRY_POINT}/subscribe-to-feeds-co
 const API_GET_TAGS_INFO = `${ENTRY_POINT}/get-tags-info`;
 const API_GET_USER_SETTINGS = `${ENTRY_POINT}/get-user-settings`;
 const API_SET_USER_SETTING = `${ENTRY_POINT}/set-user-setting`;
+const API_GET_RESOURCE_HISTORY = `${ENTRY_POINT}/get-resource-history`;
 
 
 let _onSessionLost: () => void = () => {};
@@ -220,4 +221,18 @@ export async function getUserSettings({}) {
 
 export async function setUserSetting({kind, value}: {kind: string, value: string|number|boolean}) {
     await post({url: API_SET_USER_SETTING, data: {kind: kind, value: value}});
+}
+
+
+export async function getResourceHistory({kind}: {kind: string}) {
+    const response = await post({url: API_GET_RESOURCE_HISTORY, data: {kind: kind}});
+
+    const history = [];
+
+    for (let rawRecord of response.history) {
+        const record = t.resourceHistoryRecordFromJSON(rawRecord);
+        history.push(record);
+    }
+
+    return history;
 }

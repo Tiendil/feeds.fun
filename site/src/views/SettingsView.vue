@@ -8,6 +8,29 @@
   <user-setting v-for="(value, kind) of globalSettings.userSettings"
                 :kind="kind"/>
 
+  <h2>OpenAI usage</h2>
+
+  <p v-if="openAIUsage == nukk">Loading...</p>
+
+  <table  v-else>
+    <thead>
+      <tr>
+        <th>Period</th>
+        <th>Used tokens</th>
+        <th>Reserved tokens</th>
+        <th>Total tokens</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="usage of openAIUsage">
+        <td>{{ usage.intervalStartedAt }}</td>
+        <td>{{ usage.used }}</td>
+        <td>{{ usage.reserved }}</td>
+        <td>{{ usage.total() }}</td>
+      </tr>
+    </tbody>
+  </table>
+
 </side-panel-layout>
 </template>
 
@@ -22,6 +45,10 @@ import { useGlobalSettingsStore } from "@/stores/globalSettings";
 const globalSettings = useGlobalSettingsStore();
 
 globalSettings.mainPanelMode = e.MainPanelMode.Settings;
+
+const openAIUsage = computedAsync(async () => {
+    return await api.getResourceHistory({kind: "openai_tokens"});
+}, null);
 
 </script>
 
