@@ -1,4 +1,4 @@
-import contextlib
+nimport contextlib
 import uuid
 
 from ffun.feeds_links import domain as fl_domain
@@ -94,9 +94,23 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, reserved_tokens: int):
 
     # TODO: what in case of errors?
 
+    key_usage = entities.APIKeyUsage(user_id=found_user_id,
+                                     api_key=users[found_user_id].get(UserSetting.openai_api_key),
+                                     used=None)
+
+    used_tokens = reserved_tokens
+
     try:
-        yield users[found_user_id].get(UserSetting.openai_api_key)
+        yield key_usage
+
+        used_tokens = key_usage.used
+
+    except Exception:
         # TODO: track errors like `quota exceeded`
-    finally:
-        # TODO: fix usage
         pass
+    finally:
+        r_domain.convert_reserved_to_used(user_id=found_user_id,
+                                          kind=Resource.openai_tokens,
+                                          interval_started_at=interval_started_at,
+                                          used=used_tokens,
+                                          reserved=reserved_tokens)

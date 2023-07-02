@@ -6,6 +6,7 @@ from . import operations
 
 load_resources = operations.get_resources
 try_to_reserve = operations.reserve
+convert_reserved_to_used = operations.convert_reserved_to_used
 
 
 def month_interval_start(now: datetime.datetime|None = None) -> datetime.datetime:

@@ -136,8 +136,9 @@ class Processor(base.Processor):
                                                      max_return_tokens=max_return_tokens)
 
         try:
-            async with api_key_for_feed_entry(entry.feed_id, len(messages) * total_tokens) as api_key:
-                results = await oai_client.multiple_requests(api_key=api_key,
+            async with api_key_for_feed_entry(entry.feed_id, len(messages) * total_tokens) as api_key_usage:
+
+                results = await oai_client.multiple_requests(api_key=api_key_usage.api_key,
                                                              model=self.model,
                                                              messages=messages,
                                                              function=function,
@@ -146,7 +147,9 @@ class Processor(base.Processor):
                                                              top_p=0,
                                                              presence_penalty=1,
                                                              frequency_penalty=0)
-                # TODO: calculate real tokens
+
+                api_key_usage.used_tokens = sum(result.total_tokens for result in results)
+
         except oai_errors.TemporaryError as e:
             raise errors.SkipAndContinueLater(message=str(e)) from e
 

@@ -140,9 +140,14 @@ async def request(api_key,  # noqa
     logger.info('openai_response')
 
     if function:
-        return answer['choices'][0]['message']['function_call']['arguments']
+        content = answer['choices'][0]['message']['function_call']['arguments']
+    else:
+        content = answer['choices'][0]['message']['content']
 
-    return answer['choices'][0]['message']['content']
+    return entities.OpenAIAnswer(content=content,
+                                 prompt_tokens=answer['usage']['prompt_tokens'],
+                                 completion_tokens=answer['usage']['completion_tokens'],
+                                 total_tokens=answer['usage']['total_tokens'])
 
 
 async def multiple_requests(api_key,  # noqa
@@ -156,6 +161,7 @@ async def multiple_requests(api_key,  # noqa
                             frequency_penalty):
 
     # TODO: rewrite to gather
+    #       also, it seems OpenAI API support sending multiple threads in a single request
     results = []
 
     for i, request_messages in enumerate(messages):

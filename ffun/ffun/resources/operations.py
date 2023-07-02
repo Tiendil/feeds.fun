@@ -90,3 +90,24 @@ async def try_to_reserve(user_id: uuid.UUID,
                                   'limit': limit})
 
     return len(results) > 0
+
+
+async def convert_reserved_to_used(user_id: uuid.UUID,
+                                   kind: int,
+                                   interval_started_at: datetime.datetime,
+                                   used: int,
+                                   reserved: int) -> None:
+    sql = """
+        UPDATE r_resources
+        SET used = used + %(used)s,
+            reserved = reserved - %(reserved)s
+        WHERE user_id = %(user_id)s AND
+              kind = %(kind)s AND
+              interval_started_at = %(interval_started_at)s
+    """
+
+    await execute(sql, {'user_id': user_id,
+                        'kind': kind,
+                        'interval_started_at': interval_started_at,
+                        'used': used,
+                        'reserved': reserved})
