@@ -307,6 +307,7 @@ async def api_get_resource_history(request: entities.GetResourceHistoryRequest, 
 async def api_get_info(request: entities.GetInfoRequest, user: User) -> entities.GetInfoResponse:
     return entities.GetInfoResponse(userId=user.id)
 
+
 ###############
 # user settings
 ###############
@@ -321,12 +322,8 @@ async def api_get_user_settings(request: entities.GetUserSettingsRequest, user: 
 
     result_values = []
 
-    for kind in UserSetting:
-        if kind in values:
-            result_values.append(entities.UserSetting.from_internal(kind, values[kind]))
-            continue
-
-        result_values.append(entities.UserSetting.from_internal(kind, user_settings.get(kind).default))
+    for kind, value in values.items():
+        result_values.append(entities.UserSetting.from_internal(kind, value))
 
     return entities.GetUserSettingsResponse(settings=result_values)
 

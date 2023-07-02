@@ -13,12 +13,24 @@ async def save_setting(user_id: uuid.UUID,
     await operations.save_setting(user_id, kind, value_to_save)
 
 
+def _full_settings(values: dict[int, Any], kinds: Iterable[int]) -> dict[int, Any]:
+    result = {}
+
+    for kind in kinds:
+        if kind in values:
+            result[kind] = user_settings.get(kind).type.deserialize(values[kind])
+            continue
+
+        result[kind] = user_settings.get(kind).default
+
+    return result
+
+
 async def load_settings(user_id: uuid.UUID,
                         kinds: Iterable[int]) -> Any:
-     values = await operations.load_settings(user_id, kinds)
+    values = await operations.load_settings(user_id, kinds)
 
-     return {kind: user_settings.get(kind).type.deserialize(value)
-             for kind, value in values.items()}
+    return _full_settings(values, kinds)
 
 
 async def load_settings_for_users(user_ids: Iterable[uuid.UUID],
@@ -26,6 +38,5 @@ async def load_settings_for_users(user_ids: Iterable[uuid.UUID],
 
     values = await operations.load_settings_for_users(user_ids, kinds)
 
-    return {user_id: {kind: user_settings.get(kind).type.deserialize(value)
-                      for kind, value in user_values.items()}
+    return {user_id: _full_settings(user_values, kinds)
             for user_id, user_values in values.items()}

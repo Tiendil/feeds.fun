@@ -75,7 +75,8 @@ async def try_to_reserve(user_id: uuid.UUID,
                          limit: int) -> bool:
     sql = """
         UPDATE r_resources
-        SET reserved = reserved + %(amount)s
+        SET reserved = reserved + %(amount)s,
+            updated_at = NOW()
         WHERE user_id = %(user_id)s AND
               kind = %(kind)s AND
               interval_started_at = %(interval_started_at)s AND
@@ -100,7 +101,8 @@ async def convert_reserved_to_used(user_id: uuid.UUID,
     sql = """
         UPDATE r_resources
         SET used = used + %(used)s,
-            reserved = reserved - %(reserved)s
+            reserved = reserved - %(reserved)s,
+            updated_at = NOW()
         WHERE user_id = %(user_id)s AND
               kind = %(kind)s AND
               interval_started_at = %(interval_started_at)s
