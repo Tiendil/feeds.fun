@@ -9,6 +9,11 @@ from . import client, entities, errors
 _keys_statuses = {}
 
 
+# Note: this code is not about billing, it is about protection from the overuse of keys
+#       i.e. in case of a problem, we should count a key as used with a maximum used tokens
+
+
+# TODO: add lock here to not check the same key in parallel by different processors
 async def _filter_out_users_with_wrong_keys(users):
     filtered_users = {}
 
