@@ -24,7 +24,7 @@ async def _filter_out_users_with_wrong_keys(users):
 
         key_status = _keys_statuses.get(api_key)
 
-        if key_status in (Nonem, entities.KeyStatus.broken):
+        if key_status in (None, entities.KeyStatus.unknown):
             key_status = await client.check_api_key(api_key)
             _keys_statuses[api_key] = key_status
 
@@ -106,8 +106,9 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, reserved_tokens: int):
         used_tokens = key_usage.used
 
     except Exception:
+        _keys_statuses[key_usage.api_key] = entities.KeyStatus.unknown
         # TODO: track errors like `quota exceeded`
-        pass
+        raise
     finally:
         r_domain.convert_reserved_to_used(user_id=found_user_id,
                                           kind=Resource.openai_tokens,
