@@ -8,11 +8,13 @@ import typer
 from ffun.core import json as core_json
 from ffun.core import logging
 from ffun.core import text as core_text
+from ffun.librarian import errors
 from ffun.library.entities import Entry
 from ffun.ontology.entities import ProcessorTag, TagCategory
+from ffun.openai import client as oai_client
+from ffun.openai import errors as oai_errors
 from slugify import slugify
 
-from .. import openai_client as oc
 from . import base
 
 logger = logging.get_module_logger()
@@ -57,17 +59,13 @@ class Processor(base.Processor):
     __slots__ = ('api_key', 'model')
 
     def __init__(self,
-                 api_key: str,
                  model: str,
                  **kwargs: Any):
         super().__init__(**kwargs)
-        self.api_key = api_key
         self.model = model
 
-        # TODO: we need support multiple api keys
-        oc.init(self.api_key)
-
     async def process(self, entry: Entry) -> list[ProcessorTag]:
+        raise NotImplementedError('broken, sync with openai_chat_3_5_functions')
         tags: list[ProcessorTag] = []
 
         dirty_text = entry_to_text(entry)
@@ -77,21 +75,25 @@ class Processor(base.Processor):
         total_tokens = 16 * 1024
         max_return_tokens = 2 * 1024
 
-        messages = await oc.prepare_requests(system=system,
-                                             text=text,
-                                             model=self.model,
-                                             function=None,
-                                             total_tokens=total_tokens,
-                                             max_return_tokens=max_return_tokens)
+        messages = await oai_client.prepare_requests(system=system,
+                                                     text=text,
+                                                     model=self.model,
+                                                     function=None,
+                                                     total_tokens=total_tokens,
+                                                     max_return_tokens=max_return_tokens)
 
-        results = await oc.multiple_requests(model=self.model,
-                                             messages=messages,
-                                             function=None,
-                                             max_return_tokens=max_return_tokens,
-                                             temperature=0,
-                                             top_p=0,
-                                             presence_penalty=0,
-                                             frequency_penalty=0)
+        try:
+            results = await oai_client.multiple_requests(api_key=self.api_key,
+                                                         model=self.model,
+                                                         messages=messages,
+                                                         function=None,
+                                                         max_return_tokens=max_return_tokens,
+                                                         temperature=0,
+                                                         top_p=0,
+                                                         presence_penalty=0,
+                                                         frequency_penalty=0)
+        except oai_errors.TemporaryError as e:
+            raise errors.SkipAndContinueLater(message=str(e)) from e
 
         for result in results:
             for raw_tag in extract_tags(result):

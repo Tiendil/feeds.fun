@@ -191,3 +191,52 @@ export function noInfoTag(uid: string): TagInfo {
              link: null,
              categories: [] };
 }
+
+
+export type UserSetting = {
+    readonly kind: string;
+    readonly type: string;
+    value: string|number|boolean;
+    readonly name: string;
+    readonly description: string;
+}
+
+
+export function userSettingFromJSON({ kind, type, value, name, description }:
+                                    { kind: string,
+                                      type: string,
+                                      value: string|number|boolean,
+                                      name: string,
+                                      description: string }): UserSetting {
+    return { kind,
+             type,
+             value,
+             name,
+             description};
+}
+
+
+export class ResourceHistoryRecord {
+    readonly intervalStartedAt: Date;
+    readonly used: number;
+    readonly reserved: number;
+
+    constructor({ intervalStartedAt, used, reserved }:
+                { intervalStartedAt: Date, used: number, reserved: number }) {
+        this.intervalStartedAt = intervalStartedAt;
+        this.used = used;
+        this.reserved = reserved;
+    }
+
+    total(): number {
+        return this.used + this.reserved;
+    }
+}
+
+
+export function resourceHistoryRecordFromJSON({ intervalStartedAt, used, reserved }:
+                                              { intervalStartedAt: string, used: number, reserved: number }): ResourceHistoryRecord {
+    return new ResourceHistoryRecord({ intervalStartedAt: new Date(intervalStartedAt),
+                                       used,
+                                       reserved });
+}

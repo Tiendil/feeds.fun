@@ -4,23 +4,17 @@ import json
 import math
 
 import async_lru
-import openai
 import tiktoken
 import typer
 from ffun.core import logging
 
-from . import errors
+import openai
+
+from . import entities, errors
 
 logger = logging.get_module_logger()
 
 cli = typer.Typer()
-
-
-# TODO: we need to use multiple api keys
-#       it looks like python client supports it as undocumented feature
-#       and there are some tasks/PRs in openapi repo to support it right
-def init(api_key: str):
-    openai.api_key = api_key
 
 
 @async_lru.alru_cache()
@@ -108,7 +102,8 @@ async def prepare_requests(system,  # pylint: disable=R0914
     return messages
 
 
-async def request(model,  # noqa
+async def request(api_key,  # noqa
+                  model,
                   messages,
                   function,
                   max_tokens,
@@ -125,7 +120,8 @@ async def request(model,  # noqa
         arguments['function_call'] = {'name': function['name']}
 
     try:
-        answer = await openai.ChatCompletion.acreate(model=model,
+        answer = await openai.ChatCompletion.acreate(api_key=api_key,
+                                                     model=model,
                                                      temperature=temperature,
                                                      max_tokens=max_tokens,
                                                      top_p=top_p,
@@ -136,20 +132,29 @@ async def request(model,  # noqa
     # https://platform.openai.com/docs/guides/error-codes/api-errors
     except openai.error.RateLimitError as e:
         logger.warning('openai_rate_limit', message=str(e))
-        raise errors.SkipAndContinueLater(message=str(e)) from e
+        raise errors.TemporaryError(message=str(e)) from e
+    except openai.error.ServiceUnavailableError as e:
+        logger.warning('openai_service_unavailable', message=str(e))
+        raise errors.TemporaryError(message=str(e)) from e
     except openai.error.APIError as e:
         logger.error('openai_api_error', message=str(e))
-        raise errors.SkipAndContinueLater(message=str(e)) from e
+        raise errors.TemporaryError(message=str(e)) from e
 
     logger.info('openai_response')
 
     if function:
-        return answer['choices'][0]['message']['function_call']['arguments']
+        content = answer['choices'][0]['message']['function_call']['arguments']
+    else:
+        content = answer['choices'][0]['message']['content']
 
-    return answer['choices'][0]['message']['content']
+    return entities.OpenAIAnswer(content=content,
+                                 prompt_tokens=answer['usage']['prompt_tokens'],
+                                 completion_tokens=answer['usage']['completion_tokens'],
+                                 total_tokens=answer['usage']['total_tokens'])
 
 
-async def multiple_requests(model,  # noqa
+async def multiple_requests(api_key,  # noqa
+                            model,
                             messages,
                             function,
                             max_return_tokens,
@@ -159,11 +164,13 @@ async def multiple_requests(model,  # noqa
                             frequency_penalty):
 
     # TODO: rewrite to gather
+    #       also, it seems OpenAI API support sending multiple threads in a single request
     results = []
 
     for i, request_messages in enumerate(messages):
         logger.info('request', number=i, total=len(messages))
-        result = await request(model=model,
+        result = await request(api_key=api_key,
+                               model=model,
                                messages=request_messages,
                                function=function,
                                max_tokens=max_return_tokens,
@@ -175,3 +182,17 @@ async def multiple_requests(model,  # noqa
         results.append(result)
 
     return results
+
+
+async def check_api_key(api_key) -> entities.KeyStatus:
+    try:
+        await openai.Model.alist(api_key=api_key)
+        logger.info('correct_api_key')
+    except openai.error.AuthenticationError:
+        logger.info('wrong_api_key')
+        return entities.KeyStatus.broken
+    except Exception:
+        logger.exception('unknown_error_while_checking_api_key')
+        return entities.KeyStatus.unknown
+
+    return entities.KeyStatus.works

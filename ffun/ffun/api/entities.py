@@ -1,8 +1,9 @@
 import datetime
 import enum
 import uuid
-from typing import Iterable
+from typing import Any, Iterable
 
+import markdown
 import pydantic
 from ffun.core import api
 from ffun.feeds import entities as f_entities
@@ -11,7 +12,10 @@ from ffun.library import entities as l_entities
 from ffun.markers import entities as m_entities
 from ffun.ontology import entities as o_entities
 from ffun.parsers import entities as p_entities
+from ffun.resources import entities as r_entities
 from ffun.scores import entities as s_entities
+from ffun.user_settings import types as us_types
+from ffun.user_settings.values import user_settings
 
 
 class Marker(str, enum.Enum):
@@ -139,6 +143,70 @@ class TagInfo(api.Base):
                    name=tag.name,
                    link=tag.link,
                    categories=tag.categories)
+
+
+class UserSettingKind(str, enum.Enum):
+    openai_api_key = 'openai_api_key'
+    openai_max_tokens_in_month = 'openai_max_tokens_in_month'
+    openai_hide_message_about_setting_up_key = 'openai_hide_message_about_setting_up_key'
+
+    @classmethod
+    def from_internal(cls, kind: int) -> 'UserSettingKind':
+        from ffun.application.user_settings import UserSetting
+        real_kind = UserSetting(kind)
+        return UserSettingKind(real_kind.name)
+
+    def to_internal(self) -> int:
+        from ffun.application.user_settings import UserSetting
+        return getattr(UserSetting, self.name)
+
+
+class UserSetting(api.Base):
+    kind: UserSettingKind
+    type: us_types.TypeId  # should not differ between front & back => no need to convert
+    value: Any
+    name: str
+    description: str|None
+
+    @classmethod
+    def from_internal(cls, kind: int, value: str|int|float|bool) -> 'UserSetting':
+        from ffun.application.user_settings import UserSetting
+
+        real_kind = UserSetting(kind)
+
+        real_setting = user_settings.get(real_kind)
+
+        return cls(kind=UserSettingKind.from_internal(real_kind),
+                   type=real_setting.type.id,
+                   value=real_setting.type.normalize(value),
+                   name=real_setting.name,
+                   description=markdown.markdown(real_setting.description) if real_setting.description else None)
+
+
+class ResourceKind(str, enum.Enum):
+    openai_tokens = 'openai_tokens'
+
+    @classmethod
+    def from_internal(cls, kind: int) -> 'ResourceKind':
+        from ffun.application.resources import Resource
+        real_kind = Resource(kind)
+        return ResourceKind(real_kind.name)
+
+    def to_internal(self) -> int:
+        from ffun.application.resources import Resource
+        return getattr(Resource, self.name)
+
+
+class ResourceHistoryRecord(pydantic.BaseModel):
+    intervalStartedAt: datetime.datetime
+    used: int
+    reserved: int
+
+    @classmethod
+    def from_internal(cls, record: r_entities.Resource) -> 'ResourceHistoryRecord':
+        return cls(intervalStartedAt=record.interval_started_at,
+                   used=record.used,
+                   reserved=record.reserved)
 
 
 ##################
@@ -290,3 +358,51 @@ class GetTagsInfoRequest(api.APIRequest):
 
 class GetTagsInfoResponse(api.APISuccess):
     tags: dict[str, TagInfo]
+
+
+class GetUserSettingsRequest(api.APIRequest):
+    pass
+
+
+class GetUserSettingsResponse(api.APISuccess):
+    settings: list[UserSetting]
+
+
+class SetUserSettingRequest(api.APIRequest):
+    kind: UserSettingKind
+    value: None|bool|int|str
+
+    @pydantic.root_validator
+    def validate_value(cls, values):
+        from ffun.application.user_settings import UserSetting
+
+        kind = values.get('kind').to_internal()
+        value = values.get('value')
+
+        real_kind = UserSetting(kind)
+
+        real_setting = user_settings.get(real_kind)
+
+        values['value'] = real_setting.type.normalize(value)
+
+        return values
+
+
+class SetUserSettingResponse(api.APISuccess):
+    pass
+
+
+class GetResourceHistoryRequest(api.APIRequest):
+    kind: ResourceKind
+
+
+class GetResourceHistoryResponse(api.APISuccess):
+    history: list[ResourceHistoryRecord]
+
+
+class GetInfoRequest(api.APIRequest):
+    pass
+
+
+class GetInfoResponse(api.APISuccess):
+    userId: uuid.UUID

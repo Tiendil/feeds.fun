@@ -1,8 +1,10 @@
 import { ref, watch } from "vue";
 import { useRouter } from 'vue-router'
 import { defineStore } from "pinia";
+import { computedAsync } from "@vueuse/core";
 
 import * as e from "@/logic/enums";
+import * as api from "@/logic/api";
 
 export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
@@ -29,6 +31,16 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
         dataVersion.value++;
     }
 
+    // backend side settings
+    const userSettings = computedAsync(async () => {
+        return await api.getUserSettings({dataVersion: dataVersion.value});
+    }, null);
+
+
+    const info = computedAsync(async () => {
+        return await api.getInfo({dataVersion: dataVersion.value});
+    }, null);
+
     return {
         mainPanelMode,
         lastEntriesPeriod,
@@ -37,6 +49,8 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
         showRead,
         dataVersion,
         updateDataVersion,
-        showFeedsDescriptions
+        showFeedsDescriptions,
+        userSettings,
+        info
     };
 });

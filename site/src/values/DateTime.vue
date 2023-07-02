@@ -16,11 +16,12 @@ const text = computed(() => {
         return "—";
     }
 
-    if (!properties.reversed) {
-        return properties.value.toLocaleString();
-    } else {
+    if (properties.reversed) {
         return u.timeSince(properties.value);
     }
+
+    return properties.value.toLocaleString();
+
 });
 </script>
 

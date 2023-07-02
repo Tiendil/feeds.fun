@@ -7,11 +7,14 @@ import typer
 from ffun.core import json as core_json
 from ffun.core import logging
 from ffun.core import text as core_text
+from ffun.librarian import errors
 from ffun.library.entities import Entry
 from ffun.ontology.entities import ProcessorTag, TagCategory
+from ffun.openai import client as oai_client
+from ffun.openai import errors as oai_errors
+from ffun.openai.keys_rotator import api_key_for_feed_entry
 from slugify import slugify
 
-from .. import openai_client as oc
 from . import base
 
 logger = logging.get_module_logger()
@@ -110,15 +113,10 @@ class Processor(base.Processor):
     __slots__ = ('api_key', 'model')
 
     def __init__(self,
-                 api_key: str,
                  model: str,
                  **kwargs: Any):
         super().__init__(**kwargs)
-        self.api_key = api_key
         self.model = model
-
-        # TODO: we need support multiple api keys
-        oc.init(self.api_key)
 
     async def process(self, entry: Entry) -> list[ProcessorTag]:
         tags: list[ProcessorTag] = []
@@ -130,24 +128,37 @@ class Processor(base.Processor):
         total_tokens = 16 * 1024
         max_return_tokens = 4 * 1024
 
-        messages = await oc.prepare_requests(system=system,
-                                             text=text,
-                                             model=self.model,
-                                             function=function,
-                                             total_tokens=total_tokens,
-                                             max_return_tokens=max_return_tokens)
+        messages = await oai_client.prepare_requests(system=system,
+                                                     text=text,
+                                                     model=self.model,
+                                                     function=function,
+                                                     total_tokens=total_tokens,
+                                                     max_return_tokens=max_return_tokens)
 
-        results = await oc.multiple_requests(model=self.model,
-                                             messages=messages,
-                                             function=function,
-                                             max_return_tokens=max_return_tokens,
-                                             temperature=1,
-                                             top_p=0,
-                                             presence_penalty=1,
-                                             frequency_penalty=0)
+        try:
+            async with api_key_for_feed_entry(entry.feed_id, len(messages) * total_tokens) as api_key_usage:
+
+                results = await oai_client.multiple_requests(api_key=api_key_usage.api_key,
+                                                             model=self.model,
+                                                             messages=messages,
+                                                             function=function,
+                                                             max_return_tokens=max_return_tokens,
+                                                             temperature=1,
+                                                             top_p=0,
+                                                             presence_penalty=1,
+                                                             frequency_penalty=0)
+
+                api_key_usage.used_tokens = sum(result.total_tokens for result in results)
+
+        except oai_errors.TemporaryError as e:
+            raise errors.SkipAndContinueLater(message=str(e)) from e
+
+        except oai_errors.NoKeyFoundForFeed as e:
+            # TODO: possibly, we should set different timeouts for reprocessing entries
+            raise errors.SkipAndContinueLater(message=str(e)) from e
 
         for result in results:
-            for raw_tag in extract_tags(result):
+            for raw_tag in extract_tags(result.content):
                 tags.append(ProcessorTag(raw_uid=raw_tag))
 
         return tags
