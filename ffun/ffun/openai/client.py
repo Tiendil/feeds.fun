@@ -184,10 +184,13 @@ async def multiple_requests(api_key,  # noqa
 async def check_api_key(api_key) -> entities.KeyStatus:
     try:
         # TODO: check if it is ok to use Model.list
-        await openai.Model.list(api_key=api_key)
+        await openai.Model.alist(api_key=api_key)
+        logger.info('correct_api_key')
     except openai.error.AuthenticationError:
+        logger.info('wrong_api_key')
         return entities.KeyStatus.broken
     except Exception:
+        logger.exception('unknown_error_while_checking_api_key')
         return entities.KeyStatus.unknown
 
     return entities.KeyStatus.works

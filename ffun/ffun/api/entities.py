@@ -198,13 +198,13 @@ class ResourceKind(str, enum.Enum):
 
 
 class ResourceHistoryRecord(pydantic.BaseModel):
-    interval_started_at: datetime.datetime
+    intervalStartedAt: datetime.datetime
     used: int
     reserved: int
 
     @classmethod
     def from_internal(cls, record: r_entities.Resource) -> 'ResourceHistoryRecord':
-        return cls(interval_started_at=record.interval_started_at,
+        return cls(intervalStartedAt=record.interval_started_at,
                    used=record.used,
                    reserved=record.reserved)
 

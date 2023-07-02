@@ -23,7 +23,7 @@ async def _filter_out_users_with_wrong_keys(users):
 
     log = logger.bind(function='_filter_out_users_with_wrong_keys')
 
-    log.info('start', users=users)
+    log.info('start', users=list(users.keys()))
 
     filtered_users = {}
 
@@ -49,7 +49,7 @@ async def _filter_out_users_with_wrong_keys(users):
             filtered_users[user_id] = settings
             continue
 
-    log.info('finish', filtered_users=filtered_users)
+    log.info('finish', filtered_users=list(filtered_users.keys()))
 
     return filtered_users
 
@@ -62,6 +62,8 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, reserved_tokens: int):
     from ffun.application.user_settings import UserSetting
 
     log = logger.bind(function='api_key_for_feed_entry', feed_id=feed_id)
+
+    log.info('start')
 
     # find all users who read feed
     user_ids = await fl_domain.get_linked_users(feed_id)
@@ -80,7 +82,7 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, reserved_tokens: int):
              for user_id, settings in users.items()
              if settings.get(UserSetting.openai_api_key)}
 
-    log.info('filtered_users_with_keys')
+    log.info('filtered_users_with_keys', users=list(users.keys()))
 
     # filter out users with not working keys
     users = await _filter_out_users_with_wrong_keys(users)
@@ -179,3 +181,5 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, reserved_tokens: int):
                                           reserved=reserved_tokens)
 
         log.info('resources_converted', user_id=found_user_id)
+
+    log.info('finish')
