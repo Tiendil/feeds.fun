@@ -10,7 +10,9 @@
 
   <h2>OpenAI usage</h2>
 
-  <p v-if="openAIUsage == nukk">Loading...</p>
+  <p v-if="openAIUsage == null">Loading...</p>
+
+  <p v-else-if="openAIUsage.length == 0">No usage data</p>
 
   <table  v-else>
     <thead>

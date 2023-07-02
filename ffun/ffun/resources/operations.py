@@ -11,7 +11,7 @@ from .entities import Resource
 logger = logging.get_module_logger()
 
 
-def row_to_entry(row: dict[str, Any]) -> Resource
+def row_to_entry(row: dict[str, Any]) -> Resource:
     return Resource(user_id=row['user_id'],
                     kind=row['kind'],
                     interval_started_at=row['interval_started_at'],

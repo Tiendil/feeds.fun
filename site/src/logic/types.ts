@@ -216,7 +216,7 @@ export function userSettingFromJSON({ kind, type, value, name, description }:
 }
 
 
-export class ResourceHistoryRecord = {
+export class ResourceHistoryRecord {
     readonly intervalStartedAt: Date;
     readonly used: number;
     readonly reserved: number;

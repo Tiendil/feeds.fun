@@ -4,10 +4,10 @@ from ffun.core import utils
 
 from . import operations
 
-load_resources = operations.get_resources
-try_to_reserve = operations.reserve
+load_resources = operations.load_resources
+try_to_reserve = operations.try_to_reserve
 convert_reserved_to_used = operations.convert_reserved_to_used
-load_resource_history = operations.get_resource_history
+load_resource_history = operations.load_resource_history
 
 
 def month_interval_start(now: datetime.datetime|None = None) -> datetime.datetime:
