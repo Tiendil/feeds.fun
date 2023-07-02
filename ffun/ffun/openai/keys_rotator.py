@@ -13,6 +13,7 @@ _keys_statuses = {}
 #       i.e. in case of a problem, we should count a key as used with a maximum used tokens
 
 
+# TODO: add logging
 # TODO: add lock here to not check the same key in parallel by different processors
 async def _filter_out_users_with_wrong_keys(users):
     filtered_users = {}
@@ -36,6 +37,7 @@ async def _filter_out_users_with_wrong_keys(users):
     return filtered_users
 
 
+# TODO: add logging
 @contextlib.asynccontextmanager
 async def api_key_for_feed_entry(feed_id: uuid.UUID, reserved_tokens: int):
     # TODO: in general, openai module should not depends on application
