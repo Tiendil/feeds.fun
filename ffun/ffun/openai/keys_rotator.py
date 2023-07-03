@@ -1,4 +1,5 @@
 import contextlib
+import datetime
 import uuid
 
 from ffun.core import logging
@@ -54,8 +55,13 @@ async def _filter_out_users_with_wrong_keys(users):
     return filtered_users
 
 
+_day_secods = 24 * 60 * 60
+
+
 @contextlib.asynccontextmanager
-async def api_key_for_feed_entry(feed_id: uuid.UUID, reserved_tokens: int):
+async def api_key_for_feed_entry(feed_id: uuid.UUID,
+                                 entry_age: datetime.timedelta,
+                                 reserved_tokens: int):
     # TODO: in general, openai module should not depends on application
     #       do something with that
     from ffun.application.resources import Resource
@@ -63,7 +69,7 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, reserved_tokens: int):
 
     log = logger.bind(function='api_key_for_feed_entry', feed_id=feed_id)
 
-    log.info('start')
+    log.info('start', entry_age=entry_age, reserved_tokens=reserved_tokens)
 
     # find all users who read feed
     user_ids = await fl_domain.get_linked_users(feed_id)
@@ -73,7 +79,8 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, reserved_tokens: int):
     # get api keys and limits for this users
     users = await us_domain.load_settings_for_users(user_ids,
                                                     kinds=[UserSetting.openai_api_key,
-                                                           UserSetting.openai_max_tokens_in_month])
+                                                           UserSetting.openai_max_tokens_in_month,
+                                                           UserSetting.openai_process_entries_not_older_than])
 
     log.info('users_settings_loaded')
 
@@ -83,6 +90,13 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, reserved_tokens: int):
              if settings.get(UserSetting.openai_api_key)}
 
     log.info('filtered_users_with_keys', users=list(users.keys()))
+
+    # filter out users that do not want to process old entries
+    users = {user_id: settings
+             for user_id, settings in users.items()
+             if settings.get(UserSetting.openai_process_entries_not_older_than) * _day_secods >= entry_age.total_seconds()}
+
+    log.info('filtered_users_by_entry_age', users=list(users.keys()))
 
     # filter out users with not working keys
     users = await _filter_out_users_with_wrong_keys(users)

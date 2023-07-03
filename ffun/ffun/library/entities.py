@@ -3,6 +3,7 @@ import enum
 import uuid
 
 import pydantic
+from ffun.core import utils
 
 
 class ProcessedState(int, enum.Enum):
@@ -21,6 +22,10 @@ class Entry(pydantic.BaseModel):
     external_tags: set[str]
     published_at: datetime.datetime
     cataloged_at: datetime.datetime
+
+    @property
+    def age(self) -> datetime.timedelta:
+        return utils.now() - self.published_at
 
     def log_info(self):
         return {'id': self.id,

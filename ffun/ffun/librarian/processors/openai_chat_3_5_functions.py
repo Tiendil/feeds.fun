@@ -136,7 +136,9 @@ class Processor(base.Processor):
                                                      max_return_tokens=max_return_tokens)
 
         try:
-            async with api_key_for_feed_entry(entry.feed_id, len(messages) * total_tokens) as api_key_usage:
+            async with api_key_for_feed_entry(entry.feed_id,
+                                              entry_age=entry.age,
+                                              reserved_tokens=len(messages) * total_tokens) as api_key_usage:
 
                 results = await oai_client.multiple_requests(api_key=api_key_usage.api_key,
                                                              model=self.model,

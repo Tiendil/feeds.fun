@@ -14,7 +14,7 @@ async def _handle_expected_error(_, error):
 
     capture_exception(error)
 
-    logger.error(error.__class__.__name__, sentry_skip=True)
+    logger.exception(error.__class__.__name__, sentry_skip=True)
 
     return JSONResponse(status_code=500, content=api_error.dict())
 

@@ -9,6 +9,7 @@ class UserSetting(int, enum.Enum):
     openai_api_key = 1
     openai_max_tokens_in_month = 2
     openai_hide_message_about_setting_up_key = 3
+    openai_process_entries_not_older_than = 4
 
 
 description_openai_api_key = """
@@ -40,6 +41,15 @@ The default limit is calculated based on an estimation that should prevent your 
 """
 
 
+description_openai_process_entries_not_older_than = """
+Some feeds keep all their news, regardless of their age. If you subscribe to such a feed, it may eat a lot of your OpenAI tokens.
+
+To prevent this, we allow limiting the age of news to be processed with your OpenAI key.
+
+If you want to help us and tag everything, you can set this value to a big number, like 100500.
+"""
+
+
 user_settings.add(Value(key=UserSetting.openai_api_key,
                         name="OpenAI API key",
                         type=types.Secret(),
@@ -57,3 +67,9 @@ user_settings.add(Value(key=UserSetting.openai_hide_message_about_setting_up_key
                         type=types.Boolean(),
                         default=False,
                         description=None))
+
+user_settings.add(Value(key=UserSetting.openai_process_entries_not_older_than,
+                        name="Use OpenAI key only for entries not older than N days",
+                        type=types.Integer(),
+                        default=3,
+                        description=description_openai_process_entries_not_older_than))
