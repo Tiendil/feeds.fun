@@ -21,13 +21,13 @@ class Type:
     id = NotImplemented
 
     def serialize(self, value: Any) -> str:
-        raise NotImplementedError()
+        raise NotImplementedError('You must implement "serialize" method in child class')
 
     def deserialize(self, data: str) -> Any:
-        raise NotImplementedError()
+        raise NotImplementedError('You must implement "deserialize" method in child class')
 
     def normalize(self, value: Any) -> Any:
-        raise NotImplementedError()
+        raise NotImplementedError('You must implement "normalize" method in child class')
 
 
 class Integer(Type):

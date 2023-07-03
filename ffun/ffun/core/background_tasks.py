@@ -37,11 +37,11 @@ class InfiniteTask:
         self._run_requested.set()
 
     async def single_run(self) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError('You must implement "single_run" method in child class')
 
     def start(self, from_start: bool = False) -> None:
         if self._runner_task is not None:
-            raise NotImplementedError()
+            raise NotImplementedError('You can not start task twice')
 
         self._stop_requested = False
         self._runner_task = asyncio.create_task(self._run(), name=f'{self._name}_runner')

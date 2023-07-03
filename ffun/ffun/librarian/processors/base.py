@@ -13,4 +13,4 @@ class Processor:
         return self._name
 
     async def process(self, entry: Entry) -> list[ProcessorTag]:
-        raise NotImplementedError
+        raise NotImplementedError('You must implement "process" method in child class')

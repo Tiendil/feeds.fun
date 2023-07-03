@@ -39,10 +39,10 @@ class Formatter:
     __slots__ = ()
 
     def can_format(self, value: Any) -> bool:
-        raise NotImplementedError()
+        raise NotImplementedError('You must implement "can_format" in child class')
 
     def format(self, value: Any) -> Any:
-        raise NotImplementedError()
+        raise NotImplementedError('You must implement "format" in child class')
 
 
 class DateFormatter(Formatter):

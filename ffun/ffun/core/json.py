@@ -27,7 +27,7 @@ def finish_json(text: str, empty_value: str|None = '""') -> str:  # pylint: disa
                 stack.pop()
                 continue
 
-            raise NotImplementedError()
+            raise NotImplementedError('For each "}" we expect "{"')
 
         if c == '[':
             stack.append(c)
@@ -38,7 +38,7 @@ def finish_json(text: str, empty_value: str|None = '""') -> str:  # pylint: disa
                 stack.pop()
                 continue
 
-            raise NotImplementedError()
+            raise NotImplementedError('For each "]" we expect "["')
 
         if c == '"':
             if stack[-1] == '"':
@@ -49,8 +49,6 @@ def finish_json(text: str, empty_value: str|None = '""') -> str:  # pylint: disa
             continue
 
     # fix
-
-    # print(stack)
 
     while stack:
         c = stack.pop()
@@ -77,9 +75,6 @@ def finish_json(text: str, empty_value: str|None = '""') -> str:  # pylint: disa
 
 def loads_with_fix(text: str):
     try:
-        # print('------')
-        # print(text)
-        # print('------')
         return json.loads(finish_json(text))
     except json.JSONDecodeError:
         return json.loads(finish_json(text))
