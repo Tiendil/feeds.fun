@@ -370,7 +370,7 @@ class GetUserSettingsResponse(api.APISuccess):
 
 class SetUserSettingRequest(api.APIRequest):
     kind: UserSettingKind
-    value: None|bool|int|str
+    value: Any
 
     @pydantic.root_validator
     def validate_value(cls, values):
