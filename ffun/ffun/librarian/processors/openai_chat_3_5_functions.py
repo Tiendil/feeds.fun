@@ -76,35 +76,20 @@ def entry_to_text(entry: Entry) -> str:
 
 
 trash_system_tags = {'topic',
+                     'topics',
                      'category',
                      'meta-category',
                      'five-most-related-tags-for-text'}
 
 
-def extract_tags_from_expected_format(data: Any) -> set[str]:
-    tags = set()
-
-    for topic in data['topics']:
-        tags.add(topic['topic'])
-        tags.add(topic['category'])
-        tags.add(topic['meta-category'])
-        tags.update(topic['five-most-related-tags-for-text'])
-
-    return tags
-
-
 def extract_tags(text: str) -> set[str]:
-    logger.info('extract_tags', text=text)
-
     try:
         data = core_json.loads_with_fix(text)
 
-        try:
-            tags = extract_tags_from_expected_format(data)
-        except Exception as e:
-            logger.exception('unexpected_data_format', error_message=str(e))
-            tags = core_json.extract_tags_from_random_json(data)
-
+        # there is no point in following format
+        # because it can be broken in all possible ways
+        # for example, ChatGPT may return additional fields
+        tags = core_json.extract_tags_from_random_json(data)
     except json.decoder.JSONDecodeError:
         tags = core_json.extract_tags_from_invalid_json(text)
 
