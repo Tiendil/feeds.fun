@@ -69,7 +69,7 @@ class Boolean(Type):
         return data == 'true'
 
     def normalize(self, value: Any) -> bool:
-        return value == 'true'
+        return value in (True, 'true', 'True')
 
 
 class Secret(Type):

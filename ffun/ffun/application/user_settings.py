@@ -53,7 +53,7 @@ user_settings.add(Value(key=UserSetting.openai_max_tokens_in_month,
                         description=description_openai_max_tokens_in_month))
 
 user_settings.add(Value(key=UserSetting.openai_hide_message_about_setting_up_key,
-                        name="Hide message about setting up key",
+                        name="Hide message about setting up OpenAI API key",
                         type=types.Boolean(),
                         default=False,
                         description=None))

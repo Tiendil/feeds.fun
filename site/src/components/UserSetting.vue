@@ -10,7 +10,15 @@
 
     &nbsp;
 
-    <template v-if="!editing">
+    <template v-if="setting.type == 'boolean'">
+      <button v-if="!setting.value"
+              @click.prevent="turnOn()">Turn on</button>
+
+      <button  v-if="setting.value"
+               @click.prevent="turnOff()">Turn off</button>
+    </template>
+
+    <template v-else-if="!editing">
       <button @click.prevent="startEditing()">Edit</button>
     </template>
 
@@ -86,6 +94,18 @@ function cancel() {
 function startEditing() {
     value.value = setting.value.value;
     editing.value = true;
+}
+
+
+async function turnOn() {
+    value.value = true;
+    await save();
+}
+
+
+async function turnOff() {
+    value.value = false;
+    await save();
 }
 
 </script>
