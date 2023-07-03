@@ -99,8 +99,8 @@ def extract_tags(text: str) -> set[str]:
 
         try:
             tags = extract_tags_from_expected_format(data)
-        except Exception:
-            logger.exception('unexpected_json_format')
+        except Exception as e:
+            logger.exception('unexpected_data_format', error_message=str(e))
             tags = core_json.extract_tags_from_random_json(data)
 
     except json.decoder.JSONDecodeError:
