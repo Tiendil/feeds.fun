@@ -94,6 +94,8 @@ def extract_tags_from_expected_format(data: Any) -> set[str]:
 
 
 def extract_tags(text: str) -> set[str]:
+    logger.info('extract_tags', text=text)
+
     try:
         data = core_json.loads_with_fix(text)
 
