@@ -88,6 +88,12 @@
 
     <hr/>
 
+    <div v-if="showApiKeyMessage" style="border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; background-color: #f0f8ff;">
+      <p>Because, for now, our service is free to use and OpenAI API costs money, we politely ask you to set up your own OpenAI API key.</p>
+      <p>You can do it on the <a href="#" @click.prevent="router.push({ name: e.MainPanelMode.Settings, params: {} })">settings</a> page.</p>
+    <user-setting kind="openai_hide_message_about_setting_up_key"/>
+    </div>
+
     <main>
       <slot></slot>
     </main>
@@ -100,7 +106,7 @@
 </template>
 
 <script lang="ts" setup>
-    import { ref, computed, useSlots, onMounted, watch, watchEffect } from 'vue';
+import { ref, computed, useSlots, onMounted, watch, watchEffect } from 'vue';
 import { useRouter, RouterLink, RouterView } from 'vue-router'
 import { useGlobalSettingsStore } from "@/stores/globalSettings";
 import { useGlobalState } from "@/stores/globalState";
@@ -141,6 +147,14 @@ const hasSideFooter = computed(() => {
 function hasSideMenuItem(index: number) {
     return !!slots[`side-menu-item-${index}`];
 }
+
+
+const showApiKeyMessage = computed(() => {
+    return (
+        globalSettings.userSettings &&
+        !globalSettings.userSettings.openai_api_key.value &&
+        !globalSettings.userSettings.openai_hide_message_about_setting_up_key.value);
+});
 
 
 watchEffect(() => {
