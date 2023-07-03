@@ -1,6 +1,10 @@
 import json
 from typing import Any
 
+from ffun.core import logging
+
+logger = logging.get_module_logger()
+
 
 def finish_json(text: str, empty_value: str|None = '""') -> str:  # pylint: disable=too-many-branches # noqa: C901, CCR001
     stack = []
