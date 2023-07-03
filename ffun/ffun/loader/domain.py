@@ -1,6 +1,7 @@
 import ssl
 import uuid
 
+import anyio
 import httpx
 from ffun.core import logging, utils
 from ffun.feeds import domain as f_domain
@@ -79,6 +80,11 @@ async def load_content(url: str) -> httpx.Response:  # noqa: CCR001, C901 # pyli
     except httpx.UnsupportedProtocol as e:
         logger.warning('network_unsupported_protocol')
         error_code = FeedError.network_unsupported_protocol
+        raise errors.LoadError(feed_error_code=error_code) from e
+
+    except anyio.EndOfStream as e:
+        logger.warning('server_breaks_connection')
+        error_code = FeedError.network_server_breaks_connection
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except Exception as e:
