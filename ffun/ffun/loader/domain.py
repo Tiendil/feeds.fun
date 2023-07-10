@@ -13,29 +13,35 @@ from ffun.parsers.domain import parse_feed
 from structlog.contextvars import bound_contextvars
 
 from . import errors
+from .settings import Proxy, settings
 
 logger = logging.get_module_logger()
 
 
-async def load_content(url: str) -> httpx.Response:  # noqa: CCR001, C901 # pylint: disable=R0912, R0915
+async def load_content(url: str, proxy: Proxy) -> httpx.Response:  # noqa: CCR001, C901 # pylint: disable=R0912, R0915
     error_code = FeedError.network_unknown
 
+    log = logger.bind(url=url, proxy=proxy.name, function='load_content')
+
     try:
-        async with httpx.AsyncClient() as client:
+        log.info('loading_feed')
+
+        async with httpx.AsyncClient(proxies=proxy.url) as client:
             response = await client.get(url, follow_redirects=True)
+
     except httpx.RemoteProtocolError as e:
         message = str(e)
 
         if 'illegal request line' in message:
             # TODO: at least part of such errors are caused by wrong HTTP protocol
             #       for example `http://gopractice.ru/feed/` tries to redirect to use HTTP/0.9
-            logger.warning('network_illegal_request_line')
+            log.warning('network_illegal_request_line')
             error_code = FeedError.network_illegal_request_line
         elif 'Server disconnected without sending a response' in message:
-            logger.warning('network_disconection_without_response')
+            log.warning('network_disconection_without_response')
             error_code = FeedError.network_disconection_without_response
         else:
-            logger.exception('remote_protocol_error_while_loading_feed')
+            log.exception('remote_protocol_error_while_loading_feed')
 
         raise errors.LoadError(feed_error_code=error_code) from e
 
@@ -43,16 +49,16 @@ async def load_content(url: str) -> httpx.Response:  # noqa: CCR001, C901 # pyli
         message = str(e)
 
         if '[Errno -2]' in message:
-            logger.warning('network_name_or_service_not_known')
+            log.warning('network_name_or_service_not_known')
             error_code = FeedError.network_name_or_service_not_known
         elif '[Errno -5]' in message:
-            logger.warning('no_address_associated_with_hostname')
+            log.warning('no_address_associated_with_hostname')
             error_code = FeedError.network_no_address_associated_with_hostname
         elif message == '':
-            logger.warning('undetected_connection_error')
+            log.warning('undetected_connection_error')
             error_code = FeedError.network_undetected_connection_error
         else:
-            logger.exception('connection_error_while_loading_feed')
+            log.exception('connection_error_while_loading_feed')
 
         raise errors.LoadError(feed_error_code=error_code) from e
 
@@ -60,41 +66,43 @@ async def load_content(url: str) -> httpx.Response:  # noqa: CCR001, C901 # pyli
         message = str(e)
 
         if 'CERTIFICATE_VERIFY_FAILED' in message:
-            logger.warning('network_certificate_verify_failed')
+            log.warning('network_certificate_verify_failed')
             error_code = FeedError.network_certificate_verify_failed
         else:
-            logger.exception('ssl_cert_verification_error_while_loading_feed')
+            log.exception('ssl_cert_verification_error_while_loading_feed')
 
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except httpx.ConnectTimeout as e:
-        logger.warning('network_connect_timeout')
+        log.warning('network_connect_timeout')
         error_code = FeedError.network_connection_timeout
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except httpx.ReadTimeout as e:
-        logger.warning('network_read_timeout')
+        log.warning('network_read_timeout')
         error_code = FeedError.network_read_timeout
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except httpx.UnsupportedProtocol as e:
-        logger.warning('network_unsupported_protocol')
+        log.warning('network_unsupported_protocol')
         error_code = FeedError.network_unsupported_protocol
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except anyio.EndOfStream as e:
-        logger.warning('server_breaks_connection')
+        log.warning('server_breaks_connection')
         error_code = FeedError.network_server_breaks_connection
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except Exception as e:
-        logger.exception('error_while_loading_feed')
+        log.exception('error_while_loading_feed')
         raise errors.LoadError(feed_error_code=error_code) from e
 
     if response.status_code != 200:
-        logger.warning('network_non_200_status_code', status_code=response.status_code)
+        log.warning('network_non_200_status_code', status_code=response.status_code)
         error_code = FeedError.network_non_200_status_code
         raise errors.LoadError(feed_error_code=error_code)
+
+    log.info('feed_loaded', url=url, proxy=proxy.name)
 
     return response
 
@@ -130,13 +138,28 @@ async def parse_content(content: str, original_url: str) -> p_entities.FeedInfo:
     return feed_info
 
 
+async def _load_content_with_proxies(url: str) -> httpx.Response:
+    first_exception = None
+
+    for proxy in settings.proxies:
+        try:
+            return await load_content(url, proxy)
+        except Exception as e:
+            if first_exception is None:
+                first_exception = e
+
+    # in case of error raise the first exception occurred
+    # because we should use the most common proxy first
+    raise first_exception  # type: ignore
+
+
 @logging.bound_function()
 async def process_feed(feed: Feed) -> None:
 
     logger.info("loading_feed")
 
     try:
-        response = await load_content(feed.url)
+        response = await _load_content_with_proxies(feed.url)
         content = await decode_content(response)
         feed_info = await parse_content(content, original_url=feed.url)
     except errors.LoadError as e:
