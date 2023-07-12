@@ -138,7 +138,7 @@ async def parse_content(content: str, original_url: str) -> p_entities.FeedInfo:
     return feed_info
 
 
-async def _load_content_with_proxies(url: str) -> httpx.Response:
+async def load_content_with_proxies(url: str) -> httpx.Response:
     first_exception = None
 
     for proxy in settings.proxies:
@@ -159,7 +159,7 @@ async def process_feed(feed: Feed) -> None:
     logger.info("loading_feed")
 
     try:
-        response = await _load_content_with_proxies(feed.url)
+        response = await load_content_with_proxies(feed.url)
         content = await decode_content(response)
         feed_info = await parse_content(content, original_url=feed.url)
     except errors.LoadError as e:

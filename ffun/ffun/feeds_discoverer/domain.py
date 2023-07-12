@@ -25,7 +25,7 @@ async def extract_content(url: str) -> str|None:
     logger.info('extract_content')
 
     try:
-        response = await lo_domain.load_content(url)
+        response = await lo_domain.load_content_with_proxies(url)
         content = await lo_domain.decode_content(response)
     except lo_errors.LoadError:
         logger.info('can_not_access_content')
