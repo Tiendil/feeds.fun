@@ -36,6 +36,8 @@ export type Feed = {
     readonly lastError: string|null;
     readonly loadedAt: Date|null;
     readonly linkedAt: Date;
+
+    readonly isOk: boolean;
 };
 
 
@@ -49,7 +51,8 @@ export function feedFromJSON({ id, title, description, url, state, lastError, lo
              state: state,
              lastError: lastError,
              loadedAt: loadedAt !== null ? new Date(loadedAt) : null,
-             linkedAt: new Date(linkedAt)
+             linkedAt: new Date(linkedAt),
+             isOk: (state === "loaded")
            };
 }
 

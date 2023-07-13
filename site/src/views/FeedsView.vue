@@ -58,18 +58,38 @@ const sortedFeeds = computed(() => {
 
     let sorted = feeds.value.slice();
 
+    const orderProperties = e.FeedsOrderProperties.get(globalSettings.feedsOrder);
+
+    const orderField = orderProperties.orderField;
+
+    const direction = {asc: -1,
+                       desc: 1}[orderProperties.orderDirection];
+
     sorted = sorted.sort((a, b) => {
-        const field = e.FeedsOrderProperties.get(globalSettings.feedsOrder).orderField;
 
-        const valueA = a[field];
-        const valueB = b[field];
+        if (a.isOk && !b.isOk) {
+            if (globalSettings.failedFeedsFirst) {
+                return 1;
+            }
+            return -1;
+        }
 
-        if (valueA < valueB) {
+        if (!a.isOk && b.isOk) {
+            if (globalSettings.failedFeedsFirst) {
+                return -1;
+            }
             return 1;
         }
 
+        const valueA = a[orderField];
+        const valueB = b[orderField];
+
+        if (valueA < valueB) {
+            return 1 * direction;
+        }
+
         if (valueA > valueB) {
-            return -1;
+            return -1 * direction;
         }
 
         return 0;

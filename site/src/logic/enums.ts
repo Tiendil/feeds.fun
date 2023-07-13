@@ -96,8 +96,8 @@ export enum FeedsOrder {
 
 
 export const FeedsOrderProperties = new Map<FeedsOrder, {text: string, orderField: string}>([
-    [FeedsOrder.Title, {text: "title", orderField: "title"}],
-    [FeedsOrder.Url, {text: "url", orderField: "url"}],
-    [FeedsOrder.Loaded, {text: "loaded", orderField: "loaded"}],
-    [FeedsOrder.Linked, {text: "added", orderField: "linked"}],
+    [FeedsOrder.Title, {text: "title", orderField: "title", orderDirection: "asc"}],
+    [FeedsOrder.Url, {text: "url", orderField: "url", orderDirection: "asc"}],
+    [FeedsOrder.Loaded, {text: "loaded", orderField: "loadedAt", orderDirection: "desc"}],
+    [FeedsOrder.Linked, {text: "added", orderField: "linkedAt", orderDirection: "desc"}],
 ]);
