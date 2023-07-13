@@ -6,17 +6,30 @@
                                     off-text="no"/>
   </template>
 
+  <template #side-menu-item-2>
+    Sorted by
+    <config-selector :values="e.FeedsOrderProperties"
+                     v-model:property="globalSettings.feedsOrder"/>
+  </template>
+
+  <template #side-menu-item-3>
+    Show failed
+    <config-flag v-model:flag="globalSettings.failedFeedsFirst"
+                 on-text="first"
+                 off-text="last"/>
+  </template>
+
   <template #main-header>
     Feeds
-    <span v-if="feeds">
-      [{{ feeds.length }}]
+    <span v-if="sortedFeeds">
+      [{{ sortedFeeds.length }}]
     </span>
   </template>
 
   <template #main-footer>
   </template>
 
-  <feeds-list :feeds="feeds" />
+  <feeds-list :feeds="sortedFeeds" />
 </side-panel-layout>
 
 </template>
@@ -35,6 +48,34 @@ globalSettings.mainPanelMode = e.MainPanelMode.Feeds;
 
 const feeds = computedAsync(async () => {
     return await api.getFeeds({dataVersion: globalSettings.dataVersion});
+}, null);
+
+
+const sortedFeeds = computed(() => {
+    if (!feeds.value) {
+        return null;
+    }
+
+    let sorted = feeds.value.slice();
+
+    sorted = sorted.sort((a, b) => {
+        const field = e.FeedsOrderProperties.get(globalSettings.feedsOrder).orderField;
+
+        const valueA = a[field];
+        const valueB = b[field];
+
+        if (valueA < valueB) {
+            return 1;
+        }
+
+        if (valueA > valueB) {
+            return -1;
+        }
+
+        return 0;
+    });
+
+    return sorted;
 }, null);
 
 </script>

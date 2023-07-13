@@ -8,6 +8,7 @@ import pydantic
 from ffun.core import api
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
+from ffun.feeds_links import entities as fl_entities
 from ffun.library import entities as l_entities
 from ffun.markers import entities as m_entities
 from ffun.ontology import entities as o_entities
@@ -37,9 +38,10 @@ class Feed(api.Base):
     state: str
     lastError: str|None = None
     loadedAt: datetime.datetime|None
+    linkedAt: datetime.datetime|None
 
     @classmethod
-    def from_internal(cls, feed: f_entities.Feed) -> 'Feed':
+    def from_internal(cls, feed: f_entities.Feed, link: fl_entities.FeedLink) -> 'Feed':
         return cls(
             id=feed.id,
             title=feed.title,
@@ -48,6 +50,7 @@ class Feed(api.Base):
             state=feed.state.name,
             lastError=feed.last_error.name if feed.last_error else None,
             loadedAt=feed.loaded_at,
+            linkedAt=link.created_at,
         )
 
 

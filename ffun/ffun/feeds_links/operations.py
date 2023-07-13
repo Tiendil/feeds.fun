@@ -6,7 +6,16 @@ import psycopg
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 
+from .entities import FeedLink
+
 logger = logging.get_module_logger()
+
+
+def row_to_feed_link(row: dict) -> FeedLink:
+    return FeedLink(
+        user_id=row["user_id"],
+        feed_id=row["feed_id"],
+        created_at=row["created_at"]    )
 
 
 async def add_link(user_id: uuid.UUID, feed_id: uuid.UUID):
@@ -27,14 +36,14 @@ async def remove_link(user_id: uuid.UUID, feed_id: uuid.UUID):
     await execute(sql, {"user_id": user_id, "feed_id": feed_id})
 
 
-async def get_linked_feeds(user_id: uuid.UUID) -> list[uuid.UUID]:
+async def get_linked_feeds(user_id: uuid.UUID) -> list[FeedLink]:
     sql = """
-        SELECT feed_id FROM fl_links WHERE user_id = %(user_id)s
+        SELECT * FROM fl_links WHERE user_id = %(user_id)s
     """
 
     result = await execute(sql, {"user_id": user_id})
 
-    return [row["feed_id"] for row in result]
+    return [row_to_feed_link(row) for row in result]
 
 
 async def get_linked_users(feed_id: uuid.UUID) -> list[uuid.UUID]:
