@@ -1,18 +1,18 @@
 <template>
 <div class="container">
 
-  <div style="flex-shrink: 0; width: 5rem; left-padding: 0.25rem;">
+  <div style="flex-shrink: 0; width: 4rem; left-padding: 0.25rem;">
     <a href="#" @click.prevent="unsubscribe()">
-      unsubscribe
+      remove
     </a>
   </div>
 
-  <div style="flex-shrink: 0; width: 3rem; left-padding: 0.25rem;">
-    loaded <value-date-time :value="feed.loadedAt" :reversed="true"/>
+  <div style="flex-shrink: 0; width: 2rem; left-padding: 0.25rem; cursor: default;" title="Time of last load">
+    <value-date-time :value="feed.loadedAt" :reversed="true"/>
   </div>
 
-  <div style="flex-shrink: 0; width: 3rem; left-padding: 0.25rem;">
-    added <value-date-time :value="feed.linkedAt" :reversed="true"/>
+  <div style="flex-shrink: 0; width: 2rem; left-padding: 0.25rem; cursor: default;" title="When was added">
+    <value-date-time :value="feed.linkedAt" :reversed="true"/>
   </div>
 
   <div style="flex-shrink: 0; width: 2rem; text-align: right; padding-right: 0.25rem;">
