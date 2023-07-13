@@ -69,7 +69,7 @@ export enum EntriesOrder {
 };
 
 
-export const EntriesOrderProperties = new Map<EntriesOrder, {text: string, orderField: string, timeField}>([
+export const EntriesOrderProperties = new Map<EntriesOrder, {text: string, orderField: string, timeField: string}>([
     [EntriesOrder.Score, {text: "score", orderField: "score", timeField: "catalogedAt"}],
     [EntriesOrder.ScoreToZero, {text: "score ~ 0", orderField: "scoreToZero", timeField: "catalogedAt"}],
     [EntriesOrder.Published, {text: "published", orderField: "publishedAt", timeField: "publishedAt"}],
@@ -85,3 +85,19 @@ export enum Marker {
 export const reverseMarker = {
     "read": Marker.Read
 };
+
+
+export enum FeedsOrder {
+    Title = "title",
+    Url = "url",
+    Loaded = "loaded",
+    Linked = "linked",
+};
+
+
+export const FeedsOrderProperties = new Map<FeedsOrder, {text: string, orderField: string}>([
+    [FeedsOrder.Title, {text: "title", orderField: "title", orderDirection: "asc"}],
+    [FeedsOrder.Url, {text: "url", orderField: "url", orderDirection: "asc"}],
+    [FeedsOrder.Loaded, {text: "loaded", orderField: "loadedAt", orderDirection: "desc"}],
+    [FeedsOrder.Linked, {text: "added", orderField: "linkedAt", orderDirection: "desc"}],
+]);

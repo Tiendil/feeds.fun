@@ -39,11 +39,14 @@ async def api_error() -> None:
 @router.post('/api/get-feeds')
 async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entities.GetFeedsResponse:
 
-    linked_feeds_ids = await fl_domain.get_linked_feeds(user.id)
+    linked_feeds = await fl_domain.get_linked_feeds(user.id)
 
-    feeds = await f_domain.get_feeds(linked_feeds_ids)
+    feeds_to_links = {link.feed_id: link for link in linked_feeds}
 
-    return entities.GetFeedsResponse(feeds=[entities.Feed.from_internal(feed) for feed in feeds])
+    feeds = await f_domain.get_feeds(ids=list(feeds_to_links.keys()))
+
+    return entities.GetFeedsResponse(feeds=[entities.Feed.from_internal(feed, link=feeds_to_links[feed.id])
+                                            for feed in feeds])
 
 
 async def _external_entries(entries: Iterable[l_entities.Entry],
@@ -82,7 +85,9 @@ async def _external_entries(entries: Iterable[l_entities.Entry],
 @router.post('/api/get-last-entries')
 async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: User) -> entities.GetLastEntriesResponse:
 
-    linked_feeds_ids = await fl_domain.get_linked_feeds(user.id)
+    linked_feeds = await fl_domain.get_linked_feeds(user.id)
+
+    linked_feeds_ids = [link.feed_id for link in linked_feeds]
 
     # TODO: limit
     entries = await l_domain.get_entries_by_filter(feeds_ids=linked_feeds_ids,

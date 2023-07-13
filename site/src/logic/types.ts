@@ -35,19 +35,25 @@ export type Feed = {
     readonly state: string;
     readonly lastError: string|null;
     readonly loadedAt: Date|null;
+    readonly linkedAt: Date;
+
+    readonly isOk: boolean;
 };
 
 
-export function feedFromJSON({ id, title, description, url, state, lastError, loadedAt }:
+export function feedFromJSON({ id, title, description, url, state, lastError, loadedAt, linkedAt }:
                              { id: string, title: string, description: string, url: string,
-                               state: string, lastError: string|null, loadedAt: string }): Feed {
+                               state: string, lastError: string|null, loadedAt: string, linkedAt: string }): Feed {
     return { id: toFeedId(id),
              title: title !== null ? title : null,
              description: description !== null ? description : null,
              url: toURL(url),
              state: state,
              lastError: lastError,
-             loadedAt: loadedAt !== null ? new Date(loadedAt) : null };
+             loadedAt: loadedAt !== null ? new Date(loadedAt) : null,
+             linkedAt: new Date(linkedAt),
+             isOk: (state === "loaded")
+           };
 }
 
 

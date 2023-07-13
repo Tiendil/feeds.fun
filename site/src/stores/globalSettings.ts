@@ -22,6 +22,8 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
     // Feeds
     const showFeedsDescriptions = ref(true);
+    const feedsOrder = ref(e.FeedsOrder.Title);
+    const failedFeedsFirst = ref(false);
 
     watch(mainPanelMode, (newValue, oldValue) => {
         router.push({ name: mainPanelMode.value, params: {} });
@@ -51,6 +53,8 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
         updateDataVersion,
         showFeedsDescriptions,
         userSettings,
-        info
+        info,
+        feedsOrder,
+        failedFeedsFirst,
     };
 });
