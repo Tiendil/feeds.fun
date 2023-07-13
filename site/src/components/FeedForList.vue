@@ -7,11 +7,11 @@
     </a>
   </div>
 
-  <div style="flex-shrink: 0; width: 2rem; left-padding: 0.25rem; cursor: default;" title="Time of last load">
+  <div style="flex-shrink: 0; width: 3rem; left-padding: 0.25rem; cursor: default;" title="Time of last load">
     <value-date-time :value="feed.loadedAt" :reversed="true"/>
   </div>
 
-  <div style="flex-shrink: 0; width: 2rem; left-padding: 0.25rem; cursor: default;" title="When was added">
+  <div style="flex-shrink: 0; width: 3rem; left-padding: 0.25rem; cursor: default;" title="When was added">
     <value-date-time :value="feed.linkedAt" :reversed="true"/>
   </div>
 
