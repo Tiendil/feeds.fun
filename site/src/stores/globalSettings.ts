@@ -2,6 +2,7 @@ import { ref, watch } from "vue";
 import { useRouter } from 'vue-router'
 import { defineStore } from "pinia";
 import { computedAsync } from "@vueuse/core";
+import { useGlobalState } from "@/stores/globalState";
 
 import * as e from "@/logic/enums";
 import * as api from "@/logic/api";
@@ -9,6 +10,7 @@ import * as api from "@/logic/api";
 export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
     const router = useRouter();
+    const globalState = useGlobalState();
 
     // General
     const mainPanelMode = ref(e.MainPanelMode.Entries);
@@ -35,11 +37,19 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
     // backend side settings
     const userSettings = computedAsync(async () => {
+        if (!globalState.isLoggedIn) {
+            return null;
+        }
+
         return await api.getUserSettings({dataVersion: dataVersion.value});
     }, null);
 
 
     const info = computedAsync(async () => {
+        if (!globalState.isLoggedIn) {
+            return null;
+        }
+
         return await api.getInfo({dataVersion: dataVersion.value});
     }, null);
 
