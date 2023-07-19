@@ -26,5 +26,4 @@ jobs:
           ref: ${{ inputs.branch_ref }}
 
       - name: run checks
-        run: |
-          ./bin/check-code-formatting.sh
+        run: ./bin/check-code-formatting.sh
