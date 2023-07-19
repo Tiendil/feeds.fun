@@ -5,6 +5,7 @@ from sentry_sdk import capture_exception, capture_message
 from . import api, logging
 from .errors import Error
 
+
 logger = logging.get_module_logger()
 
 

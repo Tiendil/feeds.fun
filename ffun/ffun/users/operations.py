@@ -3,11 +3,13 @@ import uuid
 from typing import Any, Iterable
 
 import psycopg
+
 from ffun.core import logging
 from ffun.core.postgresql import execute
 
 from . import errors
 from .entities import Service
+
 
 logger = logging.get_module_logger()
 

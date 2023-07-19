@@ -9,6 +9,7 @@ from ffun.user_settings import domain as us_domain
 
 from . import client, entities, errors
 
+
 logger = logging.get_module_logger()
 
 _keys_statuses = {}

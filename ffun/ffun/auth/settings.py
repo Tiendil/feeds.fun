@@ -3,6 +3,7 @@ import enum
 import uuid
 
 import pydantic
+
 from ffun.core.settings import BaseSettings
 
 

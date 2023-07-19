@@ -6,9 +6,11 @@ from typing import Any, AsyncGenerator, Callable, Protocol
 
 import psycopg
 import psycopg_pool
-from ffun.core import logging
 from psycopg.pq import ExecStatus
 from psycopg.rows import dict_row
+
+from ffun.core import logging
+
 
 logger = logging.get_module_logger()
 

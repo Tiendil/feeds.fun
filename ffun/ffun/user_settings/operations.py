@@ -4,6 +4,7 @@ from typing import Any, Iterable
 from ffun.core import logging
 from ffun.core.postgresql import execute
 
+
 logger = logging.get_module_logger()
 
 

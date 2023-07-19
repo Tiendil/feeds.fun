@@ -1,9 +1,11 @@
 import yarl
 from bs4 import BeautifulSoup
+
 from ffun.core import logging
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
 from ffun.parsers import entities as p_entities
+
 
 logger = logging.get_module_logger()
 

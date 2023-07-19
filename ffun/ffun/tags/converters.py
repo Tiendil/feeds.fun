@@ -3,6 +3,7 @@ import re
 
 from slugify import slugify
 
+
 DISALLOWED_CHARS_PATTERN = re.compile(r'[^-a-zA-Z0-9]+')
 
 

@@ -9,6 +9,7 @@ from ffun.ontology import domain as o_domain
 from . import errors
 from .processors.base import Processor
 
+
 logger = logging.get_module_logger()
 
 

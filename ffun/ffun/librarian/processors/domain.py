@@ -6,6 +6,7 @@ from ffun.ontology.entities import ProcessorTag, TagCategory
 
 from . import base
 
+
 logger = logging.get_module_logger()
 
 

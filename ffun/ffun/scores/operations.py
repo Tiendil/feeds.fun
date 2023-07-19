@@ -4,10 +4,12 @@ from typing import Iterable
 
 import psycopg
 from bidict import bidict
+
 from ffun.core import logging
 from ffun.core.postgresql import execute
 
 from .entities import Rule
+
 
 logger = logging.get_module_logger()
 

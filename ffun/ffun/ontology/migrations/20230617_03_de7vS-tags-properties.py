@@ -4,6 +4,7 @@ tags-properties
 
 from yoyo import step
 
+
 __depends__ = {'20230617_02_L0MmA-tags-relationship-processor-tracking'}
 
 sql_create_tags_properties_table = '''

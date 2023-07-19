@@ -4,13 +4,14 @@ import json
 import math
 
 import async_lru
+import openai
 import tiktoken
 import typer
+
 from ffun.core import logging
 
-import openai
-
 from . import entities, errors
+
 
 logger = logging.get_module_logger()
 

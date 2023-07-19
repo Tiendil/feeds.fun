@@ -3,6 +3,7 @@ import contextlib
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
+
 from ffun.api import http_handlers as api_http_handlers
 from ffun.auth import supertokens as st
 from ffun.core import logging, postgresql
@@ -10,6 +11,7 @@ from ffun.librarian.background_processors import create_background_processors
 from ffun.loader.background_loader import FeedsLoader
 
 from .settings import settings
+
 
 logger = logging.get_module_logger()
 

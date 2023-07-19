@@ -1,6 +1,7 @@
 
 from yoyo import step
 
+
 __depends__ = {}
 
 sql_create_tags_table = '''

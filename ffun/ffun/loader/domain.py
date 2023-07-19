@@ -3,6 +3,8 @@ import uuid
 
 import anyio
 import httpx
+from structlog.contextvars import bound_contextvars
+
 from ffun.core import logging, utils
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedError, FeedState
@@ -10,10 +12,10 @@ from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
 from ffun.parsers import entities as p_entities
 from ffun.parsers.domain import parse_feed
-from structlog.contextvars import bound_contextvars
 
 from . import errors
 from .settings import Proxy, settings
+
 
 logger = logging.get_module_logger()
 
