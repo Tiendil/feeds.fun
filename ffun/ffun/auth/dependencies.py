@@ -16,8 +16,7 @@ async def _supertokens_user(session: SessionContainer = fastapi.Depends(verify_s
 
 
 async def _single_user() -> u_entities.User:
-    return await u_domain.get_or_create_user(u_entities.Service.single,
-                                             settings.single_user.external_id)
+    return await u_domain.get_or_create_user(u_entities.Service.single, settings.single_user.external_id)
 
 
 if settings.mode == AuthMode.single_user:

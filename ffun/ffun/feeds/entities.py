@@ -40,15 +40,12 @@ class Feed(pydantic.BaseModel):
     id: uuid.UUID
     url: str
     state: FeedState = FeedState.not_loaded
-    last_error: FeedError|None = None
-    load_attempted_at: datetime.datetime|None = None
-    loaded_at: datetime.datetime|None = None
+    last_error: FeedError | None = None
+    load_attempted_at: datetime.datetime | None = None
+    loaded_at: datetime.datetime | None = None
 
-    title: str|None
-    description: str|None
+    title: str | None
+    description: str | None
 
     def log_info(self):
-        return {'id': self.id,
-                'state': self.state,
-                'url': self.url,
-                'last_error': self.last_error}
+        return {"id": self.id, "state": self.state, "url": self.url, "last_error": self.last_error}

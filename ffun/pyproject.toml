@@ -52,6 +52,7 @@ markdown = "3.*"
 pytest = "6.*"
 
 isort = "5.*"
+black = "23.*"
 
 [tool.poetry.scripts]
 
@@ -68,3 +69,7 @@ remove_redundant_aliases = "true"
 float_to_top = "true"
 treat_comments_as_code = "false"
 lines_after_imports = 2
+
+
+[tool.black]
+line-length = 119

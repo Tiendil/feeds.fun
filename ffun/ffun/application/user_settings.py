@@ -29,9 +29,9 @@ Here's how your key will be used:
 The more users set up the key, the cheaper it will be for everyone.
 """
 
-openai_max_token_cost = decimal.Decimal('0.004')
+openai_max_token_cost = decimal.Decimal("0.004")
 openai_max_token_cost_n = 1000
-openai_max_spendings = decimal.Decimal('10.00')
+openai_max_spendings = decimal.Decimal("10.00")
 
 description_openai_max_tokens_in_month = f"""
 Tokens are the currency of the OpenAI API world. The more tokens you use, the more you've gotta pay.
@@ -50,26 +50,42 @@ If you want to help us and tag everything, you can set this value to a big numbe
 """
 
 
-user_settings.add(Value(key=UserSetting.openai_api_key,
-                        name="OpenAI API key",
-                        type=types.Secret(),
-                        default='',
-                        description=description_openai_api_key))
+user_settings.add(
+    Value(
+        key=UserSetting.openai_api_key,
+        name="OpenAI API key",
+        type=types.Secret(),
+        default="",
+        description=description_openai_api_key,
+    )
+)
 
-user_settings.add(Value(key=UserSetting.openai_max_tokens_in_month,
-                        name="OpenAI max tokens in month",
-                        type=types.Integer(),
-                        default=int(openai_max_spendings / openai_max_token_cost * openai_max_token_cost_n),
-                        description=description_openai_max_tokens_in_month))
+user_settings.add(
+    Value(
+        key=UserSetting.openai_max_tokens_in_month,
+        name="OpenAI max tokens in month",
+        type=types.Integer(),
+        default=int(openai_max_spendings / openai_max_token_cost * openai_max_token_cost_n),
+        description=description_openai_max_tokens_in_month,
+    )
+)
 
-user_settings.add(Value(key=UserSetting.openai_hide_message_about_setting_up_key,
-                        name="Hide message about setting up OpenAI API key",
-                        type=types.Boolean(),
-                        default=False,
-                        description=None))
+user_settings.add(
+    Value(
+        key=UserSetting.openai_hide_message_about_setting_up_key,
+        name="Hide message about setting up OpenAI API key",
+        type=types.Boolean(),
+        default=False,
+        description=None,
+    )
+)
 
-user_settings.add(Value(key=UserSetting.openai_process_entries_not_older_than,
-                        name="Use OpenAI key only for entries not older than N days",
-                        type=types.Integer(),
-                        default=3,
-                        description=description_openai_process_entries_not_older_than))
+user_settings.add(
+    Value(
+        key=UserSetting.openai_process_entries_not_older_than,
+        name="Use OpenAI key only for entries not older than N days",
+        type=types.Integer(),
+        default=3,
+        description=description_openai_process_entries_not_older_than,
+    )
+)

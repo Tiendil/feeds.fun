@@ -1,4 +1,3 @@
-
 import datetime
 import uuid
 
@@ -14,10 +13,7 @@ logger = logging.get_module_logger()
 
 
 def row_to_feed_link(row: dict) -> FeedLink:
-    return FeedLink(
-        user_id=row["user_id"],
-        feed_id=row["feed_id"],
-        created_at=row["created_at"]    )
+    return FeedLink(user_id=row["user_id"], feed_id=row["feed_id"], created_at=row["created_at"])
 
 
 async def add_link(user_id: uuid.UUID, feed_id: uuid.UUID):
@@ -27,7 +23,7 @@ async def add_link(user_id: uuid.UUID, feed_id: uuid.UUID):
         ON CONFLICT (user_id, feed_id) DO NOTHING
     """
 
-    await execute(sql, {'id': uuid.uuid4(), "user_id": user_id, "feed_id": feed_id})
+    await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "feed_id": feed_id})
 
 
 async def remove_link(user_id: uuid.UUID, feed_id: uuid.UUID):

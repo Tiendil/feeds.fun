@@ -25,8 +25,7 @@ def custom_email_deliver(original_implementation: EmailDeliveryOverrideInput) ->
     async def send_email(template_vars: EmailTemplateVars, user_context: dict[str, Any]) -> None:
         assert template_vars.url_with_link_code is not None
         # By default: `${websiteDomain}/${websiteBasePath}/verify`
-        template_vars.url_with_link_code = template_vars.url_with_link_code.replace(
-            "/auth/verify", "/auth")
+        template_vars.url_with_link_code = template_vars.url_with_link_code.replace("/auth/verify", "/auth")
         return await original_send_email(template_vars, user_context)
 
     original_implementation.send_email = send_email
@@ -34,13 +33,15 @@ def custom_email_deliver(original_implementation: EmailDeliveryOverrideInput) ->
 
 
 @contextlib.asynccontextmanager
-async def use_supertokens(app_name: str,
-                          api_domain: str,
-                          website_domain: str,
-                          cookie_secure: bool = settings.supertokens.cookie_secure,
-                          api_base_path: str = settings.supertokens.api_base_path,
-                          website_base_path: str = settings.supertokens.website_base_path):
-    logger.info('supertokens_enabled')
+async def use_supertokens(
+    app_name: str,
+    api_domain: str,
+    website_domain: str,
+    cookie_secure: bool = settings.supertokens.cookie_secure,
+    api_base_path: str = settings.supertokens.api_base_path,
+    website_base_path: str = settings.supertokens.website_base_path,
+):
+    logger.info("supertokens_enabled")
 
     init(
         app_info=InputAppInfo(
@@ -48,29 +49,27 @@ async def use_supertokens(app_name: str,
             api_domain=api_domain,
             website_domain=website_domain,
             api_base_path=api_base_path,
-            website_base_path=website_base_path
+            website_base_path=website_base_path,
         ),
-
         supertokens_config=SupertokensConfig(
-            connection_uri=settings.supertokens.connection_uri,
-            api_key=settings.supertokens.api_key
+            connection_uri=settings.supertokens.connection_uri, api_key=settings.supertokens.api_key
         ),
-        framework='fastapi',
+        framework="fastapi",
         recipe_list=[
-            emailverification.init(mode='REQUIRED'),
+            emailverification.init(mode="REQUIRED"),
             session.init(cookie_secure=cookie_secure),
             passwordless.init(
                 flow_type="MAGIC_LINK",
                 contact_config=ContactEmailOnlyConfig(),
-                email_delivery=EmailDeliveryConfig(override=custom_email_deliver)
+                email_delivery=EmailDeliveryConfig(override=custom_email_deliver),
             ),
             dashboard.init(),
-            usermetadata.init()
+            usermetadata.init(),
         ],
-        mode=settings.supertokens.mode
+        mode=settings.supertokens.mode,
     )
 
-    logger.info('supertokens_initialized')
+    logger.info("supertokens_initialized")
 
     yield
 

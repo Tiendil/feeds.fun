@@ -1,4 +1,3 @@
-
 import uuid
 from typing import Any, Iterable
 
@@ -33,27 +32,27 @@ router = fastapi.APIRouter()
 logger = logging.get_module_logger()
 
 
-@router.post('/api/error')
+@router.post("/api/error")
 async def api_error() -> None:
-    raise Exception('test_error')
+    raise Exception("test_error")
 
 
-@router.post('/api/get-feeds')
+@router.post("/api/get-feeds")
 async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entities.GetFeedsResponse:
-
     linked_feeds = await fl_domain.get_linked_feeds(user.id)
 
     feeds_to_links = {link.feed_id: link for link in linked_feeds}
 
     feeds = await f_domain.get_feeds(ids=list(feeds_to_links.keys()))
 
-    return entities.GetFeedsResponse(feeds=[entities.Feed.from_internal(feed, link=feeds_to_links[feed.id])
-                                            for feed in feeds])
+    return entities.GetFeedsResponse(
+        feeds=[entities.Feed.from_internal(feed, link=feeds_to_links[feed.id]) for feed in feeds]
+    )
 
 
-async def _external_entries(entries: Iterable[l_entities.Entry],
-                            with_body: bool,
-                            user_id: uuid.UUID) -> list[entities.Entry]:
+async def _external_entries(
+    entries: Iterable[l_entities.Entry], with_body: bool, user_id: uuid.UUID
+) -> list[entities.Entry]:
     entries_ids = [entry.id for entry in entries]
 
     tags = await o_domain.get_tags_for_entries(entries_ids)
@@ -71,11 +70,9 @@ async def _external_entries(entries: Iterable[l_entities.Entry],
 
         external_markers = [entities.Marker.from_internal(marker) for marker in markers.get(entry.id, ())]
 
-        entry = entities.Entry.from_internal(entry=entry,
-                                             tags=tags.get(entry.id, ()),
-                                             markers=external_markers,
-                                             score=score,
-                                             with_body=with_body)
+        entry = entities.Entry.from_internal(
+            entry=entry, tags=tags.get(entry.id, ()), markers=external_markers, score=score, with_body=with_body
+        )
 
         external_entries.append(entry)
 
@@ -84,30 +81,29 @@ async def _external_entries(entries: Iterable[l_entities.Entry],
     return external_entries
 
 
-@router.post('/api/get-last-entries')
+@router.post("/api/get-last-entries")
 async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: User) -> entities.GetLastEntriesResponse:
-
     linked_feeds = await fl_domain.get_linked_feeds(user.id)
 
     linked_feeds_ids = [link.feed_id for link in linked_feeds]
 
     # TODO: limit
-    entries = await l_domain.get_entries_by_filter(feeds_ids=linked_feeds_ids,
-                                                   period=request.period,
-                                                   limit=10000)
+    entries = await l_domain.get_entries_by_filter(feeds_ids=linked_feeds_ids, period=request.period, limit=10000)
 
     external_entries = await _external_entries(entries, with_body=False, user_id=user.id)
 
     return entities.GetLastEntriesResponse(entries=external_entries)
 
 
-@router.post('/api/get-entries-by-ids')
-async def api_get_entries_by_ids(request: entities.GetEntriesByIdsRequest, user: User) -> entities.GetEntriesByIdsResponse:
+@router.post("/api/get-entries-by-ids")
+async def api_get_entries_by_ids(
+    request: entities.GetEntriesByIdsRequest, user: User
+) -> entities.GetEntriesByIdsResponse:
     # TODO: check if belongs to user
 
     if len(request.ids) > 10:
         # TODO: better error processing
-        raise fastapi.HTTPException(status_code=400, detail='Too many ids')
+        raise fastapi.HTTPException(status_code=400, detail="Too many ids")
 
     entries = await l_domain.get_entries_by_ids(request.ids)
 
@@ -118,27 +114,24 @@ async def api_get_entries_by_ids(request: entities.GetEntriesByIdsRequest, user:
     return entities.GetEntriesByIdsResponse(entries=external_entries)
 
 
-@router.post('/api/create-rule')
+@router.post("/api/create-rule")
 async def api_create_rule(request: entities.CreateRuleRequest, user: User) -> entities.CreateRuleResponse:
     tags_ids = await o_domain.get_ids_by_uids(request.tags)
 
-    await s_domain.create_rule(user_id=user.id,
-                               tags=set(tags_ids.values()),
-                               score=request.score)
+    await s_domain.create_rule(user_id=user.id, tags=set(tags_ids.values()), score=request.score)
 
     return entities.CreateRuleResponse()
 
 
-@router.post('/api/delete-rule')
+@router.post("/api/delete-rule")
 async def api_delete_rule(request: entities.DeleteRuleRequest, user: User) -> entities.DeleteRuleResponse:
     await s_domain.delete_rule(user_id=user.id, rule_id=request.id)
 
     return entities.DeleteRuleResponse()
 
 
-@router.post('/api/update-rule')
+@router.post("/api/update-rule")
 async def api_update_rule(request: entities.UpdateRuleRequest, user: User) -> entities.UpdateRuleResponse:
-
     tags_ids = await o_domain.get_ids_by_uids(request.tags)
 
     await s_domain.update_rule(user_id=user.id, rule_id=request.id, score=request.score, tags=tags_ids.values())
@@ -159,7 +152,7 @@ async def _prepare_rules(rules: Iterable[s_entities.Rule]) -> list[entities.Rule
     return external_rules
 
 
-@router.post('/api/get-rules')
+@router.post("/api/get-rules")
 async def api_get_rules(request: entities.GetRulesRequest, user: User) -> entities.GetRulesResponse:
     rules = await s_domain.get_rules(user_id=user.id)
 
@@ -168,9 +161,10 @@ async def api_get_rules(request: entities.GetRulesRequest, user: User) -> entiti
     return entities.GetRulesResponse(rules=external_rules)
 
 
-@router.post('/api/get-score-details')
-async def api_get_score_details(request: entities.GetScoreDetailsRequest, user: User) -> entities.GetScoreDetailsResponse:
-
+@router.post("/api/get-score-details")
+async def api_get_score_details(
+    request: entities.GetScoreDetailsRequest, user: User
+) -> entities.GetScoreDetailsResponse:
     entry_id = request.entryId
 
     rules = await s_domain.get_rules(user.id)
@@ -184,21 +178,21 @@ async def api_get_score_details(request: entities.GetScoreDetailsRequest, user: 
     return entities.GetScoreDetailsResponse(rules=external_rules)
 
 
-@router.post('/api/set-marker')
+@router.post("/api/set-marker")
 async def api_set_marker(request: entities.SetMarkerRequest, user: User) -> entities.SetMarkerResponse:
     await m_domain.set_marker(user_id=user.id, entry_id=request.entryId, marker=request.marker.to_internal())
 
     return entities.SetMarkerResponse()
 
 
-@router.post('/api/remove-marker')
+@router.post("/api/remove-marker")
 async def api_remove_marker(request: entities.RemoveMarkerRequest, user: User) -> entities.RemoveMarkerResponse:
     await m_domain.remove_marker(user_id=user.id, entry_id=request.entryId, marker=request.marker.to_internal())
 
     return entities.RemoveMarkerResponse()
 
 
-@router.post('/api/discover-feeds')
+@router.post("/api/discover-feeds")
 async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User) -> entities.DiscoverFeedsResponse:
     feeds = await fd_domain.discover(url=request.url)
 
@@ -212,12 +206,10 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
 
 
 async def _add_feeds(feed_infos: list[entities.FeedInfo], user: User) -> None:
-
-    feeds = [f_entities.Feed(id=uuid.uuid4(),
-                             url=feed_info.url,
-                             title=feed_info.title,
-                             description=feed_info.description)
-             for feed_info in feed_infos]
+    feeds = [
+        f_entities.Feed(id=uuid.uuid4(), url=feed_info.url, title=feed_info.title, description=feed_info.description)
+        for feed_info in feed_infos
+    ]
 
     real_feeds_ids = await f_domain.save_feeds(feeds)
 
@@ -225,22 +217,20 @@ async def _add_feeds(feed_infos: list[entities.FeedInfo], user: User) -> None:
         await fl_domain.add_link(user_id=user.id, feed_id=feed_id)
 
 
-@router.post('/api/add-feed')
+@router.post("/api/add-feed")
 async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities.AddFeedResponse:
     feed_info = await fd_domain.check_if_feed(url=request.url)
 
     if feed_info is None:
-        raise fastapi.HTTPException(status_code=400, detail='Not a feed')
+        raise fastapi.HTTPException(status_code=400, detail="Not a feed")
 
     await _add_feeds([feed_info], user)
 
     return entities.AddFeedResponse()
 
 
-@router.post('/api/add-opml')
-async def api_add_opml(request: entities.AddOpmlRequest,
-                       user: User) -> entities.AddOpmlResponse:
-
+@router.post("/api/add-opml")
+async def api_add_opml(request: entities.AddOpmlRequest, user: User) -> entities.AddOpmlResponse:
     feed_infos = p_domain.parse_opml(request.content)
 
     await _add_feeds(feed_infos, user)
@@ -248,33 +238,33 @@ async def api_add_opml(request: entities.AddOpmlRequest,
     return entities.AddOpmlResponse()
 
 
-@router.post('/api/unsubscribe')
+@router.post("/api/unsubscribe")
 async def api_unsubscribe(request: entities.UnsubscribeRequest, user: User) -> entities.UnsubscribeResponse:
     await fl_domain.remove_link(user_id=user.id, feed_id=request.feedId)
 
     return entities.UnsubscribeResponse()
 
 
-@router.post('/api/get-feeds-collections')
-async def api_get_feeds_collections(request: entities.GetFeedsCollectionsRequest, user: User) -> entities.GetFeedsCollectionsResponse:
+@router.post("/api/get-feeds-collections")
+async def api_get_feeds_collections(
+    request: entities.GetFeedsCollectionsRequest, user: User
+) -> entities.GetFeedsCollectionsResponse:
     collections = list(fc_domain.get_collections())
 
     return entities.GetFeedsCollectionsResponse(collections=collections)
 
 
-@router.post('/api/subscribe-to-feeds-collections')
-async def api_subscribe_to_feeds_collections(request: entities.SubscribeToFeedsCollectionsRequest, user: User) -> entities.SubscribeToFeedsCollectionsResponse:
-
+@router.post("/api/subscribe-to-feeds-collections")
+async def api_subscribe_to_feeds_collections(
+    request: entities.SubscribeToFeedsCollectionsRequest, user: User
+) -> entities.SubscribeToFeedsCollectionsResponse:
     feeds = []
 
     for collection in request.collections:
         feed_urls = fc_domain.get_feeds_for_collecton(collection)
 
         for feed_url in feed_urls:
-            feeds.append(f_entities.Feed(id=uuid.uuid4(),
-                                         url=feed_url,
-                                         title='unknown',
-                                         description='unknown'))
+            feeds.append(f_entities.Feed(id=uuid.uuid4(), url=feed_url, title="unknown", description="unknown"))
 
     real_feeds_ids = await f_domain.save_feeds(feeds)
 
@@ -286,9 +276,8 @@ async def api_subscribe_to_feeds_collections(request: entities.SubscribeToFeedsC
     return entities.SubscribeToFeedsCollectionsResponse()
 
 
-@router.post('/api/get-tags-info')
+@router.post("/api/get-tags-info")
 async def api_get_tags_info(request: entities.GetTagsInfoRequest, user: User) -> entities.GetTagsInfoResponse:
-
     tags_ids = await o_domain.get_ids_by_uids(request.uids)
 
     info = await o_domain.get_tags_info(tags_ids.values())
@@ -301,16 +290,18 @@ async def api_get_tags_info(request: entities.GetTagsInfoRequest, user: User) ->
     return entities.GetTagsInfoResponse(tags=tags_info)
 
 
-@router.post('/api/get-resource-history')
-async def api_get_resource_history(request: entities.GetResourceHistoryRequest, user: User) -> entities.GetResourceHistoryResponse:
-    history = await r_domain.load_resource_history(user_id=user.id,
-                                                   kind=request.kind.to_internal())
+@router.post("/api/get-resource-history")
+async def api_get_resource_history(
+    request: entities.GetResourceHistoryRequest, user: User
+) -> entities.GetResourceHistoryResponse:
+    history = await r_domain.load_resource_history(user_id=user.id, kind=request.kind.to_internal())
 
-    return entities.GetResourceHistoryResponse(history=[entities.ResourceHistoryRecord.from_internal(resource)
-                                                        for resource in history])
+    return entities.GetResourceHistoryResponse(
+        history=[entities.ResourceHistoryRecord.from_internal(resource) for resource in history]
+    )
 
 
-@router.post('/api/get-info')
+@router.post("/api/get-info")
 async def api_get_info(request: entities.GetInfoRequest, user: User) -> entities.GetInfoResponse:
     return entities.GetInfoResponse(userId=user.id)
 
@@ -319,13 +310,15 @@ async def api_get_info(request: entities.GetInfoRequest, user: User) -> entities
 # user settings
 ###############
 
-@router.post('/api/get-user-settings')
-async def api_get_user_settings(request: entities.GetUserSettingsRequest, user: User) -> entities.GetUserSettingsResponse:
+
+@router.post("/api/get-user-settings")
+async def api_get_user_settings(
+    request: entities.GetUserSettingsRequest, user: User
+) -> entities.GetUserSettingsResponse:
     from ffun.application.user_settings import UserSetting
     from ffun.user_settings.values import user_settings
 
-    values = await us_domain.load_settings(user_id=user.id,
-                                           kinds=[int(kind) for kind in UserSetting])
+    values = await us_domain.load_settings(user_id=user.id, kinds=[int(kind) for kind in UserSetting])
 
     result_values = []
 
@@ -335,12 +328,9 @@ async def api_get_user_settings(request: entities.GetUserSettingsRequest, user: 
     return entities.GetUserSettingsResponse(settings=result_values)
 
 
-@router.post('/api/set-user-setting')
+@router.post("/api/set-user-setting")
 async def api_set_user_setting(request: entities.SetUserSettingRequest, user: User) -> entities.SetUserSettingResponse:
-
-    await us_domain.save_setting(user_id=user.id,
-                                 kind=request.kind.to_internal(),
-                                 value=request.value)
+    await us_domain.save_setting(user_id=user.id, kind=request.kind.to_internal(), value=request.value)
 
     return entities.SetUserSettingResponse()
 
@@ -355,7 +345,7 @@ swagger_ui_api_parameters: dict[str, Any] = {
 }
 
 
-swagger_title = 'Feeds Fun API'
+swagger_title = "Feeds Fun API"
 
 
 swagger_description = """
@@ -377,11 +367,10 @@ Thank you for your interest in the Feeds Fun API. We look forward to your contri
 """
 
 
-@router.get('/api/openapi.json', include_in_schema=False)
+@router.get("/api/openapi.json", include_in_schema=False)
 async def openapi(request: fastapi.Request) -> JSONResponse:
-
     content = get_openapi(
-        title='Feeds Fun API',
+        title="Feeds Fun API",
         version=pkg_resources.get_distribution("ffun").version,
         description=swagger_description,
         routes=request.app.routes,
@@ -390,12 +379,10 @@ async def openapi(request: fastapi.Request) -> JSONResponse:
     return JSONResponse(content=content)
 
 
-@router.get('/api/docs', include_in_schema=False)
+@router.get("/api/docs", include_in_schema=False)
 async def docs(request: fastapi.Request) -> HTMLResponse:
-    openapi_url = request.scope.get("root_path", "") + '/api/openapi.json'
+    openapi_url = request.scope.get("root_path", "") + "/api/openapi.json"
 
     return get_swagger_ui_html(
-        openapi_url=openapi_url,
-        title=swagger_title,
-        swagger_ui_parameters=swagger_ui_api_parameters
+        openapi_url=openapi_url, title=swagger_title, swagger_ui_parameters=swagger_ui_api_parameters
     )

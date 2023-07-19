@@ -7,35 +7,37 @@ from ffun.core import logging
 logger = logging.get_module_logger()
 
 
-def finish_json(text: str, empty_value: str|None = '""') -> str:  # pylint: disable=too-many-branches # noqa: C901, CCR001
+def finish_json(
+    text: str, empty_value: str | None = '""'
+) -> str:  # pylint: disable=too-many-branches # noqa: C901, CCR001
     stack = []
 
     text = text.strip()
 
-    if text[-1] == ',':
+    if text[-1] == ",":
         text = text[:-1]
 
-    if text[-1] == ':':
+    if text[-1] == ":":
         text += empty_value
 
     for c in text:
-        if c == '{':
+        if c == "{":
             stack.append(c)
             continue
 
-        if c == '}':
-            if stack[-1] == '{':
+        if c == "}":
+            if stack[-1] == "{":
                 stack.pop()
                 continue
 
             raise NotImplementedError('For each "}" we expect "{"')
 
-        if c == '[':
+        if c == "[":
             stack.append(c)
             continue
 
-        if c == ']':
-            if stack[-1] == '[':
+        if c == "]":
+            if stack[-1] == "[":
                 stack.pop()
                 continue
 
@@ -54,18 +56,18 @@ def finish_json(text: str, empty_value: str|None = '""') -> str:  # pylint: disa
     while stack:
         c = stack.pop()
 
-        if c == '{':
-            text += '}'
+        if c == "{":
+            text += "}"
             continue
 
-        if c == '[':
-            text += ']'
+        if c == "[":
+            text += "]"
             continue
 
         if c == '"':
             text += '"'
 
-            if stack[-1] == '{':
+            if stack[-1] == "{":
                 text += f": {empty_value}"
                 continue
 
@@ -90,8 +92,9 @@ def extract_tags_from_random_json(data: Any) -> set[str]:
         return set.union(*(extract_tags_from_random_json(item) for item in data))
 
     if isinstance(data, dict):
-        return set.union(*(extract_tags_from_random_json(key)|extract_tags_from_random_json(value)
-                           for key, value in data.items()))
+        return set.union(
+            *(extract_tags_from_random_json(key) | extract_tags_from_random_json(value) for key, value in data.items())
+        )
 
     if isinstance(data, str):
         return {data}
@@ -100,7 +103,7 @@ def extract_tags_from_random_json(data: Any) -> set[str]:
 
 
 def extract_tags_from_invalid_json(text: str) -> set[str]:
-    logger.warning('try_to_extract_tags_from_an_invalid_ json', broken_source=text)
+    logger.warning("try_to_extract_tags_from_an_invalid_ json", broken_source=text)
 
     # search all strings, believing that
     parts = text.split('"')
@@ -117,6 +120,6 @@ def extract_tags_from_invalid_json(text: str) -> set[str]:
 
         is_tag = not is_tag
 
-    logger.info('tags_extracted', tags=tags)
+    logger.info("tags_extracted", tags=tags)
 
     return tags

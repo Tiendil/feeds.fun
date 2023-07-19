@@ -1,4 +1,3 @@
-
 from ffun.feeds.entities import Feed
 
 from . import feed

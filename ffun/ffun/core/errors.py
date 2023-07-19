@@ -1,13 +1,10 @@
-
-
 class Error(Exception):
-
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
         # TODO: send to Sentry
-        if 'fingerprint' not in kwargs:
+        if "fingerprint" not in kwargs:
             self.fingerprint = None
 
 

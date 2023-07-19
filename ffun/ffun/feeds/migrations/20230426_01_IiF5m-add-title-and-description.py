@@ -5,7 +5,7 @@ add-title-and-description
 from yoyo import step
 
 
-__depends__ = {'20230329_01_ilwfq-feeds-table'}
+__depends__ = {"20230329_01_ilwfq-feeds-table"}
 
 
 sql = """

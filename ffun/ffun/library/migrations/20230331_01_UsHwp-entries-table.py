@@ -8,7 +8,7 @@ from yoyo import step
 __depends__ = {}
 
 
-sql_create_entries_table = '''
+sql_create_entries_table = """
 CREATE TABLE l_entries (
     id UUID PRIMARY KEY,
     feed_id UUID NOT NULL,
@@ -21,15 +21,15 @@ CREATE TABLE l_entries (
     cataloged_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 )
-'''
+"""
 
 
-sql_create_feeds_index = '''
+sql_create_feeds_index = """
 CREATE INDEX idx_l_entries_feed_id ON l_entries (feed_id);
-'''
+"""
 
 
-sql_create_entry_process_info_table = '''
+sql_create_entry_process_info_table = """
 CREATE TABLE l_entry_process_info (
     entry_id UUID NOT NULL REFERENCES l_entries (id),
     processor_id INTEGER NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE l_entry_process_info (
 
     PRIMARY KEY (processor_id, entry_id)
 )
-'''
+"""
 
 
 def apply_step(conn):

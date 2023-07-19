@@ -11,7 +11,6 @@ class Processor(base.Processor):
         tags: list[ProcessorTag] = []
 
         for external_tag in entry.external_tags:
-            tags.append(ProcessorTag(raw_uid=external_tag,
-                                     categories={TagCategory.feed_tag}))
+            tags.append(ProcessorTag(raw_uid=external_tag, categories={TagCategory.feed_tag}))
 
         return tags

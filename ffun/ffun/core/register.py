@@ -4,14 +4,14 @@ from . import errors
 
 
 class Entity:
-    __slots__ = ('key',)
+    __slots__ = ("key",)
 
     def __init__(self, key: int) -> None:
         self.key = key
 
 
 class Register:
-    __slots__ = ('_entities',)
+    __slots__ = ("_entities",)
 
     def __init__(self) -> None:
         self._entities = {}

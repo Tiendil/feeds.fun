@@ -5,11 +5,11 @@ fix-entries-unique-index
 from yoyo import step
 
 
-__depends__ = {'20230331_01_UsHwp-entries-table'}
+__depends__ = {"20230331_01_UsHwp-entries-table"}
 
-constraint = 'l_entries_external_id_key'
-index = 'l_entries_feed_id_external_id_key'
-unnecessary_index = 'idx_l_entries_feed_id'
+constraint = "l_entries_external_id_key"
+index = "l_entries_feed_id_external_id_key"
+unnecessary_index = "idx_l_entries_feed_id"
 
 # we must controll unique constraint on entries by pair feed + id because
 # 1. we can not guarantee that there will be no duplicates of feeds
@@ -19,9 +19,9 @@ unnecessary_index = 'idx_l_entries_feed_id'
 
 def apply_step(conn):
     cursor = conn.cursor()
-    cursor.execute(f'ALTER TABLE l_entries DROP CONSTRAINT {constraint}')
-    cursor.execute(f'CREATE INDEX {index} ON l_entries (feed_id, external_id)')
-    cursor.execute(f'DROP INDEX {unnecessary_index}')
+    cursor.execute(f"ALTER TABLE l_entries DROP CONSTRAINT {constraint}")
+    cursor.execute(f"CREATE INDEX {index} ON l_entries (feed_id, external_id)")
+    cursor.execute(f"DROP INDEX {unnecessary_index}")
 
 
 def rollback_step(conn):

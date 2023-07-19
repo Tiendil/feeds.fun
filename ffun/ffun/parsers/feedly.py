@@ -8,16 +8,16 @@ from .entities import FeedInfo
 def _extract_body(data: str) -> ET.Element:
     root = ET.fromstring(data)  # noqa
 
-    if root.tag != 'opml':
-        raise NotImplementedError(f'Unknown root tag: {root.tag}')
+    if root.tag != "opml":
+        raise NotImplementedError(f"Unknown root tag: {root.tag}")
 
     head, body = root
 
-    if head.tag != 'head':
-        raise NotImplementedError(f'Unknown root tag: {head.tag}')
+    if head.tag != "head":
+        raise NotImplementedError(f"Unknown root tag: {head.tag}")
 
-    if body.tag != 'body':
-        raise NotImplementedError(f'Unknown root tag: {body.tag}')
+    if body.tag != "body":
+        raise NotImplementedError(f"Unknown root tag: {body.tag}")
 
     return body
 
@@ -41,12 +41,14 @@ def extract_feeds(data: str) -> list[FeedInfo]:
 
 def extract_feeds_records(body: ET.Element) -> Generator[FeedInfo, None, None]:
     for outline in body:
-        if outline.attrib.get('type') == 'rss':
-            yield FeedInfo(url=outline.attrib['xmlUrl'],
-                           base_url='',
-                           title=outline.attrib.get('title', ''),
-                           description='',
-                           entries=[])
+        if outline.attrib.get("type") == "rss":
+            yield FeedInfo(
+                url=outline.attrib["xmlUrl"],
+                base_url="",
+                title=outline.attrib.get("title", ""),
+                description="",
+                entries=[],
+            )
             continue
 
         yield from extract_feeds_records(outline)
