@@ -10,6 +10,7 @@ from ffun.core.postgresql import execute
 from . import errors
 from .entities import Service
 
+
 logger = logging.get_module_logger()
 
 

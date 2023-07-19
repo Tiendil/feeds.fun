@@ -10,6 +10,7 @@ from ffun.core.postgresql import execute
 from .entities import Entry, ProcessedState
 from .settings import settings
 
+
 logger = logging.get_module_logger()
 
 

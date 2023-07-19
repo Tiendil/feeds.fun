@@ -8,6 +8,7 @@ from ffun.core.postgresql import execute
 
 from .entities import Marker
 
+
 logger = logging.get_module_logger()
 
 

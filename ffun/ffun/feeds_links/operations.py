@@ -9,6 +9,7 @@ from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 
 from .entities import FeedLink
 
+
 logger = logging.get_module_logger()
 
 

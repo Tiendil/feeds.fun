@@ -9,9 +9,9 @@ from .processors.base import Processor
 from .processors.domain import Processor as DomainProcessor
 from .processors.native_tags import Processor as NativeTagsProcessor
 from .processors.openai_chat_3_5 import Processor as OpenAIChat35Processor
-from .processors.openai_chat_3_5_functions import \
-    Processor as OpenAIChat35FunctionsProcessor
+from .processors.openai_chat_3_5_functions import Processor as OpenAIChat35FunctionsProcessor
 from .settings import settings
+
 
 logger = logging.get_module_logger()
 

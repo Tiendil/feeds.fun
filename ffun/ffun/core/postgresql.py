@@ -11,6 +11,7 @@ from psycopg.rows import dict_row
 
 from ffun.core import logging
 
+
 logger = logging.get_module_logger()
 
 POOL: psycopg_pool.AsyncConnectionPool = None

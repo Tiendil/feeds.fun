@@ -16,6 +16,7 @@ from ffun.parsers.domain import parse_feed
 from . import errors
 from .settings import Proxy, settings
 
+
 logger = logging.get_module_logger()
 
 

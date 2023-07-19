@@ -8,6 +8,7 @@ from ffun.core import logging
 
 from .entities import EntryInfo, FeedInfo
 
+
 logger = logging.get_module_logger()
 
 

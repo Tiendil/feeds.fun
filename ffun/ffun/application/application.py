@@ -13,6 +13,7 @@ from ffun.loader.background_loader import FeedsLoader
 from . import errors
 from .settings import settings
 
+
 logger = logging.get_module_logger()
 
 
