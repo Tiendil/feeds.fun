@@ -1,11 +1,8 @@
 import datetime
-import enum
 import uuid
-
 import pydantic
-
 from ffun.core import utils
-
+import enum
 
 class ProcessedState(int, enum.Enum):
     success = 1
