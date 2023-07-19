@@ -13,6 +13,7 @@ from ffun.library.entities import Entry
 from ffun.ontology.entities import ProcessorTag, TagCategory
 from ffun.openai import client as oai_client
 from ffun.openai import errors as oai_errors
+from ffun.openai.keys_rotator import api_key_for_feed_entry
 from slugify import slugify
 
 from . import base
@@ -65,7 +66,6 @@ class Processor(base.Processor):
         self.model = model
 
     async def process(self, entry: Entry) -> list[ProcessorTag]:
-        raise NotImplementedError('broken, sync with openai_chat_3_5_functions')
         tags: list[ProcessorTag] = []
 
         dirty_text = entry_to_text(entry)
@@ -83,20 +83,27 @@ class Processor(base.Processor):
                                                      max_return_tokens=max_return_tokens)
 
         try:
-            results = await oai_client.multiple_requests(api_key=self.api_key,
-                                                         model=self.model,
-                                                         messages=messages,
-                                                         function=None,
-                                                         max_return_tokens=max_return_tokens,
-                                                         temperature=0,
-                                                         top_p=0,
-                                                         presence_penalty=0,
-                                                         frequency_penalty=0)
+            async with api_key_for_feed_entry(entry.feed_id,
+                                              entry_age=entry.age,
+                                              reserved_tokens=len(messages) * total_tokens) as api_key_usage:
+
+                results = await oai_client.multiple_requests(api_key=api_key_usage.api_key,
+                                                             model=self.model,
+                                                             messages=messages,
+                                                             function=None,
+                                                             max_return_tokens=max_return_tokens,
+                                                             temperature=0,
+                                                             top_p=0,
+                                                             presence_penalty=0,
+                                                             frequency_penalty=0)
+
+                api_key_usage.used_tokens = sum(result.total_tokens for result in results)
+
         except oai_errors.TemporaryError as e:
             raise errors.SkipAndContinueLater(message=str(e)) from e
 
         for result in results:
-            for raw_tag in extract_tags(result):
+            for raw_tag in extract_tags(result.content):
                 tags.append(ProcessorTag(raw_uid=raw_tag))
 
         return tags
