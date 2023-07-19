@@ -1,0 +1,30 @@
+name: code checks
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+  workflow_call:
+    inputs:
+      branch_ref:
+        type: string
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.branch_ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  check-code-formatting:
+    timeout-minutes: 5
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.branch_ref }}
+
+      - name: run checks
+        run: |
+          ./bin/check-code-formatting.sh
