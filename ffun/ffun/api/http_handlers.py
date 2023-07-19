@@ -7,6 +7,7 @@ import pkg_resources
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse, JSONResponse
+
 from ffun.auth.dependencies import User
 from ffun.core import logging
 from ffun.feeds import domain as f_domain

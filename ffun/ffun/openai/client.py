@@ -4,11 +4,11 @@ import json
 import math
 
 import async_lru
+import openai
 import tiktoken
 import typer
-from ffun.core import logging
 
-import openai
+from ffun.core import logging
 
 from . import entities, errors
 

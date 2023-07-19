@@ -3,7 +3,6 @@ from typing import Any
 
 import fastapi
 from fastapi import FastAPI
-from ffun.core import logging
 from starlette.middleware.cors import CORSMiddleware
 from supertokens_python import (InputAppInfo, SupertokensConfig,
                                 get_all_cors_headers, init)
@@ -15,6 +14,8 @@ from supertokens_python.recipe import (dashboard, emailverification,
 from supertokens_python.recipe.passwordless import ContactEmailOnlyConfig
 from supertokens_python.recipe.passwordless.types import (
     EmailDeliveryOverrideInput, EmailTemplateVars)
+
+from ffun.core import logging
 
 from .settings import settings
 

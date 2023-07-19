@@ -4,6 +4,7 @@ from typing import Iterable
 
 import psycopg
 from bidict import bidict
+
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.ontology.entities import Tag, TagProperty, TagPropertyType

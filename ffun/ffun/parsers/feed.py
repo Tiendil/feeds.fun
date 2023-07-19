@@ -3,6 +3,7 @@ import uuid
 from typing import Any, Iterable
 
 import feedparser
+
 from ffun.core import logging
 
 from .entities import EntryInfo, FeedInfo

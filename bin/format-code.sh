@@ -1,3 +1,3 @@
 #!/usr/bin/bash
 
-./bin/backend-utils.sh isort .
+./bin/backend-utils.sh poetry run isort .

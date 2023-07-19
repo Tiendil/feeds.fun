@@ -5,6 +5,7 @@ from typing import Any, Iterable
 
 import markdown
 import pydantic
+
 from ffun.core import api
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities

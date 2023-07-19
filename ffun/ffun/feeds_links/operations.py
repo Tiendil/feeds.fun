@@ -3,6 +3,7 @@ import datetime
 import uuid
 
 import psycopg
+
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 

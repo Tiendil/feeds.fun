@@ -2,6 +2,7 @@ import datetime
 import enum
 
 import pydantic
+
 from ffun.core import utils
 
 

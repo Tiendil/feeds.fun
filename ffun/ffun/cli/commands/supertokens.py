@@ -2,6 +2,7 @@ import asyncio
 
 import httpx
 import typer
+
 from ffun.application.application import with_app
 from ffun.auth.settings import settings as auth_settings
 
