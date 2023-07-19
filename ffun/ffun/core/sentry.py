@@ -1,4 +1,3 @@
-
 import sentry_sdk
 from sentry_sdk import init as initialize_sentry
 from sentry_sdk.integrations.fastapi import FastApiIntegration
@@ -25,10 +24,7 @@ def before_send(event, hint):
     return event
 
 
-def initialize(dsn: str,
-               sample_rate: float,
-               traces_sample_rate: float,
-               environment: str) -> None:
+def initialize(dsn: str, sample_rate: float, traces_sample_rate: float, environment: str) -> None:
     initialize_sentry(
         dsn=dsn,
         sample_rate=sample_rate,

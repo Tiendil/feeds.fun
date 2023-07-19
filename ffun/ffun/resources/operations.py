@@ -14,54 +14,48 @@ logger = logging.get_module_logger()
 
 
 def row_to_entry(row: dict[str, Any]) -> Resource:
-    return Resource(user_id=row['user_id'],
-                    kind=row['kind'],
-                    interval_started_at=row['interval_started_at'],
-                    used=row['used'],
-                    reserved=row['reserved'])
+    return Resource(
+        user_id=row["user_id"],
+        kind=row["kind"],
+        interval_started_at=row["interval_started_at"],
+        used=row["used"],
+        reserved=row["reserved"],
+    )
 
 
-async def initialize_resource(user_id: uuid.UUID,
-                              kind: int,
-                              interval_started_at: datetime.datetime) -> Resource:
+async def initialize_resource(user_id: uuid.UUID, kind: int, interval_started_at: datetime.datetime) -> Resource:
     sql = """
         INSERT INTO r_resources (user_id, kind, interval_started_at)
         VALUES (%(user_id)s, %(kind)s, %(interval_started_at)s)
         ON CONFLICT (user_id, kind, interval_started_at) DO NOTHING
     """
 
-    await execute(sql, {'user_id': user_id,
-                        'kind': kind,
-                        'interval_started_at': interval_started_at})
+    await execute(sql, {"user_id": user_id, "kind": kind, "interval_started_at": interval_started_at})
 
     sql = """
     SELECT * FROM r_resources
     WHERE user_id = %(user_id)s AND kind = %(kind)s AND interval_started_at = %(interval_started_at)s
     """
 
-    results = await execute(sql, {'user_id': user_id,
-                                  'kind': kind,
-                                  'interval_started_at': interval_started_at})
+    results = await execute(sql, {"user_id": user_id, "kind": kind, "interval_started_at": interval_started_at})
 
     return row_to_entry(results[0])
 
 
-async def load_resources(user_ids: Iterable[uuid.UUID],
-                         kind: int,
-                         interval_started_at: datetime.datetime) -> Any:
+async def load_resources(user_ids: Iterable[uuid.UUID], kind: int, interval_started_at: datetime.datetime) -> Any:
     sql = """
         SELECT * FROM r_resources
         WHERE user_id = ANY(%(user_ids)s) AND kind = %(kind)s AND interval_started_at = %(interval_started_at)s
     """
 
-    results = await execute(sql, {'user_ids': list(user_ids),
-                                  'kind': kind,
-                                  'interval_started_at': interval_started_at})
+    results = await execute(
+        sql, {"user_ids": list(user_ids), "kind": kind, "interval_started_at": interval_started_at}
+    )
 
     resources = {}
 
     for row in results:
-        resources[row['user_id']] = row_to_entry(row)
+        resources[row["user_id"]] = row_to_entry(row)
 
     for user_id in user_ids:
         if user_id not in resources:
@@ -70,11 +64,9 @@ async def load_resources(user_ids: Iterable[uuid.UUID],
     return resources
 
 
-async def try_to_reserve(user_id: uuid.UUID,
-                         kind: int,
-                         interval_started_at: datetime.datetime,
-                         amount: int,
-                         limit: int) -> bool:
+async def try_to_reserve(
+    user_id: uuid.UUID, kind: int, interval_started_at: datetime.datetime, amount: int, limit: int
+) -> bool:
     sql = """
         UPDATE r_resources
         SET reserved = reserved + %(amount)s,
@@ -86,20 +78,23 @@ async def try_to_reserve(user_id: uuid.UUID,
         RETURNING *
     """
 
-    results = await execute(sql, {'user_id': user_id,
-                                  'kind': kind,
-                                  'interval_started_at': interval_started_at,
-                                  'amount': amount,
-                                  'limit': limit})
+    results = await execute(
+        sql,
+        {
+            "user_id": user_id,
+            "kind": kind,
+            "interval_started_at": interval_started_at,
+            "amount": amount,
+            "limit": limit,
+        },
+    )
 
     return len(results) > 0
 
 
-async def convert_reserved_to_used(user_id: uuid.UUID,
-                                   kind: int,
-                                   interval_started_at: datetime.datetime,
-                                   used: int,
-                                   reserved: int) -> None:
+async def convert_reserved_to_used(
+    user_id: uuid.UUID, kind: int, interval_started_at: datetime.datetime, used: int, reserved: int
+) -> None:
     sql = """
         UPDATE r_resources
         SET used = used + %(used)s,
@@ -110,22 +105,25 @@ async def convert_reserved_to_used(user_id: uuid.UUID,
               interval_started_at = %(interval_started_at)s
     """
 
-    await execute(sql, {'user_id': user_id,
-                        'kind': kind,
-                        'interval_started_at': interval_started_at,
-                        'used': used,
-                        'reserved': reserved})
+    await execute(
+        sql,
+        {
+            "user_id": user_id,
+            "kind": kind,
+            "interval_started_at": interval_started_at,
+            "used": used,
+            "reserved": reserved,
+        },
+    )
 
 
-async def load_resource_history(user_id: uuid.UUID,
-                                kind: int) -> list[Resource]:
+async def load_resource_history(user_id: uuid.UUID, kind: int) -> list[Resource]:
     sql = """
         SELECT * FROM r_resources
         WHERE user_id = %(user_id)s AND kind = %(kind)s
         ORDER BY interval_started_at DESC
     """
 
-    results = await execute(sql, {'user_id': user_id,
-                                  'kind': kind})
+    results = await execute(sql, {"user_id": user_id, "kind": kind})
 
     return [row_to_entry(row) for row in results]

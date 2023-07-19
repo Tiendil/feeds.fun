@@ -1,4 +1,3 @@
-
 # TODO: rename this module, because mypy does not support name `types`
 # TODO: refactor to use pydantic instead of custom types
 
@@ -11,10 +10,10 @@ from .settings import settings
 
 
 class TypeId(str, enum.Enum):
-    integer = 'integer'
-    string = 'string'
-    boolean = 'boolean'
-    secret = 'secret'
+    integer = "integer"
+    string = "string"
+    boolean = "boolean"
+    secret = "secret"
 
 
 class Type:
@@ -40,7 +39,7 @@ class Integer(Type):
         return int(data)
 
     def normalize(self, value: Any) -> int:
-        if value == '':
+        if value == "":
             return 0
 
         return int(value)
@@ -63,13 +62,13 @@ class Boolean(Type):
     id = TypeId.boolean
 
     def serialize(self, value: bool) -> str:
-        return 'true' if value else 'false'
+        return "true" if value else "false"
 
     def deserialize(self, data: str) -> bool:
-        return data == 'true'
+        return data == "true"
 
     def normalize(self, value: Any) -> bool:
-        return value in (True, 'true', 'True')
+        return value in (True, "true", "True")
 
 
 class Secret(Type):

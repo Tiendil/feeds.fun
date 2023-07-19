@@ -99,7 +99,7 @@ def info_extracter(_, __, event_dict: dict[str, Any]) -> dict[str, Any]:
             continue
 
         for k, v in value.log_info().items():
-            event_dict[f'{key}_{k}'] = v
+            event_dict[f"{key}_{k}"] = v
 
         del event_dict[key]
 
@@ -112,17 +112,15 @@ def info_extracter(_, __, event_dict: dict[str, Any]) -> dict[str, Any]:
 
 
 def create_formatter():
-    formatters = [DateFormatter(),
-                  UUIDFormatter(),
-                  EnumFormatter()]
+    formatters = [DateFormatter(), UUIDFormatter(), EnumFormatter()]
     return ProcessorFormatter(formatters)
 
 
 def log_errors_to_sentry(_, __, event_dict: dict[str, Any]) -> dict[str, Any]:
-    if event_dict.get('sentry_skip'):
+    if event_dict.get("sentry_skip"):
         return event_dict
 
-    if event_dict.get('level', '').upper() != 'ERROR':
+    if event_dict.get("level", "").upper() != "ERROR":
         return event_dict
 
     capture_message(event_dict["event"])
@@ -131,7 +129,6 @@ def log_errors_to_sentry(_, __, event_dict: dict[str, Any]) -> dict[str, Any]:
 
 
 def processors_list(use_sentry: bool):
-
     sentry_processor = None
 
     if use_sentry:
@@ -159,7 +156,8 @@ def initialize(use_sentry: bool) -> None:
         wrapper_class=structlog.make_filtering_bound_logger(settings.structlog_level),
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),
-        cache_logger_on_first_use=True)
+        cache_logger_on_first_use=True,
+    )
 
 
 def get_module_logger():
@@ -169,7 +167,6 @@ def get_module_logger():
 
 
 def bound_function(skip=()):
-
     def wrapper(func):
         @functools.wraps(func)
         def wrapped(**kwargs):

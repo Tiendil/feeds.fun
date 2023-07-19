@@ -17,7 +17,7 @@ logger = logging.get_module_logger()
 
 
 class ProcessorInfo:
-    __slots__ = ('_id', '_processor', '_concurrency')
+    __slots__ = ("_id", "_processor", "_concurrency")
 
     def __init__(self, id: int, processor: Processor, concurrency: int):
         self._id = id
@@ -40,33 +40,43 @@ class ProcessorInfo:
 processors = []
 
 if settings.domain_processor.enabled:
-    processors.append(ProcessorInfo(id=1,
-                                    processor=DomainProcessor(name='domain'),
-                                    concurrency=settings.domain_processor.workers))
+    processors.append(
+        ProcessorInfo(id=1, processor=DomainProcessor(name="domain"), concurrency=settings.domain_processor.workers)
+    )
 
 
 if settings.native_tags_processor.enabled:
-    processors.append(ProcessorInfo(id=2,
-                                    processor=NativeTagsProcessor(name="native_tags"),
-                                    concurrency=settings.native_tags_processor.workers))
+    processors.append(
+        ProcessorInfo(
+            id=2, processor=NativeTagsProcessor(name="native_tags"), concurrency=settings.native_tags_processor.workers
+        )
+    )
 
 
 if settings.openai_chat_35_processor.enabled:
-    processors.append(ProcessorInfo(id=3,
-                                    processor=OpenAIChat35Processor(name="openai_chat_3_5",
-                                                                    model=settings.openai_chat_35_processor.model),
-                                    concurrency=settings.openai_chat_35_processor.workers))
+    processors.append(
+        ProcessorInfo(
+            id=3,
+            processor=OpenAIChat35Processor(name="openai_chat_3_5", model=settings.openai_chat_35_processor.model),
+            concurrency=settings.openai_chat_35_processor.workers,
+        )
+    )
 
 
 if settings.openai_chat_35_functions_processor.enabled:
-    processors.append(ProcessorInfo(id=4,
-                                    processor=OpenAIChat35FunctionsProcessor(name="openai_chat_3_5_functions",
-                                                                             model=settings.openai_chat_35_functions_processor.model),
-                                    concurrency=settings.openai_chat_35_functions_processor.workers))
+    processors.append(
+        ProcessorInfo(
+            id=4,
+            processor=OpenAIChat35FunctionsProcessor(
+                name="openai_chat_3_5_functions", model=settings.openai_chat_35_functions_processor.model
+            ),
+            concurrency=settings.openai_chat_35_functions_processor.workers,
+        )
+    )
 
 
 class EntriesProcessor(InfiniteTask):
-    __slots__ = ('_processor_info',)
+    __slots__ = ("_processor_info",)
 
     def __init__(self, processor_info: ProcessorInfo, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -76,18 +86,22 @@ class EntriesProcessor(InfiniteTask):
         processor_id = self._processor_info.id
         concurrency = self._processor_info.concurrency
 
-        entries = await l_domain.get_entries_to_process(processor_id=processor_id,
-                                                        number=concurrency)
+        entries = await l_domain.get_entries_to_process(processor_id=processor_id, number=concurrency)
 
-        tasks = [domain.process_entry(processor_id=processor_id,
-                                      processor=self._processor_info.processor,
-                                      entry=entry) for entry in entries]
+        tasks = [
+            domain.process_entry(processor_id=processor_id, processor=self._processor_info.processor, entry=entry)
+            for entry in entries
+        ]
 
         await asyncio.gather(*tasks, return_exceptions=True)
 
 
 def create_background_processors() -> list[EntriesProcessor]:
-    return [EntriesProcessor(processor_info=processor_info,
-                             name=f'entries_processor_{processor_info.processor.name}',
-                             delay_between_runs=1)
-            for processor_info in processors]
+    return [
+        EntriesProcessor(
+            processor_info=processor_info,
+            name=f"entries_processor_{processor_info.processor.name}",
+            delay_between_runs=1,
+        )
+        for processor_info in processors
+    ]

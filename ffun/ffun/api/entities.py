@@ -21,10 +21,10 @@ from ffun.user_settings.values import user_settings
 
 
 class Marker(str, enum.Enum):
-    read = 'read'
+    read = "read"
 
     @classmethod
-    def from_internal(cls, marker: m_entities.Marker) -> 'Marker':
+    def from_internal(cls, marker: m_entities.Marker) -> "Marker":
         return cls(marker.name)
 
     def to_internal(self) -> m_entities.Marker:
@@ -33,16 +33,16 @@ class Marker(str, enum.Enum):
 
 class Feed(api.Base):
     id: uuid.UUID
-    title: str|None
-    description: str|None
+    title: str | None
+    description: str | None
     url: str
     state: str
-    lastError: str|None = None
-    loadedAt: datetime.datetime|None
-    linkedAt: datetime.datetime|None
+    lastError: str | None = None
+    loadedAt: datetime.datetime | None
+    linkedAt: datetime.datetime | None
 
     @classmethod
-    def from_internal(cls, feed: f_entities.Feed, link: fl_entities.FeedLink) -> 'Feed':
+    def from_internal(cls, feed: f_entities.Feed, link: fl_entities.FeedLink) -> "Feed":
         return cls(
             id=feed.id,
             title=feed.title,
@@ -65,15 +65,17 @@ class Entry(api.Base):
     score: int
     publishedAt: datetime.datetime
     catalogedAt: datetime.datetime
-    body: str|None = None
+    body: str | None = None
 
     @classmethod
-    def from_internal(cls,
-                      entry: l_entities.Entry,
-                      tags: Iterable[str],
-                      markers: Iterable[Marker],
-                      score: int,
-                      with_body: bool = False) -> 'Entry':
+    def from_internal(
+        cls,
+        entry: l_entities.Entry,
+        tags: Iterable[str],
+        markers: Iterable[Marker],
+        score: int,
+        with_body: bool = False,
+    ) -> "Entry":
         return cls(
             id=entry.id,
             feed_id=entry.feed_id,
@@ -84,7 +86,7 @@ class Entry(api.Base):
             score=score,
             publishedAt=entry.published_at,
             catalogedAt=entry.cataloged_at,
-            body=entry.body if with_body else None
+            body=entry.body if with_body else None,
         )
 
 
@@ -95,7 +97,7 @@ class Rule(api.Base):
     createdAt: datetime.datetime
 
     @classmethod
-    def from_internal(cls, rule: s_entities.Rule, tags_mapping: dict[int, str]) -> 'Rule':
+    def from_internal(cls, rule: s_entities.Rule, tags_mapping: dict[int, str]) -> "Rule":
         return cls(
             id=rule.id,
             tags={tags_mapping[tag_id] for tag_id in rule.tags},
@@ -111,11 +113,8 @@ class EntryInfo(api.Base):
     published_at: datetime.datetime
 
     @classmethod
-    def from_internal(cls, entry: p_entities.EntryInfo) -> 'EntryInfo':
-        return cls(title=entry.title,
-                   body=entry.body,
-                   url=entry.external_url,
-                   published_at=entry.published_at)
+    def from_internal(cls, entry: p_entities.EntryInfo) -> "EntryInfo":
+        return cls(title=entry.title, body=entry.body, url=entry.external_url, published_at=entry.published_at)
 
 
 class FeedInfo(api.Base):
@@ -127,42 +126,43 @@ class FeedInfo(api.Base):
     entries: list[EntryInfo]
 
     @classmethod
-    def from_internal(cls, feed: p_entities.FeedInfo) -> 'FeedInfo':
-        return cls(url=feed.url,
-                   base_url=feed.base_url,
-                   title=feed.title,
-                   description=feed.description,
-                   entries=[EntryInfo.from_internal(entry) for entry in feed.entries])
+    def from_internal(cls, feed: p_entities.FeedInfo) -> "FeedInfo":
+        return cls(
+            url=feed.url,
+            base_url=feed.base_url,
+            title=feed.title,
+            description=feed.description,
+            entries=[EntryInfo.from_internal(entry) for entry in feed.entries],
+        )
 
 
 class TagInfo(api.Base):
     uid: str
     name: str
-    link: str|None
+    link: str | None
     categories: set[o_entities.TagCategory]
 
     @classmethod
-    def from_internal(cls, tag: o_entities.Tag, uid: str) -> 'TagInfo':
-        return cls(uid=uid,
-                   name=tag.name,
-                   link=tag.link,
-                   categories=tag.categories)
+    def from_internal(cls, tag: o_entities.Tag, uid: str) -> "TagInfo":
+        return cls(uid=uid, name=tag.name, link=tag.link, categories=tag.categories)
 
 
 class UserSettingKind(str, enum.Enum):
-    openai_api_key = 'openai_api_key'
-    openai_max_tokens_in_month = 'openai_max_tokens_in_month'
-    openai_hide_message_about_setting_up_key = 'openai_hide_message_about_setting_up_key'
-    openai_process_entries_not_older_than = 'openai_process_entries_not_older_than'
+    openai_api_key = "openai_api_key"
+    openai_max_tokens_in_month = "openai_max_tokens_in_month"
+    openai_hide_message_about_setting_up_key = "openai_hide_message_about_setting_up_key"
+    openai_process_entries_not_older_than = "openai_process_entries_not_older_than"
 
     @classmethod
-    def from_internal(cls, kind: int) -> 'UserSettingKind':
+    def from_internal(cls, kind: int) -> "UserSettingKind":
         from ffun.application.user_settings import UserSetting
+
         real_kind = UserSetting(kind)
         return UserSettingKind(real_kind.name)
 
     def to_internal(self) -> int:
         from ffun.application.user_settings import UserSetting
+
         return getattr(UserSetting, self.name)
 
 
@@ -171,34 +171,38 @@ class UserSetting(api.Base):
     type: us_types.TypeId  # should not differ between front & back => no need to convert
     value: Any
     name: str
-    description: str|None
+    description: str | None
 
     @classmethod
-    def from_internal(cls, kind: int, value: str|int|float|bool) -> 'UserSetting':
+    def from_internal(cls, kind: int, value: str | int | float | bool) -> "UserSetting":
         from ffun.application.user_settings import UserSetting
 
         real_kind = UserSetting(kind)
 
         real_setting = user_settings.get(real_kind)
 
-        return cls(kind=UserSettingKind.from_internal(real_kind),
-                   type=real_setting.type.id,
-                   value=real_setting.type.normalize(value),
-                   name=real_setting.name,
-                   description=markdown.markdown(real_setting.description) if real_setting.description else None)
+        return cls(
+            kind=UserSettingKind.from_internal(real_kind),
+            type=real_setting.type.id,
+            value=real_setting.type.normalize(value),
+            name=real_setting.name,
+            description=markdown.markdown(real_setting.description) if real_setting.description else None,
+        )
 
 
 class ResourceKind(str, enum.Enum):
-    openai_tokens = 'openai_tokens'
+    openai_tokens = "openai_tokens"
 
     @classmethod
-    def from_internal(cls, kind: int) -> 'ResourceKind':
+    def from_internal(cls, kind: int) -> "ResourceKind":
         from ffun.application.resources import Resource
+
         real_kind = Resource(kind)
         return ResourceKind(real_kind.name)
 
     def to_internal(self) -> int:
         from ffun.application.resources import Resource
+
         return getattr(Resource, self.name)
 
 
@@ -208,15 +212,14 @@ class ResourceHistoryRecord(pydantic.BaseModel):
     reserved: int
 
     @classmethod
-    def from_internal(cls, record: r_entities.Resource) -> 'ResourceHistoryRecord':
-        return cls(intervalStartedAt=record.interval_started_at,
-                   used=record.used,
-                   reserved=record.reserved)
+    def from_internal(cls, record: r_entities.Resource) -> "ResourceHistoryRecord":
+        return cls(intervalStartedAt=record.interval_started_at, used=record.used, reserved=record.reserved)
 
 
 ##################
 # Request/Response
 ##################
+
 
 class GetFeedsRequest(api.APIRequest):
     pass
@@ -227,12 +230,12 @@ class GetFeedsResponse(api.APISuccess):
 
 
 class GetLastEntriesRequest(api.APIRequest):
-    period: datetime.timedelta|None = None
+    period: datetime.timedelta | None = None
 
-    @pydantic.validator('period')
+    @pydantic.validator("period")
     def validate_period(cls, v):
         if v is not None and v.total_seconds() < 0:
-            raise ValueError('period must be positive')
+            raise ValueError("period must be positive")
         return v
 
 
@@ -381,14 +384,14 @@ class SetUserSettingRequest(api.APIRequest):
     def validate_value(cls, values):
         from ffun.application.user_settings import UserSetting
 
-        kind = values.get('kind').to_internal()
-        value = values.get('value')
+        kind = values.get("kind").to_internal()
+        value = values.get("value")
 
         real_kind = UserSetting(kind)
 
         real_setting = user_settings.get(real_kind)
 
-        values['value'] = real_setting.type.normalize(value)
+        values["value"] = real_setting.type.normalize(value)
 
         return values
 

@@ -7,12 +7,10 @@ from yoyo import step
 
 __depends__ = {}
 
-steps = [
-    step("")
-]
+steps = [step("")]
 
 
-sql_create_rules_table = '''
+sql_create_rules_table = """
 CREATE TABLE s_rules (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL,
@@ -21,11 +19,11 @@ CREATE TABLE s_rules (
     score INTEGER NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 )
-'''
+"""
 
-sql_users_key_index = '''
+sql_users_key_index = """
 CREATE UNIQUE INDEX idx_s_rules_user_id_key ON s_rules (user_id, key);
-'''
+"""
 
 
 def apply_step(conn):

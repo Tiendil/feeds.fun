@@ -7,7 +7,7 @@ from yoyo import step
 
 __depends__ = {}
 
-sql_create_table = '''
+sql_create_table = """
 CREATE TABLE r_resources (
     user_id UUID NOT NULL,
     kind INTEGER NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE r_resources (
 
     PRIMARY KEY (kind, user_id, interval_started_at)
 )
-'''
+"""
 
 
 def apply_step(conn):

@@ -1,4 +1,3 @@
-
 import uuid
 from typing import Iterable
 
@@ -52,10 +51,7 @@ async def get_tags_by_ids(ids: Iterable[int]) -> dict[int, str]:
     return result
 
 
-async def apply_tags_to_entry(entry_id: uuid.UUID,
-                              processor_id: int,
-                              tags: Iterable[ProcessorTag]) -> None:
-
+async def apply_tags_to_entry(entry_id: uuid.UUID, processor_id: int, tags: Iterable[ProcessorTag]) -> None:
     raw_to_uids = {tag.raw_uid: converters.normalize(tag.raw_uid) for tag in tags}
 
     uids_to_ids = await get_ids_by_uids(raw_to_uids.values())
@@ -63,8 +59,7 @@ async def apply_tags_to_entry(entry_id: uuid.UUID,
     properties = []
 
     for tag in tags:
-        properties.extend(tag.build_properties_for(uids_to_ids[raw_to_uids[tag.raw_uid]],
-                                                   processor_id=processor_id))
+        properties.extend(tag.build_properties_for(uids_to_ids[raw_to_uids[tag.raw_uid]], processor_id=processor_id))
 
     async with transaction() as execute:
         await operations.apply_tags(execute, entry_id, processor_id, uids_to_ids.values())
@@ -85,8 +80,7 @@ async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, 
 
     tags_mapping = await get_tags_by_ids(all_tags)
 
-    return {entry_id: {tags_mapping[tag_id] for tag_id in tags}
-            for entry_id, tags in tags_ids.items()}
+    return {entry_id: {tags_mapping[tag_id] for tag_id in tags} for entry_id, tags in tags_ids.items()}
 
 
 async def get_tags_info(tags_ids: Iterable[int]) -> dict[int, Tag]:  # noqa: CCR001
@@ -95,9 +89,7 @@ async def get_tags_info(tags_ids: Iterable[int]) -> dict[int, Tag]:  # noqa: CCR
 
     tags_by_ids = await get_tags_by_ids(tags_ids)
 
-    info = {tag_id: Tag(id=tag_id,
-                        name=converters.verbose(tags_by_ids[tag_id]))
-            for tag_id in tags_ids}
+    info = {tag_id: Tag(id=tag_id, name=converters.verbose(tags_by_ids[tag_id])) for tag_id in tags_ids}
 
     # TODO: implement more complex merging
     for property in properties:
@@ -109,9 +101,9 @@ async def get_tags_info(tags_ids: Iterable[int]) -> dict[int, Tag]:  # noqa: CCR
             continue
 
         if property.type == TagPropertyType.categories:
-            tag.categories.update(TagCategory(cat) for cat in property.value.split(','))
+            tag.categories.update(TagCategory(cat) for cat in property.value.split(","))
             continue
 
-        raise NotImplementedError(f'Unknown property type: {property.type}')
+        raise NotImplementedError(f"Unknown property type: {property.type}")
 
     return info

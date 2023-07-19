@@ -1,4 +1,3 @@
-
 from fastapi.responses import JSONResponse
 from sentry_sdk import capture_exception, capture_message
 
@@ -22,8 +21,9 @@ async def _handle_expected_error(_, error):
 
 async def _handle_unexpected_error(_, error):
     # TODO: improve error processing
-    api_error = api.APIError(code=error.__class__.__name__,
-                             message="An unexpected error appeared. We are working on fixing it.")
+    api_error = api.APIError(
+        code=error.__class__.__name__, message="An unexpected error appeared. We are working on fixing it."
+    )
 
     capture_exception(error)
 

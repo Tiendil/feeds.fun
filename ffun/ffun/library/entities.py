@@ -29,7 +29,4 @@ class Entry(pydantic.BaseModel):
         return utils.now() - self.published_at
 
     def log_info(self):
-        return {'id': self.id,
-                'feed_id': self.feed_id,
-                'title': self.title,
-                'external_url': self.external_url}
+        return {"id": self.id, "feed_id": self.feed_id, "title": self.title, "external_url": self.external_url}

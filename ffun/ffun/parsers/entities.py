@@ -12,8 +12,7 @@ class EntryInfo(pydantic.BaseModel):
     published_at: datetime.datetime
 
     def log_info(self):
-        return {'title': self.title,
-                'external_url': self.external_url}
+        return {"title": self.title, "external_url": self.external_url}
 
 
 class FeedInfo(pydantic.BaseModel):
@@ -25,5 +24,4 @@ class FeedInfo(pydantic.BaseModel):
     entries: list[EntryInfo]
 
     def log_info(self):
-        return {'title': self.title,
-                'url': self.url}
+        return {"title": self.title, "url": self.url}

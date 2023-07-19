@@ -1,4 +1,3 @@
-
 import asyncio
 import contextlib
 import functools
@@ -22,12 +21,11 @@ SQL_ARGUMENTS = dict[str, Any] | tuple[list[Any]]
 
 
 class ExecuteType(Protocol):
-    async def __call__(self, command: str, arguments: SQL_ARGUMENTS|None = None) -> DB_RESULT:
+    async def __call__(self, command: str, arguments: SQL_ARGUMENTS | None = None) -> DB_RESULT:
         pass
 
 
 class PGAsyncCursor(psycopg.AsyncCursor):  # type: ignore
-
     async def execute_and_extract(self, command: str, arguments: dict[str, Any]) -> DB_RESULT:
         await self.execute(command, arguments)
 
@@ -42,12 +40,9 @@ class PGAsyncCursor(psycopg.AsyncCursor):  # type: ignore
         return []
 
 
-class PGPAsyncConnection(psycopg.AsyncConnection):   # type: ignore
-
+class PGPAsyncConnection(psycopg.AsyncConnection):  # type: ignore
     def __init__(self, *argv, row_factory=dict_row, cursor_factory=PGAsyncCursor, **kwargs):  # type: ignore
-        super().__init__(*argv,
-                         row_factory=row_factory,
-                         **kwargs)
+        super().__init__(*argv, row_factory=row_factory, **kwargs)
         self.cursor_factory = cursor_factory
 
         # set prepare_threshold to None because we can use connection pool (pgbouncer/RDSPRoxy)
@@ -73,28 +68,26 @@ async def pool_refresher(delay: int) -> None:
         return
 
 
-async def prepare_pool(name: str,
-                       dsn: str,
-                       min_size: int,
-                       max_size: int|None,
-                       timeout: float,
-                       num_workers: int,
-                       max_lifetime: int) -> None:
+async def prepare_pool(
+    name: str, dsn: str, min_size: int, max_size: int | None, timeout: float, num_workers: int, max_lifetime: int
+) -> None:
     global POOL
 
     if POOL is not None:
         raise RuntimeError("Secondary db pool initialization is not allowed")
 
-    POOL = psycopg_pool.AsyncConnectionPool(dsn,
-                                            min_size=min_size,
-                                            max_size=max_size,
-                                            max_lifetime=max_lifetime,
-                                            timeout=timeout,
-                                            connection_class=PGPAsyncConnection,
-                                            num_workers=num_workers,
-                                            name=name,
-                                            open=False,
-                                            kwargs={'autocommit': True})
+    POOL = psycopg_pool.AsyncConnectionPool(
+        dsn,
+        min_size=min_size,
+        max_size=max_size,
+        max_lifetime=max_lifetime,
+        timeout=timeout,
+        connection_class=PGPAsyncConnection,
+        num_workers=num_workers,
+        name=name,
+        open=False,
+        kwargs={"autocommit": True},
+    )
 
     await POOL.open(wait=False)
 
@@ -127,7 +120,7 @@ async def transaction(autocommit: bool = False) -> AsyncGenerator[ExecuteType, N
             yield cursor.execute_and_extract
 
 
-async def execute(command: str, arguments: SQL_ARGUMENTS|None = None) -> DB_RESULT:
+async def execute(command: str, arguments: SQL_ARGUMENTS | None = None) -> DB_RESULT:
     async with transaction(autocommit=True) as execute:
         return await execute(command, arguments)
 

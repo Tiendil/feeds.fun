@@ -1,8 +1,46 @@
 # TODO: remove later
 
-types = ["topic", "author", "genre", "language", "country", "city", "organization", "person", "event", "work", "product", "author", "platform", "sentiment", "audience", "purpose", "region", "source", "industry", "licence", "book", "programming_language", "framework", "library", "tool", "platform", "development_methodology", "software_architecture", "design_pattern", "algorithm", "data_structure", "file_format", "protocol", "software_license", "operating_system", "software_category", "software"]
+types = [
+    "topic",
+    "author",
+    "genre",
+    "language",
+    "country",
+    "city",
+    "organization",
+    "person",
+    "event",
+    "work",
+    "product",
+    "author",
+    "platform",
+    "sentiment",
+    "audience",
+    "purpose",
+    "region",
+    "source",
+    "industry",
+    "licence",
+    "book",
+    "programming_language",
+    "framework",
+    "library",
+    "tool",
+    "platform",
+    "development_methodology",
+    "software_architecture",
+    "design_pattern",
+    "algorithm",
+    "data_structure",
+    "file_format",
+    "protocol",
+    "software_license",
+    "operating_system",
+    "software_category",
+    "software",
+]
 
-system = f'''You will act as an expert on the classification of texts. For received HTML, you should assign labels/tags in the format `<type>:<categoty>`. For example, `topic:politics`, `author:conan_doyle`. Labels should be normalized, allowed characters for labels: `[a-z0-9_]`.
+system = f"""You will act as an expert on the classification of texts. For received HTML, you should assign labels/tags in the format `<type>:<categoty>`. For example, `topic:politics`, `author:conan_doyle`. Labels should be normalized, allowed characters for labels: `[a-z0-9_]`.
 
 You will give answers only in strict JSON format. No free-form text allowed. No intro text allowed. No additional text is allowed. Only JSON.
 
@@ -15,10 +53,10 @@ You can return an empty list if you are unsure about the labels. It is not an er
 In case of an error, you should return a JSON object with an "error" field. For example: {{"error": "some error message"}}.
 
 Expected JSON format: {{"labels": ["label1", "label2"]}}
-'''
+"""
 
 
-system_experimental = '''
+system_experimental = """
 You are an expert on the analysis of text semantics.
 For provided text, you determine a list of tags.
 You always detect a related tag for each name or caption from the text.
@@ -47,9 +85,9 @@ Example:
 concept:politics
 author:conan-doyle
 ```
-'''
+"""
 
-gpt_3_5_experimental = '''
+gpt_3_5_experimental = """
 You are an expert on the analysis of text semantics.
 For provided text, you determine a list of best tags to describe the text.
 You always provide significant tags for topics.
@@ -88,9 +126,9 @@ mentions:
 ...
 20. conan-doyle: because conan-doyle is mentioned in the text
 ```
-'''
+"""
 
-gpt_3_5_better = '''
+gpt_3_5_better = """
 You are an expert on the analysis of text semantics.
 For provided text, you determine a list of best tags to describe the text.
 For each category, you provide 100 tags.
@@ -103,9 +141,9 @@ Output must be:
 - No free-form text allowed.
 - No intro text allowed.
 - No additional text is allowed.
-'''
+"""
 
-best = '''
+best = """
 You are an expert on the analysis of text semantics.
 For provided text, you determine a list of best tags to describe the text.
 For each category, you provide 30 tags.
@@ -113,4 +151,4 @@ For each category, you provide 30 tags.
 Categories are topics, meta-topics, high-level-topics, low-level-topics, related-topics, indirect-topics, mentions, indirect-mentions.
 
 Normalize tags and output them one per line.
-'''
+"""

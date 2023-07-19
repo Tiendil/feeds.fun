@@ -11,7 +11,6 @@ logger = logging.get_module_logger()
 
 
 def domain_to_parts(domain: str) -> list[str]:
-
     if domain.startswith("www."):
         domain = domain[4:]
 
@@ -50,8 +49,12 @@ class Processor(base.Processor):
         domain = parsed_url.netloc
 
         for subdomain in domain_to_parts(domain):
-            tags.append(ProcessorTag(raw_uid=subdomain,
-                                     link=parsed_url.scheme + "://" + subdomain,
-                                     categories={TagCategory.network_domain}))
+            tags.append(
+                ProcessorTag(
+                    raw_uid=subdomain,
+                    link=parsed_url.scheme + "://" + subdomain,
+                    categories={TagCategory.network_domain},
+                )
+            )
 
         return tags

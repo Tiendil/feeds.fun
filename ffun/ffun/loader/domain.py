@@ -23,10 +23,10 @@ logger = logging.get_module_logger()
 async def load_content(url: str, proxy: Proxy) -> httpx.Response:  # noqa: CCR001, C901 # pylint: disable=R0912, R0915
     error_code = FeedError.network_unknown
 
-    log = logger.bind(url=url, proxy=proxy.name, function='load_content')
+    log = logger.bind(url=url, proxy=proxy.name, function="load_content")
 
     try:
-        log.info('loading_feed')
+        log.info("loading_feed")
 
         async with httpx.AsyncClient(proxies=proxy.url) as client:
             response = await client.get(url, follow_redirects=True)
@@ -34,93 +34,92 @@ async def load_content(url: str, proxy: Proxy) -> httpx.Response:  # noqa: CCR00
     except httpx.RemoteProtocolError as e:
         message = str(e)
 
-        if 'illegal request line' in message:
+        if "illegal request line" in message:
             # TODO: at least part of such errors are caused by wrong HTTP protocol
             #       for example `http://gopractice.ru/feed/` tries to redirect to use HTTP/0.9
-            log.warning('network_illegal_request_line')
+            log.warning("network_illegal_request_line")
             error_code = FeedError.network_illegal_request_line
-        elif 'Server disconnected without sending a response' in message:
-            log.warning('network_disconection_without_response')
+        elif "Server disconnected without sending a response" in message:
+            log.warning("network_disconection_without_response")
             error_code = FeedError.network_disconection_without_response
         else:
-            log.exception('remote_protocol_error_while_loading_feed')
+            log.exception("remote_protocol_error_while_loading_feed")
 
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except httpx.ConnectError as e:
         message = str(e)
 
-        if '[Errno -2]' in message:
-            log.warning('network_name_or_service_not_known')
+        if "[Errno -2]" in message:
+            log.warning("network_name_or_service_not_known")
             error_code = FeedError.network_name_or_service_not_known
-        elif '[Errno -5]' in message:
-            log.warning('no_address_associated_with_hostname')
+        elif "[Errno -5]" in message:
+            log.warning("no_address_associated_with_hostname")
             error_code = FeedError.network_no_address_associated_with_hostname
-        elif message == '':
-            log.warning('undetected_connection_error')
+        elif message == "":
+            log.warning("undetected_connection_error")
             error_code = FeedError.network_undetected_connection_error
         else:
-            log.exception('connection_error_while_loading_feed')
+            log.exception("connection_error_while_loading_feed")
 
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except ssl.SSLCertVerificationError as e:
         message = str(e)
 
-        if 'CERTIFICATE_VERIFY_FAILED' in message:
-            log.warning('network_certificate_verify_failed')
+        if "CERTIFICATE_VERIFY_FAILED" in message:
+            log.warning("network_certificate_verify_failed")
             error_code = FeedError.network_certificate_verify_failed
         else:
-            log.exception('ssl_cert_verification_error_while_loading_feed')
+            log.exception("ssl_cert_verification_error_while_loading_feed")
 
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except httpx.ConnectTimeout as e:
-        log.warning('network_connect_timeout')
+        log.warning("network_connect_timeout")
         error_code = FeedError.network_connection_timeout
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except httpx.ReadTimeout as e:
-        log.warning('network_read_timeout')
+        log.warning("network_read_timeout")
         error_code = FeedError.network_read_timeout
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except httpx.UnsupportedProtocol as e:
-        log.warning('network_unsupported_protocol')
+        log.warning("network_unsupported_protocol")
         error_code = FeedError.network_unsupported_protocol
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except anyio.EndOfStream as e:
-        log.warning('server_breaks_connection')
+        log.warning("server_breaks_connection")
         error_code = FeedError.network_server_breaks_connection
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except Exception as e:
-        log.exception('error_while_loading_feed')
+        log.exception("error_while_loading_feed")
         raise errors.LoadError(feed_error_code=error_code) from e
 
     if response.status_code != 200:
-        log.warning('network_non_200_status_code', status_code=response.status_code)
+        log.warning("network_non_200_status_code", status_code=response.status_code)
         error_code = FeedError.network_non_200_status_code
         raise errors.LoadError(feed_error_code=error_code)
 
-    log.info('feed_loaded', url=url, proxy=proxy.name)
+    log.info("feed_loaded", url=url, proxy=proxy.name)
 
     return response
 
 
 async def decode_content(response: httpx.Response) -> str:
-
     error_code = FeedError.parsing_base_error
 
     try:
         return response.content.decode(response.encoding)
     except UnicodeDecodeError as e:
-        logger.warning('unicode_decode_error_while_decoding_feed')
+        logger.warning("unicode_decode_error_while_decoding_feed")
         error_code = FeedError.parsing_unicode_decode_error
         raise errors.LoadError(feed_error_code=error_code) from e
     except Exception as e:
-        logger.exception('error_while_decoding_feed')
+        logger.exception("error_while_decoding_feed")
         raise errors.LoadError(feed_error_code=error_code) from e
 
 
@@ -128,7 +127,7 @@ async def parse_content(content: str, original_url: str) -> p_entities.FeedInfo:
     try:
         feed_info = parse_feed(content, original_url=original_url)
     except Exception as e:
-        logger.exception('error_while_parsing_feed')
+        logger.exception("error_while_parsing_feed")
         raise errors.LoadError(feed_error_code=FeedError.parsing_format_error) from e
 
     if feed_info is None:
@@ -157,7 +156,6 @@ async def load_content_with_proxies(url: str) -> httpx.Response:
 
 @logging.bound_function()
 async def process_feed(feed: Feed) -> None:
-
     logger.info("loading_feed")
 
     try:
@@ -165,15 +163,11 @@ async def process_feed(feed: Feed) -> None:
         content = await decode_content(response)
         feed_info = await parse_content(content, original_url=feed.url)
     except errors.LoadError as e:
-        await f_domain.mark_feed_as_failed(feed.id,
-                                           state=FeedState.damaged,
-                                           error=e.feed_error_code)
+        await f_domain.mark_feed_as_failed(feed.id, state=FeedState.damaged, error=e.feed_error_code)
         return
 
     if feed_info.title != feed.title or feed_info.description != feed.description:
-        await f_domain.update_feed_info(feed.id,
-                                        title=feed_info.title,
-                                        description=feed_info.description)
+        await f_domain.update_feed_info(feed.id, title=feed_info.title, description=feed_info.description)
 
     entries = feed_info.entries
 
@@ -181,14 +175,12 @@ async def process_feed(feed: Feed) -> None:
 
     stored_entries_external_ids = await l_domain.check_stored_entries_by_external_ids(feed.id, external_ids)
 
-    entries_to_store = [entry for entry in entries
-                        if entry.external_id not in stored_entries_external_ids]
+    entries_to_store = [entry for entry in entries if entry.external_id not in stored_entries_external_ids]
 
-    prepared_entries = [l_entities.Entry(feed_id=feed.id,
-                                         id=uuid.uuid4(),
-                                         cataloged_at=utils.now(),
-                                         **entry_info.dict())
-                        for entry_info in entries_to_store]
+    prepared_entries = [
+        l_entities.Entry(feed_id=feed.id, id=uuid.uuid4(), cataloged_at=utils.now(), **entry_info.dict())
+        for entry_info in entries_to_store
+    ]
 
     await l_domain.catalog_entries(entries=prepared_entries)
 

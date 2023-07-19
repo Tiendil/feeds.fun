@@ -1,4 +1,3 @@
-
 from .collections import artificial_intelligence, gamedev
 from .entities import Collection
 
@@ -17,5 +16,5 @@ from .entities import Collection
 
 predefines = {
     Collection.gamedev: gamedev.collection,
-    Collection.artificial_intelligence: artificial_intelligence.collection
+    Collection.artificial_intelligence: artificial_intelligence.collection,
 }

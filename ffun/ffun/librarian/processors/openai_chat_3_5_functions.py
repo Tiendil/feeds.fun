@@ -39,7 +39,6 @@ function = {
     "parameters": {
         "type": "object",
         "properties": {
-
             "topics": {
                 "type": "array",
                 "description": "list of topics",
@@ -49,26 +48,23 @@ function = {
                         "topic": {
                             "type": "string",
                         },
-
                         "category": {
                             "type": "string",
                         },
-
                         "meta-category": {
                             "type": "string",
                         },
-
                         "five-most-related-tags-for-text": {
                             "type": "array",
                             "items": {
                                 "type": "string",
-                            }
-                        }
-                    }
-                }
+                            },
+                        },
+                    },
+                },
             }
-        }
-    }
+        },
+    },
 }
 
 
@@ -77,11 +73,7 @@ def entry_to_text(entry: Entry) -> str:
     return f'<h1>{entry.title}</h1><a href="{entry.external_url}">full article</a>{entry.body}'
 
 
-trash_system_tags = {'topic',
-                     'topics',
-                     'category',
-                     'meta-category',
-                     'five-most-related-tags-for-text'}
+trash_system_tags = {"topic", "topics", "category", "meta-category", "five-most-related-tags-for-text"}
 
 
 def extract_tags(text: str) -> set[str]:
@@ -99,11 +91,9 @@ def extract_tags(text: str) -> set[str]:
 
 
 class Processor(base.Processor):
-    __slots__ = ('api_key', 'model')
+    __slots__ = ("api_key", "model")
 
-    def __init__(self,
-                 model: str,
-                 **kwargs: Any):
+    def __init__(self, model: str, **kwargs: Any):
         super().__init__(**kwargs)
         self.model = model
 
@@ -117,27 +107,30 @@ class Processor(base.Processor):
         total_tokens = 16 * 1024
         max_return_tokens = 4 * 1024
 
-        messages = await oai_client.prepare_requests(system=system,
-                                                     text=text,
-                                                     model=self.model,
-                                                     function=function,
-                                                     total_tokens=total_tokens,
-                                                     max_return_tokens=max_return_tokens)
+        messages = await oai_client.prepare_requests(
+            system=system,
+            text=text,
+            model=self.model,
+            function=function,
+            total_tokens=total_tokens,
+            max_return_tokens=max_return_tokens,
+        )
 
         try:
-            async with api_key_for_feed_entry(entry.feed_id,
-                                              entry_age=entry.age,
-                                              reserved_tokens=len(messages) * total_tokens) as api_key_usage:
-
-                results = await oai_client.multiple_requests(api_key=api_key_usage.api_key,
-                                                             model=self.model,
-                                                             messages=messages,
-                                                             function=function,
-                                                             max_return_tokens=max_return_tokens,
-                                                             temperature=1,
-                                                             top_p=0,
-                                                             presence_penalty=1,
-                                                             frequency_penalty=0)
+            async with api_key_for_feed_entry(
+                entry.feed_id, entry_age=entry.age, reserved_tokens=len(messages) * total_tokens
+            ) as api_key_usage:
+                results = await oai_client.multiple_requests(
+                    api_key=api_key_usage.api_key,
+                    model=self.model,
+                    messages=messages,
+                    function=function,
+                    max_return_tokens=max_return_tokens,
+                    temperature=1,
+                    top_p=0,
+                    presence_penalty=1,
+                    frequency_penalty=0,
+                )
 
                 api_key_usage.used_tokens = sum(result.total_tokens for result in results)
 

@@ -3,7 +3,7 @@ from ffun.ontology.entities import ProcessorTag
 
 
 class Processor:
-    __slots__ = ('_name',)
+    __slots__ = ("_name",)
 
     def __init__(self, name: str):
         self._name = name

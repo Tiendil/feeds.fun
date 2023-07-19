@@ -8,7 +8,7 @@ class Base(pydantic.BaseModel):  # type: ignore
     class Config:
         anystr_strip_whitespace = True
         validate_all = True
-        extra = 'forbid'
+        extra = "forbid"
         allow_mutation = False
         frozen = True
         validate_assignment = True
@@ -36,8 +36,8 @@ class APISuccess(Base):
 class APIError(Base):
     status: APIStatuses = APIStatuses.error
     code: str
-    message: str|None
-    data: dict[str, Any]|None = None
+    message: str | None
+    data: dict[str, Any] | None = None
 
     class Config(Base.Config):
         title = "API Error"
