@@ -107,11 +107,11 @@ import * as settings from "@/logic/settings";
 
 // must be copy of smart_url from backend
 function smartUrl(domain: string, port: number) {
-    if (port === 80) {
+    if (port == 80) {
         return `http://${domain}`;
     }
 
-    if (port === 443) {
+    if (port == 443) {
         return `https://${domain}`;
     }
 
