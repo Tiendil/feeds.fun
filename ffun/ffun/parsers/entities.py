@@ -17,7 +17,6 @@ class EntryInfo(pydantic.BaseModel):
 
 class FeedInfo(pydantic.BaseModel):
     url: str
-    base_url: str
     title: str
     description: str
 

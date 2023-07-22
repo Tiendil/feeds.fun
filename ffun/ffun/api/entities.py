@@ -119,7 +119,6 @@ class EntryInfo(api.Base):
 
 class FeedInfo(api.Base):
     url: str
-    base_url: str
     title: str
     description: str
 
@@ -129,7 +128,6 @@ class FeedInfo(api.Base):
     def from_internal(cls, feed: p_entities.FeedInfo) -> "FeedInfo":
         return cls(
             url=feed.url,
-            base_url=feed.base_url,
             title=feed.title,
             description=feed.description,
             entries=[EntryInfo.from_internal(entry) for entry in feed.entries],

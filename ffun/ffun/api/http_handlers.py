@@ -265,12 +265,10 @@ async def api_subscribe_to_feeds_collections(
         feed_urls = fc_domain.get_feeds_for_collecton(collection)
 
         for feed_url in feed_urls:
-            feeds.append(f_entities.Feed(id=uuid.uuid4(), url=feed_url, title="unknown", description="unknown"))
-
-    real_feeds_ids = await f_domain.save_feeds(feeds)
-
-    for feed_id in real_feeds_ids:
-        await fl_domain.add_link(user_id=user.id, feed_id=feed_id)
+            feeds.append(p_entities.FeedInfo(url=feed_url,
+                                             title="unknown",
+                                             description="unknown",
+                                             entries=[]))
 
     await _add_feeds(feeds, user)
 

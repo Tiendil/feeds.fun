@@ -44,7 +44,6 @@ def extract_feeds_records(body: ET.Element) -> Generator[FeedInfo, None, None]:
         if outline.attrib.get("type") == "rss":
             yield FeedInfo(
                 url=outline.attrib["xmlUrl"],
-                base_url="",
                 title=outline.attrib.get("title", ""),
                 description="",
                 entries=[],
