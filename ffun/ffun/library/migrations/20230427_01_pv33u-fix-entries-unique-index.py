@@ -1,7 +1,7 @@
 """
 fix-entries-unique-index
 """
-
+from psycopg import Connection
 from yoyo import step
 
 
@@ -17,14 +17,14 @@ unnecessary_index = "idx_l_entries_feed_id"
 # 2. someone can damage database by infecting with wrong entries from faked feed
 
 
-def apply_step(conn):
+def apply_step(conn: Connection) -> None:
     cursor = conn.cursor()
     cursor.execute(f"ALTER TABLE l_entries DROP CONSTRAINT {constraint}")
     cursor.execute(f"CREATE INDEX {index} ON l_entries (feed_id, external_id)")
     cursor.execute(f"DROP INDEX {unnecessary_index}")
 
 
-def rollback_step(conn):
+def rollback_step(conn: Connection) -> None:
     cursor = conn.cursor()
     cursor.execute(f"ALTER TABLE l_entries ADD CONSTRAINT {constraint} UNIQUE (external_id)")
     cursor.execute(f"DROP INDEX {index}")

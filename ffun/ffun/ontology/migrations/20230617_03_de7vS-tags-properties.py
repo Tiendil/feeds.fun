@@ -1,7 +1,7 @@
 """
 tags-properties
 """
-
+from psycopg import Connection
 from yoyo import step
 
 
@@ -22,13 +22,13 @@ CREATE UNIQUE INDEX idx_o_tags_properties_unique ON o_tags_properties(tag_id, ty
 """
 
 
-def apply_step(conn):
+def apply_step(conn: Connection) -> None:
     cursor = conn.cursor()
     cursor.execute(sql_create_tags_properties_table)
     cursor.execute(sql_create_tags_properties_unique_index)
 
 
-def rollback_step(conn):
+def rollback_step(conn: Connection) -> None:
     cursor = conn.cursor()
     cursor.execute("DROP TABLE o_tags_properties")
 

@@ -1,11 +1,11 @@
 """
 settings-table
 """
-
+from psycopg import Connection
 from yoyo import step
 
 
-__depends__ = {}
+__depends__: set[str] = {}
 
 sql_create_table = """
 CREATE TABLE us_settings (
@@ -21,12 +21,12 @@ CREATE TABLE us_settings (
 """
 
 
-def apply_step(conn):
+def apply_step(conn: Connection) -> None:
     cursor = conn.cursor()
     cursor.execute(sql_create_table)
 
 
-def rollback_step(conn):
+def rollback_step(conn: Connection) -> None:
     cursor = conn.cursor()
     cursor.execute("DROP TABLE us_settings")
 

@@ -1,7 +1,7 @@
 """
 tags-relationship-processor-tracking
 """
-
+from psycopg import Connection
 from yoyo import step
 
 
@@ -17,12 +17,12 @@ CREATE TABLE o_relations_processors (
 """
 
 
-def apply_step(conn):
+def apply_step(conn: Connection) -> None:
     cursor = conn.cursor()
     cursor.execute(sql_create_relatons_processors_table)
 
 
-def rollback_step(conn):
+def rollback_step(conn: Connection) -> None:
     cursor = conn.cursor()
     cursor.execute("DROP TABLE o_relations_processors")
 

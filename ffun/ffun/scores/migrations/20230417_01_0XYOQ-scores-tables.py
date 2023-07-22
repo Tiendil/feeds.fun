@@ -1,11 +1,11 @@
 """
 scores-tables
 """
-
+from psycopg import Connection
 from yoyo import step
 
 
-__depends__ = {}
+__depends__: set[str] = {}
 
 steps = [step("")]
 
@@ -26,13 +26,13 @@ CREATE UNIQUE INDEX idx_s_rules_user_id_key ON s_rules (user_id, key);
 """
 
 
-def apply_step(conn):
+def apply_step(conn: Connection) -> None:
     cursor = conn.cursor()
     cursor.execute(sql_create_rules_table)
     cursor.execute(sql_users_key_index)
 
 
-def rollback_step(conn):
+def rollback_step(conn: Connection) -> None:
     cursor = conn.cursor()
     cursor.execute("DROP TABLE s_rules")
 

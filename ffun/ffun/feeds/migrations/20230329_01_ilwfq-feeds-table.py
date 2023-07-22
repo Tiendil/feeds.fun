@@ -1,7 +1,8 @@
+from psycopg import Connection
 from yoyo import step
 
 
-__depends__ = {}
+__depends__: set[str] = set()
 
 
 sql_create_feeds_table = """
@@ -21,13 +22,13 @@ CREATE INDEX idx_f_feeds_load_attempted_at_at ON f_feeds (load_attempted_at);
 """
 
 
-def apply_step(conn):
+def apply_step(conn: Connection) -> None:
     cursor = conn.cursor()
     cursor.execute(sql_create_feeds_table)
     cursor.execute(sql_create_load_attempted_at_index)
 
 
-def rollback_step(conn):
+def rollback_step(conn: Connection) -> None:
     cursor = conn.cursor()
     cursor.execute("DROP TABLE f_feeds")
 
