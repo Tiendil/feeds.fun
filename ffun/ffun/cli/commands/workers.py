@@ -12,7 +12,7 @@ from ..application import app
 
 
 async def run(loader: bool, librarian: bool) -> None:
-    async with with_app(loader=loader, librarian=librarian):
+    async with with_app():
         async with contextlib.AsyncExitStack() as stack:
             if loader:
                 l_domain.initialize(user_agent=app_utils.user_agent())

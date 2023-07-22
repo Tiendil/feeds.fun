@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+from typing import AsyncGenerator, Generator
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,7 +19,7 @@ logger = logging.get_module_logger()
 
 
 @contextlib.asynccontextmanager
-async def use_postgresql():
+async def use_postgresql() -> AsyncGenerator[None, None]:
     logger.info("initialize_postgresql")
     await postgresql.prepare_pool(
         name="ffun_pool",
@@ -53,7 +54,7 @@ async def use_postgresql():
 
 
 @contextlib.asynccontextmanager
-async def use_api(app: fastapi.FastAPI):
+async def use_api(app: fastapi.FastAPI) -> AsyncGenerator[None, None]:
     logger.info("api_enabled")
     app.include_router(api_http_handlers.router)
 
@@ -65,7 +66,7 @@ async def use_api(app: fastapi.FastAPI):
 
 
 @contextlib.asynccontextmanager
-async def use_sentry():
+async def use_sentry() -> AsyncGenerator[None, None]:
     logger.info("sentry_enabled")
 
     sentry.initialize(
@@ -82,7 +83,7 @@ async def use_sentry():
     logger.info("sentry_disabled")
 
 
-def smart_url(domain, port):
+def smart_url(domain: str, port: int) -> str:
     if port == 80:
         return f"http://{domain}"
 
@@ -92,13 +93,13 @@ def smart_url(domain, port):
     return f"http://{domain}:{port}"
 
 
-def create_app():  # noqa: CCR001
+def create_app() -> fastapi.FastAPI:  # noqa: CCR001
     logging.initialize(use_sentry=settings.enable_sentry)
 
     logger.info("create_app")
 
     @contextlib.asynccontextmanager
-    async def lifespan(app: fastapi.FastAPI):
+    async def lifespan(app: fastapi.FastAPI) -> AsyncGenerator[None, None]:
         async with contextlib.AsyncExitStack() as stack:
             await stack.enter_async_context(use_postgresql())
 
@@ -151,7 +152,7 @@ def create_app():  # noqa: CCR001
 
 
 @contextlib.asynccontextmanager
-async def with_app(**kwargs):
+async def with_app() -> AsyncGenerator[fastapi.FastAPI, None]:
     async with app.router.lifespan_context(app):
         yield app
 

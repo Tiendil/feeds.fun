@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+from typing import AsyncGenerator
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,7 +18,7 @@ logger = logging.get_module_logger()
 
 
 @contextlib.asynccontextmanager
-async def use_loader():
+async def use_loader() -> AsyncGenerator[None, None]:
     logger.info("feeds_loader_enabled")
 
     feeds_loader = FeedsLoader(name="ffun_feeds_loader", delay_between_runs=1)
@@ -35,7 +36,7 @@ async def use_loader():
 
 
 @contextlib.asynccontextmanager
-async def use_librarian():
+async def use_librarian() -> AsyncGenerator[None, None]:
     logger.info("librarian_enabled")
 
     entries_processors = create_background_processors()

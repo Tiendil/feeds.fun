@@ -70,11 +70,11 @@ async def _external_entries(
 
         external_markers = [entities.Marker.from_internal(marker) for marker in markers.get(entry.id, ())]
 
-        entry = entities.Entry.from_internal(
+        external_entry = entities.Entry.from_internal(
             entry=entry, tags=tags.get(entry.id, ()), markers=external_markers, score=score, with_body=with_body
         )
 
-        external_entries.append(entry)
+        external_entries.append(external_entry)
 
     external_entries.sort(key=lambda entry: entry.score, reverse=True)
 
