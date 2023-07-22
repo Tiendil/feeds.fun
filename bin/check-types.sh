@@ -4,4 +4,4 @@ set -e
 
 echo "run mypy"
 
-./bin/backend-utils.sh poetry run mypy .
+./bin/backend-utils.sh poetry run mypy --show-traceback .

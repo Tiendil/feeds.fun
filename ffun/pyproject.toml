@@ -53,10 +53,13 @@ pytest = "6.*"
 
 isort = "5.*"
 black = "23.*"
-mypy = "1.*"
+mypy = "1.3.*"  # wait till pydantic update its mypy plugin
 
 types-python-slugify = "8.*"
 types-beautifulsoup4 = "4.*"
+types-markdown = "3.*"
+types-pkg-resources = "0.*"
+types-tabulate = "0.*"
 
 [tool.poetry.scripts]
 
@@ -93,5 +96,6 @@ warn_untyped_fields = true
 [[tool.mypy.overrides]]
 module = [
     "yoyo.*",
+    "feedparser.*",
 ]
 ignore_missing_imports = true
