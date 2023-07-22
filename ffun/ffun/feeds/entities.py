@@ -25,6 +25,7 @@ class FeedError(int, enum.Enum):
     network_undetected_connection_error = 1009
     network_unsupported_protocol = 1010
     network_server_breaks_connection = 1011
+    network_could_not_resolve_host = 1012
 
     parsing_unknown = 2000
     parsing_base_error = 2001

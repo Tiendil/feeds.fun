@@ -95,6 +95,17 @@ async def load_content(url: str, proxy: Proxy) -> httpx.Response:  # noqa: CCR00
         error_code = FeedError.network_server_breaks_connection
         raise errors.LoadError(feed_error_code=error_code) from e
 
+    except httpx.ProxyError as e:
+        message = str(e)
+
+        if message.startswith("502 Could not resolve host"):
+            log.warning("network_could_not_resolve_host")
+            error_code = FeedError.network_could_not_resolve_host
+        else:
+            log.exception("unknown_proxy_error_while_loading_feed")
+
+        raise errors.LoadError(feed_error_code=error_code) from e
+
     except Exception as e:
         log.exception("error_while_loading_feed")
         raise errors.LoadError(feed_error_code=error_code) from e
