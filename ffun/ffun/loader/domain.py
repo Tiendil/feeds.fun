@@ -20,6 +20,15 @@ from .settings import Proxy, settings
 logger = logging.get_module_logger()
 
 
+_user_agent: str = "unknown"
+
+
+def initialize(user_agent: str) -> None:
+    global _user_agent
+
+    _user_agent = user_agent
+
+
 async def load_content(url: str, proxy: Proxy) -> httpx.Response:  # noqa: CCR001, C901 # pylint: disable=R0912, R0915
     error_code = FeedError.network_unknown
 
@@ -28,7 +37,7 @@ async def load_content(url: str, proxy: Proxy) -> httpx.Response:  # noqa: CCR00
     try:
         log.info("loading_feed")
 
-        async with httpx.AsyncClient(proxies=proxy.url) as client:
+        async with httpx.AsyncClient(proxies=proxy.url, headers={"user-agent": _user_agent}) as client:
             response = await client.get(url, follow_redirects=True)
 
     except httpx.RemoteProtocolError as e:
