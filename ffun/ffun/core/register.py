@@ -25,8 +25,8 @@ class Register(Generic[ENTITY]):
 
         self._entities[entity.key] = entity
 
-    def get(self, key: int) -> ENTITY|None:
-        return self._entities.get(key)
+    def get(self, key: int) -> ENTITY:
+        return self._entities[key]
 
     def all(self) -> dict[int, ENTITY]:
         return dict(self._entities)

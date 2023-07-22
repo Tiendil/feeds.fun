@@ -132,8 +132,10 @@ async def load_content(url: str, proxy: Proxy) -> httpx.Response:  # noqa: CCR00
 async def decode_content(response: httpx.Response) -> str:
     error_code = FeedError.parsing_base_error
 
+    encoding = response.encoding or "utf-8"
+
     try:
-        return response.content.decode(response.encoding)
+        return response.content.decode(encoding)
     except UnicodeDecodeError as e:
         logger.warning("unicode_decode_error_while_decoding_feed")
         error_code = FeedError.parsing_unicode_decode_error

@@ -1,3 +1,5 @@
+from typing import Any, Callable, Generic, Iterable, Optional, TypeVar
+
 import sentry_sdk
 from sentry_sdk import init as initialize_sentry
 from sentry_sdk.integrations.fastapi import FastApiIntegration
@@ -7,7 +9,7 @@ from sentry_sdk.integrations.starlette import StarletteIntegration
 from .errors import Error
 
 
-def improve_fingerprint(event, hint):
+def improve_fingerprint(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any]:
     if "exc_info" not in hint:
         return event
 
@@ -19,7 +21,7 @@ def improve_fingerprint(event, hint):
     return event
 
 
-def before_send(event, hint):
+def before_send(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any]:
     event = improve_fingerprint(event, hint)
     return event
 

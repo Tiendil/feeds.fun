@@ -14,4 +14,4 @@ class Value(Entity):
         self.description = description
 
 
-user_settings = Register()
+user_settings: Register[Value] = Register()

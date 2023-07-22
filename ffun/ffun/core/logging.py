@@ -4,7 +4,7 @@ import functools
 import inspect
 import logging
 import uuid
-from typing import Any, Iterable
+from typing import Any, Callable, Generic, Iterable, Optional, TypeVar
 
 import pydantic
 import structlog
@@ -166,8 +166,12 @@ def get_module_logger():
     return structlog.get_logger(module=module.__name__)
 
 
-def bound_function(skip=()):
-    def wrapper(func):
+FUNC = TypeVar("FUNC")
+
+
+def bound_function(skip=()) -> Callable[[FUNC], FUNC]:
+
+    def wrapper(func: FUNC) -> FUNC:
         @functools.wraps(func)
         def wrapped(**kwargs):
             with bound_contextvars(**{k: v for k, v in kwargs.items() if k not in skip}):

@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 
 from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
@@ -78,7 +79,7 @@ if settings.openai_chat_35_functions_processor.enabled:
 class EntriesProcessor(InfiniteTask):
     __slots__ = ("_processor_info",)
 
-    def __init__(self, processor_info: ProcessorInfo, **kwargs) -> None:
+    def __init__(self, processor_info: ProcessorInfo, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._processor_info = processor_info
 
