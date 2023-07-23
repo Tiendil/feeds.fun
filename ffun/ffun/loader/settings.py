@@ -10,7 +10,7 @@ class Proxy(pydantic.BaseModel):
     url: str | None = None
 
 
-class Settings(BaseSettings):  # type: ignore
+class Settings(BaseSettings):
     loaders_number: int = 5
     minimum_period: datetime.timedelta = datetime.timedelta(hours=1)
     proxies: list[Proxy] = [Proxy(name="default", url=None)]

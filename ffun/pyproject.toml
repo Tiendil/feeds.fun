@@ -97,5 +97,6 @@ warn_untyped_fields = true
 module = [
     "yoyo.*",
     "feedparser.*",
+    "supertokens-python.*" # remove after updating to a new version
 ]
 ignore_missing_imports = true

@@ -1,6 +1,8 @@
 """
 add-feeds-links
 """
+from typing import Any
+
 from psycopg import Connection
 from yoyo import step
 
@@ -20,13 +22,13 @@ CREATE UNIQUE INDEX idx_fl_links_user_id_feed_id ON fl_links (user_id, feed_id)
 """
 
 
-def apply_step(conn: Connection) -> None:
+def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
     cursor.execute(sql_create_feeds_links_table)
     cursor.execute(sql_create_unique_index)
 
 
-def rollback_step(conn: Connection) -> None:
+def rollback_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
     cursor.execute("DROP TABLE fl_links")
 

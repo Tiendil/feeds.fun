@@ -1,3 +1,5 @@
+from typing import Any
+
 from psycopg import Connection
 from yoyo import step
 
@@ -24,14 +26,14 @@ CREATE UNIQUE INDEX idx_o_relations_entry_id_tag_id ON o_relations (entry_id, ta
 """
 
 
-def apply_step(conn: Connection) -> None:
+def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
     cursor.execute(sql_create_tags_table)
     cursor.execute(sql_create_relations_table)
     cursor.execute(sql_create_relations_entry_id_tag_id_index)
 
 
-def rollback_step(conn: Connection) -> None:
+def rollback_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
     cursor.execute("DROP TABLE o_tags, o_relations")
 

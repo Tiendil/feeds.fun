@@ -1,7 +1,7 @@
 import pydantic
 
 
-class BaseSettings(pydantic.BaseSettings):  # type: ignore
+class BaseSettings(pydantic.BaseSettings):
     class Config:
         env_nested_delimiter = "__"
         # TODO: smart search for .env file
