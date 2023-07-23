@@ -92,11 +92,15 @@ init_typed = true
 warn_required_dynamic_aliases = true
 warn_untyped_fields = true
 
+[[tool.mypy.overrides]]
+module = "yoyo.*"
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = [
-    "yoyo.*",
-    "feedparser.*",
-    "supertokens-python.*" # remove after updating to a new version
-]
+module = "feedparser.*"
 ignore_missing_imports = true
+
+# remove after updating to a new version
+[[tool.mypy.overrides]]
+module = "supertokens_python.*"
+ignore_errors = true
