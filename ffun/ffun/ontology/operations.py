@@ -15,7 +15,7 @@ logger = logging.get_module_logger()
 async def get_tags_mappig() -> bidict[str, int]:
     sql = "SELECT id, uid FROM o_tags"
     rows = await execute(sql)
-    return bidict.bidict({row["uid"]: row["id"] for row in rows})
+    return bidict.bidict({row["uid"]: row["id"] for row in rows})  # type: ignore
 
 
 async def get_id_by_tag(tag: str) -> int | None:
@@ -24,6 +24,8 @@ async def get_id_by_tag(tag: str) -> int | None:
 
     if not rows:
         return None
+
+    assert isinstance(rows[0]["id"], int)
 
     return rows[0]["id"]
 
@@ -41,8 +43,11 @@ async def register_tag(tag: str) -> int:
         tag_id = await get_id_by_tag(tag)
 
         assert tag_id is not None
+        assert isinstance(tag_id, int)
 
         return tag_id
+
+    assert isinstance(rows[0]["id"], int)
 
     return rows[0]["id"]
 

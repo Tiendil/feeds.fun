@@ -44,7 +44,7 @@ async def get_tags_by_ids(ids: Iterable[int]) -> dict[int, str]:
 
     missed_tags = await operations.get_tags_by_ids(tags_to_request)
 
-    _tags_cache.update(missed_tags)
+    _tags_cache.inverse.update(missed_tags)
 
     result.update(missed_tags)
 

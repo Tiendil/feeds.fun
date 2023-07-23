@@ -2,6 +2,7 @@ import asyncio
 import functools
 import json
 import math
+from typing import Any
 
 import async_lru
 import openai
@@ -19,11 +20,16 @@ cli = typer.Typer()
 
 
 @async_lru.alru_cache()
-async def get_encoding(model):
+async def get_encoding(model: str) -> tiktoken.Encoding:
     return tiktoken.encoding_for_model(model)
 
 
-async def prepare_requests(system, text, model, function, total_tokens, max_return_tokens):  # pylint: disable=R0914
+async def prepare_requests(system: str,  # pylint: disable=R0914
+                           text: str,
+                           model: str,
+                           function: dict[str, Any]|None,
+                           total_tokens: int,
+                           max_return_tokens: int) -> list[list[dict[str, str]]]:
     # high estimation on base of
     # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
     logger.info("prepare_requests")
@@ -92,12 +98,19 @@ async def prepare_requests(system, text, model, function, total_tokens, max_retu
     return messages
 
 
-async def request(
-    api_key, model, messages, function, max_tokens, temperature, top_p, presence_penalty, frequency_penalty  # noqa
-):
+async def request(api_key: str,
+                  model: str,
+                  messages: list[dict[str, str]],
+                  function: dict[str, Any]|None,
+                  max_tokens: int,
+                  temperature: float,
+                  top_p: float,
+                  presence_penalty: float,
+                  frequency_penalty: float,
+                  ) -> entities.OpenAIAnswer:
     logger.info("request_openai")
 
-    arguments = {}
+    arguments: dict[str, Any] = {}
 
     if function is not None:
         arguments["functions"] = [function]
@@ -142,16 +155,16 @@ async def request(
 
 
 async def multiple_requests(
-    api_key,  # noqa
-    model,
-    messages,
-    function,
-    max_return_tokens,
-    temperature,
-    top_p,
-    presence_penalty,
-    frequency_penalty,
-):
+    api_key: str,
+    model: str,
+    messages: list[list[dict[str, str]]],
+    function: dict[str, Any]|None,
+    max_return_tokens: int,
+    temperature: float,
+    top_p: float,
+    presence_penalty: float,
+    frequency_penalty: float,
+) -> list[entities.OpenAIAnswer]:
     # TODO: rewrite to gather
     #       also, it seems OpenAI API support sending multiple threads in a single request
     results = []
@@ -175,7 +188,7 @@ async def multiple_requests(
     return results
 
 
-async def check_api_key(api_key) -> entities.KeyStatus:
+async def check_api_key(api_key: str) -> entities.KeyStatus:
     try:
         await openai.Model.alist(api_key=api_key)
         logger.info("correct_api_key")

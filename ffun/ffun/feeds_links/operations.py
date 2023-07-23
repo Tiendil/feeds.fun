@@ -1,5 +1,6 @@
 import datetime
 import uuid
+from typing import Any
 
 import psycopg
 
@@ -12,11 +13,11 @@ from .entities import FeedLink
 logger = logging.get_module_logger()
 
 
-def row_to_feed_link(row: dict) -> FeedLink:
+def row_to_feed_link(row: dict[str, Any]) -> FeedLink:
     return FeedLink(user_id=row["user_id"], feed_id=row["feed_id"], created_at=row["created_at"])
 
 
-async def add_link(user_id: uuid.UUID, feed_id: uuid.UUID):
+async def add_link(user_id: uuid.UUID, feed_id: uuid.UUID) -> None:
     sql = """
         INSERT INTO fl_links (id, user_id, feed_id)
         VALUES (%(id)s, %(user_id)s, %(feed_id)s)
@@ -26,7 +27,7 @@ async def add_link(user_id: uuid.UUID, feed_id: uuid.UUID):
     await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "feed_id": feed_id})
 
 
-async def remove_link(user_id: uuid.UUID, feed_id: uuid.UUID):
+async def remove_link(user_id: uuid.UUID, feed_id: uuid.UUID) -> None:
     sql = """
         DELETE FROM fl_links WHERE user_id = %(user_id)s AND feed_id = %(feed_id)s
     """
