@@ -16,9 +16,10 @@ concurrency:
 
 jobs:
 
-  prepare:
-    timeout-minutes: 5
+  run-checks:
+    timeout-minutes: 20
     runs-on: ubuntu-22.04
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -28,16 +29,8 @@ jobs:
       - name: build containers
         run: docker compose --profile dev build backend-utils
 
-  check-code-formatting:
-    timeout-minutes: 5
-    runs-on: ubuntu-22.04
-    steps:
-      - name: run checks
+      - name: check code formatting
         run: ./bin/check-code-formatting.sh
 
-  check-types:
-    timeout-minutes: 5
-    runs-on: ubuntu-22.04
-    steps:
-      - name: run checks
+      - name: check types
         run: ./bin/check-types.sh
