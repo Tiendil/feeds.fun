@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
 
-  check-code-formatting:
+  prepare:
     timeout-minutes: 5
     runs-on: ubuntu-22.04
     steps:
@@ -25,5 +25,19 @@ jobs:
         with:
           ref: ${{ inputs.branch_ref }}
 
+      - name: build containers
+        run: docker compose --profile dev build backend-utils
+
+  check-code-formatting:
+    timeout-minutes: 5
+    runs-on: ubuntu-22.04
+    steps:
       - name: run checks
         run: ./bin/check-code-formatting.sh
+
+  check-types:
+    timeout-minutes: 5
+    runs-on: ubuntu-22.04
+    steps:
+      - name: run checks
+        run: ./bin/check-types.sh
