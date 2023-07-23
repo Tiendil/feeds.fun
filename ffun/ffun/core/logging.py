@@ -4,7 +4,7 @@ import functools
 import inspect
 import logging
 import uuid
-from typing import Any, Callable, Generic, Iterable, Optional, TypeVar
+from typing import Any, Callable, Generic, Iterable, Optional, Protocol, TypeVar
 
 import pydantic
 import structlog
@@ -17,7 +17,7 @@ class Renderer(str, enum.Enum):
     json = "json"
 
 
-class Settings(pydantic.BaseSettings):  # type: ignore
+class Settings(pydantic.BaseSettings):
     log_evel: str = "INFO"
     renderer: Renderer = Renderer.console
 
@@ -29,10 +29,15 @@ class Settings(pydantic.BaseSettings):  # type: ignore
 
     @property
     def structlog_level(self) -> int:
-        return getattr(logging, self.log_evel.upper())
+        return getattr(logging, self.log_evel.upper())  # type: ignore
 
 
 settings = Settings()
+
+
+class LogProcessorType(Protocol):
+    async def __call__(self, _: Any, __: Any, event_dict: dict[str, Any]) -> dict[str, Any]:
+        pass
 
 
 class Formatter:
@@ -81,7 +86,7 @@ class ProcessorFormatter:
     def __init__(self, formatters: Iterable[Formatter]) -> None:
         self._formatters = list(formatters)
 
-    def __call__(self, _, __, event_dict: dict[str, Any]) -> dict[str, Any]:
+    def __call__(self, _: Any, __: Any, event_dict: dict[str, Any]) -> dict[str, Any]:
         for key, value in event_dict.items():
             for formatter in self._formatters:
                 if formatter.can_format(value):
@@ -91,7 +96,7 @@ class ProcessorFormatter:
         return event_dict
 
 
-def info_extracter(_, __, event_dict: dict[str, Any]) -> dict[str, Any]:
+def info_extracter(_: Any, __: Any, event_dict: dict[str, Any]) -> dict[str, Any]:
     replaced = False
 
     for key, value in list(event_dict.items()):
@@ -111,12 +116,12 @@ def info_extracter(_, __, event_dict: dict[str, Any]) -> dict[str, Any]:
     return info_extracter(_, __, event_dict)
 
 
-def create_formatter():
+def create_formatter() -> ProcessorFormatter:
     formatters = [DateFormatter(), UUIDFormatter(), EnumFormatter()]
     return ProcessorFormatter(formatters)
 
 
-def log_errors_to_sentry(_, __, event_dict: dict[str, Any]) -> dict[str, Any]:
+def log_errors_to_sentry(_: Any, __: Any, event_dict: dict[str, Any]) -> dict[str, Any]:
     if event_dict.get("sentry_skip"):
         return event_dict
 
@@ -128,7 +133,7 @@ def log_errors_to_sentry(_, __, event_dict: dict[str, Any]) -> dict[str, Any]:
     return event_dict
 
 
-def processors_list(use_sentry: bool):
+def processors_list(use_sentry: bool) -> list[LogProcessorType]:
     sentry_processor = None
 
     if use_sentry:
@@ -147,12 +152,12 @@ def processors_list(use_sentry: bool):
         structlog.processors.JSONRenderer() if settings.renderer == Renderer.json else None,
     ]
 
-    return [p for p in processors_list if p is not None]
+    return [p for p in processors_list if p is not None]  # type: ignore
 
 
 def initialize(use_sentry: bool) -> None:
     structlog.configure(
-        processors=processors_list(use_sentry=use_sentry),
+        processors=processors_list(use_sentry=use_sentry),  # type: ignore
         wrapper_class=structlog.make_filtering_bound_logger(settings.structlog_level),
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),
@@ -160,31 +165,31 @@ def initialize(use_sentry: bool) -> None:
     )
 
 
-def get_module_logger():
-    caller_frame = inspect.currentframe().f_back
+def get_module_logger() -> structlog.stdlib.BoundLogger:
+    caller_frame = inspect.currentframe().f_back  # type: ignore
     module = inspect.getmodule(caller_frame)
-    return structlog.get_logger(module=module.__name__)
+    return structlog.get_logger(module=module.__name__)  # type: ignore
 
 
-FUNC = TypeVar("FUNC")
+FUNC = TypeVar("FUNC", bound=Callable[..., Any])
 
 
-def bound_function(skip=()) -> Callable[[FUNC], FUNC]:
+def bound_function(skip: Iterable[str] = ()) -> Callable[[FUNC], FUNC]:
 
     def wrapper(func: FUNC) -> FUNC:
         @functools.wraps(func)
-        def wrapped(**kwargs):
+        def wrapped(**kwargs: Any) -> Any:
             with bound_contextvars(**{k: v for k, v in kwargs.items() if k not in skip}):
                 return func(**kwargs)
 
         @functools.wraps(func)
-        async def async_wrapped(**kwargs):
+        async def async_wrapped(**kwargs: Any) -> Any:
             with bound_contextvars(**{k: v for k, v in kwargs.items() if k not in skip}):
                 return await func(**kwargs)
 
         if inspect.iscoroutinefunction(func):
-            return async_wrapped
+            return async_wrapped  # type: ignore
 
-        return wrapped
+        return wrapped  # type: ignore
 
     return wrapper

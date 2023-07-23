@@ -17,7 +17,7 @@ class TypeId(str, enum.Enum):
 
 
 class Type:
-    id = NotImplemented
+    id: TypeId = NotImplemented
 
     def serialize(self, value: Any) -> str:
         raise NotImplementedError('You must implement "serialize" method in child class')
@@ -74,7 +74,7 @@ class Boolean(Type):
 class Secret(Type):
     id = TypeId.secret
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.fernet = Fernet(settings.secret_key)
 

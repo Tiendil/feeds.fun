@@ -33,12 +33,14 @@ async def load_settings_for_users(user_ids: Iterable[uuid.UUID],
 
     result = await execute(sql, {"user_ids": user_ids, "kinds": kinds})
 
-    values = {}
+    values: dict[uuid.UUID, UserSettings] = {}
 
     for row in result:
         user_id = row["user_id"]
         kind = row["kind"]
         value = row["value"]
+
+        assert isinstance(user_id, uuid.UUID)
 
         if user_id not in values:
             values[user_id] = {}

@@ -12,7 +12,7 @@ logger = logging.get_module_logger()
 _default_secret_key = "JHBC3P8q9nhDNStpfljJ7eO09XNztJ3xWKI5l6rvL-Q="
 
 
-class Settings(BaseSettings):  # type: ignore
+class Settings(BaseSettings):
     secret_key: str = _default_secret_key
 
     class Config:

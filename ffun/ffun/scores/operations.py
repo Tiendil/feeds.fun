@@ -1,5 +1,5 @@
 import uuid
-from typing import Iterable
+from typing import Any, Iterable
 
 import psycopg
 from bidict import bidict
@@ -17,7 +17,7 @@ def normalize_tags(tags: Iterable[int]) -> list[int]:
     return list(sorted(tags))
 
 
-def row_to_rule(row: dict) -> Rule:
+def row_to_rule(row: dict[str, Any]) -> Rule:
     return Rule(
         id=row["id"], user_id=row["user_id"], tags=set(row["tags"]), score=row["score"], created_at=row["created_at"]
     )
@@ -33,7 +33,11 @@ async def create_rule(user_id: uuid.UUID, tags: Iterable[int], score: int) -> No
         """
 
     try:
-        await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "tags": tags, "key": key, "score": score})
+        await execute(sql, {"id": uuid.uuid4(),
+                            "user_id": user_id,
+                            "tags": tags,
+                            "key": key,
+                            "score": score})
     except psycopg.errors.UniqueViolation:
         logger.warning("rule_already_exists", key=key)
 
