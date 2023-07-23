@@ -22,8 +22,9 @@ async def save_setting(user_id: uuid.UUID, kind: int, value: str) -> None:
     await execute(sql, {"user_id": user_id, "kind": kind, "value": value})
 
 
-async def load_settings_for_users(user_ids: Iterable[uuid.UUID],
-                                  kinds: Iterable[int]) -> dict[uuid.UUID, UserSettings]:
+async def load_settings_for_users(
+    user_ids: Iterable[uuid.UUID], kinds: Iterable[int]
+) -> dict[uuid.UUID, UserSettings]:
     sql = """
         SELECT *
         FROM us_settings

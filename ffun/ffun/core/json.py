@@ -7,9 +7,7 @@ from ffun.core import logging
 logger = logging.get_module_logger()
 
 
-def finish_json(
-    text: str, empty_value: str = '""'
-) -> str:  # pylint: disable=too-many-branches # noqa: C901, CCR001
+def finish_json(text: str, empty_value: str = '""') -> str:  # pylint: disable=too-many-branches # noqa: C901, CCR001
     stack = []
 
     text = text.strip()

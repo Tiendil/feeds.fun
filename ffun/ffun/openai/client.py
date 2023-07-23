@@ -24,12 +24,14 @@ async def get_encoding(model: str) -> tiktoken.Encoding:
     return tiktoken.encoding_for_model(model)
 
 
-async def prepare_requests(system: str,  # pylint: disable=R0914
-                           text: str,
-                           model: str,
-                           function: dict[str, Any]|None,
-                           total_tokens: int,
-                           max_return_tokens: int) -> list[list[dict[str, str]]]:
+async def prepare_requests(
+    system: str,  # pylint: disable=R0914
+    text: str,
+    model: str,
+    function: dict[str, Any] | None,
+    total_tokens: int,
+    max_return_tokens: int,
+) -> list[list[dict[str, str]]]:
     # high estimation on base of
     # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
     logger.info("prepare_requests")
@@ -98,16 +100,17 @@ async def prepare_requests(system: str,  # pylint: disable=R0914
     return messages
 
 
-async def request(api_key: str,
-                  model: str,
-                  messages: list[dict[str, str]],
-                  function: dict[str, Any]|None,
-                  max_tokens: int,
-                  temperature: float,
-                  top_p: float,
-                  presence_penalty: float,
-                  frequency_penalty: float,
-                  ) -> entities.OpenAIAnswer:
+async def request(
+    api_key: str,
+    model: str,
+    messages: list[dict[str, str]],
+    function: dict[str, Any] | None,
+    max_tokens: int,
+    temperature: float,
+    top_p: float,
+    presence_penalty: float,
+    frequency_penalty: float,
+) -> entities.OpenAIAnswer:
     logger.info("request_openai")
 
     arguments: dict[str, Any] = {}
@@ -158,7 +161,7 @@ async def multiple_requests(
     api_key: str,
     model: str,
     messages: list[list[dict[str, str]]],
-    function: dict[str, Any]|None,
+    function: dict[str, Any] | None,
     max_return_tokens: int,
     temperature: float,
     top_p: float,

@@ -13,7 +13,7 @@ from ffun.core import logging
 
 logger = logging.get_module_logger()
 
-POOL: psycopg_pool.AsyncConnectionPool|None = None
+POOL: psycopg_pool.AsyncConnectionPool | None = None
 
 
 DB_RESULT = list[dict[str, Any]]

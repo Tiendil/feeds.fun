@@ -31,7 +31,9 @@ async def load_settings(user_id: uuid.UUID, kinds: Iterable[int]) -> UserSetting
     return _full_settings(values, kinds)
 
 
-async def load_settings_for_users(user_ids: Iterable[uuid.UUID], kinds: Iterable[int]) -> dict[uuid.UUID, UserSettings]:
+async def load_settings_for_users(
+    user_ids: Iterable[uuid.UUID], kinds: Iterable[int]
+) -> dict[uuid.UUID, UserSettings]:
     values = await operations.load_settings_for_users(user_ids, kinds)
 
     return {user_id: _full_settings(user_values, kinds) for user_id, user_values in values.items()}

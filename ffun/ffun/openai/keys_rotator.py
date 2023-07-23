@@ -75,9 +75,9 @@ def _is_entry_new_enough(entry_age: datetime.timedelta, settings: UserSettings) 
 
 
 @contextlib.asynccontextmanager
-async def api_key_for_feed_entry(feed_id: uuid.UUID,
-                                 entry_age: datetime.timedelta,
-                                 reserved_tokens: int) -> AsyncGenerator[entities.APIKeyUsage, None]:
+async def api_key_for_feed_entry(
+    feed_id: uuid.UUID, entry_age: datetime.timedelta, reserved_tokens: int
+) -> AsyncGenerator[entities.APIKeyUsage, None]:
     # TODO: in general, openai module should not depends on application
     #       do something with that
     from ffun.application.resources import Resource
@@ -110,11 +110,7 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID,
     log.info("filtered_users_with_keys", users=list(users.keys()))
 
     # filter out users that do not want to process old entries
-    users = {
-        user_id: settings
-        for user_id, settings in users.items()
-        if _is_entry_new_enough(entry_age, settings)
-    }
+    users = {user_id: settings for user_id, settings in users.items() if _is_entry_new_enough(entry_age, settings)}
 
     log.info("filtered_users_by_entry_age", users=list(users.keys()))
 
@@ -176,9 +172,7 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID,
 
     assert api_key is not None
 
-    key_usage = entities.APIKeyUsage(
-        user_id=found_user_id, api_key=api_key, used_tokens=None
-    )
+    key_usage = entities.APIKeyUsage(user_id=found_user_id, api_key=api_key, used_tokens=None)
 
     used_tokens = reserved_tokens
 

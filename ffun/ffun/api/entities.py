@@ -144,10 +144,7 @@ class TagInfo(api.Base):
     def from_internal(cls, tag: o_entities.Tag, uid: str) -> "TagInfo":
         assert tag.name is not None
 
-        return cls(uid=uid,
-                   name=tag.name,
-                   link=tag.link,
-                   categories=tag.categories)
+        return cls(uid=uid, name=tag.name, link=tag.link, categories=tag.categories)
 
 
 class UserSettingKind(str, enum.Enum):
@@ -238,7 +235,7 @@ class GetLastEntriesRequest(api.APIRequest):
     period: datetime.timedelta | None = None
 
     @pydantic.validator("period")
-    def validate_period(cls, v: None|datetime.timedelta) -> None|datetime.timedelta:
+    def validate_period(cls, v: None | datetime.timedelta) -> None | datetime.timedelta:
         if v is not None and v.total_seconds() < 0:
             raise ValueError("period must be positive")
         return v

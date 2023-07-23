@@ -66,7 +66,7 @@ async def use_supertokens(
             dashboard.init(),
             usermetadata.init(),
         ],
-        mode='asgi',
+        mode="asgi",
     )
 
     logger.info("supertokens_initialized")

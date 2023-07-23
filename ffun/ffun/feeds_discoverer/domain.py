@@ -52,7 +52,7 @@ async def extract_feed_info(content: str, original_url: str) -> p_entities.FeedI
     return None
 
 
-def construct_soup(content: str) -> BeautifulSoup|None:
+def construct_soup(content: str) -> BeautifulSoup | None:
     logger.info("construct_soup")
 
     try:

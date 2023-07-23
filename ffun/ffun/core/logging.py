@@ -175,7 +175,6 @@ FUNC = TypeVar("FUNC", bound=Callable[..., Any])
 
 
 def bound_function(skip: Iterable[str] = ()) -> Callable[[FUNC], FUNC]:
-
     def wrapper(func: FUNC) -> FUNC:
         @functools.wraps(func)
         def wrapped(**kwargs: Any) -> Any:

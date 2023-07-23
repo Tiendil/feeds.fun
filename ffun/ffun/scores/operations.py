@@ -33,11 +33,7 @@ async def create_rule(user_id: uuid.UUID, tags: Iterable[int], score: int) -> No
         """
 
     try:
-        await execute(sql, {"id": uuid.uuid4(),
-                            "user_id": user_id,
-                            "tags": tags,
-                            "key": key,
-                            "score": score})
+        await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "tags": tags, "key": key, "score": score})
     except psycopg.errors.UniqueViolation:
         logger.warning("rule_already_exists", key=key)
 
