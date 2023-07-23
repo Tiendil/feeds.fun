@@ -4,6 +4,8 @@ from typing import Any, Iterable
 from ffun.core import logging
 from ffun.core.postgresql import execute
 
+from .entities import UserSettings
+
 
 logger = logging.get_module_logger()
 
@@ -20,7 +22,8 @@ async def save_setting(user_id: uuid.UUID, kind: int, value: str) -> None:
     await execute(sql, {"user_id": user_id, "kind": kind, "value": value})
 
 
-async def load_settings_for_users(user_ids: Iterable[uuid.UUID], kinds: Iterable[int]) -> dict[uuid.UUID, Any]:
+async def load_settings_for_users(user_ids: Iterable[uuid.UUID],
+                                  kinds: Iterable[int]) -> dict[uuid.UUID, UserSettings]:
     sql = """
         SELECT *
         FROM us_settings
@@ -45,7 +48,7 @@ async def load_settings_for_users(user_ids: Iterable[uuid.UUID], kinds: Iterable
     return values
 
 
-async def load_settings(user_id: uuid.UUID, kinds: Iterable[int]) -> dict[int, str]:
+async def load_settings(user_id: uuid.UUID, kinds: Iterable[int]) -> UserSettings:
     values = await load_settings_for_users([user_id], kinds)
 
     return values[user_id] if user_id in values else {}
