@@ -42,7 +42,7 @@ class PGAsyncCursor(psycopg.AsyncCursor):  # type: ignore
 
 class PGPAsyncConnection(psycopg.AsyncConnection):  # type: ignore
     def __init__(self, *argv, row_factory=dict_row, cursor_factory=PGAsyncCursor, **kwargs):  # type: ignore
-        super().__init__(row_factory=row_factory, **kwargs)
+        super().__init__(*argv, row_factory=row_factory, **kwargs)  # type: ignore
         self.cursor_factory = cursor_factory
 
         # set prepare_threshold to None because we can use connection pool (pgbouncer/RDSPRoxy)
