@@ -1,11 +1,13 @@
 """
 markers-tables
 """
+from typing import Any
 
+from psycopg import Connection
 from yoyo import step
 
 
-__depends__ = {}
+__depends__: set[str] = set()
 
 sql_create_markers_table = """
 CREATE TABLE m_markers (
@@ -22,13 +24,13 @@ CREATE UNIQUE INDEX idx_m_markers_user_id_marker_entry_id ON m_markers (user_id,
 """
 
 
-def apply_step(conn):
+def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
     cursor.execute(sql_create_markers_table)
     cursor.execute(sql_users_markers_index)
 
 
-def rollback_step(conn):
+def rollback_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
     cursor.execute("DROP TABLE m_markers")
 

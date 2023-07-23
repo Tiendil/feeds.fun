@@ -43,4 +43,6 @@ async def get_mapping(service: Service, external_id: str) -> uuid.UUID:
     if not result:
         raise errors.NoUserMappingFound(service=service, external_id=external_id)
 
+    assert isinstance(result[0]["internal_id"], uuid.UUID)
+
     return result[0]["internal_id"]

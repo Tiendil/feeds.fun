@@ -4,7 +4,7 @@ from typing import Any
 import pydantic
 
 
-class Base(pydantic.BaseModel):  # type: ignore
+class Base(pydantic.BaseModel):
     class Config:
         anystr_strip_whitespace = True
         validate_all = True

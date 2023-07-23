@@ -19,6 +19,7 @@ from ffun.library import entities as l_entities
 from ffun.markers import domain as m_domain
 from ffun.ontology import domain as o_domain
 from ffun.parsers import domain as p_domain
+from ffun.parsers import entities as p_entities
 from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
@@ -70,11 +71,11 @@ async def _external_entries(
 
         external_markers = [entities.Marker.from_internal(marker) for marker in markers.get(entry.id, ())]
 
-        entry = entities.Entry.from_internal(
+        external_entry = entities.Entry.from_internal(
             entry=entry, tags=tags.get(entry.id, ()), markers=external_markers, score=score, with_body=with_body
         )
 
-        external_entries.append(entry)
+        external_entries.append(external_entry)
 
     external_entries.sort(key=lambda entry: entry.score, reverse=True)
 
@@ -205,7 +206,7 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
     return entities.DiscoverFeedsResponse(feeds=external_feeds)
 
 
-async def _add_feeds(feed_infos: list[entities.FeedInfo], user: User) -> None:
+async def _add_feeds(feed_infos: list[p_entities.FeedInfo], user: User) -> None:
     feeds = [
         f_entities.Feed(id=uuid.uuid4(), url=feed_info.url, title=feed_info.title, description=feed_info.description)
         for feed_info in feed_infos
@@ -264,12 +265,7 @@ async def api_subscribe_to_feeds_collections(
         feed_urls = fc_domain.get_feeds_for_collecton(collection)
 
         for feed_url in feed_urls:
-            feeds.append(f_entities.Feed(id=uuid.uuid4(), url=feed_url, title="unknown", description="unknown"))
-
-    real_feeds_ids = await f_domain.save_feeds(feeds)
-
-    for feed_id in real_feeds_ids:
-        await fl_domain.add_link(user_id=user.id, feed_id=feed_id)
+            feeds.append(p_entities.FeedInfo(url=feed_url, title="unknown", description="unknown", entries=[]))
 
     await _add_feeds(feeds, user)
 

@@ -1,6 +1,7 @@
 import datetime
 import enum
 import uuid
+from typing import Any
 
 import pydantic
 
@@ -28,5 +29,5 @@ class Entry(pydantic.BaseModel):
     def age(self) -> datetime.timedelta:
         return utils.now() - self.published_at
 
-    def log_info(self):
+    def log_info(self) -> dict[str, Any]:
         return {"id": self.id, "feed_id": self.feed_id, "title": self.title, "external_url": self.external_url}

@@ -21,7 +21,7 @@ class Sentry(pydantic.BaseModel):
     traces_sample_rate: float = 1.0
 
 
-class Settings(BaseSettings):  # type: ignore
+class Settings(BaseSettings):
     app_name: str = "Feeds Fun"
     app_domain: str = "localhost"
     app_port: int = 5173

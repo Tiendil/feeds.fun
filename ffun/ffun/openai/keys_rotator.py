@@ -1,18 +1,20 @@
 import contextlib
 import datetime
 import uuid
+from typing import AsyncGenerator, cast
 
 from ffun.core import logging
 from ffun.feeds_links import domain as fl_domain
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
+from ffun.user_settings.entities import UserSettings
 
 from . import client, entities, errors
 
 
 logger = logging.get_module_logger()
 
-_keys_statuses = {}
+_keys_statuses: dict[str, entities.KeyStatus] = {}
 
 
 # Note: this code is not about billing, it is about protection from the overuse of keys
@@ -20,7 +22,7 @@ _keys_statuses = {}
 
 
 # TODO: add lock here to not check the same key in parallel by different processors
-async def _filter_out_users_with_wrong_keys(users):
+async def _filter_out_users_with_wrong_keys(users: dict[uuid.UUID, UserSettings]) -> dict[uuid.UUID, UserSettings]:
     from ffun.application.user_settings import UserSetting
 
     log = logger.bind(function="_filter_out_users_with_wrong_keys")
@@ -31,6 +33,8 @@ async def _filter_out_users_with_wrong_keys(users):
 
     for user_id, settings in users.items():
         api_key = settings.get(UserSetting.openai_api_key)
+
+        assert api_key
 
         key_status = _keys_statuses.get(api_key)
 
@@ -59,8 +63,21 @@ async def _filter_out_users_with_wrong_keys(users):
 _day_secods = 24 * 60 * 60
 
 
+def _is_entry_new_enough(entry_age: datetime.timedelta, settings: UserSettings) -> bool:
+    from ffun.application.user_settings import UserSetting
+
+    days = settings.get(UserSetting.openai_process_entries_not_older_than)
+
+    assert days is not None
+    assert isinstance(days, int)
+
+    return days * _day_secods >= entry_age.total_seconds()
+
+
 @contextlib.asynccontextmanager
-async def api_key_for_feed_entry(feed_id: uuid.UUID, entry_age: datetime.timedelta, reserved_tokens: int):
+async def api_key_for_feed_entry(
+    feed_id: uuid.UUID, entry_age: datetime.timedelta, reserved_tokens: int
+) -> AsyncGenerator[entities.APIKeyUsage, None]:
     # TODO: in general, openai module should not depends on application
     #       do something with that
     from ffun.application.resources import Resource
@@ -93,11 +110,7 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, entry_age: datetime.timedel
     log.info("filtered_users_with_keys", users=list(users.keys()))
 
     # filter out users that do not want to process old entries
-    users = {
-        user_id: settings
-        for user_id, settings in users.items()
-        if settings.get(UserSetting.openai_process_entries_not_older_than) * _day_secods >= entry_age.total_seconds()
-    }
+    users = {user_id: settings for user_id, settings in users.items() if _is_entry_new_enough(entry_age, settings)}
 
     log.info("filtered_users_by_entry_age", users=list(users.keys()))
 
@@ -130,12 +143,14 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, entry_age: datetime.timedel
         log.info("user_has_no_resources", user_id=user_id, total=total, reserved_tokens=reserved_tokens, limit=limit)
 
     # sort by minimal usage
-    candidate_user_ids = sorted(users_with_resources.keys(), key=lambda user_id: resources[user_id].total)
+    candidate_user_ids = sorted(users_with_resources.keys(), key=lambda user_id: cast(int, resources[user_id].total))
 
     found_user_id = None
 
     for user_id in candidate_user_ids:
         limit = settings.get(UserSetting.openai_max_tokens_in_month)
+
+        assert limit is not None
 
         log.info("try_to_reserve_resources", user_id=user_id, amount=reserved_tokens, limit=limit)
 
@@ -153,9 +168,11 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, entry_age: datetime.timedel
         log.warning("no_key_found_for_feed")
         raise errors.NoKeyFoundForFeed()
 
-    key_usage = entities.APIKeyUsage(
-        user_id=found_user_id, api_key=users[found_user_id].get(UserSetting.openai_api_key), used=None
-    )
+    api_key = users[found_user_id].get(UserSetting.openai_api_key)
+
+    assert api_key is not None
+
+    key_usage = entities.APIKeyUsage(user_id=found_user_id, api_key=api_key, used_tokens=None)
 
     used_tokens = reserved_tokens
 
@@ -163,6 +180,8 @@ async def api_key_for_feed_entry(feed_id: uuid.UUID, entry_age: datetime.timedel
         log.info("provide_key", user_id=key_usage.user_id)
 
         yield key_usage
+
+        assert key_usage.used_tokens is not None
 
         used_tokens = key_usage.used_tokens
 

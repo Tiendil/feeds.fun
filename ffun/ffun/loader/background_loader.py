@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import uuid
+from typing import Any
 
 from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
@@ -15,7 +16,7 @@ logger = logging.get_module_logger()
 class FeedsLoader(InfiniteTask):
     __slots__ = ("_loaders_number",)
 
-    def __init__(self, loaders_number: int = settings.loaders_number, **kwargs) -> None:
+    def __init__(self, loaders_number: int = settings.loaders_number, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._loaders_number = loaders_number
 

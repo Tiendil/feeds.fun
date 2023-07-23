@@ -7,9 +7,7 @@ from ffun.core import logging
 logger = logging.get_module_logger()
 
 
-def finish_json(
-    text: str, empty_value: str | None = '""'
-) -> str:  # pylint: disable=too-many-branches # noqa: C901, CCR001
+def finish_json(text: str, empty_value: str = '""') -> str:  # pylint: disable=too-many-branches # noqa: C901, CCR001
     stack = []
 
     text = text.strip()
@@ -76,11 +74,11 @@ def finish_json(
     return text
 
 
-def loads_with_fix(text: str):
+def loads_with_fix(text: str) -> dict[str, Any]:
     try:
-        return json.loads(finish_json(text))
+        return json.loads(finish_json(text))  # type: ignore
     except json.JSONDecodeError:
-        return json.loads(finish_json(text))
+        return json.loads(finish_json(text))  # type: ignore
 
 
 def extract_tags_from_random_json(data: Any) -> set[str]:

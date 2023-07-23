@@ -1,7 +1,9 @@
 """
 add-title-and-description
 """
+from typing import Any
 
+from psycopg import Connection
 from yoyo import step
 
 
@@ -15,12 +17,12 @@ ADD COLUMN description TEXT DEFAULT NULL
 """
 
 
-def apply_step(conn):
+def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
     cursor.execute(sql)
 
 
-def rollback_step(conn):
+def rollback_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
 
     sql = """

@@ -1,5 +1,5 @@
 import contextlib
-from typing import Any
+from typing import Any, AsyncGenerator
 
 import fastapi
 from fastapi import FastAPI
@@ -28,7 +28,7 @@ def custom_email_deliver(original_implementation: EmailDeliveryOverrideInput) ->
         template_vars.url_with_link_code = template_vars.url_with_link_code.replace("/auth/verify", "/auth")
         return await original_send_email(template_vars, user_context)
 
-    original_implementation.send_email = send_email
+    original_implementation.send_email = send_email  # type: ignore
     return original_implementation
 
 
@@ -40,7 +40,7 @@ async def use_supertokens(
     cookie_secure: bool = settings.supertokens.cookie_secure,
     api_base_path: str = settings.supertokens.api_base_path,
     website_base_path: str = settings.supertokens.website_base_path,
-):
+) -> AsyncGenerator[None, None]:
     logger.info("supertokens_enabled")
 
     init(
@@ -66,7 +66,7 @@ async def use_supertokens(
             dashboard.init(),
             usermetadata.init(),
         ],
-        mode=settings.supertokens.mode,
+        mode="asgi",
     )
 
     logger.info("supertokens_initialized")

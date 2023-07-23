@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Generic, Optional, TypeVar
 
 from . import errors
 
@@ -10,20 +10,23 @@ class Entity:
         self.key = key
 
 
-class Register:
+ENTITY = TypeVar("ENTITY", bound=Entity)
+
+
+class Register(Generic[ENTITY]):
     __slots__ = ("_entities",)
 
     def __init__(self) -> None:
-        self._entities = {}
+        self._entities: dict[int, ENTITY] = {}
 
-    def add(self, entity) -> None:
+    def add(self, entity: ENTITY) -> None:
         if entity.key in self._entities:
             raise errors.EntityAlreadyRegistered()
 
         self._entities[entity.key] = entity
 
-    def get(self, key) -> Any:
-        return self._entities.get(key)
+    def get(self, key: int) -> ENTITY:
+        return self._entities[key]
 
-    def all(self) -> dict[Any, Any]:
+    def all(self) -> dict[int, ENTITY]:
         return dict(self._entities)

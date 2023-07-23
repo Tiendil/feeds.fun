@@ -13,7 +13,7 @@ from ffun.core import logging
 
 logger = logging.get_module_logger()
 
-POOL: psycopg_pool.AsyncConnectionPool = None
+POOL: psycopg_pool.AsyncConnectionPool | None = None
 
 
 DB_RESULT = list[dict[str, Any]]
@@ -26,7 +26,7 @@ class ExecuteType(Protocol):
 
 
 class PGAsyncCursor(psycopg.AsyncCursor):  # type: ignore
-    async def execute_and_extract(self, command: str, arguments: dict[str, Any]) -> DB_RESULT:
+    async def execute_and_extract(self, command: str, arguments: SQL_ARGUMENTS | None = None) -> DB_RESULT:
         await self.execute(command, arguments)
 
         if self.pgresult is None:
@@ -35,14 +35,14 @@ class PGAsyncCursor(psycopg.AsyncCursor):  # type: ignore
         # see for details
         # https://github.com/psycopg/psycopg/blob/ea76ab81ba1d797eee2baf2a1464be51e608b8bd/psycopg/psycopg/pq/_enums.py
         if self.pgresult.status in (ExecStatus.TUPLES_OK, ExecStatus.SINGLE_TUPLE):
-            return await self.fetchall()  # type: ignore
+            return await self.fetchall()
 
         return []
 
 
 class PGPAsyncConnection(psycopg.AsyncConnection):  # type: ignore
     def __init__(self, *argv, row_factory=dict_row, cursor_factory=PGAsyncCursor, **kwargs):  # type: ignore
-        super().__init__(*argv, row_factory=row_factory, **kwargs)
+        super().__init__(*argv, row_factory=row_factory, **kwargs)  # type: ignore
         self.cursor_factory = cursor_factory
 
         # set prepare_threshold to None because we can use connection pool (pgbouncer/RDSPRoxy)
@@ -117,6 +117,7 @@ async def transaction(autocommit: bool = False) -> AsyncGenerator[ExecuteType, N
             await connection.set_autocommit(autocommit)
 
         async with connection.cursor() as cursor:
+            assert isinstance(cursor, PGAsyncCursor)
             yield cursor.execute_and_extract
 
 

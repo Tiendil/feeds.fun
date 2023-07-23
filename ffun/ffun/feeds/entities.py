@@ -1,6 +1,7 @@
 import datetime
 import enum
 import uuid
+from typing import Any
 
 import pydantic
 
@@ -48,5 +49,5 @@ class Feed(pydantic.BaseModel):
     title: str | None
     description: str | None
 
-    def log_info(self):
+    def log_info(self) -> dict[str, Any]:
         return {"id": self.id, "state": self.state, "url": self.url, "last_error": self.last_error}

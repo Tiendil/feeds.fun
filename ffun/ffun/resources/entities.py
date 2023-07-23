@@ -14,5 +14,5 @@ class Resource(pydantic.BaseModel):
     reserved: int
 
     @property
-    def total(self):
+    def total(self) -> int:
         return self.used + self.reserved

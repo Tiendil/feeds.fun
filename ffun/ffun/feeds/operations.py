@@ -1,6 +1,6 @@
 import datetime
 import uuid
-from typing import Iterable
+from typing import Any, Iterable
 
 import psycopg
 
@@ -13,7 +13,7 @@ from .entities import Feed, FeedError, FeedState
 logger = logging.get_module_logger()
 
 
-def row_to_feed(row: dict) -> Feed:
+def row_to_feed(row: dict[str, Any]) -> Feed:
     return Feed(
         id=row["id"],
         url=row["url"],

@@ -49,7 +49,7 @@ def normalize(tag: str) -> str:
         save_order=True,
         separator="-",
         stopwords=(),
-        regex_pattern=DISALLOWED_CHARS_PATTERN,
+        regex_pattern=DISALLOWED_CHARS_PATTERN,  # type: ignore
         lowercase=True,
         replacements=(),
         allow_unicode=False,

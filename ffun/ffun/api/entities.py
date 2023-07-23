@@ -100,7 +100,7 @@ class Rule(api.Base):
     def from_internal(cls, rule: s_entities.Rule, tags_mapping: dict[int, str]) -> "Rule":
         return cls(
             id=rule.id,
-            tags={tags_mapping[tag_id] for tag_id in rule.tags},
+            tags=[tags_mapping[tag_id] for tag_id in rule.tags],
             score=rule.score,
             createdAt=rule.created_at,
         )
@@ -119,7 +119,6 @@ class EntryInfo(api.Base):
 
 class FeedInfo(api.Base):
     url: str
-    base_url: str
     title: str
     description: str
 
@@ -129,7 +128,6 @@ class FeedInfo(api.Base):
     def from_internal(cls, feed: p_entities.FeedInfo) -> "FeedInfo":
         return cls(
             url=feed.url,
-            base_url=feed.base_url,
             title=feed.title,
             description=feed.description,
             entries=[EntryInfo.from_internal(entry) for entry in feed.entries],
@@ -144,6 +142,8 @@ class TagInfo(api.Base):
 
     @classmethod
     def from_internal(cls, tag: o_entities.Tag, uid: str) -> "TagInfo":
+        assert tag.name is not None
+
         return cls(uid=uid, name=tag.name, link=tag.link, categories=tag.categories)
 
 
@@ -163,7 +163,7 @@ class UserSettingKind(str, enum.Enum):
     def to_internal(self) -> int:
         from ffun.application.user_settings import UserSetting
 
-        return getattr(UserSetting, self.name)
+        return getattr(UserSetting, self.name)  # type: ignore
 
 
 class UserSetting(api.Base):
@@ -180,6 +180,8 @@ class UserSetting(api.Base):
         real_kind = UserSetting(kind)
 
         real_setting = user_settings.get(real_kind)
+
+        assert real_setting is not None
 
         return cls(
             kind=UserSettingKind.from_internal(real_kind),
@@ -203,7 +205,7 @@ class ResourceKind(str, enum.Enum):
     def to_internal(self) -> int:
         from ffun.application.resources import Resource
 
-        return getattr(Resource, self.name)
+        return getattr(Resource, self.name)  # type: ignore
 
 
 class ResourceHistoryRecord(pydantic.BaseModel):
@@ -233,7 +235,7 @@ class GetLastEntriesRequest(api.APIRequest):
     period: datetime.timedelta | None = None
 
     @pydantic.validator("period")
-    def validate_period(cls, v):
+    def validate_period(cls, v: None | datetime.timedelta) -> None | datetime.timedelta:
         if v is not None and v.total_seconds() < 0:
             raise ValueError("period must be positive")
         return v
@@ -381,10 +383,10 @@ class SetUserSettingRequest(api.APIRequest):
     value: Any
 
     @pydantic.root_validator
-    def validate_value(cls, values):
+    def validate_value(cls, values: dict[str, Any]) -> dict[str, Any]:
         from ffun.application.user_settings import UserSetting
 
-        kind = values.get("kind").to_internal()
+        kind = values["kind"].to_internal()
         value = values.get("value")
 
         real_kind = UserSetting(kind)
