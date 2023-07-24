@@ -12,4 +12,4 @@ echo "run black"
 
 echo "run prettier"
 
-./bin/frontend-utils.sh npm run format --check .
+./bin/frontend-utils.sh npm run format-check
