@@ -2,9 +2,9 @@
   <div>
     <button
       v-if="canShowMore"
-      @click.prevent="showMore()"
-      >next {{ realShowPerPage }}</button
-    >
+      @click.prevent="showMore()">
+      next {{ realShowPerPage }}
+    </button>
 
     <span v-if="canShowMore && canHide"> | </span>
 

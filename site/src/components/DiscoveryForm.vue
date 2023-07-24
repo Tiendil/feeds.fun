@@ -8,9 +8,9 @@
 
     <button
       :disabled="loading"
-      @click.prevent="searhedUrl = search"
-      >Search</button
-    >
+      @click.prevent="searhedUrl = search">
+      Search
+    </button>
 
     <hr />
 
@@ -26,9 +26,9 @@
 
         <button
           v-if="!addedFeeds[feed.url]"
-          @click.prevent="addFeed(feed.url)"
-          >Add</button
-        >
+          @click.prevent="addFeed(feed.url)">
+          Add
+        </button>
         <p v-else>Feed added</p>
         <hr />
       </div>

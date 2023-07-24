@@ -37,7 +37,7 @@
 
     <ul style="text-align: left">
       <li>Will become much prettier.</li>
-      <li>Will collect not only RSS/ATOM but any news feeds, including private if you allow.</li>
+      <li> Will collect not only RSS/ATOM but any news feeds, including private if you allow. </li>
       <li>Will suggest new rules to score & new feeds, if you allow.</li>
     </ul>
   </wide-layout>

@@ -24,7 +24,11 @@
 
   const entriesStore = useEntriesStore();
 
-  const properties = defineProps<{tag: string; count: number; selected: boolean}>();
+  const properties = defineProps<{
+    tag: string;
+    count: number;
+    selected: boolean;
+  }>();
 
   const emit = defineEmits(["tag:selected", "tag:deselected"]);
 

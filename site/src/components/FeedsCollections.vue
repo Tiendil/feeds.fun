@@ -43,7 +43,9 @@
   });
 
   async function subscribe() {
-    await api.subscribeToFeedsCollections({collectionsIds: selectedCollections.value});
+    await api.subscribeToFeedsCollections({
+      collectionsIds: selectedCollections.value
+    });
     globalSettings.updateDataVersion();
   }
 </script>

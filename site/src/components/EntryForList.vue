@@ -75,7 +75,11 @@
 
   const entriesStore = useEntriesStore();
 
-  const properties = defineProps<{entryId: t.EntryId; timeField: string; showTags: boolean}>();
+  const properties = defineProps<{
+    entryId: t.EntryId;
+    timeField: string;
+    showTags: boolean;
+  }>();
 
   const entry = computed(() => {
     if (properties.entryId in entriesStore.entries) {
@@ -115,7 +119,10 @@
   });
 
   async function onTitleClick() {
-    await entriesStore.setMarker({entryId: properties.entryId, marker: e.Marker.Read});
+    await entriesStore.setMarker({
+      entryId: properties.entryId,
+      marker: e.Marker.Read
+    });
   }
 </script>
 

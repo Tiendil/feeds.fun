@@ -30,9 +30,7 @@ const API_GET_INFO = `${ENTRY_POINT}/get-info`;
 
 let _onSessionLost: () => void = () => {};
 
-export function init({onSessionLost}:
-                     {onSessionLost: () => void}) {
-
+export function init({onSessionLost}: {onSessionLost: () => void}) {
   _onSessionLost = onSessionLost;
 }
 
@@ -65,7 +63,10 @@ export async function getFeeds() {
 }
 
 export async function getLastEntries({period}: {period: number}) {
-  const response = await post({url: API_GET_LAST_ENTRIES, data: {period: period}});
+  const response = await post({
+    url: API_GET_LAST_ENTRIES,
+    data: {period: period}
+  });
 
   const entries = [];
 
@@ -78,7 +79,10 @@ export async function getLastEntries({period}: {period: number}) {
 }
 
 export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
-  const response = await post({url: API_GET_ENTRIES_BY_IDS, data: {ids: ids}});
+  const response = await post({
+    url: API_GET_ENTRIES_BY_IDS,
+    data: {ids: ids}
+  });
 
   const entries = [];
 
@@ -91,7 +95,10 @@ export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
 }
 
 export async function createRule({tags, score}: {tags: string[]; score: number}) {
-  const response = await post({url: API_CREATE_RULE, data: {tags: tags, score: score}});
+  const response = await post({
+    url: API_CREATE_RULE,
+    data: {tags: tags, score: score}
+  });
   return response;
 }
 
@@ -101,7 +108,10 @@ export async function deleteRule({id}: {id: t.RuleId}) {
 }
 
 export async function updateRule({id, tags, score}: {id: t.RuleId; tags: string[]; score: number}) {
-  const response = await post({url: API_UPDATE_RULE, data: {id: id, tags: tags, score: score}});
+  const response = await post({
+    url: API_UPDATE_RULE,
+    data: {id: id, tags: tags, score: score}
+  });
   return response;
 }
 
@@ -119,7 +129,10 @@ export async function getRules() {
 }
 
 export async function getScoreDetails({entryId}: {entryId: t.EntryId}) {
-  const response = await post({url: API_GET_SCORE_DETAILS, data: {entryId: entryId}});
+  const response = await post({
+    url: API_GET_SCORE_DETAILS,
+    data: {entryId: entryId}
+  });
 
   const rules = [];
 
@@ -132,11 +145,17 @@ export async function getScoreDetails({entryId}: {entryId: t.EntryId}) {
 }
 
 export async function setMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
-  await post({url: API_SET_MARKER, data: {entryId: entryId, marker: marker}});
+  await post({
+    url: API_SET_MARKER,
+    data: {entryId: entryId, marker: marker}
+  });
 }
 
 export async function removeMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
-  await post({url: API_REMOVE_MARKER, data: {entryId: entryId, marker: marker}});
+  await post({
+    url: API_REMOVE_MARKER,
+    data: {entryId: entryId, marker: marker}
+  });
 }
 
 export async function discoverFeeds({url}: {url: string}) {
@@ -171,7 +190,10 @@ export async function getFeedsCollections() {
 }
 
 export async function subscribeToFeedsCollections({collectionsIds}: {collectionsIds: t.FeedsCollectionId[]}) {
-  await post({url: API_SUBSCRIBE_TO_FEEDS_COLLECTIONS, data: {collections: collectionsIds}});
+  await post({
+    url: API_SUBSCRIBE_TO_FEEDS_COLLECTIONS,
+    data: {collections: collectionsIds}
+  });
 }
 
 export async function getTagsInfo({uids}: {uids: string[]}) {
@@ -206,7 +228,10 @@ export async function setUserSetting({kind, value}: {kind: string; value: string
 }
 
 export async function getResourceHistory({kind}: {kind: string}) {
-  const response = await post({url: API_GET_RESOURCE_HISTORY, data: {kind: kind}});
+  const response = await post({
+    url: API_GET_RESOURCE_HISTORY,
+    data: {kind: kind}
+  });
 
   const history = [];
 

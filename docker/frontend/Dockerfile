@@ -2,7 +2,7 @@ FROM node:lts
 
 WORKDIR /repository
 
-COPY ./site/package*.json ./
+COPY ./site/* ./
 
 RUN npm ci
 

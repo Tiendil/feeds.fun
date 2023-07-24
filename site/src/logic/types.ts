@@ -191,7 +191,12 @@ export function ruleFromJSON({
   score: number;
   createdAt: string;
 }): Rule {
-  return {id: toRuleId(id), tags: tags, score: score, createdAt: new Date(createdAt)};
+  return {
+    id: toRuleId(id),
+    tags: tags,
+    score: score,
+    createdAt: new Date(createdAt)
+  };
 }
 
 export type EntryInfo = {
@@ -233,7 +238,12 @@ export function feedInfoFromJSON({
   description: string;
   entries: any[];
 }): FeedInfo {
-  return {url: toURL(url), title, description, entries: entries.map(entryInfoFromJSON)};
+  return {
+    url: toURL(url),
+    title,
+    description,
+    entries: entries.map(entryInfoFromJSON)
+  };
 }
 
 export type TagInfo = {

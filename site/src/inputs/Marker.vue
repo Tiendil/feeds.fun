@@ -41,11 +41,17 @@
   });
 
   async function mark() {
-    await entriesStore.setMarker({entryId: properties.entryId, marker: properties.marker});
+    await entriesStore.setMarker({
+      entryId: properties.entryId,
+      marker: properties.marker
+    });
   }
 
   async function unmark() {
-    await entriesStore.removeMarker({entryId: properties.entryId, marker: properties.marker});
+    await entriesStore.removeMarker({
+      entryId: properties.entryId,
+      marker: properties.marker
+    });
   }
 </script>
 
