@@ -1,15 +1,22 @@
 <template>
-<div>
-  <github-button :href="repository" data-icon="octicon-star">Star</github-button>
-  &nbsp;
-  <github-button :href="repository + '/discussions'" data-show-count="true" data-icon="octicon-comment-discussion">Discuss</github-button>
-</div>
+  <div>
+    <github-button
+      :href="repository"
+      data-icon="octicon-star"
+      >Star</github-button
+    >
+    &nbsp;
+    <github-button
+      :href="repository + '/discussions'"
+      data-show-count="true"
+      data-icon="octicon-comment-discussion"
+      >Discuss</github-button
+    >
+  </div>
 </template>
 
 <script lang="ts" setup>
-
-const props = defineProps<{ repository: string }>();
-
+  const props = defineProps<{repository: string}>();
 </script>
 
 <style></style>

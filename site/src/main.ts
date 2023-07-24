@@ -1,9 +1,9 @@
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+import {createApp} from "vue";
+import {createPinia} from "pinia";
 import * as Sentry from "@sentry/vue";
 
-import App from './App.vue'
-import router from './router'
+import App from "./App.vue";
+import router from "./router";
 
 import FeedsList from "./components/FeedsList.vue";
 import EntriesList from "./components/EntriesList.vue";
@@ -39,13 +39,12 @@ import ValueScore from "./values/Score.vue";
 import WideLayout from "./layouts/WideLayout.vue";
 import SidePanelLayout from "./layouts/SidePanelLayout.vue";
 
-import { useSupertokens } from "@/stores/supertokens";
+import {useSupertokens} from "@/stores/supertokens";
 
-import VueCountdown from '@chenfengyuan/vue-countdown';
-import GithubButton from 'vue-github-button'
+import VueCountdown from "@chenfengyuan/vue-countdown";
+import GithubButton from "vue-github-button";
 
-
-const app = createApp(App)
+const app = createApp(App);
 
 app.component("FeedsList", FeedsList);
 app.component("EntriesList", EntriesList);
@@ -81,64 +80,59 @@ app.component("ValueScore", ValueScore);
 app.component("WideLayout", WideLayout);
 app.component("SidePanelLayout", SidePanelLayout);
 
-app.component('vue-countdown', VueCountdown);
-app.component('github-button', GithubButton);
+app.component("vue-countdown", VueCountdown);
+app.component("github-button", GithubButton);
 
-app.use(createPinia())
-app.use(router)
+app.use(createPinia());
+app.use(router);
 
 if (settings.sentryEnable) {
-    Sentry.init({
-        app,
-        dsn: settings.sentryDsn,
-        environment: settings.environment,
-        sampleRate: settings.sentrySampleRate,
-        attachStacktrace: true,
-        enableTracing: false,
-        integrations: []
-    });
+  Sentry.init({
+    app,
+    dsn: settings.sentryDsn,
+    environment: settings.environment,
+    sampleRate: settings.sentrySampleRate,
+    attachStacktrace: true,
+    enableTracing: false,
+    integrations: []
+  });
 }
 
-app.mount('#app')
+app.mount("#app");
 
 import * as api from "@/logic/api";
 import * as settings from "@/logic/settings";
 
-
 // must be copy of smart_url from backend
 function smartUrl(domain: string, port: number) {
-    if (port == 80) {
-        return `http://${domain}`;
-    }
+  if (port == 80) {
+    return `http://${domain}`;
+  }
 
-    if (port == 443) {
-        return `https://${domain}`;
-    }
+  if (port == 443) {
+    return `https://${domain}`;
+  }
 
-    return `http://${domain}:${port}`;
+  return `http://${domain}:${port}`;
 }
-
 
 if (settings.authMode === settings.AuthMode.Supertokens) {
+  const supertokens = useSupertokens();
 
-    const supertokens = useSupertokens();
-
-    supertokens.init({apiDomain: smartUrl(settings.appDomain, settings.appPort),
-                      apiBasePath: settings.authSupertokensApiBasePath,
-                      appName: settings.appName,
-                      resendAfter: settings.authSupertokensResendAfter});
-}
-
-else if (settings.authMode === settings.AuthMode.SingleUser) {
-}
-
-else {
-    throw `Unknown auth mode: ${settings.authMode}`;
+  supertokens.init({
+    apiDomain: smartUrl(settings.appDomain, settings.appPort),
+    apiBasePath: settings.authSupertokensApiBasePath,
+    appName: settings.appName,
+    resendAfter: settings.authSupertokensResendAfter
+  });
+} else if (settings.authMode === settings.AuthMode.SingleUser) {
+} else {
+  throw `Unknown auth mode: ${settings.authMode}`;
 }
 
 async function onSessionLost() {
-    await supertokens.logout();
-    router.push({ name: 'main', params: {} });
+  await supertokens.logout();
+  router.push({name: "main", params: {}});
 }
 
 api.init({onSessionLost: onSessionLost});

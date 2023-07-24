@@ -1,13 +1,10 @@
 <template>
-  <router-view/>
+  <router-view />
 </template>
 
-
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <style scoped>
-
   .container {
     display: flex;
   }
@@ -25,13 +22,12 @@
   }
 
   .config-menu {
-      list-style-type: none;
-      margin: 0;
-      padding: 0;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
   }
 
   .config-menu-item {
-      margin-bottom: 1rem;
+    margin-bottom: 1rem;
   }
-
 </style>

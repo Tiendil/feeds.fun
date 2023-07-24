@@ -3,7 +3,7 @@ import axios from "axios";
 import * as t from "@/logic/types";
 import * as e from "@/logic/enums";
 
-const ENTRY_POINT = '/api'
+const ENTRY_POINT = "/api";
 
 const API_GET_FEEDS = `${ENTRY_POINT}/get-feeds`;
 const API_GET_LAST_ENTRIES = `${ENTRY_POINT}/get-last-entries`;
@@ -27,220 +27,196 @@ const API_SET_USER_SETTING = `${ENTRY_POINT}/set-user-setting`;
 const API_GET_RESOURCE_HISTORY = `${ENTRY_POINT}/get-resource-history`;
 const API_GET_INFO = `${ENTRY_POINT}/get-info`;
 
-
 let _onSessionLost: () => void = () => {};
 
-
 export function init({onSessionLost}: {onSessionLost: () => void}) {
-    _onSessionLost = onSessionLost;
+  _onSessionLost = onSessionLost;
 }
 
+async function post({url, data}: {url: string; data: any}) {
+  try {
+    const response = await axios.post(url, data);
+    return response.data;
+  } catch (error) {
+    console.log(error);
 
-async function post({url, data}: {url: string, data: any}) {
-    try {
-        const response = await axios.post(url, data);
-        return response.data;
-    } catch (error) {
-        console.log(error);
-
-        if (error.response.status === 401) {
-            await _onSessionLost();
-        }
-
-        throw error;
+    if (error.response.status === 401) {
+      await _onSessionLost();
     }
-}
 
+    throw error;
+  }
+}
 
 export async function getFeeds() {
-    const response = await post({url: API_GET_FEEDS, data: {}});
+  const response = await post({url: API_GET_FEEDS, data: {}});
 
-    const feeds = [];
+  const feeds = [];
 
-    for (let rawFeed of response.feeds) {
-        const feed = t.feedFromJSON(rawFeed);
-        feeds.push(feed);
-    }
+  for (let rawFeed of response.feeds) {
+    const feed = t.feedFromJSON(rawFeed);
+    feeds.push(feed);
+  }
 
-    return feeds;
+  return feeds;
 }
-
 
 export async function getLastEntries({period}: {period: number}) {
-    const response = await post({url: API_GET_LAST_ENTRIES, data: {period: period}});
+  const response = await post({url: API_GET_LAST_ENTRIES, data: {period: period}});
 
-    const entries = [];
+  const entries = [];
 
-    for (let rawEntry of response.entries) {
-        const entry = t.entryFromJSON(rawEntry);
-        entries.push(entry);
-    }
+  for (let rawEntry of response.entries) {
+    const entry = t.entryFromJSON(rawEntry);
+    entries.push(entry);
+  }
 
-    return entries;
+  return entries;
 }
-
 
 export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
-    const response = await post({url: API_GET_ENTRIES_BY_IDS, data: {ids: ids}});
+  const response = await post({url: API_GET_ENTRIES_BY_IDS, data: {ids: ids}});
 
-    const entries = [];
+  const entries = [];
 
-    for (let rawEntry of response.entries) {
-        const entry = t.entryFromJSON(rawEntry);
-        entries.push(entry);
-    }
+  for (let rawEntry of response.entries) {
+    const entry = t.entryFromJSON(rawEntry);
+    entries.push(entry);
+  }
 
-    return entries;
+  return entries;
 }
 
-
-export async function createRule({tags, score}: {tags: string[], score: number}) {
-    const response = await post({url: API_CREATE_RULE, data: {tags: tags, score: score}});
-    return response;
+export async function createRule({tags, score}: {tags: string[]; score: number}) {
+  const response = await post({url: API_CREATE_RULE, data: {tags: tags, score: score}});
+  return response;
 }
-
 
 export async function deleteRule({id}: {id: t.RuleId}) {
-    const response = await post({url: API_DELETE_RULE, data: {id: id}});
-    return response;
+  const response = await post({url: API_DELETE_RULE, data: {id: id}});
+  return response;
 }
 
-
-export async function updateRule({id, tags, score}: {id: t.RuleId, tags: string[], score: number}) {
-    const response = await post({url: API_UPDATE_RULE, data: {id: id, tags: tags, score: score}});
-    return response;
+export async function updateRule({id, tags, score}: {id: t.RuleId; tags: string[]; score: number}) {
+  const response = await post({url: API_UPDATE_RULE, data: {id: id, tags: tags, score: score}});
+  return response;
 }
-
 
 export async function getRules() {
-    const response = await post({url: API_GET_RULES, data: {}});
+  const response = await post({url: API_GET_RULES, data: {}});
 
-    const rules = [];
+  const rules = [];
 
-    for (let rawRule of response.rules) {
-        const rule = t.ruleFromJSON(rawRule);
-        rules.push(rule);
-    }
+  for (let rawRule of response.rules) {
+    const rule = t.ruleFromJSON(rawRule);
+    rules.push(rule);
+  }
 
-    return rules;
+  return rules;
 }
-
 
 export async function getScoreDetails({entryId}: {entryId: t.EntryId}) {
-    const response = await post({url: API_GET_SCORE_DETAILS, data: {entryId: entryId}});
+  const response = await post({url: API_GET_SCORE_DETAILS, data: {entryId: entryId}});
 
-    const rules = [];
+  const rules = [];
 
-    for (let rawRule of response.rules) {
-        const rule = t.ruleFromJSON(rawRule);
-        rules.push(rule);
-    }
+  for (let rawRule of response.rules) {
+    const rule = t.ruleFromJSON(rawRule);
+    rules.push(rule);
+  }
 
-    return rules;
+  return rules;
 }
 
-
-export async function setMarker({entryId, marker}: {entryId: t.EntryId, marker: e.Marker}) {
-    await post({url: API_SET_MARKER, data: {entryId: entryId, marker: marker}});
+export async function setMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
+  await post({url: API_SET_MARKER, data: {entryId: entryId, marker: marker}});
 }
 
-
-export async function removeMarker({entryId, marker}: {entryId: t.EntryId, marker: e.Marker}) {
-    await post({url: API_REMOVE_MARKER, data: {entryId: entryId, marker: marker}});
+export async function removeMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
+  await post({url: API_REMOVE_MARKER, data: {entryId: entryId, marker: marker}});
 }
-
 
 export async function discoverFeeds({url}: {url: string}) {
-    const response = await post({url: API_DISCOVER_FEEDS, data: {url: url}});
+  const response = await post({url: API_DISCOVER_FEEDS, data: {url: url}});
 
-    const feeds = [];
+  const feeds = [];
 
-    for (let rawFeed of response.feeds) {
-        const feed = t.feedInfoFromJSON(rawFeed);
-        feeds.push(feed);
-    }
+  for (let rawFeed of response.feeds) {
+    const feed = t.feedInfoFromJSON(rawFeed);
+    feeds.push(feed);
+  }
 
-    return feeds;
+  return feeds;
 }
-
 
 export async function addFeed({url}: {url: string}) {
-    await post({url: API_ADD_FEED, data: {url: url}});
+  await post({url: API_ADD_FEED, data: {url: url}});
 }
-
 
 export async function addOPML({content}: {content: string}) {
-    await post({url: API_ADD_OPML, data: {content: content}});
+  await post({url: API_ADD_OPML, data: {content: content}});
 }
-
 
 export async function unsubscribe({feedId}: {feedId: t.FeedId}) {
-    await post({url: API_UNSUBSCRIBE, data: {feedId: feedId}});
+  await post({url: API_UNSUBSCRIBE, data: {feedId: feedId}});
 }
-
 
 export async function getFeedsCollections() {
-    const response = await post({url: API_GET_FEEDS_COLLECTIONS, data: {}});
+  const response = await post({url: API_GET_FEEDS_COLLECTIONS, data: {}});
 
-    return response.collections;
+  return response.collections;
 }
-
 
 export async function subscribeToFeedsCollections({collectionsIds}: {collectionsIds: t.FeedsCollectionId[]}) {
-    await post({url: API_SUBSCRIBE_TO_FEEDS_COLLECTIONS, data: {collections: collectionsIds}});
+  await post({url: API_SUBSCRIBE_TO_FEEDS_COLLECTIONS, data: {collections: collectionsIds}});
 }
-
 
 export async function getTagsInfo({uids}: {uids: string[]}) {
-    const response = await post({url: API_GET_TAGS_INFO, data: {uids: uids}});
+  const response = await post({url: API_GET_TAGS_INFO, data: {uids: uids}});
 
-    const tags = {};
+  const tags = {};
 
-    for (let uid in response.tags) {
-        const rawTag = response.tags[uid];
-        const tag = t.tagInfoFromJSON(rawTag);
-        tags[uid] = tag;
-    }
+  for (let uid in response.tags) {
+    const rawTag = response.tags[uid];
+    const tag = t.tagInfoFromJSON(rawTag);
+    tags[uid] = tag;
+  }
 
-    return tags;
+  return tags;
 }
-
 
 export async function getUserSettings({}) {
-    const response = await post({url: API_GET_USER_SETTINGS, data: {}});
+  const response = await post({url: API_GET_USER_SETTINGS, data: {}});
 
-    const settings = {};
+  const settings = {};
 
-    for (let rawSetting of response.settings) {
-        const setting = t.userSettingFromJSON(rawSetting);
-        settings[setting.kind] = setting;
-    }
+  for (let rawSetting of response.settings) {
+    const setting = t.userSettingFromJSON(rawSetting);
+    settings[setting.kind] = setting;
+  }
 
-    return settings;
+  return settings;
 }
 
-
-export async function setUserSetting({kind, value}: {kind: string, value: string|number|boolean}) {
-    await post({url: API_SET_USER_SETTING, data: {kind: kind, value: value}});
+export async function setUserSetting({kind, value}: {kind: string; value: string | number | boolean}) {
+  await post({url: API_SET_USER_SETTING, data: {kind: kind, value: value}});
 }
-
 
 export async function getResourceHistory({kind}: {kind: string}) {
-    const response = await post({url: API_GET_RESOURCE_HISTORY, data: {kind: kind}});
+  const response = await post({url: API_GET_RESOURCE_HISTORY, data: {kind: kind}});
 
-    const history = [];
+  const history = [];
 
-    for (let rawRecord of response.history) {
-        const record = t.resourceHistoryRecordFromJSON(rawRecord);
-        history.push(record);
-    }
+  for (let rawRecord of response.history) {
+    const record = t.resourceHistoryRecordFromJSON(rawRecord);
+    history.push(record);
+  }
 
-    return history;
+  return history;
 }
 
-
 export async function getInfo() {
-    const response = await post({url: API_GET_INFO, data: {}});
+  const response = await post({url: API_GET_INFO, data: {}});
 
-    return response;
+  return response;
 }

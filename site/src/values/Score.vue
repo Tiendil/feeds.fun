@@ -1,22 +1,23 @@
 <template>
-<div class="score" @click.prevent="onClick()">
-{{value}}
-</div>
+  <div
+    class="score"
+    @click.prevent="onClick()">
+    {{ value }}
+  </div>
 </template>
 
 <script lang="ts" setup>
-import * as api from "@/logic/api";
-import * as t from "@/logic/types";
+  import * as api from "@/logic/api";
+  import * as t from "@/logic/types";
 
-const properties = defineProps<{ value: number,
-                                 entryId: t.Entryid}>();
+  const properties = defineProps<{value: number; entryId: t.Entryid}>();
 
-async function onClick() {
+  async function onClick() {
     const rules = await api.getScoreDetails({entryId: properties.entryId});
 
     if (rules.length === 0) {
-        alert("No rules for this news");
-        return;
+      alert("No rules for this news");
+      return;
     }
 
     rules.sort((a, b) => b.score - a.score);
@@ -24,21 +25,18 @@ async function onClick() {
     const strings = [];
 
     for (const rule of rules) {
-        strings.push(rule.score.toString().padStart(2, ' ') + ' — ' + rule.tags.join(", "));
+      strings.push(rule.score.toString().padStart(2, " ") + " — " + rule.tags.join(", "));
     }
 
-    alert(strings.join("\n"))
-}
-
+    alert(strings.join("\n"));
+  }
 </script>
 
-
 <style scoped>
-.score {
-  display: inline-block;
-  cursor: pointer;
-  padding: 0.25rem;
-  background-color: #c1c1ff;
-}
-
+  .score {
+    display: inline-block;
+    cursor: pointer;
+    padding: 0.25rem;
+    background-color: #c1c1ff;
+  }
 </style>

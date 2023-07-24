@@ -166,3 +166,14 @@ services:
 
     networks:
       ffun_network: {}
+
+  frontend-utils:
+    build:
+      context: ./
+      dockerfile: ./docker/frontend/Dockerfile
+
+    volumes:
+      - ${PWD}/site:/repository
+
+    networks:
+      ffun_network: {}
