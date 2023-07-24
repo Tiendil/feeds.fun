@@ -10,4 +10,6 @@ echo "run black"
 
 echo "run prettier"
 
+./bin/frontend-utils.sh ls -lah
+
 ./bin/frontend-utils.sh npm run format
