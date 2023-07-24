@@ -154,7 +154,7 @@ services:
     command: "npm run dev -- --host 0.0.0.0"
 
     volumes:
-      - ${PWD}/site:/repository
+      - ${PWD}/site/src:/repository/src
 
     environment:
       VITE_FFUN_AUTH_MODE: "${FFUN_AUTH_MODE-single_user}"
