@@ -9,6 +9,7 @@ const API_GET_FEEDS = `${ENTRY_POINT}/get-feeds`;
 const API_GET_LAST_ENTRIES = `${ENTRY_POINT}/get-last-entries`;
 const API_GET_ENTRIES_BY_IDS = `${ENTRY_POINT}/get-entries-by-ids`;
 const API_CREATE_RULE = `${ENTRY_POINT}/create-rule`;
+
 const API_DELETE_RULE = `${ENTRY_POINT}/delete-rule`;
 const API_UPDATE_RULE = `${ENTRY_POINT}/update-rule`;
 const API_GET_RULES = `${ENTRY_POINT}/get-rules`;
@@ -29,7 +30,9 @@ const API_GET_INFO = `${ENTRY_POINT}/get-info`;
 
 let _onSessionLost: () => void = () => {};
 
-export function init({onSessionLost}: {onSessionLost: () => void}) {
+export function init({onSessionLost}:
+                     {onSessionLost: () => void}) {
+
   _onSessionLost = onSessionLost;
 }
 
