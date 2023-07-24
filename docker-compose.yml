@@ -173,7 +173,7 @@ services:
       dockerfile: ./docker/frontend/Dockerfile
 
     volumes:
-      - ${PWD}/site:/repository
+      - ${PWD}/site/src:/repository/src
 
     networks:
       ffun_network: {}
