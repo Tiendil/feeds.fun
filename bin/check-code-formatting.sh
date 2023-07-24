@@ -10,7 +10,7 @@ echo "run black"
 
 ./bin/backend-utils.sh poetry run black --check .
 
-echo "run prettier"
+echo "run prettier!!!"
 
 ./bin/frontend-utils.sh ls -lah
 
