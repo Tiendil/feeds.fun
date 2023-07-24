@@ -1,100 +1,104 @@
 <template>
-<div>
+  <div>
+    <ul
+      v-if="displayedSelectedTags.length > 0"
+      style="list-style: none; padding: 0; margin: 0">
+      <tags-filter-element
+        v-for="tag of displayedSelectedTags"
+        :key="tag"
+        :tag="tag"
+        :count="tags[tag] ?? 0"
+        :selected="true"
+        @tag:selected="onTagSelected"
+        @tag:deselected="onTagDeselected" />
+    </ul>
 
-  <ul v-if="displayedSelectedTags.length > 0" style="list-style: none; padding: 0; margin: 0;">
-    <tags-filter-element v-for="tag of displayedSelectedTags"
-                         :key="tag"
-                         :tag="tag"
-                         :count="tags[tag] ?? 0"
-                         :selected="true"
-                         @tag:selected="onTagSelected"
-                         @tag:deselected="onTagDeselected"/>
-  </ul>
+    <ul
+      v-if="displayedTags.length > 0"
+      style="list-style: none; padding: 0; margin: 0">
+      <tags-filter-element
+        v-for="tag of displayedTags"
+        :key="tag"
+        :tag="tag"
+        :count="tags[tag]"
+        :selected="false"
+        @tag:selected="onTagSelected"
+        @tag:deselected="onTagDeselected" />
+    </ul>
 
-  <ul v-if="displayedTags.length > 0" style="list-style: none; padding: 0; margin: 0;">
-    <tags-filter-element v-for="tag of displayedTags"
-                         :key="tag"
-                         :tag="tag"
-                         :count="tags[tag]"
-                         :selected="false"
-                         @tag:selected="onTagSelected"
-                         @tag:deselected="onTagDeselected"/>
-  </ul>
+    <hr />
 
-  <hr/>
-
-  <simple-pagination :showFromStart="showFromStart"
-                     :showPerPage="10"
-                     :total="totalTags"
-                     :counterOnNewLine="true"
-                     v-model:showEntries="showEntries"/>
-</div>
+    <simple-pagination
+      :showFromStart="showFromStart"
+      :showPerPage="10"
+      :total="totalTags"
+      :counterOnNewLine="true"
+      v-model:showEntries="showEntries" />
+  </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from "vue";
+  import {computed, ref} from "vue";
 
-const selectedTags = ref<{ [key: string]: boolean }>({});
+  const selectedTags = ref<{[key: string]: boolean}>({});
 
-const properties = defineProps<{ tags: {[key: string]: number} }>();
+  const properties = defineProps<{tags: {[key: string]: number}}>();
 
-const showFromStart = ref(25);
+  const showFromStart = ref(25);
 
-const showEntries = ref(showFromStart.value);
+  const showEntries = ref(showFromStart.value);
 
-
-function tagComparator(a, b) {
+  function tagComparator(a, b) {
     const aCount = properties.tags[a];
     const bCount = properties.tags[b];
 
     if (aCount > bCount) {
-        return -1;
+      return -1;
     }
 
     if (aCount < bCount) {
-        return 1;
+      return 1;
     }
 
     if (a > b) {
-        return 1;
+      return 1;
     }
 
     if (a < b) {
-        return -1;
+      return -1;
     }
 
     return 0;
-}
+  }
 
-const displayedSelectedTags = computed(() => {
+  const displayedSelectedTags = computed(() => {
     let values = Object.keys(selectedTags.value);
 
     values = values.filter((tag) => {
-        return selectedTags.value[tag] === true;
+      return selectedTags.value[tag] === true;
     });
 
     values.sort(tagComparator);
 
     return values;
-});
+  });
 
-const totalTags = computed(() => {
+  const totalTags = computed(() => {
     // TODO: this is not correct, because selected tags are treated differently
     //       depending on their status: required or excluded.
     //       => value is not accurate, but it is ok for now
     return Object.keys(properties.tags).length + Object.keys(selectedTags.value).length;
-});
+  });
 
-const displayedTags = computed(() => {
-
+  const displayedTags = computed(() => {
     let values = Object.keys(properties.tags);
 
     if (values.length === 0) {
-        return [];
+      return [];
     }
 
     values = values.filter((tag) => {
-        return selectedTags.value[tag] !== true;
+      return selectedTags.value[tag] !== true;
     });
 
     values.sort(tagComparator);
@@ -102,28 +106,25 @@ const displayedTags = computed(() => {
     values = values.slice(0, showEntries.value);
 
     return values;
-});
+  });
 
-function onTagSelected(tag: string) {
+  function onTagSelected(tag: string) {
     selectedTags.value[tag] = true;
-}
+  }
 
-
-function onTagDeselected(tag: string) {
+  function onTagDeselected(tag: string) {
     selectedTags.value[tag] = false;
-}
-
+  }
 </script>
 
 <style scoped>
   .filter-element {
-      overflow: hidden;
-      white-space: nowrap;
+    overflow: hidden;
+    white-space: nowrap;
   }
 
   .filter-element value-tag {
-      overflow: hidden;
-      text-overflow: ellipsis;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-
 </style>

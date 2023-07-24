@@ -154,15 +154,26 @@ services:
     command: "npm run dev -- --host 0.0.0.0"
 
     volumes:
-      - ${PWD}/site:/repository
+      - ${PWD}/site/src:/repository/src
 
     environment:
-      VITE_FFUN_AUTH_MODE: "${FFUN_AUTH_MODE}"
+      VITE_FFUN_AUTH_MODE: "${FFUN_AUTH_MODE-single_user}"
       VITE_FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
       VITE_FFUN_SENTRY_DSN: "${FFUN_SENTRY__DSN:-not-specified}"
 
     ports:
       - "5173:5173"
+
+    networks:
+      ffun_network: {}
+
+  frontend-utils:
+    build:
+      context: ./
+      dockerfile: ./docker/frontend/Dockerfile
+
+    volumes:
+      - ${PWD}/site/src:/repository/src
 
     networks:
       ffun_network: {}

@@ -14,21 +14,18 @@
       <footer>
         <slot name="footer"></slot>
       </footer>
-
     </div>
   </div>
 </template>
 
-<script lang="ts" setup>
-</script>
+<script lang="ts" setup></script>
 
 <style scoped>
-
   .container {
-      display: flex;
-      justify-content: center;
-      /* align-items: center; */
-      height: 100vh;
+    display: flex;
+    justify-content: center;
+    /* align-items: center; */
+    height: 100vh;
   }
 
   .main-content {
@@ -44,5 +41,4 @@
     padding: 1rem;
     max-width: 960px;
   }
-
 </style>

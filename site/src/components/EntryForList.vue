@@ -1,117 +1,138 @@
 <template>
-<div class="container">
+  <div class="container">
+    <div style="flex-shrink: 0; width: 2rem; text-align: right; padding-right: 0.25rem">
+      <value-score
+        :value="entry.score"
+        :entry-id="entry.id"
+        class="entity-for-list-score" />
+    </div>
 
-  <div style="flex-shrink: 0; width: 2rem; text-align: right; padding-right: 0.25rem;">
-    <value-score :value="entry.score"
-                 :entry-id="entry.id"
-                 class="entity-for-list-score"/>
-  </div>
+    <div style="flex-grow: 1">
+      <input-marker
+        :marker="e.Marker.Read"
+        :entry-id="entryId"
+        on-text="read"
+        off-text="new!" />
 
-  <div style="flex-grow: 1;">
+      ·
 
-    <input-marker :marker="e.Marker.Read"
-                  :entry-id="entryId"
-                  on-text="read"
-                  off-text="new!"/>
+      <a
+        href="#"
+        style="text-decoration: none"
+        v-if="!showBody"
+        @click.prevent="displayBody()"
+        >&#9660;</a
+      >
+      <a
+        href="#"
+        style="text-decoration: none"
+        v-if="showBody"
+        @click.prevent="showBody = false"
+        >&#9650;</a
+      >
 
-    ·
+      <a
+        :href="entry.url"
+        target="_blank"
+        @click="onTitleClick()"
+        rel="noopener noreferrer">
+        {{ purifiedTitle }}
+      </a>
 
-    <a href="#" style="text-decoration: none;" v-if="!showBody" @click.prevent="displayBody()">&#9660;</a>
-    <a href="#" style="text-decoration: none;" v-if="showBody" @click.prevent="showBody = false">&#9650;</a>
+      <template v-if="showTags">
+        <br />
+        <tags-list :tags="entry.tags" />
+      </template>
 
-    <a :href="entry.url"
-       target="_blank"
-       @click="onTitleClick()"
-       rel="noopener noreferrer">
-      {{purifiedTitle}}
-    </a>
-
-    <template v-if="showTags">
-      <br/>
-      <tags-list :tags="entry.tags"/>
-    </template>
-
-    <div v-if="showBody" style="display: flex; justify-content: center;">
-      <div style="max-width: 50rem;">
-        <h2>{{purifiedTitle}}</h2>
-        <p v-if="entry.body === null">loading...</p>
-        <div v-if="entry.body !== null"
-             v-html="purifiedBody"/>
+      <div
+        v-if="showBody"
+        style="display: flex; justify-content: center">
+        <div style="max-width: 50rem">
+          <h2>{{ purifiedTitle }}</h2>
+          <p v-if="entry.body === null">loading...</p>
+          <div
+            v-if="entry.body !== null"
+            v-html="purifiedBody" />
+        </div>
       </div>
     </div>
-  </div>
 
-  <div style="flex-shrink: 0; width: 1rem; left-padding: 0.25rem;">
-    <value-date-time :value="timeFor()" :reversed="true"/>
+    <div style="flex-shrink: 0; width: 1rem; left-padding: 0.25rem">
+      <value-date-time
+        :value="timeFor()"
+        :reversed="true" />
+    </div>
   </div>
-
-</div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from "vue";
-import * as t from "@/logic/types";
-import * as e from "@/logic/enums";
-import { computedAsync } from "@vueuse/core";
-import DOMPurify from "dompurify";
-import { useEntriesStore } from "@/stores/entries";
+  import {computed, ref} from "vue";
+  import * as t from "@/logic/types";
+  import * as e from "@/logic/enums";
+  import {computedAsync} from "@vueuse/core";
+  import DOMPurify from "dompurify";
+  import {useEntriesStore} from "@/stores/entries";
 
-const entriesStore = useEntriesStore();
+  const entriesStore = useEntriesStore();
 
-const properties = defineProps<{ entryId: t.EntryId,
-                                 timeField: string,
-                                 showTags: boolean}>();
+  const properties = defineProps<{
+    entryId: t.EntryId;
+    timeField: string;
+    showTags: boolean;
+  }>();
 
-const entry = computed(() => {
+  const entry = computed(() => {
     if (properties.entryId in entriesStore.entries) {
-        return entriesStore.entries[properties.entryId];
+      return entriesStore.entries[properties.entryId];
     }
 
     return null;
-});
+  });
 
-const showBody = ref(false);
+  const showBody = ref(false);
 
-function timeFor(): Date {
-  return entry.value[properties.timeField];
-}
+  function timeFor(): Date {
+    return entry.value[properties.timeField];
+  }
 
-function displayBody() {
+  function displayBody() {
     showBody.value = true;
     entriesStore.requestFullEntry({entryId: entry.value.id});
-}
+  }
 
-const purifiedTitle = computed(() => {
+  const purifiedTitle = computed(() => {
     // TODO: remove emojis?
     let title = DOMPurify.sanitize(entry.value.title, {ALLOWED_TAGS: []});
 
     if (title.length === 0) {
-        title = "No title";
+      title = "No title";
     }
 
     return title;
-});
+  });
 
-const purifiedBody = computed(() => {
+  const purifiedBody = computed(() => {
     if (entry.value.body === null) {
-        return "";
+      return "";
     }
     return DOMPurify.sanitize(entry.value.body);
-});
+  });
 
-async function onTitleClick() {
-    await entriesStore.setMarker({entryId: properties.entryId, marker: e.Marker.Read});
-}
-
+  async function onTitleClick() {
+    await entriesStore.setMarker({
+      entryId: properties.entryId,
+      marker: e.Marker.Read
+    });
+  }
 </script>
 
 <style scoped>
   .container {
-      display: flex;
+    display: flex;
   }
 
   .container :deep(img) {
-     max-width: 100%;
-     height: auto;
+    max-width: 100%;
+    height: auto;
   }
 </style>

@@ -26,9 +26,12 @@ jobs:
         with:
           ref: ${{ inputs.branch_ref }}
 
-      - name: build containers
+      - name: pull containers
         # postgresql is dependency of backend-utils
-        run: docker compose --profile dev build backend-utils postgresql
+        run: docker compose pull postgresql
+
+      - name: build containers
+        run: docker compose --profile dev build backend-utils frontend-utils
 
       - name: check code formatting
         run: ./bin/check-code-formatting.sh
