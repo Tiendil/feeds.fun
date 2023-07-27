@@ -27,6 +27,7 @@ import FfunGithubButtons from "./components/FfunGithubButtons.vue";
 import FfunTag from "./components/FfunTag.vue";
 import SimplePagination from "./components/SimplePagination.vue";
 import UserSetting from "./components/UserSetting.vue";
+import OpenaiTokensUsage from "./components/OpenaiTokensUsage.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -68,6 +69,7 @@ app.component("FfunGithubButtons", FfunGithubButtons);
 app.component("FfunTag", FfunTag);
 app.component("SimplePagination", SimplePagination);
 app.component("UserSetting", UserSetting);
+app.component("OpenaiTokensUsage", OpenaiTokensUsage);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);

@@ -9,7 +9,7 @@ import * as passwordless from "supertokens-web-js/recipe/passwordless";
 import {computedAsync} from "@vueuse/core";
 
 export const useSupertokens = defineStore("supertokens", () => {
-  const isLoggedIn = ref(null);
+  const isLoggedIn = ref<boolean|null>(null);
 
   async function refresh() {
     isLoggedIn.value = await Session.doesSessionExist();

@@ -45,13 +45,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="usage of openAIUsage">
-          <td>{{ renderPeriod(usage.intervalStartedAt) }}</td>
-          <td style="text-align: right">{{ usage.used }}</td>
-          <td style="text-align: right">{{ usage.reserved }}</td>
-          <td style="text-align: right">{{ usage.total() }}</td>
-          <td style="text-align: right">{{ raughPercents(usage.total()) }}%</td>
-        </tr>
+        <openai-tokens-usage :usage="usage" v-for="usage of openAIUsage"/>
       </tbody>
     </table>
   </side-panel-layout>
@@ -72,26 +66,6 @@
   const openAIUsage = computedAsync(async () => {
     return await api.getResourceHistory({kind: "openai_tokens"});
   }, null);
-
-  function renderPeriod(date: Date) {
-    return date.toLocaleString("default", {month: "long", year: "numeric"});
-  }
-
-  function raughPercents(total: number) {
-    const setting = globalSettings.userSettings["openai_max_tokens_in_month"];
-
-    if (!setting) {
-      return "—";
-    }
-
-    const limit = setting.value;
-
-    if (limit == 0) {
-      return "—";
-    }
-
-    return ((total / limit) * 100).toFixed(5);
-  }
 
   const userId = computed(() => {
     if (globalSettings.info == null) {
