@@ -53,7 +53,7 @@
 
 <script lang="ts" setup>
   import {computed, ref} from "vue";
-  import * as t from "@/logic/types";
+  import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import * as api from "@/logic/api";
   import {computedAsync} from "@vueuse/core";

@@ -34,7 +34,7 @@
 </template>
 
 <script lang="ts" setup>
-  import * as t from "@/logic/types";
+  import type * as t from "@/logic/types";
   import * as api from "@/logic/api";
   import * as e from "@/logic/enums";
 

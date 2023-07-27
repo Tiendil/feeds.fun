@@ -9,7 +9,7 @@
 <script lang="ts" setup>
   import {computed, ref} from "vue";
   import * as api from "@/logic/api";
-  import * as t from "@/logic/types";
+  import type * as t from "@/logic/types";
 
   const properties = defineProps<{
     score: number;

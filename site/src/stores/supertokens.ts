@@ -78,8 +78,6 @@ export const useSupertokens = defineStore("supertokens", () => {
     try {
       let response = await passwordless.resendCode();
 
-      tick.value += 1;
-
       if (response.status === "OK") {
         return true;
       } else if (response.status === "RESTART_FLOW_ERROR") {

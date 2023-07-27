@@ -65,7 +65,7 @@
     emit("tag:selected", properties.tag);
   }
 
-  function switchToRequired(tag: stirng) {
+  function switchToRequired(tag: string) {
     entriesStore.requireTag({tag: tag});
     emit("tag:selected", properties.tag);
   }

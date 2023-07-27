@@ -17,7 +17,6 @@
   import * as e from "@/logic/enums";
   import * as api from "@/logic/api";
   import {computedAsync} from "@vueuse/core";
-  import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
 
   const opmlFile = ref<File | null>(null);

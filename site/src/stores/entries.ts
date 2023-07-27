@@ -142,7 +142,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
   requestedEntriesTimer.start();
 
-  async function setMarker({entryId, marker}: {entryId: t.EntryId; marker: t.Marker}) {
+  async function setMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
     await api.setMarker({entryId: entryId, marker: marker});
 
     if (entryId in entries.value) {
@@ -150,7 +150,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     }
   }
 
-  async function removeMarker({entryId, marker}: {entryId: t.EntryId; marker: t.Marker}) {
+  async function removeMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
     await api.removeMarker({entryId: entryId, marker: marker});
 
     if (entryId in entries.value) {

@@ -155,7 +155,7 @@
   const router = useRouter();
   const slots = useSlots();
 
-  const properties = withDefaults(defineProps<{reloadButton?: bool; loginRequired?: bool}>(), {
+  const properties = withDefaults(defineProps<{reloadButton?: boolean; loginRequired?: boolean}>(), {
     reloadButton: true,
     loginRequired: true
   });

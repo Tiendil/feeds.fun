@@ -8,9 +8,9 @@
 
 <script lang="ts" setup>
   import * as api from "@/logic/api";
-  import * as t from "@/logic/types";
+  import type * as t from "@/logic/types";
 
-  const properties = defineProps<{value: number; entryId: t.Entryid}>();
+  const properties = defineProps<{value: number; entryId: t.EntryId}>();
 
   async function onClick() {
     const rules = await api.getScoreDetails({entryId: properties.entryId});

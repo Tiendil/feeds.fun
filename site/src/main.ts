@@ -116,8 +116,10 @@ function smartUrl(domain: string, port: number) {
   return `http://${domain}:${port}`;
 }
 
+let supertokens = null;
+
 if (settings.authMode === settings.AuthMode.Supertokens) {
-  const supertokens = useSupertokens();
+  supertokens = useSupertokens();
 
   supertokens.init({
     apiDomain: smartUrl(settings.appDomain, settings.appPort),
@@ -131,8 +133,11 @@ if (settings.authMode === settings.AuthMode.Supertokens) {
 }
 
 async function onSessionLost() {
-  await supertokens.logout();
-  router.push({name: "main", params: {}});
+    if (supertokens !== null) {
+        await supertokens.logout();
+    }
+
+    router.push({name: "main", params: {}});
 }
 
 api.init({onSessionLost: onSessionLost});
