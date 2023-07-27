@@ -100,7 +100,11 @@
     entriesStore.requestFullEntry({entryId: entry.value.id});
   }
 
-  const purifiedTitle = computed(() => {
+const purifiedTitle = computed(() => {
+  if (entry.value === null) {
+    return "";
+  }
+
     // TODO: remove emojis?
     let title = DOMPurify.sanitize(entry.value.title, {ALLOWED_TAGS: []});
 
@@ -111,7 +115,11 @@
     return title;
   });
 
-  const purifiedBody = computed(() => {
+const purifiedBody = computed(() => {
+  if (entry.value === null) {
+    return "";
+  }
+
     if (entry.value.body === null) {
       return "";
     }
