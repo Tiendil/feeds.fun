@@ -1,5 +1,5 @@
 <template>
-  <div class="container">
+  <div v-if="feed !== null" class="container">
     <div style="flex-shrink: 0; width: 4rem; left-padding: 0.25rem">
       <a
         href="#"
@@ -33,10 +33,7 @@
       >
       <span
         v-else
-        :title="feed.lastError"
-        class="state-error"
-        >⚠</span
-      >
+        :title="feed.lastError || 'unknown error'"
     </div>
 
     <div style="flex-grow: 1">

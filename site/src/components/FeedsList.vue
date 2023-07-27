@@ -19,9 +19,9 @@
 
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch} from "vue";
-  import * as t from "@/logic/types";
+  import type * as t from "@/logic/types";
 
-  const properties = defineProps<{feeds: Array[t.Feed]}>();
+  const properties = defineProps<{feeds: Array<t.Feed>}>();
 </script>
 
 <style scoped></style>

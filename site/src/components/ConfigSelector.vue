@@ -16,8 +16,9 @@
 
   const emit = defineEmits(["update:property"]);
 
-  function updateProperty(event) {
-    emit("update:property", event.target.value);
+    function updateProperty(event: Event) {
+  const target = event.target as HTMLSelectElement;
+    emit("update:property", target.value);
   }
 </script>
 

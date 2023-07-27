@@ -21,7 +21,7 @@
 
   const opmlFile = ref<File | null>(null);
 
-  function uploadFile(event) {
+  function uploadFile(event: Event) {
     opmlFile.value = (event.target as HTMLInputElement).files?.[0] ?? null;
   }
 

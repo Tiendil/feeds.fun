@@ -1,5 +1,5 @@
 <template>
-  <div style="margin-bottom: 1rem">
+  <div v-if="setting !== null" style="margin-bottom: 1rem">
     <label>
       <strong>{{ setting.name }}:</strong>
       &nbsp;

@@ -86,7 +86,7 @@
       return entriesStore.entries[properties.entryId];
     }
 
-    return null;
+    throw new Error(`Unknown entry: ${properties.entryId}`);
   });
 
   const showBody = ref(false);

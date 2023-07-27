@@ -19,8 +19,9 @@
 
   const currentScore = ref(properties.score);
 
-  async function updateSelected(event) {
-    const newScore = Number(event.target.value);
+async function updateSelected(event: Event) {
+  const target = event.target as HTMLInputElement;
+    const newScore = Number(target.value);
     await api.updateRule({
       id: properties.ruleId,
       score: newScore,

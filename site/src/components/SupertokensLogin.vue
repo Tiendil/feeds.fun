@@ -23,8 +23,7 @@
       <button
         type="button"
         class="btn btn-primary"
-        :disabled="counting"
-        @click="startCountdown">
+        :disabled="counting">
         <vue-countdown
           v-if="counting"
           :time="supertokens.allowResendAfter"
