@@ -43,8 +43,12 @@ import {useGlobalSettingsStore} from "@/stores/globalSettings";
       return "—";
     }
 
+    if (typeof setting.value !== "number") {
+      return "—";
+    }
+
     const limit: number = setting.value;
-      const total = properties.usage.total();
+    const total = properties.usage.total();
 
     if (limit == 0) {
       return "—";

@@ -58,7 +58,7 @@ const addedFeeds = ref<{[key: string]: boolean}>({});
 
     loading.value = true;
 
-    let feeds: t.Feed[] = [];
+    let feeds: t.FeedInfo[] = [];
 
     try {
       feeds = await api.discoverFeeds({url: searhedUrl.value});

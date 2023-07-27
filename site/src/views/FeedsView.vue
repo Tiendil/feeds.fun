@@ -46,8 +46,10 @@
 
   globalSettings.mainPanelMode = e.MainPanelMode.Feeds;
 
-  const feeds = computedAsync(async () => {
-    return await api.getFeeds({dataVersion: globalSettings.dataVersion});
+const feeds = computedAsync(async () => {
+      // force refresh
+  globalSettings.dataVersion;
+    return await api.getFeeds();
   }, null);
 
   const sortedFeeds = computed(() => {
@@ -117,7 +119,7 @@
     });
 
     return sorted;
-  }, null);
+  });
 </script>
 
 <style></style>
