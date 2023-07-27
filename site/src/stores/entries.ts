@@ -12,15 +12,15 @@ import {useGlobalSettingsStore} from "@/stores/globalSettings";
 export const useEntriesStore = defineStore("entriesStore", () => {
   const globalSettings = useGlobalSettingsStore();
 
-  const entries = ref({});
-  const requestedEntries = ref({});
+  const entries = ref<{[key: t.EntryId]: t.Entry}>({});
+  const requestedEntries = ref<{[key: t.EntryId]: boolean}>({});
 
-  const requiredTags = ref({});
-  const excludedTags = ref({});
+  const requiredTags = ref<{[key: string]: boolean}>({});
+  const excludedTags = ref<{[key: string]: boolean}>({});
 
   const firstTimeEntriesLoading = ref(true);
 
-  function registerEntry(entry) {
+  function registerEntry(entry: t.Entry) {
     if (entry.id in entries.value) {
       if (entry.body === null && entries.value[entry.id].body !== null) {
         entry.body = entries.value[entry.id].body;
@@ -31,10 +31,19 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }
 
   const loadedEntriesReport = computedAsync(async () => {
-    const period = e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod).seconds;
+    const periodProperties = e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod);
+
+    if (periodProperties === undefined) {
+      throw new Error(`Unknown period ${globalSettings.lastEntriesPeriod}`);
+    }
+
+    const period = periodProperties.seconds;
+
+    // force refresh
+    globalSettings.dataVersion;
+
     const loadedEntries = await api.getLastEntries({
       period: period,
-      dataVersion: globalSettings.dataVersion
     });
 
     const report = [];
@@ -76,11 +85,33 @@ export const useEntriesStore = defineStore("entriesStore", () => {
       return true;
     });
 
-    report = report.sort((a, b) => {
-      const field = e.EntriesOrderProperties.get(globalSettings.entriesOrder).orderField;
+    report = report.sort((a: t.EntryId, b: t.EntryId) => {
+      const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
+
+      if (orderProperties === undefined) {
+        throw new Error(`Unknown order ${globalSettings.entriesOrder}`);
+      }
+
+      const field = orderProperties.orderField;
+
+      if (!t.isFieldOfEntry(field)) {
+        throw new Error(`Unknown field ${field}`);
+      }
 
       const valueA = entries.value[a][field];
       const valueB = entries.value[b][field];
+
+      if (valueA === null && valueB === null) {
+        return 0;
+      }
+
+      if (valueA === null) {
+        return 1;
+      }
+
+      if (valueB === null) {
+        return -1;
+      }
 
       if (valueA < valueB) {
         return 1;
@@ -97,7 +128,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }, []);
 
   const reportTagsCount = computed(() => {
-    const tagsCount = {};
+    const tagsCount: {[key: string]: number} = {};
 
     for (const entryId of entriesReport.value) {
       const entry = entries.value[entryId];
@@ -123,7 +154,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }
 
   async function loadFullEntries() {
-    const ids = Object.keys(requestedEntries.value);
+    const ids: t.EntryId[] = Object.keys(requestedEntries.value).map((key) => t.toEntryId(key));
 
     if (ids.length === 0) {
       return;

@@ -136,6 +136,11 @@ export class Entry {
   }
 }
 
+
+export function isFieldOfEntry(key: string): key is keyof Entry {
+  return key in Entry.prototype;
+}
+
 export function entryFromJSON({
   id,
   feedId,
