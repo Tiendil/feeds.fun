@@ -31,7 +31,7 @@ export function toURL(url: string): URL {
   return url as URL;
 }
 
-export type Feed = {
+export class Feed {
   readonly id: FeedId;
   readonly title: string | null;
   readonly description: string | null;
@@ -40,9 +40,47 @@ export type Feed = {
   readonly lastError: string | null;
   readonly loadedAt: Date | null;
   readonly linkedAt: Date;
-
   readonly isOk: boolean;
+
+  constructor({
+    id,
+    title,
+    description,
+    url,
+    state,
+    lastError,
+    loadedAt,
+    linkedAt,
+    isOk
+  }: {
+    id: FeedId;
+    title: string | null;
+    description: string | null;
+    url: URL;
+    state: string;
+    lastError: string | null;
+    loadedAt: Date | null;
+    linkedAt: Date;
+    isOk: boolean;
+  }) {
+    this.id = id;
+    this.title = title;
+    this.description = description;
+    this.url = url;
+    this.state = state;
+    this.lastError = lastError;
+    this.loadedAt = loadedAt;
+    this.linkedAt = linkedAt;
+    this.isOk = isOk;
+  }
+
 };
+
+
+export function isFieldOfFeed(key: string): key is keyof Feed {
+  return key in Feed.prototype;
+}
+
 
 export function feedFromJSON({
   id,

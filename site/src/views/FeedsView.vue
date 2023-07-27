@@ -59,11 +59,19 @@
 
     const orderProperties = e.FeedsOrderProperties.get(globalSettings.feedsOrder);
 
+    if (!orderProperties) {
+      throw new Error(`Invalid order properties: ${globalSettings.feedsOrder}`);
+    }
+
     const orderField = orderProperties.orderField;
 
     const direction = {asc: -1, desc: 1}[orderProperties.orderDirection];
 
-    sorted = sorted.sort((a, b) => {
+    if (direction === undefined) {
+      throw new Error(`Invalid order direction: ${orderProperties.orderDirection}`);
+    }
+
+    sorted = sorted.sort((a: t.Feed, b: t.Feed) => {
       if (a.isOk && !b.isOk) {
         if (globalSettings.failedFeedsFirst) {
           return 1;
@@ -78,8 +86,24 @@
         return 1;
       }
 
+      if (!t.isFieldOfFeed(orderField)) {
+        throw new Error(`Invalid order field: ${orderField}`);
+      }
+
       const valueA = a[orderField];
       const valueB = b[orderField];
+
+      if (valueA === null && valueB === null) {
+        return 0;
+      }
+
+      if (valueA === null) {
+        return 1 * direction;
+      }
+
+      if (valueB === null) {
+        return -1 * direction;
+      }
 
       if (valueA < valueB) {
         return 1 * direction;

@@ -65,7 +65,7 @@
 
   const email = ref("");
 
-  async function afterEmailSend(success) {
+async function afterEmailSend(success: boolean) {
     if (success) {
       return;
     }

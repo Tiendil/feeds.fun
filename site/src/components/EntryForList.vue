@@ -59,7 +59,7 @@
 
     <div style="flex-shrink: 0; width: 1rem; left-padding: 0.25rem">
       <value-date-time
-        :value="timeFor()"
+        :value="timeFor"
         :reversed="true" />
     </div>
   </div>
@@ -91,12 +91,25 @@
 
   const showBody = ref(false);
 
-  function timeFor(): Date {
-    return entry.value[properties.timeField];
+const timeFor = computed(() => {
+  if (!t.isFieldOfEntry(properties.timeField)) {
+    throw new Error(`Unknown time field: ${properties.timeField}`);
   }
+
+  if (entry.value === null) {
+    return null;
+  }
+
+  return entry.value[properties.timeField];
+});
 
   function displayBody() {
     showBody.value = true;
+
+    if (entry.value === null) {
+      throw new Error("entry is null");
+    }
+
     entriesStore.requestFullEntry({entryId: entry.value.id});
   }
 

@@ -70,7 +70,7 @@
     emit("tag:selected", properties.tag);
   }
 
-  function deselect(tag: stirng) {
+  function deselect(tag: string) {
     entriesStore.resetTag({tag: tag});
     emit("tag:deselected", properties.tag);
   }

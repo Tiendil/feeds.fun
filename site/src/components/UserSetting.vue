@@ -54,7 +54,7 @@
 
   const properties = defineProps<{kind: string}>();
 
-  const value = ref<string | null>(null);
+  const value = ref<string | boolean | number | null>(null);
 
   const editing = ref(false);
 
@@ -63,10 +63,18 @@
       return null;
     }
 
+    if (globalSettings.userSettings === null) {
+      return null;
+    }
+
     return globalSettings.userSettings[properties.kind];
   });
 
-  const verboseValue = computed(() => {
+const verboseValue = computed(() => {
+  if (setting.value === null) {
+    return "—";
+  }
+
     const v = setting.value.value;
     const type = setting.value.type;
 
@@ -86,18 +94,22 @@
   });
 
   async function save() {
+    if (value.value === null) {
+      return;
+    }
+
     await api.setUserSetting({kind: properties.kind, value: value.value});
     globalSettings.updateDataVersion();
     editing.value = false;
   }
 
   function cancel() {
-    value.value = setting.value.value;
+    value.value = setting.value && setting.value.value;
     editing.value = false;
   }
 
   function startEditing() {
-    value.value = setting.value.value;
+    value.value = setting.value && setting.value.value;
     editing.value = true;
   }
 
