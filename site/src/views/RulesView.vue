@@ -21,9 +21,9 @@
 
   globalSettings.mainPanelMode = e.MainPanelMode.Rules;
 
-const rules = computedAsync(async () => {
-  // force refresh
-  globalSettings.dataVersion;
+  const rules = computedAsync(async () => {
+    // force refresh
+    globalSettings.dataVersion;
     return await api.getRules();
   }, null);
 </script>

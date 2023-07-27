@@ -9,12 +9,12 @@ import {Timer} from "@/logic/timer";
 import {computedAsync} from "@vueuse/core";
 
 export const useTagsStore = defineStore("tagsStore", () => {
-    const tags = ref<{[key: string]: t.TagInfo}>({});
+  const tags = ref<{[key: string]: t.TagInfo}>({});
   const requestedTags = ref<{[key: string]: boolean}>({});
 
   const firstTimeTagsLoading = ref(true);
 
-    function registerTag(tag: t.TagInfo) {
+  function registerTag(tag: t.TagInfo) {
     tags.value[tag.uid] = tag;
   }
 

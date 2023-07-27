@@ -1,11 +1,11 @@
 <template>
-<tr>
-  <td>{{ period }}</td>
-  <td style="text-align: right">{{ usage.used }}</td>
-  <td style="text-align: right">{{ usage.reserved }}</td>
-  <td style="text-align: right">{{ usage.total() }}</td>
-  <td style="text-align: right">{{ percents }}%</td>
-</tr>
+  <tr>
+    <td>{{ period }}</td>
+    <td style="text-align: right">{{ usage.used }}</td>
+    <td style="text-align: right">{{ usage.reserved }}</td>
+    <td style="text-align: right">{{ usage.total() }}</td>
+    <td style="text-align: right">{{ percents }}%</td>
+  </tr>
 </template>
 
 <script lang="ts" setup>
@@ -14,7 +14,7 @@
   import * as api from "@/logic/api";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
-import {useGlobalSettingsStore} from "@/stores/globalSettings";
+  import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
   const properties = defineProps<{
     usage: t.ResourceHistoryRecord;
@@ -29,12 +29,12 @@ import {useGlobalSettingsStore} from "@/stores/globalSettings";
   }, null);
 
   const period = computed(() => {
-      return properties.usage.intervalStartedAt.toLocaleString("default", {month: "long", year: "numeric"});
+    return properties.usage.intervalStartedAt.toLocaleString("default", {month: "long", year: "numeric"});
   });
 
   const percents = computed(() => {
-      if (globalSettings.userSettings == null) {
-        return "—";
+    if (globalSettings.userSettings == null) {
+      return "—";
     }
 
     const setting = globalSettings.userSettings["openai_max_tokens_in_month"];
@@ -56,7 +56,6 @@ import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
     return ((total / limit) * 100).toFixed(5);
   });
-
 </script>
 
 <style></style>

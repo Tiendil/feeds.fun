@@ -43,7 +43,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     globalSettings.dataVersion;
 
     const loadedEntries = await api.getLastEntries({
-      period: period,
+      period: period
     });
 
     const report = [];

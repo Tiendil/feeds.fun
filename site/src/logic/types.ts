@@ -18,7 +18,6 @@ export function toRuleId(id: string): RuleId {
   return id as RuleId;
 }
 
-
 export type FeedsCollectionId = string & {readonly __brand: unique symbol};
 
 export function toFeedsCollectionId(id: string): FeedsCollectionId {
@@ -73,14 +72,11 @@ export class Feed {
     this.linkedAt = linkedAt;
     this.isOk = isOk;
   }
-
-};
-
+}
 
 export function isFieldOfFeed(key: string): key is keyof Feed {
   return key in Feed.prototype;
 }
-
 
 export function feedFromJSON({
   id,
@@ -180,7 +176,6 @@ export class Entry {
     return this.markers.includes(marker);
   }
 }
-
 
 export function isFieldOfEntry(key: string): key is keyof Entry {
   return key in Entry.prototype;

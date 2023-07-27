@@ -91,17 +91,17 @@
 
   const showBody = ref(false);
 
-const timeFor = computed(() => {
-  if (!t.isFieldOfEntry(properties.timeField)) {
-    throw new Error(`Unknown time field: ${properties.timeField}`);
-  }
+  const timeFor = computed(() => {
+    if (!t.isFieldOfEntry(properties.timeField)) {
+      throw new Error(`Unknown time field: ${properties.timeField}`);
+    }
 
-  if (entry.value === null) {
-    return null;
-  }
+    if (entry.value === null) {
+      return null;
+    }
 
-  return entry.value[properties.timeField];
-});
+    return entry.value[properties.timeField];
+  });
 
   function displayBody() {
     showBody.value = true;
@@ -113,10 +113,10 @@ const timeFor = computed(() => {
     entriesStore.requestFullEntry({entryId: entry.value.id});
   }
 
-const purifiedTitle = computed(() => {
-  if (entry.value === null) {
-    return "";
-  }
+  const purifiedTitle = computed(() => {
+    if (entry.value === null) {
+      return "";
+    }
 
     // TODO: remove emojis?
     let title = DOMPurify.sanitize(entry.value.title, {ALLOWED_TAGS: []});
@@ -128,10 +128,10 @@ const purifiedTitle = computed(() => {
     return title;
   });
 
-const purifiedBody = computed(() => {
-  if (entry.value === null) {
-    return "";
-  }
+  const purifiedBody = computed(() => {
+    if (entry.value === null) {
+      return "";
+    }
 
     if (entry.value.body === null) {
       return "";

@@ -1,5 +1,7 @@
 <template>
-  <div v-if="setting !== null" style="margin-bottom: 1rem">
+  <div
+    v-if="setting !== null"
+    style="margin-bottom: 1rem">
     <label>
       <strong>{{ setting.name }}:</strong>
       &nbsp;
@@ -70,10 +72,10 @@
     return globalSettings.userSettings[properties.kind];
   });
 
-const verboseValue = computed(() => {
-  if (setting.value === null) {
-    return "—";
-  }
+  const verboseValue = computed(() => {
+    if (setting.value === null) {
+      return "—";
+    }
 
     const v = setting.value.value;
     const type = setting.value.type;

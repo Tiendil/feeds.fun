@@ -48,7 +48,7 @@
 
   const showEntries = ref(showFromStart.value);
 
-function tagComparator(a: string, b: string) {
+  function tagComparator(a: string, b: string) {
     const aCount = properties.tags[a];
     const bCount = properties.tags[b];
 

@@ -49,7 +49,7 @@
 
   const searhedUrl = ref("");
 
-const addedFeeds = ref<{[key: string]: boolean}>({});
+  const addedFeeds = ref<{[key: string]: boolean}>({});
 
   const foundFeeds = computedAsync(async () => {
     if (searhedUrl.value === "") {

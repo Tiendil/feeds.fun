@@ -40,8 +40,8 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
       return null;
     }
 
-      // force refresh
-      dataVersion.value;
+    // force refresh
+    dataVersion.value;
 
     return await api.getUserSettings();
   }, null);
@@ -51,8 +51,8 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
       return null;
     }
 
-      // force refresh
-      dataVersion.value;
+    // force refresh
+    dataVersion.value;
 
     return await api.getInfo();
   }, null);

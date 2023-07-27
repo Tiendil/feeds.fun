@@ -118,7 +118,7 @@ function smartUrl(domain: string, port: number) {
   return `http://${domain}:${port}`;
 }
 
-let supertokens: ReturnType<typeof useSupertokens>|null = null;
+let supertokens: ReturnType<typeof useSupertokens> | null = null;
 
 if (settings.authMode === settings.AuthMode.Supertokens) {
   supertokens = useSupertokens();
@@ -135,11 +135,11 @@ if (settings.authMode === settings.AuthMode.Supertokens) {
 }
 
 async function onSessionLost() {
-    if (supertokens !== null) {
-        await supertokens.logout();
-    }
+  if (supertokens !== null) {
+    await supertokens.logout();
+  }
 
-    router.push({name: "main", params: {}});
+  router.push({name: "main", params: {}});
 }
 
 api.init({onSessionLost: onSessionLost});

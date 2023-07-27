@@ -46,9 +46,9 @@
 
   globalSettings.mainPanelMode = e.MainPanelMode.Feeds;
 
-const feeds = computedAsync(async () => {
-      // force refresh
-  globalSettings.dataVersion;
+  const feeds = computedAsync(async () => {
+    // force refresh
+    globalSettings.dataVersion;
     return await api.getFeeds();
   }, null);
 

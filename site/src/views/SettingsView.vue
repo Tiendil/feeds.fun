@@ -45,7 +45,9 @@
         </tr>
       </thead>
       <tbody>
-        <openai-tokens-usage :usage="usage" v-for="usage of openAIUsage"/>
+        <openai-tokens-usage
+          :usage="usage"
+          v-for="usage of openAIUsage" />
       </tbody>
     </table>
   </side-panel-layout>

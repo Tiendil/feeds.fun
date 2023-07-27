@@ -27,11 +27,11 @@
 
   const emit = defineEmits(["update:modelValue"]);
 
-function updateSelected(event: Event) {
-  const target = event.target as HTMLSelectElement;
+  function updateSelected(event: Event) {
+    const target = event.target as HTMLSelectElement;
 
-  const newScore = Number(target.value);
-  emit("update:modelValue", newScore);
+    const newScore = Number(target.value);
+    emit("update:modelValue", newScore);
   }
 </script>
 
