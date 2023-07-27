@@ -199,7 +199,7 @@ export async function subscribeToFeedsCollections({collectionsIds}: {collections
 export async function getTagsInfo({uids}: {uids: string[]}) {
   const response = await post({url: API_GET_TAGS_INFO, data: {uids: uids}});
 
-  const tags = {};
+    const tags: {[key: string]: t.TagInfo} = {};
 
   for (let uid in response.tags) {
     const rawTag = response.tags[uid];
