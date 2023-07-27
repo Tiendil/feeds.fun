@@ -118,7 +118,7 @@ function smartUrl(domain: string, port: number) {
   return `http://${domain}:${port}`;
 }
 
-let supertokens = null;
+let supertokens: ReturnType<typeof useSupertokens>|null = null;
 
 if (settings.authMode === settings.AuthMode.Supertokens) {
   supertokens = useSupertokens();

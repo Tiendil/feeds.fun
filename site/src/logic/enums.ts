@@ -73,7 +73,7 @@ export enum Marker {
   Read = "read"
 }
 
-export const reverseMarker = {
+export const reverseMarker: {[key: string]: Marker} = {
   read: Marker.Read
 };
 
@@ -84,7 +84,7 @@ export enum FeedsOrder {
   Linked = "linked"
 }
 
-export const FeedsOrderProperties = new Map<FeedsOrder, {text: string; orderField: string}>([
+export const FeedsOrderProperties = new Map<FeedsOrder, {text: string; orderField: string, orderDirection: string}>([
   [FeedsOrder.Title, {text: "title", orderField: "title", orderDirection: "asc"}],
   [FeedsOrder.Url, {text: "url", orderField: "url", orderDirection: "asc"}],
   [FeedsOrder.Loaded, {text: "loaded", orderField: "loadedAt", orderDirection: "desc"}],

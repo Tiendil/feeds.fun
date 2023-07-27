@@ -18,6 +18,13 @@ export function toRuleId(id: string): RuleId {
   return id as RuleId;
 }
 
+
+export type FeedsCollectionId = string & {readonly __brand: unique symbol};
+
+export function toFeedsCollectionId(id: string): FeedsCollectionId {
+  return id as FeedsCollectionId;
+}
+
 export type URL = string & {readonly __brand: unique symbol};
 
 export function toURL(url: string): URL {
@@ -170,7 +177,13 @@ export function entryFromJSON({
     title,
     url: toURL(url),
     tags: tags,
-    markers: markers.map((m) => e.reverseMarker[m]),
+    markers: markers.map((m: string) => {
+      if (m in e.reverseMarker) {
+        return e.reverseMarker[m];
+      }
+
+      throw new Error(`Unknown marker: ${m}`);
+    }),
     score: score,
     publishedAt: new Date(publishedAt),
     catalogedAt: new Date(catalogedAt),
