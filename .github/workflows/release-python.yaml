@@ -6,6 +6,7 @@ on:
         type: choice
         description: "bump version"
         # TODO: readme
+        # TODO: all properties in pyproject.toml
         # TODO: uncomment
         # default: minor
         default: patch
