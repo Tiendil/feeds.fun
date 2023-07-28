@@ -5,6 +5,7 @@ description = "feeds.fun"
 repository = "https://github.com/Tiendil/feeds.fun"
 authors = ["Aliaksei Yaletski (Tiendil) <a.eletsky@gmail.com>"]
 license = "commerce"
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
