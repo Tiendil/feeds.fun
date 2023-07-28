@@ -2,9 +2,6 @@ name: release python
 on:
   workflow_dispatch:
     inputs:
-      branch_ref:
-        type: string
-        required: true
       bump_version:
         type: choice
         description: "bump version"
@@ -23,7 +20,7 @@ jobs:
   run-checks:
     uses: ./.github/workflows/code-checks.yaml
     with:
-      branch_ref: ${{ inputs.branch_ref }}
+      branch_ref: ${{ github.ref }}
 
   release-python:
     needs: run-checks
@@ -34,7 +31,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          ref: ${{ inputs.branch_ref }}
+          ref: ${{ github.ref }}
 
       - name: Install poetry
         run: pipx install poetry
