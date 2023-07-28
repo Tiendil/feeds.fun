@@ -30,11 +30,12 @@
 
     <template #main-footer> </template>
 
-    <feeds-list :feeds="sortedFeeds" />
+    <feeds-list v-if="sortedFeeds" :feeds="sortedFeeds" />
   </side-panel-layout>
 </template>
 
-<script lang="ts" setup>
+  <script lang="ts" setup>
+  import _ from 'lodash';
   import {computed, ref, onUnmounted, watch} from "vue";
   import {computedAsync} from "@vueuse/core";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
@@ -88,12 +89,8 @@
         return 1;
       }
 
-      if (!t.isFieldOfFeed(orderField)) {
-        throw new Error(`Invalid order field: ${orderField}`);
-      }
-
-      const valueA = a[orderField];
-      const valueB = b[orderField];
+      const valueA = _.get(a, orderField, null);
+      const valueB = _.get(b, orderField, null);
 
       if (valueA === null && valueB === null) {
         return 0;

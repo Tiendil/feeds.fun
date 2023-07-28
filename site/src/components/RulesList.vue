@@ -36,12 +36,16 @@
 <script lang="ts" setup>
   import type * as t from "@/logic/types";
   import * as api from "@/logic/api";
-  import * as e from "@/logic/enums";
+import * as e from "@/logic/enums";
+import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
-  defineProps<{rules: Array<t.Rule>}>();
+defineProps<{rules: Array<t.Rule>}>();
 
-  async function deleteRule(id: t.RuleId) {
-    await api.deleteRule({id: id});
+  const globalSettings = useGlobalSettingsStore();
+
+async function deleteRule(id: t.RuleId) {
+  await api.deleteRule({id: id});
+  globalSettings.updateDataVersion();
   }
 </script>
 

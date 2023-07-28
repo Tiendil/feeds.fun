@@ -74,10 +74,6 @@ export class Feed {
   }
 }
 
-export function isFieldOfFeed(key: string): key is keyof Feed {
-  return key in Feed.prototype;
-}
-
 export function feedFromJSON({
   id,
   title,
@@ -175,10 +171,6 @@ export class Entry {
   hasMarker(marker: e.Marker): boolean {
     return this.markers.includes(marker);
   }
-}
-
-export function isFieldOfEntry(key: string): key is keyof Entry {
-  return key in Entry.prototype;
 }
 
 export function entryFromJSON({

@@ -5,7 +5,7 @@
       <span v-if="rules">[{{ rules.length }}]</span>
     </template>
 
-    <rules-list :rules="rules" />
+    <rules-list v-if="rules" :rules="rules" />
   </side-panel-layout>
 </template>
 
