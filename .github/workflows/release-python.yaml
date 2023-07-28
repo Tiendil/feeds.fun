@@ -1,7 +1,11 @@
 name: release python
 on:
+  workflow_dispatch:
   workflow_call:
     inputs:
+      branch_ref:
+        type: string
+        required: true
       bump_version:
         type: choice
         description: "bump version"
@@ -19,10 +23,10 @@ jobs:
 
   run-checks:
     needs:
-    uses: Tiendil/feeds.fun/.github/workflows/code-checks.yaml@main
+    uses: Tiendil/feeds.fun/.github/workflows/code-checks.yaml@${{ inputs.branch_ref }}
     secrets: inherit
     with:
-      branch_ref: main
+      branch_ref: ${{ inputs.branch_ref }}
 
   release-python:
     needs: run-checks
