@@ -28,6 +28,8 @@ jobs:
     # needs: run-checks
     timeout-minutes: 20
     runs-on: ubuntu-22.04
+    permissions:
+      issues: write
 
     steps:
       - name: Checkout
