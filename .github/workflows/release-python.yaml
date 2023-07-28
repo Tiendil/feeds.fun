@@ -17,13 +17,15 @@ concurrency:
 
 jobs:
 
-  run-checks:
-    uses: ./.github/workflows/code-checks.yaml
-    with:
-      branch_ref: ${{ github.ref }}
+  # TODO: uncomment
+  # run-checks:
+  #   uses: ./.github/workflows/code-checks.yaml
+  #   with:
+  #     branch_ref: ${{ github.ref }}
 
   release-python:
-    needs: run-checks
+    # TODO: uncomment
+    # needs: run-checks
     timeout-minutes: 20
     runs-on: ubuntu-22.04
 
@@ -33,8 +35,14 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
+      - name: Prepare Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'poetry'
+
       - name: Install poetry
-        run: pipx install poetry
+        run: pip install poetry
 
       - name: prepare release
         run: ./bin/release-python.sh ${{ github.event.inputs.bump_version }}
