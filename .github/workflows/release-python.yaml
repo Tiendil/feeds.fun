@@ -35,14 +35,14 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
+      - name: Install poetry
+        run: pip install poetry
+
       - name: Prepare Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
           cache: 'poetry'
-
-      - name: Install poetry
-        run: pip install poetry
 
       - name: prepare release
         run: ./bin/release-python.sh ${{ github.event.inputs.bump_version }}
