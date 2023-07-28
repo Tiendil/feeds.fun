@@ -9,7 +9,7 @@ cd ./ffun
 echo "Bumping version as $BUMP_VERSION"
 
 export FFUN_VERSION=$(poetry version $BUMP_VERSION --short)
-export FFUN_VERSION_TAG="python-$FFUN_VERSION"
+export FFUN_VERSION_TAG="backend-$FFUN_VERSION"
 
 echo "New version is $FFUN_VERSION"
 echo "New version tag $FFUN_VERSION_TAG"
