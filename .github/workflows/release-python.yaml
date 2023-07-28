@@ -1,5 +1,6 @@
 name: release python
 on:
+  workflow_dispatch:
   workflow_call:
     inputs:
       branch_ref:
