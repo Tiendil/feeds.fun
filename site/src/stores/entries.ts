@@ -1,7 +1,7 @@
 import {computed, ref, watch} from "vue";
 import {useRouter} from "vue-router";
 import {defineStore} from "pinia";
-
+import _ from 'lodash';
 import * as t from "@/logic/types";
 import * as e from "@/logic/enums";
 import * as api from "@/logic/api";
@@ -94,12 +94,8 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
       const field = orderProperties.orderField;
 
-      if (!t.isFieldOfEntry(field)) {
-        throw new Error(`Unknown field ${field}`);
-      }
-
-      const valueA = entries.value[a][field];
-      const valueB = entries.value[b][field];
+      const valueA = _.get(entries.value[a], field, null);
+      const valueB = _.get(entries.value[b], field, null);
 
       if (valueA === null && valueB === null) {
         return 0;

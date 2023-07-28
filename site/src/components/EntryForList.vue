@@ -65,7 +65,8 @@
   </div>
 </template>
 
-<script lang="ts" setup>
+  <script lang="ts" setup>
+import _ from 'lodash';
   import {computed, ref} from "vue";
   import * as t from "@/logic/types";
   import * as e from "@/logic/enums";
@@ -92,15 +93,11 @@
   const showBody = ref(false);
 
   const timeFor = computed(() => {
-    if (!t.isFieldOfEntry(properties.timeField)) {
-      throw new Error(`Unknown time field: ${properties.timeField}`);
-    }
-
     if (entry.value === null) {
       return null;
     }
 
-    return entry.value[properties.timeField];
+    return _.get(entry.value, properties.timeField, null);
   });
 
   function displayBody() {
