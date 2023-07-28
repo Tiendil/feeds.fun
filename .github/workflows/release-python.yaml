@@ -5,7 +5,10 @@ on:
       bump_version:
         type: choice
         description: "bump version"
-        default: minor
+        # TODO: readme
+        # TODO: uncomment
+        # default: minor
+        default: patch
         options:
         # major version bumps do only manually
         - minor
