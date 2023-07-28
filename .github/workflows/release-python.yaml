@@ -19,6 +19,7 @@ jobs:
 
   run-checks:
     uses: ./.github/workflows/code-checks.yaml
+    environment: release
     with:
       branch_ref: ${{ github.ref }}
 
