@@ -52,7 +52,7 @@ jobs:
 
       - name: Prepare release
         run: ./bin/release-python.sh ${{ github.event.inputs.bump_version }}
-        # env:
-        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # TODO: upload
