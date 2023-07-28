@@ -9,7 +9,7 @@
 <script lang="ts" setup>
   import {computed, ref} from "vue";
   import * as api from "@/logic/api";
-  import * as t from "@/logic/types";
+  import type * as t from "@/logic/types";
 
   const properties = defineProps<{
     score: number;
@@ -19,8 +19,9 @@
 
   const currentScore = ref(properties.score);
 
-  async function updateSelected(event) {
-    const newScore = Number(event.target.value);
+  async function updateSelected(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const newScore = Number(target.value);
     await api.updateRule({
       id: properties.ruleId,
       score: newScore,

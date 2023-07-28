@@ -1,6 +1,6 @@
 import _ from "lodash";
 
-export function timeSince(date) {
+export function timeSince(date: Date) {
   const now = new Date();
 
   const secondsPast = Math.floor((now.getTime() - date.getTime()) / 1000);

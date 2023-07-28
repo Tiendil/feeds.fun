@@ -27,6 +27,7 @@ import FfunGithubButtons from "./components/FfunGithubButtons.vue";
 import FfunTag from "./components/FfunTag.vue";
 import SimplePagination from "./components/SimplePagination.vue";
 import UserSetting from "./components/UserSetting.vue";
+import OpenaiTokensUsage from "./components/OpenaiTokensUsage.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -68,6 +69,7 @@ app.component("FfunGithubButtons", FfunGithubButtons);
 app.component("FfunTag", FfunTag);
 app.component("SimplePagination", SimplePagination);
 app.component("UserSetting", UserSetting);
+app.component("OpenaiTokensUsage", OpenaiTokensUsage);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);
@@ -116,8 +118,10 @@ function smartUrl(domain: string, port: number) {
   return `http://${domain}:${port}`;
 }
 
+let supertokens: ReturnType<typeof useSupertokens> | null = null;
+
 if (settings.authMode === settings.AuthMode.Supertokens) {
-  const supertokens = useSupertokens();
+  supertokens = useSupertokens();
 
   supertokens.init({
     apiDomain: smartUrl(settings.appDomain, settings.appPort),
@@ -131,7 +135,10 @@ if (settings.authMode === settings.AuthMode.Supertokens) {
 }
 
 async function onSessionLost() {
-  await supertokens.logout();
+  if (supertokens !== null) {
+    await supertokens.logout();
+  }
+
   router.push({name: "main", params: {}});
 }
 

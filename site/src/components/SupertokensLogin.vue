@@ -23,8 +23,7 @@
       <button
         type="button"
         class="btn btn-primary"
-        :disabled="counting"
-        @click="startCountdown">
+        :disabled="counting">
         <vue-countdown
           v-if="counting"
           :time="supertokens.allowResendAfter"
@@ -65,7 +64,7 @@
 
   const email = ref("");
 
-  async function afterEmailSend(success) {
+  async function afterEmailSend(success: boolean) {
     if (success) {
       return;
     }

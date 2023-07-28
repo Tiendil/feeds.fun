@@ -1,7 +1,7 @@
 import {computed, ref, watch} from "vue";
 import {useRouter} from "vue-router";
 import {defineStore} from "pinia";
-
+import _ from "lodash";
 import * as t from "@/logic/types";
 import * as e from "@/logic/enums";
 import * as api from "@/logic/api";
@@ -12,15 +12,15 @@ import {useGlobalSettingsStore} from "@/stores/globalSettings";
 export const useEntriesStore = defineStore("entriesStore", () => {
   const globalSettings = useGlobalSettingsStore();
 
-  const entries = ref({});
-  const requestedEntries = ref({});
+  const entries = ref<{[key: t.EntryId]: t.Entry}>({});
+  const requestedEntries = ref<{[key: t.EntryId]: boolean}>({});
 
-  const requiredTags = ref({});
-  const excludedTags = ref({});
+  const requiredTags = ref<{[key: string]: boolean}>({});
+  const excludedTags = ref<{[key: string]: boolean}>({});
 
   const firstTimeEntriesLoading = ref(true);
 
-  function registerEntry(entry) {
+  function registerEntry(entry: t.Entry) {
     if (entry.id in entries.value) {
       if (entry.body === null && entries.value[entry.id].body !== null) {
         entry.body = entries.value[entry.id].body;
@@ -31,10 +31,19 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }
 
   const loadedEntriesReport = computedAsync(async () => {
-    const period = e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod).seconds;
+    const periodProperties = e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod);
+
+    if (periodProperties === undefined) {
+      throw new Error(`Unknown period ${globalSettings.lastEntriesPeriod}`);
+    }
+
+    const period = periodProperties.seconds;
+
+    // force refresh
+    globalSettings.dataVersion;
+
     const loadedEntries = await api.getLastEntries({
-      period: period,
-      dataVersion: globalSettings.dataVersion
+      period: period
     });
 
     const report = [];
@@ -76,11 +85,29 @@ export const useEntriesStore = defineStore("entriesStore", () => {
       return true;
     });
 
-    report = report.sort((a, b) => {
-      const field = e.EntriesOrderProperties.get(globalSettings.entriesOrder).orderField;
+    report = report.sort((a: t.EntryId, b: t.EntryId) => {
+      const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
 
-      const valueA = entries.value[a][field];
-      const valueB = entries.value[b][field];
+      if (orderProperties === undefined) {
+        throw new Error(`Unknown order ${globalSettings.entriesOrder}`);
+      }
+
+      const field = orderProperties.orderField;
+
+      const valueA = _.get(entries.value[a], field, null);
+      const valueB = _.get(entries.value[b], field, null);
+
+      if (valueA === null && valueB === null) {
+        return 0;
+      }
+
+      if (valueA === null) {
+        return 1;
+      }
+
+      if (valueB === null) {
+        return -1;
+      }
 
       if (valueA < valueB) {
         return 1;
@@ -97,7 +124,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }, []);
 
   const reportTagsCount = computed(() => {
-    const tagsCount = {};
+    const tagsCount: {[key: string]: number} = {};
 
     for (const entryId of entriesReport.value) {
       const entry = entries.value[entryId];
@@ -123,7 +150,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }
 
   async function loadFullEntries() {
-    const ids = Object.keys(requestedEntries.value);
+    const ids: t.EntryId[] = Object.keys(requestedEntries.value).map((key) => t.toEntryId(key));
 
     if (ids.length === 0) {
       return;
@@ -142,7 +169,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
   requestedEntriesTimer.start();
 
-  async function setMarker({entryId, marker}: {entryId: t.EntryId; marker: t.Marker}) {
+  async function setMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
     await api.setMarker({entryId: entryId, marker: marker});
 
     if (entryId in entries.value) {
@@ -150,7 +177,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     }
   }
 
-  async function removeMarker({entryId, marker}: {entryId: t.EntryId; marker: t.Marker}) {
+  async function removeMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
     await api.removeMarker({entryId: entryId, marker: marker});
 
     if (entryId in entries.value) {

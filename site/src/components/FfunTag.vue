@@ -50,7 +50,7 @@
   const emit = defineEmits(["tag:clicked"]);
 
   const classes = computed(() => {
-    const result = {
+    const result: {[key: string]: boolean} = {
       tag: true
     };
 

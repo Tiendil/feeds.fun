@@ -18,13 +18,19 @@ export function toRuleId(id: string): RuleId {
   return id as RuleId;
 }
 
+export type FeedsCollectionId = string & {readonly __brand: unique symbol};
+
+export function toFeedsCollectionId(id: string): FeedsCollectionId {
+  return id as FeedsCollectionId;
+}
+
 export type URL = string & {readonly __brand: unique symbol};
 
 export function toURL(url: string): URL {
   return url as URL;
 }
 
-export type Feed = {
+export class Feed {
   readonly id: FeedId;
   readonly title: string | null;
   readonly description: string | null;
@@ -33,9 +39,40 @@ export type Feed = {
   readonly lastError: string | null;
   readonly loadedAt: Date | null;
   readonly linkedAt: Date;
-
   readonly isOk: boolean;
-};
+
+  constructor({
+    id,
+    title,
+    description,
+    url,
+    state,
+    lastError,
+    loadedAt,
+    linkedAt,
+    isOk
+  }: {
+    id: FeedId;
+    title: string | null;
+    description: string | null;
+    url: URL;
+    state: string;
+    lastError: string | null;
+    loadedAt: Date | null;
+    linkedAt: Date;
+    isOk: boolean;
+  }) {
+    this.id = id;
+    this.title = title;
+    this.description = description;
+    this.url = url;
+    this.state = state;
+    this.lastError = lastError;
+    this.loadedAt = loadedAt;
+    this.linkedAt = linkedAt;
+    this.isOk = isOk;
+  }
+}
 
 export function feedFromJSON({
   id,
@@ -165,7 +202,13 @@ export function entryFromJSON({
     title,
     url: toURL(url),
     tags: tags,
-    markers: markers.map((m) => e.reverseMarker[m]),
+    markers: markers.map((m: string) => {
+      if (m in e.reverseMarker) {
+        return e.reverseMarker[m];
+      }
+
+      throw new Error(`Unknown marker: ${m}`);
+    }),
     score: score,
     publishedAt: new Date(publishedAt),
     catalogedAt: new Date(catalogedAt),

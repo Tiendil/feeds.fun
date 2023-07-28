@@ -1,7 +1,7 @@
 import * as _ from "lodash";
-import axios from "axios";
+import axios, {AxiosError} from "axios";
 import * as t from "@/logic/types";
-import * as e from "@/logic/enums";
+import type * as e from "@/logic/enums";
 
 const ENTRY_POINT = "/api";
 
@@ -41,8 +41,11 @@ async function post({url, data}: {url: string; data: any}) {
   } catch (error) {
     console.log(error);
 
-    if (error.response.status === 401) {
-      await _onSessionLost();
+    if (error instanceof Error && "response" in error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response && axiosError.response.status === 401) {
+        await _onSessionLost();
+      }
     }
 
     throw error;
@@ -199,7 +202,7 @@ export async function subscribeToFeedsCollections({collectionsIds}: {collections
 export async function getTagsInfo({uids}: {uids: string[]}) {
   const response = await post({url: API_GET_TAGS_INFO, data: {uids: uids}});
 
-  const tags = {};
+  const tags: {[key: string]: t.TagInfo} = {};
 
   for (let uid in response.tags) {
     const rawTag = response.tags[uid];
@@ -210,10 +213,10 @@ export async function getTagsInfo({uids}: {uids: string[]}) {
   return tags;
 }
 
-export async function getUserSettings({}) {
+export async function getUserSettings() {
   const response = await post({url: API_GET_USER_SETTINGS, data: {}});
 
-  const settings = {};
+  const settings: {[key: string]: t.UserSetting} = {};
 
   for (let rawSetting of response.settings) {
     const setting = t.userSettingFromJSON(rawSetting);

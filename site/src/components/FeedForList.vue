@@ -1,5 +1,7 @@
 <template>
-  <div class="container">
+  <div
+    v-if="feed !== null"
+    class="container">
     <div style="flex-shrink: 0; width: 4rem; left-padding: 0.25rem">
       <a
         href="#"
@@ -33,7 +35,7 @@
       >
       <span
         v-else
-        :title="feed.lastError"
+        :title="feed.lastError || 'unknown error'"
         class="state-error"
         >⚠</span
       >
@@ -53,7 +55,7 @@
 
 <script lang="ts" setup>
   import {computed, ref} from "vue";
-  import * as t from "@/logic/types";
+  import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import * as api from "@/logic/api";
   import {computedAsync} from "@vueuse/core";

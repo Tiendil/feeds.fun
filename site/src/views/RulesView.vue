@@ -5,7 +5,9 @@
       <span v-if="rules">[{{ rules.length }}]</span>
     </template>
 
-    <rules-list :rules="rules" />
+    <rules-list
+      v-if="rules"
+      :rules="rules" />
   </side-panel-layout>
 </template>
 
@@ -22,7 +24,9 @@
   globalSettings.mainPanelMode = e.MainPanelMode.Rules;
 
   const rules = computedAsync(async () => {
-    return await api.getRules({dataVersion: globalSettings.dataVersion});
+    // force refresh
+    globalSettings.dataVersion;
+    return await api.getRules();
   }, null);
 </script>
 

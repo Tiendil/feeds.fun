@@ -23,8 +23,8 @@
 <script lang="ts" setup>
   import {computed, ref} from "vue";
   import * as api from "@/logic/api";
-  import * as e from "@/logic/enums";
-  import * as t from "@/logic/types";
+  import type * as e from "@/logic/enums";
+  import type * as t from "@/logic/types";
   import {useEntriesStore} from "@/stores/entries";
 
   const entriesStore = useEntriesStore();

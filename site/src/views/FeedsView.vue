@@ -30,16 +30,19 @@
 
     <template #main-footer> </template>
 
-    <feeds-list :feeds="sortedFeeds" />
+    <feeds-list
+      v-if="sortedFeeds"
+      :feeds="sortedFeeds" />
   </side-panel-layout>
 </template>
 
 <script lang="ts" setup>
+  import _ from "lodash";
   import {computed, ref, onUnmounted, watch} from "vue";
   import {computedAsync} from "@vueuse/core";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import * as api from "@/logic/api";
-  import * as t from "@/logic/types";
+  import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
 
   const globalSettings = useGlobalSettingsStore();
@@ -47,7 +50,9 @@
   globalSettings.mainPanelMode = e.MainPanelMode.Feeds;
 
   const feeds = computedAsync(async () => {
-    return await api.getFeeds({dataVersion: globalSettings.dataVersion});
+    // force refresh
+    globalSettings.dataVersion;
+    return await api.getFeeds();
   }, null);
 
   const sortedFeeds = computed(() => {
@@ -59,11 +64,19 @@
 
     const orderProperties = e.FeedsOrderProperties.get(globalSettings.feedsOrder);
 
+    if (!orderProperties) {
+      throw new Error(`Invalid order properties: ${globalSettings.feedsOrder}`);
+    }
+
     const orderField = orderProperties.orderField;
 
     const direction = {asc: -1, desc: 1}[orderProperties.orderDirection];
 
-    sorted = sorted.sort((a, b) => {
+    if (direction === undefined) {
+      throw new Error(`Invalid order direction: ${orderProperties.orderDirection}`);
+    }
+
+    sorted = sorted.sort((a: t.Feed, b: t.Feed) => {
       if (a.isOk && !b.isOk) {
         if (globalSettings.failedFeedsFirst) {
           return 1;
@@ -78,8 +91,20 @@
         return 1;
       }
 
-      const valueA = a[orderField];
-      const valueB = b[orderField];
+      const valueA = _.get(a, orderField, null);
+      const valueB = _.get(b, orderField, null);
+
+      if (valueA === null && valueB === null) {
+        return 0;
+      }
+
+      if (valueA === null) {
+        return 1 * direction;
+      }
+
+      if (valueB === null) {
+        return -1 * direction;
+      }
 
       if (valueA < valueB) {
         return 1 * direction;
@@ -93,7 +118,7 @@
     });
 
     return sorted;
-  }, null);
+  });
 </script>
 
 <style></style>

@@ -83,7 +83,13 @@
   });
 
   const timeField = computed(() => {
-    return e.EntriesOrderProperties.get(globalSettings.entriesOrder).timeField;
+    const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
+
+    if (orderProperties === undefined) {
+      throw new Error(`Unknown entries order: ${globalSettings.entriesOrder}`);
+    }
+
+    return orderProperties.timeField;
   });
 </script>
 

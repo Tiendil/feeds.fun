@@ -40,7 +40,10 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
       return null;
     }
 
-    return await api.getUserSettings({dataVersion: dataVersion.value});
+    // force refresh
+    dataVersion.value;
+
+    return await api.getUserSettings();
   }, null);
 
   const info = computedAsync(async () => {
@@ -48,7 +51,10 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
       return null;
     }
 
-    return await api.getInfo({dataVersion: dataVersion.value});
+    // force refresh
+    dataVersion.value;
+
+    return await api.getInfo();
   }, null);
 
   return {

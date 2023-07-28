@@ -50,7 +50,7 @@
       await supertokens.clearLoginAttempt();
     }
 
-    if (supertokens.hasInitialMagicLinkBeenSent()) {
+    if (await supertokens.hasInitialMagicLinkBeenSent()) {
       await supertokens.handleMagicLinkClicked({
         onSignUp: onSignIn,
         onSignIn: onSignIn,

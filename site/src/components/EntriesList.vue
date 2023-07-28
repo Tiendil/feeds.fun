@@ -27,11 +27,11 @@
 
 <script lang="ts" setup>
   import {computed, ref} from "vue";
-  import * as t from "@/logic/types";
+  import type * as t from "@/logic/types";
   import {computedAsync} from "@vueuse/core";
 
   const properties = defineProps<{
-    entriesIds: Array[t.EntryId];
+    entriesIds: Array<t.EntryId>;
     timeField: string;
     showTags: boolean;
     showFromStart: number;

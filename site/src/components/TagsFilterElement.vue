@@ -65,12 +65,12 @@
     emit("tag:selected", properties.tag);
   }
 
-  function switchToRequired(tag: stirng) {
+  function switchToRequired(tag: string) {
     entriesStore.requireTag({tag: tag});
     emit("tag:selected", properties.tag);
   }
 
-  function deselect(tag: stirng) {
+  function deselect(tag: string) {
     entriesStore.resetTag({tag: tag});
     emit("tag:deselected", properties.tag);
   }

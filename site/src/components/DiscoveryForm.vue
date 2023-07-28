@@ -38,11 +38,10 @@
 
 <script lang="ts" setup>
   import {computed, ref} from "vue";
-  import * as t from "@/logic/types";
+  import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import * as api from "@/logic/api";
   import {computedAsync} from "@vueuse/core";
-  import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
 
   const search = ref("");
@@ -50,7 +49,7 @@
 
   const searhedUrl = ref("");
 
-  const addedFeeds = ref({});
+  const addedFeeds = ref<{[key: string]: boolean}>({});
 
   const foundFeeds = computedAsync(async () => {
     if (searhedUrl.value === "") {
@@ -59,7 +58,7 @@
 
     loading.value = true;
 
-    let feeds: t.Feed[] = [];
+    let feeds: t.FeedInfo[] = [];
 
     try {
       feeds = await api.discoverFeeds({url: searhedUrl.value});

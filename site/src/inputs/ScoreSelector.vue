@@ -18,7 +18,7 @@
   import * as api from "@/logic/api";
 
   const properties = withDefaults(defineProps<{scores?: number[]; modelValue: number}>(), {
-    scores: [
+    scores: () => [
       1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, -1, -2, -3, -5, -8, -13, -21, -34, -55, -89, -144, -233,
       -377, -610
     ],
@@ -27,8 +27,10 @@
 
   const emit = defineEmits(["update:modelValue"]);
 
-  function updateSelected(event) {
-    const newScore = Number(event.target.value);
+  function updateSelected(event: Event) {
+    const target = event.target as HTMLSelectElement;
+
+    const newScore = Number(target.value);
     emit("update:modelValue", newScore);
   }
 </script>

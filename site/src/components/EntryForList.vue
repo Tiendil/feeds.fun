@@ -59,15 +59,16 @@
 
     <div style="flex-shrink: 0; width: 1rem; left-padding: 0.25rem">
       <value-date-time
-        :value="timeFor()"
+        :value="timeFor"
         :reversed="true" />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
+  import _ from "lodash";
   import {computed, ref} from "vue";
-  import * as t from "@/logic/types";
+  import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
@@ -86,21 +87,34 @@
       return entriesStore.entries[properties.entryId];
     }
 
-    return null;
+    throw new Error(`Unknown entry: ${properties.entryId}`);
   });
 
   const showBody = ref(false);
 
-  function timeFor(): Date {
-    return entry.value[properties.timeField];
-  }
+  const timeFor = computed(() => {
+    if (entry.value === null) {
+      return null;
+    }
+
+    return _.get(entry.value, properties.timeField, null);
+  });
 
   function displayBody() {
     showBody.value = true;
+
+    if (entry.value === null) {
+      throw new Error("entry is null");
+    }
+
     entriesStore.requestFullEntry({entryId: entry.value.id});
   }
 
   const purifiedTitle = computed(() => {
+    if (entry.value === null) {
+      return "";
+    }
+
     // TODO: remove emojis?
     let title = DOMPurify.sanitize(entry.value.title, {ALLOWED_TAGS: []});
 
@@ -112,6 +126,10 @@
   });
 
   const purifiedBody = computed(() => {
+    if (entry.value === null) {
+      return "";
+    }
+
     if (entry.value.body === null) {
       return "";
     }
