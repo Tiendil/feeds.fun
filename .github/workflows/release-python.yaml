@@ -22,8 +22,7 @@ jobs:
 
   run-checks:
     needs:
-    uses: Tiendil/feeds.fun/.github/workflows/code-checks.yaml@${{ inputs.branch_ref }}
-    secrets: inherit
+    uses: .github/workflows/code-checks.yaml
     with:
       branch_ref: ${{ inputs.branch_ref }}
 
