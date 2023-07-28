@@ -29,13 +29,14 @@ jobs:
     timeout-minutes: 20
     runs-on: ubuntu-22.04
     permissions:
-      issues: write
+      contents: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           ref: ${{ github.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup git user
         run: |
