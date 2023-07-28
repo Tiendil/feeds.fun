@@ -21,7 +21,7 @@ concurrency:
 jobs:
 
   run-checks:
-    uses: ./.github/workflows/code-checks.yaml@main
+    uses: ./.github/workflows/code-checks.yaml
     with:
       branch_ref: ${{ inputs.branch_ref }}
 
