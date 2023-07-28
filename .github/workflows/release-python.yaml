@@ -28,8 +28,11 @@ jobs:
     # needs: run-checks
     timeout-minutes: 20
     runs-on: ubuntu-22.04
+    environment: release
     permissions:
       contents: write
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
 
     steps:
       - name: Checkout
@@ -54,4 +57,7 @@ jobs:
       - name: Prepare release
         run: ./bin/release-python.sh ${{ github.event.inputs.bump_version }}
 
-      # TODO: upload
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ffun/dist/

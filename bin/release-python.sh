@@ -28,3 +28,7 @@ echo "Create tag"
 
 git tag $FFUN_VERSION_TAG
 git push origin $FFUN_VERSION_TAG
+
+echo "Publish to PyPi"
+
+poetry publish
