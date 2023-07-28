@@ -1,0 +1,24 @@
+name: release python
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      branch_ref:
+        type: string
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.branch_ref }}
+  cancel-in-progress: false
+
+jobs:
+
+  release-python:
+    timeout-minutes: 20
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.branch_ref }}
