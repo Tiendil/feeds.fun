@@ -44,9 +44,7 @@ jobs:
           python-version: '3.11'
           cache: 'poetry'
 
-      - name: prepare release
+      - name: Prepare release
         run: ./bin/release-python.sh ${{ github.event.inputs.bump_version }}
 
-      # TODO: commit
-      # TODO: create tag
       # TODO: upload
