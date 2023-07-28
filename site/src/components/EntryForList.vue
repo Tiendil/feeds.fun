@@ -65,10 +65,10 @@
   </div>
 </template>
 
-  <script lang="ts" setup>
-import _ from 'lodash';
+<script lang="ts" setup>
+  import _ from "lodash";
   import {computed, ref} from "vue";
-  import * as t from "@/logic/types";
+  import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";

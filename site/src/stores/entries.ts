@@ -1,7 +1,7 @@
 import {computed, ref, watch} from "vue";
 import {useRouter} from "vue-router";
 import {defineStore} from "pinia";
-import _ from 'lodash';
+import _ from "lodash";
 import * as t from "@/logic/types";
 import * as e from "@/logic/enums";
 import * as api from "@/logic/api";

@@ -33,9 +33,11 @@
         class="state-ok"
         >ok</span
       >
-      <span v-else
-            :title="feed.lastError || 'unknown error'"
-            class="state-error">⚠</span
+      <span
+        v-else
+        :title="feed.lastError || 'unknown error'"
+        class="state-error"
+        >⚠</span
       >
     </div>
 

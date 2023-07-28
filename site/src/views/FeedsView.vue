@@ -30,17 +30,19 @@
 
     <template #main-footer> </template>
 
-    <feeds-list v-if="sortedFeeds" :feeds="sortedFeeds" />
+    <feeds-list
+      v-if="sortedFeeds"
+      :feeds="sortedFeeds" />
   </side-panel-layout>
 </template>
 
-  <script lang="ts" setup>
-  import _ from 'lodash';
+<script lang="ts" setup>
+  import _ from "lodash";
   import {computed, ref, onUnmounted, watch} from "vue";
   import {computedAsync} from "@vueuse/core";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import * as api from "@/logic/api";
-  import * as t from "@/logic/types";
+  import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
 
   const globalSettings = useGlobalSettingsStore();
