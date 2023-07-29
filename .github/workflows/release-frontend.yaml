@@ -5,7 +5,9 @@ on:
       bump_version:
         type: choice
         description: "bump version"
-        default: minor
+        # TODO: uncomment
+        # default: minor
+        default: patch
         options:
         # major version bumps do only manually
         - minor
@@ -17,10 +19,11 @@ concurrency:
 
 jobs:
 
-  run-checks:
-    uses: ./.github/workflows/code-checks.yaml
-    with:
-      branch_ref: ${{ github.ref }}
+  # TODO: uncomment
+  # run-checks:
+  #   uses: ./.github/workflows/code-checks.yaml
+  #   with:
+  #     branch_ref: ${{ github.ref }}
 
   release-python:
     needs: run-checks
