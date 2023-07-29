@@ -1,6 +1,7 @@
 {
   "name": "feeds-fun",
   "version": "0.1.0",
+  "author": "Aliaksei Yaletski (Tiendil) <a.eletsky@gmail.com> (https://tiendil.org/)",
   "description": "Frontend for the Feeds Fun — web-based news reader",
   "keywords": [
     "news",
