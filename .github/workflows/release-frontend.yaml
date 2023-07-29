@@ -1,4 +1,4 @@
-name: release python
+name: release frontend
 on:
   workflow_dispatch:
     inputs:
@@ -43,19 +43,19 @@ jobs:
           git config --global user.name "$(git --no-pager log --format=format:'%an' -n 1)"
           git config --global user.email "$(git --no-pager log --format=format:'%ae' -n 1)"
 
-      - name: Install poetry
-        run: pip install poetry
+      # - name: Install poetry
+      #   run: pip install poetry
 
-      - name: Prepare Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-          cache: 'poetry'
+      # - name: Prepare Python
+      #   uses: actions/setup-python@v4
+      #   with:
+      #     python-version: '3.11'
+      #     cache: 'poetry'
 
-      - name: Prepare release
-        run: ./bin/release-python.sh ${{ github.event.inputs.bump_version }}
+      # - name: Prepare release
+      #   run: ./bin/release-python.sh ${{ github.event.inputs.bump_version }}
 
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          packages-dir: ffun/dist/
+      # - name: Publish package distributions to PyPI
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   with:
+      #     packages-dir: ffun/dist/
