@@ -25,8 +25,9 @@ jobs:
   #   with:
   #     branch_ref: ${{ github.ref }}
 
-  release-python:
-    needs: run-checks
+  release-frontend:
+    # TODO: uncomment
+    # needs: run-checks
     timeout-minutes: 20
     runs-on: ubuntu-22.04
     environment: release
