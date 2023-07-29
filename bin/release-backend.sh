@@ -21,7 +21,7 @@ poetry build
 echo "Commit changes"
 
 git add -A
-git commit -m "Python release ${FFUN_VERSION}"
+git commit -m "Backend release ${FFUN_VERSION}"
 git push
 
 echo "Create tag"
