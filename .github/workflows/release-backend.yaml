@@ -53,7 +53,7 @@ jobs:
           cache: 'poetry'
 
       - name: Prepare release
-        run: ./bin/release-python.sh ${{ github.event.inputs.bump_version }}
+        run: ./bin/release-backend.sh ${{ github.event.inputs.bump_version }}
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
