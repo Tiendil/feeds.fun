@@ -8,7 +8,7 @@ cd ./site
 
 echo "Bumping version as $BUMP_VERSION"
 
-export FFUN_VERSION=$(npm version $BUMP_VERSION)
+export FFUN_VERSION=$(npm version --tag-version-prefix "" $BUMP_VERSION)
 export FFUN_VERSION_TAG="frontend-$FFUN_VERSION"
 
 echo "New version is $FFUN_VERSION"
