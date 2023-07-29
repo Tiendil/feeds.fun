@@ -1,6 +1,14 @@
 {
   "name": "feeds-fun",
   "version": "0.0.4",
+  "description": "Frontend for the Feeds Fun — web-based news reader"
+  "keywords": ["news", "news-reader", "news-aggregator",
+               "rss", "rss-reader", "rss-aggregator",
+               "feed", "feed-reader", "feed-aggregator",
+               "atom", "self-hosted"],
+  "homepage": "https://feeds.fun",
+  "license": "BSD-3-Clause",
+  "repository": "github:Tiendil/feeds.fun",
   "private": false,
   "scripts": {
     "dev": "vite",
