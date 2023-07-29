@@ -1,7 +1,7 @@
 {
   "name": "feeds-fun",
   "version": "0.0.4",
-  "description": "Frontend for the Feeds Fun — web-based news reader"
+  "description": "Frontend for the Feeds Fun — web-based news reader",
   "keywords": ["news", "news-reader", "news-aggregator",
                "rss", "rss-reader", "rss-aggregator",
                "feed", "feed-reader", "feed-aggregator",
