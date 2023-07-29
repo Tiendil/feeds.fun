@@ -4,24 +4,20 @@ set -e
 
 export BUMP_VERSION=$1
 
-cd ./ffun
+cd ./site
 
 echo "Bumping version as $BUMP_VERSION"
 
-export FFUN_VERSION=$(npm version $BUMP_VERSION --short)
+export FFUN_VERSION=$(npm version $BUMP_VERSION)
 export FFUN_VERSION_TAG="frontend-$FFUN_VERSION"
 
 echo "New version is $FFUN_VERSION"
 echo "New version tag $FFUN_VERSION_TAG"
 
-echo "Building Python package"
-
-poetry build
-
 echo "Commit changes"
 
 git add -A
-git commit -m "Python release ${FFUN_VERSION}"
+git commit -m "Frontend release ${FFUN_VERSION}"
 git push
 
 echo "Create tag"
