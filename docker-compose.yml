@@ -74,48 +74,51 @@ services:
       retries: 5
 
 
-  backend-migrations:
-    build:
-      context: ./
-      dockerfile: ./docker/backend-local/Dockerfile
+  # backend-migrations:
+  #   build:
+  #     context: ./
+  #     dockerfile: ./docker/backend-local/Dockerfile
 
-    depends_on:
-      postgresql:
-        condition: service_healthy
+  #   depends_on:
+  #     postgresql:
+  #       condition: service_healthy
 
-    command: "poetry run yoyo apply"
+  #   command: "poetry run yoyo apply"
 
-    volumes:
-      - ${PWD}/ffun:/repository
-      - ${PWD}/.env:/repository/.env
+  #   volumes:
+  #     - ${PWD}/ffun:/repository
+  #     - ${PWD}/.env:/repository/.env
 
-    networks:
-      ffun_network: {}
+  #   networks:
+  #     ffun_network: {}
 
   backend:
-    build:
-      context: ./
-      dockerfile: ./docker/backend-local/Dockerfile
+    # build:
+    #   context: ./
+    #   dockerfile: ./docker/backend-local/Dockerfile
+
+    image: feeds-fun-backend:0.2
 
     depends_on:
       postgresql:
         condition: service_healthy
       supertokens:
         condition: service_healthy
-      backend-migrations:
-        condition: service_completed_successfully
+      # backend-migrations:
+      #   condition: service_completed_successfully
 
-    command: "poetry run uvicorn ffun.application.application:app --host 0.0.0.0 --port 8000 --workers 1 --reload"
+    # command: "poetry run uvicorn ffun.application.application:app --host 0.0.0.0 --port 8000 --workers 1 --reload"
 
-    volumes:
-      - ${PWD}/ffun:/repository
-      - ${PWD}/.env:/repository/.env
+    # volumes:
+    #   - ${PWD}/ffun:/repository
+    #   - ${PWD}/.env:/repository/.env
 
     environment:
-      FFUN_ENABLE_API: "${FFUN_ENABLE_API:-True}"
-      FFUN_ENABLE_SUPERTOKENS: "${FFUN_ENABLE_SUPERTOKENS:-True}"
-      FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
-      FFUN_SENTRY__DSN: "${FFUN_SENTRY__DSN:-not-specified}"
+      FFUN_DB_USER: "ffun"
+      FFUN_DB_PASWORD: "ffun"
+      FFUN_DB_NAME: "ffun"
+
+      FFUN_POSTGRESQL__DSN: "postgresql://ffun:ffun@postgresql/ffun"
 
     ports:
       - "8000:8000"
@@ -123,57 +126,57 @@ services:
     networks:
       ffun_network: {}
 
-  backend-utils:
-    build:
-      context: ./
-      dockerfile: ./docker/backend-local/Dockerfile
+  # backend-utils:
+  #   build:
+  #     context: ./
+  #     dockerfile: ./docker/backend-local/Dockerfile
 
-    depends_on:
-      postgresql:
-        condition: service_started
+  #   depends_on:
+  #     postgresql:
+  #       condition: service_started
 
-    volumes:
-      - ${PWD}/ffun:/repository
-      - ${PWD}/.env:/repository/.env
+  #   volumes:
+  #     - ${PWD}/ffun:/repository
+  #     - ${PWD}/.env:/repository/.env
 
-    networks:
-      ffun_network: {}
+  #   networks:
+  #     ffun_network: {}
 
-    profiles:
-      - dev
+  #   profiles:
+  #     - dev
 
-  frontend:
-    build:
-      context: ./
-      dockerfile: ./docker/frontend/Dockerfile
+  # frontend:
+  #   build:
+  #     context: ./
+  #     dockerfile: ./docker/frontend/Dockerfile
 
-    depends_on:
-      backend:
-        condition: service_started
+  #   depends_on:
+  #     backend:
+  #       condition: service_started
 
-    command: "npm run dev -- --host 0.0.0.0"
+  #   command: "npm run dev -- --host 0.0.0.0"
 
-    volumes:
-      - ${PWD}/site/src:/repository/src
+  #   volumes:
+  #     - ${PWD}/site/src:/repository/src
 
-    environment:
-      VITE_FFUN_AUTH_MODE: "${FFUN_AUTH_MODE-single_user}"
-      VITE_FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
-      VITE_FFUN_SENTRY_DSN: "${FFUN_SENTRY__DSN:-not-specified}"
+  #   environment:
+  #     VITE_FFUN_AUTH_MODE: "${FFUN_AUTH_MODE-single_user}"
+  #     VITE_FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
+  #     VITE_FFUN_SENTRY_DSN: "${FFUN_SENTRY__DSN:-not-specified}"
 
-    ports:
-      - "5173:5173"
+  #   ports:
+  #     - "5173:5173"
 
-    networks:
-      ffun_network: {}
+  #   networks:
+  #     ffun_network: {}
 
-  frontend-utils:
-    build:
-      context: ./
-      dockerfile: ./docker/frontend/Dockerfile
+  # frontend-utils:
+  #   build:
+  #     context: ./
+  #     dockerfile: ./docker/frontend/Dockerfile
 
-    volumes:
-      - ${PWD}/site/src:/repository/src
+  #   volumes:
+  #     - ${PWD}/site/src:/repository/src
 
-    networks:
-      ffun_network: {}
+  #   networks:
+  #     ffun_network: {}
