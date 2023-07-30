@@ -77,7 +77,7 @@ services:
   backend-migrations:
     build:
       context: ./
-      dockerfile: ./docker/backend/Dockerfile
+      dockerfile: ./docker/backend-local/Dockerfile
 
     depends_on:
       postgresql:
@@ -95,7 +95,7 @@ services:
   backend:
     build:
       context: ./
-      dockerfile: ./docker/backend/Dockerfile
+      dockerfile: ./docker/backend-local/Dockerfile
 
     depends_on:
       postgresql:
@@ -126,7 +126,7 @@ services:
   backend-utils:
     build:
       context: ./
-      dockerfile: ./docker/backend/Dockerfile
+      dockerfile: ./docker/backend-local/Dockerfile
 
     depends_on:
       postgresql:
