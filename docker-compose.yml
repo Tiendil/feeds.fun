@@ -73,25 +73,6 @@ services:
       timeout: 5s
       retries: 5
 
-
-  backend-migrations:
-    build:
-      context: ./
-      dockerfile: ./docker/backend/Dockerfile
-
-    depends_on:
-      postgresql:
-        condition: service_healthy
-
-    command: "poetry run yoyo apply"
-
-    volumes:
-      - ${PWD}/ffun:/repository
-      - ${PWD}/.env:/repository/.env
-
-    networks:
-      ffun_network: {}
-
   backend:
     build:
       context: ./
@@ -102,10 +83,14 @@ services:
         condition: service_healthy
       supertokens:
         condition: service_healthy
-      backend-migrations:
-        condition: service_completed_successfully
 
-    command: "poetry run uvicorn ffun.application.application:app --host 0.0.0.0 --port 8000 --workers 1 --reload"
+    command:
+      - /bin/bash
+      - -c
+      - |
+        poetry run ffun migrate
+        echo "migrations successed"
+        poetry run uvicorn ffun.application.application:app --host 0.0.0.0 --port 8000 --workers 1 --reload
 
     volumes:
       - ${PWD}/ffun:/repository
