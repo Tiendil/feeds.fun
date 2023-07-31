@@ -6,13 +6,26 @@ from ffun.core.settings import BaseSettings
 
 
 class PostgreSQL(pydantic.BaseModel):
-    dsn: str = "postgresql://ffun:ffun@postgresql/ffun"
+    host: str = "postgresql"
+    port: int = 5432
+    user: str = "ffun"
+    password: str = "ffun"
+    database: str = "ffun"
+
     pool_min_size: int = 20
     pool_max_size: int | None = None
     pool_timeout: float = 1
     pool_num_workers: int = 1
     pool_max_lifetime: int = 9 * 60
     pool_check_period: int = 60
+
+    @property
+    def dsn(self) -> str:
+        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+
+    @property
+    def dsn_yoyo(self) -> str:
+        return f"postgresql+psycopg://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
 
 class Sentry(pydantic.BaseModel):
