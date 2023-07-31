@@ -20,7 +20,7 @@ ffun_root = ffun_path[0]
 async def run() -> None:
     migrations: MigrationList = read_migrations(f"{ffun_root}/*/migrations")
 
-    with get_backend(app_settings.postgresql.dsn_yoyo, 'yoyo_migrations') as backend:
+    with get_backend(app_settings.postgresql.dsn_yoyo, "yoyo_migrations") as backend:
         migrations_to_apply: MigrationList = backend.to_apply(migrations)
         backend.apply_migrations(migrations_to_apply)
 
