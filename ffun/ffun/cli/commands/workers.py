@@ -1,8 +1,6 @@
 import asyncio
 import contextlib
 
-import typer
-
 from ffun.application import utils as app_utils
 from ffun.application import workers as app_workers
 from ffun.application.application import with_app
