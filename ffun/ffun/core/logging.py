@@ -7,6 +7,7 @@ import uuid
 from typing import Any, Callable, Generic, Iterable, Optional, Protocol, TypeVar
 
 import pydantic
+import pydantic_settings
 import structlog
 from sentry_sdk import capture_message
 from structlog.contextvars import bound_contextvars
@@ -17,7 +18,7 @@ class Renderer(str, enum.Enum):
     json = "json"
 
 
-class Settings(pydantic.BaseSettings):
+class Settings(pydantic_settings.BaseSettings):
     log_evel: str = "INFO"
     renderer: Renderer = Renderer.console
 

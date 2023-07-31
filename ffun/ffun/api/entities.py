@@ -382,11 +382,12 @@ class SetUserSettingRequest(api.APIRequest):
     kind: UserSettingKind
     value: Any
 
-    @pydantic.root_validator
+    @pydantic.model_validator(mode="before")
+    @classmethod
     def validate_value(cls, values: dict[str, Any]) -> dict[str, Any]:
         from ffun.application.user_settings import UserSetting
 
-        kind = values["kind"].to_internal()
+        kind = UserSettingKind(values["kind"]).to_internal()
         value = values.get("value")
 
         real_kind = UserSetting(kind)
