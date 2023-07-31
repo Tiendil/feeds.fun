@@ -4,7 +4,7 @@ set -e
 
 echo "apply migraions"
 
-yoyo apply
+ffun migrate
 
 echo "migrations successfull"
 

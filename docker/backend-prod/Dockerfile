@@ -8,7 +8,6 @@ RUN pip install ffun==${VERSION}
 
 WORKDIR /ffun
 
-COPY ./yoyo.ini /ffun/yoyo.ini
 COPY ./bin /ffun/bin
 
 ENTRYPOINT ["/ffun/bin/entrypoint.sh"]
