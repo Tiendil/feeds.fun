@@ -36,7 +36,7 @@ class APISuccess(Base):
 class APIError(Base):
     status: APIStatuses = APIStatuses.error
     code: str
-    message: str | None
+    message: str = "Unknown error"
     data: dict[str, Any] | None = None
 
     class Config(Base.Config):

@@ -32,7 +32,6 @@ def initialize(dsn: str, sample_rate: float, traces_sample_rate: float, environm
         sample_rate=sample_rate,
         traces_sample_rate=traces_sample_rate,
         attach_stacktrace=True,
-        request_bodies="never",
         before_send=before_send,
         environment=environment,
         include_source_context=True,
