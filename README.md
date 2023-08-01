@@ -58,8 +58,8 @@ Format of environment variables:
 
 TODO: check
 
-- For backend: `FFUN_<component>_<option>__<suboption>`.
-- For frontend: `VITE_FFUN_<component>_<option>__<suboption>` — must be set on build time!
+- For backend: `FFUN_<component>_<option>` or `FFUN_<component>_<option>__<suboption>`.
+- For frontend: `VITE_FFUN_<component>_<option>` or `VITE_FFUN_<component>_<option>__<suboption>` — must be set on build time!
 
 For example:
 
