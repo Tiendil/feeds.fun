@@ -84,7 +84,10 @@ services:
         condition: service_healthy
 
     environment:
-      FFUN_AUTH_MODE: "${FFUN_AUTH_MODE-single_user}"
+      FFUN_ENABLE_API: "${FFUN_ENABLE_API:-True}"
+      # FFUN_ENABLE_SUPERTOKENS: "${FFUN_ENABLE_SUPERTOKENS:-True}"
+      # FFUN_AUTH_MODE: "${FFUN_AUTH_MODE-single_user}"
+      # FFUN_AUTH_MODE: "${FFUN_AUTH_MODE-supertokens}"
       FFUN_DB_USER: "ffun"
       FFUN_DB_PASWORD: "ffun"
       FFUN_DB_NAME: "ffun"
