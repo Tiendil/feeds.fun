@@ -85,14 +85,11 @@ services:
 
     environment:
       FFUN_ENABLE_API: "${FFUN_ENABLE_API:-True}"
-      # FFUN_ENABLE_SUPERTOKENS: "${FFUN_ENABLE_SUPERTOKENS:-True}"
       # FFUN_AUTH_MODE: "${FFUN_AUTH_MODE-single_user}"
       # FFUN_AUTH_MODE: "${FFUN_AUTH_MODE-supertokens}"
       FFUN_DB_USER: "ffun"
       FFUN_DB_PASWORD: "ffun"
       FFUN_DB_NAME: "ffun"
-
-      FFUN_POSTGRESQL__DSN: "postgresql://ffun:ffun@postgresql/ffun"
 
     ports:
       - "8000:8000"

@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from ffun.api import http_handlers as api_http_handlers
 from ffun.auth import supertokens as st
+from ffun.auth.settings import AuthMode
+from ffun.auth.settings import settings as auth_settings
 from ffun.core import logging, middlewares, postgresql, sentry
 from ffun.librarian.background_processors import create_background_processors
 from ffun.loader.background_loader import FeedsLoader
@@ -106,7 +108,7 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
             if settings.enable_sentry:
                 await stack.enter_async_context(use_sentry())
 
-            if settings.enable_supertokens:
+            if auth_settings.mode == AuthMode.supertokens:
                 api_domain = smart_url(settings.app_domain, settings.api_port)
                 website_domain = smart_url(settings.app_domain, settings.app_port)
 
@@ -134,7 +136,8 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
 
     middlewares.initialize_error_processors(app)
 
-    st.add_middlewares(app)
+    if auth_settings.mode == AuthMode.supertokens:
+        st.add_middlewares(app)
 
     app.middleware("http")(middlewares.final_errors_middleware)
 
