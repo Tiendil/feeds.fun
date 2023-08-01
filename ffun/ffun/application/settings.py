@@ -44,7 +44,6 @@ class Settings(BaseSettings):
     api_port: int = 5174
 
     enable_api: bool = False
-    enable_supertokens: bool = False
     enable_sentry: bool = False
 
     postgresql: PostgreSQL = PostgreSQL()
