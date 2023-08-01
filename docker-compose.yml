@@ -75,7 +75,7 @@ services:
 
   backend:
 
-    image: feeds-fun-backend:0.2.3
+    image: feeds-fun-backend:0.2.4
 
     depends_on:
       postgresql:

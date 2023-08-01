@@ -10,7 +10,7 @@ echo "migrations successfull"
 
 # TODO: remove
 echo "-------------------------"
-echo $FFUN_AUTH_MODE
+ffun print-configs
 echo "-------------------------"
 
 exec "$@"
