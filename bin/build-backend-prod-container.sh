@@ -3,7 +3,7 @@
 set -e
 
 # TODO: remove
-VERSION="0.2.4"
+VERSION="0.2.5"
 
 docker build \
        --network=host \
