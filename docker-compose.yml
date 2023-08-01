@@ -75,7 +75,7 @@ services:
 
   backend:
 
-    image: feeds-fun-backend:0.2.2
+    image: feeds-fun-backend:0.2.3
 
     depends_on:
       postgresql:
@@ -84,6 +84,7 @@ services:
         condition: service_healthy
 
     environment:
+      FFUN_AUTH_MODE: "${FFUN_AUTH_MODE-single_user}"
       FFUN_DB_USER: "ffun"
       FFUN_DB_PASWORD: "ffun"
       FFUN_DB_NAME: "ffun"
