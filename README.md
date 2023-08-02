@@ -46,7 +46,7 @@ There no official docker images yet. Do not want to dictate how to organize your
 
 All configs can be redefined via environment variables or `.env` file in the working directory.
 
-You can print all actual configs values with:
+You can print all actual backend configs values with:
 
 ```
 ffun print-configs
@@ -54,9 +54,9 @@ ffun print-configs
 
 The output is not as pretty and ready for copying as it should be, but I'll improve it later.
 
-Format of environment variables:
+All actual frontend configs can be found [here](site/src/logic/settings.ts).
 
-TODO: check
+Format of environment variables:
 
 - For backend: `FFUN_<component>_<option>` or `FFUN_<component>_<option>__<suboption>`.
 - For frontend: `VITE_FFUN_<component>_<option>` or `VITE_FFUN_<component>_<option>__<suboption>` — must be set on build time!
@@ -70,11 +70,9 @@ FFUN_LIBRARIAN_OPENAI_CHAT_35_PROCESSOR__ENABLED="True"
 FFUN_LIBRARIAN_OPENAI_CHAT_35_PROCESSOR__API_KEY="<your key>"
 ```
 
-TODO: list workers
-TODO: loader
-TODO: processors
-
 ## Backend
+
+TODO: add must-have environment variables (enable...)
 
 ```
 pip install ffun
@@ -89,9 +87,38 @@ uvicorn ffun.application.application:app --host 0.0.0.0 --port 8000 --workers 1
 ffun workers --librarian --loader
 ```
 
+More details see in the architecture section.
+
 ## Frontend
 
 TODO
+
+# Architecture
+
+ASGI application, that you run with `uvicorn` (in the example) provides only HTTP API to access the data and change user-related properties.
+
+All actual work is done by workers, that you run with `ffun workers` command.
+
+## Loader worker
+
+Simply loads & parses feeds.
+
+Can use HTTP proxies, see [configuration options](ffun/ffun/loader/settings.py)
+
+## Librarian worker
+
+Analyse feeds entries and assign tags to them.
+
+All logic is split into processors. Each processor implements a single approach to produce tags and can be enabled/disabled via configuration.
+
+See configuration options [here](ffun/ffun/librarian/settings.py)
+
+Currently implemented processors:
+
+- `DomainProcessor` — extract domain and subdomains from URL and saves them as a tags.
+- `NativeTagsProcessor` — save tags that are received with the feed entry.
+- `OpenAIChat35Processor` — asks OpenAI chatgpt-3.5 to detect tags.
+- `OpenAIChat35FunctionsProcessor` — new version of `OpenAIChat35Processor` that uses OpenAI chatgpt-3.5 functions to detect tags.
 
 # Development
 
