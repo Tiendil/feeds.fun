@@ -2,7 +2,7 @@
 
 Web-based news reader. Self-hosted, if it is your way.
 
-- Reader automatically assigns tags to news entries. With help of ChatGPT.
+- Reader automatically assigns tags to news entries. With the help of ChatGPT.
 - You create rules to score news by tags.
 - Filter and sort news how you want, to read only what you want.
 - ?????
@@ -10,12 +10,13 @@ Web-based news reader. Self-hosted, if it is your way.
 
 # Motivation
 
-I've subscribed to a lot of news feeds and want to read only most interesting & important from them.
+I've subscribed to a lot of news feeds and want to read only the most interesting & important from them.
 
 I did not find an open-source solution that suited my needs => decided to create my own.
 
 # Features
 
+- Multi-/single-user.
 - Feeds management.
 - Automatic tag assignment for every news entry.
 - Rules to score news by tags.
@@ -26,21 +27,21 @@ I did not find an open-source solution that suited my needs => decided to create
 
 # Official site
 
-Last stable version is always available at https://feeds.fun/
+The last stable version is always available at https://feeds.fun/
 
-It is free to use, should be stable: no database resets, minimu, downtime, etc.
+It is free to use, and should be stable: no database resets, minimal, downtime, etc.
 
-Just do not forget to set up your OpenAI API key to access full power of tags generation.
+Just do not forget to set up your OpenAI API key to access the full power of tags generation.
 
 # Self-hosted version
 
 - Backend is accessible as [ffun](https://pypi.org/project/ffun/) package on PyPI.
 - Frontend is accessible as [feeds-fun](https://www.npmjs.com/package/feeds-fun) package on NPM.
-- Use latest versions, they should be compatible with each other.
+- Use the latest versions. They should be compatible with each other.
 
-Alternativly you can install from tags in this repo.
+Alternatively, you can install from tags in this repo.
 
-There no official docker images yet. Do not want to dictate how to organize your infrastructure — there are too many variants exists of how to prepare and run containers.
+There are no official docker images yet. Feeds Fun will not dictate how to organize your infrastructure. There are too many variants exist of how to prepare and run containers — choose the most suitable for you.
 
 ## Configuration
 
@@ -85,7 +86,7 @@ uvicorn ffun.application.application:app --host 0.0.0.0 --port 8000 --workers 1
 ffun workers --librarian --loader
 ```
 
-Minimal configuration for backend:
+The minimal configuration for the backend:
 
 ```
 # DB connection parameters have default values,
@@ -97,10 +98,10 @@ FFUN_POSTGRESQL__DATABASE=...
 
 FFUN_ENVIRONMENT="prod"
 
-# set for API server
+# Required for API server.
 FFUN_ENABLE_API="True"
 
-# set if you want multiuser setup
+# Set if you want multi-user setup.
 FFUN_ENABLE_SUPERTOKENS="True"
 FFUN_API_PORT="443"
 FFUN_APP_DOMAIN=...
@@ -110,14 +111,13 @@ FFUN_AUTH_SUPERTOKENS__COOKIE_SECURE="True"
 FFUN_AUTH_SUPERTOKENS__API_KEY=...
 FFUN_AUTH_SUPERTOKENS__CONNECTION_URI=...
 
-# Has default value for development environment
-# But I strogly recommend to redefine it
-# Because of potential security issues
+# Has default value for development environment.
+# I strongly recommend to redefine it because of potential security issues.
 FFUN_USER_SETTINGS_SECRET_KEY=...
 
-# enable openai chatgpt-3.5 processors
-# there are two of them, you can enbale both or only one
-# other processors are enabled by default
+# Enable openai chatgpt-3.5 processors.
+# There are two of them, you can enable both or only one.
+# Other processors are enabled by default.
 FFUN_LIBRARIAN_OPENAI_CHAT_35_PROCESSOR__ENABLED="True"
 FFUN_LIBRARIAN_OPENAI_CHAT_35_FUNCTIONS_PROCESSOR__ENABLED="True"
 ```
@@ -135,13 +135,13 @@ npm install --prefix ./node_modules/feeds-fun
 
 # Set environment variables before next step!!!
 
-# we should build static content
+# Build static content.
 npm run build-only --prefix ./node_modules/feeds-fun
 
 cp -r ./node_modules/feeds-fun/dist ./wherever-you-place-static-content
 ```
 
-Minimal configuration for frontend:
+The minimal configuration for the frontend:
 
 ```
 VITE_FFUN_AUTH_MODE="supertokens" # or "single_user"
@@ -151,9 +151,9 @@ VITE_FFUN_APP_PORT=...
 
 # Architecture
 
-ASGI application, that you run with `uvicorn` (in the example) provides only HTTP API to access the data and change user-related properties.
+ASGI application, which you run with `uvicorn` (in the example) provides only HTTP API to access the data and change user-related properties.
 
-All actual work is done by workers, that you run with `ffun workers` command.
+All actual work is done by workers, which you run with `ffun workers` command.
 
 ## Loader worker
 
@@ -163,15 +163,15 @@ Can use HTTP proxies, see [configuration options](ffun/ffun/loader/settings.py)
 
 ## Librarian worker
 
-Analyse feeds entries and assign tags to them.
+Analyse feeds' entries and assign tags to them.
 
-All logic is split into processors. Each processor implements a single approach to produce tags and can be enabled/disabled via configuration.
+All logic is split into processors. Each processor implements a single approach to produce tags that can be enabled/disabled via configuration.
 
 See configuration options [here](ffun/ffun/librarian/settings.py)
 
 Currently implemented processors:
 
-- `DomainProcessor` — extract domain and subdomains from URL and saves them as a tags.
+- `DomainProcessor` — extract domain and subdomains from URL and saves them as tags.
 - `NativeTagsProcessor` — save tags that are received with the feed entry.
 - `OpenAIChat35Processor` — asks OpenAI chatgpt-3.5 to detect tags.
 - `OpenAIChat35FunctionsProcessor` — new version of `OpenAIChat35Processor` that uses OpenAI chatgpt-3.5 functions to detect tags.
@@ -192,7 +192,7 @@ Start the API server and frontend:
 docker compose up -d
 ```
 
-Site will be accessible on http://localhost:5173/
+The site will be accessible at http://localhost:5173/
 
 Start workers:
 
@@ -202,7 +202,7 @@ Start workers:
 
 ## Utils
 
-List of all backend utils:
+List all backend utils:
 
 ```
 ./bin/backend-utils.sh poetry run ffun --help
