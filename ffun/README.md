@@ -6,3 +6,5 @@
 - Then filter and sort news how you want.
 
 Service is up and running at https://feeds.fun
+
+Documentation can be found in the repository: https://github.com/Tiendil/feeds.fun
