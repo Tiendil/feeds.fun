@@ -2,35 +2,33 @@
 
 Web-based news reader. Self-hosted, if it is your way.
 
-- Reader automatically assigns tags to news entries.
+- Reader automatically assigns tags to news entries. With help of ChatGPT.
 - You create rules to score news by tags.
-- Filter and sort news how you want to read only what you want.
+- Filter and sort news how you want, to read only what you want.
 - ?????
 - Profit.
 
 # Motivation
 
-I've subscribed to a lot of news feeds and want to read only news most interesting & important personaly for me.
-
-Plus, it is nice to access news from any device.
+I've subscribed to a lot of news feeds and want to read only most interesting & important from them.
 
 I did not find an open-source solution that suited my needs => decided to create my own.
 
 # Features
 
-- Feeds management, including discovery by URL and tracking errors.
+- Feeds management.
 - Automatic tag assignment for every news entry.
 - Rules to score news by tags.
-- Filter news by tags: exclude entries by tags, show only entries with tags.
+- Filter news by tags: exclude them by tags, show only entries with tags.
 - Sort news by score, date, etc.
-- Track read state of news, optionally hide read news.
+- Track read state of news you've read already.
 - A lot of other features are comming.
 
 # Official site
 
-Last stable version is always accessible at https://feeds.fun/
+Last stable version is always available at https://feeds.fun/
 
-It is free to use, should be stable, no resets, etc.
+It is free to use, should be stable: no database resets, minimu, downtime, etc.
 
 Just do not forget to set up your OpenAI API key to access full power of tags generation.
 
@@ -40,19 +38,19 @@ Just do not forget to set up your OpenAI API key to access full power of tags ge
 - Frontend is accessible as [feeds-fun](https://www.npmjs.com/package/feeds-fun) package on NPM.
 - Use latest versions, they should be compatible with each other.
 
-There no official docker images yet. Do not want to dictate how to organize your infrastructure — there are too many variations exists of how to prepare and run containers.
+There no official docker images yet. Do not want to dictate how to organize your infrastructure — there are too many variants exists of how to prepare and run containers.
 
 ## Configuration
 
 All configs can be redefined via environment variables or `.env` file in the working directory.
 
-You can print all actual backend configs values with:
+You can print actual backend config values with:
 
 ```
 ffun print-configs
 ```
 
-The output is not as pretty and ready for copying as it should be, but I'll improve it later.
+The output is not as pretty and ready for copying as it should be, but it will be improved later.
 
 All actual frontend configs can be found [here](site/src/logic/settings.ts).
 
