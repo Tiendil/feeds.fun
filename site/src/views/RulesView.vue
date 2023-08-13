@@ -25,7 +25,7 @@
   import _ from "lodash";
   import * as utils from "@/logic/utils";
   import * as api from "@/logic/api";
-  import * as t from "@/logic/types";
+  import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
 
   const globalSettings = useGlobalSettingsStore();
@@ -44,8 +44,17 @@
     }
 
     const orderProperties = e.RulesOrderProperties.get(globalSettings.rulesOrder);
+
+    if (!orderProperties) {
+      throw new Error(`Invalid order properties: ${globalSettings.rulesOrder}`);
+    }
+
     const orderField = orderProperties.orderField;
     const direction = {asc: -1, desc: 1}[orderProperties.orderDirection];
+
+    if (direction === undefined) {
+      throw new Error(`Invalid order direction: ${orderProperties.orderDirection}`);
+    }
 
     let sorted = rules.value.slice();
 
@@ -81,7 +90,7 @@
     });
 
     return sorted;
-  }, null);
+  });
 </script>
 
 <style></style>
