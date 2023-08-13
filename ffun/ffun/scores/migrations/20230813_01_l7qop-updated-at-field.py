@@ -8,7 +8,7 @@ from psycopg import Connection
 from yoyo import step
 
 
-__depends__ = {'20230417_01_0XYOQ-scores-tables'}
+__depends__ = {"20230417_01_0XYOQ-scores-tables"}
 
 sql = """
 ALTER TABLE s_rules

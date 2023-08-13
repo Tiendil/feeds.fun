@@ -78,11 +78,9 @@
       }
 
       return 0;
-
     });
 
     return sorted;
-
   }, null);
 </script>
 

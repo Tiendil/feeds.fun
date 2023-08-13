@@ -91,7 +91,6 @@ export const FeedsOrderProperties = new Map<FeedsOrder, {text: string; orderFiel
   [FeedsOrder.Linked, {text: "added", orderField: "linkedAt", orderDirection: "desc"}]
 ]);
 
-
 export enum RulesOrder {
   Tags = "tags",
   Score = "score",
