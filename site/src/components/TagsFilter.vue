@@ -114,7 +114,7 @@
     values = values.filter((tag) => {
       const tagInfo = tagsStore.tags[tag];
 
-      if (tagInfo === undefined) {
+      if (tagInfo === undefined || tagInfo.name === null) {
         return tag.includes(tagNameFilter.value);
       }
 
