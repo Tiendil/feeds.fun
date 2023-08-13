@@ -13,6 +13,11 @@
         @tag:deselected="onTagDeselected" />
     </ul>
 
+    <input
+      type="text"
+      placeholder="Input part of tag..."
+      v-model="tagNameFilter" />
+
     <ul
       v-if="displayedTags.length > 0"
       style="list-style: none; padding: 0; margin: 0">
@@ -39,6 +44,9 @@
 
 <script lang="ts" setup>
   import {computed, ref} from "vue";
+  import {useTagsStore} from "@/stores/tags";
+
+  const tagsStore = useTagsStore();
 
   const selectedTags = ref<{[key: string]: boolean}>({});
 
@@ -47,6 +55,8 @@
   const showFromStart = ref(25);
 
   const showEntries = ref(showFromStart.value);
+
+  const tagNameFilter = ref("");
 
   function tagComparator(a: string, b: string) {
     const aCount = properties.tags[a];
@@ -99,6 +109,16 @@
 
     values = values.filter((tag) => {
       return selectedTags.value[tag] !== true;
+    });
+
+    values = values.filter((tag) => {
+      const tagInfo = tagsStore.tags[tag];
+
+      if (tagInfo === undefined || tagInfo.name === null) {
+        return tag.includes(tagNameFilter.value);
+      }
+
+      return tagInfo.name.includes(tagNameFilter.value);
     });
 
     values.sort(tagComparator);
