@@ -13,7 +13,7 @@ _encode_replacements = {
 }
 
 
-_decode_replacements = {v.strip('-'): k for k, v in _encode_replacements.items()}
+_decode_replacements = {v.strip("-"): k for k, v in _encode_replacements.items()}
 
 
 def _encode_special_characters(tag: str) -> str:
