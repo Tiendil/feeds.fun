@@ -13,10 +13,10 @@
         @tag:deselected="onTagDeselected" />
     </ul>
 
-    <input type="text"
-           placeholder="Input part of tag..."
-           v-model="tagNameFilter"
-           />
+    <input
+      type="text"
+      placeholder="Input part of tag..."
+      v-model="tagNameFilter" />
 
     <ul
       v-if="displayedTags.length > 0"
