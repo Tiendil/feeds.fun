@@ -317,7 +317,7 @@ export function tagInfoFromJSON({
 }
 
 export function noInfoTag(uid: string): TagInfo {
-  return {uid, name: null, link: null, categories: []};
+  return {uid, name: uid, link: null, categories: []};
 }
 
 export type UserSetting = {
