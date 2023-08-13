@@ -95,6 +95,7 @@ class Rule(api.Base):
     tags: list[str]
     score: int
     createdAt: datetime.datetime
+    updatedAt: datetime.datetime
 
     @classmethod
     def from_internal(cls, rule: s_entities.Rule, tags_mapping: dict[int, str]) -> "Rule":
@@ -103,6 +104,7 @@ class Rule(api.Base):
             tags=[tags_mapping[tag_id] for tag_id in rule.tags],
             score=rule.score,
             createdAt=rule.created_at,
+            updatedAt=rule.updated_at,
         )
 
 

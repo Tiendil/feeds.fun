@@ -7,7 +7,8 @@
       </tr>
     </thead>
     <tbody>
-      <tr v-for="rule in rules">
+      <tr v-for="rule in rules"
+          :key="rule.id">
         <td>
           <rule-score-updater
             :score="rule.score"

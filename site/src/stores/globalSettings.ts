@@ -26,6 +26,9 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   const feedsOrder = ref(e.FeedsOrder.Title);
   const failedFeedsFirst = ref(false);
 
+  // Rules
+  const rulesOrder = ref(e.RulesOrder.Tags);
+
   watch(mainPanelMode, (newValue, oldValue) => {
     router.push({name: mainPanelMode.value, params: {}});
   });
@@ -69,6 +72,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     userSettings,
     info,
     feedsOrder,
-    failedFeedsFirst
+    failedFeedsFirst,
+    rulesOrder
   };
 });

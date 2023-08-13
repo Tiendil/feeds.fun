@@ -90,3 +90,18 @@ export const FeedsOrderProperties = new Map<FeedsOrder, {text: string; orderFiel
   [FeedsOrder.Loaded, {text: "loaded", orderField: "loadedAt", orderDirection: "desc"}],
   [FeedsOrder.Linked, {text: "added", orderField: "linkedAt", orderDirection: "desc"}]
 ]);
+
+
+export enum RulesOrder {
+  Tags = "tags",
+  Score = "score",
+  Created = "created",
+  Updated = "updated"
+}
+
+export const RulesOrderProperties = new Map<RulesOrder, {text: string; orderField: string; orderDirection: string}>([
+  [RulesOrder.Tags, {text: "tags", orderField: "tags", orderDirection: "asc"}],
+  [RulesOrder.Score, {text: "score", orderField: "score", orderDirection: "desc"}],
+  [RulesOrder.Created, {text: "created", orderField: "createdAt", orderDirection: "desc"}],
+  [RulesOrder.Updated, {text: "updated", orderField: "updatedAt", orderDirection: "desc"}]
+]);

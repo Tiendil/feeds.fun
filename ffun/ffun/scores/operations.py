@@ -19,7 +19,12 @@ def normalize_tags(tags: Iterable[int]) -> list[int]:
 
 def row_to_rule(row: dict[str, Any]) -> Rule:
     return Rule(
-        id=row["id"], user_id=row["user_id"], tags=set(row["tags"]), score=row["score"], created_at=row["created_at"]
+        id=row["id"],
+        user_id=row["user_id"],
+        tags=set(row["tags"]),
+        score=row["score"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
     )
 
 
@@ -53,7 +58,7 @@ async def update_rule(user_id: uuid.UUID, rule_id: uuid.UUID, tags: Iterable[int
 
     sql = """
     UPDATE s_rules
-    SET tags = %(tags)s, key = %(key)s, score = %(score)s
+    SET tags = %(tags)s, key = %(key)s, score = %(score)s, updated_at = NOW()
     WHERE user_id = %(user_id)s AND id = %(rule_id)s
     """
 
