@@ -13,7 +13,7 @@ _encode_replacements = {
 }
 
 
-_decode_replacements = {v: k for k, v in _encode_replacements.items()}
+_decode_replacements = {v.strip("-"): k for k, v in _encode_replacements.items()}
 
 
 def _encode_special_characters(tag: str) -> str:
@@ -24,14 +24,25 @@ def _encode_special_characters(tag: str) -> str:
 
 
 def _decode_special_characters(tag: str) -> str:
-    tag = f"-{tag}-"
+    parts = tag.split("-")
+    parts = [part for part in parts if part]
 
-    for substring, replacement in _decode_replacements.items():
-        tag = tag.replace(substring, replacement)
+    result = []
+    can_add_dash = False
 
-    tag = tag.strip("-")
+    for part in parts:
+        if part not in _decode_replacements:
+            if can_add_dash:
+                result.append("-")
 
-    return tag
+            can_add_dash = True
+            result.append(part)
+            continue
+
+        can_add_dash = False
+        result.append(_decode_replacements[part])
+
+    return "".join(result)
 
 
 def normalize(tag: str) -> str:
