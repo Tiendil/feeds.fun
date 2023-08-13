@@ -37,3 +37,23 @@ export function timeSince(date: Date) {
 
   return `${yearsPast}y`;
 }
+
+export function compareLexicographically(a: string[], b: string[]) {
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    const comparison = a[i].localeCompare(b[i]);
+
+    if (comparison !== 0) {
+      return comparison;
+    }
+  }
+
+  if (a.length > b.length) {
+    return 1;
+  }
+
+  if (a.length < b.length) {
+    return -1;
+  }
+
+  return 0;
+}

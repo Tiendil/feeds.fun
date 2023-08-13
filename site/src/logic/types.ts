@@ -221,24 +221,30 @@ export type Rule = {
   readonly tags: string[];
   readonly score: number;
   readonly createdAt: Date;
+  readonly updatedAt: Date;
 };
 
 export function ruleFromJSON({
   id,
   tags,
   score,
-  createdAt
+  createdAt,
+  updatedAt
 }: {
   id: string;
   tags: string[];
   score: number;
   createdAt: string;
+  updatedAt: string;
 }): Rule {
+  tags = tags.sort();
+
   return {
     id: toRuleId(id),
     tags: tags,
     score: score,
-    createdAt: new Date(createdAt)
+    createdAt: new Date(createdAt),
+    updatedAt: new Date(updatedAt)
   };
 }
 
