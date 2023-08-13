@@ -38,3 +38,6 @@ jobs:
 
       - name: check types
         run: ./bin/check-types.sh
+
+      - name: run tests
+        run: ./bin/run-tests.sh
