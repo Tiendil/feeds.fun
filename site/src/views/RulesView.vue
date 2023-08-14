@@ -67,7 +67,7 @@
       const valueB = _.get(b, orderField, null);
 
       if (valueA === null && valueB === null) {
-        return 0;
+        return utils.compareLexicographically(a.tags, b.tags);
       }
 
       if (valueA === null) {
@@ -86,7 +86,7 @@
         return -1 * direction;
       }
 
-      return 0;
+      return utils.compareLexicographically(a.tags, b.tags);
     });
 
     return sorted;
