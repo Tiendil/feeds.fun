@@ -6,12 +6,12 @@ from ffun.core.background_tasks import InfiniteTask
 from ffun.library import domain as l_domain
 
 from . import domain
-from .processor.upper_case_title import Processor as UpperCaseTitleProcessor
 from .processors.base import Processor
 from .processors.domain import Processor as DomainProcessor
 from .processors.native_tags import Processor as NativeTagsProcessor
 from .processors.openai_chat_3_5 import Processor as OpenAIChat35Processor
 from .processors.openai_chat_3_5_functions import Processor as OpenAIChat35FunctionsProcessor
+from .processors.upper_case_title import Processor as UpperCaseTitleProcessor
 from .settings import settings
 
 
