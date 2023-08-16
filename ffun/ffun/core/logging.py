@@ -22,10 +22,9 @@ class Settings(pydantic_settings.BaseSettings):
     log_evel: str = "INFO"
     renderer: Renderer = Renderer.console
 
-    model_config = pydantic_settings.SettingsConfigDict(env_prefixenv_nested_delimiter="__",
-                                                        env_file=".env",
-                                                        env_prefix="FFUN_",
-                                                        extra="allow")
+    model_config = pydantic_settings.SettingsConfigDict(
+        env_nested_delimiter="__", env_file=".env", env_prefix="FFUN_", extra="allow"
+    )
 
     @property
     def structlog_level(self) -> int:

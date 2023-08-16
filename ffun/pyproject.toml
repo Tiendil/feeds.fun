@@ -86,7 +86,7 @@ isort = "5.12.*"
 black = "23.7.*"
 
 # mypy fails in the latest versions
-mypy = "1.3.*"
+mypy = "1.5.*"
 
 types-python-slugify = "8.0.*"
 types-beautifulsoup4 = "4.12.*"

@@ -15,8 +15,6 @@ class Processor(base.Processor):
 
     async def process(self, entry: Entry) -> list[ProcessorTag]:
         if entry.title.isupper():
-            return [
-                ProcessorTag(raw_uid="upper-case-title")
-            ]
+            return [ProcessorTag(raw_uid="upper-case-title")]
 
         return []

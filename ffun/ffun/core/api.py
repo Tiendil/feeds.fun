@@ -5,14 +5,14 @@ import pydantic
 
 
 class Base(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(anystr_strip_whitespace=True,
-                                       validate_all=True,
-                                       extra="forbid",
-                                       allow_mutation=False,
-                                       frozen=True,
-                                       validate_assignment=True,
-                                       orm_mode=False,
-                                       underscore_attrs_are_private=True)
+    model_config = pydantic.ConfigDict(
+        str_strip_whitespace=True,
+        validate_default=True,
+        extra="forbid",
+        frozen=True,
+        validate_assignment=True,
+        from_attributes=False,
+    )
 
 
 class APIStatuses(str, enum.Enum):

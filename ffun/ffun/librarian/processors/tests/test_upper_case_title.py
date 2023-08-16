@@ -1,4 +1,3 @@
-
 import pytest
 
 from ffun.librarian.processors import upper_case_title
