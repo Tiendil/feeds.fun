@@ -1,4 +1,5 @@
 import pydantic
+import pydantic_settings
 
 from ffun.core.settings import BaseSettings
 
@@ -16,6 +17,10 @@ class NativeTagsProcessor(BaseProcessor):
     pass
 
 
+class UpperCaseTitleProcessor(BaseProcessor):
+    pass
+
+
 class OpenAIChat35Processor(BaseProcessor):
     model: str = "gpt-3.5-turbo-16k-0613"
 
@@ -27,11 +32,12 @@ class OpenAIChat35FunctionsProcessor(BaseProcessor):
 class Settings(BaseSettings):
     domain_processor: DomainProcessor = DomainProcessor(enabled=True)
     native_tags_processor: NativeTagsProcessor = NativeTagsProcessor(enabled=True)
+    upper_case_title_processor: UpperCaseTitleProcessor = UpperCaseTitleProcessor(enabled=True)
+
     openai_chat_35_processor: OpenAIChat35Processor = OpenAIChat35Processor()
     openai_chat_35_functions_processor: OpenAIChat35FunctionsProcessor = OpenAIChat35FunctionsProcessor()
 
-    class Config:
-        env_prefix = "FFUN_LIBRARIAN_"
+    model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_LIBRARIAN_")
 
 
 settings = Settings()

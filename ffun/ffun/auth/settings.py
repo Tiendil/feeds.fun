@@ -3,6 +3,7 @@ import enum
 import uuid
 
 import pydantic
+import pydantic_settings
 
 from ffun.core.settings import BaseSettings
 
@@ -30,8 +31,7 @@ class Settings(BaseSettings):
     single_user: SingleUser = SingleUser()
     supertokens: Supertokens = Supertokens()
 
-    class Config:
-        env_prefix = "FFUN_AUTH_"
+    model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_AUTH_")
 
 
 settings = Settings()

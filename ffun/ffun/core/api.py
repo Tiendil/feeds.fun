@@ -5,15 +5,14 @@ import pydantic
 
 
 class Base(pydantic.BaseModel):
-    class Config:
-        anystr_strip_whitespace = True
-        validate_all = True
-        extra = "forbid"
-        allow_mutation = False
-        frozen = True
-        validate_assignment = True
-        orm_mode = False
-        underscore_attrs_are_private = True
+    model_config = pydantic.ConfigDict(
+        str_strip_whitespace=True,
+        validate_default=True,
+        extra="forbid",
+        frozen=True,
+        validate_assignment=True,
+        from_attributes=False,
+    )
 
 
 class APIStatuses(str, enum.Enum):
@@ -22,15 +21,13 @@ class APIStatuses(str, enum.Enum):
 
 
 class APIRequest(Base):
-    class Config(Base.Config):
-        title = "Request Body"
+    model_config = pydantic.ConfigDict(title="Request Body")
 
 
 class APISuccess(Base):
     status: APIStatuses = APIStatuses.success
 
-    class Config(Base.Config):
-        title = "Response Body"
+    model_config = pydantic.ConfigDict(title="Response Body")
 
 
 class APIError(Base):
@@ -39,5 +36,4 @@ class APIError(Base):
     message: str = "Unknown error"
     data: dict[str, Any] | None = None
 
-    class Config(Base.Config):
-        title = "API Error"
+    model_config = pydantic.ConfigDict(title="API Error")

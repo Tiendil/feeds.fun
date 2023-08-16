@@ -11,6 +11,7 @@ from .processors.domain import Processor as DomainProcessor
 from .processors.native_tags import Processor as NativeTagsProcessor
 from .processors.openai_chat_3_5 import Processor as OpenAIChat35Processor
 from .processors.openai_chat_3_5_functions import Processor as OpenAIChat35FunctionsProcessor
+from .processors.upper_case_title import Processor as UpperCaseTitleProcessor
 from .settings import settings
 
 
@@ -72,6 +73,15 @@ if settings.openai_chat_35_functions_processor.enabled:
                 name="openai_chat_3_5_functions", model=settings.openai_chat_35_functions_processor.model
             ),
             concurrency=settings.openai_chat_35_functions_processor.workers,
+        )
+    )
+
+if settings.upper_case_title_processor.enabled:
+    processors.append(
+        ProcessorInfo(
+            id=5,
+            processor=UpperCaseTitleProcessor(name="upper_case_title"),
+            concurrency=settings.upper_case_title_processor.workers,
         )
     )
 
