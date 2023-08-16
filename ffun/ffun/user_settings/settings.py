@@ -1,4 +1,5 @@
 import pydantic
+import pydantic_settings
 
 from ffun.core import logging
 from ffun.core.settings import BaseSettings
@@ -15,8 +16,7 @@ _default_secret_key = "JHBC3P8q9nhDNStpfljJ7eO09XNztJ3xWKI5l6rvL-Q="
 class Settings(BaseSettings):
     secret_key: str = _default_secret_key
 
-    class Config:
-        env_prefix = "FFUN_USER_SETTINGS_"
+    model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_USER_SETTINGS_")
 
 
 settings = Settings()

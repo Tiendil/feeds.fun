@@ -1,6 +1,7 @@
 import datetime
 
 import pydantic
+import pydantic_settings
 
 from ffun.core.settings import BaseSettings
 
@@ -8,8 +9,7 @@ from ffun.core.settings import BaseSettings
 class Settings(BaseSettings):
     retry_after: datetime.timedelta = datetime.timedelta(hours=4)
 
-    class Config:
-        env_prefix = "FFUN_LIBRARY_"
+    model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_LIBRARY_")
 
 
 settings = Settings()

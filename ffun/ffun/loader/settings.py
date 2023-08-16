@@ -1,6 +1,7 @@
 import datetime
 
 import pydantic
+import pydantic_settings
 
 from ffun.core.settings import BaseSettings
 
@@ -15,8 +16,7 @@ class Settings(BaseSettings):
     minimum_period: datetime.timedelta = datetime.timedelta(hours=1)
     proxies: list[Proxy] = [Proxy(name="default", url=None)]
 
-    class Config:
-        env_prefix = "FFUN_LOADER_"
+    model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_LOADER_")
 
 
 settings = Settings()

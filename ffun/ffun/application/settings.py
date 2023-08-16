@@ -1,6 +1,7 @@
 import datetime
 
 import pydantic
+import pydantic_settings
 
 from ffun.core.settings import BaseSettings
 
@@ -49,8 +50,7 @@ class Settings(BaseSettings):
     postgresql: PostgreSQL = PostgreSQL()
     sentry: Sentry = Sentry()
 
-    class Config:
-        env_prefix = "FFUN_"
+    model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_")
 
 
 settings = Settings()
