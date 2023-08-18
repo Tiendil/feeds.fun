@@ -9,7 +9,7 @@
       v-for="tag of displayedTags"
       :key="tag"
       :uid="tag"
-      :mode="!!selectedTags[tag] ? 'selected' : null"
+      :mode="tagMode(tag)"
       :count="entriesStore.reportTagsCount[tag]"
       count-mode="tooltip"
       @tag:clicked="onTagClicked" />
@@ -41,7 +41,7 @@
 
   const selectedTags = ref<{[key: string]: boolean}>({});
 
-  const properties = defineProps<{tags: string[]}>();
+  const properties = defineProps<{tags: string[]; contributions: {[key: string]: number}}>();
 
   const tagsNumber = computed(() => {
     return properties.tags.length;
@@ -55,6 +55,32 @@
     return preparedTags.value.slice(0, showLimit.value);
   });
 
+  function tagMode(tag: string) {
+    if (!!selectedTags.value[tag]) {
+      return "selected";
+    }
+
+    // return null;
+
+    if (!properties.contributions) {
+      return null;
+    }
+
+    if (!(tag in properties.contributions)) {
+      return null;
+    }
+
+    if (properties.contributions[tag] == 0) {
+      return null;
+    }
+
+    if (properties.contributions[tag] > 0) {
+      return "positive";
+    }
+
+    return "negative";
+  }
+
   const preparedTags = computed(() => {
     const values = [];
 
@@ -63,6 +89,17 @@
     }
 
     values.sort((a, b) => {
+      const aContributions = Math.abs(properties.contributions[a] || 0);
+      const bContributions = Math.abs(properties.contributions[b] || 0);
+
+      if (aContributions > bContributions) {
+        return -1;
+      }
+
+      if (aContributions < bContributions) {
+        return 1;
+      }
+
       const aCount = entriesStore.reportTagsCount[a];
       const bCount = entriesStore.reportTagsCount[b];
 

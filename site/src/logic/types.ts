@@ -114,6 +114,7 @@ export class Entry {
   readonly tags: string[];
   readonly markers: e.Marker[];
   readonly score: number;
+  readonly scoreContributions: {[key: string]: number};
   readonly scoreToZero: number;
   readonly publishedAt: Date;
   readonly catalogedAt: Date;
@@ -127,6 +128,7 @@ export class Entry {
     tags,
     markers,
     score,
+    scoreContributions,
     publishedAt,
     catalogedAt,
     body
@@ -138,6 +140,7 @@ export class Entry {
     tags: string[];
     markers: e.Marker[];
     score: number;
+    scoreContributions: {[key: string]: number};
     publishedAt: Date;
     catalogedAt: Date;
     body: string | null;
@@ -149,6 +152,7 @@ export class Entry {
     this.tags = tags;
     this.markers = markers;
     this.score = score;
+    this.scoreContributions = scoreContributions;
     this.publishedAt = publishedAt;
     this.catalogedAt = catalogedAt;
     this.body = body;
@@ -181,6 +185,7 @@ export function entryFromJSON({
   tags,
   markers,
   score,
+  scoreContributions,
   publishedAt,
   catalogedAt,
   body
@@ -192,6 +197,7 @@ export function entryFromJSON({
   tags: string[];
   markers: string[];
   score: number;
+  scoreContributions: {[key: string]: number};
   publishedAt: string;
   catalogedAt: string;
   body: string | null;
@@ -210,6 +216,7 @@ export function entryFromJSON({
       throw new Error(`Unknown marker: ${m}`);
     }),
     score: score,
+    scoreContributions: scoreContributions,
     publishedAt: new Date(publishedAt),
     catalogedAt: new Date(catalogedAt),
     body: body

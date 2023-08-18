@@ -36,7 +36,7 @@
   .score {
     display: inline-block;
     cursor: pointer;
-    padding: 0.25rem;
+    padding: 0.1rem;
     background-color: #c1c1ff;
   }
 </style>

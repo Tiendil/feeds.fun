@@ -63,6 +63,7 @@ class Entry(api.Base):
     tags: list[str]
     markers: list[Marker] = []
     score: int
+    scoreContributions: dict[str, int]
     publishedAt: datetime.datetime
     catalogedAt: datetime.datetime
     body: str | None = None
@@ -74,6 +75,7 @@ class Entry(api.Base):
         tags: Iterable[str],
         markers: Iterable[Marker],
         score: int,
+        score_contributions: dict[str, int],
         with_body: bool = False,
     ) -> "Entry":
         return cls(
@@ -84,6 +86,7 @@ class Entry(api.Base):
             tags=list(tags),
             markers=list(markers),
             score=score,
+            scoreContributions=score_contributions,
             publishedAt=entry.published_at,
             catalogedAt=entry.cataloged_at,
             body=entry.body if with_body else None,

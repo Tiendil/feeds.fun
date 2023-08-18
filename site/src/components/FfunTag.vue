@@ -77,7 +77,8 @@
   .tag {
     display: inline-block;
     cursor: pointer;
-    padding: 0.25rem;
+    padding: 0.1rem;
+    margin-right: 0.2rem;
     white-space: nowrap;
   }
 
@@ -91,5 +92,13 @@
 
   .tag.excluded {
     background-color: #ffcccc;
+  }
+
+  .tag.positive {
+    color: darkgreen;
+  }
+
+  .tag.negative {
+    color: darkred;
   }
 </style>
