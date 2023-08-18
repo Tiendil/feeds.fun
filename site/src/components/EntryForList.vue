@@ -41,8 +41,9 @@
 
       <template v-if="showTags">
         <br />
-        <tags-list :tags="entry.tags"
-                   :contributions="entry.scoreContributions"/>
+        <tags-list
+          :tags="entry.tags"
+          :contributions="entry.scoreContributions" />
       </template>
 
       <div

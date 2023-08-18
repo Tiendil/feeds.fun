@@ -95,11 +95,10 @@
   }
 
   .tag.positive {
-      color: darkgreen;
+    color: darkgreen;
   }
 
   .tag.negative {
     color: darkred;
   }
-
 </style>

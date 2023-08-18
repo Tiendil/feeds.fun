@@ -114,7 +114,7 @@ export class Entry {
   readonly tags: string[];
   readonly markers: e.Marker[];
   readonly score: number;
-  readonly scoreContributions: {readonly [string]: number}
+  readonly scoreContributions: {readonly [string]: number};
   readonly scoreToZero: number;
   readonly publishedAt: Date;
   readonly catalogedAt: Date;
@@ -140,7 +140,7 @@ export class Entry {
     tags: string[];
     markers: e.Marker[];
     score: number;
-    scoreContributions: {readonly [string]: number},
+    scoreContributions: {readonly [string]: number};
     publishedAt: Date;
     catalogedAt: Date;
     body: string | null;
@@ -197,7 +197,7 @@ export function entryFromJSON({
   tags: string[];
   markers: string[];
   score: number;
-  scoreContributions: {readonly [string]: number},
+  scoreContributions: {readonly [string]: number};
   publishedAt: string;
   catalogedAt: string;
   body: string | null;

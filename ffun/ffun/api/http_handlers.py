@@ -71,8 +71,9 @@ async def _external_entries(  # pylint: disable=R0914
 
         tags_mapping = await o_domain.get_tags_by_ids(contributions_by_ids.keys())
 
-        contributions_by_str = {tags_mapping[tag_id]: contribution
-                                for tag_id, contribution in contributions_by_ids.items()}
+        contributions_by_str = {
+            tags_mapping[tag_id]: contribution for tag_id, contribution in contributions_by_ids.items()
+        }
 
         external_markers = [entities.Marker.from_internal(marker) for marker in markers.get(entry.id, ())]
 

@@ -12,7 +12,7 @@
       :mode="tagMode(tag)"
       :count="entriesStore.reportTagsCount[tag]"
       count-mode="tooltip"
-      @tag:clicked="onTagClicked"/>
+      @tag:clicked="onTagClicked" />
 
     <a
       href="#"
@@ -41,8 +41,7 @@
 
   const selectedTags = ref<{[key: string]: boolean}>({});
 
-  const properties = defineProps<{tags: string[],
-                                  contributions: {readonly [string]: number}}>();
+  const properties = defineProps<{tags: string[]; contributions: {readonly [string]: number}}>();
 
   const tagsNumber = computed(() => {
     return properties.tags.length;
