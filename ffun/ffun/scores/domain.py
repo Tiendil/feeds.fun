@@ -1,14 +1,19 @@
+from collections import defaultdict
+
 from . import entities, operations
 
 
-def get_score(rules: list[entities.Rule], tags: set[int]) -> int:
-    total = 0
+def get_score_contributions(rules: list[entities.BaseRule], tags: set[int]) -> tuple[int, dict[int, int]]:
+    score = 0
+    contributions: dict[int, int] = defaultdict(int)
 
     for rule in rules:
         if rule.tags <= tags:
-            total += rule.score
+            score += rule.score
+            for tag in rule.tags:
+                contributions[tag] += rule.score
 
-    return total
+    return score, contributions
 
 
 def get_score_rules(rules: list[entities.Rule], tags: set[int]) -> list[entities.Rule]:
