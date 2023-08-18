@@ -51,7 +51,7 @@ async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entiti
     )
 
 
-async def _external_entries(
+async def _external_entries(  # pylint: disable=R0914
     entries: Iterable[l_entities.Entry], with_body: bool, user_id: uuid.UUID
 ) -> list[entities.Entry]:
     entries_ids = [entry.id for entry in entries]
@@ -67,12 +67,22 @@ async def _external_entries(
     external_entries = []
 
     for entry in entries:
-        score = s_domain.get_score(rules, tags_ids.get(entry.id, set()))
+        score, contributions_by_ids = s_domain.get_score_contributions(rules, tags_ids.get(entry.id, set()))
+
+        tags_mapping = await o_domain.get_tags_by_ids(contributions_by_ids.keys())
+
+        contributions_by_str = {tags_mapping[tag_id]: contribution
+                                for tag_id, contribution in contributions_by_ids.items()}
 
         external_markers = [entities.Marker.from_internal(marker) for marker in markers.get(entry.id, ())]
 
         external_entry = entities.Entry.from_internal(
-            entry=entry, tags=tags.get(entry.id, ()), markers=external_markers, score=score, with_body=with_body
+            entry=entry,
+            tags=tags.get(entry.id, ()),
+            markers=external_markers,
+            score=score,
+            score_contributions=contributions_by_str,
+            with_body=with_body,
         )
 
         external_entries.append(external_entry)
