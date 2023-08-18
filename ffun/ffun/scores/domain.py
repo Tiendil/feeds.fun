@@ -1,9 +1,10 @@
 from collections import defaultdict
+from typing import Sequence
 
 from . import entities, operations
 
 
-def get_score_contributions(rules: list[entities.BaseRule], tags: set[int]) -> tuple[int, dict[int, int]]:
+def get_score_contributions(rules: Sequence[entities.BaseRule], tags: set[int]) -> tuple[int, dict[int, int]]:
     score = 0
     contributions: dict[int, int] = defaultdict(int)
 
