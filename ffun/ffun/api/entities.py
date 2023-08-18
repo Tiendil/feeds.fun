@@ -63,7 +63,7 @@ class Entry(api.Base):
     tags: list[str]
     markers: list[Marker] = []
     score: int
-    score_contributions: dict[str, int]
+    scoreContributions: dict[str, int]
     publishedAt: datetime.datetime
     catalogedAt: datetime.datetime
     body: str | None = None
@@ -86,7 +86,7 @@ class Entry(api.Base):
             tags=list(tags),
             markers=list(markers),
             score=score,
-            score_contributions=score_contributions,
+            scoreContributions=score_contributions,
             publishedAt=entry.published_at,
             catalogedAt=entry.cataloged_at,
             body=entry.body if with_body else None,
