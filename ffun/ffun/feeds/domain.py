@@ -1,10 +1,22 @@
+import uuid
+
 from . import operations
+from .entities import Feed
 
 
-save_feeds = operations.save_feeds
+save_feed = operations.save_feed
 update_feed_info = operations.update_feed_info
 get_next_feeds_to_load = operations.get_next_feeds_to_load
 mark_feed_as_loaded = operations.mark_feed_as_loaded
 mark_feed_as_failed = operations.mark_feed_as_failed
 mark_feed_as_orphaned = operations.mark_feed_as_orphaned
 get_feeds = operations.get_feeds
+
+
+async def save_feeds(feeds: list[Feed]) -> list[uuid.UUID]:
+    real_ids = []
+
+    for feed in feeds:
+        real_ids.append(await save_feed(feed))
+
+    return real_ids
