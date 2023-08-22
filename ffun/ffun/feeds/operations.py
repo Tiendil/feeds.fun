@@ -7,6 +7,7 @@ import psycopg
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 
+from . import errors
 from .entities import Feed, FeedError, FeedState
 
 
@@ -54,6 +55,21 @@ async def save_feed(feed: Feed) -> uuid.UUID:
             raise NotImplementedError("something went wrong") from e
 
         return result[0]["id"]
+
+
+async def get_feed(feed_id: uuid.UUID) -> Feed:
+    sql = """
+    SELECT *
+    FROM f_feeds
+    WHERE id = %(id)s
+    """
+
+    rows = await execute(sql, {"id": feed_id})
+
+    if not rows:
+        raise errors.NoFeedFound(feed_id=feed_id)
+
+    return row_to_feed(rows[0])
 
 
 @run_in_transaction

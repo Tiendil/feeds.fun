@@ -139,6 +139,7 @@ module = "supertokens_python.*"
 ignore_errors = true
 
 [tool.pytest.ini_options]
+addopts = """-x -vv --strict-markers -p no:cacheprovider"""
 filterwarnings = [
    "error",
     "ignore::DeprecationWarning:feedparser.encodings:29",

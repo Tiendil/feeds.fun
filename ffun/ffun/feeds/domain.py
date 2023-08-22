@@ -5,6 +5,7 @@ from .entities import Feed
 
 
 save_feed = operations.save_feed
+get_feed = operations.get_feed
 update_feed_info = operations.update_feed_info
 get_next_feeds_to_load = operations.get_next_feeds_to_load
 mark_feed_as_loaded = operations.mark_feed_as_loaded
