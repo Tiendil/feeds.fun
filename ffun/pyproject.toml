@@ -137,3 +137,10 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "supertokens_python.*"
 ignore_errors = true
+
+[tool.pytest.ini_options]
+filterwarnings = [
+   "error",
+    "ignore::DeprecationWarning:feedparser.encodings:29",
+    "ignore::DeprecationWarning:yoyo.migrations:34",
+]
