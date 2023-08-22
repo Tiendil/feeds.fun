@@ -8,6 +8,7 @@ from structlog.contextvars import bound_contextvars
 from ffun.core import logging, utils
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedError, FeedState
+from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
 from ffun.parsers import entities as p_entities
@@ -180,11 +181,17 @@ async def load_content_with_proxies(url: str) -> httpx.Response:
 async def process_feed(feed: Feed) -> None:
     logger.info("loading_feed")
 
+    if not await fl_domain.has_linked_users(feed.id):
+        logger.info("feed_has_no_linked_users")
+        await f_domain.mark_feed_as_orphaned(feed.id)
+        return
+
     try:
         response = await load_content_with_proxies(feed.url)
         content = await decode_content(response)
         feed_info = await parse_content(content, original_url=feed.url)
     except errors.LoadError as e:
+        logger.info("feed_load_error", error_code=e.feed_error_code)
         await f_domain.mark_feed_as_failed(feed.id, state=FeedState.damaged, error=e.feed_error_code)
         return
 

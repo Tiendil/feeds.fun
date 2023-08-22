@@ -10,6 +10,7 @@ class FeedState(int, enum.Enum):
     not_loaded = 1
     loaded = 2
     damaged = 3
+    orphaned = 4
 
 
 class FeedError(int, enum.Enum):

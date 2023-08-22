@@ -125,6 +125,19 @@ async def mark_feed_as_failed(feed_id: uuid.UUID, state: FeedState, error: FeedE
     await execute(sql, {"id": feed_id, "state": state, "error": error})
 
 
+async def mark_feed_as_orphaned(feed_id: uuid.UUID) -> None:
+    sql = """
+    UPDATE f_feeds
+    SET state = %(state)s,
+        last_error = NULL,
+        loaded_at = NOW(),
+        updated_at = NOW()
+    WHERE id = %(id)s
+    """
+
+    await execute(sql, {"id": feed_id, "state": FeedState.orphaned})
+
+
 async def get_feeds(ids: Iterable[uuid.UUID]) -> list[Feed]:
     sql = """
     SELECT *

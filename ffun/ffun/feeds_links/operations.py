@@ -53,3 +53,13 @@ async def get_linked_users(feed_id: uuid.UUID) -> list[uuid.UUID]:
     result = await execute(sql, {"feed_id": feed_id})
 
     return [row["user_id"] for row in result]
+
+
+async def has_linked_users(feed_id: uuid.UUID) -> bool:
+    sql = """
+        SELECT 1 FROM fl_links WHERE feed_id = %(feed_id)s LIMIT 1
+    """
+
+    result = await execute(sql, {"feed_id": feed_id})
+
+    return bool(result)
