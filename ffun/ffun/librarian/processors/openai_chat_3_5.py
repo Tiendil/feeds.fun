@@ -104,7 +104,7 @@ class Processor(base.Processor):
 
                 api_key_usage.used_tokens = sum(result.total_tokens for result in results)
 
-        except oai_errors.TemporaryError as e:
+        except (oai_errors.TemporaryError, oai_errors.NoKeyFoundForFeed) as e:
             raise errors.SkipAndContinueLater(message=str(e)) from e
 
         for result in results:
