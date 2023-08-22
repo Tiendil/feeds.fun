@@ -1,11 +1,39 @@
+import asyncio
 import datetime
 import uuid
+from typing import AsyncGenerator, Generator
 
+import fastapi
 import pytest
+import pytest_asyncio
 
-from ffun.core import utils
+from ffun.application import application
+from ffun.core import migrations, utils
 from ffun.feeds.entities import Feed, FeedState
 from ffun.library.entities import Entry
+
+
+@pytest.fixture(scope="session", autouse=True)
+def event_loop() -> Generator[asyncio.AbstractEventLoop, asyncio.AbstractEventLoop, None]:
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def app() -> AsyncGenerator[fastapi.FastAPI, None]:
+    async with application.with_app() as app:
+        yield app
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def prepare_db(
+    app: AsyncGenerator[fastapi.FastAPI, None],
+    event_loop: asyncio.AbstractEventLoop,
+) -> AsyncGenerator[None, None]:
+    await migrations.apply_all()
+    yield
+    await migrations.rollback_all()
 
 
 def fake_title() -> str:

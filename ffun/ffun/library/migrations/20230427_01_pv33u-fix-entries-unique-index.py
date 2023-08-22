@@ -28,6 +28,7 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
+    cursor.execute("TRUNCATE TABLE l_entry_process_info, l_entries")
     cursor.execute(f"ALTER TABLE l_entries ADD CONSTRAINT {constraint} UNIQUE (external_id)")
     cursor.execute(f"DROP INDEX {index}")
     cursor.execute(f"CREATE INDEX {unnecessary_index} ON l_entries (feed_id)")

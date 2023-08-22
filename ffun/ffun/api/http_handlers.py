@@ -1,8 +1,8 @@
 import uuid
+from importlib import metadata
 from typing import Any, Iterable
 
 import fastapi
-import pkg_resources
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -378,7 +378,7 @@ Thank you for your interest in the Feeds Fun API. We look forward to your contri
 async def openapi(request: fastapi.Request) -> JSONResponse:
     content = get_openapi(
         title="Feeds Fun API",
-        version=pkg_resources.get_distribution("ffun").version,
+        version=metadata.version('ffun'),
         description=swagger_description,
         routes=request.app.routes,
     )
