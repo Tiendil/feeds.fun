@@ -57,21 +57,6 @@ async def save_feed(feed: Feed) -> uuid.UUID:
         return result[0]["id"]
 
 
-async def get_feed(feed_id: uuid.UUID) -> Feed:
-    sql = """
-    SELECT *
-    FROM f_feeds
-    WHERE id = %(id)s
-    """
-
-    rows = await execute(sql, {"id": feed_id})
-
-    if not rows:
-        raise errors.NoFeedFound(feed_id=feed_id)
-
-    return row_to_feed(rows[0])
-
-
 @run_in_transaction
 async def get_next_feeds_to_load(execute: ExecuteType, number: int, loaded_before: datetime.datetime) -> list[Feed]:
     sql = """
@@ -160,3 +145,12 @@ async def get_feeds(ids: Iterable[uuid.UUID]) -> list[Feed]:
     rows = await execute(sql, {"ids": list(ids)})
 
     return [row_to_feed(row) for row in rows]
+
+
+async def get_feed(feed_id: uuid.UUID) -> Feed:
+    feeds = await get_feeds([feed_id])
+
+    if not feeds:
+        raise errors.NoFeedFound(feed_id=feed_id)
+
+    return feeds[0]
