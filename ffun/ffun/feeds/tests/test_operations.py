@@ -1,4 +1,5 @@
 import asyncio
+import random
 import uuid
 
 import pytest
@@ -7,8 +8,9 @@ from ffun.core import utils
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 
 from .. import errors
-from ..entities import Feed
-from ..operations import get_feed, get_next_feeds_to_load, save_feed, update_feed_info
+from ..entities import Feed, FeedError, FeedState
+from ..operations import (get_feed, get_next_feeds_to_load, mark_feed_as_failed, mark_feed_as_loaded, save_feed,
+                          update_feed_info)
 from . import make
 
 
@@ -175,3 +177,47 @@ class TestUpdateFeedInfo:
 
         assert updated_feed.title == new_title
         assert updated_feed.description == new_description
+
+
+class TestMarkFeedAsLoaded:
+
+    @pytest.mark.asyncio
+    async def test(self, loaded_feed: Feed) -> None:
+        now = utils.now()
+
+        await mark_feed_as_loaded(feed_id=loaded_feed.id)
+
+        updated_feed = await get_feed(loaded_feed.id)
+
+        assert updated_feed.loaded_at is not None
+        assert now < updated_feed.loaded_at
+        assert updated_feed.last_error is None
+        assert updated_feed.state == FeedState.loaded
+
+    @pytest.mark.asyncio
+    async def test_reset_error_state(self, loaded_feed: Feed) -> None:
+        await mark_feed_as_failed(feed_id=loaded_feed.id,
+                                  state=FeedState.damaged,
+                                  error=random.choice(list(FeedError)))
+
+        await mark_feed_as_loaded(feed_id=loaded_feed.id)
+
+        updated_feed = await get_feed(loaded_feed.id)
+
+        assert updated_feed.last_error is None
+
+
+class TestMarkFeedAsFailed:
+
+    @pytest.mark.asyncio
+    async def test(self, loaded_feed: Feed) -> None:
+        error = random.choice(list(FeedError))
+
+        await mark_feed_as_failed(feed_id=loaded_feed.id,
+                                  state=FeedState.damaged,
+                                  error=error)
+
+        updated_feed = await get_feed(loaded_feed.id)
+
+        assert updated_feed.state == FeedState.damaged
+        assert updated_feed.last_error == error
