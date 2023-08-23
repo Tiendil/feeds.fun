@@ -144,12 +144,3 @@ async def get_feeds(ids: Iterable[uuid.UUID]) -> list[Feed]:
     rows = await execute(sql, {"ids": list(ids)})
 
     return [row_to_feed(row) for row in rows]
-
-
-async def get_feed(feed_id: uuid.UUID) -> Feed:
-    feeds = await get_feeds([feed_id])
-
-    if not feeds:
-        raise errors.NoFeedFound(feed_id=feed_id)
-
-    return feeds[0]

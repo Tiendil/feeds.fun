@@ -8,8 +8,9 @@ from ffun.core import utils
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 
 from .. import errors
+from ..domain import get_feed, save_feeds
 from ..entities import Feed, FeedError, FeedState
-from ..operations import (get_feed, get_feeds, get_next_feeds_to_load, mark_feed_as_failed, mark_feed_as_loaded,
+from ..operations import (get_feeds, get_next_feeds_to_load, mark_feed_as_failed, mark_feed_as_loaded,
                           mark_feed_as_orphaned, save_feed, update_feed_info)
 from . import make
 
@@ -102,12 +103,8 @@ class TestGetNextFeedToLoad:
         n = 10
         m = 3
 
-        feed_ids = set()
-
-        for _ in range(n):
-            raw_feed = make.fake_feed()
-            feed_id = await save_feed(raw_feed)
-            feed_ids.add(feed_id)
+        feed_ids = set(await save_feeds([make.fake_feed()
+                                         for _ in range(n)]))
 
         while feed_ids:
             found_feeds = await get_next_feeds_to_load(number=m,
@@ -133,12 +130,8 @@ class TestGetNextFeedToLoad:
         n = 10
         m = 3
 
-        feed_ids = set()
-
-        for _ in range(n):
-            raw_feed = make.fake_feed()
-            feed_id = await save_feed(raw_feed)
-            feed_ids.add(feed_id)
+        feed_ids = set(await save_feeds([make.fake_feed()
+                                         for _ in range(n)]))
 
         tasks = [get_next_feeds_to_load(number=m,
                                         loaded_before=now)
@@ -239,15 +232,6 @@ class TestMarkFeedAsOrphaned:
         updated_feed = await get_feed(saved_feed.id)
 
         assert updated_feed.last_error is None
-
-
-# get_feed function is checked in tests of other functions
-class TestGetFeed:
-
-    @pytest.mark.asyncio
-    async def test_exception_if_no_feed_found(self) -> None:
-        with pytest.raises(errors.NoFeedFound):
-            await get_feed(uuid.uuid4())
 
 
 class TestGetFeeds:
