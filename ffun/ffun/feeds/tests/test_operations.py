@@ -8,7 +8,7 @@ from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 
 from .. import errors
 from ..entities import Feed
-from ..operations import get_feed, get_next_feeds_to_load, save_feed
+from ..operations import get_feed, get_next_feeds_to_load, save_feed, update_feed_info
 from . import make
 
 
@@ -158,3 +158,20 @@ class TestGetNextFeedToLoad:
                           for feed in feeds}
 
         assert found_feed_ids == feed_ids
+
+
+class TestUpdateFeedInfo:
+
+    @pytest.mark.asyncio
+    async def test(self, loaded_feed: Feed) -> None:
+        new_title = make.fake_title()
+        new_description = make.fake_description()
+
+        await update_feed_info(feed_id=loaded_feed.id,
+                               title=new_title,
+                               description=new_description)
+
+        updated_feed = await get_feed(loaded_feed.id)
+
+        assert updated_feed.title == new_title
+        assert updated_feed.description == new_description
