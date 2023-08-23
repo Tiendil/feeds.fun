@@ -20,6 +20,11 @@ async def saved_feed_id(new_feed: Feed) -> uuid.UUID:
 
 
 @pytest_asyncio.fixture
+async def saved_feed(saved_feed_id: uuid.UUID) -> uuid.UUID:
+    return await get_feed(saved_feed_id)
+
+
+@pytest_asyncio.fixture
 async def loaded_feed_id(saved_feed_id: uuid.UUID) -> uuid.UUID:
     await mark_feed_as_loaded(saved_feed_id)
     return saved_feed_id

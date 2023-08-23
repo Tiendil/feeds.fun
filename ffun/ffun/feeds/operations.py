@@ -127,7 +127,6 @@ async def mark_feed_as_orphaned(feed_id: uuid.UUID) -> None:
     UPDATE f_feeds
     SET state = %(state)s,
         last_error = NULL,
-        loaded_at = NOW(),
         updated_at = NOW()
     WHERE id = %(id)s
     """

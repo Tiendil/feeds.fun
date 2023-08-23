@@ -9,8 +9,8 @@ from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 
 from .. import errors
 from ..entities import Feed, FeedError, FeedState
-from ..operations import (get_feed, get_next_feeds_to_load, mark_feed_as_failed, mark_feed_as_loaded, save_feed,
-                          update_feed_info)
+from ..operations import (get_feed, get_feeds, get_next_feeds_to_load, mark_feed_as_failed, mark_feed_as_loaded,
+                          mark_feed_as_orphaned, save_feed, update_feed_info)
 from . import make
 
 
@@ -36,15 +36,6 @@ class TestSaveFeed:
 
         with pytest.raises(errors.NoFeedFound):
             await get_feed(cloned_feed.id)
-
-
-# get_feed function is checked in tests of other functions
-class TestGetFeed:
-
-    @pytest.mark.asyncio
-    async def test_exception_if_no_feed_found(self) -> None:
-        with pytest.raises(errors.NoFeedFound):
-            await get_feed(uuid.uuid4())
 
 
 class TestGetNextFeedToLoad:
@@ -165,15 +156,15 @@ class TestGetNextFeedToLoad:
 class TestUpdateFeedInfo:
 
     @pytest.mark.asyncio
-    async def test(self, loaded_feed: Feed) -> None:
+    async def test(self, saved_feed: Feed) -> None:
         new_title = make.fake_title()
         new_description = make.fake_description()
 
-        await update_feed_info(feed_id=loaded_feed.id,
+        await update_feed_info(feed_id=saved_feed.id,
                                title=new_title,
                                description=new_description)
 
-        updated_feed = await get_feed(loaded_feed.id)
+        updated_feed = await get_feed(saved_feed.id)
 
         assert updated_feed.title == new_title
         assert updated_feed.description == new_description
@@ -182,12 +173,12 @@ class TestUpdateFeedInfo:
 class TestMarkFeedAsLoaded:
 
     @pytest.mark.asyncio
-    async def test(self, loaded_feed: Feed) -> None:
+    async def test(self, saved_feed: Feed) -> None:
         now = utils.now()
 
-        await mark_feed_as_loaded(feed_id=loaded_feed.id)
+        await mark_feed_as_loaded(feed_id=saved_feed.id)
 
-        updated_feed = await get_feed(loaded_feed.id)
+        updated_feed = await get_feed(saved_feed.id)
 
         assert updated_feed.loaded_at is not None
         assert now < updated_feed.loaded_at
@@ -195,14 +186,14 @@ class TestMarkFeedAsLoaded:
         assert updated_feed.state == FeedState.loaded
 
     @pytest.mark.asyncio
-    async def test_reset_error_state(self, loaded_feed: Feed) -> None:
-        await mark_feed_as_failed(feed_id=loaded_feed.id,
+    async def test_reset_error_state(self, saved_feed: Feed) -> None:
+        await mark_feed_as_failed(feed_id=saved_feed.id,
                                   state=FeedState.damaged,
                                   error=random.choice(list(FeedError)))
 
-        await mark_feed_as_loaded(feed_id=loaded_feed.id)
+        await mark_feed_as_loaded(feed_id=saved_feed.id)
 
-        updated_feed = await get_feed(loaded_feed.id)
+        updated_feed = await get_feed(saved_feed.id)
 
         assert updated_feed.last_error is None
 
@@ -210,14 +201,71 @@ class TestMarkFeedAsLoaded:
 class TestMarkFeedAsFailed:
 
     @pytest.mark.asyncio
-    async def test(self, loaded_feed: Feed) -> None:
+    async def test(self, saved_feed: Feed) -> None:
         error = random.choice(list(FeedError))
 
-        await mark_feed_as_failed(feed_id=loaded_feed.id,
+        await mark_feed_as_failed(feed_id=saved_feed.id,
                                   state=FeedState.damaged,
                                   error=error)
 
-        updated_feed = await get_feed(loaded_feed.id)
+        updated_feed = await get_feed(saved_feed.id)
 
         assert updated_feed.state == FeedState.damaged
         assert updated_feed.last_error == error
+
+
+class TestMarkFeedAsOrphaned:
+
+    @pytest.mark.asyncio
+    async def test(self, saved_feed: Feed) -> None:
+        await mark_feed_as_orphaned(feed_id=saved_feed.id)
+
+        assert saved_feed.loaded_at is None
+
+        updated_feed = await get_feed(saved_feed.id)
+
+        assert updated_feed.loaded_at is None
+        assert updated_feed.last_error is None
+        assert updated_feed.state == FeedState.orphaned
+
+    @pytest.mark.asyncio
+    async def test_reset_error_state(self, saved_feed: Feed) -> None:
+        await mark_feed_as_failed(feed_id=saved_feed.id,
+                                  state=FeedState.damaged,
+                                  error=random.choice(list(FeedError)))
+
+        await mark_feed_as_orphaned(feed_id=saved_feed.id)
+
+        updated_feed = await get_feed(saved_feed.id)
+
+        assert updated_feed.last_error is None
+
+
+# get_feed function is checked in tests of other functions
+class TestGetFeed:
+
+    @pytest.mark.asyncio
+    async def test_exception_if_no_feed_found(self) -> None:
+        with pytest.raises(errors.NoFeedFound):
+            await get_feed(uuid.uuid4())
+
+
+class TestGetFeeds:
+
+    @pytest.mark.asyncio
+    async def test(self) -> None:
+
+        n = 3
+
+        feed_ids = []
+
+        for _ in range(n + 2):
+            raw_feed = make.fake_feed()
+            feed_id = await save_feed(raw_feed)
+            feed_ids.append(feed_id)
+
+        loaded_feeds = await get_feeds(feed_ids[1:-1])
+
+        assert len(loaded_feeds) == n
+
+        assert feed_ids[1:-1] == [feed.id for feed in loaded_feeds]
