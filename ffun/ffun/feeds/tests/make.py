@@ -17,10 +17,6 @@ def fake_description() -> str:
     return f"Feed Description: {uuid.uuid4().hex}"
 
 
-def fake_body() -> str:
-    return f"Feed Body: {uuid.uuid4().hex}"
-
-
 def fake_feed(**kwargs: Any) -> Feed:
     return Feed(
         id=uuid.uuid4() if 'id' not in kwargs else kwargs['id'],
