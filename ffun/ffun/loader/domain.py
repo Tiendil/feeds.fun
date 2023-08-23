@@ -177,44 +177,65 @@ async def load_content_with_proxies(url: str) -> httpx.Response:
     raise first_exception  # type: ignore
 
 
+async def detect_orphaned(feed_id: uuid.UUID) -> bool:
+    if await fl_domain.has_linked_users(feed_id):
+        return True
+
+    logger.info("feed_has_no_linked_users")
+    await f_domain.mark_feed_as_orphaned(feed_id)
+
+    return True
+
+
+async def extract_feed_info(feed: Feed) -> p_entities.FeedInfo|None:
+    try:
+        response = await load_content_with_proxies(feed.url)
+        content = await decode_content(response)
+        return await parse_content(content, original_url=feed.url)
+    except errors.LoadError as e:
+        logger.info("feed_load_error", error_code=e.feed_error_code)
+        await f_domain.mark_feed_as_failed(feed.id, state=FeedState.damaged, error=e.feed_error_code)
+        return None
+
+
+async def sync_feed_info(feed: Feed, feed_info: p_entities.FeedInfo) -> None:
+    if feed_info.title == feed.title and feed_info.description == feed.description:
+        return
+
+    await f_domain.update_feed_info(feed.id, title=feed_info.title, description=feed_info.description)
+
+
+async def produce_entries_to_store(feed_id: uuid.UUID, entries: list[p_entities.EntryInfo]) -> list[l_entities.Entry]:
+    external_ids = [entry.external_id for entry in entries]
+
+    stored_entries_external_ids = await l_domain.check_stored_entries_by_external_ids(feed_id, external_ids)
+
+    entries_to_store = [entry for entry in entries if entry.external_id not in stored_entries_external_ids]
+
+    return [
+        l_entities.Entry(feed_id=feed_id, id=uuid.uuid4(), cataloged_at=utils.now(), **entry_info.dict())
+        for entry_info in entries_to_store
+    ]
+
+
 @logging.bound_function()
 async def process_feed(feed: Feed) -> None:
     logger.info("loading_feed")
 
-    if not await fl_domain.has_linked_users(feed.id):
-        logger.info("feed_has_no_linked_users")
-        await f_domain.mark_feed_as_orphaned(feed.id)
+    if await detect_orphaned(feed.id):
         return
 
-    try:
-        response = await load_content_with_proxies(feed.url)
-        content = await decode_content(response)
-        feed_info = await parse_content(content, original_url=feed.url)
-    except errors.LoadError as e:
-        logger.info("feed_load_error", error_code=e.feed_error_code)
-        await f_domain.mark_feed_as_failed(feed.id, state=FeedState.damaged, error=e.feed_error_code)
+    feed_info = await extract_feed_info(feed)
+
+    if feed_info is None:
         return
 
-    if feed_info.title != feed.title or feed_info.description != feed.description:
-        await f_domain.update_feed_info(feed.id, title=feed_info.title, description=feed_info.description)
+    await sync_feed_info(feed, feed_info)
 
-    entries = feed_info.entries
-
-    external_ids = [entry.external_id for entry in entries]
-
-    stored_entries_external_ids = await l_domain.check_stored_entries_by_external_ids(feed.id, external_ids)
-
-    entries_to_store = [entry for entry in entries if entry.external_id not in stored_entries_external_ids]
-
-    prepared_entries = [
-        l_entities.Entry(feed_id=feed.id, id=uuid.uuid4(), cataloged_at=utils.now(), **entry_info.dict())
-        for entry_info in entries_to_store
-    ]
+    prepared_entries = await produce_entries_to_store(feed.id, feed_info.entries)
 
     await l_domain.catalog_entries(entries=prepared_entries)
 
-    # TODO: update title & description here if they are changed
-
     await f_domain.mark_feed_as_loaded(feed.id)
 
-    logger.info("entries_loaded", loaded_number=len(entries), stored_number=len(entries_to_store))
+    logger.info("entries_loaded", loaded_number=len(feed_info.entries), stored_number=len(prepared_entries))
