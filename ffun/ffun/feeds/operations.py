@@ -75,7 +75,7 @@ async def get_feed(feed_id: uuid.UUID) -> Feed:
 @run_in_transaction
 async def get_next_feeds_to_load(execute: ExecuteType, number: int, loaded_before: datetime.datetime) -> list[Feed]:
     sql = """
-    SELECT *
+    SELECT id
     FROM f_feeds
     WHERE load_attempted_at IS NULL OR load_attempted_at <= %(loaded_before)s
     ORDER BY load_attempted_at ASC NULLS FIRST
@@ -92,9 +92,10 @@ async def get_next_feeds_to_load(execute: ExecuteType, number: int, loaded_befor
     SET load_attempted_at = NOW(),
         updated_at = NOW()
     WHERE id = ANY(%(ids)s)
+    RETURNING *
     """
 
-    await execute(sql, {"ids": ids})
+    rows = await execute(sql, {"ids": ids})
 
     return [row_to_feed(row) for row in rows]
 

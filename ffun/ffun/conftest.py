@@ -10,10 +10,8 @@ import pytest_asyncio
 from ffun.application import application
 from ffun.core import migrations, utils
 from ffun.feeds.entities import Feed, FeedState
+from ffun.feeds.tests.fixtures import *  # noqa
 from ffun.library.entities import Entry
-from ffun.tests_framework import utils as tf_utils
-from ffun.tests_framework.fixtures.base import *  # noqa
-from ffun.tests_framework.fixtures.feeds import *  # noqa
 
 
 @pytest.fixture(scope="session", autouse=True)
