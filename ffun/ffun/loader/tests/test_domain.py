@@ -10,10 +10,13 @@ from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
 from ffun.feeds_links import domain as fl_domain
+from ffun.library import domain as l_domain
+from ffun.library import entities as l_entities
 from ffun.parsers import entities as p_entities
+from ffun.parsers.tests import make as p_make
 
 from .. import errors
-from ..domain import detect_orphaned, sync_feed_info
+from ..domain import detect_orphaned, store_entries, sync_feed_info
 
 
 class TestDetectOrphaned:
@@ -65,3 +68,75 @@ class TestSyncFeedInfo:
 
         assert loaded_feed.title == feed_info.title
         assert loaded_feed.description == feed_info.description
+
+
+class TestStoreEntries:
+
+    @pytest.mark.asyncio
+    async def test_no_entries(self, saved_feed_id: uuid.UUID) -> None:
+        await store_entries(saved_feed_id, [])
+
+        entries = await l_domain.get_entries_by_filter([saved_feed_id], limit=1)
+
+        assert not entries
+
+    def assert_entries_equal(self, entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:
+        assert entry.title == entry_info.title
+        assert entry.body == entry_info.body
+        assert entry.external_id == entry_info.external_id
+        assert entry.external_url == entry_info.external_url
+        assert entry.external_tags == entry_info.external_tags
+        assert entry.published_at == entry_info.published_at
+
+    @pytest.mark.asyncio
+    async def test_save_new_entries(self, saved_feed_id: uuid.UUID) -> None:
+        n = 3
+
+        entry_infos = [p_make.fake_entry_info() for _ in range(n)]
+
+        await store_entries(saved_feed_id, entry_infos)
+
+        loaded_entries = await l_domain.get_entries_by_filter([saved_feed_id], limit=n + 1)
+
+        assert len(loaded_entries) == 3
+
+        entry_infos.sort(key=lambda e: e.title)
+        loaded_entries.sort(key=lambda e: e.title)
+
+        for entry_info, entry in zip(entry_infos, loaded_entries):
+            assert entry.feed_id == saved_feed_id
+            self.assert_entries_equal(entry_info, entry)
+
+    @pytest.mark.asyncio
+    async def test_save_in_parts(self, saved_feed_id: uuid.UUID) -> None:
+        n = 5
+        m = 3
+
+        assert m < n
+
+        entry_infos = [p_make.fake_entry_info() for _ in range(n)]
+        entry_infos.sort(key=lambda e: e.title)
+
+        await store_entries(saved_feed_id, entry_infos[:m])
+
+        loaded_entries = await l_domain.get_entries_by_filter([saved_feed_id], limit=n + 1)
+
+        assert len(loaded_entries) == m
+
+        loaded_entries.sort(key=lambda e: e.title)
+
+        for entry_info, entry in zip(entry_infos, loaded_entries):
+            assert entry.feed_id == saved_feed_id
+            self.assert_entries_equal(entry_info, entry)
+
+        await store_entries(saved_feed_id, entry_infos)
+
+        loaded_entries = await l_domain.get_entries_by_filter([saved_feed_id], limit=n + 1)
+
+        assert len(loaded_entries) == n
+
+        loaded_entries.sort(key=lambda e: e.title)
+
+        for entry_info, entry in zip(entry_infos, loaded_entries):
+            assert entry.feed_id == saved_feed_id
+            assert entry.feed_id == saved_feed_id

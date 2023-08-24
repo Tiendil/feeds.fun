@@ -197,11 +197,15 @@ async def extract_feed_info(feed: Feed) -> p_entities.FeedInfo|None:
     try:
         response = await load_content_with_proxies(feed.url)
         content = await decode_content(response)
-        return await parse_content(content, original_url=feed.url)
+        feed_info = await parse_content(content, original_url=feed.url)
     except errors.LoadError as e:
         logger.info("feed_load_error", error_code=e.feed_error_code)
         await f_domain.mark_feed_as_failed(feed.id, state=FeedState.damaged, error=e.feed_error_code)
         return None
+
+    logger.info("feed_loaded", entries_number=len(feed_info.entries))
+
+    return feed_info
 
 
 async def sync_feed_info(feed: Feed, feed_info: p_entities.FeedInfo) -> None:
@@ -211,18 +215,21 @@ async def sync_feed_info(feed: Feed, feed_info: p_entities.FeedInfo) -> None:
     await f_domain.update_feed_info(feed.id, title=feed_info.title, description=feed_info.description)
 
 
-# TODO: tests
-async def produce_entries_to_store(feed_id: uuid.UUID, entries: list[p_entities.EntryInfo]) -> list[l_entities.Entry]:
+async def store_entries(feed_id: uuid.UUID, entries: list[p_entities.EntryInfo]) -> None:
     external_ids = [entry.external_id for entry in entries]
 
     stored_entries_external_ids = await l_domain.check_stored_entries_by_external_ids(feed_id, external_ids)
 
     entries_to_store = [entry for entry in entries if entry.external_id not in stored_entries_external_ids]
 
-    return [
-        l_entities.Entry(feed_id=feed_id, id=uuid.uuid4(), cataloged_at=utils.now(), **entry_info.dict())
+    prepared_entries = [
+        l_entities.Entry(feed_id=feed_id, id=uuid.uuid4(), cataloged_at=utils.now(), **entry_info.model_dump())
         for entry_info in entries_to_store
     ]
+
+    await l_domain.catalog_entries(entries=prepared_entries)
+
+    logger.info("entries_stored", entries_number=len(prepared_entries))
 
 
 # TODO: tests
@@ -240,10 +247,8 @@ async def process_feed(feed: Feed) -> None:
 
     await sync_feed_info(feed, feed_info)
 
-    prepared_entries = await produce_entries_to_store(feed.id, feed_info.entries)
-
-    await l_domain.catalog_entries(entries=prepared_entries)
+    await store_entries(feed.id, feed_info.entries)
 
     await f_domain.mark_feed_as_loaded(feed.id)
 
-    logger.info("entries_loaded", loaded_number=len(feed_info.entries), stored_number=len(prepared_entries))
+    logger.info("entries_loaded")
