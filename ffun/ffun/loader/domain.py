@@ -24,12 +24,14 @@ logger = logging.get_module_logger()
 _user_agent: str = "unknown"
 
 
+# TODO: tests
 def initialize(user_agent: str) -> None:
     global _user_agent
 
     _user_agent = user_agent
 
 
+# TODO: tests
 async def load_content(url: str, proxy: Proxy) -> httpx.Response:  # noqa: CCR001, C901 # pylint: disable=R0912, R0915
     error_code = FeedError.network_unknown
 
@@ -130,6 +132,7 @@ async def load_content(url: str, proxy: Proxy) -> httpx.Response:  # noqa: CCR00
     return response
 
 
+# TODO: tests
 async def decode_content(response: httpx.Response) -> str:
     error_code = FeedError.parsing_base_error
 
@@ -146,6 +149,7 @@ async def decode_content(response: httpx.Response) -> str:
         raise errors.LoadError(feed_error_code=error_code) from e
 
 
+# TODO: tests
 async def parse_content(content: str, original_url: str) -> p_entities.FeedInfo:
     try:
         feed_info = parse_feed(content, original_url=original_url)
@@ -162,6 +166,7 @@ async def parse_content(content: str, original_url: str) -> p_entities.FeedInfo:
     return feed_info
 
 
+# TODO: tests
 async def load_content_with_proxies(url: str) -> httpx.Response:
     first_exception = None
 
@@ -187,6 +192,7 @@ async def detect_orphaned(feed_id: uuid.UUID) -> bool:
     return True
 
 
+# TODO: tests
 async def extract_feed_info(feed: Feed) -> p_entities.FeedInfo|None:
     try:
         response = await load_content_with_proxies(feed.url)
@@ -205,6 +211,7 @@ async def sync_feed_info(feed: Feed, feed_info: p_entities.FeedInfo) -> None:
     await f_domain.update_feed_info(feed.id, title=feed_info.title, description=feed_info.description)
 
 
+# TODO: tests
 async def produce_entries_to_store(feed_id: uuid.UUID, entries: list[p_entities.EntryInfo]) -> list[l_entities.Entry]:
     external_ids = [entry.external_id for entry in entries]
 
@@ -218,6 +225,7 @@ async def produce_entries_to_store(feed_id: uuid.UUID, entries: list[p_entities.
     ]
 
 
+# TODO: tests
 @logging.bound_function()
 async def process_feed(feed: Feed) -> None:
     logger.info("loading_feed")
