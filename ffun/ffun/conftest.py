@@ -13,6 +13,7 @@ from ffun.feeds.entities import Feed, FeedState
 from ffun.feeds.tests.fixtures import *  # noqa
 from ffun.library.entities import Entry
 from ffun.library.tests.fixtures import *  # noqa
+from ffun.users.tests.fixtures import *  # noqa
 
 
 @pytest.fixture(scope="session", autouse=True)

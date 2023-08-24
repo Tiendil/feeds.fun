@@ -179,7 +179,7 @@ async def load_content_with_proxies(url: str) -> httpx.Response:
 
 async def detect_orphaned(feed_id: uuid.UUID) -> bool:
     if await fl_domain.has_linked_users(feed_id):
-        return True
+        return False
 
     logger.info("feed_has_no_linked_users")
     await f_domain.mark_feed_as_orphaned(feed_id)
