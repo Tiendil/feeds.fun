@@ -15,7 +15,7 @@ from ..application import app
 
 
 async def run() -> None:
-    migrations.apply_all()
+    await migrations.apply_all()
 
 
 @app.command()

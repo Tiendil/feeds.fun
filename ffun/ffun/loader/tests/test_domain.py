@@ -53,6 +53,9 @@ class TestSyncFeedInfo:
     async def test_no_sync_required(self, saved_feed: f_entities.Feed, mocker: MockerFixture) -> None:
         update_feed_info = mocker.patch("ffun.feeds.domain.update_feed_info")
 
+        assert saved_feed.title
+        assert saved_feed.description
+
         feed_info = p_entities.FeedInfo(
             url=saved_feed.url, title=saved_feed.title, description=saved_feed.description, entries=[]
         )
@@ -177,6 +180,9 @@ class TestProcessFeed:
 
         entry_infos = [p_make.fake_entry_info() for _ in range(n)]
         entry_infos.sort(key=lambda e: e.title)
+
+        assert saved_feed.title
+        assert saved_feed.description
 
         feed_info = p_entities.FeedInfo(
             url=saved_feed.url, title=saved_feed.title, description=saved_feed.description, entries=entry_infos

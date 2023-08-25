@@ -54,6 +54,8 @@ async def save_feed(feed: Feed) -> uuid.UUID:
         if not result:
             raise NotImplementedError("something went wrong") from e
 
+        assert isinstance(result[0]["id"], uuid.UUID)
+
         return result[0]["id"]
 
 

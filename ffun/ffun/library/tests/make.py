@@ -18,7 +18,7 @@ def fake_body() -> str:
     return f"Entry Body: {uuid.uuid4().hex}"
 
 
-def fake_entry(loaded_feed_id: uuid.UUID, **kwargs) -> Entry:
+def fake_entry(loaded_feed_id: uuid.UUID, **kwargs: Any) -> Entry:
     return Entry(
         id=uuid.uuid4() if "id" not in kwargs else kwargs["id"],
         feed_id=loaded_feed_id,
