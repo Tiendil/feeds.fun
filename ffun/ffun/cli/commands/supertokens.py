@@ -23,8 +23,8 @@ async def run_supertokens_create_admin(email: str, password: str) -> None:
             },
             json={"email": email, "password": password},
         )
-        logger.info(response.status_code)
-        logger.info(response.json())
+        logger.info("status_code", status_code=response.status_code)
+        logger.info("response", response.json())
 
 
 @app.command()

@@ -80,7 +80,7 @@ async def prepare_requests(
     # => number of characters to send is depends on type of part of the text,
     #    where they were taken from
     while offset < len(text):
-        expected_chunk = text[offset:offset + current_chunk_size]
+        expected_chunk = text[offset : offset + current_chunk_size]
 
         expected_text_tokens = additional_tokens_per_message + len(encoding.encode(expected_chunk))
 
