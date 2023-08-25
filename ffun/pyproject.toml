@@ -166,6 +166,7 @@ ignore = [
     "S311",
     "W503",
     "CFQ004",
+    "E203",  # blake formats [x:y] with spaves
 ]
 max-line-length = 119
 
