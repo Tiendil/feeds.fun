@@ -6,13 +6,12 @@ import fastapi
 from fastapi.middleware.cors import CORSMiddleware
 
 from ffun.api import http_handlers as api_http_handlers
+from ffun.application import errors
+from ffun.application.settings import settings
 from ffun.auth import supertokens as st
 from ffun.auth.settings import AuthMode
 from ffun.auth.settings import settings as auth_settings
 from ffun.core import logging, middlewares, postgresql, sentry
-
-from . import errors
-from .settings import settings
 
 logger = logging.get_module_logger()
 

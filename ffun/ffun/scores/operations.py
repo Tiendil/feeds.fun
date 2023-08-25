@@ -5,8 +5,7 @@ import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
-
-from .entities import Rule
+from ffun.scores.entities import Rule
 
 logger = logging.get_module_logger()
 

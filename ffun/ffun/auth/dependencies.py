@@ -4,10 +4,9 @@ import fastapi
 from supertokens_python.recipe.session import SessionContainer
 from supertokens_python.recipe.session.framework.fastapi import verify_session
 
+from ffun.auth.settings import AuthMode, settings
 from ffun.users import domain as u_domain
 from ffun.users import entities as u_entities
-
-from .settings import AuthMode, settings
 
 
 async def _supertokens_user(session: SessionContainer = fastapi.Depends(verify_session())) -> u_entities.User:

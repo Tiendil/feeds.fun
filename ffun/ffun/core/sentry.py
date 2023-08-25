@@ -5,7 +5,7 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
-from .errors import Error
+from ffun.core.errors import Error
 
 
 def improve_fingerprint(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any]:

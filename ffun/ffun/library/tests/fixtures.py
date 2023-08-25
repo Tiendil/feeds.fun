@@ -3,8 +3,7 @@ import uuid
 import pytest
 
 from ffun.library.entities import Entry
-
-from . import make as l_make
+from ffun.library.tests import make as l_make
 
 
 # TODO: replace with fixture of real entry from the DB

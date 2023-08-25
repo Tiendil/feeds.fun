@@ -5,11 +5,10 @@ import uuid
 import pytest
 
 from ffun.core import utils
-
-from .. import errors
-from ..domain import get_feed, save_feeds
-from ..entities import Feed, FeedError, FeedState
-from ..operations import (
+from ffun.feeds import errors
+from ffun.feeds.domain import get_feed, save_feeds
+from ffun.feeds.entities import Feed, FeedError, FeedState
+from ffun.feeds.operations import (
     get_feeds,
     get_next_feeds_to_load,
     mark_feed_as_failed,
@@ -18,7 +17,7 @@ from ..operations import (
     save_feed,
     update_feed_info,
 )
-from . import make
+from ffun.feeds.tests import make
 
 
 class TestSaveFeed:

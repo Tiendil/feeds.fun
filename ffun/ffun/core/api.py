@@ -3,7 +3,7 @@ from typing import Any
 
 import pydantic
 
-from .entities import BaseEntity
+from ffun.core.entities import BaseEntity
 
 
 class APIStatuses(str, enum.Enum):

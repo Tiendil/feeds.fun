@@ -1,4 +1,4 @@
-from . import operations
+from ffun.feeds_links import operations
 
 add_link = operations.add_link
 remove_link = operations.remove_link

@@ -1,4 +1,4 @@
-from . import operations
+from ffun.library import operations
 
 catalog_entries = operations.catalog_entries
 get_entries_by_ids = operations.get_entries_by_ids

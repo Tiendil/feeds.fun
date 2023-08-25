@@ -1,6 +1,6 @@
 from typing import Generic, TypeVar
 
-from . import errors
+from ffun.core import errors
 
 
 class Entity:

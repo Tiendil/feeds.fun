@@ -5,11 +5,10 @@ from typing import AsyncGenerator, cast
 
 from ffun.core import logging
 from ffun.feeds_links import domain as fl_domain
+from ffun.openai import client, entities, errors
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
 from ffun.user_settings.entities import UserSettings
-
-from . import client, entities, errors
 
 logger = logging.get_module_logger()
 
@@ -74,7 +73,7 @@ def _is_entry_new_enough(entry_age: datetime.timedelta, settings: UserSettings) 
 
 
 @contextlib.asynccontextmanager
-async def api_key_for_feed_entry(
+async def api_key_for_feed_entry(  # noqa: CCR001,CFQ001
     feed_id: uuid.UUID, entry_age: datetime.timedelta, reserved_tokens: int
 ) -> AsyncGenerator[entities.APIKeyUsage, None]:
     # TODO: in general, openai module should not depends on application

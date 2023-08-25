@@ -4,7 +4,7 @@ set -e
 
 echo "run autoflake"
 
-./bin/backend-utils.sh poetry run autoflake --check .
+./bin/backend-utils.sh poetry run autoflake --check --quiet .
 
 echo "run flake8"
 

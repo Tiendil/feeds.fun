@@ -10,11 +10,10 @@ from ffun.feeds.entities import Feed, FeedError, FeedState
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
+from ffun.loader import errors
+from ffun.loader.settings import Proxy, settings
 from ffun.parsers import entities as p_entities
 from ffun.parsers.domain import parse_feed
-
-from . import errors
-from .settings import Proxy, settings
 
 logger = logging.get_module_logger()
 

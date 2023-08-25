@@ -2,8 +2,8 @@ import uuid
 
 import pytest
 
-from .. import errors
-from ..domain import get_feed
+from ffun.feeds import errors
+from ffun.feeds.domain import get_feed
 
 
 # get_feed function is checked in tests of other functions

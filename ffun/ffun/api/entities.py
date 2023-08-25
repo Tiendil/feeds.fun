@@ -70,7 +70,7 @@ class Entry(BaseEntity):
     body: str | None = None
 
     @classmethod
-    def from_internal(
+    def from_internal(  # noqa: CFQ002
         cls,
         entry: l_entities.Entry,
         tags: Iterable[str],

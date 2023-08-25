@@ -1,6 +1,6 @@
 import pytest
 
-from .. import domain, entities
+from ffun.scores import domain, entities
 
 
 def rule(score: int, tags: set[int]) -> entities.BaseRule:

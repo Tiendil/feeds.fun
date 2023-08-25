@@ -8,10 +8,9 @@ from ffun.feeds import entities as f_entities
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
+from ffun.loader.domain import detect_orphaned, process_feed, store_entries, sync_feed_info
 from ffun.parsers import entities as p_entities
 from ffun.parsers.tests import make as p_make
-
-from ..domain import detect_orphaned, process_feed, store_entries, sync_feed_info
 
 
 def assert_entriy_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:

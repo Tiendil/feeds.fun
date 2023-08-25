@@ -9,9 +9,8 @@ from supertokens_python.recipe import dashboard, emailverification, passwordless
 from supertokens_python.recipe.passwordless import ContactEmailOnlyConfig
 from supertokens_python.recipe.passwordless.types import EmailDeliveryOverrideInput, EmailTemplateVars
 
+from ffun.auth.settings import settings
 from ffun.core import logging
-
-from .settings import settings
 
 logger = logging.get_module_logger()
 

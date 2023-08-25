@@ -6,9 +6,8 @@ import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
-
-from .entities import Entry, ProcessedState
-from .settings import settings
+from ffun.library.entities import Entry, ProcessedState
+from ffun.library.settings import settings
 
 logger = logging.get_module_logger()
 

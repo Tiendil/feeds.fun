@@ -3,8 +3,10 @@ import asyncio
 import httpx
 
 from ffun.auth.settings import settings as auth_settings
+from ffun.cli.application import app
+from ffun.core import logging
 
-from ..application import app
+logger = logging.get_module_logger()
 
 
 async def run_supertokens_create_admin(email: str, password: str) -> None:
@@ -21,8 +23,8 @@ async def run_supertokens_create_admin(email: str, password: str) -> None:
             },
             json={"email": email, "password": password},
         )
-        print(response.status_code)
-        print(response.json())
+        logger.info(response.status_code)
+        logger.info(response.json())
 
 
 @app.command()

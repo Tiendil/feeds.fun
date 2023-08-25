@@ -6,14 +6,14 @@ from typing import Any
 
 from cryptography.fernet import Fernet
 
-from .settings import settings
+from ffun.user_settings.settings import settings
 
 
 class TypeId(str, enum.Enum):
     integer = "integer"
     string = "string"
     boolean = "boolean"
-    secret = "secret"
+    secret = "secret"  # noqa: S105
 
 
 class Type:

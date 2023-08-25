@@ -1,7 +1,6 @@
+from ffun.librarian.processors import base
 from ffun.library.entities import Entry
 from ffun.ontology.entities import ProcessorTag, TagCategory
-
-from . import base
 
 
 class Processor(base.Processor):

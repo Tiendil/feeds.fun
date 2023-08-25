@@ -3,16 +3,15 @@ from typing import Any
 
 from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
+from ffun.librarian import domain
+from ffun.librarian.processors.base import Processor
+from ffun.librarian.processors.domain import Processor as DomainProcessor
+from ffun.librarian.processors.native_tags import Processor as NativeTagsProcessor
+from ffun.librarian.processors.openai_chat_3_5 import Processor as OpenAIChat35Processor
+from ffun.librarian.processors.openai_chat_3_5_functions import Processor as OpenAIChat35FunctionsProcessor
+from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTitleProcessor
+from ffun.librarian.settings import settings
 from ffun.library import domain as l_domain
-
-from . import domain
-from .processors.base import Processor
-from .processors.domain import Processor as DomainProcessor
-from .processors.native_tags import Processor as NativeTagsProcessor
-from .processors.openai_chat_3_5 import Processor as OpenAIChat35Processor
-from .processors.openai_chat_3_5_functions import Processor as OpenAIChat35FunctionsProcessor
-from .processors.upper_case_title import Processor as UpperCaseTitleProcessor
-from .settings import settings
 
 logger = logging.get_module_logger()
 

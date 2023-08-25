@@ -3,8 +3,7 @@ from typing import Any
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
-
-from .entities import FeedLink
+from ffun.feeds_links.entities import FeedLink
 
 logger = logging.get_module_logger()
 

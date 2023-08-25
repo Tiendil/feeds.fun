@@ -1,7 +1,7 @@
 import uuid
 
-from . import errors, operations
-from .entities import Feed
+from ffun.feeds import errors, operations
+from ffun.feeds.entities import Feed
 
 save_feed = operations.save_feed
 update_feed_info = operations.update_feed_info

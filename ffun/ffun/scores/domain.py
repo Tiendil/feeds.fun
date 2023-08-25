@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import Sequence
 
-from . import entities, operations
+from ffun.scores import entities, operations
 
 
 def get_score_contributions(rules: Sequence[entities.BaseRule], tags: set[int]) -> tuple[int, dict[int, int]]:

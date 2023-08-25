@@ -8,8 +8,7 @@ import tiktoken
 import typer
 
 from ffun.core import logging
-
-from . import entities, errors
+from ffun.openai import entities, errors
 
 logger = logging.get_module_logger()
 
@@ -81,7 +80,7 @@ async def prepare_requests(
     # => number of characters to send is depends on type of part of the text,
     #    where they were taken from
     while offset < len(text):
-        expected_chunk = text[offset : offset + current_chunk_size]
+        expected_chunk = text[offset:offset + current_chunk_size]
 
         expected_text_tokens = additional_tokens_per_message + len(encoding.encode(expected_chunk))
 
@@ -97,7 +96,7 @@ async def prepare_requests(
     return messages
 
 
-async def request(
+async def request(  # noqa: CFQ002
     api_key: str,
     model: str,
     messages: list[dict[str, str]],
@@ -154,7 +153,7 @@ async def request(
     )
 
 
-async def multiple_requests(
+async def multiple_requests(  # noqa: CFQ002
     api_key: str,
     model: str,
     messages: list[list[dict[str, str]]],

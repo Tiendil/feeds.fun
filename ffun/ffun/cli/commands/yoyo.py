@@ -1,8 +1,7 @@
 import asyncio
 
+from ffun.cli.application import app
 from ffun.core import migrations
-
-from ..application import app
 
 
 async def run() -> None:

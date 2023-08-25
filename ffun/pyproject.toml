@@ -152,6 +152,23 @@ filterwarnings = [
     "ignore::DeprecationWarning:yoyo.migrations:34",
 ]
 
+[tool.flake8]
+ignore = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D107",
+    "D200",
+    "D400",
+    "S101",
+    "S311",
+    "W503",
+    "CFQ004",
+]
+max-line-length = 119
+
 
 [tool.autoflake]
 in_place = true

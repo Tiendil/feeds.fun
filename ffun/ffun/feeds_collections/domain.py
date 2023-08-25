@@ -1,7 +1,7 @@
 from typing import Iterable
 
-from .entities import Collection
-from .predefines import predefines
+from ffun.feeds_collections.entities import Collection
+from ffun.feeds_collections.predefines import predefines
 
 
 def get_collections() -> Iterable[Collection]:

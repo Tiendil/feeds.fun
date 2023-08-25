@@ -7,6 +7,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from ffun.api import entities
 from ffun.auth.dependencies import User
 from ffun.core import logging
 from ffun.feeds import domain as f_domain
@@ -24,8 +25,6 @@ from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 from ffun.user_settings import domain as us_domain
-
-from . import entities
 
 router = fastapi.APIRouter()
 
@@ -358,9 +357,12 @@ Greetings!
 
 Welcome to the documentation for the Feeds Fun API.
 
-Please note that the project is currently in its early stages of development, and as such, the API may undergo significant changes. We appreciate your understanding and patience during this phase.
+Please note that the project is currently in its early stages of development, and as such, the API may undergo \
+significant changes. We appreciate your understanding and patience during this phase.
 
-At present, our **documentation does not include information regarding authentication**. If you wish to utilize API from [feeds.fun](https://feeds.fun), we recommend referring to the [supertokens](https://supertokens.com/) documentation for guidance on this matter. We'll improve this aspect of the documentation in the future.
+At present, our **documentation does not include information regarding authentication**. If you wish to utilize API \
+from [feeds.fun](https://feeds.fun), we recommend referring to the [supertokens](https://supertokens.com/) \
+documentation for guidance on this matter. We'll improve this aspect of the documentation in the future.
 
 For additional resources, please visit the following links:
 
