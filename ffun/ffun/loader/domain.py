@@ -232,7 +232,6 @@ async def store_entries(feed_id: uuid.UUID, entries: list[p_entities.EntryInfo])
     logger.info("entries_stored", entries_number=len(prepared_entries))
 
 
-# TODO: tests
 @logging.bound_function()
 async def process_feed(feed: Feed) -> None:
     logger.info("loading_feed")
