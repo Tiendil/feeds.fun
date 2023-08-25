@@ -8,7 +8,6 @@ from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.ontology.entities import Tag, TagProperty, TagPropertyType
 
-
 logger = logging.get_module_logger()
 
 

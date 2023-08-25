@@ -9,7 +9,6 @@ from ffun.feeds import domain as f_domain
 from ffun.loader import domain
 from ffun.loader.settings import settings
 
-
 logger = logging.get_module_logger()
 
 

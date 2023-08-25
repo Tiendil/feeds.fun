@@ -6,7 +6,6 @@ from ffun.core.postgresql import execute
 
 from .entities import UserSettings
 
-
 logger = logging.get_module_logger()
 
 

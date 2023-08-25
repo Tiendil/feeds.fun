@@ -3,7 +3,6 @@ import uuid
 from . import errors, operations
 from .entities import Feed
 
-
 save_feed = operations.save_feed
 update_feed_info = operations.update_feed_info
 get_next_feeds_to_load = operations.get_next_feeds_to_load

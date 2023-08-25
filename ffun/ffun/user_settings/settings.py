@@ -4,7 +4,6 @@ import pydantic_settings
 from ffun.core import logging
 from ffun.core.settings import BaseSettings
 
-
 logger = logging.get_module_logger()
 
 

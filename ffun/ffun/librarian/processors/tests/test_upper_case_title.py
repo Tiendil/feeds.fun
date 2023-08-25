@@ -4,7 +4,6 @@ from ffun.librarian.processors import upper_case_title
 from ffun.library.entities import Entry
 from ffun.ontology.entities import ProcessorTag, TagCategory
 
-
 processor = upper_case_title.Processor(name="upper_case_title")
 
 expected_tag = "upper-case-title"

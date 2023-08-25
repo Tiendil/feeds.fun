@@ -11,7 +11,6 @@ from ffun.user_settings.entities import UserSettings
 
 from . import client, entities, errors
 
-
 logger = logging.get_module_logger()
 
 _keys_statuses: dict[str, entities.KeyStatus] = {}

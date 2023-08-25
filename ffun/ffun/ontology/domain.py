@@ -9,7 +9,6 @@ from ffun.tags import converters
 from . import operations
 from .entities import ProcessorTag, Tag, TagCategory, TagProperty, TagPropertyType
 
-
 _tags_cache: bidict[str, int] = bidict()
 
 

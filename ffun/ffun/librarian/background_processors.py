@@ -14,7 +14,6 @@ from .processors.openai_chat_3_5_functions import Processor as OpenAIChat35Funct
 from .processors.upper_case_title import Processor as UpperCaseTitleProcessor
 from .settings import settings
 
-
 logger = logging.get_module_logger()
 
 

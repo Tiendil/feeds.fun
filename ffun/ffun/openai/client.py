@@ -13,7 +13,6 @@ from ffun.core import logging
 
 from . import entities, errors
 
-
 logger = logging.get_module_logger()
 
 cli = typer.Typer()

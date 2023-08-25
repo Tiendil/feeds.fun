@@ -6,7 +6,6 @@ from typing import Any
 from psycopg import Connection
 from yoyo import step
 
-
 __depends__ = {"20230331_01_UsHwp-entries-table"}
 
 constraint = "l_entries_external_id_key"

@@ -27,7 +27,6 @@ from ffun.user_settings import domain as us_domain
 
 from . import entities
 
-
 router = fastapi.APIRouter()
 
 logger = logging.get_module_logger()

@@ -1,7 +1,6 @@
 from .collections import artificial_intelligence, gamedev
 from .entities import Collection
 
-
 # temporary solution to fill feeds for a new user
 #
 # - engilish feeds only (for now)

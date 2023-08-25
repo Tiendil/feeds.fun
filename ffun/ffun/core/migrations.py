@@ -11,7 +11,6 @@ from ffun.application.application import with_app
 from ffun.application.settings import settings as app_settings
 from ffun.loader import domain as l_domain
 
-
 ffun_root = ffun_path[0]
 
 

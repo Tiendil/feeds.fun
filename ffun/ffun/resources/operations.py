@@ -9,7 +9,6 @@ from ffun.core.postgresql import execute
 
 from .entities import Resource
 
-
 logger = logging.get_module_logger()
 
 

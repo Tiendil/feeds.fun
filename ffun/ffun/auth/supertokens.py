@@ -15,7 +15,6 @@ from ffun.core import logging
 
 from .settings import settings
 
-
 logger = logging.get_module_logger()
 
 

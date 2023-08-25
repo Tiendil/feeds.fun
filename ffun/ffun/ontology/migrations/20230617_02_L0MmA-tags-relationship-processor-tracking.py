@@ -6,7 +6,6 @@ from typing import Any
 from psycopg import Connection
 from yoyo import step
 
-
 __depends__ = {"20230617_01_XDdNG-rename-tags-names-to-uid"}
 
 sql_create_relatons_processors_table = """
