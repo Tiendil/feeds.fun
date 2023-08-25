@@ -86,6 +86,19 @@ pytest-mock = "3.11.*"
 isort = "5.12.*"
 black = "23.7.*"
 
+flake8 = "6.1.*"
+flake8-docstrings = "1.7.*"
+flake8-functions = "0.0.*"
+flake8-annotations-complexity = "0.0.*"
+flake8-cognitive-complexity = "0.1.*"
+flake8-pytest = "1.4.*"
+flake8-bandit = "4.1.*"
+flake8-absolute-import = "1.0.*"
+flake8-print = "5.0.*"
+flake8-pyproject = "1.2.*"
+flake8-eradicate = "1.5.*"
+autoflake = "2.2.*"
+
 # mypy fails in the latest versions
 mypy = "1.5.*"
 
@@ -138,3 +151,10 @@ filterwarnings = [
     "ignore::DeprecationWarning:feedparser.encodings:29",
     "ignore::DeprecationWarning:yoyo.migrations:34",
 ]
+
+
+[tool.autoflake]
+in_place = true
+remove_all_unused_imports = true
+remove_unused_variables = true
+recursive = true
