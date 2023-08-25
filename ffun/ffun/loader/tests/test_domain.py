@@ -29,7 +29,6 @@ def assert_entriy_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entit
 
 
 class TestDetectOrphaned:
-
     @pytest.mark.asyncio
     async def test_is_orphaned(self, saved_feed_id: uuid.UUID) -> None:
         assert await detect_orphaned(saved_feed_id)
@@ -50,15 +49,13 @@ class TestDetectOrphaned:
 
 
 class TestSyncFeedInfo:
-
     @pytest.mark.asyncio
     async def test_no_sync_required(self, saved_feed: f_entities.Feed, mocker: MockerFixture) -> None:
-        update_feed_info = mocker.patch('ffun.feeds.domain.update_feed_info')
+        update_feed_info = mocker.patch("ffun.feeds.domain.update_feed_info")
 
-        feed_info = p_entities.FeedInfo(url=saved_feed.url,
-                                        title=saved_feed.title,
-                                        description=saved_feed.description,
-                                        entries=[])
+        feed_info = p_entities.FeedInfo(
+            url=saved_feed.url, title=saved_feed.title, description=saved_feed.description, entries=[]
+        )
 
         await sync_feed_info(saved_feed, feed_info)
 
@@ -66,10 +63,9 @@ class TestSyncFeedInfo:
 
     @pytest.mark.asyncio
     async def test_sync_required(self, saved_feed: f_entities.Feed) -> None:
-        feed_info = p_entities.FeedInfo(url=saved_feed.url,
-                                        title=uuid.uuid4().hex,
-                                        description=uuid.uuid4().hex,
-                                        entries=[])
+        feed_info = p_entities.FeedInfo(
+            url=saved_feed.url, title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[]
+        )
 
         await sync_feed_info(saved_feed, feed_info)
 
@@ -80,7 +76,6 @@ class TestSyncFeedInfo:
 
 
 class TestStoreEntries:
-
     @pytest.mark.asyncio
     async def test_no_entries(self, saved_feed_id: uuid.UUID) -> None:
         await store_entries(saved_feed_id, [])
@@ -144,7 +139,6 @@ class TestStoreEntries:
 
 
 class TestProcessFeed:
-
     @pytest.mark.asyncio
     async def test_orphaned_feed(self, saved_feed: f_entities.Feed) -> None:
         assert await detect_orphaned(saved_feed.id)
@@ -160,8 +154,10 @@ class TestProcessFeed:
         assert not loaded_entries
 
     @pytest.mark.asyncio
-    async def test_can_not_extract_feed(self, internal_user_id: uuid.UUID, saved_feed: f_entities.Feed, mocker: MockerFixture) -> None:
-        extract_feed_info = mocker.patch('ffun.loader.domain.extract_feed_info', return_value=None)
+    async def test_can_not_extract_feed(
+        self, internal_user_id: uuid.UUID, saved_feed: f_entities.Feed, mocker: MockerFixture
+    ) -> None:
+        extract_feed_info = mocker.patch("ffun.loader.domain.extract_feed_info", return_value=None)
 
         await fl_domain.add_link(internal_user_id, saved_feed.id)
 
@@ -174,18 +170,19 @@ class TestProcessFeed:
         assert not loaded_entries
 
     @pytest.mark.asyncio
-    async def test_success(self, internal_user_id: uuid.UUID, saved_feed: f_entities.Feed, mocker: MockerFixture) -> None:
+    async def test_success(
+        self, internal_user_id: uuid.UUID, saved_feed: f_entities.Feed, mocker: MockerFixture
+    ) -> None:
         n = 3
 
         entry_infos = [p_make.fake_entry_info() for _ in range(n)]
         entry_infos.sort(key=lambda e: e.title)
 
-        feed_info = p_entities.FeedInfo(url=saved_feed.url,
-                                        title=saved_feed.title,
-                                        description=saved_feed.description,
-                                        entries=entry_infos)
+        feed_info = p_entities.FeedInfo(
+            url=saved_feed.url, title=saved_feed.title, description=saved_feed.description, entries=entry_infos
+        )
 
-        extract_feed_info = mocker.patch('ffun.loader.domain.extract_feed_info', return_value=feed_info)
+        extract_feed_info = mocker.patch("ffun.loader.domain.extract_feed_info", return_value=feed_info)
 
         await fl_domain.add_link(internal_user_id, saved_feed.id)
 
@@ -193,7 +190,7 @@ class TestProcessFeed:
 
         extract_feed_info.assert_called_once_with(saved_feed)
 
-        loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n+1)
+        loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 
         assert len(loaded_entries) == n
 

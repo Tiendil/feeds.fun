@@ -14,6 +14,7 @@ from ffun.loader import domain as l_domain
 
 ffun_root = ffun_path[0]
 
+
 async def apply_all() -> None:
     migrations: MigrationList = read_migrations(f"{ffun_root}/*/migrations")
 

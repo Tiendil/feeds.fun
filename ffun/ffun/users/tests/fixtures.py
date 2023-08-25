@@ -13,7 +13,7 @@ from ffun.users.entities import Service
 
 @pytest.fixture
 def external_user_id() -> str:
-    return f'external-user-{uuid.uuid4().hex}'
+    return f"external-user-{uuid.uuid4().hex}"
 
 
 @pytest_asyncio.fixture

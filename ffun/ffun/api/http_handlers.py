@@ -378,7 +378,7 @@ Thank you for your interest in the Feeds Fun API. We look forward to your contri
 async def openapi(request: fastapi.Request) -> JSONResponse:
     content = get_openapi(
         title="Feeds Fun API",
-        version=metadata.version('ffun'),
+        version=metadata.version("ffun"),
         description=swagger_description,
         routes=request.app.routes,
     )

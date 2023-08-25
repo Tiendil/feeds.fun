@@ -77,7 +77,7 @@ async def get_entries_by_ids(ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, Entry 
 
 
 async def get_entries_by_filter(
-        feeds_ids: Iterable[uuid.UUID], limit: int, period: datetime.timedelta | None = None
+    feeds_ids: Iterable[uuid.UUID], limit: int, period: datetime.timedelta | None = None
 ) -> list[Entry]:
     if period is None:
         period = datetime.timedelta(days=100 * 365)

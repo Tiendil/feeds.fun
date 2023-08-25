@@ -10,13 +10,19 @@ from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from .. import errors
 from ..domain import get_feed, save_feeds
 from ..entities import Feed, FeedError, FeedState
-from ..operations import (get_feeds, get_next_feeds_to_load, mark_feed_as_failed, mark_feed_as_loaded,
-                          mark_feed_as_orphaned, save_feed, update_feed_info)
+from ..operations import (
+    get_feeds,
+    get_next_feeds_to_load,
+    mark_feed_as_failed,
+    mark_feed_as_loaded,
+    mark_feed_as_orphaned,
+    save_feed,
+    update_feed_info,
+)
 from . import make
 
 
 class TestSaveFeed:
-
     @pytest.mark.asyncio
     async def test_new_feed(self, new_feed: Feed) -> None:
         feed_id = await save_feed(new_feed)
@@ -40,13 +46,11 @@ class TestSaveFeed:
 
 
 class TestGetNextFeedToLoad:
-
     @pytest.mark.asyncio
     async def test_find_new_feed(self, saved_feed_id: uuid.UUID) -> None:
         now = utils.now()
 
-        found_feeds = await get_next_feeds_to_load(number=100500,
-                                                   loaded_before=now)
+        found_feeds = await get_next_feeds_to_load(number=100500, loaded_before=now)
 
         feeds = {feed.id: feed for feed in found_feeds}
 
@@ -62,24 +66,19 @@ class TestGetNextFeedToLoad:
     async def test_skip_choosen_feeds(self, saved_feed_id: uuid.UUID) -> None:
         now = utils.now()
 
-        await get_next_feeds_to_load(number=100500,
-                                     loaded_before=now)
+        await get_next_feeds_to_load(number=100500, loaded_before=now)
 
-        found_feeds = await get_next_feeds_to_load(number=100500,
-                                                   loaded_before=now)
+        found_feeds = await get_next_feeds_to_load(number=100500, loaded_before=now)
 
         assert not found_feeds
 
     @pytest.mark.asyncio
     async def test_find_choosen_after_time_passes(self, saved_feed_id: uuid.UUID) -> None:
-
-        await get_next_feeds_to_load(number=100500,
-                                     loaded_before=utils.now())
+        await get_next_feeds_to_load(number=100500, loaded_before=utils.now())
 
         now = utils.now()
 
-        found_feeds = await get_next_feeds_to_load(number=100500,
-                                                   loaded_before=now)
+        found_feeds = await get_next_feeds_to_load(number=100500, loaded_before=now)
 
         feeds = {feed.id: feed for feed in found_feeds}
 
@@ -93,22 +92,18 @@ class TestGetNextFeedToLoad:
 
     @pytest.mark.asyncio
     async def test_limit(self) -> None:
-
         now = utils.now()
 
         # mark existed feeds as chosen
-        await get_next_feeds_to_load(number=100500,
-                                     loaded_before=now)
+        await get_next_feeds_to_load(number=100500, loaded_before=now)
 
         n = 10
         m = 3
 
-        feed_ids = set(await save_feeds([make.fake_feed()
-                                         for _ in range(n)]))
+        feed_ids = set(await save_feeds([make.fake_feed() for _ in range(n)]))
 
         while feed_ids:
-            found_feeds = await get_next_feeds_to_load(number=m,
-                                                       loaded_before=now)
+            found_feeds = await get_next_feeds_to_load(number=m, loaded_before=now)
 
             assert len(found_feeds) == min(m, len(feed_ids))
 
@@ -120,42 +115,32 @@ class TestGetNextFeedToLoad:
 
     @pytest.mark.asyncio
     async def test_concurent_run(self) -> None:
-
         now = utils.now()
 
         # mark existed feeds as chosen
-        await get_next_feeds_to_load(number=100500,
-                                     loaded_before=now)
+        await get_next_feeds_to_load(number=100500, loaded_before=now)
 
         n = 10
         m = 3
 
-        feed_ids = set(await save_feeds([make.fake_feed()
-                                         for _ in range(n)]))
+        feed_ids = set(await save_feeds([make.fake_feed() for _ in range(n)]))
 
-        tasks = [get_next_feeds_to_load(number=m,
-                                        loaded_before=now)
-                 for _ in range(n // m + 1)]
+        tasks = [get_next_feeds_to_load(number=m, loaded_before=now) for _ in range(n // m + 1)]
 
         results = await asyncio.gather(*tasks)
 
-        found_feed_ids = {feed.id
-                          for feeds in results
-                          for feed in feeds}
+        found_feed_ids = {feed.id for feeds in results for feed in feeds}
 
         assert found_feed_ids == feed_ids
 
 
 class TestUpdateFeedInfo:
-
     @pytest.mark.asyncio
     async def test(self, saved_feed: Feed) -> None:
         new_title = make.fake_title()
         new_description = make.fake_description()
 
-        await update_feed_info(feed_id=saved_feed.id,
-                               title=new_title,
-                               description=new_description)
+        await update_feed_info(feed_id=saved_feed.id, title=new_title, description=new_description)
 
         updated_feed = await get_feed(saved_feed.id)
 
@@ -164,7 +149,6 @@ class TestUpdateFeedInfo:
 
 
 class TestMarkFeedAsLoaded:
-
     @pytest.mark.asyncio
     async def test(self, saved_feed: Feed) -> None:
         now = utils.now()
@@ -180,9 +164,7 @@ class TestMarkFeedAsLoaded:
 
     @pytest.mark.asyncio
     async def test_reset_error_state(self, saved_feed: Feed) -> None:
-        await mark_feed_as_failed(feed_id=saved_feed.id,
-                                  state=FeedState.damaged,
-                                  error=random.choice(list(FeedError)))
+        await mark_feed_as_failed(feed_id=saved_feed.id, state=FeedState.damaged, error=random.choice(list(FeedError)))
 
         await mark_feed_as_loaded(feed_id=saved_feed.id)
 
@@ -192,14 +174,11 @@ class TestMarkFeedAsLoaded:
 
 
 class TestMarkFeedAsFailed:
-
     @pytest.mark.asyncio
     async def test(self, saved_feed: Feed) -> None:
         error = random.choice(list(FeedError))
 
-        await mark_feed_as_failed(feed_id=saved_feed.id,
-                                  state=FeedState.damaged,
-                                  error=error)
+        await mark_feed_as_failed(feed_id=saved_feed.id, state=FeedState.damaged, error=error)
 
         updated_feed = await get_feed(saved_feed.id)
 
@@ -208,7 +187,6 @@ class TestMarkFeedAsFailed:
 
 
 class TestMarkFeedAsOrphaned:
-
     @pytest.mark.asyncio
     async def test(self, saved_feed: Feed) -> None:
         await mark_feed_as_orphaned(feed_id=saved_feed.id)
@@ -223,9 +201,7 @@ class TestMarkFeedAsOrphaned:
 
     @pytest.mark.asyncio
     async def test_reset_error_state(self, saved_feed: Feed) -> None:
-        await mark_feed_as_failed(feed_id=saved_feed.id,
-                                  state=FeedState.damaged,
-                                  error=random.choice(list(FeedError)))
+        await mark_feed_as_failed(feed_id=saved_feed.id, state=FeedState.damaged, error=random.choice(list(FeedError)))
 
         await mark_feed_as_orphaned(feed_id=saved_feed.id)
 
@@ -235,10 +211,8 @@ class TestMarkFeedAsOrphaned:
 
 
 class TestGetFeeds:
-
     @pytest.mark.asyncio
     async def test(self) -> None:
-
         n = 3
 
         feed_ids = []
