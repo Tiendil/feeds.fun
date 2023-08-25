@@ -1,4 +1,3 @@
-import pydantic
 import pydantic_settings
 
 from ffun.core import logging

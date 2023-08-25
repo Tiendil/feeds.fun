@@ -1,7 +1,5 @@
 import pkg_resources
 
-import ffun
-
 from .settings import settings
 
 

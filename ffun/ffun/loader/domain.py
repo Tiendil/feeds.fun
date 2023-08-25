@@ -3,7 +3,6 @@ import uuid
 
 import anyio
 import httpx
-from structlog.contextvars import bound_contextvars
 
 from ffun.core import logging, utils
 from ffun.feeds import domain as f_domain

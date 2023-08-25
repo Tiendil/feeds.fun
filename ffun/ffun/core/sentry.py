@@ -1,6 +1,5 @@
-from typing import Any, Callable, Generic, Iterable, Optional, TypeVar
+from typing import Any
 
-import sentry_sdk
 from sentry_sdk import init as initialize_sentry
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration

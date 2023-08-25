@@ -1,5 +1,3 @@
-import datetime
-
 from ffun.core import logging
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry, ProcessedState

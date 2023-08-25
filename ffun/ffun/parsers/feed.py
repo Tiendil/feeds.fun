@@ -1,5 +1,4 @@
 import datetime
-import uuid
 from typing import Any, Iterable
 
 import feedparser

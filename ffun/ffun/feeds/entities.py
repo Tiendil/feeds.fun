@@ -3,8 +3,6 @@ import enum
 import uuid
 from typing import Any
 
-import pydantic
-
 from ffun.core.entities import BaseEntity
 
 

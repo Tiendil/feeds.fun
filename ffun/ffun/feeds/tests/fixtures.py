@@ -3,9 +3,8 @@ import uuid
 import pytest
 import pytest_asyncio
 
-from ffun.core import utils
 from ffun.feeds.domain import get_feed, mark_feed_as_loaded, save_feed
-from ffun.feeds.entities import Feed, FeedState
+from ffun.feeds.entities import Feed
 from ffun.feeds.tests import make as f_make
 
 

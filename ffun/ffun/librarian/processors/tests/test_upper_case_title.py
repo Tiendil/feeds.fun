@@ -2,7 +2,7 @@ import pytest
 
 from ffun.librarian.processors import upper_case_title
 from ffun.library.entities import Entry
-from ffun.ontology.entities import ProcessorTag, TagCategory
+from ffun.ontology.entities import ProcessorTag
 
 processor = upper_case_title.Processor(name="upper_case_title")
 

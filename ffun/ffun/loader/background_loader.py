@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import uuid
 from typing import Any
 
 from ffun.core import logging

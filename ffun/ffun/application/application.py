@@ -1,6 +1,6 @@
 import asyncio
 import contextlib
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,8 +10,6 @@ from ffun.auth import supertokens as st
 from ffun.auth.settings import AuthMode
 from ffun.auth.settings import settings as auth_settings
 from ffun.core import logging, middlewares, postgresql, sentry
-from ffun.librarian.background_processors import create_background_processors
-from ffun.loader.background_loader import FeedsLoader
 
 from . import errors
 from .settings import settings

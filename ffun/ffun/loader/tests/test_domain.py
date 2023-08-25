@@ -1,12 +1,8 @@
-import asyncio
-import random
 import uuid
 
 import pytest
 from pytest_mock import MockerFixture
 
-from ffun.core import utils
-from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
 from ffun.feeds_links import domain as fl_domain
@@ -15,7 +11,6 @@ from ffun.library import entities as l_entities
 from ffun.parsers import entities as p_entities
 from ffun.parsers.tests import make as p_make
 
-from .. import errors
 from ..domain import detect_orphaned, process_feed, store_entries, sync_feed_info
 
 

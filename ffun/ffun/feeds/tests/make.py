@@ -1,8 +1,7 @@
-import datetime
 import uuid
 from typing import Any
 
-from ffun.feeds.entities import Feed, FeedError, FeedState
+from ffun.feeds.entities import Feed, FeedState
 
 
 def fake_url() -> str:

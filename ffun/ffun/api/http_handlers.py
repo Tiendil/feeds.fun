@@ -322,7 +322,6 @@ async def api_get_user_settings(
     request: entities.GetUserSettingsRequest, user: User
 ) -> entities.GetUserSettingsResponse:
     from ffun.application.user_settings import UserSetting
-    from ffun.user_settings.values import user_settings
 
     values = await us_domain.load_settings(user_id=user.id, kinds=[int(kind) for kind in UserSetting])
 

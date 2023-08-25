@@ -2,7 +2,6 @@ import uuid
 from typing import Any, Iterable
 
 import psycopg
-from bidict import bidict
 
 from ffun.core import logging
 from ffun.core.postgresql import execute

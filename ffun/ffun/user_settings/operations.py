@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Iterable
+from typing import Iterable
 
 from ffun.core import logging
 from ffun.core.postgresql import execute

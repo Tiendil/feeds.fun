@@ -1,5 +1,3 @@
-from ffun.feeds.entities import Feed
-
 from . import feed
 from .entities import FeedInfo
 from .feedly import extract_feeds

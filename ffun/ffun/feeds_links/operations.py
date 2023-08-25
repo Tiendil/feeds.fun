@@ -1,11 +1,8 @@
-import datetime
 import uuid
 from typing import Any
 
-import psycopg
-
 from ffun.core import logging
-from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.core.postgresql import execute
 
 from .entities import FeedLink
 

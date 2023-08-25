@@ -1,8 +1,6 @@
-from urllib.parse import urlparse
-
 from ffun.core import logging
 from ffun.library.entities import Entry
-from ffun.ontology.entities import ProcessorTag, TagCategory
+from ffun.ontology.entities import ProcessorTag
 
 from . import base
 

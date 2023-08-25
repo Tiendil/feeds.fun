@@ -1,4 +1,3 @@
-import uuid
 import xml.etree.ElementTree as ET  # noqa
 from typing import Generator
 

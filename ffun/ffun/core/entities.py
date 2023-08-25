@@ -1,9 +1,6 @@
-import decimal
-import enum
 from typing import Any, TypeVar
 
 import pydantic
-from pydantic import BaseModel, Extra
 
 BASE_ENTITY = TypeVar("BASE_ENTITY", bound="BaseEntity")
 

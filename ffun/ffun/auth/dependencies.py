@@ -3,7 +3,6 @@ from typing import Annotated
 import fastapi
 from supertokens_python.recipe.session import SessionContainer
 from supertokens_python.recipe.session.framework.fastapi import verify_session
-from supertokens_python.recipe.usermetadata.asyncio import update_user_metadata
 
 from ffun.users import domain as u_domain
 from ffun.users import entities as u_entities

@@ -1,6 +1,4 @@
 import asyncio
-import datetime
-import uuid
 from typing import AsyncGenerator, Generator
 
 import fastapi
@@ -8,10 +6,8 @@ import pytest
 import pytest_asyncio
 
 from ffun.application import application
-from ffun.core import migrations, utils
-from ffun.feeds.entities import Feed, FeedState
+from ffun.core import migrations
 from ffun.feeds.tests.fixtures import *  # noqa
-from ffun.library.entities import Entry
 from ffun.library.tests.fixtures import *  # noqa
 from ffun.users.tests.fixtures import *  # noqa
 
