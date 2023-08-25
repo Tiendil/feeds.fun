@@ -5,7 +5,6 @@ import uuid
 import pytest
 
 from ffun.core import utils
-from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 
 from .. import errors
 from ..domain import get_feed, save_feeds
