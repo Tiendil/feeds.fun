@@ -1,16 +1,14 @@
-import pydantic
 import pydantic_settings
 
 from ffun.core import logging
 from ffun.core.settings import BaseSettings
-
 
 logger = logging.get_module_logger()
 
 
 # this is key for development!
 # MUST be changed in production
-_default_secret_key = "JHBC3P8q9nhDNStpfljJ7eO09XNztJ3xWKI5l6rvL-Q="
+_default_secret_key = "JHBC3P8q9nhDNStpfljJ7eO09XNztJ3xWKI5l6rvL-Q="  # noqa: S105
 
 
 class Settings(BaseSettings):

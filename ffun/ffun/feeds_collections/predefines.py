@@ -1,6 +1,5 @@
-from .collections import artificial_intelligence, gamedev
-from .entities import Collection
-
+from ffun.feeds_collections.collections import artificial_intelligence, gamedev
+from ffun.feeds_collections.entities import Collection
 
 # temporary solution to fill feeds for a new user
 #

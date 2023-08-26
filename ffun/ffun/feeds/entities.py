@@ -3,16 +3,17 @@ import enum
 import uuid
 from typing import Any
 
-import pydantic
+from ffun.core.entities import BaseEntity
 
 
 class FeedState(int, enum.Enum):
     not_loaded = 1
     loaded = 2
     damaged = 3
+    orphaned = 4
 
 
-class FeedError(int, enum.Enum):
+class FeedError(enum.IntEnum):
     network_unknown = 1000
 
     network_no_address_associated_with_hostname = 1001
@@ -38,7 +39,7 @@ class FeedError(int, enum.Enum):
     protocol_no_entries_in_feed = 3001
 
 
-class Feed(pydantic.BaseModel):
+class Feed(BaseEntity):
     id: uuid.UUID
     url: str
     state: FeedState = FeedState.not_loaded

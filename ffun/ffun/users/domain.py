@@ -1,8 +1,7 @@
 import uuid
 
-from . import errors, operations
-from .entities import Service, User
-
+from ffun.users import errors, operations
+from ffun.users.entities import Service, User
 
 add_mapping = operations.add_mapping
 get_mapping = operations.get_mapping

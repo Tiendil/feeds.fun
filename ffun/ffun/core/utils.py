@@ -3,7 +3,6 @@ import importlib
 import pathlib
 import sys
 import types
-from itertools import chain
 
 
 def now() -> datetime.datetime:

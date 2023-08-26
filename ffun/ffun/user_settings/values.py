@@ -1,6 +1,5 @@
 from ffun.core.register import Entity, Register
-
-from .types import Type
+from ffun.user_settings.types import Type
 
 
 class Value(Entity):

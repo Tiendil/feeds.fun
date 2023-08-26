@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import uuid
 from typing import Any
 
 from ffun.core import logging
@@ -8,7 +7,6 @@ from ffun.core.background_tasks import InfiniteTask
 from ffun.feeds import domain as f_domain
 from ffun.loader import domain
 from ffun.loader.settings import settings
-
 
 logger = logging.get_module_logger()
 

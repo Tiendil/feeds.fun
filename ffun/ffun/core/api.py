@@ -3,16 +3,7 @@ from typing import Any
 
 import pydantic
 
-
-class Base(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(
-        str_strip_whitespace=True,
-        validate_default=True,
-        extra="forbid",
-        frozen=True,
-        validate_assignment=True,
-        from_attributes=False,
-    )
+from ffun.core.entities import BaseEntity
 
 
 class APIStatuses(str, enum.Enum):
@@ -20,17 +11,17 @@ class APIStatuses(str, enum.Enum):
     error = "error"
 
 
-class APIRequest(Base):
+class APIRequest(BaseEntity):
     model_config = pydantic.ConfigDict(title="Request Body")
 
 
-class APISuccess(Base):
+class APISuccess(BaseEntity):
     status: APIStatuses = APIStatuses.success
 
     model_config = pydantic.ConfigDict(title="Response Body")
 
 
-class APIError(Base):
+class APIError(BaseEntity):
     status: APIStatuses = APIStatuses.error
     code: str
     message: str = "Unknown error"

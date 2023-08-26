@@ -1,9 +1,9 @@
 import uuid
 from typing import Any, Iterable
 
-from . import operations
-from .entities import UserSettings
-from .values import user_settings
+from ffun.user_settings import operations
+from ffun.user_settings.entities import UserSettings
+from ffun.user_settings.values import user_settings
 
 
 async def save_setting(user_id: uuid.UUID, kind: int, value: Any) -> None:

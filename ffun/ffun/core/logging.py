@@ -4,9 +4,8 @@ import functools
 import inspect
 import logging
 import uuid
-from typing import Any, Callable, Generic, Iterable, Optional, Protocol, TypeVar
+from typing import Any, Callable, Iterable, Protocol, TypeVar
 
-import pydantic
 import pydantic_settings
 import structlog
 from sentry_sdk import capture_message

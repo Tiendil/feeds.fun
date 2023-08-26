@@ -1,11 +1,9 @@
 import uuid
-from typing import Any, Iterable
+from typing import Iterable
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
-
-from .entities import UserSettings
-
+from ffun.user_settings.entities import UserSettings
 
 logger = logging.get_module_logger()
 

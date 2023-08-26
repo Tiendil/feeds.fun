@@ -10,7 +10,6 @@ from psycopg.rows import dict_row
 
 from ffun.core import logging
 
-
 logger = logging.get_module_logger()
 
 POOL: psycopg_pool.AsyncConnectionPool | None = None
@@ -68,7 +67,7 @@ async def pool_refresher(delay: int) -> None:
         return
 
 
-async def prepare_pool(
+async def prepare_pool(  # noqa: CFQ002
     name: str, dsn: str, min_size: int, max_size: int | None, timeout: float, num_workers: int, max_lifetime: int
 ) -> None:
     global POOL

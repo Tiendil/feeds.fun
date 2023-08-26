@@ -2,13 +2,10 @@ import uuid
 from typing import Any, Iterable
 
 import psycopg
-from bidict import bidict
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
-
-from .entities import Rule
-
+from ffun.scores.entities import Rule
 
 logger = logging.get_module_logger()
 

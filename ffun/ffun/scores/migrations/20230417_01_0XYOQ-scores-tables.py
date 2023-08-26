@@ -6,7 +6,6 @@ from typing import Any
 from psycopg import Connection
 from yoyo import step
 
-
 __depends__: set[str] = set()
 
 steps = [step("")]

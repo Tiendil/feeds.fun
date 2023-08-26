@@ -1,9 +1,7 @@
 import datetime
 
 from ffun.core import utils
-
-from . import operations
-
+from ffun.resources import operations
 
 load_resources = operations.load_resources
 try_to_reserve = operations.try_to_reserve

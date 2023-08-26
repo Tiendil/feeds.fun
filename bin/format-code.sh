@@ -1,5 +1,9 @@
 #!/usr/bin/bash
 
+echo "run autoflake"
+
+./bin/backend-utils.sh poetry run autoflake .
+
 echo "run isort"
 
 ./bin/backend-utils.sh poetry run isort .

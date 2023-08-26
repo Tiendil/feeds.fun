@@ -1,17 +1,11 @@
 import asyncio
-import contextlib
 import pprint
 
-from ffun.application import utils as app_utils
-from ffun.application import workers as app_workers
-from ffun.application.application import with_app
+from ffun.cli.application import app
 from ffun.core.utils import discover_submodules
-from ffun.loader import domain as l_domain
-
-from ..application import app
 
 
-async def run() -> None:
+async def run() -> None:  # noqa: CCR001
     settings = []
 
     for component in discover_submodules("ffun"):
@@ -20,11 +14,11 @@ async def run() -> None:
                 settings.append(module)
 
     for module in settings:
-        print("*" * 40)
-        print(f"* {module.__name__}")
-        print("*" * 40)
-        pprint.pprint(module.settings.dict())
-        print()
+        print("*" * 40)  # noqa: T201
+        print(f"* {module.__name__}")  # noqa: T201
+        print("*" * 40)  # noqa: T201
+        pprint.pprint(module.settings.dict())  # noqa: T203
+        print()  # noqa: T201
 
 
 @app.command()

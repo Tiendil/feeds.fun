@@ -7,6 +7,7 @@ import markdown
 import pydantic
 
 from ffun.core import api
+from ffun.core.entities import BaseEntity
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.feeds_links import entities as fl_entities
@@ -20,7 +21,7 @@ from ffun.user_settings import types as us_types
 from ffun.user_settings.values import user_settings
 
 
-class Marker(str, enum.Enum):
+class Marker(enum.StrEnum):
     read = "read"
 
     @classmethod
@@ -31,7 +32,7 @@ class Marker(str, enum.Enum):
         return m_entities.Marker[self.value]
 
 
-class Feed(api.Base):
+class Feed(BaseEntity):
     id: uuid.UUID
     title: str | None
     description: str | None
@@ -55,7 +56,7 @@ class Feed(api.Base):
         )
 
 
-class Entry(api.Base):
+class Entry(BaseEntity):
     id: uuid.UUID
     feed_id: uuid.UUID
     title: str
@@ -69,7 +70,7 @@ class Entry(api.Base):
     body: str | None = None
 
     @classmethod
-    def from_internal(
+    def from_internal(  # noqa: CFQ002
         cls,
         entry: l_entities.Entry,
         tags: Iterable[str],
@@ -93,7 +94,7 @@ class Entry(api.Base):
         )
 
 
-class Rule(api.Base):
+class Rule(BaseEntity):
     id: uuid.UUID
     tags: list[str]
     score: int
@@ -111,7 +112,7 @@ class Rule(api.Base):
         )
 
 
-class EntryInfo(api.Base):
+class EntryInfo(BaseEntity):
     title: str
     body: str
     url: str
@@ -122,7 +123,7 @@ class EntryInfo(api.Base):
         return cls(title=entry.title, body=entry.body, url=entry.external_url, published_at=entry.published_at)
 
 
-class FeedInfo(api.Base):
+class FeedInfo(BaseEntity):
     url: str
     title: str
     description: str
@@ -139,7 +140,7 @@ class FeedInfo(api.Base):
         )
 
 
-class TagInfo(api.Base):
+class TagInfo(BaseEntity):
     uid: str
     name: str
     link: str | None
@@ -152,7 +153,7 @@ class TagInfo(api.Base):
         return cls(uid=uid, name=tag.name, link=tag.link, categories=tag.categories)
 
 
-class UserSettingKind(str, enum.Enum):
+class UserSettingKind(enum.StrEnum):
     openai_api_key = "openai_api_key"
     openai_max_tokens_in_month = "openai_max_tokens_in_month"
     openai_hide_message_about_setting_up_key = "openai_hide_message_about_setting_up_key"
@@ -171,7 +172,7 @@ class UserSettingKind(str, enum.Enum):
         return getattr(UserSetting, self.name)  # type: ignore
 
 
-class UserSetting(api.Base):
+class UserSetting(BaseEntity):
     kind: UserSettingKind
     type: us_types.TypeId  # should not differ between front & back => no need to convert
     value: Any
@@ -197,7 +198,7 @@ class UserSetting(api.Base):
         )
 
 
-class ResourceKind(str, enum.Enum):
+class ResourceKind(enum.StrEnum):
     openai_tokens = "openai_tokens"
 
     @classmethod
@@ -239,7 +240,7 @@ class GetFeedsResponse(api.APISuccess):
 class GetLastEntriesRequest(api.APIRequest):
     period: datetime.timedelta | None = None
 
-    @pydantic.validator("period")
+    @pydantic.field_validator("period")
     def validate_period(cls, v: None | datetime.timedelta) -> None | datetime.timedelta:
         if v is not None and v.total_seconds() < 0:
             raise ValueError("period must be positive")

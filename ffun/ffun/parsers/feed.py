@@ -1,13 +1,10 @@
 import datetime
-import uuid
 from typing import Any, Iterable
 
 import feedparser
 
 from ffun.core import logging
-
-from .entities import EntryInfo, FeedInfo
-
+from ffun.parsers.entities import EntryInfo, FeedInfo
 
 logger = logging.get_module_logger()
 

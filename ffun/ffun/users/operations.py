@@ -1,15 +1,11 @@
-import datetime
 import uuid
-from typing import Any, Iterable
 
 import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
-
-from . import errors
-from .entities import Service
-
+from ffun.users import errors
+from ffun.users.entities import Service
 
 logger = logging.get_module_logger()
 

@@ -7,7 +7,6 @@ from typing import Any
 from psycopg import Connection
 from yoyo import step
 
-
 __depends__ = {"20230417_01_0XYOQ-scores-tables"}
 
 sql = """

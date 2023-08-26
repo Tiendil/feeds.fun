@@ -3,12 +3,10 @@ from typing import Iterable
 
 from bidict import bidict
 
-from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
+from ffun.core.postgresql import transaction
+from ffun.ontology import operations
+from ffun.ontology.entities import ProcessorTag, Tag, TagCategory, TagPropertyType
 from ffun.tags import converters
-
-from . import operations
-from .entities import ProcessorTag, Tag, TagCategory, TagProperty, TagPropertyType
-
 
 _tags_cache: bidict[str, int] = bidict()
 

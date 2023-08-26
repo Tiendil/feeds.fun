@@ -1,23 +1,16 @@
 import json
-import re
-import textwrap
 from typing import Any
-
-import typer
-from slugify import slugify
 
 from ffun.core import json as core_json
 from ffun.core import logging
 from ffun.core import text as core_text
 from ffun.librarian import errors
+from ffun.librarian.processors import base
 from ffun.library.entities import Entry
-from ffun.ontology.entities import ProcessorTag, TagCategory
+from ffun.ontology.entities import ProcessorTag
 from ffun.openai import client as oai_client
 from ffun.openai import errors as oai_errors
 from ffun.openai.keys_rotator import api_key_for_feed_entry
-
-from . import base
-
 
 logger = logging.get_module_logger()
 

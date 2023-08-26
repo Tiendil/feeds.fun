@@ -1,8 +1,6 @@
 import pkg_resources
 
-import ffun
-
-from .settings import settings
+from ffun.application.settings import settings
 
 
 def user_agent() -> str:

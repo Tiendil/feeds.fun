@@ -6,10 +6,8 @@ import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
-
-from .entities import Entry, ProcessedState
-from .settings import settings
-
+from ffun.library.entities import Entry, ProcessedState
+from ffun.library.settings import settings
 
 logger = logging.get_module_logger()
 
@@ -77,7 +75,7 @@ async def get_entries_by_ids(ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, Entry 
 
 
 async def get_entries_by_filter(
-    feeds_ids: Iterable[uuid.UUID], period: datetime.timedelta | None, limit: int
+    feeds_ids: Iterable[uuid.UUID], limit: int, period: datetime.timedelta | None = None
 ) -> list[Entry]:
     if period is None:
         period = datetime.timedelta(days=100 * 365)
