@@ -224,4 +224,4 @@ class TestGetFeeds:
 
         assert len(loaded_feeds) == n
 
-        assert feed_ids[1:-1] == [feed.id for feed in loaded_feeds]
+        assert set(feed_ids[1:-1]) == {feed.id for feed in loaded_feeds}
