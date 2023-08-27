@@ -10,6 +10,8 @@ Web-based news reader. Self-hosted, if it is your way.
 
 # Screenshots
 
+*GUI is still in early development steps, like the whole project. It will become more pleasurable.*
+
 - From the news for the last week, sorted by score.
 - Show only news about `game-development` from `reddit.com`.
 - Exclude news related to `employment`.
