@@ -25,6 +25,21 @@ I did not find an open-source solution that suited my needs => decided to create
 - Track read state of news you've read already.
 - A lot of other features are comming.
 
+# Screenshots
+
+- From the news for the last week, sorted by score.
+- Show only news from `reddit.com` about `game-development`.
+- Exclude news related to `employment`.
+- Hide already read news.
+
+![News filtering](docs/images/news-filtering-example.png)
+
+News tags legend:
+
+- Tags are sorted by the impact on the score.
+- Green tags have a positive impact.
+- Red tags have a negative impact.
+
 # Official site
 
 The last stable version is always available at https://feeds.fun/
