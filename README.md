@@ -12,12 +12,14 @@ Web-based news reader. Self-hosted, if it is your way.
 
 *GUI is still in the early development stage, like the whole project. It will become more pleasurable.*
 
+![News filtering](docs/images/news-filtering-example.png)
+
+Explanation:
+
 - From the news for the last week, sorted by score.
 - Show only news about `game-development` from `reddit.com`.
 - Exclude news with the tag `employment`.
 - Hide already read news.
-
-![News filtering](docs/images/news-filtering-example.png)
 
 Tags sorting for news records:
 
