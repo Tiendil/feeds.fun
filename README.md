@@ -8,11 +8,24 @@ Web-based news reader. Self-hosted, if it is your way.
 - ?????
 - Profit.
 
-# Motivation
+# Screenshots
 
-I've subscribed to a lot of news feeds and want to read only the most interesting & important from them.
+*GUI is still in the early development stage, like the whole project. It will become more pleasurable.*
 
-I did not find an open-source solution that suited my needs => decided to create my own.
+![News filtering](docs/images/news-filtering-example.png)
+
+Explanation:
+
+- From the news for the last week, sorted by score.
+- Show only news about `game-development` from `reddit.com`.
+- Exclude news with the tag `employment`.
+- Hide already read news.
+
+Tags sorting for news records:
+
+- Tags are sorted by the impact on the score.
+- Green tags have a positive impact.
+- Red tags have a negative impact.
 
 # Features
 
@@ -24,6 +37,12 @@ I did not find an open-source solution that suited my needs => decided to create
 - Sort news by score, date, etc.
 - Track read state of news you've read already.
 - A lot of other features are comming.
+
+# Motivation
+
+I've subscribed to a lot of news feeds and want to read only the most interesting & important from them.
+
+I did not find an open-source solution that suited my needs => decided to create my own.
 
 # Official site
 
