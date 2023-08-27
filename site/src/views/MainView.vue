@@ -42,7 +42,9 @@
 
     <p><i>GUI is still in the early development stage, like the whole project. It will become more pleasurable.</i></p>
 
-    <img src="/news-filtering-example.png" alt="News filtering example" />
+    <img
+      src="/news-filtering-example.png"
+      alt="News filtering example" />
 
     <p class="main-page-element"><strong>Explanation</strong></p>
 
@@ -60,7 +62,6 @@
       <li>Green tags have a positive impact.</li>
       <li>Red tags have a negative impact.</li>
     </ul>
-
   </wide-layout>
 </template>
 
@@ -86,12 +87,10 @@
 </script>
 
 <style>
-
-.main-page-element {
+  .main-page-element {
     text-align: left;
     margin-left: auto;
     max-width: 27rem;
     margin-right: auto;
-}
-
+  }
 </style>
