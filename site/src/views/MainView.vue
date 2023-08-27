@@ -17,29 +17,50 @@
 
     <h2>What is it?</h2>
 
-    <ul style="text-align: left">
-      <li>Web-based news reader. Self-hosted, if it is your way.</li>
-      <li>Automatically assigns tags to news entries.</li>
+    <p>
+      <i>Web-based news reader. Self-hosted, if it is your way.</i>
+    </p>
+
+    <ul class="main-page-element">
+      <li>Reader automatically assigns tags to news entries.</li>
       <li>You create rules to score news by tags.</li>
-      <li>Then filter and sort news how you want.</li>
+      <li>Filter and sort news how you want, to read only what you want.</li>
+      <li>?????</li>
+      <li>Profit.</li>
     </ul>
 
     <h2>You are in control</h2>
 
-    <ul style="text-align: left">
+    <ul class="main-page-element">
       <li>No black box recommendation algorithms.</li>
       <li>No "smart" reordering of your news.</li>
       <li>No ads.</li>
       <li>No selling of your data.</li>
     </ul>
 
-    <h2>What will it become?</h2>
+    <h2>Screenshots</h2>
 
-    <ul style="text-align: left">
-      <li>Will become much prettier.</li>
-      <li> Will collect not only RSS/ATOM but any news feeds, including private if you allow. </li>
-      <li>Will suggest new rules to score & new feeds, if you allow.</li>
+    <p><i>GUI is still in the early development stage, like the whole project. It will become more pleasurable.</i></p>
+
+    <img src="/news-filtering-example.png" alt="News filtering example" />
+
+    <p class="main-page-element"><strong>Explanation</strong></p>
+
+    <ul class="main-page-element">
+      <li>From the news for the last week, sorted by score.</li>
+      <li>Show only news about <code>game-development</code> from <code>reddit.com</code>.</li>
+      <li>Exclude news related to <code>employment</code>.</li>
+      <li>Hide already read news.</li>
     </ul>
+
+    <p class="main-page-element"><strong>Tags sorting for news records</strong></p>
+
+    <ul class="main-page-element">
+      <li>Tags are sorted by the impact on the score.</li>
+      <li>Green tags have a positive impact.</li>
+      <li>Red tags have a negative impact.</li>
+    </ul>
+
   </wide-layout>
 </template>
 
@@ -64,4 +85,13 @@
   }
 </script>
 
-<style></style>
+<style>
+
+.main-page-element {
+    text-align: left;
+    margin-left: auto;
+    max-width: 27rem;
+    margin-right: auto;
+}
+
+</style>

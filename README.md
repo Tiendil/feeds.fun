@@ -19,7 +19,7 @@ Web-based news reader. Self-hosted, if it is your way.
 
 ![News filtering](docs/images/news-filtering-example.png)
 
-News tags legend:
+Tags sorting for news records:
 
 - Tags are sorted by the impact on the score.
 - Green tags have a positive impact.
