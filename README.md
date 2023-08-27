@@ -8,23 +8,6 @@ Web-based news reader. Self-hosted, if it is your way.
 - ?????
 - Profit.
 
-# Motivation
-
-I've subscribed to a lot of news feeds and want to read only the most interesting & important from them.
-
-I did not find an open-source solution that suited my needs => decided to create my own.
-
-# Features
-
-- Multi-/single-user.
-- Feeds management.
-- Automatic tag assignment for every news entry.
-- Rules to score news by tags.
-- Filter news by tags: exclude them by tags, show only entries with tags.
-- Sort news by score, date, etc.
-- Track read state of news you've read already.
-- A lot of other features are comming.
-
 # Screenshots
 
 - From the news for the last week, sorted by score.
@@ -39,6 +22,23 @@ News tags legend:
 - Tags are sorted by the impact on the score.
 - Green tags have a positive impact.
 - Red tags have a negative impact.
+
+# Features
+
+- Multi-/single-user.
+- Feeds management.
+- Automatic tag assignment for every news entry.
+- Rules to score news by tags.
+- Filter news by tags: exclude them by tags, show only entries with tags.
+- Sort news by score, date, etc.
+- Track read state of news you've read already.
+- A lot of other features are comming.
+
+# Motivation
+
+I've subscribed to a lot of news feeds and want to read only the most interesting & important from them.
+
+I did not find an open-source solution that suited my needs => decided to create my own.
 
 # Official site
 
