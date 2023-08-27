@@ -11,7 +11,7 @@ Web-based news reader. Self-hosted, if it is your way.
 # Screenshots
 
 - From the news for the last week, sorted by score.
-- Show only news from `reddit.com` about `game-development`.
+- Show only news about `game-development` from `reddit.com`.
 - Exclude news related to `employment`.
 - Hide already read news.
 
