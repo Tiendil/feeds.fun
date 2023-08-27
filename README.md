@@ -14,7 +14,7 @@ Web-based news reader. Self-hosted, if it is your way.
 
 - From the news for the last week, sorted by score.
 - Show only news about `game-development` from `reddit.com`.
-- Exclude news related to `employment`.
+- Exclude news with the tag `employment`.
 - Hide already read news.
 
 ![News filtering](docs/images/news-filtering-example.png)
