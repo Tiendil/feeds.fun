@@ -41,7 +41,9 @@
       >
     </div>
 
-    <img :src="faviconUrl" style="width: 1rem; height: 1rem; vertical-align: text-bottom; margin-right: 0.25rem;"/>
+  <img :src="faviconUrl"
+       @error="handleFaviconError"
+       style="width: 1rem; height: 1rem; vertical-align: text-bottom; margin-right: 0.25rem;"/>
 
   <div style="flex-grow: 1">
       <value-url
@@ -67,9 +69,18 @@ import * as utils from "@/logic/utils";
 
   const globalSettings = useGlobalSettingsStore();
 
-  const properties = defineProps<{feed: t.Feed}>();
+const properties = defineProps<{feed: t.Feed}>();
+
+const noFavicon = ref(false);
+
+function handleFaviconError() {
+  noFavicon.value = true;
+}
 
 const faviconUrl = computed(() => {
+  if (noFavicon.value) {
+    return '/no-favicon.ico'
+  }
   return utils.faviconForUrl(properties.feed.url);
 });
 
