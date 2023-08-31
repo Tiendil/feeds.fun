@@ -14,22 +14,24 @@
         on-text="read"
         off-text="new!" />
 
-      ·
-
       <a
         href="#"
-        style="text-decoration: none"
+        style="text-decoration: none; margin-left: 0.25rem"
         v-if="!showBody"
         @click.prevent="displayBody()"
         >&#9660;</a
       >
       <a
         href="#"
-        style="text-decoration: none"
+        style="text-decoration: none; margin-left: 0.25rem"
         v-if="showBody"
         @click.prevent="showBody = false"
         >&#9650;</a
       >
+
+      <favicon-element
+        :url="entry.url"
+        style="width: 1rem; height: 1rem; vertical-align: text-bottom; margin-left: 0.25rem; margin-right: 0.25rem" />
 
       <a
         :href="entry.url"

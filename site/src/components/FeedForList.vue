@@ -41,6 +41,10 @@
       >
     </div>
 
+    <favicon-element
+      :url="feed.url"
+      style="width: 1rem; height: 1rem; vertical-align: text-bottom; margin-right: 0.25rem" />
+
     <div style="flex-grow: 1">
       <value-url
         :value="feed.url"
