@@ -29,7 +29,11 @@
         v-if="showBody"
         @click.prevent="showBody = false"
         >&#9650;</a
-      >
+                  >
+
+      ·
+
+      <img :src="faviconUrl" style="width: 1rem; height: 1rem; vertical-align: text-bottom; margin-right: 0.25rem;"/>
 
       <a
         :href="entry.url"
@@ -71,6 +75,7 @@
   import _ from "lodash";
   import {computed, ref} from "vue";
   import type * as t from "@/logic/types";
+  import * as utils from "@/logic/utils";
   import * as e from "@/logic/enums";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
@@ -90,7 +95,11 @@
     }
 
     throw new Error(`Unknown entry: ${properties.entryId}`);
-  });
+    });
+
+const faviconUrl = computed(() => {
+  return utils.faviconForUrl(entry.value.url);
+});
 
   const showBody = ref(false);
 
