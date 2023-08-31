@@ -58,13 +58,12 @@ export function compareLexicographically(a: string[], b: string[]) {
   return 0;
 }
 
-
 export function faviconForUrl(url: string): string | null {
   try {
     const parsedUrl = new URL(url);
     return `${parsedUrl.protocol}//${parsedUrl.host}/favicon.ico`;
   } catch (error) {
-    console.error('Invalid URL:', error);
+    console.error("Invalid URL:", error);
     return null;
   }
 }

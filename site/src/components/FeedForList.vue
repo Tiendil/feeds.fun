@@ -41,10 +41,11 @@
       >
     </div>
 
-  <favicon-element :url="feed.url"
-                   style="width: 1rem; height: 1rem; vertical-align: text-bottom; margin-right: 0.25rem;"/>
+    <favicon-element
+      :url="feed.url"
+      style="width: 1rem; height: 1rem; vertical-align: text-bottom; margin-right: 0.25rem" />
 
-  <div style="flex-grow: 1">
+    <div style="flex-grow: 1">
       <value-url
         :value="feed.url"
         :text="purifiedTitle" />
@@ -60,14 +61,14 @@
   import {computed, ref} from "vue";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
-import * as api from "@/logic/api";
+  import * as api from "@/logic/api";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
   const globalSettings = useGlobalSettingsStore();
 
-const properties = defineProps<{feed: t.Feed}>();
+  const properties = defineProps<{feed: t.Feed}>();
 
   const purifiedTitle = computed(() => {
     if (properties.feed.title === null) {
