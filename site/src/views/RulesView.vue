@@ -12,6 +12,10 @@
         v-model:property="globalSettings.rulesOrder" />
     </template>
 
+    <template #side-footer>
+      <tags-filter :tags="tags" />
+    </template>
+
     <rules-list
       v-if="rules"
       :rules="sortedRules" />
@@ -37,6 +41,22 @@
     globalSettings.dataVersion;
     return await api.getRules();
   }, null);
+
+const tags = computed(() => {
+  if (!rules.value) {
+    return {};
+  }
+
+  const tags: {[key: string]: number} = {};
+
+  for (const rule of rules.value) {
+    for (const tag of rule.tags) {
+      tags[tag] = (tags[tag] || 0) + 1;
+    }
+  }
+
+  return tags;
+});
 
   const sortedRules = computed(() => {
     if (!rules.value) {

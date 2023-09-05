@@ -31,9 +31,7 @@
     </template>
 
     <template #side-footer>
-      <tags-filter
-        v-if="globalSettings.mainPanelMode == e.MainPanelMode.Entries"
-        :tags="entriesStore.reportTagsCount" />
+      <tags-filter :tags="entriesStore.reportTagsCount" />
     </template>
 
     <template #main-header>
