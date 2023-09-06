@@ -382,3 +382,6 @@ export function resourceHistoryRecordFromJSON({
     reserved
   });
 }
+
+
+export type FilterTagState = "required" | "excluded" | "none";

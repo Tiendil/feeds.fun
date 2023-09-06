@@ -31,7 +31,7 @@
     </template>
 
     <template #side-footer>
-      <tags-filter :tags="entriesStore.reportTagsCount"
+      <tags-filter :tags="tagsCount"
                    @tag:stateChanged="onTagStateChanged"/>
     </template>
 
@@ -49,9 +49,10 @@
     </template>
 
     <entries-list
-      :entriesIds="entriesStore.entriesReport"
+      :entriesIds="entriesReport"
       :time-field="timeField"
       :show-tags="globalSettings.showEntriesTags"
+      :tags-count="tagsCount"
       :showFromStart="25"
       :showPerPage="25" />
   </side-panel-layout>
@@ -65,16 +66,104 @@
   import * as e from "@/logic/enums";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useEntriesStore} from "@/stores/entries";
+import _ from "lodash";
 
   const globalSettings = useGlobalSettingsStore();
-  const entriesStore = useEntriesStore();
+const entriesStore = useEntriesStore();
+
+const requiredTags = ref<{[key: string]: boolean}>({});
+const excludedTags = ref<{[key: string]: boolean}>({});
+const tagStates = ref<{[key: string]: t.FilterTagState}>({});
 
   globalSettings.mainPanelMode = e.MainPanelMode.Entries;
 
-  globalSettings.updateDataVersion();
+globalSettings.updateDataVersion();
+
+  const entriesReport = computed(() => {
+    let report = entriesStore.loadedEntriesReport.slice();
+
+    if (!globalSettings.showRead) {
+      report = report.filter((entryId) => {
+        return !entriesStore.entries[entryId].hasMarker(e.Marker.Read);
+      });
+    }
+
+    report = report.filter((entryId) => {
+      for (const tag of entriesStore.entries[entryId].tags) {
+        if (excludedTags.value[tag]) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    report = report.filter((entryId) => {
+      for (const tag of Object.keys(requiredTags.value)) {
+        if (requiredTags.value[tag] && !entriesStore.entries[entryId].tags.includes(tag)) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    report = report.sort((a: t.EntryId, b: t.EntryId) => {
+      const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
+
+      if (orderProperties === undefined) {
+        throw new Error(`Unknown order ${globalSettings.entriesOrder}`);
+      }
+
+      const field = orderProperties.orderField;
+
+      const valueA = _.get(entriesStore.entries[a], field, null);
+      const valueB = _.get(entriesStore.entries[b], field, null);
+
+      if (valueA === null && valueB === null) {
+        return 0;
+      }
+
+      if (valueA === null) {
+        return 1;
+      }
+
+      if (valueB === null) {
+        return -1;
+      }
+
+      if (valueA < valueB) {
+        return 1;
+      }
+
+      if (valueA > valueB) {
+        return -1;
+      }
+
+      return 0;
+    });
+
+    return report;
+  });
+
+  const tagsCount = computed(() => {
+    const tagsCount: {[key: string]: number} = {};
+
+    for (const entryId of entriesReport.value) {
+      const entry = entriesStore.entries[entryId];
+
+      for (const tag of entry.tags) {
+        if (tag in tagsCount) {
+          tagsCount[tag] += 1;
+        } else {
+          tagsCount[tag] = 1;
+        }
+      }
+    }
+
+    return tagsCount;
+  });
 
   const entriesNumber = computed(() => {
-    return entriesStore.entriesReport.length;
+    return entriesReport.value.length;
   });
 
   const hasEntries = computed(() => {
@@ -93,11 +182,14 @@
 
 function onTagStateChanged({tag, state}: {tag: string, state: string}) {
   if (state === "required") {
-    entriesStore.requireTag({tag: tag});
+    requiredTags.value[tag] = true;
+    excludedTags.value[tag] = false;
   } else if (state === "excluded") {
-    entriesStore.excludeTag({tag: tag});
+    excludedTags.value[tag] = true;
+    requiredTags.value[tag] = false;
   } else if (state === "none") {
-    entriesStore.resetTag({tag: tag});
+    excludedTags.value[tag] = false;
+    requiredTags.value[tag] = false;
   } else {
     throw new Error(`Unknown tag state: ${state}`);
   }

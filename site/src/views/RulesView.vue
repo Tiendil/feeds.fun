@@ -13,7 +13,8 @@
     </template>
 
     <template #side-footer>
-      <tags-filter :tags="tags" />
+  <tags-filter :tags="tags"
+               @tag:stateChanged="onTagStateChanged"/>
     </template>
 
     <rules-list
@@ -111,6 +112,18 @@ const tags = computed(() => {
 
     return sorted;
   });
+
+function onTagStateChanged({tag, state}: {tag: string, state: string}) {
+  // if (state === "required") {
+  //   entriesStore.requireTag({tag: tag});
+  // } else if (state === "excluded") {
+  //   entriesStore.excludeTag({tag: tag});
+  // } else if (state === "none") {
+  //   entriesStore.resetTag({tag: tag});
+  // } else {
+  //   throw new Error(`Unknown tag state: ${state}`);
+  // }
+}
 </script>
 
 <style></style>

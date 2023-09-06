@@ -45,6 +45,7 @@
         <br />
         <tags-list
           :tags="entry.tags"
+          :tags-count="tagsCount"
           :contributions="entry.scoreContributions" />
       </template>
 
@@ -83,7 +84,8 @@
   const properties = defineProps<{
     entryId: t.EntryId;
     timeField: string;
-    showTags: boolean;
+                                 showTags: boolean;
+    tagsCount: {[key: string]: number};
   }>();
 
   const entry = computed(() => {
