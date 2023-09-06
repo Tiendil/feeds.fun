@@ -33,16 +33,12 @@
   import * as api from "@/logic/api";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
-import * as TagsFilterState from "@/logic/tagsFilterState";
-  const tagsStates = ref<TagsFilterState.Storage>(new TagsFilterState.Storage());
+  import * as tagsFilterState from "@/logic/tagsFilterState";
+  const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
   const globalSettings = useGlobalSettingsStore();
 
   globalSettings.mainPanelMode = e.MainPanelMode.Rules;
-
-  const requiredTags = ref<{[key: string]: boolean}>({});
-  const excludedTags = ref<{[key: string]: boolean}>({});
-  const tagStates = ref<{[key: string]: t.FilterTagState}>({});
 
   const rules = computedAsync(async () => {
     // force refresh
@@ -122,7 +118,7 @@ import * as TagsFilterState from "@/logic/tagsFilterState";
     return sorted;
   });
 
-  function onTagStateChanged({tag, state}: {tag: string; state: TagsFilterState.State}) {
+  function onTagStateChanged({tag, state}: {tag: string; state: tagsFilterState.State}) {
     tagsStates.value.onTagStateChanged({tag, state});
   }
 </script>

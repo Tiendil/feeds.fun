@@ -1,7 +1,7 @@
 export type State = "required" | "excluded" | "none";
 
 interface ReturnTagsForEntity {
-  (entity: any): string[]
+  (entity: any): string[];
 }
 
 export class Storage {

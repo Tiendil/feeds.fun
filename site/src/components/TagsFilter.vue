@@ -59,13 +59,12 @@
 <script lang="ts" setup>
   import {computed, ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
-  import * as t from "@/logic/types";
-
+  import type * as tagsFilterState from "@/logic/tagsFilterState";
   const tagsStore = useTagsStore();
 
   const selectedTags = ref<{[key: string]: boolean}>({});
 
-  const tagStates = ref<{[key: string]: t.FilterTagState}>({});
+  const tagStates = ref<{[key: string]: tagsFilterState.State}>({});
 
   const emit = defineEmits(["tag:stateChanged"]);
 

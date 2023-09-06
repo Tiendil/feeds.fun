@@ -63,8 +63,9 @@
   import {computed, ref, onUnmounted, watch} from "vue";
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
-import * as TagsFilterState from "@/logic/tagsFilterState";
+  import * as tagsFilterState from "@/logic/tagsFilterState";
   import * as e from "@/logic/enums";
+  import type * as t from "@/logic/types";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useEntriesStore} from "@/stores/entries";
   import _ from "lodash";
@@ -72,7 +73,7 @@ import * as TagsFilterState from "@/logic/tagsFilterState";
   const globalSettings = useGlobalSettingsStore();
   const entriesStore = useEntriesStore();
 
-  const tagsStates = ref<TagsFilterState.Storage>(new TagsFilterState.Storage());
+  const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
   globalSettings.mainPanelMode = e.MainPanelMode.Entries;
 
@@ -163,7 +164,7 @@ import * as TagsFilterState from "@/logic/tagsFilterState";
     return orderProperties.timeField;
   });
 
-  function onTagStateChanged({tag, state}: {tag: string; state: TagsFilterState.State}) {
+  function onTagStateChanged({tag, state}: {tag: string; state: tagsFilterState.State}) {
     tagsStates.value.onTagStateChanged({tag, state});
   }
 </script>
