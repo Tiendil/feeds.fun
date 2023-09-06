@@ -62,7 +62,8 @@
   import {computed, ref, onUnmounted, watch} from "vue";
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
-  import * as t from "@/logic/types";
+import * as t from "@/logic/types";
+import * as tagsFilterState from "@/logic/tagsFilterState";
   import * as e from "@/logic/enums";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useEntriesStore} from "@/stores/entries";
@@ -71,11 +72,9 @@ import _ from "lodash";
   const globalSettings = useGlobalSettingsStore();
 const entriesStore = useEntriesStore();
 
-const requiredTags = ref<{[key: string]: boolean}>({});
-const excludedTags = ref<{[key: string]: boolean}>({});
-const tagStates = ref<{[key: string]: t.FilterTagState}>({});
+const tagsStates = ref<tagsFilterState.TagsFilterState>(new tagsFilterState.TagsFilterState());
 
-  globalSettings.mainPanelMode = e.MainPanelMode.Entries;
+globalSettings.mainPanelMode = e.MainPanelMode.Entries;
 
 globalSettings.updateDataVersion();
 
@@ -88,23 +87,7 @@ globalSettings.updateDataVersion();
       });
     }
 
-    report = report.filter((entryId) => {
-      for (const tag of entriesStore.entries[entryId].tags) {
-        if (excludedTags.value[tag]) {
-          return false;
-        }
-      }
-      return true;
-    });
-
-    report = report.filter((entryId) => {
-      for (const tag of Object.keys(requiredTags.value)) {
-        if (requiredTags.value[tag] && !entriesStore.entries[entryId].tags.includes(tag)) {
-          return false;
-        }
-      }
-      return true;
-    });
+    report = tagsStates.value.filterByTags(report, (entryId) => entriesStore.entries[entryId].tags);
 
     report = report.sort((a: t.EntryId, b: t.EntryId) => {
       const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
@@ -180,20 +163,10 @@ globalSettings.updateDataVersion();
     return orderProperties.timeField;
   });
 
-function onTagStateChanged({tag, state}: {tag: string, state: string}) {
-  if (state === "required") {
-    requiredTags.value[tag] = true;
-    excludedTags.value[tag] = false;
-  } else if (state === "excluded") {
-    excludedTags.value[tag] = true;
-    requiredTags.value[tag] = false;
-  } else if (state === "none") {
-    excludedTags.value[tag] = false;
-    requiredTags.value[tag] = false;
-  } else {
-    throw new Error(`Unknown tag state: ${state}`);
+  function onTagStateChanged({tag, state}: {tag: string, state: FilterTagState}) {
+    tagsStates.value.onTagStateChanged({tag, state});
   }
-}
+
 </script>
 
 <style></style>
