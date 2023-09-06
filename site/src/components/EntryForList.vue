@@ -84,7 +84,7 @@
   const properties = defineProps<{
     entryId: t.EntryId;
     timeField: string;
-                                 showTags: boolean;
+    showTags: boolean;
     tagsCount: {[key: string]: number};
   }>();
 

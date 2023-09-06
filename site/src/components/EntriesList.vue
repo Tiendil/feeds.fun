@@ -10,7 +10,7 @@
             :entryId="entryId"
             :time-field="timeField"
             :show-tags="showTags"
-            :tags-count="tagsCount"/>
+            :tags-count="tagsCount" />
         </li>
       </ul>
 

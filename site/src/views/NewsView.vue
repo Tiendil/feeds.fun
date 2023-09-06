@@ -31,8 +31,9 @@
     </template>
 
     <template #side-footer>
-      <tags-filter :tags="tagsCount"
-                   @tag:stateChanged="onTagStateChanged"/>
+      <tags-filter
+        :tags="tagsCount"
+        @tag:stateChanged="onTagStateChanged" />
     </template>
 
     <template #main-header>
@@ -62,21 +63,21 @@
   import {computed, ref, onUnmounted, watch} from "vue";
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
-import * as t from "@/logic/types";
-import * as tagsFilterState from "@/logic/tagsFilterState";
+  import * as t from "@/logic/types";
+  import * as tagsFilterState from "@/logic/tagsFilterState";
   import * as e from "@/logic/enums";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useEntriesStore} from "@/stores/entries";
-import _ from "lodash";
+  import _ from "lodash";
 
   const globalSettings = useGlobalSettingsStore();
-const entriesStore = useEntriesStore();
+  const entriesStore = useEntriesStore();
 
-const tagsStates = ref<tagsFilterState.TagsFilterState>(new tagsFilterState.TagsFilterState());
+  const tagsStates = ref<tagsFilterState.TagsFilterState>(new tagsFilterState.TagsFilterState());
 
-globalSettings.mainPanelMode = e.MainPanelMode.Entries;
+  globalSettings.mainPanelMode = e.MainPanelMode.Entries;
 
-globalSettings.updateDataVersion();
+  globalSettings.updateDataVersion();
 
   const entriesReport = computed(() => {
     let report = entriesStore.loadedEntriesReport.slice();
@@ -163,10 +164,9 @@ globalSettings.updateDataVersion();
     return orderProperties.timeField;
   });
 
-  function onTagStateChanged({tag, state}: {tag: string, state: FilterTagState}) {
+  function onTagStateChanged({tag, state}: {tag: string; state: FilterTagState}) {
     tagsStates.value.onTagStateChanged({tag, state});
   }
-
 </script>
 
 <style></style>

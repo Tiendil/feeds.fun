@@ -38,9 +38,11 @@
 
   const selectedTags = ref<{[key: string]: boolean}>({});
 
-const properties = defineProps<{tags: string[];
-                                contributions: {[key: string]: number};
-                                tagsCount: {[key: string]: number}}>();
+  const properties = defineProps<{
+    tags: string[];
+    contributions: {[key: string]: number};
+    tagsCount: {[key: string]: number};
+  }>();
 
   const tagsNumber = computed(() => {
     return properties.tags.length;

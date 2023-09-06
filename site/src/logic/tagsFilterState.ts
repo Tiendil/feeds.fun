@@ -9,7 +9,7 @@ export class TagsFilterState {
     this.excludedTags = {};
   }
 
-  onTagStateChanged({tag, state}: {tag: string, state: FilterTagState}) {
+  onTagStateChanged({tag, state}: {tag: string; state: FilterTagState}) {
     if (state === "required") {
       this.requiredTags[tag] = true;
       this.excludedTags[tag] = false;
@@ -25,7 +25,6 @@ export class TagsFilterState {
   }
 
   filterByTags(entities: any[], getTags: callable) {
-
     let report = entities.slice();
 
     report = report.filter((entity) => {
