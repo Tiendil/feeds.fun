@@ -35,7 +35,11 @@
 
   const globalSettings = useGlobalSettingsStore();
 
-  globalSettings.mainPanelMode = e.MainPanelMode.Rules;
+globalSettings.mainPanelMode = e.MainPanelMode.Rules;
+
+const requiredTags = ref<{[key: string]: boolean}>({});
+const excludedTags = ref<{[key: string]: boolean}>({});
+const tagStates = ref<{[key: string]: t.FilterTagState}>({});
 
   const rules = computedAsync(async () => {
     // force refresh
@@ -64,6 +68,26 @@ const tags = computed(() => {
       return null;
     }
 
+    let sorted = rules.value.slice();
+
+    sorted = sorted.filter((rule) => {
+      for (const tag of rule.tags) {
+        if (excludedTags.value[tag]) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    sorted = sorted.filter((rule) => {
+      for (const tag of Object.keys(requiredTags.value)) {
+        if (requiredTags.value[tag] && !rule.tags.includes(tag)) {
+          return false;
+        }
+      }
+      return true;
+    });
+
     const orderProperties = e.RulesOrderProperties.get(globalSettings.rulesOrder);
 
     if (!orderProperties) {
@@ -76,8 +100,6 @@ const tags = computed(() => {
     if (direction === undefined) {
       throw new Error(`Invalid order direction: ${orderProperties.orderDirection}`);
     }
-
-    let sorted = rules.value.slice();
 
     sorted = sorted.sort((a: t.Rule, b: t.Rule) => {
       if (globalSettings.rulesOrder === e.RulesOrder.Tags) {
@@ -114,15 +136,18 @@ const tags = computed(() => {
   });
 
 function onTagStateChanged({tag, state}: {tag: string, state: string}) {
-  // if (state === "required") {
-  //   entriesStore.requireTag({tag: tag});
-  // } else if (state === "excluded") {
-  //   entriesStore.excludeTag({tag: tag});
-  // } else if (state === "none") {
-  //   entriesStore.resetTag({tag: tag});
-  // } else {
-  //   throw new Error(`Unknown tag state: ${state}`);
-  // }
+  if (state === "required") {
+    requiredTags.value[tag] = true;
+    excludedTags.value[tag] = false;
+  } else if (state === "excluded") {
+    excludedTags.value[tag] = true;
+    requiredTags.value[tag] = false;
+  } else if (state === "none") {
+    excludedTags.value[tag] = false;
+    requiredTags.value[tag] = false;
+  } else {
+    throw new Error(`Unknown tag state: ${state}`);
+  }
 }
 </script>
 
