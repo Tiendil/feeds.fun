@@ -32,6 +32,9 @@
   import * as api from "@/logic/api";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
+import * as tagsFilterState from "@/logic/tagsFilterState";
+
+const tagsStates = ref<tagsFilterState.TagsFilterState>(new tagsFilterState.TagsFilterState());
 
   const globalSettings = useGlobalSettingsStore();
 
@@ -70,23 +73,7 @@ const tags = computed(() => {
 
     let sorted = rules.value.slice();
 
-    sorted = sorted.filter((rule) => {
-      for (const tag of rule.tags) {
-        if (excludedTags.value[tag]) {
-          return false;
-        }
-      }
-      return true;
-    });
-
-    sorted = sorted.filter((rule) => {
-      for (const tag of Object.keys(requiredTags.value)) {
-        if (requiredTags.value[tag] && !rule.tags.includes(tag)) {
-          return false;
-        }
-      }
-      return true;
-    });
+    sorted = tagsStates.value.filterByTags(sorted, (rule) => rule.tags);
 
     const orderProperties = e.RulesOrderProperties.get(globalSettings.rulesOrder);
 
@@ -136,18 +123,7 @@ const tags = computed(() => {
   });
 
 function onTagStateChanged({tag, state}: {tag: string, state: string}) {
-  if (state === "required") {
-    requiredTags.value[tag] = true;
-    excludedTags.value[tag] = false;
-  } else if (state === "excluded") {
-    excludedTags.value[tag] = true;
-    requiredTags.value[tag] = false;
-  } else if (state === "none") {
-    excludedTags.value[tag] = false;
-    requiredTags.value[tag] = false;
-  } else {
-    throw new Error(`Unknown tag state: ${state}`);
-  }
+    tagsStates.value.onTagStateChanged({tag, state});
 }
 </script>
 
