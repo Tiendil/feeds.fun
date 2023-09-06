@@ -31,7 +31,8 @@
     </template>
 
     <template #side-footer>
-      <tags-filter :tags="entriesStore.reportTagsCount" />
+      <tags-filter :tags="entriesStore.reportTagsCount"
+                   @tag:stateChanged="onTagStateChanged"/>
     </template>
 
     <template #main-header>
@@ -89,6 +90,18 @@
 
     return orderProperties.timeField;
   });
+
+function onTagStateChanged({tag, state}: {tag: string, state: string}) {
+  if (state === "required") {
+    entriesStore.requireTag({tag: tag});
+  } else if (state === "excluded") {
+    entriesStore.excludeTag({tag: tag});
+  } else if (state === "none") {
+    entriesStore.resetTag({tag: tag});
+  } else {
+    throw new Error(`Unknown tag state: ${state}`);
+  }
+}
 </script>
 
 <style></style>
