@@ -1,6 +1,10 @@
-export type FilterTagState = "required" | "excluded" | "none";
+export type State = "required" | "excluded" | "none";
 
-export class TagsFilterState {
+interface ReturnTagsForEntity {
+  (entity: any): string[]
+}
+
+export class Storage {
   requiredTags: {[key: string]: boolean};
   excludedTags: {[key: string]: boolean};
 
@@ -9,7 +13,7 @@ export class TagsFilterState {
     this.excludedTags = {};
   }
 
-  onTagStateChanged({tag, state}: {tag: string; state: FilterTagState}) {
+  onTagStateChanged({tag, state}: {tag: string; state: State}) {
     if (state === "required") {
       this.requiredTags[tag] = true;
       this.excludedTags[tag] = false;
@@ -24,7 +28,7 @@ export class TagsFilterState {
     }
   }
 
-  filterByTags(entities: any[], getTags: callable) {
+  filterByTags(entities: any[], getTags: ReturnTagsForEntity) {
     let report = entities.slice();
 
     report = report.filter((entity) => {

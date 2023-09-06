@@ -33,9 +33,8 @@
   import * as api from "@/logic/api";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
-  import * as tagsFilterState from "@/logic/tagsFilterState";
-
-  const tagsStates = ref<tagsFilterState.TagsFilterState>(new tagsFilterState.TagsFilterState());
+import * as TagsFilterState from "@/logic/tagsFilterState";
+  const tagsStates = ref<TagsFilterState.Storage>(new TagsFilterState.Storage());
 
   const globalSettings = useGlobalSettingsStore();
 
@@ -123,7 +122,7 @@
     return sorted;
   });
 
-  function onTagStateChanged({tag, state}: {tag: string; state: string}) {
+  function onTagStateChanged({tag, state}: {tag: string; state: TagsFilterState.State}) {
     tagsStates.value.onTagStateChanged({tag, state});
   }
 </script>
