@@ -10,7 +10,7 @@
       :key="tag"
       :uid="tag"
       :mode="tagMode(tag)"
-      :count="entriesStore.reportTagsCount[tag]"
+      :count="tagsCount[tag]"
       count-mode="tooltip"
       @tag:clicked="onTagClicked" />
 
@@ -32,16 +32,17 @@
 
 <script lang="ts" setup>
   import {computed, ref} from "vue";
-  import {useEntriesStore} from "@/stores/entries";
-
-  const entriesStore = useEntriesStore();
 
   const showAll = ref(false);
   const showLimit = ref(5);
 
   const selectedTags = ref<{[key: string]: boolean}>({});
 
-  const properties = defineProps<{tags: string[]; contributions: {[key: string]: number}}>();
+  const properties = defineProps<{
+    tags: string[];
+    contributions: {[key: string]: number};
+    tagsCount: {[key: string]: number};
+  }>();
 
   const tagsNumber = computed(() => {
     return properties.tags.length;
@@ -100,8 +101,8 @@
         return 1;
       }
 
-      const aCount = entriesStore.reportTagsCount[a];
-      const bCount = entriesStore.reportTagsCount[b];
+      const aCount = properties.tagsCount[a];
+      const bCount = properties.tagsCount[b];
 
       if (aCount > bCount) {
         return -1;

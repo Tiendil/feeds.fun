@@ -3,14 +3,25 @@
     <ul
       v-if="displayedSelectedTags.length > 0"
       style="list-style: none; padding: 0; margin: 0">
-      <tags-filter-element
+      <li
+        class="filter-element"
         v-for="tag of displayedSelectedTags"
-        :key="tag"
-        :tag="tag"
-        :count="tags[tag] ?? 0"
-        :selected="true"
-        @tag:selected="onTagSelected"
-        @tag:deselected="onTagDeselected" />
+        :key="tag">
+        <ffun-tag
+          :uid="tag"
+          :count="tags[tag] ?? 0"
+          count-mode="no"
+          :mode="tagStates[tag]"
+          @tag:clicked="onTagClicked">
+          <template #start>
+            <a
+              href="#"
+              @click.prevent="deselect(tag)"
+              >[X]</a
+            >
+          </template>
+        </ffun-tag>
+      </li>
     </ul>
 
     <input
@@ -21,14 +32,17 @@
     <ul
       v-if="displayedTags.length > 0"
       style="list-style: none; padding: 0; margin: 0">
-      <tags-filter-element
+      <li
+        class="filter-element"
         v-for="tag of displayedTags"
-        :key="tag"
-        :tag="tag"
-        :count="tags[tag]"
-        :selected="false"
-        @tag:selected="onTagSelected"
-        @tag:deselected="onTagDeselected" />
+        :key="tag">
+        <ffun-tag
+          :uid="tag"
+          :count="tags[tag]"
+          count-mode="prefix"
+          :mode="null"
+          @tag:clicked="onTagClicked" />
+      </li>
     </ul>
 
     <hr />
@@ -45,10 +59,14 @@
 <script lang="ts" setup>
   import {computed, ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
-
+  import type * as tagsFilterState from "@/logic/tagsFilterState";
   const tagsStore = useTagsStore();
 
   const selectedTags = ref<{[key: string]: boolean}>({});
+
+  const tagStates = ref<{[key: string]: tagsFilterState.State}>({});
+
+  const emit = defineEmits(["tag:stateChanged"]);
 
   const properties = defineProps<{tags: {[key: string]: number}}>();
 
@@ -128,12 +146,30 @@
     return values;
   });
 
-  function onTagSelected(tag: string) {
-    selectedTags.value[tag] = true;
+  function onTagClicked(tag: string) {
+    const state = tagStates.value[tag] || "none";
+
+    if (state === "none") {
+      tagStates.value[tag] = "required";
+      selectedTags.value[tag] = true;
+    } else if (state === "required") {
+      tagStates.value[tag] = "excluded";
+      selectedTags.value[tag] = true;
+    } else if (state === "excluded") {
+      tagStates.value[tag] = "required";
+      selectedTags.value[tag] = true;
+    } else {
+      throw new Error(`Unknown tag state: ${state}`);
+    }
+
+    emit("tag:stateChanged", {tag: tag, state: tagStates.value[tag]});
   }
 
-  function onTagDeselected(tag: string) {
+  function deselect(tag: string) {
     selectedTags.value[tag] = false;
+    tagStates.value[tag] = "none";
+
+    emit("tag:stateChanged", {tag: tag, state: tagStates.value[tag]});
   }
 </script>
 

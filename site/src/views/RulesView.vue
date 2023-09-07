@@ -12,6 +12,12 @@
         v-model:property="globalSettings.rulesOrder" />
     </template>
 
+    <template #side-footer>
+      <tags-filter
+        :tags="tags"
+        @tag:stateChanged="onTagStateChanged" />
+    </template>
+
     <rules-list
       v-if="rules"
       :rules="sortedRules" />
@@ -27,6 +33,8 @@
   import * as api from "@/logic/api";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
+  import * as tagsFilterState from "@/logic/tagsFilterState";
+  const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
   const globalSettings = useGlobalSettingsStore();
 
@@ -38,10 +46,30 @@
     return await api.getRules();
   }, null);
 
+  const tags = computed(() => {
+    if (!rules.value) {
+      return {};
+    }
+
+    const tags: {[key: string]: number} = {};
+
+    for (const rule of rules.value) {
+      for (const tag of rule.tags) {
+        tags[tag] = (tags[tag] || 0) + 1;
+      }
+    }
+
+    return tags;
+  });
+
   const sortedRules = computed(() => {
     if (!rules.value) {
       return null;
     }
+
+    let sorted = rules.value.slice();
+
+    sorted = tagsStates.value.filterByTags(sorted, (rule) => rule.tags);
 
     const orderProperties = e.RulesOrderProperties.get(globalSettings.rulesOrder);
 
@@ -55,8 +83,6 @@
     if (direction === undefined) {
       throw new Error(`Invalid order direction: ${orderProperties.orderDirection}`);
     }
-
-    let sorted = rules.value.slice();
 
     sorted = sorted.sort((a: t.Rule, b: t.Rule) => {
       if (globalSettings.rulesOrder === e.RulesOrder.Tags) {
@@ -91,6 +117,10 @@
 
     return sorted;
   });
+
+  function onTagStateChanged({tag, state}: {tag: string; state: tagsFilterState.State}) {
+    tagsStates.value.onTagStateChanged({tag, state});
+  }
 </script>
 
 <style></style>

@@ -9,7 +9,8 @@
           <entry-for-list
             :entryId="entryId"
             :time-field="timeField"
-            :show-tags="showTags" />
+            :show-tags="showTags"
+            :tags-count="tagsCount" />
         </li>
       </ul>
 
@@ -36,6 +37,7 @@
     showTags: boolean;
     showFromStart: number;
     showPerPage: number;
+    tagsCount: {[key: string]: number};
   }>();
 
   const showEntries = ref(properties.showFromStart);

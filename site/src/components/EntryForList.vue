@@ -45,6 +45,7 @@
         <br />
         <tags-list
           :tags="entry.tags"
+          :tags-count="tagsCount"
           :contributions="entry.scoreContributions" />
       </template>
 
@@ -84,6 +85,7 @@
     entryId: t.EntryId;
     timeField: string;
     showTags: boolean;
+    tagsCount: {[key: string]: number};
   }>();
 
   const entry = computed(() => {

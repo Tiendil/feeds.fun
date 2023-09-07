@@ -15,9 +15,6 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   const entries = ref<{[key: t.EntryId]: t.Entry}>({});
   const requestedEntries = ref<{[key: t.EntryId]: boolean}>({});
 
-  const requiredTags = ref<{[key: string]: boolean}>({});
-  const excludedTags = ref<{[key: string]: boolean}>({});
-
   const firstTimeEntriesLoading = ref(true);
 
   function registerEntry(entry: t.Entry) {
@@ -57,89 +54,6 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     return report;
   }, []);
-
-  const entriesReport = computedAsync(async () => {
-    let report = loadedEntriesReport.value.slice();
-
-    if (!globalSettings.showRead) {
-      report = report.filter((entryId) => {
-        return !entries.value[entryId].hasMarker(e.Marker.Read);
-      });
-    }
-
-    report = report.filter((entryId) => {
-      for (const tag of entries.value[entryId].tags) {
-        if (excludedTags.value[tag]) {
-          return false;
-        }
-      }
-      return true;
-    });
-
-    report = report.filter((entryId) => {
-      for (const tag of Object.keys(requiredTags.value)) {
-        if (requiredTags.value[tag] && !entries.value[entryId].tags.includes(tag)) {
-          return false;
-        }
-      }
-      return true;
-    });
-
-    report = report.sort((a: t.EntryId, b: t.EntryId) => {
-      const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
-
-      if (orderProperties === undefined) {
-        throw new Error(`Unknown order ${globalSettings.entriesOrder}`);
-      }
-
-      const field = orderProperties.orderField;
-
-      const valueA = _.get(entries.value[a], field, null);
-      const valueB = _.get(entries.value[b], field, null);
-
-      if (valueA === null && valueB === null) {
-        return 0;
-      }
-
-      if (valueA === null) {
-        return 1;
-      }
-
-      if (valueB === null) {
-        return -1;
-      }
-
-      if (valueA < valueB) {
-        return 1;
-      }
-
-      if (valueA > valueB) {
-        return -1;
-      }
-
-      return 0;
-    });
-
-    return report;
-  }, []);
-
-  const reportTagsCount = computed(() => {
-    const tagsCount: {[key: string]: number} = {};
-
-    for (const entryId of entriesReport.value) {
-      const entry = entries.value[entryId];
-
-      for (const tag of entry.tags) {
-        if (tag in tagsCount) {
-          tagsCount[tag] += 1;
-        } else {
-          tagsCount[tag] = 1;
-        }
-      }
-    }
-
-    return tagsCount;
-  });
 
   function requestFullEntry({entryId}: {entryId: t.EntryId}) {
     if (entryId in entries.value && entries.value[entryId].body !== null) {
@@ -185,33 +99,12 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     }
   }
 
-  function requireTag({tag}: {tag: string}) {
-    requiredTags.value[tag] = true;
-    excludedTags.value[tag] = false;
-  }
-
-  function excludeTag({tag}: {tag: string}) {
-    excludedTags.value[tag] = true;
-    requiredTags.value[tag] = false;
-  }
-
-  function resetTag({tag}: {tag: string}) {
-    excludedTags.value[tag] = false;
-    requiredTags.value[tag] = false;
-  }
-
   return {
     entries,
-    entriesReport,
-    reportTagsCount,
     requestFullEntry,
     setMarker,
     removeMarker,
-    requireTag,
-    excludeTag,
-    resetTag,
-    requiredTags,
-    excludedTags,
-    firstTimeEntriesLoading
+    firstTimeEntriesLoading,
+    loadedEntriesReport
   };
 });
