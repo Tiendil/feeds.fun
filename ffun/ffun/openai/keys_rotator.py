@@ -91,7 +91,9 @@ async def api_key_for_feed_entry(  # noqa: CCR001,CFQ001
 
     # find all users for collections
     if await fc_domain.is_feed_in_collections(feed_id):
-        collections_user_ids = await us_domain.get_users_with_setting(UserSetting.openai_allow_use_key_for_collections, True)
+        collections_user_ids = await us_domain.get_users_with_setting(
+            UserSetting.openai_allow_use_key_for_collections, True
+        )
         user_ids.extend(collections_user_ids)
 
     log.info("users_for_feed", user_ids=user_ids)

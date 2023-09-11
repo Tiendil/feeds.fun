@@ -102,6 +102,6 @@ user_settings.add(
         name="Allow using OpenAI key for feeds in standard collections",
         type=types.Boolean(),
         default=False,
-        description="Enable if you want to help new users by providing good tags for feeds in standard collections. If you enable this your OpenAI key will be used for feeds in collections the same way as for your feeds."
+        description="Enable if you want to help new users by providing good tags for feeds in standard collections. If you enable this your OpenAI key will be used for feeds in collections the same way as for your feeds.",
     )
 )
