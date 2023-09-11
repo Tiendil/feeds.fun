@@ -7,14 +7,10 @@ import pytest
 
 from ffun.core import utils
 from ffun.user_settings import operations
+from ffun.user_settings.tests import asserts
 
 _kind_1 = 1234
 _kind_2 = 5678
-
-
-async def assert_has_setting(user_id: uuid.UUID, values: dict[int, str]) -> None:
-    settings = await operations.load_settings_for_users([user_id], list(values.keys()))
-    assert settings[user_id] == values
 
 
 class TestSave:
@@ -23,14 +19,14 @@ class TestSave:
     async def test_save_load(self, internal_user_id: uuid.UUID) -> None:
         for value in ('abc', 'def'):
             await operations.save_setting(internal_user_id, _kind_1, value)
-            await assert_has_setting(internal_user_id, {_kind_1: value})
+            await asserts.has_settings(internal_user_id, {_kind_1: value})
 
     @pytest.mark.asyncio
     async def test_save_load_multiple_kinds(self, internal_user_id: uuid.UUID) -> None:
         await operations.save_setting(internal_user_id, _kind_1, 'abc')
         await operations.save_setting(internal_user_id, _kind_2, 'def')
 
-        await assert_has_setting(internal_user_id, {_kind_1: 'abc',
+        await asserts.has_settings(internal_user_id, {_kind_1: 'abc',
                                                     _kind_2: 'def'})
 
     @pytest.mark.asyncio
@@ -38,8 +34,8 @@ class TestSave:
         await operations.save_setting(internal_user_id, _kind_1, 'abc')
         await operations.save_setting(another_internal_user_id, _kind_1, 'def')
 
-        await assert_has_setting(internal_user_id, {_kind_1:  'abc'})
-        await assert_has_setting(another_internal_user_id, {_kind_1: 'def'})
+        await asserts.has_settings(internal_user_id, {_kind_1:  'abc'})
+        await asserts.has_settings(another_internal_user_id, {_kind_1: 'def'})
 
 
 class TestLoadSettingsForUsers:

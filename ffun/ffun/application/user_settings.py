@@ -5,7 +5,7 @@ from ffun.user_settings import types
 from ffun.user_settings.values import Value, user_settings
 
 
-class UserSetting(int, enum.Enum):
+class UserSetting(enum.IntEnum):
     openai_api_key = 1
     openai_max_tokens_in_month = 2
     openai_hide_message_about_setting_up_key = 3
