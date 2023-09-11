@@ -77,6 +77,16 @@ class TestGetUsersWithSetting:
         assert await operations.get_users_with_setting(_kind_1, uuid.uuid4().hex) == set()
 
     @pytest.mark.asyncio
+    async def test_ignore_value_with_wrong_kind(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+        value_1 = uuid.uuid4().hex
+
+        await operations.save_setting(internal_user_id, _kind_1, value_1)
+        await operations.save_setting(another_internal_user_id, _kind_2, value_1)
+
+        assert await operations.get_users_with_setting(_kind_1, value_1) == {internal_user_id}
+        assert await operations.get_users_with_setting(_kind_2, value_1) == {another_internal_user_id}
+
+    @pytest.mark.asyncio
     async def test_has_users(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
         value_1 = uuid.uuid4().hex
         value_2 = uuid.uuid4().hex
