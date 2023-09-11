@@ -4,6 +4,7 @@ import uuid
 from typing import AsyncGenerator, cast
 
 from ffun.core import logging
+from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.openai import client, entities, errors
 from ffun.resources import domain as r_domain
@@ -87,6 +88,11 @@ async def api_key_for_feed_entry(  # noqa: CCR001,CFQ001
 
     # find all users who read feed
     user_ids = await fl_domain.get_linked_users(feed_id)
+
+    # find all users for collections
+    if await fc_domain.is_feed_in_collections(feed_id):
+        collections_user_ids = await us_domain.get_users_with_setting(UserSetting.openai_allow_use_key_for_collections, True)
+        user_ids.extend(collections_user_ids)
 
     log.info("users_for_feed", user_ids=user_ids)
 

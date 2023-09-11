@@ -10,6 +10,7 @@ class UserSetting(int, enum.Enum):
     openai_max_tokens_in_month = 2
     openai_hide_message_about_setting_up_key = 3
     openai_process_entries_not_older_than = 4
+    openai_allow_use_key_for_collections = 5
 
 
 description_openai_api_key = """
@@ -92,5 +93,15 @@ user_settings.add(
         type=types.Integer(),
         default=3,
         description=description_openai_process_entries_not_older_than,
+    )
+)
+
+user_settings.add(
+    Value(
+        key=UserSetting.openai_allow_use_key_for_collections,
+        name="Allow using OpenAI key for feeds in standard collections",
+        type=types.Boolean(),
+        default=False,
+        description="Enable if you want to help new users by providing good tags for feeds in standard collections. If you enable this your OpenAI key will be used for feeds in collections the same way as for your feeds."
     )
 )

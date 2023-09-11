@@ -53,3 +53,16 @@ async def load_settings(user_id: uuid.UUID, kinds: Iterable[int]) -> UserSetting
     values = await load_settings_for_users([user_id], kinds)
 
     return values[user_id] if user_id in values else {}
+
+
+async def get_users_with_setting(kind: int, value: str) -> set[uuid.UUID]:
+    sql = """
+        SELECT user_id
+        FROM us_settings
+        WHERE kind = %(kind)s
+        AND value = %(value)s
+    """
+
+    result = await execute(sql, {"kind": kind, "value": value})
+
+    return {row["user_id"] for row in result}
