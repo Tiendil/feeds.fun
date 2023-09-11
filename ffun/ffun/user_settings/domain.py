@@ -26,9 +26,11 @@ def _full_settings(values: dict[int, Any], kinds: Iterable[int]) -> UserSettings
 
 
 async def load_settings(user_id: uuid.UUID, kinds: Iterable[int]) -> UserSettings:
-    values = await operations.load_settings(user_id, kinds)
+    values = await operations.load_settings_for_users([user_id], kinds)
 
-    return _full_settings(values, kinds)
+    user_settings = values[user_id] if user_id in values else {}
+
+    return _full_settings(user_settings, kinds)
 
 
 async def load_settings_for_users(
