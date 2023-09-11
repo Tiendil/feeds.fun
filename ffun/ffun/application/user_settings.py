@@ -55,6 +55,11 @@ To prevent this, we allow limiting the age of news to be processed with your Ope
 If you want to help us and tag everything, you can set this value to a big number, like 100500.
 """
 
+description_openai_allow_use_key_for_collections = """
+Enable if you want to help new users by providing good tags for feeds in standard collections. \
+If you enable this your OpenAI key will be used for feeds in collections the same way as for your feeds."
+"""
+
 
 user_settings.add(
     Value(
@@ -102,6 +107,6 @@ user_settings.add(
         name="Allow using OpenAI key for feeds in standard collections",
         type=types.Boolean(),
         default=False,
-        description="Enable if you want to help new users by providing good tags for feeds in standard collections. If you enable this your OpenAI key will be used for feeds in collections the same way as for your feeds.",
+        description=description_openai_allow_use_key_for_collections,
     )
 )

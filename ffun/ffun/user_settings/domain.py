@@ -43,7 +43,7 @@ async def load_settings_for_users(
     return {user_id: _full_settings(user_values, kinds, register=register) for user_id, user_values in values.items()}
 
 
-async def get_users_with_setting(kind: int, value: Any, register: SettingsRegister = user_settings) -> list[uuid.UUID]:
+async def get_users_with_setting(kind: int, value: Any, register: SettingsRegister = user_settings) -> set[uuid.UUID]:
     value_to_find = register.get(kind).type.serialize(value)
 
     return await operations.get_users_with_setting(kind, value_to_find)

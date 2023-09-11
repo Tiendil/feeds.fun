@@ -1,5 +1,6 @@
 import enum
 import uuid
+from typing import Any
 
 import pytest
 
@@ -22,7 +23,7 @@ class Setting(enum.IntEnum):
 _integer_default = 123
 _string_default = "abc"
 _boolean_default = True
-_secret_default = "secret"
+_secret_default = "secret"  # noqa: S105
 
 
 register: SettingsRegister = Register()
@@ -62,8 +63,8 @@ class TestSave:
 
 
 class TestFullSettings:
-    def test(self):
-        values = {Setting.kind_integer: "666", Setting.kind_boolean: "false"}
+    def test(self) -> None:
+        values: dict[int, Any] = {Setting.kind_integer: "666", Setting.kind_boolean: "false"}
 
         settings = domain._full_settings(values, kinds=list(Setting), register=register)
 
