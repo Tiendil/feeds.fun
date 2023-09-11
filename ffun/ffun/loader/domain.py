@@ -233,6 +233,7 @@ async def store_entries(feed_id: uuid.UUID, entries: list[p_entities.EntryInfo])
 async def process_feed(feed: Feed) -> None:
     logger.info("loading_feed")
 
+    # TODO: skip for collections
     if await detect_orphaned(feed.id):
         return
 
