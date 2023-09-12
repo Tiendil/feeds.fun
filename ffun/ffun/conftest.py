@@ -8,6 +8,7 @@ import pytest_asyncio
 from ffun.application import application
 from ffun.core import migrations
 from ffun.feeds.tests.fixtures import *  # noqa
+from ffun.feeds_collections.tests.fixtures import *  # noqa
 from ffun.library.tests.fixtures import *  # noqa
 from ffun.users.tests.fixtures import *  # noqa
 
