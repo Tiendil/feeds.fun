@@ -64,3 +64,7 @@ def track_key_status(key: str, statuses: Statuses = statuses) -> Generator[None,
     except openai.error.InvalidAPIType:
         statuses.set(key, KeyStatus.broken)
         raise
+    # TODO: test
+    except openai.error.APIError:
+        statuses.set(key, KeyStatus.unknown)
+        raise
