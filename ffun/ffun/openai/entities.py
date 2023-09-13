@@ -7,6 +7,7 @@ import pydantic
 class KeyStatus(str, enum.Enum):
     works = "works"
     broken = "broken"
+    quota = "quota"
     unknown = "unknown"
 
 
