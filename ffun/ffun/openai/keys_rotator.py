@@ -1,7 +1,7 @@
 import contextlib
 import datetime
 import uuid
-from typing import AsyncGenerator, cast
+from typing import AsyncGenerator, Iterable, cast
 
 from ffun.core import logging
 from ffun.feeds_collections import domain as fc_domain
@@ -20,6 +20,7 @@ logger = logging.get_module_logger()
 #       i.e. in case of a problem, we should count a key as used with a maximum used tokens
 
 
+# TODO: add lock here to not check the same key in parallel by different processors
 async def _api_key_is_working(api_key: str) -> bool:
     status = statuses.get(api_key)
 
@@ -34,77 +35,28 @@ async def _api_key_is_working(api_key: str) -> bool:
     return new_status == entities.KeyStatus.works
 
 
-# TODO: add lock here to not check the same key in parallel by different processors
-async def _filter_out_users_with_wrong_keys(users: dict[uuid.UUID, UserSettings]) -> dict[uuid.UUID, UserSettings]:
-    from ffun.application.user_settings import UserSetting
-
-    log = logger.bind(function="_filter_out_users_with_wrong_keys")
-
-    log.info("start", users=list(users.keys()))
-
-    filtered_users = {}
-
-    for user_id, settings in users.items():
-        api_key = settings.get(UserSetting.openai_api_key)
-
-        assert api_key
-
-        if not await _api_key_is_working(api_key):
-            continue
-
-        filtered_users[user_id] = settings
-
-    log.info("finish", filtered_users=list(filtered_users.keys()))
-
-    return filtered_users
+async def _filter_out_users_with_wrong_keys(infos: list[entities.UserKeyInfo]) -> list[entities.UserKeyInfo]:
+    return [info
+            for info in infos
+            if await _api_key_is_working(info.api_key)]
 
 
-def _filter_out_users_without_keys(users: dict[uuid.UUID, UserSettings]) -> dict[uuid.UUID, UserSettings]:
-    from ffun.application.user_settings import UserSetting
-    return {user_id: settings
-            for user_id, settings in users.items()
-            if settings.get(UserSetting.openai_api_key)}
+def _filter_out_users_without_keys(infos: list[entities.UserKeyInfo]) -> list[entities.UserKeyInfo]:
+    return [info for info in infos if info.api_key]
 
 
-_day_secods = 24 * 60 * 60
+def _filter_out_users_for_whome_entry_is_too_old(infos: list[entities.UserKeyInfo],
+                                                 entry_age: datetime.timedelta) -> list[entities.UserKeyInfo]:
+    return [info
+            for info in infos
+            if info.process_entries_not_older_than >= entry_age]
 
 
-def _is_entry_new_enough(entry_age: datetime.timedelta, settings: UserSettings) -> bool:
-    from ffun.application.user_settings import UserSetting
-
-    days = settings.get(UserSetting.openai_process_entries_not_older_than)
-
-    assert days is not None
-    assert isinstance(days, int)
-
-    return days * _day_secods >= entry_age.total_seconds()
-
-
-def _filter_out_users_for_whome_entry_is_too_old(users: dict[uuid.UUID, UserSettings],
-                                                 entry_age: datetime.timedelta) -> dict[uuid.UUID, UserSettings]:
-    return {user_id: settings
-            for user_id, settings in users.items()
-            if _is_entry_new_enough(entry_age, settings)}
-
-
-async def _filter_out_users_with_overused_keys(users: dict[uuid.UUID, UserSettings],
-                                               reserved_tokens: int,
-                                               resources: dict[uuid.UUID, Resource]) -> dict[uuid.UUID, UserSettings]:
-    from ffun.application.user_settings import UserSetting
-
-    users_with_resources = {}
-
-    for user_id, settings in users.items():
-        total = resources[user_id].total
-        limit = settings.get(UserSetting.openai_max_tokens_in_month)
-
-        assert limit is not None
-
-        if total + reserved_tokens <= limit:
-            users_with_resources[user_id] = settings
-            continue
-
-    return users_with_resources
+async def _filter_out_users_with_overused_keys(infos: list[entities.UserKeyInfo],
+                                               reserved_tokens: int) -> list[entities.UserKeyInfo]:
+    return [info
+            for info in infos
+            if info.tokens_used + reserved_tokens <= info.max_tokens_in_month]
 
 
 async def _users_for_feed(feed_id: uuid.UUID) -> set[uuid.UUID]:
@@ -122,29 +74,20 @@ async def _users_for_feed(feed_id: uuid.UUID) -> set[uuid.UUID]:
     return set(user_ids)
 
 
-async def _choose_user(candidates: list[uuid.UUID],
-                       users: dict[uuid.UUID, UserSettings],
-                       resources: dict[uuid.UUID, Resource],
+async def _choose_user(infos: list[entities.UserKeyInfo],
                        reserved_tokens: int,
-                       interval_started_at: datetime.datetime) -> uuid.UUID:
+                       interval_started_at: datetime.datetime) -> entities.UserKeyInfo:
     from ffun.application.resources import Resource as AppResource
-    from ffun.application.user_settings import UserSetting
 
-    for user_id in candidates:
-        settings = users[user_id]
-
-        limit = settings.get(UserSetting.openai_max_tokens_in_month)
-
-        assert limit is not None
-
+    for info in infos:
         if await r_domain.try_to_reserve(
-            user_id=user_id,
+            user_id=info.user_id,
             kind=AppResource.openai_tokens,
             interval_started_at=interval_started_at,
             amount=reserved_tokens,
-            limit=limit,
+            limit=info.max_tokens_in_month,
         ):
-            return user_id
+            return info
 
     raise errors.NoKeyFoundForFeed()
 
@@ -189,25 +132,12 @@ async def _use_key(user_id: uuid.UUID,
         log.info("resources_converted")
 
 
-@contextlib.asynccontextmanager
-async def api_key_for_feed_entry(  # noqa: CCR001,CFQ001
-    feed_id: uuid.UUID, entry_age: datetime.timedelta, reserved_tokens: int
-) -> AsyncGenerator[entities.APIKeyUsage, None]:
-    # TODO: in general, openai module should not depends on application
-    #       do something with that
+async def _get_user_key_infos(user_ids: Iterable[uuid.UUID],
+                              interval_started_at: datetime.datetime) -> list[entities.UserKeyInfo]:
     from ffun.application.resources import Resource as AppResource
     from ffun.application.user_settings import UserSetting
 
-    log = logger.bind(function="api_key_for_feed_entry", feed_id=feed_id)
-
-    log.info("start", entry_age=entry_age, reserved_tokens=reserved_tokens)
-
-    user_ids = await _users_for_feed(feed_id)
-
-    log.info("users_for_feed", user_ids=user_ids)
-
-    # get api keys and limits for this users
-    users = await us_domain.load_settings_for_users(
+    users_settings = await us_domain.load_settings_for_users(
         user_ids,
         kinds=[
             UserSetting.openai_api_key,
@@ -216,48 +146,69 @@ async def api_key_for_feed_entry(  # noqa: CCR001,CFQ001
         ],
     )
 
-    log.info("users_settings_loaded")
-
-    users = _filter_out_users_without_keys(users)
-
-    log.info("filtered_users_with_keys", users=list(users.keys()))
-
-    users = _filter_out_users_for_whome_entry_is_too_old(users, entry_age)
-
-    log.info("filtered_users_by_entry_age", users=list(users.keys()))
-
-    users = await _filter_out_users_with_wrong_keys(users)
-
-    log.info("filtered_users_with_working_keys", users=list(users.keys()))
-
-    # TODO: move out this function?
-    interval_started_at = r_domain.month_interval_start()
-
     resources = await r_domain.load_resources(
-        user_ids=users.keys(), kind=AppResource.openai_tokens, interval_started_at=interval_started_at
+        user_ids=user_ids, kind=AppResource.openai_tokens, interval_started_at=interval_started_at
     )
 
-    users = await _filter_out_users_with_overused_keys(users, reserved_tokens, resources)
+    infos = []
 
-    log.info("filtered_users_with_enough_tokens", users=list(users.keys()))
+    for user_id in user_ids:
+        settings = users_settings[user_id]
 
-    # sort by minimal usage
-    candidate_user_ids = sorted(users.keys(), key=lambda user_id: cast(int, resources[user_id].total))
+        days = settings.get(UserSetting.openai_process_entries_not_older_than)
 
-    found_user_id = await _choose_user(candidates=candidate_user_ids,
-                                       users=users,
-                                       resources=resources,
-                                       reserved_tokens=reserved_tokens,
-                                       interval_started_at=interval_started_at)
+        assert days is not None
+        assert isinstance(days, int)
 
-    api_key = users[found_user_id].get(UserSetting.openai_api_key)
+        infos.append(entities.UserKeyInfo(
+            user_id=user_id,
+            api_key=settings.get(UserSetting.openai_api_key),
+            max_tokens_in_month=settings.get(UserSetting.openai_max_tokens_in_month),
+            process_entries_not_older_than=datetime.timedelta(days=days),
+            total_tokens=resources[user_id].total))
 
-    assert api_key is not None
+    return infos
 
-    async with _use_key(user_id=found_user_id,
-                        api_key=api_key,
+
+async def _get_candidates(feed_id: uuid.UUID,
+                          interval_started_at: datetime.datetime,
+                          entry_age: datetime.timedelta,
+                          reserved_tokens: int) -> list[entities.UserKeyInfo]:
+    user_ids = await _users_for_feed(feed_id)
+
+    infos = await _get_user_key_infos(user_ids, interval_started_at)
+
+    infos = _filter_out_users_without_keys(infos)
+
+    infos = _filter_out_users_for_whome_entry_is_too_old(infos, entry_age)
+
+    infos = await _filter_out_users_with_wrong_keys(infos)
+
+    infos = await _filter_out_users_with_overused_keys(infos, reserved_tokens)
+
+    return infos
+
+
+@contextlib.asynccontextmanager
+async def api_key_for_feed_entry(  # noqa: CCR001,CFQ001
+    feed_id: uuid.UUID, entry_age: datetime.timedelta, reserved_tokens: int
+) -> AsyncGenerator[entities.APIKeyUsage, None]:
+
+    interval_started_at = r_domain.month_interval_start()
+
+    infos = await _get_candidates(feed_id=feed_id,
+                                  interval_started_at=interval_started_at,
+                                  entry_age=entry_age,
+                                  reserved_tokens=reserved_tokens)
+
+    infos.sort(key=lambda info: info.tokens_used)
+
+    found_user = await _choose_user(infos=infos,
+                                    reserved_tokens=reserved_tokens,
+                                    interval_started_at=interval_started_at)
+
+    async with _use_key(user_id=found_user.user_id,
+                        api_key=found_user.api_key,
                         reserved_tokens=reserved_tokens,
                         interval_started_at=interval_started_at) as key_usage:
         yield key_usage
-
-    log.info("finish")
