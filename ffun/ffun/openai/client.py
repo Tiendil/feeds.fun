@@ -9,7 +9,7 @@ import typer
 
 from ffun.core import logging
 from ffun.openai import entities, errors
-from ffun.openai.key_statuses import statuses, track_key_status
+from ffun.openai.keys_statuses import statuses, track_key_status
 
 logger = logging.get_module_logger()
 

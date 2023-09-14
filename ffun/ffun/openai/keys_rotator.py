@@ -1,13 +1,13 @@
 import contextlib
 import datetime
 import uuid
-from typing import AsyncGenerator, Iterable, cast
+from typing import Any, AsyncGenerator, Callable, Coroutine, Iterable, cast
 
 from ffun.core import logging
 from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.openai import client, entities, errors
-from ffun.openai.keys_statuses import statuses
+from ffun.openai.keys_statuses import Statuses, statuses
 from ffun.resources import domain as r_domain
 from ffun.resources.entities import Resource
 from ffun.user_settings import domain as us_domain
@@ -21,7 +21,9 @@ logger = logging.get_module_logger()
 
 
 # TODO: add lock here to not check the same key in parallel by different processors
-async def _api_key_is_working(api_key: str) -> bool:
+async def _api_key_is_working(api_key: str,
+                              statuses: Statuses = statuses,
+                              check_api_key: Callable[[str], Coroutine[Any, Any, entities.KeyStatus]] = client.check_api_key) -> bool:
     status = statuses.get(api_key)
 
     if status == entities.KeyStatus.works:
@@ -30,7 +32,7 @@ async def _api_key_is_working(api_key: str) -> bool:
     if status != entities.KeyStatus.unknown:
         return False
 
-    new_status = await client.check_api_key(api_key)
+    new_status = await check_api_key(api_key)
 
     return new_status == entities.KeyStatus.works
 
