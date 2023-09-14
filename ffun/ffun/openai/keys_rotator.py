@@ -21,8 +21,7 @@ logger = logging.get_module_logger()
 
 
 # TODO: add lock here to not check the same key in parallel by different processors
-async def _api_key_is_working(api_key: str,
-                              statuses: Statuses = statuses) -> bool:
+async def _api_key_is_working(api_key: str) -> bool:
     status = statuses.get(api_key)
 
     if status == entities.KeyStatus.works:
@@ -166,7 +165,7 @@ async def _get_user_key_infos(user_ids: Iterable[uuid.UUID],
             api_key=settings.get(UserSetting.openai_api_key),
             max_tokens_in_month=settings.get(UserSetting.openai_max_tokens_in_month),
             process_entries_not_older_than=datetime.timedelta(days=days),
-            total_tokens=resources[user_id].total))
+            tokens_used=resources[user_id].total))
 
     return infos
 
