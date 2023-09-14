@@ -1,5 +1,5 @@
 import datetime
-from typing import Type
+from typing import Any, Type
 
 import openai
 import pytest
@@ -28,15 +28,17 @@ class TestAPIKeyIsWorking:
     @pytest.mark.parametrize('status, expected_result', [(KeyStatus.works, True),
                                                          (KeyStatus.broken, False)])
     @pytest.mark.asyncio
-    async def test_unknown(self, status: KeyStatus, expected_result: bool, statuses: Statuses) -> None:
+    async def test_unknown(self,
+                           status: KeyStatus,
+                           expected_result: bool,
+                           statuses: Statuses,
+                           mocker: MockerFixture) -> None:
         assert statuses.get('key_1') == KeyStatus.unknown
 
-        async def fake_check_api_key(_: str) -> KeyStatus:
-            return status
+        mocker.patch("ffun.openai.client.check_api_key", return_value=status)
 
         assert await _api_key_is_working('key_1',
-                                         statuses=statuses,
-                                         check_api_key=fake_check_api_key) == expected_result
+                                         statuses=statuses) == expected_result
 
 
 class TestFilterOutUsersWithWrongKeys:

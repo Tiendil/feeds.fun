@@ -22,8 +22,7 @@ logger = logging.get_module_logger()
 
 # TODO: add lock here to not check the same key in parallel by different processors
 async def _api_key_is_working(api_key: str,
-                              statuses: Statuses = statuses,
-                              check_api_key: Callable[[str], Coroutine[Any, Any, entities.KeyStatus]] = client.check_api_key) -> bool:
+                              statuses: Statuses = statuses) -> bool:
     status = statuses.get(api_key)
 
     if status == entities.KeyStatus.works:
@@ -32,7 +31,7 @@ async def _api_key_is_working(api_key: str,
     if status != entities.KeyStatus.unknown:
         return False
 
-    new_status = await check_api_key(api_key)
+    new_status = await client.check_api_key(api_key)
 
     return new_status == entities.KeyStatus.works
 
