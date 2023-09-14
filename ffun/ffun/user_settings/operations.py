@@ -57,3 +57,12 @@ async def get_users_with_setting(kind: int, value: str) -> set[uuid.UUID]:
     result = await execute(sql, {"kind": kind, "value": value})
 
     return {row["user_id"] for row in result}
+
+
+async def remove_setting_for_all_users(kind: int) -> None:
+    sql = """
+        DELETE FROM us_settings
+        WHERE kind = %(kind)s
+    """
+
+    await execute(sql, {"kind": kind})

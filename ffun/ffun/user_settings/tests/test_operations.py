@@ -108,3 +108,27 @@ class TestGetUsersWithSetting:
             another_internal_user_id,
         }
         assert await operations.get_users_with_setting(_kind_2, value_3) == set()
+
+
+class TestRemoveSettingForAllUsers:
+
+    @pytest.mark.asyncio
+    async def test(self, five_internal_user_ids: list[uuid.UUID]) -> None:
+        value = uuid.uuid4().hex
+
+        await operations.save_setting(five_internal_user_ids[0], _kind_1, value)
+
+        await operations.save_setting(five_internal_user_ids[1], _kind_1, value)
+        await operations.save_setting(five_internal_user_ids[1], _kind_2, value)
+
+        await operations.save_setting(five_internal_user_ids[2], _kind_2, value)
+
+        await operations.remove_setting_for_all_users(_kind_1)
+
+        settings = await operations.load_settings_for_users(five_internal_user_ids[:3], [_kind_1, _kind_2])
+
+        assert settings == {
+            five_internal_user_ids[0]: {},
+            five_internal_user_ids[1]: {_kind_2: value},
+            five_internal_user_ids[2]: {_kind_2: value},
+        }

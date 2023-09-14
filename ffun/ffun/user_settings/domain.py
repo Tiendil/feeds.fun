@@ -47,3 +47,6 @@ async def get_users_with_setting(kind: int, value: Any, register: SettingsRegist
     value_to_find = register.get(kind).type.serialize(value)
 
     return await operations.get_users_with_setting(kind, value_to_find)
+
+
+remove_setting_for_all_users = operations.remove_setting_for_all_users
