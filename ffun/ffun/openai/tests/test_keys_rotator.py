@@ -9,6 +9,7 @@ from pytest_mock import MockerFixture
 from ffun.openai.entities import KeyStatus, UserKeyInfo
 from ffun.openai.keys_rotator import (
     _api_key_is_working,
+    _filter_out_users_for_whome_entry_is_too_old,
     _filter_out_users_with_wrong_keys,
     _filter_out_users_without_keys,
 )
@@ -72,5 +73,20 @@ class TestFilterOutUsersWithoutKeys:
         five_user_key_infos[3].api_key = None
 
         infos = _filter_out_users_without_keys(five_user_key_infos)
+
+        assert infos == [five_user_key_infos[i] for i in [0, 2, 4]]
+
+
+class TestFilterOutUsersForWhomeEntryIsTooOld:
+
+    def test_empty_list(self) -> None:
+        assert _filter_out_users_for_whome_entry_is_too_old([], datetime.timedelta(days=1)) == []
+
+    def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
+        for info, days in zip(five_user_key_infos, [5, 2, 3, 1, 4]):
+            info.process_entries_not_older_than = datetime.timedelta(days=days)
+
+        infos = _filter_out_users_for_whome_entry_is_too_old(five_user_key_infos,
+                                                             datetime.timedelta(days=3))
 
         assert infos == [five_user_key_infos[i] for i in [0, 2, 4]]
