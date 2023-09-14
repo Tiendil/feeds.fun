@@ -7,7 +7,11 @@ import pytest
 from pytest_mock import MockerFixture
 
 from ffun.openai.entities import KeyStatus, UserKeyInfo
-from ffun.openai.keys_rotator import _api_key_is_working, _filter_out_users_with_wrong_keys
+from ffun.openai.keys_rotator import (
+    _api_key_is_working,
+    _filter_out_users_with_wrong_keys,
+    _filter_out_users_without_keys,
+)
 from ffun.openai.keys_statuses import Statuses, StatusInfo, statuses, track_key_status
 
 
@@ -55,4 +59,18 @@ class TestFilterOutUsersWithWrongKeys:
 
         infos = await _filter_out_users_with_wrong_keys(five_user_key_infos)
 
-        assert infos == [five_user_key_infos[0], five_user_key_infos[2], five_user_key_infos[4]]
+        assert infos == [five_user_key_infos[i] for i in [0, 2, 4]]
+
+
+class TestFilterOutUsersWithoutKeys:
+
+    def test_empty_list(self) -> None:
+        assert _filter_out_users_without_keys([]) == []
+
+    def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
+        five_user_key_infos[1].api_key = None
+        five_user_key_infos[3].api_key = None
+
+        infos = _filter_out_users_without_keys(five_user_key_infos)
+
+        assert infos == [five_user_key_infos[i] for i in [0, 2, 4]]
