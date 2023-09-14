@@ -52,11 +52,11 @@ def _filter_out_users_for_whome_entry_is_too_old(infos: list[entities.UserKeyInf
             if info.process_entries_not_older_than >= entry_age]
 
 
-async def _filter_out_users_with_overused_keys(infos: list[entities.UserKeyInfo],
-                                               reserved_tokens: int) -> list[entities.UserKeyInfo]:
+def _filter_out_users_with_overused_keys(infos: list[entities.UserKeyInfo],
+                                         reserved_tokens: int) -> list[entities.UserKeyInfo]:
     return [info
             for info in infos
-            if info.tokens_used + reserved_tokens <= info.max_tokens_in_month]
+            if info.tokens_used + reserved_tokens < info.max_tokens_in_month]
 
 
 async def _users_for_feed(feed_id: uuid.UUID) -> set[uuid.UUID]:
@@ -184,7 +184,7 @@ async def _get_candidates(feed_id: uuid.UUID,
 
     infos = await _filter_out_users_with_wrong_keys(infos)
 
-    infos = await _filter_out_users_with_overused_keys(infos, reserved_tokens)
+    infos = _filter_out_users_with_overused_keys(infos, reserved_tokens)
 
     return infos
 

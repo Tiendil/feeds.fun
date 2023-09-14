@@ -10,6 +10,7 @@ from ffun.openai.entities import KeyStatus, UserKeyInfo
 from ffun.openai.keys_rotator import (
     _api_key_is_working,
     _filter_out_users_for_whome_entry_is_too_old,
+    _filter_out_users_with_overused_keys,
     _filter_out_users_with_wrong_keys,
     _filter_out_users_without_keys,
 )
@@ -55,6 +56,9 @@ class TestFilterOutUsersWithWrongKeys:
 
     @pytest.mark.asyncio
     async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
+        assert five_user_key_infos[1].api_key
+        assert five_user_key_infos[3].api_key
+
         statuses.set(five_user_key_infos[1].api_key, KeyStatus.broken)
         statuses.set(five_user_key_infos[3].api_key, KeyStatus.quota)
 
@@ -88,5 +92,20 @@ class TestFilterOutUsersForWhomeEntryIsTooOld:
 
         infos = _filter_out_users_for_whome_entry_is_too_old(five_user_key_infos,
                                                              datetime.timedelta(days=3))
+
+        assert infos == [five_user_key_infos[i] for i in [0, 2, 4]]
+
+
+class TestFilterOutUsersWithOverusedKeys:
+
+    def test_empty_list(self) -> None:
+        assert _filter_out_users_with_overused_keys([], 100) == []
+
+    def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
+        for info, max_tokens_in_month in zip(five_user_key_infos, [201, 100, 300, 200, 500]):
+            info.tokens_used = 50
+            info.max_tokens_in_month = max_tokens_in_month
+
+        infos = _filter_out_users_with_overused_keys(five_user_key_infos, 150)
 
         assert infos == [five_user_key_infos[i] for i in [0, 2, 4]]
