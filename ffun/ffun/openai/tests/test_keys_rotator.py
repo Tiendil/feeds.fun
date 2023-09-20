@@ -18,6 +18,8 @@ from ffun.openai.keys_rotator import (
     _filter_out_users_with_overused_keys,
     _filter_out_users_with_wrong_keys,
     _filter_out_users_without_keys,
+    _filters,
+    _get_candidates,
     _get_user_key_infos,
     _use_key,
     _users_for_feed,
@@ -345,3 +347,80 @@ class TestGetUserKeyInfos:
                 tokens_used=used_tokens[i] + reserved_tokens[i])
 
             for i in range(5)]
+
+
+class TestGetCandidates:
+
+    @pytest.mark.asyncio
+    async def test_no_users(self, saved_feed_id: uuid.UUID) -> None:
+        interval_started_at = r_domain.month_interval_start()
+
+        assert await _get_candidates(feed_id=saved_feed_id,
+                                     interval_started_at=interval_started_at,
+                                     entry_age=datetime.timedelta(days=1),
+                                     reserved_tokens=100) == []
+
+    @pytest.mark.asyncio
+    async def test_default_filters(self) -> None:
+        assert _filters == (_filter_out_users_without_keys,
+                            _filter_out_users_for_whome_entry_is_too_old,
+                            _filter_out_users_with_wrong_keys,
+                            _filter_out_users_with_overused_keys)
+
+    @pytest.mark.asyncio
+    async def test_filters_used(self, saved_feed_id: uuid.UUID, five_internal_user_ids: list[uuid.UUID]) -> None:
+
+        for user_id in five_internal_user_ids:
+            await fl_domain.add_link(user_id, saved_feed_id)
+
+        interval_started_at = r_domain.month_interval_start()
+
+        filter_1_users = [five_internal_user_ids[0], five_internal_user_ids[2], five_internal_user_ids[4]]
+        filter_2_users = five_internal_user_ids
+        filter_3_users = five_internal_user_ids[1:]
+
+        def create_filter(filter_users: list[uuid.UUID]) -> Any:
+            async def _filter(infos: list[UserKeyInfo], **kwargs: Any) -> list[UserKeyInfo]:
+                return [info for info in infos if info.user_id in filter_users]
+
+            return _filter
+
+        infos = await _get_candidates(feed_id=saved_feed_id,
+                                      interval_started_at=interval_started_at,
+                                      entry_age=datetime.timedelta(days=1),
+                                      reserved_tokens=100,
+                                      filters=(create_filter(filter_1_users),
+                                               create_filter(filter_2_users),
+                                               create_filter(filter_3_users)))
+
+        assert {info.user_id for info in infos} == {five_internal_user_ids[2], five_internal_user_ids[4]}
+
+    @pytest.mark.asyncio
+    async def test_all_users_excluded(self, saved_feed_id: uuid.UUID, five_internal_user_ids: list[uuid.UUID]) -> None:
+
+        for user_id in five_internal_user_ids:
+            await fl_domain.add_link(user_id, saved_feed_id)
+
+        interval_started_at = r_domain.month_interval_start()
+
+        filter_1_users = [five_internal_user_ids[0], five_internal_user_ids[2], five_internal_user_ids[4]]
+        filter_2_users = []
+
+        def create_filter(filter_users: list[uuid.UUID]) -> Any:
+            async def _filter(infos: list[UserKeyInfo], **kwargs: Any) -> list[UserKeyInfo]:
+                return [info for info in infos if info.user_id in filter_users]
+
+            return _filter
+
+        async def _filter_3(infos: list[UserKeyInfo], **kwargs: Any) -> list[UserKeyInfo]:
+            raise Exception('Should not be called')
+
+        infos = await _get_candidates(feed_id=saved_feed_id,
+                                      interval_started_at=interval_started_at,
+                                      entry_age=datetime.timedelta(days=1),
+                                      reserved_tokens=100,
+                                      filters=(create_filter(filter_1_users),
+                                               create_filter(filter_2_users),
+                                               _filter_3))
+
+        assert infos == []

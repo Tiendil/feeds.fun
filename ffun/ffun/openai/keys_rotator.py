@@ -35,25 +35,28 @@ async def _api_key_is_working(api_key: str) -> bool:
     return new_status == entities.KeyStatus.works
 
 
-async def _filter_out_users_with_wrong_keys(infos: list[entities.UserKeyInfo]) -> list[entities.UserKeyInfo]:
+async def _filter_out_users_with_wrong_keys(infos: list[entities.UserKeyInfo],
+                                            **kwargs: Any) -> list[entities.UserKeyInfo]:
     return [info
             for info in infos
-            if await _api_key_is_working(info.api_key)]
+            if info.api_key and await _api_key_is_working(info.api_key)]
 
 
-def _filter_out_users_without_keys(infos: list[entities.UserKeyInfo]) -> list[entities.UserKeyInfo]:
+async def _filter_out_users_without_keys(infos: list[entities.UserKeyInfo], **kwargs: Any) -> list[entities.UserKeyInfo]:
     return [info for info in infos if info.api_key]
 
 
-def _filter_out_users_for_whome_entry_is_too_old(infos: list[entities.UserKeyInfo],
-                                                 entry_age: datetime.timedelta) -> list[entities.UserKeyInfo]:
+async def _filter_out_users_for_whome_entry_is_too_old(infos: list[entities.UserKeyInfo],
+                                                       entry_age: datetime.timedelta,
+                                                       **kwargs: Any) -> list[entities.UserKeyInfo]:
     return [info
             for info in infos
             if info.process_entries_not_older_than >= entry_age]
 
 
-def _filter_out_users_with_overused_keys(infos: list[entities.UserKeyInfo],
-                                         reserved_tokens: int) -> list[entities.UserKeyInfo]:
+async def _filter_out_users_with_overused_keys(infos: list[entities.UserKeyInfo],
+                                               reserved_tokens: int,
+                                               **kwargs: Any) -> list[entities.UserKeyInfo]:
     return [info
             for info in infos
             if info.tokens_used + reserved_tokens < info.max_tokens_in_month]
@@ -170,21 +173,26 @@ async def _get_user_key_infos(user_ids: Iterable[uuid.UUID],
     return infos
 
 
+_filters = (_filter_out_users_without_keys,
+            _filter_out_users_for_whome_entry_is_too_old,
+            _filter_out_users_with_wrong_keys,
+            _filter_out_users_with_overused_keys)
+
+
 async def _get_candidates(feed_id: uuid.UUID,
                           interval_started_at: datetime.datetime,
                           entry_age: datetime.timedelta,
-                          reserved_tokens: int) -> list[entities.UserKeyInfo]:
-    user_ids = await _users_for_feed(feed_id)
+                          reserved_tokens: int,
+                          filters: tuple[Any] = _filters) -> list[entities.UserKeyInfo]:
+    user_ids = list(await _users_for_feed(feed_id))
 
     infos = await _get_user_key_infos(user_ids, interval_started_at)
 
-    infos = _filter_out_users_without_keys(infos)
+    for _filter in filters:
+        if not infos:
+            return []
 
-    infos = _filter_out_users_for_whome_entry_is_too_old(infos, entry_age)
-
-    infos = await _filter_out_users_with_wrong_keys(infos)
-
-    infos = _filter_out_users_with_overused_keys(infos, reserved_tokens)
+        infos = await _filter(infos=infos, entry_age=entry_age, reserved_tokens=reserved_tokens)
 
     return infos
 
