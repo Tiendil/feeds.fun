@@ -41,7 +41,9 @@ async def initialize_resource(user_id: uuid.UUID, kind: int, interval_started_at
     return row_to_entry(results[0])
 
 
-async def load_resources(user_ids: Iterable[uuid.UUID], kind: int, interval_started_at: datetime.datetime) -> dict[uuid.UUID, Resource]:
+async def load_resources(
+    user_ids: Iterable[uuid.UUID], kind: int, interval_started_at: datetime.datetime
+) -> dict[uuid.UUID, Resource]:
     sql = """
         SELECT * FROM r_resources
         WHERE user_id = ANY(%(user_ids)s) AND kind = %(kind)s AND interval_started_at = %(interval_started_at)s
@@ -66,7 +68,6 @@ async def load_resources(user_ids: Iterable[uuid.UUID], kind: int, interval_star
 async def try_to_reserve(
     user_id: uuid.UUID, kind: int, interval_started_at: datetime.datetime, amount: int, limit: int
 ) -> bool:
-
     await initialize_resource(user_id, kind, interval_started_at)
 
     sql = """

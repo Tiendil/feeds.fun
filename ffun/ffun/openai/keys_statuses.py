@@ -10,7 +10,7 @@ from ffun.openai.settings import settings
 
 
 class StatusInfo:
-    __slots__ = ('status', 'updated_at')
+    __slots__ = ("status", "updated_at")
 
     def __init__(self, status: KeyStatus, updated_at: datetime.datetime) -> None:
         self.status = status
@@ -18,7 +18,7 @@ class StatusInfo:
 
 
 class Statuses:
-    __slots__ = ('_statuses',)
+    __slots__ = ("_statuses",)
 
     def __init__(self):
         self._statuses: dict[str, StatusInfo] = {}

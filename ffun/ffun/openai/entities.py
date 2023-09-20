@@ -28,7 +28,7 @@ class OpenAIAnswer(pydantic.BaseModel):
 
 class UserKeyInfo(pydantic.BaseModel):
     user_id: uuid.UUID
-    api_key: str|None
+    api_key: str | None
     max_tokens_in_month: int
     process_entries_not_older_than: datetime.timedelta
     tokens_used: int

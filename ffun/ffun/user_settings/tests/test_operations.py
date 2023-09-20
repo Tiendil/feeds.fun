@@ -111,7 +111,6 @@ class TestGetUsersWithSetting:
 
 
 class TestRemoveSettingForAllUsers:
-
     @pytest.mark.asyncio
     async def test(self, five_internal_user_ids: list[uuid.UUID]) -> None:
         value = uuid.uuid4().hex

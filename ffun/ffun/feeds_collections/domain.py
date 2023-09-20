@@ -1,4 +1,3 @@
-import functools
 import uuid
 from typing import Iterable
 
