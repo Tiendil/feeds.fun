@@ -20,7 +20,7 @@ class StatusInfo:
 class Statuses:
     __slots__ = ("_statuses",)
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._statuses: dict[str, StatusInfo] = {}
 
     def set(self, key: str, status: KeyStatus) -> None:

@@ -408,7 +408,6 @@ class TestGetCandidates:
         interval_started_at = r_domain.month_interval_start()
 
         filter_1_users = [five_internal_user_ids[0], five_internal_user_ids[2], five_internal_user_ids[4]]
-        filter_2_users = []
 
         def create_filter(filter_users: list[uuid.UUID]) -> Any:
             async def _filter(infos: list[UserKeyInfo], **kwargs: Any) -> list[UserKeyInfo]:
@@ -424,7 +423,7 @@ class TestGetCandidates:
             interval_started_at=interval_started_at,
             entry_age=datetime.timedelta(days=1),
             reserved_tokens=100,
-            filters=(create_filter(filter_1_users), create_filter(filter_2_users), _filter_3),
+            filters=(create_filter(filter_1_users), create_filter([]), _filter_3),
         )
 
         assert infos == []

@@ -156,11 +156,16 @@ async def _get_user_key_infos(
         assert days is not None
         assert isinstance(days, int)
 
+        max_tokens_in_month = settings.get(UserSetting.openai_max_tokens_in_month)
+
+        assert max_tokens_in_month is not None
+        assert isinstance(max_tokens_in_month, int)
+
         infos.append(
             entities.UserKeyInfo(
                 user_id=user_id,
                 api_key=settings.get(UserSetting.openai_api_key),
-                max_tokens_in_month=settings.get(UserSetting.openai_max_tokens_in_month),
+                max_tokens_in_month=max_tokens_in_month,
                 process_entries_not_older_than=datetime.timedelta(days=days),
                 tokens_used=resources[user_id].total,
             )
@@ -182,7 +187,7 @@ async def _get_candidates(
     interval_started_at: datetime.datetime,
     entry_age: datetime.timedelta,
     reserved_tokens: int,
-    filters: tuple[Any] = _filters,
+    filters: tuple[Any, ...] = _filters,
 ) -> list[entities.UserKeyInfo]:
     user_ids = list(await _users_for_feed(feed_id))
 
