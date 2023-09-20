@@ -9,9 +9,11 @@ from pytest_mock import MockerFixture
 from ffun.application.resources import Resource as AppResource
 from ffun.application.user_settings import UserSetting
 from ffun.feeds_links import domain as fl_domain
+from ffun.openai import errors
 from ffun.openai.entities import KeyStatus, UserKeyInfo
 from ffun.openai.keys_rotator import (
     _api_key_is_working,
+    _choose_user,
     _filter_out_users_for_whome_entry_is_too_old,
     _filter_out_users_with_overused_keys,
     _filter_out_users_with_wrong_keys,
@@ -19,6 +21,7 @@ from ffun.openai.keys_rotator import (
     _users_for_feed,
 )
 from ffun.openai.keys_statuses import Statuses, StatusInfo, statuses, track_key_status
+from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
 
 
@@ -161,3 +164,38 @@ class TestUsersForFeed:
                                      value=True)
 
         assert await _users_for_feed(feed_id=saved_collection_feed_id) == {five_internal_user_ids[i] for i in [1, 3]}
+
+
+class TestChooseUser:
+
+    @pytest.mark.asyncio
+    async def test_no_users(self) -> None:
+        interval_started_at = r_domain.month_interval_start()
+
+        with pytest.raises(errors.NoKeyFoundForFeed):
+            assert await _choose_user(infos=[],
+                                      reserved_tokens=0,
+                                      interval_started_at=interval_started_at)
+
+    @pytest.mark.asyncio
+    async def test_no_users_with_resources(self, five_user_key_infos: list[UserKeyInfo]) -> None:
+        interval_started_at = r_domain.month_interval_start()
+
+        with pytest.raises(errors.NoKeyFoundForFeed):
+            assert await _choose_user(infos=five_user_key_infos,
+                                      reserved_tokens=max(info.max_tokens_in_month for info in five_user_key_infos) + 1,
+                                      interval_started_at=interval_started_at)
+
+    @pytest.mark.asyncio
+    async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
+        interval_started_at = r_domain.month_interval_start()
+
+        max_tokens = max(info.max_tokens_in_month for info in five_user_key_infos) + 1
+
+        five_user_key_infos[2].max_tokens_in_month = max_tokens
+
+        info = await _choose_user(infos=five_user_key_infos,
+                                  reserved_tokens=max_tokens,
+                                  interval_started_at=interval_started_at)
+
+        assert info == five_user_key_infos[2]
