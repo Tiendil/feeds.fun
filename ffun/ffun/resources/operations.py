@@ -4,9 +4,12 @@ from typing import Any, Iterable
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
+from ffun.resources import errors
 from ffun.resources.entities import Resource
 
 logger = logging.get_module_logger()
+
+# TODO: use transactions
 
 
 def row_to_entry(row: dict[str, Any]) -> Resource:
@@ -63,6 +66,9 @@ async def load_resources(user_ids: Iterable[uuid.UUID], kind: int, interval_star
 async def try_to_reserve(
     user_id: uuid.UUID, kind: int, interval_started_at: datetime.datetime, amount: int, limit: int
 ) -> bool:
+
+    await initialize_resource(user_id, kind, interval_started_at)
+
     sql = """
         UPDATE r_resources
         SET reserved = reserved + %(amount)s,
@@ -98,10 +104,12 @@ async def convert_reserved_to_used(
             updated_at = NOW()
         WHERE user_id = %(user_id)s AND
               kind = %(kind)s AND
-              interval_started_at = %(interval_started_at)s
+              interval_started_at = %(interval_started_at)s AND
+              reserved >= %(reserved)s
+        RETURNING *
     """
 
-    await execute(
+    result = await execute(
         sql,
         {
             "user_id": user_id,
@@ -111,6 +119,9 @@ async def convert_reserved_to_used(
             "reserved": reserved,
         },
     )
+
+    if not result:
+        raise errors.CanNotConvertReservedToUsed()
 
 
 async def load_resource_history(user_id: uuid.UUID, kind: int) -> list[Resource]:

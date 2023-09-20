@@ -10,7 +10,7 @@ from ffun.application.resources import Resource as AppResource
 from ffun.application.user_settings import UserSetting
 from ffun.feeds_links import domain as fl_domain
 from ffun.openai import errors
-from ffun.openai.entities import KeyStatus, UserKeyInfo
+from ffun.openai.entities import APIKeyUsage, KeyStatus, UserKeyInfo
 from ffun.openai.keys_rotator import (
     _api_key_is_working,
     _choose_user,
@@ -18,10 +18,12 @@ from ffun.openai.keys_rotator import (
     _filter_out_users_with_overused_keys,
     _filter_out_users_with_wrong_keys,
     _filter_out_users_without_keys,
+    _use_key,
     _users_for_feed,
 )
 from ffun.openai.keys_statuses import Statuses, StatusInfo, statuses, track_key_status
 from ffun.resources import domain as r_domain
+from ffun.resources import entities as r_entities
 from ffun.user_settings import domain as us_domain
 
 
@@ -199,3 +201,86 @@ class TestChooseUser:
                                   interval_started_at=interval_started_at)
 
         assert info == five_user_key_infos[2]
+
+
+class TestUseKey:
+
+    @pytest.mark.asyncio
+    async def test_success(self,
+                           internal_user_id: uuid.UUID,
+                           openai_key: str) -> None:
+        interval_started_at = r_domain.month_interval_start()
+
+        reserved_tokens = 567
+
+        await r_domain.try_to_reserve(
+            user_id=internal_user_id,
+            kind=AppResource.openai_tokens,
+            interval_started_at=interval_started_at,
+            amount=reserved_tokens,
+            limit=1000)
+
+        resources = await r_domain.load_resources(user_ids=[internal_user_id],
+                                                  kind=AppResource.openai_tokens,
+                                                  interval_started_at=interval_started_at)
+
+        used_tokens = 132
+
+        async with _use_key(user_id=internal_user_id,
+                            api_key=openai_key,
+                            reserved_tokens=reserved_tokens,
+                            interval_started_at=interval_started_at) as key_usage:
+            assert key_usage == APIKeyUsage(user_id=internal_user_id,
+                                            api_key=openai_key,
+                                            used_tokens=None)
+            key_usage.used_tokens = used_tokens
+
+        resources = await r_domain.load_resources(user_ids=[internal_user_id],
+                                                  kind=AppResource.openai_tokens,
+                                                  interval_started_at=interval_started_at)
+
+        assert resources == {internal_user_id: r_entities.Resource(user_id=internal_user_id,
+                                                                   kind=AppResource.openai_tokens,
+                                                                   interval_started_at=interval_started_at,
+                                                                   used=used_tokens,
+                                                                   reserved=0)}
+
+
+    @pytest.mark.asyncio
+    async def test_error(self,
+                         internal_user_id: uuid.UUID,
+                         openai_key: str) -> None:
+        interval_started_at = r_domain.month_interval_start()
+
+        reserved_tokens = 567
+
+        await r_domain.try_to_reserve(
+            user_id=internal_user_id,
+            kind=AppResource.openai_tokens,
+            interval_started_at=interval_started_at,
+            amount=reserved_tokens,
+            limit=1000)
+
+        resources = await r_domain.load_resources(user_ids=[internal_user_id],
+                                                  kind=AppResource.openai_tokens,
+                                                  interval_started_at=interval_started_at)
+
+        class FakeError(Exception):
+            pass
+
+        with pytest.raises(FakeError):
+            async with _use_key(user_id=internal_user_id,
+                                api_key=openai_key,
+                                reserved_tokens=reserved_tokens,
+                                interval_started_at=interval_started_at):
+                raise FakeError()
+
+        resources = await r_domain.load_resources(user_ids=[internal_user_id],
+                                                  kind=AppResource.openai_tokens,
+                                                  interval_started_at=interval_started_at)
+
+        assert resources == {internal_user_id: r_entities.Resource(user_id=internal_user_id,
+                                                                   kind=AppResource.openai_tokens,
+                                                                   interval_started_at=interval_started_at,
+                                                                   used=reserved_tokens,
+                                                                   reserved=0)}
