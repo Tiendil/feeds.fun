@@ -18,6 +18,7 @@ from ffun.openai.keys_rotator import (
     _filter_out_users_with_overused_keys,
     _filter_out_users_with_wrong_keys,
     _filter_out_users_without_keys,
+    _get_user_key_infos,
     _use_key,
     _users_for_feed,
 )
@@ -245,7 +246,6 @@ class TestUseKey:
                                                                    used=used_tokens,
                                                                    reserved=0)}
 
-
     @pytest.mark.asyncio
     async def test_error(self,
                          internal_user_id: uuid.UUID,
@@ -284,3 +284,64 @@ class TestUseKey:
                                                                    interval_started_at=interval_started_at,
                                                                    used=reserved_tokens,
                                                                    reserved=0)}
+
+
+class TestGetUserKeyInfos:
+
+    @pytest.mark.asyncio
+    async def test_no_users(self) -> None:
+        interval_started_at = r_domain.month_interval_start()
+
+        assert await _get_user_key_infos(user_ids=[], interval_started_at=interval_started_at) == []
+
+    @pytest.mark.asyncio
+    async def test_works(self, five_internal_user_ids: list[uuid.UUID]) -> None:
+        from ffun.application.resources import Resource as AppResource
+        from ffun.application.user_settings import UserSetting
+
+        interval_started_at = r_domain.month_interval_start()
+
+        keys = [uuid.uuid4().hex for _ in range(5)]
+        max_tokens_in_month = [(i+1) * 1000 for i in range(5)]
+        days = list(range(5))
+        used_tokens = [i * 100 for i in range(5)]
+        reserved_tokens = [i * 10 for i in range(5)]
+
+        for i, user_id in enumerate(five_internal_user_ids):
+            await us_domain.save_setting(user_id=user_id,
+                                         kind=UserSetting.openai_api_key,
+                                         value=keys[i])
+
+            await us_domain.save_setting(user_id=user_id,
+                                         kind=UserSetting.openai_max_tokens_in_month,
+                                         value=max_tokens_in_month[i])
+
+            await us_domain.save_setting(user_id=user_id,
+                                         kind=UserSetting.openai_process_entries_not_older_than,
+                                         value=days[i])
+
+            await r_domain.try_to_reserve(
+                user_id=user_id,
+                kind=AppResource.openai_tokens,
+                interval_started_at=interval_started_at,
+                amount=reserved_tokens[i],
+                limit=max_tokens_in_month[i])
+
+            await r_domain.convert_reserved_to_used(
+                user_id=user_id,
+                kind=AppResource.openai_tokens,
+                interval_started_at=interval_started_at,
+                used=used_tokens[i],
+                reserved=0)
+
+        infos = await _get_user_key_infos(five_internal_user_ids, interval_started_at)
+
+        assert infos == [
+            UserKeyInfo(
+                user_id=five_internal_user_ids[i],
+                api_key=keys[i],
+                max_tokens_in_month=max_tokens_in_month[i],
+                process_entries_not_older_than=datetime.timedelta(days=days[i]),
+                tokens_used=used_tokens[i] + reserved_tokens[i])
+
+            for i in range(5)]
