@@ -470,3 +470,11 @@ class TestFindBestUserWithKey:
                 reserved=1)
 
         assert chosen_users == {info.user_id for info in five_user_key_infos}
+
+        # next user will have more used tokens
+        info = await _find_best_user_with_key(feed_id=saved_feed_id,
+                                              entry_age=datetime.timedelta(days=0),
+                                              interval_started_at=interval_started_at,
+                                              reserved_tokens=1)
+
+        assert info.tokens_used == 346
