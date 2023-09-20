@@ -197,13 +197,10 @@ async def _get_candidates(feed_id: uuid.UUID,
     return infos
 
 
-@contextlib.asynccontextmanager
-async def api_key_for_feed_entry(  # noqa: CCR001,CFQ001
-    feed_id: uuid.UUID, entry_age: datetime.timedelta, reserved_tokens: int
-) -> AsyncGenerator[entities.APIKeyUsage, None]:
-
-    interval_started_at = r_domain.month_interval_start()
-
+async def _find_best_user_with_key(feed_id: uuid.UUID,
+                                   entry_age: datetime.timedelta,
+                                   interval_started_at: datetime.datetime,
+                                   reserved_tokens: int) -> entities.UserKeyInfo:
     infos = await _get_candidates(feed_id=feed_id,
                                   interval_started_at=interval_started_at,
                                   entry_age=entry_age,
@@ -211,9 +208,24 @@ async def api_key_for_feed_entry(  # noqa: CCR001,CFQ001
 
     infos.sort(key=lambda info: info.tokens_used)
 
-    found_user = await _choose_user(infos=infos,
-                                    reserved_tokens=reserved_tokens,
-                                    interval_started_at=interval_started_at)
+    return await _choose_user(infos=infos,
+                              reserved_tokens=reserved_tokens,
+                              interval_started_at=interval_started_at)
+
+
+@contextlib.asynccontextmanager
+async def api_key_for_feed_entry(  # noqa: CCR001,CFQ001
+    feed_id: uuid.UUID, entry_age: datetime.timedelta, reserved_tokens: int
+) -> AsyncGenerator[entities.APIKeyUsage, None]:
+
+    interval_started_at = r_domain.month_interval_start()
+
+    found_user = await _find_best_user_with_key(feed_id=feed_id,
+                                                entry_age=entry_age,
+                                                interval_started_at=interval_started_at,
+                                                reserved_tokens=reserved_tokens)
+
+    assert found_user.api_key is not None
 
     async with _use_key(user_id=found_user.user_id,
                         api_key=found_user.api_key,

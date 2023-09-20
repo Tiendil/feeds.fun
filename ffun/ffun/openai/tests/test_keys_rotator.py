@@ -19,6 +19,7 @@ from ffun.openai.keys_rotator import (
     _filter_out_users_with_wrong_keys,
     _filter_out_users_without_keys,
     _filters,
+    _find_best_user_with_key,
     _get_candidates,
     _get_user_key_infos,
     _use_key,
@@ -82,44 +83,50 @@ class TestFilterOutUsersWithWrongKeys:
 
 class TestFilterOutUsersWithoutKeys:
 
-    def test_empty_list(self) -> None:
-        assert _filter_out_users_without_keys([]) == []
+    @pytest.mark.asyncio
+    async def test_empty_list(self) -> None:
+        assert await _filter_out_users_without_keys([]) == []
 
-    def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
+    @pytest.mark.asyncio
+    async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
         five_user_key_infos[1].api_key = None
         five_user_key_infos[3].api_key = None
 
-        infos = _filter_out_users_without_keys(five_user_key_infos)
+        infos = await _filter_out_users_without_keys(five_user_key_infos)
 
         assert infos == [five_user_key_infos[i] for i in [0, 2, 4]]
 
 
 class TestFilterOutUsersForWhomeEntryIsTooOld:
 
-    def test_empty_list(self) -> None:
-        assert _filter_out_users_for_whome_entry_is_too_old([], datetime.timedelta(days=1)) == []
+    @pytest.mark.asyncio
+    async def test_empty_list(self) -> None:
+        assert await _filter_out_users_for_whome_entry_is_too_old([], datetime.timedelta(days=1)) == []
 
-    def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
+    @pytest.mark.asyncio
+    async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
         for info, days in zip(five_user_key_infos, [5, 2, 3, 1, 4]):
             info.process_entries_not_older_than = datetime.timedelta(days=days)
 
-        infos = _filter_out_users_for_whome_entry_is_too_old(five_user_key_infos,
-                                                             datetime.timedelta(days=3))
+        infos = await _filter_out_users_for_whome_entry_is_too_old(five_user_key_infos,
+                                                                   datetime.timedelta(days=3))
 
         assert infos == [five_user_key_infos[i] for i in [0, 2, 4]]
 
 
 class TestFilterOutUsersWithOverusedKeys:
 
-    def test_empty_list(self) -> None:
-        assert _filter_out_users_with_overused_keys([], 100) == []
+    @pytest.mark.asyncio
+    async def test_empty_list(self) -> None:
+        assert await _filter_out_users_with_overused_keys([], 100) == []
 
-    def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
+    @pytest.mark.asyncio
+    async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
         for info, max_tokens_in_month in zip(five_user_key_infos, [201, 100, 300, 200, 500]):
             info.tokens_used = 50
             info.max_tokens_in_month = max_tokens_in_month
 
-        infos = _filter_out_users_with_overused_keys(five_user_key_infos, 150)
+        infos = await _filter_out_users_with_overused_keys(five_user_key_infos, 150)
 
         assert infos == [five_user_key_infos[i] for i in [0, 2, 4]]
 
@@ -197,7 +204,7 @@ class TestChooseUser:
 
         max_tokens = max(info.max_tokens_in_month for info in five_user_key_infos) + 1
 
-        five_user_key_infos[2].max_tokens_in_month = max_tokens
+        five_user_key_infos[2].max_tokens_in_month = max_tokens + five_user_key_infos[2].tokens_used
 
         info = await _choose_user(infos=five_user_key_infos,
                                   reserved_tokens=max_tokens,
@@ -424,3 +431,17 @@ class TestGetCandidates:
                                                _filter_3))
 
         assert infos == []
+
+
+class TestFindBestUserWithKey:
+
+    @pytest.mark.asyncio
+    async def test_no_users(self, saved_feed_id: uuid.UUID) -> None:
+        with pytest.raises(errors.NoKeyFoundForFeed):
+            await _find_best_user_with_key(feed_id=saved_feed_id,
+                                           entry_age=datetime.timedelta(days=1),
+                                           interval_started_at=r_domain.month_interval_start(),
+                                           reserved_tokens=100)
+
+    # @pytest.mark.asyncio
+    # async def test_works(self, saved_feed_id: uuid.UUID, internal_user_id: uuid.UUID) -> None:
