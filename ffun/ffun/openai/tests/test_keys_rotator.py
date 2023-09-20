@@ -443,5 +443,30 @@ class TestFindBestUserWithKey:
                                            interval_started_at=r_domain.month_interval_start(),
                                            reserved_tokens=100)
 
-    # @pytest.mark.asyncio
-    # async def test_works(self, saved_feed_id: uuid.UUID, internal_user_id: uuid.UUID) -> None:
+    @pytest.mark.asyncio
+    async def test_works(self, saved_feed_id: uuid.UUID, five_user_key_infos: list[UserKeyInfo]) -> None:
+        for info in five_user_key_infos:
+            await fl_domain.add_link(info.user_id, saved_feed_id)
+
+        chosen_users: set[uuid.UUID] = set()
+
+        interval_started_at = r_domain.month_interval_start()
+
+        for _ in range(len(five_user_key_infos)):
+            info = await _find_best_user_with_key(feed_id=saved_feed_id,
+                                                  entry_age=datetime.timedelta(days=0),
+                                                  interval_started_at=interval_started_at,
+                                                  reserved_tokens=1)
+
+            assert info.tokens_used == 345
+
+            chosen_users.add(info.user_id)
+
+            await r_domain.convert_reserved_to_used(
+                user_id=info.user_id,
+                kind=AppResource.openai_tokens,
+                interval_started_at=interval_started_at,
+                used=1,
+                reserved=1)
+
+        assert chosen_users == {info.user_id for info in five_user_key_infos}
