@@ -24,6 +24,7 @@ from ffun.openai.keys_rotator import (
     _get_user_key_infos,
     _use_key,
     _users_for_feed,
+    api_key_for_feed_entry,
 )
 from ffun.openai.keys_statuses import Statuses, StatusInfo, statuses, track_key_status
 from ffun.resources import domain as r_domain
@@ -452,13 +453,15 @@ class TestFindBestUserWithKey:
 
         interval_started_at = r_domain.month_interval_start()
 
+        used_tokens = 7
+
         for _ in range(len(five_user_key_infos)):
             info = await _find_best_user_with_key(feed_id=saved_feed_id,
                                                   entry_age=datetime.timedelta(days=0),
                                                   interval_started_at=interval_started_at,
-                                                  reserved_tokens=1)
+                                                  reserved_tokens=used_tokens)
 
-            assert info.tokens_used == 345
+            assert info.tokens_used == five_user_key_infos[0].tokens_used
 
             chosen_users.add(info.user_id)
 
@@ -466,8 +469,47 @@ class TestFindBestUserWithKey:
                 user_id=info.user_id,
                 kind=AppResource.openai_tokens,
                 interval_started_at=interval_started_at,
-                used=1,
-                reserved=1)
+                used=used_tokens,
+                reserved=used_tokens)
+
+        assert chosen_users == {info.user_id for info in five_user_key_infos}
+
+        # next user will have more used tokens
+        info = await _find_best_user_with_key(feed_id=saved_feed_id,
+                                              entry_age=datetime.timedelta(days=0),
+                                              interval_started_at=interval_started_at,
+                                              reserved_tokens=used_tokens)
+
+        assert info.tokens_used == five_user_key_infos[0].tokens_used + used_tokens
+
+
+class TestApiKeyForFeedEntry:
+
+    @pytest.mark.asyncio
+    async def test_no_users(self, saved_feed_id: uuid.UUID) -> None:
+        with pytest.raises(errors.NoKeyFoundForFeed):
+            async with api_key_for_feed_entry(feed_id=saved_feed_id,
+                                              entry_age=datetime.timedelta(days=0),
+                                              reserved_tokens=1):
+                pass
+
+    @pytest.mark.asyncio
+    async def test_works(self, saved_feed_id: uuid.UUID, five_user_key_infos: list[UserKeyInfo]) -> None:
+        for info in five_user_key_infos:
+            await fl_domain.add_link(info.user_id, saved_feed_id)
+
+        chosen_users: set[uuid.UUID] = set()
+
+        interval_started_at = r_domain.month_interval_start()
+
+        used_tokens = 7
+
+        for _ in range(len(five_user_key_infos)):
+            async with api_key_for_feed_entry(feed_id=saved_feed_id,
+                                              entry_age=datetime.timedelta(days=0),
+                                              reserved_tokens=13) as key_usage:
+                key_usage.used_tokens = used_tokens
+                chosen_users.add(key_usage.user_id)
 
         assert chosen_users == {info.user_id for info in five_user_key_infos}
 
@@ -477,4 +519,4 @@ class TestFindBestUserWithKey:
                                               interval_started_at=interval_started_at,
                                               reserved_tokens=1)
 
-        assert info.tokens_used == 346
+        assert info.tokens_used == five_user_key_infos[0].tokens_used + used_tokens
