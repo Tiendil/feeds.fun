@@ -1,6 +1,6 @@
 import copy
 from types import TracebackType
-from typing import Any, Callable, ContextManager, Generator, Optional, Type, cast
+from typing import Any, Callable, Optional, Type
 
 import pytest
 
@@ -35,9 +35,9 @@ class Comparator:
 
     def __exit__(
         self,
-        exc_type: Type[BaseException]|None,
-        exc_value: BaseException|None,
-        traceback: TracebackType|None,
+        exc_type: Type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         __tracebackhide__ = True  # pylint: disable=W0612
 
@@ -99,11 +99,9 @@ class Decreased(Comparator):
 
 
 class Delta(Comparator):
-
     def __init__(self, producer: PRODUCER, delta: Any, **kwargs: Any):
-
-        if 'message' not in kwargs:
-            kwargs['message'] = f"Value has not changed to delta {delta}"
+        if "message" not in kwargs:
+            kwargs["message"] = f"Value has not changed to delta {delta}"
 
         super().__init__(producer, **kwargs)
 
@@ -114,28 +112,27 @@ class Delta(Comparator):
 
 
 class TableSizeMixin:
-
     async def _producer(self) -> int:
-        results = await execute(f"SELECT count(*) AS number FROM {self.table}")  # type: ignore
+        results = await execute(f"SELECT count(*) AS number FROM {self.table}")  # type: ignore # noqa: S608
         size = results[0]["number"]
         assert isinstance(size, int)
         return size
 
 
-class TableSizeDelta(Delta, TableSizeMixin):  # type: ignore
+class TableSizeDelta(Delta, TableSizeMixin):
     def __init__(self, table: str, **kwargs: Any) -> None:
-        if 'producer' not in kwargs:
-            kwargs['producer'] = self._producer
+        if "producer" not in kwargs:
+            kwargs["producer"] = self._producer
 
         super().__init__(**kwargs)
 
         self.table = table
 
 
-class TableSizeNotChanged(NotChanged, TableSizeMixin):  # type: ignore
+class TableSizeNotChanged(NotChanged, TableSizeMixin):
     def __init__(self, table: str, **kwargs: Any) -> None:
-        if 'producer' not in kwargs:
-            kwargs['producer'] = self._producer
+        if "producer" not in kwargs:
+            kwargs["producer"] = self._producer
 
         super().__init__(**kwargs)
 
