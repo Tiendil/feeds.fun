@@ -9,8 +9,6 @@ from ffun.resources.entities import Resource
 
 logger = logging.get_module_logger()
 
-# TODO: use transactions
-
 
 def row_to_entry(row: dict[str, Any]) -> Resource:
     return Resource(
