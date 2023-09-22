@@ -9,6 +9,9 @@
 <script lang="ts" setup>
   import * as api from "@/logic/api";
   import type * as t from "@/logic/types";
+  import {useTagsStore} from "@/stores/tags";
+
+  const tagsStore = useTagsStore();
 
   const properties = defineProps<{value: number; entryId: t.EntryId}>();
 
@@ -25,7 +28,14 @@
     const strings = [];
 
     for (const rule of rules) {
-      strings.push(rule.score.toString().padStart(2, " ") + " — " + rule.tags.join(", "));
+      const tags = [];
+
+      for (const tagId of rule.tags) {
+        const tagInfo = tagsStore.tags[tagId];
+        tags.push(tagInfo.name);
+      }
+
+      strings.push(rule.score.toString().padStart(2, " ") + " — " + tags.join(", "));
     }
 
     alert(strings.join("\n"));
