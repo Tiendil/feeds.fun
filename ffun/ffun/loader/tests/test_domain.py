@@ -32,6 +32,14 @@ class TestDetectOrphaned:
         assert loaded_feed.state == f_entities.FeedState.orphaned
 
     @pytest.mark.asyncio
+    async def test_is_orphaned_but_from_collection(self, saved_collection_feed_id: uuid.UUID) -> None:
+        assert not await detect_orphaned(saved_collection_feed_id)
+
+        loaded_feed = await f_domain.get_feed(saved_collection_feed_id)
+
+        assert loaded_feed.state != f_entities.FeedState.orphaned
+
+    @pytest.mark.asyncio
     async def test_not_orphaned(self, internal_user_id: uuid.UUID, saved_feed_id: uuid.UUID) -> None:
         await fl_domain.add_link(internal_user_id, saved_feed_id)
 

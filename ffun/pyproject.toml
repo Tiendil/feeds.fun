@@ -100,7 +100,7 @@ flake8-eradicate = "1.5.*"
 autoflake = "2.2.*"
 
 # mypy fails in the latest versions
-mypy = "1.5.0"
+mypy = "1.5.1"
 
 types-python-slugify = "8.0.*"
 types-beautifulsoup4 = "4.12.*"
@@ -159,6 +159,7 @@ ignore = [
     "D102",
     "D103",
     "D104",
+    "D105",
     "D107",
     "D200",
     "D400",

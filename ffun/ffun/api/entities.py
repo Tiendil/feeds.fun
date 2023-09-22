@@ -158,6 +158,7 @@ class UserSettingKind(enum.StrEnum):
     openai_max_tokens_in_month = "openai_max_tokens_in_month"
     openai_hide_message_about_setting_up_key = "openai_hide_message_about_setting_up_key"
     openai_process_entries_not_older_than = "openai_process_entries_not_older_than"
+    openai_allow_use_key_for_collections = "openai_allow_use_key_for_collections"
 
     @classmethod
     def from_internal(cls, kind: int) -> "UserSettingKind":

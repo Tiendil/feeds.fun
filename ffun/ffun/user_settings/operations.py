@@ -32,7 +32,7 @@ async def load_settings_for_users(
 
     result = await execute(sql, {"user_ids": user_ids, "kinds": kinds})
 
-    values: dict[uuid.UUID, UserSettings] = {}
+    values: dict[uuid.UUID, UserSettings] = {user_id: {} for user_id in user_ids}
 
     for row in result:
         user_id = row["user_id"]
@@ -41,15 +41,28 @@ async def load_settings_for_users(
 
         assert isinstance(user_id, uuid.UUID)
 
-        if user_id not in values:
-            values[user_id] = {}
-
         values[user_id][kind] = value
 
     return values
 
 
-async def load_settings(user_id: uuid.UUID, kinds: Iterable[int]) -> UserSettings:
-    values = await load_settings_for_users([user_id], kinds)
+async def get_users_with_setting(kind: int, value: str) -> set[uuid.UUID]:
+    sql = """
+        SELECT user_id
+        FROM us_settings
+        WHERE kind = %(kind)s
+        AND value = %(value)s
+    """
 
-    return values[user_id] if user_id in values else {}
+    result = await execute(sql, {"kind": kind, "value": value})
+
+    return {row["user_id"] for row in result}
+
+
+async def remove_setting_for_all_users(kind: int) -> None:
+    sql = """
+        DELETE FROM us_settings
+        WHERE kind = %(kind)s
+    """
+
+    await execute(sql, {"kind": kind})

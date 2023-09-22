@@ -9,6 +9,7 @@ import typer
 
 from ffun.core import logging
 from ffun.openai import entities, errors
+from ffun.openai.keys_statuses import statuses, track_key_status
 
 logger = logging.get_module_logger()
 
@@ -115,28 +116,22 @@ async def request(  # noqa: CFQ002
         arguments["functions"] = [function]
         arguments["function_call"] = {"name": function["name"]}
 
-    try:
-        answer = await openai.ChatCompletion.acreate(
-            api_key=api_key,
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            top_p=top_p,
-            presence_penalty=presence_penalty,
-            frequency_penalty=frequency_penalty,
-            messages=messages,
-            **arguments
-        )
-    # https://platform.openai.com/docs/guides/error-codes/api-errors
-    except openai.error.RateLimitError as e:
-        logger.warning("openai_rate_limit", message=str(e))
-        raise errors.TemporaryError(message=str(e)) from e
-    except openai.error.ServiceUnavailableError as e:
-        logger.warning("openai_service_unavailable", message=str(e))
-        raise errors.TemporaryError(message=str(e)) from e
-    except openai.error.APIError as e:
-        logger.error("openai_api_error", message=str(e))
-        raise errors.TemporaryError(message=str(e)) from e
+    with track_key_status(api_key):
+        try:
+            answer = await openai.ChatCompletion.acreate(
+                api_key=api_key,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                top_p=top_p,
+                presence_penalty=presence_penalty,
+                frequency_penalty=frequency_penalty,
+                messages=messages,
+                **arguments
+            )
+        except openai.error.APIError as e:
+            logger.info("openai_api_error", message=str(e))
+            raise errors.TemporaryError(message=str(e)) from e
 
     logger.info("openai_response")
 
@@ -188,14 +183,10 @@ async def multiple_requests(  # noqa: CFQ002
 
 
 async def check_api_key(api_key: str) -> entities.KeyStatus:
-    try:
-        await openai.Model.alist(api_key=api_key)
-        logger.info("correct_api_key")
-    except openai.error.AuthenticationError:
-        logger.info("wrong_api_key")
-        return entities.KeyStatus.broken
-    except Exception:
-        logger.exception("unknown_error_while_checking_api_key")
-        return entities.KeyStatus.unknown
+    with track_key_status(api_key):
+        try:
+            await openai.Model.alist(api_key=api_key)
+        except openai.error.APIError:
+            pass
 
-    return entities.KeyStatus.works
+    return statuses.get(api_key)

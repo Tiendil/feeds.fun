@@ -6,6 +6,7 @@ from typing import Any
 
 from cryptography.fernet import Fernet
 
+from ffun.user_settings import errors
 from ffun.user_settings.settings import settings
 
 
@@ -33,6 +34,9 @@ class Integer(Type):
     id = TypeId.integer
 
     def serialize(self, value: int) -> str:
+        if not isinstance(value, int):
+            raise errors.WrongValueType(value=value)
+
         return str(value)
 
     def deserialize(self, data: str) -> int:
