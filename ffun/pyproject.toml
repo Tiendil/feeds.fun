@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ffun"
-version = "0.5.0"
+version = "0.6.0"
 description = "Backend for the Feeds Fun — web-based news reader"
 repository = "https://github.com/Tiendil/feeds.fun"
 authors = ["Aliaksei Yaletski (Tiendil) <a.eletsky@gmail.com>"]
