@@ -32,7 +32,11 @@
 
       for (const tagId of rule.tags) {
         const tagInfo = tagsStore.tags[tagId];
-        tags.push(tagInfo.name);
+        if (tagInfo) {
+          tags.push(tagInfo.name);
+        } else {
+          tags.push(tagId);
+        }
       }
 
       strings.push(rule.score.toString().padStart(2, " ") + " — " + tags.join(", "));
