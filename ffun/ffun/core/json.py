@@ -6,6 +6,14 @@ from ffun.core import logging
 logger = logging.get_module_logger()
 
 
+def format(data: Any) -> str:
+    return json.dumps(data, ensure_ascii=False, check_circular=False, allow_nan=False, indent=None)
+
+
+def parse(data: str) -> Any:
+    return json.loads(data)
+
+
 def finish_json(text: str, empty_value: str = '""') -> str:  # pylint: disable=too-many-branches # noqa: C901, CCR001
     stack = []
 
