@@ -111,11 +111,27 @@ export async function deleteRule({id}: {id: t.RuleId}) {
 }
 
 export async function updateRule({id, tags, score}: {id: t.RuleId; tags: string[]; score: number}) {
-  const response = await post({
-    url: API_UPDATE_RULE,
-    data: {id: id, tags: tags, score: score}
-  });
-  return response;
+  // Check if a rule with the same tags exists
+  const existingRules = await getRules(); // Fetch the existing rules
+  if (!existingRules){
+    return createRule({tags,score});
+  }
+  const existingRule = existingRules.find((rule) => _.isEqual(rule.tags, tags));
+
+  if (existingRule){
+    const updatedRule={...existingRule,score};
+    const response=await post({
+      url:API_UPDATE_RULE,
+      data:updatedRule,
+    });
+    return response;
+
+  }
+  else{
+    // If no existingRule exists
+    return createRule({tags,score});
+  }
+
 }
 
 export async function getRules() {

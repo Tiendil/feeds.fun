@@ -142,9 +142,14 @@ async def api_delete_rule(request: entities.DeleteRuleRequest, user: User) -> en
 
 @router.post("/api/update-rule")
 async def api_update_rule(request: entities.UpdateRuleRequest, user: User) -> entities.UpdateRuleResponse:
-    tags_ids = await o_domain.get_ids_by_uids(request.tags)
+    rule_id=request.id
+    score=request.score
+    tags_ids=request.tags
+    # Convert tags UIDs to tag IDs using the ontology domain
+    tags_ids = await o_domain.get_ids_by_uids(tags_uids)
 
-    await s_domain.update_rule(user_id=user.id, rule_id=request.id, score=request.score, tags=tags_ids.values())
+    # Update the rule with the new score and tags
+    await s_domain.update_rule(user_id=user.id, rule_id=rule_id, score=score, tags=tags_ids.values())
 
     return entities.UpdateRuleResponse()
 
