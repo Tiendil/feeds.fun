@@ -5,7 +5,9 @@ import pytest
 
 from ffun.feeds import domain as f_domain
 from ffun.feeds.tests import make as f_make
-from ffun.library.operations import all_entries_iterator, catalog_entries
+from ffun.library.domain import get_entry
+from ffun.library.entities import Entry
+from ffun.library.operations import all_entries_iterator, catalog_entries, update_external_url
 from ffun.library.tests import make
 
 
@@ -35,3 +37,20 @@ class TestAllEntriesIterator:
                      if (entry.feed_id, entry.id) in ids]
 
         assert found_ids == ids
+
+
+class TestUpdateExternalUrl:
+
+    @pytest.mark.asyncio
+    async def test(self, cataloged_entry: Entry, another_cataloged_entry: Entry) -> None:
+        new_url = make.fake_url()
+
+        assert cataloged_entry.external_url != new_url
+
+        await update_external_url(cataloged_entry.id, new_url)
+
+        loaded_entry = await get_entry(cataloged_entry.id)
+        assert loaded_entry.external_url == new_url
+
+        loaded_another_entry = await get_entry(another_cataloged_entry.id)
+        assert loaded_another_entry.external_url == another_cataloged_entry.external_url

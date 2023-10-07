@@ -50,7 +50,7 @@ def _extract_external_id(entry: Any) -> str:
 def _extract_external_url(entry: Any, original_url: str) -> str:
     url = entry.get("link")
 
-    return urls._normalize_external_url(url, original_url)
+    return urls.normalize_external_url(url, original_url)
 
 
 def parse_feed(content: str, original_url: str) -> FeedInfo | None:

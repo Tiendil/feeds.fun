@@ -177,3 +177,13 @@ async def all_entries_iterator(chunk: int) -> AsyncGenerator[Entry, None]:
 
         feed_id = rows[-1]["feed_id"]
         entry_id = rows[-1]["id"]
+
+
+async def update_external_url(entity_id: uuid.UUID, url: str) -> None:
+    sql = """
+    UPDATE l_entries
+    SET external_url = %(url)s
+    WHERE id = %(entity_id)s
+    """
+
+    await execute(sql, {"entity_id": entity_id, "url": url})

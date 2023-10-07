@@ -10,7 +10,7 @@ def _fake_schema_for_url(url: str) -> str:
     return url
 
 
-def _normalize_external_url(url: str, original_url: str) -> str:
+def normalize_external_url(url: str, original_url: str) -> str:
     url = _fake_schema_for_url(url)
     original_url = _fake_schema_for_url(original_url)
 

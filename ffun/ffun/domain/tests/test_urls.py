@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from ffun.domain.urls import _normalize_external_url
+from ffun.domain.urls import normalize_external_url
 
 
 class TestExternalUrlNormalization:
@@ -31,4 +31,4 @@ class TestExternalUrlNormalization:
         ('example.com/feed/', 'another.domain', 'another.domain'),
     ])
     def test_base_transformations(self, original_url: str, raw_url: str, normalized_url: str) -> None:
-        assert _normalize_external_url(raw_url, original_url) == normalized_url
+        assert normalize_external_url(raw_url, original_url) == normalized_url
