@@ -77,6 +77,8 @@ cryptography = "41.0.*"
 
 markdown = "3.4.*"
 
+furl = "2.1.*"
+
 [tool.poetry.dev-dependencies]
 
 pytest = "7.4.*"

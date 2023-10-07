@@ -32,6 +32,6 @@ class TestParseFeed:
         with open(expected_fixture_path, 'r', encoding='utf-8') as expected_fixture_file:
             expected_fixture = expected_fixture_file.read()
 
-        feed_info = parse_feed(raw_fixture, 'https::/example.com/feed/')
+        feed_info = parse_feed(raw_fixture, 'https://example.com/feed/')
 
         assert feed_info == FeedInfo.model_validate_json(expected_fixture)
