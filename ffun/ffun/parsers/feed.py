@@ -47,8 +47,18 @@ def _extract_external_id(entry: Any) -> str:
     return entry.get("link")
 
 
-def _extract_external_url(entry: Any, original_url: str) -> str:
-    url = entry.get("link")
+# is required for correct parsing by furl
+# will be removed before returning result
+def _fake_schema_for_url(url: str) -> str:
+    if '//' not in url and url[0] != '/' and ('.' in url.split('/')[0]):
+        return f'//{url}'
+
+    return url
+
+
+def _normalize_external_url(url: str, original_url: str) -> str:
+    url = _fake_schema_for_url(url)
+    original_url = _fake_schema_for_url(original_url)
 
     external_url = furl(url)
 
@@ -60,7 +70,18 @@ def _extract_external_url(entry: Any, original_url: str) -> str:
     if not external_url.netloc:
         external_url.set(netloc=f_original_url.netloc)
 
-    return str(external_url)
+    result_url = str(external_url)
+
+    if result_url.startswith('//'):
+        result_url = result_url[2:]
+
+    return result_url
+
+
+def _extract_external_url(entry: Any, original_url: str) -> str:
+    url = entry.get("link")
+
+    return _normalize_external_url(url, original_url)
 
 
 def parse_feed(content: str, original_url: str) -> FeedInfo | None:
