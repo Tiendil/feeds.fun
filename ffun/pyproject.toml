@@ -146,6 +146,10 @@ ignore_missing_imports = true
 module = "supertokens_python.*"
 ignore_errors = true
 
+[[tool.mypy.overrides]]
+module = "furl.*"
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 addopts = """-x -vv --strict-markers -p no:cacheprovider"""
 filterwarnings = [

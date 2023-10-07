@@ -44,7 +44,7 @@ def _extract_published_at(entry: Any) -> datetime.datetime:
 # TODO: we should use more formal way to detect uniqueness of entry
 # TODO: external id must be normalized
 def _extract_external_id(entry: Any) -> str:
-    return entry.get("link")
+    return entry.get("link")  # type: ignore
 
 
 def _extract_external_url(entry: Any, original_url: str) -> str:
