@@ -3,7 +3,7 @@ import uuid
 from ffun.domain import urls as d_urls
 from ffun.feeds import domain as f_domain
 from ffun.library import operations
-from ffun.library.entities import Entry
+from ffun.library.entities import Entry, EntryChange
 
 catalog_entries = operations.catalog_entries
 get_entries_by_ids = operations.get_entries_by_ids
@@ -21,11 +21,20 @@ async def get_entry(entry_id: uuid.UUID) -> Entry:
     return found_entry
 
 
-async def normalize_entry(entry: Entry) -> None:
+async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange]:
 
     feed = await f_domain.get_feed(entry.feed_id)
 
     new_external_url = d_urls.normalize_external_url(entry.external_url, feed.url)
 
+    changes = []
+
     if new_external_url != entry.external_url:
-        await operations.update_external_url(entry.id, new_external_url)
+        changes.append(EntryChange(id=entry.id,
+                                   field='external_url',
+                                   old_value=entry.external_url,
+                                   new_value=new_external_url))
+        if apply:
+            await operations.update_external_url(entry.id, new_external_url)
+
+    return changes
