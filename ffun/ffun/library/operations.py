@@ -154,7 +154,6 @@ async def get_entries_to_process(processor_id: int, number: int) -> list[Entry]:
 
 # iterate by pairs (feed_id, entry_id) because we already have index on it
 async def all_entries_iterator(chunk: int) -> AsyncGenerator[Entry, None]:
-
     feed_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
     entry_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
 
@@ -166,7 +165,6 @@ async def all_entries_iterator(chunk: int) -> AsyncGenerator[Entry, None]:
     """
 
     while True:
-
         rows = await execute(sql, {"feed_id": feed_id, "entry_id": entry_id, "chunk": chunk})
 
         if not rows:

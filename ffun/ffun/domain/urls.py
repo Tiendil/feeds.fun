@@ -4,8 +4,8 @@ from furl import furl
 # is required for correct parsing by furl
 # will be removed before returning result
 def _fake_schema_for_url(url: str) -> str:
-    if '//' not in url and url[0] != '/' and ('.' in url.split('/')[0]):
-        return f'//{url}'
+    if "//" not in url and url[0] != "/" and ("." in url.split("/")[0]):
+        return f"//{url}"
 
     return url
 
@@ -26,7 +26,7 @@ def normalize_external_url(url: str, original_url: str) -> str:
 
     result_url = str(external_url)
 
-    if result_url.startswith('//'):
+    if result_url.startswith("//"):
         result_url = result_url[2:]
 
     return result_url

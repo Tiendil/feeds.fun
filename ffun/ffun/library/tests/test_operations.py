@@ -1,4 +1,3 @@
-
 from itertools import chain
 
 import pytest
@@ -12,8 +11,7 @@ from ffun.library.tests import make
 
 
 class TestAllEntriesIterator:
-
-    @pytest.mark.parametrize('chunk', [1, 2, 3, 4, 5, 6, 7])
+    @pytest.mark.parametrize("chunk", [1, 2, 3, 4, 5, 6, 7])
     @pytest.mark.asyncio
     async def test(self, chunk: int) -> None:
         feed_1_data = f_make.fake_feed()
@@ -32,15 +30,16 @@ class TestAllEntriesIterator:
 
         ids.sort()
 
-        found_ids = [(entry.feed_id, entry.id)
-                     async for entry in all_entries_iterator(chunk=chunk)
-                     if (entry.feed_id, entry.id) in ids]
+        found_ids = [
+            (entry.feed_id, entry.id)
+            async for entry in all_entries_iterator(chunk=chunk)
+            if (entry.feed_id, entry.id) in ids
+        ]
 
         assert found_ids == ids
 
 
 class TestUpdateExternalUrl:
-
     @pytest.mark.asyncio
     async def test(self, cataloged_entry: Entry, another_cataloged_entry: Entry) -> None:
         new_url = make.fake_url()

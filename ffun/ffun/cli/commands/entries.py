@@ -1,17 +1,14 @@
 import asyncio
-import pprint
 
 from ffun.application.application import with_app
 from ffun.cli.application import app
 from ffun.core import logging
-from ffun.core.utils import discover_submodules
 from ffun.library.domain import all_entries_iterator, normalize_entry
 
 logger = logging.get_module_logger()
 
 
 async def run(apply: bool, chunk: int, log_every_n: int) -> None:  # noqa: CCR001
-
     changes_counter = 0
 
     async with with_app():

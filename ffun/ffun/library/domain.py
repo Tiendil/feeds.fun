@@ -23,7 +23,6 @@ async def get_entry(entry_id: uuid.UUID) -> Entry:
 
 
 async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange]:
-
     feed = await f_domain.get_feed(entry.feed_id)
 
     new_external_url = d_urls.normalize_external_url(entry.external_url, feed.url)
@@ -31,10 +30,9 @@ async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange
     changes = []
 
     if new_external_url != entry.external_url:
-        changes.append(EntryChange(id=entry.id,
-                                   field='external_url',
-                                   old_value=entry.external_url,
-                                   new_value=new_external_url))
+        changes.append(
+            EntryChange(id=entry.id, field="external_url", old_value=entry.external_url, new_value=new_external_url)
+        )
         if apply:
             await operations.update_external_url(entry.id, new_external_url)
 
