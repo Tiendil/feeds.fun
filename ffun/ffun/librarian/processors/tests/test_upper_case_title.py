@@ -24,10 +24,10 @@ class TestEncodeSpecialCharacters:
         ],
     )
     @pytest.mark.asyncio
-    async def test(self, fake_entry: Entry, title: str, has_tag: bool) -> None:
-        fake_entry.title = title
+    async def test(self, cataloged_entry: Entry, title: str, has_tag: bool) -> None:
+        cataloged_entry.title = title
 
-        tags = await processor.process(fake_entry)
+        tags = await processor.process(cataloged_entry)
 
         expected_tags = []
 
