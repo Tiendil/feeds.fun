@@ -1,0 +1,37 @@
+{
+  "url": "https://example.com/feed/",
+  "title": "Юникодный заголовок",
+  "description": "Юникодный заголовок",
+  "entries": [
+    {
+      "title": "Новость 1",
+      "body": "<p>Описание новости 1 [&#8230;]</p>",
+      "external_id": "https://example.com/news-1/",
+      "external_url": "https://example.com/news-1/",
+      "external_tags": [
+        "Python",
+        "Блог",
+        "Разработка",
+        "Feeds Fun",
+        "Open source",
+        "Нейронные Сети",
+        "Практика"
+      ],
+      "published_at": "2023-09-24T08:35:23"
+    },
+    {
+      "title": "Новость 2",
+      "body": "<p>Описание новости 2</p>",
+      "external_id": "https://example.com/news-2/",
+      "external_url": "https://example.com/news-2/",
+      "external_tags": [
+        "Бизнес",
+        "Дизайн игр",
+        "Монетизация",
+        "Блог",
+        "Геймдев"
+      ],
+      "published_at": "2023-08-30T19:56:11"
+    }
+  ]
+}

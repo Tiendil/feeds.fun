@@ -4,6 +4,7 @@ from typing import Any, Iterable
 import feedparser
 
 from ffun.core import logging
+from ffun.domain import urls
 from ffun.parsers.entities import EntryInfo, FeedInfo
 
 logger = logging.get_module_logger()
@@ -39,6 +40,19 @@ def _extract_published_at(entry: Any) -> datetime.datetime:
     return datetime.datetime.now()
 
 
+# not the best solution, but it works for now
+# TODO: we should use more formal way to detect uniqueness of entry
+# TODO: external id must be normalized
+def _extract_external_id(entry: Any) -> str:
+    return entry.get("link")  # type: ignore
+
+
+def _extract_external_url(entry: Any, original_url: str) -> str:
+    url = entry.get("link")
+
+    return urls.normalize_external_url(url, original_url)
+
+
 def parse_feed(content: str, original_url: str) -> FeedInfo | None:
     channel = feedparser.parse(content)
 
@@ -59,16 +73,14 @@ def parse_feed(content: str, original_url: str) -> FeedInfo | None:
         if _should_skip(entry):
             continue
 
-        url = entry.get("link")
-
         published_at = _extract_published_at(entry)
 
         feed_info.entries.append(
             EntryInfo(
                 title=entry.get("title", ""),
                 body=entry.get("description", ""),
-                external_id=url,  # TODO: normalize url
-                external_url=url,
+                external_id=_extract_external_id(entry),
+                external_url=_extract_external_url(entry, original_url),
                 external_tags=_parse_tags(entry.get("tags", ())),
                 published_at=published_at,
             )

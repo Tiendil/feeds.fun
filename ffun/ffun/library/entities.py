@@ -31,3 +31,10 @@ class Entry(pydantic.BaseModel):
 
     def log_info(self) -> dict[str, Any]:
         return {"id": self.id, "feed_id": self.feed_id, "title": self.title, "external_url": self.external_url}
+
+
+class EntryChange(pydantic.BaseModel):
+    id: uuid.UUID
+    field: str
+    old_value: Any
+    new_value: Any

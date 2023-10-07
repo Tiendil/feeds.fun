@@ -1,6 +1,6 @@
 import datetime
 import uuid
-from typing import Any, Iterable
+from typing import Any, AsyncGenerator, Iterable
 
 import psycopg
 
@@ -24,6 +24,7 @@ def row_to_entry(row: dict[str, Any]) -> Entry:
     return Entry(**row)
 
 
+# TODO: tests
 async def catalog_entries(entries: Iterable[Entry]) -> None:
     for entry in entries:
         try:
@@ -48,6 +49,7 @@ async def catalog_entries(entries: Iterable[Entry]) -> None:
 # 1. we can not guarantee that there will be no duplicates of feeds
 #    (can not guarantee perfect normalization of urls, etc)
 # 2. someone can damage database by infecting with wrong entries from faked feed
+# TODO: tests
 async def check_stored_entries_by_external_ids(feed_id: uuid.UUID, external_ids: Iterable[str]) -> set[str]:
     sql = """
     SELECT external_id
@@ -63,6 +65,7 @@ async def check_stored_entries_by_external_ids(feed_id: uuid.UUID, external_ids:
 sql_select_entries = """SELECT * FROM l_entries WHERE id = ANY(%(ids)s)"""
 
 
+# TODO: tests
 async def get_entries_by_ids(ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, Entry | None]:
     rows = await execute(sql_select_entries, {"ids": ids})
 
@@ -74,6 +77,7 @@ async def get_entries_by_ids(ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, Entry 
     return result
 
 
+# TODO: tests
 async def get_entries_by_filter(
     feeds_ids: Iterable[uuid.UUID], limit: int, period: datetime.timedelta | None = None
 ) -> list[Entry]:
@@ -91,6 +95,7 @@ async def get_entries_by_filter(
     return [row_to_entry(row) for row in rows]
 
 
+# TODO: tests
 async def get_new_entries(from_time: datetime.datetime, limit: int = 1000) -> list[Entry]:
     sql = """
     SELECT * FROM l_entries
@@ -104,6 +109,7 @@ async def get_new_entries(from_time: datetime.datetime, limit: int = 1000) -> li
     return [row_to_entry(row) for row in rows]
 
 
+# TODO: tests
 async def mark_entry_as_processed(
     entry_id: uuid.UUID, processor_id: int, state: ProcessedState, error: str | None
 ) -> None:
@@ -120,6 +126,7 @@ async def mark_entry_as_processed(
     await execute(sql, {"processor_id": processor_id, "entry_id": entry_id, "state": state, "last_error": error})
 
 
+# TODO: tests
 async def get_entries_to_process(processor_id: int, number: int) -> list[Entry]:
     sql = """
     SELECT * FROM l_entries
@@ -143,3 +150,38 @@ async def get_entries_to_process(processor_id: int, number: int) -> list[Entry]:
     )
 
     return [row_to_entry(row) for row in rows]
+
+
+# iterate by pairs (feed_id, entry_id) because we already have index on it
+async def all_entries_iterator(chunk: int) -> AsyncGenerator[Entry, None]:
+    feed_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
+    entry_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
+
+    sql = """
+    SELECT * FROM l_entries
+    WHERE (%(feed_id)s, %(entry_id)s) < (feed_id, id)
+    ORDER BY feed_id, id ASC
+    LIMIT %(chunk)s
+    """
+
+    while True:
+        rows = await execute(sql, {"feed_id": feed_id, "entry_id": entry_id, "chunk": chunk})
+
+        if not rows:
+            break
+
+        for row in rows:
+            yield row_to_entry(row)
+
+        feed_id = rows[-1]["feed_id"]
+        entry_id = rows[-1]["id"]
+
+
+async def update_external_url(entity_id: uuid.UUID, url: str) -> None:
+    sql = """
+    UPDATE l_entries
+    SET external_url = %(url)s
+    WHERE id = %(entity_id)s
+    """
+
+    await execute(sql, {"entity_id": entity_id, "url": url})

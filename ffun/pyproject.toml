@@ -77,6 +77,8 @@ cryptography = "41.0.*"
 
 markdown = "3.4.*"
 
+furl = "2.1.*"
+
 [tool.poetry.dev-dependencies]
 
 pytest = "7.4.*"
@@ -143,6 +145,10 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "supertokens_python.*"
 ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "furl.*"
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 addopts = """-x -vv --strict-markers -p no:cacheprovider"""

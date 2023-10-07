@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
+
+<channel>
+	<title>Юникодный заголовок</title>
+	<atom:link href="https://example.org/feed/" rel="self" type="application/rss+xml" />
+	<link>https://example.com</link>
+	<description>Юникодный заголовок</description>
+	<lastBuildDate>Sun, 24 Sep 2023 08:44:11 +0000</lastBuildDate>
+	<language>ru-RU</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	<generator>https://wordpress.org/?v=6.3.1</generator>
+
+<image>
+	<url>https://example.com/wp-content/uploads/2021/07/cropped-favicon-32x32.jpg</url>
+	<title>Юникодный заголовок</title>
+	<link>https://example.com</link>
+	<width>32</width>
+	<height>32</height>
+</image>
+	<item>
+		<title>Новость 1</title>
+		<link>https://example.com/news-1/</link>
+					<comments>https://example.com/news-1/#respond</comments>
+
+		<dc:creator><![CDATA[Какой-то Автор]]></dc:creator>
+		<pubDate>Sun, 24 Sep 2023 08:35:23 +0000</pubDate>
+				<category><![CDATA[Блог]]></category>
+		<category><![CDATA[Feeds Fun]]></category>
+		<category><![CDATA[Open source]]></category>
+		<category><![CDATA[Python]]></category>
+		<category><![CDATA[Нейронные Сети]]></category>
+		<category><![CDATA[Практика]]></category>
+		<category><![CDATA[Разработка]]></category>
+		<guid isPermaLink="false">https://example.com/?p=2244</guid>
+
+					<description><![CDATA[<p>Описание новости 1 [&#8230;]</p>]]></description>
+										<content:encoded><![CDATA[<figure class="wp-block-image size-full"><a href="https://example.com/wp-content/uploads/2023/09/news-1.png" rel="lightbox[2244]"><img decoding="async" fetchpriority="high" width="1019" height="723" src="https://example.com/wp-content/uploads/2023/09/news-1.png" alt="" class="wp-image-2247" srcset="https://example.com/wp-content/uploads/2023/09/news-1.png 1019w, https://example.com/wp-content/uploads/2023/09/news-1-300x213.png 300w, https://example.com/wp-content/uploads/2023/09/news-1-768x545.png 768w, https://example.com/wp-content/uploads/2023/09/news-1-624x443.png 624w" sizes="(max-width: 1019px) 100vw, 1019px" /></a><figcaption class="wp-element-caption">Описание картинки.</figcaption></figure>
+
+
+
+<p>Какой-то контент.</p>
+
+]]></content:encoded>
+
+					<wfw:commentRss>https://example.com/feeds-fun-news-reader-with-tags-and-chatgpt/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+
+
+			</item>
+		<item>
+		<title>Новость 2</title>
+		<link>https://example.com/news-2/</link>
+					<comments>https://example.com/news-2/#respond</comments>
+
+		<dc:creator><![CDATA[Tiendil]]></dc:creator>
+		<pubDate>Wed, 30 Aug 2023 19:56:11 +0000</pubDate>
+				<category><![CDATA[Блог]]></category>
+		<category><![CDATA[Бизнес]]></category>
+		<category><![CDATA[Геймдев]]></category>
+		<category><![CDATA[Дизайн игр]]></category>
+		<category><![CDATA[Монетизация]]></category>
+		<guid isPermaLink="false">https://example.com/?p=2232</guid>
+
+					<description><![CDATA[<p>Описание новости 2</p>]]></description>
+										<content:encoded><![CDATA[<figure class="wp-block-image size-full is-resized"><a href="https://example.com/wp-content/uploads/2023/08/news-2-cover.jpg" rel="lightbox[2232]"><img decoding="async" src="https://example.com/wp-content/uploads/2023/08/news-2-cover.jpg" alt="" class="wp-image-2236" style="width:655px;height:655px" width="655" height="655" srcset="https://example.com/wp-content/uploads/2023/08/news-2-cover.jpg 1024w, https://example.com/wp-content/uploads/2023/08/news-2-cover-300x300.jpg 300w, https://example.com/wp-content/uploads/2023/08/news-2-cover-150x150.jpg 150w, https://example.com/wp-content/uploads/2023/08/news-2-cover-768x768.jpg 768w, https://example.com/wp-content/uploads/2023/08/news-2-cover-624x624.jpg 624w, https://example.com/wp-content/uploads/2023/08/news-2-cover-120x120.jpg 120w" sizes="(max-width: 655px) 100vw, 655px" /></a><figcaption class="wp-element-caption"><em>DALL-E:&nbsp;«An indie game developer is crying over a marketing budget. Cubism.»</em></figcaption></figure>
+
+
+
+<p>Какой-то контент 2.</p>
+]]></content:encoded>
+
+					<wfw:commentRss>https://example.com/news-2/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+
+
+			</item>
+	</channel>
+</rss>

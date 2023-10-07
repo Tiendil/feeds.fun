@@ -1,0 +1,23 @@
+{
+  "url": "https://example.com/feed/",
+  "title": "Some author",
+  "description": "",
+  "entries": [
+    {
+      "title": "Entry title 1",
+      "body": "<p>Summary 1</p>",
+      "external_id": "/2023/07/25/news-1.html",
+      "external_url": "https://example.com/2023/07/25/news-1.html",
+      "external_tags": [],
+      "published_at": "2023-07-25T17:15:00"
+    },
+    {
+      "title": "Entry title 2",
+      "body": "<p>Summary 2</p>",
+      "external_id": "/2023/03/25/news-2.html",
+      "external_url": "https://example.com/2023/03/25/news-2.html",
+      "external_tags": [],
+      "published_at": "2023-03-25T19:05:00"
+    }
+  ]
+}
