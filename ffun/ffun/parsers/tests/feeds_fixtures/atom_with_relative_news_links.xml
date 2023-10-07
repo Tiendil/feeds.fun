@@ -1,0 +1,36 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Some author</title>
+  <id>http://example.com/</id>
+  <link href="http://example.com/"/>
+  <link href="http://example.com/feed.xml" rel="self"/>
+  <updated>2023-07-25T17:15:00+00:00</updated>
+  <author>
+    <name>Some author</name>
+  </author>
+  <entry>
+    <title>Entry title 1</title>
+    <link rel="alternate" href="/2023/07/25/news-1.html"/>
+    <id>/2023/07/25/news-1.html</id>
+    <published>2023-07-25T17:15:00+00:00</published>
+    <updated>2023-07-25T17:15:00+00:00</updated>
+    <author>
+      <name>Some Author</name>
+    </author>
+    <summary type="html">&lt;p&gt;Summary 1&lt;/p&gt;</summary>
+    <content type="html">&lt;p&gt;Content 1&lt;/p&gt;</content>
+  </entry>
+  <entry>
+    <title>Entry title 2</title>
+    <link rel="alternate" href="/2023/03/25/news-2.html"/>
+    <id>/2023/03/25/news-2.html</id>
+    <published>2023-03-25T19:05:00+00:00</published>
+    <updated>2023-03-25T19:05:00+00:00</updated>
+    <author>
+      <name>Some Author</name>
+    </author>
+    <summary type="html">&lt;p&gt;Summary 2&lt;/p&gt;</summary>
+    <content type="html">&lt;p&gt;Content 2&lt;/p&gt;</content>
+  </entry>
+</feed>
