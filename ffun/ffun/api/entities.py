@@ -260,7 +260,7 @@ class GetEntriesByIdsResponse(api.APISuccess):
     entries: list[Entry]
 
 
-class CreateRuleRequest(api.APIRequest):
+class CreateOrUpdateRuleRequest(api.APIRequest):
     tags: list[str]
     score: int
 

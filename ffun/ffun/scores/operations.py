@@ -25,7 +25,7 @@ def row_to_rule(row: dict[str, Any]) -> Rule:
     )
 
 
-async def create_rule(user_id: uuid.UUID, tags: Iterable[int], score: int) -> None:
+async def create_or_update_rule(user_id: uuid.UUID, tags: Iterable[int], score: int) -> None:
     tags = normalize_tags(tags)
     key = ",".join(map(str, tags))
 
@@ -37,7 +37,15 @@ async def create_rule(user_id: uuid.UUID, tags: Iterable[int], score: int) -> No
     try:
         await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "tags": tags, "key": key, "score": score})
     except psycopg.errors.UniqueViolation:
-        logger.warning("rule_already_exists", key=key)
+        logger.info("rule_already_exists_change_score", key=key)
+
+        sql = """
+        UPDATE s_rules
+        SET score = %(score)s, updated_at = NOW()
+        WHERE user_id = %(user_id)s AND key = %(key)s
+        """
+
+        await execute(sql, {"user_id": user_id, "key": key, "score": score})
 
 
 async def delete_rule(user_id: uuid.UUID, rule_id: uuid.UUID) -> None:
