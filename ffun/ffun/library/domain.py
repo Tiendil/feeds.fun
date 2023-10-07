@@ -12,6 +12,7 @@ get_new_entries = operations.get_new_entries
 check_stored_entries_by_external_ids = operations.check_stored_entries_by_external_ids
 mark_entry_as_processed = operations.mark_entry_as_processed
 get_entries_to_process = operations.get_entries_to_process
+all_entries_iterator = operations.all_entries_iterator
 
 
 async def get_entry(entry_id: uuid.UUID) -> Entry:
