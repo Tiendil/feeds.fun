@@ -25,7 +25,7 @@ def row_to_rule(row: dict[str, Any]) -> Rule:
     )
 
 
-async def create_or_update_rule(user_id: uuid.UUID, tags: Iterable[int], score: int) -> None:
+async def create_or_update_rule(user_id: uuid.UUID, tags: Iterable[int], score: int) -> Rule:
     tags = normalize_tags(tags)
 
     key = ",".join(map(str, tags))
@@ -33,10 +33,11 @@ async def create_or_update_rule(user_id: uuid.UUID, tags: Iterable[int], score: 
     sql = """
         INSERT INTO s_rules (id, user_id, tags, key, score)
         VALUES (%(id)s, %(user_id)s, %(tags)s, %(key)s, %(score)s)
+        RETURNING *
         """
 
     try:
-        await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "tags": tags, "key": key, "score": score})
+        result = await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "tags": tags, "key": key, "score": score})
     except psycopg.errors.UniqueViolation:
         logger.info("rule_already_exists_change_score", key=key)
 
@@ -44,9 +45,12 @@ async def create_or_update_rule(user_id: uuid.UUID, tags: Iterable[int], score: 
         UPDATE s_rules
         SET score = %(score)s, updated_at = NOW()
         WHERE user_id = %(user_id)s AND key = %(key)s
+        RETURNING *
         """
 
-        await execute(sql, {"user_id": user_id, "key": key, "score": score})
+        result = await execute(sql, {"user_id": user_id, "key": key, "score": score})
+
+    return row_to_rule(result[0])
 
 
 async def delete_rule(user_id: uuid.UUID, rule_id: uuid.UUID) -> None:
