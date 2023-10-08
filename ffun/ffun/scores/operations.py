@@ -27,6 +27,7 @@ def row_to_rule(row: dict[str, Any]) -> Rule:
 
 async def create_or_update_rule(user_id: uuid.UUID, tags: Iterable[int], score: int) -> None:
     tags = normalize_tags(tags)
+
     key = ",".join(map(str, tags))
 
     sql = """

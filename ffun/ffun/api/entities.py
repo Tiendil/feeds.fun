@@ -265,7 +265,7 @@ class CreateOrUpdateRuleRequest(api.APIRequest):
     score: int
 
 
-class CreateRuleResponse(api.APISuccess):
+class CreateOrUpdateRuleResponse(api.APISuccess):
     pass
 
 
