@@ -23,6 +23,18 @@ class TestCreateOrUpdateRule:
         assert created_rule.score == 13
 
     @pytest.mark.asyncio
+    async def test_tags_order_does_not_affect_creation(self, internal_user_id: uuid.UUID, tree_tags_ids: tuple[int, int, int]) -> None:
+        async with TableSizeDelta('s_rules', delta=1):
+            created_rule_1 = await operations.create_or_update_rule(internal_user_id, tree_tags_ids, 13)
+            created_rule_2 = await operations.create_or_update_rule(internal_user_id, reversed(tree_tags_ids), 17)
+
+        assert created_rule_1.tags == created_rule_2.tags
+
+        rules = await domain.get_rules(internal_user_id)
+
+        assert rules == [created_rule_2]
+
+    @pytest.mark.asyncio
     async def test_update_scores_of_existed_rule(self, internal_user_id: uuid.UUID, tree_tags_ids: tuple[int, int, int]) -> None:
         await operations.create_or_update_rule(internal_user_id, tree_tags_ids, 13)
 
@@ -101,3 +113,13 @@ class TestDeleteRule:
 
         async with TableSizeNotChanged('s_rules'):
             await operations.delete_rule(internal_user_id, uuid.uuid4())
+
+
+# most of the logic of this function is validated in other tests
+class TestGetRules:
+
+    @pytest.mark.asyncio
+    async def test_no_rules(self, internal_user_id: uuid.UUID) -> None:
+        rules = await domain.get_rules(internal_user_id)
+
+        assert rules == []
