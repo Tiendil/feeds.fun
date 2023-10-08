@@ -5,13 +5,18 @@ import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
+from ffun.scores import errors
 from ffun.scores.entities import Rule
 
 logger = logging.get_module_logger()
 
 
-def normalize_tags(tags: Iterable[int]) -> list[int]:
+def _normalize_tags(tags: Iterable[int]) -> list[int]:
     return list(sorted(tags))
+
+
+def _key_from_tags(tags: Iterable[int]) -> str:
+    return ",".join(map(str, tags))
 
 
 def row_to_rule(row: dict[str, Any]) -> Rule:
@@ -26,9 +31,9 @@ def row_to_rule(row: dict[str, Any]) -> Rule:
 
 
 async def create_or_update_rule(user_id: uuid.UUID, tags: Iterable[int], score: int) -> Rule:
-    tags = normalize_tags(tags)
+    tags = _normalize_tags(tags)
 
-    key = ",".join(map(str, tags))
+    key = _key_from_tags(tags)
 
     sql = """
         INSERT INTO s_rules (id, user_id, tags, key, score)
@@ -62,17 +67,23 @@ async def delete_rule(user_id: uuid.UUID, rule_id: uuid.UUID) -> None:
     await execute(sql, {"user_id": user_id, "rule_id": rule_id})
 
 
-async def update_rule(user_id: uuid.UUID, rule_id: uuid.UUID, tags: Iterable[int], score: int) -> None:
-    tags = normalize_tags(tags)
-    key = ",".join(map(str, tags))
+async def update_rule(user_id: uuid.UUID, rule_id: uuid.UUID, tags: Iterable[int], score: int) -> Rule:
+    tags = _normalize_tags(tags)
+    key = _key_from_tags(tags)
 
     sql = """
     UPDATE s_rules
     SET tags = %(tags)s, key = %(key)s, score = %(score)s, updated_at = NOW()
     WHERE user_id = %(user_id)s AND id = %(rule_id)s
+    returning *
     """
 
-    await execute(sql, {"user_id": user_id, "rule_id": rule_id, "tags": tags, "key": key, "score": score})
+    result = await execute(sql, {"user_id": user_id, "rule_id": rule_id, "tags": tags, "key": key, "score": score})
+
+    if not result:
+        raise errors.NoRuleFound()
+
+    return row_to_rule(result[0])
 
 
 async def get_rules(user_id: uuid.UUID) -> list[Rule]:

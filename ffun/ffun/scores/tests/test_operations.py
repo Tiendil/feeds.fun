@@ -3,7 +3,7 @@ import uuid
 import pytest
 
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
-from ffun.scores import domain, operations
+from ffun.scores import domain, errors, operations
 from ffun.scores.entities import Rule
 
 
@@ -109,10 +109,64 @@ class TestDeleteRule:
     async def test_delete_not_existed_rule(self,
                                            internal_user_id: uuid.UUID,
                                            tree_tags_ids: tuple[int, int, int]) -> None:
-        await operations.create_or_update_rule(internal_user_id, tree_tags_ids, 13)
-
         async with TableSizeNotChanged('s_rules'):
             await operations.delete_rule(internal_user_id, uuid.uuid4())
+
+    @pytest.mark.asyncio
+    async def test_delete_for_wrong_user(self,
+                                         internal_user_id: uuid.UUID,
+                                         another_internal_user_id: uuid.UUID,
+                                         tree_tags_ids: tuple[int, int, int]) -> None:
+        rule_to_delete = await operations.create_or_update_rule(internal_user_id, tree_tags_ids, 13)
+
+        async with TableSizeNotChanged('s_rules'):
+            await operations.delete_rule(another_internal_user_id, rule_to_delete.id)
+
+
+class TestUpdateRule:
+
+    @pytest.mark.asyncio
+    async def test_update_rule(self,
+                               internal_user_id: uuid.UUID,
+                               tree_tags_ids: tuple[int, int, int]) -> None:
+        rule_to_update = await operations.create_or_update_rule(internal_user_id, tree_tags_ids, 13)
+
+        async with TableSizeNotChanged('s_rules'):
+            updated_rule = await operations.update_rule(internal_user_id, rule_to_update.id, tree_tags_ids[:2], 17)
+
+        assert updated_rule.id == rule_to_update.id
+        assert updated_rule.user_id == internal_user_id
+        assert updated_rule.tags == set(tree_tags_ids[:2])
+        assert updated_rule.score == 17
+
+        rules = await domain.get_rules(internal_user_id)
+
+        assert rules == [updated_rule]
+
+    @pytest.mark.asyncio
+    async def test_update_not_existed_rule(self,
+                                           internal_user_id: uuid.UUID,
+                                           tree_tags_ids: tuple[int, int, int]) -> None:
+
+        async with TableSizeNotChanged('s_rules'):
+            with pytest.raises(errors.NoRuleFound):
+                await operations.update_rule(internal_user_id, uuid.uuid4(), tree_tags_ids[:2], 17)
+
+    @pytest.mark.asyncio
+    async def test_wrong_user(self,
+                              internal_user_id: uuid.UUID,
+                              another_internal_user_id: uuid.UUID,
+                              tree_tags_ids: tuple[int, int, int]) -> None:
+
+        rule_to_update = await operations.create_or_update_rule(internal_user_id, tree_tags_ids, 13)
+
+        async with TableSizeNotChanged('s_rules'):
+            with pytest.raises(errors.NoRuleFound):
+                await operations.update_rule(another_internal_user_id, rule_to_update.id, tree_tags_ids, 17)
+
+        rules = await domain.get_rules(internal_user_id)
+
+        assert rules == [rule_to_update]
 
 
 # most of the logic of this function is validated in other tests
