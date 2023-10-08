@@ -38,7 +38,7 @@ classifiers = [
 python = "^3.11"
 
 uvicorn = {extras = ["standard"], version = "0.*"}
-fastapi = "0.100.*"
+fastapi = "0.103.*"
 pydantic = "2.4.*"
 pydantic-settings = "2.0.*"
 typer = "0.9.*"
