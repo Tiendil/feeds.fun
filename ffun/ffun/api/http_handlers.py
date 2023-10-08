@@ -125,7 +125,9 @@ async def api_get_entries_by_ids(
 
 
 @router.post("/api/create-or-update-rule")
-async def api_create_or_update_rule(request: entities.CreateOrUpdateRuleRequest, user: User) -> entities.CreateOrUpdateRuleResponse:
+async def api_create_or_update_rule(
+    request: entities.CreateOrUpdateRuleRequest, user: User
+) -> entities.CreateOrUpdateRuleResponse:
     tags_ids = await o_domain.get_ids_by_uids(request.tags)
 
     await s_domain.create_or_update_rule(user_id=user.id, tags=set(tags_ids.values()), score=request.score)

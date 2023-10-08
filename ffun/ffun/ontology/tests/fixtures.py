@@ -3,7 +3,7 @@ import uuid
 import pytest
 import pytest_asyncio
 
-from ffun.ontology.domain import get_ids_by_uids, get_tags_by_ids
+from ffun.ontology.domain import get_ids_by_uids
 
 
 @pytest_asyncio.fixture
