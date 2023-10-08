@@ -33,7 +33,7 @@ class Sentry(pydantic.BaseModel):
     traces_sample_rate: float = 1.0
 
 
-_development_origins = ('*',)
+_development_origins = ("*",)
 
 
 class Settings(BaseSettings):
@@ -54,8 +54,8 @@ class Settings(BaseSettings):
     origins: tuple[str, ...] = _development_origins
 
     @pydantic.model_validator(mode="after")
-    def origin_must_be_redefined_in_prod(self) -> 'Settings':
-        if self.environment == 'prod' and self.origins == _development_origins:
+    def origin_must_be_redefined_in_prod(self) -> "Settings":
+        if self.environment == "prod" and self.origins == _development_origins:
             raise ValueError("Origins must be redefined in prod")
 
         return self
