@@ -140,9 +140,9 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_credentials=False,
+        allow_methods=[],
+        allow_headers=[],
     )
 
     logger.info("app_created")
