@@ -19,7 +19,7 @@
     <a
       href="#"
       v-if="canCreateRule"
-      @click.prevent="createRule()"
+      @click.prevent="createOrUpdateRule()"
       >create rule</a
     >
   </div>
@@ -41,8 +41,8 @@
     return properties.tags.length > 0;
   });
 
-  async function createRule() {
-    await api.createRule({tags: properties.tags, score: currentScore.value});
+  async function createOrUpdateRule() {
+    await api.createOrUpdateRule({tags: properties.tags, score: currentScore.value});
     emit("rule-constructor:created");
   }
 </script>

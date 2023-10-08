@@ -8,7 +8,7 @@ const ENTRY_POINT = "/api";
 const API_GET_FEEDS = `${ENTRY_POINT}/get-feeds`;
 const API_GET_LAST_ENTRIES = `${ENTRY_POINT}/get-last-entries`;
 const API_GET_ENTRIES_BY_IDS = `${ENTRY_POINT}/get-entries-by-ids`;
-const API_CREATE_RULE = `${ENTRY_POINT}/create-rule`;
+const API_CREATE_OR_UPDATE_RULE = `${ENTRY_POINT}/create-or-update-rule`;
 
 const API_DELETE_RULE = `${ENTRY_POINT}/delete-rule`;
 const API_UPDATE_RULE = `${ENTRY_POINT}/update-rule`;
@@ -97,9 +97,9 @@ export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
   return entries;
 }
 
-export async function createRule({tags, score}: {tags: string[]; score: number}) {
+export async function createOrUpdateRule({tags, score}: {tags: string[]; score: number}) {
   const response = await post({
-    url: API_CREATE_RULE,
+    url: API_CREATE_OR_UPDATE_RULE,
     data: {tags: tags, score: score}
   });
   return response;
