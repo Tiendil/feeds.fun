@@ -5,6 +5,8 @@ import * as Sentry from "@sentry/vue";
 import App from "./App.vue";
 import router from "./router";
 
+import "./style.css";
+
 import FeedsList from "./components/FeedsList.vue";
 import EntriesList from "./components/EntriesList.vue";
 import RulesList from "./components/RulesList.vue";
