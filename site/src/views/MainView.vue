@@ -12,7 +12,7 @@
       <supertokens-login />
     </div>
 
-    <h2>Web-based news reader with tags</h2>
+    <h2>News reader with tags</h2>
 
     <ul class="main-page-element">
       <li>Reader automatically assigns tags to news.</li>
