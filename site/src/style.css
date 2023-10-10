@@ -5,7 +5,7 @@
 @layer base {
 
     html {
-        @apply font-serif;
+        @apply font-serif bg-slate-100;
     }
 
   h1 {

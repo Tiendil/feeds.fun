@@ -4,16 +4,13 @@
 
     <div v-if="globalState.isLoggedIn">
       <p>You have already logged in.</p>
-      <button @click.prevent="goToWorkspace()">Go To Feeds</button>
+      <button class="text-blue-600 hover:text-blue-800 text-xl pt-4"
+              @click.prevent="goToWorkspace()">Go To Feeds ⇒</button>
     </div>
 
     <div v-else>
       <supertokens-login />
     </div>
-
-    <br />
-
-    <ffun-github-buttons :repository="settings.githubRepo" />
 
     <h2>Web-based news reader</h2>
 

@@ -1,3 +1,7 @@
+# TODO (remove before merge)
+
+- apply to bodies https://tailwindcss.com/docs/typography-plugin
+
 # Feeds Fun
 
 Web-based news reader. Self-hosted, if it is your way.
