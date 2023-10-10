@@ -12,21 +12,19 @@
       <supertokens-login />
     </div>
 
-    <h2>Web-based news reader</h2>
+    <h2>Web-based news reader with tags</h2>
 
     <ul class="main-page-element">
-      <li>Reader automatically assigns tags to news entries.</li>
+      <li>Reader automatically assigns tags to news.</li>
       <li>You create rules to score news by tags.</li>
-      <li>Filter and sort news how you want, to read only what you want.</li>
-      <li>?????</li>
-      <li>Profit.</li>
+      <li>Filter and sort news how you want  ⇒ read only what you want.</li>
     </ul>
 
     <h2>You are in control</h2>
 
     <ul class="main-page-element">
       <li>No black box recommendation algorithms.</li>
-      <li>No "smart" reordering of your news.</li>
+      <li>No "smart" reordering.</li>
       <li>No ads.</li>
       <li>No selling of your data.</li>
     </ul>

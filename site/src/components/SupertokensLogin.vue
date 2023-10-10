@@ -1,7 +1,7 @@
 <template>
   <div>
     <template v-if="!requested">
-      <p>Will send you an email with a login link.</p>
+      <p>We'll send you an email with a login link.</p>
 
       <p>If you don&apos;t have an account, one will be created.</p>
 
