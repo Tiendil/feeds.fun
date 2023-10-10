@@ -1,3 +1,18 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+
+    html {
+        @apply font-serif;
+    }
+
+  h1 {
+    @apply text-3xl font-bold leading-tight my-4;
+  }
+
+  h2 {
+    @apply text-2xl font-semibold leading-relaxed my-3;
+  }
+}
