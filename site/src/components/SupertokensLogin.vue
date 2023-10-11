@@ -1,6 +1,6 @@
 <template>
 
-  <div v-if="!globalState.isLoggedIn">
+  <div v-if="globalState.isLoggedIn">
     <p class="">You have already logged in.</p>
     <button class="text-blue-600 hover:text-blue-800 text-xl pt-0"
             @click.prevent="goToWorkspace()">Go To Feeds ⇒</button>
