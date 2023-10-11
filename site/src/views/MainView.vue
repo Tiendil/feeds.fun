@@ -2,14 +2,14 @@
   <wide-layout>
     <template #header> Feeds Fun </template>
 
-    <div v-if="globalState.isLoggedIn">
-      <p>You have already logged in.</p>
-      <button class="text-blue-600 hover:text-blue-800 text-xl pt-4"
-              @click.prevent="goToWorkspace()">Go To Feeds ⇒</button>
-    </div>
+    <div class="border-2 border-green-300 bg-green-50 max-w-md mx-auto p-2">
+      <div v-if="globalState.isLoggedIn">
+        <p>You have already logged in.</p>
+        <button class="text-blue-600 hover:text-blue-800 text-xl pt-0"
+                @click.prevent="goToWorkspace()">Go To Feeds ⇒</button>
+      </div>
 
-    <div v-else>
-      <supertokens-login />
+      <supertokens-login v-else />
     </div>
 
     <h2>News reader with tags</h2>
