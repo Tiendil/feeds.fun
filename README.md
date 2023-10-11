@@ -1,6 +1,8 @@
 # TODO (remove before merge)
 
 - apply to bodies https://tailwindcss.com/docs/typography-plugin
+- test supertokens on MainView
+- test supertokens on AuthView
 
 # Feeds Fun
 
