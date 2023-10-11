@@ -28,7 +28,7 @@
       <p class="">
         Login link was sent to <strong>{{ email }}</strong>
 
-        <a class="text-blue-600 hover:text-blue-800 cursor-pointer ml-1"
+        <a class="ml-1"
            @click.prevent="onChangeEmail()">change</a>
       </p>
 

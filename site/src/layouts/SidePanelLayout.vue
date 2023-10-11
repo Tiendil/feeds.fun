@@ -109,7 +109,7 @@
 
       <div
         v-if="showApiKeyMessage"
-        style="border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; background-color: #f0f8ff">
+        class="ffun-info-normal">
         <p>
           Because, for now, our service is free to use and OpenAI API costs money, we politely ask you to set up your
           own OpenAI API key.

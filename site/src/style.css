@@ -16,16 +16,24 @@
         @apply text-2xl font-semibold leading-relaxed my-3;
     }
 
+    p a {
+        @apply text-blue-600 hover:text-blue-800 cursor-pointer;
+    }
+
     .ffun-info-good {
-        @apply border-2 border-green-300 bg-green-50 p-2;
+        @apply border-2 border-green-300 bg-green-50 p-2 my-1;
     }
 
     .ffun-info-bad {
-        @apply border-2 border-red-300 bg-red-50 p-2;
+        @apply border-2 border-red-300 bg-red-50 p-2 my-1;
     }
 
     .ffun-info-warning {
-        @apply border-2 border-yellow-300 bg-yellow-50 p-2;
+        @apply border-2 border-yellow-300 bg-yellow-50 p-2 my-1;
+    }
+
+    .ffun-info-normal {
+        @apply border-2 border-blue-300 bg-blue-50 p-2 my-2;
     }
 
     .ffun-form-button {
