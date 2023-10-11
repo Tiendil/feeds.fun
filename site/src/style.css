@@ -27,4 +27,8 @@
     .ffun-info-warning {
         @apply border-2 border-yellow-300 bg-yellow-50 p-2;
     }
+
+    .ffun-form-button {
+        @apply bg-blue-500 enabled:hover:bg-blue-700 text-white py-1 px-4 rounded;
+    }
 }

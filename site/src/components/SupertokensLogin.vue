@@ -1,52 +1,54 @@
 <template>
-  <div v-if="globalState.isLoggedIn">
-    <p>You have already logged in.</p>
+
+  <div v-if="!globalState.isLoggedIn">
+    <p class="">You have already logged in.</p>
     <button class="text-blue-600 hover:text-blue-800 text-xl pt-0"
             @click.prevent="goToWorkspace()">Go To Feeds ⇒</button>
   </div>
 
   <div v-else>
     <template v-if="!requested">
-      <p>We'll send you an email with a login link.</p>
+      <p class="text-left">We'll send you an email with a login link.</p>
 
-      <p>If you don&apos;t have an account, one will be created.</p>
+      <p class="text-left">If you don&apos;t have an account, one will be created.</p>
 
-      <form @submit.prevent="login()">
+      <form @submit.prevent="login()" class="w-full flex">
         <input
+          class="flex-grow border-2 p-1 rounded border-blue-200 focus:border-blue-300 focus:outline-none placeholder-gray-500 mr-2"
           type="email"
           v-model="email"
           required
-          placeholder="your-account-email@example.com" />
-        <button type="submit">Login</button>
+          placeholder="me@example.com" />
+        <button class="ffun-form-button"
+                type="submit">Login</button>
       </form>
     </template>
 
     <template v-else>
-      <p>
-        Email with login link has been sent to <strong>{{ email }}</strong>
+      <p class="">
+        Login link was sent to <strong>{{ email }}</strong>
+
+        <a class="text-blue-600 hover:text-blue-800 cursor-pointer ml-1"
+           @click.prevent="onChangeEmail()">change</a>
       </p>
 
       <button
+        v-if="!counting"
         type="button"
-        class="btn btn-primary"
-        :disabled="counting">
-        <vue-countdown
-          v-if="counting"
-          :time="supertokens.allowResendAfter"
-          @end="onCountdownEnd"
-          v-slot="{totalSeconds}">
-          Resend the email in {{ totalSeconds }} seconds.
-        </vue-countdown>
+        class="btn btn-primary ffun-form-button disabled:bg-blue-700/75">
         <span
-          v-else
           @click.prevent="resend()"
-          >Resend email</span
-        >
+          >Resend email</span>
       </button>
 
-      <br /><br />
-
-      <button @click.prevent="onChangeEmail()">Change email</button>
+      <vue-countdown
+        v-else
+        :time="supertokens.allowResendAfter"
+        @end="onCountdownEnd"
+        class=""
+        v-slot="{totalSeconds}">
+        Resend in {{ totalSeconds }} seconds
+      </vue-countdown>
     </template>
   </div>
 </template>

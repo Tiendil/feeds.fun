@@ -3,6 +3,7 @@
 - apply to bodies https://tailwindcss.com/docs/typography-plugin
 - test supertokens on MainView
 - test supertokens on AuthView
+- italic in info panels? like on login widget
 
 # Feeds Fun
 
