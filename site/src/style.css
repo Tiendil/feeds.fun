@@ -37,6 +37,7 @@
     }
 
     .ffun-form-button {
-        @apply bg-blue-500 enabled:hover:bg-blue-700 text-white py-1 px-4 rounded;
+        /* @apply bg-blue-500 enabled:hover:bg-blue-700 text-white py-1 px-4 rounded; */
+        @apply border-2 border-blue-300 bg-blue-50 hover:bg-blue-100 enabled:hover:border-blue-500 py-0 px-2 rounded;
     }
 }

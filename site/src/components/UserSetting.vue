@@ -18,12 +18,14 @@
       <button
         v-if="!setting.value"
         @click.prevent="turnOn()"
+        class="ffun-form-button"
         >Turn on</button
       >
 
       <button
         v-if="setting.value"
         @click.prevent="turnOff()"
+        class="ffun-form-button"
         >Turn off</button
       >
     </template>
@@ -33,9 +35,9 @@
     </template>
 
     <template v-else>
-      <button @click.prevent="save()">Save</button>
+      <button @click.prevent="save()" class="ffun-form-button">Save</button>
       &nbsp;
-      <button @click.prevent="cancel()">Cancel</button>
+      <button @click.prevent="cancel()" class="ffun-form-button">Cancel</button>
     </template>
 
     <div

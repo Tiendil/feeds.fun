@@ -12,9 +12,7 @@
       <br />
     </template>
 
-    <br />
-
-    <button @click="subscribe()">Subscribe</button>
+    <button @click="subscribe()" class="ffun-form-button">Subscribe</button>
   </div>
 </template>
 
