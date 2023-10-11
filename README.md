@@ -4,6 +4,7 @@
 - test supertokens on MainView
 - test supertokens on AuthView
 - italic in info panels? like on login widget
+- show only single warning: subscribe to collections or set API key
 
 # Feeds Fun
 

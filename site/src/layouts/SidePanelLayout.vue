@@ -115,7 +115,7 @@
           own OpenAI API key.
         </p>
         <p>
-          You can do it on the
+          You can do this on the
           <a
             href="#"
             @click.prevent="router.push({name: e.MainPanelMode.Settings, params: {}})"
