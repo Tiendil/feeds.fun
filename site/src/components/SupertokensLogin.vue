@@ -1,5 +1,11 @@
 <template>
-  <div>
+  <div v-if="globalState.isLoggedIn">
+    <p>You have already logged in.</p>
+    <button class="text-blue-600 hover:text-blue-800 text-xl pt-0"
+            @click.prevent="goToWorkspace()">Go To Feeds ⇒</button>
+  </div>
+
+  <div v-else>
     <template v-if="!requested">
       <p>We'll send you an email with a login link.</p>
 
@@ -54,7 +60,12 @@
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
   import {useSupertokens} from "@/stores/supertokens";
+  import {useGlobalState} from "@/stores/globalState";
+  import {useRouter} from "vue-router";
   import * as settings from "@/logic/settings";
+  const router = useRouter();
+
+  const globalState = useGlobalState();
 
   const supertokens = useSupertokens();
 
@@ -104,6 +115,10 @@
   async function onChangeEmail() {
     requested.value = false;
     await supertokens.clearLoginAttempt();
+  }
+
+  function goToWorkspace() {
+    router.push({name: e.MainPanelMode.Entries, params: {}});
   }
 
   onMounted(async () => {

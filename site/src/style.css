@@ -8,11 +8,23 @@
         @apply font-serif bg-slate-100;
     }
 
-  h1 {
-    @apply text-3xl font-bold leading-tight my-4;
-  }
+    h1 {
+        @apply text-3xl font-bold leading-tight my-4;
+    }
 
-  h2 {
-    @apply text-2xl font-semibold leading-relaxed my-3;
-  }
+    h2 {
+        @apply text-2xl font-semibold leading-relaxed my-3;
+    }
+
+    .ffun-info-good {
+        @apply border-2 border-green-300 bg-green-50 p-2;
+    }
+
+    .ffun-info-bad {
+        @apply border-2 border-red-300 bg-red-50 p-2;
+    }
+
+    .ffun-info-warning {
+        @apply border-2 border-yellow-300 bg-yellow-50 p-2;
+    }
 }

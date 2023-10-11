@@ -1,6 +1,6 @@
 <template>
   <div class="flex justify-center h-screen">
-    <div class="flex flex-col justify-start items-center text-center w-1/2 p-4">
+    <div class="flex flex-col justify-start items-center text-center p-4">
       <header>
         <h1>
           <slot name="header"></slot>
