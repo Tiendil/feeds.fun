@@ -1,6 +1,9 @@
 <template>
 <wide-layout>
-  <template #header> Feeds Fun </template>
+  <template #header>
+    Feeds Fun
+    <small class="block text-lg font-normal ">Personalized news for professionals</small>
+  </template>
 
   <div class="max-w-md mx-auto">
     <div class="ffun-info-good">
