@@ -1,6 +1,6 @@
 <template>
   <div class="flex divide-x ">
-    <div class="p-4 bg-slate-200">
+    <div class="p-4 w-48 bg-slate-200">
       <h2 class="leading-8 my-0">
         <slot name="main-header"></slot>
       </h2>
