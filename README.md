@@ -9,6 +9,7 @@
 - does bg colors too dark?
 - opensource to the main page
 - github repo link to the main page
+- restrict minimum size of side panel
 
 # Feeds Fun
 
