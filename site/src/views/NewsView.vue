@@ -1,14 +1,14 @@
 <template>
   <side-panel-layout>
     <template #side-menu-item-1>
-      For the last
+      For
       <config-selector
         :values="e.LastEntriesPeriodProperties"
         v-model:property="globalSettings.lastEntriesPeriod" />
     </template>
 
     <template #side-menu-item-2>
-      Sorted by
+      Sort by
       <config-selector
         :values="e.EntriesOrderProperties"
         v-model:property="globalSettings.entriesOrder" />
@@ -17,14 +17,16 @@
     <template #side-menu-item-3>
       Show tags:
       <config-flag
+        style="min-width: 2.5rem;"
         v-model:flag="globalSettings.showEntriesTags"
         on-text="yes"
         off-text="no" />
     </template>
 
     <template #side-menu-item-4>
-      Show already read:
+      Show read:
       <config-flag
+        style="min-width: 2.5rem;"
         v-model:flag="globalSettings.showRead"
         on-text="yes"
         off-text="no" />

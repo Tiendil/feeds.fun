@@ -36,16 +36,23 @@
         @apply border-2 border-blue-300 bg-blue-50 p-2 my-2 rounded;
     }
 
-    .ffun-form-button {
-        /* @apply bg-blue-500 enabled:hover:bg-blue-700 text-white py-1 px-4 rounded; */
-        @apply border-2 border-blue-300 bg-blue-50 hover:bg-blue-100 enabled:hover:border-blue-500 py-0 px-2 rounded;
-    }
-
     .ffun-header-link {
         @apply text-blue-600 hover:text-blue-800 cursor-pointer text-lg;
     }
 
     .ffun-header-link-disabled {
         @apply text-lg underline underline-offset-4;
+    }
+
+    .ffun-input-common {
+        @apply border-2 rounded bg-slate-50 hover:bg-blue-50 enabled:hover:border-blue-500 px-1;
+    }
+
+    .ffun-form-button {
+        @apply ffun-input-common border-blue-300 disabled:bg-blue-700/75;
+    }
+
+    .ffun-input {
+        @apply ffun-input-common border-blue-200 focus:border-blue-300 focus:outline-none placeholder-gray-500 py-1;
     }
 }

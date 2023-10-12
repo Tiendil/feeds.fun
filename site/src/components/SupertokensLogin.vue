@@ -14,7 +14,7 @@
 
       <form @submit.prevent="login()" class="w-full flex">
         <input
-          class="flex-grow border-2 p-1 rounded border-blue-200 focus:border-blue-300 focus:outline-none placeholder-gray-500 mr-2"
+          class="ffun-input flex-grow p-1 mr-2"
           type="email"
           v-model="email"
           required
@@ -35,7 +35,7 @@
       <button
         v-if="!counting"
         type="button"
-        class="btn btn-primary ffun-form-button disabled:bg-blue-700/75">
+        class="btn btn-primary ffun-form-button">
         <span
           @click.prevent="resend()"
           >Resend email</span>

@@ -7,6 +7,8 @@
 - show only single warning: subscribe to collections or set API key
 - what with github buttons
 - does bg colors too dark?
+- opensource to the main page
+- github repo link to the main page
 
 # Feeds Fun
 
