@@ -16,6 +16,10 @@
         @apply text-2xl font-semibold leading-relaxed my-3;
     }
 
+    hr {
+        @apply border-slate-400 my-2;
+    }
+
     p a {
         @apply text-blue-600 hover:text-blue-800 cursor-pointer;
     }
@@ -45,7 +49,7 @@
     }
 
     .ffun-input-common {
-        @apply border-2 rounded bg-slate-50 hover:bg-blue-50 enabled:hover:border-blue-500 px-1;
+        @apply border-2 rounded bg-slate-50 hover:bg-blue-50 enabled:hover:border-blue-400 px-1;
     }
 
     .ffun-form-button {

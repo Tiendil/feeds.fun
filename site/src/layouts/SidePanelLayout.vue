@@ -5,7 +5,7 @@
         <slot name="main-header"></slot>
       </h2>
 
-      <hr class="my-2 border-slate-400" />
+      <hr/>
 
       <ul class="space-y-4">
         <li v-if="hasSideMenuItem(1)">
@@ -32,6 +32,7 @@
       <hr v-if="reloadButton" />
 
       <a
+        class="ffun-form-button p-1 my-1 block w-full text-center"
         v-if="reloadButton"
         href="#"
         @click="globalSettings.dataVersion += 1"
