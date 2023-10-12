@@ -5,6 +5,8 @@
 - test supertokens on AuthView
 - italic in info panels? like on login widget
 - show only single warning: subscribe to collections or set API key
+- what with github buttons
+- does bg colors too dark?
 
 # Feeds Fun
 
