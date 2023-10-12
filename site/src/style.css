@@ -59,4 +59,8 @@
     .ffun-input {
         @apply ffun-input-common border-blue-200 focus:border-blue-300 focus:outline-none placeholder-gray-500 py-1;
     }
+
+    .ffun-checkbox {
+        @apply ffun-input-common h-4 w-4 align-middle;
+    }
 }
