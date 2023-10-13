@@ -23,11 +23,9 @@
 
 Web-based news reader. Self-hosted, if it is your way.
 
-- Reader automatically assigns tags to news entries. With the help of ChatGPT.
+- Reader automatically assigns tags to news.
 - You create rules to score news by tags.
-- Filter and sort news how you want, to read only what you want.
-- ?????
-- Profit.
+- Filter and sort news how you want  ⇒ read only what you want.
 
 # Screenshots
 
