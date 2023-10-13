@@ -12,6 +12,7 @@
 - restrict minimum size of side panel
 - OpenAI usage section
 - make tags filter shorter
+- center all main content?
 
 # Feeds Fun
 
