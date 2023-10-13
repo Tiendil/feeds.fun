@@ -31,7 +31,7 @@
       <div
         v-if="showBody"
         class="flex justify-center">
-        <div class="max-w-4xl border-2">
+        <div class="max-w-3xl flex-1 bg-red-200">
           <h2><a :href="entry.url" target="_blank">{{ purifiedTitle }}</a></h2>
           <p v-if="entry.body === null">loading...</p>
           <div
