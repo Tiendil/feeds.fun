@@ -27,7 +27,6 @@ This allows you to regulate your monthly spendings on the OpenAI API.
 - If multiple users are subscribed to a single feed, we'll use a key with fewer usages in the current month.
 - If a user who lacks a key is subscribed to a feed and the feed's news already have tags, \
 the user will see these tags.
-
 - You can find API key usage statistics at this page.
 
 The more users set up the key, the cheaper it will be for everyone.
