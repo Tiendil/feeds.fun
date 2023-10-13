@@ -1,6 +1,6 @@
 # TODO (remove before merge)
 
-- apply to bodies https://tailwindcss.com/docs/typography-plugin
+- to use or not to use  https://tailwindcss.com/docs/typography-plugin for settings and news bodies
 - test supertokens on MainView
 - test supertokens on AuthView
 - italic in info panels? like on login widget
