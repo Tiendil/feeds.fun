@@ -23,36 +23,43 @@
 
     <p>Token usage for your OpenAI key per month.</p>
 
-    <ul>
-      <li> <strong>Used tokens</strong>: the number of tokens in processed requests. </li>
+    <ul class="list-disc list-inside">
+      <li> <strong>Used tokens</strong> — the number of tokens in processed requests. </li>
       <li>
-        <strong>Reserved tokens</strong>: the number of tokens reserved for requests that currently are processing or
+        <strong>Reserved tokens</strong> — the number of tokens reserved for requests that currently are processing or
         were not processed correctly.
       </li>
       <li>
-        <strong>Total tokens</strong>: the total number of tokens used in the month. Should be not less than the actual
+        <strong>Total tokens</strong> — the total number of tokens used in the month. Should be not less than the actual
         used tokens, but can be bigger because we reserve more tokens than actually use.
       </li>
     </ul>
 
     <p v-if="openAIUsage == null">Loading...</p>
 
-    <p v-else-if="openAIUsage.length == 0">No usage data</p>
-
-    <table v-else>
-      <thead>
+    <table v-else class="border border-gray-300 rounded-lg">
+      <thead class="bg-slate-200">
         <tr>
-          <th style="padding-left: 1rem">Period</th>
-          <th style="padding-left: 1rem">Used tokens</th>
-          <th style="padding-left: 1rem">Reserved tokens</th>
-          <th style="padding-left: 1rem">Total tokens</th>
-          <th style="padding-left: 1rem">% from current maximum</th>
+          <th class="p-2">Period</th>
+          <th class="p-2">Used tokens</th>
+          <th class="p-2">Reserved tokens</th>
+          <th class="p-2">Total tokens</th>
+          <th class="p-2">% from current maximum</th>
         </tr>
       </thead>
       <tbody>
         <openai-tokens-usage
           :usage="usage"
           v-for="usage of openAIUsage" />
+
+        <tr if="openAIUsage.length == 0">
+          <td class="text-center">—</td>
+          <td class="text-center">—</td>
+          <td class="text-center">—</td>
+          <td class="text-center">—</td>
+          <td class="text-center">—</td>
+        </tr>
+
       </tbody>
     </table>
   </side-panel-layout>
