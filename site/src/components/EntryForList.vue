@@ -7,27 +7,6 @@
     </div>
 
     <div class="flex-grow">
-      <input-marker
-        class="w-7"
-        :marker="e.Marker.Read"
-        :entry-id="entryId"
-        on-text="read"
-        off-text="new!" />
-
-      <a
-        href="#"
-        class="text-decoration-none ml-1"
-        v-if="!showBody"
-        @click.prevent="displayBody()"
-        >&#9660;</a
-      >
-      <a
-        href="#"
-        class="text-decoration-none ml-1"
-        v-if="showBody"
-        @click.prevent="showBody = false"
-        >&#9650;</a
-      >
 
       <favicon-element
         :url="entry.url"
@@ -36,8 +15,8 @@
       <a
         :href="entry.url"
         target="_blank"
-        @click="onTitleClick()"
-        rel="noopener noreferrer">
+        :class="[{'font-bold': !entriesStore.entries[entry.id].hasMarker(e.Marker.Read)}]"
+        @click="onTitleClick">
         {{ purifiedTitle }}
       </a>
 
@@ -52,8 +31,8 @@
       <div
         v-if="showBody"
         class="flex justify-center">
-        <div class="max-w-4xl">
-          <h2>{{ purifiedTitle }}</h2>
+        <div class="max-w-4xl border-2">
+          <h2><a :href="entry.url" target="_blank">{{ purifiedTitle }}</a></h2>
           <p v-if="entry.body === null">loading...</p>
           <div
             v-if="entry.body !== null"
@@ -62,10 +41,19 @@
       </div>
     </div>
 
-    <div class="flex-shrink-0 w-4 pl-1">
-      <value-date-time
-        :value="timeFor"
-        :reversed="true" />
+    <div class="flex flex-shrink-0">
+      <input-marker
+        class="w-7 mr-2"
+        :marker="e.Marker.Read"
+        :entry-id="entryId"
+        on-text="read"
+        off-text="new" />
+
+      <div class="w-7">
+        <value-date-time
+          :value="timeFor"
+          :reversed="true" />
+      </div>
     </div>
   </div>
 </template>
@@ -116,6 +104,10 @@
     entriesStore.requestFullEntry({entryId: entry.value.id});
   }
 
+function hideBody() {
+  showBody.value = false;
+}
+
   const purifiedTitle = computed(() => {
     if (entry.value === null) {
       return "";
@@ -142,12 +134,30 @@
     return DOMPurify.sanitize(entry.value.body);
   });
 
-  async function onTitleClick() {
+async function onTitleClick(event) {
+
+
+  if (!event.ctrlKey) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (showBody.value) {
+      hideBody();
+    }
+    else {
+      displayBody()
+    }
+  }
+
+  // TODO: is it will be too slow?
+  if (showBody.value) {
     await entriesStore.setMarker({
       entryId: properties.entryId,
       marker: e.Marker.Read
     });
   }
+
+}
 </script>
 
 <style scoped>

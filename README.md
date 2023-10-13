@@ -16,6 +16,8 @@
 - display news caption always in one line (hide too long captions)
 - check hiding already read news when open their body
 - mark news as read when clicking on header in body
+- remove input-marker?
+- news: right column does not placed at the right border of the window
 
 # Feeds Fun
 
