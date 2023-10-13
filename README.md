@@ -13,6 +13,7 @@
 - OpenAI usage section
 - make tags filter shorter
 - center all main content?
+- display news caption always in one line (hide too long captions)
 
 # Feeds Fun
 

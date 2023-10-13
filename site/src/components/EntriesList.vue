@@ -1,11 +1,11 @@
 <template>
   <div>
     <template v-if="entriesToShow.length > 0">
-      <ul style="list-style-type: none; margin: 0; padding: 0">
+      <ul>
         <li
           v-for="entryId in entriesToShow"
           :key="entryId"
-          style="margin-bottom: 0.25rem">
+          class="mb-1">
           <entry-for-list
             :entryId="entryId"
             :time-field="timeField"

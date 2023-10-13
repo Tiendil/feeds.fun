@@ -1,14 +1,14 @@
 <template>
-  <div class="container">
-    <div style="flex-shrink: 0; width: 2rem; text-align: right; padding-right: 0.25rem">
+  <div class="flex container">
+    <div class="flex-shrink-0 w-8 text-right pr-1">
       <value-score
         :value="entry.score"
-        :entry-id="entry.id"
-        class="entity-for-list-score" />
+        :entry-id="entry.id"/>
     </div>
 
-    <div style="flex-grow: 1">
+    <div class="flex-grow">
       <input-marker
+        class="w-7"
         :marker="e.Marker.Read"
         :entry-id="entryId"
         on-text="read"
@@ -16,14 +16,14 @@
 
       <a
         href="#"
-        style="text-decoration: none; margin-left: 0.25rem"
+        class="text-decoration-none ml-1"
         v-if="!showBody"
         @click.prevent="displayBody()"
         >&#9660;</a
       >
       <a
         href="#"
-        style="text-decoration: none; margin-left: 0.25rem"
+        class="text-decoration-none ml-1"
         v-if="showBody"
         @click.prevent="showBody = false"
         >&#9650;</a
@@ -31,7 +31,7 @@
 
       <favicon-element
         :url="entry.url"
-        style="width: 1rem; height: 1rem; vertical-align: text-bottom; margin-left: 0.25rem; margin-right: 0.25rem" />
+        class="w-4 h-4 align-text-bottom mx-1 inline" />
 
       <a
         :href="entry.url"
@@ -51,8 +51,8 @@
 
       <div
         v-if="showBody"
-        style="display: flex; justify-content: center">
-        <div style="max-width: 50rem">
+        class="flex justify-center">
+        <div class="max-w-4xl">
           <h2>{{ purifiedTitle }}</h2>
           <p v-if="entry.body === null">loading...</p>
           <div
@@ -62,7 +62,7 @@
       </div>
     </div>
 
-    <div style="flex-shrink: 0; width: 1rem; left-padding: 0.25rem">
+    <div class="flex-shrink-0 w-4 pl-1">
       <value-date-time
         :value="timeFor"
         :reversed="true" />
@@ -151,12 +151,10 @@
 </script>
 
 <style scoped>
-  .container {
-    display: flex;
-  }
 
+/* TODO: replace to press? */
   .container :deep(img) {
-    max-width: 100%;
-    height: auto;
+    @apply max-w-full;
+    @apply h-auto;
   }
 </style>
