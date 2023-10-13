@@ -14,6 +14,8 @@
 - make tags filter shorter
 - center all main content?
 - display news caption always in one line (hide too long captions)
+- check hiding already read news when open their body
+- mark news as read when clicking on header in body
 
 # Feeds Fun
 
