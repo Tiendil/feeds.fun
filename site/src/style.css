@@ -57,11 +57,11 @@
     }
 
     .ffun-input-common {
-        @apply border-2 rounded bg-slate-50 hover:bg-blue-50 enabled:hover:border-blue-400 px-1;
+        @apply border-2 rounded bg-slate-50 hover:bg-blue-50 enabled:hover:border-blue-400 px-1 disabled:bg-orange-50 ;
     }
 
     .ffun-form-button {
-        @apply ffun-input-common border-blue-300 disabled:bg-blue-700/75;
+        @apply ffun-input-common border-blue-300 disabled:bg-blue-700/75 py-1;
     }
 
     .ffun-input {
