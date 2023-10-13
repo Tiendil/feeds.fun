@@ -11,6 +11,7 @@
 - github repo link to the main page
 - restrict minimum size of side panel
 - OpenAI usage section
+- make tags filter shorter
 
 # Feeds Fun
 
