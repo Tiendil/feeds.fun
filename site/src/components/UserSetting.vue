@@ -1,9 +1,9 @@
 <template>
-  <div
+<div
     v-if="setting !== null"
     class="mb-4">
 
-    <strong class="mr-1">{{ setting.name }}:</strong>
+    <span class="font-semibold mr-1">{{ setting.name }}</span>
 
     <input
       class="ffun-input"
@@ -34,6 +34,7 @@
     </template>
 
     <div
+      class="ffun-normalized-text"
       v-if="setting.description"
       v-html="setting.description" />
   </div>

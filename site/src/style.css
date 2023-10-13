@@ -20,6 +20,10 @@
         @apply border-slate-400 my-2;
     }
 
+    p, ul, ol, table {
+        @apply mb-1;
+    }
+
     p a {
         @apply text-blue-600 hover:text-blue-800 cursor-pointer;
     }
@@ -70,5 +74,9 @@
 
     .ffun-checkbox {
         @apply ffun-input-common h-4 w-4 align-middle;
+    }
+
+    .ffun-normalized-text ul {
+        @apply list-disc list-inside;
     }
 }

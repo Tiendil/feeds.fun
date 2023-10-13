@@ -66,7 +66,7 @@
                 {{ props.text }}
               </a>
 
-              <span class="ffun-header-link-disabled" v-else>{{ props.text }}</span>
+              <span class="ffun-header-link-disabled cursor-default" v-else>{{ props.text }}</span>
             </li>
 
             <li>

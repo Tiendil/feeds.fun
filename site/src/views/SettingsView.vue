@@ -1,18 +1,23 @@
 <template>
-  <side-panel-layout :reload-button="false">
-    <h2>Info</h2>
+<side-panel-layout :reload-button="false">
+  <template #main-header> Settings </template>
 
     <ul>
-      <li><strong>User id</strong>: {{ userId }}</li>
+      <li>
+        <strong class="mr-1">User id</strong>
+        <input
+          class="ffun-input w-72"
+          disabled
+          :value="userId"/>
+      </li>
     </ul>
 
-    <h2>Settings</h2>
+    <hr/>
 
-    <template #main-header> Settings </template>
-
-    <user-setting
-      v-for="(value, kind) of globalSettings.userSettings"
-      :kind="kind" />
+    <template v-for="(value, kind) of globalSettings.userSettings">
+      <user-setting :kind="kind" />
+      <hr/>
+    </template>
 
     <h2>OpenAI usage</h2>
 
