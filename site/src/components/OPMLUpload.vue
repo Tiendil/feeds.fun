@@ -2,8 +2,11 @@
   <div>
     <input
       type="file"
+      class="ffun-file-button"
       @change="uploadFile" />
+
     <button
+      class="ffun-form-button"
       type="submit"
       @click.prevent="submit"
       >Submit</button

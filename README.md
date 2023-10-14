@@ -23,6 +23,7 @@
 - side panel: select boxes and buttons have different heights
 - On feeds list show two urls: to feed and to site
 - FeedInfo.vue — purify texts
+- Discovery: no notifications about added feeds from opml file
 
 # Feeds Fun
 
