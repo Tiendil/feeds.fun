@@ -1,6 +1,5 @@
 # TODO (remove before merge)
 
-- show only single warning: subscribe to collections or set API key
 - what with github buttons
 - does bg colors too dark?
 - opensource to the main page
@@ -22,6 +21,7 @@
 - Discovery: no notifications about added feeds from opml file
 - No notification about subscribing for collection
 - Update readme, to have it in sync with the site
+- settings flags work is unclear for users. Also see them in notifications
 
 # Feeds Fun
 

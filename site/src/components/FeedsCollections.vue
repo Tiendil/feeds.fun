@@ -1,7 +1,5 @@
 <template>
 <div>
-  <p> Try to subscribe for the feeds collections that we are preparing for you! </p>
-
   <ul class="mb-1">
     <li v-for="item in collections">
       <input

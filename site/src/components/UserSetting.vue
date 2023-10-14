@@ -21,8 +21,8 @@
       style="min-width: 2.5rem;"
       :flag="setting.value"
 @update:flag="updateFlag($event)"
-      on-text="Yes"
-      off-text="No" />
+      on-text="No"
+      off-text="Yes" />
 
     <template v-else-if="!editing">
       <button class="ffun-form-button ml-1" @click.prevent="startEditing()">Edit</button>

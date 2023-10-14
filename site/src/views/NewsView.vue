@@ -45,7 +45,8 @@
 
     <template #main-footer> </template>
 
-    <collections-proposal v-if="!hasEntries && !entriesStore.firstTimeEntriesLoading"/>
+    <notifications :openai-api-key="true"
+                   :collections="!hasEntries && !entriesStore.firstTimeEntriesLoading"/>
 
     <entries-list
       :entriesIds="entriesReport"
@@ -164,7 +165,8 @@
 
   function onTagStateChanged({tag, state}: {tag: string; state: tagsFilterState.State}) {
     tagsStates.value.onTagStateChanged({tag, state});
-  }
+      }
+
 </script>
 
 <style></style>

@@ -44,10 +44,6 @@
         @apply ffun-info-common border-orange-300 bg-orange-50;
     }
 
-    .ffun-info-normal {
-        @apply ffun-info-common border-blue-300 bg-blue-50;
-    }
-
     .ffun-info-attention {
         @apply ffun-info-common border-purple-300 bg-purple-50;
     }

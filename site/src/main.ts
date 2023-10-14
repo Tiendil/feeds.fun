@@ -29,7 +29,9 @@ import SimplePagination from "./components/SimplePagination.vue";
 import UserSetting from "./components/UserSetting.vue";
 import OpenaiTokensUsage from "./components/OpenaiTokensUsage.vue";
 import FaviconElement from "./components/FaviconElement.vue";
-import CollectionsProposal from "./components/CollectionsProposal.vue";
+import NotificationCollections from "./components/NotificationCollections.vue";
+import NotificationOpenaiApiKey from "./components/NotificationOpenaiApiKey.vue";
+import Notifications from "./components/Notifications.vue";
 import RuleForList from "./components/RuleForList.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
@@ -72,7 +74,9 @@ app.component("SimplePagination", SimplePagination);
 app.component("UserSetting", UserSetting);
 app.component("OpenaiTokensUsage", OpenaiTokensUsage);
 app.component("FaviconElement", FaviconElement);
-app.component("CollectionsProposal", CollectionsProposal);
+app.component("NotificationCollections", NotificationCollections);
+app.component("NotificationOpenaiApiKey", NotificationOpenaiApiKey);
+app.component("Notifications", Notifications);
 app.component("RuleForList", RuleForList);
 
 app.component("ScoreSelector", ScoreSelector);
