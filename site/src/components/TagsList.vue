@@ -159,5 +159,3 @@
     selectedTags.value = {};
   }
 </script>
-
-<style></style>

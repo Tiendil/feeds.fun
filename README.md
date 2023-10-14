@@ -18,6 +18,7 @@
 - mark news as read when clicking on header in body
 - remove input-marker?
 - news: right column does not placed at the right border of the window
+- normal font size of tags in side panel?
 
 # Feeds Fun
 

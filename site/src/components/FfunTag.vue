@@ -14,7 +14,6 @@
       :href="tagInfo.link"
       target="_blank"
       @click.stop=""
-      style="text-decoration: none"
       rel="noopener noreferrer">
       &#8599;
     </a>
@@ -75,11 +74,7 @@
 
 <style scoped>
   .tag {
-    display: inline-block;
-    cursor: pointer;
-    padding: 0.1rem;
-    margin-right: 0.2rem;
-    white-space: nowrap;
+      @apply text-sm inline-block cursor-pointer p-0 mr-2 whitespace-nowrap;
   }
 
   .tag.selected {
@@ -95,10 +90,10 @@
   }
 
   .tag.positive {
-    color: darkgreen;
+      @apply text-green-700;
   }
 
   .tag.negative {
-    color: darkred;
+      @apply text-red-700;
   }
 </style>
