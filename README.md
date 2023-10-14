@@ -3,7 +3,6 @@
 - what with github buttons
 - opensource to the main page
 - github repo link to the main page
-- make tags filter shorter
 - center all main content?
 - display news caption always in one line (hide too long captions)
 - check hiding already read news when open their body

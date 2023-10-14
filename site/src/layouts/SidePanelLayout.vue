@@ -7,7 +7,7 @@
 
       <hr/>
 
-      <ul class="space-y-4">
+      <ul class="space-y-2">
         <li v-if="hasSideMenuItem(1)">
           <slot name="side-menu-item-1"></slot>
         </li>
