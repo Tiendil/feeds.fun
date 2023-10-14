@@ -30,6 +30,7 @@ import SimplePagination from "./components/SimplePagination.vue";
 import UserSetting from "./components/UserSetting.vue";
 import OpenaiTokensUsage from "./components/OpenaiTokensUsage.vue";
 import FaviconElement from "./components/FaviconElement.vue";
+import CollectionsProposal from "./components/CollectionsProposal.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -72,6 +73,7 @@ app.component("SimplePagination", SimplePagination);
 app.component("UserSetting", UserSetting);
 app.component("OpenaiTokensUsage", OpenaiTokensUsage);
 app.component("FaviconElement", FaviconElement);
+app.component("CollectionsProposal", CollectionsProposal);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);

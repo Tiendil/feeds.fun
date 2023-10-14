@@ -45,12 +45,7 @@
 
     <template #main-footer> </template>
 
-    <div v-if="!hasEntries && !entriesStore.firstTimeEntriesLoading"
-         class="ffun-info-attention">
-      <p>It looks like you have no news to read.</p>
-      <p> Try to subscribe for the feeds collections that we are preparing for you! </p>
-      <feeds-collections />
-    </div>
+    <collections-proposal v-if="!hasEntries && !entriesStore.firstTimeEntriesLoading"/>
 
     <entries-list
       :entriesIds="entriesReport"

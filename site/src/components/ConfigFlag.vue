@@ -1,6 +1,6 @@
 <template>
 <button
-  class="ffun-form-button"
+  class="ffun-config-flag"
   @click="emit('update:flag', !flag)">
   <span v-if="flag">{{ offText }}</span>
   <span v-else>{{ onText }}</span>

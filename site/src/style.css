@@ -68,6 +68,10 @@
         @apply ffun-input-common border-blue-300 disabled:bg-blue-700/75 py-1;
     }
 
+    .ffun-config-flag {
+        @apply ffun-input-common border-blue-300 disabled:bg-blue-700/75 py-0;
+    }
+
     .ffun-input {
         @apply ffun-input-common border-blue-200 focus:border-blue-300 focus:outline-none placeholder-gray-500 py-1;
     }
