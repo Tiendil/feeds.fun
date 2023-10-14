@@ -19,8 +19,8 @@
       <config-flag
         style="min-width: 2.5rem;"
         v-model:flag="globalSettings.showEntriesTags"
-        on-text="yes"
-        off-text="no" />
+        on-text="no"
+        off-text="yes" />
     </template>
 
     <template #side-menu-item-4>
@@ -28,8 +28,8 @@
       <config-flag
         style="min-width: 2.5rem;"
         v-model:flag="globalSettings.showRead"
-        on-text="yes"
-        off-text="no" />
+        on-text="no"
+        off-text="yes" />
     </template>
 
     <template #side-footer>

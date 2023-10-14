@@ -1,61 +1,63 @@
 <template>
-  <div class="flex container">
-    <div class="flex-shrink-0 w-8 text-right pr-1">
-      <value-score
-        :value="entry.score"
-        :entry-id="entry.id"/>
-    </div>
+<div class="flex container">
 
-    <div class="flex-grow">
+  <div class="flex-shrink-0 w-8 text-right pr-1">
+    <value-score
+      :value="entry.score"
+      :entry-id="entry.id"/>
+  </div>
 
-      <favicon-element
-        :url="entry.url"
-        class="w-4 h-4 align-text-bottom mx-1 inline" />
+  <div class="flex-shrink-0 w-8 text-right pr-1">
+    <favicon-element
+      :url="entry.url"
+      class="w-4 h-4 align-text-bottom mx-1 inline" />
+  </div>
 
-      <a
-        :href="entry.url"
-        target="_blank"
-        :class="[{'font-bold': !entriesStore.entries[entry.id].hasMarker(e.Marker.Read)}]"
-        @click="onTitleClick">
-        {{ purifiedTitle }}
-      </a>
+  <div class="flex-grow ">
+    <a
+      :href="entry.url"
+      target="_blank"
+      :class="[{'font-bold': isRead}, 'flex-grow', 'min-w-fit', 'line-clamp-1', 'pr-4']"
+      @click="onTitleClick">
+      {{ purifiedTitle }}
+    </a>
 
-      <template v-if="showTags">
-        <br />
-        <tags-list
-          :tags="entry.tags"
-          :tags-count="tagsCount"
-          :contributions="entry.scoreContributions" />
-      </template>
+    <template v-if="showTags">
+      <tags-list
+        :tags="entry.tags"
+        :tags-count="tagsCount"
+        :contributions="entry.scoreContributions" />
+    </template>
+  </div>
 
-      <div
-        v-if="showBody"
-        class="flex justify-center">
-        <div class="max-w-3xl flex-1 bg-red-200">
-          <h2><a :href="entry.url" target="_blank">{{ purifiedTitle }}</a></h2>
-          <p v-if="entry.body === null">loading...</p>
-          <div
-            v-if="entry.body !== null"
-            v-html="purifiedBody" />
-        </div>
-      </div>
-    </div>
+  <div class="flex flex-shrink-0">
+    <input-marker
+      class="w-7 mr-2"
+      :marker="e.Marker.Read"
+      :entry-id="entryId"
+      on-text="read"
+      off-text="new" />
 
-    <div class="flex flex-shrink-0">
-      <input-marker
-        class="w-7 mr-2"
-        :marker="e.Marker.Read"
-        :entry-id="entryId"
-        on-text="read"
-        off-text="new" />
-
-      <div class="w-7">
-        <value-date-time
-          :value="timeFor"
-          :reversed="true" />
-      </div>
+    <div class="w-7">
+      <value-date-time
+        :value="timeFor"
+        :reversed="true" />
     </div>
   </div>
+</div>
+
+<div
+  v-if="showBody"
+  class="flex justify-center">
+  <div class="max-w-3xl flex-1 bg-slate-50 border-2 rounded p-4">
+    <h2><a :href="entry.url" target="_blank">{{ purifiedTitle }}</a></h2>
+    <p v-if="entry.body === null">loading...</p>
+    <div
+      v-if="entry.body !== null"
+      class="prose max-w-none"
+      v-html="purifiedBody" />
+  </div>
+</div>
 </template>
 
 <script lang="ts" setup>
@@ -83,6 +85,10 @@
 
     throw new Error(`Unknown entry: ${properties.entryId}`);
   });
+
+const isRead = computed(() => {
+  return !entriesStore.entries[entry.value.id].hasMarker(e.Marker.Read)
+});
 
   const showBody = ref(false);
 
