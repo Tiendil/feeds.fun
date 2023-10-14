@@ -2,11 +2,13 @@
   <div>
     <input
       type="text"
+      class="ffun-input mr-1"
       v-model="search"
       :disabled="loading"
       placeholder="Search for feeds" />
 
     <button
+      class="ffun-form-button"
       :disabled="loading"
       @click.prevent="searhedUrl = search">
       Search
@@ -25,12 +27,14 @@
         <feed-info :feed="feed" />
 
         <button
+          class="ffun-form-button"
           v-if="!addedFeeds[feed.url]"
           @click.prevent="addFeed(feed.url)">
           Add
         </button>
-        <p v-else>Feed added</p>
-        <hr />
+
+        <p v-else class="ffun-info-good">Feed added</p>
+
       </div>
     </div>
   </div>

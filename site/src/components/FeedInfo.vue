@@ -1,21 +1,28 @@
 <template>
   <div>
-    <h3>
+    <h2>
       <a
+        class="ffun-normal-link"
         :href="feed.url"
         target="_blank"
         rel="noopener noreferrer">
         {{ feed.title }}
       </a>
-    </h3>
+    </h2>
 
     <p v-html="feed.description" />
 
-    <ul>
+    <ul class="list-disc list-inside">
       <li
         v-for="entry in feed.entries"
         :key="entry.url">
-        <entry-info :entry="entry" />
+        <a
+          class="ffun-normal-link"
+          :href="entry.url"
+          target="_blank"
+          rel="noopener noreferrer">
+          {{ entry.title }}
+        </a>
       </li>
     </ul>
   </div>
