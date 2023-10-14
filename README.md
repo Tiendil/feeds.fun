@@ -1,8 +1,5 @@
 # TODO (remove before merge)
 
-- to use or not to use  https://tailwindcss.com/docs/typography-plugin for settings and news bodies
-- test supertokens on MainView
-- test supertokens on AuthView
 - italic in info panels? like on login widget
 - show only single warning: subscribe to collections or set API key
 - what with github buttons
