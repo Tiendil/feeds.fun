@@ -11,6 +11,7 @@
       @tag:clicked="onTagClicked" />
 
     <a
+      class="ffun-normal-link"
       href="#"
       v-if="canShowAll"
       @click.prevent="showAll = true"
@@ -18,6 +19,7 @@
     >
 
     <a
+      class="ffun-normal-link"
       href="#"
       v-if="canHide"
       @click.prevent="showAll = false"
