@@ -1,6 +1,5 @@
 # TODO (remove before merge)
 
-- what with github buttons
 - does bg colors too dark?
 - opensource to the main page
 - github repo link to the main page
