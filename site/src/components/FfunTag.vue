@@ -3,7 +3,6 @@
     :class="classes"
     :title="tooltip"
     @click.prevent="onClick()">
-    <slot name="start"> </slot>
 
     <span v-if="countMode == 'prefix'">[{{ count }}]</span>
 
@@ -74,19 +73,19 @@
 
 <style scoped>
   .tag {
-      @apply text-sm inline-block cursor-pointer p-0 mr-2 whitespace-nowrap;
+      @apply inline-block cursor-pointer p-0 mr-2 whitespace-nowrap;
   }
 
   .tag.selected {
-    background-color: #ccccff;
+      @apply font-bold text-purple-700;
   }
 
   .tag.required {
-    background-color: #ccffcc;
+      @apply text-green-700;
   }
 
   .tag.excluded {
-    background-color: #ffcccc;
+      @apply text-red-700;
   }
 
   .tag.positive {

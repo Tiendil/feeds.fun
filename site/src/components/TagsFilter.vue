@@ -5,20 +5,20 @@
       class="pl-0 mb-0">
       <li
         v-for="tag of displayedSelectedTags"
-        :key="tag">
+        :key="tag"
+        class="whitespace-nowrap line-clamp-1">
+        <a
+          href="#"
+          @click.prevent="deselect(tag)"
+          >[X]</a
+                >
         <ffun-tag
+          class="ml-1"
           :uid="tag"
           :count="tags[tag] ?? 0"
           count-mode="no"
           :mode="tagStates[tag]"
           @tag:clicked="onTagClicked">
-          <template #start>
-            <a
-              href="#"
-              @click.prevent="deselect(tag)"
-              >[X]</a
-            >
-          </template>
         </ffun-tag>
       </li>
     </ul>
@@ -34,7 +34,8 @@
       class="pl-0 mb-0">
       <li
         v-for="tag of displayedTags"
-        :key="tag">
+        :key="tag"
+        class="line-clamp-1">
         <ffun-tag
           :uid="tag"
           :count="tags[tag]"

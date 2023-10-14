@@ -1,6 +1,6 @@
 <template>
-  <div>
     <select
+      class="ffun-input"
       :value="modelValue"
       @input="updateSelected">
       <option
@@ -10,7 +10,6 @@
         {{ score }}
       </option>
     </select>
-  </div>
 </template>
 
 <script lang="ts" setup>

@@ -24,7 +24,7 @@
 
     <tags-list
       v-if="showTags"
-      class="mt-0 pt-0 leading-3"
+      class="mt-0 pt-0"
       :tags="entry.tags"
       :tags-count="tagsCount"
       :contributions="entry.scoreContributions" />

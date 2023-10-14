@@ -1,5 +1,5 @@
 <template>
-  <div class="rule-constructor">
+  <div class="">
     <p>Select tags to score news by them.</p>
 
     <template
@@ -12,11 +12,10 @@
 
     <br />
 
-    <score-selector v-model="currentScore" />
-
-    &nbsp;
+    <score-selector class="inline-block mr-2" v-model="currentScore" />
 
     <a
+      class="ffun-form-button"
       href="#"
       v-if="canCreateRule"
       @click.prevent="createOrUpdateRule()"
@@ -46,11 +45,3 @@
     emit("rule-constructor:created");
   }
 </script>
-
-<style scoped>
-  .rule-constructor {
-    padding: 0.25rem;
-    margin: 0.25rem;
-    border: 1px solid #ccc;
-  }
-</style>

@@ -1,10 +1,10 @@
 <template>
-  <div>
-    <rule-constructor
-      v-if="selectedTagsList.length > 0"
-      :tags="selectedTagsList"
-      @rule-constructor:created="onRuleCreated" />
+  <rule-constructor
+    v-if="selectedTagsList.length > 0"
+    :tags="selectedTagsList"
+    @rule-constructor:created="onRuleCreated" />
 
+  <div class="text-sm">
     <ffun-tag
       v-for="tag of displayedTags"
       :key="tag"
