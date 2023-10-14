@@ -24,6 +24,8 @@
 - On feeds list show two urls: to feed and to site
 - FeedInfo.vue — purify texts
 - Discovery: no notifications about added feeds from opml file
+- No notification about subscribing for collection
+- Update readme, to have it in sync with the site
 
 # Feeds Fun
 
