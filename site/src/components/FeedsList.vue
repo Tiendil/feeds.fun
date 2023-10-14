@@ -1,5 +1,5 @@
 <template>
-<ul style="list-style-type: none; margin: 0; padding: 0">
+<ul>
   <li
     v-for="feed in feeds"
     :key="feed.id">
