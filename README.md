@@ -19,6 +19,7 @@
 - remove input-marker?
 - news: right column does not placed at the right border of the window
 - normal font size of tags in side panel?
+- on rule creationg we should reload scores, but not change sorting? In any case, something should visually change
 
 # Feeds Fun
 

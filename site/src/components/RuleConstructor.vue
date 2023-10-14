@@ -1,17 +1,5 @@
 <template>
   <div class="">
-    <p>Select tags to score news by them.</p>
-
-    <template
-      v-for="tag of tags"
-      :key="tag">
-      <ffun-tag
-        :uid="tag"
-        mode="required" />&nbsp;
-    </template>
-
-    <br />
-
     <score-selector class="inline-block mr-2" v-model="currentScore" />
 
     <a
