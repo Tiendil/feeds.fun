@@ -13,21 +13,21 @@
       class="w-4 h-4 align-text-bottom mx-1 inline" />
   </div>
 
-  <div class="flex-grow ">
+  <div class="flex-grow">
     <a
       :href="entry.url"
       target="_blank"
-      :class="[{'font-bold': isRead}, 'flex-grow', 'min-w-fit', 'line-clamp-1', 'pr-4']"
+      :class="[{'font-bold': isRead}, 'flex-grow', 'min-w-fit', 'line-clamp-1', 'pr-4', 'mb-0']"
       @click="onTitleClick">
       {{ purifiedTitle }}
     </a>
 
-    <template v-if="showTags">
-      <tags-list
-        :tags="entry.tags"
-        :tags-count="tagsCount"
-        :contributions="entry.scoreContributions" />
-    </template>
+    <tags-list
+      v-if="showTags"
+      class="mt-0 pt-0 leading-3"
+      :tags="entry.tags"
+      :tags-count="tagsCount"
+      :contributions="entry.scoreContributions" />
   </div>
 
   <div class="flex flex-shrink-0">

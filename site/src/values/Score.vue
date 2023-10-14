@@ -1,6 +1,6 @@
 <template>
   <div
-    class="score"
+    class="inline-block cursor-pointer font-semibold text-purple-700"
     @click.prevent="onClick()">
     {{ value }}
   </div>
@@ -45,12 +45,3 @@
     alert(strings.join("\n"));
   }
 </script>
-
-<style scoped>
-  .score {
-    display: inline-block;
-    cursor: pointer;
-    padding: 0.1rem;
-    background-color: #c1c1ff;
-  }
-</style>
