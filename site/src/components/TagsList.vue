@@ -1,4 +1,5 @@
 <template>
+  <div>
   <rule-constructor
     v-if="selectedTagsList.length > 0"
     :tags="selectedTagsList"
@@ -27,6 +28,7 @@
       @click.prevent="showAll = false"
       >hide</a
     >
+  </div>
   </div>
 </template>
 
