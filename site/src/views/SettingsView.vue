@@ -52,7 +52,7 @@
           :usage="usage"
           v-for="usage of openAIUsage" />
 
-        <tr if="openAIUsage.length == 0">
+        <tr v-if="openAIUsage.length == 0">
           <td class="text-center">—</td>
           <td class="text-center">—</td>
           <td class="text-center">—</td>
