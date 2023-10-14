@@ -2,8 +2,7 @@
 <ul style="list-style-type: none; margin: 0; padding: 0">
   <li
     v-for="feed in feeds"
-    :key="feed.id"
-    style="margin-bottom: 0.25rem">
+    :key="feed.id">
     <feed-for-list :feed="feed" />
   </li>
 </ul>
@@ -15,5 +14,3 @@
 
   const properties = defineProps<{feeds: Array<t.Feed>}>();
 </script>
-
-<style scoped></style>

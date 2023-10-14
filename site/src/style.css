@@ -56,6 +56,10 @@
         @apply text-blue-600 hover:text-blue-800 cursor-pointer text-lg;
     }
 
+    .ffun-normal-link {
+        @apply text-blue-600 hover:text-blue-800 cursor-pointer;
+    }
+
     .ffun-header-link-disabled {
         @apply text-lg underline underline-offset-4;
     }

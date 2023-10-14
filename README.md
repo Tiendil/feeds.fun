@@ -21,6 +21,7 @@
 - normal font size of tags in side panel?
 - on rule creationg we should reload scores, but not change sorting? In any case, something should visually change
 - side panel: select boxes and buttons have different heights
+- On feeds list show two urls: to feed and to site
 
 # Feeds Fun
 
