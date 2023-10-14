@@ -56,15 +56,11 @@
 </script>
 
 <style scoped>
-  .marked {
-    color: #2e8f2e;
-    font-weight: bold;
-    text-decoration: none;
+.marked {
+@apply text-green-700 no-underline;
   }
 
-  .unmarked {
-    color: purple;
-    /* font-weight: bold; */
-    text-decoration: none;
+.unmarked {
+@apply text-purple-700 font-bold no-underline;
   }
 </style>
