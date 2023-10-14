@@ -49,7 +49,7 @@
           <ul class="list-none m-0 p-0 flex space-x-2">
             <li>
               <a
-                href="#"
+                href="/"
                 class="ffun-header-link"
                 @click.prevent="router.push({name: 'main', params: {}})"
                 >Home</a>
@@ -60,7 +60,7 @@
               :key="mode">
               <a
                 v-if="globalSettings.mainPanelMode !== mode"
-                href="#"
+                :href="mode"
                 class="ffun-header-link"
                 @click.prevent="router.push({name: mode, params: {}})">
                 {{ props.text }}
