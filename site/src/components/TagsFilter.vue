@@ -35,7 +35,7 @@
       <li
         v-for="tag of displayedTags"
         :key="tag"
-        class="line-clamp-1">
+        class="truncate">
         <ffun-tag
           :uid="tag"
           :count="tags[tag]"
