@@ -5,7 +5,7 @@
         <li
           v-for="entryId in entriesToShow"
           :key="entryId"
-          class="mb-1">
+          class="mb-1 entry-block">
           <entry-for-list
             :entryId="entryId"
             :time-field="timeField"
@@ -14,7 +14,7 @@
         </li>
       </ul>
 
-      <hr />
+      <hr/>
 
       <simple-pagination
         :showFromStart="showFromStart"
@@ -50,4 +50,11 @@
   });
 </script>
 
-<style></style>
+<style scoped>
+
+.entry-block:not(:last-child) {
+    border-bottom-width: 1px;
+}
+
+
+</style>

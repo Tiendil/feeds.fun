@@ -8,7 +8,6 @@
 - on rule creationg we should reload scores, but not change sorting? In any case, something should visually change
 - Update readme, to have it in sync with the site
 - settings flags work is unclear for users. Also see them in notifications
-- highlight news row under cursor
 
 # Feeds Fun
 
