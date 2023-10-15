@@ -13,6 +13,7 @@
                    >
       page.
     </p>
-    <user-setting kind="openai_hide_message_about_setting_up_key" />
+
+    <user-setting-for-notification kind="openai_hide_message_about_setting_up_key" button-text="Hide this message" />
   </div>
 </template>

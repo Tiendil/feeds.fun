@@ -33,6 +33,7 @@ import NotificationCollections from "./components/NotificationCollections.vue";
 import NotificationOpenaiApiKey from "./components/NotificationOpenaiApiKey.vue";
 import Notifications from "./components/Notifications.vue";
 import RuleForList from "./components/RuleForList.vue";
+import UserSettingForNotification from "./components/UserSettingForNotification.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -78,6 +79,7 @@ app.component("NotificationCollections", NotificationCollections);
 app.component("NotificationOpenaiApiKey", NotificationOpenaiApiKey);
 app.component("Notifications", Notifications);
 app.component("RuleForList", RuleForList);
+app.component("UserSettingForNotification", UserSettingForNotification);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);

@@ -4,7 +4,6 @@
 - opensource to the main page
 - github repo link to the main page
 - Update readme, to have it in sync with the site
-- settings flags work is unclear for users. Also see them in notifications
 
 # Feeds Fun
 
