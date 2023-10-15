@@ -1,6 +1,5 @@
 import {createApp} from "vue";
 import {createPinia} from "pinia";
-import * as Sentry from "@sentry/vue";
 
 import App from "./App.vue";
 import router from "./router";
@@ -67,7 +66,6 @@ app.component("OpmlUpload", OpmlUpload);
 app.component("FeedForList", FeedForList);
 app.component("SupertokensLogin", SupertokensLogin);
 app.component("FeedsCollections", FeedsCollections);
-app.component("FfunGithubButtons", FfunGithubButtons);
 app.component("FfunTag", FfunTag);
 app.component("SimplePagination", SimplePagination);
 app.component("UserSetting", UserSetting);
@@ -91,22 +89,9 @@ app.component("WideLayout", WideLayout);
 app.component("SidePanelLayout", SidePanelLayout);
 
 app.component("vue-countdown", VueCountdown);
-app.component("github-button", GithubButton);
 
 app.use(createPinia());
 app.use(router);
-
-if (settings.sentryEnable) {
-  Sentry.init({
-    app,
-    dsn: settings.sentryDsn,
-    environment: settings.environment,
-    sampleRate: settings.sentrySampleRate,
-    attachStacktrace: true,
-    enableTracing: false,
-    integrations: []
-  });
-}
 
 app.mount("#app");
 
