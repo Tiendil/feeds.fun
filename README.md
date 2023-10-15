@@ -1,6 +1,5 @@
 # TODO (remove before merge)
 
-- what with github buttons
 - Update readme, to have it in sync with the site
 
 # Feeds Fun

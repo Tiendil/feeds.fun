@@ -41,7 +41,6 @@
     "set-interval-async": "^3.0.3",
     "supertokens-web-js": "^0.5.0",
     "vue": "^3.2.47",
-    "vue-github-button": "^3.1.0",
     "vue-router": "^4.1.6"
   },
   "devDependencies": {

@@ -23,7 +23,6 @@ import OpmlUpload from "./components/OPMLUpload.vue";
 import FeedForList from "./components/FeedForList.vue";
 import SupertokensLogin from "./components/SupertokensLogin.vue";
 import FeedsCollections from "./components/FeedsCollections.vue";
-import FfunGithubButtons from "./components/FfunGithubButtons.vue";
 import FfunTag from "./components/FfunTag.vue";
 import SimplePagination from "./components/SimplePagination.vue";
 import UserSetting from "./components/UserSetting.vue";
@@ -49,7 +48,6 @@ import SidePanelLayout from "./layouts/SidePanelLayout.vue";
 import {useSupertokens} from "@/stores/supertokens";
 
 import VueCountdown from "@chenfengyuan/vue-countdown";
-import GithubButton from "vue-github-button";
 
 const app = createApp(App);
 
