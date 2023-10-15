@@ -45,8 +45,9 @@
 
     <template #main-footer> </template>
 
-    <notifications :openai-api-key="true"
-                   :collections="!hasEntries && !entriesStore.firstTimeEntriesLoading"/>
+  <notifications v-if="!entriesStore.firstTimeEntriesLoading"
+                 :openai-api-key="true"
+                 :collections="!hasEntries"/>
 
     <entries-list
       :entriesIds="entriesReport"
