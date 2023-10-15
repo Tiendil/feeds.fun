@@ -150,7 +150,7 @@
     return DOMPurify.sanitize(entry.value.body);
   });
 
-  async function onTitleClick(event) {
+  async function onTitleClick(event: MouseEvent) {
     if (!event.ctrlKey) {
       event.preventDefault();
       event.stopPropagation();

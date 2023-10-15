@@ -19,3 +19,10 @@
       button-text="Hide this message" />
   </div>
 </template>
+
+<script lang="ts" setup>
+  import {useRouter} from "vue-router";
+  import * as e from "@/logic/enums";
+
+  const router = useRouter();
+</script>
