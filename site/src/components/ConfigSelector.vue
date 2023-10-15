@@ -1,5 +1,7 @@
 <template>
-  <select @change="updateProperty($event)">
+  <select
+    class="ffun-input"
+    @change="updateProperty($event)">
     <option
       v-for="[value, props] of values"
       :value="value"

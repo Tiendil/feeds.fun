@@ -1,22 +1,11 @@
 <template>
-  <div class="rule-constructor">
-    <p>Select tags to score news by them.</p>
-
-    <template
-      v-for="tag of tags"
-      :key="tag">
-      <ffun-tag
-        :uid="tag"
-        mode="required" />&nbsp;
-    </template>
-
-    <br />
-
-    <score-selector v-model="currentScore" />
-
-    &nbsp;
+  <div class="">
+    <score-selector
+      class="inline-block mr-2"
+      v-model="currentScore" />
 
     <a
+      class="ffun-form-button"
       href="#"
       v-if="canCreateRule"
       @click.prevent="createOrUpdateRule()"
@@ -27,8 +16,11 @@
 
 <script lang="ts" setup>
   import {computed, ref} from "vue";
+  import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import * as api from "@/logic/api";
   const properties = defineProps<{tags: string[]}>();
+
+  const globalSettings = useGlobalSettingsStore();
 
   const emit = defineEmits(["rule-constructor:created"]);
 
@@ -43,14 +35,14 @@
 
   async function createOrUpdateRule() {
     await api.createOrUpdateRule({tags: properties.tags, score: currentScore.value});
+
+    // this line leads to the reloading of news and any other data
+    // not an elegant solution, but it works with the current API implementation
+    // TODO: try to refactor to only update scores of news:
+    //       - without reloading
+    //       - maybe, without reordering too
+    globalSettings.updateDataVersion();
+
     emit("rule-constructor:created");
   }
 </script>
-
-<style scoped>
-  .rule-constructor {
-    padding: 0.25rem;
-    margin: 0.25rem;
-    border: 1px solid #ccc;
-  }
-</style>

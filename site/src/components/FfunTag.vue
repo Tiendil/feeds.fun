@@ -3,8 +3,6 @@
     :class="classes"
     :title="tooltip"
     @click.prevent="onClick()">
-    <slot name="start"> </slot>
-
     <span v-if="countMode == 'prefix'">[{{ count }}]</span>
 
     {{ tagInfo.name }}
@@ -14,7 +12,6 @@
       :href="tagInfo.link"
       target="_blank"
       @click.stop=""
-      style="text-decoration: none"
       rel="noopener noreferrer">
       &#8599;
     </a>
@@ -75,30 +72,26 @@
 
 <style scoped>
   .tag {
-    display: inline-block;
-    cursor: pointer;
-    padding: 0.1rem;
-    margin-right: 0.2rem;
-    white-space: nowrap;
+    @apply inline-block cursor-pointer p-0 mr-2 whitespace-nowrap;
   }
 
   .tag.selected {
-    background-color: #ccccff;
+    @apply font-bold text-purple-700;
   }
 
   .tag.required {
-    background-color: #ccffcc;
+    @apply text-green-700;
   }
 
   .tag.excluded {
-    background-color: #ffcccc;
+    @apply text-red-700;
   }
 
   .tag.positive {
-    color: darkgreen;
+    @apply text-green-700;
   }
 
   .tag.negative {
-    color: darkred;
+    @apply text-red-700;
   }
 </style>

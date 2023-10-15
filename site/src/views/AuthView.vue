@@ -2,14 +2,10 @@
   <wide-layout>
     <template #header> Feeds Fun </template>
 
-    <div v-if="!linkProcessed">Checking login status...</div>
+    <div class="ffun-info-good">
+      <p v-if="!linkProcessed">Checking login status...</p>
 
-    <div v-else-if="globalState.isLoggedIn">
-      <button @click="goToWorkspace()">Go To Feeds</button>
-    </div>
-
-    <div v-else>
-      <supertokens-login />
+      <supertokens-login v-else />
     </div>
   </wide-layout>
 </template>

@@ -22,8 +22,8 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
         logger.info("tags_found", tags=tags_for_log)
 
         await o_domain.apply_tags_to_entry(entry.id, processor_id, tags)
-    except errors.SkipAndContinueLater:
-        logger.warning("processor_requested_to_skip_entry")
+    except errors.SkipAndContinueLater as e:
+        logger.warning("processor_requested_to_skip_entry", error_info=str(e))
         await l_domain.mark_entry_as_processed(
             processor_id=processor_id, entry_id=entry.id, state=ProcessedState.retry_later, error=None
         )

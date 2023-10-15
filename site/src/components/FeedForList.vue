@@ -1,17 +1,18 @@
 <template>
   <div
     v-if="feed !== null"
-    class="container">
-    <div style="flex-shrink: 0; width: 4rem; left-padding: 0.25rem">
+    class="flex mb-1">
+    <div class="flex-shrink-0 min-w-fit pr-2">
       <a
         href="#"
+        class="ffun-normal-link"
         @click.prevent="unsubscribe()">
         remove
       </a>
     </div>
 
     <div
-      style="flex-shrink: 0; width: 3rem; left-padding: 0.25rem; cursor: default"
+      class="flex-shrink-0 w-12 pr-2 text-right cursor-default"
       title="Time of last load">
       <value-date-time
         :value="feed.loadedAt"
@@ -19,34 +20,37 @@
     </div>
 
     <div
-      style="flex-shrink: 0; width: 3rem; left-padding: 0.25rem; cursor: default"
+      class="flex-shrink-0 w-12 pr-2 text-right cursor-default"
       title="When was added">
       <value-date-time
         :value="feed.linkedAt"
         :reversed="true" />
     </div>
 
-    <div style="flex-shrink: 0; width: 2rem; text-align: right; padding-right: 0.25rem">
+    <div class="flex-shrink-0 w-8 pr-1 text-right cursor-default">
       <span
         v-if="feed.isOk"
         title="everything is ok"
-        class="state-ok"
+        class="text-green-700 cursor-default"
         >ok</span
       >
       <span
         v-else
         :title="feed.lastError || 'unknown error'"
-        class="state-error"
+        class="text-red-700 cursor-default"
         >⚠</span
       >
     </div>
 
-    <favicon-element
-      :url="feed.url"
-      style="width: 1rem; height: 1rem; vertical-align: text-bottom; margin-right: 0.25rem" />
+    <div class="flex-shrink-0 w-8 text-right pr-1">
+      <favicon-element
+        :url="feed.url"
+        class="w-4 h-4 align-text-bottom mx-1 inline" />
+    </div>
 
-    <div style="flex-grow: 1">
+    <div class="flex-grow">
       <value-url
+        class="ffun-normal-link"
         :value="feed.url"
         :text="purifiedTitle" />
       <template v-if="globalSettings.showFeedsDescriptions">
@@ -96,24 +100,3 @@
     globalSettings.updateDataVersion();
   }
 </script>
-
-<style scoped>
-  .container {
-    display: flex;
-  }
-
-  .container :deep(img) {
-    max-width: 100%;
-    height: auto;
-  }
-
-  .state-ok {
-    color: green;
-    cursor: default;
-  }
-
-  .state-error {
-    color: red;
-    cursor: default;
-  }
-</style>

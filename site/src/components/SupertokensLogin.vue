@@ -1,46 +1,62 @@
 <template>
-  <div>
+  <div v-if="globalState.isLoggedIn">
+    <p class="">You have already logged in.</p>
+    <button
+      class="text-blue-600 hover:text-blue-800 text-xl pt-0"
+      @click.prevent="goToWorkspace()"
+      >Go To Feeds ⇒</button
+    >
+  </div>
+
+  <div v-else>
     <template v-if="!requested">
-      <p>Will send you an email with a login link.</p>
+      <p class="text-left">We'll send you an email with a login link.</p>
 
-      <p>If you don&apos;t have an account, one will be created.</p>
+      <p class="text-left">If you don&apos;t have an account, one will be created.</p>
 
-      <form @submit.prevent="login()">
+      <form
+        @submit.prevent="login()"
+        class="w-full flex">
         <input
+          class="ffun-input flex-grow p-1 mr-2"
           type="email"
           v-model="email"
           required
-          placeholder="your-account-email@example.com" />
-        <button type="submit">Login</button>
+          placeholder="me@example.com" />
+        <button
+          class="ffun-form-button"
+          type="submit"
+          >Login</button
+        >
       </form>
     </template>
 
     <template v-else>
-      <p>
-        Email with login link has been sent to <strong>{{ email }}</strong>
+      <p class="">
+        Login link was sent to <strong>{{ email }}</strong>
+
+        <a
+          class="ml-1"
+          @click.prevent="onChangeEmail()"
+          >change</a
+        >
       </p>
 
       <button
+        v-if="!counting"
         type="button"
-        class="btn btn-primary"
-        :disabled="counting">
-        <vue-countdown
-          v-if="counting"
-          :time="supertokens.allowResendAfter"
-          @end="onCountdownEnd"
-          v-slot="{totalSeconds}">
-          Resend the email in {{ totalSeconds }} seconds.
-        </vue-countdown>
-        <span
-          v-else
-          @click.prevent="resend()"
-          >Resend email</span
-        >
+        class="btn btn-primary ffun-form-button">
+        <span @click.prevent="resend()">Resend email</span>
       </button>
 
-      <br /><br />
-
-      <button @click.prevent="onChangeEmail()">Change email</button>
+      <vue-countdown
+        v-else
+        :time="supertokens.allowResendAfter"
+        @end="onCountdownEnd"
+        class=""
+        v-slot="{totalSeconds}">
+        Resend in {{ totalSeconds }} seconds
+      </vue-countdown>
     </template>
   </div>
 </template>
@@ -54,7 +70,12 @@
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
   import {useSupertokens} from "@/stores/supertokens";
+  import {useGlobalState} from "@/stores/globalState";
+  import {useRouter} from "vue-router";
   import * as settings from "@/logic/settings";
+  const router = useRouter();
+
+  const globalState = useGlobalState();
 
   const supertokens = useSupertokens();
 
@@ -104,6 +125,10 @@
   async function onChangeEmail() {
     requested.value = false;
     await supertokens.clearLoginAttempt();
+  }
+
+  function goToWorkspace() {
+    router.push({name: e.MainPanelMode.Entries, params: {}});
   }
 
   onMounted(async () => {

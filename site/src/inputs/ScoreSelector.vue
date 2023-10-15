@@ -1,16 +1,15 @@
 <template>
-  <div>
-    <select
-      :value="modelValue"
-      @input="updateSelected">
-      <option
-        v-for="score of scores"
-        :value="score"
-        :selected="modelValue === score">
-        {{ score }}
-      </option>
-    </select>
-  </div>
+  <select
+    class="ffun-input"
+    :value="modelValue"
+    @input="updateSelected">
+    <option
+      v-for="score of scores"
+      :value="score"
+      :selected="modelValue === score">
+      {{ score }}
+    </option>
+  </select>
 </template>
 
 <script lang="ts" setup>

@@ -1,9 +1,10 @@
 import {createApp} from "vue";
 import {createPinia} from "pinia";
-import * as Sentry from "@sentry/vue";
 
 import App from "./App.vue";
 import router from "./router";
+
+import "./style.css";
 
 import FeedsList from "./components/FeedsList.vue";
 import EntriesList from "./components/EntriesList.vue";
@@ -17,17 +18,20 @@ import RuleScoreUpdater from "./components/RuleScoreUpdater.vue";
 import TagsFilter from "./components/TagsFilter.vue";
 import DiscoveryForm from "./components/DiscoveryForm.vue";
 import FeedInfo from "./components/FeedInfo.vue";
-import EntryInfo from "./components/EntryInfo.vue";
 import OpmlUpload from "./components/OPMLUpload.vue";
 import FeedForList from "./components/FeedForList.vue";
 import SupertokensLogin from "./components/SupertokensLogin.vue";
 import FeedsCollections from "./components/FeedsCollections.vue";
-import FfunGithubButtons from "./components/FfunGithubButtons.vue";
 import FfunTag from "./components/FfunTag.vue";
 import SimplePagination from "./components/SimplePagination.vue";
 import UserSetting from "./components/UserSetting.vue";
 import OpenaiTokensUsage from "./components/OpenaiTokensUsage.vue";
 import FaviconElement from "./components/FaviconElement.vue";
+import NotificationCollections from "./components/NotificationCollections.vue";
+import NotificationOpenaiApiKey from "./components/NotificationOpenaiApiKey.vue";
+import Notifications from "./components/Notifications.vue";
+import RuleForList from "./components/RuleForList.vue";
+import UserSettingForNotification from "./components/UserSettingForNotification.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -43,7 +47,6 @@ import SidePanelLayout from "./layouts/SidePanelLayout.vue";
 import {useSupertokens} from "@/stores/supertokens";
 
 import VueCountdown from "@chenfengyuan/vue-countdown";
-import GithubButton from "vue-github-button";
 
 const app = createApp(App);
 
@@ -59,17 +62,20 @@ app.component("RuleScoreUpdater", RuleScoreUpdater);
 app.component("TagsFilter", TagsFilter);
 app.component("DiscoveryForm", DiscoveryForm);
 app.component("FeedInfo", FeedInfo);
-app.component("EntryInfo", EntryInfo);
 app.component("OpmlUpload", OpmlUpload);
 app.component("FeedForList", FeedForList);
 app.component("SupertokensLogin", SupertokensLogin);
 app.component("FeedsCollections", FeedsCollections);
-app.component("FfunGithubButtons", FfunGithubButtons);
 app.component("FfunTag", FfunTag);
 app.component("SimplePagination", SimplePagination);
 app.component("UserSetting", UserSetting);
 app.component("OpenaiTokensUsage", OpenaiTokensUsage);
 app.component("FaviconElement", FaviconElement);
+app.component("NotificationCollections", NotificationCollections);
+app.component("NotificationOpenaiApiKey", NotificationOpenaiApiKey);
+app.component("Notifications", Notifications);
+app.component("RuleForList", RuleForList);
+app.component("UserSettingForNotification", UserSettingForNotification);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);
@@ -83,22 +89,9 @@ app.component("WideLayout", WideLayout);
 app.component("SidePanelLayout", SidePanelLayout);
 
 app.component("vue-countdown", VueCountdown);
-app.component("github-button", GithubButton);
 
 app.use(createPinia());
 app.use(router);
-
-if (settings.sentryEnable) {
-  Sentry.init({
-    app,
-    dsn: settings.sentryDsn,
-    environment: settings.environment,
-    sampleRate: settings.sentrySampleRate,
-    attachStacktrace: true,
-    enableTracing: false,
-    integrations: []
-  });
-}
 
 app.mount("#app");
 

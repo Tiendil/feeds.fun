@@ -1,44 +1,52 @@
 <template>
   <div
     v-if="setting !== null"
-    style="margin-bottom: 1rem">
-    <label>
-      <strong>{{ setting.name }}:</strong>
-      &nbsp;
-      <input
-        v-if="editing"
-        type="input"
-        v-model="value" />
-      <span v-else>{{ verboseValue }}</span>
-    </label>
+    class="mb-4">
+    <span class="font-semibold mr-1">{{ setting.name }}</span>
 
-    &nbsp;
+    <input
+      class="ffun-input"
+      v-if="editing"
+      type="input"
+      v-model="value" />
 
-    <template v-if="setting.type == 'boolean'">
-      <button
-        v-if="!setting.value"
-        @click.prevent="turnOn()"
-        >Turn on</button
-      >
+    <input
+      v-else-if="setting.type !== 'boolean'"
+      class="ffun-input"
+      disabled
+      :value="verboseValue" />
 
-      <button
-        v-if="setting.value"
-        @click.prevent="turnOff()"
-        >Turn off</button
-      >
-    </template>
+    <config-flag
+      v-if="setting.type == 'boolean'"
+      style="min-width: 2.5rem"
+      :flag="setting.value"
+      @update:flag="updateFlag($event)"
+      on-text="No"
+      off-text="Yes" />
 
     <template v-else-if="!editing">
-      <button @click.prevent="startEditing()">Edit</button>
+      <button
+        class="ffun-form-button ml-1"
+        @click.prevent="startEditing()"
+        >Edit</button
+      >
     </template>
 
     <template v-else>
-      <button @click.prevent="save()">Save</button>
-      &nbsp;
-      <button @click.prevent="cancel()">Cancel</button>
+      <button
+        @click.prevent="save()"
+        class="ffun-form-button ml-1"
+        >Save</button
+      >
+      <button
+        @click.prevent="cancel()"
+        class="ffun-form-button ml-1"
+        >Cancel</button
+      >
     </template>
 
     <div
+      class="ffun-normalized-text"
       v-if="setting.description"
       v-html="setting.description" />
   </div>
@@ -74,7 +82,7 @@
 
   const verboseValue = computed(() => {
     if (setting.value === null) {
-      return "—";
+      return "no value";
     }
 
     const v = setting.value.value;
@@ -85,7 +93,7 @@
     }
 
     if (v == null || v == "") {
-      return "—";
+      return "no value";
     }
 
     if (type == "secret") {
@@ -115,13 +123,8 @@
     editing.value = true;
   }
 
-  async function turnOn() {
-    value.value = true;
-    await save();
-  }
-
-  async function turnOff() {
-    value.value = false;
+  async function updateFlag(newValue: any) {
+    value.value = newValue;
     await save();
   }
 </script>

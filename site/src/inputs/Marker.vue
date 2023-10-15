@@ -1,5 +1,5 @@
 <template>
-  <div style="display: inline-block">
+  <div>
     <template v-if="hasMarker">
       <a
         href="#"
@@ -57,14 +57,10 @@
 
 <style scoped>
   .marked {
-    color: #2e8f2e;
-    font-weight: bold;
-    text-decoration: none;
+    @apply text-green-700 no-underline;
   }
 
   .unmarked {
-    color: purple;
-    /* font-weight: bold; */
-    text-decoration: none;
+    @apply text-purple-700 font-bold no-underline;
   }
 </style>

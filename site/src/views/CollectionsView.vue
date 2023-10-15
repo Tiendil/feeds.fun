@@ -2,6 +2,8 @@
   <side-panel-layout :reload-button="false">
     <template #main-header> Collections </template>
 
+    <p> Try to subscribe for the feeds collections that we are preparing for you! </p>
+
     <feeds-collections />
   </side-panel-layout>
 </template>

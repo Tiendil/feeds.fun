@@ -122,5 +122,3 @@
     tagsStates.value.onTagStateChanged({tag, state});
   }
 </script>
-
-<style></style>

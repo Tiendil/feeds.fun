@@ -1,14 +1,14 @@
 <template>
   <side-panel-layout>
     <template #side-menu-item-1>
-      For the last
+      For
       <config-selector
         :values="e.LastEntriesPeriodProperties"
         v-model:property="globalSettings.lastEntriesPeriod" />
     </template>
 
     <template #side-menu-item-2>
-      Sorted by
+      Sort by
       <config-selector
         :values="e.EntriesOrderProperties"
         v-model:property="globalSettings.entriesOrder" />
@@ -17,17 +17,19 @@
     <template #side-menu-item-3>
       Show tags:
       <config-flag
+        style="min-width: 2.5rem"
         v-model:flag="globalSettings.showEntriesTags"
-        on-text="yes"
-        off-text="no" />
+        on-text="no"
+        off-text="yes" />
     </template>
 
     <template #side-menu-item-4>
-      Show already read:
+      Show read:
       <config-flag
+        style="min-width: 2.5rem"
         v-model:flag="globalSettings.showRead"
-        on-text="yes"
-        off-text="no" />
+        on-text="no"
+        off-text="yes" />
     </template>
 
     <template #side-footer>
@@ -43,11 +45,10 @@
 
     <template #main-footer> </template>
 
-    <template v-if="!hasEntries && !entriesStore.firstTimeEntriesLoading">
-      <p>It looks like you have no news to read.</p>
-      <p> Try to subscribe for the feeds collections that we are preparing for you! </p>
-      <feeds-collections />
-    </template>
+    <notifications
+      v-if="entriesStore.loadedEntriesReport !== null"
+      :openai-api-key="true"
+      :collections="!hasEntries" />
 
     <entries-list
       :entriesIds="entriesReport"
@@ -55,7 +56,8 @@
       :show-tags="globalSettings.showEntriesTags"
       :tags-count="tagsCount"
       :showFromStart="25"
-      :showPerPage="25" />
+      :showPerPage="25"
+      @entry:bodyVisibilityChanged="onBodyVisibilityChanged" />
   </side-panel-layout>
 </template>
 
@@ -79,11 +81,22 @@
 
   globalSettings.updateDataVersion();
 
+  const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
+
   const entriesReport = computed(() => {
+    if (entriesStore.loadedEntriesReport === null) {
+      return [];
+    }
+
     let report = entriesStore.loadedEntriesReport.slice();
 
     if (!globalSettings.showRead) {
       report = report.filter((entryId) => {
+        if (entriesWithOpenedBody.value[entryId]) {
+          // always show read entries with open body
+          // otherwise, they will hide right after opening it
+          return true;
+        }
         return !entriesStore.entries[entryId].hasMarker(e.Marker.Read);
       });
     }
@@ -166,6 +179,10 @@
 
   function onTagStateChanged({tag, state}: {tag: string; state: tagsFilterState.State}) {
     tagsStates.value.onTagStateChanged({tag, state});
+  }
+
+  function onBodyVisibilityChanged({entryId, visible}: {entryId: t.EntryId; visible: boolean}) {
+    entriesWithOpenedBody.value[entryId] = visible;
   }
 </script>
 

@@ -1,32 +1,36 @@
 <template>
   <div>
+    <div class="text-sm">
+      <ffun-tag
+        v-for="tag of displayedTags"
+        :key="tag"
+        :uid="tag"
+        :mode="tagMode(tag)"
+        :count="tagsCount[tag]"
+        count-mode="tooltip"
+        @tag:clicked="onTagClicked" />
+
+      <a
+        class="ffun-normal-link"
+        href="#"
+        v-if="canShowAll"
+        @click.prevent="showAll = true"
+        >{{ tagsNumber - showLimit }} more</a
+      >
+
+      <a
+        class="ffun-normal-link"
+        href="#"
+        v-if="canHide"
+        @click.prevent="showAll = false"
+        >hide</a
+      >
+    </div>
+
     <rule-constructor
       v-if="selectedTagsList.length > 0"
       :tags="selectedTagsList"
       @rule-constructor:created="onRuleCreated" />
-
-    <ffun-tag
-      v-for="tag of displayedTags"
-      :key="tag"
-      :uid="tag"
-      :mode="tagMode(tag)"
-      :count="tagsCount[tag]"
-      count-mode="tooltip"
-      @tag:clicked="onTagClicked" />
-
-    <a
-      href="#"
-      v-if="canShowAll"
-      @click.prevent="showAll = true"
-      >{{ tagsNumber - showLimit }} more</a
-    >
-
-    <a
-      href="#"
-      v-if="canHide"
-      @click.prevent="showAll = false"
-      >hide</a
-    >
   </div>
 </template>
 
@@ -159,5 +163,3 @@
     selectedTags.value = {};
   }
 </script>
-
-<style></style>

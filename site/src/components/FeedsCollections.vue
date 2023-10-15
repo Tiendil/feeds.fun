@@ -1,20 +1,28 @@
 <template>
   <div>
-    <template v-for="item in collections">
-      <input
-        type="checkbox"
-        :id="item"
-        :name="item"
-        :value="item"
-        v-model="selectedCollections"
-        checked />
-      <label :for="item">{{ item }}</label>
-      <br />
-    </template>
+    <ul class="mb-1">
+      <li v-for="item in collections">
+        <input
+          class="ffun-checkbox"
+          type="checkbox"
+          :id="item"
+          :name="item"
+          :value="item"
+          v-model="selectedCollections"
+          checked />
+        <label
+          class="ml-2"
+          :for="item"
+          >{{ item }}</label
+        >
+      </li>
+    </ul>
 
-    <br />
-
-    <button @click="subscribe()">Subscribe</button>
+    <button
+      @click="subscribe()"
+      class="ffun-form-button"
+      >Subscribe</button
+    >
   </div>
 </template>
 

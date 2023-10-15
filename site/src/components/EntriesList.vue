@@ -1,16 +1,17 @@
 <template>
   <div>
     <template v-if="entriesToShow.length > 0">
-      <ul style="list-style-type: none; margin: 0; padding: 0">
+      <ul>
         <li
           v-for="entryId in entriesToShow"
           :key="entryId"
-          style="margin-bottom: 0.25rem">
+          class="mb-1 entry-block">
           <entry-for-list
             :entryId="entryId"
             :time-field="timeField"
             :show-tags="showTags"
-            :tags-count="tagsCount" />
+            :tags-count="tagsCount"
+            @entry:bodyVisibilityChanged="onBodyVisibilityChanged" />
         </li>
       </ul>
 
@@ -40,6 +41,8 @@
     tagsCount: {[key: string]: number};
   }>();
 
+  const emit = defineEmits(["entry:bodyVisibilityChanged"]);
+
   const showEntries = ref(properties.showFromStart);
 
   const entriesToShow = computed(() => {
@@ -48,6 +51,14 @@
     }
     return properties.entriesIds.slice(0, showEntries.value);
   });
+
+  function onBodyVisibilityChanged({entryId, visible}: {entryId: t.EntryId; visible: boolean}) {
+    emit("entry:bodyVisibilityChanged", {entryId, visible});
+  }
 </script>
 
-<style></style>
+<style scoped>
+  .entry-block:not(:last-child) {
+    border-bottom-width: 1px;
+  }
+</style>

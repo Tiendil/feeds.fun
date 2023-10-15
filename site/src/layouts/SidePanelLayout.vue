@@ -1,40 +1,30 @@
 <template>
-  <div class="container">
-    <div class="nav-panel">
-      <h2 style="margin-top: 0; margin-bottom: 0">
+  <div class="flex divide-x">
+    <div class="p-4 w-60 bg-slate-200 flex-shrink-0">
+      <h2 class="leading-8 my-0">
         <slot name="main-header"></slot>
       </h2>
 
       <hr />
 
-      <ul class="config-menu">
-        <li
-          v-if="hasSideMenuItem(1)"
-          class="config-menu-item">
+      <ul class="space-y-2">
+        <li v-if="hasSideMenuItem(1)">
           <slot name="side-menu-item-1"></slot>
         </li>
 
-        <li
-          v-if="hasSideMenuItem(2)"
-          class="config-menu-item">
+        <li v-if="hasSideMenuItem(2)">
           <slot name="side-menu-item-2"></slot>
         </li>
 
-        <li
-          v-if="hasSideMenuItem(3)"
-          class="config-menu-item">
+        <li v-if="hasSideMenuItem(3)">
           <slot name="side-menu-item-3"></slot>
         </li>
 
-        <li
-          v-if="hasSideMenuItem(4)"
-          class="config-menu-item">
+        <li v-if="hasSideMenuItem(4)">
           <slot name="side-menu-item-4"></slot>
         </li>
 
-        <li
-          v-if="hasSideMenuItem(5)"
-          class="config-menu-item">
+        <li v-if="hasSideMenuItem(5)">
           <slot name="side-menu-item-5"></slot>
         </li>
       </ul>
@@ -42,6 +32,7 @@
       <hr v-if="reloadButton" />
 
       <a
+        class="ffun-form-button p-1 my-1 block w-full text-center"
         v-if="reloadButton"
         href="#"
         @click="globalSettings.dataVersion += 1"
@@ -53,80 +44,72 @@
       <slot name="side-footer"></slot>
     </div>
 
-    <div class="main-content">
-      <header style="padding-top: 1rem; display: flex; align-items: center">
-        <div style="display: flex; align-items: center; margin-right: auto">
-          <ul style="list-style-type: none; margin: 0; padding: 0">
-            <li style="display: inline-block; margin-right: 0.5rem">
+    <div class="flex-grow p-4">
+      <header class="flex items-center leading-8">
+        <div class="display:flex items-center mr-auto">
+          <ul class="list-none m-0 p-0 flex space-x-2">
+            <li>
               <a
-                href="#"
+                href="/"
+                class="ffun-header-link"
                 @click.prevent="router.push({name: 'main', params: {}})"
-                style="text-decoration: none"
                 >Home</a
               >
             </li>
 
             <li
               v-for="[mode, props] of e.MainPanelModeProperties"
-              :key="mode"
-              style="display: inline-block; margin-right: 0.5rem">
+              :key="mode">
               <a
                 v-if="globalSettings.mainPanelMode !== mode"
-                href="#"
-                @click.prevent="router.push({name: mode, params: {}})"
-                style="text-decoration: none">
+                :href="mode"
+                class="ffun-header-link"
+                @click.prevent="router.push({name: mode, params: {}})">
                 {{ props.text }}
               </a>
 
-              <span v-else>{{ props.text }}</span>
+              <span
+                class="ffun-header-link-disabled cursor-default"
+                v-else
+                >{{ props.text }}</span
+              >
             </li>
 
-            <li style="display: inline-block; margin-right: 0.5rem">
+            <li>
               <a
                 href="/api/docs"
                 target="_blank"
+                class="ffun-header-link"
                 style="text-decoration: none"
                 >API&#8599;</a
+              >
+            </li>
+
+            <li>
+              <a
+                :href="settings.githubRepo"
+                target="_blank"
+                class="ffun-header-link"
+                style="text-decoration: none"
+                >GitHub&#8599;</a
               >
             </li>
           </ul>
         </div>
 
-        <div style="display: flex; align-items: center; margin-left: 1rem">
-          <ffun-github-buttons
-            :repository="settings.githubRepo"
-            style="margin-top: 0.3rem" />
-          &nbsp;|&nbsp;
+        <div class="flex items-center ml-4">
           <a
             href="#"
+            class="ffun-header-link"
             @click.prevent="logout()"
             >logout</a
           >
         </div>
       </header>
 
-      <hr />
+      <hr class="my-2 border-slate-400" />
 
-      <div
-        v-if="showApiKeyMessage"
-        style="border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; background-color: #f0f8ff">
-        <p>
-          Because, for now, our service is free to use and OpenAI API costs money, we politely ask you to set up your
-          own OpenAI API key.
-        </p>
-        <p>
-          You can do it on the
-          <a
-            href="#"
-            @click.prevent="router.push({name: e.MainPanelMode.Settings, params: {}})"
-            >settings</a
-          >
-          page.
-        </p>
-        <user-setting kind="openai_hide_message_about_setting_up_key" />
-      </div>
-
-      <main>
+      <main class="mb-4">
         <slot></slot>
       </main>
 
@@ -178,14 +161,6 @@
     return !!slots[`side-menu-item-${index}`];
   }
 
-  const showApiKeyMessage = computed(() => {
-    return (
-      globalSettings.userSettings &&
-      !globalSettings.userSettings.openai_api_key.value &&
-      !globalSettings.userSettings.openai_hide_message_about_setting_up_key.value
-    );
-  });
-
   watchEffect(() => {
     if (!properties.loginRequired) {
       return;
@@ -200,32 +175,3 @@
     }
   });
 </script>
-
-<style scoped>
-  .container {
-    display: flex;
-  }
-
-  .nav-panel {
-    width: 11rem;
-    flex-shrink: 0;
-    background-color: #f0f0f0;
-    padding: 1rem;
-  }
-
-  .main-content {
-    flex-grow: 1;
-    padding: 1rem;
-    padding-top: 0;
-  }
-
-  .config-menu {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  :deep(.config-menu-item) {
-    margin-bottom: 1rem;
-  }
-</style>

@@ -1,16 +1,10 @@
 <template>
-  <a
-    v-if="flag"
-    href="#"
-    @click="emit('update:flag', false)"
-    >{{ onText }}</a
-  >
-  <a
-    v-if="!flag"
-    href="#"
-    @click="emit('update:flag', true)"
-    >{{ offText }}</a
-  >
+  <button
+    class="ffun-config-flag"
+    @click="emit('update:flag', !flag)">
+    <span v-if="flag">{{ offText }}</span>
+    <span v-else>{{ onText }}</span>
+  </button>
 </template>
 
 <script setup lang="ts">
@@ -18,5 +12,3 @@
 
   const emit = defineEmits(["update:flag"]);
 </script>
-
-<style scoped></style>

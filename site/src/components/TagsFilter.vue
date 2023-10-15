@@ -2,40 +2,40 @@
   <div>
     <ul
       v-if="displayedSelectedTags.length > 0"
-      style="list-style: none; padding: 0; margin: 0">
+      class="pl-0 mb-0">
       <li
-        class="filter-element"
         v-for="tag of displayedSelectedTags"
-        :key="tag">
+        :key="tag"
+        class="whitespace-nowrap line-clamp-1">
+        <a
+          href="#"
+          @click.prevent="deselect(tag)"
+          >[X]</a
+        >
         <ffun-tag
+          class="ml-1"
           :uid="tag"
           :count="tags[tag] ?? 0"
           count-mode="no"
           :mode="tagStates[tag]"
           @tag:clicked="onTagClicked">
-          <template #start>
-            <a
-              href="#"
-              @click.prevent="deselect(tag)"
-              >[X]</a
-            >
-          </template>
         </ffun-tag>
       </li>
     </ul>
 
     <input
+      class="ffun-input w-full"
       type="text"
       placeholder="Input part of tag..."
       v-model="tagNameFilter" />
 
     <ul
       v-if="displayedTags.length > 0"
-      style="list-style: none; padding: 0; margin: 0">
+      class="pl-0 mb-0">
       <li
-        class="filter-element"
         v-for="tag of displayedTags"
-        :key="tag">
+        :key="tag"
+        class="truncate">
         <ffun-tag
           :uid="tag"
           :count="tags[tag]"
@@ -172,15 +172,3 @@
     emit("tag:stateChanged", {tag: tag, state: tagStates.value[tag]});
   }
 </script>
-
-<style scoped>
-  .filter-element {
-    overflow: hidden;
-    white-space: nowrap;
-  }
-
-  .filter-element value-tag {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-</style>

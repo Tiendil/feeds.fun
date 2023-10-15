@@ -1,14 +1,16 @@
 <template>
   <div>
+    {{ realShowEntries }} of {{ total }}
+
     <button
+      class="ffun-form-button ml-2"
       v-if="canShowMore"
       @click.prevent="showMore()">
       next {{ realShowPerPage }}
     </button>
 
-    <span v-if="canShowMore && canHide"> | </span>
-
     <button
+      class="ffun-form-button ml-2"
       v-if="canHide"
       @click.prevent="hideAll()"
       >hide</button
@@ -19,8 +21,6 @@
       style="line-height: 0.5rem"
       >&nbsp;</div
     >
-
-    shown {{ realShowEntries }} / {{ total }}
   </div>
 </template>
 
@@ -77,5 +77,3 @@
     return showEntries.value < properties.total;
   });
 </script>
-
-<style></style>
