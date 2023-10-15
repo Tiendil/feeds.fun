@@ -11,12 +11,11 @@
             :time-field="timeField"
             :show-tags="showTags"
             :tags-count="tagsCount"
-            @entry:bodyVisibilityChanged="onBodyVisibilityChanged"
-            />
+            @entry:bodyVisibilityChanged="onBodyVisibilityChanged" />
         </li>
       </ul>
 
-      <hr/>
+      <hr />
 
       <simple-pagination
         :showFromStart="showFromStart"
@@ -40,7 +39,7 @@
     showFromStart: number;
     showPerPage: number;
     tagsCount: {[key: string]: number};
-                                  }>();
+  }>();
 
   const emit = defineEmits(["entry:bodyVisibilityChanged"]);
 
@@ -51,18 +50,15 @@
       return [];
     }
     return properties.entriesIds.slice(0, showEntries.value);
-    });
+  });
 
-function onBodyVisibilityChanged({entryId, visible}: {entryId: t.EntryId; visible: boolean}) {
+  function onBodyVisibilityChanged({entryId, visible}: {entryId: t.EntryId; visible: boolean}) {
     emit("entry:bodyVisibilityChanged", {entryId, visible});
-}
+  }
 </script>
 
 <style scoped>
-
-.entry-block:not(:last-child) {
+  .entry-block:not(:last-child) {
     border-bottom-width: 1px;
-}
-
-
+  }
 </style>

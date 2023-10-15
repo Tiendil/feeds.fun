@@ -33,8 +33,11 @@
           Add
         </button>
 
-        <p v-else class="ffun-info-good">Feed added</p>
-
+        <p
+          v-else
+          class="ffun-info-good"
+          >Feed added</p
+        >
       </div>
     </div>
   </div>

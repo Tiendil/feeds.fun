@@ -1,11 +1,11 @@
 <template>
-<ul>
-  <li
-    v-for="feed in feeds"
-    :key="feed.id">
-    <feed-for-list :feed="feed" />
-  </li>
-</ul>
+  <ul>
+    <li
+      v-for="feed in feeds"
+      :key="feed.id">
+      <feed-for-list :feed="feed" />
+    </li>
+  </ul>
 </template>
 
 <script lang="ts" setup>

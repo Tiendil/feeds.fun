@@ -1,8 +1,7 @@
 <template>
-<div
+  <div
     v-if="setting !== null"
     class="mb-4">
-
     <span class="font-semibold mr-1">{{ setting.name }}</span>
 
     <input
@@ -11,26 +10,39 @@
       type="input"
       v-model="value" />
 
-    <input v-else-if="setting.type !== 'boolean'"
-           class="ffun-input"
-           disabled
-           :value="verboseValue"/>
+    <input
+      v-else-if="setting.type !== 'boolean'"
+      class="ffun-input"
+      disabled
+      :value="verboseValue" />
 
     <config-flag
       v-if="setting.type == 'boolean'"
-      style="min-width: 2.5rem;"
+      style="min-width: 2.5rem"
       :flag="setting.value"
-@update:flag="updateFlag($event)"
+      @update:flag="updateFlag($event)"
       on-text="No"
       off-text="Yes" />
 
     <template v-else-if="!editing">
-      <button class="ffun-form-button ml-1" @click.prevent="startEditing()">Edit</button>
+      <button
+        class="ffun-form-button ml-1"
+        @click.prevent="startEditing()"
+        >Edit</button
+      >
     </template>
 
     <template v-else>
-      <button @click.prevent="save()" class="ffun-form-button ml-1">Save</button>
-      <button @click.prevent="cancel()" class="ffun-form-button ml-1">Cancel</button>
+      <button
+        @click.prevent="save()"
+        class="ffun-form-button ml-1"
+        >Save</button
+      >
+      <button
+        @click.prevent="cancel()"
+        class="ffun-form-button ml-1"
+        >Cancel</button
+      >
     </template>
 
     <div
@@ -111,11 +123,10 @@
     editing.value = true;
   }
 
-async function updateFlag(newValue: any) {
-  value.value = newValue;
+  async function updateFlag(newValue: any) {
+    value.value = newValue;
     await save();
-}
-
+  }
 </script>
 
 <style></style>

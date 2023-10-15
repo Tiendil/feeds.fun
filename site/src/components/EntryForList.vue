@@ -1,63 +1,68 @@
 <template>
-<div class="flex">
+  <div class="flex">
+    <div class="flex-shrink-0 w-8 text-right pr-1">
+      <value-score
+        :value="entry.score"
+        :entry-id="entry.id" />
+    </div>
 
-  <div class="flex-shrink-0 w-8 text-right pr-1">
-    <value-score
-      :value="entry.score"
-      :entry-id="entry.id"/>
-  </div>
+    <div class="flex-shrink-0 w-8 text-right pr-1">
+      <favicon-element
+        :url="entry.url"
+        class="w-4 h-4 align-text-bottom mx-1 inline" />
+    </div>
 
-  <div class="flex-shrink-0 w-8 text-right pr-1">
-    <favicon-element
-      :url="entry.url"
-      class="w-4 h-4 align-text-bottom mx-1 inline" />
-  </div>
+    <div class="flex-grow">
+      <a
+        :href="entry.url"
+        target="_blank"
+        :class="[{'font-bold': isRead}, 'flex-grow', 'min-w-fit', 'line-clamp-1', 'pr-4', 'mb-0']"
+        @click="onTitleClick">
+        {{ purifiedTitle }}
+      </a>
 
-  <div class="flex-grow">
-    <a
-      :href="entry.url"
-      target="_blank"
-      :class="[{'font-bold': isRead}, 'flex-grow', 'min-w-fit', 'line-clamp-1', 'pr-4', 'mb-0']"
-      @click="onTitleClick">
-      {{ purifiedTitle }}
-    </a>
+      <tags-list
+        v-if="showTags"
+        class="mt-0 pt-0"
+        :tags="entry.tags"
+        :tags-count="tagsCount"
+        :contributions="entry.scoreContributions" />
+    </div>
 
-    <tags-list
-      v-if="showTags"
-      class="mt-0 pt-0"
-      :tags="entry.tags"
-      :tags-count="tagsCount"
-      :contributions="entry.scoreContributions" />
-  </div>
+    <div class="flex flex-shrink-0">
+      <input-marker
+        class="w-7 mr-2"
+        :marker="e.Marker.Read"
+        :entry-id="entryId"
+        on-text="read"
+        off-text="new" />
 
-  <div class="flex flex-shrink-0">
-    <input-marker
-      class="w-7 mr-2"
-      :marker="e.Marker.Read"
-      :entry-id="entryId"
-      on-text="read"
-      off-text="new" />
-
-    <div class="w-7">
-      <value-date-time
-        :value="timeFor"
-        :reversed="true" />
+      <div class="w-7">
+        <value-date-time
+          :value="timeFor"
+          :reversed="true" />
+      </div>
     </div>
   </div>
-</div>
 
-<div
-  v-if="showBody"
-  class="flex justify-center my-1">
-  <div class="max-w-3xl flex-1 bg-slate-50 border-2 rounded p-4">
-    <h2 class="mt-0"><a :href="entry.url" target="_blank">{{ purifiedTitle }}</a></h2>
-    <p v-if="entry.body === null">loading...</p>
-    <div
-      v-if="entry.body !== null"
-      class="prose max-w-none"
-      v-html="purifiedBody" />
+  <div
+    v-if="showBody"
+    class="flex justify-center my-1">
+    <div class="max-w-3xl flex-1 bg-slate-50 border-2 rounded p-4">
+      <h2 class="mt-0"
+        ><a
+          :href="entry.url"
+          target="_blank"
+          >{{ purifiedTitle }}</a
+        ></h2
+      >
+      <p v-if="entry.body === null">loading...</p>
+      <div
+        v-if="entry.body !== null"
+        class="prose max-w-none"
+        v-html="purifiedBody" />
+    </div>
   </div>
-</div>
 </template>
 
 <script lang="ts" setup>
@@ -88,9 +93,9 @@
     throw new Error(`Unknown entry: ${properties.entryId}`);
   });
 
-const isRead = computed(() => {
-  return !entriesStore.entries[entry.value.id].hasMarker(e.Marker.Read)
-});
+  const isRead = computed(() => {
+    return !entriesStore.entries[entry.value.id].hasMarker(e.Marker.Read);
+  });
 
   const showBody = ref(false);
 
@@ -114,10 +119,10 @@ const isRead = computed(() => {
     entriesStore.requestFullEntry({entryId: entry.value.id});
   }
 
-function hideBody() {
-  showBody.value = false;
-  emit("entry:bodyVisibilityChanged", {entryId: properties.entryId, visible: false});
-}
+  function hideBody() {
+    showBody.value = false;
+    emit("entry:bodyVisibilityChanged", {entryId: properties.entryId, visible: false});
+  }
 
   const purifiedTitle = computed(() => {
     if (entry.value === null) {
@@ -145,28 +150,24 @@ function hideBody() {
     return DOMPurify.sanitize(entry.value.body);
   });
 
-async function onTitleClick(event) {
+  async function onTitleClick(event) {
+    if (!event.ctrlKey) {
+      event.preventDefault();
+      event.stopPropagation();
 
+      if (showBody.value) {
+        hideBody();
+      } else {
+        displayBody();
+      }
+    }
 
-  if (!event.ctrlKey) {
-    event.preventDefault();
-    event.stopPropagation();
-
+    // TODO: is it will be too slow?
     if (showBody.value) {
-      hideBody();
-    }
-    else {
-      displayBody()
+      await entriesStore.setMarker({
+        entryId: properties.entryId,
+        marker: e.Marker.Read
+      });
     }
   }
-
-  // TODO: is it will be too slow?
-  if (showBody.value) {
-    await entriesStore.setMarker({
-      entryId: properties.entryId,
-      marker: e.Marker.Read
-    });
-  }
-
-}
 </script>

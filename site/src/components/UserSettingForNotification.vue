@@ -1,7 +1,10 @@
 <template>
-  <button v-if="setting"
-          @click.prevent="updateFlag(true)"
-          class="ffun-form-button">{{ text }}</button>
+  <button
+    v-if="setting"
+    @click.prevent="updateFlag(true)"
+    class="ffun-form-button"
+    >{{ text }}</button
+  >
 </template>
 
 <script lang="ts" setup>
@@ -14,8 +17,7 @@
 
   const globalSettings = useGlobalSettingsStore();
 
-const properties = defineProps<{kind: string,
-                                buttonText: string}>();
+  const properties = defineProps<{kind: string; buttonText: string}>();
 
   const value = ref<boolean | null>(null);
 
@@ -31,17 +33,17 @@ const properties = defineProps<{kind: string,
     return globalSettings.userSettings[properties.kind];
   });
 
-const text = computed(() => {
-  if (properties.buttonText) {
-    return properties.buttonText;
-  }
+  const text = computed(() => {
+    if (properties.buttonText) {
+      return properties.buttonText;
+    }
 
-  if (setting.value === null) {
-    return "";
-  }
+    if (setting.value === null) {
+      return "";
+    }
 
-  return setting.value.name;
-});
+    return setting.value.name;
+  });
 
   async function save() {
     if (value.value === null) {
@@ -52,11 +54,10 @@ const text = computed(() => {
     globalSettings.updateDataVersion();
   }
 
-async function updateFlag(newValue: any) {
-  value.value = newValue;
-  await save();
-}
-
+  async function updateFlag(newValue: any) {
+    value.value = newValue;
+    await save();
+  }
 </script>
 
 <style></style>

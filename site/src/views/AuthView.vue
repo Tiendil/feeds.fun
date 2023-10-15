@@ -3,13 +3,10 @@
     <template #header> Feeds Fun </template>
 
     <div class="ffun-info-good">
-
       <p v-if="!linkProcessed">Checking login status...</p>
 
-      <supertokens-login v-else/>
-
+      <supertokens-login v-else />
     </div>
-
   </wide-layout>
 </template>
 

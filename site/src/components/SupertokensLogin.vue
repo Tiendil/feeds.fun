@@ -1,9 +1,11 @@
 <template>
-
   <div v-if="globalState.isLoggedIn">
     <p class="">You have already logged in.</p>
-    <button class="text-blue-600 hover:text-blue-800 text-xl pt-0"
-            @click.prevent="goToWorkspace()">Go To Feeds ⇒</button>
+    <button
+      class="text-blue-600 hover:text-blue-800 text-xl pt-0"
+      @click.prevent="goToWorkspace()"
+      >Go To Feeds ⇒</button
+    >
   </div>
 
   <div v-else>
@@ -12,15 +14,20 @@
 
       <p class="text-left">If you don&apos;t have an account, one will be created.</p>
 
-      <form @submit.prevent="login()" class="w-full flex">
+      <form
+        @submit.prevent="login()"
+        class="w-full flex">
         <input
           class="ffun-input flex-grow p-1 mr-2"
           type="email"
           v-model="email"
           required
           placeholder="me@example.com" />
-        <button class="ffun-form-button"
-                type="submit">Login</button>
+        <button
+          class="ffun-form-button"
+          type="submit"
+          >Login</button
+        >
       </form>
     </template>
 
@@ -28,17 +35,18 @@
       <p class="">
         Login link was sent to <strong>{{ email }}</strong>
 
-        <a class="ml-1"
-           @click.prevent="onChangeEmail()">change</a>
+        <a
+          class="ml-1"
+          @click.prevent="onChangeEmail()"
+          >change</a
+        >
       </p>
 
       <button
         v-if="!counting"
         type="button"
         class="btn btn-primary ffun-form-button">
-        <span
-          @click.prevent="resend()"
-          >Resend email</span>
+        <span @click.prevent="resend()">Resend email</span>
       </button>
 
       <vue-countdown

@@ -11,7 +11,7 @@
           href="#"
           @click.prevent="deselect(tag)"
           >[X]</a
-                >
+        >
         <ffun-tag
           class="ml-1"
           :uid="tag"

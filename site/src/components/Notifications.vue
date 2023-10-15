@@ -1,11 +1,11 @@
 <template>
-  <notification-openai-api-key v-if="showOpenAIKeyNotification"/>
-  <notification-collections v-if="showCollectionsNotification"/>
+  <notification-openai-api-key v-if="showOpenAIKeyNotification" />
+  <notification-collections v-if="showCollectionsNotification" />
 </template>
 
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch} from "vue";
-import {useGlobalSettingsStore} from "@/stores/globalSettings";
+  import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
   const properties = defineProps<{
     openaiApiKey: boolean;
@@ -22,14 +22,11 @@ import {useGlobalSettingsStore} from "@/stores/globalSettings";
     );
   });
 
-const showCollectionsNotification = computed(() => {
-  return properties.collections;
-});
+  const showCollectionsNotification = computed(() => {
+    return properties.collections;
+  });
 
-const showOpenAIKeyNotification = computed(() => {
-  return !showCollectionsNotification.value && properties.openaiApiKey && showApiKeyMessage.value;
-});
-
-
-
+  const showOpenAIKeyNotification = computed(() => {
+    return !showCollectionsNotification.value && properties.openaiApiKey && showApiKeyMessage.value;
+  });
 </script>

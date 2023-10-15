@@ -1,6 +1,8 @@
 <template>
   <div class="">
-    <score-selector class="inline-block mr-2" v-model="currentScore" />
+    <score-selector
+      class="inline-block mr-2"
+      v-model="currentScore" />
 
     <a
       class="ffun-form-button"

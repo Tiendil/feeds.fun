@@ -15,5 +15,4 @@
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
   defineProps<{rules: Array<t.Rule>}>();
-
 </script>

@@ -1,6 +1,6 @@
 <template>
-<side-panel-layout :reload-button="false">
-  <template #main-header> Settings </template>
+  <side-panel-layout :reload-button="false">
+    <template #main-header> Settings </template>
 
     <ul>
       <li>
@@ -8,15 +8,15 @@
         <input
           class="ffun-input w-72"
           disabled
-          :value="userId"/>
+          :value="userId" />
       </li>
     </ul>
 
-    <hr/>
+    <hr />
 
     <template v-for="(value, kind) of globalSettings.userSettings">
       <user-setting :kind="kind" />
-      <hr/>
+      <hr />
     </template>
 
     <h2>OpenAI usage</h2>
@@ -30,14 +30,16 @@
         were not processed correctly.
       </li>
       <li>
-        <strong>Total tokens</strong> — the total number of tokens used in the month. Should be not less than the actual
-        used tokens, but can be bigger because we reserve more tokens than actually use.
+        <strong>Total tokens</strong> — the total number of tokens used in the month. Should be not less than the
+        actual used tokens, but can be bigger because we reserve more tokens than actually use.
       </li>
     </ul>
 
     <p v-if="openAIUsage == null">Loading...</p>
 
-    <table v-else class="border border-gray-300 rounded-lg">
+    <table
+      v-else
+      class="border border-gray-300 rounded-lg">
       <thead class="bg-slate-200">
         <tr>
           <th class="p-2">Period</th>
@@ -59,7 +61,6 @@
           <td class="text-center">—</td>
           <td class="text-center">—</td>
         </tr>
-
       </tbody>
     </table>
   </side-panel-layout>

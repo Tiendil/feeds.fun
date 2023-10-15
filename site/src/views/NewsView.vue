@@ -17,7 +17,7 @@
     <template #side-menu-item-3>
       Show tags:
       <config-flag
-        style="min-width: 2.5rem;"
+        style="min-width: 2.5rem"
         v-model:flag="globalSettings.showEntriesTags"
         on-text="no"
         off-text="yes" />
@@ -26,7 +26,7 @@
     <template #side-menu-item-4>
       Show read:
       <config-flag
-        style="min-width: 2.5rem;"
+        style="min-width: 2.5rem"
         v-model:flag="globalSettings.showRead"
         on-text="no"
         off-text="yes" />
@@ -45,19 +45,19 @@
 
     <template #main-footer> </template>
 
-  <notifications v-if="entriesStore.loadedEntriesReport !== null"
-                 :openai-api-key="true"
-                 :collections="!hasEntries"/>
+    <notifications
+      v-if="entriesStore.loadedEntriesReport !== null"
+      :openai-api-key="true"
+      :collections="!hasEntries" />
 
-  <entries-list
+    <entries-list
       :entriesIds="entriesReport"
       :time-field="timeField"
       :show-tags="globalSettings.showEntriesTags"
       :tags-count="tagsCount"
       :showFromStart="25"
       :showPerPage="25"
-      @entry:bodyVisibilityChanged="onBodyVisibilityChanged"
-      />
+      @entry:bodyVisibilityChanged="onBodyVisibilityChanged" />
   </side-panel-layout>
 </template>
 
@@ -79,14 +79,14 @@
 
   globalSettings.mainPanelMode = e.MainPanelMode.Entries;
 
-globalSettings.updateDataVersion();
+  globalSettings.updateDataVersion();
 
-const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
+  const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
 
-const entriesReport = computed(() => {
-  if (entriesStore.loadedEntriesReport === null) {
-    return [];
-  }
+  const entriesReport = computed(() => {
+    if (entriesStore.loadedEntriesReport === null) {
+      return [];
+    }
 
     let report = entriesStore.loadedEntriesReport.slice();
 
@@ -179,13 +179,11 @@ const entriesReport = computed(() => {
 
   function onTagStateChanged({tag, state}: {tag: string; state: tagsFilterState.State}) {
     tagsStates.value.onTagStateChanged({tag, state});
-      }
+  }
 
-function onBodyVisibilityChanged({entryId, visible}: {entryId: t.EntryId; visible: boolean}) {
-  entriesWithOpenedBody.value[entryId] = visible;
-}
-
-
+  function onBodyVisibilityChanged({entryId, visible}: {entryId: t.EntryId; visible: boolean}) {
+    entriesWithOpenedBody.value[entryId] = visible;
+  }
 </script>
 
 <style></style>

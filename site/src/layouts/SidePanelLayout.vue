@@ -1,11 +1,11 @@
 <template>
-  <div class="flex divide-x ">
+  <div class="flex divide-x">
     <div class="p-4 w-60 bg-slate-200 flex-shrink-0">
       <h2 class="leading-8 my-0">
         <slot name="main-header"></slot>
       </h2>
 
-      <hr/>
+      <hr />
 
       <ul class="space-y-2">
         <li v-if="hasSideMenuItem(1)">
@@ -36,7 +36,8 @@
         v-if="reloadButton"
         href="#"
         @click="globalSettings.dataVersion += 1"
-        >Reload</a>
+        >Reload</a
+      >
 
       <hr v-if="hasSideFooter" />
 
@@ -52,7 +53,8 @@
                 href="/"
                 class="ffun-header-link"
                 @click.prevent="router.push({name: 'main', params: {}})"
-                >Home</a>
+                >Home</a
+              >
             </li>
 
             <li
@@ -66,7 +68,11 @@
                 {{ props.text }}
               </a>
 
-              <span class="ffun-header-link-disabled cursor-default" v-else>{{ props.text }}</span>
+              <span
+                class="ffun-header-link-disabled cursor-default"
+                v-else
+                >{{ props.text }}</span
+              >
             </li>
 
             <li>
@@ -92,10 +98,12 @@
         </div>
 
         <div class="flex items-center ml-4">
-          <a href="#"
-             class="ffun-header-link"
-             @click.prevent="logout()"
-             >logout</a>
+          <a
+            href="#"
+            class="ffun-header-link"
+            @click.prevent="logout()"
+            >logout</a
+          >
         </div>
       </header>
 

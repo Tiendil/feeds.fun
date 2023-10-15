@@ -1,5 +1,4 @@
 <template>
-
   <div
     v-if="rule !== null"
     class="flex mb-1">
@@ -25,7 +24,6 @@
         <ffun-tag :uid="tag" />&nbsp;
       </template>
     </div>
-
   </div>
 </template>
 

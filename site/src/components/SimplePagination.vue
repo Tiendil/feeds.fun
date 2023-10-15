@@ -1,7 +1,6 @@
 <template>
-<div>
-
-  {{ realShowEntries }} of {{ total }}
+  <div>
+    {{ realShowEntries }} of {{ total }}
 
     <button
       class="ffun-form-button ml-2"

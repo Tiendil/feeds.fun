@@ -3,7 +3,7 @@
     <template #side-menu-item-1>
       Show descriptions:
       <config-flag
-        style="min-width: 2.5rem;"
+        style="min-width: 2.5rem"
         v-model:flag="globalSettings.showFeedsDescriptions"
         on-text="yes"
         off-text="no" />
@@ -20,7 +20,7 @@
       Show failed
       <config-flag
         v-model:flag="globalSettings.failedFeedsFirst"
-        style="min-width: 2.5rem;"
+        style="min-width: 2.5rem"
         on-text="first"
         off-text="last" />
     </template>
@@ -30,9 +30,10 @@
       <span v-if="sortedFeeds"> [{{ sortedFeeds.length }}] </span>
     </template>
 
-    <notifications v-if="sortedFeeds !== null"
-                   :openai-api-key="false"
-                   :collections="sortedFeeds === null || sortedFeeds.length == 0"/>
+    <notifications
+      v-if="sortedFeeds !== null"
+      :openai-api-key="false"
+      :collections="sortedFeeds === null || sortedFeeds.length == 0" />
 
     <feeds-list
       v-if="sortedFeeds"

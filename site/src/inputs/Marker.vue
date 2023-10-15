@@ -56,11 +56,11 @@
 </script>
 
 <style scoped>
-.marked {
-@apply text-green-700 no-underline;
+  .marked {
+    @apply text-green-700 no-underline;
   }
 
-.unmarked {
-@apply text-purple-700 font-bold no-underline;
+  .unmarked {
+    @apply text-purple-700 font-bold no-underline;
   }
 </style>

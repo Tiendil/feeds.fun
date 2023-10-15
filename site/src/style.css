@@ -3,88 +3,90 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    @apply font-serif bg-slate-100;
+  }
 
-    html {
-        @apply font-serif bg-slate-100;
-    }
+  h1 {
+    @apply text-3xl font-bold leading-tight my-4;
+  }
 
-    h1 {
-        @apply text-3xl font-bold leading-tight my-4;
-    }
+  h2 {
+    @apply text-2xl font-semibold leading-relaxed my-3;
+  }
 
-    h2 {
-        @apply text-2xl font-semibold leading-relaxed my-3;
-    }
+  hr {
+    @apply border-slate-400 my-2;
+  }
 
-    hr {
-        @apply border-slate-400 my-2;
-    }
+  p,
+  ul,
+  ol,
+  table {
+    @apply mb-1;
+  }
 
-    p, ul, ol, table {
-        @apply mb-1;
-    }
+  p a {
+    @apply text-blue-600 hover:text-blue-800 cursor-pointer;
+  }
 
-    p a {
-        @apply text-blue-600 hover:text-blue-800 cursor-pointer;
-    }
+  .ffun-info-common {
+    @apply border-2 p-2 my-1 rounded;
+  }
 
-    .ffun-info-common {
-        @apply border-2 p-2 my-1 rounded;
-    }
+  .ffun-info-good {
+    @apply ffun-info-common border-green-300 bg-green-50;
+  }
 
-    .ffun-info-good {
-        @apply ffun-info-common border-green-300 bg-green-50;
-    }
+  .ffun-info-bad {
+    @apply ffun-info-common border-red-300 bg-red-50;
+  }
 
-    .ffun-info-bad {
-        @apply ffun-info-common border-red-300 bg-red-50;
-    }
+  .ffun-info-warning {
+    @apply ffun-info-common border-orange-300 bg-orange-50;
+  }
 
-    .ffun-info-warning {
-        @apply ffun-info-common border-orange-300 bg-orange-50;
-    }
+  .ffun-info-attention {
+    @apply ffun-info-common border-purple-300 bg-purple-50;
+  }
 
-    .ffun-info-attention {
-        @apply ffun-info-common border-purple-300 bg-purple-50;
-    }
+  .ffun-header-link {
+    @apply text-blue-600 hover:text-blue-800 cursor-pointer text-lg;
+  }
 
-    .ffun-header-link {
-        @apply text-blue-600 hover:text-blue-800 cursor-pointer text-lg;
-    }
+  .ffun-normal-link {
+    @apply text-blue-600 hover:text-blue-800 cursor-pointer;
+  }
 
-    .ffun-normal-link {
-        @apply text-blue-600 hover:text-blue-800 cursor-pointer;
-    }
+  .ffun-header-link-disabled {
+    @apply text-lg underline underline-offset-4;
+  }
 
-    .ffun-header-link-disabled {
-        @apply text-lg underline underline-offset-4;
-    }
+  .ffun-input-common {
+    @apply border-2 rounded bg-slate-50 hover:bg-blue-50 enabled:hover:border-blue-400 px-1 disabled:bg-orange-50;
+  }
 
-    .ffun-input-common {
-        @apply border-2 rounded bg-slate-50 hover:bg-blue-50 enabled:hover:border-blue-400 px-1 disabled:bg-orange-50 ;
-    }
+  .ffun-form-button {
+    @apply ffun-input-common border-blue-300 disabled:bg-blue-700/75 py-1;
+  }
 
-    .ffun-form-button {
-        @apply ffun-input-common border-blue-300 disabled:bg-blue-700/75 py-1;
-    }
+  .ffun-file-button {
+    @apply file:border-2 file:rounded file:bg-slate-50 file:hover:bg-blue-50 file:enabled:hover:border-blue-400 file:px-1 file:disabled:bg-orange-50  file:border-blue-300 file:disabled:bg-blue-700/75 file:py-1 file:shadow-none file:border-solid text-slate-500;
+  }
 
-    .ffun-file-button {
-        @apply file:border-2 file:rounded file:bg-slate-50 file:hover:bg-blue-50 file:enabled:hover:border-blue-400 file:px-1 file:disabled:bg-orange-50  file:border-blue-300 file:disabled:bg-blue-700/75 file:py-1 file:shadow-none file:border-solid text-slate-500;
-    }
+  .ffun-config-flag {
+    @apply ffun-input-common border-blue-300 disabled:bg-blue-700/75 py-0;
+  }
 
-    .ffun-config-flag {
-        @apply ffun-input-common border-blue-300 disabled:bg-blue-700/75 py-0;
-    }
+  .ffun-input {
+    @apply ffun-input-common border-blue-200 focus:border-blue-300 focus:outline-none placeholder-gray-500 py-1;
+  }
 
-    .ffun-input {
-        @apply ffun-input-common border-blue-200 focus:border-blue-300 focus:outline-none placeholder-gray-500 py-1;
-    }
+  .ffun-checkbox {
+    @apply ffun-input-common h-4 w-4 align-middle;
+  }
 
-    .ffun-checkbox {
-        @apply ffun-input-common h-4 w-4 align-middle;
-    }
-
-    .ffun-normalized-text ul {
-        @apply list-disc list-inside;
-    }
+  .ffun-normalized-text ul {
+    @apply list-disc list-inside;
+  }
 }
