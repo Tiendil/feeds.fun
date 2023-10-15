@@ -21,6 +21,7 @@
     <h2>You are in control</h2>
 
     <ul class="list-disc list-inside text-left">
+      <li><a class="ffun-normal-link" :href="settings.githubRepo" target="_blank">Open source</a>, self-hosted.</li>
       <li>No black box recommendation algorithms.</li>
       <li>No "smart" reordering.</li>
       <li>No ads.</li>
@@ -35,3 +36,7 @@
 
   </wide-layout>
 </template>
+
+<script lang="ts" setup>
+  import * as settings from "@/logic/settings";
+</script>

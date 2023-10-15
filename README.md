@@ -1,8 +1,6 @@
 # TODO (remove before merge)
 
 - what with github buttons
-- opensource to the main page
-- github repo link to the main page
 - Update readme, to have it in sync with the site
 
 # Feeds Fun
