@@ -39,6 +39,7 @@
     </div>
 
     <img
+      class="border-2 rounded border-slate-300"
       src="/news-filtering-example.png"
       alt="News filtering example" />
   </wide-layout>
