@@ -10,7 +10,9 @@
             :entryId="entryId"
             :time-field="timeField"
             :show-tags="showTags"
-            :tags-count="tagsCount" />
+            :tags-count="tagsCount"
+            @entry:bodyVisibilityChanged="onBodyVisibilityChanged"
+            />
         </li>
       </ul>
 
@@ -38,7 +40,9 @@
     showFromStart: number;
     showPerPage: number;
     tagsCount: {[key: string]: number};
-  }>();
+                                  }>();
+
+  const emit = defineEmits(["entry:bodyVisibilityChanged"]);
 
   const showEntries = ref(properties.showFromStart);
 
@@ -47,7 +51,11 @@
       return [];
     }
     return properties.entriesIds.slice(0, showEntries.value);
-  });
+    });
+
+function onBodyVisibilityChanged({entryId, visible}: {entryId: t.EntryId; visible: boolean}) {
+    emit("entry:bodyVisibilityChanged", {entryId, visible});
+}
 </script>
 
 <style scoped>

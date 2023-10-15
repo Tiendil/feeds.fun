@@ -78,6 +78,8 @@
     tagsCount: {[key: string]: number};
   }>();
 
+  const emit = defineEmits(["entry:bodyVisibilityChanged"]);
+
   const entry = computed(() => {
     if (properties.entryId in entriesStore.entries) {
       return entriesStore.entries[properties.entryId];
@@ -103,6 +105,8 @@ const isRead = computed(() => {
   function displayBody() {
     showBody.value = true;
 
+    emit("entry:bodyVisibilityChanged", {entryId: properties.entryId, visible: true});
+
     if (entry.value === null) {
       throw new Error("entry is null");
     }
@@ -112,6 +116,7 @@ const isRead = computed(() => {
 
 function hideBody() {
   showBody.value = false;
+  emit("entry:bodyVisibilityChanged", {entryId: properties.entryId, visible: false});
 }
 
   const purifiedTitle = computed(() => {

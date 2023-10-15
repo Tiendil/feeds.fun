@@ -54,7 +54,9 @@
       :show-tags="globalSettings.showEntriesTags"
       :tags-count="tagsCount"
       :showFromStart="25"
-      :showPerPage="25" />
+      :showPerPage="25"
+      @entry:bodyVisibilityChanged="onBodyVisibilityChanged"
+      />
   </side-panel-layout>
 </template>
 
@@ -76,13 +78,20 @@
 
   globalSettings.mainPanelMode = e.MainPanelMode.Entries;
 
-  globalSettings.updateDataVersion();
+globalSettings.updateDataVersion();
+
+const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
 
   const entriesReport = computed(() => {
     let report = entriesStore.loadedEntriesReport.slice();
 
     if (!globalSettings.showRead) {
       report = report.filter((entryId) => {
+        if (entriesWithOpenedBody.value[entryId]) {
+          // always show read entries with open body
+          // otherwise, they will hide right after opening it
+          return true;
+        }
         return !entriesStore.entries[entryId].hasMarker(e.Marker.Read);
       });
     }
@@ -166,6 +175,11 @@
   function onTagStateChanged({tag, state}: {tag: string; state: tagsFilterState.State}) {
     tagsStates.value.onTagStateChanged({tag, state});
       }
+
+function onBodyVisibilityChanged({entryId, visible}: {entryId: t.EntryId; visible: boolean}) {
+  entriesWithOpenedBody.value[entryId] = visible;
+}
+
 
 </script>
 
