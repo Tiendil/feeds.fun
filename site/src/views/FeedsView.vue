@@ -30,7 +30,8 @@
       <span v-if="sortedFeeds"> [{{ sortedFeeds.length }}] </span>
     </template>
 
-    <notifications :openai-api-key="false"
+    <notifications v-if="sortedFeeds !== null"
+                   :openai-api-key="false"
                    :collections="sortedFeeds === null || sortedFeeds.length == 0"/>
 
     <feeds-list

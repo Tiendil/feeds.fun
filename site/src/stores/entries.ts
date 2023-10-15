@@ -15,8 +15,6 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   const entries = ref<{[key: t.EntryId]: t.Entry}>({});
   const requestedEntries = ref<{[key: t.EntryId]: boolean}>({});
 
-  const firstTimeEntriesLoading = ref(true);
-
   function registerEntry(entry: t.Entry) {
     if (entry.id in entries.value) {
       if (entry.body === null && entries.value[entry.id].body !== null) {
@@ -50,10 +48,8 @@ export const useEntriesStore = defineStore("entriesStore", () => {
       report.push(entry.id);
     }
 
-    firstTimeEntriesLoading.value = false;
-
     return report;
-  }, []);
+  }, null);
 
   function requestFullEntry({entryId}: {entryId: t.EntryId}) {
     if (entryId in entries.value && entries.value[entryId].body !== null) {
@@ -104,7 +100,6 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     requestFullEntry,
     setMarker,
     removeMarker,
-    firstTimeEntriesLoading,
     loadedEntriesReport
   };
 });

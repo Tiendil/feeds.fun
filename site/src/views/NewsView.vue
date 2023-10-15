@@ -45,11 +45,11 @@
 
     <template #main-footer> </template>
 
-  <notifications v-if="!entriesStore.firstTimeEntriesLoading"
+  <notifications v-if="entriesStore.loadedEntriesReport !== null"
                  :openai-api-key="true"
                  :collections="!hasEntries"/>
 
-    <entries-list
+  <entries-list
       :entriesIds="entriesReport"
       :time-field="timeField"
       :show-tags="globalSettings.showEntriesTags"
@@ -83,7 +83,11 @@ globalSettings.updateDataVersion();
 
 const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
 
-  const entriesReport = computed(() => {
+const entriesReport = computed(() => {
+  if (entriesStore.loadedEntriesReport === null) {
+    return [];
+  }
+
     let report = entriesStore.loadedEntriesReport.slice();
 
     if (!globalSettings.showRead) {
