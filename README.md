@@ -1,10 +1,6 @@
-# TODO (remove before merge)
-
-- Update readme, to have it in sync with the site
-
 # Feeds Fun
 
-Web-based news reader. Self-hosted, if it is your way.
+News reader with tags. Self-hosted, if it is your way.
 
 - Reader automatically assigns tags to news.
 - You create rules to score news by tags.
@@ -12,22 +8,7 @@ Web-based news reader. Self-hosted, if it is your way.
 
 # Screenshots
 
-*GUI is still in the early development stage, like the whole project. It will become more pleasurable.*
-
 ![News filtering](docs/images/news-filtering-example.png)
-
-Explanation:
-
-- From the news for the last week, sorted by score.
-- Show only news about `game-development` from `reddit.com`.
-- Exclude news with the tag `employment`.
-- Hide already read news.
-
-Tags sorting for news records:
-
-- Tags are sorted by the impact on the score.
-- Green tags have a positive impact.
-- Red tags have a negative impact.
 
 # Features
 
@@ -35,9 +16,9 @@ Tags sorting for news records:
 - Feeds management.
 - Automatic tag assignment for every news entry.
 - Rules to score news by tags.
-- Filter news by tags: exclude them by tags, show only entries with tags.
+- Filter news: exclude news by tags, show only news with tags.
 - Sort news by score, date, etc.
-- Track read state of news you've read already.
+- Track news you've read already.
 - A lot of other features are comming.
 
 # Motivation
