@@ -1,5 +1,5 @@
 <template>
-<div class="flex container">
+<div class="flex">
 
   <div class="flex-shrink-0 w-8 text-right pr-1">
     <value-score
@@ -170,12 +170,3 @@ async function onTitleClick(event) {
 
 }
 </script>
-
-<style scoped>
-
-/* TODO: replace to press? */
-  .container :deep(img) {
-    @apply max-w-full;
-    @apply h-auto;
-  }
-</style>

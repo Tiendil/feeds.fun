@@ -3,7 +3,6 @@
 - what with github buttons
 - opensource to the main page
 - github repo link to the main page
-- news: right column does not placed at the right border of the window
 - on rule creationg we should reload scores, but not change sorting? In any case, something should visually change
 - Update readme, to have it in sync with the site
 - settings flags work is unclear for users. Also see them in notifications
