@@ -61,6 +61,6 @@
   }
 
   .unmarked {
-    @apply text-purple-700 font-bold no-underline;
+    @apply text-orange-700 font-bold no-underline;
   }
 </style>
