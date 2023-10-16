@@ -6,7 +6,6 @@
         :entry-id="entry.id" />
     </div>
 
-
     <div class="flex-shrink-0 w-8 text-right pr-1">
       <favicon-element
         :url="entry.url"
