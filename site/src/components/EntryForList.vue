@@ -12,6 +12,15 @@
         class="w-4 h-4 align-text-bottom mx-1 inline" />
     </div>
 
+    <div class="flex-shrink-0 text-right">
+      <input-marker
+        class="w-7 mr-2"
+        :marker="e.Marker.Read"
+        :entry-id="entryId"
+        on-text="read"
+        off-text="new" />
+    </div>
+
     <div class="flex-grow">
       <a
         :href="entry.url"
@@ -30,13 +39,6 @@
     </div>
 
     <div class="flex flex-shrink-0">
-      <input-marker
-        class="w-7 mr-2"
-        :marker="e.Marker.Read"
-        :entry-id="entryId"
-        on-text="read"
-        off-text="new" />
-
       <div class="w-7">
         <value-date-time
           :value="timeFor"
