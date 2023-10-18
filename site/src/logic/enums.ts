@@ -58,15 +58,20 @@ export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, {text: str
 export enum EntriesOrder {
   Score = "score",
   ScoreToZero = "score-to-zero",
+  ScoreBackward = "score-to-",
   Published = "published",
   Cataloged = "cataloged"
 }
 
-export const EntriesOrderProperties = new Map<EntriesOrder, {text: string; orderField: string; timeField: string}>([
-  [EntriesOrder.Score, {text: "score", orderField: "score", timeField: "catalogedAt"}],
-  [EntriesOrder.ScoreToZero, {text: "score ~ 0", orderField: "scoreToZero", timeField: "catalogedAt"}],
-  [EntriesOrder.Published, {text: "published", orderField: "publishedAt", timeField: "publishedAt"}],
-  [EntriesOrder.Cataloged, {text: "cataloged", orderField: "catalogedAt", timeField: "catalogedAt"}]
+export const EntriesOrderProperties = new Map<EntriesOrder, {text: string;
+                                                             orderField: string;
+                                                             timeField: string;
+                                                             direction: number}>([
+  [EntriesOrder.Score, {text: "score", orderField: "score", timeField: "catalogedAt", direction: 1}],
+  [EntriesOrder.ScoreToZero, {text: "score ~ 0", orderField: "scoreToZero", timeField: "catalogedAt", direction: 1}],
+  [EntriesOrder.ScoreBackward, {text: "score backward", orderField: "score", timeField: "catalogedAt", direction: -1}],
+  [EntriesOrder.Published, {text: "published", orderField: "publishedAt", timeField: "publishedAt", direction: 1}],
+  [EntriesOrder.Cataloged, {text: "cataloged", orderField: "catalogedAt", timeField: "catalogedAt", direction: 1}]
 ]);
 
 export enum Marker {
