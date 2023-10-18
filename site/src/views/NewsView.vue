@@ -128,11 +128,11 @@
       }
 
       if (valueA < valueB) {
-        return 1;
+        return orderProperties.direction;
       }
 
       if (valueA > valueB) {
-        return -1;
+        return -orderProperties.direction;
       }
 
       return 0;
