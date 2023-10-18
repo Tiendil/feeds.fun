@@ -63,10 +63,10 @@ export enum EntriesOrder {
   Cataloged = "cataloged"
 }
 
-export const EntriesOrderProperties = new Map<EntriesOrder, {text: string;
-                                                             orderField: string;
-                                                             timeField: string;
-                                                             direction: number}>([
+export const EntriesOrderProperties = new Map<
+  EntriesOrder,
+  {text: string; orderField: string; timeField: string; direction: number}
+>([
   [EntriesOrder.Score, {text: "score", orderField: "score", timeField: "catalogedAt", direction: 1}],
   [EntriesOrder.ScoreToZero, {text: "score ~ 0", orderField: "scoreToZero", timeField: "catalogedAt", direction: 1}],
   [EntriesOrder.ScoreBackward, {text: "score backward", orderField: "score", timeField: "catalogedAt", direction: -1}],
