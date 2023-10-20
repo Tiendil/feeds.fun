@@ -22,10 +22,7 @@
       >Searching for feeds…</p
     >
 
-    <div
-      v-else-if="foundFeeds === null"
-      ></div
-    >
+    <div v-else-if="foundFeeds === null"></div>
 
     <p
       v-else-if="foundFeeds.length === 0"
