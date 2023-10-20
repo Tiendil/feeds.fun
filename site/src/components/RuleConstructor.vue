@@ -11,6 +11,8 @@
       @click.prevent="createOrUpdateRule()"
       >create rule</a
     >
+
+    <p class="ffun-info-attention"> The news list will be updated right after you create a rule. </p>
   </div>
 </template>
 
