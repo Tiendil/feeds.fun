@@ -62,7 +62,7 @@
               :key="mode">
               <a
                 v-if="globalSettings.mainPanelMode !== mode"
-                :href="mode"
+                :href="router.resolve({name: mode, params: {}}).href"
                 class="ffun-header-link"
                 @click.prevent="router.push({name: mode, params: {}})">
                 {{ props.text }}
