@@ -1,26 +1,38 @@
 <template>
-<div>
-  <form @submit.prevent="searhedUrl = search">
-    <input
-      type="text"
-      class="ffun-input mr-1"
-      v-model="search"
-      :disabled="disableInputs"
-      placeholder="Search for feeds" />
+  <div>
+    <form @submit.prevent="searhedUrl = search">
+      <input
+        type="text"
+        class="ffun-input mr-1"
+        v-model="search"
+        :disabled="disableInputs"
+        placeholder="Search for feeds" />
 
-    <button
-      type="submit"
-      class="ffun-form-button"
-      :disabled="disableInputs">
-      Search
-    </button>
-  </form>
+      <button
+        type="submit"
+        class="ffun-form-button"
+        :disabled="disableInputs">
+        Search
+      </button>
+    </form>
 
-    <p v-if="searching" class="ffun-info-attention">Searching for feeds…</p>
+    <p
+      v-if="searching"
+      class="ffun-info-attention"
+      >Searching for feeds…</p
+    >
 
-    <p v-else-if="foundFeeds === null" class="ffun-info-attention">Enter a URL to search for feeds.</p>
+    <p
+      v-else-if="foundFeeds === null"
+      class="ffun-info-attention"
+      >Enter a URL to search for feeds.</p
+    >
 
-    <p v-else-if="foundFeeds.length === 0" class="ffun-info-attention">No feeds found.</p>
+    <p
+      v-else-if="foundFeeds.length === 0"
+      class="ffun-info-attention"
+      >No feeds found.</p
+    >
 
     <div
       v-for="feed in foundFeeds"
@@ -39,7 +51,7 @@
         v-else
         class="ffun-info-good"
         >Feed added</p
-                     >
+      >
     </div>
   </div>
 </template>
@@ -52,12 +64,12 @@
   import {computedAsync} from "@vueuse/core";
   import {useEntriesStore} from "@/stores/entries";
 
-const search = ref("");
+  const search = ref("");
 
-const searching = ref(false);
-const adding = ref(false);
+  const searching = ref(false);
+  const adding = ref(false);
 
-const disableInputs = computed(() => searching.value || adding.value);
+  const disableInputs = computed(() => searching.value || adding.value);
 
   const searhedUrl = ref("");
 
@@ -84,7 +96,6 @@ const disableInputs = computed(() => searching.value || adding.value);
   }, null);
 
   async function addFeed(url: string) {
-
     adding.value = true;
 
     await api.addFeed({url: url});
