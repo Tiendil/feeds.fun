@@ -1,36 +1,43 @@
 <template>
-<div>
-  <div
-    v-if="rule !== null"
-    class="flex mb-1">
-    <div class="flex-shrink-0 min-w-fit mr-2">
-      <a
-        href="#"
-        class="ffun-normal-link"
-        @click.prevent="deleteRule()">
-        remove
-      </a>
+  <div>
+    <div
+      v-if="rule !== null"
+      class="flex mb-1">
+      <div class="flex-shrink-0 min-w-fit mr-2">
+        <a
+          href="#"
+          class="ffun-normal-link"
+          @click.prevent="deleteRule()">
+          remove
+        </a>
+      </div>
+
+      <score-selector
+        class="flex-shrink-0 mr-2"
+        :modelValue="rule.score"
+        @input="updateSelected" />
+
+      <div class="flex-grow">
+        <template
+          v-for="tag of rule.tags"
+          :key="tag">
+          <ffun-tag :uid="tag" />&nbsp;
+        </template>
+      </div>
     </div>
 
-    <score-selector
-      class="flex-shrink-0 mr-2"
-      :modelValue="rule.score"
-      @input="updateSelected" />
-
-    <div class="flex-grow">
-      <template
-        v-for="tag of rule.tags"
-        :key="tag">
-        <ffun-tag :uid="tag" />&nbsp;
-      </template>
+    <p
+      v-if="scoreChanged"
+      class="ffun-info-good">
+      Score updated
+      <a
+        href="#"
+        class="ffun-form-button"
+        @click.prevent="scoreChanged = false"
+        >close</a
+      >
+    </p>
   </div>
-
-  </div>
-
-<p v-if="scoreChanged" class="ffun-info-good">
-  Score updated <a href="#" class="ffun-form-button" @click.prevent="scoreChanged = false">close</a>
-</p>
-</div>
 </template>
 
 <script lang="ts" setup>
@@ -44,9 +51,9 @@
 
   const globalSettings = useGlobalSettingsStore();
 
-const properties = defineProps<{rule: t.Rule}>();
+  const properties = defineProps<{rule: t.Rule}>();
 
-const scoreChanged = ref(false);
+  const scoreChanged = ref(false);
 
   async function deleteRule() {
     await api.deleteRule({id: properties.rule.id});
@@ -67,5 +74,4 @@ const scoreChanged = ref(false);
 
     globalSettings.updateDataVersion();
   }
-
 </script>
