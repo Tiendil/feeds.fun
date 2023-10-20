@@ -1,44 +1,57 @@
 <template>
   <div>
-    <input
-      type="text"
-      class="ffun-input mr-1"
-      v-model="search"
-      :disabled="loading"
-      placeholder="Search for feeds" />
+    <form @submit.prevent="searhedUrl = search">
+      <input
+        type="text"
+        class="ffun-input mr-1"
+        v-model="search"
+        :disabled="disableInputs"
+        placeholder="Search for feeds" />
 
-    <button
-      class="ffun-form-button"
-      :disabled="loading"
-      @click.prevent="searhedUrl = search">
-      Search
-    </button>
+      <button
+        type="submit"
+        class="ffun-form-button"
+        :disabled="disableInputs">
+        Search
+      </button>
+    </form>
 
-    <hr />
+    <p
+      v-if="searching"
+      class="ffun-info-attention"
+      >Searching for feeds…</p
+    >
 
-    <div v-if="!loading && foundFeeds.length === 0">No feeds found</div>
+    <p
+      v-else-if="foundFeeds === null"
+      class="ffun-info-attention"
+      >Enter a URL to search for feeds.</p
+    >
 
-    <div v-else-if="loading">Searching for feeds…</div>
+    <p
+      v-else-if="foundFeeds.length === 0"
+      class="ffun-info-attention"
+      >No feeds found.</p
+    >
 
-    <div v-else>
-      <div
-        v-for="feed in foundFeeds"
-        :key="feed.url">
-        <feed-info :feed="feed" />
+    <div
+      v-for="feed in foundFeeds"
+      :key="feed.url">
+      <feed-info :feed="feed" />
 
-        <button
-          class="ffun-form-button"
-          v-if="!addedFeeds[feed.url]"
-          @click.prevent="addFeed(feed.url)">
-          Add
-        </button>
+      <button
+        class="ffun-form-button"
+        v-if="!addedFeeds[feed.url]"
+        :disabled="disableInputs"
+        @click.prevent="addFeed(feed.url)">
+        Add
+      </button>
 
-        <p
-          v-else
-          class="ffun-info-good"
-          >Feed added</p
-        >
-      </div>
+      <p
+        v-else
+        class="ffun-info-good"
+        >Feed added</p
+      >
     </div>
   </div>
 </template>
@@ -52,7 +65,11 @@
   import {useEntriesStore} from "@/stores/entries";
 
   const search = ref("");
-  const loading = ref(false);
+
+  const searching = ref(false);
+  const adding = ref(false);
+
+  const disableInputs = computed(() => searching.value || adding.value);
 
   const searhedUrl = ref("");
 
@@ -60,10 +77,10 @@
 
   const foundFeeds = computedAsync(async () => {
     if (searhedUrl.value === "") {
-      return [];
+      return null;
     }
 
-    loading.value = true;
+    searching.value = true;
 
     let feeds: t.FeedInfo[] = [];
 
@@ -73,15 +90,19 @@
       console.error(e);
     }
 
-    loading.value = false;
+    searching.value = false;
 
     return feeds;
-  }, []);
+  }, null);
 
   async function addFeed(url: string) {
-    addedFeeds.value[url] = true;
+    adding.value = true;
 
     await api.addFeed({url: url});
+
+    addedFeeds.value[url] = true;
+
+    adding.value = false;
   }
 </script>
 
