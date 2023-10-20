@@ -6,7 +6,7 @@
         class="ffun-input mr-1"
         v-model="search"
         :disabled="disableInputs"
-        placeholder="Search for feeds" />
+        placeholder="Enter a site URL" />
 
       <button
         type="submit"
@@ -22,11 +22,7 @@
       >Searching for feeds…</p
     >
 
-    <p
-      v-else-if="foundFeeds === null"
-      class="ffun-info-attention"
-      >Enter a URL to search for feeds.</p
-    >
+    <div v-else-if="foundFeeds === null"></div>
 
     <p
       v-else-if="foundFeeds.length === 0"
