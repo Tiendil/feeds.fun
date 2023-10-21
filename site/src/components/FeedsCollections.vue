@@ -1,27 +1,47 @@
 <template>
   <div>
-    <ul class="mb-1">
-      <li v-for="item in collections">
-        <input
-          class="ffun-checkbox"
-          type="checkbox"
-          :id="item"
-          :name="item"
-          :value="item"
-          v-model="selectedCollections"
-          checked />
-        <label
-          class="ml-2"
-          :for="item"
-          >{{ item }}</label
-        >
-      </li>
-    </ul>
+    <form @submit.prevent="subscribe">
+      <ul class="mb-1">
+        <li v-for="item in collections">
+          <input
+            class="ffun-checkbox"
+            type="checkbox"
+            :id="item"
+            :name="item"
+            :value="item"
+            v-model="selectedCollections"
+            checked />
+          <label
+            class="ml-2"
+            :for="item"
+            >{{ item }}</label
+          >
+        </li>
+      </ul>
 
-    <button
-      @click="subscribe()"
-      class="ffun-form-button"
-      >Subscribe</button
+      <button
+        type="submit"
+        class="ffun-form-button"
+        >Subscribe</button
+      >
+    </form>
+
+    <p
+      v-if="loading"
+      class="ffun-info-attention"
+      >subscribing...</p
+    >
+
+    <p
+      v-if="loaded"
+      class="ffun-info-good"
+      >Feeds added!</p
+    >
+
+    <p
+      v-if="error"
+      class="ffun-info-bad"
+      >Unknown error occurred! Please, try later.</p
     >
   </div>
 </template>
@@ -35,6 +55,10 @@
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
+
+  const loading = ref(false);
+  const loaded = ref(false);
+  const error = ref(false);
 
   const selectedCollections = ref<t.FeedsCollectionId[]>([]);
 
@@ -51,9 +75,26 @@
   });
 
   async function subscribe() {
-    await api.subscribeToFeedsCollections({
-      collectionsIds: selectedCollections.value
-    });
+    loading.value = true;
+    loaded.value = false;
+    error.value = false;
+
+    try {
+      await api.subscribeToFeedsCollections({
+        collectionsIds: selectedCollections.value
+      });
+
+      loading.value = false;
+      loaded.value = true;
+      error.value = false;
+    } catch (e) {
+      console.error(e);
+
+      loading.value = false;
+      loaded.value = false;
+      error.value = true;
+    }
+
     globalSettings.updateDataVersion();
   }
 </script>
