@@ -168,20 +168,20 @@
     return entriesNumber.value > 0;
   });
 
-const hasRules = computed(() => {
-  if (!hasEntries.value) {
-    return false;
-  }
-
-  // TODO: is is heuristics (score could be 0 even with rules)
-  //       must be refactored to something more stable
-  for (const entryId of entriesReport.value) {
-    if (entriesStore.entries[entryId].score != 0) {
-      return true;
+  const hasRules = computed(() => {
+    if (!hasEntries.value) {
+      return false;
     }
-  }
-  return false;
-});
+
+    // TODO: is is heuristics (score could be 0 even with rules)
+    //       must be refactored to something more stable
+    for (const entryId of entriesReport.value) {
+      if (entriesStore.entries[entryId].score != 0) {
+        return true;
+      }
+    }
+    return false;
+  });
 
   const timeField = computed(() => {
     const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);

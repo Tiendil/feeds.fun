@@ -28,14 +28,16 @@
     return properties.collections;
   });
 
-const showCreateRuleHelpNotification = computed(() => {
-  return !showCollectionsNotification.value && properties.createRuleHelp;
-});
+  const showCreateRuleHelpNotification = computed(() => {
+    return !showCollectionsNotification.value && properties.createRuleHelp;
+  });
 
   const showOpenAIKeyNotification = computed(() => {
     return (
       !showCollectionsNotification.value &&
-        !showCreateRuleHelpNotification.value &&
-        properties.openaiApiKey && showApiKeyMessage.value);
+      !showCreateRuleHelpNotification.value &&
+      properties.openaiApiKey &&
+      showApiKeyMessage.value
+    );
   });
 </script>
