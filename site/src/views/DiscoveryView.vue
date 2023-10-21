@@ -2,9 +2,17 @@
   <side-panel-layout :reload-button="false">
     <template #main-header> Discovery </template>
 
+    <h2>Lood feeds from an OPML file</h2>
+
     <opml-upload />
 
-    <hr />
+    <h2>Search for a feed</h2>
+
+    <div class="ffun-info-attention">
+      <p> The discovery feature is experimental and might not work on all websites. </p>
+
+      <p> If we can’t find a feed for a site, try finding the feed's URL manually, then enter it in the form. </p>
+    </div>
 
     <discovery-form />
   </side-panel-layout>
