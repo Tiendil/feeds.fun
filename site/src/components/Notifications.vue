@@ -1,6 +1,7 @@
 <template>
   <notification-openai-api-key v-if="showOpenAIKeyNotification" />
   <notification-collections v-if="showCollectionsNotification" />
+  <notification-create-rule-help v-if="showCreateRuleHelpNotification" />
 </template>
 
 <script lang="ts" setup>
@@ -10,6 +11,7 @@
   const properties = defineProps<{
     openaiApiKey: boolean;
     collections: boolean;
+    createRuleHelp: boolean;
   }>();
 
   const globalSettings = useGlobalSettingsStore();
@@ -26,7 +28,16 @@
     return properties.collections;
   });
 
+  const showCreateRuleHelpNotification = computed(() => {
+    return !showCollectionsNotification.value && properties.createRuleHelp;
+  });
+
   const showOpenAIKeyNotification = computed(() => {
-    return !showCollectionsNotification.value && properties.openaiApiKey && showApiKeyMessage.value;
+    return (
+      !showCollectionsNotification.value &&
+      !showCreateRuleHelpNotification.value &&
+      properties.openaiApiKey &&
+      showApiKeyMessage.value
+    );
   });
 </script>
