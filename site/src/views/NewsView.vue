@@ -169,13 +169,13 @@
   });
 
   const hasRules = computed(() => {
-    if (!hasEntries.value) {
+    if (entriesStore.loadedEntriesReport === null) {
       return false;
     }
 
-    // TODO: is is heuristics (score could be 0 even with rules)
+    // TODO: it is a heuristic (score could be 0 even with rules)
     //       must be refactored to something more stable
-    for (const entryId of entriesReport.value) {
+    for (const entryId of entriesStore.loadedEntriesReport) {
       if (entriesStore.entries[entryId].score != 0) {
         return true;
       }
