@@ -1,0 +1,14 @@
+
+* Table with pointers to the last processed entries
+
+* Queue/table with entries to process next by each processor
+
+* Background workers to fill queue
+
+* Switch processor to the queue
+
+* Data migration from the l_entry_process_info
+
+* Remove l_entry_process_info
+
+* Remove logic, that uses l_entry_process_info
