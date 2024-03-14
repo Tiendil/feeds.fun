@@ -58,6 +58,7 @@ async-lru = "2.0.*"
 psycopg = "3.1.*"
 psycopg-pool = "3.1.*"
 yoyo-migrations = "8.2.*"
+PyPika = "0.48.*"
 
 structlog = "23.1.*"
 

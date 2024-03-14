@@ -2,6 +2,7 @@ from typing import Any, TypeVar
 
 import pydantic
 
+
 BASE_ENTITY = TypeVar("BASE_ENTITY", bound="BaseEntity")
 
 
@@ -16,6 +17,4 @@ class BaseEntity(pydantic.BaseModel):
     )
 
     def replace(self: BASE_ENTITY, **kwargs: Any) -> BASE_ENTITY:
-        data = self.model_dump()
-        data |= kwargs
-        return self.__class__(**data)
+        return self.model_copy(update=kwargs, deep=True)
