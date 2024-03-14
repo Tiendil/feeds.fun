@@ -21,8 +21,8 @@ CREATE TABLE ln_processor_pointers (
 )
 """
 
-sql_create_processors_query = """
-CREATE TABLE ln_processors_query (
+sql_create_processors_queue = """
+CREATE TABLE ln_processors_queue (
     id UUID PRIMARY KEY,
     processor_id INTEGER NOT NULL,
     entry_id UUID NOT NULL,
@@ -33,8 +33,8 @@ CREATE TABLE ln_processors_query (
 """
 
 
-sql_create_processors_query_index = """
-CREATE INDEX idx_ln_processors_query_processor_id ON ln_processors_query (processor_id, created_at)
+sql_create_processors_queue_index = """
+CREATE INDEX idx_ln_processors_queue_processor_id ON ln_processors_queue (processor_id, created_at)
 """
 
 
@@ -43,13 +43,13 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
     cursor.execute(sql_create_processor_pointers)
 
-    cursor.execute(sql_create_processors_query)
-    cursor.execute(sql_create_processors_query_index)
+    cursor.execute(sql_create_processors_queue)
+    cursor.execute(sql_create_processors_queue_index)
 
 
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
-    cursor.execute("DROP TABLE ln_processor_pointers, ln_processors_query")
+    cursor.execute("DROP TABLE ln_processor_pointers, ln_processors_queue")
 
 
 steps = [step(apply_step, rollback_step)]

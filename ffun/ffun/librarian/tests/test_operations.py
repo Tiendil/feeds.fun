@@ -6,6 +6,8 @@ import pytest
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.librarian import errors, operations
 from ffun.librarian.entities import ProcessorPointer
+from ffun.library import operations as l_operations
+from ffun.library.tests import make as l_make
 
 
 fake_processor_id = 11042
@@ -115,3 +117,22 @@ class TestSavePointer:
         loaded_pointer = await operations.get_pointer(fake_processor_id)
 
         assert new_pointer == loaded_pointer
+
+
+class TestPushEntriesToProcessorQueue:
+
+    @pytest.mark.parametrize('entries_count', [0, 1, 3, 10])
+    @pytest.mark.asyncio
+    async def test_push_entry(self, loaded_feed_id: uuid.UUID, entries_count: int) -> None:
+        await operations.clear_processor_queue(fake_processor_id)
+
+        entries = await l_make.n_entries(loaded_feed_id, n=entries_count + 5)
+
+        entries_to_push = list(entries)[:entries_count]
+
+        async with TableSizeDelta('ln_processors_queue', delta=entries_count):
+            await operations.push_entries_to_processor_queue(fake_processor_id, entries_to_push)
+
+        entries_in_queue = await operations.get_entries_to_process(fake_processor_id, n=entries_count + 5)
+
+        assert set(entries_to_push) == set(entries_in_queue)

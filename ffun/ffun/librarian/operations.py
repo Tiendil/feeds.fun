@@ -80,17 +80,17 @@ async def save_pointer(pointer: ProcessorPointer) -> None:
 
 
 async def push_entries_to_processor_queue(processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
-    query = PostgreSQLQuery.into('ln_processor_queue').columns('processor_id', 'entry_id')
+    query = PostgreSQLQuery.into('ln_processors_queue').columns('id', 'processor_id', 'entry_id')
 
     for entry_id in entry_ids:
-        query = query.insert(processor_id, entry_id)
+        query = query.insert(uuid.uuid4(), processor_id, entry_id)
 
     await execute(str(query))
 
 
 async def get_entries_to_process(processor_id: int, n: int) -> set[uuid.UUID]:
     sql = """
-    SELECT entry_id FROM ln_processor_queue
+    SELECT entry_id FROM ln_processors_queue
     WHERE processor_id = %(processor_id)s
     ORDER BY created_at
     LIMIT %(n)s
@@ -103,9 +103,18 @@ async def get_entries_to_process(processor_id: int, n: int) -> set[uuid.UUID]:
 
 async def remove_entries_from_processor_queue(processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
     sql = """
-    DELETE FROM ln_processor_queue
+    DELETE FROM ln_processors_queue
     WHERE processor_id = %(processor_id)s
     AND entry_id = ANY(%(entry_ids)s)
     """
 
     await execute(sql, {"processor_id": processor_id, "entry_ids": list(entry_ids)})
+
+
+async def clear_processor_queue(processor_id: int) -> None:
+    sql = """
+    DELETE FROM ln_processors_queue
+    WHERE processor_id = %(processor_id)s
+    """
+
+    await execute(sql, {"processor_id": processor_id})
