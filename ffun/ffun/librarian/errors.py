@@ -7,3 +7,7 @@ class Error(errors.Error):
 
 class SkipAndContinueLater(Error):
     pass
+
+
+class CanNotSaveUnexistingPointer(Error):
+    pass
