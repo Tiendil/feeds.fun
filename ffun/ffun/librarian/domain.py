@@ -13,13 +13,6 @@ from ffun.ontology import domain as o_domain
 logger = logging.get_module_logger()
 
 
-# TODO: test
-@run_in_transaction
-async def move_entries_from_queue_to_failed_storage(execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
-    await operations.add_entries_to_failed_storage(execute, processor_id, entry_ids)
-    await operations.remove_entries_from_processor_queue(execute, processor_id, entry_ids)
-
-
 # TODO: save processing errors in the database
 # TODO: tests
 @logging.bound_function(skip=("processor",))
@@ -41,13 +34,14 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
             processor_id=processor_id, entry_id=entry.id, state=ProcessedState.retry_later, error=None
         )
     except Exception as e:
-        await operations.move_entries_from_queue_to_failed_storage(processor_id=processor_id,
-                                                                   entry_ids=[entry.id])
+        await operations.add_entries_to_failed_storage(processor_id, [entry.id])
         raise errors.UnexpectedErrorInProcessor(processor_id=processor_id, entry_id=entry.id) from e
     else:
         logger.info("processor_successed")
         await l_domain.mark_entry_as_processed(
             processor_id=processor_id, entry_id=entry.id, state=ProcessedState.success, error=None
         )
+    finally:
+        await operations.remove_entries_from_processor_queue(processor_id, [entry.id])
 
     logger.info("entry_processed")

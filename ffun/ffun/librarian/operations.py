@@ -101,7 +101,7 @@ async def get_entries_to_process(processor_id: int, n: int) -> list[uuid.UUID]:
     return [row["entry_id"] for row in rows]
 
 
-async def remove_entries_from_processor_queue(execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
+async def remove_entries_from_processor_queue(processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
     sql = """
     DELETE FROM ln_processors_queue
     WHERE processor_id = %(processor_id)s
@@ -120,7 +120,7 @@ async def clear_processor_queue(processor_id: int) -> None:
     await execute(sql, {"processor_id": processor_id})
 
 
-async def add_entries_to_failed_storage(execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
+async def add_entries_to_failed_storage(processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
     query = PostgreSQLQuery.into('ln_failed_entries').columns('processor_id', 'entry_id')
 
     for entry_id in entry_ids:

@@ -154,7 +154,7 @@ class TestGetEntriesToProcess:
         while True:
             new_entries_ids = await operations.get_entries_to_process(fake_processor_id, n=3)
             received_entries.update(new_entries_ids)
-            await operations.remove_entries_from_processor_queue(execute, fake_processor_id, new_entries_ids)
+            await operations.remove_entries_from_processor_queue(fake_processor_id, new_entries_ids)
 
             if len(received_entries) == len(entries):
                 assert len(new_entries_ids) == 13 % 3
@@ -197,7 +197,7 @@ class TestRemoveEntriesFromProcessorQueue:
         entries_to_remove = list(entries)[:5]
 
         async with TableSizeDelta('ln_processors_queue', delta=-5):
-            await operations.remove_entries_from_processor_queue(execute, fake_processor_id, entries_to_remove)
+            await operations.remove_entries_from_processor_queue(fake_processor_id, entries_to_remove)
 
         entries_in_queue = await operations.get_entries_to_process(fake_processor_id, n=13)
 
@@ -215,7 +215,7 @@ class TestRemoveEntriesFromProcessorQueue:
 
         entries_to_remove = [uuid.uuid4(), uuid.uuid4()]
 
-        await operations.remove_entries_from_processor_queue(execute, fake_processor_id, entries_to_remove)
+        await operations.remove_entries_from_processor_queue(fake_processor_id, entries_to_remove)
 
         entries_in_queue = await operations.get_entries_to_process(fake_processor_id, n=13)
 
@@ -236,7 +236,7 @@ class TestAddEntriesToFailedStorage:
         entries_to_add = list(entries)[:5]
 
         async with TableSizeDelta('ln_failed_entries', delta=5):
-            await operations.add_entries_to_failed_storage(execute, fake_processor_id, entries_to_add)
+            await operations.add_entries_to_failed_storage(fake_processor_id, entries_to_add)
 
         failed_entries = await operations.get_failed_entries(fake_processor_id, n=100500)
 
@@ -249,7 +249,7 @@ class TestGetFailedEntries:
     async def test_get_entries(self, loaded_feed_id: uuid.UUID) -> None:
         entries = await l_make.n_entries(loaded_feed_id, n=4)
 
-        await operations.add_entries_to_failed_storage(execute, fake_processor_id, list(entries))
+        await operations.add_entries_to_failed_storage(fake_processor_id, list(entries))
 
         failed_entries = await operations.get_failed_entries(fake_processor_id, n=100500)
 
@@ -272,7 +272,7 @@ class TestGetFailedEntries:
     async def test_idempotency(self, loaded_feed_id: uuid.UUID) -> None:
         entries = await l_make.n_entries(loaded_feed_id, n=13)
 
-        await operations.add_entries_to_failed_storage(execute, fake_processor_id, list(entries))
+        await operations.add_entries_to_failed_storage(fake_processor_id, list(entries))
 
         failed_entries_1 = await operations.get_failed_entries(fake_processor_id, n=100500)
         failed_entries_2 = await operations.get_failed_entries(fake_processor_id, n=100500)
@@ -286,7 +286,7 @@ class TestRemoveFailedEntries:
     async def test_remove_entries(self, loaded_feed_id: uuid.UUID) -> None:
         entries = await l_make.n_entries(loaded_feed_id, n=13)
 
-        await operations.add_entries_to_failed_storage(execute, fake_processor_id, list(entries))
+        await operations.add_entries_to_failed_storage(fake_processor_id, list(entries))
 
         entries_to_remove = list(entries)[:5]
 
@@ -301,7 +301,7 @@ class TestRemoveFailedEntries:
     async def test_remove_non_existing_entries(self, loaded_feed_id: uuid.UUID) -> None:
         entries = await l_make.n_entries(loaded_feed_id, n=5)
 
-        await operations.add_entries_to_failed_storage(execute, fake_processor_id, list(entries))
+        await operations.add_entries_to_failed_storage(fake_processor_id, list(entries))
 
         entries_to_remove = [uuid.uuid4(), uuid.uuid4()]
 
