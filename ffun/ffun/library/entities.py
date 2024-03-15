@@ -4,8 +4,8 @@ import uuid
 from typing import Any
 
 import pydantic
-
 from ffun.core import utils
+from ffun.core.entities import BaseEntity
 
 
 class ProcessedState(int, enum.Enum):
@@ -14,7 +14,7 @@ class ProcessedState(int, enum.Enum):
     retry_later = 3
 
 
-class Entry(pydantic.BaseModel):
+class Entry(BaseEntity):
     id: uuid.UUID
     feed_id: uuid.UUID
     title: str
@@ -33,7 +33,7 @@ class Entry(pydantic.BaseModel):
         return {"id": self.id, "feed_id": self.feed_id, "title": self.title, "external_url": self.external_url}
 
 
-class EntryChange(pydantic.BaseModel):
+class EntryChange(BaseEntity):
     id: uuid.UUID
     field: str
     old_value: Any

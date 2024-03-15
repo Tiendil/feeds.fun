@@ -1,13 +1,46 @@
+import zoneinfo
 from itertools import chain
 
 import pytest
-
+from ffun.core import utils
+from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_times_is_near
 from ffun.feeds import domain as f_domain
 from ffun.feeds.tests import make as f_make
 from ffun.library.domain import get_entry
 from ffun.library.entities import Entry
-from ffun.library.operations import all_entries_iterator, catalog_entries, update_external_url
+from ffun.library.operations import all_entries_iterator, catalog_entries, get_entries_by_ids, update_external_url
 from ffun.library.tests import make
+
+
+class TestCatalogEntries:
+
+    @pytest.mark.asyncio
+    async def test_no_entries(self) -> None:
+        async with TableSizeNotChanged("l_entries"):
+            await catalog_entries([])
+
+    @pytest.mark.asyncio
+    async def test_success(self, new_entry: Entry, another_new_entry: Entry) -> None:
+
+        entries_data = [new_entry, another_new_entry]
+
+        async with TableSizeDelta("l_entries", delta=2):
+            await catalog_entries(entries_data)
+
+        loaded_entries = await get_entries_by_ids(ids=[new_entry.id, another_new_entry.id])
+
+        loaded_new_entry = loaded_entries[new_entry.id]
+        loaded_another_new_entry = loaded_entries[another_new_entry.id]
+
+        assert len(loaded_entries) == 2
+
+        assert_times_is_near(loaded_new_entry.cataloged_at, utils.now())
+        assert_times_is_near(loaded_another_new_entry.cataloged_at, utils.now())
+
+        assert loaded_new_entry == new_entry.replace(cataloged_at=loaded_new_entry.cataloged_at)
+        assert loaded_another_new_entry == another_new_entry.replace(
+            cataloged_at=loaded_another_new_entry.cataloged_at
+        )
 
 
 class TestAllEntriesIterator:

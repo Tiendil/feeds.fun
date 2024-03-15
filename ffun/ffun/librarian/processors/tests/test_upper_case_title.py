@@ -1,8 +1,8 @@
 import pytest
-
 from ffun.librarian.processors import upper_case_title
 from ffun.library.entities import Entry
 from ffun.ontology.entities import ProcessorTag
+
 
 processor = upper_case_title.Processor(name="upper_case_title")
 
@@ -25,7 +25,7 @@ class TestEncodeSpecialCharacters:
     )
     @pytest.mark.asyncio
     async def test(self, cataloged_entry: Entry, title: str, has_tag: bool) -> None:
-        cataloged_entry.title = title
+        cataloged_entry = cataloged_entry.replace(title=title)
 
         tags = await processor.process(cataloged_entry)
 

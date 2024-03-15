@@ -21,11 +21,10 @@ VALUES (%(id)s, %(feed_id)s, %(title)s, %(body)s,
 
 
 def row_to_entry(row: dict[str, Any]) -> Entry:
-    row['cataloged_at'] = row['created_at']
+    row['cataloged_at'] = row.pop('created_at')
     return Entry(**row)
 
 
-# TODO: tests
 async def catalog_entries(entries: Iterable[Entry]) -> None:
     for entry in entries:
         try:

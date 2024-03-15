@@ -1,5 +1,4 @@
 import pytest
-
 from ffun.feeds.entities import Feed
 from ffun.library.domain import get_entry, normalize_entry
 from ffun.library.entities import Entry, EntryChange
@@ -21,7 +20,7 @@ class TestNormalizeEntry:
         wrong_url = "/relative/url"
         expected_url = f"{loaded_feed.url}{wrong_url}"
 
-        new_entry.external_url = wrong_url
+        new_entry = new_entry.replace(external_url=wrong_url)
 
         await catalog_entries([new_entry])
 

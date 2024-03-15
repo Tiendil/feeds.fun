@@ -1,10 +1,11 @@
 import copy
+import datetime
 from types import TracebackType
 from typing import Any, Callable, Optional, Type
 
 import pytest
-
 from ffun.core.postgresql import execute
+
 
 PRODUCER = Callable[[], Any]
 
@@ -137,3 +138,9 @@ class TableSizeNotChanged(NotChanged, TableSizeMixin):
         super().__init__(**kwargs)
 
         self.table = table
+
+
+def assert_times_is_near(a: datetime.datetime,
+                         b: datetime.datetime,
+                         delta: datetime.timedelta = datetime.timedelta(seconds=1)) -> None:
+    assert abs(a - b) < delta
