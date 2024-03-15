@@ -12,6 +12,7 @@ from ffun.openai import client as oai_client
 from ffun.openai import errors as oai_errors
 from ffun.openai.keys_rotator import api_key_for_feed_entry
 
+
 logger = logging.get_module_logger()
 
 
@@ -98,8 +99,8 @@ class Processor(base.Processor):
 
                 api_key_usage.used_tokens = sum(result.total_tokens for result in results)
 
-        except (oai_errors.TemporaryError, oai_errors.NoKeyFoundForFeed) as e:
-            raise errors.SkipAndContinueLater(message=str(e)) from e
+        except oai_errors.NoKeyFoundForFeed as e:
+            raise errors.SkipEntryProcessing(message=str(e)) from e
 
         for result in results:
             for raw_tag in extract_tags(result.content):

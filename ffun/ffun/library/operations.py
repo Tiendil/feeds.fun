@@ -3,11 +3,11 @@ import uuid
 from typing import Any, AsyncGenerator, Iterable
 
 import psycopg
-
 from ffun.core import logging
 from ffun.core.postgresql import execute
 from ffun.library.entities import Entry, ProcessedState
 from ffun.library.settings import settings
+
 
 logger = logging.get_module_logger()
 
@@ -95,64 +95,78 @@ async def get_entries_by_filter(
     return [row_to_entry(row) for row in rows]
 
 
-# TODO: tests
-async def get_new_entries(from_time: datetime.datetime, limit: int = 1000) -> list[Entry]:
+# # TODO: tests
+# async def get_new_entries(from_time: datetime.datetime, limit: int = 1000) -> list[Entry]:
+#     sql = """
+#     SELECT * FROM l_entries
+#     WHERE cataloged_at > %(from_time)s
+#     ORDER BY cataloged_at ASC
+#     LIMIT %(limit)s
+#     """
+
+#     rows = await execute(sql, {"from_time": from_time, "limit": limit})
+
+#     return [row_to_entry(row) for row in rows]
+
+
+async def get_entries_after_pointer(created_at: datetime.datetime, entry_id: uuid.UUID, n: int) -> list[uuid.UUID]:
     sql = """
-    SELECT * FROM l_entries
-    WHERE cataloged_at > %(from_time)s
-    ORDER BY cataloged_at ASC
-    LIMIT %(limit)s
+    SELECT id FROM l_entries
+    WHERE created_at > %(created_at)s OR
+          (cataloged_at = %(created_at)s AND id > %(entry_id)s)
+    ORDER BY cataloged_at ASC, id ASC
+    LIMIT %(n)s
     """
 
-    rows = await execute(sql, {"from_time": from_time, "limit": limit})
+    rows = await execute(sql, {"created_at": created_at, "entry_id": entry_id, "n": n})
 
-    return [row_to_entry(row) for row in rows]
+    return [row["id"] for row in rows]
+
+# TODO: remove
+# async def mark_entry_as_processed(
+#     entry_id: uuid.UUID, processor_id: int, state: ProcessedState, error: str | None
+# ) -> None:
+#     sql = """
+#     INSERT INTO l_entry_process_info (entry_id, processor_id, processed_at, state, last_error)
+#     VALUES (%(entry_id)s, %(processor_id)s, NOW(), %(state)s, %(last_error)s)
+#     ON CONFLICT (entry_id, processor_id)
+#     DO UPDATE SET processed_at = NOW(),
+#                   updated_at = NOW(),
+#                   state = %(state)s,
+#                   last_error = %(last_error)s
+#     """
+
+#     await execute(sql, {"processor_id": processor_id, "entry_id": entry_id, "state": state, "last_error": error})
 
 
-# TODO: tests
-async def mark_entry_as_processed(
-    entry_id: uuid.UUID, processor_id: int, state: ProcessedState, error: str | None
-) -> None:
-    sql = """
-    INSERT INTO l_entry_process_info (entry_id, processor_id, processed_at, state, last_error)
-    VALUES (%(entry_id)s, %(processor_id)s, NOW(), %(state)s, %(last_error)s)
-    ON CONFLICT (entry_id, processor_id)
-    DO UPDATE SET processed_at = NOW(),
-                  updated_at = NOW(),
-                  state = %(state)s,
-                  last_error = %(last_error)s
-    """
+# TODO: remove
+# async def get_entries_to_process(processor_id: int, number: int) -> list[Entry]:
+#     sql = """
+#     SELECT * FROM l_entries
+#     LEFT JOIN l_entry_process_info ON l_entries.id = l_entry_process_info.entry_id AND
+#                                       l_entry_process_info.processor_id = %(processor_id)s
+#     WHERE l_entry_process_info.processed_at IS NULL OR
+#           (l_entry_process_info.processed_at < NOW() - %(retry_after)s AND
+#            l_entry_process_info.state != %(success_state)s)
+#     ORDER BY l_entries.cataloged_at DESC
+#     LIMIT %(number)s
+#     """
 
-    await execute(sql, {"processor_id": processor_id, "entry_id": entry_id, "state": state, "last_error": error})
+#     rows = await execute(
+#         sql,
+#         {
+#             "processor_id": processor_id,
+#             "number": number,
+#             "success_state": ProcessedState.success,
+#             "retry_after": settings.retry_after,
+#         },
+#     )
 
-
-# TODO: tests
-async def get_entries_to_process(processor_id: int, number: int) -> list[Entry]:
-    sql = """
-    SELECT * FROM l_entries
-    LEFT JOIN l_entry_process_info ON l_entries.id = l_entry_process_info.entry_id AND
-                                      l_entry_process_info.processor_id = %(processor_id)s
-    WHERE l_entry_process_info.processed_at IS NULL OR
-          (l_entry_process_info.processed_at < NOW() - %(retry_after)s AND
-           l_entry_process_info.state != %(success_state)s)
-    ORDER BY l_entries.cataloged_at DESC
-    LIMIT %(number)s
-    """
-
-    rows = await execute(
-        sql,
-        {
-            "processor_id": processor_id,
-            "number": number,
-            "success_state": ProcessedState.success,
-            "retry_after": settings.retry_after,
-        },
-    )
-
-    return [row_to_entry(row) for row in rows]
+#     return [row_to_entry(row) for row in rows]
 
 
 # iterate by pairs (feed_id, entry_id) because we already have index on it
+# TODO: rewrite to use get_entries_after_pointer
 async def all_entries_iterator(chunk: int) -> AsyncGenerator[Entry, None]:
     feed_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
     entry_id = uuid.UUID("00000000-0000-0000-0000-000000000000")

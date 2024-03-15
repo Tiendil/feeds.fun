@@ -96,6 +96,21 @@ class EntriesProcessor(InfiniteTask):
         processor_id = self._processor_info.id
         concurrency = self._processor_info.concurrency
 
+        #######################################
+        # most likely, this code should be in a separate worker with a more complext logic
+        # but for now it is ok to place it here
+        #######################################
+
+        pointer = await operations.get_pointer(processor_id=processor_id)
+
+# class ProcessorPointer(BaseEntity):
+#     processor_id: int
+#     pointer_created_at: datetime.datetime
+#     pointer_entry_id: uuid.UUID
+
+
+        #######################################
+
         entities_ids = await operations.get_entries_to_process(processor_id=processor_id, n=concurrency)
 
         if not entities_ids:

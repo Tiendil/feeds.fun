@@ -5,7 +5,7 @@ class Error(errors.Error):
     pass
 
 
-class SkipAndContinueLater(Error):
+class SkipEntryProcessing(Error):
     pass
 
 
