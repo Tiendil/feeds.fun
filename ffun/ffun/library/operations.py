@@ -14,13 +14,14 @@ logger = logging.get_module_logger()
 
 sql_insert_entry = """
 INSERT INTO l_entries (id, feed_id, title, body,
-                       external_id, external_url, external_tags, published_at, cataloged_at)
+                       external_id, external_url, external_tags, published_at)
 VALUES (%(id)s, %(feed_id)s, %(title)s, %(body)s,
-        %(external_id)s, %(external_url)s, %(external_tags)s, %(published_at)s, NOW())
+        %(external_id)s, %(external_url)s, %(external_tags)s, %(published_at)s)
 """
 
 
 def row_to_entry(row: dict[str, Any]) -> Entry:
+    row['cataloged_at'] = row['created_at']
     return Entry(**row)
 
 
@@ -86,8 +87,8 @@ async def get_entries_by_filter(
 
     sql = """
     SELECT * FROM l_entries
-    WHERE feed_id = ANY(%(feeds_ids)s) AND cataloged_at > NOW() - %(period)s
-    ORDER BY cataloged_at DESC
+    WHERE created_at > NOW() - %(period)s and feed_id = ANY(%(feeds_ids)s)
+    ORDER BY created_at DESC
     LIMIT %(limit)s"""
 
     rows = await execute(sql, {"feeds_ids": feeds_ids, "period": period, "limit": limit})
@@ -95,26 +96,13 @@ async def get_entries_by_filter(
     return [row_to_entry(row) for row in rows]
 
 
-# # TODO: tests
-# async def get_new_entries(from_time: datetime.datetime, limit: int = 1000) -> list[Entry]:
-#     sql = """
-#     SELECT * FROM l_entries
-#     WHERE cataloged_at > %(from_time)s
-#     ORDER BY cataloged_at ASC
-#     LIMIT %(limit)s
-#     """
-
-#     rows = await execute(sql, {"from_time": from_time, "limit": limit})
-
-#     return [row_to_entry(row) for row in rows]
-
-
+# TODO: tests
 async def get_entries_after_pointer(created_at: datetime.datetime, entry_id: uuid.UUID, n: int) -> list[uuid.UUID]:
     sql = """
     SELECT id FROM l_entries
     WHERE created_at > %(created_at)s OR
-          (cataloged_at = %(created_at)s AND id > %(entry_id)s)
-    ORDER BY cataloged_at ASC, id ASC
+          (created_at = %(created_at)s AND id > %(entry_id)s)
+    ORDER BY created_at ASC, id ASC
     LIMIT %(n)s
     """
 
