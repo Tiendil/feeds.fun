@@ -4,7 +4,7 @@ from typing import Any, AsyncGenerator, Iterable
 
 import psycopg
 from ffun.core import logging
-from ffun.core.postgresql import execute
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.librarian import errors
 from ffun.librarian.entities import ProcessorPointer
 from ffun.library.entities import Entry, ProcessedState
@@ -80,28 +80,28 @@ async def save_pointer(pointer: ProcessorPointer) -> None:
 
 
 async def push_entries_to_processor_queue(processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
-    query = PostgreSQLQuery.into('ln_processors_queue').columns('id', 'processor_id', 'entry_id')
+    query = PostgreSQLQuery.into('ln_processors_queue').columns('processor_id', 'entry_id')
 
     for entry_id in entry_ids:
-        query = query.insert(uuid.uuid4(), processor_id, entry_id)
+        query = query.insert(processor_id, entry_id)
 
     await execute(str(query))
 
 
-async def get_entries_to_process(processor_id: int, n: int) -> set[uuid.UUID]:
+async def get_entries_to_process(processor_id: int, n: int) -> list[uuid.UUID]:
     sql = """
     SELECT entry_id FROM ln_processors_queue
     WHERE processor_id = %(processor_id)s
-    ORDER BY created_at
+    ORDER BY created_at ASC
     LIMIT %(n)s
     """
 
     rows = await execute(sql, {"processor_id": processor_id, "n": n})
 
-    return {row["entry_id"] for row in rows}
+    return [row["entry_id"] for row in rows]
 
 
-async def remove_entries_from_processor_queue(processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
+async def remove_entries_from_processor_queue(execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
     sql = """
     DELETE FROM ln_processors_queue
     WHERE processor_id = %(processor_id)s
@@ -118,3 +118,35 @@ async def clear_processor_queue(processor_id: int) -> None:
     """
 
     await execute(sql, {"processor_id": processor_id})
+
+
+async def add_entries_to_failed_storage(execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
+    query = PostgreSQLQuery.into('ln_failed_entries').columns('processor_id', 'entry_id')
+
+    for entry_id in entry_ids:
+        query = query.insert(processor_id, entry_id)
+
+    await execute(str(query))
+
+
+async def get_failed_entries(processor_id: int, n: int) -> list[uuid.UUID]:
+    sql = """
+    SELECT entry_id FROM ln_failed_entries
+    WHERE processor_id = %(processor_id)s
+    ORDER BY created_at ASC
+    LIMIT %(n)s
+    """
+
+    rows = await execute(sql, {"processor_id": processor_id, "n": n})
+
+    return [row["entry_id"] for row in rows]
+
+
+async def remove_failed_entries(processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
+    sql = """
+    DELETE FROM ln_failed_entries
+    WHERE processor_id = %(processor_id)s
+    AND entry_id = ANY(%(entry_ids)s)
+    """
+
+    await execute(sql, {"processor_id": processor_id, "entry_ids": list(entry_ids)})

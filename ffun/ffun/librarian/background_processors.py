@@ -3,7 +3,7 @@ from typing import Any
 
 from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
-from ffun.librarian import domain
+from ffun.librarian import domain, operations
 from ffun.librarian.processors.base import Processor
 from ffun.librarian.processors.domain import Processor as DomainProcessor
 from ffun.librarian.processors.native_tags import Processor as NativeTagsProcessor
@@ -12,6 +12,7 @@ from ffun.librarian.processors.openai_chat_3_5_functions import Processor as Ope
 from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTitleProcessor
 from ffun.librarian.settings import settings
 from ffun.library import domain as l_domain
+
 
 logger = logging.get_module_logger()
 
@@ -95,7 +96,12 @@ class EntriesProcessor(InfiniteTask):
         processor_id = self._processor_info.id
         concurrency = self._processor_info.concurrency
 
-        entries = await l_domain.get_entries_to_process(processor_id=processor_id, number=concurrency)
+        entities_ids = await operations.get_entries_to_process(processor_id=processor_id, n=concurrency)
+
+        if not entities_ids:
+            return
+
+        entries = await l_domain.get_entries_by_ids(entities_ids)
 
         tasks = [
             domain.process_entry(processor_id=processor_id, processor=self._processor_info.processor, entry=entry)

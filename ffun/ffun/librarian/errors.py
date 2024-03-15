@@ -11,3 +11,7 @@ class SkipAndContinueLater(Error):
 
 class CanNotSaveUnexistingPointer(Error):
     pass
+
+
+class UnexpectedErrorInProcessor(Error):
+    pass

@@ -1,9 +1,11 @@
 
-* Table with pointers to the last processed entries
+* DONE Table with pointers to the last processed entries
 
-* Queue/table with entries to process next by each processor
+* DONE Queue/table with entries to process next by each processor
 
 * Background workers to fill queue
+
+** Moving pointer + adding entries to a queue must be atomic
 
 * Switch processor to the queue
 
@@ -12,3 +14,5 @@
 * Remove l_entry_process_info
 
 * Remove logic, that uses l_entry_process_info
+
+* Command to move entries from ln_failed_entries to queue

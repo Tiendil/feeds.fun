@@ -1,14 +1,27 @@
+import uuid
+from typing import Iterable
+
 from ffun.core import logging
-from ffun.librarian import errors
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.librarian import errors, operations
 from ffun.librarian.processors.base import Processor
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry, ProcessedState
 from ffun.ontology import domain as o_domain
 
+
 logger = logging.get_module_logger()
 
 
+# TODO: test
+@run_in_transaction
+async def move_entries_from_queue_to_failed_storage(execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
+    await operations.add_entries_to_failed_storage(execute, processor_id, entry_ids)
+    await operations.remove_entries_from_processor_queue(execute, processor_id, entry_ids)
+
+
 # TODO: save processing errors in the database
+# TODO: tests
 @logging.bound_function(skip=("processor",))
 async def process_entry(processor_id: int, processor: Processor, entry: Entry) -> None:
     logger.info("dicover_tags", entry=entry, processor_id=processor_id)
@@ -28,11 +41,9 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
             processor_id=processor_id, entry_id=entry.id, state=ProcessedState.retry_later, error=None
         )
     except Exception as e:
-        await l_domain.mark_entry_as_processed(
-            processor_id=processor_id, entry_id=entry.id, state=ProcessedState.error, error=str(e)
-        )
-        logger.exception("unexpected_error_in_processor")
-        raise
+        await operations.move_entries_from_queue_to_failed_storage(processor_id=processor_id,
+                                                                   entry_ids=[entry.id])
+        raise errors.UnexpectedErrorInProcessor(processor_id=processor_id, entry_id=entry.id) from e
     else:
         logger.info("processor_successed")
         await l_domain.mark_entry_as_processed(
