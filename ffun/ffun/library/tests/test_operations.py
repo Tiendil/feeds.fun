@@ -13,7 +13,8 @@ from ffun.feeds.tests import make as f_make
 from ffun.library.domain import get_entry
 from ffun.library.entities import Entry
 from ffun.library.operations import (all_entries_iterator, catalog_entries, check_stored_entries_by_external_ids,
-                                     get_entries_by_filter, get_entries_by_ids, update_external_url)
+                                     get_entries_after_pointer, get_entries_by_filter, get_entries_by_ids,
+                                     update_external_url)
 from ffun.library.tests import make
 
 
@@ -160,6 +161,67 @@ class TestGetEntriesByFilter:
 
         loaded_entries_ids = {entry.id for entry in loaded_entries}
         assert loaded_entries_ids == {entry.id for entry in prepared_entries[2:]}
+
+
+class TestGetEntriesAfterPointer:
+
+    @pytest.mark.asyncio
+    async def test_no_entries(self) -> None:
+        entries = await get_entries_after_pointer(created_at=utils.now(),
+                                                  entry_id=uuid.uuid4(),
+                                                  limit=100)
+        assert entries == []
+
+    @pytest.mark.asyncio
+    async def test_get_some(self, loaded_feed_id: uuid.UUID) -> None:
+        enries = await make.n_entries(loaded_feed_id, n=5)
+
+        entries_list = list(enries.values())
+        entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
+
+        loaded_entries = await get_entries_after_pointer(created_at=entries_list[2].cataloged_at,
+                                                         entry_id=entries_list[2].id,
+                                                         limit=100)
+
+        assert [entry.id for entry in entries_list[3:]] == loaded_entries
+
+    @pytest.mark.asyncio
+    async def test_duplicated_created_at(self, loaded_feed_id: uuid.UUID) -> None:
+        entries = await make.n_entries(loaded_feed_id, n=5)
+
+        entries_list = list(entries.values())
+
+        base_time = entries_list[1].cataloged_at
+
+        await execute('UPDATE l_entries SET created_at = %(created_at)s WHERE id = ANY(%(ids)s)',
+                      {'created_at': base_time,
+                       'ids': [entry.id for entry in entries_list[1:5]]})
+
+        entries = await get_entries_by_ids(ids=[entry.id for entry in entries_list])  # type: ignore
+
+        entries_list = list(entries.values())
+        entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
+
+        for i in range(1, 4):
+            loaded_entries = await get_entries_after_pointer(created_at=base_time,
+                                                             entry_id=entries_list[i].id,
+                                                             limit=100)
+
+            assert [entry.id for entry in entries_list[i + 1:]] == loaded_entries
+
+    @pytest.mark.asyncio
+    async def test_limit(self, loaded_feed_id: uuid.UUID) -> None:
+        entries = await make.n_entries(loaded_feed_id, n=5)
+
+        entries_list = list(entries.values())
+
+        entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
+
+        loaded_entries = await get_entries_after_pointer(created_at=entries_list[2].cataloged_at,
+                                                         entry_id=entries_list[2].id,
+                                                         limit=2)
+
+        assert [entry.id for entry in entries_list[3:5]] == loaded_entries
 
 
 class TestAllEntriesIterator:

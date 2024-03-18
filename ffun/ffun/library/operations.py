@@ -92,17 +92,16 @@ async def get_entries_by_filter(
     return [row_to_entry(row) for row in rows]
 
 
-# TODO: tests
-async def get_entries_after_pointer(created_at: datetime.datetime, entry_id: uuid.UUID, n: int) -> list[uuid.UUID]:
+async def get_entries_after_pointer(created_at: datetime.datetime, entry_id: uuid.UUID, limit: int) -> list[uuid.UUID]:
     sql = """
     SELECT id FROM l_entries
     WHERE created_at > %(created_at)s OR
           (created_at = %(created_at)s AND id > %(entry_id)s)
     ORDER BY created_at ASC, id ASC
-    LIMIT %(n)s
+    LIMIT %(limit)s
     """
 
-    rows = await execute(sql, {"created_at": created_at, "entry_id": entry_id, "n": n})
+    rows = await execute(sql, {"created_at": created_at, "entry_id": entry_id, "limit": limit})
 
     return [row["id"] for row in rows]
 
