@@ -79,6 +79,32 @@ class TestCheckStoredEntriesByExternalIds:
         assert stored_entries == set(entry.external_id for entry in saved_entries.values())
 
 
+class TestGetEntriesByIds:
+
+    @pytest.mark.asyncio
+    async def test_no_entries(self) -> None:
+        entries = await get_entries_by_ids(ids=[])
+        assert entries == {}
+
+    @pytest.mark.asyncio
+    async def test_success(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID) -> None:
+        entries = await make.n_entries(loaded_feed_id, n=3)
+        another_entries = await make.n_entries(another_loaded_feed_id, n=3)
+
+        entries_list = list(entries.values())
+        another_entries_list = list(another_entries.values())
+
+        entries_to_load = [*entries_list[:2], *another_entries_list[:2]]
+
+        loaded_entries = await get_entries_by_ids(ids=[entry.id for entry in entries_to_load])
+
+        assert len(loaded_entries) == 4
+        assert entries_to_load[0] == loaded_entries[entries_to_load[0].id]
+        assert entries_to_load[1] == loaded_entries[entries_to_load[1].id]
+        assert another_entries_list[0] == loaded_entries[another_entries_list[0].id]
+        assert another_entries_list[1] == loaded_entries[another_entries_list[1].id]
+
+
 class TestAllEntriesIterator:
     @pytest.mark.parametrize("chunk", [1, 2, 3, 4, 5, 6, 7])
     @pytest.mark.asyncio
