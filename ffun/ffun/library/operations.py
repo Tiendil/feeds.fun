@@ -49,7 +49,6 @@ async def catalog_entries(entries: Iterable[Entry]) -> None:
 # 1. we can not guarantee that there will be no duplicates of feeds
 #    (can not guarantee perfect normalization of urls, etc)
 # 2. someone can damage database by infecting with wrong entries from faked feed
-# TODO: tests
 async def check_stored_entries_by_external_ids(feed_id: uuid.UUID, external_ids: Iterable[str]) -> set[str]:
     sql = """
     SELECT external_id

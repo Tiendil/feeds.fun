@@ -1,3 +1,4 @@
+import uuid
 import zoneinfo
 from itertools import chain
 
@@ -8,7 +9,8 @@ from ffun.feeds import domain as f_domain
 from ffun.feeds.tests import make as f_make
 from ffun.library.domain import get_entry
 from ffun.library.entities import Entry
-from ffun.library.operations import all_entries_iterator, catalog_entries, get_entries_by_ids, update_external_url
+from ffun.library.operations import (all_entries_iterator, catalog_entries, check_stored_entries_by_external_ids,
+                                     get_entries_by_ids, update_external_url)
 from ffun.library.tests import make
 
 
@@ -34,6 +36,9 @@ class TestCatalogEntries:
 
         assert len(loaded_entries) == 2
 
+        assert loaded_new_entry is not None
+        assert loaded_another_new_entry is not None
+
         assert_times_is_near(loaded_new_entry.cataloged_at, utils.now())
         assert_times_is_near(loaded_another_new_entry.cataloged_at, utils.now())
 
@@ -41,6 +46,37 @@ class TestCatalogEntries:
         assert loaded_another_new_entry == another_new_entry.replace(
             cataloged_at=loaded_another_new_entry.cataloged_at
         )
+
+
+class TestCheckStoredEntriesByExternalIds:
+
+    @pytest.mark.asyncio
+    async def test_no_entries_stored(self, loaded_feed_id: uuid.UUID) -> None:
+        entries = [make.fake_entry(loaded_feed_id) for _ in range(3)]
+        external_ids = [entry.external_id for entry in entries]
+
+        stored_entries = await check_stored_entries_by_external_ids(loaded_feed_id, external_ids)
+
+        assert stored_entries == set()
+
+    @pytest.mark.asyncio
+    async def test_all_entries_stored(self, loaded_feed_id: uuid.UUID) -> None:
+        entries = await make.n_entries(loaded_feed_id, n=3)
+        external_ids = {entry.external_id for entry in entries.values()}
+
+        stored_entries = await check_stored_entries_by_external_ids(loaded_feed_id, list(external_ids))
+
+        assert stored_entries == external_ids
+
+    @pytest.mark.asyncio
+    async def test_some_entries_stored(self, loaded_feed_id: uuid.UUID) -> None:
+        new_entries = [make.fake_entry(loaded_feed_id) for _ in range(3)]
+        saved_entries = await make.n_entries(loaded_feed_id, n=2)
+        external_ids = [entry.external_id for entry in new_entries] + [entry.external_id for entry in saved_entries.values()]
+
+        stored_entries = await check_stored_entries_by_external_ids(loaded_feed_id, external_ids)
+
+        assert stored_entries == set(entry.external_id for entry in saved_entries.values())
 
 
 class TestAllEntriesIterator:
