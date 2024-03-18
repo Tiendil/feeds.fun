@@ -1,16 +1,19 @@
+import datetime
 import uuid
 import zoneinfo
 from itertools import chain
 
 import pytest
+import pytest_asyncio
 from ffun.core import utils
+from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_times_is_near
 from ffun.feeds import domain as f_domain
 from ffun.feeds.tests import make as f_make
 from ffun.library.domain import get_entry
 from ffun.library.entities import Entry
 from ffun.library.operations import (all_entries_iterator, catalog_entries, check_stored_entries_by_external_ids,
-                                     get_entries_by_ids, update_external_url)
+                                     get_entries_by_filter, get_entries_by_ids, update_external_url)
 from ffun.library.tests import make
 
 
@@ -103,6 +106,60 @@ class TestGetEntriesByIds:
         assert entries_to_load[1] == loaded_entries[entries_to_load[1].id]
         assert another_entries_list[0] == loaded_entries[another_entries_list[0].id]
         assert another_entries_list[1] == loaded_entries[another_entries_list[1].id]
+
+
+class TestGetEntriesByFilter:
+
+    @pytest.fixture
+    def time_border(self) -> datetime.datetime:
+        return utils.now() - datetime.timedelta(days=1)
+
+    @pytest_asyncio.fixture
+    async def prepared_entries(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, time_border: datetime.datetime) -> list[Entry]:
+        entries = await make.n_entries(loaded_feed_id, n=3)
+        another_entries = await make.n_entries(another_loaded_feed_id, n=3)
+
+        entries_list = list(entries.values())
+        another_entries_list = list(another_entries.values())
+
+        await execute('UPDATE l_entries SET created_at = %(time_border)s WHERE id = ANY(%(ids)s)',
+                      {'time_border': time_border - datetime.timedelta(seconds=10),
+                       'ids': [entries_list[0].id, another_entries_list[0].id]})
+
+        all_entries = await get_entries_by_ids(ids=[entry.id for entry in entries_list + another_entries_list])
+
+        all_entries_list = list(all_entries.values())
+        all_entries_list.sort(key=lambda entry: entry.cataloged_at)
+
+        return all_entries_list  # type: ignore
+
+    @pytest.mark.asyncio
+    async def test_all(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, prepared_entries: list[Entry]) -> None:
+        loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id, another_loaded_feed_id], limit=100)
+
+        loaded_entries_ids = {entry.id for entry in loaded_entries}
+        assert loaded_entries_ids == {entry.id for entry in prepared_entries}
+
+    @pytest.mark.asyncio
+    async def test_limit(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, prepared_entries: list[Entry]) -> None:
+        loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id, another_loaded_feed_id], limit=4)
+
+        loaded_entries_ids = {entry.id for entry in loaded_entries}
+        assert loaded_entries_ids == {entry.id for entry in prepared_entries[2:]}
+
+    @pytest.mark.asyncio
+    async def test_feeds_filter(self, loaded_feed_id: uuid.UUID, prepared_entries: list[Entry]) -> None:
+        loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id], limit=100)
+
+        loaded_entries_ids = {entry.id for entry in loaded_entries}
+        assert loaded_entries_ids == {entry.id for entry in prepared_entries if entry.feed_id == loaded_feed_id}
+
+    @pytest.mark.asyncio
+    async def test_time_period(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, prepared_entries: list[Entry]) -> None:
+        loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id, another_loaded_feed_id], limit=100, period=datetime.timedelta(days=1))
+
+        loaded_entries_ids = {entry.id for entry in loaded_entries}
+        assert loaded_entries_ids == {entry.id for entry in prepared_entries[2:]}
 
 
 class TestAllEntriesIterator:

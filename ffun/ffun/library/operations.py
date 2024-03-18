@@ -64,7 +64,6 @@ async def check_stored_entries_by_external_ids(feed_id: uuid.UUID, external_ids:
 sql_select_entries = """SELECT * FROM l_entries WHERE id = ANY(%(ids)s)"""
 
 
-# TODO: tests
 async def get_entries_by_ids(ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, Entry | None]:
     rows = await execute(sql_select_entries, {"ids": ids})
 
@@ -76,7 +75,6 @@ async def get_entries_by_ids(ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, Entry 
     return result
 
 
-# TODO: tests
 async def get_entries_by_filter(
     feeds_ids: Iterable[uuid.UUID], limit: int, period: datetime.timedelta | None = None
 ) -> list[Entry]:

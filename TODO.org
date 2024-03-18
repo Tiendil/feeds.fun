@@ -18,3 +18,5 @@
 * Command to move entries from ln_failed_entries to queue
 
 * Check that function of getting entries by pointer uses indexes
+
+* `l_entries` to we need an index for `published_at` field for GUI?
