@@ -183,7 +183,7 @@ class TestGetEntriesAfterPointer:
                                                          entry_id=entries_list[2].id,
                                                          limit=100)
 
-        assert [entry.id for entry in entries_list[3:]] == loaded_entries
+        assert [(entry.id, entry.cataloged_at) for entry in entries_list[3:]] == loaded_entries
 
     @pytest.mark.asyncio
     async def test_duplicated_created_at(self, loaded_feed_id: uuid.UUID) -> None:
@@ -207,7 +207,7 @@ class TestGetEntriesAfterPointer:
                                                              entry_id=entries_list[i].id,
                                                              limit=100)
 
-            assert [entry.id for entry in entries_list[i + 1:]] == loaded_entries
+            assert [(entry.id, entry.cataloged_at) for entry in entries_list[i + 1:]] == loaded_entries
 
     @pytest.mark.asyncio
     async def test_limit(self, loaded_feed_id: uuid.UUID) -> None:
@@ -221,7 +221,7 @@ class TestGetEntriesAfterPointer:
                                                          entry_id=entries_list[2].id,
                                                          limit=2)
 
-        assert [entry.id for entry in entries_list[3:5]] == loaded_entries
+        assert [(entry.id, entry.cataloged_at) for entry in entries_list[3:5]] == loaded_entries
 
 
 class TestAllEntriesIterator:

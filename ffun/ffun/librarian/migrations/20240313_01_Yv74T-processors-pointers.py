@@ -14,10 +14,10 @@ __depends__: set[str] = set()
 sql_create_processor_pointers = """
 CREATE TABLE ln_processor_pointers (
     processor_id INTEGER PRIMARY KEY,
-    pointer_created_at TIMESTAMP NOT NULL DEFAULT '1970-01-01 00:00:00',
+    pointer_created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT '1970-01-01 00:00:00',
     pointer_entry_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
 """
 
@@ -26,7 +26,7 @@ CREATE TABLE ln_processors_queue (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     processor_id INTEGER NOT NULL,
     entry_id UUID NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     UNIQUE (processor_id, entry_id)
 )
@@ -43,7 +43,7 @@ CREATE TABLE ln_failed_entries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     processor_id INTEGER NOT NULL,
     entry_id UUID NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     UNIQUE (processor_id, entry_id)
 )

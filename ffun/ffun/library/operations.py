@@ -92,9 +92,9 @@ async def get_entries_by_filter(
     return [row_to_entry(row) for row in rows]
 
 
-async def get_entries_after_pointer(created_at: datetime.datetime, entry_id: uuid.UUID, limit: int) -> list[uuid.UUID]:
+async def get_entries_after_pointer(created_at: datetime.datetime, entry_id: uuid.UUID, limit: int) -> list[tuple[uuid.UUID, datetime.datetime]]:
     sql = """
-    SELECT id FROM l_entries
+    SELECT id, created_at FROM l_entries
     WHERE created_at > %(created_at)s OR
           (created_at = %(created_at)s AND id > %(entry_id)s)
     ORDER BY created_at ASC, id ASC
@@ -103,7 +103,7 @@ async def get_entries_after_pointer(created_at: datetime.datetime, entry_id: uui
 
     rows = await execute(sql, {"created_at": created_at, "entry_id": entry_id, "limit": limit})
 
-    return [row["id"] for row in rows]
+    return [(row["id"], row['created_at']) for row in rows]
 
 # TODO: remove
 # async def mark_entry_as_processed(

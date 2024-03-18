@@ -61,7 +61,7 @@ async def delete_pointer(processor_id: int) -> None:
     await execute(sql, {"processor_id": processor_id})
 
 
-async def save_pointer(pointer: ProcessorPointer) -> None:
+async def save_pointer(execute: ExecuteType, pointer: ProcessorPointer) -> None:
     sql = """
     UPDATE ln_processor_pointers
     SET pointer_created_at = %(pointer_created_at)s,
@@ -79,7 +79,7 @@ async def save_pointer(pointer: ProcessorPointer) -> None:
         raise errors.CanNotSaveUnexistingPointer()
 
 
-async def push_entries_to_processor_queue(processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
+async def push_entries_to_processor_queue(execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
     query = PostgreSQLQuery.into('ln_processors_queue').columns('processor_id', 'entry_id')
 
     for entry_id in entry_ids:

@@ -11,9 +11,6 @@ from ffun.library import operations as l_operations
 from ffun.library.tests import make as l_make
 
 
-fake_processor_id = 11042
-
-
 def assert_is_new_pointer(pointer: ProcessorPointer, processor_id) -> None:
     assert pointer.processor_id == processor_id
     assert pointer.pointer_created_at == datetime.datetime(1970, 1, 1, 0, 0)
@@ -23,7 +20,7 @@ def assert_is_new_pointer(pointer: ProcessorPointer, processor_id) -> None:
 class TestCreatePointer:
 
     @pytest.mark.asyncio
-    async def test_new_pointer(self) -> None:
+    async def test_new_pointer(self, fake_processor_id: int) -> None:
         await operations.delete_pointer(fake_processor_id)
 
         async with TableSizeDelta('ln_processor_pointers', delta=1):
@@ -36,7 +33,7 @@ class TestCreatePointer:
         assert loaded_pointer.processor_id == fake_processor_id
 
     @pytest.mark.asyncio
-    async def test_existing_pointer(self) -> None:
+    async def test_existing_pointer(self, fake_processor_id: int) -> None:
         pointer = await operations.create_pointer(fake_processor_id)
 
         async with TableSizeNotChanged('ln_processor_pointers'):
@@ -51,7 +48,7 @@ class TestCreatePointer:
 class TestGetPointer:
 
     @pytest.mark.asyncio
-    async def test_create_if_not_exists(self) -> None:
+    async def test_create_if_not_exists(self, fake_processor_id: int) -> None:
         await operations.delete_pointer(fake_processor_id)
 
         async with TableSizeDelta('ln_processor_pointers', delta=1):
@@ -67,12 +64,12 @@ class TestGetPointer:
 class TestDeletePointer:
 
     @pytest.mark.asyncio
-    async def test_existing_pointer(self) -> None:
+    async def test_existing_pointer(self, fake_processor_id: int) -> None:
         pointer = await operations.create_pointer(fake_processor_id)
 
         pointer.replace(pointer_entry_id=uuid.uuid4())
 
-        await operations.save_pointer(pointer)
+        await operations.save_pointer(execute, pointer)
 
         async with TableSizeDelta('ln_processor_pointers', delta=-1):
             await operations.delete_pointer(fake_processor_id)
@@ -82,7 +79,7 @@ class TestDeletePointer:
         assert_is_new_pointer(new_pointer, fake_processor_id)
 
     @pytest.mark.asyncio
-    async def test_no_pointer(self) -> None:
+    async def test_no_pointer(self, fake_processor_id: int) -> None:
         await operations.delete_pointer(fake_processor_id)
 
         async with TableSizeNotChanged('ln_processor_pointers'):
@@ -92,7 +89,7 @@ class TestDeletePointer:
 class TestSavePointer:
 
     @pytest.mark.asyncio
-    async def test_no_pointer(self) -> None:
+    async def test_no_pointer(self, fake_processor_id: int) -> None:
         await operations.delete_pointer(fake_processor_id)
 
         pointer = ProcessorPointer(
@@ -103,17 +100,17 @@ class TestSavePointer:
 
         async with TableSizeNotChanged('ln_processor_pointers'):
             with pytest.raises(errors.CanNotSaveUnexistingPointer):
-                await operations.save_pointer(pointer)
+                await operations.save_pointer(execute, pointer)
 
     @pytest.mark.asyncio
-    async def test_existing_pointer(self) -> None:
+    async def test_existing_pointer(self, fake_processor_id: int) -> None:
         pointer = await operations.create_pointer(fake_processor_id)
 
         new_pointer = pointer.replace(pointer_created_at=datetime.datetime.now(),
                                       pointer_entry_id=uuid.uuid4())
 
         async with TableSizeNotChanged('ln_processor_pointers'):
-            await operations.save_pointer(new_pointer)
+            await operations.save_pointer(execute, new_pointer)
 
         loaded_pointer = await operations.get_pointer(fake_processor_id)
 
@@ -124,7 +121,7 @@ class TestPushEntriesToProcessorQueue:
 
     @pytest.mark.parametrize('entries_count', [0, 1, 3, 10])
     @pytest.mark.asyncio
-    async def test_push_entry(self, loaded_feed_id: uuid.UUID, entries_count: int) -> None:
+    async def test_push_entry(self, loaded_feed_id: uuid.UUID, entries_count: int, fake_processor_id: int) -> None:
         await operations.clear_processor_queue(fake_processor_id)
 
         entries = await l_make.n_entries(loaded_feed_id, n=entries_count + 5)
@@ -132,7 +129,7 @@ class TestPushEntriesToProcessorQueue:
         entries_to_push = list(entries)[:entries_count]
 
         async with TableSizeDelta('ln_processors_queue', delta=entries_count):
-            await operations.push_entries_to_processor_queue(fake_processor_id, entries_to_push)
+            await operations.push_entries_to_processor_queue(execute, fake_processor_id, entries_to_push)
 
         entries_in_queue = await operations.get_entries_to_process(fake_processor_id, n=entries_count + 5)
 
@@ -142,12 +139,12 @@ class TestPushEntriesToProcessorQueue:
 class TestGetEntriesToProcess:
 
     @pytest.mark.asyncio
-    async def test_get_entries(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_get_entries(self, loaded_feed_id: uuid.UUID, fake_processor_id: int) -> None:
         await operations.clear_processor_queue(fake_processor_id)
 
         entries = await l_make.n_entries(loaded_feed_id, n=13)
 
-        await operations.push_entries_to_processor_queue(fake_processor_id, list(entries))
+        await operations.push_entries_to_processor_queue(execute, fake_processor_id, list(entries))
 
         received_entries = set()
 
@@ -163,7 +160,7 @@ class TestGetEntriesToProcess:
         assert set(entries) == received_entries
 
     @pytest.mark.asyncio
-    async def test_no_entries(self) -> None:
+    async def test_no_entries(self, fake_processor_id: int) -> None:
         await operations.clear_processor_queue(fake_processor_id)
 
         entries = await operations.get_entries_to_process(fake_processor_id, n=3)
@@ -171,12 +168,12 @@ class TestGetEntriesToProcess:
         assert not entries
 
     @pytest.mark.asyncio
-    async def test_idempotency(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_idempotency(self, loaded_feed_id: uuid.UUID, fake_processor_id: int) -> None:
         await operations.clear_processor_queue(fake_processor_id)
 
         entries = await l_make.n_entries(loaded_feed_id, n=13)
 
-        await operations.push_entries_to_processor_queue(fake_processor_id, list(entries))
+        await operations.push_entries_to_processor_queue(execute, fake_processor_id, list(entries))
 
         entries_ids_1 = await operations.get_entries_to_process(fake_processor_id, n=3)
         entries_ids_2 = await operations.get_entries_to_process(fake_processor_id, n=3)
@@ -187,12 +184,12 @@ class TestGetEntriesToProcess:
 class TestRemoveEntriesFromProcessorQueue:
 
     @pytest.mark.asyncio
-    async def test_remove_entries(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_remove_entries(self, loaded_feed_id: uuid.UUID, fake_processor_id: int) -> None:
         await operations.clear_processor_queue(fake_processor_id)
 
         entries = await l_make.n_entries(loaded_feed_id, n=13)
 
-        await operations.push_entries_to_processor_queue(fake_processor_id, list(entries))
+        await operations.push_entries_to_processor_queue(execute, fake_processor_id, list(entries))
 
         entries_to_remove = list(entries)[:5]
 
@@ -206,12 +203,12 @@ class TestRemoveEntriesFromProcessorQueue:
         assert set(entries_to_remove) & set(entries_in_queue) == set()
 
     @pytest.mark.asyncio
-    async def test_remove_non_existing_entries(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_remove_non_existing_entries(self, loaded_feed_id: uuid.UUID, fake_processor_id: int) -> None:
         await operations.clear_processor_queue(fake_processor_id)
 
         entries = await l_make.n_entries(loaded_feed_id, n=13)
 
-        await operations.push_entries_to_processor_queue(fake_processor_id, list(entries))
+        await operations.push_entries_to_processor_queue(execute, fake_processor_id, list(entries))
 
         entries_to_remove = [uuid.uuid4(), uuid.uuid4()]
 
@@ -230,7 +227,7 @@ class TestClearProcessorQueue:
 class TestAddEntriesToFailedStorage:
 
     @pytest.mark.asyncio
-    async def test_add_entries(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_add_entries(self, loaded_feed_id: uuid.UUID, fake_processor_id: int) -> None:
         entries = await l_make.n_entries(loaded_feed_id, n=13)
 
         entries_to_add = list(entries)[:5]
@@ -246,7 +243,7 @@ class TestAddEntriesToFailedStorage:
 class TestGetFailedEntries:
 
     @pytest.mark.asyncio
-    async def test_get_entries(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_get_entries(self, loaded_feed_id: uuid.UUID, fake_processor_id: int) -> None:
         entries = await l_make.n_entries(loaded_feed_id, n=4)
 
         await operations.add_entries_to_failed_storage(fake_processor_id, list(entries))
@@ -256,7 +253,7 @@ class TestGetFailedEntries:
         assert set(entries) <= set(failed_entries)
 
     @pytest.mark.asyncio
-    async def test_no_entries(self) -> None:
+    async def test_no_entries(self, fake_processor_id: int) -> None:
         while True:
             failed_entries = await operations.get_failed_entries(fake_processor_id, n=1000)
             await operations.remove_failed_entries(fake_processor_id, failed_entries)
@@ -269,7 +266,7 @@ class TestGetFailedEntries:
         assert not failed_entries
 
     @pytest.mark.asyncio
-    async def test_idempotency(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_idempotency(self, loaded_feed_id: uuid.UUID, fake_processor_id: int) -> None:
         entries = await l_make.n_entries(loaded_feed_id, n=13)
 
         await operations.add_entries_to_failed_storage(fake_processor_id, list(entries))
@@ -283,7 +280,7 @@ class TestGetFailedEntries:
 class TestRemoveFailedEntries:
 
     @pytest.mark.asyncio
-    async def test_remove_entries(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_remove_entries(self, loaded_feed_id: uuid.UUID, fake_processor_id: int) -> None:
         entries = await l_make.n_entries(loaded_feed_id, n=13)
 
         await operations.add_entries_to_failed_storage(fake_processor_id, list(entries))
@@ -298,7 +295,7 @@ class TestRemoveFailedEntries:
         assert set(entries_to_remove) & set(failed_entries) == set()
 
     @pytest.mark.asyncio
-    async def test_remove_non_existing_entries(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_remove_non_existing_entries(self, loaded_feed_id: uuid.UUID, fake_processor_id: int) -> None:
         entries = await l_make.n_entries(loaded_feed_id, n=5)
 
         await operations.add_entries_to_failed_storage(fake_processor_id, list(entries))
