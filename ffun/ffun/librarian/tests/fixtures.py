@@ -1,4 +1,6 @@
 import pytest
+import pytest_asyncio
+from ffun.librarian.entities import ProcessorPointer
 
 
 @pytest.fixture

@@ -27,7 +27,9 @@ async def push_entries_and_move_pointer(execute: ExecuteType, next_pointer: Proc
 # but for now it is ok to place it here
 # TODO: tests
 async def plan_processor_queue(processor_id: int, limit: int) -> None:
-    pointer = await operations.get_pointer(processor_id=processor_id)
+    # TODO: maybe it will be a good idea to push more entries to the queue
+    #       but rarelly, not every time
+    pointer = await operations.get_or_create_pointer(processor_id=processor_id)
 
     next_entries = await l_domain.get_entries_after_pointer(created_at=pointer.pointer_created_at,
                                                             entry_id=pointer.pointer_entry_id,

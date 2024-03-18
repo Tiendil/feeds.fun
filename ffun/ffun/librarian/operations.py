@@ -23,7 +23,7 @@ def row_to_processor_pointer(row: dict[str, Any]) -> ProcessorPointer:
     )
 
 
-async def get_pointer(processor_id: int) -> ProcessorPointer:
+async def get_or_create_pointer(processor_id: int) -> ProcessorPointer:
     sql = """
     SELECT * FROM ln_processor_pointers
     WHERE processor_id = %(processor_id)s
@@ -34,10 +34,15 @@ async def get_pointer(processor_id: int) -> ProcessorPointer:
     if row:
         return row_to_processor_pointer(row[0])
 
-    return await create_pointer(processor_id)
+    created_pointer = await create_pointer(processor_id)
+
+    if created_pointer is None:
+        return await get_or_create_pointer(processor_id)
+
+    return created_pointer
 
 
-async def create_pointer(processor_id: int) -> ProcessorPointer:
+async def create_pointer(processor_id: int) -> ProcessorPointer | None:
     sql = """
     INSERT INTO ln_processor_pointers (processor_id)
     VALUES (%(processor_id)s)
@@ -47,7 +52,7 @@ async def create_pointer(processor_id: int) -> ProcessorPointer:
     try:
         row = await execute(sql, {"processor_id": processor_id})
     except psycopg.errors.UniqueViolation:
-        return await get_pointer(processor_id)
+        return None
 
     return row_to_processor_pointer(row[0])
 
