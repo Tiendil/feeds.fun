@@ -18,9 +18,9 @@ async def run_failed_entries_count() -> None:
     table = []
 
     for processor_info in processors:
-        table.append([processor_info.processor.name, failed_entries_count.get(processor_info.id, 0)])
+        table.append([processor_info.id, processor_info.processor.name, failed_entries_count.get(processor_info.id, 0)])
 
-    print(tabulate(table, headers=['processor', 'failed entries'], tablefmt="grid"))
+    print(tabulate(table, headers=['processor id', 'processor name', 'failed entries'], tablefmt="grid"))
 
 
 @app.command()

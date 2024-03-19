@@ -53,6 +53,17 @@ def add_entries_to_queue(cursor: Any, processor_id: int, entries: list[uuid.UUID
         cursor.execute(str(query))
 
 
+def create_processor_pointer(cursor: Any, processor_id: int) -> None:
+    sql = """
+    INSERT INTO ln_processor_pointers (processor_id, pointer_created_at, pointer_entry_id)
+    VALUES (%(processor_id)s, NOW(), '00000000-0000-0000-0000-000000000000')
+    """
+    cursor.execute(
+        sql,
+        {"processor_id": processor_id}
+    )
+
+
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor(row_factory=dict_row)
 
@@ -68,6 +79,8 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
         entries_to_add = all_entries - set(successed_entries) - set(retried_entries) - set(failed_entries)
         add_entries_to_queue(cursor, processor_id, list(entries_to_add))
 
+        create_processor_pointer(cursor, processor_id)
+
 
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:
     # the l_entry_process_info will be removed in https://github.com/Tiendil/feeds.fun/issues/177
@@ -76,6 +89,7 @@ def rollback_step(conn: Connection[dict[str, Any]]) -> None:
 
     cursor.execute("DELETE FROM ln_processors_queue")
     cursor.execute("DELETE FROM ln_failed_entries")
+    cursor.execute("DELETE FROM ln_processor_pointers")
 
 
 steps = [step(apply_step, rollback_step)]
