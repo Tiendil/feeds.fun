@@ -1,4 +1,5 @@
 import asyncio
+import sys
 
 from tabulate import tabulate
 
@@ -19,7 +20,7 @@ async def run_failed_entries_count() -> None:
             [processor_info.id, processor_info.processor.name, failed_entries_count.get(processor_info.id, 0)]
         )
 
-    print(tabulate(table, headers=["processor id", "processor name", "failed entries"], tablefmt="grid"))
+    sys.stdout.write(tabulate(table, headers=["processor id", "processor name", "failed entries"], tablefmt="grid"))
 
 
 @app.command()

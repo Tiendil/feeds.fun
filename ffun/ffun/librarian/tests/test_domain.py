@@ -54,8 +54,6 @@ class TestPushEntriesAndMovePointer:
         assert loaded_pointer == next_pointer
         assert loaded_pointer != original_pointer
 
-
-class TestPushEntriesAndMovePointer:
     @pytest.mark.asyncio
     async def test_no_new_entries(self, fake_processor_id: int) -> None:
         pointer = await make.end_processor_pointer(fake_processor_id)

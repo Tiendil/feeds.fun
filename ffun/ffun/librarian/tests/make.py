@@ -7,7 +7,7 @@ from ffun.librarian.entities import ProcessorPointer
 
 
 async def end_processor_pointer(processor_id: int) -> ProcessorPointer:
-    pointer = await operations.get_or_create_pointer(processor_id=processor_id)
+    await operations.get_or_create_pointer(processor_id=processor_id)
 
     next_pointer = ProcessorPointer(
         processor_id=processor_id, pointer_created_at=utils.now(), pointer_entry_id=uuid.UUID(int=0)
