@@ -9,7 +9,7 @@
 
 * DONE Switch processor to the queue
 
-* Data migration from the l_entry_process_info
+* DONE Data migration from the l_entry_process_info
 
 
 * DONE Remove logic, that uses l_entry_process_info
@@ -17,6 +17,8 @@
 * DONE Command to move entries from ln_failed_entries to queue
 
 * TODO handtest command to move entries from ln_failed_entries to queue
+
+* TODO handtest data migration
 
 * DONE Check that function of getting entries by pointer uses indexes
 
