@@ -26,6 +26,18 @@ async def push_entries_and_move_pointer(execute: ExecuteType, next_pointer: Proc
     await operations.save_pointer(execute, pointer=next_pointer)
 
 
+@run_in_transaction
+async def move_failed_entries_to_processor_queue(execute: ExecuteType, processor_id: int, limit: int) -> None:
+    failed_entries = await operations.get_failed_entries(execute, processor_id, limit)
+
+    if not failed_entries:
+        return
+
+    await operations.push_entries_to_processor_queue(execute, processor_id, failed_entries)
+
+    await operations.remove_failed_entries(execute, processor_id, failed_entries)
+
+
 # most likely, this code should be in a separate worker with a more complex logic
 # but for now it is ok to place it here
 async def plan_processor_queue(processor_id: int, fill_when_below: int, chunk: int) -> None:

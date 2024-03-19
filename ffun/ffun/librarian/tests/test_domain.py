@@ -7,10 +7,11 @@ from ffun.core import utils
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs
 from ffun.librarian import errors, operations
-from ffun.librarian.domain import plan_processor_queue, process_entry, push_entries_and_move_pointer
+from ffun.librarian.domain import (move_failed_entries_to_processor_queue, plan_processor_queue, process_entry,
+                                   push_entries_and_move_pointer)
 from ffun.librarian.entities import ProcessorPointer
 from ffun.librarian.processors.base import AlwaysConstantProcessor, AlwaysErrorProcessor, AlwaysSkipEntryProcessor
-from ffun.librarian.tests import make
+from ffun.librarian.tests import helpers, make
 from ffun.library import operations as l_operations
 from ffun.library.entities import Entry
 from ffun.library.tests import make as l_make
@@ -245,9 +246,49 @@ class TestProcessEntry:
 
         assert tags[cataloged_entry.id] == set()
 
-        entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, n=100500)
+        entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, limit=100500)
 
         assert set(entries_in_queue) == {another_cataloged_entry.id}
 
         failed_entry_ids = await operations.get_failed_entries(fake_processor_id, limit=100500)
         assert cataloged_entry.id in failed_entry_ids
+
+
+class TestMoveFailedEntriesToProcessorQueue:
+
+    @pytest.mark.asyncio
+    async def test_moved(self, fake_processor_id: int, another_fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry) -> None:
+        await helpers.clean_failed_storage([fake_processor_id, another_fake_processor_id])
+        await operations.clear_processor_queue(fake_processor_id)
+        await operations.clear_processor_queue(another_fake_processor_id)
+
+        await operations.add_entries_to_failed_storage(fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id])
+        await operations.add_entries_to_failed_storage(another_fake_processor_id, entry_ids=[another_cataloged_entry.id])
+
+        async with TableSizeDelta("ln_processors_queue", delta=2):
+            await move_failed_entries_to_processor_queue(fake_processor_id, limit=100500)
+
+        entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, limit=100500)
+
+        assert set(entries_in_queue) == {cataloged_entry.id, another_cataloged_entry.id}
+
+        async with TableSizeDelta("ln_processors_queue", delta=1):
+            await move_failed_entries_to_processor_queue(another_fake_processor_id, limit=100500)
+
+        entries_in_queue = await operations.get_entries_to_process(processor_id=another_fake_processor_id, limit=100500)
+
+        assert set(entries_in_queue) == {another_cataloged_entry.id}
+
+    @pytest.mark.asyncio
+    async def test_limit(self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry) -> None:
+        await helpers.clean_failed_storage([fake_processor_id])
+        await operations.clear_processor_queue(fake_processor_id)
+
+        await operations.add_entries_to_failed_storage(fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id])
+
+        async with TableSizeDelta("ln_processors_queue", delta=1):
+            await move_failed_entries_to_processor_queue(fake_processor_id, limit=1)
+
+        entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, limit=100500)
+
+        assert set(entries_in_queue) == {cataloged_entry.id}

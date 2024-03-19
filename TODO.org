@@ -15,7 +15,9 @@
 
 * DONE Remove logic, that uses l_entry_process_info
 
-* Command to move entries from ln_failed_entries to queue
+* DONE Command to move entries from ln_failed_entries to queue
+
+* TODO handtest command to move entries from ln_failed_entries to queue
 
 * Check that function of getting entries by pointer uses indexes
 

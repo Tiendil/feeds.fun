@@ -117,7 +117,7 @@ async def count_entries_in_processor_queue(processor_id: int) -> int:
     return rows[0]["count"]  # type: ignore
 
 
-async def remove_entries_from_processor_queue(processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
+async def remove_entries_from_processor_queue(execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
     sql = """
     DELETE FROM ln_processors_queue
     WHERE processor_id = %(processor_id)s
@@ -145,7 +145,7 @@ async def add_entries_to_failed_storage(processor_id: int, entry_ids: Iterable[u
     await execute(str(query))
 
 
-async def get_failed_entries(processor_id: int, limit: int) -> list[uuid.UUID]:
+async def get_failed_entries(execute: ExecuteType, processor_id: int, limit: int) -> list[uuid.UUID]:
     sql = """
     SELECT entry_id FROM ln_failed_entries
     WHERE processor_id = %(processor_id)s
@@ -158,7 +158,7 @@ async def get_failed_entries(processor_id: int, limit: int) -> list[uuid.UUID]:
     return [row["entry_id"] for row in rows]
 
 
-async def remove_failed_entries(processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
+async def remove_failed_entries(execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
     sql = """
     DELETE FROM ln_failed_entries
     WHERE processor_id = %(processor_id)s

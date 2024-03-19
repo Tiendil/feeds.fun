@@ -6,12 +6,12 @@ from ffun.application import workers as app_workers
 from ffun.application.application import with_app
 from ffun.cli.application import app
 from ffun.librarian.background_processors import processors
-from ffun.librarian.domain import count_failed_entries
+from ffun.librarian.domain import count_failed_entries, move_failed_entries_to_processor_queue
 from ffun.loader import domain as l_domain
 from tabulate import tabulate
 
 
-async def run() -> None:
+async def run_failed_entries_count() -> None:
     async with with_app():
         failed_entries_count = await count_failed_entries()
 
@@ -25,4 +25,18 @@ async def run() -> None:
 
 @app.command()
 def failed_entries_count() -> None:
-    asyncio.run(run())
+    asyncio.run(run_failed_entries_count())
+
+
+async def run_failed_enties_move_to_queue(processor_id: int, limit: int) -> None:
+    if not any(processor_info.id == processor_id for processor_info in processors):
+        raise ValueError(f"Processor with id {processor_id} not found")
+
+    async with with_app():
+        await move_failed_entries_to_processor_queue(processor_id, limit=limit)
+        failed_entries_count = await count_failed_entries()
+
+
+@app.command()
+def failed_entries_move_to_queue(processor_id: int, limit: int) -> None:
+    asyncio.run(run_failed_enties_move_to_queue(processor_id, limit))
