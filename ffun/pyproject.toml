@@ -151,6 +151,10 @@ ignore_errors = true
 module = "furl.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "pypika.*"
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 addopts = """-x -vv --strict-markers -p no:cacheprovider"""
 filterwarnings = [

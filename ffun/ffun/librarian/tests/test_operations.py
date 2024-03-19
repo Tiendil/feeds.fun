@@ -12,7 +12,7 @@ from ffun.librarian.tests import helpers
 from ffun.library.tests import make as l_make
 
 
-def assert_is_new_pointer(pointer: ProcessorPointer, processor_id) -> None:
+def assert_is_new_pointer(pointer: ProcessorPointer, processor_id: int) -> None:
     assert pointer.processor_id == processor_id
     assert pointer.pointer_created_at == datetime.datetime(1970, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)
     assert pointer.pointer_entry_id == uuid.UUID("00000000-0000-0000-0000-000000000000")

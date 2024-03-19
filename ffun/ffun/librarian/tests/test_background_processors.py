@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from structlog.testing import capture_logs
 
@@ -22,7 +24,7 @@ class TestEntriesProcessors:
 
     @pytest.mark.asyncio
     async def test_entries_more_than_concurrency(
-        self, fake_entries_processor: EntriesProcessor, loaded_feed_id: int
+        self, fake_entries_processor: EntriesProcessor, loaded_feed_id: uuid.UUID
     ) -> None:
         await operations.clear_processor_queue(fake_entries_processor.id)
         await make.end_processor_pointer(fake_entries_processor.id)
@@ -48,7 +50,7 @@ class TestEntriesProcessors:
 
     @pytest.mark.asyncio
     async def test_entries_less_than_concurrency(
-        self, fake_entries_processor: EntriesProcessor, loaded_feed_id: int
+        self, fake_entries_processor: EntriesProcessor, loaded_feed_id: uuid.UUID
     ) -> None:
         await operations.clear_processor_queue(fake_entries_processor.id)
         await make.end_processor_pointer(fake_entries_processor.id)

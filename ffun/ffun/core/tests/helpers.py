@@ -2,7 +2,7 @@ import copy
 import datetime
 from collections import Counter
 from types import TracebackType
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, MutableMapping, Optional, Type
 
 import pytest
 
@@ -147,7 +147,7 @@ def assert_times_is_near(
     assert abs(a - b) < delta
 
 
-def assert_logs(logs: list[dict[str, Any]], **kwargs: int) -> None:
+def assert_logs(logs: list[MutableMapping[str, Any]], **kwargs: int) -> None:
     found_enents = Counter(log["event"] for log in logs)
 
     for key, expected_count in kwargs.items():

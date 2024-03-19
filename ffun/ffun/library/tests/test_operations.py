@@ -139,7 +139,7 @@ class TestGetEntriesByFilter:
         all_entries = await get_entries_by_ids(ids=[entry.id for entry in entries_list + another_entries_list])
 
         all_entries_list = list(all_entries.values())
-        all_entries_list.sort(key=lambda entry: entry.cataloged_at)
+        all_entries_list.sort(key=lambda entry: entry.cataloged_at)  # type: ignore
 
         return all_entries_list  # type: ignore
 
