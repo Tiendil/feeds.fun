@@ -98,7 +98,10 @@ class EntriesProcessor(InfiniteTask):
 
         # most likely, this code should be in a separate worker with a more complex logic
         # but for now it is ok to place it here
-        await domain.plan_processor_queue(processor_id=processor_id, limit=concurrency)
+        await domain.plan_processor_queue(processor_id=processor_id,
+                                          fill_when_below=concurrency,
+                                          # TODO: move to settings
+                                          chunk=concurrency * 10)
 
         entities_ids = await operations.get_entries_to_process(processor_id=processor_id, n=concurrency)
 
@@ -109,7 +112,8 @@ class EntriesProcessor(InfiniteTask):
 
         tasks = [
             domain.process_entry(processor_id=processor_id, processor=self._processor_info.processor, entry=entry)
-            for entry in entries
+            for entry in entries.values()
+            if entry is not None
         ]
 
         await asyncio.gather(*tasks, return_exceptions=True)

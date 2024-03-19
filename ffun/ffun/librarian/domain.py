@@ -25,11 +25,11 @@ async def push_entries_and_move_pointer(execute: ExecuteType, next_pointer: Proc
 
 # most likely, this code should be in a separate worker with a more complex logic
 # but for now it is ok to place it here
-async def plan_processor_queue(processor_id: int, fill_when_less_than: int, chunk: int) -> None:
+async def plan_processor_queue(processor_id: int, fill_when_below: int, chunk: int) -> None:
 
     entries_in_queue = await operations.count_entries_in_processor_queue(processor_id)
 
-    if entries_in_queue >= fill_when_less_than:
+    if entries_in_queue >= fill_when_below:
         return
 
     pointer = await operations.get_or_create_pointer(processor_id=processor_id)
@@ -65,17 +65,14 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
         logger.info("tags_found", tags=tags_for_log)
 
         await o_domain.apply_tags_to_entry(entry.id, processor_id, tags)
+
+        logger.info("processor_successed")
     except errors.SkipEntryProcessing as e:
-        logger.warning("processor_requested_to_skip_entry", error_info=str(e))
         # do nothing in such case, see: https://github.com/Tiendil/feeds.fun/issues/176
+        logger.warning("processor_requested_to_skip_entry", error_info=str(e))
     except Exception as e:
         await operations.add_entries_to_failed_storage(processor_id, [entry.id])
         raise errors.UnexpectedErrorInProcessor(processor_id=processor_id, entry_id=entry.id) from e
-    else:
-        logger.info("processor_successed")
-        await l_domain.mark_entry_as_processed(
-            processor_id=processor_id, entry_id=entry.id, state=ProcessedState.success, error=None
-        )
     finally:
         await operations.remove_entries_from_processor_queue(processor_id, [entry.id])
 

@@ -87,7 +87,7 @@ class TestPlanProcessorQueue:
         pointer = await make.end_processor_pointer(fake_processor_id)
 
         async with TableSizeNotChanged("ln_processors_queue"):
-            await plan_processor_queue(fake_processor_id, fill_when_less_than=100500, chunk=100)
+            await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=100)
 
         loaded_pointer = await operations.get_or_create_pointer(fake_processor_id)
 
@@ -102,7 +102,7 @@ class TestPlanProcessorQueue:
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
 
         async with TableSizeDelta("ln_processors_queue", delta=3):
-            await plan_processor_queue(fake_processor_id, fill_when_less_than=100500, chunk=100)
+            await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=100)
 
         loaded_pointer = await operations.get_or_create_pointer(fake_processor_id)
 
@@ -119,7 +119,7 @@ class TestPlanProcessorQueue:
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
 
         async with TableSizeDelta("ln_processors_queue", delta=2):
-            await plan_processor_queue(fake_processor_id, fill_when_less_than=100500, chunk=2)
+            await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=2)
 
         loaded_pointer = await operations.get_or_create_pointer(fake_processor_id)
 
@@ -138,7 +138,7 @@ class TestPlanProcessorQueue:
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
 
         async with TableSizeDelta("ln_processors_queue", delta=3):
-            await plan_processor_queue(fake_processor_id, fill_when_less_than=100500, chunk=3)
+            await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=3)
 
         loaded_pointer = await operations.get_or_create_pointer(fake_processor_id)
 
@@ -156,10 +156,10 @@ class TestPlanProcessorQueue:
         entries_list = list(entries.values())
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
 
-        await plan_processor_queue(fake_processor_id, fill_when_less_than=100500, chunk=3)
+        await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=3)
 
         async with TableSizeNotChanged("ln_processors_queue"):
-            await plan_processor_queue(fake_processor_id, fill_when_less_than=3, chunk=2)
+            await plan_processor_queue(fake_processor_id, fill_when_below=3, chunk=2)
 
         loaded_pointer = await operations.get_or_create_pointer(fake_processor_id)
 
