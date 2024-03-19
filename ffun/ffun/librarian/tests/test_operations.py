@@ -136,7 +136,7 @@ class TestPushEntriesToProcessorQueue:
         async with TableSizeDelta('ln_processors_queue', delta=entries_count):
             await operations.push_entries_to_processor_queue(execute, fake_processor_id, entries_to_push)
 
-        entries_in_queue = await operations.get_entries_to_process(fake_processor_id, n=entries_count + 5)
+        entries_in_queue = await operations.get_entries_to_process(fake_processor_id, limit=entries_count + 5)
 
         assert set(entries_to_push) == set(entries_in_queue)
 
@@ -154,7 +154,7 @@ class TestGetEntriesToProcess:
         received_entries = set()
 
         while True:
-            new_entries_ids = await operations.get_entries_to_process(fake_processor_id, n=3)
+            new_entries_ids = await operations.get_entries_to_process(fake_processor_id, limit=3)
             received_entries.update(new_entries_ids)
             await operations.remove_entries_from_processor_queue(fake_processor_id, new_entries_ids)
 
@@ -168,7 +168,7 @@ class TestGetEntriesToProcess:
     async def test_no_entries(self, fake_processor_id: int) -> None:
         await operations.clear_processor_queue(fake_processor_id)
 
-        entries = await operations.get_entries_to_process(fake_processor_id, n=3)
+        entries = await operations.get_entries_to_process(fake_processor_id, limit=3)
 
         assert not entries
 
@@ -180,8 +180,8 @@ class TestGetEntriesToProcess:
 
         await operations.push_entries_to_processor_queue(execute, fake_processor_id, list(entries))
 
-        entries_ids_1 = await operations.get_entries_to_process(fake_processor_id, n=3)
-        entries_ids_2 = await operations.get_entries_to_process(fake_processor_id, n=3)
+        entries_ids_1 = await operations.get_entries_to_process(fake_processor_id, limit=3)
+        entries_ids_2 = await operations.get_entries_to_process(fake_processor_id, limit=3)
 
         assert entries_ids_1 == entries_ids_2
 
@@ -226,7 +226,7 @@ class TestRemoveEntriesFromProcessorQueue:
         async with TableSizeDelta('ln_processors_queue', delta=-5):
             await operations.remove_entries_from_processor_queue(fake_processor_id, entries_to_remove)
 
-        entries_in_queue = await operations.get_entries_to_process(fake_processor_id, n=13)
+        entries_in_queue = await operations.get_entries_to_process(fake_processor_id, limit=13)
 
         assert len(entries_in_queue) == 8
 
@@ -244,7 +244,7 @@ class TestRemoveEntriesFromProcessorQueue:
 
         await operations.remove_entries_from_processor_queue(fake_processor_id, entries_to_remove)
 
-        entries_in_queue = await operations.get_entries_to_process(fake_processor_id, n=13)
+        entries_in_queue = await operations.get_entries_to_process(fake_processor_id, limit=13)
 
         assert set(entries) == set(entries_in_queue)
 
@@ -265,7 +265,7 @@ class TestAddEntriesToFailedStorage:
         async with TableSizeDelta('ln_failed_entries', delta=5):
             await operations.add_entries_to_failed_storage(fake_processor_id, entries_to_add)
 
-        failed_entries = await operations.get_failed_entries(fake_processor_id, n=100500)
+        failed_entries = await operations.get_failed_entries(fake_processor_id, limit=100500)
 
         assert set(entries_to_add) <= set(failed_entries)
 
@@ -278,20 +278,20 @@ class TestGetFailedEntries:
 
         await operations.add_entries_to_failed_storage(fake_processor_id, list(entries))
 
-        failed_entries = await operations.get_failed_entries(fake_processor_id, n=100500)
+        failed_entries = await operations.get_failed_entries(fake_processor_id, limit=100500)
 
         assert set(entries) <= set(failed_entries)
 
     @pytest.mark.asyncio
     async def test_no_entries(self, fake_processor_id: int) -> None:
         while True:
-            failed_entries = await operations.get_failed_entries(fake_processor_id, n=1000)
+            failed_entries = await operations.get_failed_entries(fake_processor_id, limit=1000)
             await operations.remove_failed_entries(fake_processor_id, failed_entries)
 
             if not failed_entries:
                 break
 
-        failed_entries = await operations.get_failed_entries(fake_processor_id, n=100500)
+        failed_entries = await operations.get_failed_entries(fake_processor_id, limit=100500)
 
         assert not failed_entries
 
@@ -301,8 +301,8 @@ class TestGetFailedEntries:
 
         await operations.add_entries_to_failed_storage(fake_processor_id, list(entries))
 
-        failed_entries_1 = await operations.get_failed_entries(fake_processor_id, n=100500)
-        failed_entries_2 = await operations.get_failed_entries(fake_processor_id, n=100500)
+        failed_entries_1 = await operations.get_failed_entries(fake_processor_id, limit=100500)
+        failed_entries_2 = await operations.get_failed_entries(fake_processor_id, limit=100500)
 
         assert failed_entries_1 == failed_entries_2
 
@@ -320,7 +320,7 @@ class TestRemoveFailedEntries:
         async with TableSizeDelta('ln_failed_entries', delta=-5):
             await operations.remove_failed_entries(fake_processor_id, entries_to_remove)
 
-        failed_entries = await operations.get_failed_entries(fake_processor_id, n=100500)
+        failed_entries = await operations.get_failed_entries(fake_processor_id, limit=100500)
 
         assert set(entries_to_remove) & set(failed_entries) == set()
 
@@ -334,3 +334,41 @@ class TestRemoveFailedEntries:
 
         async with TableSizeNotChanged('ln_failed_entries'):
             await operations.remove_failed_entries(fake_processor_id, entries_to_remove)
+
+
+class TestCountFailedEntries:
+
+    async def clean_failed_storage(self, fake_processor_id: int, another_fake_processor_id: int) -> None:
+        while True:
+            failed_entries = await operations.get_failed_entries(fake_processor_id, limit=1000)
+            await operations.remove_failed_entries(fake_processor_id, failed_entries)
+
+            another_failed_entries = await operations.get_failed_entries(fake_processor_id, limit=1000)
+            await operations.remove_failed_entries(another_fake_processor_id, another_failed_entries)
+
+            if not failed_entries and not another_failed_entries:
+                return
+
+    @pytest.mark.asyncio
+    async def test_no_entries(self, fake_processor_id: int, another_fake_processor_id: int) -> None:
+        await self.clean_failed_storage(fake_processor_id, another_fake_processor_id)
+
+        counts = await operations.count_failed_entries()
+
+        assert fake_processor_id not in counts
+        assert another_fake_processor_id not in counts
+
+    @pytest.mark.asyncio
+    async def test_some_entries(self, fake_processor_id: int, another_fake_processor_id: int) -> None:
+        await self.clean_failed_storage(fake_processor_id, another_fake_processor_id)
+
+        entries = await l_make.n_entries(uuid.uuid4(), n=3)
+        entries_list = list(entries)
+
+        await operations.add_entries_to_failed_storage(fake_processor_id, [entries_list[0], entries_list[1]])
+        await operations.add_entries_to_failed_storage(another_fake_processor_id, [entry_id for entry_id in entries_list])
+
+        counts = await operations.count_failed_entries()
+
+        assert counts[fake_processor_id] == 2
+        assert counts[another_fake_processor_id] == 3

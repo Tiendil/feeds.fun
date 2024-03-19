@@ -14,6 +14,9 @@ from ffun.ontology import domain as o_domain
 logger = logging.get_module_logger()
 
 
+count_failed_entries = operations.count_failed_entries
+
+
 @run_in_transaction
 async def push_entries_and_move_pointer(execute: ExecuteType, next_pointer: ProcessorPointer, entry_ids: Iterable[uuid.UUID]) -> None:
     await operations.push_entries_to_processor_queue(execute,
