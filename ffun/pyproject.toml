@@ -58,6 +58,7 @@ async-lru = "2.0.*"
 psycopg = "3.1.*"
 psycopg-pool = "3.1.*"
 yoyo-migrations = "8.2.*"
+PyPika = "0.48.*"
 
 structlog = "23.1.*"
 
@@ -150,6 +151,10 @@ ignore_errors = true
 module = "furl.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "pypika.*"
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 addopts = """-x -vv --strict-markers -p no:cacheprovider"""
 filterwarnings = [
@@ -166,6 +171,7 @@ ignore = [
     "D103",
     "D104",
     "D105",
+    "D106",
     "D107",
     "D200",
     "D400",

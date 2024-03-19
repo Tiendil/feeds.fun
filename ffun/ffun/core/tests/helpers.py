@@ -1,6 +1,8 @@
 import copy
+import datetime
+from collections import Counter
 from types import TracebackType
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, MutableMapping, Optional, Type
 
 import pytest
 
@@ -137,3 +139,19 @@ class TableSizeNotChanged(NotChanged, TableSizeMixin):
         super().__init__(**kwargs)
 
         self.table = table
+
+
+def assert_times_is_near(
+    a: datetime.datetime, b: datetime.datetime, delta: datetime.timedelta = datetime.timedelta(seconds=1)
+) -> None:
+    assert abs(a - b) < delta
+
+
+def assert_logs(logs: list[MutableMapping[str, Any]], **kwargs: int) -> None:
+    found_enents = Counter(log["event"] for log in logs)
+
+    for key, expected_count in kwargs.items():
+        if expected_count != found_enents.get(key, 0):
+            pytest.fail(
+                f"Key {key} not found {expected_count} times in logs, but found {found_enents.get(key, 0)} times"
+            )

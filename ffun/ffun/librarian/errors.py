@@ -5,5 +5,13 @@ class Error(errors.Error):
     pass
 
 
-class SkipAndContinueLater(Error):
+class SkipEntryProcessing(Error):
+    pass
+
+
+class CanNotSaveUnexistingPointer(Error):
+    pass
+
+
+class UnexpectedErrorInProcessor(Error):
     pass

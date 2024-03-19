@@ -25,7 +25,7 @@ class TestEncodeSpecialCharacters:
     )
     @pytest.mark.asyncio
     async def test(self, cataloged_entry: Entry, title: str, has_tag: bool) -> None:
-        cataloged_entry.title = title
+        cataloged_entry = cataloged_entry.replace(title=title)
 
         tags = await processor.process(cataloged_entry)
 

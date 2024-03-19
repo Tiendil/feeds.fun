@@ -6,25 +6,24 @@ import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
-from ffun.library.entities import Entry, ProcessedState
-from ffun.library.settings import settings
+from ffun.library.entities import Entry
 
 logger = logging.get_module_logger()
 
 
 sql_insert_entry = """
 INSERT INTO l_entries (id, feed_id, title, body,
-                       external_id, external_url, external_tags, published_at, cataloged_at)
+                       external_id, external_url, external_tags, published_at)
 VALUES (%(id)s, %(feed_id)s, %(title)s, %(body)s,
-        %(external_id)s, %(external_url)s, %(external_tags)s, %(published_at)s, NOW())
+        %(external_id)s, %(external_url)s, %(external_tags)s, %(published_at)s)
 """
 
 
 def row_to_entry(row: dict[str, Any]) -> Entry:
+    row["cataloged_at"] = row.pop("created_at")
     return Entry(**row)
 
 
-# TODO: tests
 async def catalog_entries(entries: Iterable[Entry]) -> None:
     for entry in entries:
         try:
@@ -49,7 +48,6 @@ async def catalog_entries(entries: Iterable[Entry]) -> None:
 # 1. we can not guarantee that there will be no duplicates of feeds
 #    (can not guarantee perfect normalization of urls, etc)
 # 2. someone can damage database by infecting with wrong entries from faked feed
-# TODO: tests
 async def check_stored_entries_by_external_ids(feed_id: uuid.UUID, external_ids: Iterable[str]) -> set[str]:
     sql = """
     SELECT external_id
@@ -65,7 +63,6 @@ async def check_stored_entries_by_external_ids(feed_id: uuid.UUID, external_ids:
 sql_select_entries = """SELECT * FROM l_entries WHERE id = ANY(%(ids)s)"""
 
 
-# TODO: tests
 async def get_entries_by_ids(ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, Entry | None]:
     rows = await execute(sql_select_entries, {"ids": ids})
 
@@ -77,7 +74,6 @@ async def get_entries_by_ids(ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, Entry 
     return result
 
 
-# TODO: tests
 async def get_entries_by_filter(
     feeds_ids: Iterable[uuid.UUID], limit: int, period: datetime.timedelta | None = None
 ) -> list[Entry]:
@@ -86,8 +82,8 @@ async def get_entries_by_filter(
 
     sql = """
     SELECT * FROM l_entries
-    WHERE feed_id = ANY(%(feeds_ids)s) AND cataloged_at > NOW() - %(period)s
-    ORDER BY cataloged_at DESC
+    WHERE created_at > NOW() - %(period)s and feed_id = ANY(%(feeds_ids)s)
+    ORDER BY created_at DESC
     LIMIT %(limit)s"""
 
     rows = await execute(sql, {"feeds_ids": feeds_ids, "period": period, "limit": limit})
@@ -95,64 +91,26 @@ async def get_entries_by_filter(
     return [row_to_entry(row) for row in rows]
 
 
-# TODO: tests
-async def get_new_entries(from_time: datetime.datetime, limit: int = 1000) -> list[Entry]:
+async def get_entries_after_pointer(
+    created_at: datetime.datetime, entry_id: uuid.UUID, limit: int
+) -> list[tuple[uuid.UUID, datetime.datetime]]:
+    # Indenx on created_at should be enough (currently it is (created_at, feed_idid))
+    # In case of troubles we could add index on (created_at, id)
     sql = """
-    SELECT * FROM l_entries
-    WHERE cataloged_at > %(from_time)s
-    ORDER BY cataloged_at ASC
+    SELECT id, created_at FROM l_entries
+    WHERE created_at > %(created_at)s OR
+          (created_at = %(created_at)s AND id > %(entry_id)s)
+    ORDER BY created_at ASC, id ASC
     LIMIT %(limit)s
     """
 
-    rows = await execute(sql, {"from_time": from_time, "limit": limit})
+    rows = await execute(sql, {"created_at": created_at, "entry_id": entry_id, "limit": limit})
 
-    return [row_to_entry(row) for row in rows]
-
-
-# TODO: tests
-async def mark_entry_as_processed(
-    entry_id: uuid.UUID, processor_id: int, state: ProcessedState, error: str | None
-) -> None:
-    sql = """
-    INSERT INTO l_entry_process_info (entry_id, processor_id, processed_at, state, last_error)
-    VALUES (%(entry_id)s, %(processor_id)s, NOW(), %(state)s, %(last_error)s)
-    ON CONFLICT (entry_id, processor_id)
-    DO UPDATE SET processed_at = NOW(),
-                  updated_at = NOW(),
-                  state = %(state)s,
-                  last_error = %(last_error)s
-    """
-
-    await execute(sql, {"processor_id": processor_id, "entry_id": entry_id, "state": state, "last_error": error})
-
-
-# TODO: tests
-async def get_entries_to_process(processor_id: int, number: int) -> list[Entry]:
-    sql = """
-    SELECT * FROM l_entries
-    LEFT JOIN l_entry_process_info ON l_entries.id = l_entry_process_info.entry_id AND
-                                      l_entry_process_info.processor_id = %(processor_id)s
-    WHERE l_entry_process_info.processed_at IS NULL OR
-          (l_entry_process_info.processed_at < NOW() - %(retry_after)s AND
-           l_entry_process_info.state != %(success_state)s)
-    ORDER BY l_entries.cataloged_at DESC
-    LIMIT %(number)s
-    """
-
-    rows = await execute(
-        sql,
-        {
-            "processor_id": processor_id,
-            "number": number,
-            "success_state": ProcessedState.success,
-            "retry_after": settings.retry_after,
-        },
-    )
-
-    return [row_to_entry(row) for row in rows]
+    return [(row["id"], row["created_at"]) for row in rows]
 
 
 # iterate by pairs (feed_id, entry_id) because we already have index on it
+# TODO: rewrite to use get_entries_after_pointer
 async def all_entries_iterator(chunk: int) -> AsyncGenerator[Entry, None]:
     feed_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
     entry_id = uuid.UUID("00000000-0000-0000-0000-000000000000")

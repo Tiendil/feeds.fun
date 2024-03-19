@@ -78,7 +78,13 @@ async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, 
 
     tags_mapping = await get_tags_by_ids(all_tags)
 
-    return {entry_id: {tags_mapping[tag_id] for tag_id in tags} for entry_id, tags in tags_ids.items()}
+    result = {entry_id: {tags_mapping[tag_id] for tag_id in tags} for entry_id, tags in tags_ids.items()}
+
+    for entry_id in entries_ids:
+        if entry_id not in result:
+            result[entry_id] = set()
+
+    return result
 
 
 async def get_tags_info(tags_ids: Iterable[int]) -> dict[int, Tag]:  # noqa: CCR001

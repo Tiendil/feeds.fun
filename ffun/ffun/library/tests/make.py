@@ -2,6 +2,7 @@ import uuid
 from typing import Any
 
 from ffun.core import utils
+from ffun.library import domain
 from ffun.library.entities import Entry
 
 
@@ -29,3 +30,9 @@ def fake_entry(loaded_feed_id: uuid.UUID, **kwargs: Any) -> Entry:
         published_at=utils.now() if "published_at" not in kwargs else kwargs["published_at"],
         cataloged_at=utils.now() if "cataloged_at" not in kwargs else kwargs["cataloged_at"],
     )
+
+
+async def n_entries(loaded_feed_id: uuid.UUID, n: int) -> dict[uuid.UUID, Entry]:
+    new_entries = [fake_entry(loaded_feed_id) for _ in range(n)]
+    await domain.catalog_entries(new_entries)
+    return await domain.get_entries_by_ids([entry.id for entry in new_entries])  # type: ignore

@@ -3,7 +3,7 @@ from typing import Any
 
 from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
-from ffun.librarian import domain
+from ffun.librarian import domain, operations
 from ffun.librarian.processors.base import Processor
 from ffun.librarian.processors.domain import Processor as DomainProcessor
 from ffun.librarian.processors.native_tags import Processor as NativeTagsProcessor
@@ -91,15 +91,42 @@ class EntriesProcessor(InfiniteTask):
         super().__init__(**kwargs)
         self._processor_info = processor_info
 
+    @property
+    def id(self) -> int:
+        return self._processor_info.id
+
+    @property
+    def concurrency(self) -> int:
+        return self._processor_info.concurrency
+
     async def single_run(self) -> None:
         processor_id = self._processor_info.id
         concurrency = self._processor_info.concurrency
 
-        entries = await l_domain.get_entries_to_process(processor_id=processor_id, number=concurrency)
+        # most likely, this call should be in a separate worker with a more complex logic
+        # but for now it is ok to place it here
+        await domain.plan_processor_queue(
+            processor_id=processor_id,
+            fill_when_below=concurrency,
+            # TODO: move to settings
+            chunk=concurrency * 10,
+        )
+
+        entities_ids = await operations.get_entries_to_process(processor_id=processor_id, limit=concurrency)
+
+        if not entities_ids:
+            logger.info("no_entries_to_process", processor_id=processor_id)
+            return
+
+        # TODO: we could add caching here, because multiple processors can request the same entries
+        #       and currently we run multiple processors in the same process
+        #       but remember that for API worker such cachin may be useless or even harmful
+        entries = await l_domain.get_entries_by_ids(entities_ids)
 
         tasks = [
             domain.process_entry(processor_id=processor_id, processor=self._processor_info.processor, entry=entry)
-            for entry in entries
+            for entry in entries.values()
+            if entry is not None
         ]
 
         await asyncio.gather(*tasks, return_exceptions=True)
