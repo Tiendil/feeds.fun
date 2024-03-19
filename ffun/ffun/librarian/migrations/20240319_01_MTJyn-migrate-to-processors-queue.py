@@ -5,6 +5,7 @@ import uuid
 from typing import Any
 
 from psycopg import Connection
+from psycopg.rows import dict_row
 from pypika import Field, PostgreSQLQuery, Table
 from yoyo import step
 
@@ -29,11 +30,11 @@ def get_old_entries(cursor: Any, processor_id: int, state: int) -> list[uuid.UUI
 
 
 def add_entries_to_failed_storage(cursor: Any, processor_id: int, failed_entries: list[uuid.UUID]) -> None:
-    query = PostgreSQLQuery.into('ln_failed_entries').columns('processor_id', 'entry_id')
-
     chunk = 10000
 
     for i in range(0, len(failed_entries), chunk):
+        query = PostgreSQLQuery.into('ln_failed_entries').columns('processor_id', 'entry_id')
+
         for entry_id in failed_entries[i:i + chunk]:
             query = query.insert((processor_id, entry_id))
 
@@ -41,11 +42,11 @@ def add_entries_to_failed_storage(cursor: Any, processor_id: int, failed_entries
 
 
 def add_entries_to_queue(cursor: Any, processor_id: int, entries: list[uuid.UUID]) -> None:
-    query = PostgreSQLQuery.into('ln_processors_queue').columns('processor_id', 'entry_id')
-
     chunk = 10000
 
     for i in range(0, len(entries), chunk):
+        query = PostgreSQLQuery.into('ln_processors_queue').columns('processor_id', 'entry_id')
+
         for entry_id in entries[i:i + chunk]:
             query = query.insert((processor_id, entry_id))
 
@@ -53,7 +54,7 @@ def add_entries_to_queue(cursor: Any, processor_id: int, entries: list[uuid.UUID
 
 
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
-    cursor = conn.cursor()
+    cursor = conn.cursor(row_factory=dict_row)
 
     all_entries = get_actual_entries(cursor)
 
@@ -64,8 +65,8 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
         successed_entries = get_old_entries(cursor, processor_id, 1)
         retried_entries = get_old_entries(cursor, processor_id, 3)
 
-        entries_to_fetch = all_entries - set(successed_entries) - set(retried_entries)
-        add_entries_to_queue(cursor, processor_id, list(entries_to_fetch))
+        entries_to_add = all_entries - set(successed_entries) - set(retried_entries) - set(failed_entries)
+        add_entries_to_queue(cursor, processor_id, list(entries_to_add))
 
 
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:
