@@ -25,15 +25,18 @@ async def push_entries_and_move_pointer(execute: ExecuteType, next_pointer: Proc
 
 # most likely, this code should be in a separate worker with a more complex logic
 # but for now it is ok to place it here
-# TODO: tests
-async def plan_processor_queue(processor_id: int, limit: int) -> None:
-    # TODO: maybe it will be a good idea to push more entries to the queue
-    #       but rarelly, not every time
+async def plan_processor_queue(processor_id: int, fill_when_less_than: int, chunk: int) -> None:
+
+    entries_in_queue = await operations.count_entries_in_processor_queue(processor_id)
+
+    if entries_in_queue >= fill_when_less_than:
+        return
+
     pointer = await operations.get_or_create_pointer(processor_id=processor_id)
 
     next_entries = await l_domain.get_entries_after_pointer(created_at=pointer.pointer_created_at,
                                                             entry_id=pointer.pointer_entry_id,
-                                                            limit=limit)
+                                                            limit=chunk)
 
     if not next_entries:
         return

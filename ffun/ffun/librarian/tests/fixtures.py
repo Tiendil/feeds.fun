@@ -6,3 +6,8 @@ from ffun.librarian.entities import ProcessorPointer
 @pytest.fixture
 def fake_processor_id() -> int:
     return 11042
+
+
+@pytest.fixture
+def another_fake_processor_id() -> int:
+    return 11043

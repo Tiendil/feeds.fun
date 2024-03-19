@@ -186,6 +186,31 @@ class TestGetEntriesToProcess:
         assert entries_ids_1 == entries_ids_2
 
 
+class TestCountEntriesInProcessorQueue:
+
+    @pytest.mark.asyncio
+    async def test_no_entries(self, fake_processor_id: int) -> None:
+        await operations.clear_processor_queue(fake_processor_id)
+
+        count = await operations.count_entries_in_processor_queue(fake_processor_id)
+
+        assert count == 0
+
+    @pytest.mark.asyncio
+    async def test_count(self, loaded_feed_id: uuid.UUID, fake_processor_id: int, another_fake_processor_id: int) -> None:
+        old_count = await operations.count_entries_in_processor_queue(fake_processor_id)
+
+        entries = await l_make.n_entries(loaded_feed_id, n=3)
+        more_entries = await l_make.n_entries(loaded_feed_id, n=2)
+
+        await operations.push_entries_to_processor_queue(execute, fake_processor_id, list(entries))
+        await operations.push_entries_to_processor_queue(execute, another_fake_processor_id, list(more_entries))
+
+        new_count = await operations.count_entries_in_processor_queue(fake_processor_id)
+
+        assert new_count == old_count + 3
+
+
 class TestRemoveEntriesFromProcessorQueue:
 
     @pytest.mark.asyncio

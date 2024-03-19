@@ -106,6 +106,17 @@ async def get_entries_to_process(processor_id: int, n: int) -> list[uuid.UUID]:
     return [row["entry_id"] for row in rows]
 
 
+async def count_entries_in_processor_queue(processor_id: int) -> int:
+    sql = """
+    SELECT COUNT(*) FROM ln_processors_queue
+    WHERE processor_id = %(processor_id)s
+    """
+
+    rows = await execute(sql, {"processor_id": processor_id})
+
+    return rows[0]["count"]  # type: ignore
+
+
 async def remove_entries_from_processor_queue(processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
     sql = """
     DELETE FROM ln_processors_queue
