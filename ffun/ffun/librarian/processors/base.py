@@ -23,6 +23,7 @@ class Processor:
 # Some processors for testing purposes
 ######################################
 
+
 class AlwaysConstantProcessor(Processor):
     __slots__ = ("_tags",)
 
@@ -35,13 +36,11 @@ class AlwaysConstantProcessor(Processor):
 
 
 class AlwaysSkipEntryProcessor(Processor):
-
     async def process(self, entry: Entry) -> list[ProcessorTag]:
         raise errors.SkipEntryProcessing()
 
 
 class AlwaysErrorProcessor(Processor):
-
     class CustomError(Exception):
         pass
 

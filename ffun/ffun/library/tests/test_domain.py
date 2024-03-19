@@ -1,5 +1,5 @@
 import pytest
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
+
 from ffun.feeds.entities import Feed
 from ffun.library import operations
 from ffun.library.domain import get_entry, normalize_entry

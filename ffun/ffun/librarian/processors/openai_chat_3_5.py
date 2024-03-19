@@ -12,7 +12,6 @@ from ffun.openai import client as oai_client
 from ffun.openai import errors as oai_errors
 from ffun.openai.keys_rotator import api_key_for_feed_entry
 
-
 logger = logging.get_module_logger()
 
 

@@ -7,8 +7,7 @@ from typing import Any
 from psycopg import Connection
 from yoyo import step
 
-
-__depends__ = {'20230514_01_Bwb35-processed-state'}
+__depends__ = {"20230514_01_Bwb35-processed-state"}
 
 
 sql_remove_column = """

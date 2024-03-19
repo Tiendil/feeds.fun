@@ -2,7 +2,6 @@ from typing import Any, TypeVar
 
 import pydantic
 
-
 BASE_ENTITY = TypeVar("BASE_ENTITY", bound="BaseEntity")
 
 

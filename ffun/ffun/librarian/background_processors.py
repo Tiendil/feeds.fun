@@ -13,7 +13,6 @@ from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTit
 from ffun.librarian.settings import settings
 from ffun.library import domain as l_domain
 
-
 logger = logging.get_module_logger()
 
 
@@ -106,10 +105,12 @@ class EntriesProcessor(InfiniteTask):
 
         # most likely, this call should be in a separate worker with a more complex logic
         # but for now it is ok to place it here
-        await domain.plan_processor_queue(processor_id=processor_id,
-                                          fill_when_below=concurrency,
-                                          # TODO: move to settings
-                                          chunk=concurrency * 10)
+        await domain.plan_processor_queue(
+            processor_id=processor_id,
+            fill_when_below=concurrency,
+            # TODO: move to settings
+            chunk=concurrency * 10,
+        )
 
         entities_ids = await operations.get_entries_to_process(processor_id=processor_id, limit=concurrency)
 

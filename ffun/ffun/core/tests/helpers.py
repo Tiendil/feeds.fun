@@ -5,8 +5,8 @@ from types import TracebackType
 from typing import Any, Callable, Optional, Type
 
 import pytest
-from ffun.core.postgresql import execute
 
+from ffun.core.postgresql import execute
 
 PRODUCER = Callable[[], Any]
 
@@ -141,9 +141,9 @@ class TableSizeNotChanged(NotChanged, TableSizeMixin):
         self.table = table
 
 
-def assert_times_is_near(a: datetime.datetime,
-                         b: datetime.datetime,
-                         delta: datetime.timedelta = datetime.timedelta(seconds=1)) -> None:
+def assert_times_is_near(
+    a: datetime.datetime, b: datetime.datetime, delta: datetime.timedelta = datetime.timedelta(seconds=1)
+) -> None:
     assert abs(a - b) < delta
 
 
@@ -152,4 +152,6 @@ def assert_logs(logs: list[dict[str, Any]], **kwargs: int) -> None:
 
     for key, expected_count in kwargs.items():
         if expected_count != found_enents.get(key, 0):
-            pytest.fail(f"Key {key} not found {expected_count} times in logs, but found {found_enents.get(key, 0)} times")
+            pytest.fail(
+                f"Key {key} not found {expected_count} times in logs, but found {found_enents.get(key, 0)} times"
+            )

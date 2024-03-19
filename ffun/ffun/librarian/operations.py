@@ -1,16 +1,13 @@
-import datetime
 import uuid
-from typing import Any, AsyncGenerator, Iterable
+from typing import Any, Iterable
 
 import psycopg
+from pypika import PostgreSQLQuery
+
 from ffun.core import logging
-from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.core.postgresql import ExecuteType, execute
 from ffun.librarian import errors
 from ffun.librarian.entities import ProcessorPointer
-from ffun.library.entities import Entry, ProcessedState
-from ffun.library.settings import settings
-from pypika import Field, PostgreSQLQuery, Table
-
 
 logger = logging.get_module_logger()
 
@@ -76,16 +73,23 @@ async def save_pointer(execute: ExecuteType, pointer: ProcessorPointer) -> None:
     RETURNING *
     """
 
-    row = await execute(sql, {"processor_id": pointer.processor_id,
-                              "pointer_created_at": pointer.pointer_created_at,
-                              "pointer_entry_id": pointer.pointer_entry_id})
+    row = await execute(
+        sql,
+        {
+            "processor_id": pointer.processor_id,
+            "pointer_created_at": pointer.pointer_created_at,
+            "pointer_entry_id": pointer.pointer_entry_id,
+        },
+    )
 
     if not row:
         raise errors.CanNotSaveUnexistingPointer()
 
 
-async def push_entries_to_processor_queue(execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
-    query = PostgreSQLQuery.into('ln_processors_queue').columns('processor_id', 'entry_id')
+async def push_entries_to_processor_queue(
+    execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]
+) -> None:
+    query = PostgreSQLQuery.into("ln_processors_queue").columns("processor_id", "entry_id")
 
     for entry_id in entry_ids:
         query = query.insert(processor_id, entry_id)
@@ -117,7 +121,9 @@ async def count_entries_in_processor_queue(processor_id: int) -> int:
     return rows[0]["count"]  # type: ignore
 
 
-async def remove_entries_from_processor_queue(execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
+async def remove_entries_from_processor_queue(
+    execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]
+) -> None:
     sql = """
     DELETE FROM ln_processors_queue
     WHERE processor_id = %(processor_id)s
@@ -137,7 +143,7 @@ async def clear_processor_queue(processor_id: int) -> None:
 
 
 async def add_entries_to_failed_storage(processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
-    query = PostgreSQLQuery.into('ln_failed_entries').columns('processor_id', 'entry_id')
+    query = PostgreSQLQuery.into("ln_failed_entries").columns("processor_id", "entry_id")
 
     for entry_id in entry_ids:
         query = query.insert(processor_id, entry_id)

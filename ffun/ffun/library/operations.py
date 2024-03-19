@@ -3,11 +3,10 @@ import uuid
 from typing import Any, AsyncGenerator, Iterable
 
 import psycopg
+
 from ffun.core import logging
 from ffun.core.postgresql import execute
-from ffun.library.entities import Entry, ProcessedState
-from ffun.library.settings import settings
-
+from ffun.library.entities import Entry
 
 logger = logging.get_module_logger()
 
@@ -21,7 +20,7 @@ VALUES (%(id)s, %(feed_id)s, %(title)s, %(body)s,
 
 
 def row_to_entry(row: dict[str, Any]) -> Entry:
-    row['cataloged_at'] = row.pop('created_at')
+    row["cataloged_at"] = row.pop("created_at")
     return Entry(**row)
 
 
@@ -92,7 +91,9 @@ async def get_entries_by_filter(
     return [row_to_entry(row) for row in rows]
 
 
-async def get_entries_after_pointer(created_at: datetime.datetime, entry_id: uuid.UUID, limit: int) -> list[tuple[uuid.UUID, datetime.datetime]]:
+async def get_entries_after_pointer(
+    created_at: datetime.datetime, entry_id: uuid.UUID, limit: int
+) -> list[tuple[uuid.UUID, datetime.datetime]]:
     # Indenx on created_at should be enough (currently it is (created_at, feed_idid))
     # In case of troubles we could add index on (created_at, id)
     sql = """
@@ -105,7 +106,7 @@ async def get_entries_after_pointer(created_at: datetime.datetime, entry_id: uui
 
     rows = await execute(sql, {"created_at": created_at, "entry_id": entry_id, "limit": limit})
 
-    return [(row["id"], row['created_at']) for row in rows]
+    return [(row["id"], row["created_at"]) for row in rows]
 
 
 # iterate by pairs (feed_id, entry_id) because we already have index on it
