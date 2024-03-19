@@ -3,17 +3,17 @@
 
 * DONE Queue/table with entries to process next by each processor
 
-* Background workers to fill queue
+* DONE Background workers to fill queue
 
-** Moving pointer + adding entries to a queue must be atomic
+** DONE Moving pointer + adding entries to a queue must be atomic
 
-* Switch processor to the queue
+* DONE Switch processor to the queue
 
 * Data migration from the l_entry_process_info
 
 * Remove l_entry_process_info
 
-* Remove logic, that uses l_entry_process_info
+* DONE Remove logic, that uses l_entry_process_info
 
 * Command to move entries from ln_failed_entries to queue
 

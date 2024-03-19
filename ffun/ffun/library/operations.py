@@ -105,48 +105,6 @@ async def get_entries_after_pointer(created_at: datetime.datetime, entry_id: uui
 
     return [(row["id"], row['created_at']) for row in rows]
 
-# TODO: remove
-# async def mark_entry_as_processed(
-#     entry_id: uuid.UUID, processor_id: int, state: ProcessedState, error: str | None
-# ) -> None:
-#     sql = """
-#     INSERT INTO l_entry_process_info (entry_id, processor_id, processed_at, state, last_error)
-#     VALUES (%(entry_id)s, %(processor_id)s, NOW(), %(state)s, %(last_error)s)
-#     ON CONFLICT (entry_id, processor_id)
-#     DO UPDATE SET processed_at = NOW(),
-#                   updated_at = NOW(),
-#                   state = %(state)s,
-#                   last_error = %(last_error)s
-#     """
-
-#     await execute(sql, {"processor_id": processor_id, "entry_id": entry_id, "state": state, "last_error": error})
-
-
-# TODO: remove
-# async def get_entries_to_process(processor_id: int, number: int) -> list[Entry]:
-#     sql = """
-#     SELECT * FROM l_entries
-#     LEFT JOIN l_entry_process_info ON l_entries.id = l_entry_process_info.entry_id AND
-#                                       l_entry_process_info.processor_id = %(processor_id)s
-#     WHERE l_entry_process_info.processed_at IS NULL OR
-#           (l_entry_process_info.processed_at < NOW() - %(retry_after)s AND
-#            l_entry_process_info.state != %(success_state)s)
-#     ORDER BY l_entries.cataloged_at DESC
-#     LIMIT %(number)s
-#     """
-
-#     rows = await execute(
-#         sql,
-#         {
-#             "processor_id": processor_id,
-#             "number": number,
-#             "success_state": ProcessedState.success,
-#             "retry_after": settings.retry_after,
-#         },
-#     )
-
-#     return [row_to_entry(row) for row in rows]
-
 
 # iterate by pairs (feed_id, entry_id) because we already have index on it
 # TODO: rewrite to use get_entries_after_pointer
