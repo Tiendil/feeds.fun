@@ -42,6 +42,8 @@ async def move_failed_entries_to_processor_queue(execute: ExecuteType, processor
 # but for now it is ok to place it here
 async def plan_processor_queue(processor_id: int, fill_when_below: int, chunk: int) -> None:
 
+    # TODO: count may load the DB too much, because of how it is work in PostgreSQL
+    #       maybe pass fill_when_below as a parameter to the function and make check on the DB side
     entries_in_queue = await operations.count_entries_in_processor_queue(processor_id)
 
     if entries_in_queue >= fill_when_below:

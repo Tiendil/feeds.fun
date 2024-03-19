@@ -93,6 +93,8 @@ async def get_entries_by_filter(
 
 
 async def get_entries_after_pointer(created_at: datetime.datetime, entry_id: uuid.UUID, limit: int) -> list[tuple[uuid.UUID, datetime.datetime]]:
+    # Indenx on created_at should be enough (currently it is (created_at, feed_idid))
+    # In case of troubles we could add index on (created_at, id)
     sql = """
     SELECT id, created_at FROM l_entries
     WHERE created_at > %(created_at)s OR
