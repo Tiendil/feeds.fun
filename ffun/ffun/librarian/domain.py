@@ -50,8 +50,6 @@ async def plan_processor_queue(processor_id: int, fill_when_below: int, chunk: i
     await push_entries_and_move_pointer(next_pointer, [entry[0] for entry in next_entries])
 
 
-# TODO: save processing errors in the database
-# TODO: tests
 @logging.bound_function(skip=("processor",))
 async def process_entry(processor_id: int, processor: Processor, entry: Entry) -> None:
     logger.info("dicover_tags", entry=entry, processor_id=processor_id)

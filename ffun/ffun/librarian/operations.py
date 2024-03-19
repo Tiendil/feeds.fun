@@ -145,15 +145,15 @@ async def add_entries_to_failed_storage(processor_id: int, entry_ids: Iterable[u
     await execute(str(query))
 
 
-async def get_failed_entries(processor_id: int, n: int) -> list[uuid.UUID]:
+async def get_failed_entries(processor_id: int, limit: int) -> list[uuid.UUID]:
     sql = """
     SELECT entry_id FROM ln_failed_entries
     WHERE processor_id = %(processor_id)s
     ORDER BY created_at ASC
-    LIMIT %(n)s
+    LIMIT %(limit)s
     """
 
-    rows = await execute(sql, {"processor_id": processor_id, "n": n})
+    rows = await execute(sql, {"processor_id": processor_id, "limit": limit})
 
     return [row["entry_id"] for row in rows]
 

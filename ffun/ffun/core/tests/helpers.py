@@ -144,3 +144,13 @@ def assert_times_is_near(a: datetime.datetime,
                          b: datetime.datetime,
                          delta: datetime.timedelta = datetime.timedelta(seconds=1)) -> None:
     assert abs(a - b) < delta
+
+
+def assert_logs(logs: list[dict[str, Any]], **kwargs: bool) -> None:
+    found_enents = {log["event"] for log in logs}
+
+    for key, should_exist in kwargs.items():
+        if should_exist:
+            assert key in found_enents, f"Key {key} not found in logs"
+        else:
+            assert key not in found_enents, f"Key {key} found in logs"
