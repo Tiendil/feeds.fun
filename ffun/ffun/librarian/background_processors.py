@@ -111,7 +111,7 @@ class EntriesProcessor(InfiniteTask):
                                           # TODO: move to settings
                                           chunk=concurrency * 10)
 
-        entities_ids = await operations.get_entries_to_process(processor_id=processor_id, n=concurrency)
+        entities_ids = await operations.get_entries_to_process(processor_id=processor_id, limit=concurrency)
 
         if not entities_ids:
             logger.info("no_entries_to_process", processor_id=processor_id)

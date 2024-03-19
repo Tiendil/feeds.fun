@@ -193,11 +193,11 @@ class TestProcessEntry:
 
         assert tags[cataloged_entry.id] == {'tag-1', 'tag-2'}
 
-        entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, n=100500)
+        entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, limit=100500)
 
         assert set(entries_in_queue) == {another_cataloged_entry.id}
 
-        failed_entry_ids = await operations.get_failed_entries(fake_processor_id, limit=100500)
+        failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
         assert cataloged_entry.id not in failed_entry_ids
 
     @pytest.mark.asyncio
@@ -219,11 +219,11 @@ class TestProcessEntry:
 
         assert tags[cataloged_entry.id] == set()
 
-        entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, n=100500)
+        entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, limit=100500)
 
         assert set(entries_in_queue) == {another_cataloged_entry.id}
 
-        failed_entry_ids = await operations.get_failed_entries(fake_processor_id, limit=100500)
+        failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
         assert cataloged_entry.id not in failed_entry_ids
 
     @pytest.mark.asyncio
@@ -250,7 +250,7 @@ class TestProcessEntry:
 
         assert set(entries_in_queue) == {another_cataloged_entry.id}
 
-        failed_entry_ids = await operations.get_failed_entries(fake_processor_id, limit=100500)
+        failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
         assert cataloged_entry.id in failed_entry_ids
 
 

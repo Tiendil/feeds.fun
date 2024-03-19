@@ -87,6 +87,6 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
         await operations.add_entries_to_failed_storage(processor_id, [entry.id])
         raise errors.UnexpectedErrorInProcessor(processor_id=processor_id, entry_id=entry.id) from e
     finally:
-        await operations.remove_entries_from_processor_queue(processor_id, [entry.id])
+        await operations.remove_entries_from_processor_queue(execute, processor_id, [entry.id])
 
     logger.info("entry_processed")

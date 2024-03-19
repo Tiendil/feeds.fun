@@ -157,7 +157,7 @@ class TestGetEntriesToProcess:
         while True:
             new_entries_ids = await operations.get_entries_to_process(fake_processor_id, limit=3)
             received_entries.update(new_entries_ids)
-            await operations.remove_entries_from_processor_queue(fake_processor_id, new_entries_ids)
+            await operations.remove_entries_from_processor_queue(execute, fake_processor_id, new_entries_ids)
 
             if len(received_entries) == len(entries):
                 assert len(new_entries_ids) == 13 % 3
@@ -225,7 +225,7 @@ class TestRemoveEntriesFromProcessorQueue:
         entries_to_remove = list(entries)[:5]
 
         async with TableSizeDelta('ln_processors_queue', delta=-5):
-            await operations.remove_entries_from_processor_queue(fake_processor_id, entries_to_remove)
+            await operations.remove_entries_from_processor_queue(execute, fake_processor_id, entries_to_remove)
 
         entries_in_queue = await operations.get_entries_to_process(fake_processor_id, limit=13)
 
@@ -243,7 +243,7 @@ class TestRemoveEntriesFromProcessorQueue:
 
         entries_to_remove = [uuid.uuid4(), uuid.uuid4()]
 
-        await operations.remove_entries_from_processor_queue(fake_processor_id, entries_to_remove)
+        await operations.remove_entries_from_processor_queue(execute, fake_processor_id, entries_to_remove)
 
         entries_in_queue = await operations.get_entries_to_process(fake_processor_id, limit=13)
 
