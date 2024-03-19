@@ -186,7 +186,7 @@ class TestProcessEntry:
                                 processor=AlwaysConstantProcessor(name="fake-processor", tags=['tag-1', 'tag-2']),
                                 entry=cataloged_entry)
 
-        assert_logs(logs, processor_successed=True, processor_requested_to_skip_entry=False, entry_processed=True)
+        assert_logs(logs, processor_successed=1, processor_requested_to_skip_entry=0, entry_processed=1)
 
         tags = await o_domain.get_tags_for_entries([cataloged_entry.id])
 
@@ -212,7 +212,7 @@ class TestProcessEntry:
                                 processor=AlwaysSkipEntryProcessor(name="fake-processor"),
                                 entry=cataloged_entry)
 
-        assert_logs(logs, processor_successed=False, processor_requested_to_skip_entry=True, entry_processed=True)
+        assert_logs(logs, processor_successed=0, processor_requested_to_skip_entry=1, entry_processed=1)
 
         tags = await o_domain.get_tags_for_entries([cataloged_entry.id])
 
@@ -239,7 +239,7 @@ class TestProcessEntry:
                                     processor=AlwaysErrorProcessor(name="fake-processor"),
                                     entry=cataloged_entry)
 
-        assert_logs(logs, processor_successed=False, processor_requested_to_skip_entry=False, entry_processed=False)
+        assert_logs(logs, processor_successed=0, processor_requested_to_skip_entry=0, entry_processed=0)
 
         tags = await o_domain.get_tags_for_entries([cataloged_entry.id])
 

@@ -1,5 +1,6 @@
 import copy
 import datetime
+from collections import Counter
 from types import TracebackType
 from typing import Any, Callable, Optional, Type
 
@@ -146,11 +147,9 @@ def assert_times_is_near(a: datetime.datetime,
     assert abs(a - b) < delta
 
 
-def assert_logs(logs: list[dict[str, Any]], **kwargs: bool) -> None:
-    found_enents = {log["event"] for log in logs}
+def assert_logs(logs: list[dict[str, Any]], **kwargs: int) -> None:
+    found_enents = Counter(log["event"] for log in logs)
 
-    for key, should_exist in kwargs.items():
-        if should_exist:
-            assert key in found_enents, f"Key {key} not found in logs"
-        else:
-            assert key not in found_enents, f"Key {key} found in logs"
+    for key, expected_count in kwargs.items():
+        if expected_count != found_enents.get(key, 0):
+            pytest.fail(f"Key {key} not found {expected_count} times in logs, but found {found_enents.get(key, 0)} times")

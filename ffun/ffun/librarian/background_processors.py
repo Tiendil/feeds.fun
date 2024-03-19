@@ -92,11 +92,19 @@ class EntriesProcessor(InfiniteTask):
         super().__init__(**kwargs)
         self._processor_info = processor_info
 
+    @property
+    def id(self) -> int:
+        return self._processor_info.id
+
+    @property
+    def concurrency(self) -> int:
+        return self._processor_info.concurrency
+
     async def single_run(self) -> None:
         processor_id = self._processor_info.id
         concurrency = self._processor_info.concurrency
 
-        # most likely, this code should be in a separate worker with a more complex logic
+        # most likely, this call should be in a separate worker with a more complex logic
         # but for now it is ok to place it here
         await domain.plan_processor_queue(processor_id=processor_id,
                                           fill_when_below=concurrency,
@@ -106,8 +114,12 @@ class EntriesProcessor(InfiniteTask):
         entities_ids = await operations.get_entries_to_process(processor_id=processor_id, n=concurrency)
 
         if not entities_ids:
+            logger.info("no_entries_to_process", processor_id=processor_id)
             return
 
+        # TODO: we could add caching here, because multiple processors can request the same entries
+        #       and currently we run multiple processors in the same process
+        #       but remember that for API worker such cachin may be useless or even harmful
         entries = await l_domain.get_entries_by_ids(entities_ids)
 
         tasks = [
