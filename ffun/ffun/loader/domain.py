@@ -30,7 +30,9 @@ def initialize(user_agent: str) -> None:
 
 
 # TODO: tests
-async def load_content(url: str, proxy: Proxy) -> httpx.Response:  # noqa: CCR001, C901 # pylint: disable=R0912, R0915
+async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R0915
+    url: str, proxy: Proxy
+) -> httpx.Response:
     error_code = FeedError.network_unknown
 
     log = logger.bind(url=url, proxy=proxy.name, function="load_content")
@@ -98,6 +100,11 @@ async def load_content(url: str, proxy: Proxy) -> httpx.Response:  # noqa: CCR00
     except httpx.UnsupportedProtocol as e:
         log.warning("network_unsupported_protocol")
         error_code = FeedError.network_unsupported_protocol
+        raise errors.LoadError(feed_error_code=error_code) from e
+
+    except httpx.TooManyRedirects as e:
+        log.warning("network_too_many_redirects")
+        error_code = FeedError.network_too_many_redirects
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except anyio.EndOfStream as e:

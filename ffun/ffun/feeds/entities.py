@@ -16,6 +16,7 @@ class FeedState(int, enum.Enum):
 class FeedError(enum.IntEnum):
     network_unknown = 1000
 
+    # TODO: split to network and protocol errors?
     network_no_address_associated_with_hostname = 1001
     network_name_or_service_not_known = 1002
     network_certificate_verify_failed = 1003
@@ -28,6 +29,7 @@ class FeedError(enum.IntEnum):
     network_unsupported_protocol = 1010
     network_server_breaks_connection = 1011
     network_could_not_resolve_host = 1012
+    network_too_many_redirects = 1013
 
     parsing_unknown = 2000
     parsing_base_error = 2001
