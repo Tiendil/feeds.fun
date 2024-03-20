@@ -46,7 +46,7 @@ class TestIsMagneticUrl:
         "url, is_magnetic",
         [
             (
-                "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80",
+                "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80",  # noqa
                 True,
             ),
             ("https://example.com/path/a/b?c=d", False),
@@ -59,7 +59,7 @@ class TestIsMagneticUrl:
 
 class TestNormalizeMagneticUrl:
     def test(self) -> None:
-        url = "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80"
+        url = "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80"  # noqa
         assert urls.normalize_magnetic_url(url) == url
 
 
@@ -71,8 +71,8 @@ class TestNormalizeExternalUrl:
             ("http://another.domain:666/path/a/b?c=d", "http://another.domain:666/path/a/b?c=d"),
             ("/path/a/b?c=d", "https://example.com/path/a/b?c=d"),
             (
-                "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80",
-                "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80",
+                "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80",  # noqa
+                "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80",  # noqa
             ),
         ],
     )
