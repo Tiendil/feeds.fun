@@ -3,6 +3,7 @@ import uuid
 
 import anyio
 import httpx
+
 from ffun.core import logging, utils
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedError, FeedState
@@ -14,7 +15,6 @@ from ffun.loader import errors
 from ffun.loader.settings import Proxy, settings
 from ffun.parsers import entities as p_entities
 from ffun.parsers.domain import parse_feed
-
 
 logger = logging.get_module_logger()
 
@@ -30,7 +30,9 @@ def initialize(user_agent: str) -> None:
 
 
 # TODO: tests
-async def load_content(url: str, proxy: Proxy) -> httpx.Response:  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R0915
+async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R0915
+    url: str, proxy: Proxy
+) -> httpx.Response:
     error_code = FeedError.network_unknown
 
     log = logger.bind(url=url, proxy=proxy.name, function="load_content")
