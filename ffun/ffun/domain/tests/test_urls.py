@@ -1,9 +1,8 @@
 import pytest
+from ffun.domain import urls
 
-from ffun.domain.urls import normalize_external_url
 
-
-class TestExternalUrlNormalization:
+class TestNormalizeClassicUrl:
     @pytest.mark.parametrize(
         "original_url, raw_url, normalized_url",
         [
@@ -38,4 +37,41 @@ class TestExternalUrlNormalization:
         ],
     )
     def test_base_transformations(self, original_url: str, raw_url: str, normalized_url: str) -> None:
-        assert normalize_external_url(raw_url, original_url) == normalized_url
+        assert urls.normalize_classic_url(raw_url, original_url) == normalized_url
+
+
+class TestIsMagneticUrl:
+
+    @pytest.mark.parametrize(
+        "url, is_magnetic",
+        [
+            ("magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80", True),
+            ("https://example.com/path/a/b?c=d", False),
+            ("http://another.domain:666/path/a/b?c=d", False),
+        ],
+    )
+    def test(self, url: str, is_magnetic: bool) -> None:
+        assert urls.is_magnetic_url(url) == is_magnetic
+
+
+class TestNormalizeMagneticUrl:
+
+    def test(self) -> None:
+        url = "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80"
+        assert urls.normalize_magnetic_url(url) == url
+
+
+class TestNormalizeExternalUrl:
+
+    @pytest.mark.parametrize(
+        "url, normalized_url",
+        [
+            ("https://example.com/path/a/b?c=d", "https://example.com/path/a/b?c=d"),
+            ("http://another.domain:666/path/a/b?c=d", "http://another.domain:666/path/a/b?c=d"),
+            ("/path/a/b?c=d", "https://example.com/path/a/b?c=d"),
+            ("magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80",
+             "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80")
+        ]
+    )
+    def test(self, url: str, normalized_url: str) -> None:
+        assert urls.normalize_external_url(url, original_url="https://example.com") == normalized_url
