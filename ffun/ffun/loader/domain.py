@@ -76,6 +76,11 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
 
         raise errors.LoadError(feed_error_code=error_code) from e
 
+    except ssl.SSLError as e:
+        log.warning("network_certificate_verify_failed")
+        error_code = FeedError.network_ssl_connection_error
+        raise errors.LoadError(feed_error_code=error_code) from e
+
     except ssl.SSLCertVerificationError as e:
         message = str(e)
 

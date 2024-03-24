@@ -29,6 +29,7 @@ class FeedError(enum.IntEnum):
     network_unsupported_protocol = 1010
     network_server_breaks_connection = 1011
     network_too_many_redirects = 1013
+    network_ssl_connection_error = 1014
 
     parsing_unknown = 2000
     parsing_base_error = 2001
