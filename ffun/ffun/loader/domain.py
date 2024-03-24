@@ -71,6 +71,9 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         elif message == "":
             log.warning("undetected_connection_error")
             error_code = FeedError.network_undetected_connection_error
+        elif message == 'All connection attempts failed':
+            log.warning("network_all_connection_attempts_failed")
+            error_code = FeedError.network_all_connection_attempts_failed
         else:
             log.exception("connection_error_while_loading_feed")
 
