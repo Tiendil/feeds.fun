@@ -28,7 +28,6 @@ class FeedError(enum.IntEnum):
     network_undetected_connection_error = 1009
     network_unsupported_protocol = 1010
     network_server_breaks_connection = 1011
-    network_could_not_resolve_host = 1012
     network_too_many_redirects = 1013
 
     parsing_unknown = 2000
@@ -39,6 +38,9 @@ class FeedError(enum.IntEnum):
 
     protocol_unknown = 3000
     protocol_no_entries_in_feed = 3001
+
+    proxy_could_not_resolve_host = 4001
+    proxy_connection_refused = 4002
 
 
 class Feed(BaseEntity):
