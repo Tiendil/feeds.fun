@@ -54,6 +54,9 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         elif "Server disconnected without sending a response" in message:
             log.warning("network_disconection_without_response")
             error_code = FeedError.network_disconection_without_response
+        elif "peer closed connection without sending complete message body (incomplete chunked read)" in message:
+            log.warning("network_received_unkomplete_body")
+            error_code = FeedError.network_received_unkomplete_body
         else:
             log.exception("remote_protocol_error_while_loading_feed")
 
@@ -71,9 +74,17 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         elif message == "":
             log.warning("undetected_connection_error")
             error_code = FeedError.network_undetected_connection_error
+        elif message == "All connection attempts failed":
+            log.warning("network_all_connection_attempts_failed")
+            error_code = FeedError.network_all_connection_attempts_failed
         else:
             log.exception("connection_error_while_loading_feed")
 
+        raise errors.LoadError(feed_error_code=error_code) from e
+
+    except ssl.SSLError as e:
+        log.warning("network_certificate_verify_failed")
+        error_code = FeedError.network_ssl_connection_error
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except ssl.SSLCertVerificationError as e:
@@ -117,7 +128,10 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
 
         if message.startswith("502 Could not resolve host"):
             log.warning("network_could_not_resolve_host")
-            error_code = FeedError.network_could_not_resolve_host
+            error_code = FeedError.proxy_could_not_resolve_host
+        elif "TUN_ERR" in message and "ECONNREFUSED" in message:
+            log.warning("network_connection_refused")
+            error_code = FeedError.proxy_connection_refused
         else:
             log.exception("unknown_proxy_error_while_loading_feed")
 
