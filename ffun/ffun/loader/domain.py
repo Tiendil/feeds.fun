@@ -3,6 +3,7 @@ import uuid
 
 import anyio
 import httpx
+
 from ffun.core import logging, utils
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedError, FeedState
@@ -14,7 +15,6 @@ from ffun.loader import errors
 from ffun.loader.settings import Proxy, settings
 from ffun.parsers import entities as p_entities
 from ffun.parsers.domain import parse_feed
-
 
 logger = logging.get_module_logger()
 
@@ -74,7 +74,7 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         elif message == "":
             log.warning("undetected_connection_error")
             error_code = FeedError.network_undetected_connection_error
-        elif message == 'All connection attempts failed':
+        elif message == "All connection attempts failed":
             log.warning("network_all_connection_attempts_failed")
             error_code = FeedError.network_all_connection_attempts_failed
         else:
@@ -129,7 +129,7 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         if message.startswith("502 Could not resolve host"):
             log.warning("network_could_not_resolve_host")
             error_code = FeedError.proxy_could_not_resolve_host
-        elif 'TUN_ERR' in message and 'ECONNREFUSED' in message:
+        elif "TUN_ERR" in message and "ECONNREFUSED" in message:
             log.warning("network_connection_refused")
             error_code = FeedError.proxy_connection_refused
         else:
