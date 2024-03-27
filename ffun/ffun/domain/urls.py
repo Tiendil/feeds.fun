@@ -1,6 +1,9 @@
 from furl import furl
 
 
+# TODO: maybe switch to https://github.com/tktech/can_ada
+
+
 # is required for correct parsing by furl
 # will be removed before returning result
 def _fake_schema_for_url(url: str) -> str:
