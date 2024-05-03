@@ -1,6 +1,5 @@
 from furl import furl
 
-
 # TODO: maybe switch to https://github.com/tktech/can_ada
 
 

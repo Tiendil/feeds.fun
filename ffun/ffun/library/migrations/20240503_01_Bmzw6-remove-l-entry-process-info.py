@@ -2,17 +2,12 @@
 remove-l-entry-process-info
 """
 
-import uuid
 from typing import Any
 
 from psycopg import Connection
-from psycopg.rows import dict_row
-from pypika import PostgreSQLQuery
 from yoyo import step
 
-
-__depends__ = {'20240315_01_tWftt-optimize-l-entries',
-               '20240319_01_MTJyn-migrate-to-processors-queue'}
+__depends__ = {"20240315_01_tWftt-optimize-l-entries", "20240319_01_MTJyn-migrate-to-processors-queue"}
 
 
 sql_create_entry_process_info_table = """
