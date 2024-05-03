@@ -34,6 +34,9 @@ async def prepare_db(
     app: AsyncGenerator[fastapi.FastAPI, None],
     event_loop: asyncio.AbstractEventLoop,
 ) -> AsyncGenerator[None, None]:
+    # database migrations may be in an inconsistent state
+    await migrations.rollback_all()
+
     await migrations.apply_all()
     yield
     await migrations.rollback_all()

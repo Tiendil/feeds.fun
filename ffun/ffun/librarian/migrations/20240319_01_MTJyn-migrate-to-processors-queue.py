@@ -9,7 +9,7 @@ from psycopg.rows import dict_row
 from pypika import PostgreSQLQuery
 from yoyo import step
 
-__depends__ = {"20240313_01_Yv74T-processors-pointers"}
+__depends__ = {"20240313_01_Yv74T-processors-pointers", "20240315_01_tWftt-optimize-l-entries"}
 
 
 def get_actual_entries(cursor: Any) -> set[uuid.UUID]:
