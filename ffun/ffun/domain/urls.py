@@ -22,6 +22,12 @@ def _fake_schema_for_url(url: str) -> str:
     if RE_SCHEMA.match(url):
         return url
 
+    # TODO: this logic is required only for normalize_classic_url and has wrong behavior for top-level domains
+    #       like localhost or any other one-part domain that user will define locally
+    if "." not in url.split("/")[0]:
+        # if there is no domain, just return the url
+        return url
+
     return f"//{url}"
 
 
