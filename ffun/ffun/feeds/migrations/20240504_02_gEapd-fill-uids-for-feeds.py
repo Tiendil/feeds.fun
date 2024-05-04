@@ -16,7 +16,7 @@ def get_feeds(cursor: Any) -> list[dict[str, Any]]:
         "SELECT id, url FROM f_feeds"
     )
 
-    return cursor.fetchall()  # type: ignore
+    return [{"id": row[0], "url": row[1]} for row in cursor.fetchall()]
 
 
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
