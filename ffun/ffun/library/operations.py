@@ -154,7 +154,6 @@ async def remove_entries_by_ids(entries_ids: Iterable[uuid.UUID]) -> None:
     await execute(sql, {"entries_ids": list(entries_ids)})
 
 
-# TODO: tests
 async def remove_entries_by_feed_id(feed_id: uuid.UUID) -> None:
     sql = """
     DELETE FROM l_entries
