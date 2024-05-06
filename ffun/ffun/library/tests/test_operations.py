@@ -5,7 +5,7 @@ from itertools import chain
 import pytest
 import pytest_asyncio
 from ffun.core import utils
-from ffun.core.postgresql import execute
+from ffun.core.postgresql import execute, transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_times_is_near
 from ffun.feeds import domain as f_domain
 from ffun.feeds.tests import make as f_make
@@ -300,4 +300,10 @@ class TestMoveEntry:
 
         await move_entry(duplicated_entry.id, loaded_feed_id)
 
-        # TODO: this test should fail
+        loaded_entry = await get_entry(new_entry.id)
+
+        assert loaded_entry == new_entry.replace(cataloged_at=loaded_entry.cataloged_at)
+
+        loaded_duplicated_entries = await get_entries_by_ids([duplicated_entry.id])
+
+        assert loaded_duplicated_entries == {duplicated_entry.id: None}

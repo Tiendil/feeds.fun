@@ -4,7 +4,7 @@ from typing import Any, AsyncGenerator, Iterable
 
 import psycopg
 from ffun.core import logging
-from ffun.core.postgresql import execute
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.library.entities import Entry
 
 
@@ -146,6 +146,25 @@ async def update_external_url(entity_id: uuid.UUID, url: str) -> None:
 
 
 # TODO: tests
+async def remove_entries_by_ids(entries_ids: Iterable[uuid.UUID]) -> None:
+    sql = """
+    DELETE FROM l_entries
+    WHERE id = ANY(%(entries_ids)s)
+    """
+
+    await execute(sql, {"entries_ids": list(entries_ids)})
+
+
+# TODO: tests
+async def remove_entries_by_feed_id(feed_id: uuid.UUID) -> None:
+    sql = """
+    DELETE FROM l_entries
+    WHERE feed_id = %(feed_id)s
+    """
+
+    await execute(sql, {"feed_id": feed_id})
+
+
 async def move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
     sql = """
     UPDATE l_entries
@@ -153,4 +172,8 @@ async def move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
     WHERE id = %(entry_id)s
     """
 
-    await execute(sql, {"entry_id": entry_id, "feed_id": feed_id})
+    try:
+        await execute(sql, {"entry_id": entry_id, "feed_id": feed_id})
+    except psycopg.errors.UniqueViolation:
+        logger.warning("entry_has_already_in_feed_we_can_remove_duplicate", entry_id=entry_id)
+        await remove_entries_by_ids([entry_id])
