@@ -3,10 +3,10 @@ import uuid
 from typing import Any, AsyncGenerator, Iterable
 
 import psycopg
-
 from ffun.core import logging
 from ffun.core.postgresql import execute
 from ffun.library.entities import Entry
+
 
 logger = logging.get_module_logger()
 
@@ -143,3 +143,14 @@ async def update_external_url(entity_id: uuid.UUID, url: str) -> None:
     """
 
     await execute(sql, {"entity_id": entity_id, "url": url})
+
+
+# TODO: tests
+async def move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
+    sql = """
+    UPDATE l_entries
+    SET feed_id = %(feed_id)s
+    WHERE id = %(entry_id)s
+    """
+
+    await execute(sql, {"entry_id": entry_id, "feed_id": feed_id})

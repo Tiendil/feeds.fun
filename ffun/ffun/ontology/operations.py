@@ -2,10 +2,10 @@ import uuid
 from typing import Iterable
 
 from bidict import bidict
-
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.ontology.entities import TagProperty, TagPropertyType
+
 
 logger = logging.get_module_logger()
 
@@ -65,7 +65,8 @@ async def get_tags_by_ids(tags_ids: list[int]) -> dict[int, str]:
     return {row["id"]: row["uid"] for row in rows}
 
 
-async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: int, tags_ids: Iterable[int]) -> None:
+# TODO: tests
+async def save_tags(execute: ExecuteType, entry_id: uuid.UUID, tags_ids: Iterable[int]) -> None:
     sql_relations = """
     INSERT INTO o_relations (entry_id, tag_id)
     VALUES (%(entry_id)s, %(tag_id)s)
@@ -74,18 +75,54 @@ async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: in
     for tag_id in tags_ids:
         await execute(sql_relations, {"entry_id": entry_id, "tag_id": tag_id})
 
-    result = await execute(
-        "SELECT id FROM o_relations WHERE entry_id = %(entry_id)s AND tag_id = ANY(%(tags_ids)s)",
-        {"entry_id": entry_id, "tags_ids": list(tags_ids)},
-    )
 
+# TODO: tests
+async def register_relations_processors(execute: ExecuteType, relations_ids: Iterable[int], processor_id: int) -> None:
     sql_register_processor = """
     INSERT INTO o_relations_processors (relation_id, processor_id)
     VALUES (%(relation_id)s, %(processor_id)s)
     ON CONFLICT (relation_id, processor_id) DO NOTHING"""
 
+    for relation_id in relations_ids:
+        await execute(sql_register_processor, {"relation_id": relation_id, "processor_id": processor_id})
+
+
+async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: int, tags_ids: Iterable[int]) -> None:
+
+    await save_tags(execute, entry_id, tags_ids)
+
+    result = await execute(
+        "SELECT id FROM o_relations WHERE entry_id = %(entry_id)s AND tag_id = ANY(%(tags_ids)s)",
+        {"entry_id": entry_id, "tags_ids": list(tags_ids)},
+    )
+
+    await register_relations_processors(execute, [row["id"] for row in result], processor_id)
+
+
+# TODO: tests
+async def copy_relations(execute: ExecuteType, entry_from_id: uuid.UUID, entry_to_id: uuid.UUID) -> None:
+    "copy relations with processors info"
+
+    # get processors for each tag in entry_from
+    sql = """
+    SELECT rp.processor_id, r.tag_id
+    FROM o_relations_processors rp
+    JOIN o_relations r ON rp.relation_id = r.id
+    WHERE r.entry_id = %(entry_id)s
+    """
+
+    result = await execute(sql, {"entry_id": entry_from_id})
+
+    tags_by_processors: dict[int, list[int]] = {}
+
     for row in result:
-        await execute(sql_register_processor, {"relation_id": row["id"], "processor_id": processor_id})
+        if row["processor_id"] not in tags_by_processors:
+            tags_by_processors[row["processor_id"]] = []
+
+        tags_by_processors[row["processor_id"]].append(row["tag_id"])
+
+    for processor_id, tags_ids in tags_by_processors.items():
+        await apply_tags(execute, entry_to_id, processor_id, tags_ids)
 
 
 async def apply_tags_properties(execute: ExecuteType, properties: Iterable[TagProperty]) -> None:
@@ -108,7 +145,7 @@ async def apply_tags_properties(execute: ExecuteType, properties: Iterable[TagPr
         )
 
 
-async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:
+async def get_tags_for_entries(execute: ExecuteType, entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:
     sql = """SELECT * FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"""
 
     rows = await execute(sql, {"entries_ids": entries_ids})
