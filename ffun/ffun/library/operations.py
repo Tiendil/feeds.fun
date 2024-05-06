@@ -145,7 +145,6 @@ async def update_external_url(entity_id: uuid.UUID, url: str) -> None:
     await execute(sql, {"entity_id": entity_id, "url": url})
 
 
-# TODO: tests
 async def remove_entries_by_ids(entries_ids: Iterable[uuid.UUID]) -> None:
     sql = """
     DELETE FROM l_entries

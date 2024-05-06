@@ -38,4 +38,4 @@ async def prepare_db(
 
     await migrations.apply_all()
     yield
-    # await migrations.rollback_all()
+    await migrations.rollback_all()
