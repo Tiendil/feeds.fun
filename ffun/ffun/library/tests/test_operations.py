@@ -4,7 +4,6 @@ from itertools import chain
 
 import pytest
 import pytest_asyncio
-
 from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_times_is_near
@@ -12,15 +11,9 @@ from ffun.feeds import domain as f_domain
 from ffun.feeds.tests import make as f_make
 from ffun.library.domain import get_entry
 from ffun.library.entities import Entry
-from ffun.library.operations import (
-    all_entries_iterator,
-    catalog_entries,
-    check_stored_entries_by_external_ids,
-    get_entries_after_pointer,
-    get_entries_by_filter,
-    get_entries_by_ids,
-    update_external_url,
-)
+from ffun.library.operations import (all_entries_iterator, catalog_entries, check_stored_entries_by_external_ids,
+                                     get_entries_after_pointer, get_entries_by_filter, get_entries_by_ids, move_entry,
+                                     update_external_url)
 from ffun.library.tests import make
 
 
@@ -282,3 +275,29 @@ class TestUpdateExternalUrl:
 
         loaded_another_entry = await get_entry(another_cataloged_entry.id)
         assert loaded_another_entry.external_url == another_cataloged_entry.external_url
+
+
+class TestMoveEntry:
+
+    @pytest.mark.asyncio
+    async def test_moved(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, cataloged_entry: Entry) -> None:
+
+        await move_entry(cataloged_entry.id, another_loaded_feed_id)
+
+        loaded_entry = await get_entry(cataloged_entry.id)
+
+        assert loaded_entry.feed_id == another_loaded_feed_id
+
+        assert cataloged_entry.replace(feed_id=another_loaded_feed_id) == loaded_entry
+
+    @pytest.mark.asyncio
+    async def test_feed_has_the_same_entry(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, new_entry: Entry) -> None:
+
+        duplicated_entry = new_entry.replace(feed_id=another_loaded_feed_id,
+                                             id=uuid.uuid4())
+
+        await catalog_entries([new_entry, duplicated_entry])
+
+        await move_entry(duplicated_entry.id, loaded_feed_id)
+
+        # TODO: this test should fail

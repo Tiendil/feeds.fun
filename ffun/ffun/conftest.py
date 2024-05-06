@@ -4,7 +4,6 @@ from typing import AsyncGenerator, Generator
 import fastapi
 import pytest
 import pytest_asyncio
-
 from ffun.application import application
 from ffun.core import migrations
 from ffun.feeds.tests.fixtures import *  # noqa
@@ -39,4 +38,4 @@ async def prepare_db(
 
     await migrations.apply_all()
     yield
-    await migrations.rollback_all()
+    # await migrations.rollback_all()
