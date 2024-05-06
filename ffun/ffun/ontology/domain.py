@@ -2,11 +2,11 @@ import uuid
 from typing import Iterable
 
 from bidict import bidict
-
-from ffun.core.postgresql import transaction
+from ffun.core.postgresql import execute, transaction
 from ffun.ontology import operations
 from ffun.ontology.entities import ProcessorTag, Tag, TagCategory, TagPropertyType
 from ffun.tags import converters
+
 
 _tags_cache: bidict[str, int] = bidict()
 
@@ -65,11 +65,11 @@ async def apply_tags_to_entry(entry_id: uuid.UUID, processor_id: int, tags: Iter
 
 
 async def get_tags_ids_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:
-    return await operations.get_tags_for_entries(entries_ids)
+    return await operations.get_tags_for_entries(execute, entries_ids)
 
 
 async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[str]]:
-    tags_ids = await operations.get_tags_for_entries(entries_ids)
+    tags_ids = await operations.get_tags_for_entries(execute, entries_ids)
 
     all_tags = set()
 
