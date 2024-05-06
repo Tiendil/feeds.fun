@@ -19,20 +19,18 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
     cursor.execute(sql)
 
-    saved_ids: dict[tuple[uuid.UUID, uuid.UUID], uuid.UUID] = {}
     ids_to_remove = []
 
     for row in cursor.fetchall():
         feed_id = row['feed_id']
         external_id = row['external_id']
 
-        key = (feed_id, external_id)
+        cursor.execute('SELECT id FROM l_entries WHERE feed_id = %(feed_id)s AND external_id = %(external_id)s ORDER BY created_at ASC',
+                       {'feed_id': feed_id, 'external_id': external_id})
 
-        if key not in saved_ids:
-            saved_ids[key] = row['id']
-            continue
+        result = cursor.fetchall()
 
-        ids_to_remove.append(row['id'])
+        ids_to_remove.extend([row['id'] for row in result[1:]])
 
     sql = 'DELETE FROM l_entries WHERE id = ANY(%(ids)s)'
 
