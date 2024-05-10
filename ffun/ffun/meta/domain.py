@@ -37,10 +37,10 @@ async def merge_feeds(feed_1_id: uuid.UUID, feed_2_id: uuid.UUID):
 async def remove_feed(feed_id: uuid.UUID):
     "Remove feed and all related entries."
 
-    all_entries = await l_domain.get_entries_by_filter(feeds_ids=[feed_1_id, feed_2_id])
+    all_entries = await l_domain.get_entries_by_filter(feeds_ids=[feed_id])
 
     entries_ids = [entry.id for entry in all_entries]
 
     await o_domain.remove_relations_for_entries(entries_ids)
-    await l_domain.remove_entries_by_filter(feeds_ids=[feed_id])
-    await f_domain.remove_feed(feed_id)
+    await l_domain.tech_remove_entries_by_filter(feeds_ids=[feed_id])
+    await f_domain.tech_remove_feed(feed_id)
