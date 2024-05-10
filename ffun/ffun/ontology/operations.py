@@ -103,7 +103,6 @@ async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: in
     await _register_relations_processors(execute, list(relations.values()), processor_id)
 
 
-# TODO: tests
 async def copy_relations(execute: ExecuteType, entry_from_id: uuid.UUID, entry_to_id: uuid.UUID) -> None:
     "copy relations with processors info"
 
@@ -124,6 +123,8 @@ async def copy_relations(execute: ExecuteType, entry_from_id: uuid.UUID, entry_t
             tags_by_processors[row["processor_id"]] = []
 
         tags_by_processors[row["processor_id"]].append(row["tag_id"])
+
+    print(tags_by_processors)
 
     for processor_id, tags_ids in tags_by_processors.items():
         await apply_tags(execute, entry_to_id, processor_id, tags_ids)
