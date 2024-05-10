@@ -225,3 +225,14 @@ Create new migration:
 ```
 
 Pay attention. There are different directories layouts in the repository and in the docker containers => paths for migrations should be with only a single `ffun` directory.
+
+## Upgrade to a new version
+
+While the project is in initial development, you should upgrade backed sequentially version by version.
+
+Algorithm:
+
+- install the next version
+- apply migrations `ffun migrate`
+
+**DO NOT SKIP VERSIONS.** Migrations could drastically change between versions. Each backend version only guarantees compatibility with the previous one.
