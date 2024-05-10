@@ -3,10 +3,10 @@ import uuid
 from typing import Any, Iterable
 
 import psycopg
-
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.feeds.entities import Feed, FeedError, FeedState
+
 
 logger = logging.get_module_logger()
 
@@ -143,3 +143,12 @@ async def get_feeds(ids: Iterable[uuid.UUID]) -> list[Feed]:
     rows = await execute(sql, {"ids": list(ids)})
 
     return [row_to_feed(row) for row in rows]
+
+
+async def tech_remove_feed(execute: ExecuteType, feed_id: uuid.UUID) -> None:
+    sql = """
+    DELETE FROM f_feeds
+    WHERE id = %(feed_id)s
+    """
+
+    await execute(sql, {"feed_id": feed_id})
