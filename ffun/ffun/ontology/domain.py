@@ -2,7 +2,7 @@ import uuid
 from typing import Iterable
 
 from bidict import bidict
-from ffun.core.postgresql import execute, transaction
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
 from ffun.ontology import operations
 from ffun.ontology.entities import ProcessorTag, Tag, TagCategory, TagPropertyType
 from ffun.tags import converters
@@ -111,3 +111,8 @@ async def get_tags_info(tags_ids: Iterable[int]) -> dict[int, Tag]:  # noqa: CCR
         raise NotImplementedError(f"Unknown property type: {property.type}")
 
     return info
+
+
+@run_in_transaction
+async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[uuid.UUID]) -> None:
+    await operations.remove_relations_for_entries(execute, entries_ids)

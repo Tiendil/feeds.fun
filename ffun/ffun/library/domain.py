@@ -1,5 +1,6 @@
 import uuid
 
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
 from ffun.domain import urls as d_urls
 from ffun.feeds import domain as f_domain
 from ffun.library import operations
@@ -37,3 +38,8 @@ async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange
             await operations.update_external_url(entry.id, new_external_url)
 
     return changes
+
+
+@run_in_transaction
+async def tech_remove_entries_by_feed_id(execute: ExecuteType, feed_id: uuid.UUID) -> None:
+    await operations.tech_remove_entries_by_feed_id(execute, feed_id)

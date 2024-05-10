@@ -1,5 +1,6 @@
 import uuid
 
+from ffun.core import postgresql
 from ffun.feeds import domain as f_domain
 from ffun.library import domain as l_domain
 from ffun.ontology import domain as o_domain
@@ -11,7 +12,8 @@ async def merge_feeds(feed_1_id: uuid.UUID, feed_2_id: uuid.UUID):
     # feed_1 = await f_domain.get_feed(feed_1_id)
     # feed_2 = await f_domain.get_feed(feed_2_id)
 
-    all_entries = await l_domain.get_entries_by_filter(feeds_ids=[feed_1_id, feed_2_id])
+    all_entries = await l_domain.get_entries_by_filter(feeds_ids=[feed_1_id, feed_2_id],
+                                                       limit=postgresql.MAX_INTEGER)
 
     feed_1_entries = {entry.external_id: entry for entry in all_entries if entry.feed_id == feed_1_id}
     feed_2_entries = {entry.external_id: entry for entry in all_entries if entry.feed_id == feed_2_id}
@@ -37,7 +39,8 @@ async def merge_feeds(feed_1_id: uuid.UUID, feed_2_id: uuid.UUID):
 async def remove_feed(feed_id: uuid.UUID):
     "Remove feed and all related entries."
 
-    all_entries = await l_domain.get_entries_by_filter(feeds_ids=[feed_id])
+    all_entries = await l_domain.get_entries_by_filter(feeds_ids=[feed_id],
+                                                       limit=postgresql.MAX_INTEGER)
 
     entries_ids = [entry.id for entry in all_entries]
 

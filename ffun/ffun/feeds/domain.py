@@ -1,7 +1,9 @@
 import uuid
 
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
 from ffun.feeds import errors, operations
 from ffun.feeds.entities import Feed
+
 
 save_feed = operations.save_feed
 update_feed_info = operations.update_feed_info
@@ -28,3 +30,8 @@ async def get_feed(feed_id: uuid.UUID) -> Feed:
         raise errors.NoFeedFound(feed_id=feed_id)
 
     return feeds[0]
+
+
+@run_in_transaction
+async def tech_remove_feed(execute: ExecuteType, feed_id: uuid.UUID) -> None:
+    await operations.tech_remove_feed(execute, feed_id)
