@@ -12,7 +12,7 @@ get_entries_by_filter = operations.get_entries_by_filter
 check_stored_entries_by_external_ids = operations.check_stored_entries_by_external_ids
 all_entries_iterator = operations.all_entries_iterator
 get_entries_after_pointer = operations.get_entries_after_pointer
-move_entry = operations.move_entry
+tech_move_entry = operations.tech_move_entry
 
 
 async def get_entry(entry_id: uuid.UUID) -> Entry:

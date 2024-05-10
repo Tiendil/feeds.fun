@@ -9,11 +9,13 @@ from ffun.core.postgresql import execute, transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_times_is_near
 from ffun.feeds import domain as f_domain
 from ffun.feeds.tests import make as f_make
+from ffun.library import errors
 from ffun.library.domain import get_entry
 from ffun.library.entities import Entry
 from ffun.library.operations import (all_entries_iterator, catalog_entries, check_stored_entries_by_external_ids,
-                                     get_entries_after_pointer, get_entries_by_filter, get_entries_by_ids, move_entry,
-                                     remove_entries_by_feed_id, remove_entries_by_ids, update_external_url)
+                                     get_entries_after_pointer, get_entries_by_filter, get_entries_by_ids,
+                                     tech_move_entry, tech_remove_entries_by_feed_id, tech_remove_entries_by_ids,
+                                     update_external_url)
 from ffun.library.tests import make
 
 
@@ -277,13 +279,14 @@ class TestUpdateExternalUrl:
         assert loaded_another_entry.external_url == another_cataloged_entry.external_url
 
 
-class TestMoveEntry:
+class TestTechMoveEntry:
 
     @pytest.mark.asyncio
     async def test_moved(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, cataloged_entry: Entry) -> None:
 
         async with TableSizeNotChanged("l_entries"):
-            await move_entry(cataloged_entry.id, another_loaded_feed_id)
+            async with transaction() as trx:
+                await tech_move_entry(trx, cataloged_entry.id, another_loaded_feed_id)
 
         loaded_entry = await get_entry(cataloged_entry.id)
 
@@ -299,19 +302,21 @@ class TestMoveEntry:
 
         await catalog_entries([new_entry, duplicated_entry])
 
-        async with TableSizeDelta("l_entries", delta=-1):
-            await move_entry(duplicated_entry.id, loaded_feed_id)
+        async with TableSizeNotChanged("l_entries"):
+            with pytest.raises(errors.CanNotMoveEntryAlreadyInFeed):
+                async with transaction() as trx:
+                    await tech_move_entry(trx, duplicated_entry.id, loaded_feed_id)
 
         loaded_entry = await get_entry(new_entry.id)
 
         assert loaded_entry == new_entry.replace(cataloged_at=loaded_entry.cataloged_at)
 
-        loaded_duplicated_entries = await get_entries_by_ids([duplicated_entry.id])
+        loaded_duplicated_entries = await get_entry(duplicated_entry.id)
 
-        assert loaded_duplicated_entries == {duplicated_entry.id: None}
+        assert loaded_duplicated_entries == duplicated_entry.replace(cataloged_at=loaded_duplicated_entries.cataloged_at)
 
 
-class TestRemoveEntriesByIds:
+class TestTechRemoveEntriesByIds:
 
     @pytest.mark.asyncio
     async def test_removed(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID) -> None:
@@ -322,7 +327,7 @@ class TestRemoveEntriesByIds:
         another_entries_list = list(another_entries.values())
 
         async with TableSizeDelta("l_entries", delta=-2):
-            await remove_entries_by_ids([entries_list[0].id, another_entries_list[0].id])
+            await tech_remove_entries_by_ids(execute, [entries_list[0].id, another_entries_list[0].id])
 
         loaded_entries = await get_entries_by_ids([entry.id for entry in entries_list + another_entries_list])
 
@@ -332,8 +337,8 @@ class TestRemoveEntriesByIds:
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
         async with TableSizeNotChanged("l_entries"):
-            await remove_entries_by_ids([])
-            await remove_entries_by_ids([uuid.uuid4()])
+            await tech_remove_entries_by_ids(execute, [])
+            await tech_remove_entries_by_ids(execute, [uuid.uuid4()])
 
     @pytest.mark.asyncio
     async def test_already_removed(self, loaded_feed_id: uuid.UUID) -> None:
@@ -341,13 +346,13 @@ class TestRemoveEntriesByIds:
 
         entries_list = list(entries.values())
 
-        await remove_entries_by_ids([entry.id for entry in entries_list])
+        await tech_remove_entries_by_ids(execute, [entry.id for entry in entries_list])
 
         async with TableSizeNotChanged("l_entries"):
-            await remove_entries_by_ids([entry.id for entry in entries_list])
+            await tech_remove_entries_by_ids(execute, [entry.id for entry in entries_list])
 
 
-class TestRemoveEntriesByFeedId:
+class TestTechRemoveEntriesByFeedId:
 
     @pytest.mark.asyncio
     async def test_removed(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID) -> None:
@@ -355,7 +360,7 @@ class TestRemoveEntriesByFeedId:
         another_entries = await make.n_entries(another_loaded_feed_id, n=3)
 
         async with TableSizeDelta("l_entries", delta=-3):
-            await remove_entries_by_feed_id(loaded_feed_id)
+            await tech_remove_entries_by_feed_id(execute, loaded_feed_id)
 
         loaded_entries = await get_entries_by_ids([entry.id for entry in entries.values()])
 
@@ -368,13 +373,13 @@ class TestRemoveEntriesByFeedId:
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
         async with TableSizeNotChanged("l_entries"):
-            await remove_entries_by_feed_id(uuid.uuid4())
+            await tech_remove_entries_by_feed_id(execute, uuid.uuid4())
 
     @pytest.mark.asyncio
     async def test_already_removed(self, loaded_feed_id: uuid.UUID) -> None:
         entries = await make.n_entries(loaded_feed_id, n=3)
 
-        await remove_entries_by_feed_id(loaded_feed_id)
+        await tech_remove_entries_by_feed_id(execute, loaded_feed_id)
 
         async with TableSizeNotChanged("l_entries"):
-            await remove_entries_by_feed_id(loaded_feed_id)
+            await tech_remove_entries_by_feed_id(execute, loaded_feed_id)

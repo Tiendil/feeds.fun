@@ -5,6 +5,7 @@ from typing import Any, AsyncGenerator, Iterable
 import psycopg
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.library import errors
 from ffun.library.entities import Entry
 
 
@@ -145,7 +146,7 @@ async def update_external_url(entity_id: uuid.UUID, url: str) -> None:
     await execute(sql, {"entity_id": entity_id, "url": url})
 
 
-async def remove_entries_by_ids(entries_ids: Iterable[uuid.UUID]) -> None:
+async def tech_remove_entries_by_ids(execute: ExecuteType, entries_ids: Iterable[uuid.UUID]) -> None:
     sql = """
     DELETE FROM l_entries
     WHERE id = ANY(%(entries_ids)s)
@@ -154,7 +155,7 @@ async def remove_entries_by_ids(entries_ids: Iterable[uuid.UUID]) -> None:
     await execute(sql, {"entries_ids": list(entries_ids)})
 
 
-async def remove_entries_by_feed_id(feed_id: uuid.UUID) -> None:
+async def tech_remove_entries_by_feed_id(execute: ExecuteType, feed_id: uuid.UUID) -> None:
     sql = """
     DELETE FROM l_entries
     WHERE feed_id = %(feed_id)s
@@ -163,7 +164,8 @@ async def remove_entries_by_feed_id(feed_id: uuid.UUID) -> None:
     await execute(sql, {"feed_id": feed_id})
 
 
-async def move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
+async def tech_move_entry(execute: ExecuteType, entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
+
     sql = """
     UPDATE l_entries
     SET feed_id = %(feed_id)s
@@ -172,6 +174,5 @@ async def move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
 
     try:
         await execute(sql, {"entry_id": entry_id, "feed_id": feed_id})
-    except psycopg.errors.UniqueViolation:
-        logger.warning("entry_has_already_in_feed_we_can_remove_duplicate", entry_id=entry_id)
-        await remove_entries_by_ids([entry_id])
+    except psycopg.errors.UniqueViolation as e:
+        raise errors.CanNotMoveEntryAlreadyInFeed(entry_id=entry_id, feed_id=feed_id) from e

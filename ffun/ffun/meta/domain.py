@@ -21,7 +21,7 @@ async def merge_feeds(feed_1_id: uuid.UUID, feed_2_id: uuid.UUID):
         if external_id in feed_1_entries:
             continue
 
-        await l_domain.move_entry(entry.id, feed_1_id)
+        await l_domain.tech_move_entry(entry.id, feed_1_id)
 
         del feed_2_entries[external_id]
 
@@ -42,5 +42,5 @@ async def remove_feed(feed_id: uuid.UUID):
     entries_ids = [entry.id for entry in all_entries]
 
     await o_domain.remove_relations_for_entries(entries_ids)
-    await l_domain.tech_remove_entries_by_filter(feeds_ids=[feed_id])
+    await l_domain.tech_remove_entries_by_feed_id(feed_id)
     await f_domain.tech_remove_feed(feed_id)
