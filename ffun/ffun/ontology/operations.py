@@ -186,7 +186,7 @@ async def get_tags_properties(tags_ids: Iterable[int]) -> list[TagProperty]:
 
 
 async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[uuid.UUID]) -> None:
-    sql = "DELETE FROM o_relations WHERE entry_id = ANY(%(entries_ids)s) RETURNING id"
+    sql = "SELECT id FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"
 
     result = await execute(sql, {"entries_ids": entries_ids})
 
@@ -195,3 +195,7 @@ async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[u
     sql = "DELETE FROM o_relations_processors WHERE relation_id = ANY(%(relations_ids)s)"
 
     await execute(sql, {"relations_ids": relations_ids})
+
+    sql = "DELETE FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"
+
+    await execute(sql, {"entries_ids": entries_ids})

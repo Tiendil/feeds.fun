@@ -183,45 +183,57 @@ class TestCopyRelations:
                                                      three_tags_ids[2]: {another_fake_processor_id}})
 
 
-# class TestRemoveRelationsForEntries:
+class TestRemoveRelationsForEntries:
 
-#     @pytest.mark.asyncio
-#     async def test_nothing_to_remove(self, cataloged_entry: Entry, another_cataloged_entry: Entry) -> None:
-#         async with TableSizeNotChanged("o_relations"):
-#             await remove_relations_for_entries(execute, [cataloged_entry.id, another_cataloged_entry.id])
+    @pytest.mark.asyncio
+    async def test_nothing_to_remove(self, cataloged_entry: Entry, another_cataloged_entry: Entry) -> None:
+        async with TableSizeNotChanged("o_relations"):
+            await remove_relations_for_entries(execute, [cataloged_entry.id, another_cataloged_entry.id])
 
-#     @pytest.mark.asyncio
-#     async def test_success(self,
-#                            cataloged_entry: Entry,
-#                            another_cataloged_entry: Entry,
-#                            fake_processor_id: int,
-#                            another_fake_processor_id: int,
-#                            three_tags_ids: tuple[int, int, int]) -> None:
-#         async with transaction() as trx:
-#             await apply_tags(trx,
-#                              entry_id=cataloged_entry.id,
-#                              processor_id=fake_processor_id,
-#                              tags_ids=three_tags_ids[:2])
+    @pytest.mark.asyncio
+    async def test_success(self,
+                           cataloged_entry: Entry,
+                           another_cataloged_entry: Entry,
+                           fake_processor_id: int,
+                           another_fake_processor_id: int,
+                           three_tags_ids: tuple[int, int, int]) -> None:
+        async with transaction() as trx:
+            await apply_tags(trx,
+                             entry_id=cataloged_entry.id,
+                             processor_id=fake_processor_id,
+                             tags_ids=three_tags_ids[:2])
 
-#         async with transaction() as trx:
-#             await apply_tags(trx,
-#                              entry_id=cataloged_entry.id,
-#                              processor_id=another_fake_processor_id,
-#                              tags_ids=three_tags_ids[1:])
+        async with transaction() as trx:
+            await apply_tags(trx,
+                             entry_id=cataloged_entry.id,
+                             processor_id=another_fake_processor_id,
+                             tags_ids=three_tags_ids[1:])
 
-#         async with transaction() as trx:
-#             await apply_tags(trx,
-#                              entry_id=another_cataloged_entry.id,
-#                              processor_id=fake_processor_id,
-#                              tags_ids=three_tags_ids)
+        async with transaction() as trx:
+            await apply_tags(trx,
+                             entry_id=another_cataloged_entry.id,
+                             processor_id=fake_processor_id,
+                             tags_ids=three_tags_ids)
 
-#         async with transaction() as trx:
-#             await apply_tags(trx,
-#                              entry_id=another_cataloged_entry.id,
-#                              processor_id=another_fake_processor_id,
-#                              tags_ids=three_tags_ids)
+        async with transaction() as trx:
+            await apply_tags(trx,
+                             entry_id=another_cataloged_entry.id,
+                             processor_id=another_fake_processor_id,
+                             tags_ids=three_tags_ids)
 
-#         async with (TableSizeDelta("o_relations_processors", delta=-4),
-#                     TableSizeDelta("o_relations", delta=-3),
-#                     TableSizeNotChanged("o_tags")):
-#             await remove_relations_for_entries(execute, [cataloged_entry.id])
+        async with (TableSizeDelta("o_relations_processors", delta=-4),
+                    TableSizeDelta("o_relations", delta=-3),
+                    TableSizeNotChanged("o_tags")):
+            async with transaction() as trx:
+                await remove_relations_for_entries(trx, [cataloged_entry.id])
+
+        await assert_has_tags({cataloged_entry.id: set(),
+                               another_cataloged_entry.id: set(three_tags_ids)})
+
+        await assert_tags_processors(entry_id=cataloged_entry.id,
+                                     tag_processors={})
+
+        await assert_tags_processors(entry_id=another_cataloged_entry.id,
+                                     tag_processors={three_tags_ids[0]: {fake_processor_id, another_fake_processor_id},
+                                                     three_tags_ids[1]: {fake_processor_id, another_fake_processor_id},
+                                                     three_tags_ids[2]: {fake_processor_id, another_fake_processor_id}})
