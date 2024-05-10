@@ -1,15 +1,15 @@
 import uuid
 
-from ffun.library import domain as l_domain
 from ffun.feeds import domain as f_domain
+from ffun.library import domain as l_domain
 from ffun.ontology import domain as o_domain
 
 
-def merge_feeds(feed_1_id: uuid.UUID, feed_2_id: uuid.UUID):
+async def merge_feeds(feed_1_id: uuid.UUID, feed_2_id: uuid.UUID):
     "Merge feed_2 into feed_1, remove feed_2."
 
-    feed_1 = await f_domain.get_feed(feed_1_id)
-    feed_2 = await f_domain.get_feed(feed_2_id)
+    # feed_1 = await f_domain.get_feed(feed_1_id)
+    # feed_2 = await f_domain.get_feed(feed_2_id)
 
     all_entries = await l_domain.get_entries_by_filter(feeds_ids=[feed_1_id, feed_2_id])
 

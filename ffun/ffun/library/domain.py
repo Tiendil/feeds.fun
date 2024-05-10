@@ -5,12 +5,14 @@ from ffun.feeds import domain as f_domain
 from ffun.library import operations
 from ffun.library.entities import Entry, EntryChange
 
+
 catalog_entries = operations.catalog_entries
 get_entries_by_ids = operations.get_entries_by_ids
 get_entries_by_filter = operations.get_entries_by_filter
 check_stored_entries_by_external_ids = operations.check_stored_entries_by_external_ids
 all_entries_iterator = operations.all_entries_iterator
 get_entries_after_pointer = operations.get_entries_after_pointer
+move_entry = operations.move_entry
 
 
 async def get_entry(entry_id: uuid.UUID) -> Entry:

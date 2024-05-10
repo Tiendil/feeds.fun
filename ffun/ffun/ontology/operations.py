@@ -65,8 +65,7 @@ async def get_tags_by_ids(tags_ids: list[int]) -> dict[int, str]:
     return {row["id"]: row["uid"] for row in rows}
 
 
-# TODO: tests
-async def save_tags(execute: ExecuteType, entry_id: uuid.UUID, tags_ids: Iterable[int]) -> None:
+async def _save_tags(execute: ExecuteType, entry_id: uuid.UUID, tags_ids: Iterable[int]) -> None:
     sql_relations = """
     INSERT INTO o_relations (entry_id, tag_id)
     VALUES (%(entry_id)s, %(tag_id)s)
@@ -77,7 +76,7 @@ async def save_tags(execute: ExecuteType, entry_id: uuid.UUID, tags_ids: Iterabl
 
 
 # TODO: tests
-async def register_relations_processors(execute: ExecuteType, relations_ids: Iterable[int], processor_id: int) -> None:
+async def _register_relations_processors(execute: ExecuteType, relations_ids: Iterable[int], processor_id: int) -> None:
     sql_register_processor = """
     INSERT INTO o_relations_processors (relation_id, processor_id)
     VALUES (%(relation_id)s, %(processor_id)s)
@@ -89,14 +88,14 @@ async def register_relations_processors(execute: ExecuteType, relations_ids: Ite
 
 async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: int, tags_ids: Iterable[int]) -> None:
 
-    await save_tags(execute, entry_id, tags_ids)
+    await _save_tags(execute, entry_id, tags_ids)
 
     result = await execute(
         "SELECT id FROM o_relations WHERE entry_id = %(entry_id)s AND tag_id = ANY(%(tags_ids)s)",
         {"entry_id": entry_id, "tags_ids": list(tags_ids)},
     )
 
-    await register_relations_processors(execute, [row["id"] for row in result], processor_id)
+    await _register_relations_processors(execute, [row["id"] for row in result], processor_id)
 
 
 # TODO: tests
