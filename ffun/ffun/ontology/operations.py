@@ -124,8 +124,6 @@ async def copy_relations(execute: ExecuteType, entry_from_id: uuid.UUID, entry_t
 
         tags_by_processors[row["processor_id"]].append(row["tag_id"])
 
-    print(tags_by_processors)
-
     for processor_id, tags_ids in tags_by_processors.items():
         await apply_tags(execute, entry_to_id, processor_id, tags_ids)
 
