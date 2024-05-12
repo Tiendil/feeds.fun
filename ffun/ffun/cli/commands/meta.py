@@ -12,7 +12,8 @@ logger = logging.get_module_logger()
 
 
 async def run(base_feed_id: uuid.UUID, merged_feed_id: uuid.UUID) -> None:
-    await m_domain.merge_feeds(base_feed_id, merged_feed_id)
+    async with with_app():
+        await m_domain.merge_feeds(base_feed_id, merged_feed_id)
 
 
 @app.command()

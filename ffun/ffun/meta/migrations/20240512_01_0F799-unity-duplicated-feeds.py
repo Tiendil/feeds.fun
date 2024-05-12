@@ -14,15 +14,21 @@ __depends__ = {'20240504_02_gEapd-fill-uids-for-feeds'}
 
 
 def run_merge(base_feed_id: uuid.UUID, feed_id: uuid.UUID) -> None:
-    subprocess.run(
-        [
-            'ffun',
-            'merge-feeds',
-            base_feed_id.hex,
-            feed_id.hex,
-        ],
-        check=True,
-    )
+    try:
+        subprocess.run(
+            [
+            #     'poetry',
+            # 'run',
+                'ffun',
+                'merge-feeds',
+                base_feed_id.hex,
+                feed_id.hex,
+            ],
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write(f'error: {e}\n')
+        raise
 
 
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
@@ -35,7 +41,7 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
     cursor.execute('SELECT uid FROM f_feeds GROUP BY uid HAVING COUNT(*) > 1')
 
-    uids = [row['uid'] for row in cursor.fetchall()]
+    uids = [row[0] for row in cursor.fetchall()]
 
     sys.stdout.write(f'found_duplicated_feeds: {len(uids)}\n')
 
@@ -45,7 +51,7 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
             {'uid': uid}
         )
 
-        feed_ids = [row['id'] for row in cursor.fetchall()]
+        feed_ids = [row[0] for row in cursor.fetchall()]
 
         base_feed_id = feed_ids[0]
         merged_feed_ids = feed_ids[1:]
