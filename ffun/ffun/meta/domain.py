@@ -46,8 +46,9 @@ async def merge_feeds(feed_1_id: uuid.UUID, feed_2_id: uuid.UUID) -> None:
         entry_1 = feed_1_entries[entry_2.external_id]
 
         log.info('copy_relations', from_entry_id=entry_2.id, to_entry_id=entry_1.id)
-
         await o_domain.tech_copy_relations(entry_from_id=entry_2.id, entry_to_id=entry_1.id)
+
+        log.info('merge_markers', from_entry_id=entry_2.id, to_entry_id=entry_1.id)
         await m_domain.tech_merge_markers(from_entry_id=entry_2.id, to_entry_id=entry_1.id)
 
     await fl_domain.tech_merge_feeds(from_feed_id=feed_2_id, to_feed_id=feed_1_id)
