@@ -14,6 +14,8 @@ from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
 from ffun.library.tests import make as l_make
+from ffun.markers import domain as m_domains
+from ffun.markers.entities import Marker
 from ffun.meta.domain import merge_feeds, remove_feed
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import ProcessorTag
@@ -269,3 +271,36 @@ class TestMergeFeeds:
 
         assert {l.feed_id for l in links_a} == {loaded_feed_id}
         assert {l.feed_id for l in links_b} == {loaded_feed_id}
+
+    @pytest.mark.asyncio
+    async def test_merge_markers(self,
+                                 loaded_feed_id: uuid.UUID,
+                                 another_loaded_feed_id: uuid.UUID) -> None:
+
+        entries = await l_make.n_entries_list(loaded_feed_id, 3)
+
+        another_entries_to_save = [entry.replace(feed_id=another_loaded_feed_id,
+                                                 id=uuid.uuid4())
+                                   for entry in entries]
+        await l_domain.catalog_entries(reversed(another_entries_to_save))
+
+        another_entries = await l_domain.get_entries_by_filter(feeds_ids=[another_loaded_feed_id], limit=100)
+
+        user_a, user_b, user_c = await u_make.n_users(3)
+
+        await m_domains.set_marker(user_a, Marker.read, another_entries[1].id)
+        await m_domains.set_marker(user_b, Marker.read, entries[0].id)
+        await m_domains.set_marker(user_b, Marker.read, another_entries[0].id)
+        await m_domains.set_marker(user_b, Marker.read, entries[2].id)
+        await m_domains.set_marker(user_c, Marker.read, entries[1].id)
+
+        await merge_feeds(another_loaded_feed_id, loaded_feed_id)
+
+        markers_a = await m_domains.get_markers(user_a, [entry.id for entry in another_entries])
+        markers_b = await m_domains.get_markers(user_b, [entry.id for entry in another_entries])
+        markers_c = await m_domains.get_markers(user_c, [entry.id for entry in another_entries])
+
+        assert markers_a == {another_entries[1].id: {Marker.read}}
+        assert markers_b == {another_entries[0].id: {Marker.read},
+                             another_entries[2].id: {Marker.read}}
+        assert markers_c == {another_entries[1].id: {Marker.read}}
