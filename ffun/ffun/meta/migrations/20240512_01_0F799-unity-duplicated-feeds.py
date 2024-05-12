@@ -43,8 +43,6 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
     uids = [row[0] for row in cursor.fetchall()]
 
-    sys.stdout.write(f'found_duplicated_feeds: {len(uids)}\n')
-
     for uid in uids:
         cursor.execute(
             'SELECT id FROM f_feeds WHERE uid = %(uid)s',
@@ -57,7 +55,6 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
         merged_feed_ids = feed_ids[1:]
 
         for feed_id in merged_feed_ids:
-            sys.stdout.write(f'merge_feeds: {base_feed_id} {feed_id} {uid}\n')
             run_merge(base_feed_id, feed_id)
 
 

@@ -2,12 +2,14 @@ import uuid
 from typing import Iterable
 
 from ffun.core import logging
-from ffun.core.postgresql import execute
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.markers.entities import Marker
+
 
 logger = logging.get_module_logger()
 
 
+# TODO: tests
 async def set_marker(user_id: uuid.UUID, marker: Marker, entry_id: uuid.UUID) -> None:
     sql = """
         INSERT INTO m_markers (id, user_id, marker, entry_id)
@@ -18,6 +20,7 @@ async def set_marker(user_id: uuid.UUID, marker: Marker, entry_id: uuid.UUID) ->
     await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "marker": marker, "entry_id": entry_id})
 
 
+# TODO: tests
 async def remove_marker(user_id: uuid.UUID, marker: Marker, entry_id: uuid.UUID) -> None:
     sql = """
         DELETE FROM m_markers
@@ -27,6 +30,7 @@ async def remove_marker(user_id: uuid.UUID, marker: Marker, entry_id: uuid.UUID)
     await execute(sql, {"user_id": user_id, "marker": marker, "entry_id": entry_id})
 
 
+# TODO: tests
 async def get_markers(user_id: uuid.UUID, entries_ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, set[Marker]]:
     sql = """
         SELECT entry_id, marker
@@ -48,3 +52,21 @@ async def get_markers(user_id: uuid.UUID, entries_ids: Iterable[uuid.UUID]) -> d
         result[entry_id].add(marker)
 
     return result
+
+
+async def tech_merge_markers(execute: ExecuteType, from_entry_id: uuid.UUID, to_entry_id: uuid.UUID) -> None:
+    sql = """
+        DELETE FROM m_markers AS m
+        WHERE entry_id = %(from_entry_id)s
+              AND EXISTS (SELECT 1 FROM m_markers WHERE entry_id = %(to_entry_id)s AND user_id = m.user_id)
+    """
+
+    await execute(sql, {"from_entry_id": from_entry_id, "to_entry_id": to_entry_id})
+
+    sql = """
+        UPDATE m_markers
+        SET entry_id = %(to_entry_id)s
+        WHERE entry_id = %(from_entry_id)s
+    """
+
+    await execute(sql, {"from_entry_id": from_entry_id, "to_entry_id": to_entry_id})
