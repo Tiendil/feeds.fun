@@ -10,12 +10,14 @@ from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_
 from ffun.feeds import domain as f_domain
 from ffun.feeds import errors as f_errors
 from ffun.feeds.tests import make as f_make
+from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
 from ffun.library.tests import make as l_make
 from ffun.meta.domain import merge_feeds, remove_feed
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import ProcessorTag
+from ffun.users.tests import make as u_make
 
 
 class TestRemoveFeed:
@@ -248,3 +250,22 @@ class TestMergeFeeds:
         assert tags == {entries[0].id: {tag_a.raw_uid},
                         another_entries[0].id: {tag_a.raw_uid, tag_b.raw_uid, tag_c.raw_uid},
                         another_entries[1].id: {tag_c.raw_uid}}
+
+    @pytest.mark.asyncio
+    async def test_merge_feed_links(self,
+                                    loaded_feed_id: uuid.UUID,
+                                    another_loaded_feed_id: uuid.UUID) -> None:
+
+        user_a, user_b = await u_make.n_users(2)
+
+        await fl_domain.add_link(user_a, another_loaded_feed_id)
+        await fl_domain.add_link(user_b, loaded_feed_id)
+        await fl_domain.add_link(user_b, another_loaded_feed_id)
+
+        await merge_feeds(loaded_feed_id, another_loaded_feed_id)
+
+        links_a = await fl_domain.get_linked_feeds(user_a)
+        links_b = await fl_domain.get_linked_feeds(user_b)
+
+        assert {l.feed_id for l in links_a} == {loaded_feed_id}
+        assert {l.feed_id for l in links_b} == {loaded_feed_id}

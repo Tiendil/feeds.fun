@@ -11,7 +11,6 @@ from ffun.feeds.domain import get_feed, save_feeds
 from ffun.feeds.entities import Feed, FeedError, FeedState
 from ffun.feeds.operations import (get_feeds, get_next_feeds_to_load, mark_feed_as_failed, mark_feed_as_loaded,
                                    mark_feed_as_orphaned, save_feed, tech_remove_feed, update_feed_info)
-from ffun.feeds.tests import make
 from ffun.feeds.tests import make as f_make
 from ffun.feeds_links.operations import add_link, get_linked_feeds, tech_merge_feeds
 from ffun.users.tests import make as u_make

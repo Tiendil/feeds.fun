@@ -2,6 +2,7 @@ import uuid
 
 from ffun.core import logging, postgresql
 from ffun.feeds import domain as f_domain
+from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.ontology import domain as o_domain
 
@@ -47,10 +48,11 @@ async def merge_feeds(feed_1_id: uuid.UUID, feed_2_id: uuid.UUID) -> None:
 
         await o_domain.tech_copy_relations(entry_from_id=entry_2.id, entry_to_id=entry_1.id)
 
+    await fl_domain.tech_merge_feeds(from_feed_id=feed_2_id, to_feed_id=feed_1_id)
+
     await remove_feed(feed_2_id)
 
 
-# TODO: merge feeds
 # TODO: merge markers
 
 
