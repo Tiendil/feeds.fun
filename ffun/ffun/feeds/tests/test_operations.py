@@ -226,11 +226,11 @@ class TestTechRemoveFeed:
     @pytest.mark.asyncio
     async def test(self, saved_feed: Feed) -> None:
         async with TableSizeDelta("f_feeds", delta=-1):
-            await tech_remove_feed(execute, saved_feed.id)
+            await tech_remove_feed(saved_feed.id)
 
         with pytest.raises(errors.NoFeedFound):
             await get_feed(saved_feed.id)
 
     @pytest.mark.asyncio
     async def test_no_feed(self) -> None:
-        await tech_remove_feed(execute, uuid.uuid4())
+        await tech_remove_feed(uuid.uuid4())
