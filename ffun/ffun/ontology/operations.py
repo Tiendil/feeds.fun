@@ -103,7 +103,7 @@ async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: in
     await _register_relations_processors(execute, list(relations.values()), processor_id)
 
 
-async def copy_relations(execute: ExecuteType, entry_from_id: uuid.UUID, entry_to_id: uuid.UUID) -> None:
+async def tech_copy_relations(execute: ExecuteType, entry_from_id: uuid.UUID, entry_to_id: uuid.UUID) -> None:
     "copy relations with processors info"
 
     # get processors for each tag in entry_from

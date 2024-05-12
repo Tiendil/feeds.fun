@@ -116,3 +116,8 @@ async def get_tags_info(tags_ids: Iterable[int]) -> dict[int, Tag]:  # noqa: CCR
 @run_in_transaction
 async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[uuid.UUID]) -> None:
     await operations.remove_relations_for_entries(execute, entries_ids)
+
+
+@run_in_transaction
+async def tech_copy_relations(execute: ExecuteType, entry_from_id: uuid.UUID, entry_to_id: uuid.UUID) -> None:
+    await operations.tech_copy_relations(execute, entry_from_id, entry_to_id)

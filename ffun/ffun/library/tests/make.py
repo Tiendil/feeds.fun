@@ -40,4 +40,8 @@ async def n_entries(loaded_feed_id: uuid.UUID, n: int) -> dict[uuid.UUID, Entry]
 
 async def n_entries_list(loaded_feed_id: uuid.UUID, n: int) -> list[Entry]:
     entries = await n_entries(loaded_feed_id, n)
-    return list(entries.values())
+    result = list(entries.values())
+
+    result.sort(key=lambda entry: entry.cataloged_at, reverse=True)
+
+    return result

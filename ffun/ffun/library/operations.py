@@ -164,7 +164,7 @@ async def tech_remove_entries_by_feed_id(execute: ExecuteType, feed_id: uuid.UUI
     await execute(sql, {"feed_id": feed_id})
 
 
-async def tech_move_entry(execute: ExecuteType, entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
+async def tech_move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
 
     sql = """
     UPDATE l_entries
