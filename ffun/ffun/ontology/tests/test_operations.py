@@ -12,7 +12,8 @@ from ffun.feeds.tests import make as f_make
 from ffun.library.domain import get_entry
 from ffun.library.entities import Entry
 from ffun.ontology.operations import (_get_relations_for_entry_and_tags, _register_relations_processors, _save_tags,
-                                      apply_tags, copy_relations, get_tags_for_entries, remove_relations_for_entries)
+                                      apply_tags, get_tags_for_entries, remove_relations_for_entries,
+                                      tech_copy_relations)
 from ffun.ontology.tests.helpers import assert_has_tags
 
 
@@ -105,12 +106,12 @@ class TestGetRelationsForEntryAndTags:
     """Tested in other tests & code."""
 
 
-class TestCopyRelations:
+class TestTechCopyRelations:
 
     @pytest.mark.asyncio
     async def test_no_relations(self, cataloged_entry: Entry, another_cataloged_entry: Entry) -> None:
         async with TableSizeNotChanged("o_relations"):
-            await copy_relations(execute, cataloged_entry.id, another_cataloged_entry.id)
+            await tech_copy_relations(execute, cataloged_entry.id, another_cataloged_entry.id)
 
     @pytest.mark.asyncio
     async def test_full_copy(self,
@@ -135,7 +136,7 @@ class TestCopyRelations:
                     TableSizeDelta("o_relations", delta=3),
                     TableSizeNotChanged("o_tags")):
             async with transaction() as trx:
-                await copy_relations(trx, cataloged_entry.id, another_cataloged_entry.id)
+                await tech_copy_relations(trx, cataloged_entry.id, another_cataloged_entry.id)
 
         await assert_has_tags({another_cataloged_entry.id: set(three_tags_ids)})
 
@@ -173,7 +174,7 @@ class TestCopyRelations:
                     TableSizeDelta("o_relations", delta=2),
                     TableSizeNotChanged("o_tags")):
             async with transaction() as trx:
-                await copy_relations(trx, cataloged_entry.id, another_cataloged_entry.id)
+                await tech_copy_relations(trx, cataloged_entry.id, another_cataloged_entry.id)
 
         await assert_has_tags({another_cataloged_entry.id: set(three_tags_ids)})
 

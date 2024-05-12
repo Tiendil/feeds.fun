@@ -285,8 +285,7 @@ class TestTechMoveEntry:
     async def test_moved(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, cataloged_entry: Entry) -> None:
 
         async with TableSizeNotChanged("l_entries"):
-            async with transaction() as trx:
-                await tech_move_entry(trx, cataloged_entry.id, another_loaded_feed_id)
+            await tech_move_entry(cataloged_entry.id, another_loaded_feed_id)
 
         loaded_entry = await get_entry(cataloged_entry.id)
 
@@ -304,8 +303,7 @@ class TestTechMoveEntry:
 
         async with TableSizeNotChanged("l_entries"):
             with pytest.raises(errors.CanNotMoveEntryAlreadyInFeed):
-                async with transaction() as trx:
-                    await tech_move_entry(trx, duplicated_entry.id, loaded_feed_id)
+                await tech_move_entry(duplicated_entry.id, loaded_feed_id)
 
         loaded_entry = await get_entry(new_entry.id)
 
