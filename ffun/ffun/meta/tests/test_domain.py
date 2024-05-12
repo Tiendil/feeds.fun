@@ -78,6 +78,33 @@ class TestRemoveFeed:
                                   another_entries[1].id: another_entries[1],
                                   another_entries[2].id: another_entries[2]}
 
+    @pytest.mark.asyncio
+    async def test_remove_markers(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID) -> None:
+        entries = await l_make.n_entries_list(loaded_feed_id, 3)
+
+        another_entries = await l_make.n_entries_list(another_loaded_feed_id, 3)
+
+        user_a, user_b, user_c = await u_make.n_users(3)
+
+        await m_domains.set_marker(user_a, Marker.read, entries[0].id)
+        await m_domains.set_marker(user_b, Marker.read, entries[1].id)
+        await m_domains.set_marker(user_b, Marker.read, entries[2].id)
+
+        await m_domains.set_marker(user_b, Marker.read, another_entries[0].id)
+        await m_domains.set_marker(user_c, Marker.read, another_entries[1].id)
+        await m_domains.set_marker(user_c, Marker.read, another_entries[2].id)
+
+        await remove_feed(loaded_feed_id)
+
+        markers_a = await m_domains.get_markers(user_a, [entry.id for entry in chain(entries, another_entries)])
+        markers_b = await m_domains.get_markers(user_b, [entry.id for entry in chain(entries, another_entries)])
+        markers_c = await m_domains.get_markers(user_c, [entry.id for entry in chain(entries, another_entries)])
+
+        assert markers_a == {}
+        assert markers_b == {another_entries[0].id: {Marker.read}}
+        assert markers_c == {another_entries[1].id: {Marker.read},
+                             another_entries[2].id: {Marker.read}}
+
 
 class TestMergeFeeds:
 

@@ -70,3 +70,12 @@ async def tech_merge_markers(execute: ExecuteType, from_entry_id: uuid.UUID, to_
     """
 
     await execute(sql, {"from_entry_id": from_entry_id, "to_entry_id": to_entry_id})
+
+
+async def remove_markers_for_entries(entries_ids: Iterable[uuid.UUID]) -> None:
+    sql = """
+        DELETE FROM m_markers
+        WHERE entry_id = ANY(%(entries_ids)s)
+    """
+
+    await execute(sql, {"entries_ids": list(entries_ids)})
