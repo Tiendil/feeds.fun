@@ -145,7 +145,7 @@ async def get_feeds(ids: Iterable[uuid.UUID]) -> list[Feed]:
     return [row_to_feed(row) for row in rows]
 
 
-async def tech_remove_feed(execute: ExecuteType, feed_id: uuid.UUID) -> None:
+async def tech_remove_feed(feed_id: uuid.UUID) -> None:
     sql = """
     DELETE FROM f_feeds
     WHERE id = %(feed_id)s

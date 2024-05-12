@@ -50,6 +50,10 @@ async def merge_feeds(feed_1_id: uuid.UUID, feed_2_id: uuid.UUID) -> None:
     await remove_feed(feed_2_id)
 
 
+# TODO: merge feeds
+# TODO: merge markers
+
+
 async def remove_feed(feed_id: uuid.UUID) -> None:
     "Remove feed and all related entries."
 
