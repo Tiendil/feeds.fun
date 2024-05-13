@@ -31,6 +31,8 @@ async def save_feed(feed: Feed) -> uuid.UUID:
     VALUES (%(id)s, %(url)s, %(state)s, %(title)s, %(description)s, %(uid)s)
     """
 
+    uid = domain_urls.url_to_uid(feed.url)
+
     try:
         await execute(
             sql,
@@ -40,15 +42,15 @@ async def save_feed(feed: Feed) -> uuid.UUID:
                 "state": feed.state,
                 "title": feed.title,
                 "description": feed.description,
-                "uid": domain_urls.url_to_uid(feed.url),
+                "uid": uid
             },
         )
 
         return feed.id
     except psycopg.errors.UniqueViolation as e:
-        logger.warning("unique_violation_while_saving_feed", feed_id=feed.id)
+        logger.warning("unique_violation_while_saving_feed", feed=feed)
 
-        result = await execute("SELECT id FROM f_feeds WHERE url = %(url)s", {"url": feed.url})
+        result = await execute("SELECT id FROM f_feeds WHERE uid = %(uid)s", {"uid": uid})
 
         if not result:
             raise NotImplementedError("something went wrong") from e

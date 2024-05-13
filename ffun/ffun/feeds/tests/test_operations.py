@@ -36,6 +36,23 @@ class TestSaveFeed:
         with pytest.raises(errors.NoFeedFound):
             await get_feed(cloned_feed.id)
 
+    @pytest.mark.asyncio
+    async def test_same_uid_different_urls(self, new_feed: Feed) -> None:
+        url_part = uuid.uuid4().hex
+
+        feed_1 = new_feed.replace(url=f"http://example.com/{url_part}")
+        feed_2 = new_feed.replace(id=uuid.uuid4(), url=f"https://example.com/{url_part}")
+
+        feed_1_id = await save_feed(feed_1)
+        feed_2_id = await save_feed(feed_2)
+
+        assert feed_1_id == feed_2_id
+
+        assert await get_feed(feed_1_id) == feed_1
+
+        with pytest.raises(errors.NoFeedFound):
+            await get_feed(feed_2.id)
+
 
 class TestGetNextFeedToLoad:
     @pytest.mark.asyncio
