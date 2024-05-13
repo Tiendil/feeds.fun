@@ -2,9 +2,8 @@ import uuid
 from typing import Iterable
 
 from ffun.core import logging
-from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.core.postgresql import ExecuteType, execute
 from ffun.markers.entities import Marker
-
 
 logger = logging.get_module_logger()
 

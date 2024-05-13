@@ -3,11 +3,11 @@ import uuid
 from typing import Any, AsyncGenerator, Iterable
 
 import psycopg
+
 from ffun.core import logging
-from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.core.postgresql import ExecuteType, execute
 from ffun.library import errors
 from ffun.library.entities import Entry
-
 
 logger = logging.get_module_logger()
 
@@ -165,7 +165,6 @@ async def tech_remove_entries_by_feed_id(execute: ExecuteType, feed_id: uuid.UUI
 
 
 async def tech_move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
-
     sql = """
     UPDATE l_entries
     SET feed_id = %(feed_id)s

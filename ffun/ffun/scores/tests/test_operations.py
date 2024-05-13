@@ -1,6 +1,7 @@
 import uuid
 
 import pytest
+
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.scores import domain, errors, operations
 

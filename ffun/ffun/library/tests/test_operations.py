@@ -4,18 +4,27 @@ from itertools import chain
 
 import pytest
 import pytest_asyncio
+
 from ffun.core import utils
-from ffun.core.postgresql import execute, transaction
+from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_times_is_near
 from ffun.feeds import domain as f_domain
 from ffun.feeds.tests import make as f_make
 from ffun.library import errors
 from ffun.library.domain import get_entry
 from ffun.library.entities import Entry
-from ffun.library.operations import (all_entries_iterator, catalog_entries, check_stored_entries_by_external_ids,
-                                     get_entries_after_pointer, get_entries_by_filter, get_entries_by_ids,
-                                     tech_move_entry, tech_remove_entries_by_feed_id, tech_remove_entries_by_ids,
-                                     update_external_url)
+from ffun.library.operations import (
+    all_entries_iterator,
+    catalog_entries,
+    check_stored_entries_by_external_ids,
+    get_entries_after_pointer,
+    get_entries_by_filter,
+    get_entries_by_ids,
+    tech_move_entry,
+    tech_remove_entries_by_feed_id,
+    tech_remove_entries_by_ids,
+    update_external_url,
+)
 from ffun.library.tests import make
 
 
@@ -280,10 +289,10 @@ class TestUpdateExternalUrl:
 
 
 class TestTechMoveEntry:
-
     @pytest.mark.asyncio
-    async def test_moved(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, cataloged_entry: Entry) -> None:
-
+    async def test_moved(
+        self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, cataloged_entry: Entry
+    ) -> None:
         async with TableSizeNotChanged("l_entries"):
             await tech_move_entry(cataloged_entry.id, another_loaded_feed_id)
 
@@ -294,10 +303,10 @@ class TestTechMoveEntry:
         assert cataloged_entry.replace(feed_id=another_loaded_feed_id) == loaded_entry
 
     @pytest.mark.asyncio
-    async def test_feed_has_the_same_entry(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, new_entry: Entry) -> None:
-
-        duplicated_entry = new_entry.replace(feed_id=another_loaded_feed_id,
-                                             id=uuid.uuid4())
+    async def test_feed_has_the_same_entry(
+        self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, new_entry: Entry
+    ) -> None:
+        duplicated_entry = new_entry.replace(feed_id=another_loaded_feed_id, id=uuid.uuid4())
 
         await catalog_entries([new_entry, duplicated_entry])
 
@@ -311,11 +320,12 @@ class TestTechMoveEntry:
 
         loaded_duplicated_entries = await get_entry(duplicated_entry.id)
 
-        assert loaded_duplicated_entries == duplicated_entry.replace(cataloged_at=loaded_duplicated_entries.cataloged_at)
+        assert loaded_duplicated_entries == duplicated_entry.replace(
+            cataloged_at=loaded_duplicated_entries.cataloged_at
+        )
 
 
 class TestTechRemoveEntriesByIds:
-
     @pytest.mark.asyncio
     async def test_removed(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID) -> None:
         entries = await make.n_entries(loaded_feed_id, n=3)
@@ -351,7 +361,6 @@ class TestTechRemoveEntriesByIds:
 
 
 class TestTechRemoveEntriesByFeedId:
-
     @pytest.mark.asyncio
     async def test_removed(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID) -> None:
         entries = await make.n_entries(loaded_feed_id, n=3)

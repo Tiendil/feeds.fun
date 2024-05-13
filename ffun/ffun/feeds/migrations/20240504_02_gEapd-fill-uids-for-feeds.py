@@ -7,14 +7,11 @@ from typing import Any
 from psycopg import Connection
 from yoyo import step
 
-
-__depends__ = {'20240504_01_vBDVJ-column-for-feed-unique-id'}
+__depends__ = {"20240504_01_vBDVJ-column-for-feed-unique-id"}
 
 
 def get_feeds(cursor: Any) -> list[dict[str, Any]]:
-    cursor.execute(
-        "SELECT id, url FROM f_feeds"
-    )
+    cursor.execute("SELECT id, url FROM f_feeds")
 
     return [{"id": row[0], "url": row[1]} for row in cursor.fetchall()]
 
@@ -30,10 +27,7 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
     for feed in get_feeds(cursor):
         uid = url_to_uid(feed["url"])
 
-        cursor.execute(
-            "UPDATE f_feeds SET uid = %(uid)s WHERE id = %(id)s",
-            {"uid": uid, "id": feed["id"]}
-        )
+        cursor.execute("UPDATE f_feeds SET uid = %(uid)s WHERE id = %(id)s", {"uid": uid, "id": feed["id"]})
 
 
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:

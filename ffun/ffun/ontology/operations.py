@@ -2,10 +2,10 @@ import uuid
 from typing import Iterable
 
 from bidict import bidict
+
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.ontology.entities import TagProperty, TagPropertyType
-
 
 logger = logging.get_module_logger()
 
@@ -75,7 +75,9 @@ async def _save_tags(execute: ExecuteType, entry_id: uuid.UUID, tags_ids: Iterab
         await execute(sql_relations, {"entry_id": entry_id, "tag_id": tag_id})
 
 
-async def _register_relations_processors(execute: ExecuteType, relations_ids: Iterable[int], processor_id: int) -> None:
+async def _register_relations_processors(
+    execute: ExecuteType, relations_ids: Iterable[int], processor_id: int
+) -> None:
     sql_register_processor = """
     INSERT INTO o_relations_processors (relation_id, processor_id)
     VALUES (%(relation_id)s, %(processor_id)s)
@@ -85,17 +87,18 @@ async def _register_relations_processors(execute: ExecuteType, relations_ids: It
         await execute(sql_register_processor, {"relation_id": relation_id, "processor_id": processor_id})
 
 
-async def _get_relations_for_entry_and_tags(execute: ExecuteType, entry_id: uuid.UUID, tags_ids: Iterable[int]) -> dict[int, int]:
+async def _get_relations_for_entry_and_tags(
+    execute: ExecuteType, entry_id: uuid.UUID, tags_ids: Iterable[int]
+) -> dict[int, int]:
     result = await execute(
         "SELECT id, tag_id FROM o_relations WHERE entry_id = %(entry_id)s AND tag_id = ANY(%(tags_ids)s)",
         {"entry_id": entry_id, "tags_ids": list(tags_ids)},
     )
 
-    return {row['tag_id']: row['id'] for row in result}
+    return {row["tag_id"]: row["id"] for row in result}
 
 
 async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: int, tags_ids: Iterable[int]) -> None:
-
     await _save_tags(execute, entry_id, tags_ids)
 
     relations = await _get_relations_for_entry_and_tags(execute, entry_id, tags_ids)

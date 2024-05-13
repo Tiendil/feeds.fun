@@ -9,25 +9,24 @@ from typing import Any
 from psycopg import Connection
 from yoyo import step
 
-
-__depends__ = {'20240504_02_gEapd-fill-uids-for-feeds'}
+__depends__ = {"20240504_02_gEapd-fill-uids-for-feeds"}
 
 
 def run_merge(base_feed_id: uuid.UUID, feed_id: uuid.UUID) -> None:
     try:
         subprocess.run(
             [
-            #     'poetry',
-            # 'run',
-                'ffun',
-                'merge-feeds',
+                #     'poetry',
+                # 'run',
+                "ffun",
+                "merge-feeds",
                 base_feed_id.hex,
                 feed_id.hex,
             ],
             check=True,
         )
     except subprocess.CalledProcessError as e:
-        sys.stderr.write(f'error: {e}\n')
+        sys.stderr.write(f"error: {e}\n")
         raise
 
 
@@ -39,15 +38,12 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
     cursor = conn.cursor()
 
-    cursor.execute('SELECT uid FROM f_feeds GROUP BY uid HAVING COUNT(*) > 1')
+    cursor.execute("SELECT uid FROM f_feeds GROUP BY uid HAVING COUNT(*) > 1")
 
     uids = [row[0] for row in cursor.fetchall()]
 
     for uid in uids:
-        cursor.execute(
-            'SELECT id FROM f_feeds WHERE uid = %(uid)s',
-            {'uid': uid}
-        )
+        cursor.execute("SELECT id FROM f_feeds WHERE uid = %(uid)s", {"uid": uid})
 
         feed_ids = [row[0] for row in cursor.fetchall()]
 

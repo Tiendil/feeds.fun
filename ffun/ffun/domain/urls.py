@@ -5,7 +5,6 @@ from urllib.parse import quote_plus, unquote
 from furl import furl
 from orderedmultidict import omdict
 
-
 RE_SCHEMA = re.compile(r"^(\w+):")
 
 
@@ -106,7 +105,7 @@ def url_to_uid(url: str) -> str:
 
     path = str(url_object.path)
 
-    while '//' in path:
+    while "//" in path:
         path = path.replace("//", "/")
 
     if path and path[-1] == "/":

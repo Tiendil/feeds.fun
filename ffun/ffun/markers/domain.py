@@ -1,8 +1,7 @@
 import uuid
 
-from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.core.postgresql import ExecuteType, run_in_transaction
 from ffun.markers import operations
-
 
 set_marker = operations.set_marker
 remove_marker = operations.remove_marker

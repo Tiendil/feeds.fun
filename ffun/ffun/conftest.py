@@ -4,6 +4,7 @@ from typing import AsyncGenerator, Generator
 import fastapi
 import pytest
 import pytest_asyncio
+
 from ffun.application import application
 from ffun.core import migrations
 from ffun.feeds.tests.fixtures import *  # noqa

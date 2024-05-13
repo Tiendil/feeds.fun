@@ -7,8 +7,7 @@ from typing import Any
 from psycopg import Connection
 from yoyo import step
 
-
-__depends__ = {'20230426_01_IiF5m-add-title-and-description'}
+__depends__ = {"20230426_01_IiF5m-add-title-and-description"}
 
 
 def apply_step(conn: Connection[dict[str, Any]]) -> None:

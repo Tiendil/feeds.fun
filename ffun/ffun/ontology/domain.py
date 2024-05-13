@@ -2,11 +2,11 @@ import uuid
 from typing import Iterable
 
 from bidict import bidict
+
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
 from ffun.ontology import operations
 from ffun.ontology.entities import ProcessorTag, Tag, TagCategory, TagPropertyType
 from ffun.tags import converters
-
 
 _tags_cache: bidict[str, int] = bidict()
 

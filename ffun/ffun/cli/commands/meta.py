@@ -4,9 +4,7 @@ import uuid
 from ffun.application.application import with_app
 from ffun.cli.application import app
 from ffun.core import logging
-from ffun.library.domain import all_entries_iterator, normalize_entry
 from ffun.meta import domain as m_domain
-
 
 logger = logging.get_module_logger()
 

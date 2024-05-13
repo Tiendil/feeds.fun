@@ -7,8 +7,7 @@ from typing import Any
 from psycopg import Connection
 from yoyo import step
 
-
-__depends__ = {'20240504_02_gEapd-fill-uids-for-feeds'}
+__depends__ = {"20240504_02_gEapd-fill-uids-for-feeds"}
 
 
 unique_index = "idx_f_feeds_uid"

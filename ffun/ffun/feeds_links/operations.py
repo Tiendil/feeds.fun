@@ -1,11 +1,9 @@
 import uuid
 from typing import Any
 
-import psycopg
 from ffun.core import logging
-from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.core.postgresql import ExecuteType, execute
 from ffun.feeds_links.entities import FeedLink
-
 
 logger = logging.get_module_logger()
 
@@ -68,7 +66,6 @@ async def has_linked_users(feed_id: uuid.UUID) -> bool:
 
 
 async def tech_merge_feeds(execute: ExecuteType, from_feed_id: uuid.UUID, to_feed_id: uuid.UUID) -> None:
-
     sql = """
     DELETE FROM fl_links as fll
     WHERE feed_id = %(from_feed_id)s

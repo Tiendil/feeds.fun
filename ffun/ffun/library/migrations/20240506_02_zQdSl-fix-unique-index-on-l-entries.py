@@ -8,8 +8,7 @@ from psycopg import Connection
 from psycopg.rows import dict_row
 from yoyo import step
 
-
-__depends__ = {'20240506_01_My4vi-remove-duplicated-entries-from-feeds'}
+__depends__ = {"20240506_01_My4vi-remove-duplicated-entries-from-feeds"}
 
 
 index = "l_entries_feed_id_external_id_key"

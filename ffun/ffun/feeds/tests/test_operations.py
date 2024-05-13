@@ -3,14 +3,22 @@ import random
 import uuid
 
 import pytest
+
 from ffun.core import utils
-from ffun.core.postgresql import execute, transaction
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_times_is_near
+from ffun.core.tests.helpers import TableSizeDelta
 from ffun.feeds import errors
 from ffun.feeds.domain import get_feed, save_feeds
 from ffun.feeds.entities import Feed, FeedError, FeedState
-from ffun.feeds.operations import (get_feeds, get_next_feeds_to_load, mark_feed_as_failed, mark_feed_as_loaded,
-                                   mark_feed_as_orphaned, save_feed, tech_remove_feed, update_feed_info)
+from ffun.feeds.operations import (
+    get_feeds,
+    get_next_feeds_to_load,
+    mark_feed_as_failed,
+    mark_feed_as_loaded,
+    mark_feed_as_orphaned,
+    save_feed,
+    tech_remove_feed,
+    update_feed_info,
+)
 from ffun.feeds.tests import make
 
 
@@ -239,7 +247,6 @@ class TestGetFeeds:
 
 
 class TestTechRemoveFeed:
-
     @pytest.mark.asyncio
     async def test(self, saved_feed: Feed) -> None:
         async with TableSizeDelta("f_feeds", delta=-1):

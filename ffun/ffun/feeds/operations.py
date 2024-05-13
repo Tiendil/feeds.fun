@@ -3,11 +3,11 @@ import uuid
 from typing import Any, Iterable
 
 import psycopg
+
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain import urls as domain_urls
 from ffun.feeds.entities import Feed, FeedError, FeedState
-
 
 logger = logging.get_module_logger()
 
@@ -42,7 +42,7 @@ async def save_feed(feed: Feed) -> uuid.UUID:
                 "state": feed.state,
                 "title": feed.title,
                 "description": feed.description,
-                "uid": uid
+                "uid": uid,
             },
         )
 
