@@ -280,8 +280,8 @@ class TestMergeFeeds:
         links_a = await fl_domain.get_linked_feeds(user_a)
         links_b = await fl_domain.get_linked_feeds(user_b)
 
-        assert {l.feed_id for l in links_a} == {loaded_feed_id}
-        assert {l.feed_id for l in links_b} == {loaded_feed_id}
+        assert {link.feed_id for link in links_a} == {loaded_feed_id}
+        assert {link.feed_id for link in links_b} == {loaded_feed_id}
 
     @pytest.mark.asyncio
     async def test_merge_markers(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID) -> None:

@@ -24,7 +24,11 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
         external_id = row["external_id"]
 
         cursor.execute(
-            "SELECT id FROM l_entries WHERE feed_id = %(feed_id)s AND external_id = %(external_id)s ORDER BY created_at ASC",
+            """
+            SELECT id FROM l_entries
+            WHERE feed_id = %(feed_id)s AND external_id = %(external_id)s
+            ORDER BY created_at ASC
+            """,
             {"feed_id": feed_id, "external_id": external_id},
         )
 

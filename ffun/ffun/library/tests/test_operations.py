@@ -384,7 +384,7 @@ class TestTechRemoveEntriesByFeedId:
 
     @pytest.mark.asyncio
     async def test_already_removed(self, loaded_feed_id: uuid.UUID) -> None:
-        entries = await make.n_entries(loaded_feed_id, n=3)
+        await make.n_entries(loaded_feed_id, n=3)
 
         await tech_remove_entries_by_feed_id(execute, loaded_feed_id)
 

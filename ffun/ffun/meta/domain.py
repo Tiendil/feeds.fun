@@ -11,8 +11,7 @@ logger = logging.get_module_logger()
 
 
 async def merge_feeds(feed_1_id: uuid.UUID, feed_2_id: uuid.UUID) -> None:
-    "Merge feed_2 into feed_1, remove feed_2."
-
+    """Merge feed_2 into feed_1, remove feed_2."""
     log = logger.bind(function="merge_feeds")
 
     log.info("start", feed_1_id=feed_1_id, feed_2_id=feed_2_id)
@@ -55,8 +54,7 @@ async def merge_feeds(feed_1_id: uuid.UUID, feed_2_id: uuid.UUID) -> None:
 
 
 async def remove_feed(feed_id: uuid.UUID) -> None:
-    "Remove feed and all related entries."
-
+    """Remove feed and all related entries."""
     all_entries = await l_domain.get_entries_by_filter(feeds_ids=[feed_id], limit=postgresql.MAX_INTEGER)
 
     entries_ids = [entry.id for entry in all_entries]

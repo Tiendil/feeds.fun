@@ -31,8 +31,8 @@ class TestMergeFeeds:
         links_a = await get_linked_feeds(user_a)
         links_b = await get_linked_feeds(user_b)
 
-        assert {l.feed_id for l in links_a} == {feed_1.id}
-        assert {l.feed_id for l in links_b} == {feed_3.id}
+        assert {link.feed_id for link in links_a} == {feed_1.id}
+        assert {link.feed_id for link in links_b} == {feed_3.id}
 
     @pytest.mark.asyncio
     async def test_rewrite_links(self) -> None:
@@ -51,8 +51,8 @@ class TestMergeFeeds:
         links_a = await get_linked_feeds(user_a)
         links_b = await get_linked_feeds(user_b)
 
-        assert {l.feed_id for l in links_a} == {feed_1.id}
-        assert {l.feed_id for l in links_b} == {feed_3.id}
+        assert {link.feed_id for link in links_a} == {feed_1.id}
+        assert {link.feed_id for link in links_b} == {feed_3.id}
 
     @pytest.mark.asyncio
     async def test_complex_ops(self) -> None:
@@ -75,6 +75,6 @@ class TestMergeFeeds:
         links_b = await get_linked_feeds(user_b)
         links_c = await get_linked_feeds(user_c)
 
-        assert {l.feed_id for l in links_a} == {feed_1.id}
-        assert {l.feed_id for l in links_b} == {feed_3.id}
-        assert {l.feed_id for l in links_c} == {feed_3.id}
+        assert {link.feed_id for link in links_a} == {feed_1.id}
+        assert {link.feed_id for link in links_b} == {feed_3.id}
+        assert {link.feed_id for link in links_c} == {feed_3.id}

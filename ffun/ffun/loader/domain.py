@@ -187,7 +187,7 @@ async def parse_content(content: str, original_url: str) -> p_entities.FeedInfo:
 
 
 # TODO: tests
-async def load_content_with_proxies(url: str) -> httpx.Response:
+async def load_content_with_proxies(url: str) -> httpx.Response:  # noqa: CCR001
     url_object = furl(url)
 
     first_exception = None

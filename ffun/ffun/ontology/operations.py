@@ -107,8 +107,7 @@ async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: in
 
 
 async def tech_copy_relations(execute: ExecuteType, entry_from_id: uuid.UUID, entry_to_id: uuid.UUID) -> None:
-    "copy relations with processors info"
-
+    """Copy relations with processors info."""
     # get processors for each tag in entry_from
     sql = """
     SELECT rp.processor_id, r.tag_id

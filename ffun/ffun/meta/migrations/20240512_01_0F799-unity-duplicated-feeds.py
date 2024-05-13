@@ -1,7 +1,7 @@
 """
 unity-duplicated-feeds
 """
-import subprocess
+import subprocess  # noqa: S404
 import sys
 import uuid
 from typing import Any
@@ -14,7 +14,7 @@ __depends__ = {"20240504_02_gEapd-fill-uids-for-feeds"}
 
 def run_merge(base_feed_id: uuid.UUID, feed_id: uuid.UUID) -> None:
     try:
-        subprocess.run(
+        subprocess.run(  # noqa: S603, S607
             [
                 #     'poetry',
                 # 'run',
@@ -30,7 +30,7 @@ def run_merge(base_feed_id: uuid.UUID, feed_id: uuid.UUID) -> None:
         raise
 
 
-def apply_step(conn: Connection[dict[str, Any]]) -> None:
+def apply_step(conn: Connection[list[Any]]) -> None:
     # it is too difficult to write special migration code for this case
     # so, we will call the cli command for each found duplicated feed
     # TODO: remove this code after new version will be releases and applied to all environments
