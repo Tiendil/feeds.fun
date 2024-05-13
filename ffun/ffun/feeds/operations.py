@@ -5,6 +5,7 @@ from typing import Any, Iterable
 import psycopg
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.domain import urls as domain_urls
 from ffun.feeds.entities import Feed, FeedError, FeedState
 
 
@@ -26,8 +27,8 @@ def row_to_feed(row: dict[str, Any]) -> Feed:
 
 async def save_feed(feed: Feed) -> uuid.UUID:
     sql = """
-    INSERT INTO f_feeds (id, url, state, title, description)
-    VALUES (%(id)s, %(url)s, %(state)s, %(title)s, %(description)s)
+    INSERT INTO f_feeds (id, url, state, title, description, uid)
+    VALUES (%(id)s, %(url)s, %(state)s, %(title)s, %(description)s, %(uid)s)
     """
 
     try:
@@ -39,6 +40,7 @@ async def save_feed(feed: Feed) -> uuid.UUID:
                 "state": feed.state,
                 "title": feed.title,
                 "description": feed.description,
+                "uid": domain_urls.url_to_uid(feed.url),
             },
         )
 

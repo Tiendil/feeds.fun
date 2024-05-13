@@ -1,6 +1,6 @@
 volumes:
   ffun_postgresql_data: {}  # dump of prod
-  # ffun_postgresql_data_2: {}
+  ffun_postgresql_data_2: {}
 
 
 networks:
@@ -17,7 +17,7 @@ services:
     image: postgres:15-bullseye
 
     volumes:
-      - ffun_postgresql_data:/var/lib/postgresql/data
+      - ffun_postgresql_data_2:/var/lib/postgresql/data
       - ./docker/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
       - ./docker/postgresql/healthcheck.sh:/healthcheck.sh
 
