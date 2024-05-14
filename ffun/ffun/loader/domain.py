@@ -142,13 +142,16 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         message = str(e)
 
         if message.startswith("502 Could not resolve host"):
-            log.warning("network_could_not_resolve_host")
+            log.warning("proxy_could_not_resolve_host")
             error_code = FeedError.proxy_could_not_resolve_host
         elif "TUN_ERR" in message and "ECONNREFUSED" in message:
-            log.warning("network_connection_refused")
+            log.warning("proxy_connection_refused")
             error_code = FeedError.proxy_connection_refused
+        elif "TUN_ERR" in message and "EHOSTUNREACH" in message:
+            log.warning("proxy_no_route_to_host")
+            error_code = FeedError.proxy_no_route_to_host
         elif '403' in message:
-            log.warning("403 Forbidden")
+            log.warning("proxy_connection_403")
             error_code = FeedError.proxy_connection_403
         else:
             log.exception("unknown_proxy_error_while_loading_feed")
