@@ -45,6 +45,7 @@ class FeedError(enum.IntEnum):
 
     proxy_could_not_resolve_host = 4001
     proxy_connection_refused = 4002
+    proxy_connection_403 = 4003
 
 
 class Feed(BaseEntity):

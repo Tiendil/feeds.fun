@@ -133,6 +133,9 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         elif "TUN_ERR" in message and "ECONNREFUSED" in message:
             log.warning("network_connection_refused")
             error_code = FeedError.proxy_connection_refused
+        elif '403' in message:
+            log.warning("403 Forbidden")
+            error_code = FeedError.proxy_connection_403
         else:
             log.exception("unknown_proxy_error_while_loading_feed")
 
