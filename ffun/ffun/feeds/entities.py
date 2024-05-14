@@ -32,6 +32,9 @@ class FeedError(enum.IntEnum):
     network_ssl_connection_error = 1014
     network_all_connection_attempts_failed = 1015
     network_received_unkomplete_body = 1016
+    network_decoding_error = 1017
+    network_read_error = 1018
+    network_temporary_failure_in_name_resolution = 1019
 
     parsing_unknown = 2000
     parsing_base_error = 2001
@@ -44,6 +47,8 @@ class FeedError(enum.IntEnum):
 
     proxy_could_not_resolve_host = 4001
     proxy_connection_refused = 4002
+    proxy_connection_403 = 4003
+    proxy_no_route_to_host = 4004
 
 
 class Feed(BaseEntity):
