@@ -3,8 +3,6 @@ import uuid
 
 import anyio
 import httpx
-from furl import furl
-
 from ffun.core import logging, utils
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedError, FeedState
@@ -16,6 +14,8 @@ from ffun.loader import errors
 from ffun.loader.settings import Proxy, settings
 from ffun.parsers import entities as p_entities
 from ffun.parsers.domain import parse_feed
+from furl import furl
+
 
 logger = logging.get_module_logger()
 
@@ -136,6 +136,11 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         else:
             log.exception("unknown_proxy_error_while_loading_feed")
 
+        raise errors.LoadError(feed_error_code=error_code) from e
+
+    except httpx.DecodingError as e:
+        log.warning("network_decoding_error")
+        error_code = FeedError.network_decoding_error
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except Exception as e:

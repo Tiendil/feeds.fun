@@ -32,6 +32,7 @@ class FeedError(enum.IntEnum):
     network_ssl_connection_error = 1014
     network_all_connection_attempts_failed = 1015
     network_received_unkomplete_body = 1016
+    network_decoding_error = 1017
 
     parsing_unknown = 2000
     parsing_base_error = 2001
