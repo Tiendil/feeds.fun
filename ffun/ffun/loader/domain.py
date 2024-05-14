@@ -64,8 +64,14 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except httpx.ReadError as e:
-        error_code = FeedError.network_read_error
-        log.warning("network_read_error")
+        message = str(e)
+
+        if message == "":
+            error_code = FeedError.network_read_error
+            log.warning("network_read_error")
+        else:
+            log.exception("unknown_read_error_while_loading_feed")
+
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except httpx.ConnectError as e:
@@ -74,6 +80,9 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         if "[Errno -2]" in message:
             log.warning("network_name_or_service_not_known")
             error_code = FeedError.network_name_or_service_not_known
+        elif "[Errno -3]" in message:
+            log.warning("network_temporary_failure_in_name_resolution")
+            error_code = FeedError.network_temporary_failure_in_name_resolution
         elif "[Errno -5]" in message:
             log.warning("no_address_associated_with_hostname")
             error_code = FeedError.network_no_address_associated_with_hostname
