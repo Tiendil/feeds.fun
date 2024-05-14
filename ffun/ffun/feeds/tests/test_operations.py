@@ -5,6 +5,7 @@ import uuid
 import pytest
 
 from ffun.core import utils
+from ffun.core.tests.helpers import TableSizeDelta
 from ffun.feeds import errors
 from ffun.feeds.domain import get_feed, save_feeds
 from ffun.feeds.entities import Feed, FeedError, FeedState
@@ -15,6 +16,7 @@ from ffun.feeds.operations import (
     mark_feed_as_loaded,
     mark_feed_as_orphaned,
     save_feed,
+    tech_remove_feed,
     update_feed_info,
 )
 from ffun.feeds.tests import make
@@ -41,6 +43,23 @@ class TestSaveFeed:
 
         with pytest.raises(errors.NoFeedFound):
             await get_feed(cloned_feed.id)
+
+    @pytest.mark.asyncio
+    async def test_same_uid_different_urls(self, new_feed: Feed) -> None:
+        url_part = uuid.uuid4().hex
+
+        feed_1 = new_feed.replace(url=f"http://example.com/{url_part}")
+        feed_2 = new_feed.replace(id=uuid.uuid4(), url=f"https://example.com/{url_part}")
+
+        feed_1_id = await save_feed(feed_1)
+        feed_2_id = await save_feed(feed_2)
+
+        assert feed_1_id == feed_2_id
+
+        assert await get_feed(feed_1_id) == feed_1
+
+        with pytest.raises(errors.NoFeedFound):
+            await get_feed(feed_2.id)
 
 
 class TestGetNextFeedToLoad:
@@ -225,3 +244,17 @@ class TestGetFeeds:
         assert len(loaded_feeds) == n
 
         assert set(feed_ids[1:-1]) == {feed.id for feed in loaded_feeds}
+
+
+class TestTechRemoveFeed:
+    @pytest.mark.asyncio
+    async def test(self, saved_feed: Feed) -> None:
+        async with TableSizeDelta("f_feeds", delta=-1):
+            await tech_remove_feed(saved_feed.id)
+
+        with pytest.raises(errors.NoFeedFound):
+            await get_feed(saved_feed.id)
+
+    @pytest.mark.asyncio
+    async def test_no_feed(self) -> None:
+        await tech_remove_feed(uuid.uuid4())

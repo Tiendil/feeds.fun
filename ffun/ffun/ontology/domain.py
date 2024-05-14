@@ -3,7 +3,7 @@ from typing import Iterable
 
 from bidict import bidict
 
-from ffun.core.postgresql import transaction
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
 from ffun.ontology import operations
 from ffun.ontology.entities import ProcessorTag, Tag, TagCategory, TagPropertyType
 from ffun.tags import converters
@@ -65,11 +65,11 @@ async def apply_tags_to_entry(entry_id: uuid.UUID, processor_id: int, tags: Iter
 
 
 async def get_tags_ids_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:
-    return await operations.get_tags_for_entries(entries_ids)
+    return await operations.get_tags_for_entries(execute, entries_ids)
 
 
 async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[str]]:
-    tags_ids = await operations.get_tags_for_entries(entries_ids)
+    tags_ids = await operations.get_tags_for_entries(execute, entries_ids)
 
     all_tags = set()
 
@@ -111,3 +111,13 @@ async def get_tags_info(tags_ids: Iterable[int]) -> dict[int, Tag]:  # noqa: CCR
         raise NotImplementedError(f"Unknown property type: {property.type}")
 
     return info
+
+
+@run_in_transaction
+async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[uuid.UUID]) -> None:
+    await operations.remove_relations_for_entries(execute, entries_ids)
+
+
+@run_in_transaction
+async def tech_copy_relations(execute: ExecuteType, entry_from_id: uuid.UUID, entry_to_id: uuid.UUID) -> None:
+    await operations.tech_copy_relations(execute, entry_from_id, entry_to_id)

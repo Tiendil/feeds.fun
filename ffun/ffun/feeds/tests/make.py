@@ -2,6 +2,7 @@ import uuid
 from typing import Any
 
 from ffun.feeds.entities import Feed, FeedState
+from ffun.feeds.operations import get_feeds, save_feed
 
 
 def fake_url() -> str:
@@ -27,3 +28,13 @@ def fake_feed(**kwargs: Any) -> Feed:
         title=fake_title() if "title" not in kwargs else kwargs["title"],
         description=fake_description() if "description" not in kwargs else kwargs["description"],
     )
+
+
+async def n_feeds(n: int) -> list[Feed]:
+    feed_objects = [fake_feed() for _ in range(n)]
+
+    saved_ids = [await save_feed(feed) for feed in feed_objects]
+
+    feeds = await get_feeds(saved_ids)
+
+    return feeds

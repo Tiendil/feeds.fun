@@ -3,6 +3,7 @@ import uuid
 
 import anyio
 import httpx
+from furl import furl
 
 from ffun.core import logging, utils
 from ffun.feeds import domain as f_domain
@@ -186,15 +187,30 @@ async def parse_content(content: str, original_url: str) -> p_entities.FeedInfo:
 
 
 # TODO: tests
-async def load_content_with_proxies(url: str) -> httpx.Response:
+async def load_content_with_proxies(url: str) -> httpx.Response:  # noqa: CCR001
+    url_object = furl(url)
+
     first_exception = None
 
-    for proxy in settings.proxies:
-        try:
-            return await load_content(url, proxy)
-        except Exception as e:
-            if first_exception is None:
-                first_exception = e
+    # We try different protocols because users often make mistakes in the urls
+    # to fix them we unity similar urls like http://example.com and https://example.com
+    # => we need to check both protocols
+    #
+    # For now it is straightforward solution, but it should work
+    # Most of the domains should support HTTPS => HTTP urls will not be used
+    # but in case of full problem with url, we'll be doing unnecessary requests
+    # and in case of HTTP-only urls we'll be doing unnecessary requests too
+    #
+    # TODO: build a separate system of choosing protocol for the url with caching and periodic checks
+    for protocol in ("https", "http"):
+        url_object.scheme = protocol
+
+        for proxy in settings.proxies:
+            try:
+                return await load_content(str(url_object), proxy)
+            except Exception as e:
+                if first_exception is None:
+                    first_exception = e
 
     # in case of error raise the first exception occurred
     # because we should use the most common proxy first

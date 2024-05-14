@@ -10,6 +10,7 @@ mark_feed_as_loaded = operations.mark_feed_as_loaded
 mark_feed_as_failed = operations.mark_feed_as_failed
 mark_feed_as_orphaned = operations.mark_feed_as_orphaned
 get_feeds = operations.get_feeds
+tech_remove_feed = operations.tech_remove_feed
 
 
 async def save_feeds(feeds: list[Feed]) -> list[uuid.UUID]:

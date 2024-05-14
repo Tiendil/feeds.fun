@@ -78,3 +78,60 @@ class TestNormalizeExternalUrl:
     )
     def test(self, url: str, normalized_url: str) -> None:
         assert urls.normalize_external_url(url, original_url="https://example.com") == normalized_url
+
+
+class TestUrlToUid:
+    @pytest.mark.parametrize(
+        "url, uid",
+        [  # strip spaces
+            ("   example.com", "example.com"),
+            ("example.com   ", "example.com"),
+            # trailing slash
+            ("example.com/", "example.com"),
+            ("example.com//", "example.com"),
+            ("example.com/path/", "example.com/path"),
+            # uppercase
+            ("EXAMPLE.COM", "example.com"),
+            ("exaMple.com/somE/pAth", "example.com/some/path"),
+            # pluses
+            ("example.com/with+plus", "example.com/with+plus"),
+            ("example.com/with%20space", "example.com/with+space"),
+            ("example.com/with plus", "example.com/with+plus"),
+            # quotes
+            ("example.com/with%22quote", 'example.com/with"quote'),
+            ("example.com/with%27quote", "example.com/with'quote"),
+            # query
+            ("example.com/?a=b&c=d", "example.com?a=b&c=d"),
+            ("example.com/?c=d&a=b", "example.com?a=b&c=d"),
+            # query with quotes
+            ("example.com/?a=%22b%22", 'example.com?a="b"'),
+            ("example.com/?a=%27b%27", "example.com?a='b'"),
+            # complext query with duplicates and sorting
+            ("example.com/?c=d&a=g&e=f&a=b", "example.com?a=b&a=g&c=d&e=f"),
+            # duble slashes
+            ("example.com//path//to//resource", "example.com/path/to/resource"),
+            # unicode normalization
+            ("example.com/%D0%BF%D1%80%D0%B8%D0%B2%D0%B5%D1%82", "example.com/привет"),
+            # unicode complex symbols
+            ("example.com/%E2%98%83", "example.com/☃"),
+            # unicode NFD to NFC
+            ("example.com/й", "example.com/й"),
+            # remove schema
+            ("http://example.com", "example.com"),
+            ("https://example.com", "example.com"),
+            ("ftp://example.com", "example.com"),
+            ("//example.com", "example.com"),
+            # remove ports
+            ("example.com:666", "example.com"),
+            ("example.com:666/path", "example.com/path"),
+            ("example.com:80", "example.com"),
+            ("example.com:443/path", "example.com/path"),
+            # remove fragment
+            ("example.com#fragment", "example.com"),
+            ("example.com/path#fragment", "example.com/path"),
+            ("example.com/path#fragment?query", "example.com/path"),
+            ("example.com/path?query#", "example.com/path?query"),
+        ],
+    )
+    def test(self, url: str, uid: str) -> None:
+        assert urls.url_to_uid(url) == uid

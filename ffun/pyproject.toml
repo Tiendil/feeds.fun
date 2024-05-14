@@ -152,6 +152,10 @@ module = "furl.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = "orderedmultidict.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "pypika.*"
 ignore_missing_imports = true
 

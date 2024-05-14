@@ -1,5 +1,6 @@
 import uuid
 
+from ffun.core.postgresql import ExecuteType, run_in_transaction
 from ffun.domain import urls as d_urls
 from ffun.feeds import domain as f_domain
 from ffun.library import operations
@@ -11,6 +12,7 @@ get_entries_by_filter = operations.get_entries_by_filter
 check_stored_entries_by_external_ids = operations.check_stored_entries_by_external_ids
 all_entries_iterator = operations.all_entries_iterator
 get_entries_after_pointer = operations.get_entries_after_pointer
+tech_move_entry = operations.tech_move_entry
 
 
 async def get_entry(entry_id: uuid.UUID) -> Entry:
@@ -35,3 +37,8 @@ async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange
             await operations.update_external_url(entry.id, new_external_url)
 
     return changes
+
+
+@run_in_transaction
+async def tech_remove_entries_by_feed_id(execute: ExecuteType, feed_id: uuid.UUID) -> None:
+    await operations.tech_remove_entries_by_feed_id(execute, feed_id)

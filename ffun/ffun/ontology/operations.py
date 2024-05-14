@@ -65,7 +65,7 @@ async def get_tags_by_ids(tags_ids: list[int]) -> dict[int, str]:
     return {row["id"]: row["uid"] for row in rows}
 
 
-async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: int, tags_ids: Iterable[int]) -> None:
+async def _save_tags(execute: ExecuteType, entry_id: uuid.UUID, tags_ids: Iterable[int]) -> None:
     sql_relations = """
     INSERT INTO o_relations (entry_id, tag_id)
     VALUES (%(entry_id)s, %(tag_id)s)
@@ -74,18 +74,60 @@ async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: in
     for tag_id in tags_ids:
         await execute(sql_relations, {"entry_id": entry_id, "tag_id": tag_id})
 
-    result = await execute(
-        "SELECT id FROM o_relations WHERE entry_id = %(entry_id)s AND tag_id = ANY(%(tags_ids)s)",
-        {"entry_id": entry_id, "tags_ids": list(tags_ids)},
-    )
 
+async def _register_relations_processors(
+    execute: ExecuteType, relations_ids: Iterable[int], processor_id: int
+) -> None:
     sql_register_processor = """
     INSERT INTO o_relations_processors (relation_id, processor_id)
     VALUES (%(relation_id)s, %(processor_id)s)
     ON CONFLICT (relation_id, processor_id) DO NOTHING"""
 
+    for relation_id in relations_ids:
+        await execute(sql_register_processor, {"relation_id": relation_id, "processor_id": processor_id})
+
+
+async def _get_relations_for_entry_and_tags(
+    execute: ExecuteType, entry_id: uuid.UUID, tags_ids: Iterable[int]
+) -> dict[int, int]:
+    result = await execute(
+        "SELECT id, tag_id FROM o_relations WHERE entry_id = %(entry_id)s AND tag_id = ANY(%(tags_ids)s)",
+        {"entry_id": entry_id, "tags_ids": list(tags_ids)},
+    )
+
+    return {row["tag_id"]: row["id"] for row in result}
+
+
+async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: int, tags_ids: Iterable[int]) -> None:
+    await _save_tags(execute, entry_id, tags_ids)
+
+    relations = await _get_relations_for_entry_and_tags(execute, entry_id, tags_ids)
+
+    await _register_relations_processors(execute, list(relations.values()), processor_id)
+
+
+async def tech_copy_relations(execute: ExecuteType, entry_from_id: uuid.UUID, entry_to_id: uuid.UUID) -> None:
+    """Copy relations with processors info."""
+    # get processors for each tag in entry_from
+    sql = """
+    SELECT rp.processor_id, r.tag_id
+    FROM o_relations_processors rp
+    JOIN o_relations r ON rp.relation_id = r.id
+    WHERE r.entry_id = %(entry_id)s
+    """
+
+    result = await execute(sql, {"entry_id": entry_from_id})
+
+    tags_by_processors: dict[int, list[int]] = {}
+
     for row in result:
-        await execute(sql_register_processor, {"relation_id": row["id"], "processor_id": processor_id})
+        if row["processor_id"] not in tags_by_processors:
+            tags_by_processors[row["processor_id"]] = []
+
+        tags_by_processors[row["processor_id"]].append(row["tag_id"])
+
+    for processor_id, tags_ids in tags_by_processors.items():
+        await apply_tags(execute, entry_to_id, processor_id, tags_ids)
 
 
 async def apply_tags_properties(execute: ExecuteType, properties: Iterable[TagProperty]) -> None:
@@ -108,7 +150,7 @@ async def apply_tags_properties(execute: ExecuteType, properties: Iterable[TagPr
         )
 
 
-async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:
+async def get_tags_for_entries(execute: ExecuteType, entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:
     sql = """SELECT * FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"""
 
     rows = await execute(sql, {"entries_ids": entries_ids})
@@ -143,3 +185,19 @@ async def get_tags_properties(tags_ids: Iterable[int]) -> list[TagProperty]:
         )
         for row in result
     ]
+
+
+async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[uuid.UUID]) -> None:
+    sql = "SELECT id FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"
+
+    result = await execute(sql, {"entries_ids": entries_ids})
+
+    relations_ids = [row["id"] for row in result]
+
+    sql = "DELETE FROM o_relations_processors WHERE relation_id = ANY(%(relations_ids)s)"
+
+    await execute(sql, {"relations_ids": relations_ids})
+
+    sql = "DELETE FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"
+
+    await execute(sql, {"entries_ids": entries_ids})

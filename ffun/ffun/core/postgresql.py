@@ -12,6 +12,8 @@ from ffun.core import logging
 
 logger = logging.get_module_logger()
 
+MAX_INTEGER = 2147483647
+
 POOL: psycopg_pool.AsyncConnectionPool | None = None
 
 

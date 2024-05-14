@@ -36,3 +36,12 @@ async def n_entries(loaded_feed_id: uuid.UUID, n: int) -> dict[uuid.UUID, Entry]
     new_entries = [fake_entry(loaded_feed_id) for _ in range(n)]
     await domain.catalog_entries(new_entries)
     return await domain.get_entries_by_ids([entry.id for entry in new_entries])  # type: ignore
+
+
+async def n_entries_list(loaded_feed_id: uuid.UUID, n: int) -> list[Entry]:
+    entries = await n_entries(loaded_feed_id, n)
+    result = list(entries.values())
+
+    result.sort(key=lambda entry: entry.cataloged_at, reverse=True)
+
+    return result

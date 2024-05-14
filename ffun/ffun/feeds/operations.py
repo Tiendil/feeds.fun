@@ -6,6 +6,7 @@ import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.domain import urls as domain_urls
 from ffun.feeds.entities import Feed, FeedError, FeedState
 
 logger = logging.get_module_logger()
@@ -26,9 +27,11 @@ def row_to_feed(row: dict[str, Any]) -> Feed:
 
 async def save_feed(feed: Feed) -> uuid.UUID:
     sql = """
-    INSERT INTO f_feeds (id, url, state, title, description)
-    VALUES (%(id)s, %(url)s, %(state)s, %(title)s, %(description)s)
+    INSERT INTO f_feeds (id, url, state, title, description, uid)
+    VALUES (%(id)s, %(url)s, %(state)s, %(title)s, %(description)s, %(uid)s)
     """
+
+    uid = domain_urls.url_to_uid(feed.url)
 
     try:
         await execute(
@@ -39,14 +42,15 @@ async def save_feed(feed: Feed) -> uuid.UUID:
                 "state": feed.state,
                 "title": feed.title,
                 "description": feed.description,
+                "uid": uid,
             },
         )
 
         return feed.id
     except psycopg.errors.UniqueViolation as e:
-        logger.warning("unique_violation_while_saving_feed", feed_id=feed.id)
+        logger.warning("unique_violation_while_saving_feed", feed=feed)
 
-        result = await execute("SELECT id FROM f_feeds WHERE url = %(url)s", {"url": feed.url})
+        result = await execute("SELECT id FROM f_feeds WHERE uid = %(uid)s", {"uid": uid})
 
         if not result:
             raise NotImplementedError("something went wrong") from e
@@ -143,3 +147,12 @@ async def get_feeds(ids: Iterable[uuid.UUID]) -> list[Feed]:
     rows = await execute(sql, {"ids": list(ids)})
 
     return [row_to_feed(row) for row in rows]
+
+
+async def tech_remove_feed(feed_id: uuid.UUID) -> None:
+    sql = """
+    DELETE FROM f_feeds
+    WHERE id = %(feed_id)s
+    """
+
+    await execute(sql, {"feed_id": feed_id})
