@@ -3,11 +3,12 @@ import uuid
 from typing import Any, AsyncGenerator, Iterable
 
 import psycopg
-
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.library import errors
 from ffun.library.entities import Entry
+from ffun.library.settings import settings
+
 
 logger = logging.get_module_logger()
 
@@ -175,3 +176,19 @@ async def tech_move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
         await execute(sql, {"entry_id": entry_id, "feed_id": feed_id})
     except psycopg.errors.UniqueViolation as e:
         raise errors.CanNotMoveEntryAlreadyInFeed(entry_id=entry_id, feed_id=feed_id) from e
+
+
+async def limit_number_of_entries(feed_id: uuid.UUID, limit: int = settings.max_entries_per_feed) -> None:
+    sql = """
+    DELETE FROM l_entries
+    WHERE feed_id = %(feed_id)s
+    AND id IN (
+        SELECT id
+        FROM l_entries
+        WHERE feed_id = %(feed_id)s
+        ORDER BY created_at DESC
+        OFFSET %(limit)s
+    )
+    """
+
+    await execute(sql, {"feed_id": feed_id, "limit": limit})

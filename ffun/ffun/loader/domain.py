@@ -3,8 +3,6 @@ import uuid
 
 import anyio
 import httpx
-from furl import furl
-
 from ffun.core import logging, utils
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedError, FeedState
@@ -16,6 +14,8 @@ from ffun.loader import errors
 from ffun.loader.settings import Proxy, settings
 from ffun.parsers import entities as p_entities
 from ffun.parsers.domain import parse_feed
+from furl import furl
+
 
 logger = logging.get_module_logger()
 
@@ -310,6 +310,8 @@ async def process_feed(feed: Feed) -> None:
     await sync_feed_info(feed, feed_info)
 
     await store_entries(feed.id, feed_info.entries)
+
+    await l_domain.limit_number_of_entries(feed.id)
 
     await f_domain.mark_feed_as_loaded(feed.id)
 
