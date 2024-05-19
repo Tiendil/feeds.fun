@@ -12,6 +12,7 @@ from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
 from ffun.loader import errors
 from ffun.loader.settings import Proxy, settings
+from ffun.meta import domain as meta_domain
 from ffun.parsers import entities as p_entities
 from ffun.parsers.domain import parse_feed
 from furl import furl
@@ -311,7 +312,8 @@ async def process_feed(feed: Feed) -> None:
 
     await store_entries(feed.id, feed_info.entries)
 
-    await l_domain.limit_number_of_entries(feed.id)
+    # TODO: test
+    await meta_domain.limit_entries_for_feed(feed.id)
 
     await f_domain.mark_feed_as_loaded(feed.id)
 

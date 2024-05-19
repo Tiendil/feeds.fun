@@ -1,10 +1,12 @@
 import uuid
+from typing import Iterable
 
 from ffun.core import logging, postgresql
 from ffun.feeds import domain as f_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.markers import domain as m_domain
+from ffun.meta.settings import settings
 from ffun.ontology import domain as o_domain
 
 
@@ -67,8 +69,23 @@ async def remove_feed(feed_id: uuid.UUID) -> None:
 
 
 # TODO: tests
-async def remove_entries(entries_ids: list[uuid.UUID]) -> None:
+async def remove_entries(entries_ids: Iterable[uuid.UUID]) -> None:
     """Remove entries and all related markers and relations."""
-    await m_domain.remove_markers_for_entries(entries_ids)
-    await o_domain.remove_relations_for_entries(entries_ids)
-    await l_domain.tech_remove_entries_by_ids(entries_ids)
+
+    entries_to_remove = list(entries_ids)
+
+    await m_domain.remove_markers_for_entries(entries_to_remove)
+    await o_domain.remove_relations_for_entries(entries_to_remove)
+    await l_domain.tech_remove_entries_by_ids(entries_to_remove)
+
+
+# TODO: tests
+async def limit_entries_for_feed(feed_id: uuid.UUID) -> None:
+    """Remove oldest entries for feed to keep only `limit` entries."""
+    entries_to_remove = await l_domain.tech_get_feed_entries_tail(feed_id=feed_id,
+                                                                  offset=settings.max_entries_per_feed)
+
+    if not entries_to_remove:
+        return
+
+    await remove_entries(entries_to_remove)

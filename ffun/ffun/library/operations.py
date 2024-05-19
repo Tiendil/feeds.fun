@@ -178,7 +178,7 @@ async def tech_move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
         raise errors.CanNotMoveEntryAlreadyInFeed(entry_id=entry_id, feed_id=feed_id) from e
 
 
-async def tech_get_feed_entries_tail(feed_id: uuid.UUID, offset: int) -> set[Entry]:
+async def tech_get_feed_entries_tail(feed_id: uuid.UUID, offset: int) -> set[uuid.UUID]:
     """
     Get the last entries for the feed.
     """
