@@ -6,6 +6,7 @@ import fastapi
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse, JSONResponse
+
 from ffun.api import entities
 from ffun.api.settings import settings
 from ffun.auth.dependencies import User
@@ -25,7 +26,6 @@ from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 from ffun.user_settings import domain as us_domain
-
 
 router = fastapi.APIRouter()
 
@@ -98,9 +98,9 @@ async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: Us
 
     linked_feeds_ids = [link.feed_id for link in linked_feeds]
 
-    entries = await l_domain.get_entries_by_filter(feeds_ids=linked_feeds_ids,
-                                                   period=request.period,
-                                                   limit=settings.max_returned_entries)
+    entries = await l_domain.get_entries_by_filter(
+        feeds_ids=linked_feeds_ids, period=request.period, limit=settings.max_returned_entries
+    )
 
     external_entries = await _external_entries(entries, with_body=False, user_id=user.id)
 

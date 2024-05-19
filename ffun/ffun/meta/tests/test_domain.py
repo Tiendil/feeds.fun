@@ -2,6 +2,7 @@ import uuid
 from itertools import chain
 
 import pytest
+
 from ffun.feeds import domain as f_domain
 from ffun.feeds import errors as f_errors
 from ffun.feeds_links import domain as fl_domain
@@ -311,7 +312,6 @@ class TestMergeFeeds:
 
 
 class TestRemoveEntries:
-
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
         await remove_entries([])
@@ -369,7 +369,6 @@ class TestRemoveEntries:
 
 
 class TestLimitEntriesForFeed:
-
     @pytest.mark.asyncio
     async def test_no_feed(self) -> None:
         await limit_entries_for_feed(uuid.uuid4(), limit=10)

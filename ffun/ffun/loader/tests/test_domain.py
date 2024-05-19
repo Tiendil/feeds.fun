@@ -1,6 +1,9 @@
 import uuid
 
 import pytest
+from pytest_mock import MockerFixture
+from structlog.testing import capture_logs
+
 from ffun.core.tests.helpers import assert_logs
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
@@ -10,8 +13,6 @@ from ffun.library import entities as l_entities
 from ffun.loader.domain import detect_orphaned, process_feed, store_entries, sync_feed_info
 from ffun.parsers import entities as p_entities
 from ffun.parsers.tests import make as p_make
-from pytest_mock import MockerFixture
-from structlog.testing import capture_logs
 
 
 def assert_entriy_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:
@@ -231,7 +232,7 @@ class TestProcessFeed:
         )
 
         mocker.patch("ffun.loader.domain.extract_feed_info", return_value=feed_info)
-        mocker.patch('ffun.meta.settings.settings.max_entries_per_feed', m)
+        mocker.patch("ffun.meta.settings.settings.max_entries_per_feed", m)
 
         await fl_domain.add_link(internal_user_id, saved_feed.id)
 

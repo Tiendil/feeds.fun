@@ -9,7 +9,6 @@ from ffun.markers import domain as m_domain
 from ffun.meta.settings import settings
 from ffun.ontology import domain as o_domain
 
-
 logger = logging.get_module_logger()
 
 
@@ -85,8 +84,7 @@ async def limit_entries_for_feed(feed_id: uuid.UUID, limit: int | None = None) -
     if limit is None:
         limit = settings.max_entries_per_feed
 
-    entries_to_remove = await l_domain.tech_get_feed_entries_tail(feed_id=feed_id,
-                                                                  offset=limit)
+    entries_to_remove = await l_domain.tech_get_feed_entries_tail(feed_id=feed_id, offset=limit)
 
     if not entries_to_remove:
         logger.info("feed_has_no_entries_tail", feed_id=feed_id, entries_limit=limit)

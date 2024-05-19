@@ -4,6 +4,7 @@ from itertools import chain
 
 import pytest
 import pytest_asyncio
+
 from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_times_is_near
@@ -12,10 +13,18 @@ from ffun.feeds.tests import make as f_make
 from ffun.library import errors
 from ffun.library.domain import get_entry
 from ffun.library.entities import Entry
-from ffun.library.operations import (all_entries_iterator, catalog_entries, check_stored_entries_by_external_ids,
-                                     get_entries_after_pointer, get_entries_by_filter, get_entries_by_ids,
-                                     tech_get_feed_entries_tail, tech_move_entry, tech_remove_entries_by_ids,
-                                     update_external_url)
+from ffun.library.operations import (
+    all_entries_iterator,
+    catalog_entries,
+    check_stored_entries_by_external_ids,
+    get_entries_after_pointer,
+    get_entries_by_filter,
+    get_entries_by_ids,
+    tech_get_feed_entries_tail,
+    tech_move_entry,
+    tech_remove_entries_by_ids,
+    update_external_url,
+)
 from ffun.library.tests import make
 
 
@@ -352,7 +361,6 @@ class TestTechRemoveEntriesByIds:
 
 
 class TestTechGetFeedEntriesTail:
-
     @pytest.mark.asyncio
     async def test_nothing_to_return(self, loaded_feed_id: uuid.UUID) -> None:
         await make.n_entries(loaded_feed_id, n=5)
