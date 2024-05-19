@@ -67,7 +67,6 @@ async def remove_feed(feed_id: uuid.UUID) -> None:
     await f_domain.tech_remove_feed(feed_id)
 
 
-# TODO: tests
 async def remove_entries(entries_ids: Iterable[uuid.UUID]) -> None:
     """Remove entries and all related markers and relations."""
 
