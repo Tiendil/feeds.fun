@@ -4,7 +4,6 @@ from itertools import chain
 
 import pytest
 import pytest_asyncio
-
 from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_times_is_near
@@ -13,18 +12,10 @@ from ffun.feeds.tests import make as f_make
 from ffun.library import errors
 from ffun.library.domain import get_entry
 from ffun.library.entities import Entry
-from ffun.library.operations import (
-    all_entries_iterator,
-    catalog_entries,
-    check_stored_entries_by_external_ids,
-    get_entries_after_pointer,
-    get_entries_by_filter,
-    get_entries_by_ids,
-    tech_move_entry,
-    tech_remove_entries_by_feed_id,
-    tech_remove_entries_by_ids,
-    update_external_url,
-)
+from ffun.library.operations import (all_entries_iterator, catalog_entries, check_stored_entries_by_external_ids,
+                                     get_entries_after_pointer, get_entries_by_filter, get_entries_by_ids,
+                                     limit_number_of_entries, tech_move_entry, tech_remove_entries_by_feed_id,
+                                     tech_remove_entries_by_ids, update_external_url)
 from ffun.library.tests import make
 
 
@@ -390,3 +381,37 @@ class TestTechRemoveEntriesByFeedId:
 
         async with TableSizeNotChanged("l_entries"):
             await tech_remove_entries_by_feed_id(execute, loaded_feed_id)
+
+
+class TestLimitNumberOfEntries:
+
+    @pytest.mark.asyncio
+    async def test_nothing_to_limit(self, loaded_feed_id: uuid.UUID) -> None:
+        await limit_number_of_entries(loaded_feed_id, 10)
+
+    @pytest.mark.asyncio
+    async def test_not_excceed_limit(self, loaded_feed_id: uuid.UUID) -> None:
+        entries = await make.n_entries(loaded_feed_id, n=5)
+
+        async with TableSizeNotChanged("l_entries"):
+            await limit_number_of_entries(loaded_feed_id, 10)
+
+        loaded_entries = await get_entries_by_ids([entry.id for entry in entries.values()])
+
+        assert entries == loaded_entries
+
+    @pytest.mark.asyncio
+    async def test_limit(self, loaded_feed_id: uuid.UUID) -> None:
+        entries = await make.n_entries_list(loaded_feed_id, n=15)
+
+        async with TableSizeDelta("l_entries", delta=-5):
+            await limit_number_of_entries(loaded_feed_id, 10)
+
+        loaded_entries = await get_entries_by_ids([entry.id for entry in entries])
+
+        loaded_entries = {entry.id: entry for entry in loaded_entries.values() if entry is not None}
+
+        assert len(loaded_entries) == 10
+
+        for entry in entries[:10]:
+            assert entry == loaded_entries[entry.id]

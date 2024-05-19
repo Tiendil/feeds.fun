@@ -179,6 +179,8 @@ async def tech_move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
 
 
 async def limit_number_of_entries(feed_id: uuid.UUID, limit: int = settings.max_entries_per_feed) -> None:
+    # Order by published_at because we want to keep the newest entries
+    # and it is better to take decission based on time from an entry's source rather than on time when we collected it
     sql = """
     DELETE FROM l_entries
     WHERE feed_id = %(feed_id)s
@@ -186,7 +188,7 @@ async def limit_number_of_entries(feed_id: uuid.UUID, limit: int = settings.max_
         SELECT id
         FROM l_entries
         WHERE feed_id = %(feed_id)s
-        ORDER BY created_at DESC
+        ORDER BY published_at DESC
         OFFSET %(limit)s
     )
     """
