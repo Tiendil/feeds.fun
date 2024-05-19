@@ -14,7 +14,7 @@ check_stored_entries_by_external_ids = operations.check_stored_entries_by_extern
 all_entries_iterator = operations.all_entries_iterator
 get_entries_after_pointer = operations.get_entries_after_pointer
 tech_move_entry = operations.tech_move_entry
-limit_number_of_entries = operations.limit_number_of_entries
+tech_get_feed_entries_tail = operations.tech_get_feed_entries_tail
 
 
 async def get_entry(entry_id: uuid.UUID) -> Entry:

@@ -178,30 +178,21 @@ async def tech_move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
         raise errors.CanNotMoveEntryAlreadyInFeed(entry_id=entry_id, feed_id=feed_id) from e
 
 
-async def limit_number_of_entries(feed_id: uuid.UUID, limit: int = settings.max_entries_per_feed) -> None:
+async def tech_get_feed_entries_tail(feed_id: uuid.UUID, offset: int) -> set[Entry]:
+    """
+    Get the last entries for the feed.
+    """
+
     # Order by published_at because we want to keep the newest entries
     # and it is better to take decission based on time from an entry's source rather than on time when we collected it
     sql = """
-    WITH deleted AS (
-        DELETE FROM l_entries
-        WHERE feed_id = %(feed_id)s
-        AND id IN (
-            SELECT id
-            FROM l_entries
-            WHERE feed_id = %(feed_id)s
-            ORDER BY published_at DESC
-            OFFSET %(limit)s
-        )
-        RETURNING id
-    )
-    SELECT COUNT(*) AS deleted_count FROM deleted
+    SELECT id
+    FROM l_entries
+    WHERE feed_id = %(feed_id)s
+    ORDER BY published_at DESC
+    OFFSET %(offset)s
     """
 
-    result = await execute(sql, {"feed_id": feed_id, "limit": limit})
+    result = await execute(sql, {"feed_id": feed_id, "offset": offset})
 
-    deleted_count = result[0]["deleted_count"]
-
-    if deleted_count > 0:
-        logger.info("feed_entries_deleted_due_to_limit", feed_id=feed_id, deleted_count=deleted_count, limit=limit)
-    else:
-        logger.debug("feed_entries_limit_not_reached", feed_id=feed_id)
+    return {row["id"] for row in result}

@@ -14,7 +14,7 @@ from ffun.library.domain import get_entry
 from ffun.library.entities import Entry
 from ffun.library.operations import (all_entries_iterator, catalog_entries, check_stored_entries_by_external_ids,
                                      get_entries_after_pointer, get_entries_by_filter, get_entries_by_ids,
-                                     limit_number_of_entries, tech_move_entry, tech_remove_entries_by_feed_id,
+                                     tech_get_feed_entries_tail, tech_move_entry, tech_remove_entries_by_feed_id,
                                      tech_remove_entries_by_ids, update_external_url)
 from ffun.library.tests import make
 
@@ -383,35 +383,36 @@ class TestTechRemoveEntriesByFeedId:
             await tech_remove_entries_by_feed_id(execute, loaded_feed_id)
 
 
-class TestLimitNumberOfEntries:
+class TestTechGetFeedEntriesTail:
 
     @pytest.mark.asyncio
-    async def test_nothing_to_limit(self, loaded_feed_id: uuid.UUID) -> None:
-        await limit_number_of_entries(loaded_feed_id, 10)
+    async def test_nothing_to_return(self, loaded_feed_id: uuid.UUID) -> None:
+        entries = await make.n_entries(loaded_feed_id, n=5)
+
+        ids = await tech_get_feed_entries_tail(loaded_feed_id, offset=10)
+
+        assert ids == set()
+
+    @pytest.mark.asyncio
+    async def test_zero_head(self, loaded_feed_id: uuid.UUID) -> None:
+        entries = await make.n_entries(loaded_feed_id, n=5)
+
+        ids = await tech_get_feed_entries_tail(loaded_feed_id, offset=0)
+
+        assert ids == set(entry.id for entry in entries.values())
 
     @pytest.mark.asyncio
     async def test_not_excceed_limit(self, loaded_feed_id: uuid.UUID) -> None:
-        entries = await make.n_entries(loaded_feed_id, n=5)
+        await make.n_entries(loaded_feed_id, n=5)
 
-        async with TableSizeNotChanged("l_entries"):
-            await limit_number_of_entries(loaded_feed_id, 10)
+        ids = await tech_get_feed_entries_tail(loaded_feed_id, offset=10)
 
-        loaded_entries = await get_entries_by_ids([entry.id for entry in entries.values()])
-
-        assert entries == loaded_entries
+        assert ids == set()
 
     @pytest.mark.asyncio
-    async def test_limit(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_offset(self, loaded_feed_id: uuid.UUID) -> None:
         entries = await make.n_entries_list(loaded_feed_id, n=15)
 
-        async with TableSizeDelta("l_entries", delta=-5):
-            await limit_number_of_entries(loaded_feed_id, 10)
+        ids = await tech_get_feed_entries_tail(loaded_feed_id, offset=10)
 
-        loaded_entries = await get_entries_by_ids([entry.id for entry in entries])
-
-        loaded_entries = {entry.id: entry for entry in loaded_entries.values() if entry is not None}
-
-        assert len(loaded_entries) == 10
-
-        for entry in entries[:10]:
-            assert entry == loaded_entries[entry.id]
+        assert ids == set(entry.id for entry in entries[10:])

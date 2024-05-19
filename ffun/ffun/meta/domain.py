@@ -7,6 +7,7 @@ from ffun.library import domain as l_domain
 from ffun.markers import domain as m_domain
 from ffun.ontology import domain as o_domain
 
+
 logger = logging.get_module_logger()
 
 
@@ -63,3 +64,11 @@ async def remove_feed(feed_id: uuid.UUID) -> None:
     await o_domain.remove_relations_for_entries(entries_ids)
     await l_domain.tech_remove_entries_by_feed_id(feed_id)
     await f_domain.tech_remove_feed(feed_id)
+
+
+# TODO: tests
+async def remove_entries(entries_ids: list[uuid.UUID]) -> None:
+    """Remove entries and all related markers and relations."""
+    await m_domain.remove_markers_for_entries(entries_ids)
+    await o_domain.remove_relations_for_entries(entries_ids)
+    await l_domain.tech_remove_entries_by_ids(entries_ids)
