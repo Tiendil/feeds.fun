@@ -77,11 +77,10 @@ async def remove_entries(entries_ids: Iterable[uuid.UUID]) -> None:
     await l_domain.tech_remove_entries_by_ids(entries_to_remove)
 
 
-# TODO: tests
-async def limit_entries_for_feed(feed_id: uuid.UUID) -> None:
+async def limit_entries_for_feed(feed_id: uuid.UUID, limit: int = settings.max_entries_per_feed) -> None:
     """Remove oldest entries for feed to keep only `limit` entries."""
     entries_to_remove = await l_domain.tech_get_feed_entries_tail(feed_id=feed_id,
-                                                                  offset=settings.max_entries_per_feed)
+                                                                  offset=limit)
 
     if not entries_to_remove:
         return

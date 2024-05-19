@@ -9,7 +9,7 @@ from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
 from ffun.markers import domain as m_domains
 from ffun.markers.entities import Marker
-from ffun.meta.domain import merge_feeds, remove_entries, remove_feed
+from ffun.meta.domain import limit_entries_for_feed, merge_feeds, remove_entries, remove_feed
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import ProcessorTag
 from ffun.users.tests import make as u_make
@@ -366,3 +366,34 @@ class TestRemoveEntries:
             another_entries[1].id: None,
             another_entries[2].id: another_entries[2],
         }
+
+
+class TestLimitEntriesForFeed:
+
+    @pytest.mark.asyncio
+    async def test_no_feed(self) -> None:
+        await limit_entries_for_feed(uuid.uuid4(), limit=10)
+
+    @pytest.mark.asyncio
+    async def test_no_entries(self, loaded_feed_id: uuid.UUID) -> None:
+        await limit_entries_for_feed(loaded_feed_id, limit=10)
+
+    @pytest.mark.asyncio
+    async def test_not_exceed_limit(self, loaded_feed_id: uuid.UUID) -> None:
+        entries = await l_make.n_entries_list(loaded_feed_id, 3)
+
+        await limit_entries_for_feed(loaded_feed_id, limit=10)
+
+        loaded_entries = await l_domain.get_entries_by_filter(feeds_ids=[loaded_feed_id], limit=100)
+
+        assert loaded_entries == entries
+
+    @pytest.mark.asyncio
+    async def test_exceed_limit(self, loaded_feed_id: uuid.UUID) -> None:
+        entries = await l_make.n_entries_list(loaded_feed_id, 10)
+
+        await limit_entries_for_feed(loaded_feed_id, limit=5)
+
+        loaded_entries = await l_domain.get_entries_by_filter(feeds_ids=[loaded_feed_id], limit=100)
+
+        assert loaded_entries == entries[:5]
