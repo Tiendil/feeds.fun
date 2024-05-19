@@ -312,7 +312,6 @@ async def process_feed(feed: Feed) -> None:
 
     await store_entries(feed.id, feed_info.entries)
 
-    # TODO: test
     await meta_domain.limit_entries_for_feed(feed.id)
 
     await f_domain.mark_feed_as_loaded(feed.id)

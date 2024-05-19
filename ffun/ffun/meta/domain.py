@@ -67,7 +67,7 @@ async def remove_feed(feed_id: uuid.UUID) -> None:
     await f_domain.tech_remove_feed(feed_id)
 
 
-async def remove_entries(entries_ids: Iterable[uuid.UUID]) -> None:
+async def remove_entries(entries_ids: Iterable[uuid.UUID]) -> int:
     """Remove entries and all related markers and relations."""
 
     entries_to_remove = list(entries_ids)
@@ -76,13 +76,22 @@ async def remove_entries(entries_ids: Iterable[uuid.UUID]) -> None:
     await o_domain.remove_relations_for_entries(entries_to_remove)
     await l_domain.tech_remove_entries_by_ids(entries_to_remove)
 
+    return len(entries_to_remove)
 
-async def limit_entries_for_feed(feed_id: uuid.UUID, limit: int = settings.max_entries_per_feed) -> None:
+
+async def limit_entries_for_feed(feed_id: uuid.UUID, limit: int | None = None) -> None:
     """Remove oldest entries for feed to keep only `limit` entries."""
+
+    if limit is None:
+        limit = settings.max_entries_per_feed
+
     entries_to_remove = await l_domain.tech_get_feed_entries_tail(feed_id=feed_id,
                                                                   offset=limit)
 
     if not entries_to_remove:
+        logger.info("feed_has_no_entries_tail", feed_id=feed_id, entries_limit=limit)
         return
 
-    await remove_entries(entries_to_remove)
+    entries_removed = await remove_entries(entries_to_remove)
+
+    logger.info("feed_entries_tail_removed", feed_id=feed_id, entries_limit=limit, entries_removed=entries_removed)
