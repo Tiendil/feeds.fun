@@ -68,7 +68,6 @@ async def remove_feed(feed_id: uuid.UUID) -> None:
 
 async def remove_entries(entries_ids: Iterable[uuid.UUID]) -> int:
     """Remove entries and all related markers and relations."""
-
     entries_to_remove = list(entries_ids)
 
     await m_domain.remove_markers_for_entries(entries_to_remove)
@@ -80,7 +79,6 @@ async def remove_entries(entries_ids: Iterable[uuid.UUID]) -> int:
 
 async def limit_entries_for_feed(feed_id: uuid.UUID, limit: int | None = None) -> None:
     """Remove oldest entries for feed to keep only `limit` entries."""
-
     if limit is None:
         limit = settings.max_entries_per_feed
 

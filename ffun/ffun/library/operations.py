@@ -172,7 +172,6 @@ async def tech_get_feed_entries_tail(feed_id: uuid.UUID, offset: int) -> set[uui
     """
     Get the last entries for the feed.
     """
-
     # Order by published_at because we want to keep the newest entries
     # and it is better to take decission based on time from an entry's source rather than on time when we collected it
     sql = """
