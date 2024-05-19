@@ -14,8 +14,8 @@ from ffun.library.domain import get_entry
 from ffun.library.entities import Entry
 from ffun.library.operations import (all_entries_iterator, catalog_entries, check_stored_entries_by_external_ids,
                                      get_entries_after_pointer, get_entries_by_filter, get_entries_by_ids,
-                                     tech_get_feed_entries_tail, tech_move_entry, tech_remove_entries_by_feed_id,
-                                     tech_remove_entries_by_ids, update_external_url)
+                                     tech_get_feed_entries_tail, tech_move_entry, tech_remove_entries_by_ids,
+                                     update_external_url)
 from ffun.library.tests import make
 
 
@@ -349,38 +349,6 @@ class TestTechRemoveEntriesByIds:
 
         async with TableSizeNotChanged("l_entries"):
             await tech_remove_entries_by_ids([entry.id for entry in entries_list])
-
-
-class TestTechRemoveEntriesByFeedId:
-    @pytest.mark.asyncio
-    async def test_removed(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID) -> None:
-        entries = await make.n_entries(loaded_feed_id, n=3)
-        another_entries = await make.n_entries(another_loaded_feed_id, n=3)
-
-        async with TableSizeDelta("l_entries", delta=-3):
-            await tech_remove_entries_by_feed_id(loaded_feed_id)
-
-        loaded_entries = await get_entries_by_ids([entry.id for entry in entries.values()])
-
-        assert loaded_entries == {entry.id: None for entry in entries.values()}
-
-        another_loaded_entries = await get_entries_by_ids([entry.id for entry in another_entries.values()])
-
-        assert another_loaded_entries == another_entries
-
-    @pytest.mark.asyncio
-    async def test_no_entries(self) -> None:
-        async with TableSizeNotChanged("l_entries"):
-            await tech_remove_entries_by_feed_id(uuid.uuid4())
-
-    @pytest.mark.asyncio
-    async def test_already_removed(self, loaded_feed_id: uuid.UUID) -> None:
-        await make.n_entries(loaded_feed_id, n=3)
-
-        await tech_remove_entries_by_feed_id(loaded_feed_id)
-
-        async with TableSizeNotChanged("l_entries"):
-            await tech_remove_entries_by_feed_id(loaded_feed_id)
 
 
 class TestTechGetFeedEntriesTail:

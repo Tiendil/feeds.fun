@@ -62,9 +62,8 @@ async def remove_feed(feed_id: uuid.UUID) -> None:
 
     entries_ids = [entry.id for entry in all_entries]
 
-    await m_domain.remove_markers_for_entries(entries_ids)
-    await o_domain.remove_relations_for_entries(entries_ids)
-    await l_domain.tech_remove_entries_by_feed_id(feed_id)
+    await remove_entries(entries_ids)
+
     await f_domain.tech_remove_feed(feed_id)
 
 

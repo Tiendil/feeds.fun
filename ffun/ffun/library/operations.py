@@ -7,7 +7,6 @@ from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.library import errors
 from ffun.library.entities import Entry
-from ffun.library.settings import settings
 
 
 logger = logging.get_module_logger()
@@ -154,15 +153,6 @@ async def tech_remove_entries_by_ids(entries_ids: Iterable[uuid.UUID]) -> None:
     """
 
     await execute(sql, {"entries_ids": list(entries_ids)})
-
-
-async def tech_remove_entries_by_feed_id(feed_id: uuid.UUID) -> None:
-    sql = """
-    DELETE FROM l_entries
-    WHERE feed_id = %(feed_id)s
-    """
-
-    await execute(sql, {"feed_id": feed_id})
 
 
 async def tech_move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
