@@ -5,7 +5,7 @@ from typing import Any, AsyncGenerator, Iterable
 import psycopg
 
 from ffun.core import logging
-from ffun.core.postgresql import ExecuteType, execute
+from ffun.core.postgresql import execute
 from ffun.library import errors
 from ffun.library.entities import Entry
 
@@ -146,22 +146,13 @@ async def update_external_url(entity_id: uuid.UUID, url: str) -> None:
     await execute(sql, {"entity_id": entity_id, "url": url})
 
 
-async def tech_remove_entries_by_ids(execute: ExecuteType, entries_ids: Iterable[uuid.UUID]) -> None:
+async def tech_remove_entries_by_ids(entries_ids: Iterable[uuid.UUID]) -> None:
     sql = """
     DELETE FROM l_entries
     WHERE id = ANY(%(entries_ids)s)
     """
 
     await execute(sql, {"entries_ids": list(entries_ids)})
-
-
-async def tech_remove_entries_by_feed_id(execute: ExecuteType, feed_id: uuid.UUID) -> None:
-    sql = """
-    DELETE FROM l_entries
-    WHERE feed_id = %(feed_id)s
-    """
-
-    await execute(sql, {"feed_id": feed_id})
 
 
 async def tech_move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
@@ -175,3 +166,22 @@ async def tech_move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
         await execute(sql, {"entry_id": entry_id, "feed_id": feed_id})
     except psycopg.errors.UniqueViolation as e:
         raise errors.CanNotMoveEntryAlreadyInFeed(entry_id=entry_id, feed_id=feed_id) from e
+
+
+async def tech_get_feed_entries_tail(feed_id: uuid.UUID, offset: int) -> set[uuid.UUID]:
+    """
+    Get the last entries for the feed.
+    """
+    # Order by published_at because we want to keep the newest entries
+    # and it is better to take decission based on time from an entry's source rather than on time when we collected it
+    sql = """
+    SELECT id
+    FROM l_entries
+    WHERE feed_id = %(feed_id)s
+    ORDER BY published_at DESC
+    OFFSET %(offset)s
+    """
+
+    result = await execute(sql, {"feed_id": feed_id, "offset": offset})
+
+    return {row["id"] for row in result}

@@ -2,7 +2,9 @@ import uuid
 
 import pytest
 from pytest_mock import MockerFixture
+from structlog.testing import capture_logs
 
+from ffun.core.tests.helpers import assert_logs
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
 from ffun.feeds_links import domain as fl_domain
@@ -194,7 +196,10 @@ class TestProcessFeed:
 
         await fl_domain.add_link(internal_user_id, saved_feed.id)
 
-        await process_feed(feed=saved_feed)
+        with capture_logs() as logs:
+            await process_feed(feed=saved_feed)
+
+        assert_logs(logs, feed_has_no_entries_tail=1, feed_entries_tail_removed=0)
 
         extract_feed_info.assert_called_once_with(saved_feed)
 
@@ -208,3 +213,34 @@ class TestProcessFeed:
         for entry_info, entry in zip(entry_infos, loaded_entries):
             assert entry.feed_id == saved_feed.id
             assert_entriy_equal_to_info(entry_info, entry)
+
+    @pytest.mark.asyncio
+    async def test_remove_too_long_entries_tail(
+        self, internal_user_id: uuid.UUID, saved_feed: f_entities.Feed, mocker: MockerFixture
+    ) -> None:
+        n = 5
+        m = 3
+
+        entry_infos = [p_make.fake_entry_info() for _ in range(n)]
+        entry_infos.sort(key=lambda e: e.title)
+
+        assert saved_feed.title
+        assert saved_feed.description
+
+        feed_info = p_entities.FeedInfo(
+            url=saved_feed.url, title=saved_feed.title, description=saved_feed.description, entries=entry_infos
+        )
+
+        mocker.patch("ffun.loader.domain.extract_feed_info", return_value=feed_info)
+        mocker.patch("ffun.meta.settings.settings.max_entries_per_feed", m)
+
+        await fl_domain.add_link(internal_user_id, saved_feed.id)
+
+        with capture_logs() as logs:
+            await process_feed(feed=saved_feed)
+
+        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)
+
+        loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
+
+        assert len(loaded_entries) == m
