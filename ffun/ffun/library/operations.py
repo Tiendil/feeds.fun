@@ -147,7 +147,7 @@ async def update_external_url(entity_id: uuid.UUID, url: str) -> None:
     await execute(sql, {"entity_id": entity_id, "url": url})
 
 
-async def tech_remove_entries_by_ids(execute: ExecuteType, entries_ids: Iterable[uuid.UUID]) -> None:
+async def tech_remove_entries_by_ids(entries_ids: Iterable[uuid.UUID]) -> None:
     sql = """
     DELETE FROM l_entries
     WHERE id = ANY(%(entries_ids)s)
@@ -156,7 +156,7 @@ async def tech_remove_entries_by_ids(execute: ExecuteType, entries_ids: Iterable
     await execute(sql, {"entries_ids": list(entries_ids)})
 
 
-async def tech_remove_entries_by_feed_id(execute: ExecuteType, feed_id: uuid.UUID) -> None:
+async def tech_remove_entries_by_feed_id(feed_id: uuid.UUID) -> None:
     sql = """
     DELETE FROM l_entries
     WHERE feed_id = %(feed_id)s

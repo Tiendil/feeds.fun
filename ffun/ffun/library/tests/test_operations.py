@@ -326,7 +326,7 @@ class TestTechRemoveEntriesByIds:
         another_entries_list = list(another_entries.values())
 
         async with TableSizeDelta("l_entries", delta=-2):
-            await tech_remove_entries_by_ids(execute, [entries_list[0].id, another_entries_list[0].id])
+            await tech_remove_entries_by_ids([entries_list[0].id, another_entries_list[0].id])
 
         loaded_entries = await get_entries_by_ids([entry.id for entry in entries_list + another_entries_list])
 
@@ -336,8 +336,8 @@ class TestTechRemoveEntriesByIds:
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
         async with TableSizeNotChanged("l_entries"):
-            await tech_remove_entries_by_ids(execute, [])
-            await tech_remove_entries_by_ids(execute, [uuid.uuid4()])
+            await tech_remove_entries_by_ids([])
+            await tech_remove_entries_by_ids([uuid.uuid4()])
 
     @pytest.mark.asyncio
     async def test_already_removed(self, loaded_feed_id: uuid.UUID) -> None:
@@ -345,10 +345,10 @@ class TestTechRemoveEntriesByIds:
 
         entries_list = list(entries.values())
 
-        await tech_remove_entries_by_ids(execute, [entry.id for entry in entries_list])
+        await tech_remove_entries_by_ids([entry.id for entry in entries_list])
 
         async with TableSizeNotChanged("l_entries"):
-            await tech_remove_entries_by_ids(execute, [entry.id for entry in entries_list])
+            await tech_remove_entries_by_ids([entry.id for entry in entries_list])
 
 
 class TestTechRemoveEntriesByFeedId:
@@ -358,7 +358,7 @@ class TestTechRemoveEntriesByFeedId:
         another_entries = await make.n_entries(another_loaded_feed_id, n=3)
 
         async with TableSizeDelta("l_entries", delta=-3):
-            await tech_remove_entries_by_feed_id(execute, loaded_feed_id)
+            await tech_remove_entries_by_feed_id(loaded_feed_id)
 
         loaded_entries = await get_entries_by_ids([entry.id for entry in entries.values()])
 
@@ -371,23 +371,23 @@ class TestTechRemoveEntriesByFeedId:
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
         async with TableSizeNotChanged("l_entries"):
-            await tech_remove_entries_by_feed_id(execute, uuid.uuid4())
+            await tech_remove_entries_by_feed_id(uuid.uuid4())
 
     @pytest.mark.asyncio
     async def test_already_removed(self, loaded_feed_id: uuid.UUID) -> None:
         await make.n_entries(loaded_feed_id, n=3)
 
-        await tech_remove_entries_by_feed_id(execute, loaded_feed_id)
+        await tech_remove_entries_by_feed_id(loaded_feed_id)
 
         async with TableSizeNotChanged("l_entries"):
-            await tech_remove_entries_by_feed_id(execute, loaded_feed_id)
+            await tech_remove_entries_by_feed_id(loaded_feed_id)
 
 
 class TestTechGetFeedEntriesTail:
 
     @pytest.mark.asyncio
     async def test_nothing_to_return(self, loaded_feed_id: uuid.UUID) -> None:
-        entries = await make.n_entries(loaded_feed_id, n=5)
+        await make.n_entries(loaded_feed_id, n=5)
 
         ids = await tech_get_feed_entries_tail(loaded_feed_id, offset=10)
 
