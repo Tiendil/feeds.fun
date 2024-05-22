@@ -1,4 +1,5 @@
 import pytest
+
 from ffun.librarian.background_processors import EntriesProcessor, ProcessorInfo
 from ffun.librarian.processors.base import AlwaysConstantProcessor
 

@@ -1,15 +1,15 @@
 import uuid
 
 import pytest
+from structlog.testing import capture_logs
+
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
 from ffun.librarian import operations
 from ffun.librarian.background_processors import EntriesProcessor
 from ffun.librarian.tests import make
-from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
 from ffun.ontology import domain as o_domain
-from structlog.testing import capture_logs
 
 
 class TestEntriesProcessors:
@@ -85,9 +85,9 @@ class TestEntriesProcessors:
 
         fake_entries_ids = [uuid.uuid4() for _ in range(3)]
 
-        await operations.push_entries_to_processor_queue(execute,
-                                                         processor_id=fake_entries_processor.id,
-                                                         entry_ids=fake_entries_ids)
+        await operations.push_entries_to_processor_queue(
+            execute, processor_id=fake_entries_processor.id, entry_ids=fake_entries_ids
+        )
 
         assert fake_entries_processor.concurrency >= len(entries) + len(fake_entries_ids)
 
@@ -101,7 +101,6 @@ class TestEntriesProcessors:
         for entry in entries_list:
             assert tags[entry.id] == {"fake-constant-tag-1", "fake-constant-tag-2"}
 
-        entities_in_queue = await operations.get_entries_to_process(processor_id=fake_entries_processor.id,
-                                                                    limit=100)
+        entities_in_queue = await operations.get_entries_to_process(processor_id=fake_entries_processor.id, limit=100)
 
         assert entities_in_queue == []

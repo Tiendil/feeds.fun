@@ -10,7 +10,6 @@ from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
 from ffun.ontology import domain as o_domain
 
-
 logger = logging.get_module_logger()
 
 
@@ -96,5 +95,7 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
 
 
 @run_in_transaction
-async def remove_entries_from_processor_queue(execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
+async def remove_entries_from_processor_queue(
+    execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]
+) -> None:
     await operations.remove_entries_from_processor_queue(execute, processor_id, entry_ids)

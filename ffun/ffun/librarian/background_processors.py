@@ -13,7 +13,6 @@ from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTit
 from ffun.librarian.settings import settings
 from ffun.library import domain as l_domain
 
-
 logger = logging.get_module_logger()
 
 
@@ -133,15 +132,14 @@ class EntriesProcessor(InfiniteTask):
                 continue
 
             tasks.append(
-                domain.process_entry(processor_id=processor_id,
-                                     processor=self._processor_info.processor,
-                                     entry=entry)
+                domain.process_entry(processor_id=processor_id, processor=self._processor_info.processor, entry=entry)
             )
 
         if entries_to_remove:
             logger.warning("unexisted_entries_in_queue", processor_id=processor_id, entries_ids=entries_to_remove)
-            tasks.append(domain.remove_entries_from_processor_queue(processor_id=processor_id,
-                                                                    entry_ids=entries_to_remove))
+            tasks.append(
+                domain.remove_entries_from_processor_queue(processor_id=processor_id, entry_ids=entries_to_remove)
+            )
 
         await asyncio.gather(*tasks, return_exceptions=True)
 
