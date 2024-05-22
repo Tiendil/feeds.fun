@@ -40,6 +40,10 @@ async def load_content_with_proxies(url: str) -> httpx.Response:  # noqa: CCR001
     # TODO: cache states for some time
     proxy_states = await operations.get_proxy_states(names=[proxy.name for proxy in settings.proxies])
 
+    if all(state == ProxyState.suspended for state in proxy_states.values()):
+        logger.warning("all_proxies_suspended")
+        raise errors.AllProxiesSuspended()
+
     # We try different protocols because users often make mistakes in the urls
     # to fix them we unity similar urls like http://example.com and https://example.com
     # => we need to check both protocols
@@ -88,6 +92,9 @@ async def extract_feed_info(feed: Feed) -> p_entities.FeedInfo | None:
         response = await load_content_with_proxies(feed.url)
         content = await operations.decode_content(response)
         feed_info = await operations.parse_content(content, original_url=feed.url)
+    except errors.AllProxiesSuspended:
+        logger.info("all_proxies_suspended")
+        return None
     except errors.LoadError as e:
         logger.info("feed_load_error", error_code=e.feed_error_code)
         await f_domain.mark_feed_as_failed(feed.id, state=FeedState.damaged, error=e.feed_error_code)

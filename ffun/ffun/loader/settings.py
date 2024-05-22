@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     proxies: list[Proxy] = [Proxy(name="default", url=None)]
 
     proxy_anchors: list[str] = ["https://www.google.com", "https://www.amazon.com"]
+    proxy_available_check_period: datetime.timedelta = datetime.timedelta(minutes=5)
 
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_LOADER_")
 
