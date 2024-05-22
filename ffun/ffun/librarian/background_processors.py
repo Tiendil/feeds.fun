@@ -123,11 +123,23 @@ class EntriesProcessor(InfiniteTask):
         #       but remember that for API worker such cachin may be useless or even harmful
         entries = await l_domain.get_entries_by_ids(entities_ids)
 
-        tasks = [
-            domain.process_entry(processor_id=processor_id, processor=self._processor_info.processor, entry=entry)
-            for entry in entries.values()
-            if entry is not None
-        ]
+        tasks = []
+        entries_to_remove = []
+
+        for entry_id, entry in entries.items():
+            if entry is None:
+                entries_to_remove.append(entry_id)
+                continue
+
+            tasks.append(
+                domain.process_entry(processor_id=processor_id, processor=self._processor_info.processor, entry=entry)
+            )
+
+        if entries_to_remove:
+            logger.warning("unexisted_entries_in_queue", processor_id=processor_id, entries_ids=entries_to_remove)
+            tasks.append(
+                domain.remove_entries_from_processor_queue(processor_id=processor_id, entry_ids=entries_to_remove)
+            )
 
         await asyncio.gather(*tasks, return_exceptions=True)
 
