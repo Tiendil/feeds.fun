@@ -7,6 +7,7 @@ import uuid
 import anyio
 import httpx
 from ffun.core import logging, utils
+from ffun.core.postgresql import execute
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedError, FeedState
 from ffun.feeds_collections import domain as fc_domain
@@ -20,6 +21,7 @@ from ffun.meta import domain as meta_domain
 from ffun.parsers import entities as p_entities
 from ffun.parsers.domain import parse_feed
 from furl import furl
+from pypika import PostgreSQLQuery
 
 
 logger = logging.get_module_logger()
@@ -230,9 +232,27 @@ async def is_proxy_available(proxy: Proxy, anchors: list[str], user_agent: str) 
 
 # TODO: tests
 async def get_proxy_states(names: list[str]) -> dict[str, ProxyState]:
-    raise NotImplementedError()
+    sql = """
+    SELECT name, state
+    FROM lr_proxy_states
+    WHERE name = ANY(%(names)s)
+    """
+
+    rows = await execute(sql, {"names": names})
+
+    states = {name: ProxyState.available for name in names}
+
+    for row in rows:
+        states[row["name"]] = ProxyState(row["state"])
+
+    return states
 
 
 # TODO: tests
 async def update_proxy_states(states: dict[str, ProxyState]) -> None:
-    raise NotImplementedError()
+    query = PostgreSQLQuery.into("lr_proxy_states").columns("name", "state", "updated_at")
+
+    for name, state in states.items():
+        query = query.insert(name, state, 'NOW()')
+
+    await execute(str(query))
