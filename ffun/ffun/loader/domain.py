@@ -1,7 +1,6 @@
 import ssl
 import uuid
 
-import anyio
 import httpx
 from ffun.core import logging, utils
 from ffun.feeds import domain as f_domain
@@ -11,6 +10,7 @@ from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
 from ffun.loader import errors, operations
+from ffun.loader.entities import ProxyState
 from ffun.loader.settings import Proxy, settings
 from ffun.meta import domain as meta_domain
 from ffun.parsers import entities as p_entities
@@ -37,6 +37,9 @@ async def load_content_with_proxies(url: str) -> httpx.Response:  # noqa: CCR001
 
     first_exception = None
 
+    # TODO: cache states for some time
+    proxy_states = await operations.get_proxy_states(names=[proxy.name for proxy in settings.proxies])
+
     # We try different protocols because users often make mistakes in the urls
     # to fix them we unity similar urls like http://example.com and https://example.com
     # => we need to check both protocols
@@ -51,6 +54,10 @@ async def load_content_with_proxies(url: str) -> httpx.Response:  # noqa: CCR001
         url_object.scheme = protocol
 
         for proxy in settings.proxies:
+            if proxy_states[proxy.name] == ProxyState.suspended:
+                logger.info("skip_suspended_proxy", proxy=proxy.name)
+                continue
+
             try:
                 return await operations.load_content(str(url_object), proxy, _user_agent)
             except Exception as e:
@@ -136,3 +143,17 @@ async def process_feed(feed: Feed) -> None:
     await f_domain.mark_feed_as_loaded(feed.id)
 
     logger.info("entries_loaded")
+
+
+# TODO: tests
+async def check_proxies_availability() -> None:
+    states = {}
+
+    for proxy in settings.proxies:
+        is_available = await operations.is_proxy_available(proxy=proxy,
+                                                           anchors=settings.proxy_anchors,
+                                                           user_agent=_user_agent)
+
+        states[proxy.name] = ProxyState.available if is_available else ProxyState.suspended
+
+    await operations.update_proxy_states(states)

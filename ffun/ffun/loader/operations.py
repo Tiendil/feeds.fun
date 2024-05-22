@@ -1,5 +1,6 @@
 
 
+import asyncio
 import ssl
 import uuid
 
@@ -12,6 +13,7 @@ from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
+from ffun.loaded.entities import ProxyState
 from ffun.loader import errors
 from ffun.loader.settings import Proxy, settings
 from ffun.meta import domain as meta_domain
@@ -204,3 +206,33 @@ async def parse_content(content: str, original_url: str) -> p_entities.FeedInfo:
         raise errors.LoadError(feed_error_code=FeedError.protocol_no_entries_in_feed)
 
     return feed_info
+
+
+# TODO: tests
+async def check_proxy(proxy: Proxy, url: str, user_agent: str) -> bool:
+    async with httpx.AsyncClient(proxies=proxy.url, headers={"user-agent": user_agent}) as client:
+        response = await client.head(url)
+
+    logger.info("proxy_check", proxy=proxy.name, url=url, status_code=response.status_code)
+
+    return response.status_code == 200  # type: ignore
+
+
+# TODO: tests
+async def is_proxy_available(proxy: Proxy, anchors: list[str], user_agent: str) -> bool:
+
+    tasks = [check_proxy(proxy, url, user_agent) for url in anchors]
+
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    return any(isinstance(result, httpx.Response) for result in results)
+
+
+# TODO: tests
+async def get_proxy_states(names: list[str]) -> dict[str, ProxyState]:
+    raise NotImplementedError()
+
+
+# TODO: tests
+async def update_proxy_states(states: dict[str, ProxyState]) -> None:
+    raise NotImplementedError()
