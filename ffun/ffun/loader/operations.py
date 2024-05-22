@@ -14,14 +14,15 @@ from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
-from ffun.loaded.entities import ProxyState
 from ffun.loader import errors
+from ffun.loader.entities import ProxyState
 from ffun.loader.settings import Proxy, settings
 from ffun.meta import domain as meta_domain
 from ffun.parsers import entities as p_entities
 from ffun.parsers.domain import parse_feed
 from furl import furl
 from pypika import PostgreSQLQuery
+from pypika import functions as pypika_fn
 
 
 logger = logging.get_module_logger()
@@ -230,7 +231,6 @@ async def is_proxy_available(proxy: Proxy, anchors: list[str], user_agent: str) 
     return any(isinstance(result, httpx.Response) for result in results)
 
 
-# TODO: tests
 async def get_proxy_states(names: list[str]) -> dict[str, ProxyState]:
     sql = """
     SELECT name, state
@@ -248,11 +248,16 @@ async def get_proxy_states(names: list[str]) -> dict[str, ProxyState]:
     return states
 
 
-# TODO: tests
 async def update_proxy_states(states: dict[str, ProxyState]) -> None:
+
+    if not states:
+        return
+
     query = PostgreSQLQuery.into("lr_proxy_states").columns("name", "state", "updated_at")
 
     for name, state in states.items():
-        query = query.insert(name, state, 'NOW()')
+        query = query.insert(name, state, pypika_fn.Now())
+
+    query = query.on_conflict("name").do_update("state").do_update('updated_at', pypika_fn.Now())
 
     await execute(str(query))

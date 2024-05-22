@@ -13,7 +13,7 @@ __depends__: set[str] = set()
 
 sql_create_proxy_states_table = """
 CREATE TABLE lr_proxy_states (
-    proxy_name TEXT PRIMARY KEY,
+    name TEXT PRIMARY KEY,
     state INTEGER NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
