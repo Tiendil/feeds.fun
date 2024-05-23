@@ -152,7 +152,6 @@ async def process_feed(feed: Feed) -> None:
     logger.info("entries_loaded")
 
 
-# TODO: tests
 async def check_proxies_availability() -> None:
     states = {}
 
