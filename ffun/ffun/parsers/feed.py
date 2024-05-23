@@ -2,10 +2,10 @@ import datetime
 from typing import Any, Iterable
 
 import feedparser
-
 from ffun.core import logging
 from ffun.domain import urls
 from ffun.parsers.entities import EntryInfo, FeedInfo
+
 
 logger = logging.get_module_logger()
 
@@ -47,7 +47,7 @@ def _extract_external_id(entry: Any) -> str:
     return entry.get("link")  # type: ignore
 
 
-def _extract_external_url(entry: Any, original_url: str) -> str:
+def _extract_external_url(entry: Any, original_url: str) -> str | None:
     url = entry.get("link")
 
     return urls.normalize_external_url(url, original_url)
