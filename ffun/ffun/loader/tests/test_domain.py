@@ -10,7 +10,8 @@ from ffun.feeds import entities as f_entities
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
-from ffun.loader.domain import detect_orphaned, process_feed, store_entries, sync_feed_info
+from ffun.loader.domain import check_proxies_availability, detect_orphaned, process_feed, store_entries, sync_feed_info
+from ffun.loader.settings import Proxy, settings
 from ffun.parsers import entities as p_entities
 from ffun.parsers.tests import make as p_make
 
@@ -244,3 +245,30 @@ class TestProcessFeed:
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 
         assert len(loaded_entries) == m
+
+
+class TestCheckProxiesAvailability:
+    @pytest.mark.asyncio
+    async def test_no_proxies(self, mocker: MockerFixture) -> None:
+        mocker.patch("ffun.loader.settings.settings.proxies", [])
+
+        is_proxy_available = mocker.patch("ffun.loader.operations.is_proxy_available")
+
+        await check_proxies_availability()
+
+        is_proxy_available.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_proxies(self, mocker: MockerFixture) -> None:
+        n = 3
+
+        proxies = [Proxy(name=uuid.uuid4().hex, url=None) for _ in range(n)]
+
+        mocker.patch("ffun.loader.settings.settings.proxies", proxies)
+
+        is_proxy_available = mocker.patch("ffun.loader.operations.is_proxy_available")
+
+        await check_proxies_availability()
+
+        for proxy in proxies:
+            is_proxy_available.assert_any_call(proxy=proxy, anchors=settings.proxy_anchors, user_agent="unknown")

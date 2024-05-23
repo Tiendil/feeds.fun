@@ -8,3 +8,7 @@ class Error(errors.Error):
 
 class LoadError(Error):
     feed_error_code: f_entities.FeedError
+
+
+class AllProxiesSuspended(Error):
+    pass
