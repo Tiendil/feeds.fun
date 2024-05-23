@@ -34,7 +34,7 @@ async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange
         changes.append(
             EntryChange(id=entry.id, field="external_url", old_value=entry.external_url, new_value=new_external_url)
         )
-        if apply:
+        if apply and new_external_url is not None:
             await operations.update_external_url(entry.id, new_external_url)
 
     return changes

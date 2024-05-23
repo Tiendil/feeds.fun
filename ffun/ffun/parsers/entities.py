@@ -8,7 +8,7 @@ class EntryInfo(pydantic.BaseModel):
     title: str
     body: str
     external_id: str
-    external_url: str
+    external_url: str | None
     external_tags: set[str]
     published_at: datetime.datetime
 

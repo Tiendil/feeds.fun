@@ -5,6 +5,11 @@ from urllib.parse import quote_plus, unquote
 from furl import furl
 from orderedmultidict import omdict
 
+from ffun.core import logging
+
+logger = logging.get_module_logger()
+
+
 RE_SCHEMA = re.compile(r"^(\w+):")
 
 
@@ -30,11 +35,21 @@ def _fake_schema_for_url(url: str) -> str:
     return f"//{url}"
 
 
-def normalize_classic_url(url: str, original_url: str) -> str:
+def normalize_classic_url(url: str, original_url: str) -> str | None:
     url = _fake_schema_for_url(url)
     original_url = _fake_schema_for_url(original_url)
 
-    external_url = furl(url)
+    try:
+        external_url = furl(url)
+    except ValueError as e:
+        error = str(e)
+
+        logger.warning("invalid_url", url=url, error=error)
+
+        if "Invalid port" in error:
+            return None
+
+        raise
 
     f_original_url = furl(original_url)
 
@@ -60,7 +75,7 @@ def normalize_magnetic_url(url: str) -> str:
     return url
 
 
-def normalize_external_url(url: str, original_url: str) -> str:
+def normalize_external_url(url: str, original_url: str) -> str | None:
     if is_magnetic_url(url):
         return normalize_magnetic_url(url)
 

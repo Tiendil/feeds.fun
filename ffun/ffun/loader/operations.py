@@ -141,6 +141,9 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         elif "403" in message:
             log.warning("proxy_connection_403")
             error_code = FeedError.proxy_connection_403
+        elif "502" in message:
+            log.warning("proxy_connection_502")
+            error_code = FeedError.proxy_connection_502
         else:
             log.exception("unknown_proxy_error_while_loading_feed")
 

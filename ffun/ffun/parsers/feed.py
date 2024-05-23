@@ -47,7 +47,7 @@ def _extract_external_id(entry: Any) -> str:
     return entry.get("link")  # type: ignore
 
 
-def _extract_external_url(entry: Any, original_url: str) -> str:
+def _extract_external_url(entry: Any, original_url: str) -> str | None:
     url = entry.get("link")
 
     return urls.normalize_external_url(url, original_url)

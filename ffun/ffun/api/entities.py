@@ -115,7 +115,7 @@ class Rule(BaseEntity):
 class EntryInfo(BaseEntity):
     title: str
     body: str
-    url: str
+    url: str | None
     published_at: datetime.datetime
 
     @classmethod
