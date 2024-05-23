@@ -211,24 +211,27 @@ async def parse_content(content: str, original_url: str) -> p_entities.FeedInfo:
     return feed_info
 
 
-# TODO: tests
 async def check_proxy(proxy: Proxy, url: str, user_agent: str) -> bool:
-    async with httpx.AsyncClient(proxies=proxy.url, headers={"user-agent": user_agent}) as client:
-        response = await client.head(url)
+
+    try:
+        async with httpx.AsyncClient(proxies=proxy.url, headers={"user-agent": user_agent}) as client:
+            response = await client.head(url)
+    except Exception as e:
+        logger.info("proxy_check_error", proxy=proxy.name, url=url, error=str(e))
+        return False
 
     logger.info("proxy_check", proxy=proxy.name, url=url, status_code=response.status_code)
 
     return response.status_code == 200  # type: ignore
 
 
-# TODO: tests
 async def is_proxy_available(proxy: Proxy, anchors: list[str], user_agent: str) -> bool:
 
     tasks = [check_proxy(proxy, url, user_agent) for url in anchors]
 
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    return any(isinstance(result, httpx.Response) for result in results)
+    return any(result for result in results)
 
 
 async def get_proxy_states(names: list[str]) -> dict[str, ProxyState]:

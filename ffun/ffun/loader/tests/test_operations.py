@@ -8,7 +8,8 @@ from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.librarian import errors, operations
 from ffun.library.tests import make as l_make
 from ffun.loader.entities import ProxyState
-from ffun.loader.operations import get_proxy_states, update_proxy_states
+from ffun.loader.operations import check_proxy, get_proxy_states, is_proxy_available, update_proxy_states
+from ffun.loader.settings import Proxy
 
 
 # def assert_is_new_pointer(pointer: ProcessorPointer, processor_id: int) -> None:
@@ -78,3 +79,41 @@ class TestGetProxyStates:
                           names[1]: ProxyState.available,
                           names[2]: ProxyState.available,
                           names[3]: ProxyState.available}
+
+
+class TestCheckProxy:
+
+    @pytest.mark.asyncio
+    async def test_success(self) -> None:
+        proxy = Proxy(name=uuid.uuid4().hex, url=None)
+        url = "https://www.google.com"
+        user_agent = "Mozilla/5.0"
+
+        assert await check_proxy(proxy, url, user_agent)
+
+    @pytest.mark.asyncio
+    async def test_error(self) -> None:
+        proxy = Proxy(name=uuid.uuid4().hex, url=None)
+        url = "localhost:1"
+        user_agent = "Mozilla/5.0"
+
+        assert not await check_proxy(proxy, url, user_agent)
+
+
+class TestIsProxyAvailable:
+
+    @pytest.mark.asyncio
+    async def test_success(self) -> None:
+        proxy = Proxy(name=uuid.uuid4().hex, url=None)
+        anchors = ["https://www.google.com", "https://www.amazon.com"]
+        user_agent = "Mozilla/5.0"
+
+        assert await is_proxy_available(proxy, anchors, user_agent)
+
+    @pytest.mark.asyncio
+    async def test_error(self) -> None:
+        proxy = Proxy(name=uuid.uuid4().hex, url=None)
+        anchors = ["localhost:1", "localhost:2"]
+        user_agent = "Mozilla/5.0"
+
+        assert not await is_proxy_available(proxy, anchors, user_agent)
