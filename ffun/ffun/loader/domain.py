@@ -1,22 +1,20 @@
-import ssl
 import uuid
 
 import httpx
+from furl import furl
+
 from ffun.core import logging, utils
 from ffun.feeds import domain as f_domain
-from ffun.feeds.entities import Feed, FeedError, FeedState
+from ffun.feeds.entities import Feed, FeedState
 from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
 from ffun.loader import errors, operations
 from ffun.loader.entities import ProxyState
-from ffun.loader.settings import Proxy, settings
+from ffun.loader.settings import settings
 from ffun.meta import domain as meta_domain
 from ffun.parsers import entities as p_entities
-from ffun.parsers.domain import parse_feed
-from furl import furl
-
 
 logger = logging.get_module_logger()
 
@@ -156,9 +154,9 @@ async def check_proxies_availability() -> None:
     states = {}
 
     for proxy in settings.proxies:
-        is_available = await operations.is_proxy_available(proxy=proxy,
-                                                           anchors=settings.proxy_anchors,
-                                                           user_agent=_user_agent)
+        is_available = await operations.is_proxy_available(
+            proxy=proxy, anchors=settings.proxy_anchors, user_agent=_user_agent
+        )
 
         states[proxy.name] = ProxyState.available if is_available else ProxyState.suspended
 

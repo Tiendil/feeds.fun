@@ -1,38 +1,26 @@
-
-
 import asyncio
 import ssl
-import uuid
 
 import anyio
 import httpx
-from ffun.core import logging, utils
-from ffun.core.postgresql import execute
-from ffun.feeds import domain as f_domain
-from ffun.feeds.entities import Feed, FeedError, FeedState
-from ffun.feeds_collections import domain as fc_domain
-from ffun.feeds_links import domain as fl_domain
-from ffun.library import domain as l_domain
-from ffun.library import entities as l_entities
-from ffun.loader import errors
-from ffun.loader.entities import ProxyState
-from ffun.loader.settings import Proxy, settings
-from ffun.meta import domain as meta_domain
-from ffun.parsers import entities as p_entities
-from ffun.parsers.domain import parse_feed
-from furl import furl
 from pypika import PostgreSQLQuery
 from pypika import functions as pypika_fn
 
+from ffun.core import logging
+from ffun.core.postgresql import execute
+from ffun.feeds.entities import FeedError
+from ffun.loader import errors
+from ffun.loader.entities import ProxyState
+from ffun.loader.settings import Proxy
+from ffun.parsers import entities as p_entities
+from ffun.parsers.domain import parse_feed
 
 logger = logging.get_module_logger()
 
 
 # TODO: tests
 async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R0915
-        url: str,
-        proxy: Proxy,
-        user_agent: str
+    url: str, proxy: Proxy, user_agent: str
 ) -> httpx.Response:
     error_code = FeedError.network_unknown
 
@@ -212,7 +200,6 @@ async def parse_content(content: str, original_url: str) -> p_entities.FeedInfo:
 
 
 async def check_proxy(proxy: Proxy, url: str, user_agent: str) -> bool:
-
     try:
         async with httpx.AsyncClient(proxies=proxy.url, headers={"user-agent": user_agent}) as client:
             response = await client.head(url)
@@ -226,7 +213,6 @@ async def check_proxy(proxy: Proxy, url: str, user_agent: str) -> bool:
 
 
 async def is_proxy_available(proxy: Proxy, anchors: list[str], user_agent: str) -> bool:
-
     tasks = [check_proxy(proxy, url, user_agent) for url in anchors]
 
     results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -252,7 +238,6 @@ async def get_proxy_states(names: list[str]) -> dict[str, ProxyState]:
 
 
 async def update_proxy_states(states: dict[str, ProxyState]) -> None:
-
     if not states:
         return
 
@@ -261,6 +246,6 @@ async def update_proxy_states(states: dict[str, ProxyState]) -> None:
     for name, state in states.items():
         query = query.insert(name, state, pypika_fn.Now())
 
-    query = query.on_conflict("name").do_update("state").do_update('updated_at', pypika_fn.Now())
+    query = query.on_conflict("name").do_update("state").do_update("updated_at", pypika_fn.Now())
 
     await execute(str(query))

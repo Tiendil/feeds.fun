@@ -1,6 +1,9 @@
 import uuid
 
 import pytest
+from pytest_mock import MockerFixture
+from structlog.testing import capture_logs
+
 from ffun.core.tests.helpers import assert_logs
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
@@ -11,8 +14,6 @@ from ffun.loader.domain import check_proxies_availability, detect_orphaned, proc
 from ffun.loader.settings import Proxy, settings
 from ffun.parsers import entities as p_entities
 from ffun.parsers.tests import make as p_make
-from pytest_mock import MockerFixture
-from structlog.testing import capture_logs
 
 
 def assert_entriy_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:
@@ -247,7 +248,6 @@ class TestProcessFeed:
 
 
 class TestCheckProxiesAvailability:
-
     @pytest.mark.asyncio
     async def test_no_proxies(self, mocker: MockerFixture) -> None:
         mocker.patch("ffun.loader.settings.settings.proxies", [])
@@ -271,4 +271,4 @@ class TestCheckProxiesAvailability:
         await check_proxies_availability()
 
         for proxy in proxies:
-            is_proxy_available.assert_any_call(proxy=proxy, anchors=settings.proxy_anchors, user_agent='unknown')
+            is_proxy_available.assert_any_call(proxy=proxy, anchors=settings.proxy_anchors, user_agent="unknown")

@@ -8,21 +8,19 @@ from ffun.feeds import domain as f_domain
 from ffun.loader import domain
 from ffun.loader.settings import settings
 
-
 logger = logging.get_module_logger()
 
 
 # TODO: tests
 class FeedsLoader(InfiniteTask):
-    __slots__ = ("_loaders_number", '_last_proxies_check')
+    __slots__ = ("_loaders_number", "_last_proxies_check")
 
     def __init__(self, loaders_number: int = settings.loaders_number, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._loaders_number = loaders_number
-        self._last_proxies_check = datetime.datetime.fromtimestamp(0)
+        self._last_proxies_check = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
 
     async def single_run(self) -> None:
-
         if utils.now() - self._last_proxies_check > settings.proxy_available_check_period:
             await domain.check_proxies_availability()
             self._last_proxies_check = utils.now()
