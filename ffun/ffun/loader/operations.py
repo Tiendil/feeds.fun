@@ -209,7 +209,7 @@ async def check_proxy(proxy: Proxy, url: str, user_agent: str) -> bool:
 
     logger.info("proxy_check", proxy=proxy.name, url=url, status_code=response.status_code)
 
-    return response.status_code == 200  # type: ignore
+    return response.status_code == 200
 
 
 async def is_proxy_available(proxy: Proxy, anchors: list[str], user_agent: str) -> bool:

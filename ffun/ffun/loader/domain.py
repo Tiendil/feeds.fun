@@ -22,6 +22,10 @@ logger = logging.get_module_logger()
 _user_agent: str = "unknown"
 
 
+decode_content = operations.decode_content
+parse_content = operations.parse_content
+
+
 # TODO: tests
 def initialize(user_agent: str) -> None:
     global _user_agent
