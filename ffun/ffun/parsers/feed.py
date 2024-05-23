@@ -2,10 +2,10 @@ import datetime
 from typing import Any, Iterable
 
 import feedparser
+
 from ffun.core import logging
 from ffun.domain import urls
 from ffun.parsers.entities import EntryInfo, FeedInfo
-
 
 logger = logging.get_module_logger()
 

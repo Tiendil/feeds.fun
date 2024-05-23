@@ -1,4 +1,5 @@
 import pytest
+
 from ffun.domain import urls
 
 
@@ -73,8 +74,7 @@ class TestNormalizeExternalUrl:
                 "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80",  # noqa
                 "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80",  # noqa
             ),
-            ("http://www.usinenouvelle.comhttps://www.usine-digitale.fr/article/christophe",
-             None),
+            ("http://www.usinenouvelle.comhttps://www.usine-digitale.fr/article/christophe", None),
         ],
     )
     def test(self, url: str, normalized_url: str) -> None:

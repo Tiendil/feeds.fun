@@ -3,6 +3,9 @@ import ssl
 
 import anyio
 import httpx
+from pypika import PostgreSQLQuery
+from pypika import functions as pypika_fn
+
 from ffun.core import logging
 from ffun.core.postgresql import execute
 from ffun.feeds.entities import FeedError
@@ -11,9 +14,6 @@ from ffun.loader.entities import ProxyState
 from ffun.loader.settings import Proxy
 from ffun.parsers import entities as p_entities
 from ffun.parsers.domain import parse_feed
-from pypika import PostgreSQLQuery
-from pypika import functions as pypika_fn
-
 
 logger = logging.get_module_logger()
 
@@ -141,7 +141,7 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         elif "403" in message:
             log.warning("proxy_connection_403")
             error_code = FeedError.proxy_connection_403
-        elif '502' in message:
+        elif "502" in message:
             log.warning("proxy_connection_502")
             error_code = FeedError.proxy_connection_502
         else:
