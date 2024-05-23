@@ -12,12 +12,6 @@ from ffun.loader.operations import check_proxy, get_proxy_states, is_proxy_avail
 from ffun.loader.settings import Proxy
 
 
-# def assert_is_new_pointer(pointer: ProcessorPointer, processor_id: int) -> None:
-#     assert pointer.processor_id == processor_id
-#     assert pointer.pointer_created_at == datetime.datetime(1970, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)
-#     assert pointer.pointer_entry_id == uuid.UUID("00000000-0000-0000-0000-000000000000")
-
-
 class TestUpdateProxyStates:
 
     @pytest.mark.asyncio
