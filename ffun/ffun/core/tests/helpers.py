@@ -155,3 +155,15 @@ def assert_logs(logs: list[MutableMapping[str, Any]], **kwargs: int) -> None:
             pytest.fail(
                 f"Key {key} not found {expected_count} times in logs, but found {found_enents.get(key, 0)} times"
             )
+
+
+def assert_logs_levels(logs: list[MutableMapping[str, Any]], **kwargs: str) -> None:
+    for record in logs:
+        if record["event"] in kwargs:
+            assert record["log_level"] == kwargs[record["event"]], f"Log level is not equal to expected for {record}"
+
+
+def assert_logs_have_no_errors(logs: list[MutableMapping[str, Any]]) -> None:
+    for record in logs:
+        if record["log_level"].lower() == "error":
+            pytest.fail(f"Error found in logs: {record}")

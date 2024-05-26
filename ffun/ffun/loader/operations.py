@@ -18,7 +18,6 @@ from ffun.parsers.domain import parse_feed
 logger = logging.get_module_logger()
 
 
-# TODO: tests
 async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R0915
     url: str, proxy: Proxy, user_agent: str
 ) -> httpx.Response:
@@ -29,7 +28,9 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
     try:
         log.info("loading_feed")
 
-        async with httpx.AsyncClient(proxies=proxy.url, headers={"user-agent": user_agent}) as client:
+        headers = {"user-agent": user_agent, "accept-encoding": "br;q=1.0, gzip;q=0.9, deflate;q=0.8"}
+
+        async with httpx.AsyncClient(proxies=proxy.url, headers=headers) as client:
             response = await client.get(url, follow_redirects=True)
 
     except httpx.RemoteProtocolError as e:
