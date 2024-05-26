@@ -18,7 +18,6 @@ from ffun.parsers.domain import parse_feed
 logger = logging.get_module_logger()
 
 
-# TODO: tests
 async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R0915
     url: str, proxy: Proxy, user_agent: str
 ) -> httpx.Response:

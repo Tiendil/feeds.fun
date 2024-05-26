@@ -2,13 +2,16 @@ import uuid
 import httpx
 
 import pytest
+from structlog.testing import capture_logs
 from respx.router import MockRouter
 
 
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
+from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs, assert_logs_levels, assert_logs_have_no_errors
 from ffun.loader.entities import ProxyState
 from ffun.loader.operations import check_proxy, get_proxy_states, is_proxy_available, update_proxy_states, load_content
 from ffun.loader.settings import Proxy
+from ffun.loader import errors
+from ffun.feeds.entities import FeedError
 
 
 class TestUpdateProxyStates:
@@ -161,3 +164,35 @@ class TestLoadContent:
                            user_agent="test")
 
         assert respx_mock.calls[0].request.headers["Accept-Encoding"] == "br;q=1.0, gzip;q=0.9, deflate;q=0.8"
+
+    @pytest.mark.asyncio
+    async def test_expected_error(self,
+                                  respx_mock: MockRouter) -> None:
+        respx_mock.get("/test").mock(side_effect=httpx.ConnectTimeout('some message'))
+
+        with capture_logs() as logs:
+            with pytest.raises(errors.LoadError) as expected_error:
+                await load_content(url='http://example.com/test',
+                                   proxy=Proxy(name="test", url=None),
+                                   user_agent="test")
+
+        assert expected_error.value.feed_error_code == FeedError.network_connection_timeout
+
+        assert_logs(logs, error_while_loading_feed=0)
+        assert_logs_have_no_errors(logs)
+
+    @pytest.mark.asyncio
+    async def test_unexpected_error(self,
+                                    respx_mock: MockRouter) -> None:
+        respx_mock.get("/test").mock(side_effect=Exception('some message'))
+
+        with capture_logs() as logs:
+            with pytest.raises(errors.LoadError) as expected_error:
+                await load_content(url='http://example.com/test',
+                                   proxy=Proxy(name="test", url=None),
+                                   user_agent="test")
+
+        assert expected_error.value.feed_error_code == FeedError.network_unknown
+
+        assert_logs(logs, error_while_loading_feed=1)
+        assert_logs_levels(logs, error_while_loading_feed="error")
