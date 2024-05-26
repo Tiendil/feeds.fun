@@ -1,10 +1,13 @@
 import uuid
+import httpx
 
 import pytest
+from respx.router import MockRouter
+
 
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.loader.entities import ProxyState
-from ffun.loader.operations import check_proxy, get_proxy_states, is_proxy_available, update_proxy_states
+from ffun.loader.operations import check_proxy, get_proxy_states, is_proxy_available, update_proxy_states, load_content
 from ffun.loader.settings import Proxy
 
 
@@ -108,3 +111,53 @@ class TestIsProxyAvailable:
         user_agent = "Mozilla/5.0"
 
         assert not await is_proxy_available(proxy, anchors, user_agent)
+
+
+class TestLoadContent:
+
+    @pytest.mark.parametrize("bytes_content, expected_headers",
+                             [(b"test-response", {}),
+                              (b'\x1f\x8b\x08\x00v\x18Sf\x02\xff+I-.\xd1-J-.\xc8\xcf+N\x05\x00\xfe\xebMu\r\x00\x00\x00',
+                               {"Content-Encoding": "gzip"}),
+                              (b'x\x9c+I-.\xd1-J-.\xc8\xcf+N\x05\x00%A\x05]',
+                               {"Content-Encoding": "deflate"}),
+                              # TODO: add zstd support after upgrading HTTPX to the last version
+                              pytest.param(b'(\xb5/\xfd \ri\x00\x00test-response',
+                                           {"Content-Encoding": "zstd"},
+                                           marks=[pytest.mark.xfail(reason="zstd is not supported")]),
+                              (b'\x1b\x0c\x00\xf8\xa5[\xca\xe6\xe8\x84+\xa1\xc66',
+                               {"Content-Encoding": "br"})
+                              ],
+                             ids=["plain", "gzip", "deflate",
+                                  "zstd",
+                                  "br"])
+    @pytest.mark.asyncio
+    async def test_compressing_support(self,
+                                       respx_mock: MockRouter,
+                                       bytes_content: bytes,
+                                       expected_headers: dict[str, str]) -> None:
+
+        expected_content = "test-response"
+
+        mocked_response = httpx.Response(200,
+                                         headers=expected_headers,
+                                         content=bytes_content)
+
+        respx_mock.get("/test").mock(return_value=mocked_response)
+
+        response = await load_content(url='http://example.com/test',
+                                      proxy=Proxy(name="test", url=None),
+                                      user_agent="test")
+
+        assert response.text == expected_content
+
+    @pytest.mark.asyncio
+    async def test_accept_encoding_header(self,
+                                          respx_mock: MockRouter) -> None:
+        respx_mock.get("/test").mock()
+
+        await load_content(url='http://example.com/test',
+                           proxy=Proxy(name="test", url=None),
+                           user_agent="test")
+
+        assert respx_mock.calls[0].request.headers["Accept-Encoding"] == "br;q=1.0, gzip;q=0.9, deflate;q=0.8"

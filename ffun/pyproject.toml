@@ -42,7 +42,10 @@ fastapi = "0.103.*"
 pydantic = "2.4.*"
 pydantic-settings = "2.0.*"
 typer = "0.9.*"
+
 httpx = "0.24.*"
+brotlicffi = "1.1.*"
+# zstandard = "0.22.*"
 
 openai = "0.27.*"
 tiktoken = "0.4.*"
@@ -85,6 +88,8 @@ furl = "2.1.*"
 pytest = "7.4.*"
 pytest-asyncio = "0.21.*"
 pytest-mock = "3.11.*"
+
+respx = "0.21.*"
 
 isort = "5.12.*"
 black = "23.7.*"
