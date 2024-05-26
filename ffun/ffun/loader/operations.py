@@ -28,8 +28,7 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
     try:
         log.info("loading_feed")
 
-        headers = {"user-agent": user_agent,
-                   "accept-encoding": "br;q=1.0, gzip;q=0.9, deflate;q=0.8"}
+        headers = {"user-agent": user_agent, "accept-encoding": "br;q=1.0, gzip;q=0.9, deflate;q=0.8"}
 
         async with httpx.AsyncClient(proxies=proxy.url, headers=headers) as client:
             response = await client.get(url, follow_redirects=True)

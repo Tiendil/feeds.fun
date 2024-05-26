@@ -1,17 +1,22 @@
 import uuid
+
 import httpx
-
 import pytest
-from structlog.testing import capture_logs
 from respx.router import MockRouter
+from structlog.testing import capture_logs
 
-
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs, assert_logs_levels, assert_logs_have_no_errors
-from ffun.loader.entities import ProxyState
-from ffun.loader.operations import check_proxy, get_proxy_states, is_proxy_available, update_proxy_states, load_content
-from ffun.loader.settings import Proxy
-from ffun.loader import errors
+from ffun.core.tests.helpers import (
+    TableSizeDelta,
+    TableSizeNotChanged,
+    assert_logs,
+    assert_logs_have_no_errors,
+    assert_logs_levels,
+)
 from ffun.feeds.entities import FeedError
+from ffun.loader import errors
+from ffun.loader.entities import ProxyState
+from ffun.loader.operations import check_proxy, get_proxy_states, is_proxy_available, load_content, update_proxy_states
+from ffun.loader.settings import Proxy
 
 
 class TestUpdateProxyStates:
@@ -117,64 +122,58 @@ class TestIsProxyAvailable:
 
 
 class TestLoadContent:
-
-    @pytest.mark.parametrize("bytes_content, expected_headers",
-                             [(b"test-response", {}),
-                              (b'\x1f\x8b\x08\x00v\x18Sf\x02\xff+I-.\xd1-J-.\xc8\xcf+N\x05\x00\xfe\xebMu\r\x00\x00\x00',
-                               {"Content-Encoding": "gzip"}),
-                              (b'x\x9c+I-.\xd1-J-.\xc8\xcf+N\x05\x00%A\x05]',
-                               {"Content-Encoding": "deflate"}),
-                              # TODO: add zstd support after upgrading HTTPX to the last version
-                              pytest.param(b'(\xb5/\xfd \ri\x00\x00test-response',
-                                           {"Content-Encoding": "zstd"},
-                                           marks=[pytest.mark.xfail(reason="zstd is not supported")]),
-                              (b'\x1b\x0c\x00\xf8\xa5[\xca\xe6\xe8\x84+\xa1\xc66',
-                               {"Content-Encoding": "br"})
-                              ],
-                             ids=["plain", "gzip", "deflate",
-                                  "zstd",
-                                  "br"])
+    @pytest.mark.parametrize(
+        "bytes_content, expected_headers",
+        [
+            (b"test-response", {}),
+            (
+                b"\x1f\x8b\x08\x00v\x18Sf\x02\xff+I-.\xd1-J-.\xc8\xcf+N\x05\x00\xfe\xebMu\r\x00\x00\x00",
+                {"Content-Encoding": "gzip"},
+            ),
+            (b"x\x9c+I-.\xd1-J-.\xc8\xcf+N\x05\x00%A\x05]", {"Content-Encoding": "deflate"}),
+            # TODO: add zstd support after upgrading HTTPX to the last version
+            pytest.param(
+                b"(\xb5/\xfd \ri\x00\x00test-response",
+                {"Content-Encoding": "zstd"},
+                marks=[pytest.mark.xfail(reason="zstd is not supported")],
+            ),
+            (b"\x1b\x0c\x00\xf8\xa5[\xca\xe6\xe8\x84+\xa1\xc66", {"Content-Encoding": "br"}),
+        ],
+        ids=["plain", "gzip", "deflate", "zstd", "br"],
+    )
     @pytest.mark.asyncio
-    async def test_compressing_support(self,
-                                       respx_mock: MockRouter,
-                                       bytes_content: bytes,
-                                       expected_headers: dict[str, str]) -> None:
-
+    async def test_compressing_support(
+        self, respx_mock: MockRouter, bytes_content: bytes, expected_headers: dict[str, str]
+    ) -> None:
         expected_content = "test-response"
 
-        mocked_response = httpx.Response(200,
-                                         headers=expected_headers,
-                                         content=bytes_content)
+        mocked_response = httpx.Response(200, headers=expected_headers, content=bytes_content)
 
         respx_mock.get("/test").mock(return_value=mocked_response)
 
-        response = await load_content(url='http://example.com/test',
-                                      proxy=Proxy(name="test", url=None),
-                                      user_agent="test")
+        response = await load_content(
+            url="http://example.com/test", proxy=Proxy(name="test", url=None), user_agent="test"
+        )
 
         assert response.text == expected_content
 
     @pytest.mark.asyncio
-    async def test_accept_encoding_header(self,
-                                          respx_mock: MockRouter) -> None:
+    async def test_accept_encoding_header(self, respx_mock: MockRouter) -> None:
         respx_mock.get("/test").mock()
 
-        await load_content(url='http://example.com/test',
-                           proxy=Proxy(name="test", url=None),
-                           user_agent="test")
+        await load_content(url="http://example.com/test", proxy=Proxy(name="test", url=None), user_agent="test")
 
         assert respx_mock.calls[0].request.headers["Accept-Encoding"] == "br;q=1.0, gzip;q=0.9, deflate;q=0.8"
 
     @pytest.mark.asyncio
-    async def test_expected_error(self,
-                                  respx_mock: MockRouter) -> None:
-        respx_mock.get("/test").mock(side_effect=httpx.ConnectTimeout('some message'))
+    async def test_expected_error(self, respx_mock: MockRouter) -> None:
+        respx_mock.get("/test").mock(side_effect=httpx.ConnectTimeout("some message"))
 
         with capture_logs() as logs:
             with pytest.raises(errors.LoadError) as expected_error:
-                await load_content(url='http://example.com/test',
-                                   proxy=Proxy(name="test", url=None),
-                                   user_agent="test")
+                await load_content(
+                    url="http://example.com/test", proxy=Proxy(name="test", url=None), user_agent="test"
+                )
 
         assert expected_error.value.feed_error_code == FeedError.network_connection_timeout
 
@@ -182,15 +181,14 @@ class TestLoadContent:
         assert_logs_have_no_errors(logs)
 
     @pytest.mark.asyncio
-    async def test_unexpected_error(self,
-                                    respx_mock: MockRouter) -> None:
-        respx_mock.get("/test").mock(side_effect=Exception('some message'))
+    async def test_unexpected_error(self, respx_mock: MockRouter) -> None:
+        respx_mock.get("/test").mock(side_effect=Exception("some message"))
 
         with capture_logs() as logs:
             with pytest.raises(errors.LoadError) as expected_error:
-                await load_content(url='http://example.com/test',
-                                   proxy=Proxy(name="test", url=None),
-                                   user_agent="test")
+                await load_content(
+                    url="http://example.com/test", proxy=Proxy(name="test", url=None), user_agent="test"
+                )
 
         assert expected_error.value.feed_error_code == FeedError.network_unknown
 
