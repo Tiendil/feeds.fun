@@ -48,6 +48,9 @@ jobs:
         with:
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Install poetry
+        run: pip install poetry
+
       - name: Prepare Python
         uses: actions/setup-python@v4
         with:
