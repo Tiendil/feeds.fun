@@ -4,27 +4,37 @@ set -e
 
 export BUMP_VERSION=$1
 
-# cd ./ffun
-
 echo "Bumping version as $BUMP_VERSION"
 
-# export FFUN_VERSION=$(poetry version $BUMP_VERSION --short)
-# export FFUN_VERSION_TAG="backend-$FFUN_VERSION"
+echo "Bump backend version"
 
-# echo "New version is $FFUN_VERSION"
-# echo "New version tag $FFUN_VERSION_TAG"
+cd ./ffun
 
-# echo "Building Python package"
+export FFUN_VERSION=$(poetry version $BUMP_VERSION --short)
+export FFUN_VERSION_TAG="release-$FFUN_VERSION"
 
-# poetry build
+echo "Building Python package"
 
-# echo "Commit changes"
+poetry build
 
-# git add -A
-# git commit -m "Backend release ${FFUN_VERSION}"
-# git push
+echo "Set frontend version"
 
-# echo "Create tag"
+cd ../site
 
-# git tag $FFUN_VERSION_TAG
-# git push origin $FFUN_VERSION_TAG
+npm version --tag-version-prefix "" $BUMP_VERSION
+
+echo "New version is $FFUN_VERSION"
+echo "New version tag $FFUN_VERSION_TAG"
+
+cd ..
+
+echo "Commit changes"
+
+git add -A
+git commit -m "Release ${FFUN_VERSION}"
+git push
+
+echo "Create tag"
+
+git tag $FFUN_VERSION_TAG
+git push origin $FFUN_VERSION_TAG

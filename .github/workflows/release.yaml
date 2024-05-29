@@ -48,6 +48,9 @@ jobs:
         with:
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Install poetry
+        run: pip install poetry
+
       - name: Prepare Python
         uses: actions/setup-python@v4
         with:
@@ -57,13 +60,13 @@ jobs:
       - name: Prepare release
         run: ./bin/prepare-release.sh ${{ github.event.inputs.bump_version }}
 
-      # - name: Publish package distributions to PyPI
-      #   uses: pypa/gh-action-pypi-publish@release/v1
-      #   with:
-      #     packages-dir: ffun/dist/
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ffun/dist/
 
-      # - name: Publish package distributions to NPM
-      #   working-directory: site
-      #   run: npm publish
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
+      - name: Publish package distributions to NPM
+        working-directory: site
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
