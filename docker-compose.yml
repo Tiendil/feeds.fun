@@ -42,7 +42,7 @@ services:
       retries: 10
 
   supertokens:
-    image: registry.supertokens.io/supertokens/supertokens-postgresql:5.0
+    image: registry.supertokens.io/supertokens/supertokens-postgresql:9.02
 
     depends_on:
       postgresql:
