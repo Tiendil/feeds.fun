@@ -6,6 +6,7 @@ import async_lru
 import openai
 import tiktoken
 import typer
+from openai import AsyncOpenAI
 
 from ffun.core import logging
 from ffun.openai import entities, errors
@@ -118,8 +119,7 @@ async def request(  # noqa: CFQ002
 
     with track_key_status(api_key):
         try:
-            answer = await openai.ChatCompletion.acreate(
-                api_key=api_key,
+            answer = await AsyncOpenAI(api_key=api_key).chat.completions.create(
                 model=model,
                 temperature=temperature,
                 max_tokens=max_tokens,
@@ -129,22 +129,22 @@ async def request(  # noqa: CFQ002
                 messages=messages,
                 **arguments
             )
-        except openai.error.APIError as e:
+        except openai.APIError as e:
             logger.info("openai_api_error", message=str(e))
             raise errors.TemporaryError(message=str(e)) from e
 
     logger.info("openai_response")
 
     if function:
-        content = answer["choices"][0]["message"]["function_call"]["arguments"]
+        content = answer.choices[0].message.function_call.arguments
     else:
-        content = answer["choices"][0]["message"]["content"]
+        content = answer.choices[0].message.content
 
     return entities.OpenAIAnswer(
         content=content,
-        prompt_tokens=answer["usage"]["prompt_tokens"],
-        completion_tokens=answer["usage"]["completion_tokens"],
-        total_tokens=answer["usage"]["total_tokens"],
+        prompt_tokens=answer.usage.prompt_tokens,
+        completion_tokens=answer.usage.completion_tokens,
+        total_tokens=answer.usage.total_tokens,
     )
 
 
@@ -185,8 +185,8 @@ async def multiple_requests(  # noqa: CFQ002
 async def check_api_key(api_key: str) -> entities.KeyStatus:
     with track_key_status(api_key):
         try:
-            await openai.Model.alist(api_key=api_key)
-        except openai.error.APIError:
+            await AsyncOpenAI(api_key=api_key).models.list()
+        except openai.APIError:
             pass
 
     return statuses.get(api_key)
