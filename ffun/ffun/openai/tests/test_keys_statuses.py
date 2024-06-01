@@ -60,7 +60,7 @@ class TestTrackKeyStatus:
         assert statuses.get("key_1") == KeyStatus.works
 
     @pytest.mark.parametrize(
-        "exception", [openai.error.AuthenticationError, openai.error.PermissionError, openai.error.InvalidAPIType]
+        "exception", [openai.AuthenticationError, openai.PermissionDeniedError]
     )
     def test_authentication_error(self, exception: Type[Exception], statuses: Statuses) -> None:
         with pytest.raises(exception):
@@ -69,7 +69,7 @@ class TestTrackKeyStatus:
 
         assert statuses.get("key_1") == KeyStatus.broken
 
-    @pytest.mark.parametrize("exception", [openai.error.RateLimitError])
+    @pytest.mark.parametrize("exception", [openai.RateLimitError])
     def test_quota_error(self, exception: Type[Exception], statuses: Statuses) -> None:
         with pytest.raises(exception):
             with track_key_status("key_1", statuses):
