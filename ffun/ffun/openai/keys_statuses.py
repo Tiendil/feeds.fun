@@ -52,19 +52,16 @@ def track_key_status(key: str, statuses: Statuses = statuses) -> Generator[None,
     try:
         yield
         statuses.set(key, KeyStatus.works)
-    except openai.error.AuthenticationError:
+    except openai.AuthenticationError:
         statuses.set(key, KeyStatus.broken)
         raise
-    except openai.error.RateLimitError:
+    except openai.RateLimitError:
         statuses.set(key, KeyStatus.quota)
         raise
-    except openai.error.PermissionError:
-        statuses.set(key, KeyStatus.broken)
-        raise
-    except openai.error.InvalidAPIType:
+    except openai.PermissionDeniedError:
         statuses.set(key, KeyStatus.broken)
         raise
     # TODO: test
-    except openai.error.APIError:
+    except openai.APIError:
         statuses.set(key, KeyStatus.unknown)
         raise
