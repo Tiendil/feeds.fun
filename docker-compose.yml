@@ -116,6 +116,7 @@ services:
     volumes:
       - ${PWD}/ffun:/repository
       - ${PWD}/.env:/repository/.env
+      - ${PWD}/changes:/repository/changes
 
     networks:
       ffun_network: {}
