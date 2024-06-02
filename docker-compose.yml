@@ -117,6 +117,7 @@ services:
       - ${PWD}/ffun:/repository
       - ${PWD}/.env:/repository/.env
       - ${PWD}/changes:/repository/changes
+      - ${PWD}/CHANGELOG.md:/repository/CHANGELOG.md
 
     networks:
       ffun_network: {}
