@@ -31,6 +31,8 @@ poetry run changy changelog create
 # TODO: https://github.com/Tiendil/feeds.fun/issues/212
 mv ./CHANGELOG.md ../CHANGELOG.md
 
+export COMMIT_BODY=$(poetry run changy version show $NEXT_VERSION)
+
 echo "Building Python package"
 
 poetry build
@@ -49,7 +51,7 @@ cd ..
 echo "Commit changes"
 
 git add -A
-git commit -m "Release $NEXT_VERSION" -m "$(poetry run changy version show $NEXT_VERSION)"
+git commit -m "Release $NEXT_VERSION" -m "$COMMIT_BODY"
 git push
 
 echo "Create tag"
