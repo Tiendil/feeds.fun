@@ -1,8 +1,6 @@
-import asyncio
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator
 
 import fastapi
-import pytest
 import pytest_asyncio
 
 from ffun.application import application
@@ -14,7 +12,6 @@ from ffun.library.tests.fixtures import *  # noqa
 from ffun.ontology.tests.fixtures import *  # noqa
 from ffun.openai.tests.fixtures import *  # noqa
 from ffun.users.tests.fixtures import *  # noqa
-
 
 # Replacing the event_loop fixture with a custom implementation is deprecated
 # and will lead to errors in the future.

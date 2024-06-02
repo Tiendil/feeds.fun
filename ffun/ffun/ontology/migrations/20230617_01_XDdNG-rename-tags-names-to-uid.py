@@ -1,6 +1,7 @@
 """
 rename-tags-names-to-uid
 """
+
 from typing import Any
 
 from psycopg import Connection

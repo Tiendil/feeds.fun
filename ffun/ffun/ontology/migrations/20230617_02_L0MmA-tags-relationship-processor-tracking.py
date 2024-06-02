@@ -1,6 +1,7 @@
 """
 tags-relationship-processor-tracking
 """
+
 from typing import Any
 
 from psycopg import Connection

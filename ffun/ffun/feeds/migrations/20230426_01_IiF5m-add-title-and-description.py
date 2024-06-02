@@ -1,6 +1,7 @@
 """
 add-title-and-description
 """
+
 from typing import Any
 
 from psycopg import Connection

@@ -1,6 +1,7 @@
 """
 index-to-search-by-value
 """
+
 from typing import Any
 
 from psycopg import Connection
