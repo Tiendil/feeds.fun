@@ -37,7 +37,7 @@ jobs:
         run: ./bin/check-code-formatting.sh
 
       - name: check types
-        run: ./bin/check-types.sh
+        run: ./bin/check-code-semantics.sh
 
       - name: run tests
         run: ./bin/run-tests.sh

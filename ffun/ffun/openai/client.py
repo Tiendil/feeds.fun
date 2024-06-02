@@ -126,7 +126,7 @@ async def request(  # noqa: CFQ002
                 top_p=top_p,
                 presence_penalty=presence_penalty,
                 frequency_penalty=frequency_penalty,
-                messages=messages,
+                messages=messages,  # type: ignore
                 **arguments
             )
         except openai.APIError as e:
@@ -136,9 +136,13 @@ async def request(  # noqa: CFQ002
     logger.info("openai_response")
 
     if function:
+        assert answer.choices[0].message.function_call is not None
         content = answer.choices[0].message.function_call.arguments
     else:
+        assert answer.choices[0].message.content is not None
         content = answer.choices[0].message.content
+
+    assert answer.usage is not None
 
     return entities.OpenAIAnswer(
         content=content,

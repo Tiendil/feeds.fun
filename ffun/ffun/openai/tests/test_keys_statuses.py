@@ -64,7 +64,7 @@ class TestTrackKeyStatus:
     def test_authentication_error(self, exception: Type[Exception], statuses: Statuses) -> None:
         with pytest.raises(exception):
             with track_key_status("key_1", statuses):
-                raise exception(message="test-message", response=MagicMock(), body=MagicMock())
+                raise exception(message="test-message", response=MagicMock(), body=MagicMock())  # type: ignore
 
         assert statuses.get("key_1") == KeyStatus.broken
 
@@ -72,6 +72,6 @@ class TestTrackKeyStatus:
     def test_quota_error(self, exception: Type[Exception], statuses: Statuses) -> None:
         with pytest.raises(exception):
             with track_key_status("key_1", statuses):
-                raise exception(message="test-message", response=MagicMock(), body=MagicMock())
+                raise exception(message="test-message", response=MagicMock(), body=MagicMock())  # type: ignore
 
         assert statuses.get("key_1") == KeyStatus.quota
