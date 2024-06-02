@@ -19,11 +19,17 @@ poetry install
 
 echo "Update change log"
 
+# TODO: https://github.com/Tiendil/feeds.fun/issues/212
+export CHANGY_CHANGELOG_SOURCES_DIR="../changes"
+
 poetry run changy version create $NEXT_VERSION
 
 echo "Generate changelog"
 
 poetry run changy changelog create
+
+# TODO: https://github.com/Tiendil/feeds.fun/issues/212
+mv ./CHANGELOG.md ../CHANGELOG.md
 
 echo "Building Python package"
 
