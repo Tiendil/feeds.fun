@@ -13,5 +13,5 @@ Breaking changes:
 Changes:
 
 - [gh-128](https://github.com/Tiendil/feeds.fun/issues/128) Code migrated to Python 3.12
-- [gh-128](https://github.com/Tiendil/feeds.fun/issues/128) All packages upgraded to the latest suitable versions
+- [gh-128](https://github.com/Tiendil/feeds.fun/issues/128) Upgraded backend dependencies to the latest suitable versions
 - [gh-205](https://github.com/Tiendil/feeds.fun/issues/205) Changelog added, with help of [Changy](https://github.com/Tiendil/changy)
