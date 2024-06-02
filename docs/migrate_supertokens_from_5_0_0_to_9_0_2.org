@@ -1,0 +1,40 @@
+* TODO 6.0.0
+** TODO ensure supertokens 5.0.0 is running
+** TODO stop supertokens
+** TODO apply `./docs/supetokens_migrations/5_0_0_to_6_0_0.sql`
+** TODO upgrade supertokens to 6.0.0
+** TODO start supertokens
+* TODO 7.0.0
+** TODO stop supertokens
+** TODO upgrade supertokens to 6.0.13
+** TODO start supertokens
+** TODO stop supertokens
+** TODO apply `./docs/supetokens_migrations/6_0_13_to_7_0_0.sql`
+** TODO upgrade supertokens to 7.0.0
+** TODO start supertokens
+* TODO 7.0.13
+** TODO stop supertokens
+** TODO upgrade supertokens to 7.0.12
+** TODO start supertokens
+** TODO stop supertokens
+** TODO apply `./docs/supetokens_migrations/7_0_12_to_7_0_13.sql`
+* TODO 8.0.0
+** TODO stop supertokens
+** TODO upgrade supertokens to 7.0.18
+** TODO start supertokens
+** TODO stop supertokens
+** TODO apply `./docs/supetokens_migrations/7_0_18_to_8_0_0.sql`
+** TODO upgrade supertokens to 8.0.0
+** TODO start supertokens
+* TODO 9.0.0
+** TODO stop supertokens
+** TODO upgrade supertokens to 8.0.1
+** TODO start supertokens
+** TODO stop supertokens
+** TODO apply `./docs/supetokens_migrations/8_0_1_to_9_0_0.sql`
+** TODO upgrade supertokens to 9.0.0
+** TODO start supertokens
+* TODO 9.0.2
+** TODO stop supertokens
+** TODO upgrade supertokens to 9.0.2
+** TODO start supertokens

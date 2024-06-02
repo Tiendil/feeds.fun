@@ -1,6 +1,10 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sentry_sdk import init as initialize_sentry
+
+if TYPE_CHECKING:
+    from sentry_sdk._types import Event
+
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
@@ -8,7 +12,7 @@ from sentry_sdk.integrations.starlette import StarletteIntegration
 from ffun.core.errors import Error
 
 
-def improve_fingerprint(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any]:
+def improve_fingerprint(event: "Event", hint: dict[str, Any]) -> "Event":
     if "exc_info" not in hint:
         return event
 
@@ -20,9 +24,8 @@ def improve_fingerprint(event: dict[str, Any], hint: dict[str, Any]) -> dict[str
     return event
 
 
-def before_send(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any]:
-    event = improve_fingerprint(event, hint)
-    return event
+def before_send(event: "Event", hint: dict[str, Any]) -> "Event":
+    return improve_fingerprint(event, hint)
 
 
 def initialize(dsn: str, sample_rate: float, traces_sample_rate: float, environment: str) -> None:

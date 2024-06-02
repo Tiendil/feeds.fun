@@ -1,6 +1,7 @@
 """
 remove-duplicated-entries-from-feeds
 """
+
 from typing import Any
 
 from psycopg import Connection

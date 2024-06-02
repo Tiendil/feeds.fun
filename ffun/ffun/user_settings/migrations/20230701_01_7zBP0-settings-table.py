@@ -1,6 +1,7 @@
 """
 settings-table
 """
+
 from typing import Any
 
 from psycopg import Connection

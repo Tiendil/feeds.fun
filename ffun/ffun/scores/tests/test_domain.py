@@ -23,5 +23,5 @@ class TestGetScore:
             [[rule(12, {1, 2}), rule(-12, {2, 3})], {1, 2, 3, 4, 5}, (0, {1: 12, 2: 0, 3: -12})],
         ],
     )
-    def test(self, rules: list[entities.BaseRule], tags: set[int], contributions: dict[int, int]) -> None:
+    def test(self, rules: list[entities.BaseRule], tags: set[int], contributions: tuple[int, dict[int, int]]) -> None:
         assert domain.get_score_contributions(rules, tags) == contributions

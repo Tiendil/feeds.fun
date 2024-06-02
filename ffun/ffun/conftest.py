@@ -1,8 +1,6 @@
-import asyncio
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator
 
 import fastapi
-import pytest
 import pytest_asyncio
 
 from ffun.application import application
@@ -16,13 +14,6 @@ from ffun.openai.tests.fixtures import *  # noqa
 from ffun.users.tests.fixtures import *  # noqa
 
 
-@pytest.fixture(scope="session", autouse=True)
-def event_loop() -> Generator[asyncio.AbstractEventLoop, asyncio.AbstractEventLoop, None]:
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def app() -> AsyncGenerator[fastapi.FastAPI, None]:
     async with application.with_app() as app:
@@ -32,7 +23,6 @@ async def app() -> AsyncGenerator[fastapi.FastAPI, None]:
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def prepare_db(
     app: AsyncGenerator[fastapi.FastAPI, None],
-    event_loop: asyncio.AbstractEventLoop,
 ) -> AsyncGenerator[None, None]:
     # database migrations may be in an inconsistent state
     await migrations.rollback_all()

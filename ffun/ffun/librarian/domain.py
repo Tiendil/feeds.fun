@@ -86,6 +86,7 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
         # do nothing in such case, see: https://github.com/Tiendil/feeds.fun/issues/176
         logger.warning("processor_requested_to_skip_entry", error_info=str(e))
     except Exception as e:
+        logger.exception("processor_failed", entry_id=entry.id, processor_id=processor_id)
         await operations.add_entries_to_failed_storage(processor_id, [entry.id])
         raise errors.UnexpectedErrorInProcessor(processor_id=processor_id, entry_id=entry.id) from e
     finally:

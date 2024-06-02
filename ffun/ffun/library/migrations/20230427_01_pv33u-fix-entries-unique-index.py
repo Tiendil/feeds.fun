@@ -1,6 +1,7 @@
 """
 fix-entries-unique-index
 """
+
 from typing import Any
 
 from psycopg import Connection

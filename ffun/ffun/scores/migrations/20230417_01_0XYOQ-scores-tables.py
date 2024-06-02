@@ -1,6 +1,7 @@
 """
 scores-tables
 """
+
 from typing import Any
 
 from psycopg import Connection
