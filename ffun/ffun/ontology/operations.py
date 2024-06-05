@@ -2,6 +2,7 @@ import uuid
 from typing import Iterable
 
 from bidict import bidict
+from pypika import PostgreSQLQuery
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
@@ -131,23 +132,24 @@ async def tech_copy_relations(execute: ExecuteType, entry_from_id: uuid.UUID, en
 
 
 async def apply_tags_properties(execute: ExecuteType, properties: Iterable[TagProperty]) -> None:
-    sql = """
-    INSERT INTO o_tags_properties (tag_id, type, value, processor_id, created_at)
-    VALUES (%(tag_id)s, %(type)s, %(value)s, %(processor_id)s, %(created_at)s)
-    ON CONFLICT (tag_id, type, processor_id) DO UPDATE SET value = %(value)s
-    """
+
+    if not properties:
+        return
+
+    query = PostgreSQLQuery.into("o_tags_properties").columns("tag_id", "type", "value", "processor_id", "created_at")
 
     for property in properties:
-        await execute(
-            sql,
-            {
-                "tag_id": property.tag_id,
-                "type": property.type,
-                "value": property.value,
-                "processor_id": property.processor_id,
-                "created_at": property.created_at,
-            },
+        query = query.insert(
+            property.tag_id,
+            property.type,
+            property.value,
+            property.processor_id,
+            property.created_at,
         )
+
+    query = query.on_conflict("tag_id", "type", "processor_id").do_update("value")
+
+    await execute(str(query))
 
 
 async def get_tags_for_entries(execute: ExecuteType, entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:

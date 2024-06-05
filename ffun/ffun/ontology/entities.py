@@ -4,6 +4,7 @@ import enum
 import pydantic
 
 from ffun.core import utils
+from ffun.core.entities import BaseEntity
 
 
 class TagPropertyType(int, enum.Enum):
@@ -16,7 +17,7 @@ class TagCategory(str, enum.Enum):
     feed_tag = "feed-tag"
 
 
-class TagProperty(pydantic.BaseModel):
+class TagProperty(BaseEntity):
     tag_id: int
     type: TagPropertyType
     value: str
