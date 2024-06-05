@@ -226,13 +226,17 @@ Create new migration:
 
 Pay attention. There are different directories layouts in the repository and in the docker containers => paths for migrations should be with only a single `ffun` directory.
 
-## Upgrade to a new version
+## Upgrade to new versions
 
-While the project is in initial development, you should upgrade backed sequentially version by version.
+You should always keep versions of the backend and frontend in sync.
+
+Open [CHANGELOG](CHANGELOG.md) and look at which versions require DB migrations. You should upgrade to the first of them, run migrations and only after that upgrade to the next version.
 
 Algorithm:
 
-- install the next version
-- apply migrations `ffun migrate`
+- Stop services.
+- Install the next version.
+- Run `ffun migrate`.
+- Start services. You can skip this step if you plan to upgrade to the next version immediately.
 
-**DO NOT SKIP VERSIONS.** Migrations could drastically change between versions. Each backend version only guarantees compatibility with the previous one.
+Also, pay attention to breaking changes and notes in the CHANGELOG.
