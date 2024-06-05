@@ -2,20 +2,19 @@ import uuid
 
 import pytest
 
-from ffun.core import utils
 from ffun.core.postgresql import execute, transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.library.entities import Entry
-from ffun.ontology.entities import TagProperty, TagPropertyType, ProcessorTag
+from ffun.ontology.entities import ProcessorTag
 from ffun.ontology.operations import (
     _get_relations_for_entry_and_tags,
     _register_relations_processors,
     _save_tags,
     apply_tags,
+    apply_tags_properties,
+    get_tags_properties,
     remove_relations_for_entries,
     tech_copy_relations,
-    apply_tags_properties,
-    get_tags_properties
 )
 from ffun.ontology.tests.helpers import assert_has_tags
 
@@ -270,17 +269,20 @@ class TestApplyTagsProperties:
             await apply_tags_properties(execute, [])
 
     @pytest.mark.asyncio
-    async def test_first_time_save(self,
-                                   three_tags_by_uids: dict[str, int],
-                                   three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
-                                   fake_processor_id: int) -> None:
+    async def test_first_time_save(
+        self,
+        three_tags_by_uids: dict[str, int],
+        three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
+        fake_processor_id: int,
+    ) -> None:
 
         properties = []
 
         for tag in three_processor_tags:
             tag.link = f"https://example.com?{tag.raw_uid}"
-            properties.extend(tag.build_properties_for(tag_id=three_tags_by_uids[tag.raw_uid],
-                                                       processor_id=fake_processor_id))
+            properties.extend(
+                tag.build_properties_for(tag_id=three_tags_by_uids[tag.raw_uid], processor_id=fake_processor_id)
+            )
 
         async with TableSizeDelta("o_tags_properties", delta=3):
             await apply_tags_properties(execute, properties)
@@ -293,24 +295,29 @@ class TestApplyTagsProperties:
         assert loaded_tags_properties == properties
 
     @pytest.mark.asyncio
-    async def test_save_duplicated(self,
-                                   three_tags_by_uids: dict[str, int],
-                                   three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
-                                   fake_processor_id: int) -> None:
+    async def test_save_duplicated(
+        self,
+        three_tags_by_uids: dict[str, int],
+        three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
+        fake_processor_id: int,
+    ) -> None:
 
         properties = []
 
         for tag in three_processor_tags:
             tag.link = f"https://example.com?{tag.raw_uid}"
-            properties.extend(tag.build_properties_for(tag_id=three_tags_by_uids[tag.raw_uid],
-                                                       processor_id=fake_processor_id))
+            properties.extend(
+                tag.build_properties_for(tag_id=three_tags_by_uids[tag.raw_uid], processor_id=fake_processor_id)
+            )
 
         async with TableSizeDelta("o_tags_properties", delta=3):
             await apply_tags_properties(execute, properties)
 
-        changed_properties = [properties[0].replace(),
-                              properties[1].replace(value="https://example.com?another-uid"),
-                              properties[2].replace()]
+        changed_properties = [
+            properties[0].replace(),
+            properties[1].replace(value="https://example.com?another-uid"),
+            properties[2].replace(),
+        ]
 
         async with TableSizeNotChanged("o_tags_properties"):
             await apply_tags_properties(execute, changed_properties)

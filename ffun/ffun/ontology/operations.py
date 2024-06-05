@@ -2,11 +2,11 @@ import uuid
 from typing import Iterable
 
 from bidict import bidict
+from pypika import PostgreSQLQuery
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.ontology.entities import TagProperty, TagPropertyType
-from pypika import PostgreSQLQuery
 
 logger = logging.get_module_logger()
 
