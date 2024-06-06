@@ -49,6 +49,9 @@ async def get_tags_by_ids(ids: Iterable[int]) -> dict[int, str]:
     return result
 
 
+# TODO: in the future we could split this function into two separate functions
+#       1. tags & properties normalization
+#       2. saving tags & properties to the database
 async def apply_tags_to_entry(entry_id: uuid.UUID, processor_id: int, tags: Iterable[ProcessorTag]) -> None:
     """Apply tags to entry.
 
