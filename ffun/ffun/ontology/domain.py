@@ -49,15 +49,33 @@ async def get_tags_by_ids(ids: Iterable[int]) -> dict[int, str]:
     return result
 
 
+# TODO: in the future we could split this function into two separate functions
+#       1. tags & properties normalization
+#       2. saving tags & properties to the database
 async def apply_tags_to_entry(entry_id: uuid.UUID, processor_id: int, tags: Iterable[ProcessorTag]) -> None:
+    """Apply tags to entry.
+
+    Function expects raw tags from processors => after normalization we could have duplicates.
+    => Function skips duplicated tags.
+    """
     raw_to_uids = {tag.raw_uid: converters.normalize(tag.raw_uid) for tag in tags}
 
     uids_to_ids = await get_ids_by_uids(raw_to_uids.values())
 
     properties = []
 
+    processed_tags = set()
+
     for tag in tags:
-        properties.extend(tag.build_properties_for(uids_to_ids[raw_to_uids[tag.raw_uid]], processor_id=processor_id))
+        tag_id = uids_to_ids[raw_to_uids[tag.raw_uid]]
+
+        if tag_id in processed_tags:
+            # skip duplicated tags
+            continue
+
+        processed_tags.add(tag_id)
+
+        properties.extend(tag.build_properties_for(tag_id, processor_id=processor_id))
 
     async with transaction() as execute:
         await operations.apply_tags(execute, entry_id, processor_id, uids_to_ids.values())

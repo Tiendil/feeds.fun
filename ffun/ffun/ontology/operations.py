@@ -1,11 +1,12 @@
 import uuid
-from typing import Iterable
+from typing import Iterable, Sequence
 
 from bidict import bidict
 from pypika import PostgreSQLQuery
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
+from ffun.ontology import errors
 from ffun.ontology.entities import TagProperty, TagPropertyType
 
 logger = logging.get_module_logger()
@@ -131,10 +132,16 @@ async def tech_copy_relations(execute: ExecuteType, entry_from_id: uuid.UUID, en
         await apply_tags(execute, entry_to_id, processor_id, tags_ids)
 
 
-async def apply_tags_properties(execute: ExecuteType, properties: Iterable[TagProperty]) -> None:
+async def apply_tags_properties(execute: ExecuteType, properties: Sequence[TagProperty]) -> None:
 
     if not properties:
         return
+
+    # check for duplicates
+    tags_ids = {(property.tag_id, property.type, property.processor_id) for property in properties}
+
+    if len(tags_ids) != len(properties):
+        raise errors.DuplicatedTagPropeties()
 
     query = PostgreSQLQuery.into("o_tags_properties").columns("tag_id", "type", "value", "processor_id", "created_at")
 
