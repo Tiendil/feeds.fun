@@ -10,7 +10,7 @@ from ffun.tags import converters
 class TestApplyTagsToEntry:
 
     @pytest.mark.asyncio
-    async def test_apply_no_tags(self, cataloged_entry: Entry, fake_processor_id: int):
+    async def test_apply_no_tags(self, cataloged_entry: Entry, fake_processor_id: int) -> None:
         async with (
             TableSizeNotChanged("o_tags_properties"),
             TableSizeNotChanged("o_relations"),
@@ -28,7 +28,7 @@ class TestApplyTagsToEntry:
         cataloged_entry: Entry,
         fake_processor_id: int,
         three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
-    ):
+    ) -> None:
 
         three_processor_tags[1].link = "https://example.com"
 
@@ -52,7 +52,7 @@ class TestApplyTagsToEntry:
         cataloged_entry: Entry,
         fake_processor_id: int,
         three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
-    ):
+    ) -> None:
 
         three_processor_tags[0].raw_uid = three_processor_tags[0].raw_uid.lower()
         three_processor_tags[0].link = "https://example.com?x"

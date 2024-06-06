@@ -1,5 +1,5 @@
 import uuid
-from typing import Iterable
+from typing import Iterable, Sequence
 
 from bidict import bidict
 from pypika import PostgreSQLQuery
@@ -132,7 +132,7 @@ async def tech_copy_relations(execute: ExecuteType, entry_from_id: uuid.UUID, en
         await apply_tags(execute, entry_to_id, processor_id, tags_ids)
 
 
-async def apply_tags_properties(execute: ExecuteType, properties: Iterable[TagProperty]) -> None:
+async def apply_tags_properties(execute: ExecuteType, properties: Sequence[TagProperty]) -> None:
 
     if not properties:
         return
