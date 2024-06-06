@@ -7,6 +7,7 @@ from pypika import PostgreSQLQuery
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.ontology.entities import TagProperty, TagPropertyType
+from ffun.ontology import errors
 
 logger = logging.get_module_logger()
 
@@ -135,6 +136,12 @@ async def apply_tags_properties(execute: ExecuteType, properties: Iterable[TagPr
 
     if not properties:
         return
+
+    # check for duplicates
+    tags_ids = {(property.tag_id, property.type, property.processor_id) for property in properties}
+
+    if len(tags_ids) != len(properties):
+        raise errors.DuplicatedTagPropeties()
 
     query = PostgreSQLQuery.into("o_tags_properties").columns("tag_id", "type", "value", "processor_id", "created_at")
 

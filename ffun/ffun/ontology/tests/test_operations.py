@@ -5,6 +5,7 @@ import pytest
 from ffun.core.postgresql import execute, transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.library.entities import Entry
+from ffun.ontology import errors
 from ffun.ontology.entities import ProcessorTag
 from ffun.ontology.operations import (
     _get_relations_for_entry_and_tags,
@@ -329,3 +330,25 @@ class TestApplyTagsProperties:
 
         assert loaded_tags_properties != properties
         assert loaded_tags_properties == changed_properties
+
+    @pytest.mark.asyncio
+    async def test_error_on_duplicated_properties(
+        self,
+        three_tags_by_uids: dict[str, int],
+        three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
+        fake_processor_id: int,
+    ) -> None:
+
+        properties = []
+
+        for tag in three_processor_tags:
+            tag.link = f"https://example.com?{tag.raw_uid}"
+            properties.extend(
+                tag.build_properties_for(tag_id=three_tags_by_uids[tag.raw_uid], processor_id=fake_processor_id)
+            )
+
+        properties.append(properties[0])
+
+        async with TableSizeNotChanged("o_tags_properties"):
+            with pytest.raises(errors.DuplicatedTagPropeties):
+                await apply_tags_properties(execute, properties)
