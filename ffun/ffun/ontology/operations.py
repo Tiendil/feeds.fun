@@ -6,8 +6,8 @@ from pypika import PostgreSQLQuery
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
-from ffun.ontology.entities import TagProperty, TagPropertyType
 from ffun.ontology import errors
+from ffun.ontology.entities import TagProperty, TagPropertyType
 
 logger = logging.get_module_logger()
 
