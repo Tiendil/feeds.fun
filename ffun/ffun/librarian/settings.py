@@ -22,11 +22,11 @@ class UpperCaseTitleProcessor(BaseProcessor):
 
 
 class OpenAIChat35Processor(BaseProcessor):
-    model: str = "gpt-3.5-turbo-0125"
+    model: str = "gpt-4o-mini-2024-07-18"
 
 
 class OpenAIChat35FunctionsProcessor(BaseProcessor):
-    model: str = "gpt-3.5-turbo-0125"
+    model: str = "gpt-4o-mini-2024-07-18"
 
 
 class Settings(BaseSettings):
