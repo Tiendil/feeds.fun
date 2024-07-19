@@ -17,10 +17,10 @@ logger = logging.get_module_logger()
 
 system = """\
 You are an expert on the analysis of text semantics.
-For provided text, you determine a list of best tags to describe the text.
-For each category, you provide 30 tags.
+For the provided text, you determine a list of best tags to describe the text.
+For each category, you provide up to 30 tags.
 
-Categories are topics, meta-topics, high-level-topics, low-level-topics, related-topics,\
+Categories are topics, meta-topics, high-level-topics, low-level-topics, related-topics, \
 indirect-topics, mentions, indirect-mentions.
 
 Tags are only in English. Normalize tags and output them as JSON.\

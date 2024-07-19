@@ -32,8 +32,8 @@ the user will see these tags.
 The more users set up the key, the cheaper it will be for everyone.
 """
 
-openai_max_token_cost = decimal.Decimal("0.004")
-openai_max_token_cost_n = 1000
+openai_max_token_cost = (decimal.Decimal("0.150") + decimal.Decimal("0.600")) / 2
+openai_max_token_cost_n = 1000000
 openai_max_spendings = decimal.Decimal("10.00")
 
 description_openai_max_tokens_in_month = f"""
