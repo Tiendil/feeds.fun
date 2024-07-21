@@ -20,7 +20,7 @@ For the provided text, you determine a list of best tags to describe the text fr
 For each category, you provide 15 tags.
 
 Categories are topics, areas, professional-topics, professional-areas, meta-topics, meta-areas, high-level-topics, \
-low-level-topics, related-topics, entities-with-proper-names, domains.
+low-level-topics, related-topics, entities-with-proper-names, domains, text-ontology-tags.
 
 Tags format:
 
