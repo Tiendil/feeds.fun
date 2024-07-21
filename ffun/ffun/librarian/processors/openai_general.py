@@ -42,7 +42,7 @@ def entry_to_text(entry: Entry) -> str:
     return f'<h1>{entry.title}</h1><a href="{entry.external_url}">full article</a>{entry.body}'
 
 
-def extract_tags(text: str) -> set[str]:
+def extract_raw_tags(text: str) -> set[str]:
     return set(tag.lower() for tag in RE_TAG.findall(text))
 
 
@@ -94,7 +94,7 @@ class Processor(base.Processor):
             raise errors.SkipEntryProcessing(message=str(e)) from e
 
         for result in results:
-            for raw_tag in extract_tags(result.content):
+            for raw_tag in extract_raw_tags(result.content):
                 tags.append(ProcessorTag(raw_uid=raw_tag))
 
         return tags
