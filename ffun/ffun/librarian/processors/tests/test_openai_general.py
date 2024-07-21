@@ -5,7 +5,7 @@ from ffun.librarian.processors import openai_general
 
 class TestExtractRawTags:
 
-    raw_answer = '''\
+    raw_answer = """\
 Here is a list of tags to describe the provided text, categorized as requested:
 
 ### Topics
@@ -30,7 +30,7 @@ andthistagtoo
 и-этот-тег-тоже-не-найдут
 
 -and-this-one-tag-is-wrong
-'''
+"""
 
     @pytest.mark.asyncio
     async def test(self) -> None:
@@ -45,7 +45,7 @@ andthistagtoo
             "tag-in-the-line-2",
             "tag-in-the-line-3",
             "__broken_tag-that-should-be-found",
-            "-_this-----tag-will-be-found-too"
+            "-_this-----tag-will-be-found-too",
         }
 
         assert tags == expected_tags
