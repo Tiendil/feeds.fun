@@ -21,8 +21,7 @@ class UpperCaseTitleProcessor(BaseProcessor):
     pass
 
 
-# TODO: will be ranamed & refactored in gh-227
-class OpenAIChat35Processor(BaseProcessor):
+class OpenAIGeneralProcessor(BaseProcessor):
     model: str = "gpt-4o-mini-2024-07-18"
 
 
@@ -36,8 +35,7 @@ class Settings(BaseSettings):
     native_tags_processor: NativeTagsProcessor = NativeTagsProcessor(enabled=True)
     upper_case_title_processor: UpperCaseTitleProcessor = UpperCaseTitleProcessor(enabled=True)
 
-    openai_chat_35_processor: OpenAIChat35Processor = OpenAIChat35Processor()
-    openai_chat_35_functions_processor: OpenAIChat35FunctionsProcessor = OpenAIChat35FunctionsProcessor()
+    openai_general_processor: OpenAIGeneralProcessor = OpenAIGeneralProcessor()
 
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_LIBRARIAN_")
 

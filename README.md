@@ -69,8 +69,7 @@ For example:
 ```
 FFUN_AUTH_MODE="supertokens"
 
-FFUN_LIBRARIAN_OPENAI_CHAT_35_PROCESSOR__ENABLED="True"
-FFUN_LIBRARIAN_OPENAI_CHAT_35_PROCESSOR__API_KEY="<your key>"
+FFUN_LIBRARIAN_OPENAI_GENERAL_PROCESSOR__ENABLED="True"
 ```
 
 ## Backend
@@ -117,11 +116,9 @@ FFUN_AUTH_SUPERTOKENS__CONNECTION_URI=...
 # I strongly recommend to redefine it because of potential security issues.
 FFUN_USER_SETTINGS_SECRET_KEY=...
 
-# Enable openai chatgpt-3.5 processors.
-# There are two of them, you can enable both or only one.
+# Enable openai general processor.
 # Other processors are enabled by default.
-FFUN_LIBRARIAN_OPENAI_CHAT_35_PROCESSOR__ENABLED="True"
-FFUN_LIBRARIAN_OPENAI_CHAT_35_FUNCTIONS_PROCESSOR__ENABLED="True"
+FFUN_LIBRARIAN_OPENAI_GENERAL_PROCESSOR__ENABLED="True"
 ```
 
 More details see in the architecture section.
@@ -175,8 +172,8 @@ Currently implemented processors:
 
 - `DomainProcessor` — extract domain and subdomains from URL and saves them as tags.
 - `NativeTagsProcessor` — save tags that are received with the feed entry.
-- `OpenAIChat35Processor` — asks OpenAI chatgpt-3.5 to detect tags.
-- `OpenAIChat35FunctionsProcessor` — new version of `OpenAIChat35Processor` that uses OpenAI chatgpt-3.5 functions to detect tags.
+- `OpenAIGeneralProcessor` — asks OpenAI ChatGPT to detect tags. Currently, it is the most powerful processor. Must-have if you want to use Feed Fun in full power.
+- `UpperCaseTitleProcessor` — detect news with uppercase titles and marks them with `upper-case-title` tag.
 
 # Development
 

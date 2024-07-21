@@ -7,8 +7,7 @@ from ffun.librarian import domain, operations
 from ffun.librarian.processors.base import Processor
 from ffun.librarian.processors.domain import Processor as DomainProcessor
 from ffun.librarian.processors.native_tags import Processor as NativeTagsProcessor
-from ffun.librarian.processors.openai_chat_3_5 import Processor as OpenAIChat35Processor
-from ffun.librarian.processors.openai_chat_3_5_functions import Processor as OpenAIChat35FunctionsProcessor
+from ffun.librarian.processors.openai_general import Processor as OpenGeneralProcessor
 from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTitleProcessor
 from ffun.librarian.settings import settings
 from ffun.library import domain as l_domain
@@ -53,26 +52,17 @@ if settings.native_tags_processor.enabled:
     )
 
 
-if settings.openai_chat_35_processor.enabled:
+if settings.openai_general_processor.enabled:
     processors.append(
         ProcessorInfo(
             id=3,
-            processor=OpenAIChat35Processor(name="openai_chat_3_5", model=settings.openai_chat_35_processor.model),
-            concurrency=settings.openai_chat_35_processor.workers,
+            processor=OpenGeneralProcessor(name="openai_general", model=settings.openai_general_processor.model),
+            concurrency=settings.openai_general_processor.workers,
         )
     )
 
 
-if settings.openai_chat_35_functions_processor.enabled:
-    processors.append(
-        ProcessorInfo(
-            id=4,
-            processor=OpenAIChat35FunctionsProcessor(
-                name="openai_chat_3_5_functions", model=settings.openai_chat_35_functions_processor.model
-            ),
-            concurrency=settings.openai_chat_35_functions_processor.workers,
-        )
-    )
+# the processor 4 was "ChatGPT 3.5 + functions" and was removed in gh-227
 
 if settings.upper_case_title_processor.enabled:
     processors.append(

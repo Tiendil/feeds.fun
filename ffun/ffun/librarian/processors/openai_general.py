@@ -1,7 +1,6 @@
-import json
+import re
 from typing import Any
 
-from ffun.core import json as core_json
 from ffun.core import logging
 from ffun.core import text as core_text
 from ffun.librarian import errors
@@ -16,15 +15,26 @@ logger = logging.get_module_logger()
 
 
 system = """\
-You are an expert on the analysis of text semantics.
-For the provided text, you determine a list of best tags to describe the text.
-For each category, you provide up to 30 tags.
+You are an expert on semantic analysis, text summarization, and information extraction with PhD in Linguistics.
+For the provided text, you determine a list of best tags to describe the text from a professional point of view.
+For each category, you provide 15 tags.
 
-Categories are topics, meta-topics, high-level-topics, low-level-topics, related-topics, \
-indirect-topics, mentions, indirect-mentions.
+Categories are topics, areas, professional-topics, professional-areas, meta-topics, meta-areas, high-level-topics, \
+low-level-topics, related-topics, entities-with-proper-names, domains, text-ontology-tags.
 
-Tags are only in English. Normalize tags and output them as JSON.\
+Tags format:
+
+- Allowed tag format: `@word`, `@word-word-...`
+- Translate all tags to English.
+- Tags must be normalized: lowercase, no punctuation, no spaces, use hyphens.
+- You must use plural forms of tags: `games` is better than `game`.
+- Expand abbreviations: `AI` -> `artificial intelligence`.
+
+You are an expert on semantic analysis, text summarization, and information extraction with PhD in Linguistics. \
+Quality of your answer is highly important.
 """
+
+RE_TAG = re.compile(r"@([\w\d-]+)")
 
 
 # add url to allow chatGPT decide on domain
@@ -32,26 +42,8 @@ def entry_to_text(entry: Entry) -> str:
     return f'<h1>{entry.title}</h1><a href="{entry.external_url}">full article</a>{entry.body}'
 
 
-trash_system_tags = {
-    "topics",
-    "meta-topics",
-    "high-level-topics",
-    "low-level-topics",
-    "related-topics",
-    "indirect-topics",
-    "mentions",
-    "indirect-mentions",
-}
-
-
-def extract_tags(text: str) -> set[str]:
-    try:
-        data = core_json.loads_with_fix(text)
-        tags = core_json.extract_tags_from_random_json(data)
-    except json.decoder.JSONDecodeError:
-        tags = core_json.extract_tags_from_invalid_json(text)
-
-    return tags - trash_system_tags
+def extract_raw_tags(text: str) -> set[str]:
+    return set(tag.lower() for tag in RE_TAG.findall(text))
 
 
 class Processor(base.Processor):
@@ -68,8 +60,8 @@ class Processor(base.Processor):
 
         text = core_text.clear_text(dirty_text)
 
-        total_tokens = 16 * 1024
-        max_return_tokens = 2 * 1024
+        total_tokens = 128 * 1024
+        max_return_tokens = 4 * 1024
 
         messages = await oai_client.prepare_requests(
             system=system,
@@ -102,7 +94,7 @@ class Processor(base.Processor):
             raise errors.SkipEntryProcessing(message=str(e)) from e
 
         for result in results:
-            for raw_tag in extract_tags(result.content):
+            for raw_tag in extract_raw_tags(result.content):
                 tags.append(ProcessorTag(raw_uid=raw_tag))
 
         return tags

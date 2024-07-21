@@ -88,6 +88,7 @@ def loads_with_fix(text: str) -> dict[str, Any]:
         return json.loads(finish_json(text))  # type: ignore
 
 
+# TODO: remove if it will not be used anywhere
 def extract_tags_from_random_json(data: Any) -> set[str]:
     if not data:
         # no tags if [], {}, ''
