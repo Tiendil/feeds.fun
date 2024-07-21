@@ -57,7 +57,7 @@ if settings.openai_general_processor.enabled:
         ProcessorInfo(
             id=3,
             processor=OpenGeneralProcessor(name="openai_general", model=settings.openai_general_processor.model),
-            concurrency=settings.openai_chat_35_processor.workers,
+            concurrency=settings.openai_general_processor.workers,
         )
     )
 
