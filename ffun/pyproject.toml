@@ -82,9 +82,12 @@ tabulate = "0.9.*"
 cryptography = "42.0.*"
 
 markdown = "3.6.*"
-toml = "0.10.*"
 
 furl = "2.1.*"
+
+# TODO: move to dev dependencies?
+python-frontmatter = "1.1.*"
+toml = "0.10.*"
 
 [tool.poetry.dev-dependencies]
 
@@ -118,7 +121,7 @@ mypy = "1.10.*"
 types-python-slugify = "8.0.*"
 types-beautifulsoup4 = "4.12.*"
 types-markdown = "3.6.*"
-types-pkg-resources = "0.1.*"
+types-setuptools = "71.1.*"
 types-tabulate = "0.9.*"
 
 [tool.poetry.scripts]

@@ -1,0 +1,23 @@
+title = "Review of the book \"The Signal and the Noise\""
+external_url = "https://tiendil.org/en/posts/review-of-the-signal-and-the-noise"
+external_tags = []
+published_at = "2024-07-16T12:00:00+00:00"
+----------
+<summary type="html">
+<figure class="brigid-images brigid-images-1">
+<a href="https://tiendil.org/static/posts/review-of-the-signal-and-the-noise/cover_en.jpg" class="brigid-image-link" data-pswp-width="652" data-pswp-height="1000" target="_blank">
+<img src="https://tiendil.org/static/posts/review-of-the-signal-and-the-noise/cover_en.jpg" alt="The cover of the book "The Signal and the Noise"."/>
+</a>
+</figure>
+<p>
+<a href="https://en.wikipedia.org/wiki/Nate_Silver" target="_blank">Nate Silver</a>
+  — the author of "The Signal and the Noise" — is widely known for his successful forecasts, such as the US elections. It is not surprising that the book became a bestseller.</p>
+<p>As you might guess, the book is about forecasts. More precisely, it is about approaches to forecasting, complexities, errors, misconceptions, and so on.</p>
+<p>As usual, I expected a more theoretical approach, in the spirit of
+<a href="https://tiendil.org/ru/posts/scale">Scale
+<span class="brigid-link-language"> [ru]</span>
+</a>
+, but the author chose a different path and presented his ideas through the analysis of practical cases: one case per chapter. Each chapter describes a significant task, such as weather forecasting, and provides several prisms for looking at building forecasts. This certainly makes the material more accessible, but personally, I would like more systematics and theory.</p>
+<p>Because of the case studies approach, it isn't easy to make a brief summary of the book. It is possible, and it would even be interesting to try, but the amount of work is too large — the author did not intend to provide a coherent system or a short set of basic theses.</p>
+<p>Therefore, I will review the book as a whole, provide an approximate list of prisms, and list some cool facts.</p>
+</summary>

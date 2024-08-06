@@ -2,8 +2,9 @@ import asyncio
 import uuid
 import pathlib
 
+import typer
+
 from ffun.application.application import with_app
-from ffun.cli.application import app
 from ffun.core import logging
 from ffun.meta import domain as m_domain
 
@@ -16,6 +17,8 @@ from ffun.librarian.settings import settings as ln_settings
 from ffun.processors_quality.knowlege_base import KnowlegeBase
 
 logger = logging.get_module_logger()
+
+cli_app = typer.Typer()
 
 
 _domain_processor = DomainProcessor(name="domain")
@@ -50,7 +53,9 @@ async def run(processor_name: str, test: int, knowlege_root: pathlib.Path) -> No
 
         print(f'tags: {len(correct_tags)}/{len(expected_tags)}')
 
+        print(f'all tags: {tags}')
 
-@app.command()
+
+@cli_app.command()
 def test(processor: str, test: int, knowlege_root: pathlib.Path) -> None:
     asyncio.run(run(processor, test, knowlege_root))

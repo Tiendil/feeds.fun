@@ -1,7 +1,15 @@
 import pathlib
 import toml
+import re
+import uuid
 
 from ffun.library.entities import Entry
+import frontmatter
+
+
+class FrontmatterTOMLHandler(frontmatter.TOMLHandler):
+    FM_BOUNDARY = re.compile(r"^\-{3,}\s*$", re.MULTILINE)
+    START_DELIMITER = END_DELIMITER = "---"
 
 
 def id_to_name(id_: int) -> str:
@@ -46,8 +54,17 @@ class KnowlegeBase:
 
     def get_news_entry(self, id_: int) -> Entry:
         entry_path = self._dir_news / f'{id_to_name(id_)}.toml'
-        data = toml.loads(entry_path.read_text())
-        return Entry.model_validate(data)
+
+        data, body = frontmatter.parse(entry_path.read_text(), handler=FrontmatterTOMLHandler())
+
+        return Entry(id=uuid.UUID(int=0),
+                     feed_id=uuid.UUID(int=0),
+                     title=data['title'],
+                     body=body,
+                     external_id=uuid.UUID(int=0),
+                     external_url=data['external_url'],
+                     external_tags=data['external_tags'],
+                     published_at=data['published_at'])
 
     def get_expected_tags(self, processor: str, id_: int) -> set[str]:
         tags_path = self._dir_tags_expected / processor / f'{id_to_name(id_)}.toml'
