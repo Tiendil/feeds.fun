@@ -15,6 +15,7 @@ from ffun.librarian.processors.openai_general import Processor as OpenGeneralPro
 from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTitleProcessor
 from ffun.librarian.settings import settings as ln_settings
 from ffun.processors_quality.knowlege_base import KnowlegeBase
+from ffun.ontology import domain as o_domain
 
 logger = logging.get_module_logger()
 
@@ -45,7 +46,9 @@ async def run(processor_name: str, entry_id: int, knowlege_root: pathlib.Path) -
 
         processor = processors[processor_name]
 
-        raw_tags_to_uids = await processor.process(entry)
+        raw_tags = await processor.process(entry)
+
+        raw_tags_to_uids = await o_domain.normalize_tags(raw_tags)
 
         tags = set(raw_tags_to_uids.values())
 
