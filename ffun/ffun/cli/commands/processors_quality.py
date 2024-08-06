@@ -35,13 +35,13 @@ processors = {
 }
 
 
-async def run(processor_name: str, test: int, knowlege_root: pathlib.Path) -> None:
+async def run(processor_name: str, entry_id: int, knowlege_root: pathlib.Path) -> None:
     async with with_app():
         kb = KnowlegeBase(knowlege_root)
 
-        entry = kb.get_news_entry(processor_name)
+        entry = kb.get_news_entry(entry_id)
 
-        expected_tags = kb.get_expected_tags(processor_name, test)
+        expected_tags = kb.get_expected_tags(processor_name, entry_id)
 
         processor = processors[processor_name]
 
@@ -57,5 +57,5 @@ async def run(processor_name: str, test: int, knowlege_root: pathlib.Path) -> No
 
 
 @cli_app.command()
-def test(processor: str, test: int, knowlege_root: pathlib.Path) -> None:
-    asyncio.run(run(processor, test, knowlege_root))
+def test(processor: str, entry: int, knowlege_root: pathlib.Path = pathlib.Path('./tags_quality_base/')) -> None:
+    asyncio.run(run(processor, entry, knowlege_root))

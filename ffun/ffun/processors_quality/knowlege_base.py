@@ -3,6 +3,7 @@ import toml
 import re
 import uuid
 
+from ffun.core import utils
 from ffun.library.entities import Entry
 import frontmatter
 
@@ -61,9 +62,10 @@ class KnowlegeBase:
                      feed_id=uuid.UUID(int=0),
                      title=data['title'],
                      body=body,
-                     external_id=uuid.UUID(int=0),
+                     external_id='',
                      external_url=data['external_url'],
                      external_tags=data['external_tags'],
+                     cataloged_at=utils.now(),
                      published_at=data['published_at'])
 
     def get_expected_tags(self, processor: str, id_: int) -> set[str]:
