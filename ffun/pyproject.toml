@@ -82,6 +82,7 @@ tabulate = "0.9.*"
 cryptography = "42.0.*"
 
 markdown = "3.6.*"
+toml = "0.10.*"
 
 furl = "2.1.*"
 

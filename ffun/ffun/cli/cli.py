@@ -6,5 +6,6 @@ from ffun.cli.commands import meta  # noqa: F401
 from ffun.cli.commands import supertokens  # noqa: F401
 from ffun.cli.commands import workers  # noqa: F401
 from ffun.cli.commands import yoyo  # noqa: F401
+from ffun.cli.commands import processors_quality  # noqa: F401
 
 __all__ = ["app"]
