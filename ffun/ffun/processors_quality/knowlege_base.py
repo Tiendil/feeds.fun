@@ -98,3 +98,11 @@ class KnowlegeBase:
             (self._dir_tags_actual / processor).mkdir(parents=True, exist_ok=True)
             actual_path = self._dir_tags_actual / processor / f'{id_to_name(entry_id)}.toml'
             actual_path.write_text(content)
+
+    def entry_ids(self) -> list[int]:
+        return list(sorted(int(entry.stem) for entry in self._dir_news.glob('*.toml')))
+
+    def validate_expected_tags(self) -> None:
+        for entry_id in self.entry_ids():
+            for processor in self._dir_tags_expected.iterdir():
+                self.get_expected_tags(processor.name, entry_id)
