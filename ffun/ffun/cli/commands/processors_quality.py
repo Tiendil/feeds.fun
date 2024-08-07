@@ -52,9 +52,11 @@ async def run(processor_name: str, entry_id: int, knowlege_root: pathlib.Path) -
 
         tags = set(raw_tags_to_uids.values())
 
-        correct_tags = expected_tags & tags
+        must_tags = expected_tags.must_have & tags
+        should_tags = expected_tags.should_have & tags
 
-        print(f'tags: {len(correct_tags)}/{len(expected_tags)}')
+        print(f'must tags: {len(must_tags)}/{len(expected_tags.must_have)}')
+        print(f'should tags: {len(should_tags)}/{len(expected_tags.should_have)}')
 
         print(f'all tags: {tags}')
 

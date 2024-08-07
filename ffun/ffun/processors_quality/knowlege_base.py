@@ -5,6 +5,7 @@ import uuid
 
 from ffun.core import utils
 from ffun.library.entities import Entry
+from ffun.processors_quality.entities import ExpectedTags
 import frontmatter
 
 
@@ -68,9 +69,13 @@ class KnowlegeBase:
                      cataloged_at=utils.now(),
                      published_at=data['published_at'])
 
-    def get_expected_tags(self, processor: str, id_: int) -> set[str]:
+    def get_expected_tags(self, processor: str, id_: int) -> ExpectedTags:
         tags_path = self._dir_tags_expected / processor / f'{id_to_name(id_)}.toml'
-        return set(toml.loads(tags_path.read_text())['tags'])
+
+        data = toml.loads(tags_path.read_text())
+
+        return ExpectedTags(must_have=set(data['tags_must_have']),
+                            should_have=set(data['tags_should_have']))
 
     def get_actual_tags(self, processor: str, id_: int) -> set[str]:
         tags_path = self._dir_tags_actual / processor / f'{id_to_name(id_)}.toml'

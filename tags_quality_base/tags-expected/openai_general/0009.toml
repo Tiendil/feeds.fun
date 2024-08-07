@@ -1,4 +1,5 @@
-tags = [
+tags_must_have = []
+tags_should_have = [
   'academic-article',
   'air-pollution',
   'air-pollution-modeling',
