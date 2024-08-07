@@ -57,6 +57,7 @@ async def run(processor_name: str, entry_id: int, knowlege_root: pathlib.Path) -
 
         print(f'must tags: {len(must_tags)}/{len(expected_tags.must_have)}')
         print(f'must tags: {list(sorted(must_tags))}')
+        print(f'missing must tags: {list(sorted(expected_tags.must_have - must_tags))}')
         print()
         print(f'should tags: {len(should_tags)}/{len(expected_tags.should_have)}')
         print(f'should tags: {list(sorted(should_tags))}')

@@ -1,4 +1,11 @@
-tags_must_have = []
+# TODO: add evolution here
+# TODO: add all named persons
+# TODO: add memes, memeplexes
+tags_must_have = [
+  'memetics',
+  'richard-dawkins',
+]
+
 tags_should_have = [
   'aaron-lynch',
   'anthropology',
@@ -106,7 +113,6 @@ tags_should_have = [
   'political-science',
   'psychology',
   'religious-memes',
-  'richard-dawkins',
   'scott-atran',
   'semiotics',
   'social-memes',
