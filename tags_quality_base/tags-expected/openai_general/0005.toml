@@ -1,4 +1,7 @@
-tags_must_have = []
+tags_must_have = [
+  'elon-musk',
+  'mars',
+]
 tags_should_have = [
   'aerospace',
   'aerospace-industry',
@@ -6,7 +9,6 @@ tags_should_have = [
   'aerospace-technology',
   'astronauts',
   'colonization',
-  'elon-musk',
   'elon-musk-statements',
   'engineering',
   'entrepreneurship',
@@ -47,7 +49,6 @@ tags_should_have = [
   'interview',
   'launch-schedules',
   'life-support-systems',
-  'mars',
   'mars-colonization',
   'mars-colony',
   'mars-environment',
