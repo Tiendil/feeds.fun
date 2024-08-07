@@ -116,6 +116,7 @@ services:
     volumes:
       - ${PWD}/ffun:/repository
       - ${PWD}/.env:/repository/.env
+      - ${PWD}/tags_quality_base:/repository/tags_quality_base
       - ${PWD}/changes:/repository/changes
       - ${PWD}/CHANGELOG.md:/repository/CHANGELOG.md
 
