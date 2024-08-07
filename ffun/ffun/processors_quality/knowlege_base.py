@@ -5,7 +5,7 @@ import uuid
 
 from ffun.core import utils
 from ffun.library.entities import Entry
-from ffun.processors_quality.entities import ExpectedTags
+from ffun.processors_quality.entities import ExpectedTags, ProcessorResult
 import frontmatter
 
 
@@ -85,10 +85,16 @@ class KnowlegeBase:
         tags_path = self._dir_tags_last / processor / f'{id_to_name(id_)}.toml'
         return set(toml.loads(tags_path.read_text())['tags'])
 
-    def save_actual_tags(self, processor: str, id_: int, tags: set[str]) -> None:
-        tags_path = self._dir_tags_actual / processor / f'{id_to_name(id_)}.toml'
-        tags_path.write_text(toml.dumps({'tags': list(tags)}))
+    def save_processor_result(self, processor: str, entry_id: int, result: ProcessorResult, actual: bool) -> None:
+        (self._dir_tags_last / processor).mkdir(parents=True, exist_ok=True)
 
-    def save_last_tags(self, processor: str, id_: int, tags: set[str]) -> None:
-        tags_path = self._dir_tags_last / processor / f'{id_to_name(id_)}.toml'
-        tags_path.write_text(toml.dumps({'tags': list(tags)}))
+        last_path = self._dir_tags_last / processor / f'{id_to_name(entry_id)}.toml'
+
+        content = toml.dumps(result.dict())
+
+        last_path.write_text(content)
+
+        if actual:
+            (self._dir_tags_actual / processor).mkdir(parents=True, exist_ok=True)
+            actual_path = self._dir_tags_actual / processor / f'{id_to_name(entry_id)}.toml'
+            actual_path.write_text(content)

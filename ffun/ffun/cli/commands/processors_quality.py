@@ -23,6 +23,8 @@ async def run(processor_name: str, entry_id: int, knowlege_root: pathlib.Path) -
 
         r = await pq_domain.run_processor(kb, processor_name, entry_id)
 
+        kb.save_processor_result(processor_name, entry_id, r, actual=False)
+
         print(f'must tags: {r.must_tags_number}/{r.must_tags_total}')
         print(f'must tags: {r.must_tags_found}')
         print(f'missing must tags: {r.must_tags_missing}')

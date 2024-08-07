@@ -42,8 +42,6 @@ async def run_processor(kb: KnowlegeBase, processor_name: str, entry_id: int) ->
     should_tags_found = expected_tags.should_have & tags
 
     result = ProcessorResult(
-        tags=list(sorted(tags)),
-
         must_tags_found=list(sorted(must_tags_found)),
         must_tags_missing=list(sorted(expected_tags.must_have - must_tags_found)),
 

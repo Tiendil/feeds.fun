@@ -20,8 +20,6 @@ class ExpectedTags(BaseEntity):
 
 
 class ProcessorResult(BaseEntity):
-    tags: list[str]
-
     must_tags_found: list[str]
     must_tags_missing: list[str]
 
