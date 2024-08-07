@@ -1,0 +1,29 @@
+---
+title = "Dungeon generation — from simple to complex"
+external_url = "https://tiendil.org/en/posts/dungeon-generation-from-simple-to-complex"
+external_tags = []
+published_at = "2024-05-16T12:00:00+00:00"
+---
+<figure class="brigid-images brigid-images-1">
+
+  <a href="https://tiendil.org/static/posts/dungeon-generation-from-simple-to-complex/images/cover.png" class="brigid-image-link" data-pswp-width="640" data-pswp-height="494" target="_blank">
+     <img src="https://tiendil.org/static/posts/dungeon-generation-from-simple-to-complex/images/cover.png" alt="What we should get.">
+  </a>
+
+
+  <figcaption><p>What we should get.</p></figcaption>
+</figure>
+<p><em>This is a translation of a post from 2020</em></p>
+<p>This is a step-by-step guide to generating dungeons in Python. If you are not a programmer, you may be interested in reading <a href="https://tiendil.org/ru/posts/how-to-design-a-dungeon">how to design a dungeon<span class="brigid-link-language"> [ru]</span></a>.</p>
+<p>I spent a few evenings testing the idea of generating space bases.. The space base didn't work out, but the result looks like a good dungeon. Since I went from simple to complex and didn't use rocket science, I converted the code into a tutorial on generating dungeons in Python.</p>
+<p>By the end of this tutorial, we will have a dungeon generator with the following features:</p>
+<ul>
+<li>The rooms will be connected by corridors.</li>
+<li>The dungeon will have the shape of a <a href="https://en.wikipedia.org/wiki/Tree_(graph_theory)" target="_blank">tree</a>. Adding cycles will be elementary, but I'll leave it as homework.</li>
+<li>The number of rooms, their size, and the "branching level" will be configurable.</li>
+<li>The dungeon will be placed on a grid and consist of square cells.</li>
+</ul>
+<p>The entire code can be found on <a href="https://github.com/Tiendil/tutorial-dungeon-generation" target="_blank">github</a>.</p>
+<p>There won't be any code in the post — all the approaches used can be easily described in words. At least, I think so.</p>
+<p><strong>Each development stage has a corresponding tag in the repository, containing the code at the end of the stage.</strong></p>
+<p>The aim of this tutorial is not only to teach how to generate dungeons but to demonstrate that seemingly complex tasks can be simple when properly broken down into subtasks.</p>
