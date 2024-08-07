@@ -118,6 +118,7 @@ autoflake = "2.3.*"
 # mypy fails in the latest versions
 mypy = "1.10.*"
 
+types-toml = "0.10.*"
 types-python-slugify = "8.0.*"
 types-beautifulsoup4 = "4.12.*"
 types-markdown = "3.6.*"
@@ -170,6 +171,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "pypika.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "frontmatter.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

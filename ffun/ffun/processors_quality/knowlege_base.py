@@ -10,7 +10,7 @@ from ffun.library.entities import Entry
 from ffun.processors_quality.entities import ExpectedTags, ProcessorResult
 
 
-class FrontmatterTOMLHandler(frontmatter.TOMLHandler):
+class FrontmatterTOMLHandler(frontmatter.TOMLHandler):  # type: ignore
     FM_BOUNDARY = re.compile(r"^\-{3,}\s*$", re.MULTILINE)
     START_DELIMITER = END_DELIMITER = "---"
 

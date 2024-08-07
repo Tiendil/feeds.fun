@@ -1,5 +1,6 @@
 import asyncio
 import pathlib
+import sys
 
 import typer
 
@@ -29,13 +30,13 @@ async def run_one(processor_name: str, entry_id: int, knowlege_root: pathlib.Pat
 
         r = await single_run(processor_name, entry_id, kb, actual=actual)
 
-        print(f"must tags: {r.must_tags_number}/{r.must_tags_total}")
-        print(f"must tags: {r.must_tags_found}")
-        print(f"missing must tags: {r.must_tags_missing}")
-        print()
-        print(f"should tags: {r.should_tags_number}/{r.should_tags_total}")
-        print(f"should tags: {r.should_tags_found}")
-        print(f"missing should tags: {r.should_tags_missing}")
+        sys.stdout.write(f"must tags: {r.must_tags_number}/{r.must_tags_total}\n")
+        sys.stdout.write(f"must tags: {r.must_tags_found}\n")
+        sys.stdout.write(f"missing must tags: {r.must_tags_missing}\n")
+        sys.stdout.write("\n")
+        sys.stdout.write(f"should tags: {r.should_tags_number}/{r.should_tags_total}\n")
+        sys.stdout.write(f"should tags: {r.should_tags_found}\n")
+        sys.stdout.write(f"missing should tags: {r.should_tags_missing}\n")
 
 
 @cli_app.command()
