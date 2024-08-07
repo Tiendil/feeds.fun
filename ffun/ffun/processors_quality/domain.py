@@ -1,18 +1,18 @@
 from ffun.core import utils
-from ffun.librarian.processors.base import Processor
-from ffun.processors_quality.knowlege_base import KnowlegeBase
 from ffun.librarian.processors.domain import Processor as DomainProcessor
 from ffun.librarian.processors.native_tags import Processor as NativeTagsProcessor
 from ffun.librarian.processors.openai_general import Processor as OpenGeneralProcessor
 from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTitleProcessor
 from ffun.librarian.settings import settings as ln_settings
-from ffun.processors_quality.entities import ProcessorResult
 from ffun.ontology import domain as o_domain
-
+from ffun.processors_quality.entities import ProcessorResult
+from ffun.processors_quality.knowlege_base import KnowlegeBase
 
 _domain_processor = DomainProcessor(name="domain")
 _native_tags_processor = NativeTagsProcessor(name="native_tags")
-_openai_general_processor = OpenGeneralProcessor(name="openai_general", model=ln_settings.openai_general_processor.model)
+_openai_general_processor = OpenGeneralProcessor(
+    name="openai_general", model=ln_settings.openai_general_processor.model
+)
 _upper_case_title_processor = UpperCaseTitleProcessor(name="upper_case_title")
 
 
@@ -44,10 +44,8 @@ async def run_processor(kb: KnowlegeBase, processor_name: str, entry_id: int) ->
     result = ProcessorResult(
         must_tags_found=list(sorted(must_tags_found)),
         must_tags_missing=list(sorted(expected_tags.must_have - must_tags_found)),
-
         should_tags_found=list(sorted(should_tags_found)),
         should_tags_missing=list(sorted(expected_tags.should_have - should_tags_found)),
-
         created_at=utils.now(),
     )
 

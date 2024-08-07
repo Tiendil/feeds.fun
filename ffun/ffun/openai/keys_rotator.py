@@ -8,9 +8,9 @@ from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.openai import client, entities, errors
 from ffun.openai.keys_statuses import statuses
+from ffun.openai.settings import settings
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
-from ffun.openai.settings import settings
 
 logger = logging.get_module_logger()
 
@@ -224,11 +224,8 @@ async def api_key_for_feed_entry(  # noqa: CCR001,CFQ001
     if settings.general_api_key is not None:
         # for dev tools we can use a special general key
         # it must not be defined in production
-        yield entities.APIKeyUsage(user_id=uuid.UUID(int=0),
-                                   api_key=settings.general_api_key,
-                                   used_tokens=None)
+        yield entities.APIKeyUsage(user_id=uuid.UUID(int=0), api_key=settings.general_api_key, used_tokens=None)
         return
-
 
     interval_started_at = r_domain.month_interval_start()
 

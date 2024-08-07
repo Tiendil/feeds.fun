@@ -1,23 +1,20 @@
 import asyncio
-import uuid
 import pathlib
-import sys
 
 import typer
-from ffun.core import logging
-from ffun.application.application import with_app
 
-from ffun.processors_quality.knowlege_base import KnowlegeBase
+from ffun.application.application import with_app
+from ffun.core import logging
 from ffun.processors_quality import domain as pq_domain
 from ffun.processors_quality.entities import ProcessorResult
-
+from ffun.processors_quality.knowlege_base import KnowlegeBase
 
 logger = logging.get_module_logger()
 
 cli_app = typer.Typer()
 
 
-_root = pathlib.Path('./tags_quality_base/')
+_root = pathlib.Path("./tags_quality_base/")
 
 
 async def single_run(processor_name: str, entry_id: int, kb: KnowlegeBase, actual: bool = False) -> ProcessorResult:
@@ -32,13 +29,13 @@ async def run_one(processor_name: str, entry_id: int, knowlege_root: pathlib.Pat
 
         r = await single_run(processor_name, entry_id, kb, actual=actual)
 
-        print(f'must tags: {r.must_tags_number}/{r.must_tags_total}')
-        print(f'must tags: {r.must_tags_found}')
-        print(f'missing must tags: {r.must_tags_missing}')
+        print(f"must tags: {r.must_tags_number}/{r.must_tags_total}")
+        print(f"must tags: {r.must_tags_found}")
+        print(f"missing must tags: {r.must_tags_missing}")
         print()
-        print(f'should tags: {r.should_tags_number}/{r.should_tags_total}')
-        print(f'should tags: {r.should_tags_found}')
-        print(f'missing should tags: {r.should_tags_missing}')
+        print(f"should tags: {r.should_tags_number}/{r.should_tags_total}")
+        print(f"should tags: {r.should_tags_found}")
+        print(f"missing should tags: {r.should_tags_missing}")
 
 
 @cli_app.command()
@@ -53,7 +50,7 @@ async def run_all(processor_name: str, knowlege_root: pathlib.Path, actual: bool
         ids = kb.entry_ids()
 
         for i, entry_id in enumerate(ids):
-            logger.info('processing_entry', entry_id=entry_id, i=i, total=len(ids))
+            logger.info("processing_entry", entry_id=entry_id, i=i, total=len(ids))
             await single_run(processor_name, entry_id, kb, actual=actual)
 
 

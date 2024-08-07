@@ -1,7 +1,8 @@
 import asyncio
-from ffun.cli.commands import processors_quality  # noqa: F401
 
 import typer
+
+from ffun.cli.commands import processors_quality  # noqa: F401
 
 app = typer.Typer()
 
