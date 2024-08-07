@@ -56,9 +56,10 @@ async def run(processor_name: str, entry_id: int, knowlege_root: pathlib.Path) -
         should_tags = expected_tags.should_have & tags
 
         print(f'must tags: {len(must_tags)}/{len(expected_tags.must_have)}')
+        print(f'must tags: {list(sorted(must_tags))}')
+        print()
         print(f'should tags: {len(should_tags)}/{len(expected_tags.should_have)}')
-
-        print(f'all tags: {tags}')
+        print(f'should tags: {list(sorted(should_tags))}')
 
 
 @cli_app.command()
