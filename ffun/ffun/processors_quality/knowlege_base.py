@@ -99,6 +99,12 @@ class KnowlegeBase:
             actual_path = self._dir_tags_actual / processor / f'{id_to_name(entry_id)}.toml'
             actual_path.write_text(content)
 
+    def copy_last_to_actual(self, processor: str, entry_id: int) -> None:
+        last_path = self._dir_tags_last / processor / f'{id_to_name(entry_id)}.toml'
+        actual_path = self._dir_tags_actual / processor / f'{id_to_name(entry_id)}.toml'
+
+        actual_path.write_text(last_path.read_text())
+
     def entry_ids(self) -> list[int]:
         return list(sorted(int(entry.stem) for entry in self._dir_news.glob('*.toml')))
 
