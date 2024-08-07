@@ -1,4 +1,10 @@
-tags_must_have = []
+tags_must_have = [
+  'dungeon-generation',
+  'game-development',
+  'github',
+  'python',
+  'tutorials',
+]
 tags_should_have = [
   'agile-development',
   'algorithm',
@@ -28,20 +34,17 @@ tags_should_have = [
   'digital-game-development',
   'dungeon',
   'dungeon-design',
-  'dungeon-generation',
   'dungeon-generator',
   'education',
   'educational-content',
   'game-architecture',
   'game-design',
   'game-design-education',
-  'game-development',
   'game-development-education',
   'game-development-process',
   'game-development-techniques',
   'game-prototyping',
   'gamedev',
-  'github',
   'graph-algorithms',
   'graph-theory',
   'grid-based-design',
@@ -60,7 +63,6 @@ tags_should_have = [
   'programming-education',
   'programming-languages',
   'programming-tutorials',
-  'python',
   'python-programming',
   'repository',
   'room-configuration',
@@ -79,7 +81,6 @@ tags_should_have = [
   'tutorial',
   'tutorial-dungeon-generation',
   'tutorial-repositories',
-  'tutorials',
   'tutorials-and-guides',
   'user-experience',
   'user-experience-design']
