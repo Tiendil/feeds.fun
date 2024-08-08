@@ -62,23 +62,30 @@ def diff_processor_results(kb: KnowlegeBase, processor_name: str, entry_ids: lis
                                    must_have_total=len(expected.must_have),
                                    should_have_total=len(expected.should_have),
 
+                                   actual_total=len(actual_tags),
                                    actual_must_have_found=len(expected.must_have & actual_tags),
                                    actual_must_have_missing=list(expected.must_have - actual_tags),
                                    actual_should_have_found=len(expected.should_have & actual_tags),
+                                   actual_has_and_last_not=list(actual_tags - last_tags),
 
+                                   last_total=len(last_tags),
                                    last_must_have_found=len(expected.must_have & last_tags),
                                    last_must_have_missing=list(expected.must_have - last_tags),
-                                   last_should_have_found=len(expected.should_have & last_tags))
+                                   last_should_have_found=len(expected.should_have & last_tags),
+                                   last_has_and_actual_not=list(last_tags - actual_tags))
 
         diffs.append(diff)
 
     return diffs
 
 
-def display_diffs(diffs: list[ProcessorResultDiff]) -> None:
+def display_diffs(diffs: list[ProcessorResultDiff], show_tag_diffs: bool) -> None:
     table = []
 
-    headers = ["entry id", "must have", "should have", "should have %"]
+    if not show_tag_diffs:
+        headers = ["entry id", "total", "must have", "should have", "should have %"]
+    else:
+        headers = ["entry id", "total", "must have", "should have", "should have %", "actual has and last not", "last has and actual not"]
 
     missing_must_have = 0
 
@@ -108,14 +115,21 @@ def display_diffs(diffs: list[ProcessorResultDiff]) -> None:
 
         should_have_percent = f'{should_diff:+.2%}'
 
-        table.append(
-            [
-                id_to_name(diff.entry_id),
-                must_have,
-                should_have,
-                should_have_percent,
-            ]
-        )
+        total_fraction = diff.last_total / diff.actual_total - 1
+        total = f'{diff.actual_total} vs {diff.last_total} [{total_fraction:+.2%}]'
+
+        row = [id_to_name(diff.entry_id),
+               total,
+               must_have,
+               should_have,
+               should_have_percent]
+
+        if show_tag_diffs:
+            actual_has_and_last_not = '\n'.join(diff.actual_has_and_last_not)
+            last_has_and_actual_not = '\n'.join(diff.last_has_and_actual_not)
+            row.extend([actual_has_and_last_not, last_has_and_actual_not])
+
+        table.append(row)
 
     sys.stdout.write("\n")
     sys.stdout.write(tabulate.tabulate(table, headers=headers, tablefmt="grid"))

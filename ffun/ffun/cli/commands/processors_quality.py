@@ -98,29 +98,29 @@ def copy_last_to_actual_all(processor: str, knowlege_root: pathlib.Path = _root)
     asyncio.run(run_copy_last_to_actual_all(processor, knowlege_root=knowlege_root))
 
 
-async def run_diff_entry(processor_name: str, entry_id: int, knowlege_root: pathlib.Path = _root) -> None:
+async def run_diff_entry(processor_name: str, entry_id: int, show_tag_diffs: bool, knowlege_root: pathlib.Path = _root) -> None:
     async with with_app():
         kb = KnowlegeBase(knowlege_root)
 
         diffs = diff_processor_results(kb, processor_name, [entry_id])
 
-        display_diffs(diffs)
+        display_diffs(diffs, show_tag_diffs=show_tag_diffs)
 
 
 @cli_app.command()
-def diff_entry(processor: str, entry: int, knowlege_root: pathlib.Path = _root) -> None:
-    asyncio.run(run_diff_entry(processor, entry, knowlege_root=knowlege_root))
+def diff_entry(processor: str, entry: int, knowlege_root: pathlib.Path = _root, show_tag_diffs: bool = False) -> None:
+    asyncio.run(run_diff_entry(processor, entry, knowlege_root=knowlege_root), show_tag_diffs=show_tag_diffs)
 
 
-async def run_deff_all(processor_name: str, knowlege_root: pathlib.Path = _root) -> None:
+async def run_deff_all(processor_name: str, knowlege_root: pathlib.Path = _root, show_tag_diffs: bool = False) -> None:
     async with with_app():
         kb = KnowlegeBase(knowlege_root)
 
         diffs = diff_processor_results(kb, processor_name, kb.entry_ids())
 
-        display_diffs(diffs)
+        display_diffs(diffs, show_tag_diffs)
 
 
 @cli_app.command()
-def diff_all(processor: str, knowlege_root: pathlib.Path = _root) -> None:
-    asyncio.run(run_deff_all(processor, knowlege_root=knowlege_root))
+def diff_all(processor: str, knowlege_root: pathlib.Path = _root, show_tag_diffs: bool = False) -> None:
+    asyncio.run(run_deff_all(processor, knowlege_root=knowlege_root, show_tag_diffs=show_tag_diffs))
