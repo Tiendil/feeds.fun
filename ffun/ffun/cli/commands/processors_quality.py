@@ -9,7 +9,7 @@ from ffun.core import logging
 from ffun.processors_quality import domain as pq_domain
 from ffun.processors_quality.entities import ProcessorResult
 from ffun.processors_quality.knowlege_base import KnowlegeBase
-from ffun.processors_quality.domain import diff_processor_results
+from ffun.processors_quality.domain import diff_processor_results, display_diffs
 
 logger = logging.get_module_logger()
 
@@ -104,9 +104,23 @@ async def run_diff_entry(processor_name: str, entry_id: int, knowlege_root: path
 
         diffs = diff_processor_results(kb, processor_name, [entry_id])
 
-        print(diffs)
+        display_diffs(diffs)
 
 
 @cli_app.command()
 def diff_entry(processor: str, entry: int, knowlege_root: pathlib.Path = _root) -> None:
     asyncio.run(run_diff_entry(processor, entry, knowlege_root=knowlege_root))
+
+
+async def run_deff_all(processor_name: str, knowlege_root: pathlib.Path = _root) -> None:
+    async with with_app():
+        kb = KnowlegeBase(knowlege_root)
+
+        diffs = diff_processor_results(kb, processor_name, kb.entry_ids())
+
+        display_diffs(diffs)
+
+
+@cli_app.command()
+def diff_all(processor: str, knowlege_root: pathlib.Path = _root) -> None:
+    asyncio.run(run_deff_all(processor, knowlege_root=knowlege_root))

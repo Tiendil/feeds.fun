@@ -6,7 +6,8 @@ from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTit
 from ffun.librarian.settings import settings as ln_settings
 from ffun.ontology import domain as o_domain
 from ffun.processors_quality.entities import ProcessorResult, ProcessorResultDiff
-from ffun.processors_quality.knowlege_base import KnowlegeBase
+from ffun.processors_quality.knowlege_base import KnowlegeBase, id_to_name
+import tabulate
 
 _domain_processor = DomainProcessor(name="domain")
 _native_tags_processor = NativeTagsProcessor(name="native_tags")
@@ -71,3 +72,55 @@ def diff_processor_results(kb: KnowlegeBase, processor_name: str, entry_ids: lis
         diffs.append(diff)
 
     return diffs
+
+
+def display_diffs(diffs: list[ProcessorResultDiff]) -> None:
+    table = []
+
+    headers = ["entry id", "must have", "should have", "should have %"]
+
+    missing_must_have = 0
+
+    should_diffs = []
+
+    for diff in diffs:
+
+        if diff.actual_must_have_found == diff.last_must_have_found:
+            must_have = 'ok'
+        elif diff.actual_must_have_found > diff.last_must_have_found:
+            must_have = f'missing: {diff.last_must_have_missing}'
+            missing_must_have += 1
+        else:
+            raise NotImplementedError('Currently we expect that actual will always have "must" tags')
+
+        should_delta = diff.last_should_have_found - diff.actual_should_have_found
+
+        should_have = f'{should_delta:+} / {diff.should_have_total}'
+
+        should_diff = should_delta / diff.should_have_total
+
+        should_diffs.append(should_diff)
+
+        should_have_percent = f'{should_diff:+.2%}'
+
+        table.append(
+            [
+                id_to_name(diff.entry_id),
+                must_have,
+                should_have,
+                should_have_percent,
+            ]
+        )
+
+    print(tabulate.tabulate(table, headers=headers, tablefmt="grid"))
+
+    if missing_must_have:
+        print(f"ERROR: entries with missing must have tags: {missing_must_have}")
+
+    should_diffs = list(sorted(should_diffs))
+
+    print(f"worst: {should_diffs[0]:.2%}, median: {should_diffs[len(should_diffs) // 2]:.2%}, best: {should_diffs[-1]:.2%}")
+
+    should_diff_average = sum(should_diffs) / len(should_diffs)
+
+    print(f"average: {should_diff_average:.2%}")
