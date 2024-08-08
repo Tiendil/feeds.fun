@@ -18,26 +18,5 @@ class ExpectedTags(BaseEntity):
 
 
 class ProcessorResult(BaseEntity):
-    must_tags_found: list[str]
-    must_tags_missing: list[str]
-
-    should_tags_found: list[str]
-    should_tags_missing: list[str]
-
+    tags: list[str]
     created_at: datetime.datetime
-
-    @property
-    def must_tags_total(self) -> int:
-        return len(self.must_tags_found) + len(self.must_tags_missing)
-
-    @property
-    def must_tags_number(self) -> int:
-        return len(self.must_tags_found)
-
-    @property
-    def should_tags_total(self) -> int:
-        return len(self.should_tags_found) + len(self.should_tags_missing)
-
-    @property
-    def should_tags_number(self) -> int:
-        return len(self.should_tags_found)

@@ -30,13 +30,13 @@ async def run_one(processor_name: str, entry_id: int, knowlege_root: pathlib.Pat
 
         r = await single_run(processor_name, entry_id, kb, actual=actual)
 
-        sys.stdout.write(f"must tags: {r.must_tags_number}/{r.must_tags_total}\n")
-        sys.stdout.write(f"must tags: {r.must_tags_found}\n")
-        sys.stdout.write(f"missing must tags: {r.must_tags_missing}\n")
-        sys.stdout.write("\n")
-        sys.stdout.write(f"should tags: {r.should_tags_number}/{r.should_tags_total}\n")
-        sys.stdout.write(f"should tags: {r.should_tags_found}\n")
-        sys.stdout.write(f"missing should tags: {r.should_tags_missing}\n")
+        # sys.stdout.write(f"must tags: {r.must_tags_number}/{r.must_tags_total}\n")
+        # sys.stdout.write(f"must tags: {r.must_tags_found}\n")
+        # sys.stdout.write(f"missing must tags: {r.must_tags_missing}\n")
+        # sys.stdout.write("\n")
+        # sys.stdout.write(f"should tags: {r.should_tags_number}/{r.should_tags_total}\n")
+        # sys.stdout.write(f"should tags: {r.should_tags_found}\n")
+        # sys.stdout.write(f"missing should tags: {r.should_tags_missing}\n")
 
 
 @cli_app.command()
@@ -80,3 +80,18 @@ async def run_copy_last_to_actual(processor: str, entry: int, knowlege_root: pat
 @cli_app.command()
 def copy_last_to_actual(processor: str, entry: int, knowlege_root: pathlib.Path = _root) -> None:
     asyncio.run(run_copy_last_to_actual(processor, entry, knowlege_root=knowlege_root))
+
+
+async def run_copy_last_to_actual_all(processor: str, knowlege_root: pathlib.Path = _root) -> None:
+    async with with_app():
+        kb = KnowlegeBase(knowlege_root)
+        ids = kb.entry_ids()
+
+        for i, entry_id in enumerate(ids):
+            logger.info("copying_last_to_actual", entry_id=entry_id, i=i, total=len(ids))
+            kb.copy_last_to_actual(processor, entry_id)
+
+
+@cli_app.command()
+def copy_last_to_actual_all(processor: str, knowlege_root: pathlib.Path = _root) -> None:
+    asyncio.run(run_copy_last_to_actual_all(processor, knowlege_root=knowlege_root))

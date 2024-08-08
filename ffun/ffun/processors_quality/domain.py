@@ -28,8 +28,6 @@ async def run_processor(kb: KnowlegeBase, processor_name: str, entry_id: int) ->
 
     entry = kb.get_news_entry(entry_id)
 
-    expected_tags = kb.get_expected_tags(processor_name, entry_id)
-
     processor = processors[processor_name]
 
     raw_tags = await processor.process(entry)
@@ -38,14 +36,8 @@ async def run_processor(kb: KnowlegeBase, processor_name: str, entry_id: int) ->
 
     tags = set(raw_tags_to_uids.values())
 
-    must_tags_found = expected_tags.must_have & tags
-    should_tags_found = expected_tags.should_have & tags
-
     result = ProcessorResult(
-        must_tags_found=list(sorted(must_tags_found)),
-        must_tags_missing=list(sorted(expected_tags.must_have - must_tags_found)),
-        should_tags_found=list(sorted(should_tags_found)),
-        should_tags_missing=list(sorted(expected_tags.should_have - should_tags_found)),
+        tags=list(sorted(tags)),
         created_at=utils.now(),
     )
 
