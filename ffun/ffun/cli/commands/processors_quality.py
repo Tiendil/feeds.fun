@@ -1,6 +1,7 @@
 import asyncio
 import pathlib
 import sys
+import asyncio
 
 import typer
 
@@ -20,6 +21,7 @@ _root = pathlib.Path("./tags_quality_base/")
 
 
 async def single_run(processor_name: str, entry_id: int, kb: KnowlegeBase, actual: bool = False) -> ProcessorResult:
+    logger.info("processing_entry", entry_id=entry_id)
     result = await pq_domain.run_processor(kb, processor_name, entry_id)
     kb.save_processor_result(processor_name, entry_id, result, actual=actual)
     return result
@@ -41,20 +43,27 @@ def test_one(processor: str, entry: int, knowlege_root: pathlib.Path = _root, ac
     asyncio.run(run_one(processor, entry, knowlege_root, actual=actual, show_tag_diffs=show_tag_diffs))
 
 
-async def run_all(processor_name: str, knowlege_root: pathlib.Path, actual: bool) -> None:
+async def run_all(processor_name: str, knowlege_root: pathlib.Path, actual: bool, show_tag_diffs: bool) -> None:
     async with with_app():
         kb = KnowlegeBase(knowlege_root)
 
         ids = kb.entry_ids()
 
-        for i, entry_id in enumerate(ids):
-            logger.info("processing_entry", entry_id=entry_id, i=i, total=len(ids))
-            await single_run(processor_name, entry_id, kb, actual=actual)
+        tasks = []
+
+        for entry_id in ids:
+            tasks.append(single_run(processor_name, entry_id, kb, actual=actual))
+
+        await asyncio.gather(*tasks)
+
+        diffs = diff_processor_results(kb, processor_name, ids)
+
+        display_diffs(diffs, show_tag_diffs=show_tag_diffs)
 
 
 @cli_app.command()
-def test_all(processor: str, knowlege_root: pathlib.Path = _root, actual: bool = False) -> None:
-    asyncio.run(run_all(processor, knowlege_root, actual=actual))
+def test_all(processor: str, knowlege_root: pathlib.Path = _root, actual: bool = False, show_tag_diffs: bool = False) -> None:
+    asyncio.run(run_all(processor, knowlege_root, actual=actual, show_tag_diffs=show_tag_diffs))
 
 
 async def run_validate_expected_tags(knowlege_root: pathlib.Path = _root) -> None:
