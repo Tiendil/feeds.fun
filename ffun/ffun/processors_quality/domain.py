@@ -1,3 +1,4 @@
+import sys
 from ffun.core import utils
 from ffun.librarian.processors.domain import Processor as DomainProcessor
 from ffun.librarian.processors.native_tags import Processor as NativeTagsProcessor
@@ -85,13 +86,17 @@ def display_diffs(diffs: list[ProcessorResultDiff]) -> None:
 
     for diff in diffs:
 
+        if diff.actual_must_have_found != diff.must_have_total:
+            raise NotImplementedError('Currently we expect that actual will always have "must" tags')
+
         if diff.actual_must_have_found == diff.last_must_have_found:
             must_have = 'ok'
         elif diff.actual_must_have_found > diff.last_must_have_found:
-            must_have = f'missing: {diff.last_must_have_missing}'
+            must_have = ', '.join(f'?{tag}' for tag in diff.last_must_have_missing)
+            # must_have = f'missing: {diff.last_must_have_missing}'
             missing_must_have += 1
         else:
-            raise NotImplementedError('Currently we expect that actual will always have "must" tags')
+            raise NotImplementedError('We should not reach this point')
 
         should_delta = diff.last_should_have_found - diff.actual_should_have_found
 
@@ -112,15 +117,18 @@ def display_diffs(diffs: list[ProcessorResultDiff]) -> None:
             ]
         )
 
-    print(tabulate.tabulate(table, headers=headers, tablefmt="grid"))
+    sys.stdout.write("\n")
+    sys.stdout.write(tabulate.tabulate(table, headers=headers, tablefmt="grid"))
+    sys.stdout.write("\n")
+    sys.stdout.write("\n")
 
     if missing_must_have:
-        print(f"ERROR: entries with missing must have tags: {missing_must_have}")
+        sys.stdout.write(f"ERROR: entries with m must have tags: {missing_must_have}\n\n")
 
     should_diffs = list(sorted(should_diffs))
 
-    print(f"worst: {should_diffs[0]:.2%}, median: {should_diffs[len(should_diffs) // 2]:.2%}, best: {should_diffs[-1]:.2%}")
+    sys.stdout.write(f"worst: {should_diffs[0]:.2%}, median: {should_diffs[len(should_diffs) // 2]:.2%}, best: {should_diffs[-1]:.2%}\n")
 
     should_diff_average = sum(should_diffs) / len(should_diffs)
 
-    print(f"average: {should_diff_average:.2%}")
+    sys.stdout.write(f"average: {should_diff_average:.2%}\n\n")
