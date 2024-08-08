@@ -15,7 +15,7 @@ logger = logging.get_module_logger()
 
 
 system = """\
-You are an expert on semantic analysis, text summarization, and information extraction with PhD in Linguistics.
+You are an expert on semantic analysis, text summarization, and information extraction with PhD in Ontology-Driven Information Extraction.
 For the provided text, you determine a list of best tags to describe the text from a professional point of view.
 For each category, you provide 15 tags.
 
