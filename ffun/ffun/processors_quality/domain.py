@@ -90,6 +90,7 @@ def display_diffs(diffs: list[ProcessorResultDiff], show_tag_diffs: bool) -> Non
     missing_must_have = 0
 
     should_diffs = []
+    total_diffs = []
 
     for diff in diffs:
 
@@ -118,6 +119,8 @@ def display_diffs(diffs: list[ProcessorResultDiff], show_tag_diffs: bool) -> Non
         total_fraction = diff.last_total / diff.actual_total - 1
         total = f'{diff.actual_total} vs {diff.last_total} [{total_fraction:+.2%}]'
 
+        total_diffs.append(total_fraction)
+
         row = [id_to_name(diff.entry_id),
                total,
                must_have,
@@ -139,10 +142,24 @@ def display_diffs(diffs: list[ProcessorResultDiff], show_tag_diffs: bool) -> Non
     if missing_must_have:
         sys.stdout.write(f"ERROR: entries with m must have tags: {missing_must_have}\n\n")
 
+    # should diffs
     should_diffs = list(sorted(should_diffs))
+
+    sys.stdout.write("should diffs:\n")
 
     sys.stdout.write(f"worst: {should_diffs[0]:.2%}, median: {should_diffs[len(should_diffs) // 2]:.2%}, best: {should_diffs[-1]:.2%}\n")
 
     should_diff_average = sum(should_diffs) / len(should_diffs)
 
     sys.stdout.write(f"average: {should_diff_average:.2%}\n\n")
+
+    # total diffs
+    total_diffs = list(sorted(total_diffs))
+
+    sys.stdout.write("total diffs:\n")
+
+    sys.stdout.write(f"worst: {total_diffs[0]:.2%}, median: {total_diffs[len(total_diffs) // 2]:.2%}, best: {total_diffs[-1]:.2%}\n")
+
+    total_diff_average = sum(total_diffs) / len(total_diffs)
+
+    sys.stdout.write(f"average: {total_diff_average:.2%}\n\n")

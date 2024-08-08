@@ -25,24 +25,20 @@ async def single_run(processor_name: str, entry_id: int, kb: KnowlegeBase, actua
     return result
 
 
-async def run_one(processor_name: str, entry_id: int, knowlege_root: pathlib.Path, actual: bool) -> None:
+async def run_one(processor_name: str, entry_id: int, knowlege_root: pathlib.Path, actual: bool, show_tag_diffs: bool) -> None:
     async with with_app():
         kb = KnowlegeBase(knowlege_root)
 
-        r = await single_run(processor_name, entry_id, kb, actual=actual)
+        await single_run(processor_name, entry_id, kb, actual=actual)
 
-        # sys.stdout.write(f"must tags: {r.must_tags_number}/{r.must_tags_total}\n")
-        # sys.stdout.write(f"must tags: {r.must_tags_found}\n")
-        # sys.stdout.write(f"missing must tags: {r.must_tags_missing}\n")
-        # sys.stdout.write("\n")
-        # sys.stdout.write(f"should tags: {r.should_tags_number}/{r.should_tags_total}\n")
-        # sys.stdout.write(f"should tags: {r.should_tags_found}\n")
-        # sys.stdout.write(f"missing should tags: {r.should_tags_missing}\n")
+        diffs = diff_processor_results(kb, processor_name, [entry_id])
+
+        display_diffs(diffs, show_tag_diffs=show_tag_diffs)
 
 
 @cli_app.command()
-def test_one(processor: str, entry: int, knowlege_root: pathlib.Path = _root, actual: bool = False) -> None:
-    asyncio.run(run_one(processor, entry, knowlege_root, actual=actual))
+def test_one(processor: str, entry: int, knowlege_root: pathlib.Path = _root, actual: bool = False, show_tag_diffs: bool = False) -> None:
+    asyncio.run(run_one(processor, entry, knowlege_root, actual=actual, show_tag_diffs=show_tag_diffs))
 
 
 async def run_all(processor_name: str, knowlege_root: pathlib.Path, actual: bool) -> None:
@@ -109,7 +105,7 @@ async def run_diff_entry(processor_name: str, entry_id: int, show_tag_diffs: boo
 
 @cli_app.command()
 def diff_entry(processor: str, entry: int, knowlege_root: pathlib.Path = _root, show_tag_diffs: bool = False) -> None:
-    asyncio.run(run_diff_entry(processor, entry, knowlege_root=knowlege_root), show_tag_diffs=show_tag_diffs)
+    asyncio.run(run_diff_entry(processor, entry, knowlege_root=knowlege_root, show_tag_diffs=show_tag_diffs))
 
 
 async def run_deff_all(processor_name: str, knowlege_root: pathlib.Path = _root, show_tag_diffs: bool = False) -> None:
