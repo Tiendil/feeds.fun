@@ -9,6 +9,7 @@ from ffun.core import logging
 from ffun.processors_quality import domain as pq_domain
 from ffun.processors_quality.entities import ProcessorResult
 from ffun.processors_quality.knowlege_base import KnowlegeBase
+from ffun.processors_quality.domain import diff_processor_results
 
 logger = logging.get_module_logger()
 
@@ -95,3 +96,17 @@ async def run_copy_last_to_actual_all(processor: str, knowlege_root: pathlib.Pat
 @cli_app.command()
 def copy_last_to_actual_all(processor: str, knowlege_root: pathlib.Path = _root) -> None:
     asyncio.run(run_copy_last_to_actual_all(processor, knowlege_root=knowlege_root))
+
+
+async def run_diff_entry(processor_name: str, entry_id: int, knowlege_root: pathlib.Path = _root) -> None:
+    async with with_app():
+        kb = KnowlegeBase(knowlege_root)
+
+        diffs = diff_processor_results(kb, processor_name, [entry_id])
+
+        print(diffs)
+
+
+@cli_app.command()
+def diff_entry(processor: str, entry: int, knowlege_root: pathlib.Path = _root) -> None:
+    asyncio.run(run_diff_entry(processor, entry, knowlege_root=knowlege_root))

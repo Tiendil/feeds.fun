@@ -5,7 +5,7 @@ from ffun.librarian.processors.openai_general import Processor as OpenGeneralPro
 from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTitleProcessor
 from ffun.librarian.settings import settings as ln_settings
 from ffun.ontology import domain as o_domain
-from ffun.processors_quality.entities import ProcessorResult
+from ffun.processors_quality.entities import ProcessorResult, ProcessorResultDiff
 from ffun.processors_quality.knowlege_base import KnowlegeBase
 
 _domain_processor = DomainProcessor(name="domain")
@@ -42,3 +42,32 @@ async def run_processor(kb: KnowlegeBase, processor_name: str, entry_id: int) ->
     )
 
     return result
+
+
+def diff_processor_results(kb: KnowlegeBase, processor_name: str, entry_ids: list[int]) -> list[ProcessorResultDiff]:
+
+    diffs: list[ProcessorResultDiff] = []
+
+    for entry_id in sorted(entry_ids):
+        expected = kb.get_expected_tags(processor_name, entry_id)
+        actual = kb.get_actual_results(processor_name, entry_id)
+        last = kb.get_last_results(processor_name, entry_id)
+
+        actual_tags = set(actual.tags)
+        last_tags = set(last.tags)
+
+        diff = ProcessorResultDiff(entry_id=entry_id,
+                                   must_have_total=len(expected.must_have),
+                                   should_have_total=len(expected.should_have),
+
+                                   actual_must_have_found=len(expected.must_have & actual_tags),
+                                   actual_must_have_missing=list(expected.must_have - actual_tags),
+                                   actual_should_have_found=len(expected.should_have & actual_tags),
+
+                                   last_must_have_found=len(expected.must_have & last_tags),
+                                   last_must_have_missing=list(expected.must_have - last_tags),
+                                   last_should_have_found=len(expected.should_have & last_tags))
+
+        diffs.append(diff)
+
+    return diffs
