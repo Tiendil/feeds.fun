@@ -79,13 +79,13 @@ class KnowlegeBase:
 
         return ExpectedTags(must_have=set(data["tags_must_have"]), should_have=set(data["tags_should_have"]))
 
-    def get_actual_tags(self, processor: str, id_: int) -> set[str]:
+    def get_actual_results(self, processor: str, id_: int) -> ProcessorResult:
         tags_path = self._dir_tags_actual / processor / f"{id_to_name(id_)}.toml"
-        return set(toml.loads(tags_path.read_text())["tags"])
+        return ProcessorResult(**toml.loads(tags_path.read_text()))
 
-    def get_last_tags(self, processor: str, id_: int) -> set[str]:
+    def get_last_results(self, processor: str, id_: int) -> ProcessorResult:
         tags_path = self._dir_tags_last / processor / f"{id_to_name(id_)}.toml"
-        return set(toml.loads(tags_path.read_text())["tags"])
+        return ProcessorResult(**toml.loads(tags_path.read_text()))
 
     def save_processor_result(self, processor: str, entry_id: int, result: ProcessorResult, actual: bool) -> None:
         (self._dir_tags_last / processor).mkdir(parents=True, exist_ok=True)

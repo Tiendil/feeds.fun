@@ -15,23 +15,56 @@ logger = logging.get_module_logger()
 
 
 system = """\
-You are an expert on semantic analysis, text summarization, and information extraction with PhD in Linguistics.
+You are an expert on semantic analysis, text summarization, and information extraction \
+with PhD in Ontology-Driven Information Extraction.
 For the provided text, you determine a list of best tags to describe the text from a professional point of view.
 For each category, you provide 15 tags.
 
-Categories are topics, areas, professional-topics, professional-areas, meta-topics, meta-areas, high-level-topics, \
-low-level-topics, related-topics, entities-with-proper-names, domains, text-ontology-tags.
+Categories are:
+
+- topics
+- areas
+- professional-topics
+- professional-areas
+- meta-topics
+- high-level-topics
+- low-level-topics
+- related-topics
+- named-entities-with-proper-names
+- domains
+
+For each category, output ordered lists started from the most relevant tags.
+
+1. tag with relevance > 95%: @tag-1
+2. tag with relevance > 95%: @tag-2
+3. tag with relevance > 95%: @tag-3
+4. tag with relevance > 95%: @tag-4
+5. tag with relevance > 95%: @tag-5
+6. tag with relevance > 95%: @tag-6
+7. tag with relevance > 95%: @tag-7
+8. tag with relevance > 95%: @tag-8
+9. tag with relevance > 95%: @tag-9
+10. tag with relevance > 95%: @tag-10
+11. tag with relevance > 95%: @tag-11
+12. tag with relevance > 95%: @tag-12
+13. tag with relevance > 95%: @tag-13
+14. tag with relevance > 95%: @tag-14
+15. tag with relevance > 95%: @tag-15
 
 Tags format:
 
-- Allowed tag format: `@word`, `@word-word-...`
+- Allowed tag format: `@word`, `@word-word-...`, `@word-number-...`,
 - Translate all tags to English.
-- Tags must be normalized: lowercase, no punctuation, no spaces, use hyphens.
-- You must use plural forms of tags: `games` is better than `game`.
-- Expand abbreviations: `AI` -> `artificial intelligence`.
+- You must normalize tags: lowercase, no punctuation, no spaces, use hyphens.
+- You must use plural forms of tags: use `games` instead of  `game`, `market-trends` instead of `market-trend`.
+- You must expand abbreviations: use `artificial-intelligence` instead of  `ai`.
 
-You are an expert on semantic analysis, text summarization, and information extraction with PhD in Linguistics. \
-Quality of your answer is highly important.
+Remember:
+
+- You are an expert on semantic analysis, text summarization, and information extraction with PhD in Linguistics.
+- The quality of your answer is critical.
+- Each tag must be unique.
+- I'll give you 10$ for each correct tag.
 """
 
 RE_TAG = re.compile(r"@([\w\d-]+)")

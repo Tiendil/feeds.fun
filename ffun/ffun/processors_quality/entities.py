@@ -18,26 +18,44 @@ class ExpectedTags(BaseEntity):
 
 
 class ProcessorResult(BaseEntity):
-    must_tags_found: list[str]
-    must_tags_missing: list[str]
-
-    should_tags_found: list[str]
-    should_tags_missing: list[str]
-
+    tags: list[str]
     created_at: datetime.datetime
 
-    @property
-    def must_tags_total(self) -> int:
-        return len(self.must_tags_found) + len(self.must_tags_missing)
 
-    @property
-    def must_tags_number(self) -> int:
-        return len(self.must_tags_found)
+class ProcessorResultDiff(BaseEntity):
+    entry_id: int
 
-    @property
-    def should_tags_total(self) -> int:
-        return len(self.should_tags_found) + len(self.should_tags_missing)
+    actual_total: int
+    actual_must_have_found: int
+    actual_must_have_missing: list[str]
+    actual_should_have_found: int
+    actual_has_and_last_not: list[str]
 
-    @property
-    def should_tags_number(self) -> int:
-        return len(self.should_tags_found)
+    last_total: int
+    last_must_have_found: int
+    last_must_have_missing: list[str]
+    last_should_have_found: int
+    last_has_and_actual_not: list[str]
+
+    must_have_total: int
+    should_have_total: int
+
+    @pydantic.field_validator("actual_must_have_missing")
+    @classmethod
+    def sort_actual_must_have_missing_tags(cls, v: list[str]) -> list[str]:
+        return list(sorted(v))
+
+    @pydantic.field_validator("last_must_have_missing")
+    @classmethod
+    def sort_last_must_have_missing_tags(cls, v: list[str]) -> list[str]:
+        return list(sorted(v))
+
+    @pydantic.field_validator("actual_has_and_last_not")
+    @classmethod
+    def sort_actual_has_and_last_not_tags(cls, v: list[str]) -> list[str]:
+        return list(sorted(v))
+
+    @pydantic.field_validator("last_has_and_actual_not")
+    @classmethod
+    def sort_last_has_and_actual_not_tags(cls, v: list[str]) -> list[str]:
+        return list(sorted(v))

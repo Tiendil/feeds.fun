@@ -3,7 +3,9 @@ tags_must_have = [
   'forecasting',
   'nate-silver',
   'statistics',
-  'the-signal-and-the-noise',
+  # for russian version of the text we expect simpler name
+  # 'the-signal-and-the-noise',
+  'signal-and-noise',
 ]
 tags_should_have = [
   'analysis',
@@ -69,7 +71,6 @@ tags_should_have = [
   'risk-analysis',
   'risk-management',
   'scale',
-  'signal-and-noise',
   'statistical-analysis',
   'statistical-forecasting',
   'statistical-inference',
@@ -80,6 +81,7 @@ tags_should_have = [
   'strategic-planning',
   'successful-forecasts',
   'system-dynamics',
+  'the-signal-and-the-noise',
   'uncertainty',
   'united-states-elections',
   'us-elections',
