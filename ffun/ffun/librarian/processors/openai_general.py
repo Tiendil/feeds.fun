@@ -26,13 +26,11 @@ Categories are:
 - professional-topics
 - professional-areas
 - meta-topics
-- meta-areas
 - high-level-topics
 - low-level-topics
 - related-topics
 - named-entities-with-proper-names
 - domains
-- text-ontology
 
 For each category, output ordered lists, started from the most relevant tags.
 
@@ -51,7 +49,6 @@ For each category, output ordered lists, started from the most relevant tags.
 13. tag with relevance > 80%: @tag-13
 14. tag with relevance > 80%: @tag-14
 15. tag with relevance > 80%: @tag-15
-
 
 Tags format:
 
