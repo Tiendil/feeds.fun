@@ -145,6 +145,9 @@ async def apply_tags_properties(execute: ExecuteType, properties: Sequence[TagPr
 
     query = PostgreSQLQuery.into("o_tags_properties").columns("tag_id", "type", "value", "processor_id", "created_at")
 
+    # sort properties to avoid deadlocks
+    properties = sorted(properties, key=lambda p: (p.tag_id, p.type, p.processor_id))
+
     for property in properties:
         query = query.insert(
             property.tag_id,

@@ -52,7 +52,7 @@ class PGPAsyncConnection(psycopg.AsyncConnection):  # type: ignore
 
 
 async def pool_refresher(delay: int) -> None:
-    logger.info("start pool refresher")
+    logger.info("star_pool_refresher")
 
     try:
         while True:
@@ -61,11 +61,11 @@ async def pool_refresher(delay: int) -> None:
             if POOL is None:
                 continue
 
-            logger.info("refresh pool")
+            logger.info("refresh_pool")
 
             await POOL.check()
     except asyncio.CancelledError:
-        logger.info("Pool refresher is stopped")
+        logger.info("pool_refresher_is_stopped")
         return
 
 
