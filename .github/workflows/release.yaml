@@ -29,8 +29,55 @@ jobs:
       branch_ref: ${{ github.ref }}
       bump_version: ${{ github.event.inputs.bump_version }}
 
+  # from the https://github.com/pypa/gh-action-pypi-publish
+  #
+  # Trusted publishing cannot be used from within a reusable workflow at this time.
+  # It is recommended to instead create a non-reusable workflow that contains a job calling your reusable workflow,
+  # and then do the trusted publishing step from a separate job within that non-reusable workflow.
+  # Alternatively, you can still use a username/token inside the reusable workflow.
+  #
+  # => here is the copy of code from the upload-release.yaml
   upload-release:
     needs: prepare-release
-    uses: ./.github/workflows/upload-release.yaml
-    with:
-      branch_ref: ${{ github.ref }}
+    timeout-minutes: 20
+    runs-on: ubuntu-22.04
+    environment: release
+    permissions:
+      contents: write
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Prepare Node
+        uses: actions/setup-node@v3
+        with:
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install poetry
+        run: pip install poetry
+
+      - name: Prepare Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
+
+      - name: build python package
+        working-directory: ffun
+        run: poetry build
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1.9
+        with:
+          packages-dir: ffun/dist/
+
+      - name: Publish package distributions to NPM
+        working-directory: site
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_SECRET }}
