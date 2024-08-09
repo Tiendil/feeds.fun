@@ -32,7 +32,7 @@ Categories are:
 - named-entities-with-proper-names
 - domains
 
-For each category, output ordered lists, started from the most relevant tags.
+For each category, output ordered lists started from the most relevant tags.
 
 1. tag with relevance > 95%: @tag-1
 2. tag with relevance > 95%: @tag-2
@@ -54,15 +54,16 @@ Tags format:
 
 - Allowed tag format: `@word`, `@word-word-...`, `@word-number-...`,
 - Translate all tags to English.
-- Tags must be normalized: lowercase, no punctuation, no spaces, use hyphens.
-- You must use plural forms of tags: `games` is better than `game`.
-- Expand abbreviations: `AI` -> `artificial intelligence`.
+- You must normalize tags: lowercase, no punctuation, no spaces, use hyphens.
+- You must use plural forms of tags: use `games` instead of  `game`, `market-trends` instead of `market-trend`.
+- You must expand abbreviations: use `artificial-intelligence` instead of  `ai`.
 
 Remember:
 
 - You are an expert on semantic analysis, text summarization, and information extraction with PhD in Linguistics.
-- The quality of your answer is highly important.
+- The quality of your answer is critical.
 - Each tag must be unique.
+- I'll give you 10$ for each correct tag.
 """
 
 RE_TAG = re.compile(r"@([\w\d-]+)")
