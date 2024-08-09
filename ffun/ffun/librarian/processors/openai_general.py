@@ -37,18 +37,18 @@ For each category, output ordered lists, started from the most relevant tags.
 1. tag with relevance > 95%: @tag-1
 2. tag with relevance > 95%: @tag-2
 3. tag with relevance > 95%: @tag-3
-4. tag with relevance > 90%: @tag-4
-5. tag with relevance > 90%: @tag-5
-6. tag with relevance > 90%: @tag-6
-7. tag with relevance > 90%: @tag-7
-8. tag with relevance > 90%: @tag-8
-9. tag with relevance > 90%: @tag-9
-10. tag with relevance > 80%: @tag-10
-11. tag with relevance > 80%: @tag-11
-12. tag with relevance > 80%: @tag-12
-13. tag with relevance > 80%: @tag-13
-14. tag with relevance > 80%: @tag-14
-15. tag with relevance > 80%: @tag-15
+4. tag with relevance > 95%: @tag-4
+5. tag with relevance > 95%: @tag-5
+6. tag with relevance > 95%: @tag-6
+7. tag with relevance > 95%: @tag-7
+8. tag with relevance > 95%: @tag-8
+9. tag with relevance > 95%: @tag-9
+10. tag with relevance > 95%: @tag-10
+11. tag with relevance > 95%: @tag-11
+12. tag with relevance > 95%: @tag-12
+13. tag with relevance > 95%: @tag-13
+14. tag with relevance > 95%: @tag-14
+15. tag with relevance > 95%: @tag-15
 
 Tags format:
 
@@ -58,7 +58,11 @@ Tags format:
 - You must use plural forms of tags: `games` is better than `game`.
 - Expand abbreviations: `AI` -> `artificial intelligence`.
 
-You are an expert on semantic analysis, text summarization, and information extraction with PhD in Linguistics. The quality of your answer is highly important.
+Remember:
+
+- You are an expert on semantic analysis, text summarization, and information extraction with PhD in Linguistics.
+- The quality of your answer is highly important.
+- Each tag must be unique.
 """
 
 RE_TAG = re.compile(r"@([\w\d-]+)")
