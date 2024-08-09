@@ -42,20 +42,20 @@ class ProcessorResultDiff(BaseEntity):
 
     @pydantic.field_validator("actual_must_have_missing")
     @classmethod
-    def sort_actual_must_have_missing_tags(cls, v: str) -> str:
+    def sort_actual_must_have_missing_tags(cls, v: list[str]) -> list[str]:
         return list(sorted(v))
 
     @pydantic.field_validator("last_must_have_missing")
     @classmethod
-    def sort_last_must_have_missing_tags(cls, v: str) -> str:
+    def sort_last_must_have_missing_tags(cls, v: list[str]) -> list[str]:
         return list(sorted(v))
 
     @pydantic.field_validator("actual_has_and_last_not")
     @classmethod
-    def sort_actual_has_and_last_not_tags(cls, v: str) -> str:
+    def sort_actual_has_and_last_not_tags(cls, v: list[str]) -> list[str]:
         return list(sorted(v))
 
     @pydantic.field_validator("last_has_and_actual_not")
     @classmethod
-    def sort_last_has_and_actual_not_tags(cls, v: str) -> str:
+    def sort_last_has_and_actual_not_tags(cls, v: list[str]) -> list[str]:
         return list(sorted(v))

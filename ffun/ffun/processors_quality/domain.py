@@ -81,7 +81,7 @@ def diff_processor_results(kb: KnowlegeBase, processor_name: str, entry_ids: lis
     return diffs
 
 
-def display_diffs(diffs: list[ProcessorResultDiff], show_tag_diffs: bool) -> None:
+def display_diffs(diffs: list[ProcessorResultDiff], show_tag_diffs: bool) -> None:  # noqa: CCR001
     table = []
 
     if not show_tag_diffs:
@@ -111,7 +111,6 @@ def display_diffs(diffs: list[ProcessorResultDiff], show_tag_diffs: bool) -> Non
             must_have = "ok"
         elif diff.actual_must_have_found > diff.last_must_have_found:
             must_have = ", ".join(f"?{tag}" for tag in diff.last_must_have_missing)
-            # must_have = f'missing: {diff.last_must_have_missing}'
             missing_must_have += 1
         else:
             raise NotImplementedError("We should not reach this point")
@@ -153,9 +152,9 @@ def display_diffs(diffs: list[ProcessorResultDiff], show_tag_diffs: bool) -> Non
 
     sys.stdout.write("should diffs:\n")
 
-    sys.stdout.write(
-        f"worst: {should_diffs[0]:.2%}, median: {should_diffs[len(should_diffs) // 2]:.2%}, best: {should_diffs[-1]:.2%}\n"
-    )
+    should_median = should_diffs[len(should_diffs) // 2]
+
+    sys.stdout.write(f"worst: {should_diffs[0]:.2%}, median: {should_median:.2%}, best: {should_diffs[-1]:.2%}\n")
 
     should_diff_average = sum(should_diffs) / len(should_diffs)
 
