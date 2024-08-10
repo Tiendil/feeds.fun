@@ -5,7 +5,7 @@
       <small class="block text-lg font-normal">Personalized news for professionals</small>
     </template>
 
-    <div class="max-w-md mx-auto">
+    <div class="max-w-lg mx-auto">
       <div class="ffun-info-good">
         <supertokens-login />
       </div>
