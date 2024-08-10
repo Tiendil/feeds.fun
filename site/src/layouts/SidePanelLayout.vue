@@ -48,15 +48,6 @@
       <header class="flex items-center leading-8">
         <div class="display:flex items-center mr-auto">
           <ul class="list-none m-0 p-0 flex space-x-2">
-            <li>
-              <a
-                href="/"
-                class="ffun-header-link"
-                @click.prevent="router.push({name: 'main', params: {}})"
-                >Home</a
-              >
-            </li>
-
             <li
               v-for="[mode, props] of e.MainPanelModeProperties"
               :key="mode">
