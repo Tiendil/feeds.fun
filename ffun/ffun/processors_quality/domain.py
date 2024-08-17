@@ -122,7 +122,7 @@ def display_diffs(diffs: list[ProcessorResultDiff], show_tag_diffs: bool) -> Non
         should_have = f"{should_delta:+} / {diff.should_have_total}"
 
         if diff.should_have_total == 0:
-            should_diff = 0
+            should_diff = 0.0
         else:
             should_diff = should_delta / diff.should_have_total
 

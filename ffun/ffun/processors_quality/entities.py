@@ -63,6 +63,6 @@ class ProcessorResultDiff(BaseEntity):
 
 class Attribution(BaseEntity):
     title: str = pydantic.Field(..., min_length=1)
-    authors: list[str] = pydantic.Field(..., min_items=1)
+    authors: list[str] = pydantic.Field(..., min_items=1)  # type: ignore
     link: str = pydantic.Field(..., min_length=1)
     license: str = pydantic.Field(..., min_length=1)
