@@ -3,6 +3,12 @@ title = "Dungeon generation — from simple to complex"
 external_url = "https://tiendil.org/en/posts/dungeon-generation-from-simple-to-complex"
 external_tags = []
 published_at = "2024-05-16T12:00:00+00:00"
+
+[attribution]
+title = "Dungeon generation — from simple to complex"
+authors = ["Aliaksei Yaletski"]
+link = "https://tiendil.org/en/posts/dungeon-generation-from-simple-to-complex"
+license = "CC BY-NC-ND 4.0"
 ---
 <figure class="brigid-images brigid-images-1">
 

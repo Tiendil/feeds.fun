@@ -3,6 +3,12 @@ title = "Генерация подземелий — от простого к с
 external_url = "https://tiendil.org/ru/posts/dungeon-generation-from-simple-to-complex"
 external_tags = []
 published_at = "2020-04-16T12:00:00+00:00"
+
+[attribution]
+title = "Генерация подземелий — от простого к сложному"
+authors = ["Aliaksei Yaletski"]
+link = "https://tiendil.org/ru/posts/dungeon-generation-from-simple-to-complex"
+license = "CC BY-NC-ND 4.0"
 ---
       <figure class="brigid-images brigid-images-1">
 

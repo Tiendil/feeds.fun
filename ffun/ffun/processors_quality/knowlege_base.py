@@ -7,7 +7,8 @@ import toml
 
 from ffun.core import utils
 from ffun.library.entities import Entry
-from ffun.processors_quality.entities import ExpectedTags, ProcessorResult
+from ffun.processors_quality import errors
+from ffun.processors_quality.entities import Attribution, ExpectedTags, ProcessorResult
 
 
 class FrontmatterTOMLHandler(frontmatter.TOMLHandler):  # type: ignore
@@ -59,6 +60,12 @@ class KnowlegeBase:
         entry_path = self._dir_news / f"{id_to_name(id_)}.toml"
 
         data, body = frontmatter.parse(entry_path.read_text(), handler=FrontmatterTOMLHandler())
+
+        # attribution should be defined for the entry
+        try:
+            Attribution(**data["attribution"])
+        except Exception as e:
+            raise errors.AttributionNotDefined(message=str(e)) from e
 
         return Entry(
             id=uuid.UUID(int=0),
