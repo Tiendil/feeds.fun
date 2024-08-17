@@ -7,8 +7,8 @@ import toml
 
 from ffun.core import utils
 from ffun.library.entities import Entry
-from ffun.processors_quality.entities import ExpectedTags, ProcessorResult, Attribution
 from ffun.processors_quality import errors
+from ffun.processors_quality.entities import Attribution, ExpectedTags, ProcessorResult
 
 
 class FrontmatterTOMLHandler(frontmatter.TOMLHandler):  # type: ignore
