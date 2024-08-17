@@ -59,3 +59,10 @@ class ProcessorResultDiff(BaseEntity):
     @classmethod
     def sort_last_has_and_actual_not_tags(cls, v: list[str]) -> list[str]:
         return list(sorted(v))
+
+
+class Attribution(BaseEntity):
+    title: str = pydantic.Field(..., min_length=1)
+    authors: list[str] = pydantic.Field(..., min_items=1)
+    link: str = pydantic.Field(..., min_length=1)
+    license: str = pydantic.Field(..., min_length=1)

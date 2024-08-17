@@ -3,6 +3,12 @@ title = "Meme"
 external_url = "https://en.wikipedia.org/wiki/Meme"
 external_tags = []
 published_at = "2024-08-16T12:00:00+00:00"
+
+[attribution]
+title = "Meme"
+authors = ["Wikipedia contributor"]
+link = "https://en.wikipedia.org/wiki/Meme"
+license = "Creative Commons Attribution-ShareAlike 4.0 International License"
 ---
 <div id="mw-content-text" class="mw-body-content"><div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><div class="shortdescription nomobile noexcerpt noprint searchaux" style="display:none">Thought or idea that can be shared, in analogy to a gene</div>
 <style data-mw-deduplicate="TemplateStyles:r1236090951">.mw-parser-output .hatnote{font-style:italic}.mw-parser-output div.hatnote{padding-left:1.6em;margin-bottom:0.5em}.mw-parser-output .hatnote i{font-style:normal}.mw-parser-output .hatnote+link+.hatnote{margin-top:-0.5em}@media print{body.ns-0 .mw-parser-output .hatnote{display:none!important}}</style><div role="note" class="hatnote navigation-not-searchable">For the usage of the term on the Internet, see <a href="/wiki/Internet_meme" title="Internet meme">Internet meme</a>. For other uses, see <a href="/wiki/Meme_(disambiguation)" class="mw-disambig" title="Meme (disambiguation)">Meme (disambiguation)</a>.</div>
