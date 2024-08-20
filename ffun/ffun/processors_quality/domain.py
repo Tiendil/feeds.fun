@@ -130,7 +130,11 @@ def display_diffs(diffs: list[ProcessorResultDiff], show_tag_diffs: bool) -> Non
 
         should_have_percent = f"{should_diff:+.2%}"
 
-        total_fraction = diff.last_total / diff.actual_total - 1
+        if diff.actual_total == 0:
+            total_fraction = 1.0
+        else:
+            total_fraction = diff.last_total / diff.actual_total - 1
+
         total = f"{diff.actual_total} vs {diff.last_total} [{total_fraction:+.2%}]"
 
         total_diffs.append(total_fraction)
