@@ -70,10 +70,19 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
+  backend-build:
+    image: ffun-backend
     build:
       context: ./
       dockerfile: ./docker/backend/Dockerfile
+    command: /bin/true
+
+    profiles:
+      - dev-build
+
+  backend:
+    image: ffun-backend
+
 
     depends_on:
       postgresql:
@@ -105,9 +114,7 @@ services:
       ffun_network: {}
 
   backend-utils:
-    build:
-      context: ./
-      dockerfile: ./docker/backend/Dockerfile
+    image: ffun-backend
 
     depends_on:
       postgresql:
@@ -126,10 +133,18 @@ services:
     profiles:
       - dev
 
-  frontend:
+  frontend-build:
+    image: ffun-frontend
     build:
       context: ./
       dockerfile: ./docker/frontend/Dockerfile
+    command: /bin/true
+
+    profiles:
+      - dev-build
+
+  frontend:
+    image: ffun-frontend
 
     depends_on:
       backend:
@@ -145,6 +160,10 @@ services:
       VITE_FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
       VITE_FFUN_SENTRY_DSN: "${FFUN_SENTRY__DSN:-not-specified}"
 
+      VITE_FFUN_PLAUSIBLE_ENABLED: "${FFUN_PLAUSIBLE_ENABLED:-False}"
+      VITE_FFUN_PLAUSIBLE_DOMAIN: "${FFUN_PLAUSIBLE_DOMAIN:-localhost}"
+      VITE_FFUN_PLAUSIBLE_SCRIPT: "${FFUN_PLAUSIBLE_SCRIPT:-not-specified}"
+
     ports:
       - "5173:5173"
 
@@ -152,9 +171,7 @@ services:
       ffun_network: {}
 
   frontend-utils:
-    build:
-      context: ./
-      dockerfile: ./docker/frontend/Dockerfile
+    image: ffun-frontend
 
     volumes:
       - ${PWD}/site/src:/repository/src

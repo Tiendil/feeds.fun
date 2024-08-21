@@ -1,3 +1,5 @@
 #!/usr/bin/bash
 
-docker compose --profile dev build backend-utils backend frontend frontend-utils
+echo "build base images"
+
+docker compose --profile dev-build build backend-build frontend-build

@@ -15,6 +15,10 @@ export const authSupertokensResendAfter = import.meta.env.VITE_FFUN_AUTH_SUPERTO
 
 export const githubRepo = import.meta.env.VITE_FFUN_GITHUB_REPO || "https://github.com/Tiendil/feeds.fun";
 
+export const plausibleEnabled = import.meta.env.VITE_FFUN_PLAUSIBLE_ENABLED == "true" || false;
+export const plausibleDomain = import.meta.env.VITE_FFUN_PLAUSIBLE_DOMAIN || "localhost";
+export const plausibleScript = import.meta.env.VITE_FFUN_PLAUSIBLE_SCRIPT || "";
+
 console.log("settings.appName", appName);
 console.log("settings.appDomain", appDomain);
 console.log("settings.appPort", appPort);
@@ -26,3 +30,7 @@ console.log("settings.authSupertokensApiBasePath", authSupertokensApiBasePath);
 console.log("settings.authSupertokensResendAfter", authSupertokensResendAfter);
 
 console.log("settings.githubRepo", githubRepo);
+
+console.log("settings.plausibleEnabled", plausibleEnabled);
+console.log("settings.plausibleDomain", plausibleDomain);
+console.log("settings.plausibleScript", plausibleScript);
