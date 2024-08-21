@@ -25,6 +25,8 @@ jobs:
   prepare-release:
     needs: run-checks
     uses: ./.github/workflows/prepare-release.yaml
+    permissions:
+      contents: write
     with:
       bump_version: ${{ github.event.inputs.bump_version }}
 

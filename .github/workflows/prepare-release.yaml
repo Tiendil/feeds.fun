@@ -31,8 +31,6 @@ jobs:
     environment: release
     permissions:
       contents: write
-      # IMPORTANT: this permission is mandatory for trusted publishing
-      id-token: write
 
     steps:
       - name: Checkout
