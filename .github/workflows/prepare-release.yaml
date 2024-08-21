@@ -11,6 +11,17 @@ on:
         - minor
         - patch
 
+  workflow_call:
+    inputs:
+      bump_version:
+        type: choice
+        description: "bump version"
+        default: minor
+        options:
+        # major version bumps do only manually
+        - minor
+        - patch
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
