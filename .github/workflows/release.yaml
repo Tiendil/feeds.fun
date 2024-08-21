@@ -26,7 +26,6 @@ jobs:
     needs: run-checks
     uses: ./.github/workflows/prepare-release.yaml
     with:
-      branch_ref: ${{ github.ref }}
       bump_version: ${{ github.event.inputs.bump_version }}
 
   # from the https://github.com/pypa/gh-action-pypi-publish
