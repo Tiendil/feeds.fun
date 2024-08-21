@@ -20,7 +20,7 @@ on:
 
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-prepare-release
   cancel-in-progress: false
 
 jobs:
