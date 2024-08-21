@@ -98,6 +98,10 @@ app.mount("#app");
 import * as api from "@/logic/api";
 import * as settings from "@/logic/settings";
 
+/////////////////////
+// supertokens
+/////////////////////
+
 // must be copy of smart_url from backend
 function smartUrl(domain: string, port: number) {
   if (port == 80) {
@@ -136,3 +140,16 @@ async function onSessionLost() {
 }
 
 api.init({onSessionLost: onSessionLost});
+
+/////////////////////
+// plausible
+/////////////////////
+
+if (settings.plausibleEnabled) {
+  const script = document.createElement("script");
+  script.src = settings.plausibleScript;
+  script.async = true;
+  script.defer = true;
+  script.setAttribute("data-domain", settings.plausibleDomain);
+  document.body.appendChild(script);
+}
