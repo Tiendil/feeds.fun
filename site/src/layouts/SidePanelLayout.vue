@@ -66,24 +66,57 @@
               >
             </li>
 
-            <li>
+            <li class="">
               <a
                 href="/api/docs"
                 target="_blank"
                 class="ffun-header-link"
                 style="text-decoration: none"
-                >API&#8599;</a
+                >API</a
               >
             </li>
 
-            <li>
+            <li v-if="settings.blog">
               <a
-                :href="settings.githubRepo"
+                :href="settings.blog"
                 target="_blank"
                 class="ffun-header-link"
                 style="text-decoration: none"
-                >GitHub&#8599;</a
+                >Blog</a
               >
+            </li>
+
+            <li v-if="settings.redditSubreddit">
+              <a
+                :href="settings.redditSubreddit"
+                target="_blank"
+                class="ffun-header-link text-xl align-middle"
+                title="Reddit"
+                style="text-decoration: none"
+                ><i class="ti ti-brand-reddit"></i
+              ></a>
+            </li>
+
+            <li v-if="settings.discordInvite">
+              <a
+                :href="settings.discordInvite"
+                target="_blank"
+                class="ffun-header-link text-xl align-middle"
+                title="Discord"
+                style="text-decoration: none"
+                ><i class="ti ti-brand-discord"></i
+              ></a>
+            </li>
+
+            <li v-if="settings.githubRepo">
+              <a
+                :href="settings.githubRepo"
+                target="_blank"
+                class="ffun-header-link text-xl align-middle"
+                title="GitHub"
+                style="text-decoration: none">
+                <i class="ti ti-brand-github"></i
+              ></a>
             </li>
           </ul>
         </div>

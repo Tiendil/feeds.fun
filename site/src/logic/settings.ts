@@ -13,7 +13,10 @@ export const authMode = import.meta.env.VITE_FFUN_AUTH_MODE || AuthMode.SingleUs
 export const authSupertokensApiBasePath = import.meta.env.VITE_FFUN_AUTH_SUPERTOKENS_API_BASE_PATH || "/supertokens";
 export const authSupertokensResendAfter = import.meta.env.VITE_FFUN_AUTH_SUPERTOKENS_RESEND_AFTER || 60 * 1000;
 
+export const blog = import.meta.env.VITE_FFUN_BLOG || "https://blog.feeds.fun";
 export const githubRepo = import.meta.env.VITE_FFUN_GITHUB_REPO || "https://github.com/Tiendil/feeds.fun";
+export const discordInvite = import.meta.env.VITE_FFUN_DISCORD_INVITE || "https://discord.gg/C5RVusHQXy";
+export const redditSubreddit = import.meta.env.VITE_FFUN_REDDIT_SUBREDDIT || "https://www.reddit.com/r/feedsfun/";
 
 export const plausibleEnabled = import.meta.env.VITE_FFUN_PLAUSIBLE_ENABLED == "true" || false;
 export const plausibleDomain = import.meta.env.VITE_FFUN_PLAUSIBLE_DOMAIN || "localhost";
@@ -29,7 +32,10 @@ console.log("settings.authMode", authMode);
 console.log("settings.authSupertokensApiBasePath", authSupertokensApiBasePath);
 console.log("settings.authSupertokensResendAfter", authSupertokensResendAfter);
 
+console.log("settings.blog", blog);
 console.log("settings.githubRepo", githubRepo);
+console.log("settings.discordInvite", discordInvite);
+console.log("settings.redditSubreddit", redditSubreddit);
 
 console.log("settings.plausibleEnabled", plausibleEnabled);
 console.log("settings.plausibleDomain", plausibleDomain);
