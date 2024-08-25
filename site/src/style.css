@@ -53,7 +53,7 @@
   }
 
   .ffun-header-link {
-      @apply text-blue-600 hover:text-blue-900 cursor-pointer text-lg;
+    @apply text-blue-600 hover:text-blue-900 cursor-pointer text-lg;
   }
 
   .ffun-normal-link {
