@@ -76,7 +76,17 @@
               >
             </li>
 
-            <li>
+            <li v-if="settings.blog">
+              <a
+                :href="settings.blog"
+                target="_blank"
+                class="ffun-header-link"
+                style="text-decoration: none"
+                >Blog&#8599;</a
+                              >
+            </li>
+
+            <li v-if="settings.githubRepo">
               <a
                 :href="settings.githubRepo"
                 target="_blank"
@@ -84,6 +94,26 @@
                 style="text-decoration: none"
                 >GitHub&#8599;</a
               >
+            </li>
+
+            <li v-if="settings.discordInvite">
+              <a
+                :href="settings.discordInvite"
+                target="_blank"
+                class="ffun-header-link"
+                style="text-decoration: none"
+                >Discord&#8599;</a
+                                 >
+            </li>
+
+            <li v-if="settings.redditSubreddit">
+              <a
+                :href="settings.redditSubreddit"
+                target="_blank"
+                class="ffun-header-link"
+                style="text-decoration: none"
+                >Reddit&#8599;</a
+                                >
             </li>
           </ul>
         </div>
