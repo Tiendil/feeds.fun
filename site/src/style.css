@@ -1,3 +1,5 @@
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -51,7 +53,7 @@
   }
 
   .ffun-header-link {
-    @apply text-blue-600 hover:text-blue-800 cursor-pointer text-lg;
+      @apply text-blue-600 hover:text-blue-900 cursor-pointer text-lg align-middle;
   }
 
   .ffun-normal-link {

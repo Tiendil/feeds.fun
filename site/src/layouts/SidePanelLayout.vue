@@ -66,14 +66,14 @@
               >
             </li>
 
-            <li>
+            <li class="">
               <a
                 href="/api/docs"
                 target="_blank"
                 class="ffun-header-link"
                 style="text-decoration: none"
-                >API&#8599;</a
-              >
+                >API</a
+                             >
             </li>
 
             <li v-if="settings.blog">
@@ -82,39 +82,43 @@
                 target="_blank"
                 class="ffun-header-link"
                 style="text-decoration: none"
-                >Blog&#8599;</a
+                >Blog</a
                               >
-            </li>
-
-            <li v-if="settings.githubRepo">
-              <a
-                :href="settings.githubRepo"
-                target="_blank"
-                class="ffun-header-link"
-                style="text-decoration: none"
-                >GitHub&#8599;</a
-              >
-            </li>
-
-            <li v-if="settings.discordInvite">
-              <a
-                :href="settings.discordInvite"
-                target="_blank"
-                class="ffun-header-link"
-                style="text-decoration: none"
-                >Discord&#8599;</a
-                                 >
             </li>
 
             <li v-if="settings.redditSubreddit">
               <a
                 :href="settings.redditSubreddit"
                 target="_blank"
-                class="ffun-header-link"
+                class="ffun-header-link text-xl"
+                title="Reddit"
                 style="text-decoration: none"
-                >Reddit&#8599;</a
+                ><i class="bi-reddit"></i></a
                                 >
             </li>
+
+            <li v-if="settings.discordInvite">
+              <a
+                :href="settings.discordInvite"
+                target="_blank"
+                class="ffun-header-link text-xl"
+                title="Discord"
+                style="text-decoration: none"
+                ><i class="bi-discord"></i></a
+                                 >
+            </li>
+
+            <li v-if="settings.githubRepo" class="align-middle">
+              <a
+                :href="settings.githubRepo"
+                target="_blank"
+                class="ffun-header-link text-xl"
+                title="GitHub"
+                style="text-decoration: none"
+                >              <i class="bi-github"></i></a
+              >
+            </li>
+
           </ul>
         </div>
 
