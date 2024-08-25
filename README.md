@@ -6,6 +6,9 @@ News reader with tags. Self-hosted, if it is your way.
 - You create rules to score news by tags.
 - Filter and sort news how you want  ⇒ read only what you want.
 
+Site: [feeds.fun](https://feeds.fun)
+Blog: [blog.feeds.fun](https://blog.feeds.fun)
+
 # Screenshots
 
 ![News filtering](docs/images/news-filtering-example.png)
