@@ -90,10 +90,10 @@
               <a
                 :href="settings.redditSubreddit"
                 target="_blank"
-                class="ffun-header-link text-xl"
+                class="ffun-header-link text-2xl"
                 title="Reddit"
                 style="text-decoration: none"
-                ><i class="bi-reddit"></i></a
+                ><i class="ti ti-brand-reddit"></i></a
                                 >
             </li>
 
@@ -101,21 +101,21 @@
               <a
                 :href="settings.discordInvite"
                 target="_blank"
-                class="ffun-header-link text-xl"
+                class="ffun-header-link text-2xl"
                 title="Discord"
                 style="text-decoration: none"
-                ><i class="bi-discord"></i></a
+                ><i class="ti ti-brand-discord"></i></a
                                  >
             </li>
 
-            <li v-if="settings.githubRepo" class="align-middle">
+            <li v-if="settings.githubRepo">
               <a
                 :href="settings.githubRepo"
                 target="_blank"
-                class="ffun-header-link text-xl"
+                class="ffun-header-link text-2xl"
                 title="GitHub"
                 style="text-decoration: none"
-                >              <i class="bi-github"></i></a
+                >              <i class="ti ti-brand-github"></i></a
               >
             </li>
 
