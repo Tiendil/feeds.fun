@@ -188,6 +188,12 @@ git clone git@github.com:Tiendil/feeds.fun.git
 cd ./feeds.fun
 ```
 
+Build some docker images
+
+```
+./bin/build-local-containers.sh
+```
+
 Start the API server and frontend:
 
 ```
