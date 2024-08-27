@@ -1,8 +1,11 @@
 import datetime
 import enum
 import uuid
+from typing import Protocol
 
 import pydantic
+
+from ffun.feeds.entities import FeedId
 
 
 class KeyStatus(str, enum.Enum):
@@ -32,3 +35,15 @@ class UserKeyInfo(pydantic.BaseModel):
     max_tokens_in_month: int
     process_entries_not_older_than: datetime.timedelta
     tokens_used: int
+
+
+class SelectKeyContext(pydantic.BaseModel):
+    feed_id: FeedId
+    entry_age: datetime.timedelta
+    reserved_tokens: int
+    interval_started_at: datetime.datetime
+
+
+class KeySelector(Protocol):
+    async def select_key(self, context: SelectKeyContext) -> UserKeyInfo:
+        ...

@@ -61,7 +61,7 @@ async def _filter_out_users_with_overused_keys(
 
 async def _choose_user(
     infos: list[entities.UserKeyInfo], reserved_tokens: int, interval_started_at: datetime.datetime
-) -> entities.UserKeyInfo:
+) -> entities.UserKeyInfo | None:
     from ffun.application.resources import Resource as AppResource
 
     for info in infos:
@@ -74,18 +74,17 @@ async def _choose_user(
         ):
             return info
 
-    raise errors.NoKeyFoundForFeed()
+    return None
 
 
+# TODO: tests
 @contextlib.asynccontextmanager
 async def _use_key(
-    user_id: uuid.UUID, api_key: str, reserved_tokens: int, interval_started_at: datetime.datetime
+    key_usage: entities.APIKeyUsage, reserved_tokens: int, interval_started_at: datetime.datetime
 ) -> AsyncGenerator[entities.APIKeyUsage, None]:
     from ffun.application.resources import Resource as AppResource
 
-    log = logger.bind(function="_use_key", user_id=user_id)
-
-    key_usage = entities.APIKeyUsage(user_id=user_id, api_key=api_key, used_tokens=None)
+    log = logger.bind(function="_use_key", user_id=key_usage.user_id)
 
     used_tokens = reserved_tokens
 
@@ -104,7 +103,7 @@ async def _use_key(
         log.info("convert_reserved_to_used", reserved_tokens=reserved_tokens, used_tokens=used_tokens)
 
         await r_domain.convert_reserved_to_used(
-            user_id=user_id,
+            user_id=key_usage.user_id,
             kind=AppResource.openai_tokens,
             interval_started_at=interval_started_at,
             used=used_tokens,
@@ -191,7 +190,7 @@ async def _get_candidates(
 
 async def _find_best_user_with_key(
     feed_id: FeedId, entry_age: datetime.timedelta, interval_started_at: datetime.datetime, reserved_tokens: int
-) -> entities.UserKeyInfo:
+) -> entities.UserKeyInfo | None:
     infos = await _get_candidates(
         feed_id=feed_id, interval_started_at=interval_started_at, entry_age=entry_age, reserved_tokens=reserved_tokens
     )
@@ -201,37 +200,82 @@ async def _find_best_user_with_key(
     return await _choose_user(infos=infos, reserved_tokens=reserved_tokens, interval_started_at=interval_started_at)
 
 
+####################
+# choosing key logic
+####################
+
+# TODO: test
+async def _choose_general_key(context: entities.SelectKeyContext) -> entities.APIKeyUsage | None:
+    if settings.general_api_key is None:
+        return None
+
+    return entities.APIKeyUsage(user_id=uuid.UUID(int=0),
+                                api_key=settings.general_api_key,
+                                used_tokens=None)
+
+
+# TODO: test
+async def _choose_collections_key(context: entities.SelectKeyContext) -> entities.APIKeyUsage | None:
+    if settings.collections_api_key is None:
+        return None
+
+    if not await fc_domain.is_feed_in_collections(context.feed_id):
+        return None
+
+    return entities.APIKeyUsage(user_id=uuid.UUID(int=0),
+                                api_key=settings.collections_api_key,
+                                used_tokens=None)
+
+
+# TODO: test
+async def _chose_user_key(context: entities.SelectKeyContext) -> entities.APIKeyUsage | None:
+    info = await _find_best_user_with_key(
+        feed_id=context.feed_id,
+        entry_age=context.entry_age,
+        interval_started_at=context.interval_started_at,
+        reserved_tokens=context.reserved_tokens
+    )
+
+    if info is None:
+        return None
+
+    return entities.APIKeyUsage(user_id=info.user_id,
+                                api_key=info.api_key,
+                                used_tokens=None)
+
+
+_key_selectors = [_choose_general_key, _choose_collections_key, _chose_user_key]
+
+
+# TODO: tests
+async def _choose_key(context: entities.SelectKeyContext, selectors: list[entities.KeySelector]) -> entities.APIKeyUsage:
+    for key_selector in _key_selectors:
+        key_usage = await key_selector(context)
+
+        if key_usage is not None:
+            return key_usage
+
+    raise errors.NoKeyFoundForFeed()
+
+
 # TODO: refactore into looping via keys sources
 @contextlib.asynccontextmanager
 async def api_key_for_feed_entry(  # noqa: CCR001,CFQ001
     feed_id: FeedId, entry_age: datetime.timedelta, reserved_tokens: int
 ) -> AsyncGenerator[entities.APIKeyUsage, None]:
 
-    # TODO: test
-    if settings.general_api_key is not None:
-        # for dev tools we can use a special general key
-        # it must not be defined in production
-        yield entities.APIKeyUsage(user_id=uuid.UUID(int=0), api_key=settings.general_api_key, used_tokens=None)
-        return
-
-    # TODO: test both cases (with and without collections key specified)
-    if settings.collections_api_key is not None and await fc_domain.is_feed_in_collections(feed_id):
-        # Processing collections is a responsibility (and guarantee) of FeedsFun, not of users
-        yield entities.APIKeyUsage(user_id=uuid.UUID(int=0), api_key=settings.collections_api_key, used_tokens=None)
-        return
-
     interval_started_at = r_domain.month_interval_start()
 
-    found_user = await _find_best_user_with_key(
-        feed_id=feed_id, entry_age=entry_age, interval_started_at=interval_started_at, reserved_tokens=reserved_tokens
-    )
+    context = entities.SelectKeyContext(feed_id=feed_id,
+                                        entry_age=entry_age,
+                                        reserved_tokens=reserved_tokens,
+                                        interval_started_at=interval_started_at)
 
-    assert found_user.api_key is not None
+    key_usage = await _choose_key(context, _key_selectors)
 
     async with _use_key(
-        user_id=found_user.user_id,
-        api_key=found_user.api_key,
-        reserved_tokens=reserved_tokens,
-        interval_started_at=interval_started_at,
+            key_usage=key_usage,
+            reserved_tokens=reserved_tokens,
+            interval_started_at=interval_started_at,
     ) as key_usage:
         yield key_usage

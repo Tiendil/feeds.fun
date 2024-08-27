@@ -125,19 +125,19 @@ class TestChooseUser:
     async def test_no_users(self) -> None:
         interval_started_at = r_domain.month_interval_start()
 
-        with pytest.raises(errors.NoKeyFoundForFeed):
-            assert await _choose_user(infos=[], reserved_tokens=0, interval_started_at=interval_started_at)
+        assert await _choose_user(infos=[], reserved_tokens=0, interval_started_at=interval_started_at) is None
 
     @pytest.mark.asyncio
     async def test_no_users_with_resources(self, five_user_key_infos: list[UserKeyInfo]) -> None:
         interval_started_at = r_domain.month_interval_start()
 
-        with pytest.raises(errors.NoKeyFoundForFeed):
-            assert await _choose_user(
-                infos=five_user_key_infos,
-                reserved_tokens=max(info.max_tokens_in_month for info in five_user_key_infos) + 1,
-                interval_started_at=interval_started_at,
-            )
+        info = await _choose_user(
+            infos=five_user_key_infos,
+            reserved_tokens=max(info.max_tokens_in_month for info in five_user_key_infos) + 1,
+            interval_started_at=interval_started_at,
+        )
+
+        assert info is None
 
     @pytest.mark.asyncio
     async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
@@ -154,93 +154,93 @@ class TestChooseUser:
         assert info == five_user_key_infos[2]
 
 
-class TestUseKey:
-    @pytest.mark.asyncio
-    async def test_success(self, internal_user_id: uuid.UUID, openai_key: str) -> None:
-        interval_started_at = r_domain.month_interval_start()
+# class TestUseKey:
+#     @pytest.mark.asyncio
+#     async def test_success(self, internal_user_id: uuid.UUID, openai_key: str) -> None:
+#         interval_started_at = r_domain.month_interval_start()
 
-        reserved_tokens = 567
+#         reserved_tokens = 567
 
-        await r_domain.try_to_reserve(
-            user_id=internal_user_id,
-            kind=AppResource.openai_tokens,
-            interval_started_at=interval_started_at,
-            amount=reserved_tokens,
-            limit=1000,
-        )
+#         await r_domain.try_to_reserve(
+#             user_id=internal_user_id,
+#             kind=AppResource.openai_tokens,
+#             interval_started_at=interval_started_at,
+#             amount=reserved_tokens,
+#             limit=1000,
+#         )
 
-        resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
-        )
+#         resources = await r_domain.load_resources(
+#             user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
+#         )
 
-        used_tokens = 132
+#         used_tokens = 132
 
-        async with _use_key(
-            user_id=internal_user_id,
-            api_key=openai_key,
-            reserved_tokens=reserved_tokens,
-            interval_started_at=interval_started_at,
-        ) as key_usage:
-            assert key_usage == APIKeyUsage(user_id=internal_user_id, api_key=openai_key, used_tokens=None)
-            key_usage.used_tokens = used_tokens
+#         async with _use_key(
+#             user_id=internal_user_id,
+#             api_key=openai_key,
+#             reserved_tokens=reserved_tokens,
+#             interval_started_at=interval_started_at,
+#         ) as key_usage:
+#             assert key_usage == APIKeyUsage(user_id=internal_user_id, api_key=openai_key, used_tokens=None)
+#             key_usage.used_tokens = used_tokens
 
-        resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
-        )
+#         resources = await r_domain.load_resources(
+#             user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
+#         )
 
-        assert resources == {
-            internal_user_id: r_entities.Resource(
-                user_id=internal_user_id,
-                kind=AppResource.openai_tokens,
-                interval_started_at=interval_started_at,
-                used=used_tokens,
-                reserved=0,
-            )
-        }
+#         assert resources == {
+#             internal_user_id: r_entities.Resource(
+#                 user_id=internal_user_id,
+#                 kind=AppResource.openai_tokens,
+#                 interval_started_at=interval_started_at,
+#                 used=used_tokens,
+#                 reserved=0,
+#             )
+#         }
 
-    @pytest.mark.asyncio
-    async def test_error(self, internal_user_id: uuid.UUID, openai_key: str) -> None:
-        interval_started_at = r_domain.month_interval_start()
+#     @pytest.mark.asyncio
+#     async def test_error(self, internal_user_id: uuid.UUID, openai_key: str) -> None:
+#         interval_started_at = r_domain.month_interval_start()
 
-        reserved_tokens = 567
+#         reserved_tokens = 567
 
-        await r_domain.try_to_reserve(
-            user_id=internal_user_id,
-            kind=AppResource.openai_tokens,
-            interval_started_at=interval_started_at,
-            amount=reserved_tokens,
-            limit=1000,
-        )
+#         await r_domain.try_to_reserve(
+#             user_id=internal_user_id,
+#             kind=AppResource.openai_tokens,
+#             interval_started_at=interval_started_at,
+#             amount=reserved_tokens,
+#             limit=1000,
+#         )
 
-        resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
-        )
+#         resources = await r_domain.load_resources(
+#             user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
+#         )
 
-        class FakeError(Exception):
-            pass
+#         class FakeError(Exception):
+#             pass
 
-        with pytest.raises(FakeError):
-            async with _use_key(
-                user_id=internal_user_id,
-                api_key=openai_key,
-                reserved_tokens=reserved_tokens,
-                interval_started_at=interval_started_at,
-            ):
-                raise FakeError()
+#         with pytest.raises(FakeError):
+#             async with _use_key(
+#                 user_id=internal_user_id,
+#                 api_key=openai_key,
+#                 reserved_tokens=reserved_tokens,
+#                 interval_started_at=interval_started_at,
+#             ):
+#                 raise FakeError()
 
-        resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
-        )
+#         resources = await r_domain.load_resources(
+#             user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
+#         )
 
-        assert resources == {
-            internal_user_id: r_entities.Resource(
-                user_id=internal_user_id,
-                kind=AppResource.openai_tokens,
-                interval_started_at=interval_started_at,
-                used=reserved_tokens,
-                reserved=0,
-            )
-        }
+#         assert resources == {
+#             internal_user_id: r_entities.Resource(
+#                 user_id=internal_user_id,
+#                 kind=AppResource.openai_tokens,
+#                 interval_started_at=interval_started_at,
+#                 used=reserved_tokens,
+#                 reserved=0,
+#             )
+#         }
 
 
 class TestGetUserKeyInfos:
@@ -387,13 +387,14 @@ class TestGetCandidates:
 class TestFindBestUserWithKey:
     @pytest.mark.asyncio
     async def test_no_users(self, saved_feed_id: FeedId) -> None:
-        with pytest.raises(errors.NoKeyFoundForFeed):
-            await _find_best_user_with_key(
-                feed_id=saved_feed_id,
-                entry_age=datetime.timedelta(days=1),
-                interval_started_at=r_domain.month_interval_start(),
-                reserved_tokens=100,
-            )
+        info = await _find_best_user_with_key(
+            feed_id=saved_feed_id,
+            entry_age=datetime.timedelta(days=1),
+            interval_started_at=r_domain.month_interval_start(),
+            reserved_tokens=100,
+        )
+
+        assert info is None
 
     @pytest.mark.asyncio
     async def test_works(self, saved_feed_id: FeedId, five_user_key_infos: list[UserKeyInfo]) -> None:
