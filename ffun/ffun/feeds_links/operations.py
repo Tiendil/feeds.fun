@@ -22,7 +22,6 @@ async def add_link(user_id: uuid.UUID, feed_id: uuid.UUID) -> None:
     await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "feed_id": feed_id})
 
 
-# TODO: tests
 async def remove_link(user_id: uuid.UUID, feed_id: uuid.UUID) -> None:
     sql = """
         DELETE FROM fl_links WHERE user_id = %(user_id)s AND feed_id = %(feed_id)s

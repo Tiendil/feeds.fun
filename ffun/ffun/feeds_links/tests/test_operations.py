@@ -6,7 +6,7 @@ from ffun.core.postgresql import transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.feeds.tests import make as f_make
 from ffun.feeds_links.entities import FeedLink
-from ffun.feeds_links.operations import add_link, get_linked_feeds, tech_merge_feeds
+from ffun.feeds_links.operations import add_link, get_linked_feeds, tech_merge_feeds, remove_link
 from ffun.users.tests import make as u_make
 
 
@@ -62,6 +62,62 @@ class TestAddLink:
         links_3 = await get_linked_feeds(user_3_id)
 
         assert links_3 == [FeedLink(user_id=user_3_id, feed_id=f[3], created_at=links_3[0].created_at)]
+
+
+class TestRemoveLink:
+
+    @pytest.mark.asyncio
+    async def test_add_link(self, internal_user_id: uuid.UUID, saved_feed_id: uuid.UUID) -> None:
+        await add_link(internal_user_id, saved_feed_id)
+
+        async with TableSizeDelta("fl_links", delta=-1):
+            await remove_link(internal_user_id, saved_feed_id)
+
+        links = await get_linked_feeds(internal_user_id)
+
+        assert links == []
+
+    @pytest.mark.asyncio
+    async def test_create_after_remove(self, internal_user_id: uuid.UUID, saved_feed_id: uuid.UUID) -> None:
+        await add_link(internal_user_id, saved_feed_id)
+        await remove_link(internal_user_id, saved_feed_id)
+
+        async with TableSizeDelta("fl_links", delta=1):
+            await add_link(internal_user_id, saved_feed_id)
+
+        links = await get_linked_feeds(internal_user_id)
+
+        assert links == [FeedLink(user_id=internal_user_id, feed_id=saved_feed_id, created_at=links[0].created_at)]
+
+    @pytest.mark.asyncio
+    async def test_remove_only_required(self, five_internal_user_ids: list[uuid.UUID], five_saved_feed_ids: list[uuid.UUID]) -> None:
+        user_1_id, user_2_id, user_3_id = five_internal_user_ids[:3]
+
+        f = five_saved_feed_ids
+
+        await add_link(user_1_id, f[0])
+        await add_link(user_1_id, f[1])
+
+        await add_link(user_2_id, f[1])
+        await add_link(user_2_id, f[2])
+        await add_link(user_2_id, f[3])
+
+        await add_link(user_3_id, f[3])
+
+        async with TableSizeDelta("fl_links", delta=-1):
+            await remove_link(user_2_id, f[2])
+
+        links_1 = await get_linked_feeds(user_1_id)
+        assert len(links_1) == 2
+
+        links_2 = await get_linked_feeds(user_2_id)
+
+        assert links_2 == [FeedLink(user_id=user_2_id, feed_id=f[1], created_at=links_2[0].created_at),
+                           FeedLink(user_id=user_2_id, feed_id=f[3], created_at=links_2[1].created_at)]
+
+        links_3 = await get_linked_feeds(user_3_id)
+
+        assert len(links_3) == 1
 
 
 class TestMergeFeeds:
