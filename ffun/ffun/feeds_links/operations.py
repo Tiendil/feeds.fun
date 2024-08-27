@@ -12,7 +12,6 @@ def row_to_feed_link(row: dict[str, Any]) -> FeedLink:
     return FeedLink(user_id=row["user_id"], feed_id=row["feed_id"], created_at=row["created_at"])
 
 
-# TODO: tests
 async def add_link(user_id: uuid.UUID, feed_id: uuid.UUID) -> None:
     sql = """
         INSERT INTO fl_links (id, user_id, feed_id)

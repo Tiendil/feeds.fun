@@ -58,3 +58,8 @@ async def loaded_feed(loaded_feed_id: uuid.UUID) -> Feed:
 @pytest_asyncio.fixture
 async def another_loaded_feed(another_loaded_feed_id: uuid.UUID) -> Feed:
     return await get_feed(another_loaded_feed_id)
+
+
+@pytest_asyncio.fixture
+async def five_saved_feed_ids() -> list[uuid.UUID]:
+    return [feed.id for feed in await f_make.n_feeds(5)]
