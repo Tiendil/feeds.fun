@@ -6,7 +6,7 @@ from ffun.core.postgresql import transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.feeds.tests import make as f_make
 from ffun.feeds_links.entities import FeedLink
-from ffun.feeds_links.operations import add_link, get_linked_feeds, tech_merge_feeds, remove_link, get_linked_users
+from ffun.feeds_links.operations import add_link, get_linked_feeds, tech_merge_feeds, remove_link, get_linked_users, has_linked_users
 from ffun.users.tests import make as u_make
 
 
@@ -158,6 +158,19 @@ class TestGetLinkedUsers:
         users = await get_linked_users(another_saved_feed_id)
 
         assert users == [user_2_id, user_3_id]
+
+
+class TestHasLinkedUsers:
+
+    @pytest.mark.asyncio
+    async def test_no_users(self, saved_feed_id: uuid.UUID) -> None:
+        assert not await has_linked_users(saved_feed_id)
+
+    @pytest.mark.asyncio
+    async def test_has_users(self, internal_user_id: uuid.UUID, saved_feed_id: uuid.UUID) -> None:
+        await add_link(internal_user_id, saved_feed_id)
+
+        assert await has_linked_users(saved_feed_id)
 
 
 class TestMergeFeeds:

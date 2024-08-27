@@ -50,7 +50,6 @@ async def get_linked_users(feed_id: uuid.UUID) -> list[uuid.UUID]:
     return [row["user_id"] for row in result]
 
 
-# TODO: tests
 async def has_linked_users(feed_id: uuid.UUID) -> bool:
     sql = """
         SELECT 1 FROM fl_links WHERE feed_id = %(feed_id)s LIMIT 1
