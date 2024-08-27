@@ -1,11 +1,10 @@
-import uuid
-
 import pytest
 from structlog.testing import capture_logs
 
 from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs
+from ffun.feeds.entities import FeedId
 from ffun.librarian import errors, operations
 from ffun.librarian.domain import (
     move_failed_entries_to_processor_queue,
@@ -99,7 +98,7 @@ class TestPlanProcessorQueue:
         assert loaded_pointer == pointer
 
     @pytest.mark.asyncio
-    async def test_move_pointer_to_the_end(self, loaded_feed_id: uuid.UUID, fake_processor_id: int) -> None:
+    async def test_move_pointer_to_the_end(self, loaded_feed_id: FeedId, fake_processor_id: int) -> None:
         await make.end_processor_pointer(1)
 
         entries = await l_make.n_entries(loaded_feed_id, 3)
@@ -118,7 +117,7 @@ class TestPlanProcessorQueue:
         )
 
     @pytest.mark.asyncio
-    async def test_move_pointer_to_not_the_end(self, loaded_feed_id: uuid.UUID, fake_processor_id: int) -> None:
+    async def test_move_pointer_to_not_the_end(self, loaded_feed_id: FeedId, fake_processor_id: int) -> None:
         await make.end_processor_pointer(1)
 
         entries = await l_make.n_entries(loaded_feed_id, 3)
@@ -137,7 +136,7 @@ class TestPlanProcessorQueue:
         )
 
     @pytest.mark.asyncio
-    async def test_chunk_limit(self, loaded_feed_id: uuid.UUID, fake_processor_id: int) -> None:
+    async def test_chunk_limit(self, loaded_feed_id: FeedId, fake_processor_id: int) -> None:
         await operations.clear_processor_queue(fake_processor_id)
 
         await make.end_processor_pointer(fake_processor_id)
@@ -159,7 +158,7 @@ class TestPlanProcessorQueue:
 
     @pytest.mark.asyncio
     async def test_do_not_push_if_there_are_enough_entries(
-        self, loaded_feed_id: uuid.UUID, fake_processor_id: int
+        self, loaded_feed_id: FeedId, fake_processor_id: int
     ) -> None:
         await operations.clear_processor_queue(fake_processor_id)
 

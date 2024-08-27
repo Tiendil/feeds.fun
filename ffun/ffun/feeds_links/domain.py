@@ -1,6 +1,5 @@
-import uuid
-
 from ffun.core.postgresql import ExecuteType, run_in_transaction
+from ffun.feeds.entities import FeedId
 from ffun.feeds_links import operations
 
 add_link = operations.add_link
@@ -11,5 +10,5 @@ has_linked_users = operations.has_linked_users
 
 
 @run_in_transaction
-async def tech_merge_feeds(execute: ExecuteType, from_feed_id: uuid.UUID, to_feed_id: uuid.UUID) -> None:
+async def tech_merge_feeds(execute: ExecuteType, from_feed_id: FeedId, to_feed_id: FeedId) -> None:
     await operations.tech_merge_feeds(execute, from_feed_id=from_feed_id, to_feed_id=to_feed_id)

@@ -5,6 +5,7 @@ import pytest
 
 from ffun.feeds import domain as f_domain
 from ffun.feeds import errors as f_errors
+from ffun.feeds.entities import FeedId
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
@@ -19,13 +20,13 @@ from ffun.users.tests import make as u_make
 class TestRemoveFeed:
     @pytest.mark.asyncio
     async def test_no_feed(self) -> None:
-        await remove_feed(uuid.uuid4())
+        await remove_feed(f_domain.new_feed_id())
 
     @pytest.mark.asyncio
     async def test_success(
         self,
-        loaded_feed_id: uuid.UUID,
-        another_loaded_feed_id: uuid.UUID,
+        loaded_feed_id: FeedId,
+        another_loaded_feed_id: FeedId,
         fake_processor_id: int,
         another_fake_processor_id: int,
         three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
@@ -73,7 +74,7 @@ class TestRemoveFeed:
         }
 
     @pytest.mark.asyncio
-    async def test_remove_markers(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID) -> None:
+    async def test_remove_markers(self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId) -> None:
         entries = await l_make.n_entries_list(loaded_feed_id, 3)
 
         another_entries = await l_make.n_entries_list(another_loaded_feed_id, 3)
@@ -101,16 +102,14 @@ class TestRemoveFeed:
 
 class TestMergeFeeds:
     @pytest.mark.asyncio
-    async def test_no_entries_in_source_feed(
-        self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID
-    ) -> None:
+    async def test_no_entries_in_source_feed(self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId) -> None:
         await merge_feeds(loaded_feed_id, another_loaded_feed_id)
 
     @pytest.mark.asyncio
     async def test_move_entries_to_an_empty_feed(
         self,
-        loaded_feed_id: uuid.UUID,
-        another_loaded_feed_id: uuid.UUID,
+        loaded_feed_id: FeedId,
+        another_loaded_feed_id: FeedId,
         fake_processor_id: int,
         another_fake_processor_id: int,
         three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
@@ -147,8 +146,8 @@ class TestMergeFeeds:
     @pytest.mark.asyncio
     async def test_merge_entries(
         self,
-        loaded_feed_id: uuid.UUID,
-        another_loaded_feed_id: uuid.UUID,
+        loaded_feed_id: FeedId,
+        another_loaded_feed_id: FeedId,
         fake_processor_id: int,
         another_fake_processor_id: int,
         three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
@@ -210,8 +209,8 @@ class TestMergeFeeds:
     @pytest.mark.asyncio
     async def test_move_and_merge(
         self,
-        loaded_feed_id: uuid.UUID,
-        another_loaded_feed_id: uuid.UUID,
+        loaded_feed_id: FeedId,
+        another_loaded_feed_id: FeedId,
         fake_processor_id: int,
         another_fake_processor_id: int,
         three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
@@ -268,7 +267,7 @@ class TestMergeFeeds:
         }
 
     @pytest.mark.asyncio
-    async def test_merge_feed_links(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID) -> None:
+    async def test_merge_feed_links(self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId) -> None:
         user_a, user_b = await u_make.n_users(2)
 
         await fl_domain.add_link(user_a, another_loaded_feed_id)
@@ -284,7 +283,7 @@ class TestMergeFeeds:
         assert {link.feed_id for link in links_b} == {loaded_feed_id}
 
     @pytest.mark.asyncio
-    async def test_merge_markers(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID) -> None:
+    async def test_merge_markers(self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId) -> None:
         entries = await l_make.n_entries_list(loaded_feed_id, 3)
 
         another_entries_to_save = [entry.replace(feed_id=another_loaded_feed_id, id=uuid.uuid4()) for entry in entries]
@@ -319,8 +318,8 @@ class TestRemoveEntries:
     @pytest.mark.asyncio
     async def test_success(
         self,
-        loaded_feed_id: uuid.UUID,
-        another_loaded_feed_id: uuid.UUID,
+        loaded_feed_id: FeedId,
+        another_loaded_feed_id: FeedId,
         fake_processor_id: int,
         another_fake_processor_id: int,
         three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
@@ -371,14 +370,14 @@ class TestRemoveEntries:
 class TestLimitEntriesForFeed:
     @pytest.mark.asyncio
     async def test_no_feed(self) -> None:
-        await limit_entries_for_feed(uuid.uuid4(), limit=10)
+        await limit_entries_for_feed(f_domain.new_feed_id(), limit=10)
 
     @pytest.mark.asyncio
-    async def test_no_entries(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_no_entries(self, loaded_feed_id: FeedId) -> None:
         await limit_entries_for_feed(loaded_feed_id, limit=10)
 
     @pytest.mark.asyncio
-    async def test_not_exceed_limit(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_not_exceed_limit(self, loaded_feed_id: FeedId) -> None:
         entries = await l_make.n_entries_list(loaded_feed_id, 3)
 
         await limit_entries_for_feed(loaded_feed_id, limit=10)
@@ -388,7 +387,7 @@ class TestLimitEntriesForFeed:
         assert loaded_entries == entries
 
     @pytest.mark.asyncio
-    async def test_exceed_limit(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_exceed_limit(self, loaded_feed_id: FeedId) -> None:
         entries = await l_make.n_entries_list(loaded_feed_id, 10)
 
         await limit_entries_for_feed(loaded_feed_id, limit=5)

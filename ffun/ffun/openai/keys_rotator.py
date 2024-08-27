@@ -4,6 +4,7 @@ import uuid
 from typing import Any, AsyncGenerator, Iterable
 
 from ffun.core import logging
+from ffun.feeds.entities import FeedId
 from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.openai import client, entities, errors
@@ -169,7 +170,7 @@ _filters = (
 
 
 async def _get_candidates(
-    feed_id: uuid.UUID,
+    feed_id: FeedId,
     interval_started_at: datetime.datetime,
     entry_age: datetime.timedelta,
     reserved_tokens: int,
@@ -189,7 +190,7 @@ async def _get_candidates(
 
 
 async def _find_best_user_with_key(
-    feed_id: uuid.UUID, entry_age: datetime.timedelta, interval_started_at: datetime.datetime, reserved_tokens: int
+    feed_id: FeedId, entry_age: datetime.timedelta, interval_started_at: datetime.datetime, reserved_tokens: int
 ) -> entities.UserKeyInfo:
     infos = await _get_candidates(
         feed_id=feed_id, interval_started_at=interval_started_at, entry_age=entry_age, reserved_tokens=reserved_tokens
@@ -203,7 +204,7 @@ async def _find_best_user_with_key(
 # TODO: refactore into looping via keys sources
 @contextlib.asynccontextmanager
 async def api_key_for_feed_entry(  # noqa: CCR001,CFQ001
-    feed_id: uuid.UUID, entry_age: datetime.timedelta, reserved_tokens: int
+    feed_id: FeedId, entry_age: datetime.timedelta, reserved_tokens: int
 ) -> AsyncGenerator[entities.APIKeyUsage, None]:
 
     # TODO: test

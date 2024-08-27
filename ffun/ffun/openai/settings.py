@@ -23,6 +23,8 @@ class Settings(BaseSettings):
         if self.collections_api_key is None:
             logger.warning("collections_api_key_is_not_set", comment="Collection feeds will be treated as general")
 
+        return self
+
     @pydantic.model_validator(mode="after")
     def general_api_key_must_be_none_in_prod(self) -> "Settings":
         # TODO: this component should not depend on the environment

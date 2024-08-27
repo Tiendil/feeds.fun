@@ -8,9 +8,9 @@ from pytest_mock import MockerFixture
 from ffun.openai.entities import KeyStatus, UserKeyInfo
 from ffun.openai.keys_rotator import _get_user_key_infos
 from ffun.openai.keys_statuses import statuses
+from ffun.openai.settings import settings
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
-from ffun.openai.settings import settings
 
 
 class MockedOpenAIClient:

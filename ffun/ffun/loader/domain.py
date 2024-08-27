@@ -5,7 +5,7 @@ from furl import furl
 
 from ffun.core import logging, utils
 from ffun.feeds import domain as f_domain
-from ffun.feeds.entities import Feed, FeedState
+from ffun.feeds.entities import Feed, FeedId, FeedState
 from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
@@ -75,7 +75,7 @@ async def load_content_with_proxies(url: str) -> httpx.Response:  # noqa: CCR001
     raise first_exception  # type: ignore
 
 
-async def detect_orphaned(feed_id: uuid.UUID) -> bool:
+async def detect_orphaned(feed_id: FeedId) -> bool:
     if await fc_domain.is_feed_in_collections(feed_id):
         return False
 
@@ -114,7 +114,7 @@ async def sync_feed_info(feed: Feed, feed_info: p_entities.FeedInfo) -> None:
     await f_domain.update_feed_info(feed.id, title=feed_info.title, description=feed_info.description)
 
 
-async def store_entries(feed_id: uuid.UUID, entries: list[p_entities.EntryInfo]) -> None:
+async def store_entries(feed_id: FeedId, entries: list[p_entities.EntryInfo]) -> None:
     external_ids = [entry.external_id for entry in entries]
 
     stored_entries_external_ids = await l_domain.check_stored_entries_by_external_ids(feed_id, external_ids)

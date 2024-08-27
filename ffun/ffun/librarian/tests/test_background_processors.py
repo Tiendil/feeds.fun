@@ -5,6 +5,7 @@ from structlog.testing import capture_logs
 
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
+from ffun.feeds.entities import FeedId
 from ffun.librarian import operations
 from ffun.librarian.background_processors import EntriesProcessor
 from ffun.librarian.tests import make
@@ -25,7 +26,7 @@ class TestEntriesProcessors:
 
     @pytest.mark.asyncio
     async def test_entries_more_than_concurrency(
-        self, fake_entries_processor: EntriesProcessor, loaded_feed_id: uuid.UUID
+        self, fake_entries_processor: EntriesProcessor, loaded_feed_id: FeedId
     ) -> None:
         await operations.clear_processor_queue(fake_entries_processor.id)
         await make.end_processor_pointer(fake_entries_processor.id)
@@ -51,7 +52,7 @@ class TestEntriesProcessors:
 
     @pytest.mark.asyncio
     async def test_entries_less_than_concurrency(
-        self, fake_entries_processor: EntriesProcessor, loaded_feed_id: uuid.UUID
+        self, fake_entries_processor: EntriesProcessor, loaded_feed_id: FeedId
     ) -> None:
         await operations.clear_processor_queue(fake_entries_processor.id)
         await make.end_processor_pointer(fake_entries_processor.id)
@@ -74,7 +75,7 @@ class TestEntriesProcessors:
 
     @pytest.mark.asyncio
     async def test_unexisted_entries_in_queue(
-        self, fake_entries_processor: EntriesProcessor, loaded_feed_id: uuid.UUID
+        self, fake_entries_processor: EntriesProcessor, loaded_feed_id: FeedId
     ) -> None:
         await operations.clear_processor_queue(fake_entries_processor.id)
         await make.end_processor_pointer(fake_entries_processor.id)

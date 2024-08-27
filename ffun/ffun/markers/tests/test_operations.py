@@ -1,9 +1,8 @@
-import uuid
-
 import pytest
 
 from ffun.core.postgresql import transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
+from ffun.feeds.entities import FeedId
 from ffun.library.entities import Entry
 from ffun.library.tests import make as l_make
 from ffun.markers.entities import Marker
@@ -18,7 +17,7 @@ class TestMergeFeeds:
             await tech_merge_markers(trx, new_entry.id, another_new_entry.id)
 
     @pytest.mark.asyncio
-    async def test_move_markers(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_move_markers(self, loaded_feed_id: FeedId) -> None:
         entry_1, entry_2, entry_3 = await l_make.n_entries_list(loaded_feed_id, 3)
 
         user_a, user_b = await u_make.n_users(2)
@@ -37,7 +36,7 @@ class TestMergeFeeds:
         assert markers_b == {entry_3.id: {Marker.read}}
 
     @pytest.mark.asyncio
-    async def test_rewrite_links(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_rewrite_links(self, loaded_feed_id: FeedId) -> None:
         entry_1, entry_2, entry_3 = await l_make.n_entries_list(loaded_feed_id, 3)
 
         user_a, user_b = await u_make.n_users(2)
@@ -57,7 +56,7 @@ class TestMergeFeeds:
         assert markers_b == {entry_3.id: {Marker.read}}
 
     @pytest.mark.asyncio
-    async def test_complex_ops(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_complex_ops(self, loaded_feed_id: FeedId) -> None:
         entry_1, entry_2, entry_3 = await l_make.n_entries_list(loaded_feed_id, 3)
 
         user_a, user_b, user_c = await u_make.n_users(3)
@@ -84,14 +83,14 @@ class TestMergeFeeds:
 
 class TestRemoveMarkersForEntries:
     @pytest.mark.asyncio
-    async def test_nothing_to_remove(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_nothing_to_remove(self, loaded_feed_id: FeedId) -> None:
         entry_1, entry_2, entry_3 = await l_make.n_entries_list(loaded_feed_id, 3)
 
         async with TableSizeNotChanged("m_markers"):
             await remove_markers_for_entries([entry_1.id, entry_2.id, entry_3.id])
 
     @pytest.mark.asyncio
-    async def test_remove(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_remove(self, loaded_feed_id: FeedId) -> None:
         entry_1, entry_2, entry_3 = await l_make.n_entries_list(loaded_feed_id, 3)
 
         user_a, user_b, user_c = await u_make.n_users(3)

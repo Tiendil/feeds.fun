@@ -3,6 +3,7 @@ from typing import Iterable
 
 from ffun.core import logging, postgresql
 from ffun.feeds import domain as f_domain
+from ffun.feeds.entities import FeedId
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.markers import domain as m_domain
@@ -12,7 +13,7 @@ from ffun.ontology import domain as o_domain
 logger = logging.get_module_logger()
 
 
-async def merge_feeds(feed_1_id: uuid.UUID, feed_2_id: uuid.UUID) -> None:
+async def merge_feeds(feed_1_id: FeedId, feed_2_id: FeedId) -> None:
     """Merge feed_2 into feed_1, remove feed_2."""
     log = logger.bind(function="merge_feeds")
 
@@ -55,7 +56,7 @@ async def merge_feeds(feed_1_id: uuid.UUID, feed_2_id: uuid.UUID) -> None:
     await remove_feed(feed_2_id)
 
 
-async def remove_feed(feed_id: uuid.UUID) -> None:
+async def remove_feed(feed_id: FeedId) -> None:
     """Remove feed and all related entries."""
     all_entries = await l_domain.get_entries_by_filter(feeds_ids=[feed_id], limit=postgresql.MAX_INTEGER)
 
@@ -77,7 +78,7 @@ async def remove_entries(entries_ids: Iterable[uuid.UUID]) -> int:
     return len(entries_to_remove)
 
 
-async def limit_entries_for_feed(feed_id: uuid.UUID, limit: int | None = None) -> None:
+async def limit_entries_for_feed(feed_id: FeedId, limit: int | None = None) -> None:
     """Remove oldest entries for feed to keep only `limit` entries."""
     if limit is None:
         limit = settings.max_entries_per_feed

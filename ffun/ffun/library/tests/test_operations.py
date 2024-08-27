@@ -9,6 +9,7 @@ from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_times_is_near
 from ffun.feeds import domain as f_domain
+from ffun.feeds.entities import FeedId
 from ffun.feeds.tests import make as f_make
 from ffun.library import errors
 from ffun.library.domain import get_entry
@@ -62,7 +63,7 @@ class TestCatalogEntries:
 
 class TestCheckStoredEntriesByExternalIds:
     @pytest.mark.asyncio
-    async def test_no_entries_stored(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_no_entries_stored(self, loaded_feed_id: FeedId) -> None:
         entries = [make.fake_entry(loaded_feed_id) for _ in range(3)]
         external_ids = [entry.external_id for entry in entries]
 
@@ -71,7 +72,7 @@ class TestCheckStoredEntriesByExternalIds:
         assert stored_entries == set()
 
     @pytest.mark.asyncio
-    async def test_all_entries_stored(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_all_entries_stored(self, loaded_feed_id: FeedId) -> None:
         entries = await make.n_entries(loaded_feed_id, n=3)
         external_ids = {entry.external_id for entry in entries.values()}
 
@@ -80,7 +81,7 @@ class TestCheckStoredEntriesByExternalIds:
         assert stored_entries == external_ids
 
     @pytest.mark.asyncio
-    async def test_some_entries_stored(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_some_entries_stored(self, loaded_feed_id: FeedId) -> None:
         new_entries = [make.fake_entry(loaded_feed_id) for _ in range(3)]
         saved_entries = await make.n_entries(loaded_feed_id, n=2)
         external_ids = [entry.external_id for entry in new_entries] + [
@@ -99,7 +100,7 @@ class TestGetEntriesByIds:
         assert entries == {}
 
     @pytest.mark.asyncio
-    async def test_success(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID) -> None:
+    async def test_success(self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId) -> None:
         entries = await make.n_entries(loaded_feed_id, n=3)
         another_entries = await make.n_entries(another_loaded_feed_id, n=3)
 
@@ -124,7 +125,7 @@ class TestGetEntriesByFilter:
 
     @pytest_asyncio.fixture
     async def prepared_entries(
-        self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, time_border: datetime.datetime
+        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, time_border: datetime.datetime
     ) -> list[Entry]:
         entries = await make.n_entries(loaded_feed_id, n=3)
         another_entries = await make.n_entries(another_loaded_feed_id, n=3)
@@ -149,7 +150,7 @@ class TestGetEntriesByFilter:
 
     @pytest.mark.asyncio
     async def test_all(
-        self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, prepared_entries: list[Entry]
+        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, prepared_entries: list[Entry]
     ) -> None:
         loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id, another_loaded_feed_id], limit=100)
 
@@ -158,7 +159,7 @@ class TestGetEntriesByFilter:
 
     @pytest.mark.asyncio
     async def test_limit(
-        self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, prepared_entries: list[Entry]
+        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, prepared_entries: list[Entry]
     ) -> None:
         loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id, another_loaded_feed_id], limit=4)
 
@@ -166,7 +167,7 @@ class TestGetEntriesByFilter:
         assert loaded_entries_ids == {entry.id for entry in prepared_entries[2:]}
 
     @pytest.mark.asyncio
-    async def test_feeds_filter(self, loaded_feed_id: uuid.UUID, prepared_entries: list[Entry]) -> None:
+    async def test_feeds_filter(self, loaded_feed_id: FeedId, prepared_entries: list[Entry]) -> None:
         loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id], limit=100)
 
         loaded_entries_ids = {entry.id for entry in loaded_entries}
@@ -174,7 +175,7 @@ class TestGetEntriesByFilter:
 
     @pytest.mark.asyncio
     async def test_time_period(
-        self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, prepared_entries: list[Entry]
+        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, prepared_entries: list[Entry]
     ) -> None:
         loaded_entries = await get_entries_by_filter(
             feeds_ids=[loaded_feed_id, another_loaded_feed_id], limit=100, period=datetime.timedelta(days=1)
@@ -191,7 +192,7 @@ class TestGetEntriesAfterPointer:
         assert entries == []
 
     @pytest.mark.asyncio
-    async def test_get_some(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_get_some(self, loaded_feed_id: FeedId) -> None:
         enries = await make.n_entries(loaded_feed_id, n=5)
 
         entries_list = list(enries.values())
@@ -204,7 +205,7 @@ class TestGetEntriesAfterPointer:
         assert [(entry.id, entry.cataloged_at) for entry in entries_list[3:]] == loaded_entries
 
     @pytest.mark.asyncio
-    async def test_duplicated_created_at(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_duplicated_created_at(self, loaded_feed_id: FeedId) -> None:
         entries = await make.n_entries(loaded_feed_id, n=5)
 
         entries_list = list(entries.values())
@@ -229,7 +230,7 @@ class TestGetEntriesAfterPointer:
             assert [(entry.id, entry.cataloged_at) for entry in entries_list[i + 1 :]] == loaded_entries
 
     @pytest.mark.asyncio
-    async def test_limit(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_limit(self, loaded_feed_id: FeedId) -> None:
         entries = await make.n_entries(loaded_feed_id, n=5)
 
         entries_list = list(entries.values())
@@ -290,9 +291,7 @@ class TestUpdateExternalUrl:
 
 class TestTechMoveEntry:
     @pytest.mark.asyncio
-    async def test_moved(
-        self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, cataloged_entry: Entry
-    ) -> None:
+    async def test_moved(self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, cataloged_entry: Entry) -> None:
         async with TableSizeNotChanged("l_entries"):
             await tech_move_entry(cataloged_entry.id, another_loaded_feed_id)
 
@@ -304,7 +303,7 @@ class TestTechMoveEntry:
 
     @pytest.mark.asyncio
     async def test_feed_has_the_same_entry(
-        self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID, new_entry: Entry
+        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, new_entry: Entry
     ) -> None:
         duplicated_entry = new_entry.replace(feed_id=another_loaded_feed_id, id=uuid.uuid4())
 
@@ -327,7 +326,7 @@ class TestTechMoveEntry:
 
 class TestTechRemoveEntriesByIds:
     @pytest.mark.asyncio
-    async def test_removed(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID) -> None:
+    async def test_removed(self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId) -> None:
         entries = await make.n_entries(loaded_feed_id, n=3)
         another_entries = await make.n_entries(another_loaded_feed_id, n=3)
 
@@ -349,7 +348,7 @@ class TestTechRemoveEntriesByIds:
             await tech_remove_entries_by_ids([uuid.uuid4()])
 
     @pytest.mark.asyncio
-    async def test_already_removed(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_already_removed(self, loaded_feed_id: FeedId) -> None:
         entries = await make.n_entries(loaded_feed_id, n=3)
 
         entries_list = list(entries.values())
@@ -362,7 +361,7 @@ class TestTechRemoveEntriesByIds:
 
 class TestTechGetFeedEntriesTail:
     @pytest.mark.asyncio
-    async def test_nothing_to_return(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_nothing_to_return(self, loaded_feed_id: FeedId) -> None:
         await make.n_entries(loaded_feed_id, n=5)
 
         ids = await tech_get_feed_entries_tail(loaded_feed_id, offset=10)
@@ -370,7 +369,7 @@ class TestTechGetFeedEntriesTail:
         assert ids == set()
 
     @pytest.mark.asyncio
-    async def test_zero_head(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_zero_head(self, loaded_feed_id: FeedId) -> None:
         entries = await make.n_entries(loaded_feed_id, n=5)
 
         ids = await tech_get_feed_entries_tail(loaded_feed_id, offset=0)
@@ -378,7 +377,7 @@ class TestTechGetFeedEntriesTail:
         assert ids == set(entry.id for entry in entries.values())
 
     @pytest.mark.asyncio
-    async def test_not_excceed_limit(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_not_excceed_limit(self, loaded_feed_id: FeedId) -> None:
         await make.n_entries(loaded_feed_id, n=5)
 
         ids = await tech_get_feed_entries_tail(loaded_feed_id, offset=10)
@@ -386,7 +385,7 @@ class TestTechGetFeedEntriesTail:
         assert ids == set()
 
     @pytest.mark.asyncio
-    async def test_offset(self, loaded_feed_id: uuid.UUID) -> None:
+    async def test_offset(self, loaded_feed_id: FeedId) -> None:
         entries = await make.n_entries_list(loaded_feed_id, n=15)
 
         ids = await tech_get_feed_entries_tail(loaded_feed_id, offset=10)

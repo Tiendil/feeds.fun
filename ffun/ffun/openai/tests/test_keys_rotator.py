@@ -6,7 +6,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from ffun.application.resources import Resource as AppResource
-from ffun.application.user_settings import UserSetting
+from ffun.feeds.entities import FeedId
 from ffun.feeds_links import domain as fl_domain
 from ffun.openai import errors
 from ffun.openai.entities import APIKeyUsage, KeyStatus, UserKeyInfo
@@ -306,7 +306,7 @@ class TestGetUserKeyInfos:
 
 class TestGetCandidates:
     @pytest.mark.asyncio
-    async def test_no_users(self, saved_feed_id: uuid.UUID) -> None:
+    async def test_no_users(self, saved_feed_id: FeedId) -> None:
         interval_started_at = r_domain.month_interval_start()
 
         assert (
@@ -329,7 +329,7 @@ class TestGetCandidates:
         )
 
     @pytest.mark.asyncio
-    async def test_filters_used(self, saved_feed_id: uuid.UUID, five_internal_user_ids: list[uuid.UUID]) -> None:
+    async def test_filters_used(self, saved_feed_id: FeedId, five_internal_user_ids: list[uuid.UUID]) -> None:
         for user_id in five_internal_user_ids:
             await fl_domain.add_link(user_id, saved_feed_id)
 
@@ -356,7 +356,7 @@ class TestGetCandidates:
         assert {info.user_id for info in infos} == {five_internal_user_ids[2], five_internal_user_ids[4]}
 
     @pytest.mark.asyncio
-    async def test_all_users_excluded(self, saved_feed_id: uuid.UUID, five_internal_user_ids: list[uuid.UUID]) -> None:
+    async def test_all_users_excluded(self, saved_feed_id: FeedId, five_internal_user_ids: list[uuid.UUID]) -> None:
         for user_id in five_internal_user_ids:
             await fl_domain.add_link(user_id, saved_feed_id)
 
@@ -386,7 +386,7 @@ class TestGetCandidates:
 
 class TestFindBestUserWithKey:
     @pytest.mark.asyncio
-    async def test_no_users(self, saved_feed_id: uuid.UUID) -> None:
+    async def test_no_users(self, saved_feed_id: FeedId) -> None:
         with pytest.raises(errors.NoKeyFoundForFeed):
             await _find_best_user_with_key(
                 feed_id=saved_feed_id,
@@ -396,7 +396,7 @@ class TestFindBestUserWithKey:
             )
 
     @pytest.mark.asyncio
-    async def test_works(self, saved_feed_id: uuid.UUID, five_user_key_infos: list[UserKeyInfo]) -> None:
+    async def test_works(self, saved_feed_id: FeedId, five_user_key_infos: list[UserKeyInfo]) -> None:
         for info in five_user_key_infos:
             await fl_domain.add_link(info.user_id, saved_feed_id)
 
@@ -443,7 +443,7 @@ class TestApiKeyForFeedEntry:
 
     # TODO: duplicate test for the case when settings.collections_api_key is set
     @pytest.mark.asyncio
-    async def test_no_users(self, saved_feed_id: uuid.UUID) -> None:
+    async def test_no_users(self, saved_feed_id: FeedId) -> None:
         with pytest.raises(errors.NoKeyFoundForFeed):
             async with api_key_for_feed_entry(
                 feed_id=saved_feed_id, entry_age=datetime.timedelta(days=0), reserved_tokens=1
@@ -452,7 +452,7 @@ class TestApiKeyForFeedEntry:
 
     # TODO: duplicate test for the case when settings.collections_api_key is set
     @pytest.mark.asyncio
-    async def test_works(self, saved_feed_id: uuid.UUID, five_user_key_infos: list[UserKeyInfo]) -> None:
+    async def test_works(self, saved_feed_id: FeedId, five_user_key_infos: list[UserKeyInfo]) -> None:
         for info in five_user_key_infos:
             await fl_domain.add_link(info.user_id, saved_feed_id)
 

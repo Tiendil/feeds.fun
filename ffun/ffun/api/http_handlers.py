@@ -221,7 +221,9 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
 
 async def _add_feeds(feed_infos: list[p_entities.FeedInfo], user: User) -> None:
     feeds = [
-        f_entities.Feed(id=uuid.uuid4(), url=feed_info.url, title=feed_info.title, description=feed_info.description)
+        f_entities.Feed(
+            id=f_domain.new_feed_id(), url=feed_info.url, title=feed_info.title, description=feed_info.description
+        )
         for feed_info in feed_infos
     ]
 
