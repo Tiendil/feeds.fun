@@ -120,6 +120,16 @@ class TestRemoveLink:
         assert len(links_3) == 1
 
 
+class TestGetLinkedFeeds:
+    """This functions is validated by other tests."""
+
+    @pytest.mark.asyncio
+    async def test_empty(self, internal_user_id: uuid.UUID) -> None:
+        links = await get_linked_feeds(internal_user_id)
+
+        assert links == []
+
+
 class TestMergeFeeds:
     @pytest.mark.asyncio
     async def test_nothing_to_merge(self, loaded_feed_id: uuid.UUID, another_loaded_feed_id: uuid.UUID) -> None:
