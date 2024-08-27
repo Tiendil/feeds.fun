@@ -58,21 +58,6 @@ async def _filter_out_users_with_overused_keys(
     return [info for info in infos if info.tokens_used + reserved_tokens < info.max_tokens_in_month]
 
 
-async def _users_for_feed(feed_id: uuid.UUID) -> set[uuid.UUID]:
-    from ffun.application.user_settings import UserSetting
-
-    user_ids = await fl_domain.get_linked_users(feed_id)
-
-    # find all users for collections
-    if await fc_domain.is_feed_in_collections(feed_id):
-        collections_user_ids = await us_domain.get_users_with_setting(
-            UserSetting.openai_allow_use_key_for_collections, True
-        )
-        user_ids.extend(collections_user_ids)
-
-    return set(user_ids)
-
-
 async def _choose_user(
     infos: list[entities.UserKeyInfo], reserved_tokens: int, interval_started_at: datetime.datetime
 ) -> entities.UserKeyInfo:
@@ -190,7 +175,7 @@ async def _get_candidates(
     reserved_tokens: int,
     filters: tuple[Any, ...] = _filters,
 ) -> list[entities.UserKeyInfo]:
-    user_ids = list(await _users_for_feed(feed_id))
+    user_ids = await fl_domain.get_linked_users(feed_id)
 
     infos = await _get_user_key_infos(user_ids, interval_started_at)
 
@@ -215,6 +200,7 @@ async def _find_best_user_with_key(
     return await _choose_user(infos=infos, reserved_tokens=reserved_tokens, interval_started_at=interval_started_at)
 
 
+# TODO: refactore into looping via keys sources
 @contextlib.asynccontextmanager
 async def api_key_for_feed_entry(  # noqa: CCR001,CFQ001
     feed_id: uuid.UUID, entry_age: datetime.timedelta, reserved_tokens: int
@@ -225,6 +211,12 @@ async def api_key_for_feed_entry(  # noqa: CCR001,CFQ001
         # for dev tools we can use a special general key
         # it must not be defined in production
         yield entities.APIKeyUsage(user_id=uuid.UUID(int=0), api_key=settings.general_api_key, used_tokens=None)
+        return
+
+    # TODO: test both cases (with and without collections key specified)
+    if settings.collections_api_key is not None and await fc_domain.is_feed_in_collections(feed_id):
+        # Processing collections is a responsibility (and guarantee) of FeedsFun, not of users
+        yield entities.APIKeyUsage(user_id=uuid.UUID(int=0), api_key=settings.collections_api_key, used_tokens=None)
         return
 
     interval_started_at = r_domain.month_interval_start()

@@ -10,6 +10,7 @@ from ffun.openai.keys_rotator import _get_user_key_infos
 from ffun.openai.keys_statuses import statuses
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
+from ffun.openai.settings import settings
 
 
 class MockedOpenAIClient:
@@ -75,3 +76,8 @@ async def five_user_key_infos(five_internal_user_ids: list[uuid.UUID]) -> list[U
         )
 
     return await _get_user_key_infos(five_internal_user_ids, interval_started_at)
+
+
+@pytest.fixture(autouse=True, scope="session")
+def collections_api_key_must_be_turned_off_in_tests_by_default() -> None:
+    assert settings.collections_api_key is None, "collections_api_key must be turned off in tests by default"
