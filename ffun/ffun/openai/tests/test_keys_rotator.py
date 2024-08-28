@@ -21,11 +21,11 @@ from ffun.openai.keys_rotator import (
     _find_best_user_with_key,
     _get_candidates,
     _get_user_key_infos,
-    _use_key,
-    api_key_for_feed_entry,
+    use_api_key,
     _choose_general_key,
     _choose_collections_key,
-    _choose_user_key
+    _choose_user_key,
+    choose_api_key
 )
 from ffun.openai.keys_statuses import Statuses, statuses
 from ffun.resources import domain as r_domain
@@ -179,7 +179,7 @@ class TestChooseUser:
 
 #         used_tokens = 132
 
-#         async with _use_key(
+#         async with use_api_key(
 #             user_id=internal_user_id,
 #             api_key=openai_key,
 #             reserved_tokens=reserved_tokens,
@@ -224,7 +224,7 @@ class TestChooseUser:
 #             pass
 
 #         with pytest.raises(FakeError):
-#             async with _use_key(
+#             async with use_api_key(
 #                 user_id=internal_user_id,
 #                 api_key=openai_key,
 #                 reserved_tokens=reserved_tokens,
@@ -512,4 +512,6 @@ class TestChooseGeneralKey:
 
         assert usage == APIKeyUsage(user_id=uuid.UUID(int=0),
                                     api_key=key,
-                                    used_tokens=None)
+                                    reserved_tokens=select_key_context.reserved_tokens,
+                                    used_tokens=None,
+                                    interval_started_at=select_key_context.interval_started_at)

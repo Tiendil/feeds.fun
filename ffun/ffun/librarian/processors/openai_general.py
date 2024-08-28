@@ -9,7 +9,7 @@ from ffun.library.entities import Entry
 from ffun.ontology.entities import ProcessorTag
 from ffun.openai import client as oai_client
 from ffun.openai import errors as oai_errors
-from ffun.openai.keys_rotator import api_key_for_feed_entry
+from ffun.openai.keys_rotator import use_api_key, choose_api_key
 from ffun.openai.entities import SelectKeyContext
 
 logger = logging.get_module_logger()
@@ -106,12 +106,17 @@ class Processor(base.Processor):
             max_return_tokens=max_return_tokens,
         )
 
+        # TODO: tests?
+        # TODO: move the code bellow into a separate function?
+        #       maybe in https://github.com/Tiendil/feeds.fun/issues/245
         select_key_context = SelectKeyContext(feed_id=entry.feed_id,
                                               entry_age=entry.age,
                                               reserved_tokens=len(messages) * total_tokens)
 
+        api_key_usage = await choose_api_key(select_key_context)
+
         try:
-            async with api_key_for_feed_entry(select_key_context) as api_key_usage:
+            async with use_api_key(api_key_usage):
                 results = await oai_client.multiple_requests(
                     api_key=api_key_usage.api_key,
                     model=self.model,

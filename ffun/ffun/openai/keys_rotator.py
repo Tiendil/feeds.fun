@@ -79,25 +79,18 @@ async def _choose_user(
 
 # TODO: tests
 @contextlib.asynccontextmanager
-async def _use_key(
-    key_usage: entities.APIKeyUsage, reserved_tokens: int, interval_started_at: datetime.datetime
-) -> AsyncGenerator[entities.APIKeyUsage, None]:
+async def use_api_key(key_usage: entities.APIKeyUsage) -> AsyncGenerator[None, None]:
     from ffun.application.resources import Resource as AppResource
 
     log = logger.bind(function="_use_key", user_id=key_usage.user_id)
 
-    used_tokens = reserved_tokens
-
     try:
-        log.info("provide_key")
+        yield
 
-        yield key_usage
+        if key_usage.used_tokens is None:
+            raise NotImplementedError()
 
-        assert key_usage.used_tokens is not None
-
-        used_tokens = key_usage.used_tokens
-
-        log.info("key_used", used_tokens=used_tokens)
+        log.info("key_used", used_tokens=key_usage.used_tokens)
 
     finally:
         log.info("convert_reserved_to_used", reserved_tokens=reserved_tokens, used_tokens=used_tokens)
@@ -105,9 +98,9 @@ async def _use_key(
         await r_domain.convert_reserved_to_used(
             user_id=key_usage.user_id,
             kind=AppResource.openai_tokens,
-            interval_started_at=interval_started_at,
-            used=used_tokens,
-            reserved=reserved_tokens,
+            interval_started_at=key_usage.interval_started_at,
+            used=key_usage.spent_tokens(),
+            reserved=key_usage.reserved_tokens,
         )
 
         log.info("resources_converted")
@@ -210,7 +203,9 @@ async def _choose_general_key(context: entities.SelectKeyContext) -> entities.AP
 
     return entities.APIKeyUsage(user_id=uuid.UUID(int=0),
                                 api_key=settings.general_api_key,
-                                used_tokens=None)
+                                reserved_tokens=context.reserved_tokens,
+                                used_tokens=None,
+                                interval_started_at=context.interval_started_at)
 
 
 # TODO: test
@@ -223,7 +218,9 @@ async def _choose_collections_key(context: entities.SelectKeyContext) -> entitie
 
     return entities.APIKeyUsage(user_id=uuid.UUID(int=0),
                                 api_key=settings.collections_api_key,
-                                used_tokens=None)
+                                reserved_tokens=context.reserved_tokens,
+                                used_tokens=None,
+                                interval_started_at=context.interval_started_at)
 
 
 # TODO: test
@@ -240,33 +237,21 @@ async def _choose_user_key(context: entities.SelectKeyContext) -> entities.APIKe
 
     return entities.APIKeyUsage(user_id=info.user_id,
                                 api_key=info.api_key,
-                                used_tokens=None)
+                                reserved_tokens=context.reserved_tokens,
+                                used_tokens=None,
+                                interval_started_at=context.interval_started_at)
 
 
-_key_selectors = [_choose_general_key, _choose_collections_key, _choose_user_key]
+_key_selectors = (_choose_general_key, _choose_collections_key, _choose_user_key)
 
 
 # TODO: tests
-async def _choose_key(context: entities.SelectKeyContext, selectors: list[entities.KeySelector]) -> entities.APIKeyUsage:
-    for key_selector in _key_selectors:
+async def choose_api_key(context: entities.SelectKeyContext,
+                         selectors: Iterable[entities.KeySelector] = _key_selectors) -> entities.APIKeyUsage:
+    for key_selector in selectors:
         key_usage = await key_selector(context)
 
         if key_usage is not None:
             return key_usage
 
     raise errors.NoKeyFoundForFeed()
-
-
-# TODO: refactore into looping via keys sources
-@contextlib.asynccontextmanager
-async def api_key_for_feed_entry(context: entities.SelectKeyContext) -> AsyncGenerator[entities.APIKeyUsage, None]:
-
-    key_usage = await _choose_key(context, _key_selectors)
-
-    # TODO: replace arguments with context
-    async with _use_key(
-            key_usage=key_usage,
-            reserved_tokens=context.reserved_tokens,
-            interval_started_at=context.interval_started_at,
-    ) as key_usage:
-        yield key_usage

@@ -19,7 +19,15 @@ class KeyStatus(str, enum.Enum):
 class APIKeyUsage(pydantic.BaseModel):
     user_id: uuid.UUID
     api_key: str
+    reserved_tokens: int
     used_tokens: int | None
+    interval_started_at: datetime.datetime
+
+    def spent_tokens(self) -> int:
+        if self.used_tokens:
+            return self.used_tokens
+
+        return self.reserved_tokens
 
 
 class OpenAIAnswer(pydantic.BaseModel):
