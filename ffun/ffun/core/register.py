@@ -28,5 +28,11 @@ class Register(Generic[ENTITY]):
     def get(self, key: int) -> ENTITY:
         return self._entities[key]
 
+    def has(self, key: int) -> bool:
+        return key in self._entities
+
+    def remove(self, key: int) -> None:
+        del self._entities[key]
+
     def all(self) -> dict[int, ENTITY]:
         return dict(self._entities)

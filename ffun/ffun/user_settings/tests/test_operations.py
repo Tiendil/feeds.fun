@@ -1,3 +1,4 @@
+import random
 import uuid
 
 import pytest
@@ -131,3 +132,20 @@ class TestRemoveSettingForAllUsers:
             five_internal_user_ids[1]: {_kind_2: value},
             five_internal_user_ids[2]: {_kind_2: value},
         }
+
+
+class TestFindAllKinds:
+
+    @pytest.mark.asyncio
+    async def test_test(self, internal_user_id: uuid.UUID) -> None:
+        kinds_before = await operations.find_all_kinds()
+
+        while new_kind := random.randint(1, 1000000):
+            if new_kind not in kinds_before:
+                break
+
+        await operations.save_setting(internal_user_id, new_kind, "abc")
+
+        kinds_after = await operations.find_all_kinds()
+
+        assert kinds_after - kinds_before == {new_kind}

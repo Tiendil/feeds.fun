@@ -10,7 +10,6 @@ class UserSetting(enum.IntEnum):
     openai_max_tokens_in_month = 2
     openai_hide_message_about_setting_up_key = 3
     openai_process_entries_not_older_than = 4
-    openai_allow_use_key_for_collections = 5
 
 
 description_openai_api_key = """
@@ -24,7 +23,8 @@ Here's how your key will be used:
 - Your key will be used only to process your feeds. We will not use it for any other purposes.
 - You can establish a limit on the maximum number of tokens that can be used in a month. \
 This allows you to regulate your monthly spendings on the OpenAI API.
-- If multiple users are subscribed to a single feed, we'll use a key with fewer usages in the current month.
+- If multiple users are subscribed to a single feed, for each news from the \
+feed we'll use a key with fewer usages in the current month.
 - If a user who lacks a key is subscribed to a feed and the feed's news already have tags, \
 the user will see these tags.
 - You can find API key usage statistics at this page.
@@ -49,16 +49,10 @@ description_openai_process_entries_not_older_than = """
 Some feeds keep all their news, regardless of their age. If you subscribe to such a feed, \
 it may eat a lot of your OpenAI tokens.
 
-To prevent this, we allow limiting the age of news to be processed with your OpenAI key.
+To prevent this, we limit the age of news to be processed with your OpenAI key.
 
 If you want to help us and tag everything, you can set this value to a big number, like 100500.
 """
-
-description_openai_allow_use_key_for_collections = """
-Enable if you want to help new users by providing good tags for feeds in standard collections. \
-If you enable this your OpenAI key will be used for feeds in collections the same way as for your feeds."
-"""
-
 
 user_settings.add(
     Value(
@@ -95,17 +89,7 @@ user_settings.add(
         key=UserSetting.openai_process_entries_not_older_than,
         name="Use OpenAI key only for entries not older than N days",
         type=types.Integer(),
-        default=3,
+        default=1,
         description=description_openai_process_entries_not_older_than,
-    )
-)
-
-user_settings.add(
-    Value(
-        key=UserSetting.openai_allow_use_key_for_collections,
-        name="Allow using OpenAI key for feeds in standard collections",
-        type=types.Boolean(),
-        default=False,
-        description=description_openai_allow_use_key_for_collections,
     )
 )

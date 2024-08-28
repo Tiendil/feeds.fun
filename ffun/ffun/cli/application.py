@@ -3,6 +3,7 @@ import asyncio
 import typer
 
 from ffun.cli.commands import processors_quality  # noqa: F401
+from ffun.cli.commands import user_settings  # noqa: F401
 
 app = typer.Typer()
 
@@ -17,3 +18,4 @@ def experiment() -> None:
 
 
 app.add_typer(processors_quality.cli_app, name="processors-quality")
+app.add_typer(user_settings.cli_app, name="user-settings")

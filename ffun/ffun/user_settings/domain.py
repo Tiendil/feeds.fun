@@ -16,11 +16,16 @@ def _full_settings(values: dict[int, Any], kinds: Iterable[int], register: Setti
     result = {}
 
     for kind in kinds:
-        if kind in values:
-            result[kind] = register.get(kind).type.deserialize(values[kind])
+        if not register.has(kind):
             continue
 
-        result[kind] = register.get(kind).default
+        entity = register.get(kind)
+
+        if kind in values:
+            result[entity.key] = entity.type.deserialize(values[kind])
+            continue
+
+        result[entity.key] = entity.default
 
     return result
 
@@ -50,3 +55,13 @@ async def get_users_with_setting(kind: int, value: Any, register: SettingsRegist
 
 
 remove_setting_for_all_users = operations.remove_setting_for_all_users
+
+
+async def remove_deprecated_settings(register: SettingsRegister = user_settings) -> None:
+    all_kinds = await operations.find_all_kinds()
+
+    for kind in all_kinds:
+        if register.has(kind):
+            continue
+
+        await remove_setting_for_all_users(kind)

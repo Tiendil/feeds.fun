@@ -5,6 +5,7 @@ from typing import Any
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
+from ffun.feeds.entities import FeedId
 
 
 class ProcessedState(int, enum.Enum):
@@ -15,7 +16,7 @@ class ProcessedState(int, enum.Enum):
 
 class Entry(BaseEntity):
     id: uuid.UUID
-    feed_id: uuid.UUID
+    feed_id: FeedId
     title: str
     body: str
     external_id: str

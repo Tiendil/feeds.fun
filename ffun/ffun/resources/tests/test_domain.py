@@ -1,30 +1,13 @@
-import datetime
 import uuid
 
 import pytest
 
-from ffun.resources.domain import load_resource, month_interval_start
+from ffun.domain.datetime_intervals import month_interval_start
+from ffun.resources.domain import load_resource
 from ffun.resources.operations import initialize_resource, try_to_reserve
 
 _kind = 214
 _another_kind = 215
-
-
-class TestMonthIntervalStart:
-    @pytest.mark.asyncio
-    async def test_month_interval_start(self) -> None:
-        now = datetime.datetime.now()
-
-        assert month_interval_start(now) == datetime.datetime(
-            year=now.year,
-            month=now.month,
-            day=1,
-            hour=0,
-            minute=0,
-            second=0,
-            microsecond=0,
-            tzinfo=now.tzinfo,
-        )
 
 
 class TestLoadResource:

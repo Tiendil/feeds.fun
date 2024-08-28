@@ -1,3 +1,4 @@
+import copy
 import enum
 import uuid
 from typing import Any
@@ -5,7 +6,8 @@ from typing import Any
 import pytest
 
 from ffun.core.register import Register
-from ffun.user_settings import domain, errors, types
+from ffun.core.tests.helpers import TableSizeDecreased, TableSizeNotChanged
+from ffun.user_settings import domain, errors, operations, types
 from ffun.user_settings.tests import asserts
 from ffun.user_settings.values import SettingsRegister, Value
 
@@ -72,6 +74,18 @@ class TestFullSettings:
             Setting.kind_integer: 666,
             Setting.kind_boolean: False,
             Setting.kind_string: _string_default,
+            Setting.kind_secret: _secret_default,
+        }
+
+    def test_skip_unknown(self) -> None:
+        values: dict[int, Any] = {Setting.kind_integer: "666", _kind_1: "123"}
+
+        settings = domain._full_settings(values, kinds=list(Setting) + [_kind_1], register=register)
+
+        assert settings == {
+            Setting.kind_integer: 666,
+            Setting.kind_string: _string_default,
+            Setting.kind_boolean: _boolean_default,
             Setting.kind_secret: _secret_default,
         }
 
@@ -174,3 +188,63 @@ class TestGetUsersWithSetting:
         user_ids = await domain.get_users_with_setting(Setting.kind_string, value, register=register)
 
         assert user_ids == {internal_user_id, another_internal_user_id}
+
+
+class TestRemoveDeprecatedSettings:
+
+    @pytest.mark.asyncio
+    async def test_nothing_to_remove(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+        str_values = [uuid.uuid4().hex, uuid.uuid4().hex]
+        int_values = [uuid.uuid4().int, uuid.uuid4().int]
+
+        await domain.save_setting(internal_user_id, Setting.kind_string, str_values[0], register=register)
+        await domain.save_setting(another_internal_user_id, Setting.kind_string, str_values[1], register=register)
+
+        await domain.save_setting(internal_user_id, Setting.kind_integer, int_values[0], register=register)
+        await domain.save_setting(another_internal_user_id, Setting.kind_integer, int_values[1], register=register)
+
+        await operations.find_all_kinds()
+
+        async with TableSizeNotChanged("us_settings"):
+            await domain.remove_deprecated_settings(register=register)
+
+        user_ids = await domain.load_settings_for_users(
+            [internal_user_id, another_internal_user_id],
+            {Setting.kind_string, Setting.kind_integer},
+            register=register,
+        )
+
+        assert user_ids == {
+            internal_user_id: {Setting.kind_string: str_values[0], Setting.kind_integer: int_values[0]},
+            another_internal_user_id: {Setting.kind_string: str_values[1], Setting.kind_integer: int_values[1]},
+        }
+
+    @pytest.mark.asyncio
+    async def test_remove(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+        str_values = [uuid.uuid4().hex, uuid.uuid4().hex]
+        int_values = [uuid.uuid4().int, uuid.uuid4().int]
+
+        await domain.save_setting(internal_user_id, Setting.kind_string, str_values[0], register=register)
+        await domain.save_setting(another_internal_user_id, Setting.kind_string, str_values[1], register=register)
+
+        await domain.save_setting(internal_user_id, Setting.kind_integer, int_values[0], register=register)
+        await domain.save_setting(another_internal_user_id, Setting.kind_integer, int_values[1], register=register)
+
+        await operations.find_all_kinds()
+
+        updated_register = copy.deepcopy(register)
+        updated_register.remove(Setting.kind_string)
+
+        async with TableSizeDecreased("us_settings"):
+            await domain.remove_deprecated_settings(register=updated_register)
+
+        user_ids = await domain.load_settings_for_users(
+            [internal_user_id, another_internal_user_id],
+            {Setting.kind_string, Setting.kind_integer},
+            register=updated_register,
+        )
+
+        assert user_ids == {
+            internal_user_id: {Setting.kind_integer: int_values[0]},
+            another_internal_user_id: {Setting.kind_integer: int_values[1]},
+        }

@@ -5,9 +5,11 @@ import pytest
 import pytest_asyncio
 from pytest_mock import MockerFixture
 
+from ffun.domain.datetime_intervals import month_interval_start
 from ffun.openai.entities import KeyStatus, UserKeyInfo
 from ffun.openai.keys_rotator import _get_user_key_infos
 from ffun.openai.keys_statuses import statuses
+from ffun.openai.settings import settings
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
 
@@ -47,7 +49,7 @@ async def five_user_key_infos(five_internal_user_ids: list[uuid.UUID]) -> list[U
     max_tokens_in_month = 1000
     used_tokens = 345
 
-    interval_started_at = r_domain.month_interval_start()
+    interval_started_at = month_interval_start()
 
     for user_id in five_internal_user_ids:
         await us_domain.save_setting(user_id=user_id, kind=UserSetting.openai_api_key, value=uuid.uuid4().hex)
@@ -75,3 +77,13 @@ async def five_user_key_infos(five_internal_user_ids: list[uuid.UUID]) -> list[U
         )
 
     return await _get_user_key_infos(five_internal_user_ids, interval_started_at)
+
+
+@pytest.fixture(autouse=True, scope="session")
+def collections_api_key_must_be_turned_off_in_tests_by_default() -> None:
+    assert settings.collections_api_key is None, "collections_api_key must be turned off in tests by default"
+
+
+@pytest.fixture(autouse=True, scope="session")
+def general_api_key_must_be_turned_off_in_tests_by_default() -> None:
+    assert settings.general_api_key is None, "general_api_key must be turned off in tests by default"

@@ -6,6 +6,7 @@ import frontmatter
 import toml
 
 from ffun.core import utils
+from ffun.feeds.entities import FeedId
 from ffun.library.entities import Entry
 from ffun.processors_quality import errors
 from ffun.processors_quality.entities import Attribution, ExpectedTags, ProcessorResult
@@ -69,7 +70,7 @@ class KnowlegeBase:
 
         return Entry(
             id=uuid.UUID(int=0),
-            feed_id=uuid.UUID(int=0),
+            feed_id=FeedId(uuid.UUID(int=0)),
             title=data["title"],
             body=body,
             external_id="",

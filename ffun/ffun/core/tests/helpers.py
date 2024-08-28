@@ -141,6 +141,26 @@ class TableSizeNotChanged(NotChanged, TableSizeMixin):
         self.table = table
 
 
+class TableSizeDecreased(Decreased, TableSizeMixin):
+    def __init__(self, table: str, **kwargs: Any) -> None:
+        if "producer" not in kwargs:
+            kwargs["producer"] = self._producer
+
+        super().__init__(**kwargs)
+
+        self.table = table
+
+
+class TableSizeIncreased(Increased, TableSizeMixin):
+    def __init__(self, table: str, **kwargs: Any) -> None:
+        if "producer" not in kwargs:
+            kwargs["producer"] = self._producer
+
+        super().__init__(**kwargs)
+
+        self.table = table
+
+
 def assert_times_is_near(
     a: datetime.datetime, b: datetime.datetime, delta: datetime.timedelta = datetime.timedelta(seconds=1)
 ) -> None:

@@ -30,7 +30,7 @@ async def load_settings_for_users(
         AND kind = ANY(%(kinds)s)
     """
 
-    result = await execute(sql, {"user_ids": user_ids, "kinds": kinds})
+    result = await execute(sql, {"user_ids": list(user_ids), "kinds": list(kinds)})
 
     values: dict[uuid.UUID, UserSettings] = {user_id: {} for user_id in user_ids}
 
@@ -66,3 +66,14 @@ async def remove_setting_for_all_users(kind: int) -> None:
     """
 
     await execute(sql, {"kind": kind})
+
+
+async def find_all_kinds() -> set[int]:
+    sql = """
+        SELECT kind
+        FROM us_settings
+        GROUP by kind
+    """
+
+    result = await execute(sql)
+    return {row["kind"] for row in result}

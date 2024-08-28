@@ -27,7 +27,7 @@ def assert_entriy_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entit
 
 class TestDetectOrphaned:
     @pytest.mark.asyncio
-    async def test_is_orphaned(self, saved_feed_id: uuid.UUID) -> None:
+    async def test_is_orphaned(self, saved_feed_id: f_entities.FeedId) -> None:
         assert await detect_orphaned(saved_feed_id)
 
         loaded_feed = await f_domain.get_feed(saved_feed_id)
@@ -35,7 +35,7 @@ class TestDetectOrphaned:
         assert loaded_feed.state == f_entities.FeedState.orphaned
 
     @pytest.mark.asyncio
-    async def test_is_orphaned_but_from_collection(self, saved_collection_feed_id: uuid.UUID) -> None:
+    async def test_is_orphaned_but_from_collection(self, saved_collection_feed_id: f_entities.FeedId) -> None:
         assert not await detect_orphaned(saved_collection_feed_id)
 
         loaded_feed = await f_domain.get_feed(saved_collection_feed_id)
@@ -43,7 +43,7 @@ class TestDetectOrphaned:
         assert loaded_feed.state != f_entities.FeedState.orphaned
 
     @pytest.mark.asyncio
-    async def test_not_orphaned(self, internal_user_id: uuid.UUID, saved_feed_id: uuid.UUID) -> None:
+    async def test_not_orphaned(self, internal_user_id: f_entities.FeedId, saved_feed_id: f_entities.FeedId) -> None:
         await fl_domain.add_link(internal_user_id, saved_feed_id)
 
         assert not await detect_orphaned(saved_feed_id)
@@ -85,7 +85,7 @@ class TestSyncFeedInfo:
 
 class TestStoreEntries:
     @pytest.mark.asyncio
-    async def test_no_entries(self, saved_feed_id: uuid.UUID) -> None:
+    async def test_no_entries(self, saved_feed_id: f_entities.FeedId) -> None:
         await store_entries(saved_feed_id, [])
 
         entries = await l_domain.get_entries_by_filter([saved_feed_id], limit=1)
@@ -93,7 +93,7 @@ class TestStoreEntries:
         assert not entries
 
     @pytest.mark.asyncio
-    async def test_save_new_entries(self, saved_feed_id: uuid.UUID) -> None:
+    async def test_save_new_entries(self, saved_feed_id: f_entities.FeedId) -> None:
         n = 3
 
         entry_infos = [p_make.fake_entry_info() for _ in range(n)]
@@ -112,7 +112,7 @@ class TestStoreEntries:
             assert_entriy_equal_to_info(entry_info, entry)
 
     @pytest.mark.asyncio
-    async def test_save_in_parts(self, saved_feed_id: uuid.UUID) -> None:
+    async def test_save_in_parts(self, saved_feed_id: f_entities.FeedId) -> None:
         n = 5
         m = 3
 
@@ -163,7 +163,7 @@ class TestProcessFeed:
 
     @pytest.mark.asyncio
     async def test_can_not_extract_feed(
-        self, internal_user_id: uuid.UUID, saved_feed: f_entities.Feed, mocker: MockerFixture
+        self, internal_user_id: f_entities.FeedId, saved_feed: f_entities.Feed, mocker: MockerFixture
     ) -> None:
         extract_feed_info = mocker.patch("ffun.loader.domain.extract_feed_info", return_value=None)
 
@@ -179,7 +179,7 @@ class TestProcessFeed:
 
     @pytest.mark.asyncio
     async def test_success(
-        self, internal_user_id: uuid.UUID, saved_feed: f_entities.Feed, mocker: MockerFixture
+        self, internal_user_id: f_entities.FeedId, saved_feed: f_entities.Feed, mocker: MockerFixture
     ) -> None:
         n = 3
 
@@ -217,7 +217,7 @@ class TestProcessFeed:
 
     @pytest.mark.asyncio
     async def test_remove_too_long_entries_tail(
-        self, internal_user_id: uuid.UUID, saved_feed: f_entities.Feed, mocker: MockerFixture
+        self, internal_user_id: f_entities.FeedId, saved_feed: f_entities.Feed, mocker: MockerFixture
     ) -> None:
         n = 5
         m = 3

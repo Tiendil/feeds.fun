@@ -58,7 +58,7 @@ class Feed(BaseEntity):
 
 class Entry(BaseEntity):
     id: uuid.UUID
-    feed_id: uuid.UUID
+    feed_id: f_entities.FeedId
     title: str
     url: str
     tags: list[str]
@@ -346,7 +346,7 @@ class AddOpmlResponse(api.APISuccess):
 
 
 class UnsubscribeRequest(api.APIRequest):
-    feedId: uuid.UUID
+    feedId: f_entities.FeedId
 
 
 class UnsubscribeResponse(api.APISuccess):

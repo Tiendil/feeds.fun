@@ -1,5 +1,4 @@
 import datetime
-import uuid
 from typing import Any, Iterable
 
 import psycopg
@@ -7,7 +6,7 @@ import psycopg
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain import urls as domain_urls
-from ffun.feeds.entities import Feed, FeedError, FeedState
+from ffun.feeds.entities import Feed, FeedError, FeedId, FeedState
 
 logger = logging.get_module_logger()
 
@@ -25,7 +24,7 @@ def row_to_feed(row: dict[str, Any]) -> Feed:
     )
 
 
-async def save_feed(feed: Feed) -> uuid.UUID:
+async def save_feed(feed: Feed) -> FeedId:
     sql = """
     INSERT INTO f_feeds (id, url, state, title, description, uid)
     VALUES (%(id)s, %(url)s, %(state)s, %(title)s, %(description)s, %(uid)s)
@@ -55,9 +54,7 @@ async def save_feed(feed: Feed) -> uuid.UUID:
         if not result:
             raise NotImplementedError("something went wrong") from e
 
-        assert isinstance(result[0]["id"], uuid.UUID)
-
-        return result[0]["id"]
+        return FeedId(result[0]["id"])
 
 
 @run_in_transaction
@@ -88,7 +85,7 @@ async def get_next_feeds_to_load(execute: ExecuteType, number: int, loaded_befor
     return [row_to_feed(row) for row in rows]
 
 
-async def update_feed_info(feed_id: uuid.UUID, title: str, description: str) -> None:
+async def update_feed_info(feed_id: FeedId, title: str, description: str) -> None:
     sql = """
     UPDATE f_feeds
     SET title = %(title)s,
@@ -100,7 +97,7 @@ async def update_feed_info(feed_id: uuid.UUID, title: str, description: str) -> 
     await execute(sql, {"id": feed_id, "title": title, "description": description})
 
 
-async def mark_feed_as_loaded(feed_id: uuid.UUID) -> None:
+async def mark_feed_as_loaded(feed_id: FeedId) -> None:
     sql = """
     UPDATE f_feeds
     SET state = %(state)s,
@@ -113,7 +110,7 @@ async def mark_feed_as_loaded(feed_id: uuid.UUID) -> None:
     await execute(sql, {"id": feed_id, "state": FeedState.loaded})
 
 
-async def mark_feed_as_failed(feed_id: uuid.UUID, state: FeedState, error: FeedError) -> None:
+async def mark_feed_as_failed(feed_id: FeedId, state: FeedState, error: FeedError) -> None:
     sql = """
     UPDATE f_feeds
     SET state = %(state)s,
@@ -125,7 +122,7 @@ async def mark_feed_as_failed(feed_id: uuid.UUID, state: FeedState, error: FeedE
     await execute(sql, {"id": feed_id, "state": state, "error": error})
 
 
-async def mark_feed_as_orphaned(feed_id: uuid.UUID) -> None:
+async def mark_feed_as_orphaned(feed_id: FeedId) -> None:
     sql = """
     UPDATE f_feeds
     SET state = %(state)s,
@@ -137,7 +134,7 @@ async def mark_feed_as_orphaned(feed_id: uuid.UUID) -> None:
     await execute(sql, {"id": feed_id, "state": FeedState.orphaned})
 
 
-async def get_feeds(ids: Iterable[uuid.UUID]) -> list[Feed]:
+async def get_feeds(ids: Iterable[FeedId]) -> list[Feed]:
     sql = """
     SELECT *
     FROM f_feeds
@@ -149,7 +146,7 @@ async def get_feeds(ids: Iterable[uuid.UUID]) -> list[Feed]:
     return [row_to_feed(row) for row in rows]
 
 
-async def tech_remove_feed(feed_id: uuid.UUID) -> None:
+async def tech_remove_feed(feed_id: FeedId) -> None:
     sql = """
     DELETE FROM f_feeds
     WHERE id = %(feed_id)s

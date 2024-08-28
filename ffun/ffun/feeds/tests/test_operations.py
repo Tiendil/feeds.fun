@@ -7,8 +7,8 @@ import pytest
 from ffun.core import utils
 from ffun.core.tests.helpers import TableSizeDelta
 from ffun.feeds import errors
-from ffun.feeds.domain import get_feed, save_feeds
-from ffun.feeds.entities import Feed, FeedError, FeedState
+from ffun.feeds.domain import get_feed, new_feed_id, save_feeds
+from ffun.feeds.entities import Feed, FeedError, FeedId, FeedState
 from ffun.feeds.operations import (
     get_feeds,
     get_next_feeds_to_load,
@@ -64,7 +64,7 @@ class TestSaveFeed:
 
 class TestGetNextFeedToLoad:
     @pytest.mark.asyncio
-    async def test_find_new_feed(self, saved_feed_id: uuid.UUID) -> None:
+    async def test_find_new_feed(self, saved_feed_id: FeedId) -> None:
         now = utils.now()
 
         found_feeds = await get_next_feeds_to_load(number=100500, loaded_before=now)
@@ -80,7 +80,7 @@ class TestGetNextFeedToLoad:
         assert loaded_feed.load_attempted_at == found_feed.load_attempted_at
 
     @pytest.mark.asyncio
-    async def test_skip_choosen_feeds(self, saved_feed_id: uuid.UUID) -> None:
+    async def test_skip_choosen_feeds(self, saved_feed_id: FeedId) -> None:
         now = utils.now()
 
         await get_next_feeds_to_load(number=100500, loaded_before=now)
@@ -90,7 +90,7 @@ class TestGetNextFeedToLoad:
         assert not found_feeds
 
     @pytest.mark.asyncio
-    async def test_find_choosen_after_time_passes(self, saved_feed_id: uuid.UUID) -> None:
+    async def test_find_choosen_after_time_passes(self, saved_feed_id: FeedId) -> None:
         await get_next_feeds_to_load(number=100500, loaded_before=utils.now())
 
         now = utils.now()
@@ -257,4 +257,4 @@ class TestTechRemoveFeed:
 
     @pytest.mark.asyncio
     async def test_no_feed(self) -> None:
-        await tech_remove_feed(uuid.uuid4())
+        await tech_remove_feed(new_feed_id())
