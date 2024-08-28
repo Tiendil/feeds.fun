@@ -11,3 +11,7 @@ class TemporaryError(Error):
 
 class NoKeyFoundForFeed(Error):
     pass
+
+
+class UsedTokensHasNotSpecified(Error):
+    pass

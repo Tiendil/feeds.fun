@@ -243,7 +243,7 @@ async def use_api_key(key_usage: entities.APIKeyUsage) -> AsyncGenerator[None, N
         yield
 
         if key_usage.used_tokens is None:
-            raise NotImplementedError()
+            raise errors.UsedTokensHasNotSpecified()
 
         log.info("key_used", used_tokens=key_usage.used_tokens)
 
