@@ -204,7 +204,6 @@ async def _find_best_user_with_key(
 # choosing key logic
 ####################
 
-# TODO: test
 async def _choose_general_key(context: entities.SelectKeyContext) -> entities.APIKeyUsage | None:
     if settings.general_api_key is None:
         return None
@@ -228,7 +227,7 @@ async def _choose_collections_key(context: entities.SelectKeyContext) -> entitie
 
 
 # TODO: test
-async def _chose_user_key(context: entities.SelectKeyContext) -> entities.APIKeyUsage | None:
+async def _choose_user_key(context: entities.SelectKeyContext) -> entities.APIKeyUsage | None:
     info = await _find_best_user_with_key(
         feed_id=context.feed_id,
         entry_age=context.entry_age,
@@ -244,7 +243,7 @@ async def _chose_user_key(context: entities.SelectKeyContext) -> entities.APIKey
                                 used_tokens=None)
 
 
-_key_selectors = [_choose_general_key, _choose_collections_key, _chose_user_key]
+_key_selectors = [_choose_general_key, _choose_collections_key, _choose_user_key]
 
 
 # TODO: tests
@@ -260,22 +259,14 @@ async def _choose_key(context: entities.SelectKeyContext, selectors: list[entiti
 
 # TODO: refactore into looping via keys sources
 @contextlib.asynccontextmanager
-async def api_key_for_feed_entry(  # noqa: CCR001,CFQ001
-    feed_id: FeedId, entry_age: datetime.timedelta, reserved_tokens: int
-) -> AsyncGenerator[entities.APIKeyUsage, None]:
-
-    interval_started_at = r_domain.month_interval_start()
-
-    context = entities.SelectKeyContext(feed_id=feed_id,
-                                        entry_age=entry_age,
-                                        reserved_tokens=reserved_tokens,
-                                        interval_started_at=interval_started_at)
+async def api_key_for_feed_entry(context: entities.SelectKeyContext) -> AsyncGenerator[entities.APIKeyUsage, None]:
 
     key_usage = await _choose_key(context, _key_selectors)
 
+    # TODO: replace arguments with context
     async with _use_key(
             key_usage=key_usage,
-            reserved_tokens=reserved_tokens,
-            interval_started_at=interval_started_at,
+            reserved_tokens=context.reserved_tokens,
+            interval_started_at=context.interval_started_at,
     ) as key_usage:
         yield key_usage

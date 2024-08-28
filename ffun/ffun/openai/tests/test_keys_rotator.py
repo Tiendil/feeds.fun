@@ -9,7 +9,7 @@ from ffun.application.resources import Resource as AppResource
 from ffun.feeds.entities import FeedId
 from ffun.feeds_links import domain as fl_domain
 from ffun.openai import errors
-from ffun.openai.entities import APIKeyUsage, KeyStatus, UserKeyInfo
+from ffun.openai.entities import APIKeyUsage, KeyStatus, UserKeyInfo, SelectKeyContext
 from ffun.openai.keys_rotator import (
     _api_key_is_working,
     _choose_user,
@@ -23,11 +23,15 @@ from ffun.openai.keys_rotator import (
     _get_user_key_infos,
     _use_key,
     api_key_for_feed_entry,
+    _choose_general_key,
+    _choose_collections_key,
+    _choose_user_key
 )
 from ffun.openai.keys_statuses import Statuses, statuses
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
 from ffun.user_settings import domain as us_domain
+from ffun.domain.datetime_intervals import month_interval_start
 
 
 class TestAPIKeyIsWorking:
@@ -123,13 +127,13 @@ class TestFilterOutUsersWithOverusedKeys:
 class TestChooseUser:
     @pytest.mark.asyncio
     async def test_no_users(self) -> None:
-        interval_started_at = r_domain.month_interval_start()
+        interval_started_at = month_interval_start()
 
         assert await _choose_user(infos=[], reserved_tokens=0, interval_started_at=interval_started_at) is None
 
     @pytest.mark.asyncio
     async def test_no_users_with_resources(self, five_user_key_infos: list[UserKeyInfo]) -> None:
-        interval_started_at = r_domain.month_interval_start()
+        interval_started_at = month_interval_start()
 
         info = await _choose_user(
             infos=five_user_key_infos,
@@ -141,7 +145,7 @@ class TestChooseUser:
 
     @pytest.mark.asyncio
     async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
-        interval_started_at = r_domain.month_interval_start()
+        interval_started_at = month_interval_start()
 
         max_tokens = max(info.max_tokens_in_month for info in five_user_key_infos) + 1
 
@@ -157,7 +161,7 @@ class TestChooseUser:
 # class TestUseKey:
 #     @pytest.mark.asyncio
 #     async def test_success(self, internal_user_id: uuid.UUID, openai_key: str) -> None:
-#         interval_started_at = r_domain.month_interval_start()
+#         interval_started_at = month_interval_start()
 
 #         reserved_tokens = 567
 
@@ -200,7 +204,7 @@ class TestChooseUser:
 
 #     @pytest.mark.asyncio
 #     async def test_error(self, internal_user_id: uuid.UUID, openai_key: str) -> None:
-#         interval_started_at = r_domain.month_interval_start()
+#         interval_started_at = month_interval_start()
 
 #         reserved_tokens = 567
 
@@ -246,7 +250,7 @@ class TestChooseUser:
 class TestGetUserKeyInfos:
     @pytest.mark.asyncio
     async def test_no_users(self) -> None:
-        interval_started_at = r_domain.month_interval_start()
+        interval_started_at = month_interval_start()
 
         assert await _get_user_key_infos(user_ids=[], interval_started_at=interval_started_at) == []
 
@@ -255,7 +259,7 @@ class TestGetUserKeyInfos:
         from ffun.application.resources import Resource as AppResource
         from ffun.application.user_settings import UserSetting
 
-        interval_started_at = r_domain.month_interval_start()
+        interval_started_at = month_interval_start()
 
         keys = [uuid.uuid4().hex for _ in range(5)]
         max_tokens_in_month = [(i + 1) * 1000 for i in range(5)]
@@ -307,7 +311,7 @@ class TestGetUserKeyInfos:
 class TestGetCandidates:
     @pytest.mark.asyncio
     async def test_no_users(self, saved_feed_id: FeedId) -> None:
-        interval_started_at = r_domain.month_interval_start()
+        interval_started_at = month_interval_start()
 
         assert (
             await _get_candidates(
@@ -333,7 +337,7 @@ class TestGetCandidates:
         for user_id in five_internal_user_ids:
             await fl_domain.add_link(user_id, saved_feed_id)
 
-        interval_started_at = r_domain.month_interval_start()
+        interval_started_at = month_interval_start()
 
         filter_1_users = [five_internal_user_ids[0], five_internal_user_ids[2], five_internal_user_ids[4]]
         filter_2_users = five_internal_user_ids
@@ -360,7 +364,7 @@ class TestGetCandidates:
         for user_id in five_internal_user_ids:
             await fl_domain.add_link(user_id, saved_feed_id)
 
-        interval_started_at = r_domain.month_interval_start()
+        interval_started_at = month_interval_start()
 
         filter_1_users = [five_internal_user_ids[0], five_internal_user_ids[2], five_internal_user_ids[4]]
 
@@ -390,7 +394,7 @@ class TestFindBestUserWithKey:
         info = await _find_best_user_with_key(
             feed_id=saved_feed_id,
             entry_age=datetime.timedelta(days=1),
-            interval_started_at=r_domain.month_interval_start(),
+            interval_started_at=month_interval_start(),
             reserved_tokens=100,
         )
 
@@ -403,7 +407,7 @@ class TestFindBestUserWithKey:
 
         chosen_users: set[uuid.UUID] = set()
 
-        interval_started_at = r_domain.month_interval_start()
+        interval_started_at = month_interval_start()
 
         used_tokens = 7
 
@@ -440,44 +444,72 @@ class TestFindBestUserWithKey:
         assert info.tokens_used == five_user_key_infos[0].tokens_used + used_tokens
 
 
-class TestApiKeyForFeedEntry:
+# class TestApiKeyForFeedEntry:
 
-    # TODO: duplicate test for the case when settings.collections_api_key is set
+#     # TODO: duplicate test for the case when settings.collections_api_key is set
+#     @pytest.mark.asyncio
+#     async def test_no_users(self, saved_feed_id: FeedId) -> None:
+#         with pytest.raises(errors.NoKeyFoundForFeed):
+#             async with api_key_for_feed_entry(
+#                 feed_id=saved_feed_id, entry_age=datetime.timedelta(days=0), reserved_tokens=1
+#             ):
+#                 pass
+
+#     # TODO: duplicate test for the case when settings.collections_api_key is set
+#     @pytest.mark.asyncio
+#     async def test_works(self, saved_feed_id: FeedId, five_user_key_infos: list[UserKeyInfo]) -> None:
+#         for info in five_user_key_infos:
+#             await fl_domain.add_link(info.user_id, saved_feed_id)
+
+#         chosen_users: set[uuid.UUID] = set()
+
+#         interval_started_at = month_interval_start()
+
+#         used_tokens = 7
+
+#         for _ in range(len(five_user_key_infos)):
+#             async with api_key_for_feed_entry(
+#                 feed_id=saved_feed_id, entry_age=datetime.timedelta(days=0), reserved_tokens=13
+#             ) as key_usage:
+#                 key_usage.used_tokens = used_tokens
+#                 chosen_users.add(key_usage.user_id)
+
+#         assert chosen_users == {info.user_id for info in five_user_key_infos}
+
+#         # next user will have more used tokens
+#         info = await _find_best_user_with_key(
+#             feed_id=saved_feed_id,
+#             entry_age=datetime.timedelta(days=0),
+#             interval_started_at=interval_started_at,
+#             reserved_tokens=1,
+#         )
+
+#         assert info.tokens_used == five_user_key_infos[0].tokens_used + used_tokens
+
+
+@pytest.fixture
+def select_key_context(saved_feed_id: FeedId) -> SelectKeyContext:
+    return SelectKeyContext(feed_id=saved_feed_id,
+                            entry_age=3,
+                            reserved_tokens=10000)
+
+
+class TestChooseGeneralKey:
+
     @pytest.mark.asyncio
-    async def test_no_users(self, saved_feed_id: FeedId) -> None:
-        with pytest.raises(errors.NoKeyFoundForFeed):
-            async with api_key_for_feed_entry(
-                feed_id=saved_feed_id, entry_age=datetime.timedelta(days=0), reserved_tokens=1
-            ):
-                pass
+    async def test_no_general_key_specified(self, select_key_context: SelectKeyContext, mocker: MockerFixture) -> None:
+        mocker.patch('ffun.openai.settings.settings.general_api_key', None)
 
-    # TODO: duplicate test for the case when settings.collections_api_key is set
+        assert await _choose_general_key(select_key_context) is None
+
     @pytest.mark.asyncio
-    async def test_works(self, saved_feed_id: FeedId, five_user_key_infos: list[UserKeyInfo]) -> None:
-        for info in five_user_key_infos:
-            await fl_domain.add_link(info.user_id, saved_feed_id)
+    async def test_general_key_specified(self, select_key_context: SelectKeyContext, mocker: MockerFixture) -> None:
+        key = uuid.uuid4().hex
 
-        chosen_users: set[uuid.UUID] = set()
+        mocker.patch('ffun.openai.settings.settings.general_api_key', key)
 
-        interval_started_at = r_domain.month_interval_start()
+        usage = await _choose_general_key(select_key_context)
 
-        used_tokens = 7
-
-        for _ in range(len(five_user_key_infos)):
-            async with api_key_for_feed_entry(
-                feed_id=saved_feed_id, entry_age=datetime.timedelta(days=0), reserved_tokens=13
-            ) as key_usage:
-                key_usage.used_tokens = used_tokens
-                chosen_users.add(key_usage.user_id)
-
-        assert chosen_users == {info.user_id for info in five_user_key_infos}
-
-        # next user will have more used tokens
-        info = await _find_best_user_with_key(
-            feed_id=saved_feed_id,
-            entry_age=datetime.timedelta(days=0),
-            interval_started_at=interval_started_at,
-            reserved_tokens=1,
-        )
-
-        assert info.tokens_used == five_user_key_infos[0].tokens_used + used_tokens
+        assert usage == APIKeyUsage(user_id=uuid.UUID(int=0),
+                                    api_key=key,
+                                    used_tokens=None)

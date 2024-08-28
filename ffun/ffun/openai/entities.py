@@ -5,6 +5,7 @@ from typing import Protocol
 
 import pydantic
 
+from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
 
 
@@ -41,7 +42,7 @@ class SelectKeyContext(pydantic.BaseModel):
     feed_id: FeedId
     entry_age: datetime.timedelta
     reserved_tokens: int
-    interval_started_at: datetime.datetime
+    interval_started_at: datetime.datetime = pydantic.Field(default_factory=month_interval_start)
 
 
 class KeySelector(Protocol):

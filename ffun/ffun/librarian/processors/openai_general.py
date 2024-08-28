@@ -10,6 +10,7 @@ from ffun.ontology.entities import ProcessorTag
 from ffun.openai import client as oai_client
 from ffun.openai import errors as oai_errors
 from ffun.openai.keys_rotator import api_key_for_feed_entry
+from ffun.openai.entities import SelectKeyContext
 
 logger = logging.get_module_logger()
 
@@ -105,10 +106,12 @@ class Processor(base.Processor):
             max_return_tokens=max_return_tokens,
         )
 
+        select_key_context = SelectKeyContext(feed_id=entry.feed_id,
+                                              entry_age=entry.age,
+                                              reserved_tokens=len(messages) * total_tokens)
+
         try:
-            async with api_key_for_feed_entry(
-                entry.feed_id, entry_age=entry.age, reserved_tokens=len(messages) * total_tokens
-            ) as api_key_usage:
+            async with api_key_for_feed_entry(select_key_context) as api_key_usage:
                 results = await oai_client.multiple_requests(
                     api_key=api_key_usage.api_key,
                     model=self.model,
