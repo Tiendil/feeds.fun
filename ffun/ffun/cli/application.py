@@ -18,3 +18,4 @@ def experiment() -> None:
 
 
 app.add_typer(processors_quality.cli_app, name="processors-quality")
+app.add_typer(user_settings.cli_app, name="user-settings")

@@ -1,3 +1,4 @@
+import uuid
 import asyncio
 
 from ffun.application.application import with_app
@@ -15,5 +16,5 @@ async def run(base_feed_id: FeedId, merged_feed_id: FeedId) -> None:
 
 
 @app.command()
-def merge_feeds(base_feed_id: FeedId, merged_feed_id: FeedId) -> None:
-    asyncio.run(run(base_feed_id, merged_feed_id))
+def merge_feeds(base_feed_id: uuid.UUID, merged_feed_id: uuid.UUID) -> None:
+    asyncio.run(run(FeedId(base_feed_id), FeedId(merged_feed_id)))
