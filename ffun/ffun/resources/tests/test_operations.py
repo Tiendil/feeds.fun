@@ -5,7 +5,8 @@ import pytest
 
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.resources import errors
-from ffun.resources.domain import load_resource, month_interval_start
+from ffun.domain.datetime_intervals import month_interval_start
+from ffun.resources.domain import load_resource
 from ffun.resources.operations import (
     convert_reserved_to_used,
     initialize_resource,
