@@ -1,5 +1,5 @@
-import uuid
 import asyncio
+import uuid
 
 from ffun.application.application import with_app
 from ffun.cli.application import app

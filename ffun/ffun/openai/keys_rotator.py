@@ -1,7 +1,7 @@
 import contextlib
 import datetime
 import uuid
-from typing import Any, AsyncGenerator, Iterable
+from typing import Any, AsyncGenerator, Collection, Iterable
 
 from ffun.core import logging
 from ffun.feeds.entities import FeedId
@@ -23,6 +23,7 @@ logger = logging.get_module_logger()
 #######################
 # filtering users logic
 #######################
+
 
 # TODO: add lock here to not check the same key in parallel by different processors
 async def _api_key_is_working(api_key: str) -> bool:
@@ -172,15 +173,18 @@ async def _find_best_user_with_key(
 # choosing key logic
 ####################
 
+
 async def _choose_general_key(context: entities.SelectKeyContext) -> entities.APIKeyUsage | None:
     if settings.general_api_key is None:
         return None
 
-    return entities.APIKeyUsage(user_id=uuid.UUID(int=0),
-                                api_key=settings.general_api_key,
-                                reserved_tokens=context.reserved_tokens,
-                                used_tokens=None,
-                                interval_started_at=context.interval_started_at)
+    return entities.APIKeyUsage(
+        user_id=uuid.UUID(int=0),
+        api_key=settings.general_api_key,
+        reserved_tokens=context.reserved_tokens,
+        used_tokens=None,
+        interval_started_at=context.interval_started_at,
+    )
 
 
 async def _choose_collections_key(context: entities.SelectKeyContext) -> entities.APIKeyUsage | None:
@@ -190,11 +194,13 @@ async def _choose_collections_key(context: entities.SelectKeyContext) -> entitie
     if not await fc_domain.is_feed_in_collections(context.feed_id):
         return None
 
-    return entities.APIKeyUsage(user_id=uuid.UUID(int=0),
-                                api_key=settings.collections_api_key,
-                                reserved_tokens=context.reserved_tokens,
-                                used_tokens=None,
-                                interval_started_at=context.interval_started_at)
+    return entities.APIKeyUsage(
+        user_id=uuid.UUID(int=0),
+        api_key=settings.collections_api_key,
+        reserved_tokens=context.reserved_tokens,
+        used_tokens=None,
+        interval_started_at=context.interval_started_at,
+    )
 
 
 async def _choose_user_key(context: entities.SelectKeyContext) -> entities.APIKeyUsage | None:
@@ -202,24 +208,30 @@ async def _choose_user_key(context: entities.SelectKeyContext) -> entities.APIKe
         feed_id=context.feed_id,
         entry_age=context.entry_age,
         interval_started_at=context.interval_started_at,
-        reserved_tokens=context.reserved_tokens
+        reserved_tokens=context.reserved_tokens,
     )
 
     if info is None:
         return None
 
-    return entities.APIKeyUsage(user_id=info.user_id,
-                                api_key=info.api_key,
-                                reserved_tokens=context.reserved_tokens,
-                                used_tokens=None,
-                                interval_started_at=context.interval_started_at)
+    if info.api_key is None:
+        raise NotImplementedError("imporssible keys")
+
+    return entities.APIKeyUsage(
+        user_id=info.user_id,
+        api_key=info.api_key,
+        reserved_tokens=context.reserved_tokens,
+        used_tokens=None,
+        interval_started_at=context.interval_started_at,
+    )
 
 
-_key_selectors = (_choose_general_key, _choose_collections_key, _choose_user_key)
+_key_selectors: Collection[entities.KeySelector] = (_choose_general_key, _choose_collections_key, _choose_user_key)
 
 
-async def choose_api_key(context: entities.SelectKeyContext,
-                         selectors: Iterable[entities.KeySelector] = _key_selectors) -> entities.APIKeyUsage:
+async def choose_api_key(
+    context: entities.SelectKeyContext, selectors: Iterable[entities.KeySelector] = _key_selectors
+) -> entities.APIKeyUsage:
     for key_selector in selectors:
         key_usage = await key_selector(context)
 
@@ -232,6 +244,7 @@ async def choose_api_key(context: entities.SelectKeyContext,
 #################
 # key usage logic
 #################
+
 
 @contextlib.asynccontextmanager
 async def use_api_key(key_usage: entities.APIKeyUsage) -> AsyncGenerator[None, None]:
@@ -248,9 +261,9 @@ async def use_api_key(key_usage: entities.APIKeyUsage) -> AsyncGenerator[None, N
         log.info("key_used", used_tokens=key_usage.used_tokens)
 
     finally:
-        log.info("convert_reserved_to_used",
-                 reserved_tokens=key_usage.reserved_tokens,
-                 used_tokens=key_usage.used_tokens)
+        log.info(
+            "convert_reserved_to_used", reserved_tokens=key_usage.reserved_tokens, used_tokens=key_usage.used_tokens
+        )
 
         await r_domain.convert_reserved_to_used(
             user_id=key_usage.user_id,

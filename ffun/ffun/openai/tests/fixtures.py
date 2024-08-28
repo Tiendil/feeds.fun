@@ -5,13 +5,13 @@ import pytest
 import pytest_asyncio
 from pytest_mock import MockerFixture
 
+from ffun.domain.datetime_intervals import month_interval_start
 from ffun.openai.entities import KeyStatus, UserKeyInfo
 from ffun.openai.keys_rotator import _get_user_key_infos
 from ffun.openai.keys_statuses import statuses
 from ffun.openai.settings import settings
-from ffun.user_settings import domain as us_domain
 from ffun.resources import domain as r_domain
-from ffun.domain.datetime_intervals import month_interval_start
+from ffun.user_settings import domain as us_domain
 
 
 class MockedOpenAIClient:

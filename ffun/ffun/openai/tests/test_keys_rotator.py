@@ -6,13 +6,17 @@ import pytest
 from pytest_mock import MockerFixture
 
 from ffun.application.resources import Resource as AppResource
+from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
 from ffun.feeds_links import domain as fl_domain
 from ffun.openai import errors
-from ffun.openai.entities import APIKeyUsage, KeyStatus, UserKeyInfo, SelectKeyContext
+from ffun.openai.entities import APIKeyUsage, KeyStatus, SelectKeyContext, UserKeyInfo
 from ffun.openai.keys_rotator import (
     _api_key_is_working,
+    _choose_collections_key,
+    _choose_general_key,
     _choose_user,
+    _choose_user_key,
     _filter_out_users_for_whome_entry_is_too_old,
     _filter_out_users_with_overused_keys,
     _filter_out_users_with_wrong_keys,
@@ -21,18 +25,14 @@ from ffun.openai.keys_rotator import (
     _find_best_user_with_key,
     _get_candidates,
     _get_user_key_infos,
-    use_api_key,
-    _choose_general_key,
-    _choose_collections_key,
-    _choose_user_key,
+    _key_selectors,
     choose_api_key,
-    _key_selectors
+    use_api_key,
 )
 from ffun.openai.keys_statuses import Statuses, statuses
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
 from ffun.user_settings import domain as us_domain
-from ffun.domain.datetime_intervals import month_interval_start
 
 
 class TestAPIKeyIsWorking:
@@ -314,8 +314,8 @@ class TestFindBestUserWithKey:
 
     @pytest.mark.asyncio
     async def test_works(self, saved_feed_id: FeedId, five_user_key_infos: list[UserKeyInfo]) -> None:
-        for info in five_user_key_infos:
-            await fl_domain.add_link(info.user_id, saved_feed_id)
+        for user_key_info in five_user_key_infos:
+            await fl_domain.add_link(user_key_info.user_id, saved_feed_id)
 
         chosen_users: set[uuid.UUID] = set()
 
@@ -326,11 +326,12 @@ class TestFindBestUserWithKey:
         for _ in range(len(five_user_key_infos)):
             info = await _find_best_user_with_key(
                 feed_id=saved_feed_id,
-                entry_age= datetime.timedelta(days=0),
+                entry_age=datetime.timedelta(days=0),
                 interval_started_at=interval_started_at,
                 reserved_tokens=used_tokens,
             )
 
+            assert info is not None
             assert info.tokens_used == five_user_key_infos[0].tokens_used
 
             chosen_users.add(info.user_id)
@@ -353,21 +354,20 @@ class TestFindBestUserWithKey:
             reserved_tokens=used_tokens,
         )
 
+        assert info is not None
         assert info.tokens_used == five_user_key_infos[0].tokens_used + used_tokens
 
 
 @pytest.fixture
 def select_key_context(saved_feed_id: FeedId) -> SelectKeyContext:
-    return SelectKeyContext(feed_id=saved_feed_id,
-                            entry_age=0,
-                            reserved_tokens=0)
+    return SelectKeyContext(feed_id=saved_feed_id, entry_age=datetime.timedelta(seconds=0), reserved_tokens=0)
 
 
 class TestChooseGeneralKey:
 
     @pytest.mark.asyncio
     async def test_no_general_key_specified(self, select_key_context: SelectKeyContext, mocker: MockerFixture) -> None:
-        mocker.patch('ffun.openai.settings.settings.general_api_key', None)
+        mocker.patch("ffun.openai.settings.settings.general_api_key", None)
 
         assert await _choose_general_key(select_key_context) is None
 
@@ -375,50 +375,60 @@ class TestChooseGeneralKey:
     async def test_general_key_specified(self, select_key_context: SelectKeyContext, mocker: MockerFixture) -> None:
         key = uuid.uuid4().hex
 
-        mocker.patch('ffun.openai.settings.settings.general_api_key', key)
+        mocker.patch("ffun.openai.settings.settings.general_api_key", key)
 
         usage = await _choose_general_key(select_key_context)
 
-        assert usage == APIKeyUsage(user_id=uuid.UUID(int=0),
-                                    api_key=key,
-                                    reserved_tokens=select_key_context.reserved_tokens,
-                                    used_tokens=None,
-                                    interval_started_at=select_key_context.interval_started_at)
+        assert usage == APIKeyUsage(
+            user_id=uuid.UUID(int=0),
+            api_key=key,
+            reserved_tokens=select_key_context.reserved_tokens,
+            used_tokens=None,
+            interval_started_at=select_key_context.interval_started_at,
+        )
 
 
 class TestChooseCollectionsKey:
 
     @pytest.mark.asyncio
-    async def test_no_collections_key_specified(self, select_key_context: SelectKeyContext, mocker: MockerFixture) -> None:
-        mocker.patch('ffun.openai.settings.settings.collections_api_key', None)
+    async def test_no_collections_key_specified(
+        self, select_key_context: SelectKeyContext, mocker: MockerFixture
+    ) -> None:
+        mocker.patch("ffun.openai.settings.settings.collections_api_key", None)
 
         assert await _choose_collections_key(select_key_context) is None
 
     @pytest.mark.asyncio
-    async def test_collections_key_specified__in_collection(self, select_key_context: SelectKeyContext, mocker: MockerFixture) -> None:
+    async def test_collections_key_specified__in_collection(
+        self, select_key_context: SelectKeyContext, mocker: MockerFixture
+    ) -> None:
         key = uuid.uuid4().hex
 
-        mocker.patch('ffun.openai.settings.settings.collections_api_key', key)
+        mocker.patch("ffun.openai.settings.settings.collections_api_key", key)
 
         # TODO: remove mocking after collections will be reworked in https://github.com/Tiendil/feeds.fun/issues/246
-        mocker.patch('ffun.feeds_collections.domain.is_feed_in_collections', return_value=True)
+        mocker.patch("ffun.feeds_collections.domain.is_feed_in_collections", return_value=True)
 
         usage = await _choose_collections_key(select_key_context)
 
-        assert usage == APIKeyUsage(user_id=uuid.UUID(int=0),
-                                    api_key=key,
-                                    reserved_tokens=select_key_context.reserved_tokens,
-                                    used_tokens=None,
-                                    interval_started_at=select_key_context.interval_started_at)
+        assert usage == APIKeyUsage(
+            user_id=uuid.UUID(int=0),
+            api_key=key,
+            reserved_tokens=select_key_context.reserved_tokens,
+            used_tokens=None,
+            interval_started_at=select_key_context.interval_started_at,
+        )
 
     @pytest.mark.asyncio
-    async def test_collections_key_specified__not_in_collection(self, select_key_context: SelectKeyContext, mocker: MockerFixture) -> None:
+    async def test_collections_key_specified__not_in_collection(
+        self, select_key_context: SelectKeyContext, mocker: MockerFixture
+    ) -> None:
         key = uuid.uuid4().hex
 
-        mocker.patch('ffun.openai.settings.settings.collections_api_key', key)
+        mocker.patch("ffun.openai.settings.settings.collections_api_key", key)
 
         # TODO: remove mocking after collections will be reworked in
-        mocker.patch('ffun.feeds_collections.domain.is_feed_in_collections', return_value=False)
+        mocker.patch("ffun.feeds_collections.domain.is_feed_in_collections", return_value=False)
 
         assert await _choose_collections_key(select_key_context) is None
 
@@ -430,18 +440,24 @@ class TestChooseUserKey:
         assert await _choose_user_key(select_key_context) is None
 
     @pytest.mark.asyncio
-    async def test_found_user(self, select_key_context: SelectKeyContext, saved_feed_id: FeedId, five_user_key_infos: list[UserKeyInfo]) -> None:
+    async def test_found_user(
+        self, select_key_context: SelectKeyContext, saved_feed_id: FeedId, five_user_key_infos: list[UserKeyInfo]
+    ) -> None:
         info = five_user_key_infos[0]
+
+        assert info.api_key is not None
 
         await fl_domain.add_link(info.user_id, saved_feed_id)
 
         usage = await _choose_user_key(select_key_context)
 
-        assert usage == APIKeyUsage(user_id=info.user_id,
-                                    api_key=info.api_key,
-                                    reserved_tokens=select_key_context.reserved_tokens,
-                                    used_tokens=None,
-                                    interval_started_at=select_key_context.interval_started_at)
+        assert usage == APIKeyUsage(
+            user_id=info.user_id,
+            api_key=info.api_key,
+            reserved_tokens=select_key_context.reserved_tokens,
+            used_tokens=None,
+            interval_started_at=select_key_context.interval_started_at,
+        )
 
 
 class TestKeySelectors:
@@ -455,11 +471,15 @@ class TestChooseApiKey:
 
     def create_selector(self, api_key: str | None) -> Any:
         async def success_selector(context: SelectKeyContext) -> APIKeyUsage:
-            return APIKeyUsage(user_id=uuid.uuid4(),
-                               api_key=api_key,
-                               reserved_tokens=context.reserved_tokens,
-                               used_tokens=None,
-                               interval_started_at=context.interval_started_at)
+            assert api_key is not None
+
+            return APIKeyUsage(
+                user_id=uuid.uuid4(),
+                api_key=api_key,
+                reserved_tokens=context.reserved_tokens,
+                used_tokens=None,
+                interval_started_at=context.interval_started_at,
+            )
 
         async def fail_selector(context: SelectKeyContext) -> None:
             return None
@@ -473,9 +493,7 @@ class TestChooseApiKey:
 
     @pytest.mark.asyncio
     async def test_key_not_found(self, select_key_context: SelectKeyContext) -> None:
-        selectors = [self.create_selector(None),
-                     self.create_selector(None),
-                     self.create_selector(None)]
+        selectors = [self.create_selector(None), self.create_selector(None), self.create_selector(None)]
 
         with pytest.raises(errors.NoKeyFoundForFeed):
             await choose_api_key(select_key_context, selectors=selectors)
@@ -484,11 +502,13 @@ class TestChooseApiKey:
     async def test_choose_first(self, select_key_context: SelectKeyContext) -> None:
         expected_key = uuid.uuid4().hex
 
-        selectors = [self.create_selector(None),
-                     self.create_selector(expected_key),
-                     self.create_selector(None),
-                     self.create_selector(uuid.uuid4().hex),
-                     self.create_selector(None)]
+        selectors = [
+            self.create_selector(None),
+            self.create_selector(expected_key),
+            self.create_selector(None),
+            self.create_selector(uuid.uuid4().hex),
+            self.create_selector(None),
+        ]
 
         usage = await choose_api_key(select_key_context, selectors=selectors)
 
@@ -518,11 +538,13 @@ class TestUseApiKey:
 
         used_tokens = 132
 
-        key_usage = APIKeyUsage(user_id=internal_user_id,
-                                api_key=openai_key,
-                                reserved_tokens=reserved_tokens,
-                                used_tokens=None,
-                                interval_started_at=interval_started_at)
+        key_usage = APIKeyUsage(
+            user_id=internal_user_id,
+            api_key=openai_key,
+            reserved_tokens=reserved_tokens,
+            used_tokens=None,
+            interval_started_at=interval_started_at,
+        )
 
         async with use_api_key(key_usage):
             key_usage.used_tokens = used_tokens
@@ -560,11 +582,13 @@ class TestUseApiKey:
             user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
         )
 
-        key_usage = APIKeyUsage(user_id=internal_user_id,
-                                api_key=openai_key,
-                                reserved_tokens=reserved_tokens,
-                                used_tokens=None,
-                                interval_started_at=interval_started_at)
+        key_usage = APIKeyUsage(
+            user_id=internal_user_id,
+            api_key=openai_key,
+            reserved_tokens=reserved_tokens,
+            used_tokens=None,
+            interval_started_at=interval_started_at,
+        )
 
         with pytest.raises(errors.UsedTokensHasNotSpecified):
             async with use_api_key(key_usage):
@@ -606,11 +630,13 @@ class TestUseApiKey:
         class FakeError(Exception):
             pass
 
-        key_usage = APIKeyUsage(user_id=internal_user_id,
-                                api_key=openai_key,
-                                reserved_tokens=reserved_tokens,
-                                used_tokens=None,
-                                interval_started_at=interval_started_at)
+        key_usage = APIKeyUsage(
+            user_id=internal_user_id,
+            api_key=openai_key,
+            reserved_tokens=reserved_tokens,
+            used_tokens=None,
+            interval_started_at=interval_started_at,
+        )
 
         with pytest.raises(FakeError):
             async with use_api_key(key_usage):

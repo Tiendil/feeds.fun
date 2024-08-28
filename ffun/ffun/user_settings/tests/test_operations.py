@@ -1,5 +1,6 @@
-import uuid
 import random
+import uuid
+
 import pytest
 
 from ffun.user_settings import operations

@@ -54,5 +54,5 @@ class SelectKeyContext(pydantic.BaseModel):
 
 
 class KeySelector(Protocol):
-    async def select_key(self, context: SelectKeyContext) -> UserKeyInfo:
-        ...
+    async def __call__(self, context: SelectKeyContext) -> APIKeyUsage | None:
+        """Selector function"""

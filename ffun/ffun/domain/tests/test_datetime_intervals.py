@@ -1,5 +1,6 @@
-import pytest
 import datetime
+
+import pytest
 
 from ffun.domain.datetime_intervals import month_interval_start
 

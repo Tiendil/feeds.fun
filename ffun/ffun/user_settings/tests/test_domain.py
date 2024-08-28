@@ -1,12 +1,13 @@
+import copy
 import enum
 import uuid
 from typing import Any
-import copy
 
 import pytest
-from ffun.core.tests.helpers import TableSizeNotChanged, TableSizeDecreased
+
 from ffun.core.register import Register
-from ffun.user_settings import domain, errors, types, operations
+from ffun.core.tests.helpers import TableSizeDecreased, TableSizeNotChanged
+from ffun.user_settings import domain, errors, operations, types
 from ffun.user_settings.tests import asserts
 from ffun.user_settings.values import SettingsRegister, Value
 
@@ -202,18 +203,20 @@ class TestRemoveDeprecatedSettings:
         await domain.save_setting(internal_user_id, Setting.kind_integer, int_values[0], register=register)
         await domain.save_setting(another_internal_user_id, Setting.kind_integer, int_values[1], register=register)
 
-        all_kinds = await operations.find_all_kinds()
+        await operations.find_all_kinds()
 
         async with TableSizeNotChanged("us_settings"):
             await domain.remove_deprecated_settings(register=register)
 
-        user_ids = await domain.load_settings_for_users([internal_user_id, another_internal_user_id],
-                                                        {Setting.kind_string, Setting.kind_integer},
-                                                        register=register)
+        user_ids = await domain.load_settings_for_users(
+            [internal_user_id, another_internal_user_id],
+            {Setting.kind_string, Setting.kind_integer},
+            register=register,
+        )
 
         assert user_ids == {
             internal_user_id: {Setting.kind_string: str_values[0], Setting.kind_integer: int_values[0]},
-            another_internal_user_id: {Setting.kind_string: str_values[1], Setting.kind_integer: int_values[1]}
+            another_internal_user_id: {Setting.kind_string: str_values[1], Setting.kind_integer: int_values[1]},
         }
 
     @pytest.mark.asyncio
@@ -227,7 +230,7 @@ class TestRemoveDeprecatedSettings:
         await domain.save_setting(internal_user_id, Setting.kind_integer, int_values[0], register=register)
         await domain.save_setting(another_internal_user_id, Setting.kind_integer, int_values[1], register=register)
 
-        all_kinds = await operations.find_all_kinds()
+        await operations.find_all_kinds()
 
         updated_register = copy.deepcopy(register)
         updated_register.remove(Setting.kind_string)
@@ -235,11 +238,13 @@ class TestRemoveDeprecatedSettings:
         async with TableSizeDecreased("us_settings"):
             await domain.remove_deprecated_settings(register=updated_register)
 
-        user_ids = await domain.load_settings_for_users([internal_user_id, another_internal_user_id],
-                                                        {Setting.kind_string, Setting.kind_integer},
-                                                        register=updated_register)
+        user_ids = await domain.load_settings_for_users(
+            [internal_user_id, another_internal_user_id],
+            {Setting.kind_string, Setting.kind_integer},
+            register=updated_register,
+        )
 
         assert user_ids == {
             internal_user_id: {Setting.kind_integer: int_values[0]},
-            another_internal_user_id: {Setting.kind_integer: int_values[1]}
+            another_internal_user_id: {Setting.kind_integer: int_values[1]},
         }

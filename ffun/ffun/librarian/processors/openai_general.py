@@ -9,8 +9,8 @@ from ffun.library.entities import Entry
 from ffun.ontology.entities import ProcessorTag
 from ffun.openai import client as oai_client
 from ffun.openai import errors as oai_errors
-from ffun.openai.keys_rotator import use_api_key, choose_api_key
 from ffun.openai.entities import SelectKeyContext
+from ffun.openai.keys_rotator import choose_api_key, use_api_key
 
 logger = logging.get_module_logger()
 
@@ -109,9 +109,9 @@ class Processor(base.Processor):
 
         # TODO: move the code bellow into a separate function?
         #       maybe in https://github.com/Tiendil/feeds.fun/issues/245
-        select_key_context = SelectKeyContext(feed_id=entry.feed_id,
-                                              entry_age=entry.age,
-                                              reserved_tokens=len(messages) * total_tokens)
+        select_key_context = SelectKeyContext(
+            feed_id=entry.feed_id, entry_age=entry.age, reserved_tokens=len(messages) * total_tokens
+        )
 
         api_key_usage = await choose_api_key(select_key_context)
 

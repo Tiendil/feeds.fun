@@ -1,15 +1,9 @@
 import asyncio
-import pathlib
 
 import typer
 
 from ffun.application.application import with_app
 from ffun.core import logging
-from ffun.processors_quality import domain as pq_domain
-from ffun.processors_quality.domain import diff_processor_results, display_diffs
-from ffun.processors_quality.entities import ProcessorResult
-from ffun.processors_quality.knowlege_base import KnowlegeBase
-
 from ffun.user_settings import domain as us_domain
 
 logger = logging.get_module_logger()
