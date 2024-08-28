@@ -208,7 +208,6 @@ async def _choose_general_key(context: entities.SelectKeyContext) -> entities.AP
                                 interval_started_at=context.interval_started_at)
 
 
-# TODO: test
 async def _choose_collections_key(context: entities.SelectKeyContext) -> entities.APIKeyUsage | None:
     if settings.collections_api_key is None:
         return None

@@ -515,3 +515,40 @@ class TestChooseGeneralKey:
                                     reserved_tokens=select_key_context.reserved_tokens,
                                     used_tokens=None,
                                     interval_started_at=select_key_context.interval_started_at)
+
+
+class TestChooseCollectionsKey:
+
+    @pytest.mark.asyncio
+    async def test_no_collections_key_specified(self, select_key_context: SelectKeyContext, mocker: MockerFixture) -> None:
+        mocker.patch('ffun.openai.settings.settings.collections_api_key', None)
+
+        assert await _choose_collections_key(select_key_context) is None
+
+    @pytest.mark.asyncio
+    async def test_collections_key_specified__in_collection(self, select_key_context: SelectKeyContext, mocker: MockerFixture) -> None:
+        key = uuid.uuid4().hex
+
+        mocker.patch('ffun.openai.settings.settings.collections_api_key', key)
+
+        # TODO: remove mocking after collections will be reworked in https://github.com/Tiendil/feeds.fun/issues/246
+        mocker.patch('ffun.feeds_collections.domain.is_feed_in_collections', return_value=True)
+
+        usage = await _choose_collections_key(select_key_context)
+
+        assert usage == APIKeyUsage(user_id=uuid.UUID(int=0),
+                                    api_key=key,
+                                    reserved_tokens=select_key_context.reserved_tokens,
+                                    used_tokens=None,
+                                    interval_started_at=select_key_context.interval_started_at)
+
+    @pytest.mark.asyncio
+    async def test_collections_key_specified__not_in_collection(self, select_key_context: SelectKeyContext, mocker: MockerFixture) -> None:
+        key = uuid.uuid4().hex
+
+        mocker.patch('ffun.openai.settings.settings.collections_api_key', key)
+
+        # TODO: remove mocking after collections will be reworked in
+        mocker.patch('ffun.feeds_collections.domain.is_feed_in_collections', return_value=False)
+
+        assert await _choose_collections_key(select_key_context) is None
