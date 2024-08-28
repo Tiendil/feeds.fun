@@ -20,6 +20,10 @@ logger = logging.get_module_logger()
 #       i.e. in case of a problem, we should count a key as used with a maximum used tokens
 
 
+#######################
+# filtering users logic
+#######################
+
 # TODO: add lock here to not check the same key in parallel by different processors
 async def _api_key_is_working(api_key: str) -> bool:
     status = statuses.get(api_key)
@@ -75,35 +79,6 @@ async def _choose_user(
             return info
 
     return None
-
-
-# TODO: tests
-@contextlib.asynccontextmanager
-async def use_api_key(key_usage: entities.APIKeyUsage) -> AsyncGenerator[None, None]:
-    from ffun.application.resources import Resource as AppResource
-
-    log = logger.bind(function="_use_key", user_id=key_usage.user_id)
-
-    try:
-        yield
-
-        if key_usage.used_tokens is None:
-            raise NotImplementedError()
-
-        log.info("key_used", used_tokens=key_usage.used_tokens)
-
-    finally:
-        log.info("convert_reserved_to_used", reserved_tokens=reserved_tokens, used_tokens=used_tokens)
-
-        await r_domain.convert_reserved_to_used(
-            user_id=key_usage.user_id,
-            kind=AppResource.openai_tokens,
-            interval_started_at=key_usage.interval_started_at,
-            used=key_usage.spent_tokens(),
-            reserved=key_usage.reserved_tokens,
-        )
-
-        log.info("resources_converted")
 
 
 async def _get_user_key_infos(
@@ -222,7 +197,6 @@ async def _choose_collections_key(context: entities.SelectKeyContext) -> entitie
                                 interval_started_at=context.interval_started_at)
 
 
-# TODO: test
 async def _choose_user_key(context: entities.SelectKeyContext) -> entities.APIKeyUsage | None:
     info = await _find_best_user_with_key(
         feed_id=context.feed_id,
@@ -241,6 +215,7 @@ async def _choose_user_key(context: entities.SelectKeyContext) -> entities.APIKe
                                 interval_started_at=context.interval_started_at)
 
 
+# TODO: test order
 _key_selectors = (_choose_general_key, _choose_collections_key, _choose_user_key)
 
 
@@ -254,3 +229,36 @@ async def choose_api_key(context: entities.SelectKeyContext,
             return key_usage
 
     raise errors.NoKeyFoundForFeed()
+
+#################
+# key usage logic
+#################
+
+@contextlib.asynccontextmanager
+async def use_api_key(key_usage: entities.APIKeyUsage) -> AsyncGenerator[None, None]:
+    from ffun.application.resources import Resource as AppResource
+
+    log = logger.bind(function="_use_key", user_id=key_usage.user_id)
+
+    try:
+        yield
+
+        if key_usage.used_tokens is None:
+            raise NotImplementedError()
+
+        log.info("key_used", used_tokens=key_usage.used_tokens)
+
+    finally:
+        log.info("convert_reserved_to_used",
+                 reserved_tokens=key_usage.reserved_tokens,
+                 used_tokens=key_usage.used_tokens)
+
+        await r_domain.convert_reserved_to_used(
+            user_id=key_usage.user_id,
+            kind=AppResource.openai_tokens,
+            interval_started_at=key_usage.interval_started_at,
+            used=key_usage.spent_tokens(),
+            reserved=key_usage.reserved_tokens,
+        )
+
+        log.info("resources_converted")

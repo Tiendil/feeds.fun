@@ -414,7 +414,7 @@ class TestFindBestUserWithKey:
         for _ in range(len(five_user_key_infos)):
             info = await _find_best_user_with_key(
                 feed_id=saved_feed_id,
-                entry_age=datetime.timedelta(days=0),
+                entry_age= datetime.timedelta(days=0),
                 interval_started_at=interval_started_at,
                 reserved_tokens=used_tokens,
             )
@@ -444,54 +444,11 @@ class TestFindBestUserWithKey:
         assert info.tokens_used == five_user_key_infos[0].tokens_used + used_tokens
 
 
-# class TestApiKeyForFeedEntry:
-
-#     # TODO: duplicate test for the case when settings.collections_api_key is set
-#     @pytest.mark.asyncio
-#     async def test_no_users(self, saved_feed_id: FeedId) -> None:
-#         with pytest.raises(errors.NoKeyFoundForFeed):
-#             async with api_key_for_feed_entry(
-#                 feed_id=saved_feed_id, entry_age=datetime.timedelta(days=0), reserved_tokens=1
-#             ):
-#                 pass
-
-#     # TODO: duplicate test for the case when settings.collections_api_key is set
-#     @pytest.mark.asyncio
-#     async def test_works(self, saved_feed_id: FeedId, five_user_key_infos: list[UserKeyInfo]) -> None:
-#         for info in five_user_key_infos:
-#             await fl_domain.add_link(info.user_id, saved_feed_id)
-
-#         chosen_users: set[uuid.UUID] = set()
-
-#         interval_started_at = month_interval_start()
-
-#         used_tokens = 7
-
-#         for _ in range(len(five_user_key_infos)):
-#             async with api_key_for_feed_entry(
-#                 feed_id=saved_feed_id, entry_age=datetime.timedelta(days=0), reserved_tokens=13
-#             ) as key_usage:
-#                 key_usage.used_tokens = used_tokens
-#                 chosen_users.add(key_usage.user_id)
-
-#         assert chosen_users == {info.user_id for info in five_user_key_infos}
-
-#         # next user will have more used tokens
-#         info = await _find_best_user_with_key(
-#             feed_id=saved_feed_id,
-#             entry_age=datetime.timedelta(days=0),
-#             interval_started_at=interval_started_at,
-#             reserved_tokens=1,
-#         )
-
-#         assert info.tokens_used == five_user_key_infos[0].tokens_used + used_tokens
-
-
 @pytest.fixture
 def select_key_context(saved_feed_id: FeedId) -> SelectKeyContext:
     return SelectKeyContext(feed_id=saved_feed_id,
-                            entry_age=3,
-                            reserved_tokens=10000)
+                            entry_age=0,
+                            reserved_tokens=0)
 
 
 class TestChooseGeneralKey:
@@ -552,3 +509,24 @@ class TestChooseCollectionsKey:
         mocker.patch('ffun.feeds_collections.domain.is_feed_in_collections', return_value=False)
 
         assert await _choose_collections_key(select_key_context) is None
+
+
+class TestChooseUserKey:
+
+    @pytest.mark.asyncio
+    async def test_no_users(self, select_key_context: SelectKeyContext) -> None:
+        assert await _choose_user_key(select_key_context) is None
+
+    @pytest.mark.asyncio
+    async def test_found_user(self, select_key_context: SelectKeyContext, saved_feed_id: FeedId, five_user_key_infos: list[UserKeyInfo]) -> None:
+        info = five_user_key_infos[0]
+
+        await fl_domain.add_link(info.user_id, saved_feed_id)
+
+        usage = await _choose_user_key(select_key_context)
+
+        assert usage == APIKeyUsage(user_id=info.user_id,
+                                    api_key=info.api_key,
+                                    reserved_tokens=select_key_context.reserved_tokens,
+                                    used_tokens=None,
+                                    interval_started_at=select_key_context.interval_started_at)
