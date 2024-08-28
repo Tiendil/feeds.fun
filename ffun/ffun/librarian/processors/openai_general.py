@@ -87,6 +87,7 @@ class Processor(base.Processor):
         super().__init__(**kwargs)
         self.model = model
 
+    # TODO: tests
     async def process(self, entry: Entry) -> list[ProcessorTag]:
         tags: list[ProcessorTag] = []
 
@@ -106,7 +107,6 @@ class Processor(base.Processor):
             max_return_tokens=max_return_tokens,
         )
 
-        # TODO: tests?
         # TODO: move the code bellow into a separate function?
         #       maybe in https://github.com/Tiendil/feeds.fun/issues/245
         select_key_context = SelectKeyContext(feed_id=entry.feed_id,
