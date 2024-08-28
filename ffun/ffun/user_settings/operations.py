@@ -30,7 +30,7 @@ async def load_settings_for_users(
         AND kind = ANY(%(kinds)s)
     """
 
-    result = await execute(sql, {"user_ids": user_ids, "kinds": kinds})
+    result = await execute(sql, {"user_ids": list(user_ids), "kinds": list(kinds)})
 
     values: dict[uuid.UUID, UserSettings] = {user_id: {} for user_id in user_ids}
 
