@@ -25,7 +25,8 @@ from ffun.openai.keys_rotator import (
     _choose_general_key,
     _choose_collections_key,
     _choose_user_key,
-    choose_api_key
+    choose_api_key,
+    _key_selectors
 )
 from ffun.openai.keys_statuses import Statuses, statuses
 from ffun.resources import domain as r_domain
@@ -530,3 +531,54 @@ class TestChooseUserKey:
                                     reserved_tokens=select_key_context.reserved_tokens,
                                     used_tokens=None,
                                     interval_started_at=select_key_context.interval_started_at)
+
+
+class TestKeySelectors:
+
+    def test_order(self) -> None:
+        """Just double protection from overriding this constant"""
+        assert _key_selectors == (_choose_general_key, _choose_collections_key, _choose_user_key)
+
+
+class TestChooseApiKey:
+
+    def create_selector(self, api_key: str | None) -> Any:
+        async def success_selector(context: SelectKeyContext) -> APIKeyUsage:
+            return APIKeyUsage(user_id=uuid.uuid4(),
+                               api_key=api_key,
+                               reserved_tokens=context.reserved_tokens,
+                               used_tokens=None,
+                               interval_started_at=context.interval_started_at)
+
+        async def fail_selector(context: SelectKeyContext) -> None:
+            return None
+
+        return success_selector if api_key is not None else fail_selector
+
+    @pytest.mark.asyncio
+    async def test_no_selectors(self, select_key_context: SelectKeyContext) -> None:
+        with pytest.raises(errors.NoKeyFoundForFeed):
+            await choose_api_key(select_key_context, selectors=[])
+
+    @pytest.mark.asyncio
+    async def test_key_not_found(self, select_key_context: SelectKeyContext) -> None:
+        selectors = [self.create_selector(None),
+                     self.create_selector(None),
+                     self.create_selector(None)]
+
+        with pytest.raises(errors.NoKeyFoundForFeed):
+            await choose_api_key(select_key_context, selectors=selectors)
+
+    @pytest.mark.asyncio
+    async def test_choose_first(self, select_key_context: SelectKeyContext) -> None:
+        expected_key = uuid.uuid4().hex
+
+        selectors = [self.create_selector(None),
+                     self.create_selector(expected_key),
+                     self.create_selector(None),
+                     self.create_selector(uuid.uuid4().hex),
+                     self.create_selector(None)]
+
+        usage = await choose_api_key(select_key_context, selectors=selectors)
+
+        assert usage.api_key == expected_key

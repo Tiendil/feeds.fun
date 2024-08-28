@@ -215,11 +215,9 @@ async def _choose_user_key(context: entities.SelectKeyContext) -> entities.APIKe
                                 interval_started_at=context.interval_started_at)
 
 
-# TODO: test order
 _key_selectors = (_choose_general_key, _choose_collections_key, _choose_user_key)
 
 
-# TODO: tests
 async def choose_api_key(context: entities.SelectKeyContext,
                          selectors: Iterable[entities.KeySelector] = _key_selectors) -> entities.APIKeyUsage:
     for key_selector in selectors:
@@ -229,6 +227,7 @@ async def choose_api_key(context: entities.SelectKeyContext,
             return key_usage
 
     raise errors.NoKeyFoundForFeed()
+
 
 #################
 # key usage logic
