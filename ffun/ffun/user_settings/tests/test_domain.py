@@ -219,8 +219,6 @@ class TestRemoveDeprecatedSettings:
 
         user_ids = await domain.load_settings_for_users([internal_user_id, another_internal_user_id], all_kinds, register=register)
 
-        print(user_ids)
-
         assert user_ids == {
             internal_user_id: {Setting.kind_integer: int_values[0], Setting.kind_string: _string_default},
             another_internal_user_id: {Setting.kind_integer: int_values[1], Setting.kind_string: _string_default}
