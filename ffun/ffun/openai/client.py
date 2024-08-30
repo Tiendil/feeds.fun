@@ -194,4 +194,3 @@ async def check_api_key(api_key: str) -> entities.KeyStatus:
             pass
 
     return statuses.get(api_key)
-l
