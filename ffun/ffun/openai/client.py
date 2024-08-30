@@ -22,8 +22,8 @@ async def get_encoding(model: str) -> tiktoken.Encoding:
     return tiktoken.encoding_for_model(model)
 
 
-async def prepare_requests(
-    system: str,  # pylint: disable=R0914
+async def prepare_requests(  # pylint: disable=R0914
+    system: str,
     text: str,
     model: str,
     function: dict[str, Any] | None,
@@ -194,3 +194,4 @@ async def check_api_key(api_key: str) -> entities.KeyStatus:
             pass
 
     return statuses.get(api_key)
+l
