@@ -8,6 +8,8 @@ from ffun.core import utils
 from ffun.openai.entities import KeyStatus
 from ffun.openai.settings import settings
 
+# TODO: move to llms_framework
+
 
 class StatusInfo:
     __slots__ = ("status", "updated_at")

@@ -1,5 +1,6 @@
 import re
 from typing import Any
+import asyncio
 
 from ffun.core import logging
 from ffun.core import text as core_text
@@ -11,6 +12,8 @@ from ffun.openai import client as oai_client
 from ffun.openai import errors as oai_errors
 from ffun.openai.entities import SelectKeyContext
 from ffun.openai.keys_rotator import choose_api_key, use_api_key
+from ffun.llms_framework.entities import LLMConfiguration
+from ffun.llms_framework.provider_interface import provider
 
 logger = logging.get_module_logger()
 
@@ -71,6 +74,19 @@ Remember:
 RE_TAG = re.compile(r"@([\w\d-]+)")
 
 
+# TODO: move to configs somewhere
+llm_config = LLMConfiguration(
+    model="gpt-4o-mini-2024-07-18",
+    system=system,
+    max_return_tokens=4 * 1024,
+    text_parts_intersection=100,
+    additional_tokens_per_message=10,
+    temperature=0,
+    top_p=0,
+    presence_penalty=0,
+    frequency_penalty=0)
+
+
 # add url to allow chatGPT decide on domain
 def entry_to_text(entry: Entry) -> str:
     return f'<h1>{entry.title}</h1><a href="{entry.external_url}">full article</a>{entry.body}'
@@ -95,47 +111,35 @@ class Processor(base.Processor):
 
         text = core_text.clear_text(dirty_text)
 
-        total_tokens = 128 * 1024
-        max_return_tokens = 4 * 1024
-
-        messages = await oai_client.prepare_requests(
-            system=system,
-            text=text,
-            model=self.model,
-            function=None,
-            total_tokens=total_tokens,
-            max_return_tokens=max_return_tokens,
-        )
+        requests = provider.prepare_requests(llm_config, text)
 
         # TODO: move the code bellow into a separate function?
         #       maybe in https://github.com/Tiendil/feeds.fun/issues/245
-        select_key_context = SelectKeyContext(
-            feed_id=entry.feed_id, entry_age=entry.age, reserved_tokens=len(messages) * total_tokens
-        )
+
+        reserved_tokens = len(requests) * provider.max_context_size_for_model(llm_config)
+
+        select_key_context = SelectKeyContext(feed_id=entry.feed_id,
+                                              entry_age=entry.age,
+                                              reserved_tokens=reserved_tokens)
 
         api_key_usage = await choose_api_key(select_key_context)
 
         try:
             async with use_api_key(api_key_usage):
-                results = await oai_client.multiple_requests(
-                    api_key=api_key_usage.api_key,
-                    model=self.model,
-                    messages=messages,
-                    function=None,
-                    max_return_tokens=max_return_tokens,
-                    temperature=0,
-                    top_p=0,
-                    presence_penalty=0,
-                    frequency_penalty=0,
-                )
+                tasks = [provider.chat_request(llm_config,
+                                               api_key_usage.api_key,
+                                               request)
+                         for request in requests]
 
-                api_key_usage.used_tokens = sum(result.total_tokens for result in results)
+                responses = await asyncio.gather(*tasks)
+
+                api_key_usage.used_tokens = sum(response.total_tokens for response in responses)
 
         except oai_errors.NoKeyFoundForFeed as e:
             raise errors.SkipEntryProcessing(message=str(e)) from e
 
-        for result in results:
-            for raw_tag in extract_raw_tags(result.content):
+        for response in responses:
+            for raw_tag in extract_raw_tags(response.content):
                 tags.append(ProcessorTag(raw_uid=raw_tag))
 
         return tags

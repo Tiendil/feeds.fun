@@ -20,7 +20,7 @@ class NativeTagsProcessor(BaseProcessor):
 class UpperCaseTitleProcessor(BaseProcessor):
     pass
 
-
+# TODO: remove processor confiogs from here? Or just LLM configs?
 class OpenAIGeneralProcessor(BaseProcessor):
     model: str = "gpt-4o-mini-2024-07-18"
 
