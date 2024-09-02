@@ -50,7 +50,6 @@ def track_key_status(key: str, statuses: Statuses = statuses) -> Generator[None,
     except openai.PermissionDeniedError:
         statuses.set(key, KeyStatus.broken)
         raise
-    # TODO: test
     except openai.APIError:
         statuses.set(key, KeyStatus.unknown)
         raise
