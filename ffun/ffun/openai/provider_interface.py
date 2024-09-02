@@ -2,15 +2,16 @@ import async_lru
 import functools
 import json
 import tiktoken
-from typing import Any
+from typing import Any, Generator
+import contextlib
 
 from ffun.core import logging
-from ffun.llms_framework.entities import LLMConfiguration, Provider
+from ffun.llms_framework.entities import LLMConfiguration, Provider, KeyStatus
+from ffun.llms_framework.keys_statuses import Statuses, statuses
 from ffun.llms_framework.provider_interface import ProviderInterface, ChatRequest, ChatResponse
 from ffun.llms_framework import errors as llmsf_errors
 from ffun.llms_framework import domain as llmsf_domain
 from ffun.openai.entities import OpenAIModelInfo
-from ffun.openai.keys_statuses import statuses, track_key_status
 from ffun.openai import errors
 import openai
 
@@ -31,6 +32,28 @@ class OpenAIChatResponse(ChatResponse):
 @functools.cache
 def _get_encoding(model: str) -> tiktoken.Encoding:
     return tiktoken.encoding_for_model(model)
+
+
+# TODO: tests
+# TODO: separate keys by providers
+@contextlib.contextmanager
+def track_key_status(key: str, statuses: Statuses = statuses) -> Generator[None, None, None]:
+    try:
+        yield
+        statuses.set(key, KeyStatus.works)
+    except openai.AuthenticationError:
+        statuses.set(key, KeyStatus.broken)
+        raise
+    except openai.RateLimitError:
+        statuses.set(key, KeyStatus.quota)
+        raise
+    except openai.PermissionDeniedError:
+        statuses.set(key, KeyStatus.broken)
+        raise
+    # TODO: test
+    except openai.APIError:
+        statuses.set(key, KeyStatus.unknown)
+        raise
 
 
 # TODO: tests
@@ -96,6 +119,15 @@ class OpenAIInterface(ProviderInterface):
             requests.append(request)
 
         return requests
+
+    async def check_api_key(self, config: LLMConfiguration, api_key: str) -> KeyStatus:
+        with track_key_status(api_key):
+            try:
+                await openai.AsyncOpenAI(api_key=api_key).models.list()
+            except openai.APIError:
+                pass
+
+        return statuses.get(api_key)
 
 
 provider = OpenAIInterface()

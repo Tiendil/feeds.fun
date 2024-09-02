@@ -18,6 +18,12 @@ class ModelInfo(pydantic.BaseModel):
     max_return_tokens: int
 
 
+class KeyStatus(str, enum.Enum):
+    works = "works"
+    broken = "broken"
+    quota = "quota"
+    unknown = "unknown"
+
 
 # Generally, different LLM providers can have config parameters with different names.
 # But for simplicity, for now, we will use the unified config for all providers.

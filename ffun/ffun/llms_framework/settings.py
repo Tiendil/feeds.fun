@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     # TODO: add to documentation/README
     models_description: pathlib.Path = _root / "fixtures" / "models.toml"
 
+    key_quota_timeout: datetime.timedelta = datetime.timedelta(hours=1)
+    key_broken_timeout: datetime.timedelta = datetime.timedelta(hours=1)
+
     @pydantic.computed_field
     @functools.cached_property
     def models(self) -> ModelInfo:
@@ -31,5 +34,6 @@ class Settings(BaseSettings):
 
         return ModelInfos(**data).models
 
+    model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_LLMS_FRAMEWORK_")
 
 settings = Settings()

@@ -9,13 +9,6 @@ from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
 
 
-class KeyStatus(str, enum.Enum):
-    works = "works"
-    broken = "broken"
-    quota = "quota"
-    unknown = "unknown"
-
-
 class APIKeyUsage(pydantic.BaseModel):
     user_id: uuid.UUID
     api_key: str
@@ -28,14 +21,6 @@ class APIKeyUsage(pydantic.BaseModel):
             return self.used_tokens
 
         return self.reserved_tokens
-
-
-class OpenAIAnswer(pydantic.BaseModel):
-    content: str
-
-    prompt_tokens: int
-    completion_tokens: int
-    total_tokens: int
 
 
 class UserKeyInfo(pydantic.BaseModel):

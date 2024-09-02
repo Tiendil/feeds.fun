@@ -10,9 +10,6 @@ logger = logging.get_module_logger()
 
 
 class Settings(BaseSettings):
-    key_quota_timeout: datetime.timedelta = datetime.timedelta(hours=1)
-    key_broken_timeout: datetime.timedelta = datetime.timedelta(hours=1)
-
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_OPENAI_")
 
     collections_api_key: str | None = None
