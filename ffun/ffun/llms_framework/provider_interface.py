@@ -6,14 +6,6 @@ from ffun.llms_framework import errors
 from ffun.llms_framework.keys_statuses import Statuses
 
 
-class ChatRequest(BaseEntity):
-    pass
-
-
-class ChatResponse(BaseEntity):
-    pass
-
-
 # TODO: tests
 class ProviderInterface:
 

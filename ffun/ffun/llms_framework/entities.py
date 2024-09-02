@@ -3,6 +3,7 @@ import enum
 import uuid
 import decimal
 from typing import Protocol
+from ffun.core.entities import BaseEntity
 
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
@@ -32,7 +33,7 @@ class KeyStatus(str, enum.Enum):
 # Generally, different LLM providers can have config parameters with different names.
 # But for simplicity, for now, we will use the unified config for all providers.
 # We'll split it later if needed.
-class LLMConfiguration(pydantic.BaseModel):
+class LLMConfiguration(BaseEntity):
     model: str
     system: str  # TODO: trim
     max_return_tokens: int
@@ -44,7 +45,15 @@ class LLMConfiguration(pydantic.BaseModel):
     frequency_penalty: decimal.Decimal
 
 
-class APIKeyUsage(pydantic.BaseModel):
+class ChatRequest(BaseEntity):
+    pass
+
+
+class ChatResponse(BaseEntity):
+    pass
+
+
+class APIKeyUsage(BaseEntity):
     user_id: uuid.UUID
     api_key: str
     reserved_tokens: int
@@ -58,7 +67,7 @@ class APIKeyUsage(pydantic.BaseModel):
         return self.reserved_tokens
 
 
-class UserKeyInfo(pydantic.BaseModel):
+class UserKeyInfo(BaseEntity):
     user_id: uuid.UUID
     api_key: str | None
     max_tokens_in_month: int
@@ -66,7 +75,7 @@ class UserKeyInfo(pydantic.BaseModel):
     tokens_used: int
 
 
-class SelectKeyContext(pydantic.BaseModel):
+class SelectKeyContext(BaseEntity):
     feed_id: FeedId
     entry_age: datetime.timedelta
     reserved_tokens: int
