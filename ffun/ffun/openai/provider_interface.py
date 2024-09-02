@@ -5,7 +5,7 @@ import tiktoken
 from typing import Any
 
 from ffun.core import logging
-from ffun.llms_framework.entities import LLMConfiguration
+from ffun.llms_framework.entities import LLMConfiguration, Provider
 from ffun.llms_framework.provider_interface import ProviderInterface, ChatRequest, ChatResponse
 from ffun.llms_framework import errors as llmsf_errors
 from ffun.llms_framework import domain as llmsf_domain
@@ -15,13 +15,6 @@ from ffun.openai import errors
 import openai
 
 logger = logging.get_module_logger()
-
-
-# TODO: move to configs
-# TODO: add
-_models = [
-    OpenAIModelInfo(name="gpt-4o-mini-2024-07-18", max_context_size=128000, max_return_tokens=16384)
-]
 
 
 class OpenAIChatRequest(ChatRequest):
@@ -42,27 +35,7 @@ def _get_encoding(model: str) -> tiktoken.Encoding:
 
 # TODO: tests
 class OpenAIInterface(ProviderInterface):
-
-    # TODO: add @functools.cache (but remember about `self`)
-    def _get_model(self, config: LLMConfiguration) -> OpenAIModelInfo:
-        for m in _models:
-            if m.name == config.model:
-                return m
-
-        raise llmsf_errors.ModelDoesNotFound(model=config.model)
-
-    def max_context_size_for_model(self, config: LLMConfiguration) -> int:
-        return self._get_model(config).max_context_size
-
-    def max_return_tokens_for_model(self, config: LLMConfiguration) -> int:
-        return self._get_model(config).max_return_tokens
-
-    def is_model_supported(self, model: str) -> bool:
-        try:
-            self._get_model(model)
-            return True
-        except llmsf_errors.ModelDoesNotFound:
-            return False
+    provider = Provider.openai
 
     def estimate_tokens(self, config: LLMConfiguration, text: str) -> int:
         encoding = _get_encoding(config.model)

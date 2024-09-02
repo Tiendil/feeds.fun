@@ -9,12 +9,6 @@ from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
 
 
-class OpenAIModelInfo(pydantic.BaseModel):
-    name: str
-    max_context_size: int
-    max_return_tokens: int
-
-
 class KeyStatus(str, enum.Enum):
     works = "works"
     broken = "broken"

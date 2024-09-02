@@ -6,7 +6,20 @@ import decimal
 import pydantic
 
 
-# Generally, different LLMs providers can have config parameters with different names.
+class Provider(enum.StrEnum):
+    openai = "openai"
+    google = "google"
+
+
+class ModelInfo(pydantic.BaseModel):
+    provider: Provider
+    name: str
+    max_context_size: int
+    max_return_tokens: int
+
+
+
+# Generally, different LLM providers can have config parameters with different names.
 # But for simplicity, for now, we will use the unified config for all providers.
 # We'll split it later if needed.
 class LLMConfiguration(pydantic.BaseModel):

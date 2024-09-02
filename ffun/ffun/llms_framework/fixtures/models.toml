@@ -1,0 +1,29 @@
+[[models]]
+  provider = "openai"
+  name = "gpt-4o"
+  max_context_size = 128000
+  max_return_tokens = 4096
+
+[[models]]
+  provider = "openai"
+  name = "chatgpt-4o-latest"
+  max_context_size = 128000
+  max_return_tokens = 16384
+
+[[models]]
+  provider = "openai"
+  name = "gpt-4o-2024-08-06"
+  max_context_size = 128000
+  max_return_tokens = 16384
+
+[[models]]
+  provider = "openai"
+  name = "gpt-4o-mini"
+  max_context_size = 128000
+  max_return_tokens = 16384
+
+[[models]]
+  provider="openai"
+  name="gpt-4o-mini-2024-07-18"
+  max_context_size=128000
+  max_return_tokens=16384
