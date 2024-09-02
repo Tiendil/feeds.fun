@@ -11,3 +11,15 @@ class ModelDoesNotFound(Error):
 
 class TextPartsMustBePositive(Error):
     pass
+
+
+class TemporaryError(Error):
+    pass
+
+
+class NoKeyFoundForFeed(Error):
+    pass
+
+
+class UsedTokensHasNotSpecified(Error):
+    pass
