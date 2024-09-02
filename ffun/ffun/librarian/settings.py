@@ -25,11 +25,6 @@ class OpenAIGeneralProcessor(BaseProcessor):
     model: str = "gpt-4o-mini-2024-07-18"
 
 
-# TODO: will be removed in gh-227
-class OpenAIChat35FunctionsProcessor(BaseProcessor):
-    model: str = "gpt-4o-mini-2024-07-18"
-
-
 class Settings(BaseSettings):
     domain_processor: DomainProcessor = DomainProcessor(enabled=True)
     native_tags_processor: NativeTagsProcessor = NativeTagsProcessor(enabled=True)

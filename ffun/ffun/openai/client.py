@@ -2,9 +2,8 @@ import json
 import math
 from typing import Any
 
-import async_lru
+
 import openai
-import tiktoken
 import typer
 from openai import AsyncOpenAI
 
@@ -15,11 +14,6 @@ from ffun.openai.keys_statuses import statuses, track_key_status
 logger = logging.get_module_logger()
 
 cli = typer.Typer()
-
-
-@async_lru.alru_cache()
-async def get_encoding(model: str) -> tiktoken.Encoding:
-    return tiktoken.encoding_for_model(model)
 
 
 async def prepare_requests(  # pylint: disable=R0914
@@ -34,27 +28,27 @@ async def prepare_requests(  # pylint: disable=R0914
     # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
     logger.info("prepare_requests")
 
-    additional_tokens_per_message = 10
+    # additional_tokens_per_message = 10
 
-    encoding = await get_encoding(model)
+    # encoding = await get_encoding(model)
 
-    system_tokens = additional_tokens_per_message + len(encoding.encode("system")) + len(encoding.encode(system))
+    # system_tokens = additional_tokens_per_message + len(encoding.encode("system")) + len(encoding.encode(system))
 
-    text_tokens = additional_tokens_per_message + len(encoding.encode("user")) + len(encoding.encode(text))
+    # text_tokens = additional_tokens_per_message + len(encoding.encode("user")) + len(encoding.encode(text))
 
-    # rough estimation, because we don't know how exactly openai counts tokens for functions
-    if function:
-        function_tokens = (
-            additional_tokens_per_message
-            + len(encoding.encode("function"))
-            + len(encoding.encode(json.dumps(function)))
-        )
-    else:
-        function_tokens = 0
+    # # rough estimation, because we don't know how exactly openai counts tokens for functions
+    # if function:
+    #     function_tokens = (
+    #         additional_tokens_per_message
+    #         + len(encoding.encode("function"))
+    #         + len(encoding.encode(json.dumps(function)))
+    #     )
+    # else:
+    #     function_tokens = 0
 
-    tokens_per_chunk = (
-        total_tokens - system_tokens - max_return_tokens - function_tokens - additional_tokens_per_message
-    )
+    # tokens_per_chunk = (
+    #     total_tokens - system_tokens - max_return_tokens - function_tokens - additional_tokens_per_message
+    # )
 
     if text_tokens <= tokens_per_chunk:
         logger.info("single_chunk_text")
