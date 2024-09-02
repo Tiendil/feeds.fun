@@ -43,6 +43,3 @@ class Statuses:
             return KeyStatus.quota
 
         return KeyStatus.unknown
-
-
-statuses = Statuses()

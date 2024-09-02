@@ -7,7 +7,7 @@ import contextlib
 
 from ffun.core import logging
 from ffun.llms_framework.entities import LLMConfiguration, Provider, KeyStatus
-from ffun.llms_framework.keys_statuses import Statuses, statuses
+from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.provider_interface import ProviderInterface, ChatRequest, ChatResponse
 from ffun.llms_framework import errors as llmsf_errors
 from ffun.llms_framework import domain as llmsf_domain
@@ -37,7 +37,7 @@ def _get_encoding(model: str) -> tiktoken.Encoding:
 # TODO: tests
 # TODO: separate keys by providers
 @contextlib.contextmanager
-def track_key_status(key: str, statuses: Statuses = statuses) -> Generator[None, None, None]:
+def track_key_status(key: str, statuses: Statuses) -> Generator[None, None, None]:
     try:
         yield
         statuses.set(key, KeyStatus.works)
@@ -73,7 +73,7 @@ class OpenAIInterface(ProviderInterface):
         # TODO: move out of here
 
         try:
-            with track_key_status(api_key):
+            with track_key_status(api_key, self.api_keys_statuses):
                 # TODO: cache client
                 # TODO: add automatic retries
                 answer = await openai.AsyncOpenAI(api_key=api_key).chat.completions.create(
@@ -120,13 +120,13 @@ class OpenAIInterface(ProviderInterface):
         return requests
 
     async def check_api_key(self, config: LLMConfiguration, api_key: str) -> KeyStatus:
-        with track_key_status(api_key):
+        with track_key_status(api_key, self.api_keys_statuses):
             try:
                 await openai.AsyncOpenAI(api_key=api_key).models.list()
             except openai.APIError:
                 pass
 
-        return statuses.get(api_key)
+        return self.api_keys_statuses.get(api_key)
 
 
 provider = OpenAIInterface()

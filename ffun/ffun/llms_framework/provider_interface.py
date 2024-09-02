@@ -3,6 +3,7 @@ from ffun.core.entities import BaseEntity
 from ffun.llms_framework.entities import LLMConfiguration, ModelInfo, Provider, KeyStatus
 from ffun.llms_framework.settings import settings
 from ffun.llms_framework import errors
+from ffun.llms_framework.keys_statuses import Statuses
 
 
 class ChatRequest(BaseEntity):
@@ -17,6 +18,9 @@ class ChatResponse(BaseEntity):
 class ProviderInterface:
 
     provider: Provider = NotImplemented
+
+    def __init__(self) -> None:
+        self.api_keys_statuses = Statuses()
 
     # TODO: add @functools.cache (but remember about `self`)
     def _get_model(self, config: LLMConfiguration) -> ModelInfo:
