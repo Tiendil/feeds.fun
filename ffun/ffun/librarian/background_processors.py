@@ -10,6 +10,7 @@ from ffun.librarian.processors.native_tags import Processor as NativeTagsProcess
 from ffun.librarian.processors.openai_general import Processor as OpenGeneralProcessor
 from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTitleProcessor
 from ffun.librarian.settings import settings
+from ffun.librarian.entities import ProcessorType
 from ffun.library import domain as l_domain
 
 logger = logging.get_module_logger()
@@ -38,40 +39,30 @@ class ProcessorInfo:
 
 processors = []
 
-if settings.domain_processor.enabled:
-    processors.append(
-        ProcessorInfo(id=1, processor=DomainProcessor(name="domain"), concurrency=settings.domain_processor.workers)
-    )
+for processor_config in settings.tag_processors:
+    if not processor_config.enabled:
+        logger.info('tag_processor_is_disabled', processor_id=processor_config.id)
+        continue
 
-
-if settings.native_tags_processor.enabled:
-    processors.append(
-        ProcessorInfo(
-            id=2, processor=NativeTagsProcessor(name="native_tags"), concurrency=settings.native_tags_processor.workers
-        )
-    )
-
-
-if settings.openai_general_processor.enabled:
-    processors.append(
-        ProcessorInfo(
-            id=3,
-            processor=OpenGeneralProcessor(name="openai_general", model=settings.openai_general_processor.model),
-            concurrency=settings.openai_general_processor.workers,
-        )
-    )
-
-
-# the processor 4 was "ChatGPT 3.5 + functions" and was removed in gh-227
-
-if settings.upper_case_title_processor.enabled:
-    processors.append(
-        ProcessorInfo(
-            id=5,
-            processor=UpperCaseTitleProcessor(name="upper_case_title"),
-            concurrency=settings.upper_case_title_processor.workers,
-        )
-    )
+    if processor_config.type == ProcessorType.domain:
+        processor = ProcessorInfo(id=processor_config.id,
+                                  processor=DomainProcessor(name=processor_config.name),
+                                  concurrency=processor_config.workers)
+    elif processor_config.type == ProcessorType.native_tags:
+        processor = ProcessorInfo(id=processor_config.id,
+                                    processor=NativeTagsProcessor(name=processor_config.name),
+                                    concurrency=processor_config.workers)
+    elif processor_config.type == ProcessorType.upper_case_title:
+        processor = ProcessorInfo(id=processor_config.id,
+                                    processor=UpperCaseTitleProcessor(name=processor_config.name),
+                                    concurrency=processor_config.workers)
+    elif processor_config.type == ProcessorType.llm_general:
+        processor = ProcessorInfo(id=processor_config.id,
+                                  processor=OpenGeneralProcessor(name=processor_config.name,
+                                                                model=processor_config.llm_config.model),
+                                  concurrency=processor_config.workers)
+    else:
+        raise NotImplementedError(f"Unknown processor type: {processor_config.type}")
 
 
 class EntriesProcessor(InfiniteTask):

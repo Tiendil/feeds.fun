@@ -34,7 +34,7 @@ class KeyStatus(str, enum.Enum):
 # We'll split it later if needed.
 class LLMConfiguration(pydantic.BaseModel):
     model: str
-    system: str
+    system: str  # TODO: trim
     max_return_tokens: int
     text_parts_intersection: int
     additional_tokens_per_message: int
