@@ -11,6 +11,11 @@ from ffun.llms_framework.provider_interface import ChatRequest, ChatResponse, Pr
 
 logger = logging.get_module_logger()
 
+# IMPROTANT!!!
+# TODO: Solve conflict with using different providers by users vs lack of using providers by system logic (collections)
+#       There is possible situation when collections uses one provider and ignore another, but user wants to use another provider
+#       This may lead to processing all feeds in collections with the user key
+#       Maybe it is better to restrict processing of collections with user keys
 
 # class GoogleChatRequest(ChatRequest):
 #     messages: list[ChatCompletionMessageParam]
