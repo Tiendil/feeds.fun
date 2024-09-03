@@ -17,7 +17,7 @@ _root = pathlib.Path(__file__).parent
 
 
 class ModelInfos(pydantic.BaseModel):
-    models = list[ModelInfo]
+    models: list[ModelInfo]
 
 
 class Settings(BaseSettings):
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     key_broken_timeout: datetime.timedelta = datetime.timedelta(hours=1)
 
     # TODO: tests
-    @pydantic.computed_field
+    @pydantic.computed_field  # type: ignore
     @functools.cached_property
     def models(self) -> list[ModelInfo]:
         data = toml.loads(self.model_descriptions.read_text())

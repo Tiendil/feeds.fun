@@ -1,6 +1,6 @@
 import pytest
 
-from ffun.openai.keys_statuses import Statuses
+from ffun.llms_framework.keys_statuses import Statuses
 
 
 @pytest.fixture

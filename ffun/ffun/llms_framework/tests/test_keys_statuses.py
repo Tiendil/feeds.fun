@@ -6,8 +6,8 @@ import openai
 import pytest
 from pytest_mock import MockerFixture
 
-from ffun.openai.entities import KeyStatus
-from ffun.openai.keys_statuses import Statuses, track_key_status
+from ffun.llms_framework.entities import KeyStatus
+from ffun.llms_framework.keys_statuses import Statuses, track_key_status
 
 
 class TestStatuses:

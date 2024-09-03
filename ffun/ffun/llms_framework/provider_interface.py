@@ -1,5 +1,5 @@
 from ffun.llms_framework import errors
-from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, ModelInfo, Provider
+from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, ModelInfo, Provider, ChatRequest, ChatResponse
 from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.settings import settings
 
