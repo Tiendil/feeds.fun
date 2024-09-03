@@ -198,7 +198,7 @@ async def _choose_general_key(context: SelectKeyContext) -> APIKeyUsage | None:
         return None
 
     return APIKeyUsage(
-        user_id=uuid.UUID(int=0),
+        user_id=None,
         api_key=key,
         reserved_tokens=context.reserved_tokens,
         used_tokens=None,
@@ -217,7 +217,7 @@ async def _choose_collections_key(context: SelectKeyContext) -> APIKeyUsage | No
         return None
 
     return APIKeyUsage(
-        user_id=uuid.UUID(int=0),
+        user_id=None,
         api_key=key,
         reserved_tokens=context.reserved_tokens,
         used_tokens=None,
@@ -286,12 +286,14 @@ async def use_api_key(key_usage: APIKeyUsage) -> AsyncGenerator[None, None]:
             "convert_reserved_to_used", reserved_tokens=key_usage.reserved_tokens, used_tokens=key_usage.used_tokens
         )
 
-        await r_domain.convert_reserved_to_used(
-            user_id=key_usage.user_id,
-            kind=AppResource.openai_tokens,
-            interval_started_at=key_usage.interval_started_at,
-            used=key_usage.spent_tokens(),
-            reserved=key_usage.reserved_tokens,
-        )
+        # TODO: tests
+        if key_usage.user_id is not None:
+            await r_domain.convert_reserved_to_used(
+                user_id=key_usage.user_id,
+                kind=AppResource.openai_tokens,
+                interval_started_at=key_usage.interval_started_at,
+                used=key_usage.spent_tokens(),
+                reserved=key_usage.reserved_tokens,
+            )
 
         log.info("resources_converted")

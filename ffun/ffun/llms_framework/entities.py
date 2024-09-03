@@ -65,7 +65,7 @@ class ChatResponse(BaseEntity):
 class APIKeyUsage(BaseEntity):
     model_config = pydantic.ConfigDict(frozen=False)
 
-    user_id: uuid.UUID
+    user_id: uuid.UUID | None
     api_key: str
     reserved_tokens: int
     used_tokens: int | None
