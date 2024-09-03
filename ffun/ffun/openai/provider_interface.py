@@ -27,6 +27,9 @@ class OpenAIChatResponse(ChatResponse):
     completion_tokens: int
     total_tokens: int
 
+    def response_content(self) -> str:
+        return self.content
+
     def spent_tokens(self) -> int:
         return self.total_tokens
 
@@ -109,7 +112,7 @@ class OpenAIInterface(ProviderInterface):
             total_tokens=answer.usage.total_tokens,
         )
 
-    def prepare_requests(self, config: LLMConfiguration, text: str) -> list[OpenAIChatRequest]:  # noqa: CFQ002
+    def prepare_requests(self, config: LLMConfiguration, text: str) -> list[OpenAIChatRequest]:  # type: ignore  # noqa: CFQ002
 
         parts = llmsf_domain.split_text_according_to_tokens(llm=self, config=config, text=text)
 

@@ -8,7 +8,7 @@ from ffun.librarian.entities import ProcessorType
 from ffun.librarian.processors.base import Processor
 from ffun.librarian.processors.domain import Processor as DomainProcessor
 from ffun.librarian.processors.native_tags import Processor as NativeTagsProcessor
-from ffun.librarian.processors.openai_general import Processor as OpenGeneralProcessor
+from ffun.librarian.processors.llm_general import Processor as LLMGeneralProcessor
 from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTitleProcessor
 from ffun.librarian.settings import settings
 from ffun.library import domain as l_domain
@@ -37,8 +37,9 @@ class ProcessorInfo:
         return self._concurrency
 
 
-processors = []
+processors: list[ProcessorInfo] = []
 
+# TODO: unify creation
 for processor_config in settings.tag_processors:
     if not processor_config.enabled:
         logger.info("tag_processor_is_disabled", processor_id=processor_config.id)
@@ -65,7 +66,8 @@ for processor_config in settings.tag_processors:
     elif processor_config.type == ProcessorType.llm_general:
         processor = ProcessorInfo(
             id=processor_config.id,
-            processor=OpenGeneralProcessor(
+            # TODO: better arguments passing?
+            processor=LLMGeneralProcessor(
                 name=processor_config.name,
                 entry_template=processor_config.entry_template,
                 text_cleaner=processor_config.text_cleaner,

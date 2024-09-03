@@ -10,7 +10,7 @@ from ffun.application.resources import Resource as AppResource
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
 from ffun.feeds_links import domain as fl_domain
-from ffun.openai import errors
+from ffun.llms_framework import errors
 from ffun.llms_framework.entities import APIKeyUsage, KeyStatus, SelectKeyContext, UserKeyInfo, LLMConfiguration, Provider
 from ffun.llms_framework.provider_interface import ProviderTest
 from ffun.llms_framework.providers import llm_providers
@@ -71,7 +71,7 @@ class TestAPIKeyIsWorking:
     @pytest.mark.parametrize("status, expected_result", [(KeyStatus.works, True), (KeyStatus.broken, False)])
     @pytest.mark.asyncio
     async def test_unknown(
-        self, status: KeyStatus, expected_result: bool, statuses: Statuses, mocker: MockerFixture, fake_api_key: str
+        self, status: KeyStatus, expected_result: bool, mocker: MockerFixture, fake_api_key: str
     ) -> None:
         assert _llm_provider.api_keys_statuses.get(fake_api_key) == KeyStatus.unknown
 
@@ -83,17 +83,17 @@ class TestAPIKeyIsWorking:
 class TestFilterOutUsersWithWrongKeys:
     @pytest.mark.asyncio
     async def test_empty_list(self) -> None:
-        assert await _filter_out_users_with_wrong_keys([]) == []
+        assert await _filter_out_users_with_wrong_keys(_llm_config, []) == []
 
     @pytest.mark.asyncio
     async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
         assert five_user_key_infos[1].api_key
         assert five_user_key_infos[3].api_key
 
-        statuses.set(five_user_key_infos[1].api_key, KeyStatus.broken)
-        statuses.set(five_user_key_infos[3].api_key, KeyStatus.quota)
+        _llm_provider.api_keys_statuses.set(five_user_key_infos[1].api_key, KeyStatus.broken)
+        _llm_provider.api_keys_statuses.set(five_user_key_infos[3].api_key, KeyStatus.quota)
 
-        infos = await _filter_out_users_with_wrong_keys(five_user_key_infos)
+        infos = await _filter_out_users_with_wrong_keys(_llm_config, five_user_key_infos)
 
         assert infos == [five_user_key_infos[i] for i in [0, 2, 4]]
 
@@ -105,8 +105,8 @@ class TestFilterOutUsersWithoutKeys:
 
     @pytest.mark.asyncio
     async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
-        five_user_key_infos[1].api_key = None
-        five_user_key_infos[3].api_key = None
+        five_user_key_infos[1] = five_user_key_infos[1].replace(api_key=None)
+        five_user_key_infos[3] = five_user_key_infos[3].replace(api_key=None)
 
         infos = await _filter_out_users_without_keys(five_user_key_infos)
 
@@ -120,8 +120,11 @@ class TestFilterOutUsersForWhomeEntryIsTooOld:
 
     @pytest.mark.asyncio
     async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
-        for info, days in zip(five_user_key_infos, [5, 2, 3, 1, 4]):
-            info.process_entries_not_older_than = datetime.timedelta(days=days)
+        # for info, days in zip(five_user_key_infos, [5, 2, 3, 1, 4]):
+        #     info.process_entries_not_older_than = datetime.timedelta(days=days)
+
+        for i, days in enumerate([5, 2, 3, 1, 4]):
+            five_user_key_infos[i] = five_user_key_infos[i].replace(process_entries_not_older_than=datetime.timedelta(days=days))
 
         infos = await _filter_out_users_for_whome_entry_is_too_old(five_user_key_infos, datetime.timedelta(days=3))
 
@@ -135,9 +138,13 @@ class TestFilterOutUsersWithOverusedKeys:
 
     @pytest.mark.asyncio
     async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
-        for info, max_tokens_in_month in zip(five_user_key_infos, [201, 100, 300, 200, 500]):
-            info.tokens_used = 50
-            info.max_tokens_in_month = max_tokens_in_month
+        # for info, max_tokens_in_month in zip(five_user_key_infos, [201, 100, 300, 200, 500]):
+        #     info.tokens_used = 50
+        #     info.max_tokens_in_month = max_tokens_in_month
+
+        for i, max_tokens_in_month in enumerate([201, 100, 300, 200, 500]):
+            five_user_key_infos[i] = five_user_key_infos[i].replace(tokens_used=50,
+                                                                    max_tokens_in_month=max_tokens_in_month)
 
         infos = await _filter_out_users_with_overused_keys(five_user_key_infos, 150)
 
@@ -169,7 +176,7 @@ class TestChooseUser:
 
         max_tokens = max(info.max_tokens_in_month for info in five_user_key_infos) + 1
 
-        five_user_key_infos[2].max_tokens_in_month = max_tokens + five_user_key_infos[2].tokens_used
+        five_user_key_infos[2] = five_user_key_infos[2].replace(max_tokens_in_month=max_tokens + five_user_key_infos[2].tokens_used)
 
         info = await _choose_user(
             infos=five_user_key_infos, reserved_tokens=max_tokens, interval_started_at=interval_started_at
@@ -246,6 +253,7 @@ class TestGetCandidates:
 
         assert (
             await _get_candidates(
+                llm_config=_llm_config,
                 feed_id=saved_feed_id,
                 interval_started_at=interval_started_at,
                 entry_age=datetime.timedelta(days=1),
@@ -281,6 +289,7 @@ class TestGetCandidates:
             return _filter
 
         infos = await _get_candidates(
+            llm_config=_llm_config,
             feed_id=saved_feed_id,
             interval_started_at=interval_started_at,
             entry_age=datetime.timedelta(days=1),
@@ -309,6 +318,7 @@ class TestGetCandidates:
             raise Exception("Should not be called")
 
         infos = await _get_candidates(
+            llm_config=_llm_config,
             feed_id=saved_feed_id,
             interval_started_at=interval_started_at,
             entry_age=datetime.timedelta(days=1),
@@ -323,6 +333,7 @@ class TestFindBestUserWithKey:
     @pytest.mark.asyncio
     async def test_no_users(self, saved_feed_id: FeedId) -> None:
         info = await _find_best_user_with_key(
+            llm_config=_llm_config,
             feed_id=saved_feed_id,
             entry_age=datetime.timedelta(days=1),
             interval_started_at=month_interval_start(),
@@ -344,6 +355,7 @@ class TestFindBestUserWithKey:
 
         for _ in range(len(five_user_key_infos)):
             info = await _find_best_user_with_key(
+                llm_config=_llm_config,
                 feed_id=saved_feed_id,
                 entry_age=datetime.timedelta(days=0),
                 interval_started_at=interval_started_at,
@@ -367,6 +379,7 @@ class TestFindBestUserWithKey:
 
         # next user will have more used tokens
         info = await _find_best_user_with_key(
+            llm_config=_llm_config,
             feed_id=saved_feed_id,
             entry_age=datetime.timedelta(days=0),
             interval_started_at=interval_started_at,
@@ -379,7 +392,12 @@ class TestFindBestUserWithKey:
 
 @pytest.fixture
 def select_key_context(saved_feed_id: FeedId) -> SelectKeyContext:
-    return SelectKeyContext(feed_id=saved_feed_id, entry_age=datetime.timedelta(seconds=0), reserved_tokens=0)
+    return SelectKeyContext(llm_config=_llm_config,
+                            collections_api_key=None,
+                            general_api_key=None,
+                            feed_id=saved_feed_id,
+                            entry_age=datetime.timedelta(seconds=0),
+                            reserved_tokens=0)
 
 
 class TestChooseGeneralKey:

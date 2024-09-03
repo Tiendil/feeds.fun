@@ -8,7 +8,6 @@ from pytest_mock import MockerFixture
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.llms_framework.entities import KeyStatus, UserKeyInfo
 from ffun.llms_framework.keys_rotator import _get_user_key_infos
-from ffun.llms_framework.keys_statuses import statuses
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
 

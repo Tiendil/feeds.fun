@@ -51,7 +51,6 @@ class Processor(base.Processor):
 
         # TODO: too many agruments
         api_key_usage = await search_for_api_key(
-            llm=self.llm_provider,
             llm_config=self.llm_config,
             entry=entry,
             requests=requests,
@@ -61,7 +60,7 @@ class Processor(base.Processor):
 
         try:
             responses = await call_llm(
-                llm=self.llm_provider, llm_config=self.llm_config, api_key_usage=api_key_usage, requests=requests
+                llm_config=self.llm_config, api_key_usage=api_key_usage, requests=requests
             )
         except llmsf_errors.NoKeyFoundForFeed as e:
             raise errors.SkipEntryProcessing(message=str(e)) from e
@@ -73,7 +72,7 @@ class Processor(base.Processor):
         tags: list[ProcessorTag] = []
 
         for response in responses:
-            raw_tags.update(self.tag_extractor(response.content))
+            raw_tags.update(self.tag_extractor(response.response_content()))
 
         for raw_tag in raw_tags:
             tags.append(ProcessorTag(raw_uid=raw_tag))

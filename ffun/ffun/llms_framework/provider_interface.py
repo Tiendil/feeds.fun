@@ -36,6 +36,9 @@ class ProviderInterface:
         except errors.ModelDoesNotFound:
             return False
 
+    def prepare_requests(self, config: LLMConfiguration, text: str) -> list[ChatRequest]:
+        raise NotImplementedError("Must be implemented in a subclass")
+
     def estimate_tokens(self, config: LLMConfiguration, text: str) -> int:
         raise NotImplementedError("Must be implemented in a subclass")
 
@@ -44,16 +47,36 @@ class ProviderInterface:
 
     async def check_api_key(self, config: LLMConfiguration, api_key: str) -> KeyStatus:
         raise NotImplementedError("Must be implemented in a subclass")
+
+
+class ChatRequestTest(ChatRequest):
+    text: str
+
+
+class ChatResponseTest(ChatResponse):
+    content: str
+
+    def response_content(self) -> str:
+        return self.content
+
+    def spent_tokens(self) -> int:
+        return len(self.content)
 
 
 class ProviderTest(ProviderInterface):
     provider = Provider.test
 
+    def prepare_requests(self, config: LLMConfiguration, text: str) -> list[ChatRequestTest]:  # type: ignore
+        return [ChatRequestTest(text=text)]
+
     def estimate_tokens(self, config: LLMConfiguration, text: str) -> int:
         return 0
 
-    async def chat_request(self, config: LLMConfiguration, api_key: str, request: ChatRequest) -> ChatResponse:
-        return ChatResponse(content="")
+    async def chat_request(self, config: LLMConfiguration, api_key: str, request: ChatRequestTest) -> ChatResponseTest:  # type: ignore
+        return ChatResponseTest(content="")
 
     async def check_api_key(self, config: LLMConfiguration, api_key: str) -> KeyStatus:
         return KeyStatus.works
+
+
+provider_test = ProviderTest()

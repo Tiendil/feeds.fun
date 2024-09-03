@@ -47,14 +47,19 @@ class LLMConfiguration(BaseEntity):
     frequency_penalty: decimal.Decimal
 
 
+# TODO: transform to protocol
 class ChatRequest(BaseEntity):
     pass
 
 
+# TODO: transform to protocol
 class ChatResponse(BaseEntity):
 
+    def response_content(self) -> str:
+        raise NotImplementedError('Must be implemented in subclasses')
+
     def spent_tokens(self) -> int:
-        raise NotImplementedError
+        raise NotImplementedError('Must be implemented in subclasses')
 
 
 class APIKeyUsage(BaseEntity):
