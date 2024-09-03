@@ -1,7 +1,10 @@
-
-from ffun.llms_framework.entities import LLMConfiguration
+import asyncio
+from ffun.llms_framework.entities import LLMConfiguration, APIKeyUsage, ChatRequest, ChatResponse
 from ffun.llms_framework import errors
 from ffin.llms_framework.provider_interface import ProviderInterface
+from ffun.openai.keys_rotator import choose_api_key, use_api_key
+from ffun.library.entities import Entry
+from ffun.openai.entities import SelectKeyContext
 
 
 # TODO: test
@@ -53,3 +56,35 @@ def split_text_according_to_tokens(llm: ProviderInterface,
         #     break
 
         return parts
+
+
+# TODO: test
+async def search_for_api_key(llm: ProviderInterface,
+                             llm_config: LLMConfiguration,
+                             entry: Entry,
+                             requests: list[ChatRequest]) -> APIKeyUsage:
+    reserved_tokens = len(requests) * llm.max_context_size_for_model(llm_config)
+
+    select_key_context = SelectKeyContext(feed_id=entry.feed_id,
+                                          entry_age=entry.age,
+                                          reserved_tokens=reserved_tokens)
+
+    return await choose_api_key(select_key_context)
+
+
+# TODO: tests
+async def call_llm(llm: ProviderInterface,
+                   llm_config: LLMConfiguration,
+                   api_key_usage: APIKeyUsage,
+                   requests: list[ChatRequest]) -> list[ChatResponse]:
+    async with use_api_key(api_key_usage):
+        tasks = [llm.chat_request(llm_config,
+                                  api_key_usage.api_key,
+                                  request)
+                 for request in requests]
+
+        responses = await asyncio.gather(*tasks)
+
+        api_key_usage.used_tokens = sum(response.total_tokens for response in responses)
+
+    return responses
