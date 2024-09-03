@@ -32,9 +32,9 @@ class MockedOpenAIClient:
 #     return MockedOpenAIClient(check_api_key=check_api_key, request=request)
 
 
-@pytest.fixture
-def openai_key() -> str:
-    return uuid.uuid4().hex
+# @pytest.fixture
+# def openai_key() -> str:
+#     return uuid.uuid4().hex
 
 
 # TODO: refactor

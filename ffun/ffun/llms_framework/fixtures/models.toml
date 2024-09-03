@@ -1,4 +1,10 @@
 [[models]]
+  provider = "test"
+  name = "test-model"
+  max_context_size = 128000
+  max_return_tokens = 4096
+
+[[models]]
   provider = "openai"
   name = "gpt-4o"
   max_context_size = 128000

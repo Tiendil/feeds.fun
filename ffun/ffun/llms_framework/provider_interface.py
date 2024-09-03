@@ -44,3 +44,16 @@ class ProviderInterface:
 
     async def check_api_key(self, config: LLMConfiguration, api_key: str) -> KeyStatus:
         raise NotImplementedError("Must be implemented in a subclass")
+
+
+class ProviderTest(ProviderInterface):
+    provider = Provider.test
+
+    def estimate_tokens(self, config: LLMConfiguration, text: str) -> int:
+        return 0
+
+    async def chat_request(self, config: LLMConfiguration, api_key: str, request: ChatRequest) -> ChatResponse:
+        return ChatResponse(content="")
+
+    async def check_api_key(self, config: LLMConfiguration, api_key: str) -> KeyStatus:
+        return KeyStatus.works

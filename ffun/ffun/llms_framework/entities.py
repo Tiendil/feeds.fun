@@ -12,6 +12,7 @@ from ffun.feeds.entities import FeedId
 
 
 class Provider(enum.StrEnum):
+    test = "test"
     openai = "openai"
     google = "google"
 

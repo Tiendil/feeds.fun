@@ -1,6 +1,7 @@
 import datetime
 import uuid
 from typing import Any
+import decimal
 
 import pytest
 from pytest_mock import MockerFixture
@@ -10,8 +11,10 @@ from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
 from ffun.feeds_links import domain as fl_domain
 from ffun.openai import errors
-from ffun.openai.entities import APIKeyUsage, KeyStatus, SelectKeyContext, UserKeyInfo
-from ffun.openai.keys_rotator import (
+from ffun.llms_framework.entities import APIKeyUsage, KeyStatus, SelectKeyContext, UserKeyInfo, LLMConfiguration, Provider
+from ffun.llms_framework.provider_interface import ProviderTest
+from ffun.llms_framework.providers import llm_providers
+from ffun.llms_framework.keys_rotator import (
     _api_key_is_working,
     _choose_collections_key,
     _choose_general_key,
@@ -29,36 +32,52 @@ from ffun.openai.keys_rotator import (
     choose_api_key,
     use_api_key,
 )
-from ffun.openai.keys_statuses import Statuses, statuses
+from ffun.llms_framework.keys_statuses import Statuses
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
 from ffun.user_settings import domain as us_domain
 
 
+_llm_config = LLMConfiguration(
+    provider=Provider.test,
+    model='test-model',
+    system="some system prompt",
+    max_return_tokens=1017,
+    text_parts_intersection=113,
+    additional_tokens_per_message=7,
+    temperature=decimal.Decimal('0.3'),
+    top_p=decimal.Decimal('0.9'),
+    presence_penalty=decimal.Decimal('0.5'),
+    frequency_penalty=decimal.Decimal('0.75'))
+
+
+_llm_provider = llm_providers.get(Provider.test).provider
+
+
 class TestAPIKeyIsWorking:
     @pytest.mark.asyncio
-    async def test_is_working(self, openai_key: str) -> None:
-        statuses.set(openai_key, KeyStatus.works)
-        assert await _api_key_is_working(openai_key)
+    async def test_is_working(self, fake_api_key: str) -> None:
+        _llm_provider.api_keys_statuses.set(fake_api_key, KeyStatus.works)
+        assert await _api_key_is_working(_llm_config, fake_api_key)
 
     @pytest.mark.parametrize(
         "status", [status for status in KeyStatus if status not in [KeyStatus.works, KeyStatus.unknown]]
     )
     @pytest.mark.asyncio
-    async def test_guaranted_broken(self, status: KeyStatus, openai_key: str) -> None:
-        statuses.set(openai_key, status)
-        assert not await _api_key_is_working(openai_key)
+    async def test_guaranted_broken(self, status: KeyStatus, fake_api_key: str) -> None:
+        _llm_provider.api_keys_statuses.set(fake_api_key, status)
+        assert not await _api_key_is_working(_llm_config, fake_api_key)
 
     @pytest.mark.parametrize("status, expected_result", [(KeyStatus.works, True), (KeyStatus.broken, False)])
     @pytest.mark.asyncio
     async def test_unknown(
-        self, status: KeyStatus, expected_result: bool, statuses: Statuses, mocker: MockerFixture, openai_key: str
+        self, status: KeyStatus, expected_result: bool, statuses: Statuses, mocker: MockerFixture, fake_api_key: str
     ) -> None:
-        assert statuses.get(openai_key) == KeyStatus.unknown
+        assert _llm_provider.api_keys_statuses.get(fake_api_key) == KeyStatus.unknown
 
-        mocker.patch("ffun.openai.client.check_api_key", return_value=status)
+        mocker.patch("ffun.llms_framework.provider_interface.ProviderTest.check_api_key", return_value=status)
 
-        assert await _api_key_is_working(openai_key) == expected_result
+        assert await _api_key_is_working(_llm_config, fake_api_key) == expected_result
 
 
 class TestFilterOutUsersWithWrongKeys:

@@ -49,3 +49,8 @@ async def five_user_key_infos(five_internal_user_ids: list[uuid.UUID]) -> list[U
         )
 
     return await _get_user_key_infos(five_internal_user_ids, interval_started_at)
+
+
+@pytest.fixture
+def fake_api_key() -> str:
+    return uuid.uuid4().hex
