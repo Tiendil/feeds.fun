@@ -12,7 +12,9 @@ logger = logging.get_module_logger()
 class Settings(BaseSettings):
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_OPENAI_")
 
+    # TODO: move to processor's llm config
     collections_api_key: str | None = None
+    # TODO: move to processor's llm config
     general_api_key: str | None = None
 
     @pydantic.model_validator(mode="after")
