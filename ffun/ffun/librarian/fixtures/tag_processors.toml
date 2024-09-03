@@ -32,6 +32,7 @@
   tags_extractor = "ffun.librarian.tag_extractors.dog_tag_extractor"
 
   [tag_processors_config.llm_config]
+    provider = "openai"
     model = "gpt-4o-mini-2024-07-18"
     max_return_tokens = 4 * 1024
     text_parts_intersection = 200

@@ -7,12 +7,13 @@ from ffun.core import logging
 from ffun.feeds.entities import FeedId
 from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
-from ffun.llms_framework.keys_statuses import statuses
 from ffun.llms_framework.settings import settings
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
-from ffun.llms_framework.entities import APIKeyUsage, UserKeyInfo, KeyStatus, SelectKeyContext, KeySelector, APIKeyUsage
+from ffun.llms_framework.entities import APIKeyUsage, UserKeyInfo, KeyStatus, SelectKeyContext, KeySelector, APIKeyUsage, LLMConfiguration
 from ffun.llms_framework import errors
+from ffun.llms_framework.provider_interface import ProviderInterface
+from ffun.llms_framework.providers import llm_providers
 
 logger = logging.get_module_logger()
 
@@ -27,8 +28,10 @@ logger = logging.get_module_logger()
 
 
 # TODO: add lock here to not check the same key in parallel by different processors
-async def _api_key_is_working(api_key: str) -> bool:
-    status = statuses.get(api_key)
+async def _api_key_is_working(llm_config: LLMConfiguration, api_key: str) -> bool:
+    llm = llm_providers.get(llm_config.provider).provider
+
+    status = llm.api_keys_statuses.get(api_key)
 
     if status == KeyStatus.works:
         return True
@@ -36,15 +39,19 @@ async def _api_key_is_working(api_key: str) -> bool:
     if status != KeyStatus.unknown:
         return False
 
-    new_status = await client.check_api_key(api_key)
+    new_status = await llm.check_api_key(llm_config, api_key)
 
     return new_status == KeyStatus.works
 
 
 async def _filter_out_users_with_wrong_keys(
-    infos: list[UserKeyInfo], **kwargs: Any
+        llm_config: LLMConfiguration,
+        infos: list[UserKeyInfo],
+        **kwargs: Any
 ) -> list[UserKeyInfo]:
-    return [info for info in infos if info.api_key and await _api_key_is_working(info.api_key)]
+    return [info
+            for info in infos
+            if info.api_key and await _api_key_is_working(llm_config, info.api_key)]
 
 
 async def _filter_out_users_without_keys(
@@ -138,7 +145,8 @@ _filters = (
 )
 
 
-async def _get_candidates(
+async def _get_candidates(  # noqa
+    llm_config: LLMConfiguration,
     feed_id: FeedId,
     interval_started_at: datetime.datetime,
     entry_age: datetime.timedelta,
@@ -153,16 +161,27 @@ async def _get_candidates(
         if not infos:
             return []
 
-        infos = await _filter(infos=infos, entry_age=entry_age, reserved_tokens=reserved_tokens)
+        infos = await _filter(llm_config=llm_config,
+                              infos=infos,
+                              entry_age=entry_age,
+                              reserved_tokens=reserved_tokens)
 
     return infos
 
 
 async def _find_best_user_with_key(
-    feed_id: FeedId, entry_age: datetime.timedelta, interval_started_at: datetime.datetime, reserved_tokens: int
+        llm_config: LLMConfiguration,
+        feed_id: FeedId,
+        entry_age: datetime.timedelta,
+        interval_started_at: datetime.datetime,
+        reserved_tokens: int
 ) -> UserKeyInfo | None:
     infos = await _get_candidates(
-        feed_id=feed_id, interval_started_at=interval_started_at, entry_age=entry_age, reserved_tokens=reserved_tokens
+        llm_config=llm_config,
+        feed_id=feed_id,
+        interval_started_at=interval_started_at,
+        entry_age=entry_age,
+        reserved_tokens=reserved_tokens
     )
 
     infos.sort(key=lambda info: info.tokens_used)
@@ -206,6 +225,7 @@ async def _choose_collections_key(context: SelectKeyContext) -> APIKeyUsage | No
 
 async def _choose_user_key(context: SelectKeyContext) -> APIKeyUsage | None:
     info = await _find_best_user_with_key(
+        llm_config=context.llm_config,
         feed_id=context.feed_id,
         entry_age=context.entry_age,
         interval_started_at=context.interval_started_at,

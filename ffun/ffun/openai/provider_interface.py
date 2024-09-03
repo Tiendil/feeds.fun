@@ -3,10 +3,12 @@ import functools
 from typing import Generator
 
 import openai
+from openai.types.chat import ChatCompletionMessageParam
 import tiktoken
 
 from ffun.core import logging
 from ffun.llms_framework import domain as llmsf_domain
+from ffun.llms_framework import errors as llmsf_errors
 from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, Provider
 from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.provider_interface import ChatRequest, ChatResponse, ProviderInterface
@@ -16,7 +18,7 @@ logger = logging.get_module_logger()
 
 
 class OpenAIChatRequest(ChatRequest):
-    messages = list[dict[str, str]]
+    messages: list[ChatCompletionMessageParam]
 
 
 class OpenAIChatResponse(ChatResponse):
@@ -67,7 +69,7 @@ class OpenAIInterface(ProviderInterface):
 
         return system_tokens + text_tokens
 
-    async def chat_request(
+    async def chat_request(  # type: ignore
         self, config: LLMConfiguration, api_key: str, request: OpenAIChatRequest
     ) -> OpenAIChatResponse:
         # TODO: how to differe keys of different providers?
@@ -79,16 +81,16 @@ class OpenAIInterface(ProviderInterface):
                 # TODO: add automatic retries
                 answer = await openai.AsyncOpenAI(api_key=api_key).chat.completions.create(
                     model=config.model,
-                    temperature=config.temperature,
+                    temperature=float(config.temperature),
                     max_tokens=config.max_return_tokens,
-                    top_p=config.top_p,
-                    presence_penalty=config.presence_penalty,
-                    frequency_penalty=config.frequency_penalty,
+                    top_p=float(config.top_p),
+                    presence_penalty=float(config.presence_penalty),
+                    frequency_penalty=float(config.frequency_penalty),
                     messages=request.messages,
                 )
         except openai.APIError as e:
             logger.info("openai_api_error", message=str(e))
-            raise errors.TemporaryError(message=str(e)) from e
+            raise llmsf_errors.TemporaryError(message=str(e)) from e
 
         logger.info("openai_response")
 

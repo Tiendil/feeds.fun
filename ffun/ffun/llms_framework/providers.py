@@ -5,7 +5,7 @@ from ffun.openai.provider_interface import provider as openai_provider
 
 
 class Value(Entity):
-    def __init__(self, key: int, provider: ProviderInterface) -> None:
+    def __init__(self, key: str, provider: ProviderInterface) -> None:
         super().__init__(key=key)
         self.provider = provider
 
