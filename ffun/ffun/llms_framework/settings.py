@@ -1,13 +1,13 @@
 import datetime
-import toml
 import functools
 import pathlib
+
 import pydantic
 import pydantic_settings
+import toml
 
 from ffun.core import logging
 from ffun.core.settings import BaseSettings
-
 from ffun.llms_framework.entities import ModelInfo
 
 logger = logging.get_module_logger()
@@ -36,5 +36,6 @@ class Settings(BaseSettings):
         return ModelInfos(**data).models
 
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_LLMS_FRAMEWORK_")
+
 
 settings = Settings()

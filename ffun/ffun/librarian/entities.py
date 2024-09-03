@@ -1,8 +1,9 @@
 import datetime
-import uuid
-import pydantic
 import enum
+import uuid
 from typing import Literal
+
+import pydantic
 
 from ffun.core.entities import BaseEntity
 from ffun.llms_framework.entities import LLMConfiguration

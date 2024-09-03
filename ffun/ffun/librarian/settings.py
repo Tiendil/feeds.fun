@@ -1,14 +1,12 @@
-import pathlib
 import functools
-import toml
-from typing import Literal
+import pathlib
 
 import pydantic
 import pydantic_settings
+import toml
 
 from ffun.core.settings import BaseSettings
 from ffun.librarian.entities import ProcessorsConfig, TagProcessor
-
 
 _root = pathlib.Path(__file__).parent
 

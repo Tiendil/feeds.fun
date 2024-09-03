@@ -1,21 +1,15 @@
-from typing import Any
-import asyncio
 import importlib
+from typing import Any
 
 from ffun.core import logging
-from ffun.core import text as core_text
 from ffun.librarian import errors
 from ffun.librarian.processors import base
 from ffun.library.entities import Entry
-from ffun.ontology.entities import ProcessorTag
-from ffun.openai import client as oai_client
-from ffun.openai import errors as oai_errors
-from ffun.openai.entities import SelectKeyContext
-from ffun.openai.keys_rotator import choose_api_key, use_api_key
-from ffun.llms_framework.entities import LLMConfiguration, ChatRequest, ChatResponse, APIKeyUsage
 from ffun.llms_framework import errors as llmsf_errors
-from ffun.llms_framework.providers import llm_providers
 from ffun.llms_framework.domain import call_llm, search_for_api_key
+from ffun.llms_framework.entities import ChatResponse, LLMConfiguration
+from ffun.llms_framework.providers import llm_providers
+from ffun.ontology.entities import ProcessorTag
 
 logger = logging.get_module_logger()
 
@@ -24,12 +18,9 @@ logger = logging.get_module_logger()
 class Processor(base.Processor):
     __slots__ = ("llm_config", "llm_provider", "entry_template", "text_cleaner", "tag_extractor")
 
-    def __init__(self,
-                 llm_config: LLMConfiguration,
-                 entry_template: str,
-                 text_cleaner: str,
-                 tag_extractor: str,
-                 **kwargs: Any):
+    def __init__(
+        self, llm_config: LLMConfiguration, entry_template: str, text_cleaner: str, tag_extractor: str, **kwargs: Any
+    ):
         super().__init__(**kwargs)
         self.llm_config = llm_config
         self.llm_provider = llm_providers.get(llm_config.provider).provider
@@ -48,16 +39,14 @@ class Processor(base.Processor):
 
         requests = self.llm_provider.prepare_requests(self.llm_config, cleaned_text)
 
-        api_key_usage = await search_for_api_key(llm=self.llm_provider,
-                                                 llm_config=self.llm_config,
-                                                 entry=entry,
-                                                 requests=requests)
+        api_key_usage = await search_for_api_key(
+            llm=self.llm_provider, llm_config=self.llm_config, entry=entry, requests=requests
+        )
 
         try:
-            responses = await call_llm(llm=self.llm_provider,
-                                       llm_config=self.llm_config,
-                                       api_key_usage=api_key_usage,
-                                       requests=requests)
+            responses = await call_llm(
+                llm=self.llm_provider, llm_config=self.llm_config, api_key_usage=api_key_usage, requests=requests
+            )
         except llmsf_errors.NoKeyFoundForFeed as e:
             raise errors.SkipEntryProcessing(message=str(e)) from e
 

@@ -4,13 +4,13 @@ from typing import Any
 from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
 from ffun.librarian import domain, operations
+from ffun.librarian.entities import ProcessorType
 from ffun.librarian.processors.base import Processor
 from ffun.librarian.processors.domain import Processor as DomainProcessor
 from ffun.librarian.processors.native_tags import Processor as NativeTagsProcessor
 from ffun.librarian.processors.openai_general import Processor as OpenGeneralProcessor
 from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTitleProcessor
 from ffun.librarian.settings import settings
-from ffun.librarian.entities import ProcessorType
 from ffun.library import domain as l_domain
 
 logger = logging.get_module_logger()
@@ -41,29 +41,39 @@ processors = []
 
 for processor_config in settings.tag_processors:
     if not processor_config.enabled:
-        logger.info('tag_processor_is_disabled', processor_id=processor_config.id)
+        logger.info("tag_processor_is_disabled", processor_id=processor_config.id)
         continue
 
     if processor_config.type == ProcessorType.domain:
-        processor = ProcessorInfo(id=processor_config.id,
-                                  processor=DomainProcessor(name=processor_config.name),
-                                  concurrency=processor_config.workers)
+        processor = ProcessorInfo(
+            id=processor_config.id,
+            processor=DomainProcessor(name=processor_config.name),
+            concurrency=processor_config.workers,
+        )
     elif processor_config.type == ProcessorType.native_tags:
-        processor = ProcessorInfo(id=processor_config.id,
-                                  processor=NativeTagsProcessor(name=processor_config.name),
-                                  concurrency=processor_config.workers)
+        processor = ProcessorInfo(
+            id=processor_config.id,
+            processor=NativeTagsProcessor(name=processor_config.name),
+            concurrency=processor_config.workers,
+        )
     elif processor_config.type == ProcessorType.upper_case_title:
-        processor = ProcessorInfo(id=processor_config.id,
-                                  processor=UpperCaseTitleProcessor(name=processor_config.name),
-                                  concurrency=processor_config.workers)
+        processor = ProcessorInfo(
+            id=processor_config.id,
+            processor=UpperCaseTitleProcessor(name=processor_config.name),
+            concurrency=processor_config.workers,
+        )
     elif processor_config.type == ProcessorType.llm_general:
-        processor = ProcessorInfo(id=processor_config.id,
-                                  processor=OpenGeneralProcessor(name=processor_config.name,
-                                                                 entry_template=processor_config.entry_template,
-                                                                 text_cleaner=processor_config.text_cleaner,
-                                                                 tag_extractor=processor_config.tag_extractor,
-                                                                 llm_config=processor_config.llm_config),
-                                  concurrency=processor_config.workers)
+        processor = ProcessorInfo(
+            id=processor_config.id,
+            processor=OpenGeneralProcessor(
+                name=processor_config.name,
+                entry_template=processor_config.entry_template,
+                text_cleaner=processor_config.text_cleaner,
+                tag_extractor=processor_config.tag_extractor,
+                llm_config=processor_config.llm_config,
+            ),
+            concurrency=processor_config.workers,
+        )
     else:
         raise NotImplementedError(f"Unknown processor type: {processor_config.type}")
 

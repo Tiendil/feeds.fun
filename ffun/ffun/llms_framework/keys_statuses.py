@@ -1,13 +1,8 @@
-import contextlib
 import datetime
-from typing import Generator
-
-import openai
 
 from ffun.core import utils
 from ffun.llms_framework.entities import KeyStatus
 from ffun.llms_framework.settings import settings
-
 
 
 class StatusInfo:

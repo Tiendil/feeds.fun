@@ -1,14 +1,14 @@
 import datetime
+import decimal
 import enum
 import uuid
-import decimal
 from typing import Protocol
-from ffun.core.entities import BaseEntity
-
-from ffun.domain.datetime_intervals import month_interval_start
-from ffun.feeds.entities import FeedId
 
 import pydantic
+
+from ffun.core.entities import BaseEntity
+from ffun.domain.datetime_intervals import month_interval_start
+from ffun.feeds.entities import FeedId
 
 
 class Provider(enum.StrEnum):

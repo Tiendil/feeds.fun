@@ -1,9 +1,7 @@
-
-from ffun.core.entities import BaseEntity
-from ffun.llms_framework.entities import LLMConfiguration, ModelInfo, Provider, KeyStatus
-from ffun.llms_framework.settings import settings
 from ffun.llms_framework import errors
+from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, ModelInfo, Provider
 from ffun.llms_framework.keys_statuses import Statuses
+from ffun.llms_framework.settings import settings
 
 
 # TODO: tests
@@ -39,10 +37,10 @@ class ProviderInterface:
             return False
 
     def estimate_tokens(self, config: LLMConfiguration, text: str) -> int:
-        raise NotImplementedError('Must be implemented in a subclass')
+        raise NotImplementedError("Must be implemented in a subclass")
 
     async def chat_request(self, config: LLMConfiguration, api_key: str, request: ChatRequest) -> ChatResponse:
-        raise NotImplementedError('Must be implemented in a subclass')
+        raise NotImplementedError("Must be implemented in a subclass")
 
     async def check_api_key(self, config: LLMConfiguration, api_key: str) -> KeyStatus:
-        raise NotImplementedError('Must be implemented in a subclass')
+        raise NotImplementedError("Must be implemented in a subclass")
