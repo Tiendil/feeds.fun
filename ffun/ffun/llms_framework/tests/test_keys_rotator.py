@@ -415,16 +415,18 @@ def select_key_context(saved_feed_id: FeedId) -> SelectKeyContext:
 class TestChooseGeneralKey:
 
     @pytest.mark.asyncio
-    async def test_no_general_key_specified(self, select_key_context: SelectKeyContext, mocker: MockerFixture) -> None:
-        mocker.patch("ffun.openai.settings.settings.general_api_key", None)
+    async def test_no_general_key_specified(self, select_key_context: SelectKeyContext) -> None:
+        # mocker.patch("ffun.openai.settings.settings.general_api_key", None)
+
+        assert select_key_context.general_api_key is None
 
         assert await _choose_general_key(select_key_context) is None
 
     @pytest.mark.asyncio
-    async def test_general_key_specified(self, select_key_context: SelectKeyContext, mocker: MockerFixture) -> None:
+    async def test_general_key_specified(self, select_key_context: SelectKeyContext) -> None:
         key = uuid.uuid4().hex
 
-        mocker.patch("ffun.openai.settings.settings.general_api_key", key)
+        select_key_context = select_key_context.replace(general_api_key=key)
 
         usage = await _choose_general_key(select_key_context)
 
@@ -441,9 +443,9 @@ class TestChooseCollectionsKey:
 
     @pytest.mark.asyncio
     async def test_no_collections_key_specified(
-        self, select_key_context: SelectKeyContext, mocker: MockerFixture
+        self, select_key_context: SelectKeyContext
     ) -> None:
-        mocker.patch("ffun.openai.settings.settings.collections_api_key", None)
+        assert select_key_context.collections_api_key is None
 
         assert await _choose_collections_key(select_key_context) is None
 
@@ -453,7 +455,7 @@ class TestChooseCollectionsKey:
     ) -> None:
         key = uuid.uuid4().hex
 
-        mocker.patch("ffun.openai.settings.settings.collections_api_key", key)
+        select_key_context = select_key_context.replace(collections_api_key=key)
 
         # TODO: remove mocking after collections will be reworked in https://github.com/Tiendil/feeds.fun/issues/246
         mocker.patch("ffun.feeds_collections.domain.is_feed_in_collections", return_value=True)
@@ -474,7 +476,7 @@ class TestChooseCollectionsKey:
     ) -> None:
         key = uuid.uuid4().hex
 
-        mocker.patch("ffun.openai.settings.settings.collections_api_key", key)
+        select_key_context = select_key_context.replace(collections_api_key=key)
 
         # TODO: remove mocking after collections will be reworked in
         mocker.patch("ffun.feeds_collections.domain.is_feed_in_collections", return_value=False)
@@ -567,7 +569,7 @@ class TestChooseApiKey:
 class TestUseApiKey:
 
     @pytest.mark.asyncio
-    async def test_success(self, internal_user_id: uuid.UUID, openai_key: str) -> None:
+    async def test_success(self, internal_user_id: uuid.UUID, fake_api_key: str) -> None:
 
         interval_started_at = month_interval_start()
 
@@ -589,7 +591,7 @@ class TestUseApiKey:
 
         key_usage = APIKeyUsage(
             user_id=internal_user_id,
-            api_key=openai_key,
+            api_key=fake_api_key ,
             reserved_tokens=reserved_tokens,
             used_tokens=None,
             interval_started_at=interval_started_at,
@@ -613,7 +615,7 @@ class TestUseApiKey:
         }
 
     @pytest.mark.asyncio
-    async def test_no_used_tokens_specified(self, internal_user_id: uuid.UUID, openai_key: str) -> None:
+    async def test_no_used_tokens_specified(self, internal_user_id: uuid.UUID, fake_api_key: str) -> None:
 
         interval_started_at = month_interval_start()
 
@@ -633,7 +635,7 @@ class TestUseApiKey:
 
         key_usage = APIKeyUsage(
             user_id=internal_user_id,
-            api_key=openai_key,
+            api_key=fake_api_key,
             reserved_tokens=reserved_tokens,
             used_tokens=None,
             interval_started_at=interval_started_at,
@@ -658,7 +660,7 @@ class TestUseApiKey:
         }
 
     @pytest.mark.asyncio
-    async def test_exception_in_child_code(self, internal_user_id: uuid.UUID, openai_key: str) -> None:
+    async def test_exception_in_child_code(self, internal_user_id: uuid.UUID, fake_api_key: str) -> None:
 
         interval_started_at = month_interval_start()
 
@@ -666,6 +668,7 @@ class TestUseApiKey:
 
         await r_domain.try_to_reserve(
             user_id=internal_user_id,
+            # TODO: differentiate tokens in all places
             kind=AppResource.openai_tokens,
             interval_started_at=interval_started_at,
             amount=reserved_tokens,
@@ -681,7 +684,7 @@ class TestUseApiKey:
 
         key_usage = APIKeyUsage(
             user_id=internal_user_id,
-            api_key=openai_key,
+            api_key=fake_api_key,
             reserved_tokens=reserved_tokens,
             used_tokens=None,
             interval_started_at=interval_started_at,

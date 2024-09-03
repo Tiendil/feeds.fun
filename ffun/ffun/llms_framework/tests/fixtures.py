@@ -3,6 +3,7 @@ import uuid
 import pytest
 import pytest_asyncio
 
+from ffun.llms_framework.keys_statuses import Statuses
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.llms_framework.entities import UserKeyInfo
 from ffun.llms_framework.keys_rotator import _get_user_key_infos
@@ -51,3 +52,8 @@ async def five_user_key_infos(five_internal_user_ids: list[uuid.UUID]) -> list[U
 @pytest.fixture
 def fake_api_key() -> str:
     return uuid.uuid4().hex
+
+
+@pytest.fixture
+def api_key_statuses() -> Statuses:
+    return Statuses()
