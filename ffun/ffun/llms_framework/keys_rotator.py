@@ -7,11 +7,12 @@ from ffun.core import logging
 from ffun.feeds.entities import FeedId
 from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
-from ffun.openai import client, entities, errors
-from ffun.openai.keys_statuses import statuses
-from ffun.openai.settings import settings
+from ffun.llms_framework.keys_statuses import statuses
+from ffun.llms_framework.settings import settings
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
+from ffun.llms_framework.entities import APIKeyUsage, UserKeyInfo, KeyStatus, SelectKeyContext, KeySelector, APIKeyUsage
+from ffun.llms_framework import errors
 
 logger = logging.get_module_logger()
 
@@ -29,44 +30,44 @@ logger = logging.get_module_logger()
 async def _api_key_is_working(api_key: str) -> bool:
     status = statuses.get(api_key)
 
-    if status == entities.KeyStatus.works:
+    if status == KeyStatus.works:
         return True
 
-    if status != entities.KeyStatus.unknown:
+    if status != KeyStatus.unknown:
         return False
 
     new_status = await client.check_api_key(api_key)
 
-    return new_status == entities.KeyStatus.works
+    return new_status == KeyStatus.works
 
 
 async def _filter_out_users_with_wrong_keys(
-    infos: list[entities.UserKeyInfo], **kwargs: Any
-) -> list[entities.UserKeyInfo]:
+    infos: list[UserKeyInfo], **kwargs: Any
+) -> list[UserKeyInfo]:
     return [info for info in infos if info.api_key and await _api_key_is_working(info.api_key)]
 
 
 async def _filter_out_users_without_keys(
-    infos: list[entities.UserKeyInfo], **kwargs: Any
-) -> list[entities.UserKeyInfo]:
+    infos: list[UserKeyInfo], **kwargs: Any
+) -> list[UserKeyInfo]:
     return [info for info in infos if info.api_key]
 
 
 async def _filter_out_users_for_whome_entry_is_too_old(
-    infos: list[entities.UserKeyInfo], entry_age: datetime.timedelta, **kwargs: Any
-) -> list[entities.UserKeyInfo]:
+    infos: list[UserKeyInfo], entry_age: datetime.timedelta, **kwargs: Any
+) -> list[UserKeyInfo]:
     return [info for info in infos if info.process_entries_not_older_than >= entry_age]
 
 
 async def _filter_out_users_with_overused_keys(
-    infos: list[entities.UserKeyInfo], reserved_tokens: int, **kwargs: Any
-) -> list[entities.UserKeyInfo]:
+    infos: list[UserKeyInfo], reserved_tokens: int, **kwargs: Any
+) -> list[UserKeyInfo]:
     return [info for info in infos if info.tokens_used + reserved_tokens < info.max_tokens_in_month]
 
 
 async def _choose_user(
-    infos: list[entities.UserKeyInfo], reserved_tokens: int, interval_started_at: datetime.datetime
-) -> entities.UserKeyInfo | None:
+    infos: list[UserKeyInfo], reserved_tokens: int, interval_started_at: datetime.datetime
+) -> UserKeyInfo | None:
     from ffun.application.resources import Resource as AppResource
 
     for info in infos:
@@ -84,7 +85,7 @@ async def _choose_user(
 
 async def _get_user_key_infos(
     user_ids: Iterable[uuid.UUID], interval_started_at: datetime.datetime
-) -> list[entities.UserKeyInfo]:
+) -> list[UserKeyInfo]:
     from ffun.application.resources import Resource as AppResource
     from ffun.application.user_settings import UserSetting
 
@@ -117,7 +118,7 @@ async def _get_user_key_infos(
         assert isinstance(max_tokens_in_month, int)
 
         infos.append(
-            entities.UserKeyInfo(
+            UserKeyInfo(
                 user_id=user_id,
                 api_key=settings.get(UserSetting.openai_api_key),
                 max_tokens_in_month=max_tokens_in_month,
@@ -143,7 +144,7 @@ async def _get_candidates(
     entry_age: datetime.timedelta,
     reserved_tokens: int,
     filters: tuple[Any, ...] = _filters,
-) -> list[entities.UserKeyInfo]:
+) -> list[UserKeyInfo]:
     user_ids = await fl_domain.get_linked_users(feed_id)
 
     infos = await _get_user_key_infos(user_ids, interval_started_at)
@@ -159,7 +160,7 @@ async def _get_candidates(
 
 async def _find_best_user_with_key(
     feed_id: FeedId, entry_age: datetime.timedelta, interval_started_at: datetime.datetime, reserved_tokens: int
-) -> entities.UserKeyInfo | None:
+) -> UserKeyInfo | None:
     infos = await _get_candidates(
         feed_id=feed_id, interval_started_at=interval_started_at, entry_age=entry_age, reserved_tokens=reserved_tokens
     )
@@ -174,11 +175,11 @@ async def _find_best_user_with_key(
 ####################
 
 
-async def _choose_general_key(context: entities.SelectKeyContext) -> entities.APIKeyUsage | None:
+async def _choose_general_key(context: SelectKeyContext) -> APIKeyUsage | None:
     if settings.general_api_key is None:
         return None
 
-    return entities.APIKeyUsage(
+    return APIKeyUsage(
         user_id=uuid.UUID(int=0),
         api_key=settings.general_api_key,
         reserved_tokens=context.reserved_tokens,
@@ -187,14 +188,14 @@ async def _choose_general_key(context: entities.SelectKeyContext) -> entities.AP
     )
 
 
-async def _choose_collections_key(context: entities.SelectKeyContext) -> entities.APIKeyUsage | None:
+async def _choose_collections_key(context: SelectKeyContext) -> APIKeyUsage | None:
     if settings.collections_api_key is None:
         return None
 
     if not await fc_domain.is_feed_in_collections(context.feed_id):
         return None
 
-    return entities.APIKeyUsage(
+    return APIKeyUsage(
         user_id=uuid.UUID(int=0),
         api_key=settings.collections_api_key,
         reserved_tokens=context.reserved_tokens,
@@ -203,7 +204,7 @@ async def _choose_collections_key(context: entities.SelectKeyContext) -> entitie
     )
 
 
-async def _choose_user_key(context: entities.SelectKeyContext) -> entities.APIKeyUsage | None:
+async def _choose_user_key(context: SelectKeyContext) -> APIKeyUsage | None:
     info = await _find_best_user_with_key(
         feed_id=context.feed_id,
         entry_age=context.entry_age,
@@ -217,7 +218,7 @@ async def _choose_user_key(context: entities.SelectKeyContext) -> entities.APIKe
     if info.api_key is None:
         raise NotImplementedError("imporssible keys")
 
-    return entities.APIKeyUsage(
+    return APIKeyUsage(
         user_id=info.user_id,
         api_key=info.api_key,
         reserved_tokens=context.reserved_tokens,
@@ -226,12 +227,12 @@ async def _choose_user_key(context: entities.SelectKeyContext) -> entities.APIKe
     )
 
 
-_key_selectors: Collection[entities.KeySelector] = (_choose_general_key, _choose_collections_key, _choose_user_key)
+_key_selectors: Collection[KeySelector] = (_choose_general_key, _choose_collections_key, _choose_user_key)
 
 
 async def choose_api_key(
-    context: entities.SelectKeyContext, selectors: Iterable[entities.KeySelector] = _key_selectors
-) -> entities.APIKeyUsage:
+    context: SelectKeyContext, selectors: Iterable[KeySelector] = _key_selectors
+) -> APIKeyUsage:
     for key_selector in selectors:
         key_usage = await key_selector(context)
 
@@ -247,7 +248,7 @@ async def choose_api_key(
 
 
 @contextlib.asynccontextmanager
-async def use_api_key(key_usage: entities.APIKeyUsage) -> AsyncGenerator[None, None]:
+async def use_api_key(key_usage: APIKeyUsage) -> AsyncGenerator[None, None]:
     from ffun.application.resources import Resource as AppResource
 
     log = logger.bind(function="_use_key", user_id=key_usage.user_id)
