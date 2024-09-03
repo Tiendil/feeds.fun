@@ -27,6 +27,9 @@ class OpenAIChatResponse(ChatResponse):
     completion_tokens: int
     total_tokens: int
 
+    def spent_tokens(self) -> int:
+        return self.total_tokens
+
 
 @functools.cache
 def _get_encoding(model: str) -> tiktoken.Encoding:

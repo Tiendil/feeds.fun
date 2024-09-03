@@ -71,6 +71,8 @@ for processor_config in settings.tag_processors:
                 text_cleaner=processor_config.text_cleaner,
                 tag_extractor=processor_config.tag_extractor,
                 llm_config=processor_config.llm_config,
+                collections_api_key=processor_config.collections_api_key,
+                general_api_key=processor_config.general_api_key,
             ),
             concurrency=processor_config.workers,
         )

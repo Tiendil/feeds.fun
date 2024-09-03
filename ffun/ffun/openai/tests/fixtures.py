@@ -6,7 +6,6 @@ import pytest_asyncio
 from pytest_mock import MockerFixture
 
 from ffun.domain.datetime_intervals import month_interval_start
-from ffun.openai.settings import settings
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
 
@@ -39,12 +38,12 @@ def openai_key() -> str:
 
 
 # TODO: refactor
-@pytest.fixture(autouse=True, scope="session")
-def collections_api_key_must_be_turned_off_in_tests_by_default() -> None:
-    assert settings.collections_api_key is None, "collections_api_key must be turned off in tests by default"
+# @pytest.fixture(autouse=True, scope="session")
+# def collections_api_key_must_be_turned_off_in_tests_by_default() -> None:
+#     assert settings.collections_api_key is None, "collections_api_key must be turned off in tests by default"
 
 
 # TODO: refactor
-@pytest.fixture(autouse=True, scope="session")
-def general_api_key_must_be_turned_off_in_tests_by_default() -> None:
-    assert settings.general_api_key is None, "general_api_key must be turned off in tests by default"
+# @pytest.fixture(autouse=True, scope="session")
+# def general_api_key_must_be_turned_off_in_tests_by_default() -> None:
+#     assert settings.general_api_key is None, "general_api_key must be turned off in tests by default"

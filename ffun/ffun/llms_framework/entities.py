@@ -51,10 +51,14 @@ class ChatRequest(BaseEntity):
 
 
 class ChatResponse(BaseEntity):
-    pass
+
+    def spent_tokens(self) -> int:
+        raise NotImplementedError
 
 
 class APIKeyUsage(BaseEntity):
+    model_config = pydantic.ConfigDict(frozen=False)
+
     user_id: uuid.UUID
     api_key: str
     reserved_tokens: int
@@ -82,6 +86,8 @@ class SelectKeyContext(BaseEntity):
     entry_age: datetime.timedelta
     reserved_tokens: int
     interval_started_at: datetime.datetime = pydantic.Field(default_factory=month_interval_start)
+    collections_api_key: str | None
+    general_api_key: str | None
 
 
 class KeySelector(Protocol):

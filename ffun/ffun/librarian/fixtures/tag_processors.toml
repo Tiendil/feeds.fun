@@ -31,6 +31,17 @@
   text_cleaner = "ffun.librarian.text_cleaners.clean_html"
   tags_extractor = "ffun.librarian.tag_extractors.dog_tag_extractor"
 
+  #####################################
+  # ATTENTION!!!
+  # setting up this values may lead to significant costs
+
+  # setup if you want to process feeds from collections with a specific API key
+  collections_api_key = ""
+
+  # setup if you want to process ALL feeds with a specific API key
+  general_api_key = ""
+  #####################################
+
   [tag_processors_config.llm_config]
     provider = "openai"
     model = "gpt-4o-mini-2024-07-18"

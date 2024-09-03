@@ -195,12 +195,15 @@ async def _find_best_user_with_key(
 
 
 async def _choose_general_key(context: SelectKeyContext) -> APIKeyUsage | None:
-    if settings.general_api_key is None:
+
+    key = context.general_api_key
+
+    if key is None:
         return None
 
     return APIKeyUsage(
         user_id=uuid.UUID(int=0),
-        api_key=settings.general_api_key,
+        api_key=key,
         reserved_tokens=context.reserved_tokens,
         used_tokens=None,
         interval_started_at=context.interval_started_at,
@@ -208,7 +211,10 @@ async def _choose_general_key(context: SelectKeyContext) -> APIKeyUsage | None:
 
 
 async def _choose_collections_key(context: SelectKeyContext) -> APIKeyUsage | None:
-    if settings.collections_api_key is None:
+
+    key = context.collections_api_key
+
+    if key is None:
         return None
 
     if not await fc_domain.is_feed_in_collections(context.feed_id):
@@ -216,7 +222,7 @@ async def _choose_collections_key(context: SelectKeyContext) -> APIKeyUsage | No
 
     return APIKeyUsage(
         user_id=uuid.UUID(int=0),
-        api_key=settings.collections_api_key,
+        api_key=key,
         reserved_tokens=context.reserved_tokens,
         used_tokens=None,
         interval_started_at=context.interval_started_at,
