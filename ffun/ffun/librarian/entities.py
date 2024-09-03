@@ -1,7 +1,7 @@
 import datetime
 import enum
 import uuid
-from typing import Any, Literal
+from typing import Any, Literal, Annotated
 
 import pydantic
 
@@ -55,7 +55,7 @@ class LLMGeneralProcessor(BaseProcessor):
     text_cleaner: str
 
     # TODO: validate
-    tag_extractor: str
+    tags_extractor: str
 
     llm_config: LLMConfiguration
 
@@ -101,8 +101,9 @@ class LLMGeneralProcessor(BaseProcessor):
         return self
 
 
-TagProcessor = DomainProcessor | NativeTagsProcessor | UpperCaseTitleProcessor | LLMGeneralProcessor
+TagProcessor = Annotated[DomainProcessor | NativeTagsProcessor | UpperCaseTitleProcessor | LLMGeneralProcessor,
+                         pydantic.Field(discriminator='type')]
 
 
 class ProcessorsConfig(pydantic.BaseModel):
-    processors: tuple[TagProcessor, ...]
+    tag_processors: tuple[TagProcessor, ...]

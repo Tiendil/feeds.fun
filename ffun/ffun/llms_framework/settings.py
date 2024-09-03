@@ -22,7 +22,7 @@ class ModelInfos(pydantic.BaseModel):
 
 class Settings(BaseSettings):
     # TODO: add to documentation/README
-    model_descriptions: pathlib.Path = _root / "fixtures" / "models.toml"
+    models_descriptions: pathlib.Path = _root / "fixtures" / "models.toml"
 
     key_quota_timeout: datetime.timedelta = datetime.timedelta(hours=1)
     key_broken_timeout: datetime.timedelta = datetime.timedelta(hours=1)
@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     @pydantic.computed_field  # type: ignore
     @functools.cached_property
     def models(self) -> list[ModelInfo]:
-        data = toml.loads(self.model_descriptions.read_text())
+        data = toml.loads(self.models_descriptions.read_text())
 
         return ModelInfos(**data).models
 

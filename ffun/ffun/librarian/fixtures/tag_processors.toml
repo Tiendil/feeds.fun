@@ -3,22 +3,21 @@
 # ATTENTION: processors ids <= 10000 are reserved for the system.
 #            if you want to add a custom processor, use ids > 10000.
 
-[[tag_processors_config]]
+[[tag_processors]]
   id = 1
   enabled = true
   workers = 1
   name = "domain"
   type = "domain"
 
-[[tag_processors_config]]
+[[tag_processors]]
   id = 2
   enabled = true
   workers = 1
   name = "native_tags"
   type = "native_tags"
 
-
-[[tag_processors_config]]
+[[tag_processors]]
   id = 3
   enabled = false
   workers = 1
@@ -26,7 +25,7 @@
   type = "llm_general"
 
   # add url to help chatGPT decide on domain
-  entry_template = "<h1>{entry.title}</h1><a href="{entry.external_url}">full article</a>{entry.body}"
+  entry_template = "<h1>{entry.title}</h1><a href='{entry.external_url}'>full article</a>{entry.body}"
 
   text_cleaner = "ffun.librarian.text_cleaners.clean_html"
   tags_extractor = "ffun.librarian.tag_extractors.dog_tag_extractor"
@@ -42,10 +41,10 @@
   general_api_key = ""
   #####################################
 
-  [tag_processors_config.llm_config]
+  [tag_processors.llm_config]
     provider = "openai"
     model = "gpt-4o-mini-2024-07-18"
-    max_return_tokens = 4 * 1024
+    max_return_tokens = 4096
     text_parts_intersection = 200
     additional_tokens_per_message = 10
     temperature = 0
@@ -106,7 +105,7 @@ Remember:
 
 # id 4 — old OpenAI ChatGP processor
 
-[[tag_processors_config]]
+[[tag_processors]]
   id = 5
   enabled = true
   workers = 1
