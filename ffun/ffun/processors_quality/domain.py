@@ -8,7 +8,6 @@ from ffun.ontology import domain as o_domain
 from ffun.processors_quality.entities import ProcessorResult, ProcessorResultDiff
 from ffun.processors_quality.knowlege_base import KnowlegeBase, id_to_name
 
-
 processors = {info.processor.name: info.processor for info in ln_processors}
 
 

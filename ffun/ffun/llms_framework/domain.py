@@ -1,11 +1,10 @@
 import asyncio
 
-from ffun.llms_framework.provider_interface import ProviderInterface
-
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
 from ffun.llms_framework.entities import APIKeyUsage, ChatRequest, ChatResponse, LLMConfiguration, SelectKeyContext
 from ffun.llms_framework.keys_rotator import choose_api_key, use_api_key
+from ffun.llms_framework.provider_interface import ProviderInterface
 from ffun.llms_framework.providers import llm_providers
 
 
@@ -45,9 +44,7 @@ def split_text_according_to_tokens(llm: ProviderInterface, config: LLMConfigurat
 
         parts = split_text(text, parts=parts_number, intersection=config.text_parts_intersection)
 
-        parts_tokens = [llm.estimate_tokens(config,
-                                            text=part)
-                        for part in parts]
+        parts_tokens = [llm.estimate_tokens(config, text=part) for part in parts]
 
         if any(tokens + config.max_return_tokens >= max_context_size for tokens in parts_tokens):
             continue
@@ -60,22 +57,24 @@ def split_text_according_to_tokens(llm: ProviderInterface, config: LLMConfigurat
 
 # TODO: test
 async def search_for_api_key(
-        llm_config: LLMConfiguration,
-        entry: Entry,
-        requests: list[ChatRequest],
-        collections_api_key: str | None,
-        general_api_key: str | None
+    llm_config: LLMConfiguration,
+    entry: Entry,
+    requests: list[ChatRequest],
+    collections_api_key: str | None,
+    general_api_key: str | None,
 ) -> APIKeyUsage:
     llm = llm_providers.get(llm_config.provider).provider
 
     reserved_tokens = len(requests) * llm.max_context_size_for_model(llm_config)
 
-    select_key_context = SelectKeyContext(llm_config=llm_config,
-                                          feed_id=entry.feed_id,
-                                          entry_age=entry.age,
-                                          reserved_tokens=reserved_tokens,
-                                          collections_api_key=collections_api_key,
-                                          general_api_key=general_api_key)
+    select_key_context = SelectKeyContext(
+        llm_config=llm_config,
+        feed_id=entry.feed_id,
+        entry_age=entry.age,
+        reserved_tokens=reserved_tokens,
+        collections_api_key=collections_api_key,
+        general_api_key=general_api_key,
+    )
 
     return await choose_api_key(select_key_context)
 

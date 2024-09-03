@@ -1,13 +1,4 @@
-import uuid
 from typing import Any
-
-import pytest
-import pytest_asyncio
-from pytest_mock import MockerFixture
-
-from ffun.domain.datetime_intervals import month_interval_start
-from ffun.resources import domain as r_domain
-from ffun.user_settings import domain as us_domain
 
 
 class MockedOpenAIClient:

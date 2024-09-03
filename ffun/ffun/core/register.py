@@ -2,7 +2,6 @@ from typing import Generic, TypeVar
 
 from ffun.core import errors
 
-
 KEY = int | str
 
 

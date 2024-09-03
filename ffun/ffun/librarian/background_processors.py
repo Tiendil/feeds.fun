@@ -7,8 +7,8 @@ from ffun.librarian import domain, operations
 from ffun.librarian.entities import ProcessorType
 from ffun.librarian.processors.base import Processor
 from ffun.librarian.processors.domain import Processor as DomainProcessor
-from ffun.librarian.processors.native_tags import Processor as NativeTagsProcessor
 from ffun.librarian.processors.llm_general import Processor as LLMGeneralProcessor
+from ffun.librarian.processors.native_tags import Processor as NativeTagsProcessor
 from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTitleProcessor
 from ffun.librarian.settings import settings
 from ffun.library import domain as l_domain

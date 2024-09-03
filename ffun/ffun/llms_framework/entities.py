@@ -56,10 +56,10 @@ class ChatRequest(BaseEntity):
 class ChatResponse(BaseEntity):
 
     def response_content(self) -> str:
-        raise NotImplementedError('Must be implemented in subclasses')
+        raise NotImplementedError("Must be implemented in subclasses")
 
     def spent_tokens(self) -> int:
-        raise NotImplementedError('Must be implemented in subclasses')
+        raise NotImplementedError("Must be implemented in subclasses")
 
 
 class APIKeyUsage(BaseEntity):

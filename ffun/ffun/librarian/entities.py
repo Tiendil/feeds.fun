@@ -1,14 +1,13 @@
 import datetime
 import enum
 import uuid
-from typing import Literal, Any
+from typing import Any, Literal
 
 import pydantic
 
 from ffun.core import logging
 from ffun.core.entities import BaseEntity
 from ffun.llms_framework.entities import LLMConfiguration
-
 
 logger = logging.get_module_logger()
 
@@ -63,12 +62,12 @@ class LLMGeneralProcessor(BaseProcessor):
     collections_api_key: str | None = None
     general_api_key: str | None = None
 
-    @pydantic.model_validator(mode='before')
+    @pydantic.model_validator(mode="before")
     @classmethod
     def collections_api_key_none(cls, data: Any) -> Any:
         # TODO: test
-        if data.get('collections_api_key') == "":
-            data['collections_api_key'] = None
+        if data.get("collections_api_key") == "":
+            data["collections_api_key"] = None
 
         return data
 
@@ -79,12 +78,12 @@ class LLMGeneralProcessor(BaseProcessor):
 
         return self
 
-    @pydantic.model_validator(mode='before')
+    @pydantic.model_validator(mode="before")
     @classmethod
     def general_api_key_none(cls, data: Any) -> Any:
         # TODO: test
-        if data.get('general_api_key') == "":
-            data['general_api_key'] = None
+        if data.get("general_api_key") == "":
+            data["general_api_key"] = None
 
         return data
 

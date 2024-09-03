@@ -3,8 +3,8 @@ import functools
 from typing import Generator
 
 import openai
-from openai.types.chat import ChatCompletionMessageParam
 import tiktoken
+from openai.types.chat import ChatCompletionMessageParam
 
 from ffun.core import logging
 from ffun.llms_framework import domain as llmsf_domain
@@ -12,7 +12,6 @@ from ffun.llms_framework import errors as llmsf_errors
 from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, Provider
 from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.provider_interface import ChatRequest, ChatResponse, ProviderInterface
-from ffun.openai import errors
 
 logger = logging.get_module_logger()
 

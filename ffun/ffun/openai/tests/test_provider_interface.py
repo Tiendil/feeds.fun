@@ -1,9 +1,8 @@
-import datetime
 from typing import Type
 from unittest.mock import MagicMock
 
-import pytest
 import openai
+import pytest
 
 from ffun.llms_framework.entities import KeyStatus
 from ffun.llms_framework.keys_statuses import Statuses

@@ -16,17 +16,25 @@ logger = logging.get_module_logger()
 
 # TODO: tests
 class Processor(base.Processor):
-    __slots__ = ("llm_config", "llm_provider", "entry_template", "text_cleaner", "tag_extractor", "collections_api_key", "general_api_key")
+    __slots__ = (
+        "llm_config",
+        "llm_provider",
+        "entry_template",
+        "text_cleaner",
+        "tag_extractor",
+        "collections_api_key",
+        "general_api_key",
+    )
 
     def __init__(  # noqa
-            self,
-            llm_config: LLMConfiguration,
-            entry_template: str,
-            text_cleaner: str,
-            tag_extractor: str,
-            collections_api_key: str | None,
-            general_api_key: str | None,
-            **kwargs: Any
+        self,
+        llm_config: LLMConfiguration,
+        entry_template: str,
+        text_cleaner: str,
+        tag_extractor: str,
+        collections_api_key: str | None,
+        general_api_key: str | None,
+        **kwargs: Any
     ):
         super().__init__(**kwargs)
         self.llm_config = llm_config
@@ -59,9 +67,7 @@ class Processor(base.Processor):
         )
 
         try:
-            responses = await call_llm(
-                llm_config=self.llm_config, api_key_usage=api_key_usage, requests=requests
-            )
+            responses = await call_llm(llm_config=self.llm_config, api_key_usage=api_key_usage, requests=requests)
         except llmsf_errors.NoKeyFoundForFeed as e:
             raise errors.SkipEntryProcessing(message=str(e)) from e
 

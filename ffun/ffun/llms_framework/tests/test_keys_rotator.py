@@ -1,7 +1,7 @@
 import datetime
+import decimal
 import uuid
 from typing import Any
-import decimal
 
 import pytest
 from pytest_mock import MockerFixture
@@ -11,9 +11,14 @@ from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
 from ffun.feeds_links import domain as fl_domain
 from ffun.llms_framework import errors
-from ffun.llms_framework.entities import APIKeyUsage, KeyStatus, SelectKeyContext, UserKeyInfo, LLMConfiguration, Provider
-from ffun.llms_framework.provider_interface import ProviderTest
-from ffun.llms_framework.providers import llm_providers
+from ffun.llms_framework.entities import (
+    APIKeyUsage,
+    KeyStatus,
+    LLMConfiguration,
+    Provider,
+    SelectKeyContext,
+    UserKeyInfo,
+)
 from ffun.llms_framework.keys_rotator import (
     _api_key_is_working,
     _choose_collections_key,
@@ -32,23 +37,23 @@ from ffun.llms_framework.keys_rotator import (
     choose_api_key,
     use_api_key,
 )
-from ffun.llms_framework.keys_statuses import Statuses
+from ffun.llms_framework.providers import llm_providers
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
 from ffun.user_settings import domain as us_domain
 
-
 _llm_config = LLMConfiguration(
     provider=Provider.test,
-    model='test-model',
+    model="test-model",
     system="some system prompt",
     max_return_tokens=1017,
     text_parts_intersection=113,
     additional_tokens_per_message=7,
-    temperature=decimal.Decimal('0.3'),
-    top_p=decimal.Decimal('0.9'),
-    presence_penalty=decimal.Decimal('0.5'),
-    frequency_penalty=decimal.Decimal('0.75'))
+    temperature=decimal.Decimal("0.3"),
+    top_p=decimal.Decimal("0.9"),
+    presence_penalty=decimal.Decimal("0.5"),
+    frequency_penalty=decimal.Decimal("0.75"),
+)
 
 
 _llm_provider = llm_providers.get(Provider.test).provider
@@ -124,7 +129,9 @@ class TestFilterOutUsersForWhomeEntryIsTooOld:
         #     info.process_entries_not_older_than = datetime.timedelta(days=days)
 
         for i, days in enumerate([5, 2, 3, 1, 4]):
-            five_user_key_infos[i] = five_user_key_infos[i].replace(process_entries_not_older_than=datetime.timedelta(days=days))
+            five_user_key_infos[i] = five_user_key_infos[i].replace(
+                process_entries_not_older_than=datetime.timedelta(days=days)
+            )
 
         infos = await _filter_out_users_for_whome_entry_is_too_old(five_user_key_infos, datetime.timedelta(days=3))
 
@@ -143,8 +150,9 @@ class TestFilterOutUsersWithOverusedKeys:
         #     info.max_tokens_in_month = max_tokens_in_month
 
         for i, max_tokens_in_month in enumerate([201, 100, 300, 200, 500]):
-            five_user_key_infos[i] = five_user_key_infos[i].replace(tokens_used=50,
-                                                                    max_tokens_in_month=max_tokens_in_month)
+            five_user_key_infos[i] = five_user_key_infos[i].replace(
+                tokens_used=50, max_tokens_in_month=max_tokens_in_month
+            )
 
         infos = await _filter_out_users_with_overused_keys(five_user_key_infos, 150)
 
@@ -176,7 +184,9 @@ class TestChooseUser:
 
         max_tokens = max(info.max_tokens_in_month for info in five_user_key_infos) + 1
 
-        five_user_key_infos[2] = five_user_key_infos[2].replace(max_tokens_in_month=max_tokens + five_user_key_infos[2].tokens_used)
+        five_user_key_infos[2] = five_user_key_infos[2].replace(
+            max_tokens_in_month=max_tokens + five_user_key_infos[2].tokens_used
+        )
 
         info = await _choose_user(
             infos=five_user_key_infos, reserved_tokens=max_tokens, interval_started_at=interval_started_at
@@ -392,12 +402,14 @@ class TestFindBestUserWithKey:
 
 @pytest.fixture
 def select_key_context(saved_feed_id: FeedId) -> SelectKeyContext:
-    return SelectKeyContext(llm_config=_llm_config,
-                            collections_api_key=None,
-                            general_api_key=None,
-                            feed_id=saved_feed_id,
-                            entry_age=datetime.timedelta(seconds=0),
-                            reserved_tokens=0)
+    return SelectKeyContext(
+        llm_config=_llm_config,
+        collections_api_key=None,
+        general_api_key=None,
+        feed_id=saved_feed_id,
+        entry_age=datetime.timedelta(seconds=0),
+        reserved_tokens=0,
+    )
 
 
 class TestChooseGeneralKey:
