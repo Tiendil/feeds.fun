@@ -42,8 +42,10 @@ processors: list[ProcessorInfo] = []
 # TODO: unify creation
 for processor_config in settings.tag_processors:
     if not processor_config.enabled:
-        logger.info("tag_processor_is_disabled", processor_id=processor_config.id)
+        logger.info("tag_processor_is_disabled", processor_id=processor_config.id, processor_name=processor_config.name)
         continue
+
+    logger.info("add_tag_processor", processor_id=processor_config.id, processor_name=processor_config.name)
 
     if processor_config.type == ProcessorType.domain:
         processor = ProcessorInfo(
@@ -71,7 +73,7 @@ for processor_config in settings.tag_processors:
                 name=processor_config.name,
                 entry_template=processor_config.entry_template,
                 text_cleaner=processor_config.text_cleaner,
-                tag_extractor=processor_config.tag_extractor,
+                tag_extractor=processor_config.tags_extractor,
                 llm_config=processor_config.llm_config,
                 collections_api_key=processor_config.collections_api_key,
                 general_api_key=processor_config.general_api_key,
@@ -80,6 +82,8 @@ for processor_config in settings.tag_processors:
         )
     else:
         raise NotImplementedError(f"Unknown processor type: {processor_config.type}")
+
+    processors.append(processor)
 
 
 class EntriesProcessor(InfiniteTask):
