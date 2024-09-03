@@ -16,10 +16,10 @@ class Settings(BaseSettings):
     tag_processors_config: pathlib.Path = _root / "fixtures" / "tag_processors.toml"
 
     # TODO: tests
-    @pydantic.computed_field
+    @pydantic.computed_field  # type: ignore
     @functools.cached_property
     def tag_processors(self) -> tuple[TagProcessor, ...]:
-        data = toml.loads(self.models_description.read_text())
+        data = toml.loads(self.tag_processors_config.read_text())
 
         return ProcessorsConfig(**data).processors
 

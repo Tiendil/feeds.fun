@@ -61,4 +61,4 @@ TagProcessor = DomainProcessor | NativeTagsProcessor | UpperCaseTitleProcessor |
 
 
 class ProcessorsConfig(pydantic.BaseModel):
-    processors: list[TagProcessor]
+    processors: tuple[TagProcessor, ...]

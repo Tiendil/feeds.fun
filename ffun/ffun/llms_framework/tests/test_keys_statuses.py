@@ -2,12 +2,11 @@ import datetime
 from typing import Type
 from unittest.mock import MagicMock
 
-import openai
 import pytest
 from pytest_mock import MockerFixture
 
 from ffun.llms_framework.entities import KeyStatus
-from ffun.llms_framework.keys_statuses import Statuses, track_key_status
+from ffun.llms_framework.keys_statuses import Statuses
 
 
 class TestStatuses:
@@ -51,27 +50,3 @@ class TestStatuses:
         mocker.patch("ffun.openai.settings.settings.key_quota_timeout", datetime.timedelta(seconds=0))
 
         assert statuses.get("key_1") == KeyStatus.unknown
-
-
-class TestTrackKeyStatus:
-    def test_works(self, statuses: Statuses) -> None:
-        with track_key_status("key_1", statuses):
-            pass
-
-        assert statuses.get("key_1") == KeyStatus.works
-
-    @pytest.mark.parametrize("exception", [openai.AuthenticationError, openai.PermissionDeniedError])
-    def test_authentication_error(self, exception: Type[Exception], statuses: Statuses) -> None:
-        with pytest.raises(exception):
-            with track_key_status("key_1", statuses):
-                raise exception(message="test-message", response=MagicMock(), body=MagicMock())  # type: ignore
-
-        assert statuses.get("key_1") == KeyStatus.broken
-
-    @pytest.mark.parametrize("exception", [openai.RateLimitError])
-    def test_quota_error(self, exception: Type[Exception], statuses: Statuses) -> None:
-        with pytest.raises(exception):
-            with track_key_status("key_1", statuses):
-                raise exception(message="test-message", response=MagicMock(), body=MagicMock())  # type: ignore
-
-        assert statuses.get("key_1") == KeyStatus.quota

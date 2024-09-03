@@ -1,12 +1,11 @@
 import asyncio
 
-from ffin.llms_framework.provider_interface import ProviderInterface
+from ffun.llms_framework.provider_interface import ProviderInterface
 
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
-from ffun.llms_framework.entities import APIKeyUsage, ChatRequest, ChatResponse, LLMConfiguration
-from ffun.openai.entities import SelectKeyContext
-from ffun.openai.keys_rotator import choose_api_key, use_api_key
+from ffun.llms_framework.entities import APIKeyUsage, ChatRequest, ChatResponse, LLMConfiguration, SelectKeyContext
+from ffun.llms_framework.keys_rotator import choose_api_key, use_api_key
 
 
 # TODO: test
