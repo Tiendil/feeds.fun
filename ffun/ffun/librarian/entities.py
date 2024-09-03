@@ -43,6 +43,16 @@ class UpperCaseTitleProcessor(BaseProcessor):
 
 class LLMGeneralProcessor(BaseProcessor):
     type: Literal[ProcessorType.llm_general] = ProcessorType.llm_general
+
+    # TODO: validate
+    entry_template: str
+
+    # TODO: validate
+    text_cleaner: str
+
+    # TODO: validate
+    tag_extractor: str
+
     llm_config: LLMConfiguration
 
 

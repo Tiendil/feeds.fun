@@ -1,6 +1,6 @@
-import re
 from typing import Any
 import asyncio
+import importlib
 
 from ffun.core import logging
 from ffun.core import text as core_text
@@ -20,50 +20,33 @@ from ffun.llms_framework.domain import call_llm, search_for_api_key
 logger = logging.get_module_logger()
 
 
-RE_TAG = re.compile(r"@([\w\d-]+)")
-
-# add url to allow chatGPT decide on domain
-def entry_to_text(entry: Entry) -> str:
-    return f'<h1>{entry.title}</h1><a href="{entry.external_url}">full article</a>{entry.body}'
-
-
-def extract_raw_tags(text: str) -> set[str]:
-    return set(tag.lower() for tag in RE_TAG.findall(text))
-
-
-def entry_to_llm_text(entry: Entry) -> str:
-    dirty_text = entry_to_text(entry)
-
-    return core_text.clear_text(dirty_text)
-
-
-def extract_tags(texts: list[str]) -> set[ProcessorTag]:
-    raw_tags = set()
-    tags: list[ProcessorTag] = []
-
-    for text in texts:
-        raw_tags.update(extract_raw_tags(text))
-
-    for raw_tag in raw_tags:
-        tags.append(ProcessorTag(raw_uid=raw_tag))
-
-    return tags
-
-
 # TODO: tests
 class Processor(base.Processor):
-    __slots__ = ("llm_config", "llm_provider")
+    __slots__ = ("llm_config", "llm_provider", "entry_template", "text_cleaner", "tag_extractor")
 
-    def __init__(self, llm_config: LLMConfiguration, **kwargs: Any):
+    def __init__(self,
+                 llm_config: LLMConfiguration,
+                 entry_template: str,
+                 text_cleaner: str,
+                 tag_extractor: str,
+                 **kwargs: Any):
         super().__init__(**kwargs)
         self.llm_config = llm_config
         self.llm_provider = llm_providers.get(llm_config.provider).provider
+        self.entry_template = entry_template
+
+        cleaner_module, cleaner_function = text_cleaner.rsplit(".", 1)
+        self.text_cleaner = getattr(importlib.import_module(cleaner_module), cleaner_function)
+
+        extractor_module, extractor_function = tag_extractor.rsplit(".", 1)
+        self.tag_extractor = getattr(importlib.import_module(extractor_module), extractor_function)
 
     async def process(self, entry: Entry) -> list[ProcessorTag]:
-        # TODO: parametrize
-        text = entry_to_llm_text(entry)
+        dirty_text = self.entry_template.format(entry=entry)
 
-        requests = self.llm_provider.prepare_requests(self.llm_config, text)
+        cleaned_text = self.text_cleaner(dirty_text)
+
+        requests = self.llm_provider.prepare_requests(self.llm_config, cleaned_text)
 
         api_key_usage = await search_for_api_key(llm=self.llm_provider,
                                                  llm_config=self.llm_config,
@@ -78,5 +61,16 @@ class Processor(base.Processor):
         except llmsf_errors.NoKeyFoundForFeed as e:
             raise errors.SkipEntryProcessing(message=str(e)) from e
 
-        # TODO: parametrize
-        return extract_tags([response.content for response in responses])
+        return self.extract_tags(responses)
+
+    def extract_tags(self, responses: list[ChatResponse]) -> list[ProcessorTag]:
+        raw_tags = set()
+        tags: list[ProcessorTag] = []
+
+        for response in responses:
+            raw_tags.update(self.tag_extractor(response.content))
+
+        for raw_tag in raw_tags:
+            tags.append(ProcessorTag(raw_uid=raw_tag))
+
+        return tags

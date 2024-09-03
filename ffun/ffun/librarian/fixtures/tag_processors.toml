@@ -25,6 +25,12 @@
   name = "openai_llm_general"
   type = "llm_general"
 
+  # add url to help chatGPT decide on domain
+  entry_template = "<h1>{entry.title}</h1><a href="{entry.external_url}">full article</a>{entry.body}"
+
+  text_cleaner = "ffun.librarian.text_cleaners.clean_html"
+  tags_extractor = "ffun.librarian.tag_extractors.dog_tag_extractor"
+
   [tag_processors_config.llm_config]
     model = "gpt-4o-mini-2024-07-18"
     max_return_tokens = 4 * 1024

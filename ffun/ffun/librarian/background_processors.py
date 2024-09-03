@@ -50,16 +50,19 @@ for processor_config in settings.tag_processors:
                                   concurrency=processor_config.workers)
     elif processor_config.type == ProcessorType.native_tags:
         processor = ProcessorInfo(id=processor_config.id,
-                                    processor=NativeTagsProcessor(name=processor_config.name),
-                                    concurrency=processor_config.workers)
+                                  processor=NativeTagsProcessor(name=processor_config.name),
+                                  concurrency=processor_config.workers)
     elif processor_config.type == ProcessorType.upper_case_title:
         processor = ProcessorInfo(id=processor_config.id,
-                                    processor=UpperCaseTitleProcessor(name=processor_config.name),
-                                    concurrency=processor_config.workers)
+                                  processor=UpperCaseTitleProcessor(name=processor_config.name),
+                                  concurrency=processor_config.workers)
     elif processor_config.type == ProcessorType.llm_general:
         processor = ProcessorInfo(id=processor_config.id,
                                   processor=OpenGeneralProcessor(name=processor_config.name,
-                                                                model=processor_config.llm_config.model),
+                                                                 entry_template=processor_config.entry_template,
+                                                                 text_cleaner=processor_config.text_cleaner,
+                                                                 tag_extractor=processor_config.tag_extractor,
+                                                                 llm_config=processor_config.llm_config),
                                   concurrency=processor_config.workers)
     else:
         raise NotImplementedError(f"Unknown processor type: {processor_config.type}")
