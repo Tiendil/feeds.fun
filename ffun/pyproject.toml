@@ -53,7 +53,8 @@ openai = "1.30.*"
 tiktoken = "0.7.*"
 
 google-generativeai = "0.7.*"
-vertexai = "1.64.*"
+vertexai = {extras = ["tokenization"], version = "1.64.*"}
+sentencepiece = "0.2.*" # should be installed by vertexai with "tokenization" option but something goes wrong
 
 bidict = "0.23.*"
 

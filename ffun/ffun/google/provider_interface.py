@@ -22,6 +22,9 @@ logger = logging.get_module_logger()
 #       Maybe it is better to restrict processing of collections with user keys
 
 
+# genai.configure(api_key="wrong_api_key_because_google_auth_libs_rises_error_without setting it_globally")
+
+
 class GoogleChatRequest(ChatRequest):
     system_message: str
     user_message: str
@@ -96,13 +99,14 @@ class GoogleInterface(ProviderInterface):
     #       Refactor after this issue will be resolved
     def _model(self, model_name: str, system: str, api_key: str) -> genai.GenerativeModel:
         # TODO: cache clients?
-        client = glm.GenerativeServiceClient(
+        client = glm.GenerativeServiceAsyncClient(
             client_options={'api_key': api_key}
         )
 
         model = genai.GenerativeModel(model_name=model_name,
                                       system_instruction=system)
-        model._client = client
+        model._client = None
+        model._async_client = client
 
         return model
 
@@ -125,16 +129,21 @@ class GoogleInterface(ProviderInterface):
             temperature=config.temperature,
             top_p=config.top_p,
             top_k=None,  # TODO: add to config?
-        ),
+        )
 
         safety_settings = []
 
+        # print(list(safety_types.HarmCategory))
+        # TODO: list of categories in safety_types.HarmCategory is not equal to returned in error messages
         for category in safety_types.HarmCategory:
+            if category == safety_types.HarmCategory.HARM_CATEGORY_UNSPECIFIED:
+                continue
+
             safety_settings.append(
-                safety_types.SafetySetting(
-                    category=category,
-                    threshold=safety_types.HarmBlockThreshold.BLOCK_NONE,
-                )
+                {
+                    "category": category,
+                    "threshold": safety_types.HarmBlockThreshold.BLOCK_NONE,
+                }
             )
 
         try:
@@ -144,26 +153,36 @@ class GoogleInterface(ProviderInterface):
                                                             generation_config=generation_config,
                                                             safety_settings=safety_settings)
 
-                print(answer)
+                # print(answer)
 
         # TODO: add correct error processing
         # except google.APIError as e:
         except Exception as e:
+            print(e.__class__, e)
             logger.info("google_api_error", message=str(e))
             raise llmsf_errors.TemporaryError(message=str(e)) from e
 
         logger.info("google_response")
 
+        # print(dir(answer))
+        # print(answer.__dict__)
+
+        if not answer._done:
+            # TODO: custom exception
+            raise NotImplementedError('Something goes wrong')
+
         # assert answer.choices[0].message.content is not None
         # assert answer.usage is not None
 
-        content = answer.choices[0].message.content
+        content = answer.text
+
+        usage = answer.usage_metadata
 
         return GoogleChatResponse(
             content=content,
-            prompt_tokens=answer.usage.prompt_tokens,
-            completion_tokens=answer.usage.completion_tokens,
-            total_tokens=answer.usage.total_tokens,
+            prompt_tokens=usage.prompt_token_count,
+            completion_tokens=usage.candidates_token_count,
+            total_tokens=usage.total_token_count
         )
 
     def prepare_requests(self, config: LLMConfiguration, text: str) -> list[GoogleChatRequest]:  # type: ignore  # noqa: CFQ002
