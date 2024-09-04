@@ -182,14 +182,16 @@ class GoogleInterface(ProviderInterface):
 
         return requests
 
-#     async def check_api_key(self, config: LLMConfiguration, api_key: str) -> KeyStatus:
-#         with track_key_status(api_key, self.api_keys_statuses):
-#             try:
-#                 await google.AsyncGoogle(api_key=api_key).models.list()
-#             except google.APIError:
-#                 pass
+    async def check_api_key(self, config: LLMConfiguration, api_key: str) -> KeyStatus:
+        # TODO: implement actual check
+        with track_key_status(api_key, self.api_keys_statuses):
+            pass
+        #     try:
+        #         await google.AsyncGoogle(api_key=api_key).models.list()
+        #     except google.APIError:
+        #         pass
 
-#         return self.api_keys_statuses.get(api_key)
+        return self.api_keys_statuses.get(api_key)
 
 
-# provider = GoogleInterface()
+provider = GoogleInterface()
