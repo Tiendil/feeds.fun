@@ -52,6 +52,9 @@ brotlicffi = "1.1.*"
 openai = "1.30.*"
 tiktoken = "0.7.*"
 
+google-generativeai = "0.7.*"
+vertexai = "1.64.*"
+
 bidict = "0.23.*"
 
 feedparser = "6.0.*"

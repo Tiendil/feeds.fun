@@ -60,6 +60,7 @@ def track_key_status(key: str, statuses: Statuses) -> Generator[None, None, None
 
 
 # TODO: tests
+# TODO: test support of multiple keys
 class OpenAIInterface(ProviderInterface):
     provider = Provider.openai
 
