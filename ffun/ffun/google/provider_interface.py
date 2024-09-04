@@ -20,7 +20,7 @@ logger = logging.get_module_logger()
 #       There is possible situation when collections uses one provider and ignore another, but user wants to use another provider
 #       This may lead to processing all feeds in collections with the user key
 #       Maybe it is better to restrict processing of collections with user keys
-
+#       Maybe, we could move flags: for_collections, for_users, for_all to the configuration of all tag processors?
 
 # genai.configure(api_key="wrong_api_key_because_google_auth_libs_rises_error_without setting it_globally")
 
