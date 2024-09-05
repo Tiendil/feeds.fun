@@ -3,6 +3,7 @@ import re
 from bs4 import BeautifulSoup
 
 
+# TODO: test
 def clear_html(text: str) -> str:
     soup = BeautifulSoup(text, "html.parser")
 
