@@ -1,4 +1,5 @@
 import asyncio
+import math
 
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
@@ -8,26 +9,37 @@ from ffun.llms_framework.provider_interface import ProviderInterface
 from ffun.llms_framework.providers import llm_providers
 
 
-# TODO: test
 def split_text(text: str, parts: int, intersection: int) -> list[str]:
     if parts < 1:
         raise errors.TextPartsMustBePositive()
 
+    if intersection < 0:
+        raise errors.TextIntersectionMustBePositiveOrZero()
+
+    if not text:
+        raise errors.TextIsEmpty()
+
     if parts == 1:
         return [text]
 
-    part_size = len(text) // parts + intersection // 2
+    base_part_size = int(math.ceil(len(text) / parts))
+
+    if base_part_size * parts - len(text) >= base_part_size:
+        raise errors.TextIsTooShort()
 
     text_parts: list[str] = []
 
     index = 0
 
     while index < len(text):
-        part = text[index : index + part_size]
+        left_border = max(0, index - intersection)
+        right_border = min(len(text), index + base_part_size + intersection)
+
+        part = text[left_border : right_border]
 
         text_parts.append(part)
 
-        index += part_size - intersection
+        index += base_part_size
 
     return text_parts
 

@@ -13,6 +13,18 @@ class TextPartsMustBePositive(Error):
     pass
 
 
+class TextIntersectionMustBePositiveOrZero(Error):
+    pass
+
+
+class TextIsEmpty(Error):
+    pass
+
+
+class TextIsTooShort(Error):
+    pass
+
+
 class TemporaryError(Error):
     pass
 
