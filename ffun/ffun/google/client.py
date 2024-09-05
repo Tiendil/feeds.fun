@@ -1,5 +1,6 @@
 import httpx
 
+from ffun.google import errors
 from ffun.google.settings import settings
 from ffun.google.entities import GoogleChatRequest, GoogleChatResponse, GenerationConfig
 from ffun.llms_framework.entities import LLMConfiguration
@@ -18,8 +19,7 @@ class Client:
     def __init__(self, api_key: str, entry_point: str = settings.gemini_api_entry_point) -> None:
         self._api_key = api_key
         self.entry_point = entry_point
-    # TODO: maybe introduce separate classes for request/response
-    # TODO: system message is duplicated in config & request
+
     async def generate_content(self,
                                model: str,
                                config: GenerationConfig,
@@ -42,11 +42,14 @@ class Client:
         async with httpx.AsyncClient(headers=headers, timeout=timeout) as client:
             response = await client.post(url, json=request)
 
-        print(response.json())
+        if response.status_code == 429:
+            raise errors.QuotaError(message=response.content, status_code=response.status_code)
 
-        # TODO: add correct exception
+        if response.status_code in (401, 403):
+            raise errors.AuthError(message=response.content, status_code=response.status_code)
+
         if response.status_code != 200:
-            raise NotImplementedError(f'Error: {response.status_code}')
+            raise errors.UnknownError(message=response.content, status_code=response.status_code)
 
         response_data = response.json()
 

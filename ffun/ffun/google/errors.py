@@ -17,3 +17,7 @@ class AuthError(ClientError):
 
 class QuotaError(ClientError):
     pass
+
+
+class UnknownError(ClientError):
+    pass
