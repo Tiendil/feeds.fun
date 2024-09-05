@@ -431,7 +431,7 @@ class TestChooseGeneralKey:
         usage = await _choose_general_key(select_key_context)
 
         assert usage == APIKeyUsage(
-            user_id=uuid.UUID(int=0),
+            user_id=None,
             api_key=key,
             reserved_tokens=select_key_context.reserved_tokens,
             used_tokens=None,
@@ -461,7 +461,7 @@ class TestChooseCollectionsKey:
         usage = await _choose_collections_key(select_key_context)
 
         assert usage == APIKeyUsage(
-            user_id=uuid.UUID(int=0),
+            user_id=None,
             api_key=key,
             reserved_tokens=select_key_context.reserved_tokens,
             used_tokens=None,
@@ -705,3 +705,22 @@ class TestUseApiKey:
                 reserved=0,
             )
         }
+
+    @pytest.mark.asyncio
+    async def test_no_user_in_key_usage(self, fake_api_key: str) -> None:
+
+        interval_started_at = month_interval_start()
+
+        reserved_tokens = 567
+        used_tokens = 214
+
+        key_usage = APIKeyUsage(
+            user_id=None,
+            api_key=fake_api_key,
+            reserved_tokens=reserved_tokens,
+            used_tokens=None,
+            interval_started_at=interval_started_at,
+        )
+
+        async with use_api_key(key_usage):
+            key_usage.used_tokens = used_tokens

@@ -286,7 +286,6 @@ async def use_api_key(key_usage: APIKeyUsage) -> AsyncGenerator[None, None]:
             "convert_reserved_to_used", reserved_tokens=key_usage.reserved_tokens, used_tokens=key_usage.used_tokens
         )
 
-        # TODO: tests
         if key_usage.user_id is not None:
             await r_domain.convert_reserved_to_used(
                 user_id=key_usage.user_id,
