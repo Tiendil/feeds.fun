@@ -44,25 +44,23 @@ def split_text(text: str, parts: int, intersection: int) -> list[str]:
     return text_parts
 
 
-# TODO: tests
-def split_text_according_to_tokens(llm: ProviderInterface, config: LLMConfiguration, text: str) -> list[str]:
+def split_text_according_to_tokens(llm: ProviderInterface, llm_config: LLMConfiguration, text: str) -> list[str]:
     parts_number = 0
 
-    max_context_size = llm.max_context_size_for_model(config)
+    model = llm.get_model(llm_config)
 
-    # TODO: move to common code
     while True:
         parts_number += 1
 
-        parts = split_text(text, parts=parts_number, intersection=config.text_parts_intersection)
+        parts = split_text(text, parts=parts_number, intersection=llm_config.text_parts_intersection)
 
-        parts_tokens = [llm.estimate_tokens(config, text=part) for part in parts]
+        parts_tokens = [llm.estimate_tokens(llm_config, text=part) for part in parts]
 
-        if any(tokens + config.max_return_tokens >= max_context_size for tokens in parts_tokens):
+        if any(tokens + llm_config.max_return_tokens >= model.max_context_size for tokens in parts_tokens):
             continue
 
-        # if sum(tokens + max_return_tokens for tokens in parts_tokens) >= max_context_size:
-        #     break
+        if sum(tokens + llm_config.max_return_tokens for tokens in parts_tokens) > model.max_tokens_per_entry:
+            raise errors.TooManyTokensForEntry()
 
         return parts
 

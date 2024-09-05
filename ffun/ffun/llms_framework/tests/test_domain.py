@@ -2,7 +2,9 @@
 import pytest
 
 from ffun.llms_framework import errors
-from ffun.llms_framework.domain import split_text
+from ffun.llms_framework.domain import split_text, split_text_according_to_tokens
+from ffun.llms_framework.provider_interface import ProviderTest
+from ffun.llms_framework.entities import LLMConfiguration
 
 
 class TestSplitText:
@@ -54,3 +56,52 @@ class TestSplitText:
                               ])
     def test_split(self, text: str, parts: int, intersection: int, expected: list[str]) -> None:
         assert split_text(text, parts=parts, intersection=intersection) == expected
+
+
+class TestSplitTextAccordingToTokens:
+
+    @pytest.fixture
+    def llm_config(self) -> LLMConfiguration:
+        return LLMConfiguration(model='test-model-1',
+                                system="system prompt",
+                                max_return_tokens=143,
+                                text_parts_intersection=100,
+                                temperature=0,
+                                top_p=0,
+                                presence_penalty=0,
+                                frequency_penalty=0)
+
+    def test_single_part(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
+        text = "some text"
+
+        parts = split_text_according_to_tokens(llm=fake_llm_provider, llm_config=llm_config, text=text)
+
+        assert parts == [text]
+
+    def test_multiple_parts(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
+        # We test that algorithm will pass a few iterations before finding the right split
+        # => for this test, text must be splittable to 3 parts
+
+        model = fake_llm_provider.get_model(llm_config)
+
+        size = int(model.max_context_size * 2.5)
+
+        text = "a" * size
+
+        parts = split_text_according_to_tokens(llm=fake_llm_provider, llm_config=llm_config, text=text)
+
+        assert len(parts) == 3
+
+        assert size < sum(len(part) for part in parts) < size + 2 * 2 * llm_config.text_parts_intersection + 1
+
+        assert abs(len(parts[0]) - len(parts[1])) <= llm_config.text_parts_intersection + 1
+        assert abs(len(parts[1]) - len(parts[2])) <= llm_config.text_parts_intersection + 1
+        assert abs(len(parts[0]) - len(parts[2])) <= 1
+
+    def test_too_many_tokens_for_entry(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
+        model = fake_llm_provider.get_model(llm_config)
+
+        text = "a" * (model.max_tokens_per_entry + 1)
+
+        with pytest.raises(errors.TooManyTokensForEntry):
+            split_text_according_to_tokens(llm=fake_llm_provider, llm_config=llm_config, text=text)

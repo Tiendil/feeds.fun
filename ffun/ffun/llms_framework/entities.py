@@ -23,6 +23,9 @@ class ModelInfo(pydantic.BaseModel):
     max_context_size: int
     max_return_tokens: int
 
+    # protection from overuse/overspend
+    max_tokens_per_entry: int
+
 
 class KeyStatus(str, enum.Enum):
     works = "works"

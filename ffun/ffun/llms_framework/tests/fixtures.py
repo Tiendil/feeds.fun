@@ -7,6 +7,7 @@ from ffun.domain.datetime_intervals import month_interval_start
 from ffun.llms_framework.entities import UserKeyInfo
 from ffun.llms_framework.keys_rotator import _get_user_key_infos
 from ffun.llms_framework.keys_statuses import Statuses
+from ffun.llms_framework.provider_interface import ProviderTest
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
 
@@ -57,3 +58,8 @@ def fake_api_key() -> str:
 @pytest.fixture
 def api_key_statuses() -> Statuses:
     return Statuses()
+
+
+@pytest.fixture
+def fake_llm_provider() -> ProviderTest:
+    return ProviderTest()

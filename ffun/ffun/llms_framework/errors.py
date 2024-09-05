@@ -35,3 +35,7 @@ class NoKeyFoundForFeed(Error):
 
 class UsedTokensHasNotSpecified(Error):
     pass
+
+
+class TooManyTokensForEntry(Error):
+    pass

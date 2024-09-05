@@ -55,7 +55,8 @@ class ProviderTest(ProviderInterface):
         return [ChatRequestTest(text=text)]
 
     def estimate_tokens(self, config: LLMConfiguration, text: str) -> int:
-        return 0
+        """Count each character as a token to simplify tests"""
+        return len(text)
 
     async def chat_request(self, config: LLMConfiguration, api_key: str, request: ChatRequestTest) -> ChatResponseTest:  # type: ignore
         return ChatResponseTest(content="")
