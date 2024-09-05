@@ -64,14 +64,16 @@ def track_key_status(key: str, statuses: Statuses) -> Generator[None, None, None
 class OpenAIInterface(ProviderInterface):
     provider = Provider.openai
 
+    additional_tokens_per_message: int = 10
+
     def estimate_tokens(self, config: LLMConfiguration, text: str) -> int:
         encoding = _get_encoding(config.model)
 
         system_tokens = (
-            config.additional_tokens_per_message + len(encoding.encode("system")) + len(encoding.encode(config.system))
+            self.additional_tokens_per_message + len(encoding.encode("system")) + len(encoding.encode(config.system))
         )
 
-        text_tokens = config.additional_tokens_per_message + len(encoding.encode("user")) + len(encoding.encode(text))
+        text_tokens = self.additional_tokens_per_message + len(encoding.encode("user")) + len(encoding.encode(text))
 
         return system_tokens + text_tokens
 

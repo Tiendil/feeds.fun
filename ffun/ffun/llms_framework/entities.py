@@ -40,7 +40,6 @@ class LLMConfiguration(BaseEntity):
     system: str  # TODO: trim
     max_return_tokens: int
     text_parts_intersection: int
-    additional_tokens_per_message: int
     temperature: decimal.Decimal
     top_p: decimal.Decimal
     presence_penalty: decimal.Decimal

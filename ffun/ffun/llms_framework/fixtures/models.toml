@@ -1,8 +1,14 @@
 [[models]]
   provider = "test"
-  name = "test-model"
+  name = "test-model-1"
   max_context_size = 128000
   max_return_tokens = 4096
+
+[[models]]
+  provider = "test"
+  name = "test-model-2"
+  max_context_size = 14212
+  max_return_tokens = 1024
 
 [[models]]
   provider = "openai"
