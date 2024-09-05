@@ -35,7 +35,6 @@ class KeyStatus(str, enum.Enum):
 # But for simplicity, for now, we will use the unified config for all providers.
 # We'll split it later if needed.
 class LLMConfiguration(BaseEntity):
-    provider: Provider
     model: str
     system: str  # TODO: trim
     max_return_tokens: int

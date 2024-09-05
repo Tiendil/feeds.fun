@@ -76,6 +76,7 @@ for processor_config in settings.tag_processors:
                 entry_template=processor_config.entry_template,
                 text_cleaner=processor_config.text_cleaner,
                 tag_extractor=processor_config.tags_extractor,
+                llm_provider=processor_config.llm_provider,
                 llm_config=processor_config.llm_config,
                 collections_api_key=processor_config.collections_api_key,
                 general_api_key=processor_config.general_api_key,

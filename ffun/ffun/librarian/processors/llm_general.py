@@ -7,7 +7,7 @@ from ffun.librarian.processors import base
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors as llmsf_errors
 from ffun.llms_framework.domain import call_llm, search_for_api_key
-from ffun.llms_framework.entities import ChatResponse, LLMConfiguration
+from ffun.llms_framework.entities import ChatResponse, LLMConfiguration, Provider
 from ffun.llms_framework.providers import llm_providers
 from ffun.ontology.entities import ProcessorTag
 
@@ -28,6 +28,7 @@ class Processor(base.Processor):
 
     def __init__(  # noqa
         self,
+            llm_provider: Provider,
         llm_config: LLMConfiguration,
         entry_template: str,
         text_cleaner: str,
@@ -38,7 +39,7 @@ class Processor(base.Processor):
     ):
         super().__init__(**kwargs)
         self.llm_config = llm_config
-        self.llm_provider = llm_providers.get(llm_config.provider).provider
+        self.llm_provider = llm_providers.get(llm_provider).provider
         self.entry_template = entry_template
 
         cleaner_module, cleaner_function = text_cleaner.rsplit(".", 1)

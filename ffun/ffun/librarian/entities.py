@@ -7,7 +7,7 @@ import pydantic
 
 from ffun.core import logging
 from ffun.core.entities import BaseEntity
-from ffun.llms_framework.entities import LLMConfiguration
+from ffun.llms_framework.entities import LLMConfiguration, Provider
 
 logger = logging.get_module_logger()
 
@@ -56,6 +56,8 @@ class LLMGeneralProcessor(BaseProcessor):
 
     # TODO: validate
     tags_extractor: str
+
+    llm_provider: Provider
 
     llm_config: LLMConfiguration
 

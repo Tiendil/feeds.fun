@@ -30,6 +30,8 @@
   text_cleaner = "ffun.librarian.text_cleaners.clear_html"
   tags_extractor = "ffun.librarian.tag_extractors.dog_tags_extractor"
 
+  llm_provider = "openai"
+
   #####################################
   # ATTENTION!!!
   # setting up this values may lead to significant costs
@@ -42,7 +44,6 @@
   #####################################
 
   [tag_processors.llm_config]
-    provider = "openai"
     model = "gpt-4o-mini-2024-07-18"
     max_return_tokens = 4096
     text_parts_intersection = 200

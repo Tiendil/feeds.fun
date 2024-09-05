@@ -26,8 +26,7 @@ class TestBaseProviderInterfaceClass:
     def test_get_model(self, mocker: MockerFixture) -> None:
         provider = ProviderTest()
 
-        config_1 = LLMConfiguration(provider=Provider.test,
-                                    model='test-model-1',
+        config_1 = LLMConfiguration(model='test-model-1',
                                     system="system prompt",
                                     max_return_tokens=143,
                                     text_parts_intersection=100,
@@ -61,8 +60,7 @@ class TestBaseProviderInterfaceClass:
     def test_wrong_provider(self, mocker: MockerFixture) -> None:
         provider = ProviderTest()
 
-        config = LLMConfiguration(provider=Provider.openai,
-                                  model='chatgpt-4o-latest',
+        config = LLMConfiguration(model='chatgpt-4o-latest',
                                   system="system prompt",
                                   max_return_tokens=143,
                                   text_parts_intersection=100,
@@ -81,8 +79,7 @@ class TestBaseProviderInterfaceClass:
     def test_wrong_model(self, mocker: MockerFixture) -> None:
         provider = ProviderTest()
 
-        config_1 = LLMConfiguration(provider=Provider.test,
-                                    model='test-model-wrong',
+        config_1 = LLMConfiguration(model='test-model-wrong',
                                     system="system prompt",
                                     max_return_tokens=143,
                                     text_parts_intersection=100,
