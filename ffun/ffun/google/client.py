@@ -38,9 +38,11 @@ class Client:
                                 'threshold': 'BLOCK_NONE'} for category in _safety_categories],
         }
 
-        # TODO: process errors
-        async with httpx.AsyncClient(headers=headers, timeout=timeout) as client:
-            response = await client.post(url, json=request)
+        try:
+            async with httpx.AsyncClient(headers=headers, timeout=timeout) as client:
+                response = await client.post(url, json=request)
+        except Exception as e:
+            raise errors.UnknownError(message=str(e)) from e
 
         if response.status_code == 429:
             raise errors.QuotaError(message=response.content, status_code=response.status_code)
