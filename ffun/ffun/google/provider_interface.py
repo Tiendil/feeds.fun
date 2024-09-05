@@ -14,6 +14,7 @@ from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.provider_interface import ChatRequest, ChatResponse, ProviderInterface
 # from vertexai.preview.tokenization import get_tokenizer_for_model
 from ffun.google.client import Client
+from ffun.google import errors
 from ffun.google.entities import GoogleChatRequest, GoogleChatResponse, ChatMessage, GenerationConfig
 
 logger = logging.get_module_logger()
@@ -26,29 +27,21 @@ logger = logging.get_module_logger()
 #       Maybe, we could move flags: for_collections, for_users, for_all to the configuration of all tag processors?
 
 
-# TODO: tests
-# TODO: separate keys by providers
 @contextlib.contextmanager
 def track_key_status(key: str, statuses: Statuses) -> Generator[None, None, None]:
     try:
+
         yield
+
         statuses.set(key, KeyStatus.works)
-    # TODO: add correct processing
-    # except google_core_exceptions.InvalidArgument as e:
-    #     if e.reason == 'API_KEY_INVALID':
-    #         statuses.set(key, KeyStatus.broken)
-    #     else:
-    #         statuses.set(key, KeyStatus.unknown)
 
-    #     raise
+    except errors.AuthError:
+        statuses.set(key, KeyStatus.broken)
+        raise
 
-    # except google_core_exceptions.TooManyRequests:
-    #     statuses.set(key, KeyStatus.quota)
-    #     raise
-
-    # except google_core_exceptions.GoogleAPIError:
-    #     statuses.set(key, KeyStatus.unknown)
-    #     raise
+    except errors.QuotaError:
+        statuses.set(key, KeyStatus.quota)
+        raise
 
     except Exception:
         statuses.set(key, KeyStatus.unknown)
