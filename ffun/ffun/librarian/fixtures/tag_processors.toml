@@ -111,3 +111,6 @@ Remember:
   workers = 1
   name = "upper_case_title"
   type = "upper_case_title"
+
+
+# TODO: add example of Gemini processor
