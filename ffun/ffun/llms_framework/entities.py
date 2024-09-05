@@ -31,7 +31,7 @@ class KeyStatus(str, enum.Enum):
     unknown = "unknown"
 
 
-# Generally, different LLM providers can have config parameters with different names.
+# Generally, different LLM providers can have different config parameters with different names.
 # But for simplicity, for now, we will use the unified config for all providers.
 # We'll split it later if needed.
 class LLMConfiguration(BaseEntity):
@@ -47,12 +47,10 @@ class LLMConfiguration(BaseEntity):
     frequency_penalty: decimal.Decimal
 
 
-# TODO: transform to protocol
 class ChatRequest(BaseEntity):
     pass
 
 
-# TODO: transform to protocol
 class ChatResponse(BaseEntity):
 
     def response_content(self) -> str:

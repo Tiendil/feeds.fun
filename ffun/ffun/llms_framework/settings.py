@@ -27,7 +27,6 @@ class Settings(BaseSettings):
     key_quota_timeout: datetime.timedelta = datetime.timedelta(hours=1)
     key_broken_timeout: datetime.timedelta = datetime.timedelta(hours=1)
 
-    # TODO: tests
     @pydantic.computed_field  # type: ignore
     @functools.cached_property
     def models(self) -> list[ModelInfo]:
