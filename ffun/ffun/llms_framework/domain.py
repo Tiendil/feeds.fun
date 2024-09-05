@@ -87,7 +87,7 @@ async def search_for_api_key(
         general_api_key=general_api_key,
     )
 
-    return await choose_api_key(select_key_context)
+    return await choose_api_key(llm, select_key_context)
 
 
 # TODO: tests

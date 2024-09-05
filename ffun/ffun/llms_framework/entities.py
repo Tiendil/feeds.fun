@@ -93,8 +93,3 @@ class SelectKeyContext(BaseEntity):
     interval_started_at: datetime.datetime = pydantic.Field(default_factory=month_interval_start)
     collections_api_key: str | None
     general_api_key: str | None
-
-
-class KeySelector(Protocol):
-    async def __call__(self, context: SelectKeyContext) -> APIKeyUsage | None:
-        """Selector function"""

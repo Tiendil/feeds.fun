@@ -1,7 +1,7 @@
 import contextlib
 import datetime
 import uuid
-from typing import Any, AsyncGenerator, Collection, Iterable
+from typing import Any, AsyncGenerator, Collection, Iterable, Protocol
 
 from ffun.core import logging
 from ffun.feeds.entities import FeedId
@@ -10,13 +10,13 @@ from ffun.feeds_links import domain as fl_domain
 from ffun.llms_framework import errors
 from ffun.llms_framework.entities import (
     APIKeyUsage,
-    KeySelector,
     KeyStatus,
     LLMConfiguration,
     SelectKeyContext,
     UserKeyInfo,
 )
 from ffun.llms_framework.providers import llm_providers
+from ffun.llms_framework.provider_interface import ProviderInterface
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
 
@@ -27,15 +27,18 @@ logger = logging.get_module_logger()
 #       i.e. in case of a problem, we should count a key as used with a maximum used tokens
 
 
+class KeySelector(Protocol):
+    async def __call__(self, llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage | None:
+        """Selector function"""
+
+
 #######################
 # filtering users logic
 #######################
 
 
 # TODO: add lock here to not check the same key in parallel by different processors
-async def _api_key_is_working(llm_config: LLMConfiguration, api_key: str) -> bool:
-    llm = llm_providers.get(llm_config.provider).provider
-
+async def _api_key_is_working(llm: ProviderInterface, llm_config: LLMConfiguration, api_key: str) -> bool:
     status = llm.api_keys_statuses.get(api_key)
 
     if status == KeyStatus.works:
@@ -50,9 +53,9 @@ async def _api_key_is_working(llm_config: LLMConfiguration, api_key: str) -> boo
 
 
 async def _filter_out_users_with_wrong_keys(
-    llm_config: LLMConfiguration, infos: list[UserKeyInfo], **kwargs: Any
+        llm: ProviderInterface, llm_config: LLMConfiguration, infos: list[UserKeyInfo], **kwargs: Any
 ) -> list[UserKeyInfo]:
-    return [info for info in infos if info.api_key and await _api_key_is_working(llm_config, info.api_key)]
+    return [info for info in infos if info.api_key and await _api_key_is_working(llm, llm_config, info.api_key)]
 
 
 async def _filter_out_users_without_keys(infos: list[UserKeyInfo], **kwargs: Any) -> list[UserKeyInfo]:
@@ -145,6 +148,7 @@ _filters = (
 
 
 async def _get_candidates(  # noqa
+    llm: ProviderInterface,
     llm_config: LLMConfiguration,
     feed_id: FeedId,
     interval_started_at: datetime.datetime,
@@ -160,12 +164,13 @@ async def _get_candidates(  # noqa
         if not infos:
             return []
 
-        infos = await _filter(llm_config=llm_config, infos=infos, entry_age=entry_age, reserved_tokens=reserved_tokens)
+        infos = await _filter(llm=llm, llm_config=llm_config, infos=infos, entry_age=entry_age, reserved_tokens=reserved_tokens)
 
     return infos
 
 
 async def _find_best_user_with_key(
+        llm: ProviderInterface,
     llm_config: LLMConfiguration,
     feed_id: FeedId,
     entry_age: datetime.timedelta,
@@ -173,6 +178,7 @@ async def _find_best_user_with_key(
     reserved_tokens: int,
 ) -> UserKeyInfo | None:
     infos = await _get_candidates(
+        llm=llm,
         llm_config=llm_config,
         feed_id=feed_id,
         interval_started_at=interval_started_at,
@@ -190,7 +196,7 @@ async def _find_best_user_with_key(
 ####################
 
 
-async def _choose_general_key(context: SelectKeyContext) -> APIKeyUsage | None:
+async def _choose_general_key(llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage | None:
 
     key = context.general_api_key
 
@@ -206,7 +212,7 @@ async def _choose_general_key(context: SelectKeyContext) -> APIKeyUsage | None:
     )
 
 
-async def _choose_collections_key(context: SelectKeyContext) -> APIKeyUsage | None:
+async def _choose_collections_key(llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage | None:
 
     key = context.collections_api_key
 
@@ -225,8 +231,9 @@ async def _choose_collections_key(context: SelectKeyContext) -> APIKeyUsage | No
     )
 
 
-async def _choose_user_key(context: SelectKeyContext) -> APIKeyUsage | None:
+async def _choose_user_key(llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage | None:
     info = await _find_best_user_with_key(
+        llm=llm,
         llm_config=context.llm_config,
         feed_id=context.feed_id,
         entry_age=context.entry_age,
@@ -252,9 +259,9 @@ async def _choose_user_key(context: SelectKeyContext) -> APIKeyUsage | None:
 _key_selectors: Collection[KeySelector] = (_choose_general_key, _choose_collections_key, _choose_user_key)
 
 
-async def choose_api_key(context: SelectKeyContext, selectors: Iterable[KeySelector] = _key_selectors) -> APIKeyUsage:
+async def choose_api_key(llm: ProviderInterface, context: SelectKeyContext, selectors: Iterable[KeySelector] = _key_selectors) -> APIKeyUsage:
     for key_selector in selectors:
-        key_usage = await key_selector(context)
+        key_usage = await key_selector(llm, context)
 
         if key_usage is not None:
             return key_usage
