@@ -52,9 +52,11 @@ brotlicffi = "1.1.*"
 openai = "1.30.*"
 tiktoken = "0.7.*"
 
-google-generativeai = "0.7.*"
-vertexai = {extras = ["tokenization"], version = "1.64.*"}
-sentencepiece = "0.2.*" # should be installed by vertexai with "tokenization" option but something goes wrong
+# TODO: remove
+# google-generativeai = "0.7.*"
+# vertexai = {extras = ["tokenization"], version = "1.64.*"}
+# sentencepiece = "0.2.*" # should be installed by vertexai with "tokenization" option but something goes wrong
+# protobuf = "4.25.*" # downgrade protobuf because of problems with warnings in tests in 5th version
 
 bidict = "0.23.*"
 
@@ -66,7 +68,7 @@ async-lru = "2.0.*"
 
 psycopg = "3.1.*"
 psycopg-pool = "3.2.*"
-yoyo-migrations = "8.2.*"
+yoyo-migrations = "9.0.*"
 PyPika = "0.48.*"
 
 structlog = "24.2.*"
@@ -97,7 +99,7 @@ toml = "0.10.*"
 
 changy = "0.*"
 
-pytest = "8.2.*"
+pytest = "8.3.*"
 pytest-asyncio = "0.23.*"
 pytest-mock = "3.14.*"
 
@@ -186,15 +188,17 @@ addopts = """-x -vv --strict-markers -p no:cacheprovider"""
 filterwarnings = [
   "error",
   "ignore::DeprecationWarning:feedparser.encodings:29",
-  "ignore::DeprecationWarning:yoyo.migrations:34",
+  # "ignore::DeprecationWarning:yoyo.migrations:34",
 
   # datetime.datetime.utcnow
-  "ignore::DeprecationWarning:yoyo.backends.base:341",
-  "ignore::DeprecationWarning:yoyo.backends.base:541",
-  "ignore::DeprecationWarning:yoyo.backends.base:562",
-  "ignore::DeprecationWarning:yoyo.internalmigrations:68",
+  # "ignore::DeprecationWarning:yoyo.backends.base:341",
+  # "ignore::DeprecationWarning:yoyo.backends.base:541",
+  # "ignore::DeprecationWarning:yoyo.backends.base:562",
+  # "ignore::DeprecationWarning:yoyo.internalmigrations:68",
 
-  "ignore::pytest.PytestDeprecationWarning:pytest_asyncio.plugin:231"
+  # "ignore::pytest.PytestDeprecationWarning:pytest_asyncio.plugin:231"
+
+  # ??? # "ignore::DeprecationWarning:google.protobuf.internal.api_implementation:41"
 ]
 
 [tool.flake8]
