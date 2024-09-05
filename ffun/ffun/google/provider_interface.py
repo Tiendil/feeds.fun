@@ -58,21 +58,19 @@ def track_key_status(key: str, statuses: Statuses) -> Generator[None, None, None
 class GoogleInterface(ProviderInterface):
     provider = Provider.google
 
-    # TODO: refactor according to gemini logic
     def estimate_tokens(self, config: LLMConfiguration, text: str) -> int:
-        # TODO: do better
-        return len(text) * 4
-        # tokenizer = get_tokenizer_for_model(config.model)
+        # There are multiple ways to count tokens for Gemini:
+        # 1. Use vertextai lib to count tokens locally.
+        #    For now, it is too big a dependency for the project.
+        #    Also, it was difficult to integrate official Google Libs.
+        # 2. Use Google REST API to calculate tokens remotely.
+        #    Looks like too much overhead.
+        # 3. Estimate upper boundaries with a heuristic.
+        #    Because the context windows of Gemini models are big
+        #    this approach looks ok for start.
 
-        # system_tokens = [config.additional_tokens_per_message,
-        #                  tokenizer.count_tokens("system").total_tokens,
-        #                  tokenizer.count_tokens(config.system).total_tokens]
-
-        # text_tokens = [config.additional_tokens_per_message,
-        #                tokenizer.count_tokens("user").total_tokens,
-        #                tokenizer.count_tokens(text).total_tokens]
-
-        # return sum(system_tokens) + sum(text_tokens)
+        # Coefficient was chosen according to ChatGPT's recommendations :-)
+        return len(text) * 1.8
 
     async def chat_request(  # type: ignore
         self, config: LLMConfiguration, api_key: str, request: GoogleChatRequest
