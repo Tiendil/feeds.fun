@@ -99,7 +99,7 @@ toml = "0.10.*"
 
 changy = "0.*"
 
-pytest = "8.2.*"  # rollback pytest version becaus of strange error/warning in pluggy
+pytest = "8.3.*"
 pytest-asyncio = "0.24.*"
 pytest-mock = "3.14.*"
 
@@ -185,18 +185,20 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 addopts = """-x -vv --strict-markers -p no:cacheprovider"""
+
+# TODO: remove commented lines
 filterwarnings = [
   "error",
   "ignore::DeprecationWarning:feedparser.encodings:29",
-  "ignore::DeprecationWarning:yoyo.migrations:34",
+  # "ignore::DeprecationWarning:yoyo.migrations:34",
 
   # datetime.datetime.utcnow
-  "ignore::DeprecationWarning:yoyo.backends.base:341",
-  "ignore::DeprecationWarning:yoyo.backends.base:541",
-  "ignore::DeprecationWarning:yoyo.backends.base:562",
-  "ignore::DeprecationWarning:yoyo.internalmigrations:68",
+  # "ignore::DeprecationWarning:yoyo.backends.base:341",
+  # "ignore::DeprecationWarning:yoyo.backends.base:541",
+  # "ignore::DeprecationWarning:yoyo.backends.base:562",
+  # "ignore::DeprecationWarning:yoyo.internalmigrations:68",
 
-  "ignore::pytest.PytestDeprecationWarning:pytest_asyncio.plugin:231"
+  # "ignore::pytest.PytestDeprecationWarning:pytest_asyncio.plugin:231"
 ]
 
 [tool.flake8]

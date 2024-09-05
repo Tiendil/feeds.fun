@@ -12,14 +12,15 @@ from ffun.google import errors
 
 
 class TestTrackKeyStatus:
+
     def test_works(self, api_key_statuses: Statuses) -> None:
         with track_key_status("key_1", api_key_statuses):
             pass
 
         assert api_key_statuses.get("key_1") == KeyStatus.works
 
-    @pytest.mark.parametrize("exception, reason", [errors.AuthError])
-    def test_authentication_error(self, exception: Type[Exception], reason: str, api_key_statuses: Statuses) -> None:
+    @pytest.mark.parametrize("exception", [errors.AuthError])
+    def test_authentication_error(self, exception: Type[Exception], api_key_statuses: Statuses) -> None:
         with pytest.raises(exception):
             with track_key_status("key_1", api_key_statuses):
                 raise exception()
