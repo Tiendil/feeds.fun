@@ -14,7 +14,7 @@ from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.provider_interface import ChatRequest, ChatResponse, ProviderInterface
 # from vertexai.preview.tokenization import get_tokenizer_for_model
 from ffun.google.client import Client
-from ffun.google.entities import GoogleChatRequest, GoogleChatResponse
+from ffun.google.entities import GoogleChatRequest, GoogleChatResponse, ChatMessage, GenerationConfig
 
 logger = logging.get_module_logger()
 
@@ -77,34 +77,24 @@ class GoogleInterface(ProviderInterface):
 
         # return sum(system_tokens) + sum(text_tokens)
 
-    # TODO: test
-    # TODO: Code is taken from https://github.com/google-gemini/generative-ai-python/issues/136
-    #       Refactor after this issue will be resolved
-    # def _model(self, model_name: str, system: str, api_key: str) -> genai.GenerativeModel:
-    #     # TODO: cache clients?
-    #     client = glm.GenerativeServiceAsyncClient(
-    #         client_options={'api_key': api_key}
-    #     )
-
-    #     model = genai.GenerativeModel(model_name=model_name,
-    #                                   system_instruction=system)
-    #     model._client = None
-    #     model._async_client = client
-
-    #     return model
-
     async def chat_request(  # type: ignore
         self, config: LLMConfiguration, api_key: str, request: GoogleChatRequest
     ) -> GoogleChatResponse:
 
+        # TODO: cache
         client = Client(api_key=api_key)
+
+        generation_config = GenerationConfig(max_output_tokens=config.max_return_tokens,
+                                             temperature=float(config.temperature),
+                                             top_p=float(config.top_p),
+                                             top_k=None)
 
         try:
             with track_key_status(api_key, self.api_keys_statuses):
                 # TODO: retries via request_options?
-                answer = await client.generate_content(config=config, request=request)
-
-                print(answer)
+                answer = await client.generate_content(model=config.model,
+                                                       request=request,
+                                                       config=generation_config)
 
         # TODO: add correct error processing
         # except google.APIError as e:
@@ -117,89 +107,15 @@ class GoogleInterface(ProviderInterface):
 
         return answer
 
-
-        # TODO: how to differe keys of different providers?
-        # TODO: move out of here
-
-        # model = self._model(model_name=config.model,
-        #                     system=request.system_message,
-        #                     api_key=api_key)
-
-        # generation_config = genai.types.GenerationConfig(
-        #     candidate_count=1,
-        #     stop_sequences=[],
-        #     response_mime_type='text/plain',
-        #     response_schema=None,
-        #     max_output_tokens=config.max_return_tokens,
-        #     temperature=config.temperature,
-        #     top_p=config.top_p,
-        #     top_k=None,  # TODO: add to config?
-        # )
-
-        # safety_settings = []
-
-        # print(list(safety_types.HarmCategory))
-        # TODO: list of categories in safety_types.HarmCategory is not equal to returned in error messages
-        # for category in safety_types.HarmCategory:
-        #     if category == safety_types.HarmCategory.HARM_CATEGORY_UNSPECIFIED:
-        #         continue
-
-        #     safety_settings.append(
-        #         {
-        #             "category": category,
-        #             "threshold": safety_types.HarmBlockThreshold.BLOCK_NONE,
-        #         }
-        #     )
-
-        # try:
-        #     with track_key_status(api_key, self.api_keys_statuses):
-        #         # TODO: retries via request_options?
-        #         answer = await model.generate_content_async(request.user_message,
-        #                                                     generation_config=generation_config,
-        #                                                     safety_settings=safety_settings)
-
-        #         # print(answer)
-
-        # # TODO: add correct error processing
-        # # except google.APIError as e:
-        # except Exception as e:
-        #     print(e.__class__, e)
-        #     logger.info("google_api_error", message=str(e))
-        #     raise llmsf_errors.TemporaryError(message=str(e)) from e
-
-        # logger.info("google_response")
-
-        # # print(dir(answer))
-        # # print(answer.__dict__)
-
-        # if not answer._done:
-        #     # TODO: custom exception
-        #     raise NotImplementedError('Something goes wrong')
-
-        # # assert answer.choices[0].message.content is not None
-        # # assert answer.usage is not None
-
-        # content = answer.text
-
-        # usage = answer.usage_metadata
-
-        # return GoogleChatResponse(
-        #     content=content,
-        #     prompt_tokens=usage.prompt_token_count,
-        #     completion_tokens=usage.candidates_token_count,
-        #     total_tokens=usage.total_token_count
-        # )
-
     def prepare_requests(self, config: LLMConfiguration, text: str) -> list[GoogleChatRequest]:  # type: ignore  # noqa: CFQ002
-
         parts = llmsf_domain.split_text_according_to_tokens(llm=self, config=config, text=text)
 
         requests = []
 
         for part in parts:
             request = GoogleChatRequest(
-                system_message=config.system,
-                user_message=part
+                system=ChatMessage(text=config.system),
+                messages=[ChatMessage(role='user', text=part)]
             )
 
             requests.append(request)
