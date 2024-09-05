@@ -84,23 +84,21 @@ class GoogleInterface(ProviderInterface):
 
         try:
             with track_key_status(api_key, self.api_keys_statuses):
-                # TODO: retries via request_options?
                 answer = await client.generate_content(model=config.model,
                                                        request=request,
                                                        config=generation_config)
 
-        # TODO: add correct error processing
-        # except google.APIError as e:
         except Exception as e:
-            print(e.__class__, e)
-            logger.info("google_api_error", message=str(e))
+            # temporary track all errors here, till we not implement good enough processing of them
+            logger.exception("google_api_error")
             raise llmsf_errors.TemporaryError(message=str(e)) from e
 
         logger.info("google_response")
 
         return answer
 
-    def prepare_requests(self, config: LLMConfiguration, text: str) -> list[GoogleChatRequest]:  # type: ignore  # noqa: CFQ002
+    # TODO: test
+    def prepare_requests(self, config: LLMConfiguration, text: str) -> list[GoogleChatRequest]:  # type: ignore
         parts = llmsf_domain.split_text_according_to_tokens(llm=self, config=config, text=text)
 
         requests = []
@@ -116,13 +114,14 @@ class GoogleInterface(ProviderInterface):
         return requests
 
     async def check_api_key(self, config: LLMConfiguration, api_key: str) -> KeyStatus:
-        # TODO: implement actual check
-        with track_key_status(api_key, self.api_keys_statuses):
+        # TODO: cache
+        client = Client(api_key=api_key)
+
+        try:
+            with track_key_status(api_key, self.api_keys_statuses):
+                await client.list_models()
+        except errors.ClientError:
             pass
-        #     try:
-        #         await google.AsyncGoogle(api_key=api_key).models.list()
-        #     except google.APIError:
-        #         pass
 
         return self.api_keys_statuses.get(api_key)
 

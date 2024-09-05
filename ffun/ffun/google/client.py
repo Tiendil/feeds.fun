@@ -1,4 +1,7 @@
 import httpx
+import contextlib
+
+from typing import Generator, Any
 
 from ffun.google import errors
 from ffun.google.settings import settings
@@ -20,6 +23,23 @@ class Client:
         self._api_key = api_key
         self.entry_point = entry_point
 
+    @contextlib.contextmanager
+    def _handle_network_errors(self) -> Generator[None, None, None]:
+        try:
+            yield
+        except Exception as e:
+            raise errors.UnknownError(message=str(e)) from e
+
+    def _handle_response_errors(self, response: httpx.Response) -> None:
+        if response.status_code == 429:
+            raise errors.QuotaError(message=response.content, status_code=response.status_code)
+
+        if response.status_code in (401, 403):
+            raise errors.AuthError(message=response.content, status_code=response.status_code)
+
+        if response.status_code != 200:
+            raise errors.UnknownError(message=response.content, status_code=response.status_code)
+
     async def generate_content(self,
                                model: str,
                                config: GenerationConfig,
@@ -38,20 +58,11 @@ class Client:
                                 'threshold': 'BLOCK_NONE'} for category in _safety_categories],
         }
 
-        try:
+        with self._handle_network_errors():
             async with httpx.AsyncClient(headers=headers, timeout=timeout) as client:
                 response = await client.post(url, json=request)
-        except Exception as e:
-            raise errors.UnknownError(message=str(e)) from e
 
-        if response.status_code == 429:
-            raise errors.QuotaError(message=response.content, status_code=response.status_code)
-
-        if response.status_code in (401, 403):
-            raise errors.AuthError(message=response.content, status_code=response.status_code)
-
-        if response.status_code != 200:
-            raise errors.UnknownError(message=response.content, status_code=response.status_code)
+        self._handle_response_errors(response)
 
         response_data = response.json()
 
@@ -61,3 +72,17 @@ class Client:
             completion_tokens=response_data['usageMetadata']['candidatesTokenCount'],
             total_tokens=response_data['usageMetadata']['totalTokenCount'],
         )
+
+    # TODO: introduce entity class for models
+    async def list_models(self, timeout: float = settings.gemini_api_timeout) -> list[dict[str, Any]]:
+        headers = {'Content-Type': 'application/json'}
+
+        url = f'{self.entry_point}/models?key={self._api_key}'
+
+        with self._handle_network_errors():
+            async with httpx.AsyncClient(headers=headers, timeout=timeout) as client:
+                response = await client.get(url)
+
+        self._handle_response_errors(response)
+
+        return response.json()['models']
