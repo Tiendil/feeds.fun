@@ -19,6 +19,10 @@ from ffun.google.entities import GoogleChatRequest, GoogleChatResponse, ChatMess
 
 logger = logging.get_module_logger()
 
+# Important!!!
+# TODO: allow specifying providers as third-party plugins
+#       or create an issue on github about that
+
 # IMPROTANT!!!
 # TODO: Solve conflict with using different providers by users vs lack of using providers by system logic (collections)
 #       There is possible situation when collections uses one provider and ignore another, but user wants to use another provider
@@ -89,7 +93,7 @@ class GoogleInterface(ProviderInterface):
                                                        config=generation_config)
 
         except Exception as e:
-            # temporary track all errors here, till we not implement good enough processing of them
+            # temporary track all errors here till we do not implement good enough processing of them
             logger.exception("google_api_error")
             raise llmsf_errors.TemporaryError(message=str(e)) from e
 
