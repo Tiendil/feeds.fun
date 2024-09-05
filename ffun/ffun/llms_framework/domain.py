@@ -65,6 +65,7 @@ async def search_for_api_key(
 ) -> APIKeyUsage:
     llm = llm_providers.get(llm_config.provider).provider
 
+    # TODO: here may be problems with too big context window for gemini
     reserved_tokens = len(requests) * llm.max_context_size_for_model(llm_config)
 
     select_key_context = SelectKeyContext(
