@@ -42,7 +42,9 @@ processors: list[ProcessorInfo] = []
 # TODO: unify creation
 for processor_config in settings.tag_processors:
     if not processor_config.enabled:
-        logger.info("tag_processor_is_disabled", processor_id=processor_config.id, processor_name=processor_config.name)
+        logger.info(
+            "tag_processor_is_disabled", processor_id=processor_config.id, processor_name=processor_config.name
+        )
         continue
 
     logger.info("add_tag_processor", processor_id=processor_config.id, processor_name=processor_config.name)

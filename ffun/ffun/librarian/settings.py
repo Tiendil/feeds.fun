@@ -22,6 +22,7 @@ class Settings(BaseSettings):
         data = toml.loads(self.tag_processors_config.read_text())
 
         return ProcessorsConfig(**data).tag_processors
+
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_LIBRARIAN_")
 
 

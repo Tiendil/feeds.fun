@@ -442,9 +442,7 @@ class TestChooseGeneralKey:
 class TestChooseCollectionsKey:
 
     @pytest.mark.asyncio
-    async def test_no_collections_key_specified(
-        self, select_key_context: SelectKeyContext
-    ) -> None:
+    async def test_no_collections_key_specified(self, select_key_context: SelectKeyContext) -> None:
         assert select_key_context.collections_api_key is None
 
         assert await _choose_collections_key(select_key_context) is None
@@ -591,7 +589,7 @@ class TestUseApiKey:
 
         key_usage = APIKeyUsage(
             user_id=internal_user_id,
-            api_key=fake_api_key ,
+            api_key=fake_api_key,
             reserved_tokens=reserved_tokens,
             used_tokens=None,
             interval_started_at=interval_started_at,

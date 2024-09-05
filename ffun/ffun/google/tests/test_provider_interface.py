@@ -1,14 +1,13 @@
 from typing import Type
-from unittest.mock import MagicMock
 
 import pytest
 
-# from google.api_core import exceptions as google_core_exceptions
-
+from ffun.google import errors
+from ffun.google.provider_interface import track_key_status
 from ffun.llms_framework.entities import KeyStatus
 from ffun.llms_framework.keys_statuses import Statuses
-from ffun.google.provider_interface import track_key_status
-from ffun.google import errors
+
+# from google.api_core import exceptions as google_core_exceptions
 
 
 class TestTrackKeyStatus:

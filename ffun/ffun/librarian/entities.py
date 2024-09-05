@@ -1,7 +1,7 @@
 import datetime
 import enum
 import uuid
-from typing import Any, Literal, Annotated
+from typing import Annotated, Any, Literal
 
 import pydantic
 
@@ -101,8 +101,10 @@ class LLMGeneralProcessor(BaseProcessor):
         return self
 
 
-TagProcessor = Annotated[DomainProcessor | NativeTagsProcessor | UpperCaseTitleProcessor | LLMGeneralProcessor,
-                         pydantic.Field(discriminator='type')]
+TagProcessor = Annotated[
+    DomainProcessor | NativeTagsProcessor | UpperCaseTitleProcessor | LLMGeneralProcessor,
+    pydantic.Field(discriminator="type"),
+]
 
 
 class ProcessorsConfig(pydantic.BaseModel):

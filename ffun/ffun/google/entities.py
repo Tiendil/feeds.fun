@@ -1,20 +1,16 @@
-import contextlib
-import functools
+from typing import Any
+
 import pydantic
-from typing import Generator, Any, Collection
+
+# from vertexai.preview.tokenization import get_tokenizer_for_model
+from ffun.core.entities import BaseEntity
+
 # import google.generativeai as genai
 # from google.ai import generativelanguage as glm
 # from google.generativeai.types import helper_types
 # from google.generativeai.types import safety_types
 # from google.api_core import exceptions as google_core_exceptions
-from ffun.core import logging
-from ffun.llms_framework import domain as llmsf_domain
-from ffun.llms_framework import errors as llmsf_errors
-from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, Provider
-from ffun.llms_framework.keys_statuses import Statuses
-from ffun.llms_framework.provider_interface import ChatRequest, ChatResponse, ProviderInterface
-# from vertexai.preview.tokenization import get_tokenizer_for_model
-from ffun.core.entities import BaseEntity
+from ffun.llms_framework.provider_interface import ChatRequest, ChatResponse
 
 
 class ChatMessage(BaseEntity):
@@ -25,7 +21,7 @@ class ChatMessage(BaseEntity):
         data = {"parts": [{"text": self.text}]}
 
         if self.role is not None:
-            data['role'] = self.role
+            data["role"] = self.role
 
         return data
 
@@ -60,12 +56,12 @@ class GenerationConfig(BaseEntity):
 
     def to_api(self) -> dict[str, Any]:
         return {
-                'candidateCount': self.candidates_count,
-                'stopSequences': self.stop_sequences,
-                'responseMimeType': self.response_mime_type,
-                'responseSchema': self.response_schema,
-                'maxOutputTokens': self.max_output_tokens,
-                'temperature': self.temperature,
-                'topP': self.top_p,
-                'topK': self.top_k,
-            }
+            "candidateCount": self.candidates_count,
+            "stopSequences": self.stop_sequences,
+            "responseMimeType": self.response_mime_type,
+            "responseSchema": self.response_schema,
+            "maxOutputTokens": self.max_output_tokens,
+            "temperature": self.temperature,
+            "topP": self.top_p,
+            "topK": self.top_k,
+        }
