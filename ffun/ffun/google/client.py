@@ -73,7 +73,6 @@ class Client:
             total_tokens=response_data["usageMetadata"]["totalTokenCount"],
         )
 
-    # TODO: introduce entity class for models
     async def list_models(self, timeout: float = settings.gemini_api_timeout) -> list[dict[str, Any]]:
         headers = {"Content-Type": "application/json"}
 
@@ -85,4 +84,5 @@ class Client:
 
         self._handle_response_errors(response)
 
+        # TODO: introduce entity class for models
         return response.json()["models"]  # type: ignore

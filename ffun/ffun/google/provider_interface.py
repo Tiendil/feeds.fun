@@ -49,7 +49,6 @@ def track_key_status(key: str, statuses: Statuses) -> Generator[None, None, None
 
 # TODO: add to the documentation note about quotas of Gemini API (especially free tier)
 # TODO: tests
-# TODO: test support of multiple keys
 class GoogleInterface(ProviderInterface):
     provider = Provider.google
 
@@ -71,7 +70,6 @@ class GoogleInterface(ProviderInterface):
         self, config: LLMConfiguration, api_key: str, request: GoogleChatRequest
     ) -> GoogleChatResponse:
 
-        # TODO: cache
         client = Client(api_key=api_key)
 
         generation_config = GenerationConfig(
@@ -94,7 +92,6 @@ class GoogleInterface(ProviderInterface):
 
         return answer
 
-    # TODO: test
     def prepare_requests(self, config: LLMConfiguration, text: str) -> Sequence[GoogleChatRequest]:  # type: ignore
         parts = llmsf_domain.split_text_according_to_tokens(llm=self, llm_config=config, text=text)
 
@@ -110,7 +107,6 @@ class GoogleInterface(ProviderInterface):
         return requests
 
     async def check_api_key(self, config: LLMConfiguration, api_key: str) -> KeyStatus:
-        # TODO: cache
         client = Client(api_key=api_key)
 
         try:

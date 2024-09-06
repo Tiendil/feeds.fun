@@ -39,7 +39,6 @@ def _get_encoding(model: str) -> tiktoken.Encoding:
 
 
 # TODO: tests
-# TODO: separate keys by providers
 @contextlib.contextmanager
 def track_key_status(key: str, statuses: Statuses) -> Generator[None, None, None]:
     try:
@@ -60,7 +59,6 @@ def track_key_status(key: str, statuses: Statuses) -> Generator[None, None, None
 
 
 # TODO: tests
-# TODO: test support of multiple keys
 class OpenAIInterface(ProviderInterface):
     provider = Provider.openai
 
@@ -80,13 +78,8 @@ class OpenAIInterface(ProviderInterface):
     async def chat_request(  # type: ignore
         self, config: LLMConfiguration, api_key: str, request: OpenAIChatRequest
     ) -> OpenAIChatResponse:
-        # TODO: how to differe keys of different providers?
-        # TODO: move out of here
-
         try:
             with track_key_status(api_key, self.api_keys_statuses):
-                # TODO: cache client
-                # TODO: add automatic retries
                 answer = await openai.AsyncOpenAI(api_key=api_key).chat.completions.create(
                     model=config.model,
                     temperature=float(config.temperature),
