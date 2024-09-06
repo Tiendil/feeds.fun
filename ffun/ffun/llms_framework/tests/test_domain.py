@@ -4,11 +4,14 @@ from pytest_mock import MockerFixture
 
 from ffun.feeds.entities import FeedId
 from ffun.library.entities import Entry
+from ffun.domain.datetime_intervals import month_interval_start
 from ffun.llms_framework import errors
-from ffun.llms_framework.domain import split_text, split_text_according_to_tokens, search_for_api_key
-from ffun.llms_framework.provider_interface import ProviderTest
-from ffun.llms_framework.entities import LLMConfiguration
+from ffun.llms_framework.domain import split_text, split_text_according_to_tokens, search_for_api_key, call_llm
+from ffun.llms_framework.provider_interface import ProviderTest, ChatRequestTest, ChatResponseTest
+from ffun.llms_framework.entities import LLMConfiguration, APIKeyUsage
 from ffun.llms_framework.keys_rotator import choose_api_key, SelectKeyContext
+from ffun.application.resources import Resource as AppResource
+from ffun.resources import domain as r_domain
 
 
 class TestSplitText:
@@ -168,3 +171,58 @@ class TestSearchForAPIKey:
                                              general_api_key=None)
 
         assert key_usage is None
+
+
+class TestCallLLM:
+
+    @pytest.fixture
+    def llm_config(self) -> LLMConfiguration:
+        return LLMConfiguration(model='test-model-1',
+                                system="system prompt",
+                                max_return_tokens=143,
+                                text_parts_intersection=100,
+                                temperature=0,
+                                top_p=0,
+                                presence_penalty=0,
+                                frequency_penalty=0)
+
+    @pytest.mark.asyncio
+    async def test_counts_tokens(self,
+                                 fake_llm_provider: ProviderTest,
+                                 llm_config: LLMConfiguration,
+                                 internal_user_id: str,
+                                 fake_api_key: str) -> None:
+
+        interval_started_at = month_interval_start()
+
+        key_usage = APIKeyUsage(
+            user_id=internal_user_id,
+            api_key=fake_api_key,
+            reserved_tokens=100500,
+            used_tokens=None,
+            interval_started_at=interval_started_at)
+
+        await r_domain.try_to_reserve(
+                user_id=internal_user_id,
+                kind=AppResource.openai_tokens,
+                interval_started_at=interval_started_at,
+                amount=key_usage.reserved_tokens,
+                limit=12451251255,
+            )
+
+        requests = [ChatRequestTest(text='abcd'),
+                    ChatRequestTest(text='efgh1234'),
+                    ChatRequestTest(text='99')]
+
+        responses = await call_llm(llm=fake_llm_provider,
+                                   llm_config=llm_config,
+                                   api_key_usage=key_usage,
+                                   requests=requests)
+
+        assert responses == [ChatResponseTest(content=request.text) for request in requests]
+
+        resources = await r_domain.load_resources(
+            user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
+        )
+
+        assert resources[internal_user_id].used == sum(len(request.text) for request in requests)

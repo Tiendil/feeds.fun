@@ -59,7 +59,7 @@ class ProviderTest(ProviderInterface):
         return len(text)
 
     async def chat_request(self, config: LLMConfiguration, api_key: str, request: ChatRequestTest) -> ChatResponseTest:  # type: ignore
-        return ChatResponseTest(content="")
+        return ChatResponseTest(content=request.text)
 
     async def check_api_key(self, config: LLMConfiguration, api_key: str) -> KeyStatus:
         return KeyStatus.works

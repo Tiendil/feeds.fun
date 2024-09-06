@@ -90,12 +90,12 @@ async def search_for_api_key(
     return await choose_api_key(llm, select_key_context)
 
 
-# TODO: tests
 async def call_llm(
-    llm_config: LLMConfiguration, api_key_usage: APIKeyUsage, requests: list[ChatRequest]
+        llm: ProviderInterface,
+        llm_config: LLMConfiguration,
+        api_key_usage: APIKeyUsage,
+        requests: list[ChatRequest]
 ) -> list[ChatResponse]:
-    llm = llm_providers.get(llm_config.provider).provider
-
     async with use_api_key(api_key_usage):
         tasks = [llm.chat_request(llm_config, api_key_usage.api_key, request) for request in requests]
 
