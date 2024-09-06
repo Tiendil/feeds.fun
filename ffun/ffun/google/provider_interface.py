@@ -1,5 +1,5 @@
 import contextlib
-from typing import Generator
+from typing import Generator, Sequence
 
 from ffun.core import logging
 from ffun.google import errors
@@ -65,7 +65,7 @@ class GoogleInterface(ProviderInterface):
         #    this approach looks ok for start.
 
         # Coefficient was chosen according to ChatGPT's recommendations :-)
-        return len(text) * 1.8
+        return int(len(text) * 1.8)
 
     async def chat_request(  # type: ignore
         self, config: LLMConfiguration, api_key: str, request: GoogleChatRequest
@@ -95,8 +95,8 @@ class GoogleInterface(ProviderInterface):
         return answer
 
     # TODO: test
-    def prepare_requests(self, config: LLMConfiguration, text: str) -> list[GoogleChatRequest]:  # type: ignore
-        parts = llmsf_domain.split_text_according_to_tokens(llm=self, config=config, text=text)
+    def prepare_requests(self, config: LLMConfiguration, text: str) -> Sequence[GoogleChatRequest]:  # type: ignore
+        parts = llmsf_domain.split_text_according_to_tokens(llm=self, llm_config=config, text=text)
 
         requests = []
 

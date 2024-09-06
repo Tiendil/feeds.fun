@@ -11,7 +11,6 @@ from ffun.librarian.tests.fixtures import *  # noqa
 from ffun.library.tests.fixtures import *  # noqa
 from ffun.llms_framework.tests.fixtures import *  # noqa
 from ffun.ontology.tests.fixtures import *  # noqa
-from ffun.openai.tests.fixtures import *  # noqa
 from ffun.users.tests.fixtures import *  # noqa
 
 

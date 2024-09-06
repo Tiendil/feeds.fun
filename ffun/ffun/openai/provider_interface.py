@@ -1,6 +1,6 @@
 import contextlib
 import functools
-from typing import Generator
+from typing import Generator, Sequence
 
 import openai
 import tiktoken
@@ -114,9 +114,9 @@ class OpenAIInterface(ProviderInterface):
             total_tokens=answer.usage.total_tokens,
         )
 
-    def prepare_requests(self,  # type: ignore  # noqa: CFQ002
-                         config: LLMConfiguration, text: str
-                         ) -> list[OpenAIChatRequest]:
+    def prepare_requests(
+        self, config: LLMConfiguration, text: str
+    ) -> Sequence[OpenAIChatRequest]:
 
         parts = llmsf_domain.split_text_according_to_tokens(llm=self, llm_config=config, text=text)
 

@@ -14,7 +14,7 @@ logger = logging.get_module_logger()
 
 
 # TODO: add fixture to protect tests from using real collection API keys
-# TODO: add fixture to protect tests from using real general API keys
+# TODO: add fixture to protect tests from using real general65 API keys
 
 
 # TODO: tests
@@ -63,6 +63,7 @@ class Processor(base.Processor):
 
         # TODO: too many agruments
         api_key_usage = await search_for_api_key(
+            llm=self.llm_provider,
             llm_config=self.llm_config,
             entry=entry,
             requests=requests,
@@ -73,7 +74,8 @@ class Processor(base.Processor):
         if api_key_usage is None:
             raise errors.SkipEntryProcessing()
 
-        responses = await call_llm(llm_config=self.llm_config, api_key_usage=api_key_usage, requests=requests)
+        responses = await call_llm(llm=self.llm_provider,
+                                   llm_config=self.llm_config, api_key_usage=api_key_usage, requests=requests)
 
         return self.extract_tags(responses)
 

@@ -14,7 +14,7 @@ class ChatMessage(BaseEntity):
         data = {"parts": [{"text": self.text}]}
 
         if self.role is not None:
-            data["role"] = self.role
+            data["role"] = self.role  # type: ignore
 
         return data
 

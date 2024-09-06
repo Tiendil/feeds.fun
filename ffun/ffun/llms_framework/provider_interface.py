@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from ffun.llms_framework import errors
 from ffun.llms_framework.entities import ChatRequest, ChatResponse, KeyStatus, LLMConfiguration, ModelInfo, Provider
 from ffun.llms_framework.keys_statuses import Statuses
@@ -21,7 +23,7 @@ class ProviderInterface:
 
         raise errors.ModelDoesNotFound(model=config.model)
 
-    def prepare_requests(self, config: LLMConfiguration, text: str) -> list[ChatRequest]:
+    def prepare_requests(self, config: LLMConfiguration, text: str) -> Sequence[ChatRequest]:
         raise NotImplementedError("Must be implemented in a subclass")
 
     def estimate_tokens(self, config: LLMConfiguration, text: str) -> int:
@@ -51,7 +53,7 @@ class ChatResponseTest(ChatResponse):
 class ProviderTest(ProviderInterface):
     provider = Provider.test
 
-    def prepare_requests(self, config: LLMConfiguration, text: str) -> list[ChatRequestTest]:  # type: ignore
+    def prepare_requests(self, config: LLMConfiguration, text: str) -> Sequence[ChatRequestTest]:  # type: ignore
         return [ChatRequestTest(text=text)]
 
     def estimate_tokens(self, config: LLMConfiguration, text: str) -> int:

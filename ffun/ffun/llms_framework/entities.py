@@ -1,5 +1,4 @@
 import datetime
-import decimal
 import enum
 import uuid
 
@@ -41,10 +40,10 @@ class LLMConfiguration(BaseEntity):
     system: str  # TODO: trim
     max_return_tokens: int
     text_parts_intersection: int
-    temperature: decimal.Decimal
-    top_p: decimal.Decimal
-    presence_penalty: decimal.Decimal
-    frequency_penalty: decimal.Decimal
+    temperature: float
+    top_p: float
+    presence_penalty: float
+    frequency_penalty: float
 
 
 class ChatRequest(BaseEntity):

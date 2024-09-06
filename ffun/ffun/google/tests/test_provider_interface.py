@@ -28,7 +28,7 @@ class TestTrackKeyStatus:
     def test_quota_error(self, exception: Type[Exception], api_key_statuses: Statuses) -> None:
         with pytest.raises(exception):
             with track_key_status("key_1", api_key_statuses):
-                raise exception()  # type: ignore
+                raise exception()
 
         assert api_key_statuses.get("key_1") == KeyStatus.quota
 

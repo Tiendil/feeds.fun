@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from pytest_mock import MockerFixture
 
@@ -151,6 +153,8 @@ class TestSearchForAPIKey:
             general_api_key=fake_api_key,
         )
 
+        assert key_usage is not None
+
         assert key_usage.api_key == fake_api_key
 
     @pytest.mark.asyncio
@@ -197,7 +201,11 @@ class TestCallLLM:
 
     @pytest.mark.asyncio
     async def test_counts_tokens(
-        self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration, internal_user_id: str, fake_api_key: str
+        self,
+        fake_llm_provider: ProviderTest,
+        llm_config: LLMConfiguration,
+        internal_user_id: uuid.UUID,
+        fake_api_key: str,
     ) -> None:
 
         interval_started_at = month_interval_start()

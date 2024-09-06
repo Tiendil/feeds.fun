@@ -1,5 +1,6 @@
 import asyncio
 import math
+from typing import Sequence
 
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
@@ -68,7 +69,7 @@ async def search_for_api_key(
     llm: ProviderInterface,
     llm_config: LLMConfiguration,
     entry: Entry,
-    requests: list[ChatRequest],
+    requests: Sequence[ChatRequest],
     # TODO: separate types for collection & general keys
     collections_api_key: str | None,
     general_api_key: str | None,
@@ -90,7 +91,7 @@ async def search_for_api_key(
 
 
 async def call_llm(
-    llm: ProviderInterface, llm_config: LLMConfiguration, api_key_usage: APIKeyUsage, requests: list[ChatRequest]
+    llm: ProviderInterface, llm_config: LLMConfiguration, api_key_usage: APIKeyUsage, requests: Sequence[ChatRequest]
 ) -> list[ChatResponse]:
     async with use_api_key(api_key_usage):
         tasks = [llm.chat_request(llm_config, api_key_usage.api_key, request) for request in requests]

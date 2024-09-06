@@ -45,13 +45,13 @@ class Client:
         config: GenerationConfig,
         request: GoogleChatRequest,
         timeout: float = settings.gemini_api_timeout,
-    ) -> str:
+    ) -> GoogleChatResponse:
 
         headers = {"Content-Type": "application/json"}
 
         url = f"{self.entry_point}/models/{model}:generateContent?key={self._api_key}"
 
-        request = {
+        http_request = {
             "systemInstruction": request.system.to_api(),
             "contents": [message.to_api() for message in request.messages],
             "generationConfig": config.to_api(),
@@ -60,7 +60,7 @@ class Client:
 
         with self._handle_network_errors():
             async with httpx.AsyncClient(headers=headers, timeout=timeout) as client:
-                response = await client.post(url, json=request)
+                response = await client.post(url, json=http_request)
 
         self._handle_response_errors(response)
 
@@ -85,4 +85,4 @@ class Client:
 
         self._handle_response_errors(response)
 
-        return response.json()["models"]
+        return response.json()["models"]  # type: ignore

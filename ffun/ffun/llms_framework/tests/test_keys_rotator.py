@@ -1,5 +1,4 @@
 import datetime
-import decimal
 import uuid
 from typing import Any
 
@@ -40,10 +39,10 @@ _llm_config = LLMConfiguration(
     system="some system prompt",
     max_return_tokens=1017,
     text_parts_intersection=113,
-    temperature=decimal.Decimal("0.3"),
-    top_p=decimal.Decimal("0.9"),
-    presence_penalty=decimal.Decimal("0.5"),
-    frequency_penalty=decimal.Decimal("0.75"),
+    temperature=0.3,
+    top_p=0.9,
+    presence_penalty=0.5,
+    frequency_penalty=0.75,
 )
 
 
@@ -569,6 +568,8 @@ class TestChooseApiKey:
         ]
 
         usage = await choose_api_key(fake_llm_provider, select_key_context, selectors=selectors)
+
+        assert usage is not None
 
         assert usage.api_key == expected_key
 
