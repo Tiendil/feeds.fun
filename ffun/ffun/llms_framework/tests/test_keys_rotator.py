@@ -11,15 +11,7 @@ from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
 from ffun.feeds_links import domain as fl_domain
 from ffun.llms_framework import errors
-from ffun.llms_framework.entities import (
-    APIKeyUsage,
-    KeyStatus,
-    LLMConfiguration,
-    Provider,
-    SelectKeyContext,
-    UserKeyInfo,
-)
-from ffun.llms_framework.provider_interface import ProviderTest, ProviderInterface
+from ffun.llms_framework.entities import APIKeyUsage, KeyStatus, LLMConfiguration, SelectKeyContext, UserKeyInfo
 from ffun.llms_framework.keys_rotator import (
     _api_key_is_working,
     _choose_collections_key,
@@ -38,7 +30,7 @@ from ffun.llms_framework.keys_rotator import (
     choose_api_key,
     use_api_key,
 )
-from ffun.llms_framework.providers import llm_providers
+from ffun.llms_framework.provider_interface import ProviderInterface, ProviderTest
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
 from ffun.user_settings import domain as us_domain
@@ -65,14 +57,21 @@ class TestAPIKeyIsWorking:
         "status", [status for status in KeyStatus if status not in [KeyStatus.works, KeyStatus.unknown]]
     )
     @pytest.mark.asyncio
-    async def test_guaranted_broken(self, fake_llm_provider: ProviderTest, status: KeyStatus, fake_api_key: str) -> None:
+    async def test_guaranted_broken(
+        self, fake_llm_provider: ProviderTest, status: KeyStatus, fake_api_key: str
+    ) -> None:
         fake_llm_provider.api_keys_statuses.set(fake_api_key, status)
         assert not await _api_key_is_working(fake_llm_provider, _llm_config, fake_api_key)
 
     @pytest.mark.parametrize("status, expected_result", [(KeyStatus.works, True), (KeyStatus.broken, False)])
     @pytest.mark.asyncio
     async def test_unknown(
-        self, fake_llm_provider: ProviderTest, status: KeyStatus, expected_result: bool, mocker: MockerFixture, fake_api_key: str
+        self,
+        fake_llm_provider: ProviderTest,
+        status: KeyStatus,
+        expected_result: bool,
+        mocker: MockerFixture,
+        fake_api_key: str,
     ) -> None:
         assert fake_llm_provider.api_keys_statuses.get(fake_api_key) == KeyStatus.unknown
 
@@ -279,7 +278,9 @@ class TestGetCandidates:
         )
 
     @pytest.mark.asyncio
-    async def test_filters_used(self, fake_llm_provider: ProviderTest, saved_feed_id: FeedId, five_internal_user_ids: list[uuid.UUID]) -> None:
+    async def test_filters_used(
+        self, fake_llm_provider: ProviderTest, saved_feed_id: FeedId, five_internal_user_ids: list[uuid.UUID]
+    ) -> None:
         for user_id in five_internal_user_ids:
             await fl_domain.add_link(user_id, saved_feed_id)
 
@@ -308,7 +309,9 @@ class TestGetCandidates:
         assert {info.user_id for info in infos} == {five_internal_user_ids[2], five_internal_user_ids[4]}
 
     @pytest.mark.asyncio
-    async def test_all_users_excluded(self, fake_llm_provider: ProviderTest, saved_feed_id: FeedId, five_internal_user_ids: list[uuid.UUID]) -> None:
+    async def test_all_users_excluded(
+        self, fake_llm_provider: ProviderTest, saved_feed_id: FeedId, five_internal_user_ids: list[uuid.UUID]
+    ) -> None:
         for user_id in five_internal_user_ids:
             await fl_domain.add_link(user_id, saved_feed_id)
 
@@ -353,7 +356,9 @@ class TestFindBestUserWithKey:
         assert info is None
 
     @pytest.mark.asyncio
-    async def test_works(self, fake_llm_provider: ProviderTest, saved_feed_id: FeedId, five_user_key_infos: list[UserKeyInfo]) -> None:
+    async def test_works(
+        self, fake_llm_provider: ProviderTest, saved_feed_id: FeedId, five_user_key_infos: list[UserKeyInfo]
+    ) -> None:
         for user_key_info in five_user_key_infos:
             await fl_domain.add_link(user_key_info.user_id, saved_feed_id)
 
@@ -417,7 +422,9 @@ def select_key_context(saved_feed_id: FeedId) -> SelectKeyContext:
 class TestChooseGeneralKey:
 
     @pytest.mark.asyncio
-    async def test_no_general_key_specified(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
+    async def test_no_general_key_specified(
+        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext
+    ) -> None:
         # mocker.patch("ffun.openai.settings.settings.general_api_key", None)
 
         assert select_key_context.general_api_key is None
@@ -425,7 +432,9 @@ class TestChooseGeneralKey:
         assert await _choose_general_key(fake_llm_provider, select_key_context) is None
 
     @pytest.mark.asyncio
-    async def test_general_key_specified(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
+    async def test_general_key_specified(
+        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext
+    ) -> None:
         key = uuid.uuid4().hex
 
         select_key_context = select_key_context.replace(general_api_key=key)
@@ -444,7 +453,9 @@ class TestChooseGeneralKey:
 class TestChooseCollectionsKey:
 
     @pytest.mark.asyncio
-    async def test_no_collections_key_specified(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
+    async def test_no_collections_key_specified(
+        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext
+    ) -> None:
         assert select_key_context.collections_api_key is None
 
         assert await _choose_collections_key(fake_llm_provider, select_key_context) is None
@@ -492,7 +503,11 @@ class TestChooseUserKey:
 
     @pytest.mark.asyncio
     async def test_found_user(
-        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext, saved_feed_id: FeedId, five_user_key_infos: list[UserKeyInfo]
+        self,
+        fake_llm_provider: ProviderTest,
+        select_key_context: SelectKeyContext,
+        saved_feed_id: FeedId,
+        five_user_key_infos: list[UserKeyInfo],
     ) -> None:
         info = five_user_key_infos[0]
 

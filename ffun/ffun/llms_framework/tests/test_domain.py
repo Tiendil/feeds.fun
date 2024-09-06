@@ -1,16 +1,13 @@
-import uuid
 import pytest
 from pytest_mock import MockerFixture
 
-from ffun.feeds.entities import FeedId
-from ffun.library.entities import Entry
-from ffun.domain.datetime_intervals import month_interval_start
-from ffun.llms_framework import errors
-from ffun.llms_framework.domain import split_text, split_text_according_to_tokens, search_for_api_key, call_llm
-from ffun.llms_framework.provider_interface import ProviderTest, ChatRequestTest, ChatResponseTest
-from ffun.llms_framework.entities import LLMConfiguration, APIKeyUsage
-from ffun.llms_framework.keys_rotator import choose_api_key, SelectKeyContext
 from ffun.application.resources import Resource as AppResource
+from ffun.domain.datetime_intervals import month_interval_start
+from ffun.library.entities import Entry
+from ffun.llms_framework import errors
+from ffun.llms_framework.domain import call_llm, search_for_api_key, split_text, split_text_according_to_tokens
+from ffun.llms_framework.entities import APIKeyUsage, LLMConfiguration
+from ffun.llms_framework.provider_interface import ChatRequestTest, ChatResponseTest, ProviderTest
 from ffun.resources import domain as r_domain
 
 
@@ -37,30 +34,28 @@ class TestSplitText:
         with pytest.raises(errors.TextIsTooShort):
             split_text("some-text", parts=4, intersection=0)
 
-    @pytest.mark.parametrize("text",
-                             ['small-text', 'long-long-text ' * 10**6],
-                             ids=['small', 'big'])
+    @pytest.mark.parametrize("text", ["small-text", "long-long-text " * 10**6], ids=["small", "big"])
     def test_single_part(self, text: str) -> None:
         for intersection in [0, 1, 100, 1000, 10000]:
             assert split_text(text, parts=1, intersection=intersection) == [text]
 
-    @pytest.mark.parametrize("text, parts, intersection, expected",
-                             [('some-text', 1, 0, ['some-text']),
-                              ('some-text', 2, 0, ['some-', 'text']),
-                              ('some-text', 3, 0, ['som', 'e-t', 'ext']),
-
-                              ('some-text', 1, 1, ['some-text']),
-                              ('some-text', 2, 1, ['some-t', '-text']),
-                              ('some-text', 3, 1, ['some', 'me-te', 'text']),
-
-                              ('some-text', 1, 2, ['some-text']),
-                              ('some-text', 2, 2, ['some-te', 'e-text']),
-                              ('some-text', 3, 2, ['some-', 'ome-tex', '-text']),
-
-                              ('some-text', 1, 3, ['some-text']),
-                              ('some-text', 2, 3, ['some-tex', 'me-text']),
-                              ('some-text', 3, 3, ['some-t', 'some-text', 'e-text']),
-                              ])
+    @pytest.mark.parametrize(
+        "text, parts, intersection, expected",
+        [
+            ("some-text", 1, 0, ["some-text"]),
+            ("some-text", 2, 0, ["some-", "text"]),
+            ("some-text", 3, 0, ["som", "e-t", "ext"]),
+            ("some-text", 1, 1, ["some-text"]),
+            ("some-text", 2, 1, ["some-t", "-text"]),
+            ("some-text", 3, 1, ["some", "me-te", "text"]),
+            ("some-text", 1, 2, ["some-text"]),
+            ("some-text", 2, 2, ["some-te", "e-text"]),
+            ("some-text", 3, 2, ["some-", "ome-tex", "-text"]),
+            ("some-text", 1, 3, ["some-text"]),
+            ("some-text", 2, 3, ["some-tex", "me-text"]),
+            ("some-text", 3, 3, ["some-t", "some-text", "e-text"]),
+        ],
+    )
     def test_split(self, text: str, parts: int, intersection: int, expected: list[str]) -> None:
         assert split_text(text, parts=parts, intersection=intersection) == expected
 
@@ -69,14 +64,16 @@ class TestSplitTextAccordingToTokens:
 
     @pytest.fixture
     def llm_config(self) -> LLMConfiguration:
-        return LLMConfiguration(model='test-model-1',
-                                system="system prompt",
-                                max_return_tokens=143,
-                                text_parts_intersection=100,
-                                temperature=0,
-                                top_p=0,
-                                presence_penalty=0,
-                                frequency_penalty=0)
+        return LLMConfiguration(
+            model="test-model-1",
+            system="system prompt",
+            max_return_tokens=143,
+            text_parts_intersection=100,
+            temperature=0,
+            top_p=0,
+            presence_penalty=0,
+            frequency_penalty=0,
+        )
 
     def test_single_part(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
         text = "some text"
@@ -118,57 +115,67 @@ class TestSearchForAPIKey:
 
     @pytest.fixture
     def llm_config(self) -> LLMConfiguration:
-        return LLMConfiguration(model='test-model-1',
-                                system="system prompt",
-                                max_return_tokens=143,
-                                text_parts_intersection=100,
-                                temperature=0,
-                                top_p=0,
-                                presence_penalty=0,
-                                frequency_penalty=0)
+        return LLMConfiguration(
+            model="test-model-1",
+            system="system prompt",
+            max_return_tokens=143,
+            text_parts_intersection=100,
+            temperature=0,
+            top_p=0,
+            presence_penalty=0,
+            frequency_penalty=0,
+        )
 
     @pytest.mark.asyncio
-    async def test_key_found(self,
-                             fake_api_key: str,
-                             fake_llm_provider: ProviderTest,
-                             llm_config: LLMConfiguration,
-                             cataloged_entry: Entry,
-                             mocker: MockerFixture) -> None:
+    async def test_key_found(
+        self,
+        fake_api_key: str,
+        fake_llm_provider: ProviderTest,
+        llm_config: LLMConfiguration,
+        cataloged_entry: Entry,
+        mocker: MockerFixture,
+    ) -> None:
         # Here we test meta logic => we can check the simplest case (general api key)
         # plus check the all parameters passed to selection function
 
-        text = 'some-text'
+        text = "some-text"
 
         requests = fake_llm_provider.prepare_requests(llm_config, text)
 
-        key_usage = await search_for_api_key(llm=fake_llm_provider,
-                                             llm_config=llm_config,
-                                             entry=cataloged_entry,
-                                             requests=requests,
-                                             collections_api_key=None,
-                                             general_api_key=fake_api_key)
+        key_usage = await search_for_api_key(
+            llm=fake_llm_provider,
+            llm_config=llm_config,
+            entry=cataloged_entry,
+            requests=requests,
+            collections_api_key=None,
+            general_api_key=fake_api_key,
+        )
 
         assert key_usage.api_key == fake_api_key
 
     @pytest.mark.asyncio
-    async def test_key_not_found(self,
-                             fake_llm_provider: ProviderTest,
-                             llm_config: LLMConfiguration,
-                             cataloged_entry: Entry,
-                             mocker: MockerFixture) -> None:
+    async def test_key_not_found(
+        self,
+        fake_llm_provider: ProviderTest,
+        llm_config: LLMConfiguration,
+        cataloged_entry: Entry,
+        mocker: MockerFixture,
+    ) -> None:
         # Here we test meta logic => we can check the simplest case (general api key)
         # plus check the all parameters passed to selection function
 
-        text = 'some-text'
+        text = "some-text"
 
         requests = fake_llm_provider.prepare_requests(llm_config, text)
 
-        key_usage = await search_for_api_key(llm=fake_llm_provider,
-                                             llm_config=llm_config,
-                                             entry=cataloged_entry,
-                                             requests=requests,
-                                             collections_api_key=None,
-                                             general_api_key=None)
+        key_usage = await search_for_api_key(
+            llm=fake_llm_provider,
+            llm_config=llm_config,
+            entry=cataloged_entry,
+            requests=requests,
+            collections_api_key=None,
+            general_api_key=None,
+        )
 
         assert key_usage is None
 
@@ -177,21 +184,21 @@ class TestCallLLM:
 
     @pytest.fixture
     def llm_config(self) -> LLMConfiguration:
-        return LLMConfiguration(model='test-model-1',
-                                system="system prompt",
-                                max_return_tokens=143,
-                                text_parts_intersection=100,
-                                temperature=0,
-                                top_p=0,
-                                presence_penalty=0,
-                                frequency_penalty=0)
+        return LLMConfiguration(
+            model="test-model-1",
+            system="system prompt",
+            max_return_tokens=143,
+            text_parts_intersection=100,
+            temperature=0,
+            top_p=0,
+            presence_penalty=0,
+            frequency_penalty=0,
+        )
 
     @pytest.mark.asyncio
-    async def test_counts_tokens(self,
-                                 fake_llm_provider: ProviderTest,
-                                 llm_config: LLMConfiguration,
-                                 internal_user_id: str,
-                                 fake_api_key: str) -> None:
+    async def test_counts_tokens(
+        self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration, internal_user_id: str, fake_api_key: str
+    ) -> None:
 
         interval_started_at = month_interval_start()
 
@@ -200,24 +207,22 @@ class TestCallLLM:
             api_key=fake_api_key,
             reserved_tokens=100500,
             used_tokens=None,
-            interval_started_at=interval_started_at)
+            interval_started_at=interval_started_at,
+        )
 
         await r_domain.try_to_reserve(
-                user_id=internal_user_id,
-                kind=AppResource.openai_tokens,
-                interval_started_at=interval_started_at,
-                amount=key_usage.reserved_tokens,
-                limit=12451251255,
-            )
+            user_id=internal_user_id,
+            kind=AppResource.openai_tokens,
+            interval_started_at=interval_started_at,
+            amount=key_usage.reserved_tokens,
+            limit=12451251255,
+        )
 
-        requests = [ChatRequestTest(text='abcd'),
-                    ChatRequestTest(text='efgh1234'),
-                    ChatRequestTest(text='99')]
+        requests = [ChatRequestTest(text="abcd"), ChatRequestTest(text="efgh1234"), ChatRequestTest(text="99")]
 
-        responses = await call_llm(llm=fake_llm_provider,
-                                   llm_config=llm_config,
-                                   api_key_usage=key_usage,
-                                   requests=requests)
+        responses = await call_llm(
+            llm=fake_llm_provider, llm_config=llm_config, api_key_usage=key_usage, requests=requests
+        )
 
         assert responses == [ChatResponseTest(content=request.text) for request in requests]
 

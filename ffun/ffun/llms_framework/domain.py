@@ -6,7 +6,6 @@ from ffun.llms_framework import errors
 from ffun.llms_framework.entities import APIKeyUsage, ChatRequest, ChatResponse, LLMConfiguration, SelectKeyContext
 from ffun.llms_framework.keys_rotator import choose_api_key, use_api_key
 from ffun.llms_framework.provider_interface import ProviderInterface
-from ffun.llms_framework.providers import llm_providers
 
 
 def split_text(text: str, parts: int, intersection: int) -> list[str]:
@@ -35,7 +34,7 @@ def split_text(text: str, parts: int, intersection: int) -> list[str]:
         left_border = max(0, index - intersection)
         right_border = min(len(text), index + base_part_size + intersection)
 
-        part = text[left_border : right_border]
+        part = text[left_border:right_border]
 
         text_parts.append(part)
 
@@ -66,13 +65,13 @@ def split_text_according_to_tokens(llm: ProviderInterface, llm_config: LLMConfig
 
 
 async def search_for_api_key(
-        llm: ProviderInterface,
-        llm_config: LLMConfiguration,
-        entry: Entry,
-        requests: list[ChatRequest],
-        # TODO: separate types for collection & general keys
-        collections_api_key: str | None,
-        general_api_key: str | None,
+    llm: ProviderInterface,
+    llm_config: LLMConfiguration,
+    entry: Entry,
+    requests: list[ChatRequest],
+    # TODO: separate types for collection & general keys
+    collections_api_key: str | None,
+    general_api_key: str | None,
 ) -> APIKeyUsage | None:
     # TODO: here may be problems with too big context window for gemini
     #       (we'll reserve too much tokens), see ModelInfo.max_tokens_per_entry as a potential solution
@@ -91,10 +90,7 @@ async def search_for_api_key(
 
 
 async def call_llm(
-        llm: ProviderInterface,
-        llm_config: LLMConfiguration,
-        api_key_usage: APIKeyUsage,
-        requests: list[ChatRequest]
+    llm: ProviderInterface, llm_config: LLMConfiguration, api_key_usage: APIKeyUsage, requests: list[ChatRequest]
 ) -> list[ChatResponse]:
     async with use_api_key(api_key_usage):
         tasks = [llm.chat_request(llm_config, api_key_usage.api_key, request) for request in requests]

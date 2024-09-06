@@ -5,7 +5,6 @@ from ffun.core import logging
 from ffun.librarian import errors
 from ffun.librarian.processors import base
 from ffun.library.entities import Entry
-from ffun.llms_framework import errors as llmsf_errors
 from ffun.llms_framework.domain import call_llm, search_for_api_key
 from ffun.llms_framework.entities import ChatResponse, LLMConfiguration, Provider
 from ffun.llms_framework.providers import llm_providers
@@ -28,7 +27,7 @@ class Processor(base.Processor):
 
     def __init__(  # noqa
         self,
-            llm_provider: Provider,
+        llm_provider: Provider,
         llm_config: LLMConfiguration,
         entry_template: str,
         text_cleaner: str,
