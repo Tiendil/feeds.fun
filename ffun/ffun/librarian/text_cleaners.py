@@ -3,7 +3,6 @@ import re
 from bs4 import BeautifulSoup
 
 
-# TODO: test
 def clear_nothing(text: str) -> str:
     return text
 

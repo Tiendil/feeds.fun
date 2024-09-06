@@ -15,7 +15,6 @@ class Settings(BaseSettings):
     # TODO: add to documentation/README
     tag_processors_config: pathlib.Path = _root / "fixtures" / "tag_processors.toml"
 
-    # TODO: tests
     @pydantic.computed_field  # type: ignore
     @functools.cached_property
     def tag_processors(self) -> tuple[TagProcessor, ...]:
