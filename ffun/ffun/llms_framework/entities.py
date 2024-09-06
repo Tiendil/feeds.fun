@@ -44,7 +44,7 @@ class KeyStatus(str, enum.Enum):
 # We'll split it later if needed.
 class LLMConfiguration(BaseEntity):
     model: str
-    system: str  # TODO: trim
+    system: str = pydantic.StringConstraints(strip_whitespace=True)
     max_return_tokens: int
     text_parts_intersection: int
     temperature: float

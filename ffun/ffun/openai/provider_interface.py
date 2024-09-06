@@ -38,7 +38,6 @@ def _get_encoding(model: str) -> tiktoken.Encoding:
     return tiktoken.encoding_for_model(model)
 
 
-# TODO: tests
 @contextlib.contextmanager
 def track_key_status(key: str, statuses: Statuses) -> Generator[None, None, None]:
     try:
