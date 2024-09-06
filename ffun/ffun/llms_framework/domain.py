@@ -65,18 +65,17 @@ def split_text_according_to_tokens(llm: ProviderInterface, llm_config: LLMConfig
         return parts
 
 
-# TODO: test
 async def search_for_api_key(
-    llm_config: LLMConfiguration,
-    entry: Entry,
-    requests: list[ChatRequest],
-    collections_api_key: str | None,
-    general_api_key: str | None,
-) -> APIKeyUsage:
-    llm = llm_providers.get(llm_config.provider).provider
-
+        llm: ProviderInterface,
+        llm_config: LLMConfiguration,
+        entry: Entry,
+        requests: list[ChatRequest],
+        collections_api_key: str | None,
+        general_api_key: str | None,
+) -> APIKeyUsage | None:
     # TODO: here may be problems with too big context window for gemini
-    reserved_tokens = len(requests) * llm.max_context_size_for_model(llm_config)
+    #       (we'll reserve too much tokens), see ModelInfo.max_tokens_per_entry as a potential solution
+    reserved_tokens = len(requests) * llm.get_model(llm_config).max_context_size
 
     select_key_context = SelectKeyContext(
         llm_config=llm_config,

@@ -67,10 +67,10 @@ class Processor(base.Processor):
             general_api_key=self.general_api_key,
         )
 
-        try:
-            responses = await call_llm(llm_config=self.llm_config, api_key_usage=api_key_usage, requests=requests)
-        except llmsf_errors.NoKeyFoundForFeed as e:
-            raise errors.SkipEntryProcessing(message=str(e)) from e
+        if api_key_usage is None:
+            raise errors.SkipEntryProcessing()
+
+        responses = await call_llm(llm_config=self.llm_config, api_key_usage=api_key_usage, requests=requests)
 
         return self.extract_tags(responses)
 

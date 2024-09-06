@@ -1,10 +1,14 @@
-
+import uuid
 import pytest
+from pytest_mock import MockerFixture
 
+from ffun.feeds.entities import FeedId
+from ffun.library.entities import Entry
 from ffun.llms_framework import errors
-from ffun.llms_framework.domain import split_text, split_text_according_to_tokens
+from ffun.llms_framework.domain import split_text, split_text_according_to_tokens, search_for_api_key
 from ffun.llms_framework.provider_interface import ProviderTest
 from ffun.llms_framework.entities import LLMConfiguration
+from ffun.llms_framework.keys_rotator import choose_api_key, SelectKeyContext
 
 
 class TestSplitText:
@@ -105,3 +109,62 @@ class TestSplitTextAccordingToTokens:
 
         with pytest.raises(errors.TooManyTokensForEntry):
             split_text_according_to_tokens(llm=fake_llm_provider, llm_config=llm_config, text=text)
+
+
+class TestSearchForAPIKey:
+
+    @pytest.fixture
+    def llm_config(self) -> LLMConfiguration:
+        return LLMConfiguration(model='test-model-1',
+                                system="system prompt",
+                                max_return_tokens=143,
+                                text_parts_intersection=100,
+                                temperature=0,
+                                top_p=0,
+                                presence_penalty=0,
+                                frequency_penalty=0)
+
+    @pytest.mark.asyncio
+    async def test_key_found(self,
+                             fake_api_key: str,
+                             fake_llm_provider: ProviderTest,
+                             llm_config: LLMConfiguration,
+                             cataloged_entry: Entry,
+                             mocker: MockerFixture) -> None:
+        # Here we test meta logic => we can check the simplest case (general api key)
+        # plus check the all parameters passed to selection function
+
+        text = 'some-text'
+
+        requests = fake_llm_provider.prepare_requests(llm_config, text)
+
+        key_usage = await search_for_api_key(llm=fake_llm_provider,
+                                             llm_config=llm_config,
+                                             entry=cataloged_entry,
+                                             requests=requests,
+                                             collections_api_key=None,
+                                             general_api_key=fake_api_key)
+
+        assert key_usage.api_key == fake_api_key
+
+    @pytest.mark.asyncio
+    async def test_key_not_found(self,
+                             fake_llm_provider: ProviderTest,
+                             llm_config: LLMConfiguration,
+                             cataloged_entry: Entry,
+                             mocker: MockerFixture) -> None:
+        # Here we test meta logic => we can check the simplest case (general api key)
+        # plus check the all parameters passed to selection function
+
+        text = 'some-text'
+
+        requests = fake_llm_provider.prepare_requests(llm_config, text)
+
+        key_usage = await search_for_api_key(llm=fake_llm_provider,
+                                             llm_config=llm_config,
+                                             entry=cataloged_entry,
+                                             requests=requests,
+                                             collections_api_key=None,
+                                             general_api_key=None)
+
+        assert key_usage is None

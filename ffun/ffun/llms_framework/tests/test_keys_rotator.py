@@ -539,15 +539,16 @@ class TestChooseApiKey:
 
     @pytest.mark.asyncio
     async def test_no_selectors(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
-        with pytest.raises(errors.NoKeyFoundForFeed):
-            await choose_api_key(fake_llm_provider, select_key_context, selectors=[])
+        key_usage = await choose_api_key(fake_llm_provider, select_key_context, selectors=[])
+        assert key_usage is None
 
     @pytest.mark.asyncio
     async def test_key_not_found(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
         selectors = [self.create_selector(None), self.create_selector(None), self.create_selector(None)]
 
-        with pytest.raises(errors.NoKeyFoundForFeed):
-            await choose_api_key(fake_llm_provider, select_key_context, selectors=selectors)
+        key_usage = await choose_api_key(fake_llm_provider, select_key_context, selectors=selectors)
+
+        assert key_usage is None
 
     @pytest.mark.asyncio
     async def test_choose_first(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:

@@ -259,14 +259,14 @@ async def _choose_user_key(llm: ProviderInterface, context: SelectKeyContext) ->
 _key_selectors: Collection[KeySelector] = (_choose_general_key, _choose_collections_key, _choose_user_key)
 
 
-async def choose_api_key(llm: ProviderInterface, context: SelectKeyContext, selectors: Iterable[KeySelector] = _key_selectors) -> APIKeyUsage:
+async def choose_api_key(llm: ProviderInterface, context: SelectKeyContext, selectors: Iterable[KeySelector] = _key_selectors) -> APIKeyUsage | None:
     for key_selector in selectors:
         key_usage = await key_selector(llm, context)
 
         if key_usage is not None:
             return key_usage
 
-    raise errors.NoKeyFoundForFeed()
+    return None
 
 
 #################
