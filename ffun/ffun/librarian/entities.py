@@ -48,13 +48,13 @@ class UpperCaseTitleProcessor(BaseProcessor):
 class LLMGeneralProcessor(BaseProcessor):
     type: Literal[ProcessorType.llm_general] = ProcessorType.llm_general
 
-    # TODO: validate
+    # TODO: validate that template will render correctly
     entry_template: str
 
-    # TODO: validate
+    # TODO: validate that text cleaner is importable and works
     text_cleaner: str
 
-    # TODO: validate
+    # TODO: validate that text extractor is importable and works
     tags_extractor: str
 
     llm_provider: Provider
@@ -67,12 +67,13 @@ class LLMGeneralProcessor(BaseProcessor):
     @pydantic.model_validator(mode="before")
     @classmethod
     def collections_api_key_none(cls, data: Any) -> Any:
-        # TODO: test
+        """Translate empty string to None because TOML does not support None value"""
         if data.get("collections_api_key") == "":
             data["collections_api_key"] = None
 
         return data
 
+    # TODO: remove this after separating collections from other feeds
     @pydantic.model_validator(mode="after")
     def collections_api_key_warning(self) -> "LLMGeneralProcessor":
         if self.collections_api_key is None:
@@ -83,7 +84,7 @@ class LLMGeneralProcessor(BaseProcessor):
     @pydantic.model_validator(mode="before")
     @classmethod
     def general_api_key_none(cls, data: Any) -> Any:
-        # TODO: test
+        """Translate empty string to None because TOML does not support None value"""
         if data.get("general_api_key") == "":
             data["general_api_key"] = None
 

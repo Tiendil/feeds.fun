@@ -39,7 +39,7 @@ class ProcessorInfo:
 
 processors: list[ProcessorInfo] = []
 
-# TODO: unify creation
+
 for processor_config in settings.tag_processors:
     if not processor_config.enabled:
         logger.info(
@@ -70,7 +70,6 @@ for processor_config in settings.tag_processors:
     elif processor_config.type == ProcessorType.llm_general:
         processor = ProcessorInfo(
             id=processor_config.id,
-            # TODO: better arguments passing?
             processor=LLMGeneralProcessor(
                 name=processor_config.name,
                 entry_template=processor_config.entry_template,
