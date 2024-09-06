@@ -7,7 +7,6 @@ def clear_nothing(text: str) -> str:
     return text
 
 
-# TODO: test
 def clear_html(text: str) -> str:
     soup = BeautifulSoup(text, "html.parser")
 
@@ -24,4 +23,4 @@ def clear_html(text: str) -> str:
 
     cleaned_text = re.sub(r"\s+", " ", simplified_html)
 
-    return cleaned_text
+    return cleaned_text.strip()
