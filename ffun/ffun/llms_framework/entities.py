@@ -1,12 +1,19 @@
 import datetime
 import enum
 import uuid
+from typing import NewType
 
 import pydantic
 
 from ffun.core.entities import BaseEntity
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
+
+
+LLMApiKey = NewType("LLMApiKey", str)
+LLMUserApiKey = NewType("LLMUserApiKey", LLMApiKey)
+LLMCollectionApiKey = NewType("LLMCollectionApiKey", LLMApiKey)
+LLMGeneralApiKey = NewType("LLMGeneralApiKey", LLMApiKey)
 
 
 class Provider(enum.StrEnum):
@@ -63,7 +70,7 @@ class APIKeyUsage(BaseEntity):
     model_config = pydantic.ConfigDict(frozen=False)
 
     user_id: uuid.UUID | None
-    api_key: str
+    api_key: LLMApiKey
     reserved_tokens: int
     used_tokens: int | None
     interval_started_at: datetime.datetime
@@ -77,7 +84,7 @@ class APIKeyUsage(BaseEntity):
 
 class UserKeyInfo(BaseEntity):
     user_id: uuid.UUID
-    api_key: str | None
+    api_key: LLMApiKey | None
     max_tokens_in_month: int
     process_entries_not_older_than: datetime.timedelta
     tokens_used: int
@@ -89,5 +96,5 @@ class SelectKeyContext(BaseEntity):
     entry_age: datetime.timedelta
     reserved_tokens: int
     interval_started_at: datetime.datetime = pydantic.Field(default_factory=month_interval_start)
-    collections_api_key: str | None
-    general_api_key: str | None
+    collections_api_key: LLMCollectionApiKey | None
+    general_api_key: LLMGeneralApiKey | None

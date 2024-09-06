@@ -8,7 +8,7 @@ from ffun.domain.datetime_intervals import month_interval_start
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
 from ffun.llms_framework.domain import call_llm, search_for_api_key, split_text, split_text_according_to_tokens
-from ffun.llms_framework.entities import APIKeyUsage, LLMConfiguration
+from ffun.llms_framework.entities import APIKeyUsage, LLMConfiguration, LLMApiKey, LLMGeneralApiKey
 from ffun.llms_framework.provider_interface import ChatRequestTest, ChatResponseTest, ProviderTest
 from ffun.resources import domain as r_domain
 
@@ -131,7 +131,7 @@ class TestSearchForAPIKey:
     @pytest.mark.asyncio
     async def test_key_found(
         self,
-        fake_api_key: str,
+        fake_llm_api_key: LLMApiKey,
         fake_llm_provider: ProviderTest,
         llm_config: LLMConfiguration,
         cataloged_entry: Entry,
@@ -150,12 +150,12 @@ class TestSearchForAPIKey:
             entry=cataloged_entry,
             requests=requests,
             collections_api_key=None,
-            general_api_key=fake_api_key,
+            general_api_key=LLMGeneralApiKey(fake_llm_api_key),
         )
 
         assert key_usage is not None
 
-        assert key_usage.api_key == fake_api_key
+        assert key_usage.api_key == fake_llm_api_key
 
     @pytest.mark.asyncio
     async def test_key_not_found(
@@ -205,14 +205,14 @@ class TestCallLLM:
         fake_llm_provider: ProviderTest,
         llm_config: LLMConfiguration,
         internal_user_id: uuid.UUID,
-        fake_api_key: str,
+        fake_llm_api_key: LLMApiKey,
     ) -> None:
 
         interval_started_at = month_interval_start()
 
         key_usage = APIKeyUsage(
             user_id=internal_user_id,
-            api_key=fake_api_key,
+            api_key=fake_llm_api_key,
             reserved_tokens=100500,
             used_tokens=None,
             interval_started_at=interval_started_at,

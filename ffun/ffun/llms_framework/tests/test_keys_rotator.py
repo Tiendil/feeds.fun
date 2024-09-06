@@ -10,7 +10,7 @@ from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
 from ffun.feeds_links import domain as fl_domain
 from ffun.llms_framework import errors
-from ffun.llms_framework.entities import APIKeyUsage, KeyStatus, LLMConfiguration, SelectKeyContext, UserKeyInfo
+from ffun.llms_framework.entities import APIKeyUsage, KeyStatus, LLMConfiguration, SelectKeyContext, UserKeyInfo, LLMApiKey, LLMGeneralApiKey, LLMCollectionApiKey
 from ffun.llms_framework.keys_rotator import (
     _api_key_is_working,
     _choose_collections_key,
@@ -48,19 +48,19 @@ _llm_config = LLMConfiguration(
 
 class TestAPIKeyIsWorking:
     @pytest.mark.asyncio
-    async def test_is_working(self, fake_llm_provider: ProviderTest, fake_api_key: str) -> None:
-        fake_llm_provider.api_keys_statuses.set(fake_api_key, KeyStatus.works)
-        assert await _api_key_is_working(fake_llm_provider, _llm_config, fake_api_key)
+    async def test_is_working(self, fake_llm_provider: ProviderTest, fake_llm_api_key: LLMApiKey) -> None:
+        fake_llm_provider.api_keys_statuses.set(fake_llm_api_key, KeyStatus.works)
+        assert await _api_key_is_working(fake_llm_provider, _llm_config, fake_llm_api_key)
 
     @pytest.mark.parametrize(
         "status", [status for status in KeyStatus if status not in [KeyStatus.works, KeyStatus.unknown]]
     )
     @pytest.mark.asyncio
     async def test_guaranted_broken(
-        self, fake_llm_provider: ProviderTest, status: KeyStatus, fake_api_key: str
+        self, fake_llm_provider: ProviderTest, status: KeyStatus, fake_llm_api_key: LLMApiKey
     ) -> None:
-        fake_llm_provider.api_keys_statuses.set(fake_api_key, status)
-        assert not await _api_key_is_working(fake_llm_provider, _llm_config, fake_api_key)
+        fake_llm_provider.api_keys_statuses.set(fake_llm_api_key, status)
+        assert not await _api_key_is_working(fake_llm_provider, _llm_config, fake_llm_api_key)
 
     @pytest.mark.parametrize("status, expected_result", [(KeyStatus.works, True), (KeyStatus.broken, False)])
     @pytest.mark.asyncio
@@ -70,13 +70,13 @@ class TestAPIKeyIsWorking:
         status: KeyStatus,
         expected_result: bool,
         mocker: MockerFixture,
-        fake_api_key: str,
+        fake_llm_api_key: LLMApiKey,
     ) -> None:
-        assert fake_llm_provider.api_keys_statuses.get(fake_api_key) == KeyStatus.unknown
+        assert fake_llm_provider.api_keys_statuses.get(fake_llm_api_key) == KeyStatus.unknown
 
         mocker.patch("ffun.llms_framework.provider_interface.ProviderTest.check_api_key", return_value=status)
 
-        assert await _api_key_is_working(fake_llm_provider, _llm_config, fake_api_key) == expected_result
+        assert await _api_key_is_working(fake_llm_provider, _llm_config, fake_llm_api_key) == expected_result
 
 
 class TestFilterOutUsersWithWrongKeys:
@@ -196,7 +196,7 @@ class TestGetUserKeyInfos:
 
         interval_started_at = month_interval_start()
 
-        keys = [uuid.uuid4().hex for _ in range(5)]
+        keys = [LLMApiKey(uuid.uuid4().hex) for _ in range(5)]
         max_tokens_in_month = [(i + 1) * 1000 for i in range(5)]
         days = list(range(5))
         used_tokens = [i * 100 for i in range(5)]
@@ -423,17 +423,16 @@ class TestChooseGeneralKey:
 
     @pytest.mark.asyncio
     async def test_general_key_specified(
-        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext
+            self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext, fake_llm_api_key: LLMApiKey
     ) -> None:
-        key = uuid.uuid4().hex
 
-        select_key_context = select_key_context.replace(general_api_key=key)
+        select_key_context = select_key_context.replace(general_api_key=LLMGeneralApiKey(fake_llm_api_key))
 
         usage = await _choose_general_key(fake_llm_provider, select_key_context)
 
         assert usage == APIKeyUsage(
             user_id=None,
-            api_key=key,
+            api_key=fake_llm_api_key,
             reserved_tokens=select_key_context.reserved_tokens,
             used_tokens=None,
             interval_started_at=select_key_context.interval_started_at,
@@ -452,11 +451,9 @@ class TestChooseCollectionsKey:
 
     @pytest.mark.asyncio
     async def test_collections_key_specified__in_collection(
-        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext, mocker: MockerFixture
+            self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext, mocker: MockerFixture, fake_llm_api_key: LLMApiKey
     ) -> None:
-        key = uuid.uuid4().hex
-
-        select_key_context = select_key_context.replace(collections_api_key=key)
+        select_key_context = select_key_context.replace(collections_api_key=LLMCollectionApiKey(fake_llm_api_key))
 
         # TODO: remove mocking after collections will be reworked in https://github.com/Tiendil/feeds.fun/issues/246
         mocker.patch("ffun.feeds_collections.domain.is_feed_in_collections", return_value=True)
@@ -465,7 +462,7 @@ class TestChooseCollectionsKey:
 
         assert usage == APIKeyUsage(
             user_id=None,
-            api_key=key,
+            api_key=fake_llm_api_key,
             reserved_tokens=select_key_context.reserved_tokens,
             used_tokens=None,
             interval_started_at=select_key_context.interval_started_at,
@@ -525,7 +522,7 @@ class TestKeySelectors:
 
 class TestChooseApiKey:
 
-    def create_selector(self, api_key: str | None) -> Any:
+    def create_selector(self, api_key: LLMApiKey | None) -> Any:
         async def success_selector(llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage:
             assert api_key is not None
 
@@ -557,13 +554,13 @@ class TestChooseApiKey:
 
     @pytest.mark.asyncio
     async def test_choose_first(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
-        expected_key = uuid.uuid4().hex
+        expected_key = LLMApiKey(uuid.uuid4().hex)
 
         selectors = [
             self.create_selector(None),
             self.create_selector(expected_key),
             self.create_selector(None),
-            self.create_selector(uuid.uuid4().hex),
+            self.create_selector(LLMApiKey(uuid.uuid4().hex)),
             self.create_selector(None),
         ]
 
@@ -577,7 +574,7 @@ class TestChooseApiKey:
 class TestUseApiKey:
 
     @pytest.mark.asyncio
-    async def test_success(self, internal_user_id: uuid.UUID, fake_api_key: str) -> None:
+    async def test_success(self, internal_user_id: uuid.UUID, fake_llm_api_key: LLMApiKey) -> None:
 
         interval_started_at = month_interval_start()
 
@@ -599,7 +596,7 @@ class TestUseApiKey:
 
         key_usage = APIKeyUsage(
             user_id=internal_user_id,
-            api_key=fake_api_key,
+            api_key=fake_llm_api_key,
             reserved_tokens=reserved_tokens,
             used_tokens=None,
             interval_started_at=interval_started_at,
@@ -623,7 +620,7 @@ class TestUseApiKey:
         }
 
     @pytest.mark.asyncio
-    async def test_no_used_tokens_specified(self, internal_user_id: uuid.UUID, fake_api_key: str) -> None:
+    async def test_no_used_tokens_specified(self, internal_user_id: uuid.UUID, fake_llm_api_key: LLMApiKey) -> None:
 
         interval_started_at = month_interval_start()
 
@@ -643,7 +640,7 @@ class TestUseApiKey:
 
         key_usage = APIKeyUsage(
             user_id=internal_user_id,
-            api_key=fake_api_key,
+            api_key=fake_llm_api_key,
             reserved_tokens=reserved_tokens,
             used_tokens=None,
             interval_started_at=interval_started_at,
@@ -668,7 +665,7 @@ class TestUseApiKey:
         }
 
     @pytest.mark.asyncio
-    async def test_exception_in_child_code(self, internal_user_id: uuid.UUID, fake_api_key: str) -> None:
+    async def test_exception_in_child_code(self, internal_user_id: uuid.UUID, fake_llm_api_key: LLMApiKey) -> None:
 
         interval_started_at = month_interval_start()
 
@@ -692,7 +689,7 @@ class TestUseApiKey:
 
         key_usage = APIKeyUsage(
             user_id=internal_user_id,
-            api_key=fake_api_key,
+            api_key=fake_llm_api_key,
             reserved_tokens=reserved_tokens,
             used_tokens=None,
             interval_started_at=interval_started_at,
@@ -717,7 +714,7 @@ class TestUseApiKey:
         }
 
     @pytest.mark.asyncio
-    async def test_no_user_in_key_usage(self, fake_api_key: str) -> None:
+    async def test_no_user_in_key_usage(self, fake_llm_api_key: LLMApiKey) -> None:
 
         interval_started_at = month_interval_start()
 
@@ -726,7 +723,7 @@ class TestUseApiKey:
 
         key_usage = APIKeyUsage(
             user_id=None,
-            api_key=fake_api_key,
+            api_key=fake_llm_api_key,
             reserved_tokens=reserved_tokens,
             used_tokens=None,
             interval_started_at=interval_started_at,

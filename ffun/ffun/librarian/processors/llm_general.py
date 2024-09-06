@@ -6,7 +6,7 @@ from ffun.librarian import errors
 from ffun.librarian.processors import base
 from ffun.library.entities import Entry
 from ffun.llms_framework.domain import call_llm, search_for_api_key
-from ffun.llms_framework.entities import ChatResponse, LLMConfiguration, Provider
+from ffun.llms_framework.entities import ChatResponse, LLMConfiguration, Provider, LLMCollectionApiKey, LLMGeneralApiKey
 from ffun.llms_framework.providers import llm_providers
 from ffun.ontology.entities import ProcessorTag
 
@@ -36,8 +36,8 @@ class Processor(base.Processor):
         entry_template: str,
         text_cleaner: str,
         tag_extractor: str,
-        collections_api_key: str | None,
-        general_api_key: str | None,
+        collections_api_key: LLMCollectionApiKey | None,
+        general_api_key: LLMGeneralApiKey | None,
         **kwargs: Any
     ):
         super().__init__(**kwargs)

@@ -7,7 +7,7 @@ import pydantic
 
 from ffun.core import logging
 from ffun.core.entities import BaseEntity
-from ffun.llms_framework.entities import LLMConfiguration, Provider
+from ffun.llms_framework.entities import LLMConfiguration, Provider, LLMCollectionApiKey, LLMGeneralApiKey
 
 logger = logging.get_module_logger()
 
@@ -61,8 +61,8 @@ class LLMGeneralProcessor(BaseProcessor):
 
     llm_config: LLMConfiguration
 
-    collections_api_key: str | None = None
-    general_api_key: str | None = None
+    collections_api_key: LLMCollectionApiKey | None = None
+    general_api_key: LLMGeneralApiKey | None = None
 
     @pydantic.model_validator(mode="before")
     @classmethod

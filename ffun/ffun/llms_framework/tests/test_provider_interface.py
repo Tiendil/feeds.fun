@@ -2,24 +2,24 @@ import pytest
 from pytest_mock import MockerFixture
 
 from ffun.llms_framework import errors
-from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, ModelInfo, Provider
+from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, ModelInfo, Provider, LLMApiKey
 from ffun.llms_framework.provider_interface import ProviderTest
 
 
 class TestBaseProviderInterfaceClass:
     """Test concrete methods of the abstract ProviderInterface class."""
 
-    def test_different_storages_for_keys(self, fake_api_key: str) -> None:
+    def test_different_storages_for_keys(self, fake_llm_api_key: LLMApiKey) -> None:
         provider_1 = ProviderTest()
         provider_2 = ProviderTest()
 
         assert provider_1.api_keys_statuses is not provider_2.api_keys_statuses
 
-        provider_1.api_keys_statuses.set(fake_api_key, KeyStatus.works)
-        provider_2.api_keys_statuses.set(fake_api_key, KeyStatus.broken)
+        provider_1.api_keys_statuses.set(fake_llm_api_key, KeyStatus.works)
+        provider_2.api_keys_statuses.set(fake_llm_api_key, KeyStatus.broken)
 
-        assert provider_1.api_keys_statuses.get(fake_api_key) == KeyStatus.works
-        assert provider_2.api_keys_statuses.get(fake_api_key) == KeyStatus.broken
+        assert provider_1.api_keys_statuses.get(fake_llm_api_key) == KeyStatus.works
+        assert provider_2.api_keys_statuses.get(fake_llm_api_key) == KeyStatus.broken
 
     def test_get_model(self, fake_llm_provider: ProviderTest, mocker: MockerFixture) -> None:
         config_1 = LLMConfiguration(

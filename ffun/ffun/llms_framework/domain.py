@@ -4,7 +4,7 @@ from typing import Sequence
 
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
-from ffun.llms_framework.entities import APIKeyUsage, ChatRequest, ChatResponse, LLMConfiguration, SelectKeyContext
+from ffun.llms_framework.entities import APIKeyUsage, ChatRequest, ChatResponse, LLMConfiguration, SelectKeyContext, LLMCollectionApiKey, LLMGeneralApiKey
 from ffun.llms_framework.keys_rotator import choose_api_key, use_api_key
 from ffun.llms_framework.provider_interface import ProviderInterface
 
@@ -71,8 +71,8 @@ async def search_for_api_key(
     entry: Entry,
     requests: Sequence[ChatRequest],
     # TODO: separate types for collection & general keys
-    collections_api_key: str | None,
-    general_api_key: str | None,
+    collections_api_key: LLMCollectionApiKey | None,
+    general_api_key: LLMGeneralApiKey | None,
 ) -> APIKeyUsage | None:
     # TODO: here may be problems with too big context window for gemini
     #       (we'll reserve too much tokens), see ModelInfo.max_tokens_per_entry as a potential solution
