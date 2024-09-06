@@ -70,7 +70,6 @@ async def search_for_api_key(
     llm_config: LLMConfiguration,
     entry: Entry,
     requests: Sequence[ChatRequest],
-    # TODO: separate types for collection & general keys
     collections_api_key: LLMCollectionApiKey | None,
     general_api_key: LLMGeneralApiKey | None,
 ) -> APIKeyUsage | None:
