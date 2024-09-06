@@ -1,7 +1,7 @@
 import datetime
 import enum
 import uuid
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Protocol
 
 import pydantic
 
@@ -10,6 +10,16 @@ from ffun.core.entities import BaseEntity
 from ffun.llms_framework.entities import LLMConfiguration, Provider, LLMCollectionApiKey, LLMGeneralApiKey
 
 logger = logging.get_module_logger()
+
+
+class TextCleaner(Protocol):
+    def __call__(self, text: str) -> str:
+        ...
+
+
+class TagsExtractor(Protocol):
+    def __call__(self, text: str) -> set[str]:
+        ...
 
 
 class ProcessorType(enum.StrEnum):
@@ -52,11 +62,8 @@ class LLMGeneralProcessor(BaseProcessor):
     # TODO: validate that template will render correctly
     entry_template: str
 
-    # TODO: validate that text cleaner is importable and works
-    text_cleaner: str
-
-    # TODO: validate that text extractor is importable and works
-    tags_extractor: str
+    text_cleaner: pydantic.ImportString
+    tags_extractor: pydantic.ImportString
 
     llm_provider: Provider
 

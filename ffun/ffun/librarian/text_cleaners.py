@@ -4,6 +4,11 @@ from bs4 import BeautifulSoup
 
 
 # TODO: test
+def clear_nothing(text: str) -> str:
+    return text
+
+
+# TODO: test
 def clear_html(text: str) -> str:
     soup = BeautifulSoup(text, "html.parser")
 

@@ -1,5 +1,5 @@
 import importlib
-from typing import Any
+from typing import Any, Sequence
 
 from ffun.core import logging
 from ffun.librarian import errors
@@ -9,11 +9,11 @@ from ffun.llms_framework.domain import call_llm, search_for_api_key
 from ffun.llms_framework.entities import ChatResponse, LLMConfiguration, Provider, LLMCollectionApiKey, LLMGeneralApiKey
 from ffun.llms_framework.providers import llm_providers
 from ffun.ontology.entities import ProcessorTag
+from ffun.librarian.entities import TextCleaner, TagsExtractor
 
 logger = logging.get_module_logger()
 
 
-# TODO: tests
 class Processor(base.Processor):
     __slots__ = (
         "llm_config",
@@ -30,8 +30,8 @@ class Processor(base.Processor):
         llm_provider: Provider,
         llm_config: LLMConfiguration,
         entry_template: str,
-        text_cleaner: str,
-        tag_extractor: str,
+        text_cleaner: TextCleaner,
+        tag_extractor: TagsExtractor,
         collections_api_key: LLMCollectionApiKey | None,
         general_api_key: LLMGeneralApiKey | None,
         **kwargs: Any
@@ -40,12 +40,8 @@ class Processor(base.Processor):
         self.llm_config = llm_config
         self.llm_provider = llm_providers.get(llm_provider).provider
         self.entry_template = entry_template
-
-        cleaner_module, cleaner_function = text_cleaner.rsplit(".", 1)
-        self.text_cleaner = getattr(importlib.import_module(cleaner_module), cleaner_function)
-
-        extractor_module, extractor_function = tag_extractor.rsplit(".", 1)
-        self.tag_extractor = getattr(importlib.import_module(extractor_module), extractor_function)
+        self.text_cleaner = text_cleaner
+        self.tag_extractor = tag_extractor
 
         self.collections_api_key = collections_api_key
         self.general_api_key = general_api_key
@@ -74,7 +70,7 @@ class Processor(base.Processor):
 
         return self.extract_tags(responses)
 
-    def extract_tags(self, responses: list[ChatResponse]) -> list[ProcessorTag]:
+    def extract_tags(self, responses: Sequence[ChatResponse]) -> list[ProcessorTag]:
         raw_tags = set()
         tags: list[ProcessorTag] = []
 
