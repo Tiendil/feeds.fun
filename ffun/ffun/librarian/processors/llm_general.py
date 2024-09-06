@@ -13,10 +13,6 @@ from ffun.ontology.entities import ProcessorTag
 logger = logging.get_module_logger()
 
 
-# TODO: add fixture to protect tests from using real collection API keys
-# TODO: add fixture to protect tests from using real general65 API keys
-
-
 # TODO: tests
 class Processor(base.Processor):
     __slots__ = (
@@ -61,7 +57,6 @@ class Processor(base.Processor):
 
         requests = self.llm_provider.prepare_requests(self.llm_config, cleaned_text)
 
-        # TODO: too many agruments
         api_key_usage = await search_for_api_key(
             llm=self.llm_provider,
             llm_config=self.llm_config,

@@ -13,6 +13,7 @@ logger = logging.get_module_logger()
 
 
 class ProcessorType(enum.StrEnum):
+    fake = "fake"
     domain = "domain"
     native_tags = "native_tags"
     upper_case_title = "upper_case_title"

@@ -17,9 +17,10 @@ logger = logging.get_module_logger()
 
 
 class ProcessorInfo:
-    __slots__ = ("_id", "_processor", "_concurrency")
+    __slots__ = ("_id", "_processor", "_concurrency", "type")
 
-    def __init__(self, id: int, processor: Processor, concurrency: int):
+    def __init__(self, id: int, type: ProcessorType, processor: Processor, concurrency: int):
+        self.type = type
         self._id = id
         self._processor = processor
         self._concurrency = concurrency
@@ -51,24 +52,28 @@ for processor_config in settings.tag_processors:
 
     if processor_config.type == ProcessorType.domain:
         processor = ProcessorInfo(
+            type=processor_config.type,
             id=processor_config.id,
             processor=DomainProcessor(name=processor_config.name),
             concurrency=processor_config.workers,
         )
     elif processor_config.type == ProcessorType.native_tags:
         processor = ProcessorInfo(
+            type=processor_config.type,
             id=processor_config.id,
             processor=NativeTagsProcessor(name=processor_config.name),
             concurrency=processor_config.workers,
         )
     elif processor_config.type == ProcessorType.upper_case_title:
         processor = ProcessorInfo(
+            type=processor_config.type,
             id=processor_config.id,
             processor=UpperCaseTitleProcessor(name=processor_config.name),
             concurrency=processor_config.workers,
         )
     elif processor_config.type == ProcessorType.llm_general:
         processor = ProcessorInfo(
+            type=processor_config.type,
             id=processor_config.id,
             processor=LLMGeneralProcessor(
                 name=processor_config.name,

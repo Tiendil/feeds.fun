@@ -2,6 +2,7 @@ import pytest
 
 from ffun.librarian.background_processors import EntriesProcessor, ProcessorInfo
 from ffun.librarian.processors.base import AlwaysConstantProcessor
+from ffun.librarian.entities import ProcessorType
 
 
 @pytest.fixture
@@ -18,6 +19,7 @@ def another_fake_processor_id() -> int:
 def fake_processor_info(fake_processor_id: int) -> ProcessorInfo:
     return ProcessorInfo(
         id=fake_processor_id,
+        type=ProcessorType.fake,
         processor=AlwaysConstantProcessor(
             name="fake_constant_processor", tags=["fake-constant-tag-1", "fake-constant-tag-2"]
         ),
