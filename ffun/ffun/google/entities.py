@@ -2,14 +2,7 @@ from typing import Any
 
 import pydantic
 
-# from vertexai.preview.tokenization import get_tokenizer_for_model
 from ffun.core.entities import BaseEntity
-
-# import google.generativeai as genai
-# from google.ai import generativelanguage as glm
-# from google.generativeai.types import helper_types
-# from google.generativeai.types import safety_types
-# from google.api_core import exceptions as google_core_exceptions
 from ffun.llms_framework.provider_interface import ChatRequest, ChatResponse
 
 

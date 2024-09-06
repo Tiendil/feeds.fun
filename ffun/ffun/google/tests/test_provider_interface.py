@@ -7,8 +7,6 @@ from ffun.google.provider_interface import track_key_status
 from ffun.llms_framework.entities import KeyStatus
 from ffun.llms_framework.keys_statuses import Statuses
 
-# from google.api_core import exceptions as google_core_exceptions
-
 
 class TestTrackKeyStatus:
 

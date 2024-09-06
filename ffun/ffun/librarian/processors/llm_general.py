@@ -13,6 +13,10 @@ from ffun.ontology.entities import ProcessorTag
 logger = logging.get_module_logger()
 
 
+# TODO: add fixture to protect tests from using real collection API keys
+# TODO: add fixture to protect tests from using real general API keys
+
+
 # TODO: tests
 class Processor(base.Processor):
     __slots__ = (

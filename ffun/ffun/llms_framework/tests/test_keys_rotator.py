@@ -120,9 +120,6 @@ class TestFilterOutUsersForWhomeEntryIsTooOld:
 
     @pytest.mark.asyncio
     async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
-        # for info, days in zip(five_user_key_infos, [5, 2, 3, 1, 4]):
-        #     info.process_entries_not_older_than = datetime.timedelta(days=days)
-
         for i, days in enumerate([5, 2, 3, 1, 4]):
             five_user_key_infos[i] = five_user_key_infos[i].replace(
                 process_entries_not_older_than=datetime.timedelta(days=days)
@@ -140,10 +137,6 @@ class TestFilterOutUsersWithOverusedKeys:
 
     @pytest.mark.asyncio
     async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
-        # for info, max_tokens_in_month in zip(five_user_key_infos, [201, 100, 300, 200, 500]):
-        #     info.tokens_used = 50
-        #     info.max_tokens_in_month = max_tokens_in_month
-
         for i, max_tokens_in_month in enumerate([201, 100, 300, 200, 500]):
             five_user_key_infos[i] = five_user_key_infos[i].replace(
                 tokens_used=50, max_tokens_in_month=max_tokens_in_month
@@ -425,8 +418,6 @@ class TestChooseGeneralKey:
     async def test_no_general_key_specified(
         self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext
     ) -> None:
-        # mocker.patch("ffun.openai.settings.settings.general_api_key", None)
-
         assert select_key_context.general_api_key is None
 
         assert await _choose_general_key(fake_llm_provider, select_key_context) is None

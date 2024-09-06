@@ -58,7 +58,9 @@ class ProviderTest(ProviderInterface):
         """Count each character as a token to simplify tests"""
         return len(text)
 
-    async def chat_request(self, config: LLMConfiguration, api_key: str, request: ChatRequestTest) -> ChatResponseTest:  # type: ignore
+    async def chat_request(  # type: ignore
+        self, config: LLMConfiguration, api_key: str, request: ChatRequestTest
+    ) -> ChatResponseTest:
         return ChatResponseTest(content=request.text)
 
     async def check_api_key(self, config: LLMConfiguration, api_key: str) -> KeyStatus:

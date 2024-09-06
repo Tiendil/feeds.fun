@@ -1,15 +1,8 @@
 import contextlib
 from typing import Generator
 
-# import google.generativeai as genai
-# from google.ai import generativelanguage as glm
-# from google.generativeai.types import helper_types
-# from google.generativeai.types import safety_types
-# from google.api_core import exceptions as google_core_exceptions
 from ffun.core import logging
 from ffun.google import errors
-
-# from vertexai.preview.tokenization import get_tokenizer_for_model
 from ffun.google.client import Client
 from ffun.google.entities import ChatMessage, GenerationConfig, GoogleChatRequest, GoogleChatResponse
 from ffun.llms_framework import domain as llmsf_domain
@@ -26,7 +19,8 @@ logger = logging.get_module_logger()
 
 # IMPROTANT!!!
 # TODO: Solve conflict with using different providers by users vs lack of using providers by system logic (collections)
-#       There is possible situation when collections uses one provider and ignore another, but user wants to use another provider
+#       There is possible situation when collections uses one provider and ignore another,
+#       but user wants to use another provider
 #       This may lead to processing all feeds in collections with the user key
 #       Maybe it is better to restrict processing of collections with user keys
 #       Maybe, we could move flags: for_collections, for_users, for_all to the configuration of all tag processors?

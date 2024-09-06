@@ -114,9 +114,11 @@ class OpenAIInterface(ProviderInterface):
             total_tokens=answer.usage.total_tokens,
         )
 
-    def prepare_requests(self, config: LLMConfiguration, text: str) -> list[OpenAIChatRequest]:  # type: ignore  # noqa: CFQ002
+    def prepare_requests(self,  # type: ignore  # noqa: CFQ002
+                         config: LLMConfiguration, text: str
+                         ) -> list[OpenAIChatRequest]:
 
-        parts = llmsf_domain.split_text_according_to_tokens(llm=self, config=config, text=text)
+        parts = llmsf_domain.split_text_according_to_tokens(llm=self, llm_config=config, text=text)
 
         requests = []
 
