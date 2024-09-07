@@ -251,7 +251,9 @@ async def _choose_user_key(llm: ProviderInterface, context: SelectKeyContext) ->
     )
 
 
-_key_selectors: Collection[KeySelector] = (_choose_general_key, _choose_collections_key, _choose_user_key)
+# Collections key has priority over general key
+# Because otherwise there will be not possible to use general key only for users
+_key_selectors: Collection[KeySelector] = (_choose_collections_key, _choose_general_key, _choose_user_key)
 
 
 async def choose_api_key(

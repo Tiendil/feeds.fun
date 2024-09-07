@@ -517,7 +517,7 @@ class TestKeySelectors:
 
     def test_order(self) -> None:
         """Just double protection from overriding this constant"""
-        assert _key_selectors == (_choose_general_key, _choose_collections_key, _choose_user_key)
+        assert _key_selectors == (_choose_collections_key, _choose_general_key, _choose_user_key)
 
 
 class TestChooseApiKey:

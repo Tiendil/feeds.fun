@@ -189,9 +189,9 @@ class TestEntriesProcessors:
 
     @pytest.mark.asyncio
     async def test_separate_entries__users_not_allowed(self,
-                                                             fake_entries_processor: EntriesProcessor,
-                                                             loaded_feed_id: FeedId,
-                                                             another_loaded_feed_id: FeedId) -> None:
+                                                       fake_entries_processor: EntriesProcessor,
+                                                       loaded_feed_id: FeedId,
+                                                       another_loaded_feed_id: FeedId) -> None:
         entries_1 = await l_make.n_entries(loaded_feed_id, 3)
         entries_2 = await l_make.n_entries(another_loaded_feed_id, 2)
 

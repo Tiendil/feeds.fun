@@ -47,7 +47,8 @@
   general_api_key = ""
   #####################################
 
-  allowed_for_collections = true
+  # using for collections is disabled because there are no API keys set
+  allowed_for_collections = false
   allowed_for_users = true
 
   [tag_processors.llm_config]
@@ -148,7 +149,8 @@ Remember:
   general_api_key = ""
   #####################################
 
-  allowed_for_collections = true
+  # using for collections is disabled because there are no API keys set
+  allowed_for_collections = false
 
   # currently, we do not support tracking tokens for Gemini
   allowed_for_users = false
