@@ -95,7 +95,7 @@ class TestEntriesProcessors:
         with capture_logs() as logs:
             await fake_entries_processor.single_run()
 
-        assert_logs(logs, no_entries_to_process=0, unexisted_entries_in_queue=1)
+        assert_logs(logs, no_entries_to_process=0, unexisted_entry_in_queue=3)
 
         tags = await o_domain.get_tags_for_entries(list(entries))
 

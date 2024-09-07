@@ -9,6 +9,8 @@
   workers = 1
   name = "domain"
   type = "domain"
+  allowed_for_collections = true
+  allowed_for_users = true
 
 [[tag_processors]]
   id = 2
@@ -16,6 +18,8 @@
   workers = 1
   name = "native_tags"
   type = "native_tags"
+  allowed_for_collections = true
+  allowed_for_users = true
 
 [[tag_processors]]
   id = 3
@@ -42,6 +46,9 @@
   # setup if you want to process ALL feeds with a specific API key
   general_api_key = ""
   #####################################
+
+  allowed_for_collections = true
+  allowed_for_users = true
 
   [tag_processors.llm_config]
     model = "gpt-4o-mini-2024-07-18"
@@ -111,6 +118,8 @@ Remember:
   workers = 1
   name = "upper_case_title"
   type = "upper_case_title"
+  allowed_for_collections = true
+  allowed_for_users = true
 
 
 [[tag_processors]]
@@ -138,6 +147,11 @@ Remember:
   # setup if you want to process ALL feeds with a specific API key
   general_api_key = ""
   #####################################
+
+  allowed_for_collections = true
+
+  # currently, we do not support tracking tokens for Gemini
+  allowed_for_users = false
 
   [tag_processors.llm_config]
     model = "gemini-1.5-flash-001"

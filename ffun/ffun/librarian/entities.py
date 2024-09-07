@@ -42,6 +42,8 @@ class BaseProcessor(BaseEntity):
     workers: int
     name: str
     type: ProcessorType
+    allowed_for_collections: bool
+    allowed_for_users: bool
 
 
 class DomainProcessor(BaseProcessor):
