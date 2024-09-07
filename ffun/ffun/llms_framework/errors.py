@@ -35,3 +35,7 @@ class UsedTokensHasNotSpecified(Error):
 
 class TooManyTokensForEntry(Error):
     pass
+
+
+class FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys(Error):
+    pass

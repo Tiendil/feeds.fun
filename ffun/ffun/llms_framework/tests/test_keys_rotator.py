@@ -10,6 +10,7 @@ from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
 from ffun.feeds_links import domain as fl_domain
 from ffun.llms_framework import errors
+from ffun.feeds_collections import domain as fc_domain
 from ffun.llms_framework.entities import APIKeyUsage, KeyStatus, LLMConfiguration, SelectKeyContext, UserKeyInfo, LLMApiKey, LLMGeneralApiKey, LLMCollectionApiKey
 from ffun.llms_framework.keys_rotator import (
     _api_key_is_working,
@@ -487,6 +488,13 @@ class TestChooseUserKey:
     @pytest.mark.asyncio
     async def test_no_users(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
         assert await _choose_user_key(fake_llm_provider, select_key_context) is None
+
+    @pytest.mark.asyncio
+    async def test_protection_from_collections_processing(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
+        fc_domain.add_test_feed_to_collections(select_key_context.feed_id)
+
+        with pytest.raises(errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys):
+            await _choose_user_key(fake_llm_provider, select_key_context)
 
     @pytest.mark.asyncio
     async def test_found_user(

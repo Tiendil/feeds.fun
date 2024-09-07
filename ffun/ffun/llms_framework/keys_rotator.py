@@ -227,6 +227,10 @@ async def _choose_collections_key(llm: ProviderInterface, context: SelectKeyCont
 
 
 async def _choose_user_key(llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage | None:
+
+    if await fc_domain.is_feed_in_collections(context.feed_id):
+        raise errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys(feed_id=context.feed_id)
+
     info = await _find_best_user_with_key(
         llm=llm,
         llm_config=context.llm_config,
