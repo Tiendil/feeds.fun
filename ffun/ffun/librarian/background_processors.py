@@ -139,6 +139,7 @@ class EntriesProcessor(InfiniteTask):
                 entries_to_remove.append(entry_id)
                 continue
 
+            logger.info("proccessor_is_allowed_for_entry", processor_id=processor_id, entry_id=entry_id)
             entries_to_process.append(entry)
 
         return entries_to_process, entries_to_remove
