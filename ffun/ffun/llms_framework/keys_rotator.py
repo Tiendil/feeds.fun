@@ -123,14 +123,12 @@ async def _get_user_key_infos(  # pylint: disable=R0914
     provider_to_settings = {
         LLMProvider.openai: UserSetting.openai_api_key,
         LLMProvider.google: UserSetting.gemini_api_key,
-        LLMProvider.test: UserSetting.test_api_key
+        LLMProvider.test: UserSetting.test_api_key,
     }
 
     key_setting = provider_to_settings[provider]
 
-    kinds = [UserSetting.max_tokens_cost_in_month,
-             UserSetting.process_entries_not_older_than,
-             key_setting]
+    kinds = [UserSetting.max_tokens_cost_in_month, UserSetting.process_entries_not_older_than, key_setting]
 
     users_settings = await us_domain.load_settings_for_users(
         user_ids,

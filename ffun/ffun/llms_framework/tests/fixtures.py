@@ -15,7 +15,9 @@ from ffun.user_settings import domain as us_domain
 
 # TODO: replace LLMProvider.openai with LLMProvider.test
 @pytest_asyncio.fixture
-async def five_user_key_infos(fake_llm_provider: ProviderTest, five_internal_user_ids: list[uuid.UUID]) -> list[UserKeyInfo]:
+async def five_user_key_infos(
+    fake_llm_provider: ProviderTest, five_internal_user_ids: list[uuid.UUID]
+) -> list[UserKeyInfo]:
     from ffun.application.resources import Resource as AppResource
     from ffun.application.user_settings import UserSetting
 

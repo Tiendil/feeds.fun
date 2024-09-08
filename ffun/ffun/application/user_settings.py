@@ -106,7 +106,7 @@ user_settings.add(
         key=UserSetting.max_tokens_cost_in_month,
         name="Max spendings on API keys in month",
         type=types.Decimal(),
-        default=Decimal('10'),
+        default=Decimal("10"),
         description=description_max_tokens_cost_in_month,
     )
 )

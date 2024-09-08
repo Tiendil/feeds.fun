@@ -1,7 +1,7 @@
 import datetime
 import enum
 import uuid
-from typing import Annotated, Any, Literal, Protocol, TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Protocol
 
 import pydantic
 from pydantic_core import PydanticCustomError

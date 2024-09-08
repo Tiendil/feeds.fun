@@ -49,8 +49,8 @@ class TestBaseProviderInterfaceClass:
             max_context_size=LLMTokens(12800),
             max_return_tokens=LLMTokens(4096),
             max_tokens_per_entry=LLMTokens(300000),
-            input_1m_tokens_cost=USDCost(Decimal('0.3')),
-            output_1m_tokens_cost=USDCost(Decimal('0.7')),
+            input_1m_tokens_cost=USDCost(Decimal("0.3")),
+            output_1m_tokens_cost=USDCost(Decimal("0.7")),
         )
 
         config_2 = config_1.replace(model="test-model-2")
@@ -61,8 +61,8 @@ class TestBaseProviderInterfaceClass:
             max_context_size=LLMTokens(14212),
             max_return_tokens=LLMTokens(1024),
             max_tokens_per_entry=LLMTokens(300000),
-            input_1m_tokens_cost=USDCost(Decimal('0.7')),
-            output_1m_tokens_cost=USDCost(Decimal('0.3')),
+            input_1m_tokens_cost=USDCost(Decimal("0.7")),
+            output_1m_tokens_cost=USDCost(Decimal("0.3")),
         )
 
         mocker.patch.object(fake_llm_provider, "provider", LLMProvider.openai)
@@ -75,8 +75,8 @@ class TestBaseProviderInterfaceClass:
             max_context_size=LLMTokens(128000),
             max_return_tokens=LLMTokens(16384),
             max_tokens_per_entry=LLMTokens(300000),
-            input_1m_tokens_cost=USDCost(Decimal('5')),
-            output_1m_tokens_cost=USDCost(Decimal('15')),
+            input_1m_tokens_cost=USDCost(Decimal("5")),
+            output_1m_tokens_cost=USDCost(Decimal("15")),
         )
 
     def test_wrong_provider(self, fake_llm_provider: ProviderTest, mocker: MockerFixture) -> None:
