@@ -53,44 +53,40 @@ for processor_config in settings.tag_processors:
     logger.info("add_tag_processor", processor_id=processor_config.id, processor_name=processor_config.name)
 
     info_arguments = {
-        "id": processor_config.id,
-        "type": processor_config.type,
-        "concurrency": processor_config.workers,
-        "allowed_for_collections": processor_config.allowed_for_collections,
-        "allowed_for_users": processor_config.allowed_for_users,
+
     }
 
+    tags_processor: Processor
+
     if processor_config.type == ProcessorType.domain:
-        processor = ProcessorInfo(
-            processor=DomainProcessor(name=processor_config.name),
-            **info_arguments,
-        )
+        tags_processor = DomainProcessor(name=processor_config.name)
     elif processor_config.type == ProcessorType.native_tags:
-        processor = ProcessorInfo(
-            processor=NativeTagsProcessor(name=processor_config.name),
-            **info_arguments,
-        )
+        tags_processor = NativeTagsProcessor(name=processor_config.name)
     elif processor_config.type == ProcessorType.upper_case_title:
-        processor = ProcessorInfo(
-            processor=UpperCaseTitleProcessor(name=processor_config.name),
-            **info_arguments,
-        )
+        tags_processor = UpperCaseTitleProcessor(name=processor_config.name)
     elif processor_config.type == ProcessorType.llm_general:
-        processor = ProcessorInfo(
-            processor=LLMGeneralProcessor(
-                name=processor_config.name,
-                entry_template=processor_config.entry_template,
-                text_cleaner=processor_config.text_cleaner,
-                tag_extractor=processor_config.tags_extractor,
-                llm_provider=processor_config.llm_provider,
-                llm_config=processor_config.llm_config,
-                collections_api_key=processor_config.collections_api_key,
-                general_api_key=processor_config.general_api_key,
-            ),
-            **info_arguments,
+        tags_processor = LLMGeneralProcessor(
+            name=processor_config.name,
+            entry_template=processor_config.entry_template,
+            text_cleaner=processor_config.text_cleaner,
+            tag_extractor=processor_config.tags_extractor,
+            llm_provider=processor_config.llm_provider,
+            llm_config=processor_config.llm_config,
+            collections_api_key=processor_config.collections_api_key,
+            general_api_key=processor_config.general_api_key,
         )
     else:
         raise NotImplementedError(f"Unknown processor type: {processor_config.type}")
+
+    info_arguments["processor"] = tags_processor
+
+    processor = ProcessorInfo(
+        id=processor_config.id,
+        type=processor_config.type,
+        processor=tags_processor,
+        concurrency=processor_config.workers,
+        allowed_for_collections=processor_config.allowed_for_collections,
+        allowed_for_users=processor_config.allowed_for_users)
 
     processors.append(processor)
 

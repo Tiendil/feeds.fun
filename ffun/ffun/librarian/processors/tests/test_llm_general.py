@@ -1,11 +1,12 @@
 import pytest
+from decimal import Decimal
 
 from ffun.librarian import errors
 from ffun.librarian.processors.llm_general import Processor
 from ffun.librarian.tag_extractors import dog_tags_extractor
 from ffun.librarian.text_cleaners import clear_nothing
 from ffun.library.entities import Entry
-from ffun.llms_framework.entities import LLMApiKey, LLMConfiguration, LLMGeneralApiKey, Provider
+from ffun.llms_framework.entities import LLMApiKey, LLMConfiguration, LLMGeneralApiKey, LLMProvider, USDCost, LLMTokens
 from ffun.llms_framework.provider_interface import ChatResponseTest
 from ffun.ontology.entities import ProcessorTag
 
@@ -17,7 +18,7 @@ class TestProcessor:
         return LLMConfiguration(
             model="test-model-1",
             system="system prompt",
-            max_return_tokens=143,
+            max_return_tokens=LLMTokens(143),
             text_parts_intersection=100,
             temperature=0,
             top_p=0,
@@ -29,7 +30,7 @@ class TestProcessor:
     def llm_processor(self, llm_config: LLMConfiguration) -> Processor:
         return Processor(
             name="test-llm-processor",
-            llm_provider=Provider.test,
+            llm_provider=LLMProvider.test,
             llm_config=llm_config,
             entry_template="{entry.title} {entry.body}",
             text_cleaner=clear_nothing,

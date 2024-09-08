@@ -11,7 +11,7 @@ from ffun.llms_framework.entities import (
     LLMCollectionApiKey,
     LLMConfiguration,
     LLMGeneralApiKey,
-    Provider,
+    LLMProvider,
 )
 from ffun.llms_framework.providers import llm_providers
 from ffun.ontology.entities import ProcessorTag
@@ -32,7 +32,7 @@ class Processor(base.Processor):
 
     def __init__(  # noqa
         self,
-        llm_provider: Provider,
+        llm_provider: LLMProvider,
         llm_config: LLMConfiguration,
         entry_template: str,
         text_cleaner: TextCleaner,

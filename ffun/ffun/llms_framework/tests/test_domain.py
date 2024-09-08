@@ -1,5 +1,5 @@
 import uuid
-
+from decimal import Decimal
 import pytest
 from pytest_mock import MockerFixture
 
@@ -8,8 +8,9 @@ from ffun.domain.datetime_intervals import month_interval_start
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
 from ffun.llms_framework.domain import call_llm, search_for_api_key, split_text, split_text_according_to_tokens
-from ffun.llms_framework.entities import APIKeyUsage, LLMApiKey, LLMConfiguration, LLMGeneralApiKey
+from ffun.llms_framework.entities import APIKeyUsage, LLMApiKey, LLMConfiguration, LLMGeneralApiKey, USDCost, LLMTokens
 from ffun.llms_framework.provider_interface import ChatRequestTest, ChatResponseTest, ProviderTest
+from ffun.llms_framework.keys_rotator import _cost_points
 from ffun.resources import domain as r_domain
 
 
@@ -69,7 +70,7 @@ class TestSplitTextAccordingToTokens:
         return LLMConfiguration(
             model="test-model-1",
             system="system prompt",
-            max_return_tokens=143,
+            max_return_tokens=LLMTokens(143),
             text_parts_intersection=100,
             temperature=0,
             top_p=0,
@@ -120,7 +121,7 @@ class TestSearchForAPIKey:
         return LLMConfiguration(
             model="test-model-1",
             system="system prompt",
-            max_return_tokens=143,
+            max_return_tokens=LLMTokens(143),
             text_parts_intersection=100,
             temperature=0,
             top_p=0,
@@ -191,7 +192,7 @@ class TestCallLLM:
         return LLMConfiguration(
             model="test-model-1",
             system="system prompt",
-            max_return_tokens=143,
+            max_return_tokens=LLMTokens(143),
             text_parts_intersection=100,
             temperature=0,
             top_p=0,
@@ -213,8 +214,10 @@ class TestCallLLM:
         key_usage = APIKeyUsage(
             user_id=internal_user_id,
             api_key=fake_llm_api_key,
-            reserved_tokens=100500,
-            used_tokens=None,
+            reserved_cost=USDCost(Decimal(100500)),
+            used_cost=None,
+            input_tokens=None,
+            output_tokens=None,
             interval_started_at=interval_started_at,
         )
 
@@ -222,8 +225,8 @@ class TestCallLLM:
             user_id=internal_user_id,
             kind=AppResource.openai_tokens,
             interval_started_at=interval_started_at,
-            amount=key_usage.reserved_tokens,
-            limit=12451251255,
+            amount=_cost_points.to_points(key_usage.reserved_cost),
+            limit=_cost_points.to_points(USDCost(Decimal(12451251255))),
         )
 
         requests = [ChatRequestTest(text="abcd"), ChatRequestTest(text="efgh1234"), ChatRequestTest(text="99")]
