@@ -35,7 +35,7 @@ async def five_user_key_infos(five_internal_user_ids: list[uuid.UUID]) -> list[U
 
         await r_domain.try_to_reserve(
             user_id=user_id,
-            kind=AppResource.openai_tokens,
+            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(used_cost),
             limit=_cost_points.to_points(max_tokens_cost_in_month),
@@ -43,7 +43,7 @@ async def five_user_key_infos(five_internal_user_ids: list[uuid.UUID]) -> list[U
 
         await r_domain.convert_reserved_to_used(
             user_id=user_id,
-            kind=AppResource.openai_tokens,
+            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             used=_cost_points.to_points(used_cost),
             reserved=_cost_points.to_points(used_cost),

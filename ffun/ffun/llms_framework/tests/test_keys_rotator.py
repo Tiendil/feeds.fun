@@ -235,7 +235,7 @@ class TestGetUserKeyInfos:
 
             await r_domain.try_to_reserve(
                 user_id=user_id,
-                kind=AppResource.openai_tokens,
+                kind=AppResource.tokens_cost,
                 interval_started_at=interval_started_at,
                 amount=_cost_points.to_points(reserved_costs[i]),
                 limit=_cost_points.to_points(max_tokens_cost_in_month[i]),
@@ -243,7 +243,7 @@ class TestGetUserKeyInfos:
 
             await r_domain.convert_reserved_to_used(
                 user_id=user_id,
-                kind=AppResource.openai_tokens,
+                kind=AppResource.tokens_cost,
                 interval_started_at=interval_started_at,
                 used=_cost_points.to_points(used_costs[i]),
                 reserved=0,
@@ -397,7 +397,7 @@ class TestFindBestUserWithKey:
 
             await r_domain.convert_reserved_to_used(
                 user_id=info.user_id,
-                kind=AppResource.openai_tokens,
+                kind=AppResource.tokens_cost,
                 interval_started_at=interval_started_at,
                 used=_cost_points.to_points(used_cost),
                 reserved=_cost_points.to_points(used_cost),
@@ -623,14 +623,14 @@ class TestUseApiKey:
 
         await r_domain.try_to_reserve(
             user_id=internal_user_id,
-            kind=AppResource.openai_tokens,
+            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(1000))),
         )
 
         resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
+            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
         )
 
         used_cost = USDCost(Decimal(132))
@@ -649,13 +649,13 @@ class TestUseApiKey:
             key_usage.used_cost = used_cost
 
         resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
+            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
         )
 
         assert resources == {
             internal_user_id: r_entities.Resource(
                 user_id=internal_user_id,
-                kind=AppResource.openai_tokens,
+                kind=AppResource.tokens_cost,
                 interval_started_at=interval_started_at,
                 used=_cost_points.to_points(used_cost),
                 reserved=0,
@@ -671,14 +671,14 @@ class TestUseApiKey:
 
         await r_domain.try_to_reserve(
             user_id=internal_user_id,
-            kind=AppResource.openai_tokens,
+            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(1000))),
         )
 
         resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
+            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
         )
 
         key_usage = APIKeyUsage(
@@ -696,13 +696,13 @@ class TestUseApiKey:
                 assert key_usage.used_cost is None
 
         resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
+            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
         )
 
         assert resources == {
             internal_user_id: r_entities.Resource(
                 user_id=internal_user_id,
-                kind=AppResource.openai_tokens,
+                kind=AppResource.tokens_cost,
                 interval_started_at=interval_started_at,
                 used=_cost_points.to_points(reserved_cost),
                 reserved=0,
@@ -719,14 +719,14 @@ class TestUseApiKey:
         await r_domain.try_to_reserve(
             user_id=internal_user_id,
             # TODO: differentiate tokens in all places
-            kind=AppResource.openai_tokens,
+            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(1000))),
         )
 
         resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
+            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
         )
 
         class FakeError(Exception):
@@ -747,13 +747,13 @@ class TestUseApiKey:
                 raise FakeError()
 
         resources = await r_domain.load_resources(
-            user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
+            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
         )
 
         assert resources == {
             internal_user_id: r_entities.Resource(
                 user_id=internal_user_id,
-                kind=AppResource.openai_tokens,
+                kind=AppResource.tokens_cost,
                 interval_started_at=interval_started_at,
                 used=_cost_points.to_points(reserved_cost),
                 reserved=0,

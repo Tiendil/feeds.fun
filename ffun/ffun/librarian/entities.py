@@ -1,7 +1,7 @@
 import datetime
 import enum
 import uuid
-from typing import Annotated, Any, Literal, Protocol
+from typing import Annotated, Any, Literal, Protocol, TYPE_CHECKING
 
 import pydantic
 from pydantic_core import PydanticCustomError
@@ -62,14 +62,27 @@ class UpperCaseTitleProcessor(BaseProcessor):
 _general_key_warning = "I understand that setting this key may be DANGEROUS and COSTLY."
 
 
+if TYPE_CHECKING:
+    # TODO: fix after Pydantic learn how to process such parametrization at runtime
+    PydanticTextCleaner = pydantic.ImportString[TextCleaner]
+    PydanticTagsExtractor = pydantic.ImportString[TagsExtractor]
+else:
+    PydanticTextCleaner = pydantic.ImportString
+    PydanticTagsExtractor = pydantic.ImportString
+
+
 class LLMGeneralProcessor(BaseProcessor):
+
+    # arbitrary_types_allowed is required for parametrization of pydantic.ImportString
+    model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
+
     type: Literal[ProcessorType.llm_general] = ProcessorType.llm_general
 
     # TODO: validate that template will render correctly
     entry_template: str
 
-    text_cleaner: pydantic.ImportString[TextCleaner]
-    tags_extractor: pydantic.ImportString[TagsExtractor]
+    text_cleaner: PydanticTextCleaner
+    tags_extractor: PydanticTagsExtractor
 
     llm_provider: LLMProvider
 

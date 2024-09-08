@@ -46,7 +46,11 @@ class ChatResponseTest(ChatResponse):
     def response_content(self) -> str:
         return self.content
 
-    def spent_tokens(self) -> int:
+    def input_tokens(self) -> int:
+        return len(self.content)
+
+    # TODO: make it differ from input_tokens
+    def output_tokens(self) -> int:
         return len(self.content)
 
 

@@ -29,8 +29,11 @@ class OpenAIChatResponse(ChatResponse):
     def response_content(self) -> str:
         return self.content
 
-    def spent_tokens(self) -> int:
-        return self.total_tokens
+    def input_tokens(self) -> int:
+        return self.prompt_tokens
+
+    def output_tokens(self) -> int:
+        return self.completion_tokens
 
 
 @functools.cache
