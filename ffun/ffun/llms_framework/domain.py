@@ -89,14 +89,22 @@ async def search_for_api_key(
     return await choose_api_key(llm, select_key_context)
 
 
+# TODO: test tokens costs
 async def call_llm(
     llm: ProviderInterface, llm_config: LLMConfiguration, api_key_usage: APIKeyUsage, requests: Sequence[ChatRequest]
 ) -> list[ChatResponse]:
+
+    model = llm.get_model(llm_config)
+
     async with use_api_key(api_key_usage):
         tasks = [llm.chat_request(llm_config, api_key_usage.api_key, request) for request in requests]
 
         responses = await asyncio.gather(*tasks)
 
-        api_key_usage.used_tokens = sum(response.spent_tokens() for response in responses)
+        api_key_usage.input_tokens = sum(response.input_tokens() for response in responses)
+        api_key_usage.output_tokens = sum(response.output_tokens() for response in responses)
+
+        api_key_usage.tokens_cost = model.tokens_cost(input_tokens=api_key_usage.input_tokens,
+                                                      output_tokens=api_key_usage.output_tokens)
 
     return responses

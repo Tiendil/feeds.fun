@@ -6,10 +6,20 @@ from ffun.user_settings.values import Value, user_settings
 
 
 class UserSetting(enum.IntEnum):
+    # TODO: add gemini key
     openai_api_key = 1
+
+    # TODO: remove
     openai_max_tokens_in_month = 2
+
+    # TODO: rename and update for Gemini
     openai_hide_message_about_setting_up_key = 3
-    openai_process_entries_not_older_than = 4
+
+    process_entries_not_older_than = 4
+
+    max_tokens_cost_in_month = 5
+
+    gemini_api_key = 6
 
 
 description_openai_api_key = """

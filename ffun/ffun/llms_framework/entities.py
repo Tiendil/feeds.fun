@@ -2,6 +2,7 @@ import datetime
 import enum
 import uuid
 from typing import NewType
+import decimal
 
 import pydantic
 
@@ -15,21 +16,33 @@ LLMUserApiKey = NewType("LLMUserApiKey", LLMApiKey)
 LLMCollectionApiKey = NewType("LLMCollectionApiKey", LLMApiKey)
 LLMGeneralApiKey = NewType("LLMGeneralApiKey", LLMApiKey)
 
+USDCost = NewType("USDCost", decimal.Decimal)
 
-class Provider(enum.StrEnum):
+LLMTokens = NewType("LLMTokens", int)
+
+
+class LLMProvider(enum.StrEnum):
     test = "test"
     openai = "openai"
     google = "google"
 
 
 class ModelInfo(pydantic.BaseModel):
-    provider: Provider
+    provider: LLMProvider
     name: str
-    max_context_size: int
-    max_return_tokens: int
+    max_context_size: LLMTokens
+    max_return_tokens: LLMTokens
 
     # protection from overuse/overspend
-    max_tokens_per_entry: int
+    max_tokens_per_entry: LLMTokens
+
+    input_1m_tokens_cost: decimal.Decimal
+    output_1m_tokens_cost: decimal.Decimal
+
+    # TODO: test
+    def tokens_cost(self, input_tokens: int, output_tokens: int) -> decimal.Decimal:
+        return (self.input_1m_tokens_cost * input_tokens / 1_000_000 +
+                self.output_1m_tokens_cost * output_tokens / 1_000_000)
 
 
 class KeyStatus(str, enum.Enum):
@@ -45,7 +58,7 @@ class KeyStatus(str, enum.Enum):
 class LLMConfiguration(BaseEntity):
     model: str
     system: str = pydantic.StringConstraints(strip_whitespace=True)
-    max_return_tokens: int
+    max_return_tokens: LLMTokens
     text_parts_intersection: int
     temperature: float
     top_p: float
@@ -62,7 +75,10 @@ class ChatResponse(BaseEntity):
     def response_content(self) -> str:
         raise NotImplementedError("Must be implemented in subclasses")
 
-    def spent_tokens(self) -> int:
+    def input_tokens(self) -> int:
+        raise NotImplementedError("Must be implemented in subclasses")
+
+    def output_tokens(self) -> int:
         raise NotImplementedError("Must be implemented in subclasses")
 
 
@@ -71,8 +87,10 @@ class APIKeyUsage(BaseEntity):
 
     user_id: uuid.UUID | None
     api_key: LLMApiKey
-    reserved_tokens: int
-    used_tokens: int | None
+    reserved_cost: USDCost
+    input_tokens: LLMTokens | None
+    output_tokens: LLMTokens | None
+    tokens_cost: USDCost | None
     interval_started_at: datetime.datetime
 
     def spent_tokens(self) -> int:
@@ -85,16 +103,16 @@ class APIKeyUsage(BaseEntity):
 class UserKeyInfo(BaseEntity):
     user_id: uuid.UUID
     api_key: LLMApiKey | None
-    max_tokens_in_month: int
+    max_tokens_cost_in_month: USDCost
     process_entries_not_older_than: datetime.timedelta
-    tokens_used: int
+    cost_used: USDCost
 
 
 class SelectKeyContext(BaseEntity):
     llm_config: LLMConfiguration
     feed_id: FeedId
     entry_age: datetime.timedelta
-    reserved_tokens: int
+    reserved_cost: USDCost
     interval_started_at: datetime.datetime = pydantic.Field(default_factory=month_interval_start)
     collections_api_key: LLMCollectionApiKey | None
     general_api_key: LLMGeneralApiKey | None
