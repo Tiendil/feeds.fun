@@ -106,9 +106,7 @@ class OpenAIInterface(ProviderInterface):
             total_tokens=answer.usage.total_tokens,
         )
 
-    def prepare_requests(
-        self, config: LLMConfiguration, text: str
-    ) -> Sequence[OpenAIChatRequest]:
+    def prepare_requests(self, config: LLMConfiguration, text: str) -> Sequence[OpenAIChatRequest]:
 
         parts = llmsf_domain.split_text_according_to_tokens(llm=self, llm_config=config, text=text)
 

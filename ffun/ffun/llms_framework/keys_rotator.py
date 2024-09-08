@@ -8,7 +8,16 @@ from ffun.feeds.entities import FeedId
 from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.llms_framework import errors
-from ffun.llms_framework.entities import APIKeyUsage, KeyStatus, LLMConfiguration, SelectKeyContext, UserKeyInfo, USDCost, LLMTokens, LLMProvider
+from ffun.llms_framework.entities import (
+    APIKeyUsage,
+    KeyStatus,
+    LLMConfiguration,
+    LLMProvider,
+    LLMTokens,
+    SelectKeyContext,
+    USDCost,
+    UserKeyInfo,
+)
 from ffun.llms_framework.provider_interface import ProviderInterface
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
@@ -87,9 +96,7 @@ async def _choose_user(
 
 # TODO: test that works for openai and gemini
 async def _get_user_key_infos(
-        provider: LLMProvider,
-        user_ids: Iterable[uuid.UUID],
-        interval_started_at: datetime.datetime
+    provider: LLMProvider, user_ids: Iterable[uuid.UUID], interval_started_at: datetime.datetime
 ) -> list[UserKeyInfo]:
     from ffun.application.resources import Resource as AppResource
     from ffun.application.user_settings import UserSetting
@@ -98,13 +105,12 @@ async def _get_user_key_infos(
     provider_to_settings = {
         LLMProvider.openai: UserSetting.openai_api_key,
         LLMProvider.google: UserSetting.gemini_api_key,
-        LLMProvider.test: None  # TODO: ????
+        LLMProvider.test: None,  # TODO: ????
     }
 
     key_setting = provider_to_settings[provider]
 
-    kinds = [UserSetting.max_tokens_cost_in_month,
-             UserSetting.process_entries_not_older_than]
+    kinds = [UserSetting.max_tokens_cost_in_month, UserSetting.process_entries_not_older_than]
 
     if key_setting is not None:
         kinds.append(provider_to_settings[provider])
@@ -194,9 +200,7 @@ async def _find_best_user_with_key(
 
     infos.sort(key=lambda info: info.tokens_used)
 
-    return await _choose_user(infos=infos,
-                              reserved_cost=reserved_cost,
-                              interval_started_at=interval_started_at)
+    return await _choose_user(infos=infos, reserved_cost=reserved_cost, interval_started_at=interval_started_at)
 
 
 ####################

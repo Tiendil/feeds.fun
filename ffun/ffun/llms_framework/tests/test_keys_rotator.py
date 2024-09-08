@@ -8,10 +8,19 @@ from pytest_mock import MockerFixture
 from ffun.application.resources import Resource as AppResource
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
+from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.llms_framework import errors
-from ffun.feeds_collections import domain as fc_domain
-from ffun.llms_framework.entities import APIKeyUsage, KeyStatus, LLMConfiguration, SelectKeyContext, UserKeyInfo, LLMApiKey, LLMGeneralApiKey, LLMCollectionApiKey
+from ffun.llms_framework.entities import (
+    APIKeyUsage,
+    KeyStatus,
+    LLMApiKey,
+    LLMCollectionApiKey,
+    LLMConfiguration,
+    LLMGeneralApiKey,
+    SelectKeyContext,
+    UserKeyInfo,
+)
 from ffun.llms_framework.keys_rotator import (
     _api_key_is_working,
     _choose_collections_key,
@@ -424,7 +433,7 @@ class TestChooseGeneralKey:
 
     @pytest.mark.asyncio
     async def test_general_key_specified(
-            self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext, fake_llm_api_key: LLMApiKey
+        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext, fake_llm_api_key: LLMApiKey
     ) -> None:
 
         select_key_context = select_key_context.replace(general_api_key=LLMGeneralApiKey(fake_llm_api_key))
@@ -452,7 +461,11 @@ class TestChooseCollectionsKey:
 
     @pytest.mark.asyncio
     async def test_collections_key_specified__in_collection(
-            self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext, mocker: MockerFixture, fake_llm_api_key: LLMApiKey
+        self,
+        fake_llm_provider: ProviderTest,
+        select_key_context: SelectKeyContext,
+        mocker: MockerFixture,
+        fake_llm_api_key: LLMApiKey,
     ) -> None:
         select_key_context = select_key_context.replace(collections_api_key=LLMCollectionApiKey(fake_llm_api_key))
 
@@ -490,7 +503,9 @@ class TestChooseUserKey:
         assert await _choose_user_key(fake_llm_provider, select_key_context) is None
 
     @pytest.mark.asyncio
-    async def test_protection_from_collections_processing(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
+    async def test_protection_from_collections_processing(
+        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext
+    ) -> None:
         fc_domain.add_test_feed_to_collections(select_key_context.feed_id)
 
         with pytest.raises(errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys):

@@ -4,6 +4,7 @@ from typing import Any
 
 from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
+from ffun.feeds_collections import domain as fc_domain
 from ffun.librarian import domain, operations
 from ffun.librarian.entities import ProcessorType
 from ffun.librarian.processors.base import Processor
@@ -14,7 +15,6 @@ from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTit
 from ffun.librarian.settings import settings
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
-from ffun.feeds_collections import domain as fc_domain
 
 logger = logging.get_module_logger()
 
@@ -23,13 +23,15 @@ logger = logging.get_module_logger()
 class ProcessorInfo:
     __slots__ = ("id", "processor", "concurrency", "type", "allowed_for_collections", "allowed_for_users")
 
-    def __init__(self,  # noqa: disable=CFQ002
-                 id: int,
-                 type: ProcessorType,
-                 processor: Processor,
-                 concurrency: int,
-                 allowed_for_collections: bool,
-                 allowed_for_users: bool):
+    def __init__(
+        self,  # noqa: disable=CFQ002
+        id: int,
+        type: ProcessorType,
+        processor: Processor,
+        concurrency: int,
+        allowed_for_collections: bool,
+        allowed_for_users: bool,
+    ):
         self.type = type
         self.id = id
         self.processor = processor
@@ -109,8 +111,9 @@ class EntriesProcessor(InfiniteTask):
         return self._processor_info.concurrency
 
     # TODO: test
-    async def separate_entries(self,  # noqa: disable=CCR001
-                               entries_ids: list[uuid.UUID]) -> tuple[list[Entry], list[uuid.UUID]]:
+    async def separate_entries(
+        self, entries_ids: list[uuid.UUID]  # noqa: disable=CCR001
+    ) -> tuple[list[Entry], list[uuid.UUID]]:
         processor_id = self._processor_info.id
 
         # TODO: we could add caching here, because multiple processors can request the same entries

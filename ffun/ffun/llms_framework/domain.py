@@ -4,7 +4,15 @@ from typing import Sequence
 
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
-from ffun.llms_framework.entities import APIKeyUsage, ChatRequest, ChatResponse, LLMConfiguration, SelectKeyContext, LLMCollectionApiKey, LLMGeneralApiKey
+from ffun.llms_framework.entities import (
+    APIKeyUsage,
+    ChatRequest,
+    ChatResponse,
+    LLMCollectionApiKey,
+    LLMConfiguration,
+    LLMGeneralApiKey,
+    SelectKeyContext,
+)
 from ffun.llms_framework.keys_rotator import choose_api_key, use_api_key
 from ffun.llms_framework.provider_interface import ProviderInterface
 
@@ -104,7 +112,8 @@ async def call_llm(
         api_key_usage.input_tokens = sum(response.input_tokens() for response in responses)
         api_key_usage.output_tokens = sum(response.output_tokens() for response in responses)
 
-        api_key_usage.tokens_cost = model.tokens_cost(input_tokens=api_key_usage.input_tokens,
-                                                      output_tokens=api_key_usage.output_tokens)
+        api_key_usage.tokens_cost = model.tokens_cost(
+            input_tokens=api_key_usage.input_tokens, output_tokens=api_key_usage.output_tokens
+        )
 
     return responses

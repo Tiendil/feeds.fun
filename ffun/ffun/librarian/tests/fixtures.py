@@ -1,8 +1,8 @@
 import pytest
 
 from ffun.librarian.background_processors import EntriesProcessor, ProcessorInfo
-from ffun.librarian.processors.base import AlwaysConstantProcessor
 from ffun.librarian.entities import ProcessorType
+from ffun.librarian.processors.base import AlwaysConstantProcessor
 
 
 @pytest.fixture

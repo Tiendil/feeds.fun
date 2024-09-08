@@ -1,8 +1,8 @@
-
-import pytest
 import pydantic
-from ffun.librarian.entities import LLMGeneralProcessor, ProcessorType
-from ffun.llms_framework.entities import LLMConfiguration, Provider, LLMCollectionApiKey, LLMGeneralApiKey
+import pytest
+
+from ffun.librarian.entities import LLMGeneralProcessor
+from ffun.llms_framework.entities import LLMConfiguration, Provider
 
 
 class TestLLMGeneralProcessor:
@@ -38,10 +38,12 @@ class TestLLMGeneralProcessor:
                 general_api_key=None,
             )
 
-        assert exc_info.value.errors()[0]['type'] == 'collections_or_general_key_required_for_collections'
+        assert exc_info.value.errors()[0]["type"] == "collections_or_general_key_required_for_collections"
 
     @pytest.mark.parametrize("key_warning", [None, "wrong warning"])
-    def test_general_api_key_warning_check__failed(self, llm_config: LLMConfiguration, key_warning: str | None) -> None:
+    def test_general_api_key_warning_check__failed(
+        self, llm_config: LLMConfiguration, key_warning: str | None
+    ) -> None:
         with pytest.raises(pydantic.ValidationError) as exc_info:
             LLMGeneralProcessor(
                 id=666,
@@ -60,4 +62,4 @@ class TestLLMGeneralProcessor:
                 general_api_key_warning=key_warning,
             )
 
-        assert exc_info.value.errors()[0]['type'] == 'you_must_confirm_general_api_key_usage'
+        assert exc_info.value.errors()[0]["type"] == "you_must_confirm_general_api_key_usage"

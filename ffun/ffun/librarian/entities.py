@@ -8,19 +8,17 @@ from pydantic_core import PydanticCustomError
 
 from ffun.core import logging
 from ffun.core.entities import BaseEntity
-from ffun.llms_framework.entities import LLMConfiguration, Provider, LLMCollectionApiKey, LLMGeneralApiKey
+from ffun.llms_framework.entities import LLMCollectionApiKey, LLMConfiguration, LLMGeneralApiKey, Provider
 
 logger = logging.get_module_logger()
 
 
 class TextCleaner(Protocol):
-    def __call__(self, text: str) -> str:
-        ...
+    def __call__(self, text: str) -> str: ...
 
 
 class TagsExtractor(Protocol):
-    def __call__(self, text: str) -> set[str]:
-        ...
+    def __call__(self, text: str) -> set[str]: ...
 
 
 class ProcessorType(enum.StrEnum):
@@ -96,7 +94,8 @@ class LLMGeneralProcessor(BaseProcessor):
                 "collections_or_general_key_required_for_collections",
                 "Collections API key or General API key must be set "
                 "if you want to use this processor to process feeds from collections. "
-                "Feeds Fun must guarantee that users will not pay for processing feeds from collections.")
+                "Feeds Fun must guarantee that users will not pay for processing feeds from collections.",
+            )
 
         return self
 
@@ -113,9 +112,10 @@ class LLMGeneralProcessor(BaseProcessor):
     def general_api_key_warning_check(self) -> "LLMGeneralProcessor":
         if self.general_api_key is not None and self.general_api_key_warning != _general_key_warning:
             raise PydanticCustomError(
-                'you_must_confirm_general_api_key_usage',
+                "you_must_confirm_general_api_key_usage",
                 "You must confirm that you understand the risks of using the General API key. "
-                f"Set `general_api_key_warning` to the value '{_general_key_warning}'.")
+                f"Set `general_api_key_warning` to the value '{_general_key_warning}'.",
+            )
 
         return self
 

@@ -2,7 +2,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from ffun.llms_framework import errors
-from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, ModelInfo, Provider, LLMApiKey
+from ffun.llms_framework.entities import KeyStatus, LLMApiKey, LLMConfiguration, ModelInfo, Provider
 from ffun.llms_framework.provider_interface import ProviderTest
 
 

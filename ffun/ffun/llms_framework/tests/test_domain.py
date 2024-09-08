@@ -8,7 +8,7 @@ from ffun.domain.datetime_intervals import month_interval_start
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
 from ffun.llms_framework.domain import call_llm, search_for_api_key, split_text, split_text_according_to_tokens
-from ffun.llms_framework.entities import APIKeyUsage, LLMConfiguration, LLMApiKey, LLMGeneralApiKey
+from ffun.llms_framework.entities import APIKeyUsage, LLMApiKey, LLMConfiguration, LLMGeneralApiKey
 from ffun.llms_framework.provider_interface import ChatRequestTest, ChatResponseTest, ProviderTest
 from ffun.resources import domain as r_domain
 

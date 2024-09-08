@@ -1,15 +1,20 @@
-import importlib
 from typing import Any, Sequence
 
 from ffun.core import logging
 from ffun.librarian import errors
+from ffun.librarian.entities import TagsExtractor, TextCleaner
 from ffun.librarian.processors import base
 from ffun.library.entities import Entry
 from ffun.llms_framework.domain import call_llm, search_for_api_key
-from ffun.llms_framework.entities import ChatResponse, LLMConfiguration, Provider, LLMCollectionApiKey, LLMGeneralApiKey
+from ffun.llms_framework.entities import (
+    ChatResponse,
+    LLMCollectionApiKey,
+    LLMConfiguration,
+    LLMGeneralApiKey,
+    Provider,
+)
 from ffun.llms_framework.providers import llm_providers
 from ffun.ontology.entities import ProcessorTag
-from ffun.librarian.entities import TextCleaner, TagsExtractor
 
 logger = logging.get_module_logger()
 
@@ -65,8 +70,9 @@ class Processor(base.Processor):
         if api_key_usage is None:
             raise errors.SkipEntryProcessing()
 
-        responses = await call_llm(llm=self.llm_provider,
-                                   llm_config=self.llm_config, api_key_usage=api_key_usage, requests=requests)
+        responses = await call_llm(
+            llm=self.llm_provider, llm_config=self.llm_config, api_key_usage=api_key_usage, requests=requests
+        )
 
         return self.extract_tags(responses)
 

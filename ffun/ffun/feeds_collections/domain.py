@@ -8,7 +8,6 @@ from ffun.feeds.entities import FeedId
 from ffun.feeds_collections.entities import Collection
 from ffun.feeds_collections.predefines import predefines
 
-
 _test_feeds_in_collections: set[FeedId] = set()
 
 

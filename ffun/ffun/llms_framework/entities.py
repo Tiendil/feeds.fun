@@ -1,15 +1,14 @@
 import datetime
+import decimal
 import enum
 import uuid
 from typing import NewType
-import decimal
 
 import pydantic
 
 from ffun.core.entities import BaseEntity
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
-
 
 LLMApiKey = NewType("LLMApiKey", str)
 LLMUserApiKey = NewType("LLMUserApiKey", LLMApiKey)
@@ -41,8 +40,10 @@ class ModelInfo(pydantic.BaseModel):
 
     # TODO: test
     def tokens_cost(self, input_tokens: int, output_tokens: int) -> decimal.Decimal:
-        return (self.input_1m_tokens_cost * input_tokens / 1_000_000 +
-                self.output_1m_tokens_cost * output_tokens / 1_000_000)
+        return (
+            self.input_1m_tokens_cost * input_tokens / 1_000_000
+            + self.output_1m_tokens_cost * output_tokens / 1_000_000
+        )
 
 
 class KeyStatus(str, enum.Enum):

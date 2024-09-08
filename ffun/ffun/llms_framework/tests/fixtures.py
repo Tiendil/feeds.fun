@@ -4,7 +4,7 @@ import pytest
 import pytest_asyncio
 
 from ffun.domain.datetime_intervals import month_interval_start
-from ffun.llms_framework.entities import UserKeyInfo, LLMApiKey
+from ffun.llms_framework.entities import LLMApiKey, UserKeyInfo
 from ffun.llms_framework.keys_rotator import _get_user_key_infos
 from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.provider_interface import ProviderTest
