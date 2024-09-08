@@ -1,12 +1,11 @@
 import pytest
-from decimal import Decimal
 
 from ffun.librarian import errors
 from ffun.librarian.processors.llm_general import Processor
 from ffun.librarian.tag_extractors import dog_tags_extractor
 from ffun.librarian.text_cleaners import clear_nothing
 from ffun.library.entities import Entry
-from ffun.llms_framework.entities import LLMApiKey, LLMConfiguration, LLMGeneralApiKey, LLMProvider, USDCost, LLMTokens
+from ffun.llms_framework.entities import LLMApiKey, LLMConfiguration, LLMGeneralApiKey, LLMProvider, LLMTokens
 from ffun.llms_framework.provider_interface import ChatResponseTest
 from ffun.ontology.entities import ProcessorTag
 

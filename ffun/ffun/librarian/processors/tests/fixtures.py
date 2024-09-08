@@ -16,9 +16,7 @@ def do_not_use_real_collection_api_keys_in_tests() -> None:
 
         assert isinstance(tags_processor, LLMGeneralProcessor)
 
-        assert (
-            tags_processor.collections_api_key is None
-        ), "You should disable the real API keys processors' settings"
+        assert tags_processor.collections_api_key is None, "You should disable the real API keys processors' settings"
 
 
 @pytest.fixture(scope="session", autouse=True)

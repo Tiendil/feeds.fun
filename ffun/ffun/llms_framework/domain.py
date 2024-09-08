@@ -11,9 +11,9 @@ from ffun.llms_framework.entities import (
     LLMCollectionApiKey,
     LLMConfiguration,
     LLMGeneralApiKey,
+    LLMTokens,
     SelectKeyContext,
     USDCost,
-    LLMTokens
 )
 from ffun.llms_framework.keys_rotator import choose_api_key, use_api_key
 from ffun.llms_framework.provider_interface import ProviderInterface
@@ -89,8 +89,9 @@ async def search_for_api_key(
     model = llm.get_model(llm_config)
 
     # TODO: test new calculation logic
-    reserved_cost = USDCost(len(requests) * model.tokens_cost(input_tokens=model.max_context_size,
-                                                              output_tokens=model.max_return_tokens))
+    reserved_cost = USDCost(
+        len(requests) * model.tokens_cost(input_tokens=model.max_context_size, output_tokens=model.max_return_tokens)
+    )
 
     select_key_context = SelectKeyContext(
         llm_config=llm_config,

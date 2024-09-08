@@ -1,7 +1,7 @@
 import datetime
 import uuid
-from typing import Any
 from decimal import Decimal
+from typing import Any
 
 import pytest
 from pytest_mock import MockerFixture
@@ -19,11 +19,11 @@ from ffun.llms_framework.entities import (
     LLMCollectionApiKey,
     LLMConfiguration,
     LLMGeneralApiKey,
-    SelectKeyContext,
-    UserKeyInfo,
-    LLMTokens,
-    USDCost,
     LLMProvider,
+    LLMTokens,
+    SelectKeyContext,
+    USDCost,
+    UserKeyInfo,
 )
 from ffun.llms_framework.keys_rotator import (
     _api_key_is_working,
@@ -31,6 +31,7 @@ from ffun.llms_framework.keys_rotator import (
     _choose_general_key,
     _choose_user,
     _choose_user_key,
+    _cost_points,
     _filter_out_users_for_whome_entry_is_too_old,
     _filter_out_users_with_overused_keys,
     _filter_out_users_with_wrong_keys,
@@ -42,7 +43,6 @@ from ffun.llms_framework.keys_rotator import (
     _key_selectors,
     choose_api_key,
     use_api_key,
-    _cost_points
 )
 from ffun.llms_framework.provider_interface import ProviderInterface, ProviderTest
 from ffun.resources import domain as r_domain
@@ -153,8 +153,7 @@ class TestFilterOutUsersWithOverusedKeys:
     async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
         for i, max_tokens_cost_in_month in enumerate([201, 100, 300, 200, 500]):
             five_user_key_infos[i] = five_user_key_infos[i].replace(
-                cost_used=USDCost(Decimal(50)),
-                max_tokens_cost_in_month=USDCost(Decimal(max_tokens_cost_in_month))
+                cost_used=USDCost(Decimal(50)), max_tokens_cost_in_month=USDCost(Decimal(max_tokens_cost_in_month))
             )
 
         infos = await _filter_out_users_with_overused_keys(five_user_key_infos, reserved_cost=USDCost(Decimal(150)))
@@ -167,9 +166,10 @@ class TestChooseUser:
     async def test_no_users(self) -> None:
         interval_started_at = month_interval_start()
 
-        assert await _choose_user(infos=[],
-                                  reserved_cost=USDCost(Decimal(0)),
-                                  interval_started_at=interval_started_at) is None
+        assert (
+            await _choose_user(infos=[], reserved_cost=USDCost(Decimal(0)), interval_started_at=interval_started_at)
+            is None
+        )
 
     @pytest.mark.asyncio
     async def test_no_users_with_resources(self, five_user_key_infos: list[UserKeyInfo]) -> None:
@@ -196,9 +196,7 @@ class TestChooseUser:
         )
 
         info = await _choose_user(
-            infos=five_user_key_infos,
-            reserved_cost=max_cost,
-            interval_started_at=interval_started_at
+            infos=five_user_key_infos, reserved_cost=max_cost, interval_started_at=interval_started_at
         )
 
         assert info == five_user_key_infos[2]
@@ -251,9 +249,7 @@ class TestGetUserKeyInfos:
                 reserved=0,
             )
 
-        infos = await _get_user_key_infos(LLMProvider.openai,
-                                          five_internal_user_ids,
-                                          interval_started_at)
+        infos = await _get_user_key_infos(LLMProvider.openai, five_internal_user_ids, interval_started_at)
 
         assert infos == [
             UserKeyInfo(
@@ -630,7 +626,7 @@ class TestUseApiKey:
             kind=AppResource.openai_tokens,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
-            limit=_cost_points.to_points(USDCost(Decimal(1000)))
+            limit=_cost_points.to_points(USDCost(Decimal(1000))),
         )
 
         resources = await r_domain.load_resources(

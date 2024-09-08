@@ -1,6 +1,7 @@
-from ffun.core import utils
 import decimal
-from ffun.llms_framework.entities import APIKeyUsage, LLMApiKey, USDCost, LLMTokens
+
+from ffun.core import utils
+from ffun.llms_framework.entities import APIKeyUsage, LLMApiKey, LLMTokens, USDCost
 
 
 class TestAPIKeyUsage:

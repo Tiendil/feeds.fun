@@ -2,9 +2,9 @@ import pydantic
 import pytest
 
 from ffun.librarian.entities import LLMGeneralProcessor
-from ffun.llms_framework.entities import LLMConfiguration, LLMProvider, LLMTokens, LLMGeneralApiKey, LLMApiKey
-from ffun.librarian.text_cleaners import clear_nothing
 from ffun.librarian.tag_extractors import dog_tags_extractor
+from ffun.librarian.text_cleaners import clear_nothing
+from ffun.llms_framework.entities import LLMApiKey, LLMConfiguration, LLMGeneralApiKey, LLMProvider, LLMTokens
 
 
 class TestLLMGeneralProcessor:

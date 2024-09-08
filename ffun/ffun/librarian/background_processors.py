@@ -52,9 +52,7 @@ for processor_config in settings.tag_processors:
 
     logger.info("add_tag_processor", processor_id=processor_config.id, processor_name=processor_config.name)
 
-    info_arguments = {
-
-    }
+    info_arguments = {}
 
     tags_processor: Processor
 
@@ -86,7 +84,8 @@ for processor_config in settings.tag_processors:
         processor=tags_processor,
         concurrency=processor_config.workers,
         allowed_for_collections=processor_config.allowed_for_collections,
-        allowed_for_users=processor_config.allowed_for_users)
+        allowed_for_users=processor_config.allowed_for_users,
+    )
 
     processors.append(processor)
 
@@ -108,7 +107,7 @@ class EntriesProcessor(InfiniteTask):
 
     # TODO: test
     async def separate_entries(  # noqa: disable=CCR001
-            self, entries_ids: list[uuid.UUID]
+        self, entries_ids: list[uuid.UUID]
     ) -> tuple[list[Entry], list[uuid.UUID]]:
         processor_id = self._processor_info.id
 

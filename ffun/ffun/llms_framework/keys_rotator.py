@@ -1,8 +1,8 @@
 import contextlib
 import datetime
 import uuid
-from typing import Any, AsyncGenerator, Collection, Iterable, Protocol
 from decimal import Decimal
+from typing import Any, AsyncGenerator, Collection, Iterable, Protocol
 
 from ffun.core import logging
 from ffun.feeds.entities import FeedId
@@ -12,13 +12,12 @@ from ffun.llms_framework import errors
 from ffun.llms_framework.entities import (
     APIKeyUsage,
     KeyStatus,
+    LLMApiKey,
     LLMConfiguration,
     LLMProvider,
-    LLMTokens,
     SelectKeyContext,
     USDCost,
     UserKeyInfo,
-    LLMApiKey
 )
 from ffun.llms_framework.provider_interface import ProviderInterface
 from ffun.resources import domain as r_domain
@@ -29,7 +28,7 @@ logger = logging.get_module_logger()
 
 # TODO: cost
 class CostPoints:
-    __slots__ = ('_k', )
+    __slots__ = ("_k",)
 
     def __init__(self, k: int) -> None:
         self._k = k
@@ -343,11 +342,7 @@ async def use_api_key(key_usage: APIKeyUsage) -> AsyncGenerator[None, None]:
         log.info("used_cost", used_cost=key_usage.used_cost)
 
     finally:
-        log.info(
-            "convert_reserved_to_used",
-            reserved_cost=key_usage.reserved_cost,
-            used_cost=key_usage.used_cost
-        )
+        log.info("convert_reserved_to_used", reserved_cost=key_usage.reserved_cost, used_cost=key_usage.used_cost)
 
         if key_usage.user_id is not None:
             await r_domain.convert_reserved_to_used(

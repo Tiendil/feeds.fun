@@ -1,9 +1,9 @@
 # TODO: rename this module, because mypy does not support name `types`
 # TODO: refactor to use pydantic instead of custom types
 
+import decimal
 import enum
 from typing import Any
-import decimal
 
 from cryptography.fernet import Fernet
 

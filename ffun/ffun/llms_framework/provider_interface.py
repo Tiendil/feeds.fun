@@ -1,7 +1,7 @@
 from typing import Sequence
 
 from ffun.llms_framework import errors
-from ffun.llms_framework.entities import ChatRequest, ChatResponse, KeyStatus, LLMConfiguration, ModelInfo, LLMProvider
+from ffun.llms_framework.entities import ChatRequest, ChatResponse, KeyStatus, LLMConfiguration, LLMProvider, ModelInfo
 from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.settings import settings
 

@@ -1,5 +1,5 @@
-from decimal import Decimal
 import enum
+from decimal import Decimal
 
 from ffun.user_settings import types
 from ffun.user_settings.values import Value, user_settings
