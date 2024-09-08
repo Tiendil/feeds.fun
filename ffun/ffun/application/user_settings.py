@@ -22,46 +22,41 @@ class UserSetting(enum.IntEnum):
     test_api_key = 7
 
 
-description_openai_api_key = """
-Feeds Fun uses OpenAI ChatGPT to find tags for texts.
+_key_rules = """\
+Here's how your key will be used:
+
+- Your key will be used only to process your feeds. We will not use it for any other purposes.
+- You can set a limit on the maximum money spent on requests to API. \
+We estimate spent resources and stop using your key if they exceed the limit.
+- If multiple users are subscribed to a single feed, for each news item from the \
+feed, we'll use a key with less money spent in the current month.
+- You can find API key usage statistics on this page.
+
+The more users set up the key, the cheaper Feeds Fun will be for everyone.
+"""
+
+
+description_openai_api_key = f"""
+Feeds Fun can use OpenAI ChatGPT to determine tags for texts.
 
 Because, for now, our service is free to use and OpenAI API costs money, \
 we politely ask you to set up your own OpenAI API key.
 
-Here's how your key will be used:
-
-- Your key will be used only to process your feeds. We will not use it for any other purposes.
-- You can establish a limit on the maximum number of tokens that can be used in a month. \
-This allows you to regulate your monthly spendings on the OpenAI API.
-- If multiple users are subscribed to a single feed, for each news from the \
-feed we'll use a key with fewer usages in the current month.
-- If a user who lacks a key is subscribed to a feed and the feed's news already have tags, \
-the user will see these tags.
-- You can find API key usage statistics at this page.
-
-The more users set up the key, the cheaper it will be for everyone.
+{_key_rules}
 """
 
-openai_max_token_cost = (Decimal("0.150") + Decimal("0.600")) / 2
-openai_max_token_cost_n = 1000000
-openai_max_spendings = Decimal("10.00")
+description_gemini_api_key = f"""
+Feeds Fun can use Google Gemini to determine tags for texts.
 
+Because, for now, our service is free to use and OpenAI API costs money, \
+we politely ask you to set up your own OpenAI API key.
 
-description_gemini_api_key = """
+{_key_rules}
 """
 
-# description_openai_max_tokens_in_month = f"""
-# Tokens are the currency of the OpenAI API world. The more tokens you use, the more you've gotta pay.
-
-# The default limit is calculated based on an estimation that should prevent your monthly spending \
-# from exceeding ${openai_max_spendings}. However, this figure is merely a projection and actual usage may vary.
-
-# """
-
-
-description_openai_process_entries_not_older_than = """
+description_process_entries_not_older_than = """
 Some feeds keep all their news, regardless of their age. If you subscribe to such a feed, \
-it may eat a lot of your OpenAI tokens.
+it may eat a lot of your API key resources.
 
 To prevent this, we limit the age of news to be processed with your OpenAI key.
 
@@ -69,9 +64,8 @@ If you want to help us and tag everything, you can set this value to a big numbe
 """
 
 
-description_max_tokens_cost_in_month = """
-TODO
-"""
+description_max_tokens_cost_in_month = "TODO"
+
 
 user_settings.add(
     Value(
@@ -106,31 +100,22 @@ user_settings.add(
     )
 )
 
-# user_settings.add(
-#     Value(
-#         key=UserSetting.openai_max_tokens_in_month,
-#         name="OpenAI max tokens in month",
-#         type=types.Integer(),
-#         default=int(openai_max_spendings / openai_max_token_cost * openai_max_token_cost_n),
-#         description=description_openai_max_tokens_in_month,
-#     )
-# )
 
 user_settings.add(
     Value(
         key=UserSetting.max_tokens_cost_in_month,
-        name="OpenAI max tokens in month",
+        name="Max spendings on API keys in month",
         type=types.Decimal(),
-        default=Decimal(10),  # TODO: document
+        default=Decimal('10'),
         description=description_max_tokens_cost_in_month,
     )
 )
 
-# TODO: update description
+
 user_settings.add(
     Value(
         key=UserSetting.hide_message_about_setting_up_key,
-        name="Hide message about setting up OpenAI API key",
+        name="Hide message about setting up API keys",
         type=types.Boolean(),
         default=False,
         description=None,
@@ -143,6 +128,6 @@ user_settings.add(
         name="Use OpenAI key only for entries not older than N days",
         type=types.Integer(),
         default=1,
-        description=description_openai_process_entries_not_older_than,
+        description=description_process_entries_not_older_than,
     )
 )
