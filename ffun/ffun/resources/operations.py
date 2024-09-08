@@ -120,7 +120,6 @@ async def convert_reserved_to_used(
     )
 
     if not result:
-        print(kind, used, reserved)
         raise errors.CanNotConvertReservedToUsed()
 
 

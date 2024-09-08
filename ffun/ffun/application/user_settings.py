@@ -9,7 +9,7 @@ class UserSetting(enum.IntEnum):
     # TODO: add gemini key
     openai_api_key = 1
 
-    # openai_max_tokens_in_month = 2
+    # openai_max_tokens_in_month = 2  # noqa
 
     # TODO: rename and update for Gemini
     hide_message_about_setting_up_key = 3
