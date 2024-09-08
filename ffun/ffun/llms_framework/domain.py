@@ -12,6 +12,8 @@ from ffun.llms_framework.entities import (
     LLMConfiguration,
     LLMGeneralApiKey,
     SelectKeyContext,
+    USDCost,
+    LLMTokens
 )
 from ffun.llms_framework.keys_rotator import choose_api_key, use_api_key
 from ffun.llms_framework.provider_interface import ProviderInterface
@@ -83,13 +85,18 @@ async def search_for_api_key(
 ) -> APIKeyUsage | None:
     # TODO: here may be problems with too big context window for gemini
     #       (we'll reserve too much tokens), see ModelInfo.max_tokens_per_entry as a potential solution
-    reserved_tokens = len(requests) * llm.get_model(llm_config).max_context_size
+
+    model = llm.get_model(llm_config)
+
+    # TODO: test new calculation logic
+    reserved_cost = USDCost(len(requests) * model.tokens_cost(input_tokens=model.max_context_size,
+                                                              output_tokens=model.max_return_tokens))
 
     select_key_context = SelectKeyContext(
         llm_config=llm_config,
         feed_id=entry.feed_id,
         entry_age=entry.age,
-        reserved_tokens=reserved_tokens,
+        reserved_cost=reserved_cost,
         collections_api_key=collections_api_key,
         general_api_key=general_api_key,
     )
@@ -109,10 +116,10 @@ async def call_llm(
 
         responses = await asyncio.gather(*tasks)
 
-        api_key_usage.input_tokens = sum(response.input_tokens() for response in responses)
-        api_key_usage.output_tokens = sum(response.output_tokens() for response in responses)
+        api_key_usage.input_tokens = LLMTokens(sum(response.input_tokens() for response in responses))
+        api_key_usage.output_tokens = LLMTokens(sum(response.output_tokens() for response in responses))
 
-        api_key_usage.tokens_cost = model.tokens_cost(
+        api_key_usage.used_cost = model.tokens_cost(
             input_tokens=api_key_usage.input_tokens, output_tokens=api_key_usage.output_tokens
         )
 

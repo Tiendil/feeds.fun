@@ -2,6 +2,7 @@ import contextlib
 import datetime
 import uuid
 from typing import Any, AsyncGenerator, Collection, Iterable, Protocol
+from decimal import Decimal
 
 from ffun.core import logging
 from ffun.feeds.entities import FeedId
@@ -17,12 +18,30 @@ from ffun.llms_framework.entities import (
     SelectKeyContext,
     USDCost,
     UserKeyInfo,
+    LLMApiKey
 )
 from ffun.llms_framework.provider_interface import ProviderInterface
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
 
 logger = logging.get_module_logger()
+
+
+# TODO: cost
+class CostPoints:
+    __slots__ = ('_k', )
+
+    def __init__(self, k: int) -> None:
+        self._k = k
+
+    def to_cost(self, points: int) -> USDCost:
+        return USDCost(Decimal(points) / self._k)
+
+    def to_points(self, cost: USDCost) -> int:
+        return int(cost * self._k)
+
+
+_cost_points = CostPoints(k=1_000_000)
 
 
 # Note: this code is not about billing, it is about protection from the overuse of keys
@@ -71,9 +90,9 @@ async def _filter_out_users_for_whome_entry_is_too_old(
 
 
 async def _filter_out_users_with_overused_keys(
-    infos: list[UserKeyInfo], reserved_tokens: int, **kwargs: Any
+    infos: list[UserKeyInfo], reserved_cost: USDCost, **kwargs: Any
 ) -> list[UserKeyInfo]:
-    return [info for info in infos if info.tokens_used + reserved_tokens < info.max_tokens_in_month]
+    return [info for info in infos if info.cost_used + reserved_cost < info.max_tokens_cost_in_month]
 
 
 async def _choose_user(
@@ -86,8 +105,8 @@ async def _choose_user(
             user_id=info.user_id,
             kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
-            amount=reserved_cost,
-            limit=info.max_tokens_cost_in_month,
+            amount=_cost_points.to_points(reserved_cost),
+            limit=_cost_points.to_points(info.max_tokens_cost_in_month),
         ):
             return info
 
@@ -95,7 +114,7 @@ async def _choose_user(
 
 
 # TODO: test that works for openai and gemini
-async def _get_user_key_infos(
+async def _get_user_key_infos(  # pylint: disable=R0914
     provider: LLMProvider, user_ids: Iterable[uuid.UUID], interval_started_at: datetime.datetime
 ) -> list[UserKeyInfo]:
     from ffun.application.resources import Resource as AppResource
@@ -113,7 +132,7 @@ async def _get_user_key_infos(
     kinds = [UserSetting.max_tokens_cost_in_month, UserSetting.process_entries_not_older_than]
 
     if key_setting is not None:
-        kinds.append(provider_to_settings[provider])
+        kinds.append(key_setting)
 
     users_settings = await us_domain.load_settings_for_users(
         user_ids,
@@ -130,19 +149,28 @@ async def _get_user_key_infos(
         settings = users_settings[user_id]
 
         days = settings.get(UserSetting.process_entries_not_older_than)
-
         assert days is not None
         assert isinstance(days, int)
 
-        max_tokens_cost_in_month = LLMTokens(settings.get(UserSetting.max_tokens_cost_in_month))
+        max_tokens_cost_in_month_raw = settings.get(UserSetting.max_tokens_cost_in_month)
+        assert isinstance(max_tokens_cost_in_month_raw, Decimal)
+        max_tokens_cost_in_month = USDCost(max_tokens_cost_in_month_raw)
+
+        if key_setting is not None:
+            api_key_raw = settings.get(key_setting)
+            assert isinstance(api_key_raw, str)
+            api_key = LLMApiKey(api_key_raw)
+        else:
+            # TODO: must be allowed only in tests, add some protection here
+            api_key = LLMApiKey(uuid.uuid4().hex)
 
         infos.append(
             UserKeyInfo(
                 user_id=user_id,
-                api_key=settings.get(key_setting),
+                api_key=api_key,
                 max_tokens_cost_in_month=max_tokens_cost_in_month,
                 process_entries_not_older_than=datetime.timedelta(days=days),
-                cost_used=resources[user_id].total,
+                cost_used=_cost_points.to_cost(resources[user_id].total),
             )
         )
 
@@ -198,7 +226,7 @@ async def _find_best_user_with_key(
         reserved_cost=reserved_cost,
     )
 
-    infos.sort(key=lambda info: info.tokens_used)
+    infos.sort(key=lambda info: info.cost_used)
 
     return await _choose_user(infos=infos, reserved_cost=reserved_cost, interval_started_at=interval_started_at)
 
@@ -221,7 +249,7 @@ async def _choose_general_key(llm: ProviderInterface, context: SelectKeyContext)
         reserved_cost=context.reserved_cost,
         input_tokens=None,
         output_tokens=None,
-        tokens_cost=None,
+        used_cost=None,
         interval_started_at=context.interval_started_at,
     )
 
@@ -242,7 +270,7 @@ async def _choose_collections_key(llm: ProviderInterface, context: SelectKeyCont
         reserved_cost=context.reserved_cost,
         input_tokens=None,
         output_tokens=None,
-        tokens_cost=None,
+        used_cost=None,
         interval_started_at=context.interval_started_at,
     )
 
@@ -273,7 +301,7 @@ async def _choose_user_key(llm: ProviderInterface, context: SelectKeyContext) ->
         reserved_cost=context.reserved_cost,
         input_tokens=None,
         output_tokens=None,
-        tokens_cost=None,
+        used_cost=None,
         interval_started_at=context.interval_started_at,
     )
 
@@ -309,14 +337,16 @@ async def use_api_key(key_usage: APIKeyUsage) -> AsyncGenerator[None, None]:
     try:
         yield
 
-        if key_usage.tokens_cost is None:
+        if key_usage.used_cost is None:
             raise errors.UsedTokensHasNotSpecified()
 
-        log.info("tokens_cost", tokens_cost=key_usage.tokens_cost)
+        log.info("used_cost", used_cost=key_usage.used_cost)
 
     finally:
         log.info(
-            "convert_reserved_to_used", reserved_tokens=key_usage.reserved_tokens, used_tokens=key_usage.used_tokens
+            "convert_reserved_to_used",
+            reserved_cost=key_usage.reserved_cost,
+            used_cost=key_usage.used_cost
         )
 
         if key_usage.user_id is not None:
@@ -324,8 +354,8 @@ async def use_api_key(key_usage: APIKeyUsage) -> AsyncGenerator[None, None]:
                 user_id=key_usage.user_id,
                 kind=AppResource.tokens_cost,
                 interval_started_at=key_usage.interval_started_at,
-                used=key_usage.spent_tokens(),
-                reserved=key_usage.reserved_cost,
+                used=_cost_points.to_points(key_usage.cost_to_register()),
+                reserved=_cost_points.to_points(key_usage.reserved_cost),
             )
 
         log.info("resources_converted")

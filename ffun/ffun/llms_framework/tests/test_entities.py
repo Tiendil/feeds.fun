@@ -1,5 +1,6 @@
 from ffun.core import utils
-from ffun.llms_framework.entities import APIKeyUsage, LLMApiKey
+import decimal
+from ffun.llms_framework.entities import APIKeyUsage, LLMApiKey, USDCost, LLMTokens
 
 
 class TestAPIKeyUsage:
@@ -8,20 +9,24 @@ class TestAPIKeyUsage:
         usage = APIKeyUsage(
             user_id=None,
             api_key=LLMApiKey("api_key"),
-            reserved_tokens=100,
-            used_tokens=10,
+            reserved_cost=USDCost(decimal.Decimal(123)),
+            used_cost=USDCost(decimal.Decimal(17)),
+            input_tokens=LLMTokens(100),
+            output_tokens=LLMTokens(200),
             interval_started_at=utils.now(),
         )
 
-        assert usage.spent_tokens() == 10
+        assert usage.cost_to_register() == 17
 
     def test_spent_tokens__not_setuped(self) -> None:
         usage = APIKeyUsage(
             user_id=None,
             api_key=LLMApiKey("api_key"),
-            reserved_tokens=100,
-            used_tokens=None,
+            reserved_cost=USDCost(decimal.Decimal(132)),
+            used_cost=None,
+            input_tokens=LLMTokens(100),
+            output_tokens=LLMTokens(200),
             interval_started_at=utils.now(),
         )
 
-        assert usage.spent_tokens() == 100
+        assert usage.cost_to_register() == 132

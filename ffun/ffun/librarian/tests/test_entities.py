@@ -2,7 +2,9 @@ import pydantic
 import pytest
 
 from ffun.librarian.entities import LLMGeneralProcessor
-from ffun.llms_framework.entities import LLMConfiguration, Provider
+from ffun.llms_framework.entities import LLMConfiguration, LLMProvider, LLMTokens, LLMGeneralApiKey, LLMApiKey
+from ffun.librarian.text_cleaners import clear_nothing
+from ffun.librarian.tag_extractors import dog_tags_extractor
 
 
 class TestLLMGeneralProcessor:
@@ -12,7 +14,7 @@ class TestLLMGeneralProcessor:
         return LLMConfiguration(
             model="test-model",
             system="some system prompt",
-            max_return_tokens=1017,
+            max_return_tokens=LLMTokens(1017),
             text_parts_intersection=113,
             temperature=0.3,
             top_p=0.9,
@@ -29,11 +31,11 @@ class TestLLMGeneralProcessor:
                 name="test-processor",
                 allowed_for_collections=True,
                 allowed_for_users=False,
-                llm_provider=Provider.test,
+                llm_provider=LLMProvider.test,
                 llm_config=llm_config,
                 entry_template="<h1>{entry.title}</h1><a href='{entry.external_url}'>full article</a>{entry.body}",
-                text_cleaner="ffun.librarian.text_cleaners.clear_html",
-                tags_extractor="ffun.librarian.tag_extractors.dog_tags_extractor",
+                text_cleaner=clear_nothing,
+                tags_extractor=dog_tags_extractor,
                 collections_api_key=None,
                 general_api_key=None,
             )
@@ -52,13 +54,13 @@ class TestLLMGeneralProcessor:
                 name="test-processor",
                 allowed_for_collections=False,
                 allowed_for_users=False,
-                llm_provider=Provider.test,
+                llm_provider=LLMProvider.test,
                 llm_config=llm_config,
                 entry_template="<h1>{entry.title}</h1><a href='{entry.external_url}'>full article</a>{entry.body}",
-                text_cleaner="ffun.librarian.text_cleaners.clear_html",
-                tags_extractor="ffun.librarian.tag_extractors.dog_tags_extractor",
+                text_cleaner=clear_nothing,
+                tags_extractor=dog_tags_extractor,
                 collections_api_key=None,
-                general_api_key="some key",
+                general_api_key=LLMGeneralApiKey(LLMApiKey("some key")),
                 general_api_key_warning=key_warning,
             )
 

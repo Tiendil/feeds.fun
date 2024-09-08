@@ -8,17 +8,19 @@ from pydantic_core import PydanticCustomError
 
 from ffun.core import logging
 from ffun.core.entities import BaseEntity
-from ffun.llms_framework.entities import LLMCollectionApiKey, LLMConfiguration, LLMGeneralApiKey, Provider
+from ffun.llms_framework.entities import LLMCollectionApiKey, LLMConfiguration, LLMGeneralApiKey, LLMProvider
 
 logger = logging.get_module_logger()
 
 
 class TextCleaner(Protocol):
-    def __call__(self, text: str) -> str: ...
+    def __call__(self, text: str) -> str:
+        pass
 
 
 class TagsExtractor(Protocol):
-    def __call__(self, text: str) -> set[str]: ...
+    def __call__(self, text: str) -> set[str]:
+        pass
 
 
 class ProcessorType(enum.StrEnum):
@@ -66,10 +68,10 @@ class LLMGeneralProcessor(BaseProcessor):
     # TODO: validate that template will render correctly
     entry_template: str
 
-    text_cleaner: pydantic.ImportString
-    tags_extractor: pydantic.ImportString
+    text_cleaner: pydantic.ImportString[TextCleaner]
+    tags_extractor: pydantic.ImportString[TagsExtractor]
 
-    llm_provider: Provider
+    llm_provider: LLMProvider
 
     llm_config: LLMConfiguration
 

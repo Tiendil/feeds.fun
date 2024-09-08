@@ -7,7 +7,7 @@ from ffun.google.client import Client
 from ffun.google.entities import ChatMessage, GenerationConfig, GoogleChatRequest, GoogleChatResponse
 from ffun.llms_framework import domain as llmsf_domain
 from ffun.llms_framework import errors as llmsf_errors
-from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, Provider
+from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, LLMProvider
 from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.provider_interface import ProviderInterface
 
@@ -50,7 +50,7 @@ def track_key_status(key: str, statuses: Statuses) -> Generator[None, None, None
 # TODO: add to the documentation note about quotas of Gemini API (especially free tier)
 # TODO: tests
 class GoogleInterface(ProviderInterface):
-    provider = Provider.google
+    provider = LLMProvider.google
 
     def estimate_tokens(self, config: LLMConfiguration, text: str) -> int:
         # There are multiple ways to count tokens for Gemini:

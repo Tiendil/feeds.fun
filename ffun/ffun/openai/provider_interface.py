@@ -9,7 +9,7 @@ from openai.types.chat import ChatCompletionMessageParam
 from ffun.core import logging
 from ffun.llms_framework import domain as llmsf_domain
 from ffun.llms_framework import errors as llmsf_errors
-from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, Provider
+from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, LLMProvider
 from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.provider_interface import ChatRequest, ChatResponse, ProviderInterface
 
@@ -59,7 +59,7 @@ def track_key_status(key: str, statuses: Statuses) -> Generator[None, None, None
 
 # TODO: tests
 class OpenAIInterface(ProviderInterface):
-    provider = Provider.openai
+    provider = LLMProvider.openai
 
     additional_tokens_per_message: int = 10
 

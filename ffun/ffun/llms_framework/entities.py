@@ -2,7 +2,7 @@ import datetime
 import decimal
 import enum
 import uuid
-from typing import NewType
+from typing import NewType, Annotated
 
 import pydantic
 
@@ -35,15 +35,16 @@ class ModelInfo(pydantic.BaseModel):
     # protection from overuse/overspend
     max_tokens_per_entry: LLMTokens
 
-    input_1m_tokens_cost: decimal.Decimal
-    output_1m_tokens_cost: decimal.Decimal
+    input_1m_tokens_cost: USDCost
+    output_1m_tokens_cost: USDCost
 
     # TODO: test
-    def tokens_cost(self, input_tokens: int, output_tokens: int) -> decimal.Decimal:
-        return (
+    def tokens_cost(self, input_tokens: LLMTokens, output_tokens: LLMTokens) -> USDCost:
+        cost = (
             self.input_1m_tokens_cost * input_tokens / 1_000_000
             + self.output_1m_tokens_cost * output_tokens / 1_000_000
         )
+        return USDCost(cost)
 
 
 class KeyStatus(str, enum.Enum):
@@ -58,7 +59,7 @@ class KeyStatus(str, enum.Enum):
 # We'll split it later if needed.
 class LLMConfiguration(BaseEntity):
     model: str
-    system: str = pydantic.StringConstraints(strip_whitespace=True)
+    system: Annotated[str, pydantic.StringConstraints(strip_whitespace=True)]
     max_return_tokens: LLMTokens
     text_parts_intersection: int
     temperature: float
@@ -91,14 +92,14 @@ class APIKeyUsage(BaseEntity):
     reserved_cost: USDCost
     input_tokens: LLMTokens | None
     output_tokens: LLMTokens | None
-    tokens_cost: USDCost | None
+    used_cost: USDCost | None
     interval_started_at: datetime.datetime
 
-    def spent_tokens(self) -> int:
-        if self.used_tokens:
-            return self.used_tokens
+    def cost_to_register(self) -> USDCost:
+        if self.used_cost:
+            return self.used_cost
 
-        return self.reserved_tokens
+        return self.reserved_cost
 
 
 class UserKeyInfo(BaseEntity):

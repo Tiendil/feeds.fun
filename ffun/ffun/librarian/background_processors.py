@@ -23,8 +23,8 @@ logger = logging.get_module_logger()
 class ProcessorInfo:
     __slots__ = ("id", "processor", "concurrency", "type", "allowed_for_collections", "allowed_for_users")
 
-    def __init__(
-        self,  # noqa: disable=CFQ002
+    def __init__(  # noqa: disable=CFQ002
+        self,
         id: int,
         type: ProcessorType,
         processor: Processor,
@@ -111,8 +111,8 @@ class EntriesProcessor(InfiniteTask):
         return self._processor_info.concurrency
 
     # TODO: test
-    async def separate_entries(
-        self, entries_ids: list[uuid.UUID]  # noqa: disable=CCR001
+    async def separate_entries(  # noqa: disable=CCR001
+            self, entries_ids: list[uuid.UUID]
     ) -> tuple[list[Entry], list[uuid.UUID]]:
         processor_id = self._processor_info.id
 

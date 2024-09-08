@@ -3,6 +3,7 @@
 
 import enum
 from typing import Any
+import decimal
 
 from cryptography.fernet import Fernet
 
@@ -15,6 +16,7 @@ class TypeId(str, enum.Enum):
     string = "string"
     boolean = "boolean"
     secret = "secret"  # noqa: S105
+    decimal = "decimal"
 
 
 class Type:
@@ -47,6 +49,26 @@ class Integer(Type):
             return 0
 
         return int(value)
+
+
+# TODO: test
+class Decimal(Type):
+    id = TypeId.decimal
+
+    def serialize(self, value: decimal.Decimal) -> str:
+        if not isinstance(value, decimal.Decimal):
+            raise errors.WrongValueType(value=value)
+
+        return str(value)
+
+    def deserialize(self, data: str) -> decimal.Decimal:
+        return decimal.Decimal(data)
+
+    def normalize(self, value: Any) -> decimal.Decimal:
+        if value == "":
+            return decimal.Decimal(0)
+
+        return decimal.Decimal(value)
 
 
 class String(Type):

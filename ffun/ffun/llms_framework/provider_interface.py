@@ -1,14 +1,14 @@
 from typing import Sequence
 
 from ffun.llms_framework import errors
-from ffun.llms_framework.entities import ChatRequest, ChatResponse, KeyStatus, LLMConfiguration, ModelInfo, Provider
+from ffun.llms_framework.entities import ChatRequest, ChatResponse, KeyStatus, LLMConfiguration, ModelInfo, LLMProvider
 from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.settings import settings
 
 
 class ProviderInterface:
 
-    provider: Provider = NotImplemented
+    provider: LLMProvider = NotImplemented
 
     def __init__(self) -> None:
         self.api_keys_statuses = Statuses()
@@ -51,7 +51,7 @@ class ChatResponseTest(ChatResponse):
 
 
 class ProviderTest(ProviderInterface):
-    provider = Provider.test
+    provider = LLMProvider.test
 
     def prepare_requests(self, config: LLMConfiguration, text: str) -> Sequence[ChatRequestTest]:  # type: ignore
         return [ChatRequestTest(text=text)]
