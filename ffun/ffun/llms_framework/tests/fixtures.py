@@ -15,7 +15,7 @@ from ffun.user_settings import domain as us_domain
 
 # TODO: replace LLMProvider.openai with LLMProvider.test
 @pytest_asyncio.fixture
-async def five_user_key_infos(five_internal_user_ids: list[uuid.UUID]) -> list[UserKeyInfo]:
+async def five_user_key_infos(fake_llm_provider: ProviderTest, five_internal_user_ids: list[uuid.UUID]) -> list[UserKeyInfo]:
     from ffun.application.resources import Resource as AppResource
     from ffun.application.user_settings import UserSetting
 
@@ -25,7 +25,7 @@ async def five_user_key_infos(five_internal_user_ids: list[uuid.UUID]) -> list[U
     interval_started_at = month_interval_start()
 
     for user_id in five_internal_user_ids:
-        await us_domain.save_setting(user_id=user_id, kind=UserSetting.openai_api_key, value=uuid.uuid4().hex)
+        await us_domain.save_setting(user_id=user_id, kind=UserSetting.test_api_key, value=uuid.uuid4().hex)
 
         await us_domain.save_setting(
             user_id=user_id, kind=UserSetting.max_tokens_cost_in_month, value=max_tokens_cost_in_month
@@ -49,7 +49,7 @@ async def five_user_key_infos(five_internal_user_ids: list[uuid.UUID]) -> list[U
             reserved=_cost_points.to_points(used_cost),
         )
 
-    return await _get_user_key_infos(LLMProvider.openai, five_internal_user_ids, interval_started_at)
+    return await _get_user_key_infos(LLMProvider.test, five_internal_user_ids, interval_started_at)
 
 
 @pytest.fixture

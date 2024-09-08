@@ -123,15 +123,14 @@ async def _get_user_key_infos(  # pylint: disable=R0914
     provider_to_settings = {
         LLMProvider.openai: UserSetting.openai_api_key,
         LLMProvider.google: UserSetting.gemini_api_key,
-        LLMProvider.test: None,  # TODO: ????
+        LLMProvider.test: UserSetting.test_api_key
     }
 
     key_setting = provider_to_settings[provider]
 
-    kinds = [UserSetting.max_tokens_cost_in_month, UserSetting.process_entries_not_older_than]
-
-    if key_setting is not None:
-        kinds.append(key_setting)
+    kinds = [UserSetting.max_tokens_cost_in_month,
+             UserSetting.process_entries_not_older_than,
+             key_setting]
 
     users_settings = await us_domain.load_settings_for_users(
         user_ids,
@@ -155,13 +154,9 @@ async def _get_user_key_infos(  # pylint: disable=R0914
         assert isinstance(max_tokens_cost_in_month_raw, Decimal)
         max_tokens_cost_in_month = USDCost(max_tokens_cost_in_month_raw)
 
-        if key_setting is not None:
-            api_key_raw = settings.get(key_setting)
-            assert isinstance(api_key_raw, str)
-            api_key = LLMApiKey(api_key_raw)
-        else:
-            # TODO: must be allowed only in tests, add some protection here
-            api_key = LLMApiKey(uuid.uuid4().hex)
+        api_key_raw = settings.get(key_setting)
+        assert isinstance(api_key_raw, str)
+        api_key = LLMApiKey(api_key_raw)
 
         infos.append(
             UserKeyInfo(

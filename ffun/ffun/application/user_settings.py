@@ -19,6 +19,7 @@ class UserSetting(enum.IntEnum):
     max_tokens_cost_in_month = 5
 
     gemini_api_key = 6
+    test_api_key = 7
 
 
 description_openai_api_key = """
@@ -90,6 +91,18 @@ user_settings.add(
         type=types.Secret(),
         default="",
         description=description_gemini_api_key,
+    )
+)
+
+
+# TODO: hide in GUI
+user_settings.add(
+    Value(
+        key=UserSetting.test_api_key,
+        name="Test API key, YOU SHOULD NOT SEE THIS, tell to developers",
+        type=types.Secret(),
+        default="",
+        description="",
     )
 )
 
