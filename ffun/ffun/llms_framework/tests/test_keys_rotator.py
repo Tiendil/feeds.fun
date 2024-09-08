@@ -1,6 +1,7 @@
 import datetime
 import uuid
 from typing import Any
+from decimal import Decimal
 
 import pytest
 from pytest_mock import MockerFixture
@@ -20,6 +21,9 @@ from ffun.llms_framework.entities import (
     LLMGeneralApiKey,
     SelectKeyContext,
     UserKeyInfo,
+    LLMTokens,
+    USDCost,
+    LLMProvider,
 )
 from ffun.llms_framework.keys_rotator import (
     _api_key_is_working,
@@ -38,6 +42,7 @@ from ffun.llms_framework.keys_rotator import (
     _key_selectors,
     choose_api_key,
     use_api_key,
+    _cost_points
 )
 from ffun.llms_framework.provider_interface import ProviderInterface, ProviderTest
 from ffun.resources import domain as r_domain
@@ -47,7 +52,7 @@ from ffun.user_settings import domain as us_domain
 _llm_config = LLMConfiguration(
     model="test-model",
     system="some system prompt",
-    max_return_tokens=1017,
+    max_return_tokens=LLMTokens(1017),
     text_parts_intersection=113,
     temperature=0.3,
     top_p=0.9,
@@ -142,16 +147,17 @@ class TestFilterOutUsersForWhomeEntryIsTooOld:
 class TestFilterOutUsersWithOverusedKeys:
     @pytest.mark.asyncio
     async def test_empty_list(self) -> None:
-        assert await _filter_out_users_with_overused_keys([], 100) == []
+        assert await _filter_out_users_with_overused_keys([], reserved_cost=USDCost(Decimal(100))) == []
 
     @pytest.mark.asyncio
     async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
-        for i, max_tokens_in_month in enumerate([201, 100, 300, 200, 500]):
+        for i, max_tokens_cost_in_month in enumerate([201, 100, 300, 200, 500]):
             five_user_key_infos[i] = five_user_key_infos[i].replace(
-                tokens_used=50, max_tokens_in_month=max_tokens_in_month
+                cost_used=USDCost(Decimal(50)),
+                max_tokens_cost_in_month=USDCost(Decimal(max_tokens_cost_in_month))
             )
 
-        infos = await _filter_out_users_with_overused_keys(five_user_key_infos, 150)
+        infos = await _filter_out_users_with_overused_keys(five_user_key_infos, reserved_cost=USDCost(Decimal(150)))
 
         assert infos == [five_user_key_infos[i] for i in [0, 2, 4]]
 
@@ -161,15 +167,19 @@ class TestChooseUser:
     async def test_no_users(self) -> None:
         interval_started_at = month_interval_start()
 
-        assert await _choose_user(infos=[], reserved_tokens=0, interval_started_at=interval_started_at) is None
+        assert await _choose_user(infos=[],
+                                  reserved_cost=USDCost(Decimal(0)),
+                                  interval_started_at=interval_started_at) is None
 
     @pytest.mark.asyncio
     async def test_no_users_with_resources(self, five_user_key_infos: list[UserKeyInfo]) -> None:
         interval_started_at = month_interval_start()
 
+        reserved_cost = USDCost(max(info.max_tokens_cost_in_month for info in five_user_key_infos) + 1)
+
         info = await _choose_user(
             infos=five_user_key_infos,
-            reserved_tokens=max(info.max_tokens_in_month for info in five_user_key_infos) + 1,
+            reserved_cost=reserved_cost,
             interval_started_at=interval_started_at,
         )
 
@@ -179,14 +189,16 @@ class TestChooseUser:
     async def test_all_working(self, five_user_key_infos: list[UserKeyInfo]) -> None:
         interval_started_at = month_interval_start()
 
-        max_tokens = max(info.max_tokens_in_month for info in five_user_key_infos) + 1
+        max_cost = USDCost(max(info.max_tokens_cost_in_month for info in five_user_key_infos) + 1)
 
         five_user_key_infos[2] = five_user_key_infos[2].replace(
-            max_tokens_in_month=max_tokens + five_user_key_infos[2].tokens_used
+            max_tokens_cost_in_month=max_cost + five_user_key_infos[2].cost_used
         )
 
         info = await _choose_user(
-            infos=five_user_key_infos, reserved_tokens=max_tokens, interval_started_at=interval_started_at
+            infos=five_user_key_infos,
+            reserved_cost=max_cost,
+            interval_started_at=interval_started_at
         )
 
         assert info == five_user_key_infos[2]
@@ -197,7 +209,7 @@ class TestGetUserKeyInfos:
     async def test_no_users(self) -> None:
         interval_started_at = month_interval_start()
 
-        assert await _get_user_key_infos(user_ids=[], interval_started_at=interval_started_at) == []
+        assert await _get_user_key_infos(LLMProvider.test, user_ids=[], interval_started_at=interval_started_at) == []
 
     @pytest.mark.asyncio
     async def test_works(self, five_internal_user_ids: list[uuid.UUID]) -> None:
@@ -207,47 +219,49 @@ class TestGetUserKeyInfos:
         interval_started_at = month_interval_start()
 
         keys = [LLMApiKey(uuid.uuid4().hex) for _ in range(5)]
-        max_tokens_in_month = [(i + 1) * 1000 for i in range(5)]
+        max_tokens_cost_in_month = [USDCost(Decimal(i + 1) * 1000) for i in range(5)]
         days = list(range(5))
-        used_tokens = [i * 100 for i in range(5)]
-        reserved_tokens = [i * 10 for i in range(5)]
+        used_costs = [USDCost(Decimal(i * 100)) for i in range(5)]
+        reserved_costs = [USDCost(Decimal(i * 10)) for i in range(5)]
 
         for i, user_id in enumerate(five_internal_user_ids):
             await us_domain.save_setting(user_id=user_id, kind=UserSetting.openai_api_key, value=keys[i])
 
             await us_domain.save_setting(
-                user_id=user_id, kind=UserSetting.openai_max_tokens_in_month, value=max_tokens_in_month[i]
+                user_id=user_id, kind=UserSetting.max_tokens_cost_in_month, value=max_tokens_cost_in_month[i]
             )
 
             await us_domain.save_setting(
-                user_id=user_id, kind=UserSetting.openai_process_entries_not_older_than, value=days[i]
+                user_id=user_id, kind=UserSetting.process_entries_not_older_than, value=days[i]
             )
 
             await r_domain.try_to_reserve(
                 user_id=user_id,
                 kind=AppResource.openai_tokens,
                 interval_started_at=interval_started_at,
-                amount=reserved_tokens[i],
-                limit=max_tokens_in_month[i],
+                amount=_cost_points.to_points(reserved_costs[i]),
+                limit=_cost_points.to_points(max_tokens_cost_in_month[i]),
             )
 
             await r_domain.convert_reserved_to_used(
                 user_id=user_id,
                 kind=AppResource.openai_tokens,
                 interval_started_at=interval_started_at,
-                used=used_tokens[i],
+                used=_cost_points.to_points(used_costs[i]),
                 reserved=0,
             )
 
-        infos = await _get_user_key_infos(five_internal_user_ids, interval_started_at)
+        infos = await _get_user_key_infos(LLMProvider.openai,
+                                          five_internal_user_ids,
+                                          interval_started_at)
 
         assert infos == [
             UserKeyInfo(
                 user_id=five_internal_user_ids[i],
                 api_key=keys[i],
-                max_tokens_in_month=max_tokens_in_month[i],
+                max_tokens_cost_in_month=max_tokens_cost_in_month[i],
                 process_entries_not_older_than=datetime.timedelta(days=days[i]),
-                tokens_used=used_tokens[i] + reserved_tokens[i],
+                cost_used=USDCost(used_costs[i] + reserved_costs[i]),
             )
             for i in range(5)
         ]
@@ -265,7 +279,7 @@ class TestGetCandidates:
                 feed_id=saved_feed_id,
                 interval_started_at=interval_started_at,
                 entry_age=datetime.timedelta(days=1),
-                reserved_tokens=100,
+                reserved_cost=USDCost(Decimal(100)),
             )
             == []
         )
@@ -304,7 +318,7 @@ class TestGetCandidates:
             feed_id=saved_feed_id,
             interval_started_at=interval_started_at,
             entry_age=datetime.timedelta(days=1),
-            reserved_tokens=100,
+            reserved_cost=USDCost(Decimal(100)),
             filters=(create_filter(filter_1_users), create_filter(filter_2_users), create_filter(filter_3_users)),
         )
 
@@ -336,7 +350,7 @@ class TestGetCandidates:
             feed_id=saved_feed_id,
             interval_started_at=interval_started_at,
             entry_age=datetime.timedelta(days=1),
-            reserved_tokens=100,
+            reserved_cost=USDCost(Decimal(100)),
             filters=(create_filter(filter_1_users), create_filter([]), _filter_3),
         )
 
@@ -352,7 +366,7 @@ class TestFindBestUserWithKey:
             feed_id=saved_feed_id,
             entry_age=datetime.timedelta(days=1),
             interval_started_at=month_interval_start(),
-            reserved_tokens=100,
+            reserved_cost=USDCost(Decimal(100)),
         )
 
         assert info is None
@@ -368,7 +382,7 @@ class TestFindBestUserWithKey:
 
         interval_started_at = month_interval_start()
 
-        used_tokens = 7
+        used_cost = USDCost(Decimal(7))
 
         for _ in range(len(five_user_key_infos)):
             info = await _find_best_user_with_key(
@@ -377,11 +391,11 @@ class TestFindBestUserWithKey:
                 feed_id=saved_feed_id,
                 entry_age=datetime.timedelta(days=0),
                 interval_started_at=interval_started_at,
-                reserved_tokens=used_tokens,
+                reserved_cost=used_cost,
             )
 
             assert info is not None
-            assert info.tokens_used == five_user_key_infos[0].tokens_used
+            assert info.cost_used == five_user_key_infos[0].cost_used
 
             chosen_users.add(info.user_id)
 
@@ -389,8 +403,8 @@ class TestFindBestUserWithKey:
                 user_id=info.user_id,
                 kind=AppResource.openai_tokens,
                 interval_started_at=interval_started_at,
-                used=used_tokens,
-                reserved=used_tokens,
+                used=_cost_points.to_points(used_cost),
+                reserved=_cost_points.to_points(used_cost),
             )
 
         assert chosen_users == {info.user_id for info in five_user_key_infos}
@@ -402,11 +416,11 @@ class TestFindBestUserWithKey:
             feed_id=saved_feed_id,
             entry_age=datetime.timedelta(days=0),
             interval_started_at=interval_started_at,
-            reserved_tokens=used_tokens,
+            reserved_cost=used_cost,
         )
 
         assert info is not None
-        assert info.tokens_used == five_user_key_infos[0].tokens_used + used_tokens
+        assert info.cost_used == USDCost(five_user_key_infos[0].cost_used + used_cost)
 
 
 @pytest.fixture
@@ -417,7 +431,7 @@ def select_key_context(saved_feed_id: FeedId) -> SelectKeyContext:
         general_api_key=None,
         feed_id=saved_feed_id,
         entry_age=datetime.timedelta(seconds=0),
-        reserved_tokens=0,
+        reserved_cost=USDCost(Decimal(0)),
     )
 
 
@@ -443,8 +457,10 @@ class TestChooseGeneralKey:
         assert usage == APIKeyUsage(
             user_id=None,
             api_key=fake_llm_api_key,
-            reserved_tokens=select_key_context.reserved_tokens,
-            used_tokens=None,
+            reserved_cost=select_key_context.reserved_cost,
+            used_cost=None,
+            input_tokens=None,
+            output_tokens=None,
             interval_started_at=select_key_context.interval_started_at,
         )
 
@@ -477,8 +493,10 @@ class TestChooseCollectionsKey:
         assert usage == APIKeyUsage(
             user_id=None,
             api_key=fake_llm_api_key,
-            reserved_tokens=select_key_context.reserved_tokens,
-            used_tokens=None,
+            reserved_cost=select_key_context.reserved_cost,
+            used_cost=None,
+            input_tokens=None,
+            output_tokens=None,
             interval_started_at=select_key_context.interval_started_at,
         )
 
@@ -530,8 +548,10 @@ class TestChooseUserKey:
         assert usage == APIKeyUsage(
             user_id=info.user_id,
             api_key=info.api_key,
-            reserved_tokens=select_key_context.reserved_tokens,
-            used_tokens=None,
+            reserved_cost=select_key_context.reserved_cost,
+            used_cost=None,
+            input_tokens=None,
+            output_tokens=None,
             interval_started_at=select_key_context.interval_started_at,
         )
 
@@ -552,8 +572,10 @@ class TestChooseApiKey:
             return APIKeyUsage(
                 user_id=uuid.uuid4(),
                 api_key=api_key,
-                reserved_tokens=context.reserved_tokens,
-                used_tokens=None,
+                reserved_cost=context.reserved_cost,
+                used_cost=None,
+                input_tokens=None,
+                output_tokens=None,
                 interval_started_at=context.interval_started_at,
             )
 
@@ -601,32 +623,34 @@ class TestUseApiKey:
 
         interval_started_at = month_interval_start()
 
-        reserved_tokens = 567
+        reserved_cost = USDCost(Decimal(567))
 
         await r_domain.try_to_reserve(
             user_id=internal_user_id,
             kind=AppResource.openai_tokens,
             interval_started_at=interval_started_at,
-            amount=reserved_tokens,
-            limit=1000,
+            amount=_cost_points.to_points(reserved_cost),
+            limit=_cost_points.to_points(USDCost(Decimal(1000)))
         )
 
         resources = await r_domain.load_resources(
             user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
         )
 
-        used_tokens = 132
+        used_cost = USDCost(Decimal(132))
 
         key_usage = APIKeyUsage(
             user_id=internal_user_id,
             api_key=fake_llm_api_key,
-            reserved_tokens=reserved_tokens,
-            used_tokens=None,
+            reserved_cost=reserved_cost,
+            used_cost=None,
+            input_tokens=None,
+            output_tokens=None,
             interval_started_at=interval_started_at,
         )
 
         async with use_api_key(key_usage):
-            key_usage.used_tokens = used_tokens
+            key_usage.used_cost = used_cost
 
         resources = await r_domain.load_resources(
             user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
@@ -637,7 +661,7 @@ class TestUseApiKey:
                 user_id=internal_user_id,
                 kind=AppResource.openai_tokens,
                 interval_started_at=interval_started_at,
-                used=used_tokens,
+                used=_cost_points.to_points(used_cost),
                 reserved=0,
             )
         }
@@ -647,14 +671,14 @@ class TestUseApiKey:
 
         interval_started_at = month_interval_start()
 
-        reserved_tokens = 567
+        reserved_cost = USDCost(Decimal(567))
 
         await r_domain.try_to_reserve(
             user_id=internal_user_id,
             kind=AppResource.openai_tokens,
             interval_started_at=interval_started_at,
-            amount=reserved_tokens,
-            limit=1000,
+            amount=_cost_points.to_points(reserved_cost),
+            limit=_cost_points.to_points(USDCost(Decimal(1000))),
         )
 
         resources = await r_domain.load_resources(
@@ -664,14 +688,16 @@ class TestUseApiKey:
         key_usage = APIKeyUsage(
             user_id=internal_user_id,
             api_key=fake_llm_api_key,
-            reserved_tokens=reserved_tokens,
-            used_tokens=None,
+            reserved_cost=reserved_cost,
+            used_cost=None,
+            input_tokens=None,
+            output_tokens=None,
             interval_started_at=interval_started_at,
         )
 
         with pytest.raises(errors.UsedTokensHasNotSpecified):
             async with use_api_key(key_usage):
-                assert key_usage.used_tokens is None
+                assert key_usage.used_cost is None
 
         resources = await r_domain.load_resources(
             user_ids=[internal_user_id], kind=AppResource.openai_tokens, interval_started_at=interval_started_at
@@ -682,7 +708,7 @@ class TestUseApiKey:
                 user_id=internal_user_id,
                 kind=AppResource.openai_tokens,
                 interval_started_at=interval_started_at,
-                used=reserved_tokens,
+                used=_cost_points.to_points(reserved_cost),
                 reserved=0,
             )
         }
@@ -692,15 +718,15 @@ class TestUseApiKey:
 
         interval_started_at = month_interval_start()
 
-        reserved_tokens = 567
+        reserved_cost = USDCost(Decimal(567))
 
         await r_domain.try_to_reserve(
             user_id=internal_user_id,
             # TODO: differentiate tokens in all places
             kind=AppResource.openai_tokens,
             interval_started_at=interval_started_at,
-            amount=reserved_tokens,
-            limit=1000,
+            amount=_cost_points.to_points(reserved_cost),
+            limit=_cost_points.to_points(USDCost(Decimal(1000))),
         )
 
         resources = await r_domain.load_resources(
@@ -713,8 +739,10 @@ class TestUseApiKey:
         key_usage = APIKeyUsage(
             user_id=internal_user_id,
             api_key=fake_llm_api_key,
-            reserved_tokens=reserved_tokens,
-            used_tokens=None,
+            reserved_cost=reserved_cost,
+            used_cost=None,
+            input_tokens=None,
+            output_tokens=None,
             interval_started_at=interval_started_at,
         )
 
@@ -731,7 +759,7 @@ class TestUseApiKey:
                 user_id=internal_user_id,
                 kind=AppResource.openai_tokens,
                 interval_started_at=interval_started_at,
-                used=reserved_tokens,
+                used=_cost_points.to_points(reserved_cost),
                 reserved=0,
             )
         }
@@ -741,16 +769,18 @@ class TestUseApiKey:
 
         interval_started_at = month_interval_start()
 
-        reserved_tokens = 567
-        used_tokens = 214
+        reserved_cost = USDCost(Decimal(567))
+        used_cost = USDCost(Decimal(214))
 
         key_usage = APIKeyUsage(
             user_id=None,
             api_key=fake_llm_api_key,
-            reserved_tokens=reserved_tokens,
-            used_tokens=None,
+            reserved_cost=reserved_cost,
+            used_cost=None,
+            input_tokens=None,
+            output_tokens=None,
             interval_started_at=interval_started_at,
         )
 
         async with use_api_key(key_usage):
-            key_usage.used_tokens = used_tokens
+            key_usage.used_cost = used_cost
