@@ -34,7 +34,7 @@ I did not find an open-source solution that suited my needs => decided to create
 
 The last stable version is always available at https://feeds.fun/
 
-It is free to use, and should be stable: no database resets, minimal, downtime, etc.
+It is free and should be stable: no database resets, minimal downtime, etc.
 
 Just do not forget to set up your OpenAI or Gemini API key to access the full power of tags generation.
 
@@ -81,32 +81,32 @@ Feeds Fun uses different tag processors to detect tags for news entries. Some of
 
 Processors are configured via a separate configuration file.
 
-You can find example of configuration [in the code](./ffun/ffun/librarian/fixtures/tag_processors.toml).
+You can find an example of configuration [in the code](./ffun/ffun/librarian/fixtures/tag_processors.toml).
 
 To pass your own configuration, set `FFUN_LIBRARIAN_TAG_PROCESSORS_CONFIG` to the path to your configuration file.
 
-To configure LLM processors you may be interested in models configuration. You can find an example of it [in the code](./ffun/ffun/llms_framework/fixtures/models.toml).
+To configure LLM processors, you may be interested in configuring models. You can find an example of it [in the code](./ffun/ffun/llms_framework/fixtures/models.toml). It mostly the slice of info from the official OpenAI/Google documentation.
 
 To pass your own configuration, set `FFUN_LLMS_FRAMEWORK_MODELS_CONFIG` to the path to your configuration file.
 
 Currently implemented processors:
 
-- `domain` — extract domain and subdomains from URL and saves them as tags.
-- `native_tags` — save tags that are received with the feed entry.
+- `domain` — extracts domain and subdomains from URL and saves them as tags.
+- `native_tags` — saves tags that are received with the feed entry.
 - `llm_general` — asks ChatGPT/GeminiGPT to detect tags. Currently, it is the most powerful processor. Must-have if you want to use Feed Fun in full power.
-- `upper_case_title` — detect news with uppercase titles and marks them with `upper-case-title` tag.
+- `upper_case_title` — detects news with uppercase titles and marks them with `upper-case-title` tag.
 
 ### LLM Processors
 
-LLM tag processors are the main source of tags for Feeds Fun.
+LLM tag processors are the primary source of tags for Feeds Fun.
 
-Currently, we support two API providers: OpenAI (ChatGPT) and Google (Gemini). In the future there will be more, including self-hosted.
+Currently, we support two API providers: OpenAI (ChatGPT) and Google (Gemini). In the future, there will be more, including self-hosted.
 
-By default, LLM processors will skip feeds from default collections and will use user API keys to process their news.
+By default, LLM processors will skip feeds from default collections and use user API keys to process their news.
 
-You can set API key for collections in processor's config.
+You can set the API key for collections in the processor's config.
 
-**DANGER!!!** You can set "general API key" in processor's config, in this case the processor will use it to process **ALL** news. It may be convinient if you self-host service and fully control who has access to it.
+**DANGER!!!** You can set the "general API key" in the processor's config; in this case, the processor will use it to process **ALL** news. It may be convenient if you self-host the service and fully control who has access to it.
 
 ## Backend
 
