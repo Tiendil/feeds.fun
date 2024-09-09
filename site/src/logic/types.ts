@@ -351,7 +351,7 @@ export function userSettingFromJSON({
   return {
     kind,
     type,
-    value: type === "decimal" ? parseFloat(value) : value,
+    value: type === "decimal" ? parseFloat(value as string) : value,
     name,
     description
   };
@@ -385,7 +385,7 @@ export function resourceHistoryRecordFromJSON({
   return new ResourceHistoryRecord({
     intervalStartedAt: new Date(intervalStartedAt),
     // TODO: refactor to use kind of Decimals and to respect input types
-    used: parseFloat(used),
-    reserved: parseFloat(reserved)
+    used: parseFloat(used as string),
+    reserved: parseFloat(reserved as string)
   });
 }
