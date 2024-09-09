@@ -24,10 +24,6 @@
 
   globalSettings.mainPanelMode = e.MainPanelMode.Settings;
 
-  const openAIUsage = computedAsync(async () => {
-    return await api.getResourceHistory({kind: "openai_tokens"});
-  }, null);
-
   const period = computed(() => {
     return properties.usage.intervalStartedAt.toLocaleString("default", {month: "long", year: "numeric"});
   });
@@ -37,7 +33,7 @@
       return "—";
     }
 
-    const setting = globalSettings.userSettings["openai_max_tokens_in_month"];
+    const setting = globalSettings.userSettings["max_tokens_cost_in_month"];
 
     if (!setting) {
       return "—";

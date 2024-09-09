@@ -155,10 +155,11 @@ class TagInfo(BaseEntity):
 
 class UserSettingKind(enum.StrEnum):
     openai_api_key = "openai_api_key"
-    openai_max_tokens_in_month = "openai_max_tokens_in_month"
-    openai_hide_message_about_setting_up_key = "openai_hide_message_about_setting_up_key"
-    openai_process_entries_not_older_than = "openai_process_entries_not_older_than"
-    openai_allow_use_key_for_collections = "openai_allow_use_key_for_collections"
+    gemini_api_key = 'gemini_api_key'
+
+    hide_message_about_setting_up_key = "hide_message_about_setting_up_key"
+    process_entries_not_older_than = "process_entries_not_older_than"
+    max_tokens_cost_in_month = 'max_tokens_cost_in_month'
 
     @classmethod
     def from_internal(cls, kind: int) -> "UserSettingKind":
@@ -200,7 +201,7 @@ class UserSetting(BaseEntity):
 
 
 class ResourceKind(enum.StrEnum):
-    openai_tokens = "openai_tokens"
+    tokens_cost = "tokens_cost"
 
     @classmethod
     def from_internal(cls, kind: int) -> "ResourceKind":
