@@ -23,16 +23,15 @@ class UserSetting(enum.IntEnum):
 
 
 _key_rules = """\
-Here's how your key will be used:
+Here's how your API key will be used:
 
-- Your key will be used only to process your feeds. We will not use it for any other purposes.
-- You can set a limit on the maximum money spent on requests to API. \
-We estimate spent resources and stop using your key if they exceed the limit.
-- If multiple users are subscribed to a single feed, for each news item from the \
-feed, we'll use a key with less money spent in the current month.
-- You can find API key usage statistics on this page.
+- It will only be used for your feeds.
+- It will not be used for predefined collections or any other purposes.
+- You can set a spending limit; we'll stop using the key if the limit is exceeded.
+- If a feed has multiple subscribers with keys, we'll use the key with the lowest usage in the current month.
+- API key usage statistics are available on this page.
 
-The more users set up the key, the cheaper Feeds Fun will be for everyone.
+The more users set up a key, the cheaper Feeds Fun becomes for everyone.
 """
 
 
