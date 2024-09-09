@@ -13,8 +13,9 @@ from ffun.feeds_collections.entities import Collection
 # TODO: define explicit rules
 # TODO: for each source add short "why added" description and show it in UI
 
+# TODO: uncomment
 predefines = {
-    Collection.feeds_fun: feeds_fun.collection,
-    Collection.gamedev: gamedev.collection,
-    Collection.artificial_intelligence: artificial_intelligence.collection,
+    Collection.feeds_fun: set(), #feeds_fun.collection,
+    Collection.gamedev: set(), #gamedev.collection,
+    Collection.artificial_intelligence: set(), #artificial_intelligence.collection,
 }

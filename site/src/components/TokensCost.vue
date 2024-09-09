@@ -1,9 +1,9 @@
 <template>
   <tr>
     <td>{{ period }}</td>
-    <td style="text-align: right">{{ usage.used }}</td>
-    <td style="text-align: right">{{ usage.reserved }}</td>
-    <td style="text-align: right">{{ usage.total() }}</td>
+    <td style="text-align: right">{{ cost_used }}</td>
+    <td style="text-align: right">{{ cost_reserved }}</td>
+    <td style="text-align: right">{{ cost_total }}</td>
     <td style="text-align: right">{{ percents }}%</td>
   </tr>
 </template>
@@ -28,6 +28,8 @@
     return properties.usage.intervalStartedAt.toLocaleString("default", {month: "long", year: "numeric"});
   });
 
+  const k = 2;
+
   const percents = computed(() => {
     if (globalSettings.userSettings == null) {
       return "—";
@@ -50,8 +52,21 @@
       return "—";
     }
 
-    return ((total / limit) * 100).toFixed(5);
+    return ((total / limit) * 100).toFixed(k);
   });
+
+const cost_used = computed(() =>{
+  return properties.usage.used.toFixed(k)
+});
+
+const cost_reserved = computed(() =>{
+  return properties.usage.reserved.toFixed(k)
+});
+
+const cost_total = computed(() =>{
+  return properties.usage.total().toFixed(k)
+});
+
 </script>
 
 <style></style>
