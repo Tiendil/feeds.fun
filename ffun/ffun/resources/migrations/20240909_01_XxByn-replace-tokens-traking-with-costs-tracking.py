@@ -1,13 +1,15 @@
 """
 replace tokens traking with costs tracking
 """
-from typing import Any
+
 import datetime
-from psycopg.rows import dict_row
+from typing import Any
+
 from psycopg import Connection
+from psycopg.rows import dict_row
 from yoyo import step
 
-__depends__ = {'20230702_01_LEEES-resources-table'}
+__depends__ = {"20230702_01_LEEES-resources-table"}
 
 
 def month_interval_start() -> datetime.datetime:
@@ -35,16 +37,20 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
     interval = month_interval_start()
 
-    cursor.execute("SELECT * FROM r_resources WHERE kind=1 AND interval_started_at=%(interval)s",
-                   {'interval': interval})
+    cursor.execute(
+        "SELECT * FROM r_resources WHERE kind=1 AND interval_started_at=%(interval)s", {"interval": interval}
+    )
 
     for row in cursor.fetchall():
-        cursor.execute(sql,
-                       {
-                           'user_id': row['user_id'],
-                           'interval_started_at': row['interval_started_at'],
-                           'used': tokens_to_points(row['used']),
-                           'reserved': tokens_to_points(row['reserved'])})
+        cursor.execute(
+            sql,
+            {
+                "user_id": row["user_id"],
+                "interval_started_at": row["interval_started_at"],
+                "used": tokens_to_points(row["used"]),
+                "reserved": tokens_to_points(row["reserved"]),
+            },
+        )
 
     cursor.execute("DELETE FROM r_resources WHERE kind=1")
 

@@ -26,12 +26,10 @@
     <ul class="list-disc list-inside">
       <li> <strong>Estimated Used USD</strong> — the estimated cost of tokens in processed requests. </li>
       <li>
-        <strong>Estimated Reserved USD</strong> — the estimated cost of tokens reserved for requests that currently are processing or
-        were not processed correctly.
+        <strong>Estimated Reserved USD</strong> — the estimated cost of tokens reserved for requests that currently are
+        processing or were not processed correctly.
       </li>
-      <li>
-        <strong>Estimated Total USD</strong> — the estimated total cost of tokens used in the month.
-      </li>
+      <li> <strong>Estimated Total USD</strong> — the estimated total cost of tokens used in the month. </li>
     </ul>
 
     <p v-if="tokensCostData == null">Loading...</p>
@@ -89,14 +87,14 @@
     return globalSettings.info.userId;
   });
 
-
   // TODO: refactor, this is the temporary code to display settings in the right order
-const settingsOrder = ['hide_message_about_setting_up_key',
-                       'openai_api_key',
-                       'gemini_api_key',
-                       'max_tokens_cost_in_month',
-                       'process_entries_not_older_than'];
-
+  const settingsOrder = [
+    "hide_message_about_setting_up_key",
+    "openai_api_key",
+    "gemini_api_key",
+    "max_tokens_cost_in_month",
+    "process_entries_not_older_than"
+  ];
 </script>
 
 <style></style>

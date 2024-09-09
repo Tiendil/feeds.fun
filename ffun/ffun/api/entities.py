@@ -13,6 +13,9 @@ from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.feeds_links import entities as fl_entities
 from ffun.library import entities as l_entities
+
+# TODO: rename to public name
+from ffun.llms_framework.keys_rotator import _cost_points
 from ffun.markers import entities as m_entities
 from ffun.ontology import entities as o_entities
 from ffun.parsers import entities as p_entities
@@ -20,9 +23,6 @@ from ffun.resources import entities as r_entities
 from ffun.scores import entities as s_entities
 from ffun.user_settings import types as us_types
 from ffun.user_settings.values import user_settings
-
-# TODO: rename to public name
-from ffun.llms_framework.keys_rotator import _cost_points
 
 
 class Marker(enum.StrEnum):
@@ -159,11 +159,11 @@ class TagInfo(BaseEntity):
 
 class UserSettingKind(enum.StrEnum):
     openai_api_key = "openai_api_key"
-    gemini_api_key = 'gemini_api_key'
+    gemini_api_key = "gemini_api_key"
 
     hide_message_about_setting_up_key = "hide_message_about_setting_up_key"
     process_entries_not_older_than = "process_entries_not_older_than"
-    max_tokens_cost_in_month = 'max_tokens_cost_in_month'
+    max_tokens_cost_in_month = "max_tokens_cost_in_month"
 
     @classmethod
     def from_internal(cls, kind: int) -> "UserSettingKind":
@@ -232,12 +232,15 @@ class ResourceHistoryRecord(pydantic.BaseModel):
         if record.kind == Resource.tokens_cost:
             transformer = _cost_points.to_cost
         else:
+
             def transformer(x: int) -> int:
                 return x
 
-        return cls(intervalStartedAt=record.interval_started_at,
-                   used=transformer(record.used),
-                   reserved=transformer(record.reserved))
+        return cls(
+            intervalStartedAt=record.interval_started_at,
+            used=transformer(record.used),
+            reserved=transformer(record.reserved),
+        )
 
 
 ##################

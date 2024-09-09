@@ -55,18 +55,17 @@
     return ((total / limit) * 100).toFixed(k);
   });
 
-const cost_used = computed(() =>{
-  return properties.usage.used.toFixed(k)
-});
+  const cost_used = computed(() => {
+    return properties.usage.used.toFixed(k);
+  });
 
-const cost_reserved = computed(() =>{
-  return properties.usage.reserved.toFixed(k)
-});
+  const cost_reserved = computed(() => {
+    return properties.usage.reserved.toFixed(k);
+  });
 
-const cost_total = computed(() =>{
-  return properties.usage.total().toFixed(k)
-});
-
+  const cost_total = computed(() => {
+    return properties.usage.total().toFixed(k);
+  });
 </script>
 
 <style></style>

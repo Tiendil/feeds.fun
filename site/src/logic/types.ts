@@ -351,9 +351,10 @@ export function userSettingFromJSON({
   return {
     kind,
     type,
-    value: type === 'decimal' ? parseFloat(value) : value,
+    value: type === "decimal" ? parseFloat(value) : value,
     name,
-    description};
+    description
+  };
 }
 
 export class ResourceHistoryRecord {

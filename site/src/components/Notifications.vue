@@ -18,10 +18,10 @@
 
   const showApiKeyMessage = computed(() => {
     return (
-        globalSettings.userSettings &&
-        !globalSettings.userSettings.openai_api_key.value &&
-        !globalSettings.userSettings.gemini_api_key.value &&
-        !globalSettings.userSettings.hide_message_about_setting_up_key.value
+      globalSettings.userSettings &&
+      !globalSettings.userSettings.openai_api_key.value &&
+      !globalSettings.userSettings.gemini_api_key.value &&
+      !globalSettings.userSettings.hide_message_about_setting_up_key.value
     );
   });
 

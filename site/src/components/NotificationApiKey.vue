@@ -1,11 +1,7 @@
 <template>
   <div class="ffun-info-attention">
-    <p>
-      Feeds Fun provides tags for feeds from collections for free.
-    </p>
-    <p>
-      Please, set up your own OpenAI and/or Gemini API keys to tag your personal feeds.
-    </p>
+    <p> Feeds Fun provides tags for feeds from collections for free. </p>
+    <p> Please, set up your own OpenAI and/or Gemini API keys to tag your personal feeds. </p>
     <p>
       You can do this on the
       <a

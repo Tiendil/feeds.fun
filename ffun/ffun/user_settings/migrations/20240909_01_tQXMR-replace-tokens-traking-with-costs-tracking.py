@@ -3,12 +3,12 @@ replace tokens traking with costs tracking
 """
 
 from typing import Any
-import datetime
-from psycopg.rows import dict_row
+
 from psycopg import Connection
+from psycopg.rows import dict_row
 from yoyo import step
 
-__depends__ = {'20230911_01_5vjXI-index-to-search-by-value'}
+__depends__ = {"20230911_01_5vjXI-index-to-search-by-value"}
 
 sql = """
 INSERT INTO us_settings (user_id, kind, value)
@@ -20,7 +20,7 @@ cost_1m = 0.6
 
 
 def tokens_to_costs(tokens: int) -> int:
-    return (tokens / 1_000_000 * cost_1m)
+    return tokens / 1_000_000 * cost_1m
 
 
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
@@ -30,11 +30,13 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
     for row in cursor.fetchall():
 
-        cursor.execute(sql,
-                       {
-                           'user_id': row['user_id'],
-                           'value': tokens_to_costs(int(row['value'])),
-                          })
+        cursor.execute(
+            sql,
+            {
+                "user_id": row["user_id"],
+                "value": tokens_to_costs(int(row["value"])),
+            },
+        )
 
     cursor.execute("DELETE FROM us_settings WHERE kind=2")
 
