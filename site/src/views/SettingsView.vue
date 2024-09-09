@@ -14,7 +14,7 @@
 
     <hr />
 
-    <template v-for="(value, kind) of globalSettings.userSettings">
+    <template v-for="kind of settingsOrder">
       <user-setting :kind="kind" />
       <hr />
     </template>
@@ -41,11 +41,11 @@
       class="border border-gray-300 rounded-lg">
       <thead class="bg-slate-200">
         <tr>
-          <th class="p-2">Period</th>
-          <th class="p-2">Estimated Used USD </th>
-          <th class="p-2">Estimated Reserved USD</th>
-          <th class="p-2">Estimated Total USD</th>
-          <th class="p-2">% From Maximum</th>
+          <th class="w-32">Period</th>
+          <th class="w-48">Estimated Used USD </th>
+          <th class="w-48">Estimated Reserved USD</th>
+          <th class="w-48">Estimated Total USD</th>
+          <th class="w-48">% From Maximum</th>
         </tr>
       </thead>
       <tbody>
@@ -88,6 +88,15 @@
 
     return globalSettings.info.userId;
   });
+
+
+  // TODO: refactor, this is the temporary code to display settings in the right order
+const settingsOrder = ['hide_message_about_setting_up_key',
+                       'openai_api_key',
+                       'gemini_api_key',
+                       'max_tokens_cost_in_month',
+                       'process_entries_not_older_than'];
+
 </script>
 
 <style></style>
