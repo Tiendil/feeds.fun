@@ -34,7 +34,7 @@
       </li>
     </ul>
 
-    <p v-if="tokensCost == null">Loading...</p>
+    <p v-if="tokensCostData == null">Loading...</p>
 
     <table
       v-else
@@ -45,15 +45,15 @@
           <th class="p-2">Estimated Used USD </th>
           <th class="p-2">Estimated Reserved USD</th>
           <th class="p-2">Estimated Total USD</th>
-          <th class="p-2">% from current maximum</th>
+          <th class="p-2">% From Maximum</th>
         </tr>
       </thead>
       <tbody>
         <tokens-cost
           :usage="usage"
-          v-for="usage of tokensCost" />
+          v-for="usage of tokensCostData" />
 
-        <tr v-if="tokensCost.length == 0">
+        <tr v-if="tokensCostData.length == 0">
           <td class="text-center">—</td>
           <td class="text-center">—</td>
           <td class="text-center">—</td>
@@ -77,7 +77,7 @@
 
   globalSettings.mainPanelMode = e.MainPanelMode.Settings;
 
-  const tokensCost = computedAsync(async () => {
+  const tokensCostData = computedAsync(async () => {
     return await api.getResourceHistory({kind: "tokens_cost"});
   }, null);
 

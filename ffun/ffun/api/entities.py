@@ -1,6 +1,7 @@
 import datetime
 import enum
 import uuid
+from decimal import Decimal
 from typing import Any, Iterable
 
 import markdown
@@ -19,6 +20,9 @@ from ffun.resources import entities as r_entities
 from ffun.scores import entities as s_entities
 from ffun.user_settings import types as us_types
 from ffun.user_settings.values import user_settings
+
+# TODO: rename to public name
+from ffun.llms_framework.keys_rotator import _cost_points
 
 
 class Marker(enum.StrEnum):
@@ -218,12 +222,22 @@ class ResourceKind(enum.StrEnum):
 
 class ResourceHistoryRecord(pydantic.BaseModel):
     intervalStartedAt: datetime.datetime
-    used: int
-    reserved: int
+    used: Decimal
+    reserved: Decimal
 
     @classmethod
     def from_internal(cls, record: r_entities.Resource) -> "ResourceHistoryRecord":
-        return cls(intervalStartedAt=record.interval_started_at, used=record.used, reserved=record.reserved)
+        from ffun.application.resources import Resource
+
+        if record.kind == Resource.tokens_cost:
+            transformer = _cost_points.to_cost
+        else:
+            def transformer(x: int) -> int:
+                return x
+
+        return cls(intervalStartedAt=record.interval_started_at,
+                   used=transformer(record.used),
+                   reserved=transformer(record.reserved))
 
 
 ##################
