@@ -1,12 +1,8 @@
-import contextlib
 import datetime
-from typing import Generator
-
-import openai
 
 from ffun.core import utils
-from ffun.openai.entities import KeyStatus
-from ffun.openai.settings import settings
+from ffun.llms_framework.entities import KeyStatus
+from ffun.llms_framework.settings import settings
 
 
 class StatusInfo:
@@ -42,26 +38,3 @@ class Statuses:
             return KeyStatus.quota
 
         return KeyStatus.unknown
-
-
-statuses = Statuses()
-
-
-@contextlib.contextmanager
-def track_key_status(key: str, statuses: Statuses = statuses) -> Generator[None, None, None]:
-    try:
-        yield
-        statuses.set(key, KeyStatus.works)
-    except openai.AuthenticationError:
-        statuses.set(key, KeyStatus.broken)
-        raise
-    except openai.RateLimitError:
-        statuses.set(key, KeyStatus.quota)
-        raise
-    except openai.PermissionDeniedError:
-        statuses.set(key, KeyStatus.broken)
-        raise
-    # TODO: test
-    except openai.APIError:
-        statuses.set(key, KeyStatus.unknown)
-        raise

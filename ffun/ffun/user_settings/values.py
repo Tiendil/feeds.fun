@@ -1,10 +1,17 @@
+import decimal
+
 from ffun.core.register import Entity, Register
 from ffun.user_settings.types import Type
 
 
 class Value(Entity):
     def __init__(
-        self, key: int, name: str, type: Type, default: str | int | bool | None, description: str | None
+        self,
+        key: int,
+        name: str,
+        type: Type,
+        default: str | int | bool | decimal.Decimal | None,
+        description: str | None,
     ) -> None:
         super().__init__(key=key)
         self.name = name

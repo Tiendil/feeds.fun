@@ -14,47 +14,44 @@
 
     <hr />
 
-    <template v-for="(value, kind) of globalSettings.userSettings">
+    <template v-for="kind of settingsOrder">
       <user-setting :kind="kind" />
       <hr />
     </template>
 
-    <h2>OpenAI usage</h2>
+    <h2>API usage</h2>
 
-    <p>Token usage for your OpenAI key per month.</p>
+    <p>Estimated tokens cost for your API keys usage per month.</p>
 
     <ul class="list-disc list-inside">
-      <li> <strong>Used tokens</strong> — the number of tokens in processed requests. </li>
+      <li> <strong>Estimated Used USD</strong> — the estimated cost of tokens in processed requests. </li>
       <li>
-        <strong>Reserved tokens</strong> — the number of tokens reserved for requests that currently are processing or
-        were not processed correctly.
+        <strong>Estimated Reserved USD</strong> — the estimated cost of tokens reserved for requests that currently are
+        processing or were not processed correctly.
       </li>
-      <li>
-        <strong>Total tokens</strong> — the total number of tokens used in the month. Should be not less than the
-        actual used tokens, but can be bigger because we reserve more tokens than actually use.
-      </li>
+      <li> <strong>Estimated Total USD</strong> — the estimated total cost of tokens used in the month. </li>
     </ul>
 
-    <p v-if="openAIUsage == null">Loading...</p>
+    <p v-if="tokensCostData == null">Loading...</p>
 
     <table
       v-else
       class="border border-gray-300 rounded-lg">
       <thead class="bg-slate-200">
         <tr>
-          <th class="p-2">Period</th>
-          <th class="p-2">Used tokens</th>
-          <th class="p-2">Reserved tokens</th>
-          <th class="p-2">Total tokens</th>
-          <th class="p-2">% from current maximum</th>
+          <th class="w-32">Period</th>
+          <th class="w-48">Estimated Used USD </th>
+          <th class="w-48">Estimated Reserved USD</th>
+          <th class="w-48">Estimated Total USD</th>
+          <th class="w-48">% From Maximum</th>
         </tr>
       </thead>
       <tbody>
-        <openai-tokens-usage
+        <tokens-cost
           :usage="usage"
-          v-for="usage of openAIUsage" />
+          v-for="usage of tokensCostData" />
 
-        <tr v-if="openAIUsage.length == 0">
+        <tr v-if="tokensCostData.length == 0">
           <td class="text-center">—</td>
           <td class="text-center">—</td>
           <td class="text-center">—</td>
@@ -78,8 +75,8 @@
 
   globalSettings.mainPanelMode = e.MainPanelMode.Settings;
 
-  const openAIUsage = computedAsync(async () => {
-    return await api.getResourceHistory({kind: "openai_tokens"});
+  const tokensCostData = computedAsync(async () => {
+    return await api.getResourceHistory({kind: "tokens_cost"});
   }, null);
 
   const userId = computed(() => {
@@ -89,6 +86,15 @@
 
     return globalSettings.info.userId;
   });
+
+  // TODO: refactor, this is the temporary code to display settings in the right order
+  const settingsOrder = [
+    "hide_message_about_setting_up_key",
+    "openai_api_key",
+    "gemini_api_key",
+    "max_tokens_cost_in_month",
+    "process_entries_not_older_than"
+  ];
 </script>
 
 <style></style>

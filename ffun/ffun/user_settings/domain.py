@@ -27,7 +27,7 @@ def _full_settings(values: dict[int, Any], kinds: Iterable[int], register: Setti
 
         result[entity.key] = entity.default
 
-    return result
+    return result  # type: ignore
 
 
 async def load_settings(

@@ -1,9 +1,9 @@
 import pytest
 
-from ffun.librarian.processors import openai_general
+from ffun.librarian.tag_extractors import dog_tags_extractor
 
 
-class TestExtractRawTags:
+class TestDogTagsExtractor:
 
     raw_answer = """\
 Here is a list of tags to describe the provided text, categorized as requested:
@@ -34,7 +34,7 @@ andthistagtoo
 
     @pytest.mark.asyncio
     async def test(self) -> None:
-        tags = openai_general.extract_raw_tags(self.raw_answer)
+        tags = dog_tags_extractor(self.raw_answer)
 
         expected_tags = {
             "singlwordtag",

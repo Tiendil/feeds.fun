@@ -194,6 +194,9 @@ class TestRemoveDeprecatedSettings:
 
     @pytest.mark.asyncio
     async def test_nothing_to_remove(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+        # cleanup table for this test
+        await domain.remove_deprecated_settings(register=register)
+
         str_values = [uuid.uuid4().hex, uuid.uuid4().hex]
         int_values = [uuid.uuid4().int, uuid.uuid4().int]
 

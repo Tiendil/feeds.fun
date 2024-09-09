@@ -13,7 +13,7 @@ networks:
 services:
 
   postgresql:
-    image: postgres:15-bullseye
+    image: postgres:15.2
 
     volumes:
       - ffun_postgresql_data:/var/lib/postgresql/data
@@ -101,6 +101,7 @@ services:
     volumes:
       - ${PWD}/ffun:/repository
       - ${PWD}/.env:/repository/.env
+      - ${PWD}/.configs:/repository/.configs
 
     environment:
       FFUN_ENABLE_API: "${FFUN_ENABLE_API:-True}"
@@ -123,6 +124,7 @@ services:
     volumes:
       - ${PWD}/ffun:/repository
       - ${PWD}/.env:/repository/.env
+      - ${PWD}/.configs:/repository/.configs
       - ${PWD}/tags_quality_base:/repository/tags_quality_base
       - ${PWD}/changes:/repository/changes
       - ${PWD}/CHANGELOG.md:/repository/CHANGELOG.md

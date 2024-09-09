@@ -333,6 +333,9 @@ async def api_get_user_settings(
     result_values = []
 
     for kind, value in values.items():
+        if kind == UserSetting.test_api_key:
+            continue
+
         result_values.append(entities.UserSetting.from_internal(kind, value))
 
     return entities.GetUserSettingsResponse(settings=result_values)

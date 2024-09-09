@@ -1,41 +1,26 @@
+import functools
+import pathlib
+
 import pydantic
 import pydantic_settings
+import toml
 
 from ffun.core.settings import BaseSettings
+from ffun.librarian.entities import ProcessorsConfig, TagProcessor
 
-
-class BaseProcessor(pydantic.BaseModel):
-    enabled: bool = False
-    workers: int = 1
-
-
-class DomainProcessor(BaseProcessor):
-    pass
-
-
-class NativeTagsProcessor(BaseProcessor):
-    pass
-
-
-class UpperCaseTitleProcessor(BaseProcessor):
-    pass
-
-
-class OpenAIGeneralProcessor(BaseProcessor):
-    model: str = "gpt-4o-mini-2024-07-18"
-
-
-# TODO: will be removed in gh-227
-class OpenAIChat35FunctionsProcessor(BaseProcessor):
-    model: str = "gpt-4o-mini-2024-07-18"
+_root = pathlib.Path(__file__).parent
 
 
 class Settings(BaseSettings):
-    domain_processor: DomainProcessor = DomainProcessor(enabled=True)
-    native_tags_processor: NativeTagsProcessor = NativeTagsProcessor(enabled=True)
-    upper_case_title_processor: UpperCaseTitleProcessor = UpperCaseTitleProcessor(enabled=True)
+    # TODO: add to documentation/README
+    tag_processors_config: pathlib.Path = _root / "fixtures" / "tag_processors.toml"
 
-    openai_general_processor: OpenAIGeneralProcessor = OpenAIGeneralProcessor()
+    @pydantic.computed_field  # type: ignore
+    @functools.cached_property
+    def tag_processors(self) -> tuple[TagProcessor, ...]:
+        data = toml.loads(self.tag_processors_config.read_text())
+
+        return ProcessorsConfig(**data).tag_processors
 
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_LIBRARIAN_")
 

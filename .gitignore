@@ -130,3 +130,6 @@ dmypy.json
 # ignore wrong changelog
 # it is created because of how we mount volumes in the backed-utils container
 ffun/CHANGELOG.md
+
+# ignore directory with custom configs
+.configs

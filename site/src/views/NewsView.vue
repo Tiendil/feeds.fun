@@ -48,7 +48,7 @@
     <notifications
       v-if="entriesStore.loadedEntriesReport !== null"
       :create-rule-help="hasEntries && !hasRules"
-      :openai-api-key="true"
+      :api-key="true"
       :collections="!hasEntries" />
 
     <entries-list

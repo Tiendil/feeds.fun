@@ -1,0 +1,216 @@
+# This is an example of the configuration file for the tag processors.
+#
+# ATTENTION: processors ids <= 10000 are reserved for the system.
+#            if you want to add a custom processor, use ids > 10000.
+
+[[tag_processors]]
+  id = 1
+  enabled = true
+  workers = 1
+  name = "domain"
+  type = "domain"
+  allowed_for_collections = true
+  allowed_for_users = true
+
+[[tag_processors]]
+  id = 2
+  enabled = true
+  workers = 1
+  name = "native_tags"
+  type = "native_tags"
+  allowed_for_collections = true
+  allowed_for_users = true
+
+[[tag_processors]]
+  id = 3
+  enabled = false
+  workers = 1
+  name = "openai_llm_general"
+  type = "llm_general"
+
+  # add url to help chatGPT decide on domain
+  entry_template = "<h1>{entry.title}</h1><a href='{entry.external_url}'>full article</a>{entry.body}"
+
+  text_cleaner = "ffun.librarian.text_cleaners.clear_html"
+  tags_extractor = "ffun.librarian.tag_extractors.dog_tags_extractor"
+
+  llm_provider = "openai"
+
+  #####################################
+  # ATTENTION!!!
+  # setting up this values may lead to significant costs
+
+  # setup if you want to process feeds from collections with a specific API key
+  collections_api_key = ""
+
+  # setup if you want to process ALL feeds with a specific API key
+  general_api_key = ""
+  #####################################
+
+  # using for collections is disabled because there are no API keys set
+  allowed_for_collections = false
+  allowed_for_users = true
+
+  [tag_processors.llm_config]
+    model = "gpt-4o-mini-2024-07-18"
+    max_return_tokens = 4096
+    text_parts_intersection = 200
+    temperature = 0
+    top_p = 0
+    presence_penalty =0
+    frequency_penalty = 0
+    system = """
+You are an expert on semantic analysis, text summarization, and information extraction with PhD in Ontology-Driven Information Extraction.
+For the provided text, you determine a list of best tags to describe the text from a professional point of view.
+For each category, you provide 15 tags.
+
+Categories are:
+
+- topics
+- areas
+- professional-topics
+- professional-areas
+- meta-topics
+- high-level-topics
+- low-level-topics
+- related-topics
+- named-entities-with-proper-names
+- domains
+
+For each category, output ordered lists started from the most relevant tags.
+
+1. tag with relevance > 95%: @tag-1
+2. tag with relevance > 95%: @tag-2
+3. tag with relevance > 95%: @tag-3
+4. tag with relevance > 95%: @tag-4
+5. tag with relevance > 95%: @tag-5
+6. tag with relevance > 95%: @tag-6
+7. tag with relevance > 95%: @tag-7
+8. tag with relevance > 95%: @tag-8
+9. tag with relevance > 95%: @tag-9
+10. tag with relevance > 95%: @tag-10
+11. tag with relevance > 95%: @tag-11
+12. tag with relevance > 95%: @tag-12
+13. tag with relevance > 95%: @tag-13
+14. tag with relevance > 95%: @tag-14
+15. tag with relevance > 95%: @tag-15
+
+Tags format:
+
+- Allowed tag format: `@word`, `@word-word-...`, `@word-number-...`,
+- Translate all tags to English.
+- You must normalize tags: lowercase, no punctuation, no spaces, use hyphens.
+- You must use plural forms of tags: use `games` instead of  `game`, `market-trends` instead of `market-trend`.
+- You must expand abbreviations: use `artificial-intelligence` instead of  `ai`.
+
+Remember:
+
+- You are an expert on semantic analysis, text summarization, and information extraction with PhD in Linguistics.
+- The quality of your answer is critical.
+- Each tag must be unique.
+- I'll give you 10$ for each correct tag.
+      """
+
+# id 4 — old OpenAI ChatGP processor
+
+[[tag_processors]]
+  id = 5
+  enabled = true
+  workers = 1
+  name = "upper_case_title"
+  type = "upper_case_title"
+  allowed_for_collections = true
+  allowed_for_users = true
+
+
+[[tag_processors]]
+  id = 6
+  enabled = false
+  workers = 1
+  name = "gemini_llm_general"
+  type = "llm_general"
+
+  # add url to help chatGPT decide on domain
+  entry_template = "<h1>{entry.title}</h1><a href='{entry.external_url}'>full article</a>{entry.body}"
+
+  text_cleaner = "ffun.librarian.text_cleaners.clear_html"
+  tags_extractor = "ffun.librarian.tag_extractors.dog_tags_extractor"
+
+  llm_provider = "google"
+
+  #####################################
+  # ATTENTION!!!
+  # setting up this values may lead to significant costs
+
+  # setup if you want to process feeds from collections with a specific API key
+  collections_api_key = ""
+
+  # setup if you want to process ALL feeds with a specific API key
+  general_api_key = ""
+  #####################################
+
+  # using for collections is disabled because there are no API keys set
+  allowed_for_collections = false
+
+  # currently, we do not support tracking tokens for Gemini
+  allowed_for_users = false
+
+  [tag_processors.llm_config]
+    model = "gemini-1.5-flash-001"
+    max_return_tokens = 4096
+    text_parts_intersection = 200
+    temperature = 0
+    top_p = 0
+    presence_penalty =0
+    frequency_penalty = 0
+    system = """
+You are an expert on semantic analysis, text summarization, and information extraction with PhD in Ontology-Driven Information Extraction.
+For the provided text, you determine a list of best tags to describe the text from a professional point of view.
+For each category, you provide 15 tags.
+
+Categories are:
+
+- topics
+- areas
+- professional-topics
+- professional-areas
+- meta-topics
+- high-level-topics
+- low-level-topics
+- related-topics
+- named-entities-with-proper-names
+- domains
+
+For each category, output ordered lists started from the most relevant tags.
+
+1. tag with relevance > 95%: @tag-1
+2. tag with relevance > 95%: @tag-2
+3. tag with relevance > 95%: @tag-3
+4. tag with relevance > 95%: @tag-4
+5. tag with relevance > 95%: @tag-5
+6. tag with relevance > 95%: @tag-6
+7. tag with relevance > 95%: @tag-7
+8. tag with relevance > 95%: @tag-8
+9. tag with relevance > 95%: @tag-9
+10. tag with relevance > 95%: @tag-10
+11. tag with relevance > 95%: @tag-11
+12. tag with relevance > 95%: @tag-12
+13. tag with relevance > 95%: @tag-13
+14. tag with relevance > 95%: @tag-14
+15. tag with relevance > 95%: @tag-15
+
+Tags format:
+
+- Allowed tag format: `@word`, `@word-word-...`, `@word-number-...`,
+- Translate all tags to English.
+- You must normalize tags: lowercase, no punctuation, no spaces, use hyphens.
+- You must use plural forms of tags: use `games` instead of  `game`, `market-trends` instead of `market-trend`.
+- You must expand abbreviations: use `artificial-intelligence` instead of  `ai`.
+
+Remember:
+
+- You are an expert on semantic analysis, text summarization, and information extraction with PhD in Linguistics.
+- The quality of your answer is critical.
+- Each tag must be unique.
+- I'll give you 10$ for each correct tag.
+      """

@@ -1,9 +1,7 @@
 <template>
   <div class="ffun-info-attention">
-    <p>
-      Because, for now, our service is free to use and OpenAI API costs money, we politely ask you to set up your own
-      OpenAI API key.
-    </p>
+    <p> Feeds Fun provides tags for feeds from collections for free. </p>
+    <p> Please, set up your own OpenAI and/or Gemini API keys to tag your personal feeds. </p>
     <p>
       You can do this on the
       <a
@@ -15,7 +13,7 @@
     </p>
 
     <user-setting-for-notification
-      kind="openai_hide_message_about_setting_up_key"
+      kind="hide_message_about_setting_up_key"
       button-text="Hide this message" />
   </div>
 </template>
