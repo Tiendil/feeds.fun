@@ -29,7 +29,7 @@ cost_1m = 0.6
 
 
 def tokens_to_points(tokens: int) -> int:
-    return (tokens / 1_000_000 * cost_1m) * k
+    return int((tokens / 1_000_000 * cost_1m) * k)
 
 
 def apply_step(conn: Connection[dict[str, Any]]) -> None:

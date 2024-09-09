@@ -15,7 +15,7 @@ from ffun.feeds_links import entities as fl_entities
 from ffun.library import entities as l_entities
 
 # TODO: rename to public name
-from ffun.llms_framework.keys_rotator import _cost_points
+from ffun.llms_framework.keys_rotator import _cost_points, USDCost
 from ffun.markers import entities as m_entities
 from ffun.ontology import entities as o_entities
 from ffun.parsers import entities as p_entities
@@ -233,8 +233,8 @@ class ResourceHistoryRecord(pydantic.BaseModel):
             transformer = _cost_points.to_cost
         else:
 
-            def transformer(x: int) -> int:
-                return x
+            def transformer(points: int) -> USDCost:
+                return USDCost(Decimal(points))
 
         return cls(
             intervalStartedAt=record.interval_started_at,

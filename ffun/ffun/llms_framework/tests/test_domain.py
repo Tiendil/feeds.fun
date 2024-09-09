@@ -244,11 +244,12 @@ class TestCallLLM:
             user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
         )
 
-        cost = USDCost(
+        cost = USDCost(Decimal(
             sum(
-                model.tokens_cost(input_tokens=len(request.text), output_tokens=len(request.text))
+                model.tokens_cost(input_tokens=LLMTokens(len(request.text)),
+                                  output_tokens=LLMTokens(len(request.text)))
                 for request in requests
             )
-        )
+        ))
 
         assert resources[internal_user_id].used == _cost_points.to_points(cost)
