@@ -3,6 +3,7 @@ replace tokens traking with costs tracking
 """
 from typing import Any
 import datetime
+from psycopg.rows import dict_row
 from psycopg import Connection
 from yoyo import step
 
@@ -30,7 +31,7 @@ def tokens_to_points(tokens: int) -> int:
 
 
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
-    cursor = conn.cursor()
+    cursor = conn.cursor(row_factory=dict_row)
 
     interval = month_interval_start()
 
@@ -42,8 +43,8 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
                        {
                            'user_id': row['user_id'],
                            'interval_started_at': row['interval_started_at'],
-                           'used': tokens_to_points(row['tokens']),
-                           'reserved': tokens_to_points(row['tokens'])})
+                           'used': tokens_to_points(row['used']),
+                           'reserved': tokens_to_points(row['reserved'])})
 
     cursor.execute("DELETE FROM r_resources WHERE kind=1")
 
