@@ -210,6 +210,8 @@ class TestCallLLM:
         fake_llm_api_key: LLMApiKey,
     ) -> None:
 
+        model = fake_llm_provider.get_model(llm_config)
+
         interval_started_at = month_interval_start()
 
         key_usage = APIKeyUsage(
@@ -242,4 +244,8 @@ class TestCallLLM:
             user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
         )
 
-        assert resources[internal_user_id].used == sum(len(request.text) for request in requests)
+        cost = USDCost(sum(model.tokens_cost(input_tokens=len(request.text),
+                                     output_tokens=len(request.text))
+                   for request in requests))
+
+        assert resources[internal_user_id].used == _cost_points.to_points(cost)
