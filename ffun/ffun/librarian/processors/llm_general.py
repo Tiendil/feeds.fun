@@ -68,7 +68,7 @@ class Processor(base.Processor):
         )
 
         if api_key_usage is None:
-            raise errors.SkipEntryProcessing()
+            raise errors.SkipEntryProcessing(message="no api key found")
 
         responses = await call_llm(
             llm=self.llm_provider, llm_config=self.llm_config, api_key_usage=api_key_usage, requests=requests
