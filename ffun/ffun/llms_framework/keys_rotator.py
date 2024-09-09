@@ -40,7 +40,7 @@ class CostPoints:
         return int(cost * self._k)
 
 
-_cost_points = CostPoints(k=1_000_000)
+_cost_points = CostPoints(k=1_000_000_000)
 
 
 # Note: this code is not about billing, it is about protection from the overuse of keys
@@ -100,6 +100,7 @@ async def _choose_user(
     from ffun.application.resources import Resource as AppResource
 
     for info in infos:
+
         if await r_domain.try_to_reserve(
             user_id=info.user_id,
             kind=AppResource.tokens_cost,
@@ -191,6 +192,7 @@ async def _get_candidates(  # noqa
     infos = await _get_user_key_infos(llm.provider, user_ids, interval_started_at)
 
     for _filter in filters:
+
         if not infos:
             return []
 
