@@ -13,7 +13,7 @@ networks:
 services:
 
   postgresql:
-    image: postgres:15-bullseye
+    image: postgres:15.2
 
     volumes:
       - ffun_postgresql_data:/var/lib/postgresql/data
