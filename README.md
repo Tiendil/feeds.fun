@@ -4,7 +4,7 @@ News reader with tags. Self-hosted, if it is your way.
 
 - Reader automatically assigns tags to news.
 - You create rules to score news by tags.
-- Filter and sort news how you want  ⇒ read only what you want.
+- Filter and sort news how you want ⇒ read only what you need.
 
 Site: [feeds.fun](https://feeds.fun)
 Blog: [blog.feeds.fun](https://blog.feeds.fun)
@@ -36,17 +36,17 @@ The last stable version is always available at https://feeds.fun/
 
 It is free to use, and should be stable: no database resets, minimal, downtime, etc.
 
-Just do not forget to set up your OpenAI API key to access the full power of tags generation.
+Just do not forget to set up your OpenAI or Gemini API key to access the full power of tags generation.
 
 # Self-hosted version
 
 - Backend is accessible as [ffun](https://pypi.org/project/ffun/) package on PyPI.
 - Frontend is accessible as [feeds-fun](https://www.npmjs.com/package/feeds-fun) package on NPM.
-- Use the latest versions. They should be compatible with each other.
+- Use the same versions for front and back.
 
 Alternatively, you can install from tags in this repo.
 
-There are no official docker images yet. Feeds Fun will not dictate how to organize your infrastructure. There are too many variants exist of how to prepare and run containers — choose the most suitable for you.
+There are no official docker images yet. Feeds
 
 ## Configuration
 
@@ -58,7 +58,7 @@ You can print actual backend config values with:
 ffun print-configs
 ```
 
-The output is not as pretty and ready for copying as it should be, but it will be improved later.
+The output is not as pretty and ready for copying as it should be, but I'll improve it later.
 
 All actual frontend configs can be found [here](site/src/logic/settings.ts).
 
@@ -74,6 +74,39 @@ FFUN_AUTH_MODE="supertokens"
 
 FFUN_LIBRARIAN_OPENAI_GENERAL_PROCESSOR__ENABLED="True"
 ```
+
+### Configure Tag Processors
+
+Feeds Fun uses different tag processors to detect tags for news entries. Some of them are simple, like `set domain as tag`, some of them are more complex, like `use LLM to detect all possible tags`.
+
+Processors are configured via a separate configuration file.
+
+You can find example of configuration [in the code](./ffun/ffun/librarian/fixtures/tag_processors.toml).
+
+To pass your own configuration, set `FFUN_LIBRARIAN_TAG_PROCESSORS_CONFIG` to the path to your configuration file.
+
+To configure LLM processors you may be interested in models configuration. You can find an example of it [in the code](./ffun/ffun/llms_framework/fixtures/models.toml).
+
+To pass your own configuration, set `FFUN_LLMS_FRAMEWORK_MODELS_CONFIG` to the path to your configuration file.
+
+Currently implemented processors:
+
+- `domain` — extract domain and subdomains from URL and saves them as tags.
+- `native_tags` — save tags that are received with the feed entry.
+- `llm_general` — asks ChatGPT/GeminiGPT to detect tags. Currently, it is the most powerful processor. Must-have if you want to use Feed Fun in full power.
+- `upper_case_title` — detect news with uppercase titles and marks them with `upper-case-title` tag.
+
+### LLM Processors
+
+LLM tag processors are the main source of tags for Feeds Fun.
+
+Currently, we support two API providers: OpenAI (ChatGPT) and Google (Gemini). In the future there will be more, including self-hosted.
+
+By default, LLM processors will skip feeds from default collections and will use user API keys to process their news.
+
+You can set API key for collections in processor's config.
+
+**DANGER!!!** You can set "general API key" in processor's config, in this case the processor will use it to process **ALL** news. It may be convinient if you self-host service and fully control who has access to it.
 
 ## Backend
 
@@ -118,10 +151,6 @@ FFUN_AUTH_SUPERTOKENS__CONNECTION_URI=...
 # Has default value for development environment.
 # I strongly recommend to redefine it because of potential security issues.
 FFUN_USER_SETTINGS_SECRET_KEY=...
-
-# Enable openai general processor.
-# Other processors are enabled by default.
-FFUN_LIBRARIAN_OPENAI_GENERAL_PROCESSOR__ENABLED="True"
 ```
 
 More details see in the architecture section.
@@ -167,16 +196,7 @@ Can use HTTP proxies, see [configuration options](ffun/ffun/loader/settings.py)
 
 Analyse feeds' entries and assign tags to them.
 
-All logic is split into processors. Each processor implements a single approach to produce tags that can be enabled/disabled via configuration.
-
-See configuration options [here](ffun/ffun/librarian/settings.py)
-
-Currently implemented processors:
-
-- `DomainProcessor` — extract domain and subdomains from URL and saves them as tags.
-- `NativeTagsProcessor` — save tags that are received with the feed entry.
-- `OpenAIGeneralProcessor` — asks OpenAI ChatGPT to detect tags. Currently, it is the most powerful processor. Must-have if you want to use Feed Fun in full power.
-- `UpperCaseTitleProcessor` — detect news with uppercase titles and marks them with `upper-case-title` tag.
+All logic is split between tag processors. Each processor implements a single approach to produce tags that can be enabled/disabled via configuration.
 
 # Development
 
