@@ -64,7 +64,9 @@ If you want to help us and tag everything, you can set this value to a big numbe
 """
 
 
-description_max_tokens_cost_in_month = "TODO"
+description_max_tokens_cost_in_month = """
+We'll stop using all your API key when the total cost of all spent tokens exceeds this value.
+"""
 
 
 user_settings.add(
@@ -104,7 +106,7 @@ user_settings.add(
 user_settings.add(
     Value(
         key=UserSetting.max_tokens_cost_in_month,
-        name="Max spendings on API keys in month",
+        name="Max spendings on API keys USD/month",
         type=types.Decimal(),
         default=Decimal("10"),
         description=description_max_tokens_cost_in_month,
