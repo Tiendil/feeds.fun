@@ -16,10 +16,12 @@ class UserSetting(enum.IntEnum):
 
     process_entries_not_older_than = 4
 
-    max_tokens_cost_in_month = 5
+    # openai_allow_use_key_for_collections = 5  # noqa
 
-    gemini_api_key = 6
-    test_api_key = 7
+    max_tokens_cost_in_month = 6
+
+    gemini_api_key = 7
+    test_api_key = 8
 
 
 _key_rules = """\
