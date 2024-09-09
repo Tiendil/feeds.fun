@@ -1,9 +1,9 @@
 <template>
   <div class="ffun-info-attention">
-    <p> Make your first rule to experience the reader's full capabilities! </p>
+    <p> Make your first rule to experience the full power of the Feeds Fun! </p>
 
     <ul class="list-decimal list-inside">
-      <li>Click a tag under a news.</li>
+      <li>Click any tag under a news item.</li>
       <li>Select more tags if needed.</li>
       <li>Set a score for the rule.</li>
       <li>Click "Create Rule".</li>

@@ -1,5 +1,5 @@
 <template>
-  <notification-openai-api-key v-if="showOpenAIKeyNotification" />
+  <notification-api-key v-if="showAPIKeyNotification" />
   <notification-collections v-if="showCollectionsNotification" />
   <notification-create-rule-help v-if="showCreateRuleHelpNotification" />
 </template>
@@ -9,7 +9,7 @@
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
   const properties = defineProps<{
-    openaiApiKey: boolean;
+    apiKey: boolean;
     collections: boolean;
     createRuleHelp: boolean;
   }>();
@@ -18,9 +18,10 @@
 
   const showApiKeyMessage = computed(() => {
     return (
-      globalSettings.userSettings &&
-      !globalSettings.userSettings.openai_api_key.value &&
-      !globalSettings.userSettings.openai_hide_message_about_setting_up_key.value
+        globalSettings.userSettings &&
+        !globalSettings.userSettings.openai_api_key.value &&
+        !globalSettings.userSettings.gemini_api_key.value &&
+        !globalSettings.userSettings.hide_message_about_setting_up_key.value
     );
   });
 
@@ -32,11 +33,11 @@
     return !showCollectionsNotification.value && properties.createRuleHelp;
   });
 
-  const showOpenAIKeyNotification = computed(() => {
+  const showAPIKeyNotification = computed(() => {
     return (
       !showCollectionsNotification.value &&
       !showCreateRuleHelpNotification.value &&
-      properties.openaiApiKey &&
+      properties.apiKey &&
       showApiKeyMessage.value
     );
   });
