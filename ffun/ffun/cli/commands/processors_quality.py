@@ -153,7 +153,7 @@ async def run_prepare_news_item(
 
         logger.info("requests_completed")
 
-        tags = Counter()
+        tags: Counter[str] = Counter()
 
         for result in results:
             tags.update(result.tags)
