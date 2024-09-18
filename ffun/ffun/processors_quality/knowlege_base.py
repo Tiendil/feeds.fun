@@ -109,6 +109,20 @@ class KnowlegeBase:
             actual_path = self._dir_tags_actual / processor / f"{id_to_name(entry_id)}.toml"
             actual_path.write_text(content)
 
+    def save_expected_data(
+        self, processor: str, entry_id: int, tags_must_have: set[str], tags_should_have: set[str]
+    ) -> None:
+        if tags_must_have & tags_should_have:
+            raise NotImplementedError("tags_must_have and tags_should_have should not intersect")
+
+        (self._dir_tags_expected / processor).mkdir(parents=True, exist_ok=True)
+
+        tags_path = self._dir_tags_expected / processor / f"{id_to_name(entry_id)}.toml"
+
+        data = {"tags_must_have": list(sorted(tags_must_have)), "tags_should_have": list(sorted(tags_should_have))}
+
+        tags_path.write_text(toml.dumps(data))
+
     def copy_last_to_actual(self, processor: str, entry_id: int) -> None:
         last_path = self._dir_tags_last / processor / f"{id_to_name(entry_id)}.toml"
         actual_path = self._dir_tags_actual / processor / f"{id_to_name(entry_id)}.toml"

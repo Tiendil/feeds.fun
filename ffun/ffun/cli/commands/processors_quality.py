@@ -1,5 +1,6 @@
 import asyncio
 import pathlib
+from collections import Counter
 
 import typer
 
@@ -135,3 +136,44 @@ async def run_deff_all(processor_name: str, knowlege_root: pathlib.Path = _root,
 @cli_app.command()
 def diff_all(processor: str, knowlege_root: pathlib.Path = _root, show_tag_diffs: bool = False) -> None:
     asyncio.run(run_deff_all(processor, knowlege_root=knowlege_root, show_tag_diffs=show_tag_diffs))
+
+
+async def run_prepare_news_item(
+    processor: str, entry_id: int, knowlege_root: pathlib.Path, requests_number: int, min_tags_count: int
+) -> None:
+    results = []
+
+    async with with_app():
+        kb = KnowlegeBase(knowlege_root)
+
+        for i in range(requests_number):
+            logger.info("requesting_tags", step=i, steps_number=requests_number)
+            result = await single_run(processor, entry_id, kb, actual=True)
+            results.append(result)
+
+        logger.info("requests_completed")
+
+        tags: Counter[str] = Counter()
+
+        for result in results:
+            tags.update(result.tags)
+
+        tags_must_have = {tag for tag, count in tags.items() if count == requests_number}
+        tags_should_have = {tag for tag, count in tags.items() if min_tags_count <= count < requests_number}
+
+        kb.save_expected_data(processor, entry_id, tags_must_have=tags_must_have, tags_should_have=tags_should_have)
+
+
+@cli_app.command()
+def prepere_news_item(
+    processor: str, entry: int, knowlege_root: pathlib.Path = _root, requests_number: int = 5, min_tags_count: int = 3
+) -> None:
+    asyncio.run(
+        run_prepare_news_item(
+            processor,
+            entry_id=entry,
+            knowlege_root=knowlege_root,
+            requests_number=requests_number,
+            min_tags_count=min_tags_count,
+        )
+    )
