@@ -139,11 +139,7 @@ def diff_all(processor: str, knowlege_root: pathlib.Path = _root, show_tag_diffs
 
 
 async def run_prepare_news_item(
-        processor: str,
-        entry_id: int,
-        knowlege_root: pathlib.Path,
-        requests_number: int,
-        min_tags_count: int
+    processor: str, entry_id: int, knowlege_root: pathlib.Path, requests_number: int, min_tags_count: int
 ) -> None:
     results = []
 
@@ -169,5 +165,15 @@ async def run_prepare_news_item(
 
 
 @cli_app.command()
-def prepere_news_item(processor: str, entry: int, knowlege_root: pathlib.Path = _root, requests_number: int = 5, min_tags_count: int = 3) -> None:
-    asyncio.run(run_prepare_news_item(processor, entry_id=entry, knowlege_root=knowlege_root, requests_number=requests_number, min_tags_count=min_tags_count))
+def prepere_news_item(
+    processor: str, entry: int, knowlege_root: pathlib.Path = _root, requests_number: int = 5, min_tags_count: int = 3
+) -> None:
+    asyncio.run(
+        run_prepare_news_item(
+            processor,
+            entry_id=entry,
+            knowlege_root=knowlege_root,
+            requests_number=requests_number,
+            min_tags_count=min_tags_count,
+        )
+    )
