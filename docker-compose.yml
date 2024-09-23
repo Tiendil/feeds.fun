@@ -102,6 +102,7 @@ services:
       - ${PWD}/ffun:/repository
       - ${PWD}/.env:/repository/.env
       - ${PWD}/.configs:/repository/.configs
+      - ${PWD}/feeds_collections:/repository/feeds_collections
 
     environment:
       FFUN_ENABLE_API: "${FFUN_ENABLE_API:-True}"
@@ -126,6 +127,7 @@ services:
       - ${PWD}/.env:/repository/.env
       - ${PWD}/.configs:/repository/.configs
       - ${PWD}/tags_quality_base:/repository/tags_quality_base
+      - ${PWD}/feeds_collections:/repository/feeds_collections
       - ${PWD}/changes:/repository/changes
       - ${PWD}/CHANGELOG.md:/repository/CHANGELOG.md
 

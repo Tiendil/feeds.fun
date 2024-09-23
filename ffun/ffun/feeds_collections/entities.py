@@ -4,11 +4,6 @@ from typing import Any, NewType
 
 from ffun.core.entities import BaseEntity
 
-# class Collection(str, enum.Enum):
-#     gamedev = "gamedev"
-#     artificial_intelligence = "artificial_intelligence"
-#     feeds_fun = "feeds_fun"
-
 
 class FeedInfo(BaseEntity):
     url: str

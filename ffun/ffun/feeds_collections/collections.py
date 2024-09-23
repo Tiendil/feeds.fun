@@ -10,6 +10,7 @@ from ffun.feeds.entities import FeedId, Feed
 from ffun.feeds_collections.entities import Collection
 from ffun.feeds_collections.predefines import predefines
 from ffun.feeds_collections.settings import settings
+from ffun.feeds_collections import errors
 
 
 class Collections:
@@ -34,6 +35,13 @@ class Collections:
 
         self._collections = collections
 
+    # TODO: test
+    def validate_collection_ids(self) -> None:
+        ids = {c.id for c in self._collections}
+
+        if len(ids) != len(self._collections):
+            raise errors.DuplicateCollectionIds()
+
     # This method may become a bottleneck if there are too many feeds in collections.
     # It could be optimized/removed by refactoring collections to be stored in a database
     # linked to all necessary ids only once.
@@ -56,10 +64,13 @@ class Collections:
 
         self._feeds_in_collections = set(feed_ids)
 
+    # TODO: test
     async def initialize(self, collection_configs: pathlib.Path | None = settings.collection_configs) -> None:
 
         if collection_configs is not None:
             self.load(collection_configs)
+
+        self.validate_collection_ids()
 
         await self.prepare_feeds()
 
