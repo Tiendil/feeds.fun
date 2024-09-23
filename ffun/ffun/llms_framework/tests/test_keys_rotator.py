@@ -9,7 +9,9 @@ from pytest_mock import MockerFixture
 from ffun.application.resources import Resource as AppResource
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
-from ffun.feeds_collections import domain as fc_domain
+from ffun.feeds import domain as f_domain
+from ffun.feeds_collections.collections import collections
+from ffun.feeds_collections.entities import CollectionId, FeedInfo
 from ffun.feeds_links import domain as fl_domain
 from ffun.llms_framework import errors
 from ffun.llms_framework.entities import (
@@ -518,9 +520,18 @@ class TestChooseUserKey:
 
     @pytest.mark.asyncio
     async def test_protection_from_collections_processing(
-        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext
+            self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext,
+            collection_id_for_test_feeds: CollectionId
     ) -> None:
-        fc_domain.add_test_feed_to_collections(select_key_context.feed_id)
+
+        feed = await f_domain.get_feed(select_key_context.feed_id)
+
+        assert feed.title is not None
+        assert feed.description is not None
+
+        feed_info = FeedInfo(url=feed.url, title=feed.title, description=feed.description)
+
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, feed_info)
 
         with pytest.raises(errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys):
             await _choose_user_key(fake_llm_provider, select_key_context)

@@ -6,7 +6,7 @@ from furl import furl
 from ffun.core import logging, utils
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedId, FeedState
-from ffun.feeds_collections import domain as fc_domain
+from ffun.feeds_collections.collections import collections
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
@@ -76,7 +76,7 @@ async def load_content_with_proxies(url: str) -> httpx.Response:  # noqa: CCR001
 
 
 async def detect_orphaned(feed_id: FeedId) -> bool:
-    if await fc_domain.is_feed_in_collections(feed_id):
+    if collections.has_feed(feed_id):
         return False
 
     if await fl_domain.has_linked_users(feed_id):
