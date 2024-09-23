@@ -1,4 +1,3 @@
-import functools
 import pathlib
 
 import pydantic_settings

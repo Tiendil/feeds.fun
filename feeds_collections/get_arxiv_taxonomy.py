@@ -1,6 +1,7 @@
+import re
+
 import httpx
 import toml
-import re
 from bs4 import BeautifulSoup, NavigableString
 
 
@@ -11,13 +12,12 @@ def parse_sub_subcategories(meta_category: str, sub_category: str, root):
         if isinstance(el, NavigableString):
             continue
 
-        name = el.find('h4').text
-        description = el.find('p').text
+        name = el.find("h4").text
+        description = el.find("p").text
 
-        categories.append({'meta_category': meta_category,
-                           'sub_category': sub_category,
-                           'name': name,
-                           'description': description})
+        categories.append(
+            {"meta_category": meta_category, "sub_category": sub_category, "name": name, "description": description}
+        )
 
     return categories
 
@@ -30,7 +30,7 @@ def parse_sub_subcategories_container(meta_category: str, root):
     if len(children) == 1:
         return parse_sub_subcategories(meta_category, meta_category, children[0])
 
-    name = children[0].find('h3').text
+    name = children[0].find("h3").text
 
     return parse_sub_subcategories(meta_category, name, children[1])
 
@@ -48,9 +48,9 @@ def parse_subcategories(meta_category: str, root):
 
 def parse(content: str):  # noqa
 
-    soup = BeautifulSoup(content, 'html.parser')
+    soup = BeautifulSoup(content, "html.parser")
 
-    root = soup.find(id='category_taxonomy_list')
+    root = soup.find(id="category_taxonomy_list")
 
     categories = []
 
@@ -63,7 +63,7 @@ def parse(content: str):  # noqa
             continue
 
         if state == "wait_for_title":
-            if el.name == 'h2':
+            if el.name == "h2":
                 meta_category = el.text
                 state = "wait_for_subcategories"
                 continue
@@ -71,7 +71,7 @@ def parse(content: str):  # noqa
             raise NotImplementedError()
 
         if state == "wait_for_subcategories":
-            if el.name == 'div':
+            if el.name == "div":
                 subcategories = parse_subcategories(meta_category, el)
                 categories.extend(subcategories)
                 state = "wait_for_title"
@@ -93,15 +93,15 @@ def normalize(raw_categories):
 
     for raw_category in raw_categories:
 
-        cat_id, cat_name = CAT_ID_AND_NAME_REGEX.match(raw_category['name']).groups()
+        cat_id, cat_name = CAT_ID_AND_NAME_REGEX.match(raw_category["name"]).groups()
 
         cat_name = cat_name.strip()
 
-        meta_name = raw_category['meta_category'].strip()
-        parent_name = raw_category['sub_category'].strip()
+        meta_name = raw_category["meta_category"].strip()
+        parent_name = raw_category["sub_category"].strip()
 
-        if '(' in parent_name:
-            parent_name = parent_name.split('(')[0].strip()
+        if "(" in parent_name:
+            parent_name = parent_name.split("(")[0].strip()
 
         title_parts = [meta_name]
 
@@ -114,9 +114,9 @@ def normalize(raw_categories):
         title = " :: ".join(title_parts)
 
         category = {
-            'url': f"https://rss.arxiv.org/rss/{cat_id}",
+            "url": f"https://rss.arxiv.org/rss/{cat_id}",
             "title": title,
-            "description": raw_category['description']
+            "description": raw_category["description"],
         }
 
         categories.append(category)

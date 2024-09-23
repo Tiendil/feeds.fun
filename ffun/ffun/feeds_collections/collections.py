@@ -1,16 +1,12 @@
-from typing import Iterable
 import pathlib
+
 import toml
 
-import async_lru
-
 from ffun.feeds import domain as f_domain
-from ffun.feeds import errors as f_errors
-from ffun.feeds.entities import FeedId, Feed
-from ffun.feeds_collections.entities import Collection
-from ffun.feeds_collections.predefines import predefines
-from ffun.feeds_collections.settings import settings
+from ffun.feeds.entities import Feed, FeedId
 from ffun.feeds_collections import errors
+from ffun.feeds_collections.entities import Collection
+from ffun.feeds_collections.settings import settings
 
 
 class Collections:
@@ -52,10 +48,12 @@ class Collections:
         # ensure that all feeds are really in the DB
         for collection in self._collections:
             for feed_info in collection.feeds:
-                real_feed = Feed(id=f_domain.new_feed_id(),
-                                 url=feed_info.url,
-                                 title=feed_info.title,
-                                 description=feed_info.description)
+                real_feed = Feed(
+                    id=f_domain.new_feed_id(),
+                    url=feed_info.url,
+                    title=feed_info.title,
+                    description=feed_info.description,
+                )
 
                 feeds_infos.append(real_feed)
                 feeds_to_process.append(real_feed)

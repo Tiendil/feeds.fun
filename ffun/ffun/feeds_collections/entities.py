@@ -1,6 +1,5 @@
-import enum
 import uuid
-from typing import Any, NewType
+from typing import NewType
 
 from ffun.core.entities import BaseEntity
 
