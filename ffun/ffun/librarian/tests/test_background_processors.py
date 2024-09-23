@@ -6,8 +6,8 @@ from structlog.testing import capture_logs
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
 from ffun.feeds.entities import FeedId
-from ffun.feeds_collections.entities import CollectionId
 from ffun.feeds_collections.collections import collections
+from ffun.feeds_collections.entities import CollectionId
 from ffun.librarian import operations
 from ffun.librarian.background_processors import EntriesProcessor
 from ffun.librarian.tests import make
@@ -138,8 +138,11 @@ class TestEntriesProcessors:
 
     @pytest.mark.asyncio
     async def test_separate_entries__collections_not_allowed(
-            self, fake_entries_processor: EntriesProcessor, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId,
-            collection_id_for_test_feeds: CollectionId
+        self,
+        fake_entries_processor: EntriesProcessor,
+        loaded_feed_id: FeedId,
+        another_loaded_feed_id: FeedId,
+        collection_id_for_test_feeds: CollectionId,
     ) -> None:
         entries_1 = await l_make.n_entries(loaded_feed_id, 3)
         entries_2 = await l_make.n_entries(another_loaded_feed_id, 2)
@@ -171,8 +174,11 @@ class TestEntriesProcessors:
 
     @pytest.mark.asyncio
     async def test_separate_entries__all_allowed(
-            self, fake_entries_processor: EntriesProcessor, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId,
-            collection_id_for_test_feeds: CollectionId
+        self,
+        fake_entries_processor: EntriesProcessor,
+        loaded_feed_id: FeedId,
+        another_loaded_feed_id: FeedId,
+        collection_id_for_test_feeds: CollectionId,
     ) -> None:
         entries_1 = await l_make.n_entries(loaded_feed_id, 3)
         entries_2 = await l_make.n_entries(another_loaded_feed_id, 2)
@@ -204,8 +210,11 @@ class TestEntriesProcessors:
 
     @pytest.mark.asyncio
     async def test_separate_entries__users_not_allowed(
-            self, fake_entries_processor: EntriesProcessor, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId,
-            collection_id_for_test_feeds: CollectionId
+        self,
+        fake_entries_processor: EntriesProcessor,
+        loaded_feed_id: FeedId,
+        another_loaded_feed_id: FeedId,
+        collection_id_for_test_feeds: CollectionId,
     ) -> None:
         entries_1 = await l_make.n_entries(loaded_feed_id, 3)
         entries_2 = await l_make.n_entries(another_loaded_feed_id, 2)

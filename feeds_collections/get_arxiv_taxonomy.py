@@ -1,6 +1,7 @@
 import re
 import sys
 from typing import Any
+
 import httpx
 import toml
 from bs4 import BeautifulSoup, NavigableString, Tag

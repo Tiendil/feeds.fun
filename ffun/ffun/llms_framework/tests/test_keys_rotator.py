@@ -9,9 +9,8 @@ from pytest_mock import MockerFixture
 from ffun.application.resources import Resource as AppResource
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
-from ffun.feeds import domain as f_domain
 from ffun.feeds_collections.collections import collections
-from ffun.feeds_collections.entities import CollectionId, FeedInfo
+from ffun.feeds_collections.entities import CollectionId
 from ffun.feeds_links import domain as fl_domain
 from ffun.llms_framework import errors
 from ffun.llms_framework.entities import (
@@ -520,8 +519,10 @@ class TestChooseUserKey:
 
     @pytest.mark.asyncio
     async def test_protection_from_collections_processing(
-            self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext,
-            collection_id_for_test_feeds: CollectionId
+        self,
+        fake_llm_provider: ProviderTest,
+        select_key_context: SelectKeyContext,
+        collection_id_for_test_feeds: CollectionId,
     ) -> None:
         await collections.add_test_feed_to_collections(collection_id_for_test_feeds, select_key_context.feed_id)
 
