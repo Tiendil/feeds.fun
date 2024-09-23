@@ -14,8 +14,8 @@ class Collections:
 
     def __init__(self) -> None:
         self.initialized = False
-        self._collections = []
-        self._feeds_in_collections = set()
+        self._collections: list[Collection] = []
+        self._feeds_in_collections: set[FeedId] = set()
 
     # TODO: test
     def load(self, collection_configs: pathlib.Path) -> None:
