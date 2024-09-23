@@ -6,26 +6,42 @@ import pytest
 import pytest_asyncio
 
 from ffun.feeds.domain import save_feed
-from ffun.feeds.entities import Feed
+from ffun.feeds.entities import Feed, FeedId
 from ffun.feeds.tests import make as f_make
-from ffun.feeds_collections import predefines
+from ffun.feeds_collections.settings import settings
+from ffun.feeds_collections.collections import collections
+from ffun.feeds_collections.entities import Collection, FeedInfo, CollectionId
+from ffun.feeds_collections.domain import new_collection_id
 
 
-@functools.cache
-def all_urls() -> set[str]:
-    urls = set()
-
-    for collection in predefines.predefines.values():
-        urls.update(collection)
-
-    return urls
+@pytest.fixture(scope="session")
+def collection_configs_should_be_none_in_tests() -> None:
+    assert settings.collection_configs is None
 
 
-@pytest.fixture
-def new_collection_feed() -> Feed:
-    return f_make.fake_feed(url=random.choice(list(all_urls())))
+@pytest_asyncio.fixture(scope="session")
+async def collection_id_for_test_feeds() -> CollectionId:
+    collection = Collection(id=new_collection_id(),
+                            name=uuid.uuid4().hex,
+                            description=uuid.uuid4().hex,
+                            feeds=[])
+
+    await collections.add_test_collection(collection)
+
+    return collection.id
 
 
 @pytest_asyncio.fixture
-async def saved_collection_feed_id(new_collection_feed: Feed) -> uuid.UUID:
-    return await save_feed(new_collection_feed)
+async def saved_collection_feed_id(collection_id_for_test_feeds: CollectionId) -> FeedId:
+    feeds = await f_make.n_feeds(1)
+
+    feed = feeds[0]
+
+    assert feed.title
+    assert feed.description
+
+    feed_info = FeedInfo(url=feed.url, title=feed.title, description=feed.description)
+
+    await collections.add_test_feed_to_collections(collection_id_for_test_feeds, feed_info)
+
+    return feed.id

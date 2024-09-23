@@ -5,7 +5,7 @@ import toml
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedId
 from ffun.feeds_collections import errors
-from ffun.feeds_collections.entities import Collection
+from ffun.feeds_collections.entities import Collection, CollectionId, FeedInfo
 from ffun.feeds_collections.settings import settings
 
 
@@ -79,9 +79,21 @@ class Collections:
         return feed_id in self._feeds_in_collections
 
     # TODO: test
+    async def add_test_collection(self, collection: Collection) -> None:
+        self._collections.append(collection)
+        await self.initialize(collection_configs=None)
+
+    # TODO: test
     # TODO: switch all mocks in tests to this function
-    def add_test_feed_to_collections(self, feed_id: FeedId) -> None:
-        self._feeds_in_collections.add(feed_id)
+    async def add_test_feed_to_collections(self, collection_id: CollectionId, feed_info: FeedInfo) -> None:
+        for collection in self._collections:
+            if collection.id == collection_id:
+                collection.feeds.append(feed_info)
+                break
+        else:
+            raise NotImplementedError("Collection not found")
+
+        await self.initialize(collection_configs=None)
 
 
 collections = Collections()
