@@ -85,7 +85,15 @@ class Collections:
 
     # TODO: test
     # TODO: switch all mocks in tests to this function
-    async def add_test_feed_to_collections(self, collection_id: CollectionId, feed_info: FeedInfo) -> None:
+    async def add_test_feed_to_collections(self, collection_id: CollectionId, feed_id: FeedId) -> None:
+
+        feed = await f_domain.get_feed(feed_id)
+
+        assert feed.title
+        assert feed.description
+
+        feed_info = FeedInfo(url=feed.url, title=feed.title, description=feed.description)
+
         for collection in self._collections:
             if collection.id == collection_id:
                 collection.feeds.append(feed_info)

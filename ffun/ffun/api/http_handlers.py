@@ -13,7 +13,6 @@ from ffun.auth.dependencies import User
 from ffun.core import logging
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
-from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_discoverer import domain as fd_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
@@ -261,30 +260,31 @@ async def api_unsubscribe(request: entities.UnsubscribeRequest, user: User) -> e
     return entities.UnsubscribeResponse()
 
 
-@router.post("/api/get-feeds-collections")
-async def api_get_feeds_collections(
-    request: entities.GetFeedsCollectionsRequest, user: User
-) -> entities.GetFeedsCollectionsResponse:
-    collections = list(fc_domain.get_collections())
+# TODO: refactor
+# @router.post("/api/get-feeds-collections")
+# async def api_get_feeds_collections(
+#     request: entities.GetFeedsCollectionsRequest, user: User
+# ) -> entities.GetFeedsCollectionsResponse:
+#     collections = list(fc_domain.get_collections())
 
-    return entities.GetFeedsCollectionsResponse(collections=collections)
+#     return entities.GetFeedsCollectionsResponse(collections=collections)
 
 
-@router.post("/api/subscribe-to-feeds-collections")
-async def api_subscribe_to_feeds_collections(
-    request: entities.SubscribeToFeedsCollectionsRequest, user: User
-) -> entities.SubscribeToFeedsCollectionsResponse:
-    feeds = []
+# @router.post("/api/subscribe-to-feeds-collections")
+# async def api_subscribe_to_feeds_collections(
+#     request: entities.SubscribeToFeedsCollectionsRequest, user: User
+# ) -> entities.SubscribeToFeedsCollectionsResponse:
+#     feeds = []
 
-    for collection in request.collections:
-        feed_urls = fc_domain.get_feeds_for_collecton(collection)
+#     for collection in request.collections:
+#         feed_urls = fc_domain.get_feeds_for_collecton(collection)
 
-        for feed_url in feed_urls:
-            feeds.append(p_entities.FeedInfo(url=feed_url, title="unknown", description="unknown", entries=[]))
+#         for feed_url in feed_urls:
+#             feeds.append(p_entities.FeedInfo(url=feed_url, title="unknown", description="unknown", entries=[]))
 
-    await _add_feeds(feeds, user)
+#     await _add_feeds(feeds, user)
 
-    return entities.SubscribeToFeedsCollectionsResponse()
+#     return entities.SubscribeToFeedsCollectionsResponse()
 
 
 @router.post("/api/get-tags-info")

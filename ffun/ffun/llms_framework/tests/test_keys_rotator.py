@@ -523,15 +523,7 @@ class TestChooseUserKey:
             self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext,
             collection_id_for_test_feeds: CollectionId
     ) -> None:
-
-        feed = await f_domain.get_feed(select_key_context.feed_id)
-
-        assert feed.title is not None
-        assert feed.description is not None
-
-        feed_info = FeedInfo(url=feed.url, title=feed.title, description=feed.description)
-
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, feed_info)
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, select_key_context.feed_id)
 
         with pytest.raises(errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys):
             await _choose_user_key(fake_llm_provider, select_key_context)

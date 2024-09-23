@@ -29,19 +29,3 @@ async def collection_id_for_test_feeds() -> CollectionId:
     await collections.add_test_collection(collection)
 
     return collection.id
-
-
-@pytest_asyncio.fixture
-async def saved_collection_feed_id(collection_id_for_test_feeds: CollectionId) -> FeedId:
-    feeds = await f_make.n_feeds(1)
-
-    feed = feeds[0]
-
-    assert feed.title
-    assert feed.description
-
-    feed_info = FeedInfo(url=feed.url, title=feed.title, description=feed.description)
-
-    await collections.add_test_feed_to_collections(collection_id_for_test_feeds, feed_info)
-
-    return feed.id
