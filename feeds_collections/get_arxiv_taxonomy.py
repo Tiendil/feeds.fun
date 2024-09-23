@@ -1,11 +1,12 @@
 import re
-
+import sys
+from typing import Any
 import httpx
 import toml
-from bs4 import BeautifulSoup, NavigableString
+from bs4 import BeautifulSoup, NavigableString, Tag
 
 
-def parse_sub_subcategories(meta_category: str, sub_category: str, root):
+def parse_sub_subcategories(meta_category: str, sub_category: str, root: Any) -> list[dict[str, str]]:
     categories = []
 
     for el in root.children:
@@ -22,7 +23,7 @@ def parse_sub_subcategories(meta_category: str, sub_category: str, root):
     return categories
 
 
-def parse_sub_subcategories_container(meta_category: str, root):
+def parse_sub_subcategories_container(meta_category: str, root: Any) -> list[dict[str, str]]:
     children = list(root.children)
 
     children = [child for child in children if not isinstance(child, NavigableString)]
@@ -35,7 +36,7 @@ def parse_sub_subcategories_container(meta_category: str, root):
     return parse_sub_subcategories(meta_category, name, children[1])
 
 
-def parse_subcategories(meta_category: str, root):
+def parse_subcategories(meta_category: str, root: Any) -> list[dict[str, str]]:
     categories = []
 
     for el in root.children:
@@ -46,11 +47,13 @@ def parse_subcategories(meta_category: str, root):
     return categories
 
 
-def parse(content: str):  # noqa
+def parse(content: str) -> list[dict[str, str]]:  # noqa
 
     soup = BeautifulSoup(content, "html.parser")
 
     root = soup.find(id="category_taxonomy_list")
+
+    assert isinstance(root, Tag)
 
     categories = []
 
@@ -59,7 +62,7 @@ def parse(content: str):  # noqa
     state = "wait_for_title"
 
     for el in root.children:
-        if isinstance(el, NavigableString):
+        if not isinstance(el, Tag):
             continue
 
         if state == "wait_for_title":
@@ -72,6 +75,8 @@ def parse(content: str):  # noqa
 
         if state == "wait_for_subcategories":
             if el.name == "div":
+                assert meta_category is not None
+
                 subcategories = parse_subcategories(meta_category, el)
                 categories.extend(subcategories)
                 state = "wait_for_title"
@@ -88,12 +93,12 @@ def parse(content: str):  # noqa
 CAT_ID_AND_NAME_REGEX = re.compile(r"(.*) \((.*)\)")
 
 
-def normalize(raw_categories):
+def normalize(raw_categories: list[dict[str, str]]) -> list[dict[str, str]]:
     categories = []
 
     for raw_category in raw_categories:
 
-        cat_id, cat_name = CAT_ID_AND_NAME_REGEX.match(raw_category["name"]).groups()
+        cat_id, cat_name = CAT_ID_AND_NAME_REGEX.match(raw_category["name"]).groups()  # type: ignore
 
         cat_name = cat_name.strip()
 
@@ -124,16 +129,18 @@ def normalize(raw_categories):
     return categories
 
 
-def main():
+def main() -> None:
     url = "https://arxiv.org/category_taxonomy"
 
     response = httpx.get(url)
 
-    raw_categories = parse(response.content)
+    raw_categories = parse(response.text)
 
     categories = normalize(raw_categories)
 
-    print(toml.dumps({"feeds": categories}))
+    sys.stdout.write("\n")
+    sys.stdout.write(toml.dumps({"feeds": categories}))
+    sys.stdout.write("\n")
 
 
 if __name__ == "__main__":

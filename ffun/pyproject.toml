@@ -188,21 +188,22 @@ filterwarnings = [
 
 [tool.flake8]
 ignore = [
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D104",
-    "D105",
-    "D106",
-    "D107",
-    "D200",
-    "D400",
-    "S101",
-    "S311",
-    "W503",
-    "CFQ004",
-    "E203",  # blake formats [x:y] with spaves
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D105",
+  "D106",
+  "D107",
+  "D200",
+  "D400",
+  "D401",
+  "S101",
+  "S311",
+  "W503",
+  "CFQ004",
+  "E203",  # blake formats [x:y] with spaves
 ]
 max-line-length = 119
 
