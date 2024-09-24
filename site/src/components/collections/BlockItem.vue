@@ -1,7 +1,7 @@
 <template>
   <div>
     <input
-      class="ffun-checkbox"
+      class="ffun-checkbox align-top m-1"
       type="checkbox"
       :id="collection.id"
       :name="collection.name"
@@ -11,7 +11,14 @@
     <label
       class="ml-2"
       :for="collection.id"
-      >{{ collection.name }}</label>
+      >
+      <div class="inline-block">
+        {{ collection.name }}
+        <p class="">{{ collection.description }}</p>
+      </div>
+    </label>
+
+
   </div>
 </template>
 
