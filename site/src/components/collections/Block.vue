@@ -64,7 +64,7 @@ async function subscribe() {
   error.value = false;
 
   try {
-    await api.subscribeToFeedsCollections({
+    await api.subscribeToCollections({
       collectionsIds: selectedCollections.value
     });
 

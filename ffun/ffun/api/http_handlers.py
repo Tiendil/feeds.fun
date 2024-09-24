@@ -285,8 +285,8 @@ async def api_get_collection_feeds(
     return entities.GetCollectionFeedsResponse(feeds=feeds)
 
 
-@router.post("/api/subscribe-to-collection")
-async def api_subscribe_to_feeds_collections(
+@router.post("/api/subscribe-to-collections")
+async def api_subscribe_to_collections(
     request: entities.SubscribeToCollectionsRequest, user: User
 ) -> entities.SubscribeToCollectionsResponse:
     feeds = []
