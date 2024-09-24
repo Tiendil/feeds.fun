@@ -399,18 +399,18 @@ export class Collection {
 
   constructor({
     id,
-    title,
+    name,
     description,
     feedsNumber
   }: {
     id: CollectionId;
-    title: string;
+    name: string;
     description: string;
     feedsNumber: number;
 
   }) {
     this.id = id;
-    this.title = title;
+    this.name = name;
     this.description = description;
     this.feedsNumber = feedsNumber;
   }
@@ -418,18 +418,18 @@ export class Collection {
 
 export function collectionFromJSON({
   id,
-  title,
+  name,
   description,
   feedsNumber
 }: {
   id: string;
-  title: string;
+  name: string;
   description: string;
   feedsNumber: number;
 }): Collection {
   return {
     id: toCollectionId(id),
-    title: title,
+    name: name,
     description: description,
     feedsNumber: feedsNumber
   };

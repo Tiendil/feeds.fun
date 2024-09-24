@@ -2,7 +2,7 @@
   <div>
     <form @submit.prevent="subscribe">
       <ul class="mb-1">
-        <li v-for="item in collections">
+        <li v-for="collectionId in collectionIds">
           <input
             class="ffun-checkbox"
             type="checkbox"
@@ -14,7 +14,7 @@
           <label
             class="ml-2"
             :for="item"
-            >{{ item }}</label
+            >{{ getCollection(collectionId).name }}</label
           >
         </li>
       </ul>
@@ -48,55 +48,61 @@
 
 <script lang="ts" setup>
   import {computed, ref} from "vue";
-  import type * as t from "@/logic/types";
-  import * as e from "@/logic/enums";
-  import * as api from "@/logic/api";
-  import {computedAsync} from "@vueuse/core";
-  import DOMPurify from "dompurify";
-  import {useEntriesStore} from "@/stores/entries";
-  import {useGlobalSettingsStore} from "@/stores/globalSettings";
+import type * as t from "@/logic/types";
+import * as e from "@/logic/enums";
+import * as api from "@/logic/api";
+import {computedAsync} from "@vueuse/core";
+import DOMPurify from "dompurify";
+import {useEntriesStore} from "@/stores/entries";
+import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
-  const loading = ref(false);
-  const loaded = ref(false);
-  const error = ref(false);
+const loading = ref(false);
+const loaded = ref(false);
+const error = ref(false);
 
-  const selectedCollections = ref<t.FeedsCollectionId[]>([]);
+const selectedCollections = ref<t.FeedsCollectionId[]>([]);
 
-  const globalSettings = useGlobalSettingsStore();
+const globalSettings = useGlobalSettingsStore();
 
-  const collections = computedAsync(async () => {
-    const collections = await api.getCollections();
+const collections = computedAsync(async () => {
+  const collections = await api.getCollections();
 
-    for (const collection of collections) {
-      selectedCollections.value.push(collection.id);
-    }
-
-    return collections;
-  });
-
-  async function subscribe() {
-    loading.value = true;
-    loaded.value = false;
-    error.value = false;
-
-    try {
-      await api.subscribeToFeedsCollections({
-        collectionsIds: selectedCollections.value
-      });
-
-      loading.value = false;
-      loaded.value = true;
-      error.value = false;
-    } catch (e) {
-      console.error(e);
-
-      loading.value = false;
-      loaded.value = false;
-      error.value = true;
-    }
-
-    globalSettings.updateDataVersion();
+  for (const collection of collections) {
+    selectedCollections.value.push(collection.id);
   }
+
+  return collections;
+}, []);
+
+const collectionIds = computed(() => collections.value.map((c) => c.id));
+
+function getCollection(id: t.FeedsCollectionId) {
+  return collections.value.find((c) => c.id === id);
+}
+
+async function subscribe() {
+  loading.value = true;
+  loaded.value = false;
+  error.value = false;
+
+  try {
+    await api.subscribeToFeedsCollections({
+      collectionsIds: selectedCollections.value
+    });
+
+    loading.value = false;
+    loaded.value = true;
+    error.value = false;
+  } catch (e) {
+    console.error(e);
+
+    loading.value = false;
+    loaded.value = false;
+    error.value = true;
+  }
+
+  globalSettings.updateDataVersion();
+}
 </script>
 
 <style scoped></style>
