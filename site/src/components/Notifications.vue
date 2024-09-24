@@ -1,6 +1,6 @@
 <template>
   <notification-api-key v-if="showAPIKeyNotification" />
-  <notification-collections v-if="showCollectionsNotification" />
+  <collections-notification v-if="showCollectionsNotification" />
   <notification-create-rule-help v-if="showCreateRuleHelpNotification" />
 </template>
 
