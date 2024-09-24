@@ -19,6 +19,7 @@ CollectionId = NewType("CollectionId", uuid.UUID)
 
 class Collection(BaseEntity):
     id: CollectionId
+    gui_order: int
     name: str
     description: str
     feeds: list[FeedInfo]

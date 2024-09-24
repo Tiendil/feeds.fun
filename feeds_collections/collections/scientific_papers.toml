@@ -1,4 +1,5 @@
 id = "eb66a806-7168-450a-81c8-166f7624bf97"
+gui_order = 2
 name = "Scientific Papers"
 description = "Feeds of new scientific papers and preprints from official sources"
 

@@ -2,7 +2,7 @@
   <div>
     <form @submit.prevent="subscribe">
       <ul class="mb-1">
-        <li v-for="collectionId in collectionIds">
+        <li v-for="collectionId in collections.collectionsOrder">
           <input
             class="ffun-checkbox"
             type="checkbox"
@@ -14,7 +14,7 @@
           <label
             class="ml-2"
             :for="item"
-            >{{ getCollection(collectionId).name }}</label
+            >{{ collections.collections[collectionId].name }}</label
           >
         </li>
       </ul>
@@ -55,6 +55,7 @@ import {computedAsync} from "@vueuse/core";
 import DOMPurify from "dompurify";
 import {useEntriesStore} from "@/stores/entries";
 import {useGlobalSettingsStore} from "@/stores/globalSettings";
+import {useCollectionsStore} from "@/stores/collections";
 
 const loading = ref(false);
 const loaded = ref(false);
@@ -64,21 +65,7 @@ const selectedCollections = ref<t.FeedsCollectionId[]>([]);
 
 const globalSettings = useGlobalSettingsStore();
 
-const collections = computedAsync(async () => {
-  const collections = await api.getCollections();
-
-  for (const collection of collections) {
-    selectedCollections.value.push(collection.id);
-  }
-
-  return collections;
-}, []);
-
-const collectionIds = computed(() => collections.value.map((c) => c.id));
-
-function getCollection(id: t.FeedsCollectionId) {
-  return collections.value.find((c) => c.id === id);
-}
+const collections = useCollectionsStore();
 
 async function subscribe() {
   loading.value = true;

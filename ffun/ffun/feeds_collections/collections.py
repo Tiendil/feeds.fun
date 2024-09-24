@@ -53,6 +53,13 @@ class Collections:
         if len(ids) != len(self._collections):
             raise errors.DuplicateCollectionIds()
 
+    # TODO: test
+    def validate_collection_gui_order(self) -> None:
+        orders = {c.gui_order for c in self._collections}
+
+        if len(orders) != len(self._collections):
+            raise errors.DuplicateCollectionOrders()
+
     # This method may become a bottleneck if there are too many feeds in collections.
     # It could be optimized/removed by refactoring collections to be stored in a database
     # linked to all necessary ids only once.
@@ -89,6 +96,7 @@ class Collections:
             self.load(collection_configs)
 
         self.validate_collection_ids()
+        self.validate_collection_gui_order()
 
         await self.prepare_feeds()
 

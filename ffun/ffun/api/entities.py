@@ -245,13 +245,18 @@ class ResourceHistoryRecord(pydantic.BaseModel):
 
 class Collection(pydantic.BaseModel):
     id: fc_entities.CollectionId
+    guiOrder: int
     name: str
     description: str
-    feeds_number: int
+    feedsNumber: int
 
     @classmethod
     def from_internal(cls, record: fc_entities.Collection) -> "Collection":
-        return cls(id=record.id, name=record.name, description=record.description, feeds_number=len(record.feeds))
+        return cls(id=record.id,
+                   guiOrder=record.gui_order,
+                   name=record.name,
+                   description=record.description,
+                   feedsNumber=len(record.feeds))
 
 
 class CollectionFeedInfo(pydantic.BaseModel):
@@ -401,7 +406,7 @@ class GetFeedsCollectionsResponse(api.APISuccess):
 
 
 class GetCollectionFeedsRequest(api.APIRequest):
-    collection_id: fc_entities.CollectionId
+    collectionId: fc_entities.CollectionId
 
 
 class GetCollectionFeedsResponse(api.APISuccess):

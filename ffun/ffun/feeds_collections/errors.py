@@ -11,3 +11,7 @@ class DuplicateCollectionIds(Error):
 
 class CollectionNotFound(Error):
     pass
+
+
+class DuplicateCollectionOrders(Error):
+    pass

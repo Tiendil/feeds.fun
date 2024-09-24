@@ -1,4 +1,5 @@
 id = "09887b50-48b0-420a-b614-772e85617cb7"
+gui_order = 1
 name = "Feeds Fun"
 description = "News of our project and related topics"
 

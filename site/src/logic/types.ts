@@ -393,23 +393,27 @@ export function resourceHistoryRecordFromJSON({
 
 export class Collection {
   readonly id: CollectionId;
+  readonly guiOrder: number;
   readonly name: string;
   readonly description: string;
   readonly feedsNumber: number;
 
   constructor({
     id,
+    guiOrder,
     name,
     description,
     feedsNumber
   }: {
     id: CollectionId;
+    guiOrder: number;
     name: string;
     description: string;
     feedsNumber: number;
 
   }) {
     this.id = id;
+    this.guiOrder = guiOrder;
     this.name = name;
     this.description = description;
     this.feedsNumber = feedsNumber;
@@ -418,17 +422,20 @@ export class Collection {
 
 export function collectionFromJSON({
   id,
+  guiOrder,
   name,
   description,
   feedsNumber
 }: {
   id: string;
+  guiOrder: number;
   name: string;
   description: string;
   feedsNumber: number;
 }): Collection {
   return {
     id: toCollectionId(id),
+    guiOrder: guiOrder,
     name: name,
     description: description,
     feedsNumber: feedsNumber
