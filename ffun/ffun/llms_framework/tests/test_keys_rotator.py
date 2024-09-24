@@ -498,7 +498,9 @@ class TestChooseCollectionsKey:
 
     @pytest.mark.asyncio
     async def test_collections_key_specified__not_in_collection(
-            self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext,
+        self,
+        fake_llm_provider: ProviderTest,
+        select_key_context: SelectKeyContext,
     ) -> None:
         key = uuid.uuid4().hex
 

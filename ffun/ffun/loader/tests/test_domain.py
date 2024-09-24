@@ -7,6 +7,8 @@ from structlog.testing import capture_logs
 from ffun.core.tests.helpers import assert_logs
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
+from ffun.feeds_collections.collections import collections
+from ffun.feeds_collections.entities import CollectionId
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
@@ -14,8 +16,6 @@ from ffun.loader.domain import check_proxies_availability, detect_orphaned, proc
 from ffun.loader.settings import Proxy, settings
 from ffun.parsers import entities as p_entities
 from ffun.parsers.tests import make as p_make
-from ffun.feeds_collections.collections import collections
-from ffun.feeds_collections.entities import CollectionId
 
 
 def assert_entriy_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:
@@ -37,7 +37,11 @@ class TestDetectOrphaned:
         assert loaded_feed.state == f_entities.FeedState.orphaned
 
     @pytest.mark.asyncio
-    async def test_is_orphaned_but_from_collection(self, saved_feed_id: f_entities.FeedId, collection_id_for_test_feeds: CollectionId,) -> None:
+    async def test_is_orphaned_but_from_collection(
+        self,
+        saved_feed_id: f_entities.FeedId,
+        collection_id_for_test_feeds: CollectionId,
+    ) -> None:
         await collections.add_test_feed_to_collections(collection_id_for_test_feeds, saved_feed_id)
 
         assert not await detect_orphaned(saved_feed_id)

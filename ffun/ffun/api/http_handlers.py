@@ -13,6 +13,7 @@ from ffun.auth.dependencies import User
 from ffun.core import logging
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
+from ffun.feeds_collections.collections import collections
 from ffun.feeds_discoverer import domain as fd_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
@@ -25,7 +26,6 @@ from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 from ffun.user_settings import domain as us_domain
-from ffun.feeds_collections.collections import collections
 
 router = fastapi.APIRouter()
 
@@ -295,10 +295,11 @@ async def api_subscribe_to_feeds_collections(
         collection = collections.collection(collection_id)
 
         for feed_info in collection.feeds:
-            feeds.append(p_entities.FeedInfo(url=feed_info.url,
-                                             title=feed_info.title,
-                                             description=feed_info.description,
-                                             entries=[]))
+            feeds.append(
+                p_entities.FeedInfo(
+                    url=feed_info.url, title=feed_info.title, description=feed_info.description, entries=[]
+                )
+            )
 
     await _add_feeds(feeds, user)
 
