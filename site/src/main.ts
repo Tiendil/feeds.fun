@@ -33,6 +33,7 @@ import UserSettingForNotification from "./components/UserSettingForNotification.
 
 import CollectionsNotification from "./components/collections/Notification.vue";
 import CollectionsBlock from "./components/collections/Block.vue";
+import CollectionsBlockItem from "./components/collections/BlockItem.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 import InputMarker from "./inputs/Marker.vue";
@@ -78,6 +79,7 @@ app.component("UserSettingForNotification", UserSettingForNotification);
 
 app.component("CollectionsNotification", CollectionsNotification);
 app.component("CollectionsBlock", CollectionsBlock);
+app.component("CollectionsBlockItem", CollectionsBlockItem);
 
 app.component("ScoreSelector", ScoreSelector);
 app.component("InputMarker", InputMarker);

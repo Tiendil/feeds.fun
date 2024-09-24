@@ -3,19 +3,9 @@
     <form @submit.prevent="subscribe">
       <ul class="mb-1">
         <li v-for="collectionId in collections.collectionsOrder">
-          <input
-            class="ffun-checkbox"
-            type="checkbox"
-            :id="item"
-            :name="item"
-            :value="item"
-            v-model="selectedCollections"
-            checked />
-          <label
-            class="ml-2"
-            :for="item"
-            >{{ collections.collections[collectionId].name }}</label
-          >
+          <colllection-block-item
+            :collectionId="collectionId"
+            :selectedCollections="selectedCollections"/>
         </li>
       </ul>
 
