@@ -7,3 +7,7 @@ class Error(errors.Error):
 
 class DuplicateCollectionIds(Error):
     pass
+
+
+class CollectionNotFound(Error):
+    pass

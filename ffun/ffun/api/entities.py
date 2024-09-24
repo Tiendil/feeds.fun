@@ -243,6 +243,32 @@ class ResourceHistoryRecord(pydantic.BaseModel):
         )
 
 
+class Collection(pydantic.BaseModel):
+    id: fc_entities.CollectionId
+    name: str
+    description: str
+    feeds_number: int
+
+    @classmethod
+    def from_internal(cls, record: fc_entities.Collection) -> "Collection":
+        return cls(id=record.id,
+                   name=record.name,
+                   description=record.description,
+                   feeds_number=len(record.feeds))
+
+
+class CollectionFeedInfo(pydantic.BaseModel):
+    url: str
+    title: str
+    description: str
+
+    @classmethod
+    def from_internal(cls, record: fc_entities.FeedInfo) -> "CollectionFeedInfo":
+        return cls(url=record.url,
+                   name=record.name,
+                   description=record.description)
+
+
 ##################
 # Request/Response
 ##################
@@ -376,14 +402,22 @@ class GetFeedsCollectionsRequest(api.APIRequest):
 
 
 class GetFeedsCollectionsResponse(api.APISuccess):
-    collections: list[fc_entities.Collection]
+    collections: list[Collection]
 
 
-class SubscribeToFeedsCollectionsRequest(api.APIRequest):
-    collections: list[fc_entities.Collection]
+class GetCollectionFeedsRequest(api.APIRequest):
+    collection_id: fc_entities.CollectionId
 
 
-class SubscribeToFeedsCollectionsResponse(api.APISuccess):
+class GetCollectionFeedsResponse(api.APISuccess):
+    feeds: list[CollectionFeedInfo]
+
+
+class SubscribeToCollectionsRequest(api.APIRequest):
+    collections: list[fc_entities.CollectionId]
+
+
+class SubscribeToCollectionsResponse(api.APISuccess):
     pass
 
 

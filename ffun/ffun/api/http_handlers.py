@@ -25,6 +25,7 @@ from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 from ffun.user_settings import domain as us_domain
+from ffun.feeds_collections.collections import collections
 
 router = fastapi.APIRouter()
 
@@ -260,31 +261,48 @@ async def api_unsubscribe(request: entities.UnsubscribeRequest, user: User) -> e
     return entities.UnsubscribeResponse()
 
 
-# TODO: refactor
-# @router.post("/api/get-feeds-collections")
-# async def api_get_feeds_collections(
-#     request: entities.GetFeedsCollectionsRequest, user: User
-# ) -> entities.GetFeedsCollectionsResponse:
-#     collections = list(fc_domain.get_collections())
+@router.post("/api/get-feeds-collections")
+async def api_get_feeds_collections(
+    request: entities.GetFeedsCollectionsRequest, user: User
+) -> entities.GetFeedsCollectionsResponse:
 
-#     return entities.GetFeedsCollectionsResponse(collections=collections)
+    internal_collections = collections.collections()
+
+    collections_to_return = [entities.Collection.from_internal(collection) for collection in internal_collections]
+
+    return entities.GetFeedsCollectionsResponse(collections=collections_to_return)
 
 
-# @router.post("/api/subscribe-to-feeds-collections")
-# async def api_subscribe_to_feeds_collections(
-#     request: entities.SubscribeToFeedsCollectionsRequest, user: User
-# ) -> entities.SubscribeToFeedsCollectionsResponse:
-#     feeds = []
+@router.post("/api/get-collection-feeds")
+async def api_get_collection_feeds(
+    request: entities.GetCollectionFeedsRequest, user: User
+) -> entities.GetCollectionFeedsResponse:
 
-#     for collection in request.collections:
-#         feed_urls = fc_domain.get_feeds_for_collecton(collection)
+    collection = collections.collection(request.collection_id)
 
-#         for feed_url in feed_urls:
-#             feeds.append(p_entities.FeedInfo(url=feed_url, title="unknown", description="unknown", entries=[]))
+    feeds = [entities.CollectionFeedInfo.from_internal(feed_info) for feed_info in collection.feeds]
 
-#     await _add_feeds(feeds, user)
+    return entities.GetCollectionFeedsResponse(feeds=feeds)
 
-#     return entities.SubscribeToFeedsCollectionsResponse()
+
+@router.post("/api/subscribe-to-collection")
+async def api_subscribe_to_feeds_collections(
+    request: entities.SubscribeToCollectionsRequest, user: User
+) -> entities.SubscribeToCollectionsResponse:
+    feeds = []
+
+    for collection_id in request.collections:
+        collection = collections.collection(collection_id)
+
+        for feed_info in collection.feeds:
+            feeds.append(p_entities.FeedInfo(url=feed_info.url,
+                                             title=feed_info.title,
+                                             description=feed_info.description,
+                                             entries=[]))
+
+    await _add_feeds(feeds, user)
+
+    return entities.SubscribeToCollectionsResponse()
 
 
 @router.post("/api/get-tags-info")

@@ -17,6 +17,17 @@ class Collections:
         self._collections: list[Collection] = []
         self._feeds_in_collections: set[FeedId] = set()
 
+    def collections(self) -> list[Collection]:
+        return list(self._collections)
+
+    # TODO: test
+    def collection(self, collection_id: CollectionId) -> Collection:
+        for collection in self._collections:
+            if collection.id == collection_id:
+                return collection
+
+        raise errors.CollectionNotFound()
+
     # TODO: test
     def load(self, collection_configs: pathlib.Path) -> None:
         """Loads all collection configs from the given directory."""
