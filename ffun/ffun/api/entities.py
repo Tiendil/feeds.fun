@@ -261,7 +261,7 @@ class CollectionFeedInfo(pydantic.BaseModel):
 
     @classmethod
     def from_internal(cls, record: fc_entities.FeedInfo) -> "CollectionFeedInfo":
-        return cls(url=record.url, name=record.name, description=record.description)
+        return cls(url=record.url, title=record.title, description=record.description)
 
 
 ##################
