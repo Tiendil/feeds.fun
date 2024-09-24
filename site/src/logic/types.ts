@@ -18,10 +18,10 @@ export function toRuleId(id: string): RuleId {
   return id as RuleId;
 }
 
-export type FeedsCollectionId = string & {readonly __brand: unique symbol};
+export type CollectionId = string & {readonly __brand: unique symbol};
 
-export function toFeedsCollectionId(id: string): FeedsCollectionId {
-  return id as FeedsCollectionId;
+export function toCollectionId(id: string): CollectionId {
+  return id as CollectionId;
 }
 
 export type URL = string & {readonly __brand: unique symbol};
@@ -388,4 +388,49 @@ export function resourceHistoryRecordFromJSON({
     used: parseFloat(used as string),
     reserved: parseFloat(reserved as string)
   });
+}
+
+
+export class Collection {
+  readonly id: CollectionId;
+  readonly name: string;
+  readonly description: string;
+  readonly feedsNumber: number;
+
+  constructor({
+    id,
+    title,
+    description,
+    feedsNumber
+  }: {
+    id: CollectionId;
+    title: string;
+    description: string;
+    feedsNumber: number;
+
+  }) {
+    this.id = id;
+    this.title = title;
+    this.description = description;
+    this.feedsNumber = feedsNumber;
+  }
+}
+
+export function collectionFromJSON({
+  id,
+  title,
+  description,
+  feedsNumber
+}: {
+  id: string;
+  title: string;
+  description: string;
+  feedsNumber: number;
+}): Collection {
+  return {
+    id: toCollectionId(id),
+    title: title,
+    description: description,
+    feedsNumber: feedsNumber
+  };
 }

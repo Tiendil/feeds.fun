@@ -108,6 +108,7 @@ services:
       FFUN_ENABLE_API: "${FFUN_ENABLE_API:-True}"
       FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
       FFUN_SENTRY__DSN: "${FFUN_SENTRY__DSN:-not-specified}"
+      FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS: "/repository/feeds_collections/collections"
 
     ports:
       - "8000:8000"
@@ -130,6 +131,11 @@ services:
       - ${PWD}/feeds_collections:/repository/feeds_collections
       - ${PWD}/changes:/repository/changes
       - ${PWD}/CHANGELOG.md:/repository/CHANGELOG.md
+
+    environment:
+      FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
+      FFUN_SENTRY__DSN: "${FFUN_SENTRY__DSN:-not-specified}"
+      FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS: "/repository/feeds_collections/collections"
 
     networks:
       ffun_network: {}

@@ -65,10 +65,10 @@
   const globalSettings = useGlobalSettingsStore();
 
   const collections = computedAsync(async () => {
-    const collections = await api.getFeedsCollections();
+    const collections = await api.getCollections();
 
-    for (const collectionId of collections) {
-      selectedCollections.value.push(collectionId);
+    for (const collection of collections) {
+      selectedCollections.value.push(collection.id);
     }
 
     return collections;

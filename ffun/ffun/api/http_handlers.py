@@ -261,7 +261,7 @@ async def api_unsubscribe(request: entities.UnsubscribeRequest, user: User) -> e
     return entities.UnsubscribeResponse()
 
 
-@router.post("/api/get-feeds-collections")
+@router.post("/api/get-collections")
 async def api_get_feeds_collections(
     request: entities.GetFeedsCollectionsRequest, user: User
 ) -> entities.GetFeedsCollectionsResponse:

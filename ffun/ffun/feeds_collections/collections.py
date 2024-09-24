@@ -2,11 +2,15 @@ import pathlib
 
 import toml
 
+from ffun.core import logging
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedId
 from ffun.feeds_collections import errors
 from ffun.feeds_collections.entities import Collection, CollectionId, FeedInfo
 from ffun.feeds_collections.settings import settings
+
+
+logger = logging.get_module_logger()
 
 
 class Collections:
@@ -53,6 +57,8 @@ class Collections:
     # It could be optimized/removed by refactoring collections to be stored in a database
     # linked to all necessary ids only once.
     async def prepare_feeds(self) -> None:
+        logger.info("preparing_feeds")
+
         feeds_infos = []
         feeds_to_process = []
 
@@ -73,8 +79,11 @@ class Collections:
 
         self._feeds_in_collections = set(feed_ids)
 
+        logger.info("feeds_prepared")
+
     # TODO: test
     async def initialize(self, collection_configs: pathlib.Path | None = settings.collection_configs) -> None:
+        logger.info("initializing_collections")
 
         if collection_configs is not None:
             self.load(collection_configs)
@@ -84,6 +93,8 @@ class Collections:
         await self.prepare_feeds()
 
         self.initialized = True
+
+        logger.info("collections_initialized")
 
     # TODO: test
     def has_feed(self, feed_id: FeedId) -> bool:
