@@ -1,9 +1,10 @@
 <template>
-  <div>
+<div>
     <form @submit.prevent="subscribe">
       <ul class="mb-1">
         <li v-for="collectionId in collections.collectionsOrder">
-          <colllection-block-item
+          <collections-block-item
+            v-model="selectedCollections"
             :collectionId="collectionId"
             :selectedCollections="selectedCollections"/>
         </li>

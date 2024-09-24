@@ -6,7 +6,7 @@
       :id="collection.id"
       :name="collection.name"
       :value="collection.id"
-      v-model="selectedCollections"
+      v-model="model"
       checked />
     <label
       class="ml-2"
@@ -30,6 +30,8 @@ const properties = defineProps<{
   collectionId: t.FeedsCollectionId;
   selectedCollections: t.FeedsCollectionId[];
 }>();
+
+const model = defineModel()
 
 const collections = useCollectionsStore();
 
