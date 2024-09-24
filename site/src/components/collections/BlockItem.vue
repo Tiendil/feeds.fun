@@ -13,7 +13,7 @@
       :for="collection.id"
       >
       <div class="inline-block">
-        {{ collection.name }}
+        {{ collection.name }} [feeds: {{collection.feedsNumber}}]
         <p class="">{{ collection.description }}</p>
       </div>
     </label>
