@@ -14,7 +14,7 @@ export const useCollectionsStore = defineStore("collectionsStore", () => {
   const collections = computedAsync(async () => {
     const collectionsList = await api.getCollections();
 
-    const collections: {[key: t.CollectionId]: t.Collection}  = {};
+    const collections: {[key: t.CollectionId]: t.Collection} = {};
 
     for (const collection of collectionsList) {
       collections[collection.id] = collection;
