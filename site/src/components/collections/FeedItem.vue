@@ -1,8 +1,33 @@
 <template>
-<div>
-  <strong>{{feed.title}}</strong>
+<div class="flex">
+  <div class="flex-shrink-0 w-16 text-right pr-1">
+    <a href="#"
+       v-if="!subscribed"
+       @click.prevent.stop="subscribe"
+       class="text-blue-700">subscribe</a>
 
-  <p>{{feed.description}}</p>
+    <span v-else
+          class="text-green-700 cursor-default">subscribed</span>
+  </div>
+
+  <div class="flex-shrink-0 w-8 text-right pr-1">
+    <favicon-element
+      :url="feed.url"
+      class="w-4 h-4 align-text-bottom mx-1 inline" />
+  </div>
+
+  <div class="flex-grow">
+    <strong>{{feed.title}}</strong>
+  </div>
+</div>
+
+<div class="flex">
+  <div class="flex-shrink-0 w-16 pr-1">
+  </div>
+
+  <div class="max-w-3xl flex-1 bg-slate-50 border-2 rounded p-4">
+    <p>{{feed.description}}</p>
+  </div>
 </div>
 </template>
 
@@ -23,35 +48,14 @@ const properties = defineProps<{
 
 const globalSettings = useGlobalSettingsStore();
 
-const collections = useCollectionsStore();
-
-const collection = computed(() => collections.collections[properties.collectionId]);
-
-const loading = ref(false);
-const loaded = ref(false);
-const error = ref(false);
-const showFeeds = ref(false);
+const subscribed = ref(false);
 
 async function subscribe() {
-  loading.value = true;
-  loaded.value = false;
-  error.value = false;
+  subscribed.value = true;
 
-  try {
-    await api.subscribeToCollections({
-      collectionsIds: [properties.collectionId]
-    });
-
-    loading.value = false;
-    loaded.value = true;
-    error.value = false;
-  } catch (e) {
-    console.error(e);
-
-    loading.value = false;
-    loaded.value = false;
-    error.value = true;
-  }
+  await api.addFeed({
+      url: properties.feed.url,
+  });
 
   globalSettings.updateDataVersion();
 }

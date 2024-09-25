@@ -5,9 +5,11 @@
   <p class="">{{ collection.description }}</p>
 
   <div v-if="showFeeds">
-    <collections-feed-item v-for="feed in feeds"
-                           :key="feed.url"
-                           :feed="feed" />
+    <div v-for="feed in feeds"
+         :key="feed.url"
+         class="mb-2 pb-2 collection-feed-block">
+      <collections-feed-item :feed="feed" />
+    </div>
   </div>
 
   <!-- TODO: singular form "1 feed" -->
@@ -102,4 +104,8 @@ const feeds = computedAsync(async () => {
 
 </script>
 
-<style scoped></style>
+<style scoped>
+  .collection-feed-block:not(:last-child) {
+    border-bottom-width: 1px;
+  }
+</style>
