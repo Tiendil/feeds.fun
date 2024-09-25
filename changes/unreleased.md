@@ -1,8 +1,8 @@
 **Operations required AFTER UPDATE**:
 
 1. Run migrations `ffun migrate`
-1. Run `ffun user-settings remove-deprecated-settings`
-2. Specify a custom configuration file for tag processors. If you are using an OpenAI tag processor. Details can be found in the updated README.md
+2. Run `ffun user-settings remove-deprecated-settings`
+3. Specify a custom configuration file for tag processors. If you are using an OpenAI tag processor. Details can be found in the updated README.md
 
 Changes:
 
@@ -12,3 +12,4 @@ Changes:
     - The configuration of LLM models was moved to a separate file; see README.md for actual details.
     - You can configure multiple LLM tag processors with different parameters, including prompts, API keys, etc.
     - Token usage tracking has been replaced with cost tracking. User settings will convert automatically.
+- Collections refactored. Now, they are configurable and empty by default. You can specify the path to the directory with collections configuration in `FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS`. An example of configuration can be found in the `./feeds_collections/collections`
