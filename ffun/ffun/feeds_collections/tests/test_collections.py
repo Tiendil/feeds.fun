@@ -1,13 +1,14 @@
+import pathlib
 import uuid
+
 import pytest
 import pytest_asyncio
+
+from ffun.feeds import domain as f_domain
+from ffun.feeds_collections import errors
 from ffun.feeds_collections.collections import Collections
 from ffun.feeds_collections.domain import new_collection_id
 from ffun.feeds_collections.entities import Collection, FeedInfo
-from ffun.feeds import domain as f_domain
-from ffun.feeds_collections import errors
-import pathlib
-
 
 _root = pathlib.Path(__file__).parent
 
@@ -89,17 +90,13 @@ class TestCollections:
 
         feed_1 = FeedInfo(url="http://example.com/feed1", title="Feed 1", description="Feed 1")
 
-        collection_1 = Collection(id=new_collection_id(),
-                                  gui_order=1,
-                                  name=uuid.uuid4().hex,
-                                  description=uuid.uuid4().hex,
-                                  feeds=[feed_1])
+        collection_1 = Collection(
+            id=new_collection_id(), gui_order=1, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[feed_1]
+        )
 
-        collection_2 = Collection(id=collection_1.id,
-                                  gui_order=2,
-                                  name=uuid.uuid4().hex,
-                                  description=uuid.uuid4().hex,
-                                  feeds=[feed_1])
+        collection_2 = Collection(
+            id=collection_1.id, gui_order=2, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[feed_1]
+        )
 
         await collections.add_test_collection(collection_1)
 
@@ -112,17 +109,13 @@ class TestCollections:
 
         feed_1 = FeedInfo(url="http://example.com/feed1", title="Feed 1", description="Feed 1")
 
-        collection_1 = Collection(id=new_collection_id(),
-                                  gui_order=1,
-                                  name=uuid.uuid4().hex,
-                                  description=uuid.uuid4().hex,
-                                  feeds=[feed_1])
+        collection_1 = Collection(
+            id=new_collection_id(), gui_order=1, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[feed_1]
+        )
 
-        collection_2 = Collection(id=new_collection_id(),
-                                  gui_order=1,
-                                  name=uuid.uuid4().hex,
-                                  description=uuid.uuid4().hex,
-                                  feeds=[feed_1])
+        collection_2 = Collection(
+            id=new_collection_id(), gui_order=1, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[feed_1]
+        )
 
         await collections.add_test_collection(collection_1)
 
@@ -135,17 +128,13 @@ class TestCollections:
 
         feed_1 = FeedInfo(url="http://example.com/feed1", title="Feed 1", description="Feed 1")
 
-        collection_1 = Collection(id=new_collection_id(),
-                                  gui_order=1,
-                                  name=uuid.uuid4().hex,
-                                  description=uuid.uuid4().hex,
-                                  feeds=[feed_1])
+        collection_1 = Collection(
+            id=new_collection_id(), gui_order=1, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[feed_1]
+        )
 
-        collection_2 = Collection(id=new_collection_id(),
-                                  gui_order=2,
-                                  name=uuid.uuid4().hex,
-                                  description=uuid.uuid4().hex,
-                                  feeds=[])
+        collection_2 = Collection(
+            id=new_collection_id(), gui_order=2, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[]
+        )
 
         await collections.add_test_collection(collection_1)
 
