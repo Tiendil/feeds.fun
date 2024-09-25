@@ -30,8 +30,6 @@ export const useCollectionsStore = defineStore("collectionsStore", () => {
       return collections.value[a].guiOrder - collections.value[b].guiOrder;
     });
 
-    console.log("collections", collections.value);
-
     return order;
   });
 
