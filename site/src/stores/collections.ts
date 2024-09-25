@@ -8,9 +8,7 @@ import * as api from "@/logic/api";
 import {Timer} from "@/logic/timer";
 import {computedAsync} from "@vueuse/core";
 
-
 export const useCollectionsStore = defineStore("collectionsStore", () => {
-
   const feeds = ref<{[id: t.CollectionId]: t.Feed[]}>({});
 
   const collections = computedAsync(async () => {

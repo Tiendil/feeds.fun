@@ -9,7 +9,6 @@ from ffun.feeds_collections import errors
 from ffun.feeds_collections.entities import Collection, CollectionId, FeedInfo
 from ffun.feeds_collections.settings import settings
 
-
 logger = logging.get_module_logger()
 
 

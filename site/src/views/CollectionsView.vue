@@ -2,13 +2,12 @@
   <side-panel-layout :reload-button="false">
     <template #main-header> Collections </template>
 
-    <div v-for="collectionId in collections.collectionsOrder"
-         :key="collectionId"
-         class="collection-block pb-4">
-      <collections-detailed-item
-        :collectionId="collectionId"/>
+    <div
+      v-for="collectionId in collections.collectionsOrder"
+      :key="collectionId"
+      class="collection-block pb-4">
+      <collections-detailed-item :collectionId="collectionId" />
     </div>
-
   </side-panel-layout>
 </template>
 
@@ -19,12 +18,12 @@
   import * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
-import {useEntriesStore} from "@/stores/entries";
-import {useCollectionsStore} from "@/stores/collections";
+  import {useEntriesStore} from "@/stores/entries";
+  import {useCollectionsStore} from "@/stores/collections";
 
-const globalSettings = useGlobalSettingsStore();
+  const globalSettings = useGlobalSettingsStore();
 
-const collections = useCollectionsStore();
+  const collections = useCollectionsStore();
 
   globalSettings.mainPanelMode = e.MainPanelMode.Collections;
 </script>

@@ -201,11 +201,10 @@ export async function getCollections() {
 }
 
 export async function getCollectionFeeds({collectionId}: {collectionId: t.CollectionId}) {
-  const response = await post(
-    {
-      url: API_GET_COLLECTION_FEEDS,
-      data: {collectionId: collectionId}
-    });
+  const response = await post({
+    url: API_GET_COLLECTION_FEEDS,
+    data: {collectionId: collectionId}
+  });
 
   const feeds = [];
 

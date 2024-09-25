@@ -390,7 +390,6 @@ export function resourceHistoryRecordFromJSON({
   });
 }
 
-
 export class Collection {
   readonly id: CollectionId;
   readonly guiOrder: number;
@@ -410,7 +409,6 @@ export class Collection {
     name: string;
     description: string;
     feedsNumber: number;
-
   }) {
     this.id = id;
     this.guiOrder = guiOrder;
@@ -442,26 +440,16 @@ export function collectionFromJSON({
   };
 }
 
-
 class CollectionFeedInfo {
   readonly url: URL;
   readonly title: string;
   readonly description: string;
 
-  constructor({
-    url,
-    title,
-    description
-  }: {
-    url: URL;
-    title: string;
-    description: string;
-  }) {
+  constructor({url, title, description}: {url: URL; title: string; description: string}) {
     this.url = url;
     this.title = title;
     this.description = description;
   }
-
 }
 
 export function collectionFeedInfoFromJSON({

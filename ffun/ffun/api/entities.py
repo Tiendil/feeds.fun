@@ -252,11 +252,13 @@ class Collection(pydantic.BaseModel):
 
     @classmethod
     def from_internal(cls, record: fc_entities.Collection) -> "Collection":
-        return cls(id=record.id,
-                   guiOrder=record.gui_order,
-                   name=record.name,
-                   description=record.description,
-                   feedsNumber=len(record.feeds))
+        return cls(
+            id=record.id,
+            guiOrder=record.gui_order,
+            name=record.name,
+            description=record.description,
+            feedsNumber=len(record.feeds),
+        )
 
 
 class CollectionFeedInfo(pydantic.BaseModel):
