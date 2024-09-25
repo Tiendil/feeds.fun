@@ -12,12 +12,18 @@
       </div>
     </div>
 
-    <!-- TODO: singular form "1 feed" -->
-
     <button
       @click.prevent="subscribe"
       class="ffun-form-button mr-2"
-      >Subscribe to all {{ collection.feedsNumber }} feeds</button
+      >
+      <template v-if="collection.feedsNumber === 1">
+        Subscribe to 1 feed
+      </template>
+
+      <template v-else>
+        Subscribe to all {{ collection.feedsNumber }} feeds
+      </template>
+    </button
     >
 
     <button
