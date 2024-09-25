@@ -23,7 +23,6 @@ class Collections:
     def collections(self) -> list[Collection]:
         return list(self._collections)
 
-    # TODO: test
     def collection(self, collection_id: CollectionId) -> Collection:
         for collection in self._collections:
             if collection.id == collection_id:
@@ -31,7 +30,6 @@ class Collections:
 
         raise errors.CollectionNotFound()
 
-    # TODO: test
     def load(self, collection_configs: pathlib.Path) -> None:
         """Loads all collection configs from the given directory."""
         collections = []
@@ -45,19 +43,22 @@ class Collections:
 
         self._collections = collections
 
-    # TODO: test
     def validate_collection_ids(self) -> None:
         ids = {c.id for c in self._collections}
 
         if len(ids) != len(self._collections):
             raise errors.DuplicateCollectionIds()
 
-    # TODO: test
     def validate_collection_gui_order(self) -> None:
         orders = {c.gui_order for c in self._collections}
 
         if len(orders) != len(self._collections):
             raise errors.DuplicateCollectionOrders()
+
+    def validate_collection_is_not_empty(self) -> None:
+        for collection in self._collections:
+            if not collection.feeds:
+                raise errors.CollectionIsEmpty()
 
     # This method may become a bottleneck if there are too many feeds in collections.
     # It could be optimized/removed by refactoring collections to be stored in a database
@@ -87,7 +88,6 @@ class Collections:
 
         logger.info("feeds_prepared")
 
-    # TODO: test
     async def initialize(self, collection_configs: pathlib.Path | None = settings.collection_configs) -> None:
         logger.info("initializing_collections")
 
@@ -96,6 +96,7 @@ class Collections:
 
         self.validate_collection_ids()
         self.validate_collection_gui_order()
+        self.validate_collection_is_not_empty()
 
         await self.prepare_feeds()
 
@@ -103,16 +104,13 @@ class Collections:
 
         logger.info("collections_initialized")
 
-    # TODO: test
     def has_feed(self, feed_id: FeedId) -> bool:
         return feed_id in self._feeds_in_collections
 
-    # TODO: test
     async def add_test_collection(self, collection: Collection) -> None:
         self._collections.append(collection)
         await self.initialize(collection_configs=None)
 
-    # TODO: test
     async def add_test_feed_to_collections(self, collection_id: CollectionId, feed_id: FeedId) -> None:
 
         feed = await f_domain.get_feed(feed_id)

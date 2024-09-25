@@ -15,3 +15,7 @@ class CollectionNotFound(Error):
 
 class DuplicateCollectionOrders(Error):
     pass
+
+
+class CollectionIsEmpty(Error):
+    pass
