@@ -113,7 +113,6 @@ class Collections:
         await self.initialize(collection_configs=None)
 
     # TODO: test
-    # TODO: switch all mocks in tests to this function
     async def add_test_feed_to_collections(self, collection_id: CollectionId, feed_id: FeedId) -> None:
 
         feed = await f_domain.get_feed(feed_id)
