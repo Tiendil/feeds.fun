@@ -278,7 +278,7 @@ async def api_get_collection_feeds(
     request: entities.GetCollectionFeedsRequest, user: User
 ) -> entities.GetCollectionFeedsResponse:
 
-    collection = collections.collection(request.collection_id)
+    collection = collections.collection(request.collectionId)
 
     feeds = [entities.CollectionFeedInfo.from_internal(feed_info) for feed_info in collection.feeds]
 

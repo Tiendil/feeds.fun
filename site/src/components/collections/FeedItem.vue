@@ -1,41 +1,9 @@
 <template>
 <div>
+  <strong>{{feed.title}}</strong>
 
-  <h3>{{ collection.name }}</h3>
-  <p class="">{{ collection.description }}</p>
-
-  <div v-if="showFeeds">
-    <collections-feed-item v-for="feed in feeds"
-                           :key="feed.url"
-                           :feed="feed" />
-  </div>
-
-  <!-- TODO: singular form "1 feed" -->
-
-  <button
-    @click.prevent="subscribe"
-    class="ffun-form-button mr-2"
-    >Subscribe to all {{collection.feedsNumber}} feeds</button>
-
-  <button
-    v-if="!showFeeds"
-    @click.prevent="show"
-    class="ffun-form-button"
-    >Show feeds</button>
-
-  <button
-    v-if="showFeeds"
-    @click.prevent="hide"
-    class="ffun-form-button"
-    >Hide feeds</button>
-
-  <collections-subscribing-progress
-    :loading="loading"
-    :loaded="loaded"
-    :error="error"
-    />
-
-  </div>
+  <p>{{feed.description}}</p>
+</div>
 </template>
 
 <script lang="ts" setup>
@@ -50,7 +18,7 @@ import {useGlobalSettingsStore} from "@/stores/globalSettings";
 import {useCollectionsStore} from "@/stores/collections";
 
 const properties = defineProps<{
-  collectionId: t.FeedsCollectionId;
+  feed: t.CollectionFeedInfo;
 }>();
 
 const globalSettings = useGlobalSettingsStore();
@@ -87,18 +55,6 @@ async function subscribe() {
 
   globalSettings.updateDataVersion();
 }
-
-function show() {
-  showFeeds.value = true;
-}
-
-function hide() {
-  showFeeds.value = false;
-}
-
-const feeds = computedAsync(async () => {
-  return await collections.getFeeds({collectionId: properties.collectionId});
-}, []);
 
 </script>
 

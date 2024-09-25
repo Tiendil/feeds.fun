@@ -441,3 +441,41 @@ export function collectionFromJSON({
     feedsNumber: feedsNumber
   };
 }
+
+
+class CollectionFeedInfo {
+  readonly url: URL;
+  readonly title: string;
+  readonly description: string;
+
+  constructor({
+    url,
+    title,
+    description
+  }: {
+    url: URL;
+    title: string;
+    description: string;
+  }) {
+    this.url = url;
+    this.title = title;
+    this.description = description;
+  }
+
+}
+
+export function collectionFeedInfoFromJSON({
+  url,
+  title,
+  description
+}: {
+  url: string;
+  title: string;
+  description: string;
+}): CollectionFeedInfo {
+  return new CollectionFeedInfo({
+    url: toURL(url),
+    title: title,
+    description: description
+  });
+}

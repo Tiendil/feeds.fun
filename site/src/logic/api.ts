@@ -21,6 +21,7 @@ const API_ADD_FEED = `${ENTRY_POINT}/add-feed`;
 const API_ADD_OPML = `${ENTRY_POINT}/add-opml`;
 const API_UNSUBSCRIBE = `${ENTRY_POINT}/unsubscribe`;
 const API_GET_COLLECTIONS = `${ENTRY_POINT}/get-collections`;
+const API_GET_COLLECTION_FEEDS = `${ENTRY_POINT}/get-collection-feeds`;
 const API_SUBSCRIBE_TO_COLLECTIONS = `${ENTRY_POINT}/subscribe-to-collections`;
 const API_GET_TAGS_INFO = `${ENTRY_POINT}/get-tags-info`;
 const API_GET_USER_SETTINGS = `${ENTRY_POINT}/get-user-settings`;
@@ -197,6 +198,23 @@ export async function getCollections() {
   }
 
   return collections;
+}
+
+export async function getCollectionFeeds({collectionId}: {collectionId: t.CollectionId}) {
+  const response = await post(
+    {
+      url: API_GET_COLLECTION_FEEDS,
+      data: {collectionId: collectionId}
+    });
+
+  const feeds = [];
+
+  for (let rawFeed of response.feeds) {
+    const feed = t.collectionFeedInfoFromJSON(rawFeed);
+    feeds.push(feed);
+  }
+
+  return feeds;
 }
 
 export async function subscribeToCollections({collectionsIds}: {collectionsIds: t.CollectionId[]}) {

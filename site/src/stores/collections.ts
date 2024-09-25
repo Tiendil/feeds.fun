@@ -11,6 +11,8 @@ import {computedAsync} from "@vueuse/core";
 
 export const useCollectionsStore = defineStore("collectionsStore", () => {
 
+  const feeds = ref<{[id: t.CollectionId]: t.Feed[]}>({});
+
   const collections = computedAsync(async () => {
     const collectionsList = await api.getCollections();
 
@@ -33,8 +35,21 @@ export const useCollectionsStore = defineStore("collectionsStore", () => {
     return order;
   });
 
+  async function getFeeds({collectionId}: {collectionId: t.CollectionId}) {
+    if (collectionId in feeds.value) {
+      return feeds.value[collectionId];
+    }
+
+    const feedsList = await api.getCollectionFeeds({collectionId: collectionId});
+
+    feeds.value[collectionId] = feedsList;
+
+    return feeds.value[collectionId];
+  }
+
   return {
     collections,
-    collectionsOrder
+    collectionsOrder,
+    getFeeds
   };
 });
