@@ -39,7 +39,7 @@
   const loaded = ref(false);
   const error = ref(false);
 
-  const selectedCollections = ref<t.FeedsCollectionId[]>([]);
+  const selectedCollections = ref<t.CollectionId[]>([]);
 
   const globalSettings = useGlobalSettingsStore();
 

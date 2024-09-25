@@ -9,12 +9,12 @@ import {Timer} from "@/logic/timer";
 import {computedAsync} from "@vueuse/core";
 
 export const useCollectionsStore = defineStore("collectionsStore", () => {
-  const feeds = ref<{[id: t.CollectionId]: t.Feed[]}>({});
+  const feeds = ref<{[id: t.CollectionId]: t.CollectionFeedInfo[]}>({});
 
   const collections = computedAsync(async () => {
     const collectionsList = await api.getCollections();
 
-    const collections = {};
+    const collections: {[key: t.CollectionId]: t.Collection}  = {};
 
     for (const collection of collectionsList) {
       collections[collection.id] = collection;
@@ -24,7 +24,7 @@ export const useCollectionsStore = defineStore("collectionsStore", () => {
   }, {});
 
   const collectionsOrder = computed(() => {
-    const order = Object.keys(collections.value);
+    const order = Object.keys(collections.value) as t.CollectionId[];
 
     order.sort((a, b) => {
       return collections.value[a].guiOrder - collections.value[b].guiOrder;

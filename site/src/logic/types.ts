@@ -440,7 +440,7 @@ export function collectionFromJSON({
   };
 }
 
-class CollectionFeedInfo {
+export class CollectionFeedInfo {
   readonly url: URL;
   readonly title: string;
   readonly description: string;

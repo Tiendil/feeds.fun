@@ -53,7 +53,7 @@
   import {useCollectionsStore} from "@/stores/collections";
 
   const properties = defineProps<{
-    collectionId: t.FeedsCollectionId;
+    collectionId: t.CollectionId;
   }>();
 
   const globalSettings = useGlobalSettingsStore();

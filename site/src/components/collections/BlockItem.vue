@@ -31,8 +31,8 @@
   import {useCollectionsStore} from "@/stores/collections";
 
   const properties = defineProps<{
-    collectionId: t.FeedsCollectionId;
-    selectedCollections: t.FeedsCollectionId[];
+    collectionId: t.CollectionId;
+    selectedCollections: t.CollectionId[];
   }>();
 
   const model = defineModel();
