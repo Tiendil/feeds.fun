@@ -9,7 +9,8 @@ from pytest_mock import MockerFixture
 from ffun.application.resources import Resource as AppResource
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.feeds.entities import FeedId
-from ffun.feeds_collections import domain as fc_domain
+from ffun.feeds_collections.collections import collections
+from ffun.feeds_collections.entities import CollectionId
 from ffun.feeds_links import domain as fl_domain
 from ffun.llms_framework import errors
 from ffun.llms_framework.entities import (
@@ -476,13 +477,12 @@ class TestChooseCollectionsKey:
         self,
         fake_llm_provider: ProviderTest,
         select_key_context: SelectKeyContext,
-        mocker: MockerFixture,
         fake_llm_api_key: LLMApiKey,
+        collection_id_for_test_feeds: CollectionId,
     ) -> None:
         select_key_context = select_key_context.replace(collections_api_key=LLMCollectionApiKey(fake_llm_api_key))
 
-        # TODO: remove mocking after collections will be reworked in https://github.com/Tiendil/feeds.fun/issues/246
-        mocker.patch("ffun.feeds_collections.domain.is_feed_in_collections", return_value=True)
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, select_key_context.feed_id)
 
         usage = await _choose_collections_key(fake_llm_provider, select_key_context)
 
@@ -498,14 +498,15 @@ class TestChooseCollectionsKey:
 
     @pytest.mark.asyncio
     async def test_collections_key_specified__not_in_collection(
-        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext, mocker: MockerFixture
+        self,
+        fake_llm_provider: ProviderTest,
+        select_key_context: SelectKeyContext,
     ) -> None:
         key = uuid.uuid4().hex
 
         select_key_context = select_key_context.replace(collections_api_key=key)
 
-        # TODO: remove mocking after collections will be reworked in
-        mocker.patch("ffun.feeds_collections.domain.is_feed_in_collections", return_value=False)
+        assert not collections.has_feed(select_key_context.feed_id)
 
         assert await _choose_collections_key(fake_llm_provider, select_key_context) is None
 
@@ -518,9 +519,12 @@ class TestChooseUserKey:
 
     @pytest.mark.asyncio
     async def test_protection_from_collections_processing(
-        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext
+        self,
+        fake_llm_provider: ProviderTest,
+        select_key_context: SelectKeyContext,
+        collection_id_for_test_feeds: CollectionId,
     ) -> None:
-        fc_domain.add_test_feed_to_collections(select_key_context.feed_id)
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, select_key_context.feed_id)
 
         with pytest.raises(errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys):
             await _choose_user_key(fake_llm_provider, select_key_context)

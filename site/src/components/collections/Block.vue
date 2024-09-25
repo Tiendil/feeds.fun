@@ -2,20 +2,11 @@
   <div>
     <form @submit.prevent="subscribe">
       <ul class="mb-1">
-        <li v-for="item in collections">
-          <input
-            class="ffun-checkbox"
-            type="checkbox"
-            :id="item"
-            :name="item"
-            :value="item"
+        <li v-for="collectionId in collections.collectionsOrder">
+          <collections-block-item
             v-model="selectedCollections"
-            checked />
-          <label
-            class="ml-2"
-            :for="item"
-            >{{ item }}</label
-          >
+            :collectionId="collectionId"
+            :selectedCollections="selectedCollections" />
         </li>
       </ul>
 
@@ -26,23 +17,10 @@
       >
     </form>
 
-    <p
-      v-if="loading"
-      class="ffun-info-attention"
-      >subscribing...</p
-    >
-
-    <p
-      v-if="loaded"
-      class="ffun-info-good"
-      >Feeds added!</p
-    >
-
-    <p
-      v-if="error"
-      class="ffun-info-bad"
-      >Unknown error occurred! Please, try later.</p
-    >
+    <collections-subscribing-progress
+      :loading="loading"
+      :loaded="loaded"
+      :error="error" />
   </div>
 </template>
 
@@ -55,24 +33,17 @@
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
+  import {useCollectionsStore} from "@/stores/collections";
 
   const loading = ref(false);
   const loaded = ref(false);
   const error = ref(false);
 
-  const selectedCollections = ref<t.FeedsCollectionId[]>([]);
+  const selectedCollections = ref<t.CollectionId[]>([]);
 
   const globalSettings = useGlobalSettingsStore();
 
-  const collections = computedAsync(async () => {
-    const collections = await api.getFeedsCollections();
-
-    for (const collectionId of collections) {
-      selectedCollections.value.push(collectionId);
-    }
-
-    return collections;
-  });
+  const collections = useCollectionsStore();
 
   async function subscribe() {
     loading.value = true;
@@ -80,7 +51,7 @@
     error.value = false;
 
     try {
-      await api.subscribeToFeedsCollections({
+      await api.subscribeToCollections({
         collectionsIds: selectedCollections.value
       });
 

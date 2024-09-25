@@ -4,7 +4,7 @@ from typing import Any
 
 from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
-from ffun.feeds_collections import domain as fc_domain
+from ffun.feeds_collections.collections import collections
 from ffun.librarian import domain, operations
 from ffun.librarian.entities import ProcessorType
 from ffun.librarian.processors.base import Processor
@@ -125,7 +125,7 @@ class EntriesProcessor(InfiniteTask):
                 entries_to_remove.append(entry_id)
                 continue
 
-            in_collection = await fc_domain.is_feed_in_collections(entry.feed_id)
+            in_collection = collections.has_feed(entry.feed_id)
 
             if in_collection and not self._processor_info.allowed_for_collections:
                 logger.info("proccessor_not_allowed_for_collections", processor_id=processor_id, entry_id=entry_id)

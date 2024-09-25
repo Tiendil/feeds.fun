@@ -17,6 +17,10 @@
     @apply text-2xl font-semibold leading-relaxed my-3;
   }
 
+  h3 {
+    @apply text-xl font-semibold leading-relaxed my-2;
+  }
+
   hr {
     @apply border-slate-400 my-2;
   }

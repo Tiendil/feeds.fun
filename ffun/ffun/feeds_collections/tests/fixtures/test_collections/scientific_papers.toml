@@ -1,0 +1,14 @@
+id = "eb66a806-7168-450a-81c8-166f7624bf97"
+gui_order = 2
+name = "Scientific Papers"
+description = "Feeds of new scientific papers and preprints from official sources."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/cs.AI"
+title = "arXiv.org :: Computer Science :: Artificial Intelligence"
+description = "Covers all areas of AI except Vision, Robotics, Machine Learning, Multiagent Systems, and Computation and Language (Natural Language Processing), which have separate subject areas. In particular, includes Expert Systems, Theorem Proving (although this may overlap with Logic in Computer Science), Knowledge Representation, Planning, and Uncertainty in AI. Roughly includes material in ACM Subject Classes I.2.0, I.2.1, I.2.3, I.2.4, I.2.8, and I.2.11."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/cs.AR"
+title = "arXiv.org :: Computer Science :: Hardware Architecture"
+description = "Covers systems organization and hardware architecture. Roughly includes material in ACM Subject Classes C.0, C.1, and C.5."

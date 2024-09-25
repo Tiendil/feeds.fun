@@ -19,7 +19,7 @@
       <hr />
     </template>
 
-    <h2>API usage</h2>
+    <h3>API usage</h3>
 
     <p>Estimated tokens cost for your API keys usage per month.</p>
 

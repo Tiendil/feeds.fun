@@ -102,11 +102,14 @@ services:
       - ${PWD}/ffun:/repository
       - ${PWD}/.env:/repository/.env
       - ${PWD}/.configs:/repository/.configs
+      - ${PWD}/feeds_collections:/repository/feeds_collections
 
     environment:
       FFUN_ENABLE_API: "${FFUN_ENABLE_API:-True}"
       FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
       FFUN_SENTRY__DSN: "${FFUN_SENTRY__DSN:-not-specified}"
+      # set to /repository/feeds_collections/collections in case you want to use the default collection
+      FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS: "${FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS-}"
 
     ports:
       - "8000:8000"
@@ -126,8 +129,15 @@ services:
       - ${PWD}/.env:/repository/.env
       - ${PWD}/.configs:/repository/.configs
       - ${PWD}/tags_quality_base:/repository/tags_quality_base
+      - ${PWD}/feeds_collections:/repository/feeds_collections
       - ${PWD}/changes:/repository/changes
       - ${PWD}/CHANGELOG.md:/repository/CHANGELOG.md
+
+    environment:
+      FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
+      FFUN_SENTRY__DSN: "${FFUN_SENTRY__DSN:-not-specified}"
+      # set to /repository/feeds_collections/collections in case you want to use the default collection
+      FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS: "${FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS-}"
 
     networks:
       ffun_network: {}

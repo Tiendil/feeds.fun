@@ -6,7 +6,7 @@ from typing import Any, AsyncGenerator, Collection, Iterable, Protocol
 
 from ffun.core import logging
 from ffun.feeds.entities import FeedId
-from ffun.feeds_collections import domain as fc_domain
+from ffun.feeds_collections.collections import collections
 from ffun.feeds_links import domain as fl_domain
 from ffun.llms_framework import errors
 from ffun.llms_framework.entities import (
@@ -255,7 +255,7 @@ async def _choose_collections_key(llm: ProviderInterface, context: SelectKeyCont
     if key is None:
         return None
 
-    if not await fc_domain.is_feed_in_collections(context.feed_id):
+    if not collections.has_feed(context.feed_id):
         return None
 
     return APIKeyUsage(
@@ -271,7 +271,7 @@ async def _choose_collections_key(llm: ProviderInterface, context: SelectKeyCont
 
 async def _choose_user_key(llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage | None:
 
-    if await fc_domain.is_feed_in_collections(context.feed_id):
+    if collections.has_feed(context.feed_id):
         raise errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys(feed_id=context.feed_id)
 
     info = await _find_best_user_with_key(

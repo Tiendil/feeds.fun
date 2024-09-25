@@ -20,8 +20,9 @@ const API_DISCOVER_FEEDS = `${ENTRY_POINT}/discover-feeds`;
 const API_ADD_FEED = `${ENTRY_POINT}/add-feed`;
 const API_ADD_OPML = `${ENTRY_POINT}/add-opml`;
 const API_UNSUBSCRIBE = `${ENTRY_POINT}/unsubscribe`;
-const API_GET_FEEDS_COLLECTIONS = `${ENTRY_POINT}/get-feeds-collections`;
-const API_SUBSCRIBE_TO_FEEDS_COLLECTIONS = `${ENTRY_POINT}/subscribe-to-feeds-collections`;
+const API_GET_COLLECTIONS = `${ENTRY_POINT}/get-collections`;
+const API_GET_COLLECTION_FEEDS = `${ENTRY_POINT}/get-collection-feeds`;
+const API_SUBSCRIBE_TO_COLLECTIONS = `${ENTRY_POINT}/subscribe-to-collections`;
 const API_GET_TAGS_INFO = `${ENTRY_POINT}/get-tags-info`;
 const API_GET_USER_SETTINGS = `${ENTRY_POINT}/get-user-settings`;
 const API_SET_USER_SETTING = `${ENTRY_POINT}/set-user-setting`;
@@ -186,15 +187,38 @@ export async function unsubscribe({feedId}: {feedId: t.FeedId}) {
   await post({url: API_UNSUBSCRIBE, data: {feedId: feedId}});
 }
 
-export async function getFeedsCollections() {
-  const response = await post({url: API_GET_FEEDS_COLLECTIONS, data: {}});
+export async function getCollections() {
+  const response = await post({url: API_GET_COLLECTIONS, data: {}});
 
-  return response.collections;
+  const collections = [];
+
+  for (let rawCollection of response.collections) {
+    const collection = t.collectionFromJSON(rawCollection);
+    collections.push(collection);
+  }
+
+  return collections;
 }
 
-export async function subscribeToFeedsCollections({collectionsIds}: {collectionsIds: t.FeedsCollectionId[]}) {
+export async function getCollectionFeeds({collectionId}: {collectionId: t.CollectionId}) {
+  const response = await post({
+    url: API_GET_COLLECTION_FEEDS,
+    data: {collectionId: collectionId}
+  });
+
+  const feeds = [];
+
+  for (let rawFeed of response.feeds) {
+    const feed = t.collectionFeedInfoFromJSON(rawFeed);
+    feeds.push(feed);
+  }
+
+  return feeds;
+}
+
+export async function subscribeToCollections({collectionsIds}: {collectionsIds: t.CollectionId[]}) {
   await post({
-    url: API_SUBSCRIBE_TO_FEEDS_COLLECTIONS,
+    url: API_SUBSCRIBE_TO_COLLECTIONS,
     data: {collections: collectionsIds}
   });
 }

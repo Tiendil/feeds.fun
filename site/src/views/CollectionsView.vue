@@ -2,9 +2,12 @@
   <side-panel-layout :reload-button="false">
     <template #main-header> Collections </template>
 
-    <p> Try to subscribe for the feeds collections that we are preparing for you! </p>
-
-    <feeds-collections />
+    <div
+      v-for="collectionId in collections.collectionsOrder"
+      :key="collectionId"
+      class="collection-block pb-4">
+      <collections-detailed-item :collectionId="collectionId" />
+    </div>
   </side-panel-layout>
 </template>
 
@@ -16,10 +19,17 @@
   import * as e from "@/logic/enums";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useEntriesStore} from "@/stores/entries";
+  import {useCollectionsStore} from "@/stores/collections";
 
   const globalSettings = useGlobalSettingsStore();
+
+  const collections = useCollectionsStore();
 
   globalSettings.mainPanelMode = e.MainPanelMode.Collections;
 </script>
 
-<style></style>
+<style scoped>
+  .collection-block:not(:last-child) {
+    border-bottom-width: 1px;
+  }
+</style>
