@@ -16,14 +16,8 @@ from ffun.users.tests.fixtures import *  # noqa
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
-async def app() -> AsyncGenerator[fastapi.FastAPI, None]:
-    async with application.with_app() as app:
-        yield app
-
-
-@pytest_asyncio.fixture(scope="session", autouse=True)
 async def prepare_db(
-    app: AsyncGenerator[fastapi.FastAPI, None],
+    # app: AsyncGenerator[fastapi.FastAPI, None],
 ) -> AsyncGenerator[None, None]:
     # database migrations may be in an inconsistent state
     await migrations.rollback_all()
@@ -31,3 +25,9 @@ async def prepare_db(
     await migrations.apply_all()
     yield
     await migrations.rollback_all()
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def app(prepare_db: None) -> AsyncGenerator[fastapi.FastAPI, None]:
+    async with application.with_app() as app:
+        yield app

@@ -178,6 +178,10 @@ module = "frontmatter.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
+# possibly it is not good option value, because we'll lose detecting of lost coroutines
+# but for now it is required for some session-scoped fixtures
+asyncio_default_fixture_loop_scope = "session"
+
 addopts = """-x -vv --strict-markers -p no:cacheprovider"""
 
 filterwarnings = [
@@ -203,6 +207,7 @@ ignore = [
   "S311",
   "W503",
   "CFQ004",
+  "C1803",
   "E203",  # blake formats [x:y] with spaves
 ]
 max-line-length = 119
