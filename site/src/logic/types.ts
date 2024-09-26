@@ -40,6 +40,7 @@ export class Feed {
   readonly loadedAt: Date | null;
   readonly linkedAt: Date;
   readonly isOk: boolean;
+  readonly collectionIds: CollectionId[];
 
   constructor({
     id,
@@ -50,7 +51,8 @@ export class Feed {
     lastError,
     loadedAt,
     linkedAt,
-    isOk
+    isOk,
+    collectionIds
   }: {
     id: FeedId;
     title: string | null;
@@ -61,6 +63,7 @@ export class Feed {
     loadedAt: Date | null;
     linkedAt: Date;
     isOk: boolean;
+    collectionIds: CollectionId[];
   }) {
     this.id = id;
     this.title = title;
@@ -71,6 +74,7 @@ export class Feed {
     this.loadedAt = loadedAt;
     this.linkedAt = linkedAt;
     this.isOk = isOk;
+    this.collectionIds = collectionIds;
   }
 }
 
@@ -82,7 +86,8 @@ export function feedFromJSON({
   state,
   lastError,
   loadedAt,
-  linkedAt
+  linkedAt,
+  collectionIds
 }: {
   id: string;
   title: string;
@@ -92,6 +97,7 @@ export function feedFromJSON({
   lastError: string | null;
   loadedAt: string;
   linkedAt: string;
+  collectionIds: string[];
 }): Feed {
   return {
     id: toFeedId(id),
@@ -102,7 +108,8 @@ export function feedFromJSON({
     lastError: lastError,
     loadedAt: loadedAt !== null ? new Date(loadedAt) : null,
     linkedAt: new Date(linkedAt),
-    isOk: state === "loaded"
+    isOk: state === "loaded",
+    collectionIds: collectionIds.map(toCollectionId)
   };
 }
 

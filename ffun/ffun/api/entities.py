@@ -45,9 +45,10 @@ class Feed(BaseEntity):
     lastError: str | None = None
     loadedAt: datetime.datetime | None
     linkedAt: datetime.datetime | None
+    collectionIds: list[fc_entities.CollectionId]
 
     @classmethod
-    def from_internal(cls, feed: f_entities.Feed, link: fl_entities.FeedLink) -> "Feed":
+    def from_internal(cls, feed: f_entities.Feed, link: fl_entities.FeedLink, collection_ids: list[fc_entities.CollectionId]) -> "Feed":
         return cls(
             id=feed.id,
             title=feed.title,
@@ -57,11 +58,13 @@ class Feed(BaseEntity):
             lastError=feed.last_error.name if feed.last_error else None,
             loadedAt=feed.loaded_at,
             linkedAt=link.created_at,
+            collectionIds=collection_ids
         )
 
 
 class Entry(BaseEntity):
     id: uuid.UUID
+    # TODO: rename to feedId
     feed_id: f_entities.FeedId
     title: str
     url: str

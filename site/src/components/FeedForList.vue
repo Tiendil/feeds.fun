@@ -53,9 +53,21 @@
         class="ffun-normal-link"
         :value="feed.url"
         :text="purifiedTitle" />
+
+      <template v-if="feed.collectionIds.length > 0">
+        <span v-for="(collectionId, index) in feed.collectionIds">
+          <template v-if="collectionId in collections.collections">
+            <br />
+            Collections:
+            <span class="text-green-700 font-bold">{{ collections.collections[collectionId].name }}</span><span v-if="index < feed.collectionIds.length - 1">, </span>
+          </template>
+        </span>
+      </template>
       <template v-if="globalSettings.showFeedsDescriptions">
         <br />
-        <div v-html="purifiedDescription" />
+        <div class="max-w-3xl flex-1 bg-slate-50 border-2 rounded p-4">
+          <div v-html="purifiedDescription" />
+        </div>
       </template>
     </div>
   </div>
@@ -68,9 +80,13 @@
   import * as api from "@/logic/api";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
-  import {useGlobalSettingsStore} from "@/stores/globalSettings";
+import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
-  const globalSettings = useGlobalSettingsStore();
+  import {useCollectionsStore} from "@/stores/collections";
+
+const globalSettings = useGlobalSettingsStore();
+
+  const collections = useCollectionsStore();
 
   const properties = defineProps<{feed: t.Feed}>();
 

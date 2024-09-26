@@ -12,7 +12,7 @@
       class="ml-2"
       :for="collection.id">
       <div class="inline-block">
-        {{ collection.name }} [feeds: {{ collection.feedsNumber }}]
+        <span class="text-green-700 font-bold">{{ collection.name }}</span> [feeds: {{ collection.feedsNumber }}]
         <p class="">{{ collection.description }}</p>
       </div>
     </label>

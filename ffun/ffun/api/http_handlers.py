@@ -45,8 +45,17 @@ async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entiti
 
     feeds = await f_domain.get_feeds(ids=list(feeds_to_links.keys()))
 
+    external_feeds = []
+
+    for feed in feeds:
+        collection_ids = collections.collections_for_feed(feed.id)
+        external_feed = entities.Feed.from_internal(feed,
+                                                    link=feeds_to_links[feed.id],
+                                                    collection_ids=collection_ids)
+        external_feeds.append(external_feed)
+
     return entities.GetFeedsResponse(
-        feeds=[entities.Feed.from_internal(feed, link=feeds_to_links[feed.id]) for feed in feeds]
+        feeds=external_feeds
     )
 
 
