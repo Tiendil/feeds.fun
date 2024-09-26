@@ -147,6 +147,7 @@ class TestCollections:
     def test_collections_for_feed(self, collections: Collections) -> None:
         for collection in collections._collections:
             for feed_info in collection.feeds:
+                assert feed_info.feed_id is not None
                 assert collection.id in collections.collections_for_feed(feed_info.feed_id)
 
     def test_collections_for_feed__no_collection(self, collections: Collections) -> None:
