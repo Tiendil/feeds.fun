@@ -18,7 +18,6 @@
   import * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
-  import {useEntriesStore} from "@/stores/entries";
   import {useCollectionsStore} from "@/stores/collections";
 
   const globalSettings = useGlobalSettingsStore();
