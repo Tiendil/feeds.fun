@@ -32,6 +32,7 @@
 
     <notifications
       v-if="sortedFeeds !== null"
+      :create-rule-help="false"
       :api-key="false"
       :collections="sortedFeeds === null || sortedFeeds.length == 0" />
 

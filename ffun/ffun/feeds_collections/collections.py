@@ -18,7 +18,7 @@ class Collections:
     def __init__(self) -> None:
         self.initialized = False
         self._collections: list[Collection] = []
-        self._feeds_in_collections: set[FeedId] = set()
+        self._feeds_in_collections: dict[FeedId, set[CollectionId]] = {}
 
     def collections(self) -> list[Collection]:
         return list(self._collections)
@@ -66,8 +66,9 @@ class Collections:
     async def prepare_feeds(self) -> None:
         logger.info("preparing_feeds")
 
-        feeds_infos = []
-        feeds_to_process = []
+        feeds = []
+        feeds_collections = []
+        feed_infos = []
 
         # ensure that all feeds are really in the DB
         for collection in self._collections:
@@ -79,14 +80,24 @@ class Collections:
                     description=feed_info.description,
                 )
 
-                feeds_infos.append(real_feed)
-                feeds_to_process.append(real_feed)
+                feed_infos.append(feed_info)
+                feeds.append(real_feed)
+                feeds_collections.append(collection.id)
 
-        feed_ids = await f_domain.save_feeds(feeds_infos)
+        feed_ids = await f_domain.save_feeds(feeds)
 
-        self._feeds_in_collections = set(feed_ids)
+        for feed_id, collection_id, feed_info in zip(feed_ids, feeds_collections, feed_infos):
+            feed_info.feed_id = feed_id
+
+            if feed_id not in self._feeds_in_collections:
+                self._feeds_in_collections[feed_id] = set()
+
+            self._feeds_in_collections[feed_id].add(collection_id)
 
         logger.info("feeds_prepared")
+
+    def collections_for_feed(self, feed_id: FeedId) -> list[CollectionId]:
+        return list(self._feeds_in_collections.get(feed_id, []))
 
     async def initialize(self, collection_configs: pathlib.Path | None = settings.collection_configs) -> None:
         logger.info("initializing_collections")
