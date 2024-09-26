@@ -4,7 +4,7 @@
       <a
         href="#"
         v-if="!subscribed"
-        @click.prevent.stop="subscribe"
+        @click.prevent.stop="feedsStore.subscribe(feed.url)"
         class="text-blue-700"
         >subscribe</a
       >
@@ -46,6 +46,9 @@
   import {useEntriesStore} from "@/stores/entries";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useCollectionsStore} from "@/stores/collections";
+  import {useFeedsStore} from "@/stores/feeds";
+
+  const feedsStore = useFeedsStore();
 
   const properties = defineProps<{
     feed: t.CollectionFeedInfo;
@@ -53,17 +56,7 @@
 
   const globalSettings = useGlobalSettingsStore();
 
-  const subscribed = ref(false);
-
-  async function subscribe() {
-    subscribed.value = true;
-
-    await api.addFeed({
-      url: properties.feed.url
-    });
-
-    globalSettings.updateDataVersion();
-  }
+  const subscribed = computed(() => properties.feed.id in feedsStore.feeds);
 </script>
 
 <style scoped></style>

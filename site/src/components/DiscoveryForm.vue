@@ -59,6 +59,9 @@
   import * as api from "@/logic/api";
   import {computedAsync} from "@vueuse/core";
   import {useEntriesStore} from "@/stores/entries";
+  import {useFeedsStore} from "@/stores/feeds";
+
+  const feedsStore = useFeedsStore();
 
   const search = ref("");
 
@@ -91,10 +94,10 @@
     return feeds;
   }, null);
 
-  async function addFeed(url: string) {
+  async function addFeed(url: t.URL) {
     adding.value = true;
 
-    await api.addFeed({url: url});
+    await feedsStore.subscribe(url);
 
     addedFeeds.value[url] = true;
 

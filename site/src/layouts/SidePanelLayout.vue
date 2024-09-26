@@ -149,13 +149,11 @@
   import {useRouter, RouterLink, RouterView} from "vue-router";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useGlobalState} from "@/stores/globalState";
-  import {useEntriesStore} from "@/stores/entries";
   import {useSupertokens} from "@/stores/supertokens";
   import * as e from "@/logic/enums";
   import * as settings from "@/logic/settings";
 
   const globalSettings = useGlobalSettingsStore();
-  const entriesStore = useEntriesStore();
   const supertokens = useSupertokens();
   const globalState = useGlobalState();
 
