@@ -94,7 +94,7 @@
     return feeds;
   }, null);
 
-  async function addFeed(url: string) {
+  async function addFeed(url: t.URL) {
     adding.value = true;
 
     await feedsStore.subscribe(url);

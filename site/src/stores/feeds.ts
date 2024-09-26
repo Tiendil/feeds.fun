@@ -18,10 +18,11 @@ export const useFeedsStore = defineStore("feedsStore", () => {
 
     const feedsList = await api.getFeeds();
 
-    const feedsDict = feedsList.reduce((acc, feed) => {
-      acc[feed.id] = feed;
-      return acc;
-    }, {});
+    const feedsDict: {[key: t.FeedId]: t.Feed} = {};
+
+    for (const feed of feedsList) {
+      feedsDict[feed.id] = feed;
+    }
 
     return feedsDict;
   }, {});
