@@ -86,7 +86,7 @@
   import {useCollectionsStore} from "@/stores/collections";
 
   const globalSettings = useGlobalSettingsStore();
-const feedsStore = useFeedsStore();
+  const feedsStore = useFeedsStore();
   const collections = useCollectionsStore();
 
   const properties = defineProps<{feed: t.Feed}>();
@@ -111,5 +111,4 @@ const feedsStore = useFeedsStore();
     }
     return DOMPurify.sanitize(properties.feed.description);
   });
-
 </script>

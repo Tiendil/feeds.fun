@@ -453,7 +453,7 @@ export class CollectionFeedInfo {
   readonly description: string;
   readonly id: FeedId;
 
-  constructor({url, title, description, id}: {url: URL; title: string; description: string, id: FeedId}) {
+  constructor({url, title, description, id}: {url: URL; title: string; description: string; id: FeedId}) {
     this.url = url;
     this.title = title;
     this.description = description;

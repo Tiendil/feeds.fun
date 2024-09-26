@@ -99,10 +99,13 @@
     showFeeds.value = false;
   }
 
-const feeds = computedAsync(async () => {
-    return await collections.getFeeds({collectionId: properties.collectionId});
-}, [],
-  { lazy: true });
+  const feeds = computedAsync(
+    async () => {
+      return await collections.getFeeds({collectionId: properties.collectionId});
+    },
+    [],
+    {lazy: true}
+  );
 </script>
 
 <style scoped>

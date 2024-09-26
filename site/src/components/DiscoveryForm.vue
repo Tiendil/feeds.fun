@@ -59,9 +59,9 @@
   import * as api from "@/logic/api";
   import {computedAsync} from "@vueuse/core";
   import {useEntriesStore} from "@/stores/entries";
-import {useFeedsStore} from "@/stores/feeds";
+  import {useFeedsStore} from "@/stores/feeds";
 
-const feedsStore = useFeedsStore();
+  const feedsStore = useFeedsStore();
 
   const search = ref("");
 

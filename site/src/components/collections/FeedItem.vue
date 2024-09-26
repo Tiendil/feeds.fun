@@ -45,10 +45,10 @@
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
-import {useCollectionsStore} from "@/stores/collections";
-import {useFeedsStore} from "@/stores/feeds";
+  import {useCollectionsStore} from "@/stores/collections";
+  import {useFeedsStore} from "@/stores/feeds";
 
-const feedsStore = useFeedsStore();
+  const feedsStore = useFeedsStore();
 
   const properties = defineProps<{
     feed: t.CollectionFeedInfo;

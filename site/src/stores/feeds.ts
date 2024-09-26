@@ -9,9 +9,7 @@ import {Timer} from "@/logic/timer";
 import {computedAsync} from "@vueuse/core";
 import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
-
 export const useFeedsStore = defineStore("feedsStore", () => {
-
   const globalSettings = useGlobalSettingsStore();
 
   const feeds = computedAsync(async () => {
@@ -23,11 +21,9 @@ export const useFeedsStore = defineStore("feedsStore", () => {
     const feedsDict = feedsList.reduce((acc, feed) => {
       acc[feed.id] = feed;
       return acc;
-    }
-      , {});
+    }, {});
 
     return feedsDict;
-
   }, {});
 
   async function unsubscribe(feedId: t.FeedId) {
