@@ -1,10 +1,14 @@
 import uuid
 from typing import NewType
-
+import pydantic
 from ffun.core.entities import BaseEntity
+
+from ffun.feeds.entities import FeedId
 
 
 class FeedInfo(BaseEntity):
+    model_config = pydantic.ConfigDict(frozen=False)
+
     url: str
 
     # Some feeds define title and description in their data
@@ -12,6 +16,8 @@ class FeedInfo(BaseEntity):
     # So, we can describe feeds in a consistent way resistent to problems on the feed side
     title: str
     description: str
+
+    feed_id: FeedId | None = None
 
 
 CollectionId = NewType("CollectionId", uuid.UUID)

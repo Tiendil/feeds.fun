@@ -66,8 +66,9 @@ class Collections:
     async def prepare_feeds(self) -> None:
         logger.info("preparing_feeds")
 
-        feeds_infos = []
+        feeds = []
         feeds_collections = []
+        feed_infos = []
 
         # ensure that all feeds are really in the DB
         for collection in self._collections:
@@ -79,12 +80,15 @@ class Collections:
                     description=feed_info.description,
                 )
 
-                feeds_infos.append(real_feed)
+                feed_infos.append(feed_info)
+                feeds.append(real_feed)
                 feeds_collections.append(collection.id)
 
-        feed_ids = await f_domain.save_feeds(feeds_infos)
+        feed_ids = await f_domain.save_feeds(feeds)
 
-        for feed_id, collection_id in zip(feed_ids, feeds_collections):
+        for feed_id, collection_id, feed_info in zip(feed_ids, feeds_collections, feed_infos):
+            feed_info.feed_id = feed_id
+
             if feed_id not in self._feeds_in_collections:
                 self._feeds_in_collections[feed_id] = set()
 
@@ -92,7 +96,6 @@ class Collections:
 
         logger.info("feeds_prepared")
 
-    # TODO: test
     def collections_for_feed(self, feed_id: FeedId) -> list[CollectionId]:
         return list(self._feeds_in_collections.get(feed_id, []))
 

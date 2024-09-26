@@ -30,7 +30,7 @@ class TestCollections:
 
         assert not collections.initialized
         assert collections._collections == []
-        assert collections._feeds_in_collections == set()
+        assert collections._feeds_in_collections == {}
 
     @pytest.mark.asyncio
     async def test_initialize__no_feeds(self) -> None:
@@ -40,7 +40,7 @@ class TestCollections:
 
         assert collections.initialized
         assert collections._collections == []
-        assert collections._feeds_in_collections == set()
+        assert collections._feeds_in_collections == {}
 
     # Also tests:
     # - Collections.load
@@ -53,11 +53,14 @@ class TestCollections:
         assert len(collections._feeds_in_collections) == 3
 
         feeds = await f_domain.get_feeds(collections._feeds_in_collections)
+        feed_ids = {feed.id for feed in feeds}
 
         expected_urls = set()
 
         for collection in collections._collections:
             for feed_info in collection.feeds:
+                assert feed_info.feed_id in collections._feeds_in_collections
+                assert feed_info.feed_id in feed_ids
                 expected_urls.add(feed_info.url)
 
         assert expected_urls == {feed.url for feed in feeds}
@@ -140,3 +143,12 @@ class TestCollections:
 
         with pytest.raises(errors.CollectionIsEmpty):
             await collections.add_test_collection(collection_2)
+
+    def test_collections_for_feed(self, collections: Collections) -> None:
+        for collection in collections._collections:
+            for feed_info in collection.feeds:
+                assert collection.id in collections.collections_for_feed(feed_info.feed_id)
+
+    def test_collections_for_feed__no_collection(self, collections: Collections) -> None:
+        for collection in collections._collections:
+            assert collection.id not in collections.collections_for_feed(f_domain.new_feed_id())
