@@ -100,7 +100,6 @@
   }
 
 const feeds = computedAsync(async () => {
-  console.log('collectionId', properties.collectionId);
     return await collections.getFeeds({collectionId: properties.collectionId});
 }, [],
   { lazy: true });
