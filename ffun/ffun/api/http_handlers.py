@@ -49,14 +49,10 @@ async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entiti
 
     for feed in feeds:
         collection_ids = collections.collections_for_feed(feed.id)
-        external_feed = entities.Feed.from_internal(feed,
-                                                    link=feeds_to_links[feed.id],
-                                                    collection_ids=collection_ids)
+        external_feed = entities.Feed.from_internal(feed, link=feeds_to_links[feed.id], collection_ids=collection_ids)
         external_feeds.append(external_feed)
 
-    return entities.GetFeedsResponse(
-        feeds=external_feeds
-    )
+    return entities.GetFeedsResponse(feeds=external_feeds)
 
 
 async def _external_entries(  # pylint: disable=R0914

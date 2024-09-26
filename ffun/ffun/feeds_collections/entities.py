@@ -1,8 +1,9 @@
 import uuid
 from typing import NewType
-import pydantic
-from ffun.core.entities import BaseEntity
 
+import pydantic
+
+from ffun.core.entities import BaseEntity
 from ffun.feeds.entities import FeedId
 
 

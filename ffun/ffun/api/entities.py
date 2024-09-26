@@ -48,7 +48,9 @@ class Feed(BaseEntity):
     collectionIds: list[fc_entities.CollectionId]
 
     @classmethod
-    def from_internal(cls, feed: f_entities.Feed, link: fl_entities.FeedLink, collection_ids: list[fc_entities.CollectionId]) -> "Feed":
+    def from_internal(
+        cls, feed: f_entities.Feed, link: fl_entities.FeedLink, collection_ids: list[fc_entities.CollectionId]
+    ) -> "Feed":
         return cls(
             id=feed.id,
             title=feed.title,
@@ -58,7 +60,7 @@ class Feed(BaseEntity):
             lastError=feed.last_error.name if feed.last_error else None,
             loadedAt=feed.loaded_at,
             linkedAt=link.created_at,
-            collectionIds=collection_ids
+            collectionIds=collection_ids,
         )
 
 

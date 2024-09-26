@@ -59,7 +59,8 @@
           <template v-if="collectionId in collections.collections">
             <br />
             Collections:
-            <span class="text-green-700 font-bold">{{ collections.collections[collectionId].name }}</span><span v-if="index < feed.collectionIds.length - 1">, </span>
+            <span class="text-green-700 font-bold">{{ collections.collections[collectionId].name }}</span
+            ><span v-if="index < feed.collectionIds.length - 1">, </span>
           </template>
         </span>
       </template>
@@ -80,11 +81,11 @@
   import * as api from "@/logic/api";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
-import {useGlobalSettingsStore} from "@/stores/globalSettings";
+  import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
   import {useCollectionsStore} from "@/stores/collections";
 
-const globalSettings = useGlobalSettingsStore();
+  const globalSettings = useGlobalSettingsStore();
 
   const collections = useCollectionsStore();
 
