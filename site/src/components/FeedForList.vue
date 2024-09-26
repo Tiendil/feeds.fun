@@ -6,7 +6,7 @@
       <a
         href="#"
         class="ffun-normal-link"
-        @click.prevent="unsubscribe()">
+        @click.prevent="feedsStore.unsubscribe(feed.id)">
         remove
       </a>
     </div>
@@ -82,11 +82,11 @@
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
-
+  import {useFeedsStore} from "@/stores/feeds";
   import {useCollectionsStore} from "@/stores/collections";
 
   const globalSettings = useGlobalSettingsStore();
-
+const feedsStore = useFeedsStore();
   const collections = useCollectionsStore();
 
   const properties = defineProps<{feed: t.Feed}>();
@@ -112,8 +112,4 @@
     return DOMPurify.sanitize(properties.feed.description);
   });
 
-  async function unsubscribe() {
-    await api.unsubscribe({feedId: properties.feed.id});
-    globalSettings.updateDataVersion();
-  }
 </script>

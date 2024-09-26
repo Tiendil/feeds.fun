@@ -48,27 +48,25 @@
   import _ from "lodash";
   import {computed, ref, onUnmounted, watch} from "vue";
   import {computedAsync} from "@vueuse/core";
-  import {useGlobalSettingsStore} from "@/stores/globalSettings";
+import {useGlobalSettingsStore} from "@/stores/globalSettings";
+  import {useFeedsStore} from "@/stores/feeds";
   import * as api from "@/logic/api";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
 
-  const globalSettings = useGlobalSettingsStore();
+const globalSettings = useGlobalSettingsStore();
+
+const feedsStore = useFeedsStore();
 
   globalSettings.mainPanelMode = e.MainPanelMode.Feeds;
 
-  const feeds = computedAsync(async () => {
-    // force refresh
-    globalSettings.dataVersion;
-    return await api.getFeeds();
-  }, null);
+const sortedFeeds = computed(() => {
 
-  const sortedFeeds = computed(() => {
-    if (!feeds.value) {
+    let sorted = Object.values(feedsStore.feeds);
+
+    if (sorted.length === 0) {
       return null;
     }
-
-    let sorted = feeds.value.slice();
 
     const orderProperties = e.FeedsOrderProperties.get(globalSettings.feedsOrder);
 

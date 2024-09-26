@@ -270,10 +270,12 @@ class CollectionFeedInfo(pydantic.BaseModel):
     url: str
     title: str
     description: str
+    id: f_entities.FeedId
 
     @classmethod
     def from_internal(cls, record: fc_entities.FeedInfo) -> "CollectionFeedInfo":
-        return cls(url=record.url, title=record.title, description=record.description)
+        assert record.feed_id is not None
+        return cls(url=record.url, title=record.title, description=record.description, id=record.feed_id)
 
 
 ##################

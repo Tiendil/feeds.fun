@@ -451,26 +451,31 @@ export class CollectionFeedInfo {
   readonly url: URL;
   readonly title: string;
   readonly description: string;
+  readonly id: FeedId;
 
-  constructor({url, title, description}: {url: URL; title: string; description: string}) {
+  constructor({url, title, description, id}: {url: URL; title: string; description: string, id: FeedId}) {
     this.url = url;
     this.title = title;
     this.description = description;
+    this.id = id;
   }
 }
 
 export function collectionFeedInfoFromJSON({
   url,
   title,
-  description
+  description,
+  id
 }: {
   url: string;
   title: string;
   description: string;
+  id: string;
 }): CollectionFeedInfo {
   return new CollectionFeedInfo({
     url: toURL(url),
     title: title,
-    description: description
+    description: description,
+    id: toFeedId(id)
   });
 }
