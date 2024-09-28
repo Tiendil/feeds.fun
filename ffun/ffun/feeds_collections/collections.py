@@ -4,13 +4,13 @@ import toml
 
 from ffun.core import logging
 from ffun.domain.domain import new_feed_id
+from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
+from ffun.feeds.domain import get_source_ids
 from ffun.feeds.entities import Feed, FeedId
 from ffun.feeds_collections import errors
 from ffun.feeds_collections.entities import Collection, CollectionId, FeedInfo
 from ffun.feeds_collections.settings import settings
-from ffun.feeds.domain import get_source_ids
-from ffun.domain.urls import url_to_source_uid
 
 logger = logging.get_module_logger()
 
@@ -73,9 +73,11 @@ class Collections:
         feeds_collections = []
         feed_infos = []
 
-        source_uids = {feed_info.url: url_to_source_uid(feed_info.url)
-                       for collection in self._collections
-                       for feed_info in collection.feeds}
+        source_uids = {
+            feed_info.url: url_to_source_uid(feed_info.url)
+            for collection in self._collections
+            for feed_info in collection.feeds
+        }
 
         source_ids = await get_source_ids(source_uids.values())
 

@@ -1,9 +1,9 @@
 import uuid
 from typing import Any
 
-from ffun.feeds.entities import Feed, FeedState
-from ffun.feeds.operations import get_feeds, save_feed, get_source_ids
 from ffun.domain.urls import url_to_source_uid
+from ffun.feeds.entities import Feed, FeedState
+from ffun.feeds.operations import get_feeds, get_source_ids, save_feed
 
 
 def fake_url() -> str:

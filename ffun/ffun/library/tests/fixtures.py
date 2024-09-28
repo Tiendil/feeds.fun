@@ -1,4 +1,3 @@
-import pytest
 import pytest_asyncio
 
 from ffun.feeds.entities import FeedId

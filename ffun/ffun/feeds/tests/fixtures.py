@@ -1,4 +1,3 @@
-import pytest
 import pytest_asyncio
 
 from ffun.feeds.domain import get_feed, mark_feed_as_loaded, save_feed
