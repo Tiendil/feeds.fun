@@ -1,9 +1,8 @@
-import uuid
-
 import httpx
 from furl import furl
 
 from ffun.core import logging, utils
+from ffun.domain.domain import new_entry_id
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedId, FeedState
 from ffun.feeds_collections.collections import collections
@@ -122,7 +121,7 @@ async def store_entries(feed_id: FeedId, entries: list[p_entities.EntryInfo]) ->
     entries_to_store = [entry for entry in entries if entry.external_id not in stored_entries_external_ids]
 
     prepared_entries = [
-        l_entities.Entry(feed_id=feed_id, id=uuid.uuid4(), cataloged_at=utils.now(), **entry_info.model_dump())
+        l_entities.Entry(feed_id=feed_id, id=new_entry_id(), cataloged_at=utils.now(), **entry_info.model_dump())
         for entry_info in entries_to_store
     ]
 

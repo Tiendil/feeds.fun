@@ -1,7 +1,6 @@
-import uuid
-
+from ffun.domain.entities import FeedId
 from ffun.feeds import errors, operations
-from ffun.feeds.entities import Feed, FeedId
+from ffun.feeds.entities import Feed
 
 save_feed = operations.save_feed
 update_feed_info = operations.update_feed_info
@@ -29,7 +28,3 @@ async def get_feed(feed_id: FeedId) -> Feed:
         raise errors.NoFeedFound(feed_id=feed_id)
 
     return feeds[0]
-
-
-def new_feed_id() -> FeedId:
-    return FeedId(uuid.uuid4())

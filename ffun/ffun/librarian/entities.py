@@ -1,6 +1,5 @@
 import datetime
 import enum
-import uuid
 from typing import TYPE_CHECKING, Annotated, Any, Literal, Protocol
 
 import pydantic
@@ -8,6 +7,7 @@ from pydantic_core import PydanticCustomError
 
 from ffun.core import logging
 from ffun.core.entities import BaseEntity
+from ffun.domain.entities import EntryId
 from ffun.llms_framework.entities import LLMCollectionApiKey, LLMConfiguration, LLMGeneralApiKey, LLMProvider
 
 logger = logging.get_module_logger()
@@ -34,7 +34,7 @@ class ProcessorType(enum.StrEnum):
 class ProcessorPointer(BaseEntity):
     processor_id: int
     pointer_created_at: datetime.datetime
-    pointer_entry_id: uuid.UUID
+    pointer_entry_id: EntryId
 
 
 class BaseProcessor(BaseEntity):

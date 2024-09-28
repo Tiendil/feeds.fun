@@ -1,9 +1,8 @@
-import uuid
 from typing import Iterable
 
 from ffun.core import logging, postgresql
+from ffun.domain.entities import EntryId, FeedId
 from ffun.feeds import domain as f_domain
-from ffun.feeds.entities import FeedId
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.markers import domain as m_domain
@@ -67,7 +66,7 @@ async def remove_feed(feed_id: FeedId) -> None:
     await f_domain.tech_remove_feed(feed_id)
 
 
-async def remove_entries(entries_ids: Iterable[uuid.UUID]) -> int:
+async def remove_entries(entries_ids: Iterable[EntryId]) -> int:
     """Remove entries and all related markers and relations."""
     entries_to_remove = list(entries_ids)
 

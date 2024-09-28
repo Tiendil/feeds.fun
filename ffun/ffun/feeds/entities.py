@@ -1,9 +1,9 @@
 import datetime
 import enum
-import uuid
-from typing import Any, NewType
+from typing import Any
 
 from ffun.core.entities import BaseEntity
+from ffun.domain.entities import FeedId
 
 
 class FeedState(int, enum.Enum):
@@ -50,9 +50,6 @@ class FeedError(enum.IntEnum):
     proxy_connection_403 = 4003
     proxy_no_route_to_host = 4004
     proxy_connection_502 = 4005
-
-
-FeedId = NewType("FeedId", uuid.UUID)
 
 
 class Feed(BaseEntity):

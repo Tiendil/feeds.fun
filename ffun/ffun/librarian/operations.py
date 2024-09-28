@@ -1,4 +1,3 @@
-import uuid
 from typing import Any, Iterable
 
 import psycopg
@@ -6,6 +5,7 @@ from pypika import PostgreSQLQuery
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
+from ffun.domain.entities import EntryId
 from ffun.librarian import errors
 from ffun.librarian.entities import ProcessorPointer
 
@@ -87,7 +87,7 @@ async def save_pointer(execute: ExecuteType, pointer: ProcessorPointer) -> None:
 
 
 async def push_entries_to_processor_queue(
-    execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]
+    execute: ExecuteType, processor_id: int, entry_ids: Iterable[EntryId]
 ) -> None:
     query = PostgreSQLQuery.into("ln_processors_queue").columns("processor_id", "entry_id")
 
@@ -97,7 +97,7 @@ async def push_entries_to_processor_queue(
     await execute(str(query))
 
 
-async def get_entries_to_process(processor_id: int, limit: int) -> list[uuid.UUID]:
+async def get_entries_to_process(processor_id: int, limit: int) -> list[EntryId]:
     sql = """
     SELECT entry_id FROM ln_processors_queue
     WHERE processor_id = %(processor_id)s
@@ -122,7 +122,7 @@ async def count_entries_in_processor_queue(processor_id: int) -> int:
 
 
 async def remove_entries_from_processor_queue(
-    execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]
+    execute: ExecuteType, processor_id: int, entry_ids: Iterable[EntryId]
 ) -> None:
     sql = """
     DELETE FROM ln_processors_queue
@@ -142,7 +142,7 @@ async def clear_processor_queue(processor_id: int) -> None:
     await execute(sql, {"processor_id": processor_id})
 
 
-async def add_entries_to_failed_storage(processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
+async def add_entries_to_failed_storage(processor_id: int, entry_ids: Iterable[EntryId]) -> None:
     query = PostgreSQLQuery.into("ln_failed_entries").columns("processor_id", "entry_id")
 
     for entry_id in entry_ids:
@@ -151,7 +151,7 @@ async def add_entries_to_failed_storage(processor_id: int, entry_ids: Iterable[u
     await execute(str(query))
 
 
-async def get_failed_entries(execute: ExecuteType, processor_id: int, limit: int) -> list[uuid.UUID]:
+async def get_failed_entries(execute: ExecuteType, processor_id: int, limit: int) -> list[EntryId]:
     sql = """
     SELECT entry_id FROM ln_failed_entries
     WHERE processor_id = %(processor_id)s
@@ -164,7 +164,7 @@ async def get_failed_entries(execute: ExecuteType, processor_id: int, limit: int
     return [row["entry_id"] for row in rows]
 
 
-async def remove_failed_entries(execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]) -> None:
+async def remove_failed_entries(execute: ExecuteType, processor_id: int, entry_ids: Iterable[EntryId]) -> None:
     sql = """
     DELETE FROM ln_failed_entries
     WHERE processor_id = %(processor_id)s

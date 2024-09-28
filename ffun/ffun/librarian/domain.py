@@ -1,8 +1,8 @@
-import uuid
 from typing import Iterable
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.domain.entities import EntryId
 from ffun.librarian import errors, operations
 from ffun.librarian.entities import ProcessorPointer
 from ffun.librarian.processors.base import Processor
@@ -18,7 +18,7 @@ count_failed_entries = operations.count_failed_entries
 
 @run_in_transaction
 async def push_entries_and_move_pointer(
-    execute: ExecuteType, next_pointer: ProcessorPointer, entry_ids: Iterable[uuid.UUID]
+    execute: ExecuteType, next_pointer: ProcessorPointer, entry_ids: Iterable[EntryId]
 ) -> None:
     await operations.push_entries_to_processor_queue(
         execute, processor_id=next_pointer.processor_id, entry_ids=entry_ids
@@ -97,6 +97,6 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
 
 @run_in_transaction
 async def remove_entries_from_processor_queue(
-    execute: ExecuteType, processor_id: int, entry_ids: Iterable[uuid.UUID]
+    execute: ExecuteType, processor_id: int, entry_ids: Iterable[EntryId]
 ) -> None:
     await operations.remove_entries_from_processor_queue(execute, processor_id, entry_ids)

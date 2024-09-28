@@ -1,10 +1,9 @@
-import uuid
-
 import pytest
 from structlog.testing import capture_logs
 
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
+from ffun.domain.domain import new_entry_id
 from ffun.feeds.entities import FeedId
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import CollectionId
@@ -86,7 +85,7 @@ class TestEntriesProcessors:
         entries_list = list(entries.values())
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
 
-        fake_entries_ids = [uuid.uuid4() for _ in range(3)]
+        fake_entries_ids = [new_entry_id() for _ in range(3)]
 
         await operations.push_entries_to_processor_queue(
             execute, processor_id=fake_entries_processor.id, entry_ids=fake_entries_ids
@@ -116,7 +115,7 @@ class TestEntriesProcessors:
         entries_list = list(entries.values())
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
 
-        fake_entries_ids = [uuid.uuid4() for _ in range(3)]
+        fake_entries_ids = [new_entry_id() for _ in range(3)]
 
         entries_ids = [entry.id for entry in entries_list] + fake_entries_ids
 

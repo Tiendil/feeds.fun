@@ -1,9 +1,9 @@
-import uuid
 from typing import Iterable
 
 from bidict import bidict
 
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
+from ffun.domain.entities import EntryId
 from ffun.ontology import operations
 from ffun.ontology.entities import ProcessorTag, Tag, TagCategory, TagPropertyType
 from ffun.tags import converters
@@ -57,7 +57,7 @@ async def normalize_tags(tags: Iterable[ProcessorTag]) -> dict[str, str]:
 # TODO: in the future we could split this function into two separate functions
 #       1. tags & properties normalization
 #       2. saving tags & properties to the database
-async def apply_tags_to_entry(entry_id: uuid.UUID, processor_id: int, tags: Iterable[ProcessorTag]) -> None:
+async def apply_tags_to_entry(entry_id: EntryId, processor_id: int, tags: Iterable[ProcessorTag]) -> None:
     """Apply tags to entry.
 
     Function expects raw tags from processors => after normalization we could have duplicates.
@@ -87,11 +87,11 @@ async def apply_tags_to_entry(entry_id: uuid.UUID, processor_id: int, tags: Iter
         await operations.apply_tags_properties(execute, properties)
 
 
-async def get_tags_ids_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:
+async def get_tags_ids_for_entries(entries_ids: list[EntryId]) -> dict[EntryId, set[int]]:
     return await operations.get_tags_for_entries(execute, entries_ids)
 
 
-async def get_tags_for_entries(entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[str]]:
+async def get_tags_for_entries(entries_ids: list[EntryId]) -> dict[EntryId, set[str]]:
     tags_ids = await operations.get_tags_for_entries(execute, entries_ids)
 
     all_tags = set()
@@ -137,10 +137,10 @@ async def get_tags_info(tags_ids: Iterable[int]) -> dict[int, Tag]:  # noqa: CCR
 
 
 @run_in_transaction
-async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[uuid.UUID]) -> None:
+async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> None:
     await operations.remove_relations_for_entries(execute, entries_ids)
 
 
 @run_in_transaction
-async def tech_copy_relations(execute: ExecuteType, entry_from_id: uuid.UUID, entry_to_id: uuid.UUID) -> None:
+async def tech_copy_relations(execute: ExecuteType, entry_from_id: EntryId, entry_to_id: EntryId) -> None:
     await operations.tech_copy_relations(execute, entry_from_id, entry_to_id)

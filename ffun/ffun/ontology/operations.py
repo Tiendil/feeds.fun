@@ -1,4 +1,3 @@
-import uuid
 from typing import Iterable, Sequence
 
 from bidict import bidict
@@ -6,6 +5,7 @@ from pypika import PostgreSQLQuery
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
+from ffun.domain.entities import EntryId
 from ffun.ontology import errors
 from ffun.ontology.entities import TagProperty, TagPropertyType
 
@@ -67,7 +67,7 @@ async def get_tags_by_ids(tags_ids: list[int]) -> dict[int, str]:
     return {row["id"]: row["uid"] for row in rows}
 
 
-async def _save_tags(execute: ExecuteType, entry_id: uuid.UUID, tags_ids: Iterable[int]) -> None:
+async def _save_tags(execute: ExecuteType, entry_id: EntryId, tags_ids: Iterable[int]) -> None:
     sql_relations = """
     INSERT INTO o_relations (entry_id, tag_id)
     VALUES (%(entry_id)s, %(tag_id)s)
@@ -90,7 +90,7 @@ async def _register_relations_processors(
 
 
 async def _get_relations_for_entry_and_tags(
-    execute: ExecuteType, entry_id: uuid.UUID, tags_ids: Iterable[int]
+    execute: ExecuteType, entry_id: EntryId, tags_ids: Iterable[int]
 ) -> dict[int, int]:
     result = await execute(
         "SELECT id, tag_id FROM o_relations WHERE entry_id = %(entry_id)s AND tag_id = ANY(%(tags_ids)s)",
@@ -100,7 +100,7 @@ async def _get_relations_for_entry_and_tags(
     return {row["tag_id"]: row["id"] for row in result}
 
 
-async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: int, tags_ids: Iterable[int]) -> None:
+async def apply_tags(execute: ExecuteType, entry_id: EntryId, processor_id: int, tags_ids: Iterable[int]) -> None:
     await _save_tags(execute, entry_id, tags_ids)
 
     relations = await _get_relations_for_entry_and_tags(execute, entry_id, tags_ids)
@@ -108,7 +108,7 @@ async def apply_tags(execute: ExecuteType, entry_id: uuid.UUID, processor_id: in
     await _register_relations_processors(execute, list(relations.values()), processor_id)
 
 
-async def tech_copy_relations(execute: ExecuteType, entry_from_id: uuid.UUID, entry_to_id: uuid.UUID) -> None:
+async def tech_copy_relations(execute: ExecuteType, entry_from_id: EntryId, entry_to_id: EntryId) -> None:
     """Copy relations with processors info."""
     # get processors for each tag in entry_from
     sql = """
@@ -162,12 +162,12 @@ async def apply_tags_properties(execute: ExecuteType, properties: Sequence[TagPr
     await execute(str(query))
 
 
-async def get_tags_for_entries(execute: ExecuteType, entries_ids: list[uuid.UUID]) -> dict[uuid.UUID, set[int]]:
+async def get_tags_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> dict[EntryId, set[int]]:
     sql = """SELECT * FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"""
 
     rows = await execute(sql, {"entries_ids": entries_ids})
 
-    result: dict[uuid.UUID, set[int]] = {}
+    result: dict[EntryId, set[int]] = {}
 
     for row in rows:
         entry_id = row["entry_id"]
@@ -199,7 +199,7 @@ async def get_tags_properties(tags_ids: Iterable[int]) -> list[TagProperty]:
     ]
 
 
-async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[uuid.UUID]) -> None:
+async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> None:
     sql = "SELECT id FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"
 
     result = await execute(sql, {"entries_ids": entries_ids})

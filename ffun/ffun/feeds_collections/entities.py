@@ -1,9 +1,7 @@
-import uuid
-from typing import NewType
-
 import pydantic
 
 from ffun.core.entities import BaseEntity
+from ffun.domain.entities import CollectionId
 from ffun.feeds.entities import FeedId
 
 
@@ -19,9 +17,6 @@ class FeedInfo(BaseEntity):
     description: str
 
     feed_id: FeedId | None = None
-
-
-CollectionId = NewType("CollectionId", uuid.UUID)
 
 
 class Collection(BaseEntity):

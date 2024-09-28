@@ -3,6 +3,7 @@ from itertools import chain
 
 import pytest
 
+from ffun.domain.domain import new_feed_id
 from ffun.feeds import domain as f_domain
 from ffun.feeds import errors as f_errors
 from ffun.feeds.entities import FeedId
@@ -20,7 +21,7 @@ from ffun.users.tests import make as u_make
 class TestRemoveFeed:
     @pytest.mark.asyncio
     async def test_no_feed(self) -> None:
-        await remove_feed(f_domain.new_feed_id())
+        await remove_feed(new_feed_id())
 
     @pytest.mark.asyncio
     async def test_success(
@@ -370,7 +371,7 @@ class TestRemoveEntries:
 class TestLimitEntriesForFeed:
     @pytest.mark.asyncio
     async def test_no_feed(self) -> None:
-        await limit_entries_for_feed(f_domain.new_feed_id(), limit=10)
+        await limit_entries_for_feed(new_feed_id(), limit=10)
 
     @pytest.mark.asyncio
     async def test_no_entries(self, loaded_feed_id: FeedId) -> None:

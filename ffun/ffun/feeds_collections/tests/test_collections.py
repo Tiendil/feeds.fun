@@ -4,10 +4,10 @@ import uuid
 import pytest
 import pytest_asyncio
 
+from ffun.domain.domain import new_collection_id, new_feed_id
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections import errors
 from ffun.feeds_collections.collections import Collections
-from ffun.feeds_collections.domain import new_collection_id
 from ffun.feeds_collections.entities import Collection, FeedInfo
 
 _root = pathlib.Path(__file__).parent
@@ -82,7 +82,7 @@ class TestCollections:
 
     @pytest.mark.asyncio
     async def test_has_feed(self, collections: Collections) -> None:
-        assert not collections.has_feed(f_domain.new_feed_id())
+        assert not collections.has_feed(new_feed_id())
 
         existed_feed_id = list(collections._feeds_in_collections)[0]
         assert collections.has_feed(existed_feed_id)
@@ -152,4 +152,4 @@ class TestCollections:
 
     def test_collections_for_feed__no_collection(self, collections: Collections) -> None:
         for collection in collections._collections:
-            assert collection.id not in collections.collections_for_feed(f_domain.new_feed_id())
+            assert collection.id not in collections.collections_for_feed(new_feed_id())

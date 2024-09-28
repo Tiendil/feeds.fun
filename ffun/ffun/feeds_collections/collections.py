@@ -3,6 +3,7 @@ import pathlib
 import toml
 
 from ffun.core import logging
+from ffun.domain.domain import new_feed_id
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedId
 from ffun.feeds_collections import errors
@@ -74,7 +75,7 @@ class Collections:
         for collection in self._collections:
             for feed_info in collection.feeds:
                 real_feed = Feed(
-                    id=f_domain.new_feed_id(),
+                    id=new_feed_id(),
                     url=feed_info.url,
                     title=feed_info.title,
                     description=feed_info.description,

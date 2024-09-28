@@ -6,6 +6,7 @@ import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
+from ffun.domain.entities import EntryId, FeedId
 from ffun.library import errors
 from ffun.library.entities import Entry
 
@@ -49,7 +50,7 @@ async def catalog_entries(entries: Iterable[Entry]) -> None:
 # 1. we can not guarantee that there will be no duplicates of feeds
 #    (can not guarantee perfect normalization of urls, etc)
 # 2. someone can damage database by infecting with wrong entries from faked feed
-async def check_stored_entries_by_external_ids(feed_id: uuid.UUID, external_ids: Iterable[str]) -> set[str]:
+async def check_stored_entries_by_external_ids(feed_id: FeedId, external_ids: Iterable[str]) -> set[str]:
     sql = """
     SELECT external_id
     FROM l_entries
@@ -64,10 +65,10 @@ async def check_stored_entries_by_external_ids(feed_id: uuid.UUID, external_ids:
 sql_select_entries = """SELECT * FROM l_entries WHERE id = ANY(%(ids)s)"""
 
 
-async def get_entries_by_ids(ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, Entry | None]:
+async def get_entries_by_ids(ids: Iterable[EntryId]) -> dict[EntryId, Entry | None]:
     rows = await execute(sql_select_entries, {"ids": ids})
 
-    result: dict[uuid.UUID, Entry | None] = {id: None for id in ids}
+    result: dict[EntryId, Entry | None] = {id: None for id in ids}
 
     for row in rows:
         result[row["id"]] = row_to_entry(row)
@@ -76,7 +77,7 @@ async def get_entries_by_ids(ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, Entry 
 
 
 async def get_entries_by_filter(
-    feeds_ids: Iterable[uuid.UUID], limit: int, period: datetime.timedelta | None = None
+    feeds_ids: Iterable[FeedId], limit: int, period: datetime.timedelta | None = None
 ) -> list[Entry]:
     if period is None:
         period = datetime.timedelta(days=100 * 365)
@@ -93,8 +94,8 @@ async def get_entries_by_filter(
 
 
 async def get_entries_after_pointer(
-    created_at: datetime.datetime, entry_id: uuid.UUID, limit: int
-) -> list[tuple[uuid.UUID, datetime.datetime]]:
+    created_at: datetime.datetime, entry_id: EntryId, limit: int
+) -> list[tuple[EntryId, datetime.datetime]]:
     # Indenx on created_at should be enough (currently it is (created_at, feed_idid))
     # In case of troubles we could add index on (created_at, id)
     sql = """
@@ -136,7 +137,7 @@ async def all_entries_iterator(chunk: int) -> AsyncGenerator[Entry, None]:
         entry_id = rows[-1]["id"]
 
 
-async def update_external_url(entity_id: uuid.UUID, url: str) -> None:
+async def update_external_url(entity_id: EntryId, url: str) -> None:
     sql = """
     UPDATE l_entries
     SET external_url = %(url)s
@@ -146,7 +147,7 @@ async def update_external_url(entity_id: uuid.UUID, url: str) -> None:
     await execute(sql, {"entity_id": entity_id, "url": url})
 
 
-async def tech_remove_entries_by_ids(entries_ids: Iterable[uuid.UUID]) -> None:
+async def tech_remove_entries_by_ids(entries_ids: Iterable[EntryId]) -> None:
     sql = """
     DELETE FROM l_entries
     WHERE id = ANY(%(entries_ids)s)
@@ -155,7 +156,7 @@ async def tech_remove_entries_by_ids(entries_ids: Iterable[uuid.UUID]) -> None:
     await execute(sql, {"entries_ids": list(entries_ids)})
 
 
-async def tech_move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
+async def tech_move_entry(entry_id: EntryId, feed_id: FeedId) -> None:
     sql = """
     UPDATE l_entries
     SET feed_id = %(feed_id)s
@@ -168,7 +169,7 @@ async def tech_move_entry(entry_id: uuid.UUID, feed_id: uuid.UUID) -> None:
         raise errors.CanNotMoveEntryAlreadyInFeed(entry_id=entry_id, feed_id=feed_id) from e
 
 
-async def tech_get_feed_entries_tail(feed_id: uuid.UUID, offset: int) -> set[uuid.UUID]:
+async def tech_get_feed_entries_tail(feed_id: FeedId, offset: int) -> set[EntryId]:
     """
     Get the last entries for the feed.
     """

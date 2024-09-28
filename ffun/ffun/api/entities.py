@@ -9,6 +9,7 @@ import pydantic
 
 from ffun.core import api
 from ffun.core.entities import BaseEntity
+from ffun.domain.entities import EntryId, FeedId
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.feeds_links import entities as fl_entities
@@ -37,7 +38,7 @@ class Marker(enum.StrEnum):
 
 
 class Feed(BaseEntity):
-    id: uuid.UUID
+    id: FeedId
     title: str | None
     description: str | None
     url: str
@@ -65,7 +66,7 @@ class Feed(BaseEntity):
 
 
 class Entry(BaseEntity):
-    id: uuid.UUID
+    id: EntryId
     # TODO: rename to feedId
     feed_id: f_entities.FeedId
     title: str
@@ -306,7 +307,7 @@ class GetLastEntriesResponse(api.APISuccess):
 
 
 class GetEntriesByIdsRequest(api.APIRequest):
-    ids: list[uuid.UUID]
+    ids: list[EntryId]
 
 
 class GetEntriesByIdsResponse(api.APISuccess):
@@ -349,7 +350,7 @@ class GetRulesResponse(api.APISuccess):
 
 
 class GetScoreDetailsRequest(api.APIRequest):
-    entryId: uuid.UUID
+    entryId: EntryId
 
 
 class GetScoreDetailsResponse(api.APISuccess):
@@ -357,7 +358,7 @@ class GetScoreDetailsResponse(api.APISuccess):
 
 
 class SetMarkerRequest(api.APIRequest):
-    entryId: uuid.UUID
+    entryId: EntryId
     marker: Marker
 
 
@@ -366,7 +367,7 @@ class SetMarkerResponse(api.APISuccess):
 
 
 class RemoveMarkerRequest(api.APIRequest):
-    entryId: uuid.UUID
+    entryId: EntryId
     marker: Marker
 
 

@@ -1,9 +1,9 @@
 import asyncio
-import uuid
 from typing import Any
 
 from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
+from ffun.domain.entities import EntryId
 from ffun.feeds_collections.collections import collections
 from ffun.librarian import domain, operations
 from ffun.librarian.entities import ProcessorType
@@ -107,8 +107,8 @@ class EntriesProcessor(InfiniteTask):
 
     # TODO: test
     async def separate_entries(  # noqa: disable=CCR001
-        self, entries_ids: list[uuid.UUID]
-    ) -> tuple[list[Entry], list[uuid.UUID]]:
+        self, entries_ids: list[EntryId]
+    ) -> tuple[list[Entry], list[EntryId]]:
         processor_id = self._processor_info.id
 
         # TODO: we could add caching here, because multiple processors can request the same entries
@@ -117,7 +117,7 @@ class EntriesProcessor(InfiniteTask):
         entries = await l_domain.get_entries_by_ids(entries_ids)
 
         entries_to_process: list[Entry] = []
-        entries_to_remove: list[uuid.UUID] = []
+        entries_to_remove: list[EntryId] = []
 
         for entry_id, entry in entries.items():
             if entry is None:
