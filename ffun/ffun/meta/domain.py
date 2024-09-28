@@ -1,5 +1,10 @@
 from typing import Iterable
 
+from ffun.users import entities as u_entities
+from ffun.parsers import entities as p_entities
+from ffun.domain.domain import new_feed_id
+from ffun.domain.urls import url_to_source_uid
+from ffun.feeds import entities as f_entities
 from ffun.core import logging, postgresql
 from ffun.domain.entities import EntryId, FeedId
 from ffun.feeds import domain as f_domain
@@ -91,3 +96,25 @@ async def limit_entries_for_feed(feed_id: FeedId, limit: int | None = None) -> N
     entries_removed = await remove_entries(entries_to_remove)
 
     logger.info("feed_entries_tail_removed", feed_id=feed_id, entries_limit=limit, entries_removed=entries_removed)
+
+
+# TODO: tests
+async def add_feeds(feed_infos: list[p_entities.FeedInfo], user: u_entities.User) -> None:
+
+    urls_to_sources_uids = {feed_info.url: url_to_source_uid(feed_info.url) for feed_info in feed_infos}
+
+    sources_uids_to_ids = await f_domain.get_source_ids(urls_to_sources_uids.values())
+
+    feeds = [
+        f_entities.Feed(id=new_feed_id(),
+                        source_id=sources_uids_to_ids[urls_to_sources_uids[feed_info.url]],
+                        url=feed_info.url,
+                        title=feed_info.title,
+                        description=feed_info.description)
+        for feed_info in feed_infos
+    ]
+
+    real_feeds_ids = await f_domain.save_feeds(feeds)
+
+    for feed_id in real_feeds_ids:
+        await fl_domain.add_link(user_id=user.id, feed_id=feed_id)
