@@ -34,6 +34,7 @@ async def catalog_entries(entries: Iterable[Entry]) -> None:
                 {
                     "id": entry.id,
                     "feed_id": entry.feed_id,
+                    "source_id": entry.source_id,
                     "title": entry.title,
                     "body": entry.body,
                     "external_id": entry.external_id,
