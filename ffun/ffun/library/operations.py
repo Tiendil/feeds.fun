@@ -5,20 +5,12 @@ from typing import Any, AsyncGenerator, Iterable
 import psycopg
 
 from ffun.core import logging
-from ffun.core.postgresql import execute
-from ffun.domain.entities import EntryId, FeedId
+from ffun.core.postgresql import execute, transaction, run_in_transaction, ExecuteType
+from ffun.domain.entities import EntryId, FeedId, SourceId
 from ffun.library import errors
 from ffun.library.entities import Entry
 
 logger = logging.get_module_logger()
-
-
-sql_insert_entry = """
-INSERT INTO l_entries (id, feed_id, title, body,
-                       external_id, external_url, external_tags, published_at)
-VALUES (%(id)s, %(feed_id)s, %(title)s, %(body)s,
-        %(external_id)s, %(external_url)s, %(external_tags)s, %(published_at)s)
-"""
 
 
 def row_to_entry(row: dict[str, Any]) -> Entry:
@@ -26,34 +18,72 @@ def row_to_entry(row: dict[str, Any]) -> Entry:
     return Entry(**row)
 
 
-async def catalog_entries(entries: Iterable[Entry]) -> None:
+# TODO: tests
+@run_in_transaction
+async def _save_entry(execute: ExecuteType, feed_id: FeedId, source_id: SourceId, entry: Entry) -> None:
+    sql_insert_entry = """
+    INSERT INTO l_entries (id, title, body, external_id, external_url, external_tags, published_at)
+    VALUES (%(id)s, %(title)s, %(body)s, %(external_id)s, %(external_url)s, %(external_tags)s, %(published_at)s)
+    ON CONFLICT (source_id, external_id) DO NOTHING
+    RETURNING id
+    """
+
+    sql_insert_feed_to_entry = """
+    INSERT INTO l_feeds_to_entries (feed_id, entry_id)
+    VALUES (%(feed_id)s, %(entry_id)s)
+    """
+
+    result = await execute(
+        sql_insert_entry,
+        {
+            "id": entry.id,
+            # "feed_id": entry.feed_id,
+            "source_id": source_id,
+            "title": entry.title,
+            "body": entry.body,
+            "external_id": entry.external_id,
+            "external_url": entry.external_url,
+            "external_tags": list(entry.external_tags),
+            "published_at": entry.published_at,
+        },
+    )
+
+    if result:
+        entry_id = result[0]["id"]
+    else:
+        # TODO: add index
+        result = await execute("SELECT id FROM l_entries WHERE source_id = %(source_id)s AND external_id = %(external_id)s",
+                               {"source_id": source_id,
+                                "external_id": entry.external_id})
+
+        if result:
+            entry_id = result[0]["id"]
+        else:
+            raise NotImplementedError("Can not find entry by source_id and external_id")
+
+    await execute(
+        sql_insert_feed_to_entry,
+        {
+            "feed_id": feed_id,
+            "entry_id": entry_id
+        })
+
+
+# TODO: test conflict with existed entry but different feed
+async def catalog_entries(feed_id: FeedId, source_id: SourceId, entries: Iterable[Entry]) -> None:
     for entry in entries:
-        try:
-            await execute(
-                sql_insert_entry,
-                {
-                    "id": entry.id,
-                    "feed_id": entry.feed_id,
-                    "title": entry.title,
-                    "body": entry.body,
-                    "external_id": entry.external_id,
-                    "external_url": entry.external_url,
-                    "external_tags": list(entry.external_tags),
-                    "published_at": entry.published_at,
-                },
-            )
-        except psycopg.errors.UniqueViolation:
-            logger.warning("racing_is_possible_unique_violation_while_saving_entry", entry_id=entry.id)
+        await _save_entry(feed_id, source_id, entry)
 
 
-# we must controll unique constraint on entries by pair feed + id because
-# 1. we can not guarantee that there will be no duplicates of feeds
-#    (can not guarantee perfect normalization of urls, etc)
-# 2. someone can damage database by infecting with wrong entries from faked feed
-async def check_stored_entries_by_external_ids(feed_id: FeedId, external_ids: Iterable[str]) -> set[str]:
+# TODO: rename tests
+# TODO: test for multiple feeds
+async def find_stored_entries_for_feed(feed_id: FeedId, external_ids: Iterable[str]) -> set[str]:
+
+    # TODO: index
     sql = """
     SELECT external_id
-    FROM l_entries
+    FROM l_entries AS le
+    JOIN l_feeds_to_entries AS lfe
     WHERE feed_id = %(feed_id)s AND external_id = ANY(%(external_ids)s)
     """
 
@@ -62,10 +92,10 @@ async def check_stored_entries_by_external_ids(feed_id: FeedId, external_ids: It
     return {row["external_id"] for row in rows}
 
 
-sql_select_entries = """SELECT * FROM l_entries WHERE id = ANY(%(ids)s)"""
-
-
 async def get_entries_by_ids(ids: Iterable[EntryId]) -> dict[EntryId, Entry | None]:
+
+    sql_select_entries = """SELECT * FROM l_entries WHERE id = ANY(%(ids)s)"""
+
     rows = await execute(sql_select_entries, {"ids": ids})
 
     result: dict[EntryId, Entry | None] = {id: None for id in ids}
@@ -76,6 +106,8 @@ async def get_entries_by_ids(ids: Iterable[EntryId]) -> dict[EntryId, Entry | No
     return result
 
 
+# TODO: test of multiple feeds
+# TODO: test of intersection of feeds
 async def get_entries_by_filter(
     feeds_ids: Iterable[FeedId], limit: int, period: datetime.timedelta | None = None
 ) -> list[Entry]:
@@ -83,10 +115,13 @@ async def get_entries_by_filter(
         period = datetime.timedelta(days=100 * 365)
 
     sql = """
-    SELECT * FROM l_entries
-    WHERE created_at > NOW() - %(period)s and feed_id = ANY(%(feeds_ids)s)
-    ORDER BY created_at DESC
-    LIMIT %(limit)s"""
+    SELECT DISTINCT le.*
+    FROM l_entries AS le
+    JOIN l_feeds_to_entries AS lfe ON le.id = lfe.entry_id
+    WHERE lfe.created_at > NOW() - %(period)s AND lfe.feed_id = ANY(%(feeds_ids)s)
+    ORDER BY le.created_at DESC
+    LIMIT %(limit)s;
+    """
 
     rows = await execute(sql, {"feeds_ids": feeds_ids, "period": period, "limit": limit})
 
@@ -147,42 +182,43 @@ async def update_external_url(entity_id: EntryId, url: str) -> None:
     await execute(sql, {"entity_id": entity_id, "url": url})
 
 
-async def tech_remove_entries_by_ids(entries_ids: Iterable[EntryId]) -> None:
-    sql = """
-    DELETE FROM l_entries
-    WHERE id = ANY(%(entries_ids)s)
-    """
+@run_in_transaction
+async def tech_remove_entries_by_ids(execute: ExecuteType, entries_ids: Iterable[EntryId]) -> None:
+    ids = list(entries_ids)
 
-    await execute(sql, {"entries_ids": list(entries_ids)})
-
-
-async def tech_move_entry(entry_id: EntryId, feed_id: FeedId) -> None:
-    sql = """
-    UPDATE l_entries
-    SET feed_id = %(feed_id)s
-    WHERE id = %(entry_id)s
-    """
-
-    try:
-        await execute(sql, {"entry_id": entry_id, "feed_id": feed_id})
-    except psycopg.errors.UniqueViolation as e:
-        raise errors.CanNotMoveEntryAlreadyInFeed(entry_id=entry_id, feed_id=feed_id) from e
+    await execute("DELETE FROM l_feeds_to_entries WHERE entry_idid = ANY(%(entries_ids)s)", {"entries_ids": ids})
+    await execute("DELETE FROM l_entries WHERE id = ANY(%(entries_ids)s)", {"entries_ids": ids})
 
 
-async def tech_get_feed_entries_tail(feed_id: FeedId, offset: int) -> set[EntryId]:
-    """
-    Get the last entries for the feed.
-    """
-    # Order by published_at because we want to keep the newest entries
-    # and it is better to take decission based on time from an entry's source rather than on time when we collected it
-    sql = """
-    SELECT id
-    FROM l_entries
-    WHERE feed_id = %(feed_id)s
-    ORDER BY published_at DESC
-    OFFSET %(offset)s
-    """
+# TODO: no more correct logic, refactor whole call chain
+# Async def tech_move_entry(entry_id: EntryId, feed_id: FeedId) -> None:
+#     sql = """
+#     UPDATE l_entries
+#     SET feed_id = %(feed_id)s
+#     WHERE id = %(entry_id)s
+#     """
 
-    result = await execute(sql, {"feed_id": feed_id, "offset": offset})
+#     try:
+#         await execute(sql, {"entry_id": entry_id, "feed_id": feed_id})
+#     except psycopg.errors.UniqueViolation as e:
+#         raise errors.CanNotMoveEntryAlreadyInFeed(entry_id=entry_id, feed_id=feed_id) from e
 
-    return {row["id"] for row in result}
+
+# TODO: no more correct logic, refactor whole call chain
+# async def tech_get_feed_entries_tail(feed_id: FeedId, offset: int) -> set[EntryId]:
+#     """
+#     Get the last entries for the feed.
+#     """
+#     # Order by published_at because we want to keep the newest entries
+#     # and it is better to take decission based on time from an entry's source rather than on time when we collected it
+#     sql = """
+#     SELECT id
+#     FROM l_entries
+#     WHERE feed_id = %(feed_id)s
+#     ORDER BY published_at DESC
+#     OFFSET %(offset)s
+#     """
+
+#     result = await execute(sql, {"feed_id": feed_id, "offset": offset})
+
+#     return {row["id"] for row in result}

@@ -15,7 +15,7 @@ class ProcessedState(int, enum.Enum):
 
 class Entry(BaseEntity):
     id: EntryId
-    feed_id: FeedId
+    # feed_id: FeedId  # TODO: replace to feed_ids: set[FeedId]?
     title: str
     body: str
     external_id: str

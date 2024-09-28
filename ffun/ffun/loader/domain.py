@@ -116,7 +116,7 @@ async def sync_feed_info(feed: Feed, feed_info: p_entities.FeedInfo) -> None:
 async def store_entries(feed_id: FeedId, entries: list[p_entities.EntryInfo]) -> None:
     external_ids = [entry.external_id for entry in entries]
 
-    stored_entries_external_ids = await l_domain.check_stored_entries_by_external_ids(feed_id, external_ids)
+    stored_entries_external_ids = await l_domain.find_stored_entries_for_feed(feed_id, external_ids)
 
     entries_to_store = [entry for entry in entries if entry.external_id not in stored_entries_external_ids]
 

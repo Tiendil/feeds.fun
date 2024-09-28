@@ -52,6 +52,7 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor.execute("ALTER TABLE l_entries DROP COLUMN feed_id")
 
 
+# TODO: restore lost indexes if any
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
 
