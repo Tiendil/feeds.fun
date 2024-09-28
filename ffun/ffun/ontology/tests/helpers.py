@@ -3,9 +3,10 @@ from typing import Iterable
 
 from ffun.core.postgresql import execute
 from ffun.ontology.operations import get_tags_for_entries
+from ffun.domain.entities import EntryId
 
 
-async def assert_has_tags(tags_ids: dict[uuid.UUID, Iterable[int]]) -> None:
+async def assert_has_tags(tags_ids: dict[EntryId, Iterable[int]]) -> None:
     tags = await get_tags_for_entries(execute, [entry_id for entry_id in tags_ids])
 
     for entry_id, tag_ids in tags_ids.items():

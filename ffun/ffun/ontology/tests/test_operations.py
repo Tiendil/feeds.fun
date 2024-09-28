@@ -18,9 +18,10 @@ from ffun.ontology.operations import (
     tech_copy_relations,
 )
 from ffun.ontology.tests.helpers import assert_has_tags
+from ffun.domain.entities import EntryId
 
 
-async def assert_tags_processors(entry_id: uuid.UUID, tag_processors: dict[int, set[int]]) -> None:
+async def assert_tags_processors(entry_id: EntryId, tag_processors: dict[int, set[int]]) -> None:
     relations = await _get_relations_for_entry_and_tags(execute, entry_id, list(tag_processors.keys()))
 
     relations_ids = list(relations.values())

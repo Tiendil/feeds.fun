@@ -12,12 +12,14 @@ from ffun.librarian import errors, operations
 from ffun.librarian.entities import ProcessorPointer
 from ffun.librarian.tests import helpers
 from ffun.library.tests import make as l_make
+from ffun.domain.domain import new_entry_id, new_feed_id
+from ffun.domain.entities import EntryId
 
 
 def assert_is_new_pointer(pointer: ProcessorPointer, processor_id: int) -> None:
     assert pointer.processor_id == processor_id
     assert pointer.pointer_created_at == datetime.datetime(1970, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)
-    assert pointer.pointer_entry_id == uuid.UUID("00000000-0000-0000-0000-000000000000")
+    assert pointer.pointer_entry_id == EntryId(uuid.UUID("00000000-0000-0000-0000-000000000000"))
 
 
 class TestCreatePointer:
@@ -97,7 +99,7 @@ class TestSavePointer:
 
         pointer = ProcessorPointer(
             processor_id=fake_processor_id,
-            pointer_entry_id=uuid.uuid4(),
+            pointer_entry_id=new_entry_id(),
             pointer_created_at=datetime.datetime.now(),
         )
 
@@ -233,7 +235,7 @@ class TestRemoveEntriesFromProcessorQueue:
 
         await operations.push_entries_to_processor_queue(execute, fake_processor_id, list(entries))
 
-        entries_to_remove = [uuid.uuid4(), uuid.uuid4()]
+        entries_to_remove = [new_entry_id(), new_entry_id()]
 
         await operations.remove_entries_from_processor_queue(execute, fake_processor_id, entries_to_remove)
 
@@ -320,7 +322,7 @@ class TestRemoveFailedEntries:
 
         await operations.add_entries_to_failed_storage(fake_processor_id, list(entries))
 
-        entries_to_remove = [uuid.uuid4(), uuid.uuid4()]
+        entries_to_remove = [new_entry_id(), new_entry_id()]
 
         async with TableSizeNotChanged("ln_failed_entries"):
             await operations.remove_failed_entries(execute, fake_processor_id, entries_to_remove)
@@ -340,7 +342,7 @@ class TestCountFailedEntries:
     async def test_some_entries(self, fake_processor_id: int, another_fake_processor_id: int) -> None:
         await helpers.clean_failed_storage([fake_processor_id, another_fake_processor_id])
 
-        entries = await l_make.n_entries(f_domain.new_feed_id(), n=3)
+        entries = await l_make.n_entries(new_feed_id(), n=3)
         entries_list = list(entries)
 
         await operations.add_entries_to_failed_storage(fake_processor_id, [entries_list[0], entries_list[1]])

@@ -13,6 +13,7 @@ from ffun.librarian.background_processors import EntriesProcessor
 from ffun.librarian.tests import make
 from ffun.library.tests import make as l_make
 from ffun.ontology import domain as o_domain
+from ffun.domain.domain import new_entry_id
 
 
 class TestEntriesProcessors:
@@ -86,7 +87,7 @@ class TestEntriesProcessors:
         entries_list = list(entries.values())
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
 
-        fake_entries_ids = [uuid.uuid4() for _ in range(3)]
+        fake_entries_ids = [new_entry_id() for _ in range(3)]
 
         await operations.push_entries_to_processor_queue(
             execute, processor_id=fake_entries_processor.id, entry_ids=fake_entries_ids
@@ -116,7 +117,7 @@ class TestEntriesProcessors:
         entries_list = list(entries.values())
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
 
-        fake_entries_ids = [uuid.uuid4() for _ in range(3)]
+        fake_entries_ids = [new_entry_id() for _ in range(3)]
 
         entries_ids = [entry.id for entry in entries_list] + fake_entries_ids
 

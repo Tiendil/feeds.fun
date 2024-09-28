@@ -15,6 +15,7 @@ from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTit
 from ffun.librarian.settings import settings
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
+from ffun.domain.entities import EntryId
 
 logger = logging.get_module_logger()
 
@@ -107,8 +108,8 @@ class EntriesProcessor(InfiniteTask):
 
     # TODO: test
     async def separate_entries(  # noqa: disable=CCR001
-        self, entries_ids: list[uuid.UUID]
-    ) -> tuple[list[Entry], list[uuid.UUID]]:
+        self, entries_ids: list[EntryId]
+    ) -> tuple[list[Entry], list[EntryId]]:
         processor_id = self._processor_info.id
 
         # TODO: we could add caching here, because multiple processors can request the same entries
@@ -117,7 +118,7 @@ class EntriesProcessor(InfiniteTask):
         entries = await l_domain.get_entries_by_ids(entries_ids)
 
         entries_to_process: list[Entry] = []
-        entries_to_remove: list[uuid.UUID] = []
+        entries_to_remove: list[EntryId] = []
 
         for entry_id, entry in entries.items():
             if entry is None:

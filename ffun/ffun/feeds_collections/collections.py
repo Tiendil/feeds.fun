@@ -8,6 +8,7 @@ from ffun.feeds.entities import Feed, FeedId
 from ffun.feeds_collections import errors
 from ffun.feeds_collections.entities import Collection, CollectionId, FeedInfo
 from ffun.feeds_collections.settings import settings
+from ffun.domain.domain import new_feed_id
 
 logger = logging.get_module_logger()
 
@@ -74,7 +75,7 @@ class Collections:
         for collection in self._collections:
             for feed_info in collection.feeds:
                 real_feed = Feed(
-                    id=f_domain.new_feed_id(),
+                    id=new_feed_id(),
                     url=feed_info.url,
                     title=feed_info.title,
                     description=feed_info.description,

@@ -27,6 +27,7 @@ from ffun.library.operations import (
     update_external_url,
 )
 from ffun.library.tests import make
+from ffun.domain.domain import new_entry_id
 
 
 class TestCatalogEntries:
@@ -188,7 +189,7 @@ class TestGetEntriesByFilter:
 class TestGetEntriesAfterPointer:
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
-        entries = await get_entries_after_pointer(created_at=utils.now(), entry_id=uuid.uuid4(), limit=100)
+        entries = await get_entries_after_pointer(created_at=utils.now(), entry_id=new_entry_id(), limit=100)
         assert entries == []
 
     @pytest.mark.asyncio
@@ -345,7 +346,7 @@ class TestTechRemoveEntriesByIds:
     async def test_no_entries(self) -> None:
         async with TableSizeNotChanged("l_entries"):
             await tech_remove_entries_by_ids([])
-            await tech_remove_entries_by_ids([uuid.uuid4()])
+            await tech_remove_entries_by_ids([new_entry_id()])
 
     @pytest.mark.asyncio
     async def test_already_removed(self, loaded_feed_id: FeedId) -> None:

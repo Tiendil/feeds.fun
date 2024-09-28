@@ -15,6 +15,7 @@ from ffun.loader.entities import ProxyState
 from ffun.loader.settings import settings
 from ffun.meta import domain as meta_domain
 from ffun.parsers import entities as p_entities
+from ffun.domain.domain import new_entry_id
 
 logger = logging.get_module_logger()
 
@@ -122,7 +123,7 @@ async def store_entries(feed_id: FeedId, entries: list[p_entities.EntryInfo]) ->
     entries_to_store = [entry for entry in entries if entry.external_id not in stored_entries_external_ids]
 
     prepared_entries = [
-        l_entities.Entry(feed_id=feed_id, id=uuid.uuid4(), cataloged_at=utils.now(), **entry_info.model_dump())
+        l_entities.Entry(feed_id=feed_id, id=new_entry_id(), cataloged_at=utils.now(), **entry_info.model_dump())
         for entry_info in entries_to_store
     ]
 

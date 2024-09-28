@@ -4,6 +4,8 @@ from ffun.domain import urls as d_urls
 from ffun.feeds import domain as f_domain
 from ffun.library import operations
 from ffun.library.entities import Entry, EntryChange
+from ffun.domain.entities import EntryId
+
 
 catalog_entries = operations.catalog_entries
 get_entries_by_ids = operations.get_entries_by_ids
@@ -16,7 +18,7 @@ tech_get_feed_entries_tail = operations.tech_get_feed_entries_tail
 tech_remove_entries_by_ids = operations.tech_remove_entries_by_ids
 
 
-async def get_entry(entry_id: uuid.UUID) -> Entry:
+async def get_entry(entry_id: EntryId) -> Entry:
     entries = await get_entries_by_ids([entry_id])
     found_entry = entries.get(entry_id)
     assert found_entry is not None

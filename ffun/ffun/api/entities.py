@@ -23,6 +23,7 @@ from ffun.resources import entities as r_entities
 from ffun.scores import entities as s_entities
 from ffun.user_settings import types as us_types
 from ffun.user_settings.values import user_settings
+from ffun.domain.entities import EntryId, FeedId
 
 
 class Marker(enum.StrEnum):
@@ -37,7 +38,7 @@ class Marker(enum.StrEnum):
 
 
 class Feed(BaseEntity):
-    id: uuid.UUID
+    id: FeedId
     title: str | None
     description: str | None
     url: str
@@ -65,7 +66,7 @@ class Feed(BaseEntity):
 
 
 class Entry(BaseEntity):
-    id: uuid.UUID
+    id: EntryId
     # TODO: rename to feedId
     feed_id: f_entities.FeedId
     title: str
@@ -306,7 +307,7 @@ class GetLastEntriesResponse(api.APISuccess):
 
 
 class GetEntriesByIdsRequest(api.APIRequest):
-    ids: list[uuid.UUID]
+    ids: list[EntryId]
 
 
 class GetEntriesByIdsResponse(api.APISuccess):
@@ -349,7 +350,7 @@ class GetRulesResponse(api.APISuccess):
 
 
 class GetScoreDetailsRequest(api.APIRequest):
-    entryId: uuid.UUID
+    entryId: EntryId
 
 
 class GetScoreDetailsResponse(api.APISuccess):
@@ -357,7 +358,7 @@ class GetScoreDetailsResponse(api.APISuccess):
 
 
 class SetMarkerRequest(api.APIRequest):
-    entryId: uuid.UUID
+    entryId: EntryId
     marker: Marker
 
 
@@ -366,7 +367,7 @@ class SetMarkerResponse(api.APISuccess):
 
 
 class RemoveMarkerRequest(api.APIRequest):
-    entryId: uuid.UUID
+    entryId: EntryId
     marker: Marker
 
 

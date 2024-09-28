@@ -15,12 +15,13 @@ from ffun.meta.domain import limit_entries_for_feed, merge_feeds, remove_entries
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import ProcessorTag
 from ffun.users.tests import make as u_make
+from ffun.domain.domain import new_feed_id
 
 
 class TestRemoveFeed:
     @pytest.mark.asyncio
     async def test_no_feed(self) -> None:
-        await remove_feed(f_domain.new_feed_id())
+        await remove_feed(new_feed_id())
 
     @pytest.mark.asyncio
     async def test_success(
@@ -370,7 +371,7 @@ class TestRemoveEntries:
 class TestLimitEntriesForFeed:
     @pytest.mark.asyncio
     async def test_no_feed(self) -> None:
-        await limit_entries_for_feed(f_domain.new_feed_id(), limit=10)
+        await limit_entries_for_feed(new_feed_id(), limit=10)
 
     @pytest.mark.asyncio
     async def test_no_entries(self, loaded_feed_id: FeedId) -> None:
