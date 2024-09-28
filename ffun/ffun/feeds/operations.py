@@ -30,8 +30,8 @@ def row_to_feed(row: dict[str, Any]) -> Feed:
 
 async def save_feed(feed: Feed) -> FeedId:
     sql = """
-    INSERT INTO f_feeds (id, url, state, title, description, uid)
-    VALUES (%(id)s, %(url)s, %(state)s, %(title)s, %(description)s, %(uid)s)
+    INSERT INTO f_feeds (id, source_id, url, state, title, description, uid)
+    VALUES (%(id)s, %(source_id)s, %(url)s, %(state)s, %(title)s, %(description)s, %(uid)s)
     """
 
     uid = domain_urls.url_to_uid(feed.url)
@@ -153,6 +153,10 @@ async def get_feeds(ids: Iterable[FeedId]) -> list[Feed]:
 
 # TODO: test
 async def get_source_ids(source_uids: Iterable[str]) -> dict[str, SourceId]:
+
+    if not source_uids:
+        return {}
+
     query = PostgreSQLQuery.into("f_sources").columns("id", "uid")
 
     for source_uid in source_uids:

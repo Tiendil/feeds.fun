@@ -338,10 +338,10 @@ class TestCountFailedEntries:
         assert another_fake_processor_id not in counts
 
     @pytest.mark.asyncio
-    async def test_some_entries(self, fake_processor_id: int, another_fake_processor_id: int) -> None:
+    async def test_some_entries(self, saved_feed_id: FeedId, fake_processor_id: int, another_fake_processor_id: int) -> None:
         await helpers.clean_failed_storage([fake_processor_id, another_fake_processor_id])
 
-        entries = await l_make.n_entries(new_feed_id(), n=3)
+        entries = await l_make.n_entries(saved_feed_id, n=3)
         entries_list = list(entries)
 
         await operations.add_entries_to_failed_storage(fake_processor_id, [entries_list[0], entries_list[1]])

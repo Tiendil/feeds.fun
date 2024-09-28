@@ -114,6 +114,9 @@ async def sync_feed_info(feed: Feed, feed_info: p_entities.FeedInfo) -> None:
 
 
 async def store_entries(feed_id: FeedId, entries: list[p_entities.EntryInfo]) -> None:
+    # TODO: move out of here?
+    feed = await f_domain.get_feed(feed_id)
+
     external_ids = [entry.external_id for entry in entries]
 
     stored_entries_external_ids = await l_domain.check_stored_entries_by_external_ids(feed_id, external_ids)
@@ -121,7 +124,11 @@ async def store_entries(feed_id: FeedId, entries: list[p_entities.EntryInfo]) ->
     entries_to_store = [entry for entry in entries if entry.external_id not in stored_entries_external_ids]
 
     prepared_entries = [
-        l_entities.Entry(feed_id=feed_id, id=new_entry_id(), cataloged_at=utils.now(), **entry_info.model_dump())
+        l_entities.Entry(feed_id=feed_id,
+                         id=new_entry_id(),
+                         source_id=feed.source_id,
+                         cataloged_at=utils.now(),
+                         **entry_info.model_dump())
         for entry_info in entries_to_store
     ]
 

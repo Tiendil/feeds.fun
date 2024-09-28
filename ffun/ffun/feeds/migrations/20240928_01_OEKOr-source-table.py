@@ -22,7 +22,8 @@ sql_sources_table = """
 CREATE TABLE f_sources (
     id UUID PRIMARY KEY,
     uid TEXT NOT NULL UNIQUE,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+)
 """
 
 
@@ -52,7 +53,7 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
             {"source_uid": source_uid, "feed_id": row["id"]},
         )
 
-    cursor.execute("ALTER TABLE f_entries ALTER COLUMN source_id SET NOT NULL")
+    cursor.execute("ALTER TABLE f_feeds ALTER COLUMN source_id SET NOT NULL")
 
 
 # TODO: restore lost indexes if any
