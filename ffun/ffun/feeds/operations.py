@@ -5,8 +5,11 @@ import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.domain.entities import SourceId
+from ffun.domain.domain import new_source_id
 from ffun.domain import urls as domain_urls
 from ffun.feeds.entities import Feed, FeedError, FeedId, FeedState
+from pypika import PostgreSQLQuery
 
 logger = logging.get_module_logger()
 
@@ -14,6 +17,7 @@ logger = logging.get_module_logger()
 def row_to_feed(row: dict[str, Any]) -> Feed:
     return Feed(
         id=row["id"],
+        source_id=row["source_id"],
         url=row["url"],
         state=FeedState(row["state"]),
         last_error=FeedError(row["last_error"]) if row["last_error"] else None,
@@ -37,6 +41,7 @@ async def save_feed(feed: Feed) -> FeedId:
             sql,
             {
                 "id": feed.id,
+                "source_id": feed.source_id,
                 "url": feed.url,
                 "state": feed.state,
                 "title": feed.title,
@@ -144,6 +149,23 @@ async def get_feeds(ids: Iterable[FeedId]) -> list[Feed]:
     rows = await execute(sql, {"ids": list(ids)})
 
     return [row_to_feed(row) for row in rows]
+
+
+# TODO: test
+async def get_source_ids(source_uids: Iterable[str]) -> dict[str, SourceId]:
+    query = PostgreSQLQuery.into("f_sources").columns("id", "uid")
+
+    for source_uid in source_uids:
+        query = query.insert(new_source_id(), source_uid)
+
+    query = query.on_conflict("uid").do_nothing()
+
+    await execute(str(query))
+
+    result = await execute("SELECT id, uid FROM f_sources WHERE uid = ANY(%(source_uids)s)",
+                           {"source_uids": list(source_uids)})
+
+    return {row["uid"]: row["id"] for row in result}
 
 
 async def tech_remove_feed(feed_id: FeedId) -> None:

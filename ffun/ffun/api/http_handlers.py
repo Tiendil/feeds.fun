@@ -12,6 +12,7 @@ from ffun.api.settings import settings
 from ffun.auth.dependencies import User
 from ffun.core import logging
 from ffun.domain.domain import new_feed_id
+from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections.collections import collections
@@ -226,8 +227,17 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
 
 
 async def _add_feeds(feed_infos: list[p_entities.FeedInfo], user: User) -> None:
+
+    urls_to_sources_uids = {feed_info.url: url_to_source_uid(feed_info.url) for feed_info in feed_infos}
+
+    sources_uids_to_ids = await f_domain.get_source_ids(urls_to_sources_uids.values())
+
     feeds = [
-        f_entities.Feed(id=new_feed_id(), url=feed_info.url, title=feed_info.title, description=feed_info.description)
+        f_entities.Feed(id=new_feed_id(),
+                        source_id=sources_uids_to_ids[urls_to_sources_uids[feed_info.url]],
+                        url=feed_info.url,
+                        title=feed_info.title,
+                        description=feed_info.description)
         for feed_info in feed_infos
     ]
 

@@ -83,21 +83,21 @@ def normalize_external_url(url: str, original_url: str) -> str | None:
 
 
 def url_to_uid(url: str) -> str:
-    # The goal of this function is to detect urls that most likely (99.(9)%) point to the same resource
-    # It normalizes and simplifies an url according to heuristics
-    # I.e. there is a small possibility that two different urls will be normalized to the same uid
+    # The goal of this function is to detect URLs that most likely (99.(9)%) point to the same resource
+    # It normalizes and simplifies a URL according to heuristics
+    # I.e. there is a small possibility that two different URLs will be normalized to the same uid
     #
     # For example, http://example.com/ and http://example.com can return different data
-    # In reality it is mostly imposible and is a signe of bug or hacking on the side of third-party service
-    # => we could remove schema from the resulted uid
+    # In reality, it is mostly impossible and is a sign of bug or hacking on the side of third-party service
+    # => We could remove a schema from the resulting uid
     #
     # Some normalization rules are based on personal taste,
-    # for example, there are multiple ways to encode a url or to normalize unicode
+    # for example, there are multiple ways to encode a URL or to normalize Unicode
     #
     # The rules are based on the next heuristics:
     #
-    # - readability are better than technical representation
-    # - it is ok to loss some corner urls forms, unless there will be an explicit request to support them
+    # - readability is better than technical representation
+    # - it is ok to loss some corner URL forms, unless there is an explicit request to support them
 
     normalized_url = _fake_schema_for_url(url.lower().strip())
 
@@ -136,3 +136,22 @@ def url_to_uid(url: str) -> str:
         resulted_url = resulted_url[2:]
 
     return resulted_url
+
+
+# TODO: test
+def url_to_source_uid(url: str) -> str:
+    # Because some portals (Reddit, ArXiv) provide customizable feed URLs,
+    # we could see the same news entry in different feeds
+    # => we should track the entry's source not by feed but by the portal
+    # that will help us to ensure the entry's uniqueness.
+
+    normalized_url = unicodedata.normalize("NFC", url)
+
+    url_object = furl(normalized_url)
+
+    domain = url_object.host
+
+    if domain.startswith("www."):
+        domain = domain[4:]
+
+    return domain
