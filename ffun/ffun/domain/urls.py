@@ -154,4 +154,6 @@ def url_to_source_uid(url: str) -> str:
     if domain.startswith("www."):
         domain = domain[4:]
 
+    assert isinstance(domain, str)
+
     return domain

@@ -5,6 +5,7 @@ from ffun.core import utils
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import EntryId
 from ffun.feeds.entities import FeedId
+from ffun.feeds.domain import get_feed
 from ffun.library import domain
 from ffun.library.entities import Entry
 
@@ -21,9 +22,14 @@ def fake_body() -> str:
     return f"Entry Body: {uuid.uuid4().hex}"
 
 
-def fake_entry(loaded_feed_id: FeedId, **kwargs: Any) -> Entry:
+# TODO: refactor to remove unnecessary feed loading
+async def fake_entry(loaded_feed_id: FeedId, **kwargs: Any) -> Entry:
+
+    feed = await get_feed(loaded_feed_id)
+
     return Entry(
         id=new_entry_id() if "id" not in kwargs else kwargs["id"],
+        source_id=feed.source_id,
         feed_id=loaded_feed_id,
         title=fake_title() if "title" not in kwargs else kwargs["title"],
         body=fake_body() if "body" not in kwargs else kwargs["body"],
@@ -36,7 +42,7 @@ def fake_entry(loaded_feed_id: FeedId, **kwargs: Any) -> Entry:
 
 
 async def n_entries(loaded_feed_id: FeedId, n: int) -> dict[EntryId, Entry]:
-    new_entries = [fake_entry(loaded_feed_id) for _ in range(n)]
+    new_entries = [await fake_entry(loaded_feed_id) for _ in range(n)]
     await domain.catalog_entries(new_entries)
     return await domain.get_entries_by_ids([entry.id for entry in new_entries])  # type: ignore
 

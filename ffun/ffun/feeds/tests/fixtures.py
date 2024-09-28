@@ -6,14 +6,14 @@ from ffun.feeds.entities import Feed, FeedId
 from ffun.feeds.tests import make as f_make
 
 
-@pytest.fixture
-def new_feed() -> Feed:
-    return f_make.fake_feed()
+@pytest_asyncio.fixture
+async def new_feed() -> Feed:
+    return await f_make.fake_feed()
 
 
-@pytest.fixture
-def another_new_feed() -> Feed:
-    return f_make.fake_feed()
+@pytest_asyncio.fixture
+async def another_new_feed() -> Feed:
+    return await f_make.fake_feed()
 
 
 @pytest_asyncio.fixture

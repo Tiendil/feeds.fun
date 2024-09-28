@@ -119,7 +119,7 @@ class TestGetNextFeedToLoad:
         n = 10
         m = 3
 
-        feed_ids = set(await save_feeds([make.fake_feed() for _ in range(n)]))
+        feed_ids = set(await save_feeds([await make.fake_feed() for _ in range(n)]))
 
         while feed_ids:
             found_feeds = await get_next_feeds_to_load(number=m, loaded_before=now)
@@ -142,7 +142,7 @@ class TestGetNextFeedToLoad:
         n = 10
         m = 3
 
-        feed_ids = set(await save_feeds([make.fake_feed() for _ in range(n)]))
+        feed_ids = set(await save_feeds([await make.fake_feed() for _ in range(n)]))
 
         tasks = [get_next_feeds_to_load(number=m, loaded_before=now) for _ in range(n // m + 1)]
 
@@ -237,7 +237,7 @@ class TestGetFeeds:
         feed_ids = []
 
         for _ in range(n + 2):
-            raw_feed = make.fake_feed()
+            raw_feed = await make.fake_feed()
             feed_id = await save_feed(raw_feed)
             feed_ids.append(feed_id)
 

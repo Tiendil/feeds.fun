@@ -9,6 +9,8 @@ from ffun.feeds.entities import Feed, FeedId
 from ffun.feeds_collections import errors
 from ffun.feeds_collections.entities import Collection, CollectionId, FeedInfo
 from ffun.feeds_collections.settings import settings
+from ffun.feeds.domain import get_source_ids
+from ffun.domain.urls import url_to_source_uid
 
 logger = logging.get_module_logger()
 
@@ -71,11 +73,19 @@ class Collections:
         feeds_collections = []
         feed_infos = []
 
+        source_uids = {feed_info.url: url_to_source_uid(feed_info.url)
+                       for collection in self._collections
+                       for feed_info in collection.feeds}
+
+        source_ids = await get_source_ids(source_uids.values())
+
         # ensure that all feeds are really in the DB
         for collection in self._collections:
             for feed_info in collection.feeds:
                 real_feed = Feed(
                     id=new_feed_id(),
+                    # TODO: test
+                    source_id=source_ids[source_uids[feed_info.url]],
                     url=feed_info.url,
                     title=feed_info.title,
                     description=feed_info.description,

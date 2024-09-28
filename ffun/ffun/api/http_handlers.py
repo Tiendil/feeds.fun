@@ -292,7 +292,7 @@ async def api_subscribe_to_collections(
                 )
             )
 
-    await _add_feeds(feeds, user)
+    await meta_domain.add_feeds(feeds, user)
 
     return entities.SubscribeToCollectionsResponse()
 
