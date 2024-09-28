@@ -1,6 +1,6 @@
 import uuid
 
-from ffun.domain.entities import FeedId, EntryId, CollectionId
+from ffun.domain.entities import CollectionId, EntryId, FeedId
 
 
 def new_entry_id() -> EntryId:

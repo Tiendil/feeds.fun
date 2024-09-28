@@ -1,9 +1,9 @@
 import asyncio
-import uuid
 from typing import Any
 
 from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
+from ffun.domain.entities import EntryId
 from ffun.feeds_collections.collections import collections
 from ffun.librarian import domain, operations
 from ffun.librarian.entities import ProcessorType
@@ -15,7 +15,6 @@ from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTit
 from ffun.librarian.settings import settings
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
-from ffun.domain.entities import EntryId
 
 logger = logging.get_module_logger()
 

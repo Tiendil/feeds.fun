@@ -8,6 +8,7 @@ import pytest_asyncio
 from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_times_is_near
+from ffun.domain.domain import new_entry_id
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import FeedId
 from ffun.feeds.tests import make as f_make
@@ -27,7 +28,6 @@ from ffun.library.operations import (
     update_external_url,
 )
 from ffun.library.tests import make
-from ffun.domain.domain import new_entry_id
 
 
 class TestCatalogEntries:

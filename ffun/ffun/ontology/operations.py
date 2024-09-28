@@ -1,4 +1,3 @@
-import uuid
 from typing import Iterable, Sequence
 
 from bidict import bidict
@@ -6,9 +5,9 @@ from pypika import PostgreSQLQuery
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
+from ffun.domain.entities import EntryId
 from ffun.ontology import errors
 from ffun.ontology.entities import TagProperty, TagPropertyType
-from ffun.domain.entities import EntryId
 
 logger = logging.get_module_logger()
 

@@ -1,15 +1,14 @@
-import uuid
 from typing import Iterable
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.domain.entities import EntryId
 from ffun.librarian import errors, operations
 from ffun.librarian.entities import ProcessorPointer
 from ffun.librarian.processors.base import Processor
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
 from ffun.ontology import domain as o_domain
-from ffun.domain.entities import EntryId
 
 logger = logging.get_module_logger()
 

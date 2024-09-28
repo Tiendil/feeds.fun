@@ -1,7 +1,5 @@
-import uuid
-
-from ffun.feeds import errors, operations
 from ffun.domain.entities import FeedId
+from ffun.feeds import errors, operations
 from ffun.feeds.entities import Feed
 
 save_feed = operations.save_feed

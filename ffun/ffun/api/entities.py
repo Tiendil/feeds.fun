@@ -9,6 +9,7 @@ import pydantic
 
 from ffun.core import api
 from ffun.core.entities import BaseEntity
+from ffun.domain.entities import EntryId, FeedId
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.feeds_links import entities as fl_entities
@@ -23,7 +24,6 @@ from ffun.resources import entities as r_entities
 from ffun.scores import entities as s_entities
 from ffun.user_settings import types as us_types
 from ffun.user_settings.values import user_settings
-from ffun.domain.entities import EntryId, FeedId
 
 
 class Marker(enum.StrEnum):

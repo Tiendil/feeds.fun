@@ -1,8 +1,8 @@
 import pytest
 
+from ffun.domain.domain import new_feed_id
 from ffun.feeds import errors
 from ffun.feeds.domain import get_feed
-from ffun.domain.domain import new_feed_id
 
 
 # get_feed function is checked in tests of other functions

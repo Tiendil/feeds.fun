@@ -11,6 +11,7 @@ from ffun.api import entities
 from ffun.api.settings import settings
 from ffun.auth.dependencies import User
 from ffun.core import logging
+from ffun.domain.domain import new_feed_id
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections.collections import collections
@@ -26,7 +27,6 @@ from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 from ffun.user_settings import domain as us_domain
-from ffun.domain.domain import new_feed_id
 
 router = fastapi.APIRouter()
 
@@ -227,9 +227,7 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
 
 async def _add_feeds(feed_infos: list[p_entities.FeedInfo], user: User) -> None:
     feeds = [
-        f_entities.Feed(
-            id=new_feed_id(), url=feed_info.url, title=feed_info.title, description=feed_info.description
-        )
+        f_entities.Feed(id=new_feed_id(), url=feed_info.url, title=feed_info.title, description=feed_info.description)
         for feed_info in feed_infos
     ]
 

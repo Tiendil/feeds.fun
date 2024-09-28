@@ -1,11 +1,8 @@
-import uuid
-
 from ffun.domain import urls as d_urls
+from ffun.domain.entities import EntryId
 from ffun.feeds import domain as f_domain
 from ffun.library import operations
 from ffun.library.entities import Entry, EntryChange
-from ffun.domain.entities import EntryId
-
 
 catalog_entries = operations.catalog_entries
 get_entries_by_ids = operations.get_entries_by_ids

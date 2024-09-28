@@ -6,7 +6,7 @@ import frontmatter
 import toml
 
 from ffun.core import utils
-from ffun.domain.entities import FeedId, EntryId
+from ffun.domain.entities import EntryId, FeedId
 from ffun.library.entities import Entry
 from ffun.processors_quality import errors
 from ffun.processors_quality.entities import Attribution, ExpectedTags, ProcessorResult

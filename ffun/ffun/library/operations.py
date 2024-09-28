@@ -6,8 +6,8 @@ import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
+from ffun.domain.entities import EntryId, FeedId
 from ffun.library import errors
-from ffun.domain.entities import FeedId, EntryId
 from ffun.library.entities import Entry
 
 logger = logging.get_module_logger()

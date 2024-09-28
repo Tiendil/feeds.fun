@@ -3,8 +3,8 @@ import uuid
 import pytest
 import pytest_asyncio
 
-from ffun.feeds_collections.collections import collections
 from ffun.domain.domain import new_collection_id
+from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import Collection, CollectionId, FeedInfo
 from ffun.feeds_collections.settings import settings
 

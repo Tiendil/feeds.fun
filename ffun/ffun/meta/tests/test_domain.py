@@ -3,6 +3,7 @@ from itertools import chain
 
 import pytest
 
+from ffun.domain.domain import new_feed_id
 from ffun.feeds import domain as f_domain
 from ffun.feeds import errors as f_errors
 from ffun.feeds.entities import FeedId
@@ -15,7 +16,6 @@ from ffun.meta.domain import limit_entries_for_feed, merge_feeds, remove_entries
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import ProcessorTag
 from ffun.users.tests import make as u_make
-from ffun.domain.domain import new_feed_id
 
 
 class TestRemoveFeed:

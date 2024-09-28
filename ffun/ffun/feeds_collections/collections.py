@@ -3,12 +3,12 @@ import pathlib
 import toml
 
 from ffun.core import logging
+from ffun.domain.domain import new_feed_id
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedId
 from ffun.feeds_collections import errors
 from ffun.feeds_collections.entities import Collection, CollectionId, FeedInfo
 from ffun.feeds_collections.settings import settings
-from ffun.domain.domain import new_feed_id
 
 logger = logging.get_module_logger()
 

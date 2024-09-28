@@ -1,9 +1,8 @@
-import uuid
-
 import httpx
 from furl import furl
 
 from ffun.core import logging, utils
+from ffun.domain.domain import new_entry_id
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedId, FeedState
 from ffun.feeds_collections.collections import collections
@@ -15,7 +14,6 @@ from ffun.loader.entities import ProxyState
 from ffun.loader.settings import settings
 from ffun.meta import domain as meta_domain
 from ffun.parsers import entities as p_entities
-from ffun.domain.domain import new_entry_id
 
 logger = logging.get_module_logger()
 

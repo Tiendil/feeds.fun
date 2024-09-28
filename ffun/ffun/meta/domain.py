@@ -1,9 +1,8 @@
-import uuid
 from typing import Iterable
 
 from ffun.core import logging, postgresql
+from ffun.domain.entities import EntryId, FeedId
 from ffun.feeds import domain as f_domain
-from ffun.domain.entities import FeedId, EntryId
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.markers import domain as m_domain

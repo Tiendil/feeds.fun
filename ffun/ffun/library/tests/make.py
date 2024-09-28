@@ -2,11 +2,11 @@ import uuid
 from typing import Any
 
 from ffun.core import utils
+from ffun.domain.domain import new_entry_id
+from ffun.domain.entities import EntryId
 from ffun.feeds.entities import FeedId
 from ffun.library import domain
 from ffun.library.entities import Entry
-from ffun.domain.entities import EntryId
-from ffun.domain.domain import new_entry_id
 
 
 def fake_url() -> str:

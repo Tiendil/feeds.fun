@@ -1,6 +1,5 @@
 import uuid
-
-from typing import Any, NewType
+from typing import NewType
 
 EntryId = NewType("EntryId", uuid.UUID)
 FeedId = NewType("FeedId", uuid.UUID)

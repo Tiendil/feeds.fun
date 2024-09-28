@@ -1,9 +1,8 @@
-import uuid
 from typing import Iterable
 
 from ffun.core.postgresql import execute
-from ffun.ontology.operations import get_tags_for_entries
 from ffun.domain.entities import EntryId
+from ffun.ontology.operations import get_tags_for_entries
 
 
 async def assert_has_tags(tags_ids: dict[EntryId, Iterable[int]]) -> None:

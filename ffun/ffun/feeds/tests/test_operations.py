@@ -6,10 +6,10 @@ import pytest
 
 from ffun.core import utils
 from ffun.core.tests.helpers import TableSizeDelta
+from ffun.domain.domain import new_feed_id
+from ffun.domain.entities import FeedId
 from ffun.feeds import errors
 from ffun.feeds.domain import get_feed, save_feeds
-from ffun.domain.entities import FeedId
-from ffun.domain.domain import new_feed_id
 from ffun.feeds.entities import Feed, FeedError, FeedState
 from ffun.feeds.operations import (
     get_feeds,

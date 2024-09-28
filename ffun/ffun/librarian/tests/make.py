@@ -2,9 +2,9 @@ import uuid
 
 from ffun.core import utils
 from ffun.core.postgresql import execute
+from ffun.domain.entities import EntryId
 from ffun.librarian import operations
 from ffun.librarian.entities import ProcessorPointer
-from ffun.domain.entities import EntryId
 
 
 async def end_processor_pointer(processor_id: int) -> ProcessorPointer:

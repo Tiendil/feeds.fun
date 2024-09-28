@@ -6,14 +6,13 @@ import pytest
 from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
-from ffun.feeds import domain as f_domain
+from ffun.domain.domain import new_entry_id, new_feed_id
+from ffun.domain.entities import EntryId
 from ffun.feeds.entities import FeedId
 from ffun.librarian import errors, operations
 from ffun.librarian.entities import ProcessorPointer
 from ffun.librarian.tests import helpers
 from ffun.library.tests import make as l_make
-from ffun.domain.domain import new_entry_id, new_feed_id
-from ffun.domain.entities import EntryId
 
 
 def assert_is_new_pointer(pointer: ProcessorPointer, processor_id: int) -> None:

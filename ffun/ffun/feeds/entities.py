@@ -1,10 +1,9 @@
 import datetime
 import enum
-import uuid
-from typing import Any, NewType
-from ffun.domain.entities import FeedId
+from typing import Any
 
 from ffun.core.entities import BaseEntity
+from ffun.domain.entities import FeedId
 
 
 class FeedState(int, enum.Enum):

@@ -1,10 +1,7 @@
-import uuid
-from typing import NewType
-
 import pydantic
 
-from ffun.domain.entities import CollectionId
 from ffun.core.entities import BaseEntity
+from ffun.domain.entities import CollectionId
 from ffun.feeds.entities import FeedId
 
 

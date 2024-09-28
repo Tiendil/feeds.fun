@@ -1,10 +1,9 @@
-import uuid
-
 import pytest
 from structlog.testing import capture_logs
 
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
+from ffun.domain.domain import new_entry_id
 from ffun.feeds.entities import FeedId
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import CollectionId
@@ -13,7 +12,6 @@ from ffun.librarian.background_processors import EntriesProcessor
 from ffun.librarian.tests import make
 from ffun.library.tests import make as l_make
 from ffun.ontology import domain as o_domain
-from ffun.domain.domain import new_entry_id
 
 
 class TestEntriesProcessors:

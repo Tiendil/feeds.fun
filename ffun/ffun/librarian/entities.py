@@ -1,6 +1,5 @@
 import datetime
 import enum
-import uuid
 from typing import TYPE_CHECKING, Annotated, Any, Literal, Protocol
 
 import pydantic

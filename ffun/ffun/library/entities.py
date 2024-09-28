@@ -1,11 +1,10 @@
 import datetime
 import enum
-import uuid
 from typing import Any
 
 from ffun.core import utils
-from ffun.domain.entities import FeedId, EntryId
 from ffun.core.entities import BaseEntity
+from ffun.domain.entities import EntryId, FeedId
 
 
 class ProcessedState(int, enum.Enum):

@@ -1,4 +1,3 @@
-import uuid
 from typing import Any, Iterable
 
 import psycopg
@@ -6,9 +5,9 @@ from pypika import PostgreSQLQuery
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
+from ffun.domain.entities import EntryId
 from ffun.librarian import errors
 from ffun.librarian.entities import ProcessorPointer
-from ffun.domain.entities import EntryId
 
 logger = logging.get_module_logger()
 

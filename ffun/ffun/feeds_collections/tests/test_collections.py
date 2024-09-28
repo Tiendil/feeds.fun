@@ -4,10 +4,10 @@ import uuid
 import pytest
 import pytest_asyncio
 
+from ffun.domain.domain import new_collection_id, new_feed_id
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections import errors
 from ffun.feeds_collections.collections import Collections
-from ffun.domain.domain import new_collection_id, new_feed_id
 from ffun.feeds_collections.entities import Collection, FeedInfo
 
 _root = pathlib.Path(__file__).parent

@@ -1,9 +1,8 @@
-import uuid
-
 import pytest
 
 from ffun.core.postgresql import execute, transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
+from ffun.domain.entities import EntryId
 from ffun.library.entities import Entry
 from ffun.ontology import errors
 from ffun.ontology.entities import ProcessorTag
@@ -18,7 +17,6 @@ from ffun.ontology.operations import (
     tech_copy_relations,
 )
 from ffun.ontology.tests.helpers import assert_has_tags
-from ffun.domain.entities import EntryId
 
 
 async def assert_tags_processors(entry_id: EntryId, tag_processors: dict[int, set[int]]) -> None:
