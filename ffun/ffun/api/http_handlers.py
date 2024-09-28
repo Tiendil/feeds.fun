@@ -18,6 +18,7 @@ from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
 from ffun.markers import domain as m_domain
+from ffun.meta import domain as meta_domain
 from ffun.ontology import domain as o_domain
 from ffun.parsers import domain as p_domain
 from ffun.parsers import entities as p_entities
@@ -25,7 +26,6 @@ from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 from ffun.user_settings import domain as us_domain
-from ffun.meta import domain as meta_domain
 
 router = fastapi.APIRouter()
 

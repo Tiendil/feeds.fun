@@ -2,15 +2,12 @@
 source-table
 """
 
-from yoyo import step
-
 from typing import Any
 
 from psycopg import Connection
 from yoyo import step
 
-
-__depends__ = {'20240512_01_jL7Mt-turn-on-unique-uids'}
+__depends__ = {"20240512_01_jL7Mt-turn-on-unique-uids"}
 
 
 # TODO: test on production data
@@ -43,14 +40,17 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
     for row in result:
         source_uid = url_to_source_uid(row["url"])
 
-        cursor.execute("INSERT INTO f_sources (id, uid) VALUES (gen_random_uuid(), %(uid)s) ON CONFLICT DO NOTHING",
-                       {"uid": source_uid})
+        cursor.execute(
+            "INSERT INTO f_sources (id, uid) VALUES (gen_random_uuid(), %(uid)s) ON CONFLICT DO NOTHING",
+            {"uid": source_uid},
+        )
 
-        cursor.execute("""UPDATE f_feeds
+        cursor.execute(
+            """UPDATE f_feeds
                           SET source_id = (SELECT id FROM f_sources WHERE uid = %(source_uid)s)
                           WHERE id = %(feed_id)s""",
-                       {"source_uid": source_uid,
-                        "feed_id": row["id"]})
+            {"source_uid": source_uid, "feed_id": row["id"]},
+        )
 
     cursor.execute("ALTER TABLE f_entries ALTER COLUMN source_id SET NOT NULL")
 

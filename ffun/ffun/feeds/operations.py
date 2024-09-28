@@ -2,14 +2,14 @@ import datetime
 from typing import Any, Iterable
 
 import psycopg
+from pypika import PostgreSQLQuery
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
-from ffun.domain.entities import SourceId
-from ffun.domain.domain import new_source_id
 from ffun.domain import urls as domain_urls
+from ffun.domain.domain import new_source_id
+from ffun.domain.entities import SourceId
 from ffun.feeds.entities import Feed, FeedError, FeedId, FeedState
-from pypika import PostgreSQLQuery
 
 logger = logging.get_module_logger()
 
@@ -162,8 +162,9 @@ async def get_source_ids(source_uids: Iterable[str]) -> dict[str, SourceId]:
 
     await execute(str(query))
 
-    result = await execute("SELECT id, uid FROM f_sources WHERE uid = ANY(%(source_uids)s)",
-                           {"source_uids": list(source_uids)})
+    result = await execute(
+        "SELECT id, uid FROM f_sources WHERE uid = ANY(%(source_uids)s)", {"source_uids": list(source_uids)}
+    )
 
     return {row["uid"]: row["id"] for row in result}
 

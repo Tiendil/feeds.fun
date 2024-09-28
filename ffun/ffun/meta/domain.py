@@ -1,18 +1,18 @@
 from typing import Iterable
 
-from ffun.users import entities as u_entities
-from ffun.parsers import entities as p_entities
-from ffun.domain.domain import new_feed_id
-from ffun.domain.urls import url_to_source_uid
-from ffun.feeds import entities as f_entities
 from ffun.core import logging, postgresql
+from ffun.domain.domain import new_feed_id
 from ffun.domain.entities import EntryId, FeedId
+from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
+from ffun.feeds import entities as f_entities
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.markers import domain as m_domain
 from ffun.meta.settings import settings
 from ffun.ontology import domain as o_domain
+from ffun.parsers import entities as p_entities
+from ffun.users import entities as u_entities
 
 logger = logging.get_module_logger()
 
@@ -106,11 +106,13 @@ async def add_feeds(feed_infos: list[p_entities.FeedInfo], user: u_entities.User
     sources_uids_to_ids = await f_domain.get_source_ids(urls_to_sources_uids.values())
 
     feeds = [
-        f_entities.Feed(id=new_feed_id(),
-                        source_id=sources_uids_to_ids[urls_to_sources_uids[feed_info.url]],
-                        url=feed_info.url,
-                        title=feed_info.title,
-                        description=feed_info.description)
+        f_entities.Feed(
+            id=new_feed_id(),
+            source_id=sources_uids_to_ids[urls_to_sources_uids[feed_info.url]],
+            url=feed_info.url,
+            title=feed_info.title,
+            description=feed_info.description,
+        )
         for feed_info in feed_infos
     ]
 
