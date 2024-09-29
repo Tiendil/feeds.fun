@@ -20,6 +20,8 @@ RE_SCHEMA = re.compile(r"^(\w+):")
 # is required for correct parsing by furl
 # will be removed before returning result
 def _fake_schema_for_url(url: str) -> str:
+    url = url.strip()
+
     if url.startswith("//"):
         return url
 
@@ -138,21 +140,28 @@ def url_to_uid(url: str) -> str:
     return resulted_url
 
 
-# TODO: test
 def url_to_source_uid(url: str) -> str:
     # Because some portals (Reddit, ArXiv) provide customizable feed URLs,
     # we could see the same news entry in different feeds
     # => we should track the entry's source not by feed but by the portal
     # that will help us to ensure the entry's uniqueness.
 
-    normalized_url = unicodedata.normalize("NFC", url)
+    normalized_url = unicodedata.normalize("NFC", url).lower().strip()
+
+    normalized_url = _fake_schema_for_url(normalized_url)
 
     url_object = furl(normalized_url)
 
     domain = url_object.host
 
+    # TODO: move rules to settings
+
     if domain.startswith("www."):
         domain = domain[4:]
+
+    if domain == 'old.reddit.com':
+        # old.reddit.com is just the old GUI version of reddit.com
+        domain = 'reddit.com'
 
     assert isinstance(domain, str)
 
