@@ -93,22 +93,22 @@ class TestSyncFeedInfo:
 
 class TestStoreEntries:
     @pytest.mark.asyncio
-    async def test_no_entries(self, saved_feed_id: f_entities.FeedId) -> None:
-        await store_entries(saved_feed_id, [])
+    async def test_no_entries(self, saved_feed: f_entities.Feed) -> None:
+        await store_entries(saved_feed, [])
 
-        entries = await l_domain.get_entries_by_filter([saved_feed_id], limit=1)
+        entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=1)
 
         assert not entries
 
     @pytest.mark.asyncio
-    async def test_save_new_entries(self, saved_feed_id: f_entities.FeedId) -> None:
+    async def test_save_new_entries(self, saved_feed: f_entities.Feed) -> None:
         n = 3
 
         entry_infos = [p_make.fake_entry_info() for _ in range(n)]
 
-        await store_entries(saved_feed_id, entry_infos)
+        await store_entries(saved_feed, entry_infos)
 
-        loaded_entries = await l_domain.get_entries_by_filter([saved_feed_id], limit=n + 1)
+        loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 
         assert len(loaded_entries) == 3
 
@@ -116,11 +116,11 @@ class TestStoreEntries:
         loaded_entries.sort(key=lambda e: e.title)
 
         for entry_info, entry in zip(entry_infos, loaded_entries):
-            assert entry.feed_id == saved_feed_id
+            assert entry.feed_id == saved_feed.id
             assert_entriy_equal_to_info(entry_info, entry)
 
     @pytest.mark.asyncio
-    async def test_save_in_parts(self, saved_feed_id: f_entities.FeedId) -> None:
+    async def test_save_in_parts(self, saved_feed: f_entities.Feed) -> None:
         n = 5
         m = 3
 
@@ -129,28 +129,28 @@ class TestStoreEntries:
         entry_infos = [p_make.fake_entry_info() for _ in range(n)]
         entry_infos.sort(key=lambda e: e.title)
 
-        await store_entries(saved_feed_id, entry_infos[:m])
+        await store_entries(saved_feed, entry_infos[:m])
 
-        loaded_entries = await l_domain.get_entries_by_filter([saved_feed_id], limit=n + 1)
+        loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 
         assert len(loaded_entries) == m
 
         loaded_entries.sort(key=lambda e: e.title)
 
         for entry_info, entry in zip(entry_infos, loaded_entries):
-            assert entry.feed_id == saved_feed_id
+            assert entry.feed_id == saved_feed.id
             assert_entriy_equal_to_info(entry_info, entry)
 
-        await store_entries(saved_feed_id, entry_infos)
+        await store_entries(saved_feed, entry_infos)
 
-        loaded_entries = await l_domain.get_entries_by_filter([saved_feed_id], limit=n + 1)
+        loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 
         assert len(loaded_entries) == n
 
         loaded_entries.sort(key=lambda e: e.title)
 
         for entry_info, entry in zip(entry_infos, loaded_entries):
-            assert entry.feed_id == saved_feed_id
+            assert entry.feed_id == saved_feed.id
             assert_entriy_equal_to_info(entry_info, entry)
 
 

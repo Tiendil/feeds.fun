@@ -1,4 +1,3 @@
-import pytest
 import pytest_asyncio
 
 from ffun.feeds.entities import FeedId
@@ -7,14 +6,14 @@ from ffun.library.entities import Entry
 from ffun.library.tests import make as l_make
 
 
-@pytest.fixture
-def new_entry(loaded_feed_id: FeedId) -> Entry:
-    return l_make.fake_entry(loaded_feed_id)
+@pytest_asyncio.fixture
+async def new_entry(loaded_feed_id: FeedId) -> Entry:
+    return await l_make.fake_entry(loaded_feed_id)
 
 
-@pytest.fixture
-def another_new_entry(another_loaded_feed_id: FeedId) -> Entry:
-    return l_make.fake_entry(another_loaded_feed_id)
+@pytest_asyncio.fixture
+async def another_new_entry(another_loaded_feed_id: FeedId) -> Entry:
+    return await l_make.fake_entry(another_loaded_feed_id)
 
 
 @pytest_asyncio.fixture

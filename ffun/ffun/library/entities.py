@@ -4,7 +4,7 @@ from typing import Any
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import EntryId, FeedId
+from ffun.domain.entities import EntryId, FeedId, SourceId
 
 
 class ProcessedState(int, enum.Enum):
@@ -15,7 +15,8 @@ class ProcessedState(int, enum.Enum):
 
 class Entry(BaseEntity):
     id: EntryId
-    # feed_id: FeedId  # TODO: replace to feed_ids: set[FeedId]?
+    # feed_id: FeedId
+    source_id: SourceId
     title: str
     body: str
     external_id: str

@@ -22,8 +22,8 @@ def row_to_entry(row: dict[str, Any]) -> Entry:
 @run_in_transaction
 async def _save_entry(execute: ExecuteType, feed_id: FeedId, source_id: SourceId, entry: Entry) -> None:
     sql_insert_entry = """
-    INSERT INTO l_entries (id, title, body, external_id, external_url, external_tags, published_at)
-    VALUES (%(id)s, %(title)s, %(body)s, %(external_id)s, %(external_url)s, %(external_tags)s, %(published_at)s)
+    INSERT INTO l_entries (id, source_id, title, body, external_id, external_url, external_tags, published_at)
+    VALUES (%(id)s, %(source_id)s, %(title)s, %(body)s, %(external_id)s, %(external_url)s, %(external_tags)s, %(published_at)s)
     ON CONFLICT (source_id, external_id) DO NOTHING
     RETURNING id
     """
@@ -73,7 +73,6 @@ async def _save_entry(execute: ExecuteType, feed_id: FeedId, source_id: SourceId
 async def catalog_entries(feed_id: FeedId, source_id: SourceId, entries: Iterable[Entry]) -> None:
     for entry in entries:
         await _save_entry(feed_id, source_id, entry)
-
 
 # TODO: rename tests
 # TODO: test for multiple feeds

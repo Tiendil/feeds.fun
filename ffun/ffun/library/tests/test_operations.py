@@ -65,7 +65,7 @@ class TestCatalogEntries:
 class TestCheckStoredEntriesByExternalIds:
     @pytest.mark.asyncio
     async def test_no_entries_stored(self, loaded_feed_id: FeedId) -> None:
-        entries = [make.fake_entry(loaded_feed_id) for _ in range(3)]
+        entries = [await make.fake_entry(loaded_feed_id) for _ in range(3)]
         external_ids = [entry.external_id for entry in entries]
 
         stored_entries = await check_stored_entries_by_external_ids(loaded_feed_id, external_ids)
@@ -83,7 +83,7 @@ class TestCheckStoredEntriesByExternalIds:
 
     @pytest.mark.asyncio
     async def test_some_entries_stored(self, loaded_feed_id: FeedId) -> None:
-        new_entries = [make.fake_entry(loaded_feed_id) for _ in range(3)]
+        new_entries = [await make.fake_entry(loaded_feed_id) for _ in range(3)]
         saved_entries = await make.n_entries(loaded_feed_id, n=2)
         external_ids = [entry.external_id for entry in new_entries] + [
             entry.external_id for entry in saved_entries.values()
@@ -249,14 +249,14 @@ class TestAllEntriesIterator:
     @pytest.mark.parametrize("chunk", [1, 2, 3, 4, 5, 6, 7])
     @pytest.mark.asyncio
     async def test(self, chunk: int) -> None:
-        feed_1_data = f_make.fake_feed()
+        feed_1_data = await f_make.fake_feed()
         feed_1_id = await f_domain.save_feed(feed_1_data)
 
-        feed_2_data = f_make.fake_feed()
+        feed_2_data = await f_make.fake_feed()
         feed_2_id = await f_domain.save_feed(feed_2_data)
 
-        entries_1_data = [make.fake_entry(feed_1_id) for _ in range(3)]
-        entries_2_data = [make.fake_entry(feed_2_id) for _ in range(3)]
+        entries_1_data = [await make.fake_entry(feed_1_id) for _ in range(3)]
+        entries_2_data = [await make.fake_entry(feed_2_id) for _ in range(3)]
 
         await catalog_entries(entries_1_data)
         await catalog_entries(entries_2_data)
