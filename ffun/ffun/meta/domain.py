@@ -1,5 +1,5 @@
 from typing import Iterable
-
+import uuid
 from ffun.core import logging, postgresql
 from ffun.domain.domain import new_feed_id
 from ffun.domain.entities import EntryId, FeedId
@@ -98,8 +98,7 @@ async def limit_entries_for_feed(feed_id: FeedId, limit: int | None = None) -> N
     logger.info("feed_entries_tail_removed", feed_id=feed_id, entries_limit=limit, entries_removed=entries_removed)
 
 
-# TODO: tests
-async def add_feeds(feed_infos: list[p_entities.FeedInfo], user: u_entities.User) -> None:
+async def add_feeds(feed_infos: list[p_entities.FeedInfo], user_id: uuid.UUID) -> None:
 
     urls_to_sources_uids = {feed_info.url: url_to_source_uid(feed_info.url) for feed_info in feed_infos}
 
@@ -119,4 +118,4 @@ async def add_feeds(feed_infos: list[p_entities.FeedInfo], user: u_entities.User
     real_feeds_ids = await f_domain.save_feeds(feeds)
 
     for feed_id in real_feeds_ids:
-        await fl_domain.add_link(user_id=user.id, feed_id=feed_id)
+        await fl_domain.add_link(user_id=user_id, feed_id=feed_id)

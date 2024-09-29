@@ -231,7 +231,7 @@ async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities
     if feed_info is None:
         raise fastapi.HTTPException(status_code=400, detail="Not a feed")
 
-    await meta_domain.add_feeds([feed_info], user)
+    await meta_domain.add_feeds([feed_info], user.id)
 
     return entities.AddFeedResponse()
 
@@ -240,7 +240,7 @@ async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities
 async def api_add_opml(request: entities.AddOpmlRequest, user: User) -> entities.AddOpmlResponse:
     feed_infos = p_domain.parse_opml(request.content)
 
-    await meta_domain.add_feeds(feed_infos, user)
+    await meta_domain.add_feeds(feed_infos, user.id)
 
     return entities.AddOpmlResponse()
 
@@ -292,7 +292,7 @@ async def api_subscribe_to_collections(
                 )
             )
 
-    await meta_domain.add_feeds(feeds, user)
+    await meta_domain.add_feeds(feeds, user.id)
 
     return entities.SubscribeToCollectionsResponse()
 
