@@ -1,15 +1,15 @@
 """
 source-table
 """
+
 import re
+import unicodedata
 from typing import Any
 
+from furl import furl
 from psycopg import Connection
 from psycopg.rows import dict_row
 from yoyo import step
-
-import unicodedata
-from furl import furl
 
 __depends__ = {"20240512_01_jL7Mt-turn-on-unique-uids", "20230427_01_9HuHj-add-feeds-links"}
 
@@ -68,9 +68,9 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
     # cleaning up feeds from broken urls
     cursor.execute("SELECT id FROM f_feeds WHERE url NOT LIKE 'http%'")
     result = cursor.fetchall()
-    feed_ids = [row['id'] for row in result]
-    cursor.execute('DELETE FROM fl_links WHERE feed_id = ANY(%(feed_ids)s)', {'feed_ids': feed_ids})
-    cursor.execute('DELETE FROM f_feeds WHERE id = ANY(%(feed_ids)s)', {'feed_ids': feed_ids})
+    feed_ids = [row["id"] for row in result]
+    cursor.execute("DELETE FROM fl_links WHERE feed_id = ANY(%(feed_ids)s)", {"feed_ids": feed_ids})
+    cursor.execute("DELETE FROM f_feeds WHERE id = ANY(%(feed_ids)s)", {"feed_ids": feed_ids})
     ####################################
 
     cursor.execute(sql_sources_table)
