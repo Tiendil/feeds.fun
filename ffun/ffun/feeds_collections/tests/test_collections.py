@@ -5,6 +5,7 @@ import pytest
 import pytest_asyncio
 
 from ffun.domain.domain import new_collection_id, new_feed_id
+from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections import errors
 from ffun.feeds_collections.collections import Collections
@@ -64,6 +65,13 @@ class TestCollections:
                 expected_urls.add(feed_info.url)
 
         assert expected_urls == {feed.url for feed in feeds}
+
+        # test that feeds created with correct source ids
+        source_uids = {url_to_source_uid(url) for url in expected_urls}
+        source_ids = await f_domain.get_source_ids(source_uids)
+
+        for feed in feeds:
+            assert feed.source_id == source_ids[url_to_source_uid(feed.url)]
 
     @pytest.mark.asyncio
     async def test_collections(self, collections: Collections) -> None:

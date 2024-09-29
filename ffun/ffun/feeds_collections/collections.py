@@ -86,7 +86,6 @@ class Collections:
             for feed_info in collection.feeds:
                 real_feed = Feed(
                     id=new_feed_id(),
-                    # TODO: test
                     source_id=source_ids[source_uids[feed_info.url]],
                     url=feed_info.url,
                     title=feed_info.title,
