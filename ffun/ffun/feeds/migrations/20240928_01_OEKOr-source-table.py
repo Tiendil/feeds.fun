@@ -1,21 +1,57 @@
 """
 source-table
 """
-
+import re
 from typing import Any
 
 from psycopg import Connection
 from yoyo import step
 
+import unicodedata
+from furl import furl
+
 __depends__ = {"20240512_01_jL7Mt-turn-on-unique-uids"}
 
 
-# TODO: test on production data
+RE_SCHEMA = re.compile(r"^(\w+):")
 
 
-# TODO: sync with actual implementation
+def _fake_schema_for_url(url: str) -> str:
+    url = url.strip()
+
+    if url.startswith("//"):
+        return url
+
+    if RE_SCHEMA.match(url):
+        return url
+
+    # TODO: this logic is required only for normalize_classic_url and has wrong behavior for top-level domains
+    #       like localhost or any other one-part domain that user will define locally
+    if "." not in url.split("/")[0]:
+        # if there is no domain, just return the url
+        return url
+
+    return f"//{url}"
+
+
 def url_to_source_uid(url: str) -> str:
-    return url
+    normalized_url = unicodedata.normalize("NFC", url).lower().strip()
+
+    normalized_url = _fake_schema_for_url(normalized_url)
+
+    url_object = furl(normalized_url)
+
+    domain = url_object.host
+
+    if domain.startswith("www."):
+        domain = domain[4:]
+
+    if domain == "old.reddit.com":
+        domain = "reddit.com"
+
+    assert isinstance(domain, str)
+
+    return domain
 
 
 sql_sources_table = """
