@@ -151,7 +151,6 @@ async def get_feeds(ids: Iterable[FeedId]) -> list[Feed]:
     return [row_to_feed(row) for row in rows]
 
 
-# TODO: test
 async def get_source_ids(source_uids: Iterable[str]) -> dict[str, SourceId]:
 
     if not source_uids:
