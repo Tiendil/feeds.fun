@@ -113,18 +113,15 @@ async def sync_feed_info(feed: Feed, feed_info: p_entities.FeedInfo) -> None:
     await f_domain.update_feed_info(feed.id, title=feed_info.title, description=feed_info.description)
 
 
-async def store_entries(feed_id: FeedId, entries: list[p_entities.EntryInfo]) -> None:
-    # TODO: move out of here?
-    feed = await f_domain.get_feed(feed_id)
-
+async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None:
     external_ids = [entry.external_id for entry in entries]
 
-    stored_entries_external_ids = await l_domain.check_stored_entries_by_external_ids(feed_id, external_ids)
+    stored_entries_external_ids = await l_domain.check_stored_entries_by_external_ids(feed.id, external_ids)
 
     entries_to_store = [entry for entry in entries if entry.external_id not in stored_entries_external_ids]
 
     prepared_entries = [
-        l_entities.Entry(feed_id=feed_id,
+        l_entities.Entry(feed_id=feed.id,
                          id=new_entry_id(),
                          source_id=feed.source_id,
                          cataloged_at=utils.now(),
@@ -151,7 +148,7 @@ async def process_feed(feed: Feed) -> None:
 
     await sync_feed_info(feed, feed_info)
 
-    await store_entries(feed.id, feed_info.entries)
+    await store_entries(feed, feed_info.entries)
 
     await meta_domain.limit_entries_for_feed(feed.id)
 
