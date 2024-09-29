@@ -136,3 +136,26 @@ class TestUrlToUid:
     )
     def test(self, url: str, uid: str) -> None:
         assert urls.url_to_uid(url) == uid
+
+
+class TestUrlToSourceUid:
+
+    @pytest.mark.parametrize(
+        "url, source_uid",
+        [
+            ("   example.com   ", "example.com"),
+            ("example.com/path/a/b?x=y", "example.com"),
+            ("ExamPle.com", "example.com"),
+            ("www.example.com", "example.com"),
+            ("subdomain.example.com", "subdomain.example.com"),
+            ("old.reddit.com", "reddit.com"),
+            ("api.reddit.com", "reddit.com"),
+            ("programming.reddit.com", "reddit.com"),
+            ("anotherreddit.com", "anotherreddit.com"),
+            ("xxx.anotherreddit.com", "xxx.anotherreddit.com"),
+            # unicode normalization
+            ("фвыа.com", "фвыа.com"),
+        ],
+    )
+    def test(self, url: str, source_uid: str) -> None:
+        assert urls.url_to_source_uid(url) == source_uid

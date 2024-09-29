@@ -5,7 +5,7 @@ import uuid
 import pytest
 
 from ffun.core import utils
-from ffun.core.tests.helpers import TableSizeDelta
+from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.domain import new_feed_id
 from ffun.domain.entities import FeedId
 from ffun.feeds import errors
@@ -14,6 +14,7 @@ from ffun.feeds.entities import Feed, FeedError, FeedState
 from ffun.feeds.operations import (
     get_feeds,
     get_next_feeds_to_load,
+    get_source_ids,
     mark_feed_as_failed,
     mark_feed_as_loaded,
     mark_feed_as_orphaned,
@@ -119,7 +120,7 @@ class TestGetNextFeedToLoad:
         n = 10
         m = 3
 
-        feed_ids = set(await save_feeds([make.fake_feed() for _ in range(n)]))
+        feed_ids = set(await save_feeds([await make.fake_feed() for _ in range(n)]))
 
         while feed_ids:
             found_feeds = await get_next_feeds_to_load(number=m, loaded_before=now)
@@ -142,7 +143,7 @@ class TestGetNextFeedToLoad:
         n = 10
         m = 3
 
-        feed_ids = set(await save_feeds([make.fake_feed() for _ in range(n)]))
+        feed_ids = set(await save_feeds([await make.fake_feed() for _ in range(n)]))
 
         tasks = [get_next_feeds_to_load(number=m, loaded_before=now) for _ in range(n // m + 1)]
 
@@ -237,7 +238,7 @@ class TestGetFeeds:
         feed_ids = []
 
         for _ in range(n + 2):
-            raw_feed = make.fake_feed()
+            raw_feed = await make.fake_feed()
             feed_id = await save_feed(raw_feed)
             feed_ids.append(feed_id)
 
@@ -246,6 +247,41 @@ class TestGetFeeds:
         assert len(loaded_feeds) == n
 
         assert set(feed_ids[1:-1]) == {feed.id for feed in loaded_feeds}
+
+
+class TestGetSourceIds:
+
+    @pytest.mark.asyncio
+    async def test_no_uids_passed(self) -> None:
+        async with TableSizeNotChanged("f_sources"):
+            ids = await get_source_ids([])
+
+        assert ids == {}
+
+    @pytest.mark.asyncio
+    async def test_all_new(self) -> None:
+        n = 3
+
+        uids = [f"{uuid.uuid4().hex}.com" for _ in range(n)]
+
+        async with TableSizeDelta("f_sources", delta=n):
+            ids = await get_source_ids(uids)
+
+        assert set(ids.keys()) == set(uids)
+
+    @pytest.mark.asyncio
+    async def test_partially_saved(self) -> None:
+        n = 5
+        m = 3
+
+        uids = [f"{uuid.uuid4().hex}.com" for _ in range(n)]
+
+        await get_source_ids(uids[:m])
+
+        async with TableSizeDelta("f_sources", delta=n - m):
+            ids = await get_source_ids(uids)
+
+        assert set(ids.keys()) == set(uids)
 
 
 class TestTechRemoveFeed:

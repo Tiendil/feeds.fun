@@ -3,7 +3,7 @@ import enum
 from typing import Any
 
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import FeedId
+from ffun.domain.entities import FeedId, SourceId
 
 
 class FeedState(int, enum.Enum):
@@ -54,6 +54,7 @@ class FeedError(enum.IntEnum):
 
 class Feed(BaseEntity):
     id: FeedId
+    source_id: SourceId
     url: str
     state: FeedState = FeedState.not_loaded
     last_error: FeedError | None = None

@@ -4,6 +4,7 @@ from itertools import chain
 import pytest
 
 from ffun.domain.domain import new_feed_id
+from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds import errors as f_errors
 from ffun.feeds.entities import FeedId
@@ -12,9 +13,10 @@ from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
 from ffun.markers import domain as m_domains
 from ffun.markers.entities import Marker
-from ffun.meta.domain import limit_entries_for_feed, merge_feeds, remove_entries, remove_feed
+from ffun.meta.domain import add_feeds, limit_entries_for_feed, merge_feeds, remove_entries, remove_feed
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import ProcessorTag
+from ffun.parsers import entities as p_entities
 from ffun.users.tests import make as u_make
 
 
@@ -396,3 +398,47 @@ class TestLimitEntriesForFeed:
         loaded_entries = await l_domain.get_entries_by_filter(feeds_ids=[loaded_feed_id], limit=100)
 
         assert loaded_entries == entries[:5]
+
+
+class TestAddFeeds:
+
+    @pytest.mark.asyncio
+    async def test_no_feeds_to_add(self, internal_user_id: uuid.UUID) -> None:
+        await add_feeds([], internal_user_id)
+
+    @pytest.mark.asyncio
+    async def test_add(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+
+        feeds = [
+            p_entities.FeedInfo(
+                url=f"{uuid.uuid4().hex}.com", title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[]
+            ),
+            p_entities.FeedInfo(
+                url=f"{uuid.uuid4().hex}.com", title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[]
+            ),
+            p_entities.FeedInfo(
+                url=f"{uuid.uuid4().hex}.com", title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[]
+            ),
+        ]
+
+        await add_feeds(feeds[:2], internal_user_id)
+        await add_feeds(feeds[1:], another_internal_user_id)
+
+        links_1 = await fl_domain.get_linked_feeds(internal_user_id)
+        links_2 = await fl_domain.get_linked_feeds(another_internal_user_id)
+
+        feeds_1 = await f_domain.get_feeds([link.feed_id for link in links_1])
+        feeds_2 = await f_domain.get_feeds([link.feed_id for link in links_2])
+
+        assert len({feed.id for feed in feeds_1} & {feed.id for feed in feeds_2}) == 1
+
+        assert {feed.url for feed in feeds_1} == {feed.url for feed in feeds[:2]}
+        assert {feed.url for feed in feeds_2} == {feed.url for feed in feeds[1:]}
+
+        urls = {feed.url for feed in feeds}
+
+        source_uids = {url: url_to_source_uid(url) for url in urls}
+        source_ids = await f_domain.get_source_ids(source_uids.values())
+
+        for feed in chain(feeds_1, feeds_2):
+            assert feed.source_id == source_ids[source_uids[feed.url]]

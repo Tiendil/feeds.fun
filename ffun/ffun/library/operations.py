@@ -14,9 +14,9 @@ logger = logging.get_module_logger()
 
 
 sql_insert_entry = """
-INSERT INTO l_entries (id, feed_id, title, body,
+INSERT INTO l_entries (id, source_id, feed_id, title, body,
                        external_id, external_url, external_tags, published_at)
-VALUES (%(id)s, %(feed_id)s, %(title)s, %(body)s,
+VALUES (%(id)s, %(source_id)s, %(feed_id)s, %(title)s, %(body)s,
         %(external_id)s, %(external_url)s, %(external_tags)s, %(published_at)s)
 """
 
@@ -34,6 +34,7 @@ async def catalog_entries(entries: Iterable[Entry]) -> None:
                 {
                     "id": entry.id,
                     "feed_id": entry.feed_id,
+                    "source_id": entry.source_id,
                     "title": entry.title,
                     "body": entry.body,
                     "external_id": entry.external_id,

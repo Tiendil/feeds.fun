@@ -4,7 +4,9 @@ import toml
 
 from ffun.core import logging
 from ffun.domain.domain import new_feed_id
+from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
+from ffun.feeds.domain import get_source_ids
 from ffun.feeds.entities import Feed, FeedId
 from ffun.feeds_collections import errors
 from ffun.feeds_collections.entities import Collection, CollectionId, FeedInfo
@@ -71,11 +73,20 @@ class Collections:
         feeds_collections = []
         feed_infos = []
 
+        source_uids = {
+            feed_info.url: url_to_source_uid(feed_info.url)
+            for collection in self._collections
+            for feed_info in collection.feeds
+        }
+
+        source_ids = await get_source_ids(source_uids.values())
+
         # ensure that all feeds are really in the DB
         for collection in self._collections:
             for feed_info in collection.feeds:
                 real_feed = Feed(
                     id=new_feed_id(),
+                    source_id=source_ids[source_uids[feed_info.url]],
                     url=feed_info.url,
                     title=feed_info.title,
                     description=feed_info.description,

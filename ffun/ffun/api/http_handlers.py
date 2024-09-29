@@ -11,15 +11,14 @@ from ffun.api import entities
 from ffun.api.settings import settings
 from ffun.auth.dependencies import User
 from ffun.core import logging
-from ffun.domain.domain import new_feed_id
 from ffun.feeds import domain as f_domain
-from ffun.feeds import entities as f_entities
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_discoverer import domain as fd_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
 from ffun.markers import domain as m_domain
+from ffun.meta import domain as meta_domain
 from ffun.ontology import domain as o_domain
 from ffun.parsers import domain as p_domain
 from ffun.parsers import entities as p_entities
@@ -225,18 +224,6 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
     return entities.DiscoverFeedsResponse(feeds=external_feeds)
 
 
-async def _add_feeds(feed_infos: list[p_entities.FeedInfo], user: User) -> None:
-    feeds = [
-        f_entities.Feed(id=new_feed_id(), url=feed_info.url, title=feed_info.title, description=feed_info.description)
-        for feed_info in feed_infos
-    ]
-
-    real_feeds_ids = await f_domain.save_feeds(feeds)
-
-    for feed_id in real_feeds_ids:
-        await fl_domain.add_link(user_id=user.id, feed_id=feed_id)
-
-
 @router.post("/api/add-feed")
 async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities.AddFeedResponse:
     feed_info = await fd_domain.check_if_feed(url=request.url)
@@ -244,7 +231,7 @@ async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities
     if feed_info is None:
         raise fastapi.HTTPException(status_code=400, detail="Not a feed")
 
-    await _add_feeds([feed_info], user)
+    await meta_domain.add_feeds([feed_info], user.id)
 
     return entities.AddFeedResponse()
 
@@ -253,7 +240,7 @@ async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities
 async def api_add_opml(request: entities.AddOpmlRequest, user: User) -> entities.AddOpmlResponse:
     feed_infos = p_domain.parse_opml(request.content)
 
-    await _add_feeds(feed_infos, user)
+    await meta_domain.add_feeds(feed_infos, user.id)
 
     return entities.AddOpmlResponse()
 
@@ -305,7 +292,7 @@ async def api_subscribe_to_collections(
                 )
             )
 
-    await _add_feeds(feeds, user)
+    await meta_domain.add_feeds(feeds, user.id)
 
     return entities.SubscribeToCollectionsResponse()
 
