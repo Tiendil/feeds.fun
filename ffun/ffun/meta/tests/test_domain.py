@@ -13,11 +13,11 @@ from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
 from ffun.markers import domain as m_domains
 from ffun.markers.entities import Marker
-from ffun.meta.domain import limit_entries_for_feed, merge_feeds, remove_entries, remove_feed, add_feeds
+from ffun.meta.domain import add_feeds, limit_entries_for_feed, merge_feeds, remove_entries, remove_feed
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import ProcessorTag
-from ffun.users.tests import make as u_make
 from ffun.parsers import entities as p_entities
+from ffun.users.tests import make as u_make
 
 
 class TestRemoveFeed:
@@ -411,22 +411,14 @@ class TestAddFeeds:
 
         feeds = [
             p_entities.FeedInfo(
-                url=f"{uuid.uuid4().hex}.com",
-                title=uuid.uuid4().hex,
-                description=uuid.uuid4().hex,
-                entries=[]),
-
+                url=f"{uuid.uuid4().hex}.com", title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[]
+            ),
             p_entities.FeedInfo(
-                url=f"{uuid.uuid4().hex}.com",
-                title=uuid.uuid4().hex,
-                description=uuid.uuid4().hex,
-                entries=[]),
-
+                url=f"{uuid.uuid4().hex}.com", title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[]
+            ),
             p_entities.FeedInfo(
-                url=f"{uuid.uuid4().hex}.com",
-                title=uuid.uuid4().hex,
-                description=uuid.uuid4().hex,
-                entries=[])
+                url=f"{uuid.uuid4().hex}.com", title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[]
+            ),
         ]
 
         await add_feeds(feeds[:2], internal_user_id)

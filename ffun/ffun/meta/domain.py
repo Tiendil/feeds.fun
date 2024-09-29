@@ -1,5 +1,6 @@
-from typing import Iterable
 import uuid
+from typing import Iterable
+
 from ffun.core import logging, postgresql
 from ffun.domain.domain import new_feed_id
 from ffun.domain.entities import EntryId, FeedId
@@ -12,7 +13,6 @@ from ffun.markers import domain as m_domain
 from ffun.meta.settings import settings
 from ffun.ontology import domain as o_domain
 from ffun.parsers import entities as p_entities
-from ffun.users import entities as u_entities
 
 logger = logging.get_module_logger()
 

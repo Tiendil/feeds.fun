@@ -6,7 +6,7 @@ import pytest
 from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
-from ffun.domain.domain import new_entry_id, new_feed_id
+from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import EntryId
 from ffun.feeds.entities import FeedId
 from ffun.librarian import errors, operations
@@ -338,7 +338,9 @@ class TestCountFailedEntries:
         assert another_fake_processor_id not in counts
 
     @pytest.mark.asyncio
-    async def test_some_entries(self, saved_feed_id: FeedId, fake_processor_id: int, another_fake_processor_id: int) -> None:
+    async def test_some_entries(
+        self, saved_feed_id: FeedId, fake_processor_id: int, another_fake_processor_id: int
+    ) -> None:
         await helpers.clean_failed_storage([fake_processor_id, another_fake_processor_id])
 
         entries = await l_make.n_entries(saved_feed_id, n=3)

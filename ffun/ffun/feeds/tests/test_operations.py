@@ -14,13 +14,13 @@ from ffun.feeds.entities import Feed, FeedError, FeedState
 from ffun.feeds.operations import (
     get_feeds,
     get_next_feeds_to_load,
+    get_source_ids,
     mark_feed_as_failed,
     mark_feed_as_loaded,
     mark_feed_as_orphaned,
     save_feed,
     tech_remove_feed,
     update_feed_info,
-    get_source_ids,
 )
 from ffun.feeds.tests import make
 
@@ -253,7 +253,7 @@ class TestGetSourceIds:
 
     @pytest.mark.asyncio
     async def test_no_uids_passed(self) -> None:
-        async with TableSizeNotChanged('f_sources'):
+        async with TableSizeNotChanged("f_sources"):
             ids = await get_source_ids([])
 
         assert ids == {}
@@ -262,9 +262,9 @@ class TestGetSourceIds:
     async def test_all_new(self) -> None:
         n = 3
 
-        uids = [f'{uuid.uuid4().hex}.com' for _ in range(n)]
+        uids = [f"{uuid.uuid4().hex}.com" for _ in range(n)]
 
-        async with TableSizeDelta('f_sources', delta=n):
+        async with TableSizeDelta("f_sources", delta=n):
             ids = await get_source_ids(uids)
 
         assert set(ids.keys()) == set(uids)
@@ -274,11 +274,11 @@ class TestGetSourceIds:
         n = 5
         m = 3
 
-        uids = [f'{uuid.uuid4().hex}.com' for _ in range(n)]
+        uids = [f"{uuid.uuid4().hex}.com" for _ in range(n)]
 
         await get_source_ids(uids[:m])
 
-        async with TableSizeDelta('f_sources', delta=n - m):
+        async with TableSizeDelta("f_sources", delta=n - m):
             ids = await get_source_ids(uids)
 
         assert set(ids.keys()) == set(uids)

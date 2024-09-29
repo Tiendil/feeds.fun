@@ -146,14 +146,12 @@ class TestUrlToSourceUid:
             ("   example.com   ", "example.com"),
             ("example.com/path/a/b?x=y", "example.com"),
             ("ExamPle.com", "example.com"),
-
             ("www.example.com", "example.com"),
             ("subdomain.example.com", "subdomain.example.com"),
-
             ("old.reddit.com", "reddit.com"),
-
             # unicode normalization
             ("фвыа.com", "фвыа.com"),
-        ])
+        ],
+    )
     def test(self, url: str, source_uid: str) -> None:
         assert urls.url_to_source_uid(url) == source_uid

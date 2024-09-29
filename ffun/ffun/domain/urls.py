@@ -159,9 +159,9 @@ def url_to_source_uid(url: str) -> str:
     if domain.startswith("www."):
         domain = domain[4:]
 
-    if domain == 'old.reddit.com':
+    if domain == "old.reddit.com":
         # old.reddit.com is just the old GUI version of reddit.com
-        domain = 'reddit.com'
+        domain = "reddit.com"
 
     assert isinstance(domain, str)
 
