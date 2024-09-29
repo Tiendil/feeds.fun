@@ -406,7 +406,6 @@ class TestAddFeeds:
     async def test_no_feeds_to_add(self, internal_user_id: uuid.UUID) -> None:
         await add_feeds([], internal_user_id)
 
-    # TODO: test sources
     @pytest.mark.asyncio
     async def test_add(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
 
