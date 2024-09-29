@@ -9,8 +9,6 @@ from yoyo import step
 
 __depends__ = {"20240506_02_zQdSl-fix-unique-index-on-l-entries", "20240928_01_OEKOr-source-table"}
 
-# TODO: test on production data
-
 
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()

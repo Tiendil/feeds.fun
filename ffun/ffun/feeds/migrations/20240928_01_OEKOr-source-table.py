@@ -5,12 +5,13 @@ import re
 from typing import Any
 
 from psycopg import Connection
+from psycopg.rows import dict_row
 from yoyo import step
 
 import unicodedata
 from furl import furl
 
-__depends__ = {"20240512_01_jL7Mt-turn-on-unique-uids"}
+__depends__ = {"20240512_01_jL7Mt-turn-on-unique-uids", "20230427_01_9HuHj-add-feeds-links"}
 
 
 RE_SCHEMA = re.compile(r"^(\w+):")
@@ -25,10 +26,7 @@ def _fake_schema_for_url(url: str) -> str:
     if RE_SCHEMA.match(url):
         return url
 
-    # TODO: this logic is required only for normalize_classic_url and has wrong behavior for top-level domains
-    #       like localhost or any other one-part domain that user will define locally
     if "." not in url.split("/")[0]:
-        # if there is no domain, just return the url
         return url
 
     return f"//{url}"
@@ -46,7 +44,7 @@ def url_to_source_uid(url: str) -> str:
     if domain.startswith("www."):
         domain = domain[4:]
 
-    if domain == "old.reddit.com":
+    if domain.endswith(".reddit.com"):
         domain = "reddit.com"
 
     assert isinstance(domain, str)
@@ -64,7 +62,16 @@ CREATE TABLE f_sources (
 
 
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
-    cursor = conn.cursor()
+    cursor = conn.cursor(row_factory=dict_row)
+
+    ####################################
+    # cleaning up feeds from broken urls
+    cursor.execute("SELECT id FROM f_feeds WHERE url NOT LIKE 'http%'")
+    result = cursor.fetchall()
+    feed_ids = [row['id'] for row in result]
+    cursor.execute('DELETE FROM fl_links WHERE feed_id = ANY(%(feed_ids)s)', {'feed_ids': feed_ids})
+    cursor.execute('DELETE FROM f_feeds WHERE id = ANY(%(feed_ids)s)', {'feed_ids': feed_ids})
+    ####################################
 
     cursor.execute(sql_sources_table)
 

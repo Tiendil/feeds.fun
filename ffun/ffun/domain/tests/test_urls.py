@@ -149,6 +149,10 @@ class TestUrlToSourceUid:
             ("www.example.com", "example.com"),
             ("subdomain.example.com", "subdomain.example.com"),
             ("old.reddit.com", "reddit.com"),
+            ("api.reddit.com", "reddit.com"),
+            ("programming.reddit.com", "reddit.com"),
+            ("anotherreddit.com", "anotherreddit.com"),
+            ("xxx.anotherreddit.com", "xxx.anotherreddit.com"),
             # unicode normalization
             ("фвыа.com", "фвыа.com"),
         ],
