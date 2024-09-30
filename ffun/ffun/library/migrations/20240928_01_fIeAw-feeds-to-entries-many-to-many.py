@@ -56,12 +56,10 @@ LEFT JOIN originals AS o ON d.source_id = o.source_id AND d.external_id = o.exte
 
 
 sql_remove_duplicated_entries = """
-DELETE FROM l_entries
-WHERE id IN (
-  SELECT id FROM l_entries
-  JOIN l_feeds_to_entries ON l_feeds_to_entries.entry_id = l_entries.id
-  WHERE l_feeds_to_entries.feed_id IS NULL
-)
+DELETE FROM l_entries AS e
+USING l_entries AS e2
+LEFT JOIN l_feeds_to_entries AS f ON e2.id = f.entry_id
+WHERE e.id = e2.id AND f.entry_id IS NULL
 """
 
 
@@ -72,13 +70,6 @@ SET feed_id = x.feed_id
 FROM (SELECT MAX(feed_id) as feed_id, entry_id FROM l_feeds_to_entries GROUP BY entry_id) AS x
 WHERE x.entry_id = l_entries.id
 """
-
-# total entries: 6563604
-# unique entries: 6137479
-# duplicated entries: 426125 = 6563604 - 6137479
-
-# inserted additional relations: 543471 ????
-
 
 
 # TODO: remove prints after migration applied to prod
@@ -94,21 +85,27 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
     # cursor.execute(sql_fill_from_entries_table)
 
+    # TODO: index is created here to spedup the migration, should we remove it at it's end?
+    # TODO: rename index to use prefix idx_? and in other migrations too
+    # cursor.execute('CREATE INDEX l_feeds_to_entries_entry_id_idx ON l_feeds_to_entries (entry_id)')
+
     print('Filling duplicated entries')  # noqa
 
-    cursor.execute(sql_fill_duplicated_entries)
+    # cursor.execute(sql_fill_duplicated_entries)
 
     print('Removing duplicated entries')  # noqa
 
-    cursor.execute(sql_remove_duplicated_entries)
+    # cursor.execute(sql_remove_duplicated_entries)
 
     print('Creating unique index on l_entries')  # noqa
 
-    cursor.execute("CREATE UNIQUE INDEX l_entries_source_id_external_id_idx ON l_entries (source_id, external_id)")
+    # TODO: rename index?
+    # TODO: change order of fields to (external_id, source_id) ?
+    # cursor.execute("CREATE UNIQUE INDEX l_entries_source_id_external_id_idx ON l_entries (source_id, external_id)")
 
     print('Removing feed_id column from l_entries')  # noqa
 
-    cursor.execute("ALTER TABLE l_entries DROP COLUMN feed_id")
+    # cursor.execute("ALTER TABLE l_entries DROP COLUMN feed_id")
 
     print("Completed")  # noqa
 
