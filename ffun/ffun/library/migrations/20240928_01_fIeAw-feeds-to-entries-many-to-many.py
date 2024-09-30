@@ -67,45 +67,46 @@ WHERE e.id = e2.id AND f.entry_id IS NULL
 sql_update_entries_from_m2m_table = """
 UPDATE l_entries
 SET feed_id = x.feed_id
-FROM (SELECT MAX(feed_id) as feed_id, entry_id FROM l_feeds_to_entries GROUP BY entry_id) AS x
+FROM (SELECT DISTINCT ON (entry_id) feed_id, entry_id FROM l_feeds_to_entries ORDER BY entry_id, created_at ASC) AS x
 WHERE x.entry_id = l_entries.id
 """
 
 
 # TODO: remove prints after migration applied to prod
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
-    raise Exception('stop')
     cursor = conn.cursor(row_factory=dict_row)
 
     print('Creating l_feeds_to_entries table')  # noqa
 
-    # cursor.execute(sql_create_feeds_to_entries_table)
+    cursor.execute(sql_create_feeds_to_entries_table)
 
     print('Filling l_feeds_to_entries table')  # noqa
 
-    # cursor.execute(sql_fill_from_entries_table)
+    cursor.execute(sql_fill_from_entries_table)
 
     # TODO: index is created here to spedup the migration, should we remove it at it's end?
     # TODO: rename index to use prefix idx_? and in other migrations too
-    # cursor.execute('CREATE INDEX l_feeds_to_entries_entry_id_idx ON l_feeds_to_entries (entry_id)')
+    cursor.execute('CREATE INDEX l_feeds_to_entries_entry_id_idx ON l_feeds_to_entries (entry_id)')
 
     print('Filling duplicated entries')  # noqa
 
-    # cursor.execute(sql_fill_duplicated_entries)
+    cursor.execute(sql_fill_duplicated_entries)
 
     print('Removing duplicated entries')  # noqa
 
-    # cursor.execute(sql_remove_duplicated_entries)
+    cursor.execute(sql_remove_duplicated_entries)
 
     print('Creating unique index on l_entries')  # noqa
 
     # TODO: rename index?
     # TODO: change order of fields to (external_id, source_id) ?
-    # cursor.execute("CREATE UNIQUE INDEX l_entries_source_id_external_id_idx ON l_entries (source_id, external_id)")
+    cursor.execute("CREATE UNIQUE INDEX l_entries_source_id_external_id_idx ON l_entries (source_id, external_id)")
 
     print('Removing feed_id column from l_entries')  # noqa
 
-    # cursor.execute("ALTER TABLE l_entries DROP COLUMN feed_id")
+    cursor.execute("ALTER TABLE l_entries DROP COLUMN feed_id")
+
+    # TODO: add more indexes for l_feeds_to_entries table?
 
     print("Completed")  # noqa
 
@@ -121,6 +122,8 @@ def rollback_step(conn: Connection[dict[str, Any]]) -> None:
     cursor.execute(sql_update_entries_from_m2m_table)
 
     cursor.execute("ALTER TABLE l_entries ALTER COLUMN feed_id DROP DEFAULT")
+
+    cursor.execute("ALTER TABLE l_entries ALTER COLUMN feed_id SET NOT NULL")
 
     cursor.execute("DROP TABLE l_feeds_to_entries")
 
