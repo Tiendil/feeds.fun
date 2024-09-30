@@ -1,3 +1,5 @@
+# noqa
+# TODO: remove ^
 import datetime
 import uuid
 from typing import Any, AsyncGenerator, Iterable
@@ -37,7 +39,6 @@ async def _save_entry(execute: ExecuteType, feed_id: FeedId, source_id: SourceId
         sql_insert_entry,
         {
             "id": entry.id,
-            # "feed_id": entry.feed_id,
             "source_id": source_id,
             "title": entry.title,
             "body": entry.body,
@@ -51,7 +52,6 @@ async def _save_entry(execute: ExecuteType, feed_id: FeedId, source_id: SourceId
     if result:
         entry_id = result[0]["id"]
     else:
-        # TODO: add index
         result = await execute("SELECT id FROM l_entries WHERE source_id = %(source_id)s AND external_id = %(external_id)s",
                                {"source_id": source_id,
                                 "external_id": entry.external_id})
