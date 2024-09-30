@@ -9,7 +9,7 @@ from typing import Any
 from psycopg import Connection
 from yoyo import step
 
-__depends__ = {'20240506_02_zQdSl-fix-unique-index-on-l-entries', '20240928_01_OEKOr-source-table'}
+__depends__ = {'20240928_02_lD7Bv-source-for-entries'}
 
 
 # TODO: test on production data
