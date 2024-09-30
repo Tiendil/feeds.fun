@@ -5,7 +5,7 @@ feeds-to-entries-many-to-many
 from yoyo import step
 
 from typing import Any
-
+from psycopg.rows import dict_row
 from psycopg import Connection
 from yoyo import step
 
@@ -28,33 +28,96 @@ CREATE TABLE l_feeds_to_entries (
 
 sql_fill_from_entries_table = """
 INSERT INTO l_feeds_to_entries (feed_id, entry_id, created_at)
-SELECT feed_id, id, created_at
+SELECT DISTINCT ON (source_id, external_id) feed_id, id, created_at
 FROM l_entries
+ORDER BY source_id, external_id ASC
+"""
+
+sql_fill_duplicated_entries = """
+WITH duplicates AS (
+  SELECT id, source_id, external_id, l_entries.feed_id, l_entries.created_at
+  FROM l_entries
+  LEFT JOIN l_feeds_to_entries ON l_entries.id = l_feeds_to_entries.entry_id
+  WHERE l_feeds_to_entries.entry_id IS NULL
+),
+
+originals AS (
+  SELECT id, source_id, external_id
+  FROM l_entries
+  LEFT JOIN l_feeds_to_entries ON l_entries.id = l_feeds_to_entries.entry_id
+  WHERE l_feeds_to_entries.entry_id IS NOT NULL
+)
+
+INSERT INTO l_feeds_to_entries (feed_id, entry_id, created_at)
+SELECT d.feed_id, o.id, d.created_at
+FROM duplicates AS d
+LEFT JOIN originals AS o ON d.source_id = o.source_id AND d.external_id = o.external_id
+"""
+
+
+sql_remove_duplicated_entries = """
+DELETE FROM l_entries
+WHERE id IN (
+  SELECT id FROM l_entries
+  JOIN l_feeds_to_entries ON l_feeds_to_entries.entry_id = l_entries.id
+  WHERE l_feeds_to_entries.feed_id IS NULL
+)
 """
 
 
 # rollback migration
 sql_update_entries_from_m2m_table = """
 UPDATE l_entries
-SET feed_id = l_feeds_to_entries.feed_id
-FROM l_feeds_to_entries
-WHERE l_feeds_to_entries.entry_id = l_entries.id
+SET feed_id = x.feed_id
+FROM (SELECT MAX(feed_id) as feed_id, entry_id FROM l_feeds_to_entries GROUP BY entry_id) AS x
+WHERE x.entry_id = l_entries.id
 """
 
+# total entries: 6563604
+# unique entries: 6137479
+# duplicated entries: 426125 = 6563604 - 6137479
 
+# inserted additional relations: 543471 ????
+
+
+
+# TODO: remove prints after migration applied to prod
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
-    cursor = conn.cursor()
+    raise Exception('stop')
+    cursor = conn.cursor(row_factory=dict_row)
 
-    cursor.execute(sql_create_feeds_to_entries_table)
+    print('Creating l_feeds_to_entries table')  # noqa
 
-    cursor.execute(sql_fill_from_entries_table)
+    # cursor.execute(sql_create_feeds_to_entries_table)
+
+    print('Filling l_feeds_to_entries table')  # noqa
+
+    # cursor.execute(sql_fill_from_entries_table)
+
+    print('Filling duplicated entries')  # noqa
+
+    cursor.execute(sql_fill_duplicated_entries)
+
+    print('Removing duplicated entries')  # noqa
+
+    cursor.execute(sql_remove_duplicated_entries)
+
+    print('Creating unique index on l_entries')  # noqa
+
+    cursor.execute("CREATE UNIQUE INDEX l_entries_source_id_external_id_idx ON l_entries (source_id, external_id)")
+
+    print('Removing feed_id column from l_entries')  # noqa
 
     cursor.execute("ALTER TABLE l_entries DROP COLUMN feed_id")
+
+    print("Completed")  # noqa
 
 
 # TODO: restore lost indexes if any
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
+
+    cursor.execute("DROP INDEX l_entries_source_id_external_id_idx")
 
     cursor.execute("ALTER TABLE l_entries ADD COLUMN feed_id UUID DEFAULT NULL")
 
