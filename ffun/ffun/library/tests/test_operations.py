@@ -350,8 +350,8 @@ class TestGetEntriesAfterPointer:
         assert entries == []
 
     @pytest.mark.asyncio
-    async def test_get_some(self, loaded_feed_id: FeedId) -> None:
-        enries = await make.n_entries(loaded_feed_id, n=5)
+    async def test_get_some(self, loaded_feed: Feed) -> None:
+        enries = await make.n_entries(loaded_feed, n=5)
 
         entries_list = list(enries.values())
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
@@ -363,8 +363,8 @@ class TestGetEntriesAfterPointer:
         assert [(entry.id, entry.cataloged_at) for entry in entries_list[3:]] == loaded_entries
 
     @pytest.mark.asyncio
-    async def test_duplicated_created_at(self, loaded_feed_id: FeedId) -> None:
-        entries = await make.n_entries(loaded_feed_id, n=5)
+    async def test_duplicated_created_at(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries(loaded_feed, n=5)
 
         entries_list = list(entries.values())
 
@@ -388,8 +388,8 @@ class TestGetEntriesAfterPointer:
             assert [(entry.id, entry.cataloged_at) for entry in entries_list[i + 1 :]] == loaded_entries
 
     @pytest.mark.asyncio
-    async def test_limit(self, loaded_feed_id: FeedId) -> None:
-        entries = await make.n_entries(loaded_feed_id, n=5)
+    async def test_limit(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries(loaded_feed, n=5)
 
         entries_list = list(entries.values())
 
