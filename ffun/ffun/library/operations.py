@@ -74,7 +74,6 @@ async def catalog_entries(feed_id: FeedId, entries: Iterable[Entry]) -> None:
         await _catalog_entry(feed_id, entry)
 
 
-# TODO: tests
 # TODO: index?
 async def get_feed_entry_links(entries_ids: Iterable[EntryId]) -> dict[EntryId, list[FeedEntryLink]]:
     sql = """

@@ -170,6 +170,14 @@ class TestCatalogEntries:
         )
 
 
+# Most of the functionality is tested in the tests for catalog_entry and other functions
+class TestGetFeedEntryLnks:
+
+    @pytest.mark.asyncio
+    async def test_no_entries(self) -> None:
+        assert await get_feed_entry_links([]) == {}
+
+
 class TestFindStoredEntriesForFeed:
     @pytest.mark.asyncio
     async def test_no_entries_stored(self, loaded_feed_id: FeedId) -> None:
