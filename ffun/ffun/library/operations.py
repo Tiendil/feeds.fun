@@ -176,21 +176,19 @@ async def get_entries_after_pointer(
     return [(row["id"], row["created_at"]) for row in rows]
 
 
-# iterate by pairs (feed_id, entry_id) because we already have index on it
 # TODO: rewrite to use get_entries_after_pointer
 async def all_entries_iterator(chunk: int) -> AsyncGenerator[Entry, None]:
-    feed_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
     entry_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
 
     sql = """
     SELECT * FROM l_entries
-    WHERE (%(feed_id)s, %(entry_id)s) < (feed_id, id)
-    ORDER BY feed_id, id ASC
+    WHERE %(entry_id)s < id
+    ORDER BY id ASC
     LIMIT %(chunk)s
     """
 
     while True:
-        rows = await execute(sql, {"feed_id": feed_id, "entry_id": entry_id, "chunk": chunk})
+        rows = await execute(sql, {"entry_id": entry_id, "chunk": chunk})
 
         if not rows:
             break
@@ -198,7 +196,6 @@ async def all_entries_iterator(chunk: int) -> AsyncGenerator[Entry, None]:
         for row in rows:
             yield row_to_entry(row)
 
-        feed_id = rows[-1]["feed_id"]
         entry_id = rows[-1]["id"]
 
 

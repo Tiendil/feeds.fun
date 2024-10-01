@@ -412,20 +412,20 @@ class TestAllEntriesIterator:
         feed_2_data = await f_make.fake_feed()
         feed_2_id = await f_domain.save_feed(feed_2_data)
 
-        entries_1_data = [await make.fake_entry(feed_1_id) for _ in range(3)]
-        entries_2_data = [await make.fake_entry(feed_2_id) for _ in range(3)]
+        entries_1_data = [make.fake_entry(feed_1_data.source_id) for _ in range(3)]
+        entries_2_data = [make.fake_entry(feed_2_data.source_id) for _ in range(3)]
 
-        await catalog_entries(entries_1_data)
-        await catalog_entries(entries_2_data)
+        await catalog_entries(feed_1_id, entries_1_data)
+        await catalog_entries(feed_2_id, entries_2_data)
 
-        ids = [(e.feed_id, e.id) for e in chain(entries_1_data, entries_2_data)]
+        ids = [e.id for e in chain(entries_1_data, entries_2_data)]
 
         ids.sort()
 
         found_ids = [
-            (entry.feed_id, entry.id)
+            entry.id
             async for entry in all_entries_iterator(chunk=chunk)
-            if (entry.feed_id, entry.id) in ids
+            if entry.id in ids
         ]
 
         assert found_ids == ids
