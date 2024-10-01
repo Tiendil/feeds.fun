@@ -234,9 +234,9 @@ class TestGetEntriesByIds:
         assert entries == {}
 
     @pytest.mark.asyncio
-    async def test_success(self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId) -> None:
-        entries = await make.n_entries(loaded_feed_id, n=3)
-        another_entries = await make.n_entries(another_loaded_feed_id, n=3)
+    async def test_success(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
+        entries = await make.n_entries(loaded_feed, n=3)
+        another_entries = await make.n_entries(another_loaded_feed, n=3)
 
         entries_list = list(entries.values())
         another_entries_list = list(another_entries.values())
