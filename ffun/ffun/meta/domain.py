@@ -16,7 +16,7 @@ from ffun.parsers import entities as p_entities
 logger = logging.get_module_logger()
 
 
-# TODO: fix
+# TODO: refactor to remove unlinked entries
 async def remove_entries(entries_ids: Iterable[EntryId]) -> int:
     """Remove entries and all related markers and relations."""
     entries_to_remove = list(entries_ids)
