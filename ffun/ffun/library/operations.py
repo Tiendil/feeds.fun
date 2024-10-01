@@ -213,7 +213,7 @@ async def update_external_url(entity_id: EntryId, url: str) -> None:
 async def tech_remove_entries_by_ids(execute: ExecuteType, entries_ids: Iterable[EntryId]) -> None:
     ids = list(entries_ids)
 
-    await execute("DELETE FROM l_feeds_to_entries WHERE entry_idid = ANY(%(entries_ids)s)", {"entries_ids": ids})
+    await execute("DELETE FROM l_feeds_to_entries WHERE entry_id = ANY(%(entries_ids)s)", {"entries_ids": ids})
     await execute("DELETE FROM l_entries WHERE id = ANY(%(entries_ids)s)", {"entries_ids": ids})
 
 
