@@ -257,30 +257,55 @@ class TestGetEntriesByFilter:
     def time_border(self) -> datetime.datetime:
         return utils.now() - datetime.timedelta(days=1)
 
+    # TODO: actualize to multiple feeds?
     @pytest_asyncio.fixture
     async def prepared_entries(
-        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, time_border: datetime.datetime
-    ) -> list[Entry]:
-        entries = await make.n_entries(loaded_feed_id, n=3)
-        another_entries = await make.n_entries(another_loaded_feed_id, n=3)
+        self, loaded_feed: Feed, another_loaded_feed: Feed, time_border: datetime.datetime
+    ) -> tuple[list[Entry], list[Entry]]:
+        entries = await make.n_entries_list(loaded_feed, n=3)
+        another_entries = await make.n_entries_list(another_loaded_feed, n=3)
 
-        entries_list = list(entries.values())
-        another_entries_list = list(another_entries.values())
+        common_entry = make.fake_entry(loaded_feed.source_id)
+        await catalog_entries(loaded_feed.id, [common_entry])
+        await catalog_entries(another_loaded_feed.id, [common_entry])
+
+        await execute(
+            "UPDATE l_feeds_to_entries SET created_at = %(time_border)s WHERE entry_id = ANY(%(ids)s)",
+            {
+                "time_border": time_border - datetime.timedelta(seconds=10),
+                "ids": [entries[0].id, another_entries[0].id],
+            },
+        )
 
         await execute(
             "UPDATE l_entries SET created_at = %(time_border)s WHERE id = ANY(%(ids)s)",
             {
                 "time_border": time_border - datetime.timedelta(seconds=10),
-                "ids": [entries_list[0].id, another_entries_list[0].id],
+                "ids": [entries[0].id, another_entries[0].id],
             },
         )
 
-        all_entries = await get_entries_by_ids(ids=[entry.id for entry in entries_list + another_entries_list])
+        all_entries = await get_entries_by_ids(ids=[entry.id
+                                                    for entry in chain(entries, another_entries, [common_entry])])
 
         all_entries_list = list(all_entries.values())
         all_entries_list.sort(key=lambda entry: entry.cataloged_at)  # type: ignore
 
-        return all_entries_list  # type: ignore
+        entries_1 = []
+        entries_2 = []
+
+        for entry in all_entries_list:
+            if entry.id in {e.id for e in entries}:
+                entries_1.append(entry)
+            elif entry.id in {e.id for e in another_entries}:
+                entries_2.append(entry)
+            elif entry.id == common_entry.id:
+                entries_1.append(entry)
+                entries_2.append(entry)
+            else:
+                raise NotImplementedError()
+
+        return (entries_1, entries_2)
 
     @pytest.mark.asyncio
     async def test_all(
@@ -289,23 +314,22 @@ class TestGetEntriesByFilter:
         loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id, another_loaded_feed_id], limit=100)
 
         loaded_entries_ids = {entry.id for entry in loaded_entries}
-        assert loaded_entries_ids == {entry.id for entry in prepared_entries}
+        assert loaded_entries_ids == {entry.id for entry in chain(*prepared_entries)}
 
     @pytest.mark.asyncio
     async def test_limit(
         self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, prepared_entries: list[Entry]
     ) -> None:
-        loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id, another_loaded_feed_id], limit=4)
+        loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id, another_loaded_feed_id], limit=5)
 
         loaded_entries_ids = {entry.id for entry in loaded_entries}
-        assert loaded_entries_ids == {entry.id for entry in prepared_entries[2:]}
+        assert loaded_entries_ids == {entry.id for entry in chain(prepared_entries[0][1:], prepared_entries[1][1:])}
 
     @pytest.mark.asyncio
     async def test_feeds_filter(self, loaded_feed_id: FeedId, prepared_entries: list[Entry]) -> None:
         loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id], limit=100)
-
         loaded_entries_ids = {entry.id for entry in loaded_entries}
-        assert loaded_entries_ids == {entry.id for entry in prepared_entries if entry.feed_id == loaded_feed_id}
+        assert loaded_entries_ids == {entry.id for entry in prepared_entries[0]}
 
     @pytest.mark.asyncio
     async def test_time_period(
@@ -316,7 +340,7 @@ class TestGetEntriesByFilter:
         )
 
         loaded_entries_ids = {entry.id for entry in loaded_entries}
-        assert loaded_entries_ids == {entry.id for entry in prepared_entries[2:]}
+        assert loaded_entries_ids == {entry.id for entry in chain(prepared_entries[0][1:], prepared_entries[1][1:])}
 
 
 class TestGetEntriesAfterPointer:

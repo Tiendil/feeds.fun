@@ -129,14 +129,21 @@ async def get_entries_by_ids(ids: Iterable[EntryId]) -> dict[EntryId, Entry | No
     return result
 
 
-# TODO: test of multiple feeds
-# TODO: test of intersection of feeds
 async def get_entries_by_filter(
     feeds_ids: Iterable[FeedId], limit: int, period: datetime.timedelta | None = None
 ) -> list[Entry]:
     if period is None:
         period = datetime.timedelta(days=100 * 365)
 
+    # Here is an important logic implemented
+    # When we are applying created time restriction
+    # we are looking at a time of creating a link between entry and feed, not the real cataloged time
+    # In most cases, those times should be nearly the same, but there is a possibility
+    # that there will be aggregator-style feeds that include old entries as new.
+    # In such cases, we'll show such an entry as new to a user.
+    # We may want to change this logic in the future.
+
+    # TODO: index
     sql = """
     SELECT DISTINCT le.*
     FROM l_entries AS le
