@@ -17,6 +17,7 @@ from ffun.parsers import entities as p_entities
 logger = logging.get_module_logger()
 
 
+# TODO: fix
 async def merge_feeds(feed_1_id: FeedId, feed_2_id: FeedId) -> None:
     """Merge feed_2 into feed_1, remove feed_2."""
     log = logger.bind(function="merge_feeds")
@@ -60,6 +61,7 @@ async def merge_feeds(feed_1_id: FeedId, feed_2_id: FeedId) -> None:
     await remove_feed(feed_2_id)
 
 
+# TODO: fix
 async def remove_feed(feed_id: FeedId) -> None:
     """Remove feed and all related entries."""
     all_entries = await l_domain.get_entries_by_filter(feeds_ids=[feed_id], limit=postgresql.MAX_INTEGER)
@@ -71,6 +73,7 @@ async def remove_feed(feed_id: FeedId) -> None:
     await f_domain.tech_remove_feed(feed_id)
 
 
+# TODO: fix
 async def remove_entries(entries_ids: Iterable[EntryId]) -> int:
     """Remove entries and all related markers and relations."""
     entries_to_remove = list(entries_ids)
@@ -82,6 +85,7 @@ async def remove_entries(entries_ids: Iterable[EntryId]) -> int:
     return len(entries_to_remove)
 
 
+# TODO: fix
 async def limit_entries_for_feed(feed_id: FeedId, limit: int | None = None) -> None:
     """Remove oldest entries for feed to keep only `limit` entries."""
     if limit is None:
