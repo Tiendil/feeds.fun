@@ -127,5 +127,8 @@ def rollback_step(conn: Connection[dict[str, Any]]) -> None:
 
     cursor.execute("DROP TABLE l_feeds_to_entries")
 
+    cursor.execute("CREATE UNIQUE INDEX l_entries_feed_id_external_id_key ON l_entries (feed_id, external_id)")
+    cursor.execute("CREATE INDEX idx_l_entries_created_at_feed_id ON l_entries (created_at, feed_id)")
+
 
 steps = [step(apply_step, rollback_step)]
