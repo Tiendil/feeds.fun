@@ -24,7 +24,6 @@ from ffun.library.operations import (
     get_entries_by_filter,
     get_entries_by_ids,
     # tech_get_feed_entries_tail,
-    # tech_move_entry,
     # tech_remove_entries_by_ids,
     update_external_url,
     _catalog_entry,
@@ -445,41 +444,6 @@ class TestUpdateExternalUrl:
 
         loaded_another_entry = await get_entry(another_cataloged_entry.id)
         assert loaded_another_entry.external_url == another_cataloged_entry.external_url
-
-
-class TestTechMoveEntry:
-    @pytest.mark.asyncio
-    async def test_moved(self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, cataloged_entry: Entry) -> None:
-        async with TableSizeNotChanged("l_entries"):
-            await tech_move_entry(cataloged_entry.id, another_loaded_feed_id)
-
-        loaded_entry = await get_entry(cataloged_entry.id)
-
-        assert loaded_entry.feed_id == another_loaded_feed_id
-
-        assert cataloged_entry.replace(feed_id=another_loaded_feed_id) == loaded_entry
-
-    @pytest.mark.asyncio
-    async def test_feed_has_the_same_entry(
-        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, new_entry: Entry
-    ) -> None:
-        duplicated_entry = new_entry.replace(feed_id=another_loaded_feed_id, id=uuid.uuid4())
-
-        await catalog_entries([new_entry, duplicated_entry])
-
-        async with TableSizeNotChanged("l_entries"):
-            with pytest.raises(errors.CanNotMoveEntryAlreadyInFeed):
-                await tech_move_entry(duplicated_entry.id, loaded_feed_id)
-
-        loaded_entry = await get_entry(new_entry.id)
-
-        assert loaded_entry == new_entry.replace(cataloged_at=loaded_entry.cataloged_at)
-
-        loaded_duplicated_entries = await get_entry(duplicated_entry.id)
-
-        assert loaded_duplicated_entries == duplicated_entry.replace(
-            cataloged_at=loaded_duplicated_entries.cataloged_at
-        )
 
 
 class TestTechRemoveEntriesByIds:

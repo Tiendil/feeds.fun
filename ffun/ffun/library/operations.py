@@ -218,20 +218,6 @@ async def tech_remove_entries_by_ids(execute: ExecuteType, entries_ids: Iterable
 
 
 # TODO: no more correct logic, refactor whole call chain
-# Async def tech_move_entry(entry_id: EntryId, feed_id: FeedId) -> None:
-#     sql = """
-#     UPDATE l_entries
-#     SET feed_id = %(feed_id)s
-#     WHERE id = %(entry_id)s
-#     """
-
-#     try:
-#         await execute(sql, {"entry_id": entry_id, "feed_id": feed_id})
-#     except psycopg.errors.UniqueViolation as e:
-#         raise errors.CanNotMoveEntryAlreadyInFeed(entry_id=entry_id, feed_id=feed_id) from e
-
-
-# TODO: no more correct logic, refactor whole call chain
 # async def tech_get_feed_entries_tail(feed_id: FeedId, offset: int) -> set[EntryId]:
 #     """
 #     Get the last entries for the feed.

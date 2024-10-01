@@ -10,7 +10,6 @@ get_entries_by_filter = operations.get_entries_by_filter
 find_stored_entries_for_feed = operations.find_stored_entries_for_feed
 all_entries_iterator = operations.all_entries_iterator
 get_entries_after_pointer = operations.get_entries_after_pointer
-# tech_move_entry = operations.tech_move_entry
 # tech_get_feed_entries_tail = operations.tech_get_feed_entries_tail
 tech_remove_entries_by_ids = operations.tech_remove_entries_by_ids
 
