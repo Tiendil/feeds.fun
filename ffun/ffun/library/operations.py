@@ -100,15 +100,13 @@ async def get_feed_entry_links(entries_ids: Iterable[EntryId]) -> dict[EntryId, 
     return feeds_for_entries
 
 
-# TODO: rename tests
-# TODO: test for multiple feeds
 async def find_stored_entries_for_feed(feed_id: FeedId, external_ids: Iterable[str]) -> set[str]:
 
     # TODO: index
     sql = """
     SELECT external_id
-    FROM l_entries AS le
-    JOIN l_feeds_to_entries AS lfe
+    FROM l_entries
+    JOIN l_feeds_to_entries ON l_entries.id = l_feeds_to_entries.entry_id
     WHERE feed_id = %(feed_id)s AND external_id = ANY(%(external_ids)s)
     """
 

@@ -6,6 +6,7 @@ from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import EntryId, SourceId
 from ffun.library import domain
 from ffun.library.entities import Entry
+from ffun.feeds.entities import Feed
 
 
 def fake_url() -> str:
@@ -34,14 +35,14 @@ def fake_entry(source_id: SourceId, **kwargs: Any) -> Entry:
     )
 
 
-async def n_entries(source_id: SourceId, n: int) -> dict[EntryId, Entry]:
-    new_entries = [fake_entry(source_id) for _ in range(n)]
-    await domain.catalog_entries(new_entries)
+async def n_entries(feed: Feed, n: int) -> dict[EntryId, Entry]:
+    new_entries = [fake_entry(feed.source_id) for _ in range(n)]
+    await domain.catalog_entries(feed.id, new_entries)
     return await domain.get_entries_by_ids([entry.id for entry in new_entries])  # type: ignore
 
 
-async def n_entries_list(source_id: SourceId, n: int) -> list[Entry]:
-    entries = await n_entries(source_id, n)
+async def n_entries_list(feed: Feed, n: int) -> list[Entry]:
+    entries = await n_entries(feed, n)
 
     result = list(entries.values())
 

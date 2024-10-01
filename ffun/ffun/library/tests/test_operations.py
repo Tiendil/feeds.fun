@@ -180,34 +180,51 @@ class TestGetFeedEntryLnks:
 
 class TestFindStoredEntriesForFeed:
     @pytest.mark.asyncio
-    async def test_no_entries_stored(self, loaded_feed_id: FeedId) -> None:
-        entries = [await make.fake_entry(loaded_feed_id) for _ in range(3)]
+    async def test_no_entries_stored(self, loaded_feed: Feed) -> None:
+        entries = [make.fake_entry(loaded_feed.source_id) for _ in range(3)]
         external_ids = [entry.external_id for entry in entries]
 
-        stored_entries = await find_stored_entries_for_feed(loaded_feed_id, external_ids)
+        stored_entries = await find_stored_entries_for_feed(loaded_feed.id, external_ids)
 
         assert stored_entries == set()
 
     @pytest.mark.asyncio
-    async def test_all_entries_stored(self, loaded_feed_id: FeedId) -> None:
-        entries = await make.n_entries(loaded_feed_id, n=3)
+    async def test_all_entries_stored(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries(loaded_feed, n=3)
         external_ids = {entry.external_id for entry in entries.values()}
 
-        stored_entries = await find_stored_entries_for_feed(loaded_feed_id, list(external_ids))
+        stored_entries = await find_stored_entries_for_feed(loaded_feed.id, list(external_ids))
 
         assert stored_entries == external_ids
 
     @pytest.mark.asyncio
-    async def test_some_entries_stored(self, loaded_feed_id: FeedId) -> None:
-        new_entries = [await make.fake_entry(loaded_feed_id) for _ in range(3)]
-        saved_entries = await make.n_entries(loaded_feed_id, n=2)
+    async def test_some_entries_stored(self, loaded_feed: Feed) -> None:
+        new_entries = [make.fake_entry(loaded_feed.source_id) for _ in range(3)]
+        saved_entries = await make.n_entries(loaded_feed, n=2)
         external_ids = [entry.external_id for entry in new_entries] + [
             entry.external_id for entry in saved_entries.values()
         ]
 
-        stored_entries = await find_stored_entries_for_feed(loaded_feed_id, external_ids)
+        stored_entries = await find_stored_entries_for_feed(loaded_feed.id, external_ids)
 
         assert stored_entries == set(entry.external_id for entry in saved_entries.values())
+
+    @pytest.mark.asyncio
+    async def test_some_entries_stored_in_another_feed(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
+        saved_entries = await make.n_entries_list(loaded_feed, n=2)
+        saved_another_entries = await make.n_entries_list(another_loaded_feed, n=2)
+
+        common_entry = make.fake_entry(loaded_feed.source_id)
+        await catalog_entries(loaded_feed.id, [common_entry])
+        await catalog_entries(another_loaded_feed.id, [common_entry])
+
+        external_ids = [entry.external_id for entry in chain(saved_entries, saved_another_entries, [common_entry])]
+
+        stored_entries = await find_stored_entries_for_feed(loaded_feed.id, external_ids)
+        assert stored_entries == set(entry.external_id for entry in saved_entries) | {common_entry.external_id}
+
+        stored_entries = await find_stored_entries_for_feed(another_loaded_feed.id, external_ids)
+        assert stored_entries == set(entry.external_id for entry in saved_another_entries) | {common_entry.external_id}
 
 
 class TestGetEntriesByIds:
