@@ -69,8 +69,6 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Entry) ->
         })
 
 
-# TODO: test conflict with existed entry but different feed
-# TODO: how to check if entry ids have the same source as feed? Should we check this?
 async def catalog_entries(feed_id: FeedId, entries: Iterable[Entry]) -> None:
     for entry in entries:
         await _catalog_entry(feed_id, entry)

@@ -140,16 +140,16 @@ class TestCatalogEntry:
 
 class TestCatalogEntries:
     @pytest.mark.asyncio
-    async def test_no_entries(self) -> None:
+    async def test_no_entries(self, loaded_feed_id: FeedId) -> None:
         async with TableSizeNotChanged("l_entries"):
-            await catalog_entries([])
+            await catalog_entries(loaded_feed_id, [])
 
     @pytest.mark.asyncio
-    async def test_success(self, new_entry: Entry, another_new_entry: Entry) -> None:
+    async def test_success(self, loaded_feed_id: FeedId, new_entry: Entry, another_new_entry: Entry) -> None:
         entries_data = [new_entry, another_new_entry]
 
         async with TableSizeDelta("l_entries", delta=2):
-            await catalog_entries(entries_data)
+            await catalog_entries(loaded_feed_id, entries_data)
 
         loaded_entries = await get_entries_by_ids(ids=[new_entry.id, another_new_entry.id])
 
