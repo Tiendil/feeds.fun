@@ -10,6 +10,7 @@ from ffun.core import logging
 from ffun.core.postgresql import execute, transaction, run_in_transaction, ExecuteType
 from ffun.domain.entities import EntryId, FeedId, SourceId
 from ffun.library import errors
+from ffun.library.settings import settings
 from ffun.library.entities import Entry, FeedEntryLink
 
 logger = logging.get_module_logger()
@@ -209,29 +210,20 @@ async def update_external_url(entity_id: EntryId, url: str) -> None:
     await execute(sql, {"entity_id": entity_id, "url": url})
 
 
-@run_in_transaction
-async def tech_remove_entries_by_ids(execute: ExecuteType, entries_ids: Iterable[EntryId]) -> None:
-    ids = list(entries_ids)
+async def unlink_feed_tail(feed_id: FeedId, offset: int = settings.max_entries_per_feed) -> None:
+    # TODO: index
+    sql = """
+    WITH cte AS (
+        SELECT feed_id, entry_id
+        FROM l_feeds_to_entries
+        WHERE feed_id = %(feed_id)s
+        ORDER BY created_at DESC
+        OFFSET %(offset)s
+    )
+    DELETE FROM l_feeds_to_entries
+    USING cte
+    WHERE l_feeds_to_entries.feed_id = cte.feed_id
+      AND l_feeds_to_entries.entry_id = cte.entry_id;
+    """
 
-    await execute("DELETE FROM l_feeds_to_entries WHERE entry_id = ANY(%(entries_ids)s)", {"entries_ids": ids})
-    await execute("DELETE FROM l_entries WHERE id = ANY(%(entries_ids)s)", {"entries_ids": ids})
-
-
-# TODO: no more correct logic, refactor whole call chain
-# async def tech_get_feed_entries_tail(feed_id: FeedId, offset: int) -> set[EntryId]:
-#     """
-#     Get the last entries for the feed.
-#     """
-#     # Order by published_at because we want to keep the newest entries
-#     # and it is better to take decission based on time from an entry's source rather than on time when we collected it
-#     sql = """
-#     SELECT id
-#     FROM l_entries
-#     WHERE feed_id = %(feed_id)s
-#     ORDER BY published_at DESC
-#     OFFSET %(offset)s
-#     """
-
-#     result = await execute(sql, {"feed_id": feed_id, "offset": offset})
-
-#     return {row["id"] for row in result}
+    await execute(sql, {"feed_id": feed_id, "offset": offset})

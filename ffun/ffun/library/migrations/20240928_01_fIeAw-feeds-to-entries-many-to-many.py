@@ -124,6 +124,9 @@ def rollback_step(conn: Connection[dict[str, Any]]) -> None:
 
     cursor.execute("ALTER TABLE l_entries ALTER COLUMN feed_id DROP DEFAULT")
 
+    # after some tests there may be entries without a feed
+    cursor.execute("DELETE FROM l_entries WHERE feed_id IS NULL")
+
     cursor.execute("ALTER TABLE l_entries ALTER COLUMN feed_id SET NOT NULL")
 
     cursor.execute("DROP TABLE l_feeds_to_entries")

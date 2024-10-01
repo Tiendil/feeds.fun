@@ -10,8 +10,7 @@ get_entries_by_filter = operations.get_entries_by_filter
 find_stored_entries_for_feed = operations.find_stored_entries_for_feed
 all_entries_iterator = operations.all_entries_iterator
 get_entries_after_pointer = operations.get_entries_after_pointer
-# tech_get_feed_entries_tail = operations.tech_get_feed_entries_tail
-tech_remove_entries_by_ids = operations.tech_remove_entries_by_ids
+unlink_feed_tail = operations.unlink_feed_tail
 
 
 async def get_entry(entry_id: EntryId) -> Entry:

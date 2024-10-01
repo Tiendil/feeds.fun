@@ -23,11 +23,10 @@ from ffun.library.operations import (
     get_entries_after_pointer,
     get_entries_by_filter,
     get_entries_by_ids,
-    # tech_get_feed_entries_tail,
-    # tech_remove_entries_by_ids,
     update_external_url,
     _catalog_entry,
     get_feed_entry_links,
+    unlink_feed_tail,
 )
 from ffun.library.tests import make
 
@@ -446,70 +445,40 @@ class TestUpdateExternalUrl:
         assert loaded_another_entry.external_url == another_cataloged_entry.external_url
 
 
-class TestTechRemoveEntriesByIds:
-    @pytest.mark.asyncio
-    async def test_removed(self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId) -> None:
-        entries = await make.n_entries(loaded_feed_id, n=3)
-        another_entries = await make.n_entries(another_loaded_feed_id, n=3)
-
-        entries_list = list(entries.values())
-        another_entries_list = list(another_entries.values())
-
-        async with TableSizeDelta("l_entries", delta=-2):
-            await tech_remove_entries_by_ids([entries_list[0].id, another_entries_list[0].id])
-
-        loaded_entries = await get_entries_by_ids([entry.id for entry in entries_list + another_entries_list])
-
-        assert loaded_entries[entries_list[0].id] is None
-        assert loaded_entries[another_entries_list[0].id] is None
+class TestUnlinkFeedTail:
 
     @pytest.mark.asyncio
-    async def test_no_entries(self) -> None:
-        async with TableSizeNotChanged("l_entries"):
-            await tech_remove_entries_by_ids([])
-            await tech_remove_entries_by_ids([new_entry_id()])
+    async def test_zero_head(self, loaded_feed: Feed) -> None:
+        await make.n_entries(loaded_feed, n=5)
+
+        async with TableSizeDelta("l_feeds_to_entries", delta=-5):
+            async with TableSizeNotChanged("l_entries"):
+                await unlink_feed_tail(loaded_feed.id, offset=0)
+
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
+
+        assert set() == {entry.id for entry in feed_entries}
 
     @pytest.mark.asyncio
-    async def test_already_removed(self, loaded_feed_id: FeedId) -> None:
-        entries = await make.n_entries(loaded_feed_id, n=3)
+    async def test_not_excceed_limit(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=5)
 
-        entries_list = list(entries.values())
+        async with TableSizeNotChanged("l_feeds_to_entries"):
+            async with TableSizeNotChanged("l_entries"):
+                await unlink_feed_tail(loaded_feed.id, offset=10)
 
-        await tech_remove_entries_by_ids([entry.id for entry in entries_list])
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
 
-        async with TableSizeNotChanged("l_entries"):
-            await tech_remove_entries_by_ids([entry.id for entry in entries_list])
-
-
-class TestTechGetFeedEntriesTail:
-    @pytest.mark.asyncio
-    async def test_nothing_to_return(self, loaded_feed_id: FeedId) -> None:
-        await make.n_entries(loaded_feed_id, n=5)
-
-        ids = await tech_get_feed_entries_tail(loaded_feed_id, offset=10)
-
-        assert ids == set()
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries}
 
     @pytest.mark.asyncio
-    async def test_zero_head(self, loaded_feed_id: FeedId) -> None:
-        entries = await make.n_entries(loaded_feed_id, n=5)
+    async def test_offset(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=15)
 
-        ids = await tech_get_feed_entries_tail(loaded_feed_id, offset=0)
+        async with TableSizeDelta("l_feeds_to_entries", delta=-5):
+            async with TableSizeNotChanged("l_entries"):
+                await unlink_feed_tail(loaded_feed.id, offset=10)
 
-        assert ids == set(entry.id for entry in entries.values())
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
 
-    @pytest.mark.asyncio
-    async def test_not_excceed_limit(self, loaded_feed_id: FeedId) -> None:
-        await make.n_entries(loaded_feed_id, n=5)
-
-        ids = await tech_get_feed_entries_tail(loaded_feed_id, offset=10)
-
-        assert ids == set()
-
-    @pytest.mark.asyncio
-    async def test_offset(self, loaded_feed_id: FeedId) -> None:
-        entries = await make.n_entries_list(loaded_feed_id, n=15)
-
-        ids = await tech_get_feed_entries_tail(loaded_feed_id, offset=10)
-
-        assert ids == set(entry.id for entry in entries[10:])
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:10]}
