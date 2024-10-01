@@ -11,7 +11,6 @@ from yoyo import step
 
 __depends__ = {'20240928_02_lD7Bv-source-for-entries'}
 
-
 # TODO: test on production data
 # TODO: add index on created_at?
 
@@ -55,6 +54,8 @@ LEFT JOIN originals AS o ON d.source_id = o.source_id AND d.external_id = o.exte
 """
 
 
+# TODO: remove related markers
+# TODO: remove related ontology relations
 sql_remove_duplicated_entries = """
 DELETE FROM l_entries AS e
 USING l_entries AS e2
