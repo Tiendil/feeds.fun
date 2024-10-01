@@ -3,9 +3,7 @@ from typing import Any
 
 from ffun.core import utils
 from ffun.domain.domain import new_entry_id
-from ffun.domain.entities import EntryId
-from ffun.feeds.domain import get_feed
-from ffun.feeds.entities import FeedId
+from ffun.domain.entities import EntryId, SourceId
 from ffun.library import domain
 from ffun.library.entities import Entry
 
@@ -22,15 +20,10 @@ def fake_body() -> str:
     return f"Entry Body: {uuid.uuid4().hex}"
 
 
-# TODO: refactor to remove unnecessary feed loading
-async def fake_entry(loaded_feed_id: FeedId, **kwargs: Any) -> Entry:
-
-    feed = await get_feed(loaded_feed_id)
-
+def fake_entry(source_id: SourceId, **kwargs: Any) -> Entry:
     return Entry(
         id=new_entry_id() if "id" not in kwargs else kwargs["id"],
-        source_id=feed.source_id,
-        feed_id=loaded_feed_id,
+        source_id=source_id,
         title=fake_title() if "title" not in kwargs else kwargs["title"],
         body=fake_body() if "body" not in kwargs else kwargs["body"],
         external_id=uuid.uuid4().hex if "external_id" not in kwargs else kwargs["external_id"],
@@ -41,14 +34,15 @@ async def fake_entry(loaded_feed_id: FeedId, **kwargs: Any) -> Entry:
     )
 
 
-async def n_entries(loaded_feed_id: FeedId, n: int) -> dict[EntryId, Entry]:
-    new_entries = [await fake_entry(loaded_feed_id) for _ in range(n)]
+async def n_entries(source_id: SourceId, n: int) -> dict[EntryId, Entry]:
+    new_entries = [fake_entry(source_id) for _ in range(n)]
     await domain.catalog_entries(new_entries)
     return await domain.get_entries_by_ids([entry.id for entry in new_entries])  # type: ignore
 
 
-async def n_entries_list(loaded_feed_id: FeedId, n: int) -> list[Entry]:
-    entries = await n_entries(loaded_feed_id, n)
+async def n_entries_list(source_id: SourceId, n: int) -> list[Entry]:
+    entries = await n_entries(source_id, n)
+
     result = list(entries.values())
 
     result.sort(key=lambda entry: entry.cataloged_at, reverse=True)

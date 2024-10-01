@@ -10,7 +10,7 @@ from ffun.core import logging
 from ffun.core.postgresql import execute, transaction, run_in_transaction, ExecuteType
 from ffun.domain.entities import EntryId, FeedId, SourceId
 from ffun.library import errors
-from ffun.library.entities import Entry
+from ffun.library.entities import Entry, FeedEntryLink
 
 logger = logging.get_module_logger()
 
@@ -20,9 +20,8 @@ def row_to_entry(row: dict[str, Any]) -> Entry:
     return Entry(**row)
 
 
-# TODO: tests
 @run_in_transaction
-async def _save_entry(execute: ExecuteType, feed_id: FeedId, source_id: SourceId, entry: Entry) -> None:
+async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Entry) -> None:
     sql_insert_entry = """
     INSERT INTO l_entries (id, source_id, title, body, external_id, external_url, external_tags, published_at)
     VALUES (%(id)s, %(source_id)s, %(title)s, %(body)s, %(external_id)s, %(external_url)s, %(external_tags)s, %(published_at)s)
@@ -33,13 +32,14 @@ async def _save_entry(execute: ExecuteType, feed_id: FeedId, source_id: SourceId
     sql_insert_feed_to_entry = """
     INSERT INTO l_feeds_to_entries (feed_id, entry_id)
     VALUES (%(feed_id)s, %(entry_id)s)
+    ON CONFLICT (feed_id, entry_id) DO NOTHING
     """
 
     result = await execute(
         sql_insert_entry,
         {
             "id": entry.id,
-            "source_id": source_id,
+            "source_id": entry.source_id,
             "title": entry.title,
             "body": entry.body,
             "external_id": entry.external_id,
@@ -53,7 +53,7 @@ async def _save_entry(execute: ExecuteType, feed_id: FeedId, source_id: SourceId
         entry_id = result[0]["id"]
     else:
         result = await execute("SELECT id FROM l_entries WHERE source_id = %(source_id)s AND external_id = %(external_id)s",
-                               {"source_id": source_id,
+                               {"source_id": entry.source_id,
                                 "external_id": entry.external_id})
 
         if result:
@@ -70,9 +70,38 @@ async def _save_entry(execute: ExecuteType, feed_id: FeedId, source_id: SourceId
 
 
 # TODO: test conflict with existed entry but different feed
-async def catalog_entries(feed_id: FeedId, source_id: SourceId, entries: Iterable[Entry]) -> None:
+# TODO: how to check if entry ids have the same source as feed? Should we check this?
+async def catalog_entries(feed_id: FeedId, entries: Iterable[Entry]) -> None:
     for entry in entries:
-        await _save_entry(feed_id, source_id, entry)
+        await _catalog_entry(feed_id, entry)
+
+
+# TODO: tests
+# TODO: index?
+async def get_feed_entry_links(entries_ids: Iterable[EntryId]) -> dict[EntryId, list[FeedEntryLink]]:
+    sql = """
+    SELECT entry_id, feed_id, created_at
+    FROM l_feeds_to_entries
+    WHERE entry_id = ANY(%(entries_ids)s)
+    ORDER BY created_at ASC
+    """
+
+    result = await execute(sql, {"entries_ids": list(entries_ids)})
+
+    feeds_for_entries = {}
+
+    for row in result:
+        entry_id = row["entry_id"]
+        feed_id = row["feed_id"]
+        created_at = row["created_at"]
+
+        if entry_id not in feeds_for_entries:
+            feeds_for_entries[entry_id] = []
+
+        feeds_for_entries[entry_id].append(FeedEntryLink(feed_id=feed_id, entry_id=entry_id, created_at=created_at))
+
+    return feeds_for_entries
+
 
 # TODO: rename tests
 # TODO: test for multiple feeds

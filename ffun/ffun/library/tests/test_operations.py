@@ -9,8 +9,9 @@ from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_times_is_near
 from ffun.domain.domain import new_entry_id
+from ffun.domain.entities import FeedId
 from ffun.feeds import domain as f_domain
-from ffun.feeds.entities import FeedId
+from ffun.feeds.entities import Feed
 from ffun.feeds.tests import make as f_make
 from ffun.library import errors
 from ffun.library.domain import get_entry
@@ -18,16 +19,123 @@ from ffun.library.entities import Entry
 from ffun.library.operations import (
     all_entries_iterator,
     catalog_entries,
-    check_stored_entries_by_external_ids,
+    find_stored_entries_for_feed,
     get_entries_after_pointer,
     get_entries_by_filter,
     get_entries_by_ids,
-    tech_get_feed_entries_tail,
-    tech_move_entry,
-    tech_remove_entries_by_ids,
+    # tech_get_feed_entries_tail,
+    # tech_move_entry,
+    # tech_remove_entries_by_ids,
     update_external_url,
+    _catalog_entry,
+    get_feed_entry_links,
 )
 from ffun.library.tests import make
+
+
+class TestCatalogEntry:
+
+    @pytest.mark.asyncio
+    async def test_new_entry_new_feed(self, loaded_feed_id: FeedId, new_entry: Entry) -> None:
+        async with TableSizeDelta("l_entries", delta=1):
+            async with TableSizeDelta("l_feeds_to_entries", delta=1):
+                await _catalog_entry(loaded_feed_id, new_entry)
+
+        loaded_entry = await get_entry(new_entry.id)
+
+        assert_times_is_near(loaded_entry.cataloged_at, utils.now())
+
+        assert loaded_entry == new_entry.replace(cataloged_at=loaded_entry.cataloged_at)
+
+        links = await get_feed_entry_links([new_entry.id])
+
+        assert len(links[new_entry.id]) == 1
+
+        link = links[new_entry.id][0]
+
+        assert link.feed_id == loaded_feed_id
+        assert link.entry_id == new_entry.id
+        assert_times_is_near(link.created_at, utils.now())
+
+    @pytest.mark.asyncio
+    async def test_same_entry_new_feed(self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, new_entry: Entry) -> None:
+        await _catalog_entry(loaded_feed_id, new_entry)
+
+        async with TableSizeNotChanged("l_entries"):
+            async with TableSizeDelta("l_feeds_to_entries", delta=1):
+                await _catalog_entry(another_loaded_feed_id, new_entry)
+
+        loaded_entry = await get_entry(new_entry.id)
+
+        assert_times_is_near(loaded_entry.cataloged_at, utils.now())
+
+        assert loaded_entry == new_entry.replace(cataloged_at=loaded_entry.cataloged_at)
+
+        links = await get_feed_entry_links([new_entry.id])
+
+        assert len(links[new_entry.id]) == 2
+
+        link_1 = links[new_entry.id][0]
+
+        assert link_1.feed_id == loaded_feed_id
+        assert link_1.entry_id == new_entry.id
+        assert_times_is_near(link_1.created_at, utils.now())
+
+        link_2 = links[new_entry.id][1]
+
+        assert link_2.feed_id == another_loaded_feed_id
+        assert link_2.entry_id == new_entry.id
+        assert_times_is_near(link_2.created_at, utils.now())
+
+        assert link_1.created_at < link_2.created_at
+
+    @pytest.mark.asyncio
+    async def test_same_entry_same_feed(self, loaded_feed_id: FeedId, new_entry: Entry) -> None:
+        await _catalog_entry(loaded_feed_id, new_entry)
+
+        async with TableSizeNotChanged("l_entries"):
+            async with TableSizeNotChanged("l_feeds_to_entries"):
+                await _catalog_entry(loaded_feed_id, new_entry)
+
+        loaded_entry = await get_entry(new_entry.id)
+
+        assert_times_is_near(loaded_entry.cataloged_at, utils.now())
+
+        assert loaded_entry == new_entry.replace(cataloged_at=loaded_entry.cataloged_at)
+
+        links = await get_feed_entry_links([new_entry.id])
+
+        assert len(links[new_entry.id]) == 1
+
+        link = links[new_entry.id][0]
+
+        assert link.feed_id == loaded_feed_id
+        assert link.entry_id == new_entry.id
+        assert_times_is_near(link.created_at, utils.now())
+
+    @pytest.mark.asyncio
+    async def test_new_entry_same_feed(self, loaded_feed_id: FeedId, new_entry: Entry, another_new_entry: Entry) -> None:
+        await _catalog_entry(loaded_feed_id, new_entry)
+
+        async with TableSizeDelta("l_entries", delta=1):
+            async with TableSizeDelta("l_feeds_to_entries", delta=1):
+                await _catalog_entry(loaded_feed_id, another_new_entry)
+
+        loaded_another_entry = await get_entry(another_new_entry.id)
+
+        assert_times_is_near(loaded_another_entry.cataloged_at, utils.now())
+
+        assert loaded_another_entry == another_new_entry.replace(cataloged_at=loaded_another_entry.cataloged_at)
+
+        links = await get_feed_entry_links([another_new_entry.id])
+
+        assert len(links[another_new_entry.id]) == 1
+
+        link = links[another_new_entry.id][0]
+
+        assert link.feed_id == loaded_feed_id
+        assert link.entry_id == another_new_entry.id
+        assert_times_is_near(link.created_at, utils.now())
 
 
 class TestCatalogEntries:
@@ -62,13 +170,13 @@ class TestCatalogEntries:
         )
 
 
-class TestCheckStoredEntriesByExternalIds:
+class TestFindStoredEntriesForFeed:
     @pytest.mark.asyncio
     async def test_no_entries_stored(self, loaded_feed_id: FeedId) -> None:
         entries = [await make.fake_entry(loaded_feed_id) for _ in range(3)]
         external_ids = [entry.external_id for entry in entries]
 
-        stored_entries = await check_stored_entries_by_external_ids(loaded_feed_id, external_ids)
+        stored_entries = await find_stored_entries_for_feed(loaded_feed_id, external_ids)
 
         assert stored_entries == set()
 
@@ -77,7 +185,7 @@ class TestCheckStoredEntriesByExternalIds:
         entries = await make.n_entries(loaded_feed_id, n=3)
         external_ids = {entry.external_id for entry in entries.values()}
 
-        stored_entries = await check_stored_entries_by_external_ids(loaded_feed_id, list(external_ids))
+        stored_entries = await find_stored_entries_for_feed(loaded_feed_id, list(external_ids))
 
         assert stored_entries == external_ids
 
@@ -89,7 +197,7 @@ class TestCheckStoredEntriesByExternalIds:
             entry.external_id for entry in saved_entries.values()
         ]
 
-        stored_entries = await check_stored_entries_by_external_ids(loaded_feed_id, external_ids)
+        stored_entries = await find_stored_entries_for_feed(loaded_feed_id, external_ids)
 
         assert stored_entries == set(entry.external_id for entry in saved_entries.values())
 

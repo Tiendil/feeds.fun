@@ -4,7 +4,7 @@ from typing import Any
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import EntryId, FeedId, SourceId
+from ffun.domain.entities import EntryId, SourceId, FeedId
 
 
 class ProcessedState(int, enum.Enum):
@@ -15,7 +15,6 @@ class ProcessedState(int, enum.Enum):
 
 class Entry(BaseEntity):
     id: EntryId
-    # feed_id: FeedId
     source_id: SourceId
     title: str
     body: str
@@ -37,7 +36,7 @@ class Entry(BaseEntity):
         return utils.now() - self.published_at
 
     def log_info(self) -> dict[str, Any]:
-        return {"id": self.id, "feed_id": self.feed_id, "title": self.title, "external_url": self.external_url}
+        return {"id": self.id, "source_id": self.feed_id, "title": self.title, "external_url": self.external_url}
 
 
 class EntryChange(BaseEntity):
@@ -45,3 +44,9 @@ class EntryChange(BaseEntity):
     field: str
     old_value: Any
     new_value: Any
+
+
+class FeedEntryLink(BaseEntity):
+    feed_id: FeedId
+    entry_id: EntryId
+    created_at: datetime.datetime
