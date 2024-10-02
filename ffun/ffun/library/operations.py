@@ -210,8 +210,13 @@ async def update_external_url(entity_id: EntryId, url: str) -> None:
     await execute(sql, {"entity_id": entity_id, "url": url})
 
 
-async def unlink_feed_tail(feed_id: FeedId, offset: int = settings.max_entries_per_feed) -> None:
+async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
+
+    if offset is None:
+        offset = settings.max_entries_per_feed
+
     # TODO: index
+    # TODO: refactor to use https://www.psycopg.org/psycopg3/docs/api/cursors.html#psycopg.Cursor.rowcount
     sql = """
     WITH cte AS (
         SELECT feed_id, entry_id
@@ -223,7 +228,14 @@ async def unlink_feed_tail(feed_id: FeedId, offset: int = settings.max_entries_p
     DELETE FROM l_feeds_to_entries
     USING cte
     WHERE l_feeds_to_entries.feed_id = cte.feed_id
-      AND l_feeds_to_entries.entry_id = cte.entry_id;
+      AND l_feeds_to_entries.entry_id = cte.entry_id
+    RETURNING 1
     """
 
-    await execute(sql, {"feed_id": feed_id, "offset": offset})
+    result = await execute(sql, {"feed_id": feed_id, "offset": offset})
+
+    # TODO: test
+    if result:
+        logger.info("feed_entries_tail_removed", feed_id=feed_id, entries_limit=offset, entries_removed=len(result))
+    else:
+        logger.info("feed_has_no_entries_tail", feed_id=feed_id, entries_limit=offset)

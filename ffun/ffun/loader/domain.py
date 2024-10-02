@@ -122,7 +122,6 @@ async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None
 
     prepared_entries = [
         l_entities.Entry(
-            feed_id=feed.id,
             id=new_entry_id(),
             source_id=feed.source_id,
             cataloged_at=utils.now(),
@@ -131,7 +130,7 @@ async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None
         for entry_info in entries_to_store
     ]
 
-    await l_domain.catalog_entries(entries=prepared_entries)
+    await l_domain.catalog_entries(feed.id, entries=prepared_entries)
 
     logger.info("entries_stored", entries_number=len(prepared_entries))
 

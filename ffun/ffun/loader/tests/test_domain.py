@@ -116,7 +116,7 @@ class TestStoreEntries:
         loaded_entries.sort(key=lambda e: e.title)
 
         for entry_info, entry in zip(entry_infos, loaded_entries):
-            assert entry.feed_id == saved_feed.id
+            assert entry.source_id == saved_feed.source_id
             assert_entriy_equal_to_info(entry_info, entry)
 
     @pytest.mark.asyncio
@@ -138,7 +138,7 @@ class TestStoreEntries:
         loaded_entries.sort(key=lambda e: e.title)
 
         for entry_info, entry in zip(entry_infos, loaded_entries):
-            assert entry.feed_id == saved_feed.id
+            assert entry.source_id == saved_feed.source_id
             assert_entriy_equal_to_info(entry_info, entry)
 
         await store_entries(saved_feed, entry_infos)
@@ -150,7 +150,7 @@ class TestStoreEntries:
         loaded_entries.sort(key=lambda e: e.title)
 
         for entry_info, entry in zip(entry_infos, loaded_entries):
-            assert entry.feed_id == saved_feed.id
+            assert entry.source_id == saved_feed.source_id
             assert_entriy_equal_to_info(entry_info, entry)
 
 
@@ -220,7 +220,7 @@ class TestProcessFeed:
         loaded_entries.sort(key=lambda e: e.title)
 
         for entry_info, entry in zip(entry_infos, loaded_entries):
-            assert entry.feed_id == saved_feed.id
+            assert entry.source_id == saved_feed.source_id
             assert_entriy_equal_to_info(entry_info, entry)
 
     @pytest.mark.asyncio
@@ -241,7 +241,7 @@ class TestProcessFeed:
         )
 
         mocker.patch("ffun.loader.domain.extract_feed_info", return_value=feed_info)
-        mocker.patch("ffun.meta.settings.settings.max_entries_per_feed", m)
+        mocker.patch("ffun.library.settings.settings.max_entries_per_feed", m)
 
         await fl_domain.add_link(internal_user_id, saved_feed.id)
 
