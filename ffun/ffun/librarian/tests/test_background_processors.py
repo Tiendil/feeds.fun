@@ -4,7 +4,7 @@ from structlog.testing import capture_logs
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
 from ffun.domain.domain import new_entry_id
-from ffun.feeds.entities import FeedId
+from ffun.feeds.entities import Feed
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import CollectionId
 from ffun.librarian import operations
@@ -27,12 +27,12 @@ class TestEntriesProcessors:
 
     @pytest.mark.asyncio
     async def test_entries_more_than_concurrency(
-        self, fake_entries_processor: EntriesProcessor, loaded_feed_id: FeedId
+        self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
         await operations.clear_processor_queue(fake_entries_processor.id)
         await make.end_processor_pointer(fake_entries_processor.id)
 
-        entries = await l_make.n_entries(loaded_feed_id, 9)
+        entries = await l_make.n_entries(loaded_feed, 9)
         entries_list = list(entries.values())
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
 
@@ -53,12 +53,12 @@ class TestEntriesProcessors:
 
     @pytest.mark.asyncio
     async def test_entries_less_than_concurrency(
-        self, fake_entries_processor: EntriesProcessor, loaded_feed_id: FeedId
+        self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
         await operations.clear_processor_queue(fake_entries_processor.id)
         await make.end_processor_pointer(fake_entries_processor.id)
 
-        entries = await l_make.n_entries(loaded_feed_id, 2)
+        entries = await l_make.n_entries(loaded_feed, 2)
         entries_list = list(entries.values())
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
 
@@ -76,12 +76,12 @@ class TestEntriesProcessors:
 
     @pytest.mark.asyncio
     async def test_unexisted_entries_in_queue(
-        self, fake_entries_processor: EntriesProcessor, loaded_feed_id: FeedId
+        self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
         await operations.clear_processor_queue(fake_entries_processor.id)
         await make.end_processor_pointer(fake_entries_processor.id)
 
-        entries = await l_make.n_entries(loaded_feed_id, 2)
+        entries = await l_make.n_entries(loaded_feed, 2)
         entries_list = list(entries.values())
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
 
@@ -109,9 +109,9 @@ class TestEntriesProcessors:
 
     @pytest.mark.asyncio
     async def test_separate_entries__unexsisted_entries(
-        self, fake_entries_processor: EntriesProcessor, loaded_feed_id: FeedId
+        self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
-        entries = await l_make.n_entries(loaded_feed_id, 2)
+        entries = await l_make.n_entries(loaded_feed, 2)
         entries_list = list(entries.values())
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
 
@@ -139,14 +139,14 @@ class TestEntriesProcessors:
     async def test_separate_entries__collections_not_allowed(
         self,
         fake_entries_processor: EntriesProcessor,
-        loaded_feed_id: FeedId,
-        another_loaded_feed_id: FeedId,
+        loaded_feed: Feed,
+        another_loaded_feed: Feed,
         collection_id_for_test_feeds: CollectionId,
     ) -> None:
-        entries_1 = await l_make.n_entries(loaded_feed_id, 3)
-        entries_2 = await l_make.n_entries(another_loaded_feed_id, 2)
+        entries_1 = await l_make.n_entries(loaded_feed, 3)
+        entries_2 = await l_make.n_entries(another_loaded_feed, 2)
 
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed_id)
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
 
         entries_list = list(entries_1.values()) + list(entries_2.values())
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
@@ -175,14 +175,14 @@ class TestEntriesProcessors:
     async def test_separate_entries__all_allowed(
         self,
         fake_entries_processor: EntriesProcessor,
-        loaded_feed_id: FeedId,
-        another_loaded_feed_id: FeedId,
+        loaded_feed: Feed,
+        another_loaded_feed: Feed,
         collection_id_for_test_feeds: CollectionId,
     ) -> None:
-        entries_1 = await l_make.n_entries(loaded_feed_id, 3)
-        entries_2 = await l_make.n_entries(another_loaded_feed_id, 2)
+        entries_1 = await l_make.n_entries(loaded_feed, 3)
+        entries_2 = await l_make.n_entries(another_loaded_feed, 2)
 
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed_id)
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
 
         entries_list = list(entries_1.values()) + list(entries_2.values())
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
@@ -211,14 +211,14 @@ class TestEntriesProcessors:
     async def test_separate_entries__users_not_allowed(
         self,
         fake_entries_processor: EntriesProcessor,
-        loaded_feed_id: FeedId,
-        another_loaded_feed_id: FeedId,
+        loaded_feed: Feed,
+        another_loaded_feed: Feed,
         collection_id_for_test_feeds: CollectionId,
     ) -> None:
-        entries_1 = await l_make.n_entries(loaded_feed_id, 3)
-        entries_2 = await l_make.n_entries(another_loaded_feed_id, 2)
+        entries_1 = await l_make.n_entries(loaded_feed, 3)
+        entries_2 = await l_make.n_entries(another_loaded_feed, 2)
 
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed_id)
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
 
         entries_list = list(entries_1.values()) + list(entries_2.values())
         entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
