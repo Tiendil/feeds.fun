@@ -1,5 +1,5 @@
 import uuid
-from typing import Any
+from typing import Any, Iterable
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
@@ -41,14 +41,26 @@ async def get_linked_feeds(user_id: uuid.UUID) -> list[FeedLink]:
     return [row_to_feed_link(row) for row in result]
 
 
-async def get_linked_users(feed_id: FeedId) -> list[uuid.UUID]:
+# TODO: test
+async def get_linked_users(feed_ids: Iterable[FeedId]) -> dict[FeedId, set[uuid.UUID]]:
     sql = """
-        SELECT user_id FROM fl_links WHERE feed_id = %(feed_id)s
+        SELECT feed_id, user_id FROM fl_links WHERE feed_id = ANY(%(feed_ids)s)
     """
 
-    result = await execute(sql, {"feed_id": feed_id})
+    result = await execute(sql, {"feed_ids": list(feed_ids)})
 
-    return [row["user_id"] for row in result]
+    users = {}
+
+    for row in result:
+        feed_id = row["feed_id"]
+        user_id = row["user_id"]
+
+        if feed_id not in users:
+            users[feed_id] = set()
+
+        users[feed_id].add(user_id)
+
+    return users
 
 
 async def has_linked_users(feed_id: FeedId) -> bool:

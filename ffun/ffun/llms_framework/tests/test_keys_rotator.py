@@ -273,7 +273,7 @@ class TestGetCandidates:
             await _get_candidates(
                 llm=fake_llm_provider,
                 llm_config=_llm_config,
-                feed_id=saved_feed_id,
+                feed_ids=[saved_feed_id],
                 interval_started_at=interval_started_at,
                 entry_age=datetime.timedelta(days=1),
                 reserved_cost=USDCost(Decimal(100)),
@@ -312,7 +312,7 @@ class TestGetCandidates:
         infos = await _get_candidates(
             llm=fake_llm_provider,
             llm_config=_llm_config,
-            feed_id=saved_feed_id,
+            feed_ids=[saved_feed_id],
             interval_started_at=interval_started_at,
             entry_age=datetime.timedelta(days=1),
             reserved_cost=USDCost(Decimal(100)),
@@ -344,7 +344,7 @@ class TestGetCandidates:
         infos = await _get_candidates(
             llm=fake_llm_provider,
             llm_config=_llm_config,
-            feed_id=saved_feed_id,
+            feed_ids=[saved_feed_id],
             interval_started_at=interval_started_at,
             entry_age=datetime.timedelta(days=1),
             reserved_cost=USDCost(Decimal(100)),
@@ -360,7 +360,7 @@ class TestFindBestUserWithKey:
         info = await _find_best_user_with_key(
             llm=fake_llm_provider,
             llm_config=_llm_config,
-            feed_id=saved_feed_id,
+            feed_ids=[saved_feed_id],
             entry_age=datetime.timedelta(days=1),
             interval_started_at=month_interval_start(),
             reserved_cost=USDCost(Decimal(100)),
@@ -385,7 +385,7 @@ class TestFindBestUserWithKey:
             info = await _find_best_user_with_key(
                 llm=fake_llm_provider,
                 llm_config=_llm_config,
-                feed_id=saved_feed_id,
+                feed_ids=[saved_feed_id],
                 entry_age=datetime.timedelta(days=0),
                 interval_started_at=interval_started_at,
                 reserved_cost=used_cost,
@@ -410,7 +410,7 @@ class TestFindBestUserWithKey:
         info = await _find_best_user_with_key(
             llm=fake_llm_provider,
             llm_config=_llm_config,
-            feed_id=saved_feed_id,
+            feed_ids=[saved_feed_id],
             entry_age=datetime.timedelta(days=0),
             interval_started_at=interval_started_at,
             reserved_cost=used_cost,
@@ -426,7 +426,7 @@ def select_key_context(saved_feed_id: FeedId) -> SelectKeyContext:
         llm_config=_llm_config,
         collections_api_key=None,
         general_api_key=None,
-        feed_id=saved_feed_id,
+        feed_ids=[saved_feed_id],
         entry_age=datetime.timedelta(seconds=0),
         reserved_cost=USDCost(Decimal(0)),
     )
@@ -482,7 +482,7 @@ class TestChooseCollectionsKey:
     ) -> None:
         select_key_context = select_key_context.replace(collections_api_key=LLMCollectionApiKey(fake_llm_api_key))
 
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, select_key_context.feed_id)
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, list(select_key_context.feed_ids)[0])
 
         usage = await _choose_collections_key(fake_llm_provider, select_key_context)
 
@@ -506,7 +506,7 @@ class TestChooseCollectionsKey:
 
         select_key_context = select_key_context.replace(collections_api_key=key)
 
-        assert not collections.has_feed(select_key_context.feed_id)
+        assert all(not collections.has_feed(feed_id) for feed_id in select_key_context.feed_ids)
 
         assert await _choose_collections_key(fake_llm_provider, select_key_context) is None
 
@@ -524,7 +524,7 @@ class TestChooseUserKey:
         select_key_context: SelectKeyContext,
         collection_id_for_test_feeds: CollectionId,
     ) -> None:
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, select_key_context.feed_id)
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, list(select_key_context.feed_ids)[0])
 
         with pytest.raises(errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys):
             await _choose_user_key(fake_llm_provider, select_key_context)

@@ -2,6 +2,7 @@ import asyncio
 import math
 from typing import Sequence
 
+from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
 from ffun.llms_framework.entities import (
@@ -93,9 +94,12 @@ async def search_for_api_key(
         len(requests) * model.tokens_cost(input_tokens=model.max_context_size, output_tokens=model.max_return_tokens)
     )
 
+    # TODO: test
+    feed_ids = await l_domain.get_feeds_for_entry(entry.id)
+
     select_key_context = SelectKeyContext(
         llm_config=llm_config,
-        feed_id=entry.feed_id,
+        feed_ids=feed_ids,
         entry_age=entry.age,
         reserved_cost=reserved_cost,
         collections_api_key=collections_api_key,

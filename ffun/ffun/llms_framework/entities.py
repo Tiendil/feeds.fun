@@ -112,7 +112,7 @@ class UserKeyInfo(BaseEntity):
 
 class SelectKeyContext(BaseEntity):
     llm_config: LLMConfiguration
-    feed_id: FeedId
+    feed_ids: set[FeedId]
     entry_age: datetime.timedelta
     reserved_cost: USDCost
     interval_started_at: datetime.datetime = pydantic.Field(default_factory=month_interval_start)
