@@ -36,7 +36,7 @@ class Entry(BaseEntity):
         return utils.now() - self.published_at
 
     def log_info(self) -> dict[str, Any]:
-        return {"id": self.id, "source_id": self.feed_id, "title": self.title, "external_url": self.external_url}
+        return {"id": self.id, "source_id": self.source_id, "title": self.title, "external_url": self.external_url}
 
 
 class EntryChange(BaseEntity):

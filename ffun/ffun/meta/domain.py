@@ -23,7 +23,7 @@ async def remove_entries(entries_ids: Iterable[EntryId]) -> int:
 
     await m_domain.remove_markers_for_entries(entries_to_remove)
     await o_domain.remove_relations_for_entries(entries_to_remove)
-    await l_domain.tech_remove_entries_by_ids(entries_to_remove)
+    await l_domain.tech_remove_entries_by_ids(entries_to_remove)  # type: ignore
 
     return len(entries_to_remove)
 
@@ -32,9 +32,9 @@ async def remove_entries(entries_ids: Iterable[EntryId]) -> int:
 async def limit_entries_for_feed(feed_id: FeedId, limit: int | None = None) -> None:
     """Remove oldest entries for feed to keep only `limit` entries."""
     if limit is None:
-        limit = settings.max_entries_per_feed
+        limit = settings.max_entries_per_feed  # type: ignore  # noqa
 
-    entries_to_remove = await l_domain.tech_get_feed_entries_tail(feed_id=feed_id, offset=limit)
+    entries_to_remove = await l_domain.tech_get_feed_entries_tail(feed_id=feed_id, offset=limit)  # type: ignore
 
     if not entries_to_remove:
         logger.info("feed_has_no_entries_tail", feed_id=feed_id, entries_limit=limit)

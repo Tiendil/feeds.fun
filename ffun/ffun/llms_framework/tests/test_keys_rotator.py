@@ -273,7 +273,7 @@ class TestGetCandidates:
             await _get_candidates(
                 llm=fake_llm_provider,
                 llm_config=_llm_config,
-                feed_ids=[saved_feed_id],
+                feed_ids={saved_feed_id},
                 interval_started_at=interval_started_at,
                 entry_age=datetime.timedelta(days=1),
                 reserved_cost=USDCost(Decimal(100)),
@@ -312,7 +312,7 @@ class TestGetCandidates:
         infos = await _get_candidates(
             llm=fake_llm_provider,
             llm_config=_llm_config,
-            feed_ids=[saved_feed_id],
+            feed_ids={saved_feed_id},
             interval_started_at=interval_started_at,
             entry_age=datetime.timedelta(days=1),
             reserved_cost=USDCost(Decimal(100)),
@@ -344,7 +344,7 @@ class TestGetCandidates:
         infos = await _get_candidates(
             llm=fake_llm_provider,
             llm_config=_llm_config,
-            feed_ids=[saved_feed_id],
+            feed_ids={saved_feed_id},
             interval_started_at=interval_started_at,
             entry_age=datetime.timedelta(days=1),
             reserved_cost=USDCost(Decimal(100)),
@@ -360,7 +360,7 @@ class TestFindBestUserWithKey:
         info = await _find_best_user_with_key(
             llm=fake_llm_provider,
             llm_config=_llm_config,
-            feed_ids=[saved_feed_id],
+            feed_ids={saved_feed_id},
             entry_age=datetime.timedelta(days=1),
             interval_started_at=month_interval_start(),
             reserved_cost=USDCost(Decimal(100)),
@@ -385,7 +385,7 @@ class TestFindBestUserWithKey:
             info = await _find_best_user_with_key(
                 llm=fake_llm_provider,
                 llm_config=_llm_config,
-                feed_ids=[saved_feed_id],
+                feed_ids={saved_feed_id},
                 entry_age=datetime.timedelta(days=0),
                 interval_started_at=interval_started_at,
                 reserved_cost=used_cost,
@@ -410,7 +410,7 @@ class TestFindBestUserWithKey:
         info = await _find_best_user_with_key(
             llm=fake_llm_provider,
             llm_config=_llm_config,
-            feed_ids=[saved_feed_id],
+            feed_ids={saved_feed_id},
             entry_age=datetime.timedelta(days=0),
             interval_started_at=interval_started_at,
             reserved_cost=used_cost,
@@ -426,7 +426,7 @@ def select_key_context(saved_feed_id: FeedId) -> SelectKeyContext:
         llm_config=_llm_config,
         collections_api_key=None,
         general_api_key=None,
-        feed_ids=[saved_feed_id],
+        feed_ids={saved_feed_id},
         entry_age=datetime.timedelta(seconds=0),
         reserved_cost=USDCost(Decimal(0)),
     )

@@ -48,7 +48,7 @@ async def get_linked_users(feed_ids: Iterable[FeedId]) -> dict[FeedId, set[uuid.
 
     result = await execute(sql, {"feed_ids": list(feed_ids)})
 
-    users = {}
+    users: dict[FeedId, set[uuid.UUID]] = {}
 
     for row in result:
         feed_id = row["feed_id"]

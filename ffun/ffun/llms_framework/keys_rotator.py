@@ -181,7 +181,7 @@ _filters = (
 async def _get_candidates(  # noqa
     llm: ProviderInterface,
     llm_config: LLMConfiguration,
-    feed_ids: frozenset[FeedId],
+    feed_ids: set[FeedId],
     interval_started_at: datetime.datetime,
     entry_age: datetime.timedelta,
     reserved_cost: USDCost,
@@ -206,7 +206,7 @@ async def _get_candidates(  # noqa
 async def _find_best_user_with_key(
     llm: ProviderInterface,
     llm_config: LLMConfiguration,
-    feed_ids: frozenset[FeedId],
+    feed_ids: set[FeedId],
     entry_age: datetime.timedelta,
     interval_started_at: datetime.datetime,
     reserved_cost: USDCost,

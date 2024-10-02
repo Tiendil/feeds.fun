@@ -22,7 +22,8 @@ def row_to_entry(row: dict[str, Any]) -> Entry:
 async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Entry) -> None:
     sql_insert_entry = """
     INSERT INTO l_entries (id, source_id, title, body, external_id, external_url, external_tags, published_at)
-    VALUES (%(id)s, %(source_id)s, %(title)s, %(body)s, %(external_id)s, %(external_url)s, %(external_tags)s, %(published_at)s)
+    VALUES (%(id)s, %(source_id)s, %(title)s, %(body)s, %(external_id)s,
+            %(external_url)s, %(external_tags)s, %(published_at)s)
     ON CONFLICT (source_id, external_id) DO NOTHING
     RETURNING id
     """
@@ -80,7 +81,7 @@ async def get_feed_links_for_entry(entries_ids: Iterable[EntryId]) -> dict[Entry
 
     result = await execute(sql, {"entries_ids": list(entries_ids)})
 
-    feeds_for_entries = {}
+    feeds_for_entries: dict[EntryId, list[FeedEntryLink]] = {}
 
     for row in result:
         entry_id = row["entry_id"]

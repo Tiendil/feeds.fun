@@ -296,6 +296,8 @@ class TestGetEntriesByFilter:
         entries_2 = []
 
         for entry in all_entries_list:
+            assert entry is not None
+
             if entry.id in {e.id for e in entries}:
                 entries_1.append(entry)
             elif entry.id in {e.id for e in another_entries}:
@@ -310,7 +312,7 @@ class TestGetEntriesByFilter:
 
     @pytest.mark.asyncio
     async def test_all(
-        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, prepared_entries: list[Entry]
+        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, prepared_entries: tuple[list[Entry], list[Entry]]
     ) -> None:
         loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id, another_loaded_feed_id], limit=100)
 
@@ -319,7 +321,7 @@ class TestGetEntriesByFilter:
 
     @pytest.mark.asyncio
     async def test_limit(
-        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, prepared_entries: list[Entry]
+        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, prepared_entries: tuple[list[Entry], list[Entry]]
     ) -> None:
         loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id, another_loaded_feed_id], limit=5)
 
@@ -327,14 +329,14 @@ class TestGetEntriesByFilter:
         assert loaded_entries_ids == {entry.id for entry in chain(prepared_entries[0][1:], prepared_entries[1][1:])}
 
     @pytest.mark.asyncio
-    async def test_feeds_filter(self, loaded_feed_id: FeedId, prepared_entries: list[Entry]) -> None:
+    async def test_feeds_filter(self, loaded_feed_id: FeedId, prepared_entries: tuple[list[Entry], list[Entry]]) -> None:
         loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id], limit=100)
         loaded_entries_ids = {entry.id for entry in loaded_entries}
         assert loaded_entries_ids == {entry.id for entry in prepared_entries[0]}
 
     @pytest.mark.asyncio
     async def test_time_period(
-        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, prepared_entries: list[Entry]
+        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, prepared_entries: tuple[list[Entry], list[Entry]]
     ) -> None:
         loaded_entries = await get_entries_by_filter(
             feeds_ids=[loaded_feed_id, another_loaded_feed_id], limit=100, period=datetime.timedelta(days=1)

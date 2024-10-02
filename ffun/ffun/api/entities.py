@@ -67,8 +67,6 @@ class Feed(BaseEntity):
 
 class Entry(BaseEntity):
     id: EntryId
-    # TODO: rename to feedId
-    feed_id: f_entities.FeedId
     title: str
     url: str
     tags: list[str]
@@ -91,7 +89,6 @@ class Entry(BaseEntity):
     ) -> "Entry":
         return cls(
             id=entry.id,
-            feed_id=entry.feed_id,
             title=entry.title,
             url=entry.external_url,
             tags=list(tags),

@@ -6,7 +6,7 @@ import pytest
 from ffun.domain.domain import new_feed_id
 from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
-from ffun.feeds.entities import FeedId
+from ffun.feeds.entities import Feed
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
@@ -26,14 +26,14 @@ class TestRemoveEntries:
     @pytest.mark.asyncio
     async def test_success(
         self,
-        loaded_feed_id: FeedId,
-        another_loaded_feed_id: FeedId,
+        loaded_feed: Feed,
+        another_loaded_feed: Feed,
         fake_processor_id: int,
         another_fake_processor_id: int,
         three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
     ) -> None:
-        entries = await l_make.n_entries_list(loaded_feed_id, 3)
-        another_entries = await l_make.n_entries_list(another_loaded_feed_id, 3)
+        entries = await l_make.n_entries_list(loaded_feed, 3)
+        another_entries = await l_make.n_entries_list(another_loaded_feed, 3)
 
         tag_a, tag_b, tag_c = three_processor_tags
 
@@ -83,28 +83,28 @@ class TestLimitEntriesForFeed:
 
     @pytest.mark.xfail
     @pytest.mark.asyncio
-    async def test_no_entries(self, loaded_feed_id: FeedId) -> None:
-        await limit_entries_for_feed(loaded_feed_id, limit=10)
+    async def test_no_entries(self, loaded_feed: Feed) -> None:
+        await limit_entries_for_feed(loaded_feed.id, limit=10)
 
     @pytest.mark.xfail
     @pytest.mark.asyncio
-    async def test_not_exceed_limit(self, loaded_feed_id: FeedId) -> None:
-        entries = await l_make.n_entries_list(loaded_feed_id, 3)
+    async def test_not_exceed_limit(self, loaded_feed: Feed) -> None:
+        entries = await l_make.n_entries_list(loaded_feed, 3)
 
-        await limit_entries_for_feed(loaded_feed_id, limit=10)
+        await limit_entries_for_feed(loaded_feed.id, limit=10)
 
-        loaded_entries = await l_domain.get_entries_by_filter(feeds_ids=[loaded_feed_id], limit=100)
+        loaded_entries = await l_domain.get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
 
         assert loaded_entries == entries
 
     @pytest.mark.xfail
     @pytest.mark.asyncio
-    async def test_exceed_limit(self, loaded_feed_id: FeedId) -> None:
-        entries = await l_make.n_entries_list(loaded_feed_id, 10)
+    async def test_exceed_limit(self, loaded_feed: Feed) -> None:
+        entries = await l_make.n_entries_list(loaded_feed, 10)
 
-        await limit_entries_for_feed(loaded_feed_id, limit=5)
+        await limit_entries_for_feed(loaded_feed.id, limit=5)
 
-        loaded_entries = await l_domain.get_entries_by_filter(feeds_ids=[loaded_feed_id], limit=100)
+        loaded_entries = await l_domain.get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
 
         assert loaded_entries == entries[:5]
 
