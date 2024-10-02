@@ -232,7 +232,6 @@ async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
         logger.info("feed_has_no_entries_tail", feed_id=feed_id, entries_limit=offset)
 
 
-# TODO: test
 async def tech_unlink_entry(entry_id: EntryId, feed_id: FeedId) -> None:
     # TODO: index
     sql = """

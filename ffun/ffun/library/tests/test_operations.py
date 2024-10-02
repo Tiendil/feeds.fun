@@ -496,3 +496,8 @@ class TestUnlinkFeedTail:
         feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
 
         assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:10]}
+
+
+# this function is used in tests => validated in them
+class TestTechUnlinkEntry:
+    pass
