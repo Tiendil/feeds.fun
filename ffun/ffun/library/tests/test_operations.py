@@ -259,7 +259,6 @@ class TestGetEntriesByFilter:
     def time_border(self) -> datetime.datetime:
         return utils.now() - datetime.timedelta(days=1)
 
-    # TODO: actualize to multiple feeds?
     @pytest_asyncio.fixture
     async def prepared_entries(
         self, loaded_feed: Feed, another_loaded_feed: Feed, time_border: datetime.datetime
