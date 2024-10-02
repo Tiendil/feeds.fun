@@ -24,6 +24,15 @@ CREATE TABLE l_feeds_to_entries (
 )
 """
 
+
+sql_create_orphaned_entries_table = """
+CREATE TABLE l_orphaned_entries (
+    entry_id UUID PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+)
+"""
+
+
 sql_fill_from_entries_table = """
 INSERT INTO l_feeds_to_entries (feed_id, entry_id, created_at)
 SELECT DISTINCT ON (source_id, external_id) feed_id, id, created_at
@@ -31,12 +40,20 @@ FROM l_entries
 ORDER BY source_id, external_id ASC
 """
 
+
+sql_fill_orphaned_entries = """
+INSERT INTO l_orphaned_entries (entry_id)
+SELECT id FROM l_entries
+LEFT JOIN l_feeds_to_entries ON l_entries.id = l_feeds_to_entries.entry_id
+WHERE l_feeds_to_entries.entry_id IS NULL
+"""
+
+
 sql_fill_duplicated_entries = """
 WITH duplicates AS (
   SELECT id, source_id, external_id, l_entries.feed_id, l_entries.created_at
   FROM l_entries
-  LEFT JOIN l_feeds_to_entries ON l_entries.id = l_feeds_to_entries.entry_id
-  WHERE l_feeds_to_entries.entry_id IS NULL
+  RIGHT JOIN l_orphaned_entries ON l_entries.id = l_orphaned_entries.entry_id
 ),
 
 originals AS (
@@ -53,13 +70,10 @@ LEFT JOIN originals AS o ON d.source_id = o.source_id AND d.external_id = o.exte
 """
 
 
-# TODO: remove related markers
-# TODO: remove related ontology relations
 sql_remove_duplicated_entries = """
 DELETE FROM l_entries AS e
-USING l_entries AS e2
-LEFT JOIN l_feeds_to_entries AS f ON e2.id = f.entry_id
-WHERE e.id = e2.id AND f.entry_id IS NULL
+USING l_orphaned_entries AS o
+WHERE e.id = o.entry_id
 """
 
 
@@ -80,9 +94,17 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
     cursor.execute(sql_create_feeds_to_entries_table)
 
+    print("Creating l_orphaned_entries table")  # noqa
+
+    cursor.execute(sql_create_orphaned_entries_table)
+
     print("Filling l_feeds_to_entries table")  # noqa
 
     cursor.execute(sql_fill_from_entries_table)
+
+    print("Filling l_orphaned_entries table")  # noqa
+
+    cursor.execute(sql_fill_orphaned_entries)
 
     # TODO: index is created here to spedup the migration, should we remove it at it's end?
     # TODO: rename index to use prefix idx_? and in other migrations too
@@ -128,6 +150,7 @@ def rollback_step(conn: Connection[dict[str, Any]]) -> None:
 
     cursor.execute("ALTER TABLE l_entries ALTER COLUMN feed_id SET NOT NULL")
 
+    cursor.execute("DROP TABLE l_orphaned_entries")
     cursor.execute("DROP TABLE l_feeds_to_entries")
 
     cursor.execute("CREATE UNIQUE INDEX l_entries_feed_id_external_id_key ON l_entries (feed_id, external_id)")
