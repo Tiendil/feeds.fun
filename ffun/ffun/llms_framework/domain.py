@@ -94,7 +94,6 @@ async def search_for_api_key(
         len(requests) * model.tokens_cost(input_tokens=model.max_context_size, output_tokens=model.max_return_tokens)
     )
 
-    # TODO: test
     feed_ids = await l_domain.get_feeds_for_entry(entry.id)
 
     select_key_context = SelectKeyContext(

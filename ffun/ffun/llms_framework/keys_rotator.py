@@ -255,7 +255,6 @@ async def _choose_collections_key(llm: ProviderInterface, context: SelectKeyCont
     if key is None:
         return None
 
-    # TODO: test
     if all(not collections.has_feed(feed_id) for feed_id in context.feed_ids):
         return None
 

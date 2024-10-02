@@ -466,12 +466,16 @@ class TestChooseCollectionsKey:
 
     @pytest.mark.asyncio
     async def test_no_collections_key_specified(
-        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext
+            self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext, another_saved_feed_id: FeedId
     ) -> None:
+        select_key_context.feed_ids.add(another_saved_feed_id)
+
         assert select_key_context.collections_api_key is None
+        assert len(select_key_context.feed_ids) > 1
 
         assert await _choose_collections_key(fake_llm_provider, select_key_context) is None
 
+    @pytest.mark.parametrize("collection_feed_index", [0, 1])
     @pytest.mark.asyncio
     async def test_collections_key_specified__in_collection(
         self,
@@ -479,11 +483,14 @@ class TestChooseCollectionsKey:
         select_key_context: SelectKeyContext,
         fake_llm_api_key: LLMApiKey,
         collection_id_for_test_feeds: CollectionId,
+            another_saved_feed_id: FeedId,
+            collection_feed_index: int
     ) -> None:
-        select_key_context = select_key_context.replace(collections_api_key=LLMCollectionApiKey(fake_llm_api_key))
+        select_key_context = select_key_context.replace(collections_api_key=LLMCollectionApiKey(fake_llm_api_key),
+                                                        feed_ids=select_key_context.feed_ids.union({another_saved_feed_id}))
 
         await collections.add_test_feed_to_collections(
-            collection_id_for_test_feeds, list(select_key_context.feed_ids)[0]
+            collection_id_for_test_feeds, list(select_key_context.feed_ids)[collection_feed_index]
         )
 
         usage = await _choose_collections_key(fake_llm_provider, select_key_context)
