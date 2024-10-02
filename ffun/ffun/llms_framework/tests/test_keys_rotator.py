@@ -264,6 +264,16 @@ class TestGetUserKeyInfos:
         ]
 
 
+@pytest.mark.asyncio
+async def test_default_filters() -> None:
+    assert _filters == (
+        _filter_out_users_without_keys,
+        _filter_out_users_for_whome_entry_is_too_old,
+        _filter_out_users_with_wrong_keys,
+        _filter_out_users_with_overused_keys,
+    )
+
+
 class TestGetCandidates:
     @pytest.mark.asyncio
     async def test_no_users(self, fake_llm_provider: ProviderTest, saved_feed_id: FeedId) -> None:
@@ -282,20 +292,14 @@ class TestGetCandidates:
         )
 
     @pytest.mark.asyncio
-    async def test_default_filters(self) -> None:
-        assert _filters == (
-            _filter_out_users_without_keys,
-            _filter_out_users_for_whome_entry_is_too_old,
-            _filter_out_users_with_wrong_keys,
-            _filter_out_users_with_overused_keys,
-        )
-
-    @pytest.mark.asyncio
     async def test_filters_used(
-        self, fake_llm_provider: ProviderTest, saved_feed_id: FeedId, five_internal_user_ids: list[uuid.UUID]
+            self, fake_llm_provider: ProviderTest, saved_feed_id: FeedId, another_saved_feed_id: FeedId, five_internal_user_ids: list[uuid.UUID]
     ) -> None:
-        for user_id in five_internal_user_ids:
+        for user_id in five_internal_user_ids[:2]:
             await fl_domain.add_link(user_id, saved_feed_id)
+
+        for user_id in five_internal_user_ids[2:]:
+            await fl_domain.add_link(user_id, another_saved_feed_id)
 
         interval_started_at = month_interval_start()
 
@@ -312,7 +316,7 @@ class TestGetCandidates:
         infos = await _get_candidates(
             llm=fake_llm_provider,
             llm_config=_llm_config,
-            feed_ids={saved_feed_id},
+            feed_ids={saved_feed_id, another_saved_feed_id},
             interval_started_at=interval_started_at,
             entry_age=datetime.timedelta(days=1),
             reserved_cost=USDCost(Decimal(100)),
