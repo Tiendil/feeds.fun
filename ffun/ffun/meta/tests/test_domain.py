@@ -13,7 +13,7 @@ from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
 from ffun.markers import domain as m_domains
 from ffun.markers.entities import Marker
-from ffun.meta.domain import add_feeds, limit_entries_for_feed, merge_feeds, remove_entries, remove_feed
+from ffun.meta.domain import add_feeds, limit_entries_for_feed, remove_entries
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import ProcessorTag
 from ffun.parsers import entities as p_entities

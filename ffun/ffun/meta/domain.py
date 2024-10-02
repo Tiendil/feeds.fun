@@ -28,7 +28,7 @@ async def remove_entries(entries_ids: Iterable[EntryId]) -> int:
     return len(entries_to_remove)
 
 
-# TODO: fix
+# TODO: remove
 async def limit_entries_for_feed(feed_id: FeedId, limit: int | None = None) -> None:
     """Remove oldest entries for feed to keep only `limit` entries."""
     if limit is None:
