@@ -12,7 +12,6 @@ get_linked_users = operations.get_linked_users
 has_linked_users = operations.has_linked_users
 
 
-# TODO: test
 async def get_linked_users_flat(feed_ids: Iterable[FeedId]) -> set[uuid.UUID]:
     users = await operations.get_linked_users(feed_ids)
 
