@@ -137,25 +137,36 @@ async def get_entries_by_filter(
     # We may want to change this logic in the future.
 
     # TODO: index
+    # TODO: test for multiple feeds
+    # TODO: does select distinct here works correctly?
     sql = """
-    SELECT DISTINCT le.*
-    FROM l_entries AS le
-    JOIN l_feeds_to_entries AS lfe ON le.id = lfe.entry_id
-    WHERE lfe.created_at > NOW() - %(period)s AND lfe.feed_id = ANY(%(feeds_ids)s)
-    ORDER BY le.created_at DESC
-    LIMIT %(limit)s;
+    SELECT le.*, re.max_created_at
+    FROM (
+        SELECT lfe.entry_id AS id, MAX(lfe.created_at) AS max_created_at
+        FROM l_feeds_to_entries AS lfe
+        WHERE lfe.created_at > NOW() - %(period)s
+          AND lfe.feed_id = ANY(%(feeds_ids)s)
+        GROUP BY lfe.entry_id
+        ORDER BY MAX(lfe.created_at) DESC
+        LIMIT %(limit)s
+    ) AS re
+    JOIN l_entries AS le ON le.id = re.id
+    ORDER BY re.max_created_at DESC;
     """
 
     rows = await execute(sql, {"feeds_ids": feeds_ids, "period": period, "limit": limit})
 
+    for row in rows:
+        row.pop('max_created_at')
+
     return [row_to_entry(row) for row in rows]
 
 
+# TODO: manually test that processors work correctly
 async def get_entries_after_pointer(
     created_at: datetime.datetime, entry_id: EntryId, limit: int
 ) -> list[tuple[EntryId, datetime.datetime]]:
-    # Indenx on created_at should be enough (currently it is (created_at, feed_idid))
-    # In case of troubles we could add index on (created_at, id)
+    # TODO: index
     sql = """
     SELECT id, created_at FROM l_entries
     WHERE created_at > %(created_at)s OR

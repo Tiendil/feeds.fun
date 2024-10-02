@@ -10,7 +10,6 @@ from yoyo import step
 
 __depends__ = {"20240928_02_lD7Bv-source-for-entries"}
 
-# TODO: test on production data
 # TODO: add index on created_at?
 
 sql_create_feeds_to_entries_table = """
@@ -133,7 +132,6 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
     print("Completed")  # noqa
 
 
-# TODO: restore lost indexes if any
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
 
