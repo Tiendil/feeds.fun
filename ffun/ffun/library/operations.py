@@ -73,7 +73,6 @@ async def get_feed_links_for_entries(entries_ids: Iterable[EntryId]) -> dict[Ent
     SELECT entry_id, feed_id, created_at
     FROM l_feeds_to_entries
     WHERE entry_id = ANY(%(entries_ids)s)
-    ORDER BY created_at ASC
     """
 
     result = await execute(sql, {"entries_ids": list(entries_ids)})

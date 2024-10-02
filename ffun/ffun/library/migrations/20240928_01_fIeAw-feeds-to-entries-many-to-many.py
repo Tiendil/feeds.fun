@@ -105,8 +105,6 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
     cursor.execute(sql_fill_orphaned_entries)
 
-    # TODO: index is created here to spedup the migration, should we remove it at it's end?
-    # TODO: rename index to use prefix idx_? and in other migrations too
     cursor.execute("CREATE INDEX l_feeds_to_entries_entry_id_idx ON l_feeds_to_entries (entry_id)")
 
     print("Filling duplicated entries")  # noqa
@@ -119,15 +117,16 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
     print("Creating unique index on l_entries")  # noqa
 
-    # TODO: rename index?
-    # TODO: change order of fields to (external_id, source_id) ?
-    cursor.execute("CREATE UNIQUE INDEX l_entries_source_id_external_id_idx ON l_entries (source_id, external_id)")
+    # external_id goes first to optimize queries
+    cursor.execute("CREATE UNIQUE INDEX l_entries_source_id_external_id_idx ON l_entries (external_id, source_id)")
 
     print("Removing feed_id column from l_entries")  # noqa
 
     cursor.execute("ALTER TABLE l_entries DROP COLUMN feed_id")
 
-    # TODO: add more indexes for l_feeds_to_entries table?
+    cursor.execute("CREATE INDEX l_feeds_to_entries_feed_id_created_at_entity_id_idx ON l_feeds_to_entries(feed_id, created_at DESC, entry_id)")
+
+    cursor.execute("CREATE INDEX l_entries_created_at_idx ON l_entries (created_at ASC)")
 
     print("Completed")  # noqa
 
