@@ -226,7 +226,6 @@ async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
 
     result = await execute(sql, {"feed_id": feed_id, "offset": offset})
 
-    # TODO: test
     if result:
         logger.info("feed_entries_tail_removed", feed_id=feed_id, entries_limit=offset, entries_removed=len(result))
     else:

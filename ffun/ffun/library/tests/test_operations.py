@@ -4,6 +4,8 @@ from itertools import chain
 import pytest
 import pytest_asyncio
 
+from structlog.testing import capture_logs
+from ffun.core.tests.helpers import assert_logs
 from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_times_is_near
@@ -454,9 +456,12 @@ class TestUnlinkFeedTail:
     async def test_zero_head(self, loaded_feed: Feed) -> None:
         await make.n_entries(loaded_feed, n=5)
 
-        async with TableSizeDelta("l_feeds_to_entries", delta=-5):
-            async with TableSizeNotChanged("l_entries"):
-                await unlink_feed_tail(loaded_feed.id, offset=0)
+        with capture_logs() as logs:
+            async with TableSizeDelta("l_feeds_to_entries", delta=-5):
+                async with TableSizeNotChanged("l_entries"):
+                    await unlink_feed_tail(loaded_feed.id, offset=0)
+
+        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)
 
         feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
 
@@ -466,9 +471,12 @@ class TestUnlinkFeedTail:
     async def test_not_excceed_limit(self, loaded_feed: Feed) -> None:
         entries = await make.n_entries_list(loaded_feed, n=5)
 
-        async with TableSizeNotChanged("l_feeds_to_entries"):
-            async with TableSizeNotChanged("l_entries"):
-                await unlink_feed_tail(loaded_feed.id, offset=10)
+        with capture_logs() as logs:
+            async with TableSizeNotChanged("l_feeds_to_entries"):
+                async with TableSizeNotChanged("l_entries"):
+                    await unlink_feed_tail(loaded_feed.id, offset=10)
+
+        assert_logs(logs, feed_has_no_entries_tail=1, feed_entries_tail_removed=0)
 
         feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
 
@@ -478,9 +486,12 @@ class TestUnlinkFeedTail:
     async def test_offset(self, loaded_feed: Feed) -> None:
         entries = await make.n_entries_list(loaded_feed, n=15)
 
-        async with TableSizeDelta("l_feeds_to_entries", delta=-5):
-            async with TableSizeNotChanged("l_entries"):
-                await unlink_feed_tail(loaded_feed.id, offset=10)
+        with capture_logs() as logs:
+            async with TableSizeDelta("l_feeds_to_entries", delta=-5):
+                async with TableSizeNotChanged("l_entries"):
+                    await unlink_feed_tail(loaded_feed.id, offset=10)
+
+        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)
 
         feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
 
