@@ -329,7 +329,9 @@ class TestGetEntriesByFilter:
         assert loaded_entries_ids == {entry.id for entry in chain(prepared_entries[0][1:], prepared_entries[1][1:])}
 
     @pytest.mark.asyncio
-    async def test_feeds_filter(self, loaded_feed_id: FeedId, prepared_entries: tuple[list[Entry], list[Entry]]) -> None:
+    async def test_feeds_filter(
+        self, loaded_feed_id: FeedId, prepared_entries: tuple[list[Entry], list[Entry]]
+    ) -> None:
         loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id], limit=100)
         loaded_entries_ids = {entry.id for entry in loaded_entries}
         assert loaded_entries_ids == {entry.id for entry in prepared_entries[0]}
