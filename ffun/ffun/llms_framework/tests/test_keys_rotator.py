@@ -526,15 +526,19 @@ class TestChooseUserKey:
     async def test_no_users(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
         assert await _choose_user_key(fake_llm_provider, select_key_context) is None
 
+    @pytest.mark.parametrize("collection_feed_index", [0, 1])
     @pytest.mark.asyncio
     async def test_protection_from_collections_processing(
         self,
         fake_llm_provider: ProviderTest,
         select_key_context: SelectKeyContext,
         collection_id_for_test_feeds: CollectionId,
+            another_saved_feed_id: FeedId,
+            collection_feed_index: int
     ) -> None:
+        select_key_context.feed_ids.add(another_saved_feed_id)
         await collections.add_test_feed_to_collections(
-            collection_id_for_test_feeds, list(select_key_context.feed_ids)[0]
+            collection_id_for_test_feeds, list(select_key_context.feed_ids)[collection_feed_index]
         )
 
         with pytest.raises(errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys):

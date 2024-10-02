@@ -271,7 +271,6 @@ async def _choose_collections_key(llm: ProviderInterface, context: SelectKeyCont
 
 async def _choose_user_key(llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage | None:
 
-    # TODO: tests
     if any(collections.has_feed(feed_id) for feed_id in context.feed_ids):
         raise errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys(feed_ids=context.feed_ids)
 
