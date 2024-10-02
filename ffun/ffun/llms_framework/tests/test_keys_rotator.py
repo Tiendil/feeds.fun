@@ -264,6 +264,16 @@ class TestGetUserKeyInfos:
         ]
 
 
+@pytest.mark.asyncio
+async def test_default_filters() -> None:
+    assert _filters == (
+        _filter_out_users_without_keys,
+        _filter_out_users_for_whome_entry_is_too_old,
+        _filter_out_users_with_wrong_keys,
+        _filter_out_users_with_overused_keys,
+    )
+
+
 class TestGetCandidates:
     @pytest.mark.asyncio
     async def test_no_users(self, fake_llm_provider: ProviderTest, saved_feed_id: FeedId) -> None:
@@ -273,7 +283,7 @@ class TestGetCandidates:
             await _get_candidates(
                 llm=fake_llm_provider,
                 llm_config=_llm_config,
-                feed_id=saved_feed_id,
+                feed_ids={saved_feed_id},
                 interval_started_at=interval_started_at,
                 entry_age=datetime.timedelta(days=1),
                 reserved_cost=USDCost(Decimal(100)),
@@ -282,20 +292,18 @@ class TestGetCandidates:
         )
 
     @pytest.mark.asyncio
-    async def test_default_filters(self) -> None:
-        assert _filters == (
-            _filter_out_users_without_keys,
-            _filter_out_users_for_whome_entry_is_too_old,
-            _filter_out_users_with_wrong_keys,
-            _filter_out_users_with_overused_keys,
-        )
-
-    @pytest.mark.asyncio
     async def test_filters_used(
-        self, fake_llm_provider: ProviderTest, saved_feed_id: FeedId, five_internal_user_ids: list[uuid.UUID]
+        self,
+        fake_llm_provider: ProviderTest,
+        saved_feed_id: FeedId,
+        another_saved_feed_id: FeedId,
+        five_internal_user_ids: list[uuid.UUID],
     ) -> None:
-        for user_id in five_internal_user_ids:
+        for user_id in five_internal_user_ids[:2]:
             await fl_domain.add_link(user_id, saved_feed_id)
+
+        for user_id in five_internal_user_ids[2:]:
+            await fl_domain.add_link(user_id, another_saved_feed_id)
 
         interval_started_at = month_interval_start()
 
@@ -312,7 +320,7 @@ class TestGetCandidates:
         infos = await _get_candidates(
             llm=fake_llm_provider,
             llm_config=_llm_config,
-            feed_id=saved_feed_id,
+            feed_ids={saved_feed_id, another_saved_feed_id},
             interval_started_at=interval_started_at,
             entry_age=datetime.timedelta(days=1),
             reserved_cost=USDCost(Decimal(100)),
@@ -344,7 +352,7 @@ class TestGetCandidates:
         infos = await _get_candidates(
             llm=fake_llm_provider,
             llm_config=_llm_config,
-            feed_id=saved_feed_id,
+            feed_ids={saved_feed_id},
             interval_started_at=interval_started_at,
             entry_age=datetime.timedelta(days=1),
             reserved_cost=USDCost(Decimal(100)),
@@ -360,7 +368,7 @@ class TestFindBestUserWithKey:
         info = await _find_best_user_with_key(
             llm=fake_llm_provider,
             llm_config=_llm_config,
-            feed_id=saved_feed_id,
+            feed_ids={saved_feed_id},
             entry_age=datetime.timedelta(days=1),
             interval_started_at=month_interval_start(),
             reserved_cost=USDCost(Decimal(100)),
@@ -385,7 +393,7 @@ class TestFindBestUserWithKey:
             info = await _find_best_user_with_key(
                 llm=fake_llm_provider,
                 llm_config=_llm_config,
-                feed_id=saved_feed_id,
+                feed_ids={saved_feed_id},
                 entry_age=datetime.timedelta(days=0),
                 interval_started_at=interval_started_at,
                 reserved_cost=used_cost,
@@ -410,7 +418,7 @@ class TestFindBestUserWithKey:
         info = await _find_best_user_with_key(
             llm=fake_llm_provider,
             llm_config=_llm_config,
-            feed_id=saved_feed_id,
+            feed_ids={saved_feed_id},
             entry_age=datetime.timedelta(days=0),
             interval_started_at=interval_started_at,
             reserved_cost=used_cost,
@@ -426,7 +434,7 @@ def select_key_context(saved_feed_id: FeedId) -> SelectKeyContext:
         llm_config=_llm_config,
         collections_api_key=None,
         general_api_key=None,
-        feed_id=saved_feed_id,
+        feed_ids={saved_feed_id},
         entry_age=datetime.timedelta(seconds=0),
         reserved_cost=USDCost(Decimal(0)),
     )
@@ -466,23 +474,34 @@ class TestChooseCollectionsKey:
 
     @pytest.mark.asyncio
     async def test_no_collections_key_specified(
-        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext
+        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext, another_saved_feed_id: FeedId
     ) -> None:
+        select_key_context.feed_ids.add(another_saved_feed_id)
+
         assert select_key_context.collections_api_key is None
+        assert len(select_key_context.feed_ids) > 1
 
         assert await _choose_collections_key(fake_llm_provider, select_key_context) is None
 
+    @pytest.mark.parametrize("collection_feed_index", [0, 1])
     @pytest.mark.asyncio
-    async def test_collections_key_specified__in_collection(
+    async def test_collections_key_specified__in_collection(  # noqa: ignore=CFQ002
         self,
         fake_llm_provider: ProviderTest,
         select_key_context: SelectKeyContext,
         fake_llm_api_key: LLMApiKey,
         collection_id_for_test_feeds: CollectionId,
+        another_saved_feed_id: FeedId,
+        collection_feed_index: int,
     ) -> None:
-        select_key_context = select_key_context.replace(collections_api_key=LLMCollectionApiKey(fake_llm_api_key))
+        select_key_context = select_key_context.replace(
+            collections_api_key=LLMCollectionApiKey(fake_llm_api_key),
+            feed_ids=select_key_context.feed_ids.union({another_saved_feed_id}),
+        )
 
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, select_key_context.feed_id)
+        await collections.add_test_feed_to_collections(
+            collection_id_for_test_feeds, list(select_key_context.feed_ids)[collection_feed_index]
+        )
 
         usage = await _choose_collections_key(fake_llm_provider, select_key_context)
 
@@ -506,7 +525,7 @@ class TestChooseCollectionsKey:
 
         select_key_context = select_key_context.replace(collections_api_key=key)
 
-        assert not collections.has_feed(select_key_context.feed_id)
+        assert all(not collections.has_feed(feed_id) for feed_id in select_key_context.feed_ids)
 
         assert await _choose_collections_key(fake_llm_provider, select_key_context) is None
 
@@ -517,14 +536,20 @@ class TestChooseUserKey:
     async def test_no_users(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
         assert await _choose_user_key(fake_llm_provider, select_key_context) is None
 
+    @pytest.mark.parametrize("collection_feed_index", [0, 1])
     @pytest.mark.asyncio
     async def test_protection_from_collections_processing(
         self,
         fake_llm_provider: ProviderTest,
         select_key_context: SelectKeyContext,
         collection_id_for_test_feeds: CollectionId,
+        another_saved_feed_id: FeedId,
+        collection_feed_index: int,
     ) -> None:
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, select_key_context.feed_id)
+        select_key_context.feed_ids.add(another_saved_feed_id)
+        await collections.add_test_feed_to_collections(
+            collection_id_for_test_feeds, list(select_key_context.feed_ids)[collection_feed_index]
+        )
 
         with pytest.raises(errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys):
             await _choose_user_key(fake_llm_provider, select_key_context)

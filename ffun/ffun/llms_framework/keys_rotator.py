@@ -181,13 +181,13 @@ _filters = (
 async def _get_candidates(  # noqa
     llm: ProviderInterface,
     llm_config: LLMConfiguration,
-    feed_id: FeedId,
+    feed_ids: set[FeedId],
     interval_started_at: datetime.datetime,
     entry_age: datetime.timedelta,
     reserved_cost: USDCost,
     filters: tuple[Any, ...] = _filters,
 ) -> list[UserKeyInfo]:
-    user_ids = await fl_domain.get_linked_users(feed_id)
+    user_ids = await fl_domain.get_linked_users_flat(feed_ids)
 
     infos = await _get_user_key_infos(llm.provider, user_ids, interval_started_at)
 
@@ -206,7 +206,7 @@ async def _get_candidates(  # noqa
 async def _find_best_user_with_key(
     llm: ProviderInterface,
     llm_config: LLMConfiguration,
-    feed_id: FeedId,
+    feed_ids: set[FeedId],
     entry_age: datetime.timedelta,
     interval_started_at: datetime.datetime,
     reserved_cost: USDCost,
@@ -214,7 +214,7 @@ async def _find_best_user_with_key(
     infos = await _get_candidates(
         llm=llm,
         llm_config=llm_config,
-        feed_id=feed_id,
+        feed_ids=feed_ids,
         interval_started_at=interval_started_at,
         entry_age=entry_age,
         reserved_cost=reserved_cost,
@@ -255,7 +255,7 @@ async def _choose_collections_key(llm: ProviderInterface, context: SelectKeyCont
     if key is None:
         return None
 
-    if not collections.has_feed(context.feed_id):
+    if all(not collections.has_feed(feed_id) for feed_id in context.feed_ids):
         return None
 
     return APIKeyUsage(
@@ -271,13 +271,13 @@ async def _choose_collections_key(llm: ProviderInterface, context: SelectKeyCont
 
 async def _choose_user_key(llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage | None:
 
-    if collections.has_feed(context.feed_id):
-        raise errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys(feed_id=context.feed_id)
+    if any(collections.has_feed(feed_id) for feed_id in context.feed_ids):
+        raise errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys(feed_ids=context.feed_ids)
 
     info = await _find_best_user_with_key(
         llm=llm,
         llm_config=context.llm_config,
-        feed_id=context.feed_id,
+        feed_ids=context.feed_ids,
         entry_age=context.entry_age,
         interval_started_at=context.interval_started_at,
         reserved_cost=context.reserved_cost,

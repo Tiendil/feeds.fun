@@ -1,5 +1,5 @@
 from ffun.domain import urls as d_urls
-from ffun.domain.entities import EntryId
+from ffun.domain.entities import EntryId, FeedId
 from ffun.feeds import domain as f_domain
 from ffun.library import operations
 from ffun.library.entities import Entry, EntryChange
@@ -7,12 +7,11 @@ from ffun.library.entities import Entry, EntryChange
 catalog_entries = operations.catalog_entries
 get_entries_by_ids = operations.get_entries_by_ids
 get_entries_by_filter = operations.get_entries_by_filter
-check_stored_entries_by_external_ids = operations.check_stored_entries_by_external_ids
+find_stored_entries_for_feed = operations.find_stored_entries_for_feed
 all_entries_iterator = operations.all_entries_iterator
 get_entries_after_pointer = operations.get_entries_after_pointer
-tech_move_entry = operations.tech_move_entry
-tech_get_feed_entries_tail = operations.tech_get_feed_entries_tail
-tech_remove_entries_by_ids = operations.tech_remove_entries_by_ids
+unlink_feed_tail = operations.unlink_feed_tail
+get_feed_links_for_entries = operations.get_feed_links_for_entries
 
 
 async def get_entry(entry_id: EntryId) -> Entry:
@@ -22,8 +21,30 @@ async def get_entry(entry_id: EntryId) -> Entry:
     return found_entry
 
 
+async def get_feeds_for_entry(entry_id: EntryId) -> set[FeedId]:
+    mapping = await get_feed_links_for_entries([entry_id])
+
+    if not mapping:
+        return set()
+
+    return {link.feed_id for link in mapping[entry_id]}
+
+
 async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange]:
-    feed = await f_domain.get_feed(entry.feed_id)
+    feed_links_mapping = await get_feed_links_for_entries([entry.id])
+
+    if entry.id not in feed_links_mapping:
+        return []
+
+    feed_links = feed_links_mapping[entry.id]
+
+    feed_links.sort(key=lambda link: link.created_at)
+
+    # use oldest link to chose normalization feed
+    # TODO: give priority to feeds from collections
+    feed_id = feed_links[0].feed_id
+
+    feed = await f_domain.get_feed(feed_id)
 
     new_external_url = d_urls.normalize_external_url(entry.external_url, feed.url)
 

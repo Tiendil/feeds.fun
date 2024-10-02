@@ -105,7 +105,6 @@ class EntriesProcessor(InfiniteTask):
     def concurrency(self) -> int:
         return self._processor_info.concurrency
 
-    # TODO: test
     async def separate_entries(  # noqa: disable=CCR001
         self, entries_ids: list[EntryId]
     ) -> tuple[list[Entry], list[EntryId]]:
@@ -119,13 +118,18 @@ class EntriesProcessor(InfiniteTask):
         entries_to_process: list[Entry] = []
         entries_to_remove: list[EntryId] = []
 
+        feed_links = await l_domain.get_feed_links_for_entries(entries_ids)
+        feed_ids = {entry_id: [link.feed_id for link in links] for entry_id, links in feed_links.items()}
+
         for entry_id, entry in entries.items():
             if entry is None:
                 logger.warning("unexisted_entry_in_queue", processor_id=processor_id, entry_id=entry_id)
                 entries_to_remove.append(entry_id)
                 continue
 
-            in_collection = collections.has_feed(entry.feed_id)
+            # TODO: maybe we should create some `in_collection` marker directly for entry
+            #       this may simplify a lot of code by moveing checks from multiple places to one
+            in_collection = any(collections.has_feed(feed_id) for feed_id in feed_ids[entry_id])
 
             if in_collection and not self._processor_info.allowed_for_collections:
                 logger.info("proccessor_not_allowed_for_collections", processor_id=processor_id, entry_id=entry_id)

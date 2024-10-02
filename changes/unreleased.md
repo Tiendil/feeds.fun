@@ -12,4 +12,5 @@ Changes:
     - The configuration of LLM models was moved to a separate file; see README.md for actual details.
     - You can configure multiple LLM tag processors with different parameters, including prompts, API keys, etc.
     - Token usage tracking has been replaced with cost tracking. User settings will convert automatically.
-- Collections refactored. Now, they are configurable and empty by default. You can specify the path to the directory with collections configuration in `FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS`. An example of configuration can be found in the `./feeds_collections/collections`
+- Collections refactored. Now, they are configurable and empty by default. You can specify the path to the directory with collections configuration in `FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS`. An example of configuration can be found in the `./feeds_collections/collections`.
+- `FFUN_META_MAX_ENTRIES_PER_FEED` setting moved to `FFUN_LIBRARY_MAX_ENTRIES_PER_FEED`.
