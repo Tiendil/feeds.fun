@@ -234,3 +234,14 @@ async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
         logger.info("feed_entries_tail_removed", feed_id=feed_id, entries_limit=offset, entries_removed=len(result))
     else:
         logger.info("feed_has_no_entries_tail", feed_id=feed_id, entries_limit=offset)
+
+
+# TODO: test
+async def tech_unlink_entry(entry_id: EntryId, feed_id: FeedId) -> None:
+    # TODO: index
+    sql = """
+    DELETE FROM l_feeds_to_entries
+    WHERE feed_id = %(feed_id)s AND entry_id = %(entry_id)s
+    """
+
+    await execute(sql, {"entry_id": entry_id, "feed_id": feed_id})

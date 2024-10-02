@@ -21,7 +21,6 @@ async def get_entry(entry_id: EntryId) -> Entry:
     return found_entry
 
 
-# TODO: test
 async def get_feeds_for_entry(entry_id: EntryId) -> set[FeedId]:
     mapping = await get_feed_links_for_entry([entry_id])
 

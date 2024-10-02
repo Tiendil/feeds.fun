@@ -171,7 +171,7 @@ class TestCatalogEntries:
 
 
 # Most of the functionality is tested in the tests for catalog_entry and other functions
-class TestGetFeedEntryLnks:
+class TestGetFeedLinksForEntry:
 
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
