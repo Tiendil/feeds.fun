@@ -17,7 +17,7 @@ class TestNormalizeEntry:
 
     @pytest.mark.parametrize("apply", [True, False])
     @pytest.mark.asyncio
-    async def test_normalize_external_url(self, new_entry: Entry, loaded_feed: Feed, apply: bool) -> None:
+    async def test_normalize_external_url(self, new_entry: Entry, loaded_feed: Feed, another_loaded_feed: Feed, apply: bool) -> None:
         wrong_url = "/relative/url"
         expected_url = f"{loaded_feed.url}{wrong_url}"
 
@@ -26,6 +26,9 @@ class TestNormalizeEntry:
         assert loaded_feed.source_id == new_entry.source_id
 
         await operations.catalog_entries(loaded_feed.id, [new_entry])
+
+        # this feed should be ignored, because current logic uses only the oldest link
+        await operations.catalog_entries(another_loaded_feed.id, [new_entry])
 
         entry = await get_entry(new_entry.id)
 

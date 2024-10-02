@@ -30,11 +30,9 @@ async def get_feeds_for_entry(entry_id: EntryId) -> set[FeedId]:
     return {link.feed_id for link in mapping[entry_id]}
 
 
-# TODO: tests
 async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange]:
     feed_links_mapping = await get_feed_links_for_entry([entry.id])
 
-    # TODO: test
     if entry.id not in feed_links_mapping:
         return []
 
