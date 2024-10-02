@@ -3,12 +3,11 @@ from itertools import chain
 
 import pytest
 import pytest_asyncio
-
 from structlog.testing import capture_logs
-from ffun.core.tests.helpers import assert_logs
+
 from ffun.core import utils
 from ffun.core.postgresql import execute
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_times_is_near
+from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs, assert_times_is_near
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import FeedId
 from ffun.feeds import domain as f_domain

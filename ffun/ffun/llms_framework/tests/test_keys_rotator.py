@@ -293,7 +293,11 @@ class TestGetCandidates:
 
     @pytest.mark.asyncio
     async def test_filters_used(
-            self, fake_llm_provider: ProviderTest, saved_feed_id: FeedId, another_saved_feed_id: FeedId, five_internal_user_ids: list[uuid.UUID]
+        self,
+        fake_llm_provider: ProviderTest,
+        saved_feed_id: FeedId,
+        another_saved_feed_id: FeedId,
+        five_internal_user_ids: list[uuid.UUID],
     ) -> None:
         for user_id in five_internal_user_ids[:2]:
             await fl_domain.add_link(user_id, saved_feed_id)
@@ -470,7 +474,7 @@ class TestChooseCollectionsKey:
 
     @pytest.mark.asyncio
     async def test_no_collections_key_specified(
-            self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext, another_saved_feed_id: FeedId
+        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext, another_saved_feed_id: FeedId
     ) -> None:
         select_key_context.feed_ids.add(another_saved_feed_id)
 
@@ -481,17 +485,19 @@ class TestChooseCollectionsKey:
 
     @pytest.mark.parametrize("collection_feed_index", [0, 1])
     @pytest.mark.asyncio
-    async def test_collections_key_specified__in_collection(
+    async def test_collections_key_specified__in_collection(  # noqa: ignore=CFQ002
         self,
         fake_llm_provider: ProviderTest,
         select_key_context: SelectKeyContext,
         fake_llm_api_key: LLMApiKey,
         collection_id_for_test_feeds: CollectionId,
-            another_saved_feed_id: FeedId,
-            collection_feed_index: int
+        another_saved_feed_id: FeedId,
+        collection_feed_index: int,
     ) -> None:
-        select_key_context = select_key_context.replace(collections_api_key=LLMCollectionApiKey(fake_llm_api_key),
-                                                        feed_ids=select_key_context.feed_ids.union({another_saved_feed_id}))
+        select_key_context = select_key_context.replace(
+            collections_api_key=LLMCollectionApiKey(fake_llm_api_key),
+            feed_ids=select_key_context.feed_ids.union({another_saved_feed_id}),
+        )
 
         await collections.add_test_feed_to_collections(
             collection_id_for_test_feeds, list(select_key_context.feed_ids)[collection_feed_index]
@@ -537,8 +543,8 @@ class TestChooseUserKey:
         fake_llm_provider: ProviderTest,
         select_key_context: SelectKeyContext,
         collection_id_for_test_feeds: CollectionId,
-            another_saved_feed_id: FeedId,
-            collection_feed_index: int
+        another_saved_feed_id: FeedId,
+        collection_feed_index: int,
     ) -> None:
         select_key_context.feed_ids.add(another_saved_feed_id)
         await collections.add_test_feed_to_collections(

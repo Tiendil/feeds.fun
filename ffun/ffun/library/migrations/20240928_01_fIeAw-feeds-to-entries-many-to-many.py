@@ -122,7 +122,10 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
     cursor.execute("ALTER TABLE l_entries DROP COLUMN feed_id")
 
-    cursor.execute("CREATE INDEX l_feeds_to_entries_feed_id_created_at_entity_id_idx ON l_feeds_to_entries(feed_id, created_at DESC, entry_id)")
+    cursor.execute(
+        """CREATE INDEX l_feeds_to_entries_feed_id_created_at_entity_id_idx
+           ON l_feeds_to_entries(feed_id, created_at DESC, entry_id)"""
+    )
 
     cursor.execute("CREATE INDEX l_entries_created_at_idx ON l_entries (created_at ASC)")
 

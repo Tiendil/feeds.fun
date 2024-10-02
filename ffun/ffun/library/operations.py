@@ -151,7 +151,7 @@ async def get_entries_by_filter(
     rows = await execute(sql, {"feeds_ids": feeds_ids, "period": period, "limit": limit})
 
     for row in rows:
-        row.pop('max_created_at')
+        row.pop("max_created_at")
 
     return [row_to_entry(row) for row in rows]
 

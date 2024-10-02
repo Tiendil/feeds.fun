@@ -4,13 +4,13 @@ from structlog.testing import capture_logs
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
 from ffun.domain.domain import new_entry_id
-from ffun.library import domain as l_domain
 from ffun.feeds.entities import Feed
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import CollectionId
 from ffun.librarian import operations
 from ffun.librarian.background_processors import EntriesProcessor
 from ffun.librarian.tests import make
+from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
 from ffun.ontology import domain as o_domain
 

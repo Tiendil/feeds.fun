@@ -1,10 +1,10 @@
-import pytest
 import uuid
+
+import pytest
+
 from ffun.domain.entities import FeedId
-
-from ffun.feeds_links.operations import add_link
 from ffun.feeds_links.domain import get_linked_users_flat
-
+from ffun.feeds_links.operations import add_link
 
 
 class TestGetLinkedUsersFlat:

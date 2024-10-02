@@ -2,7 +2,7 @@ import pytest
 
 from ffun.feeds.entities import Feed
 from ffun.library import operations
-from ffun.library.domain import get_entry, normalize_entry, get_feeds_for_entry
+from ffun.library.domain import get_entry, get_feeds_for_entry, normalize_entry
 from ffun.library.entities import Entry, EntryChange
 
 
@@ -17,7 +17,9 @@ class TestNormalizeEntry:
 
     @pytest.mark.parametrize("apply", [True, False])
     @pytest.mark.asyncio
-    async def test_normalize_external_url(self, new_entry: Entry, loaded_feed: Feed, another_loaded_feed: Feed, apply: bool) -> None:
+    async def test_normalize_external_url(
+        self, new_entry: Entry, loaded_feed: Feed, another_loaded_feed: Feed, apply: bool
+    ) -> None:
         wrong_url = "/relative/url"
         expected_url = f"{loaded_feed.url}{wrong_url}"
 
