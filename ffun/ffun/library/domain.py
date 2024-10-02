@@ -11,7 +11,7 @@ find_stored_entries_for_feed = operations.find_stored_entries_for_feed
 all_entries_iterator = operations.all_entries_iterator
 get_entries_after_pointer = operations.get_entries_after_pointer
 unlink_feed_tail = operations.unlink_feed_tail
-get_feed_links_for_entry = operations.get_feed_links_for_entry
+get_feed_links_for_entries = operations.get_feed_links_for_entries
 
 
 async def get_entry(entry_id: EntryId) -> Entry:
@@ -22,7 +22,7 @@ async def get_entry(entry_id: EntryId) -> Entry:
 
 
 async def get_feeds_for_entry(entry_id: EntryId) -> set[FeedId]:
-    mapping = await get_feed_links_for_entry([entry_id])
+    mapping = await get_feed_links_for_entries([entry_id])
 
     if not mapping:
         return set()
@@ -31,7 +31,7 @@ async def get_feeds_for_entry(entry_id: EntryId) -> set[FeedId]:
 
 
 async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange]:
-    feed_links_mapping = await get_feed_links_for_entry([entry.id])
+    feed_links_mapping = await get_feed_links_for_entries([entry.id])
 
     if entry.id not in feed_links_mapping:
         return []

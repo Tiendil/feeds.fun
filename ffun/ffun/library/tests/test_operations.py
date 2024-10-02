@@ -22,7 +22,7 @@ from ffun.library.operations import (
     get_entries_after_pointer,
     get_entries_by_filter,
     get_entries_by_ids,
-    get_feed_links_for_entry,
+    get_feed_links_for_entries,
     unlink_feed_tail,
     update_external_url,
 )
@@ -43,7 +43,7 @@ class TestCatalogEntry:
 
         assert loaded_entry == new_entry.replace(cataloged_at=loaded_entry.cataloged_at)
 
-        links = await get_feed_links_for_entry([new_entry.id])
+        links = await get_feed_links_for_entries([new_entry.id])
 
         assert len(links[new_entry.id]) == 1
 
@@ -69,7 +69,7 @@ class TestCatalogEntry:
 
         assert loaded_entry == new_entry.replace(cataloged_at=loaded_entry.cataloged_at)
 
-        links = await get_feed_links_for_entry([new_entry.id])
+        links = await get_feed_links_for_entries([new_entry.id])
 
         assert len(links[new_entry.id]) == 2
 
@@ -101,7 +101,7 @@ class TestCatalogEntry:
 
         assert loaded_entry == new_entry.replace(cataloged_at=loaded_entry.cataloged_at)
 
-        links = await get_feed_links_for_entry([new_entry.id])
+        links = await get_feed_links_for_entries([new_entry.id])
 
         assert len(links[new_entry.id]) == 1
 
@@ -127,7 +127,7 @@ class TestCatalogEntry:
 
         assert loaded_another_entry == another_new_entry.replace(cataloged_at=loaded_another_entry.cataloged_at)
 
-        links = await get_feed_links_for_entry([another_new_entry.id])
+        links = await get_feed_links_for_entries([another_new_entry.id])
 
         assert len(links[another_new_entry.id]) == 1
 
@@ -171,11 +171,11 @@ class TestCatalogEntries:
 
 
 # Most of the functionality is tested in the tests for catalog_entry and other functions
-class TestGetFeedLinksForEntry:
+class TestGetFeedLinksForEntries:
 
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
-        assert await get_feed_links_for_entry([]) == {}
+        assert await get_feed_links_for_entries([]) == {}
 
 
 class TestFindStoredEntriesForFeed:

@@ -1,5 +1,3 @@
-# noqa
-# TODO: remove ^
 import datetime
 import uuid
 from typing import Any, AsyncGenerator, Iterable
@@ -69,8 +67,7 @@ async def catalog_entries(feed_id: FeedId, entries: Iterable[Entry]) -> None:
         await _catalog_entry(feed_id, entry)
 
 
-# TODO: rename to `get_feed_links_for_entryis`
-async def get_feed_links_for_entry(entries_ids: Iterable[EntryId]) -> dict[EntryId, list[FeedEntryLink]]:
+async def get_feed_links_for_entries(entries_ids: Iterable[EntryId]) -> dict[EntryId, list[FeedEntryLink]]:
     # TODO: index?
     sql = """
     SELECT entry_id, feed_id, created_at

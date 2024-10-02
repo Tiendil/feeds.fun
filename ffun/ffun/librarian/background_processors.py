@@ -118,7 +118,7 @@ class EntriesProcessor(InfiniteTask):
         entries_to_process: list[Entry] = []
         entries_to_remove: list[EntryId] = []
 
-        feed_links = await l_domain.get_feed_links_for_entry(entries_ids)
+        feed_links = await l_domain.get_feed_links_for_entries(entries_ids)
         feed_ids = {entry_id: [link.feed_id for link in links] for entry_id, links in feed_links.items()}
 
         for entry_id, entry in entries.items():
