@@ -1,5 +1,4 @@
 import datetime
-import uuid
 from itertools import chain
 
 import pytest
@@ -13,20 +12,19 @@ from ffun.domain.entities import FeedId
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
 from ffun.feeds.tests import make as f_make
-from ffun.library import errors
 from ffun.library.domain import get_entry
 from ffun.library.entities import Entry
 from ffun.library.operations import (
+    _catalog_entry,
     all_entries_iterator,
     catalog_entries,
     find_stored_entries_for_feed,
     get_entries_after_pointer,
     get_entries_by_filter,
     get_entries_by_ids,
-    update_external_url,
-    _catalog_entry,
     get_feed_links_for_entry,
     unlink_feed_tail,
+    update_external_url,
 )
 from ffun.library.tests import make
 
@@ -56,7 +54,9 @@ class TestCatalogEntry:
         assert_times_is_near(link.created_at, utils.now())
 
     @pytest.mark.asyncio
-    async def test_same_entry_new_feed(self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, new_entry: Entry) -> None:
+    async def test_same_entry_new_feed(
+        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, new_entry: Entry
+    ) -> None:
         await _catalog_entry(loaded_feed_id, new_entry)
 
         async with TableSizeNotChanged("l_entries"):
@@ -112,7 +112,9 @@ class TestCatalogEntry:
         assert_times_is_near(link.created_at, utils.now())
 
     @pytest.mark.asyncio
-    async def test_new_entry_same_feed(self, loaded_feed_id: FeedId, new_entry: Entry, another_new_entry: Entry) -> None:
+    async def test_new_entry_same_feed(
+        self, loaded_feed_id: FeedId, new_entry: Entry, another_new_entry: Entry
+    ) -> None:
         await _catalog_entry(loaded_feed_id, new_entry)
 
         async with TableSizeDelta("l_entries", delta=1):
@@ -283,8 +285,9 @@ class TestGetEntriesByFilter:
             },
         )
 
-        all_entries = await get_entries_by_ids(ids=[entry.id
-                                                    for entry in chain(entries, another_entries, [common_entry])])
+        all_entries = await get_entries_by_ids(
+            ids=[entry.id for entry in chain(entries, another_entries, [common_entry])]
+        )
 
         all_entries_list = list(all_entries.values())
         all_entries_list.sort(key=lambda entry: entry.cataloged_at)  # type: ignore
@@ -420,11 +423,7 @@ class TestAllEntriesIterator:
 
         ids.sort()
 
-        found_ids = [
-            entry.id
-            async for entry in all_entries_iterator(chunk=chunk)
-            if entry.id in ids
-        ]
+        found_ids = [entry.id async for entry in all_entries_iterator(chunk=chunk) if entry.id in ids]
 
         assert found_ids == ids
 

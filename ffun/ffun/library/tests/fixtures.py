@@ -1,11 +1,10 @@
 import pytest_asyncio
 
-from ffun.feeds.entities import Feed
 from ffun.domain.entities import FeedId
+from ffun.feeds.entities import Feed
 from ffun.library.domain import catalog_entries, get_entry
 from ffun.library.entities import Entry
 from ffun.library.tests import make as l_make
-from ffun.feeds.domain import get_feed
 
 
 @pytest_asyncio.fixture

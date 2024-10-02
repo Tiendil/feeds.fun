@@ -6,18 +6,14 @@ import pytest
 from ffun.domain.domain import new_feed_id
 from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
-from ffun.feeds import errors as f_errors
 from ffun.feeds.entities import FeedId
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
-from ffun.markers import domain as m_domains
-from ffun.markers.entities import Marker
 from ffun.meta.domain import add_feeds, limit_entries_for_feed, remove_entries
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import ProcessorTag
 from ffun.parsers import entities as p_entities
-from ffun.users.tests import make as u_make
 
 
 class TestRemoveEntries:

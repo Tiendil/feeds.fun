@@ -4,14 +4,11 @@ import datetime
 import uuid
 from typing import Any, AsyncGenerator, Iterable
 
-import psycopg
-
 from ffun.core import logging
-from ffun.core.postgresql import execute, transaction, run_in_transaction, ExecuteType
-from ffun.domain.entities import EntryId, FeedId, SourceId
-from ffun.library import errors
-from ffun.library.settings import settings
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.domain.entities import EntryId, FeedId
 from ffun.library.entities import Entry, FeedEntryLink
+from ffun.library.settings import settings
 
 logger = logging.get_module_logger()
 
@@ -53,21 +50,17 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Entry) ->
     if result:
         entry_id = result[0]["id"]
     else:
-        result = await execute("SELECT id FROM l_entries WHERE source_id = %(source_id)s AND external_id = %(external_id)s",
-                               {"source_id": entry.source_id,
-                                "external_id": entry.external_id})
+        result = await execute(
+            "SELECT id FROM l_entries WHERE source_id = %(source_id)s AND external_id = %(external_id)s",
+            {"source_id": entry.source_id, "external_id": entry.external_id},
+        )
 
         if result:
             entry_id = result[0]["id"]
         else:
             raise NotImplementedError("Can not find entry by source_id and external_id")
 
-    await execute(
-        sql_insert_feed_to_entry,
-        {
-            "feed_id": feed_id,
-            "entry_id": entry_id
-        })
+    await execute(sql_insert_feed_to_entry, {"feed_id": feed_id, "entry_id": entry_id})
 
 
 async def catalog_entries(feed_id: FeedId, entries: Iterable[Entry]) -> None:

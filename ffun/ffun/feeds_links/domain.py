@@ -1,6 +1,6 @@
+import uuid
 from typing import Iterable
 
-import uuid
 from ffun.core.postgresql import ExecuteType, run_in_transaction
 from ffun.feeds.entities import FeedId
 from ffun.feeds_links import operations

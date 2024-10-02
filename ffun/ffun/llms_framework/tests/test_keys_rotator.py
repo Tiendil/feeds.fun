@@ -482,7 +482,9 @@ class TestChooseCollectionsKey:
     ) -> None:
         select_key_context = select_key_context.replace(collections_api_key=LLMCollectionApiKey(fake_llm_api_key))
 
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, list(select_key_context.feed_ids)[0])
+        await collections.add_test_feed_to_collections(
+            collection_id_for_test_feeds, list(select_key_context.feed_ids)[0]
+        )
 
         usage = await _choose_collections_key(fake_llm_provider, select_key_context)
 
@@ -524,7 +526,9 @@ class TestChooseUserKey:
         select_key_context: SelectKeyContext,
         collection_id_for_test_feeds: CollectionId,
     ) -> None:
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, list(select_key_context.feed_ids)[0])
+        await collections.add_test_feed_to_collections(
+            collection_id_for_test_feeds, list(select_key_context.feed_ids)[0]
+        )
 
         with pytest.raises(errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys):
             await _choose_user_key(fake_llm_provider, select_key_context)

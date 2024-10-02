@@ -2,14 +2,13 @@
 feeds-to-entries-many-to-many
 """
 
-from yoyo import step
-
 from typing import Any
-from psycopg.rows import dict_row
+
 from psycopg import Connection
+from psycopg.rows import dict_row
 from yoyo import step
 
-__depends__ = {'20240928_02_lD7Bv-source-for-entries'}
+__depends__ = {"20240928_02_lD7Bv-source-for-entries"}
 
 # TODO: test on production data
 # TODO: add index on created_at?
@@ -77,33 +76,33 @@ WHERE x.entry_id = l_entries.id
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor(row_factory=dict_row)
 
-    print('Creating l_feeds_to_entries table')  # noqa
+    print("Creating l_feeds_to_entries table")  # noqa
 
     cursor.execute(sql_create_feeds_to_entries_table)
 
-    print('Filling l_feeds_to_entries table')  # noqa
+    print("Filling l_feeds_to_entries table")  # noqa
 
     cursor.execute(sql_fill_from_entries_table)
 
     # TODO: index is created here to spedup the migration, should we remove it at it's end?
     # TODO: rename index to use prefix idx_? and in other migrations too
-    cursor.execute('CREATE INDEX l_feeds_to_entries_entry_id_idx ON l_feeds_to_entries (entry_id)')
+    cursor.execute("CREATE INDEX l_feeds_to_entries_entry_id_idx ON l_feeds_to_entries (entry_id)")
 
-    print('Filling duplicated entries')  # noqa
+    print("Filling duplicated entries")  # noqa
 
     cursor.execute(sql_fill_duplicated_entries)
 
-    print('Removing duplicated entries')  # noqa
+    print("Removing duplicated entries")  # noqa
 
     cursor.execute(sql_remove_duplicated_entries)
 
-    print('Creating unique index on l_entries')  # noqa
+    print("Creating unique index on l_entries")  # noqa
 
     # TODO: rename index?
     # TODO: change order of fields to (external_id, source_id) ?
     cursor.execute("CREATE UNIQUE INDEX l_entries_source_id_external_id_idx ON l_entries (source_id, external_id)")
 
-    print('Removing feed_id column from l_entries')  # noqa
+    print("Removing feed_id column from l_entries")  # noqa
 
     cursor.execute("ALTER TABLE l_entries DROP COLUMN feed_id")
 

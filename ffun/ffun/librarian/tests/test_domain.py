@@ -157,9 +157,7 @@ class TestPlanProcessorQueue:
         )
 
     @pytest.mark.asyncio
-    async def test_do_not_push_if_there_are_enough_entries(
-        self, loaded_feed: Feed, fake_processor_id: int
-    ) -> None:
+    async def test_do_not_push_if_there_are_enough_entries(self, loaded_feed: Feed, fake_processor_id: int) -> None:
         await operations.clear_processor_queue(fake_processor_id)
 
         await make.end_processor_pointer(fake_processor_id)

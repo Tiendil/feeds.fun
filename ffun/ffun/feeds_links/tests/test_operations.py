@@ -179,8 +179,7 @@ class TestGetLinkedUsers:
 
         users = await get_linked_users([saved_feed_id, another_saved_feed_id])
 
-        assert users == {saved_feed_id: {user_1_id, user_2_id},
-                         another_saved_feed_id: {user_2_id, user_3_id}}
+        assert users == {saved_feed_id: {user_1_id, user_2_id}, another_saved_feed_id: {user_2_id, user_3_id}}
 
 
 class TestHasLinkedUsers:
