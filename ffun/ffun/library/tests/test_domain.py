@@ -23,7 +23,9 @@ class TestNormalizeEntry:
 
         new_entry = new_entry.replace(external_url=wrong_url)
 
-        await operations.catalog_entries([new_entry])
+        assert loaded_feed.source_id == new_entry.source_id
+
+        await operations.catalog_entries(loaded_feed.id, [new_entry])
 
         entry = await get_entry(new_entry.id)
 

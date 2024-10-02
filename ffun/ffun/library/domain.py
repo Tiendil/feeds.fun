@@ -31,8 +31,23 @@ async def get_feeds_for_entry(entry_id: EntryId) -> set[FeedId]:
     return {link.feed_id for link in mapping[entry_id]}
 
 
+# TODO: tests
 async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange]:
-    feed = await f_domain.get_feed(entry.feed_id)
+    feed_links_mapping = await get_feed_links_for_entry([entry.id])
+
+    # TODO: test
+    if entry.id not in feed_links_mapping:
+        return []
+
+    feed_links = feed_links_mapping[entry.id]
+
+    feed_links.sort(key=lambda link: link.created_at)
+
+    # use oldest link to chose normalization feed
+    # TODO: give priority to feeds from collections
+    feed_id = feed_links[0].feed_id
+
+    feed = await f_domain.get_feed(feed_id)
 
     new_external_url = d_urls.normalize_external_url(entry.external_url, feed.url)
 
