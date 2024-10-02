@@ -166,7 +166,7 @@ async def run_prepare_news_item(
 
 @cli_app.command()
 def prepere_news_item(
-    processor: str, entry: int, knowlege_root: pathlib.Path = _root, requests_number: int = 5, min_tags_count: int = 3
+    processor: str, entry: int, knowlege_root: pathlib.Path = _root, requests_number: int = 10, min_tags_count: int = 5
 ) -> None:
     asyncio.run(
         run_prepare_news_item(
