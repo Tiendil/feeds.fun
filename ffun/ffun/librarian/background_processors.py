@@ -127,7 +127,6 @@ class EntriesProcessor(InfiniteTask):
                 entries_to_remove.append(entry_id)
                 continue
 
-            # TODO: test
             # TODO: maybe we should create some `in_collection` marker directly for entry
             #       this may simplify a lot of code by moveing checks from multiple places to one
             in_collection = any(collections.has_feed(feed_id) for feed_id in feed_ids[entry_id])

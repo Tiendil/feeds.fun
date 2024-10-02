@@ -4,6 +4,7 @@ from structlog.testing import capture_logs
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
 from ffun.domain.domain import new_entry_id
+from ffun.library import domain as l_domain
 from ffun.feeds.entities import Feed
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import CollectionId
@@ -170,6 +171,44 @@ class TestEntriesProcessors:
 
         assert {entry.id for entry in entries_to_process} == set(entries_1)
         assert set(entries_to_remove) == set(entries_2)
+
+    @pytest.mark.asyncio
+    async def test_separate_entries__collections_not_allowed__entry_is_in_multiple_feeds(
+        self,
+        fake_entries_processor: EntriesProcessor,
+        loaded_feed: Feed,
+        another_loaded_feed: Feed,
+        collection_id_for_test_feeds: CollectionId,
+    ) -> None:
+        entries_1 = await l_make.n_entries_list(loaded_feed, 3)
+        entries_2 = await l_make.n_entries_list(another_loaded_feed, 2)
+
+        await l_domain.catalog_entries(another_loaded_feed.id, entries_1[:2])
+
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
+
+        entries_list = list(entries_1) + list(entries_2)
+        entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
+
+        entries_ids = [entry.id for entry in entries_list]
+
+        fake_entries_processor._processor_info.allowed_for_collections = False
+
+        with capture_logs() as logs:
+            entries_to_process, entries_to_remove = await fake_entries_processor.separate_entries(
+                entries_ids=entries_ids
+            )
+
+        assert_logs(
+            logs,
+            unexisted_entry_in_queue=0,
+            proccessor_not_allowed_for_collections=4,
+            proccessor_not_allowed_for_users=0,
+            proccessor_is_allowed_for_entry=1,
+        )
+
+        assert {entry.id for entry in entries_to_process} == {entries_1[2].id}
+        assert set(entries_to_remove) == {entry.id for entry in entries_1[:2]} | {entry.id for entry in entries_2}
 
     @pytest.mark.asyncio
     async def test_separate_entries__all_allowed(
