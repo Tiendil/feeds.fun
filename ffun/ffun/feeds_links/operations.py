@@ -41,7 +41,6 @@ async def get_linked_feeds(user_id: uuid.UUID) -> list[FeedLink]:
     return [row_to_feed_link(row) for row in result]
 
 
-# TODO: test
 async def get_linked_users(feed_ids: Iterable[FeedId]) -> dict[FeedId, set[uuid.UUID]]:
     sql = """
         SELECT feed_id, user_id FROM fl_links WHERE feed_id = ANY(%(feed_ids)s)

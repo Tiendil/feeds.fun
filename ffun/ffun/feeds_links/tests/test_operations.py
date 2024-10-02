@@ -152,9 +152,9 @@ class TestGetLinkedUsers:
 
     @pytest.mark.asyncio
     async def test_empty(self, saved_feed_id: FeedId) -> None:
-        users = await get_linked_users(saved_feed_id)
+        users = await get_linked_users([saved_feed_id])
 
-        assert users == []
+        assert users == {}
 
     @pytest.mark.asyncio
     async def test_returns_only_required(
@@ -169,13 +169,18 @@ class TestGetLinkedUsers:
 
         await add_link(user_3_id, another_saved_feed_id)
 
-        users = await get_linked_users(saved_feed_id)
+        users = await get_linked_users([saved_feed_id])
 
-        assert users == [user_1_id, user_2_id]
+        assert users == {saved_feed_id: {user_1_id, user_2_id}}
 
-        users = await get_linked_users(another_saved_feed_id)
+        users = await get_linked_users([another_saved_feed_id])
 
-        assert users == [user_2_id, user_3_id]
+        assert users == {another_saved_feed_id: {user_2_id, user_3_id}}
+
+        users = await get_linked_users([saved_feed_id, another_saved_feed_id])
+
+        assert users == {saved_feed_id: {user_1_id, user_2_id},
+                         another_saved_feed_id: {user_2_id, user_3_id}}
 
 
 class TestHasLinkedUsers:
