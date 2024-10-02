@@ -68,7 +68,6 @@ async def catalog_entries(feed_id: FeedId, entries: Iterable[Entry]) -> None:
 
 
 async def get_feed_links_for_entries(entries_ids: Iterable[EntryId]) -> dict[EntryId, list[FeedEntryLink]]:
-    # TODO: index?
     sql = """
     SELECT entry_id, feed_id, created_at
     FROM l_feeds_to_entries
@@ -94,7 +93,6 @@ async def get_feed_links_for_entries(entries_ids: Iterable[EntryId]) -> dict[Ent
 
 async def find_stored_entries_for_feed(feed_id: FeedId, external_ids: Iterable[str]) -> set[str]:
 
-    # TODO: index
     sql = """
     SELECT external_id
     FROM l_entries
@@ -135,9 +133,6 @@ async def get_entries_by_filter(
     # In such cases, we'll show such an entry as new to a user.
     # We may want to change this logic in the future.
 
-    # TODO: index
-    # TODO: test for multiple feeds
-    # TODO: does select distinct here works correctly?
     sql = """
     SELECT le.*, re.max_created_at
     FROM (
@@ -161,11 +156,9 @@ async def get_entries_by_filter(
     return [row_to_entry(row) for row in rows]
 
 
-# TODO: manually test that processors work correctly
 async def get_entries_after_pointer(
     created_at: datetime.datetime, entry_id: EntryId, limit: int
 ) -> list[tuple[EntryId, datetime.datetime]]:
-    # TODO: index
     sql = """
     SELECT id, created_at FROM l_entries
     WHERE created_at > %(created_at)s OR
@@ -217,7 +210,6 @@ async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
     if offset is None:
         offset = settings.max_entries_per_feed
 
-    # TODO: index
     # TODO: refactor to use https://www.psycopg.org/psycopg3/docs/api/cursors.html#psycopg.Cursor.rowcount
     sql = """
     WITH cte AS (
@@ -243,7 +235,6 @@ async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
 
 
 async def tech_unlink_entry(entry_id: EntryId, feed_id: FeedId) -> None:
-    # TODO: index
     sql = """
     DELETE FROM l_feeds_to_entries
     WHERE feed_id = %(feed_id)s AND entry_id = %(entry_id)s

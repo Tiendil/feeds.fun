@@ -10,8 +10,6 @@ from yoyo import step
 
 __depends__ = {"20240928_02_lD7Bv-source-for-entries"}
 
-# TODO: add index on created_at?
-
 sql_create_feeds_to_entries_table = """
 CREATE TABLE l_feeds_to_entries (
     feed_id UUID NOT NULL,
