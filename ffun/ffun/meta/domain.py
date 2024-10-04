@@ -16,16 +16,14 @@ from ffun.parsers import entities as p_entities
 logger = logging.get_module_logger()
 
 
-# TODO: refactor to remove unlinked entries
-async def remove_entries(entries_ids: Iterable[EntryId]) -> int:
+# TODO: tests
+async def remove_entries(entries_ids: Iterable[EntryId]) -> None:
     """Remove entries and all related markers and relations."""
     entries_to_remove = list(entries_ids)
 
     await m_domain.remove_markers_for_entries(entries_to_remove)
     await o_domain.remove_relations_for_entries(entries_to_remove)
-    await l_domain.tech_remove_entries_by_ids(entries_to_remove)  # type: ignore
-
-    return len(entries_to_remove)
+    await l_domain.remove_entries_by_ids(entries_to_remove)
 
 
 # TODO: remove
@@ -66,3 +64,10 @@ async def add_feeds(feed_infos: list[p_entities.FeedInfo], user_id: uuid.UUID) -
 
     for feed_id in real_feeds_ids:
         await fl_domain.add_link(user_id=user_id, feed_id=feed_id)
+
+
+# TODO: tests
+async def clean_orphaned_entries(chunk: int) -> None:
+    orphanes = await l_domain.get_orphaned_entries(limit=chunk)
+
+    await remove_entries(orphanes)

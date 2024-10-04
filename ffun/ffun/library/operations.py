@@ -205,6 +205,10 @@ async def update_external_url(entity_id: EntryId, url: str) -> None:
     await execute(sql, {"entity_id": entity_id, "url": url})
 
 
+# TODO: fill orphaned_entries, if required
+# TODO: fully unlinked entry can be linked again before removing from l_entries
+#       we should do something with it
+# TODO: rename?
 async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
 
     if offset is None:
@@ -223,18 +227,65 @@ async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
     USING cte
     WHERE l_feeds_to_entries.feed_id = cte.feed_id
       AND l_feeds_to_entries.entry_id = cte.entry_id
-    RETURNING 1
+    RETURNING entry_id
     """
 
     result = await execute(sql, {"feed_id": feed_id, "offset": offset})
 
-    if result:
-        logger.info("feed_entries_tail_removed", feed_id=feed_id, entries_limit=offset, entries_removed=len(result))
-    else:
+    if not result:
         logger.info("feed_has_no_entries_tail", feed_id=feed_id, entries_limit=offset)
+        return
+
+    logger.info("feed_entries_tail_removed", feed_id=feed_id, entries_limit=offset, entries_removed=len(result))
+
+    potential_orphanes = [row["entry_id"] for row in result]
+
+    # TODO: tests
+    await mark_as_orphanes(potential_orphanes)
 
 
-async def tech_unlink_entry(entry_id: EntryId, feed_id: FeedId) -> None:
+# TODO: tests
+async def mark_as_orphanes(entry_ids: Iterable[EntryId]) -> None:
+    feed_links = await get_feed_links_for_entries(entry_ids)
+
+    orphans = [entry_id for entry_id in entry_ids if entry_id not in feed_links]
+
+    if not orphans:
+        return
+
+    await execute("INSERT INTO l_orphaned_entries (entry_id) VALUES %(orphans)s", {"orphans": orphans})
+
+
+# TODO: tests
+async def get_orphaned_entries(limit: int) -> list[EntryId]:
+    sql = """
+    SELECT entry_id
+    FROM l_orphaned_entries
+    LIMIT %(limit)s
+    """
+
+    rows = await execute(sql, {"limit": limit})
+
+    return [row["entry_id"] for row in rows]
+
+
+# TODO: tests
+# TODO: fully unlinked entry can be linked again before removing from l_entries
+#       we should do something with it
+@run_in_transaction
+async def remove_entries_by_ids(execute: ExecuteType, entry_ids: Iterable[EntryId]) -> None:
+    ids = list(entry_ids)
+
+    await execute("DELETE FROM l_feeds_to_entries WHERE entry_id = ANY(%(ids)s)", {"ids": ids})
+    await execute("DELETE FROM l_entries WHERE id = ANY(%(ids)s)", {"ids": ids})
+    await execute("DELETE FROM l_orphaned_entries WHERE entry_id = ANY(%(ids)s)", {"ids": ids})
+
+
+# TODO: fill orphaned_entries, if required
+# TODO: fully unlinked entry can be linked again before removing from l_entries
+#       we should do something with it
+# TODO: rename? to smth like tech_test_unlink_entry
+async def tech_test_unlink_entry(entry_id: EntryId, feed_id: FeedId) -> None:
     sql = """
     DELETE FROM l_feeds_to_entries
     WHERE feed_id = %(feed_id)s AND entry_id = %(entry_id)s
