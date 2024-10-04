@@ -3,7 +3,7 @@ from typing import Iterable
 
 from ffun.core import logging
 from ffun.domain.domain import new_feed_id
-from ffun.domain.entities import EntryId, FeedId
+from ffun.domain.entities import EntryId
 from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
@@ -26,23 +26,6 @@ async def remove_entries(entries_ids: Iterable[EntryId]) -> None:
     await m_domain.remove_markers_for_entries(entries_to_remove)
     await o_domain.remove_relations_for_entries(entries_to_remove)
     await l_domain.remove_entries_by_ids(entries_to_remove)
-
-
-# TODO: remove
-async def limit_entries_for_feed(feed_id: FeedId, limit: int | None = None) -> None:
-    """Remove oldest entries for feed to keep only `limit` entries."""
-    if limit is None:
-        limit = settings.max_entries_per_feed  # type: ignore  # noqa
-
-    entries_to_remove = await l_domain.tech_get_feed_entries_tail(feed_id=feed_id, offset=limit)  # type: ignore
-
-    if not entries_to_remove:
-        logger.info("feed_has_no_entries_tail", feed_id=feed_id, entries_limit=limit)
-        return
-
-    entries_removed = await remove_entries(entries_to_remove)
-
-    logger.info("feed_entries_tail_removed", feed_id=feed_id, entries_limit=limit, entries_removed=entries_removed)
 
 
 async def add_feeds(feed_infos: list[p_entities.FeedInfo], user_id: uuid.UUID) -> None:
@@ -68,8 +51,9 @@ async def add_feeds(feed_infos: list[p_entities.FeedInfo], user_id: uuid.UUID) -
         await fl_domain.add_link(user_id=user_id, feed_id=feed_id)
 
 
-# TODO: tests
-async def clean_orphaned_entries(chunk: int) -> None:
+async def clean_orphaned_entries(chunk: int) -> int:
     orphanes = await l_domain.get_orphaned_entries(limit=chunk)
 
     await remove_entries(orphanes)
+
+    return len(orphanes)
