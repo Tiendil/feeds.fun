@@ -16,7 +16,6 @@ from ffun.parsers import entities as p_entities
 logger = logging.get_module_logger()
 
 
-# TODO: tests
 # Note: fully unlinked entry can be linked again before removing from l_entries
 #       we should do something with it in the future, but it is ok for now
 #       there should not a lot of such cases

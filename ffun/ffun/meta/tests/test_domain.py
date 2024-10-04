@@ -17,12 +17,10 @@ from ffun.parsers import entities as p_entities
 
 
 class TestRemoveEntries:
-    @pytest.mark.xfail
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
         await remove_entries([])
 
-    @pytest.mark.xfail
     @pytest.mark.asyncio
     async def test_success(
         self,
