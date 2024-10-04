@@ -1,5 +1,6 @@
 import datetime
 from itertools import chain
+from unittest import mock
 
 import pytest
 import pytest_asyncio
@@ -24,6 +25,9 @@ from ffun.library.operations import (
     get_entries_by_filter,
     get_entries_by_ids,
     get_feed_links_for_entries,
+    get_orphaned_entries,
+    remove_entries_by_ids,
+    try_mark_as_orphanes,
     unlink_feed_tail,
     update_external_url,
 )
@@ -481,7 +485,7 @@ class TestUnlinkFeedTail:
         assert {entry.id for entry in feed_entries} == {entry.id for entry in entries}
 
     @pytest.mark.asyncio
-    async def test_offset(self, loaded_feed: Feed) -> None:
+    async def test_limit(self, loaded_feed: Feed) -> None:
         entries = await make.n_entries_list(loaded_feed, n=15)
 
         with capture_logs() as logs:
@@ -495,7 +499,103 @@ class TestUnlinkFeedTail:
 
         assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:10]}
 
+        orphaned_entries = await get_orphaned_entries(limit=100500)
 
-# this function is used in tests => validated in them
-class TestTechUnlinkEntry:
-    pass
+        assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries[10:]}
+
+
+class TestRemoveEntriesByIds:
+
+    @pytest.mark.asyncio
+    async def test_no_entries_in_request(self) -> None:
+        async with TableSizeNotChanged("l_orphaned_entries"):
+            await remove_entries_by_ids([new_entry_id()])
+
+    @pytest.mark.asyncio
+    async def test_no_entries_to_remove(self) -> None:
+        async with TableSizeNotChanged("l_orphaned_entries"):
+            await remove_entries_by_ids([])
+
+    @pytest.mark.asyncio
+    async def test_remove(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=10)
+
+        await catalog_entries(another_loaded_feed.id, entries[2:7])
+
+        await unlink_feed_tail(loaded_feed.id, 6)
+
+        # 0,1 entries goes to orphanes
+        # 2,3 is linked only to another_loaded_feed
+        # 4,5,6 is linked to both feeds
+        # 7,8,9 is linked only to loaded_feed
+
+        entries_to_remove = [entries[0].id, entries[3].id, entries[5].id, entries[6].id, entries[8].id]
+
+        async with TableSizeDelta("l_orphaned_entries", delta=-1):
+            async with TableSizeDelta("l_feeds_to_entries", delta=-6):
+                async with TableSizeDelta("l_entries", delta=-5):
+                    await remove_entries_by_ids(entries_to_remove)
+
+
+class TestGetOrphanedEntries:
+
+    @pytest_asyncio.fixture(autouse=True)
+    async def cleanup_orphaned_entries(self) -> None:
+        await execute("DELETE FROM l_orphaned_entries")
+
+    @pytest.mark.asyncio
+    async def test_no_orphaned_entries(self) -> None:
+        assert await get_orphaned_entries(limit=100) == set()
+
+    @pytest.mark.asyncio
+    async def test_zero_limit(self) -> None:
+        assert await get_orphaned_entries(limit=0) == set()
+
+    @pytest.mark.asyncio
+    async def test_orphaned_entries(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=5)
+
+        await unlink_feed_tail(loaded_feed.id, 2)
+
+        assert await get_orphaned_entries(limit=100) == {entry.id for entry in entries[2:]}
+
+    @pytest.mark.asyncio
+    async def test_limit(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=5)
+
+        await unlink_feed_tail(loaded_feed.id, 1)
+
+        orphaned_entries = await get_orphaned_entries(limit=2)
+
+        assert len(orphaned_entries) == 2
+
+        assert len(orphaned_entries & {entry.id for entry in entries[1:]}) == 2
+
+
+class TestTryMarkAsOrphanes:
+
+    @pytest.mark.asyncio
+    async def test_no_entries(self) -> None:
+        async with TableSizeNotChanged("l_orphaned_entries"):
+            await try_mark_as_orphanes([])
+
+    @pytest.mark.asyncio
+    async def test_no_orphanes_found(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=3)
+
+        async with TableSizeNotChanged("l_orphaned_entries"):
+            await try_mark_as_orphanes([entry.id for entry in entries])
+
+    @pytest.mark.asyncio
+    async def test_orphanes_found(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=5)
+
+        with mock.patch("ffun.library.operations.try_mark_as_orphanes"):
+            await unlink_feed_tail(loaded_feed.id, 3)
+
+        async with TableSizeDelta("l_orphaned_entries", delta=2):
+            await try_mark_as_orphanes([entry.id for entry in entries])
+
+        orphaned_entries = await get_orphaned_entries(limit=100500)
+
+        assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries[3:]}

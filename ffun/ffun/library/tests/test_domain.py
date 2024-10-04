@@ -73,7 +73,7 @@ class TestGetFeedsForEntry:
     async def test_no_feeds(self, new_entry: Entry, loaded_feed: Feed) -> None:
         await operations.catalog_entries(loaded_feed.id, [new_entry])
 
-        await operations.tech_unlink_entry(new_entry.id, loaded_feed.id)
+        await operations.unlink_feed_tail(loaded_feed.id, 0)
 
         feeds = await get_feeds_for_entry(new_entry.id)
 

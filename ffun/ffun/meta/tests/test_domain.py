@@ -2,27 +2,26 @@ import uuid
 from itertools import chain
 
 import pytest
+import pytest_asyncio
 
-from ffun.domain.domain import new_feed_id
+from ffun.core.postgresql import execute
 from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
-from ffun.meta.domain import add_feeds, limit_entries_for_feed, remove_entries
+from ffun.meta.domain import add_feeds, clean_orphaned_entries, remove_entries
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import ProcessorTag
 from ffun.parsers import entities as p_entities
 
 
 class TestRemoveEntries:
-    @pytest.mark.xfail
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
         await remove_entries([])
 
-    @pytest.mark.xfail
     @pytest.mark.asyncio
     async def test_success(
         self,
@@ -75,40 +74,6 @@ class TestRemoveEntries:
         }
 
 
-class TestLimitEntriesForFeed:
-    @pytest.mark.xfail
-    @pytest.mark.asyncio
-    async def test_no_feed(self) -> None:
-        await limit_entries_for_feed(new_feed_id(), limit=10)
-
-    @pytest.mark.xfail
-    @pytest.mark.asyncio
-    async def test_no_entries(self, loaded_feed: Feed) -> None:
-        await limit_entries_for_feed(loaded_feed.id, limit=10)
-
-    @pytest.mark.xfail
-    @pytest.mark.asyncio
-    async def test_not_exceed_limit(self, loaded_feed: Feed) -> None:
-        entries = await l_make.n_entries_list(loaded_feed, 3)
-
-        await limit_entries_for_feed(loaded_feed.id, limit=10)
-
-        loaded_entries = await l_domain.get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
-
-        assert loaded_entries == entries
-
-    @pytest.mark.xfail
-    @pytest.mark.asyncio
-    async def test_exceed_limit(self, loaded_feed: Feed) -> None:
-        entries = await l_make.n_entries_list(loaded_feed, 10)
-
-        await limit_entries_for_feed(loaded_feed.id, limit=5)
-
-        loaded_entries = await l_domain.get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
-
-        assert loaded_entries == entries[:5]
-
-
 class TestAddFeeds:
 
     @pytest.mark.asyncio
@@ -151,3 +116,30 @@ class TestAddFeeds:
 
         for feed in chain(feeds_1, feeds_2):
             assert feed.source_id == source_ids[source_uids[feed.url]]
+
+
+# test that everything is connected correctly
+# detailed cases are covered in tests of functioned called in clean_orphaned_entries
+class TestCleanOrphanedEntries:
+
+    @pytest_asyncio.fixture(autouse=True)
+    async def cleanup_orphaned_entries(self) -> None:
+        await execute("DELETE FROM l_orphaned_entries")
+
+    @pytest.mark.asyncio
+    async def test(self, loaded_feed: Feed) -> None:
+        entries = await l_make.n_entries_list(loaded_feed, n=10)
+
+        await l_domain.unlink_feed_tail(loaded_feed.id, offset=3)
+
+        removed_1 = await clean_orphaned_entries(chunk=5)
+
+        assert removed_1 == 5
+
+        removed_2 = await clean_orphaned_entries(chunk=5)
+
+        assert removed_2 == 2
+
+        loaded_entries = await l_domain.get_entries_by_ids([entry.id for entry in entries])
+
+        assert loaded_entries == {entry.id: entry for entry in entries[:3]} | {entry.id: None for entry in entries[3:]}
