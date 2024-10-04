@@ -3,6 +3,8 @@ from itertools import chain
 
 import pytest
 import pytest_asyncio
+from unittest import mock
+
 from structlog.testing import capture_logs
 
 from ffun.core import utils
@@ -28,6 +30,7 @@ from ffun.library.operations import (
     update_external_url,
     remove_entries_by_ids,
     get_orphaned_entries,
+    try_mark_as_orphanes,
 )
 from ffun.library.tests import make
 
@@ -564,3 +567,32 @@ class TestGetOrphanedEntries:
         assert len(found_entries) == 2
 
         assert len(found_entries & {entry.id for entry in entries[1:]}) == 2
+
+
+class TestTryMarkAsOrphanes:
+
+    @pytest.mark.asyncio
+    async def test_no_entries(self) -> None:
+        async with TableSizeNotChanged("l_orphaned_entries"):
+            await try_mark_as_orphanes([])
+
+    @pytest.mark.asyncio
+    async def test_no_orphanes_found(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=3)
+
+        async with TableSizeNotChanged("l_orphaned_entries"):
+            await try_mark_as_orphanes([entry.id for entry in entries])
+
+    @pytest.mark.asyncio
+    async def test_orphanes_found(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=5)
+
+        with mock.patch("ffun.library.operations.try_mark_as_orphanes"):
+            await unlink_feed_tail(loaded_feed.id, 3)
+
+        async with TableSizeDelta("l_orphaned_entries", delta=2):
+            await try_mark_as_orphanes([entry.id for entry in entries])
+
+        found_entries = await get_orphaned_entries(limit=100500)
+
+        assert found_entries & {entry.id for entry in entries} == {entry.id for entry in entries[3:]}

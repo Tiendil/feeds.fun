@@ -240,7 +240,6 @@ async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
     await try_mark_as_orphanes(potential_orphanes)
 
 
-# TODO: tests
 async def try_mark_as_orphanes(entry_ids: Iterable[EntryId]) -> None:
     feed_links = await get_feed_links_for_entries(entry_ids)
 
