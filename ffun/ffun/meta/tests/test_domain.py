@@ -2,7 +2,9 @@ import uuid
 from itertools import chain
 
 import pytest
+import pytest_asyncio
 
+from ffun.core.postgresql import execute
 from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
@@ -119,6 +121,10 @@ class TestAddFeeds:
 # test that everything is connected correctly
 # detailed cases are covered in tests of functioned called in clean_orphaned_entries
 class TestCleanOrphanedEntries:
+
+    @pytest_asyncio.fixture(autouse=True)
+    async def cleanup_orphaned_entries(self) -> None:
+        await execute("DELETE FROM l_orphaned_entries")
 
     @pytest.mark.asyncio
     async def test(self, loaded_feed: Feed) -> None:
