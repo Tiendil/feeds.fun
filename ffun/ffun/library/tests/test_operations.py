@@ -1,10 +1,9 @@
 import datetime
 from itertools import chain
+from unittest import mock
 
 import pytest
 import pytest_asyncio
-from unittest import mock
-
 from structlog.testing import capture_logs
 
 from ffun.core import utils
@@ -26,11 +25,11 @@ from ffun.library.operations import (
     get_entries_by_filter,
     get_entries_by_ids,
     get_feed_links_for_entries,
+    get_orphaned_entries,
+    remove_entries_by_ids,
+    try_mark_as_orphanes,
     unlink_feed_tail,
     update_external_url,
-    remove_entries_by_ids,
-    get_orphaned_entries,
-    try_mark_as_orphanes,
 )
 from ffun.library.tests import make
 

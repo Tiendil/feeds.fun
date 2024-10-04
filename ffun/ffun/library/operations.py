@@ -1,7 +1,9 @@
 import datetime
 import uuid
 from typing import Any, AsyncGenerator, Iterable
+
 from pypika import PostgreSQLQuery
+
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain.entities import EntryId, FeedId

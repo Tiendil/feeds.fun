@@ -1,6 +1,4 @@
 import asyncio
-import pathlib
-from collections import Counter
 
 import typer
 

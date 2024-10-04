@@ -3,14 +3,13 @@ from itertools import chain
 
 import pytest
 
-from ffun.domain.domain import new_feed_id
 from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
-from ffun.meta.domain import add_feeds, remove_entries, clean_orphaned_entries
+from ffun.meta.domain import add_feeds, clean_orphaned_entries, remove_entries
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import ProcessorTag
 from ffun.parsers import entities as p_entities
@@ -135,14 +134,6 @@ class TestCleanOrphanedEntries:
 
         assert removed_2 == 2
 
-        loaded_entries = await l_domain.get_entries_by_ids(
-            [entry.id for entry in entries]
-        )
+        loaded_entries = await l_domain.get_entries_by_ids([entry.id for entry in entries])
 
-        assert loaded_entries == {
-            entry.id: entry
-            for entry in entries[:3]
-        } | {
-            entry.id: None
-            for entry in entries[3:]
-        }
+        assert loaded_entries == {entry.id: entry for entry in entries[:3]} | {entry.id: None for entry in entries[3:]}
