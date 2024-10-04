@@ -236,7 +236,6 @@ async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
 
     potential_orphanes = [row["entry_id"] for row in result]
 
-    # TODO: tests
     await try_mark_as_orphanes(potential_orphanes)
 
 

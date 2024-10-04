@@ -486,7 +486,7 @@ class TestUnlinkFeedTail:
         assert {entry.id for entry in feed_entries} == {entry.id for entry in entries}
 
     @pytest.mark.asyncio
-    async def test_offset(self, loaded_feed: Feed) -> None:
+    async def test_limit(self, loaded_feed: Feed) -> None:
         entries = await make.n_entries_list(loaded_feed, n=15)
 
         with capture_logs() as logs:
@@ -499,6 +499,10 @@ class TestUnlinkFeedTail:
         feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
 
         assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:10]}
+
+        orphaned_entries = await get_orphaned_entries(limit=100500)
+
+        assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries[10:]}
 
 
 class TestRemoveEntriesByIds:
@@ -562,11 +566,11 @@ class TestGetOrphanedEntries:
 
         await unlink_feed_tail(loaded_feed.id, 1)
 
-        found_entries = await get_orphaned_entries(limit=2)
+        orphaned_entries = await get_orphaned_entries(limit=2)
 
-        assert len(found_entries) == 2
+        assert len(orphaned_entries) == 2
 
-        assert len(found_entries & {entry.id for entry in entries[1:]}) == 2
+        assert len(orphaned_entries & {entry.id for entry in entries[1:]}) == 2
 
 
 class TestTryMarkAsOrphanes:
@@ -593,6 +597,6 @@ class TestTryMarkAsOrphanes:
         async with TableSizeDelta("l_orphaned_entries", delta=2):
             await try_mark_as_orphanes([entry.id for entry in entries])
 
-        found_entries = await get_orphaned_entries(limit=100500)
+        orphaned_entries = await get_orphaned_entries(limit=100500)
 
-        assert found_entries & {entry.id for entry in entries} == {entry.id for entry in entries[3:]}
+        assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries[3:]}
