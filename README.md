@@ -153,6 +153,8 @@ FFUN_AUTH_SUPERTOKENS__CONNECTION_URI=...
 FFUN_USER_SETTINGS_SECRET_KEY=...
 ```
 
+If you want to periodically clean your database from old entries, add the call `ffun cleaner clean` to your cron tasks. **It is recommended.**
+
 More details see in the architecture section.
 
 ## Frontend

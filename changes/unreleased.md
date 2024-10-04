@@ -2,7 +2,8 @@
 
 1. Run migrations `ffun migrate`
 2. Run `ffun user-settings remove-deprecated-settings`
-3. Specify a custom configuration file for tag processors. If you are using an OpenAI tag processor. Details can be found in the updated README.md
+3. If you are using an OpenAI tag processor, specify a custom configuration file for tag processors with an API key. Details can be found in the updated README.md
+4. If you want to periodically clean your database from old entries, add the call `ffun cleaner clean` to your cron tasks. It is recommended.
 
 Changes:
 
