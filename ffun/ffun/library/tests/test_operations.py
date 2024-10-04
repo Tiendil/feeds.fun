@@ -27,6 +27,7 @@ from ffun.library.operations import (
     unlink_feed_tail,
     update_external_url,
     remove_entries_by_ids,
+    get_orphaned_entries,
 )
 from ffun.library.tests import make
 
@@ -528,3 +529,38 @@ class TestRemoveEntriesByIds:
             async with TableSizeDelta("l_feeds_to_entries", delta=-6):
                 async with TableSizeDelta("l_entries", delta=-5):
                     await remove_entries_by_ids(entries_to_remove)
+
+
+class TestGetOrphanedEntries:
+
+    @pytest_asyncio.fixture(autouse=True)
+    async def cleanup_orphaned_entries(self) -> None:
+        await execute("DELETE FROM l_orphaned_entries")
+
+    @pytest.mark.asyncio
+    async def test_no_orphaned_entries(self) -> None:
+        assert await get_orphaned_entries(limit=100) == set()
+
+    @pytest.mark.asyncio
+    async def test_zero_limit(self) -> None:
+        assert await get_orphaned_entries(limit=0) == set()
+
+    @pytest.mark.asyncio
+    async def test_orphaned_entries(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=5)
+
+        await unlink_feed_tail(loaded_feed.id, 2)
+
+        assert await get_orphaned_entries(limit=100) == {entry.id for entry in entries[2:]}
+
+    @pytest.mark.asyncio
+    async def test_limit(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=5)
+
+        await unlink_feed_tail(loaded_feed.id, 1)
+
+        found_entries = await get_orphaned_entries(limit=2)
+
+        assert len(found_entries) == 2
+
+        assert len(found_entries & {entry.id for entry in entries[1:]}) == 2

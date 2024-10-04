@@ -205,10 +205,6 @@ async def update_external_url(entity_id: EntryId, url: str) -> None:
     await execute(sql, {"entity_id": entity_id, "url": url})
 
 
-# TODO: fill orphaned_entries, if required
-# TODO: fully unlinked entry can be linked again before removing from l_entries
-#       we should do something with it
-# TODO: rename?
 async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
 
     if offset is None:
@@ -244,6 +240,7 @@ async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
     await try_mark_as_orphanes(potential_orphanes)
 
 
+# TODO: tests
 async def try_mark_as_orphanes(entry_ids: Iterable[EntryId]) -> None:
     feed_links = await get_feed_links_for_entries(entry_ids)
 
@@ -262,8 +259,7 @@ async def try_mark_as_orphanes(entry_ids: Iterable[EntryId]) -> None:
     await execute(str(query))
 
 
-# TODO: tests
-async def get_orphaned_entries(limit: int) -> list[EntryId]:
+async def get_orphaned_entries(limit: int) -> set[EntryId]:
     sql = """
     SELECT entry_id
     FROM l_orphaned_entries
@@ -272,10 +268,9 @@ async def get_orphaned_entries(limit: int) -> list[EntryId]:
 
     rows = await execute(sql, {"limit": limit})
 
-    return [row["entry_id"] for row in rows]
+    return {row["entry_id"] for row in rows}
 
 
-# TODO: tests
 @run_in_transaction
 async def remove_entries_by_ids(execute: ExecuteType, entry_ids: Iterable[EntryId]) -> None:
     ids = list(entry_ids)

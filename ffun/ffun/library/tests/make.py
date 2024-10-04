@@ -46,6 +46,7 @@ async def n_entries_list(feed: Feed, n: int) -> list[Entry]:
 
     result = list(entries.values())
 
+    # from newest to oldest
     result.sort(key=lambda entry: entry.cataloged_at, reverse=True)
 
     return result
