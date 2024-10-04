@@ -279,16 +279,3 @@ async def remove_entries_by_ids(execute: ExecuteType, entry_ids: Iterable[EntryI
     await execute("DELETE FROM l_feeds_to_entries WHERE entry_id = ANY(%(ids)s)", {"ids": ids})
     await execute("DELETE FROM l_entries WHERE id = ANY(%(ids)s)", {"ids": ids})
     await execute("DELETE FROM l_orphaned_entries WHERE entry_id = ANY(%(ids)s)", {"ids": ids})
-
-
-# TODO: fill orphaned_entries, if required
-# TODO: fully unlinked entry can be linked again before removing from l_entries
-#       we should do something with it
-# TODO: rename? to smth like tech_test_unlink_entry
-async def tech_test_unlink_entry(entry_id: EntryId, feed_id: FeedId) -> None:
-    sql = """
-    DELETE FROM l_feeds_to_entries
-    WHERE feed_id = %(feed_id)s AND entry_id = %(entry_id)s
-    """
-
-    await execute(sql, {"entry_id": entry_id, "feed_id": feed_id})
