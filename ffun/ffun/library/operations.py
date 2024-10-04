@@ -1,7 +1,7 @@
 import datetime
 import uuid
 from typing import Any, AsyncGenerator, Iterable
-
+from pypika import PostgreSQLQuery
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain.entities import EntryId, FeedId
@@ -227,7 +227,7 @@ async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
     USING cte
     WHERE l_feeds_to_entries.feed_id = cte.feed_id
       AND l_feeds_to_entries.entry_id = cte.entry_id
-    RETURNING entry_id
+    RETURNING l_feeds_to_entries.entry_id AS entry_id
     """
 
     result = await execute(sql, {"feed_id": feed_id, "offset": offset})
@@ -241,11 +241,10 @@ async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
     potential_orphanes = [row["entry_id"] for row in result]
 
     # TODO: tests
-    await mark_as_orphanes(potential_orphanes)
+    await try_mark_as_orphanes(potential_orphanes)
 
 
-# TODO: tests
-async def mark_as_orphanes(entry_ids: Iterable[EntryId]) -> None:
+async def try_mark_as_orphanes(entry_ids: Iterable[EntryId]) -> None:
     feed_links = await get_feed_links_for_entries(entry_ids)
 
     orphans = [entry_id for entry_id in entry_ids if entry_id not in feed_links]
@@ -253,7 +252,14 @@ async def mark_as_orphanes(entry_ids: Iterable[EntryId]) -> None:
     if not orphans:
         return
 
-    await execute("INSERT INTO l_orphaned_entries (entry_id) VALUES %(orphans)s", {"orphans": orphans})
+    query = PostgreSQLQuery.into("l_orphaned_entries").columns("entry_id")
+
+    for entry_id in orphans:
+        query = query.insert(entry_id)
+
+    query = query.on_conflict("entry_id").do_nothing()
+
+    await execute(str(query))
 
 
 # TODO: tests
@@ -270,8 +276,6 @@ async def get_orphaned_entries(limit: int) -> list[EntryId]:
 
 
 # TODO: tests
-# TODO: fully unlinked entry can be linked again before removing from l_entries
-#       we should do something with it
 @run_in_transaction
 async def remove_entries_by_ids(execute: ExecuteType, entry_ids: Iterable[EntryId]) -> None:
     ids = list(entry_ids)

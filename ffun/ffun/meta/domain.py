@@ -17,6 +17,9 @@ logger = logging.get_module_logger()
 
 
 # TODO: tests
+# Note: fully unlinked entry can be linked again before removing from l_entries
+#       we should do something with it in the future, but it is ok for now
+#       there should not a lot of such cases
 async def remove_entries(entries_ids: Iterable[EntryId]) -> None:
     """Remove entries and all related markers and relations."""
     entries_to_remove = list(entries_ids)

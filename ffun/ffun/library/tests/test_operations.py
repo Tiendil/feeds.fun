@@ -26,6 +26,7 @@ from ffun.library.operations import (
     get_feed_links_for_entries,
     unlink_feed_tail,
     update_external_url,
+    remove_entries_by_ids,
 )
 from ffun.library.tests import make
 
@@ -496,6 +497,34 @@ class TestUnlinkFeedTail:
         assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:10]}
 
 
-# this function is used in tests => validated in them
-class TestTechUnlinkEntry:
-    pass
+class TestRemoveEntriesByIds:
+
+    @pytest.mark.asyncio
+    async def test_no_entries_in_request(self) -> None:
+        async with TableSizeNotChanged("l_orphaned_entries"):
+            await remove_entries_by_ids([new_entry_id()])
+
+    @pytest.mark.asyncio
+    async def test_no_entries_to_remove(self) -> None:
+        async with TableSizeNotChanged("l_orphaned_entries"):
+            await remove_entries_by_ids([])
+
+    @pytest.mark.asyncio
+    async def test_remove(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=10)
+
+        await catalog_entries(another_loaded_feed.id, entries[2:7])
+
+        await unlink_feed_tail(loaded_feed.id, 6)
+
+        # 0,1 entries goes to orphanes
+        # 2,3 is linked only to another_loaded_feed
+        # 4,5,6 is linked to both feeds
+        # 7,8,9 is linked only to loaded_feed
+
+        entries_to_remove = [entries[0].id, entries[3].id, entries[5].id, entries[6].id, entries[8].id]
+
+        async with TableSizeDelta("l_orphaned_entries", delta=-1):
+            async with TableSizeDelta("l_feeds_to_entries", delta=-6):
+                async with TableSizeDelta("l_entries", delta=-5):
+                    await remove_entries_by_ids(entries_to_remove)
