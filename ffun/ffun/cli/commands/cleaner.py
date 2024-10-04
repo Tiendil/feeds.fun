@@ -13,11 +13,11 @@ logger = logging.get_module_logger()
 cli_app = typer.Typer()
 
 
-async def run_cleaner(chunk: int) -> None:
+async def run_clean(chunk: int) -> None:
     async with with_app():
         await clean_orphaned_entries(chunk=chunk)
 
 
 @cli_app.command()
-def cleaner(chunk: int = 1000) -> None:
-    asyncio.run(run_cleaner(chunk=chunk))
+def clean(chunk: int = 1000) -> None:
+    asyncio.run(run_clean(chunk=chunk))
