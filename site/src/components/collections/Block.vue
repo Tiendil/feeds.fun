@@ -15,6 +15,13 @@
         class="ffun-form-button"
         >Subscribe</button
       >
+
+      <button
+        type="button"
+        class="ffun-form-button ml-2"
+        @click.prevent="router.push({name: e.MainPanelMode.Collections, params: {}})"
+        >Explore Feeds Library
+      </button>
     </form>
 
     <collections-subscribing-progress
@@ -25,7 +32,8 @@
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref} from "vue";
+  import {useRouter, RouterLink, RouterView} from "vue-router";
+  import {computed, ref, watch} from "vue";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import * as api from "@/logic/api";
@@ -35,15 +43,25 @@
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useCollectionsStore} from "@/stores/collections";
 
+  const router = useRouter();
+
   const loading = ref(false);
   const loaded = ref(false);
   const error = ref(false);
 
-  const selectedCollections = ref<t.CollectionId[]>([]);
-
   const globalSettings = useGlobalSettingsStore();
 
   const collections = useCollectionsStore();
+
+  const selectedCollections = ref<t.CollectionId[]>([]);
+
+  watch(
+    () => collections.collectionsOrder,
+    (newOrder) => {
+      selectedCollections.value.push(...newOrder);
+    },
+    {once: true}
+  );
 
   async function subscribe() {
     loading.value = true;

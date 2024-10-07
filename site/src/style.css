@@ -37,23 +37,23 @@
   }
 
   .ffun-info-common {
-    @apply border-2 p-2 my-1 rounded;
+    @apply border-2 p-2 my-1 rounded border-slate-200;
   }
 
   .ffun-info-good {
-    @apply ffun-info-common border-green-300 bg-green-50;
+    @apply ffun-info-common bg-green-50;
   }
 
   .ffun-info-bad {
-    @apply ffun-info-common border-red-300 bg-red-50;
+    @apply ffun-info-common bg-red-50;
   }
 
   .ffun-info-warning {
-    @apply ffun-info-common border-orange-300 bg-orange-50;
+    @apply ffun-info-common bg-orange-50;
   }
 
   .ffun-info-attention {
-    @apply ffun-info-common border-purple-300 bg-purple-50;
+    @apply ffun-info-common bg-purple-50;
   }
 
   .ffun-header-link {
