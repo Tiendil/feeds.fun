@@ -20,7 +20,7 @@
         type="button"
         class="ffun-form-button ml-2"
         @click.prevent="router.push({name: e.MainPanelMode.Collections, params: {}})"
-        >See all feeds
+        >Explore Feeds Library
       </button>
 
     </form>
