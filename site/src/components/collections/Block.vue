@@ -11,7 +11,7 @@
       </ul>
 
       <button
-        type="submit bg-black"
+        type="submit"
         class="ffun-form-button"
         >Subscribe</button
       >
@@ -22,7 +22,6 @@
         @click.prevent="router.push({name: e.MainPanelMode.Collections, params: {}})"
         >Explore Feeds Library
       </button>
-
     </form>
 
     <collections-subscribing-progress
@@ -42,7 +41,7 @@
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
-import {useCollectionsStore} from "@/stores/collections";
+  import {useCollectionsStore} from "@/stores/collections";
 
   const router = useRouter();
 
@@ -52,17 +51,17 @@ import {useCollectionsStore} from "@/stores/collections";
 
   const globalSettings = useGlobalSettingsStore();
 
-const collections = useCollectionsStore();
+  const collections = useCollectionsStore();
 
-const selectedCollections = ref<t.CollectionId[]>([]);
+  const selectedCollections = ref<t.CollectionId[]>([]);
 
-watch(() => collections.collectionsOrder,
-      (newOrder) => {
-        selectedCollections.value.push(...newOrder);
-  },
-      {once: true}
-);
-
+  watch(
+    () => collections.collectionsOrder,
+    (newOrder) => {
+      selectedCollections.value.push(...newOrder);
+    },
+    {once: true}
+  );
 
   async function subscribe() {
     loading.value = true;

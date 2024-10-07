@@ -37,7 +37,7 @@
   }
 
   .ffun-info-common {
-    @apply border-2 p-2 my-1 rounded border-slate-200 ;
+    @apply border-2 p-2 my-1 rounded border-slate-200;
   }
 
   .ffun-info-good {
