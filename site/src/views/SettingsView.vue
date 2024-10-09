@@ -90,6 +90,7 @@
   // TODO: refactor, this is the temporary code to display settings in the right order
   const settingsOrder = [
     "hide_message_about_setting_up_key",
+    "hide_message_about_adding_collections",
     "openai_api_key",
     "gemini_api_key",
     "max_tokens_cost_in_month",

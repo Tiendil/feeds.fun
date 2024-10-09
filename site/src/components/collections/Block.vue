@@ -22,6 +22,11 @@
         @click.prevent="router.push({name: e.MainPanelMode.Collections, params: {}})"
         >Explore Feeds Library
       </button>
+
+      <user-setting-for-notification
+        class="ml-2"
+        kind="hide_message_about_adding_collections"
+        button-text="Hide this message" />
     </form>
 
     <collections-subscribing-progress
@@ -55,6 +60,10 @@
 
   const selectedCollections = ref<t.CollectionId[]>([]);
 
+  // fill selectedCollections in case collections are already loaded
+  selectedCollections.value.push(...collections.collectionsOrder);
+
+  // fill selectedCollections in case collections are not loaded yet
   watch(
     () => collections.collectionsOrder,
     (newOrder) => {

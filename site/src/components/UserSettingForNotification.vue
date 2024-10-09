@@ -2,7 +2,7 @@
   <button
     v-if="setting"
     @click.prevent="updateFlag(true)"
-    class="ffun-form-button"
+    class="ffun-normal-link"
     >{{ text }}</button
   >
 </template>
