@@ -28,8 +28,11 @@
   });
 
   const showCollectionsNotification = computed(() => {
-    return (properties.collections &&
-            !globalSettings.userSettings.hide_message_about_adding_collections.value);
+    return (
+      properties.collections &&
+      globalSettings.userSettings &&
+      !globalSettings.userSettings.hide_message_about_adding_collections.value
+    );
   });
 
   const showCreateRuleHelpNotification = computed(() => {
