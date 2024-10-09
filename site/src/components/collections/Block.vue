@@ -53,8 +53,12 @@
 
   const collections = useCollectionsStore();
 
-  const selectedCollections = ref<t.CollectionId[]>([]);
+const selectedCollections = ref<t.CollectionId[]>([]);
 
+// fill selectedCollections in case collections are already loaded
+selectedCollections.value.push(...collections.collectionsOrder);
+
+// fill selectedCollections in case collections are not loaded yet
   watch(
     () => collections.collectionsOrder,
     (newOrder) => {
