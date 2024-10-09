@@ -1,15 +1,22 @@
 <template>
   <div class="ffun-info-attention">
-    <p> Feeds Fun provides tags for feeds from collections for free. </p>
-    <p> Please, set up your own OpenAI and/or Gemini API keys to tag your personal feeds. </p>
     <p>
-      You can do this on the
+      Feeds Fun provides tags for feeds from
       <a
         href="#"
-        @click.prevent="router.push({name: e.MainPanelMode.Settings, params: {}})"
-        >settings</a
+        @click.prevent="goToCollections()"
+        >collections</a
       >
-      page.
+      for free.
+    </p>
+    <p>
+      Please
+      <a
+        href="#"
+        @click.prevent="goToSettings()"
+        >set up</a
+      >
+      your own OpenAI and/or Gemini API keys to tag your personal feeds.
     </p>
 
     <user-setting-for-notification
@@ -23,4 +30,12 @@
   import * as e from "@/logic/enums";
 
   const router = useRouter();
+
+  function goToCollections() {
+    router.push({name: e.MainPanelMode.Collections, params: {}});
+  }
+
+  function goToSettings() {
+    router.push({name: e.MainPanelMode.Settings, params: {}});
+  }
 </script>
