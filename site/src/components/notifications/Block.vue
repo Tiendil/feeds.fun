@@ -1,7 +1,7 @@
 <template>
-  <notification-api-key v-if="showAPIKeyNotification" />
+  <notifications-api-key v-if="showAPIKeyNotification" />
   <collections-notification v-if="showCollectionsNotification" />
-  <notification-create-rule-help v-if="showCreateRuleHelpNotification" />
+  <notifications-create-rule-help v-if="showCreateRuleHelpNotification" />
 </template>
 
 <script lang="ts" setup>

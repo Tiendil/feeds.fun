@@ -25,11 +25,12 @@ import SimplePagination from "./components/SimplePagination.vue";
 import UserSetting from "./components/UserSetting.vue";
 import TokensCost from "./components/TokensCost.vue";
 import FaviconElement from "./components/FaviconElement.vue";
-import NotificationApiKey from "./components/NotificationApiKey.vue";
-import NotificationCreateRuleHelp from "./components/NotificationCreateRuleHelp.vue";
-import Notifications from "./components/Notifications.vue";
 import RuleForList from "./components/RuleForList.vue";
 import UserSettingForNotification from "./components/UserSettingForNotification.vue";
+
+import NotificationsApiKey from "./components/notifications/ApiKey.vue";
+import NotificationsCreateRuleHelp from "./components/notifications/CreateRuleHelp.vue";
+import Notifications from "./components/notifications/Block.vue";
 
 import CollectionsNotification from "./components/collections/Notification.vue";
 import CollectionsBlock from "./components/collections/Block.vue";
@@ -74,11 +75,12 @@ app.component("SimplePagination", SimplePagination);
 app.component("UserSetting", UserSetting);
 app.component("TokensCost", TokensCost);
 app.component("FaviconElement", FaviconElement);
-app.component("NotificationApiKey", NotificationApiKey);
-app.component("NotificationCreateRuleHelp", NotificationCreateRuleHelp);
-app.component("Notifications", Notifications);
 app.component("RuleForList", RuleForList);
 app.component("UserSettingForNotification", UserSettingForNotification);
+
+app.component("NotificationsApiKey", NotificationsApiKey);
+app.component("NotificationsCreateRuleHelp", NotificationsCreateRuleHelp);
+app.component("Notifications", Notifications);
 
 app.component("CollectionsNotification", CollectionsNotification);
 app.component("CollectionsBlock", CollectionsBlock);
