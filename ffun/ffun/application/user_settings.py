@@ -23,6 +23,8 @@ class UserSetting(enum.IntEnum):
     gemini_api_key = 7
     test_api_key = 8
 
+    hide_message_about_adding_collections = 9
+
 
 _key_rules = """\
 Here's how your API key will be used:
@@ -132,5 +134,16 @@ user_settings.add(
         type=types.Integer(),
         default=1,
         description=description_process_entries_not_older_than,
+    )
+)
+
+
+user_settings.add(
+    Value(
+        key=UserSetting.hide_message_about_adding_collections,
+        name="Hide message about adding feeds from collections",
+        type=types.Boolean(),
+        default=False,
+        description=None,
     )
 )
