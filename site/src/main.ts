@@ -33,6 +33,7 @@ import NotificationsCreateRuleHelp from "./components/notifications/CreateRuleHe
 import Notifications from "./components/notifications/Block.vue";
 
 import CollectionsNotification from "./components/collections/Notification.vue";
+import CollectionsWarning from "./components/collections/Warning.vue";
 import CollectionsBlock from "./components/collections/Block.vue";
 import CollectionsBlockItem from "./components/collections/BlockItem.vue";
 import CollectionsDetailedItem from "./components/collections/DetailedItem.vue";
@@ -83,6 +84,7 @@ app.component("NotificationsCreateRuleHelp", NotificationsCreateRuleHelp);
 app.component("Notifications", Notifications);
 
 app.component("CollectionsNotification", CollectionsNotification);
+app.component("CollectionsWarning", CollectionsWarning);
 app.component("CollectionsBlock", CollectionsBlock);
 app.component("CollectionsBlockItem", CollectionsBlockItem);
 app.component("CollectionsDetailedItem", CollectionsDetailedItem);

@@ -34,7 +34,9 @@
       v-if="sortedFeeds !== null"
       :create-rule-help="false"
       :api-key="false"
-      :collections="sortedFeeds === null || sortedFeeds.length == 0" />
+      :collections-notification_="sortedFeeds === null || sortedFeeds.length == 0"
+      :collections-warning_="true"
+      />
 
     <feeds-list
       v-if="sortedFeeds"
@@ -64,7 +66,7 @@
     let sorted = Object.values(feedsStore.feeds);
 
     if (sorted.length === 0) {
-      return null;
+      return [];
     }
 
     const orderProperties = e.FeedsOrderProperties.get(globalSettings.feedsOrder);

@@ -49,7 +49,8 @@
       v-if="entriesStore.loadedEntriesReport !== null"
       :create-rule-help="hasEntries && !hasRules"
       :api-key="true"
-      :collections="!hasEntries" />
+      :collections-notification_="!hasEntries"
+      :collections-warning_="false"/>
 
     <entries-list
       :entriesIds="entriesReport"
