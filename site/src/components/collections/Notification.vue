@@ -1,7 +1,8 @@
 <template>
   <div class="ffun-info-attention">
-    <p>It looks like you have no news to read.</p>
-    <p> Try to subscribe for the feeds collections that we are preparing for you! </p>
+    <h3>It looks like your news feed is empty!</h3>
+    <p>But don't worry — we've prepared some ready-to-use thematic collections just for you. All the feeds in them are fully tagged.</p>
+    <p>Subscribe to some and enjoy the full power of Feeds Fun!</p>
     <collections-block />
   </div>
 </template>
