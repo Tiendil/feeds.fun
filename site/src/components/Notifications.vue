@@ -7,6 +7,7 @@
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch} from "vue";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
+  import {useCollectionsStore} from "@/stores/collections";
 
   const properties = defineProps<{
     apiKey: boolean;
@@ -14,6 +15,7 @@
     createRuleHelp: boolean;
   }>();
 
+  const collections = useCollectionsStore();
   const globalSettings = useGlobalSettingsStore();
 
   const showApiKeyMessage = computed(() => {
@@ -26,7 +28,8 @@
   });
 
   const showCollectionsNotification = computed(() => {
-    return properties.collections;
+    return (properties.collections &&
+            !globalSettings.userSettings.hide_message_about_adding_collections.value);
   });
 
   const showCreateRuleHelpNotification = computed(() => {
