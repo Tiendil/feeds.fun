@@ -2,6 +2,11 @@
   <side-panel-layout :reload-button="false">
     <template #main-header> Collections </template>
 
+    <div class="ffun-info-attention">
+      <p>We've prepared some ready-to-use thematic collections just for you. All the feeds in them are fully tagged free of charge.</p>
+      <p>Subscribe to some and enjoy the full power of Feeds Fun!</p>
+    </div>
+
     <div
       v-for="collectionId in collections.collectionsOrder"
       :key="collectionId"
