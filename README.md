@@ -6,7 +6,8 @@ News reader with tags & AI. Self-hosted, if it is your way.
 - You create rules to score news by tags.
 - Filter and sort news how you want ⇒ read only what you need.
 
-Site: [feeds.fun](https://feeds.fun) **Curated collections of feeds that are tagged for free!**
+Site: [feeds.fun](https://feeds.fun) with **curated collections of feeds that are tagged for free!**
+
 Blog: [blog.feeds.fun](https://blog.feeds.fun)
 
 # Screenshots
