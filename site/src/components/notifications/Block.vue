@@ -1,7 +1,8 @@
 <template>
-  <notification-api-key v-if="showAPIKeyNotification" />
+  <notifications-api-key v-if="showAPIKeyNotification" />
   <collections-notification v-if="showCollectionsNotification" />
-  <notification-create-rule-help v-if="showCreateRuleHelpNotification" />
+  <notifications-create-rule-help v-if="showCreateRuleHelpNotification" />
+  <collections-warning v-if="showCollectionsWarning" />
 </template>
 
 <script lang="ts" setup>
@@ -11,8 +12,9 @@
 
   const properties = defineProps<{
     apiKey: boolean;
-    collections: boolean;
     createRuleHelp: boolean;
+    collectionsNotification_: boolean;
+    collectionsWarning_: boolean;
   }>();
 
   const collections = useCollectionsStore();
@@ -29,7 +31,7 @@
 
   const showCollectionsNotification = computed(() => {
     return (
-      properties.collections &&
+      properties.collectionsNotification_ &&
       globalSettings.userSettings &&
       !globalSettings.userSettings.hide_message_about_adding_collections.value
     );
@@ -45,6 +47,15 @@
       !showCreateRuleHelpNotification.value &&
       properties.apiKey &&
       showApiKeyMessage.value
+    );
+  });
+
+  const showCollectionsWarning = computed(() => {
+    return (
+      properties.collectionsWarning_ &&
+      !showCollectionsNotification.value &&
+      globalSettings.userSettings &&
+      !globalSettings.userSettings.hide_message_check_your_feed_urls.value
     );
   });
 </script>

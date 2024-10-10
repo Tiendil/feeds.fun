@@ -24,6 +24,7 @@ class UserSetting(enum.IntEnum):
     test_api_key = 8
 
     hide_message_about_adding_collections = 9
+    hide_message_check_your_feed_urls = 10
 
 
 _key_rules = """\
@@ -127,6 +128,7 @@ user_settings.add(
     )
 )
 
+
 user_settings.add(
     Value(
         key=UserSetting.process_entries_not_older_than,
@@ -142,6 +144,17 @@ user_settings.add(
     Value(
         key=UserSetting.hide_message_about_adding_collections,
         name="Hide message about adding feeds from collections",
+        type=types.Boolean(),
+        default=False,
+        description=None,
+    )
+)
+
+
+user_settings.add(
+    Value(
+        key=UserSetting.hide_message_check_your_feed_urls,
+        name="Hide message about checking your feed URLs",
         type=types.Boolean(),
         default=False,
         description=None,

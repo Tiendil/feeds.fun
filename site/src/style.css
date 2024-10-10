@@ -36,8 +36,16 @@
     @apply text-blue-600 hover:text-blue-800 cursor-pointer;
   }
 
+  .ffun-normalized-text ul {
+    @apply list-disc list-inside;
+  }
+
+  .ffun-normalized-text code {
+    @apply bg-slate-800 px-1 rounded bg-opacity-10 text-sm;
+  }
+
   .ffun-info-common {
-    @apply border-2 p-2 my-1 rounded border-slate-200;
+    @apply ffun-normalized-text border-2 p-2 my-1 rounded border-slate-200;
   }
 
   .ffun-info-good {
@@ -90,9 +98,5 @@
 
   .ffun-checkbox {
     @apply ffun-input-common h-4 w-4 align-middle;
-  }
-
-  .ffun-normalized-text ul {
-    @apply list-disc list-inside;
   }
 }

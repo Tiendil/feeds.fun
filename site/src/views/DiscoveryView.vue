@@ -2,6 +2,12 @@
   <side-panel-layout :reload-button="false">
     <template #main-header> Discovery </template>
 
+    <notifications
+      :create-rule-help="false"
+      :api-key="false"
+      :collections-notification_="false"
+      :collections-warning_="true" />
+
     <h2>Lood feeds from an OPML file</h2>
 
     <opml-upload />

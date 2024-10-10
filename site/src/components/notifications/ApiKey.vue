@@ -1,15 +1,6 @@
 <template>
   <div class="ffun-info-attention">
     <p>
-      Feeds Fun provides tags for feeds from
-      <a
-        href="#"
-        @click.prevent="goToCollections()"
-        >collections</a
-      >
-      for free.
-    </p>
-    <p>
       Please
       <a
         href="#"
@@ -17,6 +8,16 @@
         >set up</a
       >
       your own OpenAI and/or Gemini API keys to tag your personal feeds.
+    </p>
+
+    <p>
+      Remember, Feeds Fun provides tags for feeds from
+      <a
+        href="#"
+        @click.prevent="goToCollections()"
+        >collections</a
+      >
+      for free. You do not need to set up your own API keys to have tags in news from collections.
     </p>
 
     <user-setting-for-notification
