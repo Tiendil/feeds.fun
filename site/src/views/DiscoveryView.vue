@@ -6,8 +6,7 @@
       :create-rule-help="false"
       :api-key="false"
       :collections-notification_="false"
-      :collections-warning_="true"
-      />
+      :collections-warning_="true" />
 
     <h2>Lood feeds from an OPML file</h2>
 

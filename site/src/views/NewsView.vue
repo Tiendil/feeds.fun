@@ -50,7 +50,7 @@
       :create-rule-help="hasEntries && !hasRules"
       :api-key="true"
       :collections-notification_="!hasEntries"
-      :collections-warning_="false"/>
+      :collections-warning_="false" />
 
     <entries-list
       :entriesIds="entriesReport"

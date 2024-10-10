@@ -35,8 +35,7 @@
       :create-rule-help="false"
       :api-key="false"
       :collections-notification_="sortedFeeds === null || sortedFeeds.length == 0"
-      :collections-warning_="true"
-      />
+      :collections-warning_="true" />
 
     <feeds-list
       v-if="sortedFeeds"

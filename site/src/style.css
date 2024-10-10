@@ -41,7 +41,7 @@
   }
 
   .ffun-normalized-text code {
-      @apply bg-slate-800 px-1 rounded bg-opacity-10 text-sm;
+    @apply bg-slate-800 px-1 rounded bg-opacity-10 text-sm;
   }
 
   .ffun-info-common {
