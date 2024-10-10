@@ -1,12 +1,12 @@
 # Feeds Fun
 
-News reader with tags. Self-hosted, if it is your way.
+News reader with tags & AI. Self-hosted, if it is your way.
 
 - Reader automatically assigns tags to news.
 - You create rules to score news by tags.
 - Filter and sort news how you want ⇒ read only what you need.
 
-Site: [feeds.fun](https://feeds.fun)
+Site: [feeds.fun](https://feeds.fun) **Curated collections of feeds that are tagged for free!**
 Blog: [blog.feeds.fun](https://blog.feeds.fun)
 
 # Screenshots
