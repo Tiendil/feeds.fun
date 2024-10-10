@@ -166,6 +166,7 @@ class UserSettingKind(enum.StrEnum):
 
     hide_message_about_setting_up_key = "hide_message_about_setting_up_key"
     hide_message_about_adding_collections = "hide_message_about_adding_collections"
+    hide_message_check_your_feed_urls = "hide_message_check_your_feed_urls"
     process_entries_not_older_than = "process_entries_not_older_than"
     max_tokens_cost_in_month = "max_tokens_cost_in_month"
 

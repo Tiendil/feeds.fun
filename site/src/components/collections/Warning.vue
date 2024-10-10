@@ -19,6 +19,11 @@
       <li>Add feeds directly from <a class="ffun-normal-link"  href="#" @click.prevent="goToCollections()">collections</a> instead of using URLs from sites.</li>
     </ul>
 
+    <user-setting-for-notification
+      class=""
+      kind="hide_message_check_your_feed_urls"
+      button-text="Hide this message" />
+
   </div>
 </template>
 

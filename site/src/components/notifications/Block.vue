@@ -51,7 +51,7 @@
   });
 
 const showCollectionsWarning = computed(() => {
-  return properties.collectionsWarning_ && !showCollectionsNotification.value;
+  return properties.collectionsWarning_ && !showCollectionsNotification.value && globalSettings.userSettings && !globalSettings.userSettings.hide_message_check_your_feed_urls.value;
 
 });
 </script>
