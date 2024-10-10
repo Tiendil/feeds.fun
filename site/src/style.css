@@ -40,6 +40,10 @@
     @apply list-disc list-inside;
   }
 
+  .ffun-normalized-text code {
+      @apply bg-slate-800 px-1 rounded bg-opacity-10 text-sm;
+  }
+
   .ffun-info-common {
     @apply ffun-normalized-text border-2 p-2 my-1 rounded border-slate-200;
   }

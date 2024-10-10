@@ -6,8 +6,8 @@
       >Websites like <a href="https://reddit.com" target="_blank">Reddit</a> or <a href="https://arxiv.org" target="_blank">arXiv</a> provide multiple feeds by:</p>
 
     <ul>
-      <li>Customizing news categories lists in URL (like <pre class="inline-block">https://site.com/feed/rss?category1+category2</pre>) instead of using separate URLs.</li>
-      <li>Supporting different feed formats (like <pre class="inline-block">https://site.com/feed/rss</pre> and <pre class="inline-block">https://site.com/feed/atom</pre>).</li>
+      <li>Customizing news categories lists in URL (like <code class="inline-block">https://site.com/feed/rss?category1+category2</code>) instead of using separate URLs.</li>
+      <li>Supporting different feed formats (like <code class="inline-block">https://site.com/feed/rss</code> and <code class="inline-block">https://site.com/feed/atom</code>).</li>
     </ul>
 
     <p>This can lead to the same news item appearing in multiple feeds, not being recognized as news from collections, and being processed with your API key. We do our best to detect such news, but there are always exceptions.</p>
