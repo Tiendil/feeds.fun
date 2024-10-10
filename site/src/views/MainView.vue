@@ -18,6 +18,13 @@
         <li>Filter and sort news how you want ⇒ read only what you want.</li>
       </ul>
 
+      <h2>Curated collections of feeds</h2>
+
+      <ul class="list-disc list-inside text-left">
+        <li>We handpick the most interesting feeds into thematic collections.</li>
+        <li>Feeds in the collections are tagged for free.</li>
+      </ul>
+
       <h2>You are in control</h2>
 
       <ul class="list-disc list-inside text-left">
