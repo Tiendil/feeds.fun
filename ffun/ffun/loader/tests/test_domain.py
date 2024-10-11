@@ -91,7 +91,9 @@ class TestSyncFeedInfo:
         assert loaded_feed.description == feed_info.description
 
     @pytest.mark.asyncio
-    async def test_sync_required__collections(self, collection_id_for_test_feeds: CollectionId, saved_feed: f_entities.Feed) -> None:
+    async def test_sync_required__collections(
+        self, collection_id_for_test_feeds: CollectionId, saved_feed: f_entities.Feed
+    ) -> None:
         await collections.add_test_feed_to_collections(collection_id_for_test_feeds, saved_feed.id)
 
         feed_info = p_entities.FeedInfo(
