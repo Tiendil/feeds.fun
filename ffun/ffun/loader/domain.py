@@ -105,7 +105,6 @@ async def extract_feed_info(feed: Feed) -> p_entities.FeedInfo | None:
     return feed_info
 
 
-# TODO: tests
 async def sync_feed_info(feed: Feed, feed_info: p_entities.FeedInfo) -> None:
     title = feed_info.title
     description = feed_info.description
