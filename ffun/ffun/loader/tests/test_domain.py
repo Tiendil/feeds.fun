@@ -90,6 +90,28 @@ class TestSyncFeedInfo:
         assert loaded_feed.title == feed_info.title
         assert loaded_feed.description == feed_info.description
 
+    @pytest.mark.asyncio
+    async def test_sync_required__collections(
+        self, collection_id_for_test_feeds: CollectionId, saved_feed: f_entities.Feed
+    ) -> None:
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, saved_feed.id)
+
+        feed_info = p_entities.FeedInfo(
+            url=saved_feed.url, title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[]
+        )
+
+        await sync_feed_info(saved_feed, feed_info)
+
+        loaded_feed = await f_domain.get_feed(saved_feed.id)
+
+        assert loaded_feed.title != feed_info.title
+        assert loaded_feed.description != feed_info.description
+
+        collection_feed_info = collections.get_feed_info(saved_feed.id)
+
+        assert loaded_feed.title == collection_feed_info.title
+        assert loaded_feed.description == collection_feed_info.description
+
 
 class TestStoreEntries:
     @pytest.mark.asyncio

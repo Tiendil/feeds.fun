@@ -19,3 +19,7 @@ class DuplicateCollectionOrders(Error):
 
 class CollectionIsEmpty(Error):
     pass
+
+
+class FeedNotFound(Error):
+    pass

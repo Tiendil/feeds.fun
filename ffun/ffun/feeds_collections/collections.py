@@ -130,6 +130,17 @@ class Collections:
     def has_feed(self, feed_id: FeedId) -> bool:
         return feed_id in self._feeds_in_collections
 
+    # TODO: refactor collections logic to have only single feed object
+    def get_feed_info(self, feed_id: FeedId) -> FeedInfo:
+        for collection_id in self._feeds_in_collections.get(feed_id, ()):
+            collection = self.collection(collection_id)
+
+            for feed_info in collection.feeds:
+                if feed_info.feed_id == feed_id:
+                    return feed_info
+
+        raise errors.FeedNotFound()
+
     async def add_test_collection(self, collection: Collection) -> None:
         self._collections.append(collection)
         await self.initialize(collection_configs=None)
