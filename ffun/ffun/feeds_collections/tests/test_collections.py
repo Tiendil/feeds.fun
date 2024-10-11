@@ -96,6 +96,19 @@ class TestCollections:
         assert collections.has_feed(existed_feed_id)
 
     @pytest.mark.asyncio
+    async def test_get_feed_info__feed_not_found(self, collections: Collections) -> None:
+        with pytest.raises(errors.FeedNotFound):
+            collections.get_feed_info(new_feed_id())
+
+    @pytest.mark.asyncio
+    async def test_get_feed_info(self, collections: Collections) -> None:
+        existed_feed_id = list(collections._feeds_in_collections)[0]
+
+        feed_info = collections.get_feed_info(existed_feed_id)
+
+        assert feed_info.feed_id == existed_feed_id
+
+    @pytest.mark.asyncio
     async def test_validate_collections_ids(self) -> None:
         collections = Collections()
 

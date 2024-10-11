@@ -105,8 +105,18 @@ async def extract_feed_info(feed: Feed) -> p_entities.FeedInfo | None:
     return feed_info
 
 
+# TODO: tests
 async def sync_feed_info(feed: Feed, feed_info: p_entities.FeedInfo) -> None:
-    if feed_info.title == feed.title and feed_info.description == feed.description:
+    title = feed_info.title
+    description = feed_info.description
+
+    if collections.has_feed(feed.id):
+        collections_feed_info = collections.get_feed_info(feed.id)
+
+        title = collections_feed_info.title
+        description = collections_feed_info.description
+
+    if title == feed.title and description == feed.description:
         return
 
     await f_domain.update_feed_info(feed.id, title=feed_info.title, description=feed_info.description)
