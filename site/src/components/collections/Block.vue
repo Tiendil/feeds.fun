@@ -1,14 +1,11 @@
 <template>
   <div>
     <form @submit.prevent="subscribe">
-      <ul class="mb-1">
-        <li v-for="collectionId in collections.collectionsOrder">
-          <collections-block-item
-            v-model="selectedCollections"
-            :collectionId="collectionId"
-            :selectedCollections="selectedCollections" />
-        </li>
-      </ul>
+      <collections-block-item
+        v-for="collectionId in collections.collectionsOrder"
+        v-model="selectedCollections"
+        :collectionId="collectionId"
+        :selectedCollections="selectedCollections" />
 
       <button
         type="submit"
