@@ -1,9 +1,9 @@
-import pkg_resources
+from importlib.metadata import version
 
 from ffun.application.settings import settings
 
 
 def user_agent() -> str:
     name = settings.app_name.replace(" ", "")
-    version = pkg_resources.get_distribution("ffun").version
-    return f"{name}/{version} ({settings.environment} {settings.app_domain})"
+    package_version = version("ffun")
+    return f"{name}/{package_version} ({settings.environment} {settings.app_domain})"
