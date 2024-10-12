@@ -7,7 +7,7 @@
 
 Changes:
 
-- [gh-229](https://github.com/Tiendil/feeds.fun/issues/229) — Removed `Allow using OpenAI key for feeds in standard collections` user settings. It was confusing for users and not usable in the project's current state. Instead, you can specify an LLM API key to process collections per tag processor. By new logic, the service's owner is responsible for managing tags for all feeds in collections.
+- [gh-229](https://github.com/Tiendil/feeds.fun/issues/229) — Removed `Allow using OpenAI key for feeds in standard collections` user settings. It was confusing for users and not usable in the project's current state. Instead, you can specify an LLM API key to process collections (one per tag processor). By new logic, the service's owner is responsible for managing tags for all feeds in collections.
 - [gh-245](https://github.com/Tiendil/feeds.fun/issues/245) — Implemented the universal LLM tag processor. Currently, it supports two API providers: OpenAI (ChatGPT) and Google (Gemini). Also:
     - The configuration of tag processors was moved to a separate file; see README.md for actual details.
     - The configuration of LLM models was moved to a separate file; see README.md for actual details.
