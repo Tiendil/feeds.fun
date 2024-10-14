@@ -81,21 +81,19 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         elif message == "All connection attempts failed":
             log.warning("network_all_connection_attempts_failed")
             error_code = FeedError.network_all_connection_attempts_failed
-        elif "[SSL: WRONG_VERSION_NUMBER]" in message:
-            log.warning("wrong_ssl_version")
-            error_code = FeedError.network_wrong_ssl_version
-        elif "[SSL: CERTIFICATE_VERIFY_FAILED]" in message:
-            log.warning("network_certificate_verify_failed")
-            error_code = FeedError.network_certificate_verify_failed
-        elif "[SSL:" in message and "UNRECOGNIZED_NAME]" in message:
-            log.warning("network_sll_unrecognized_name")
-            error_code = FeedError.network_wrong_ssl_version
+        elif "[SSL:" in message:
+            # catch all SSL errors
+            log.warning("network_ssl_connection_error")
+            error_code = FeedError.network_ssl_connection_error
         else:
             log.exception("connection_error_while_loading_feed")
 
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except ssl.SSLError as e:
+        # TODO: it is possible, that httpx started to wrap ssl errors into httpx.ConnectError
+        #       for example, see CERTIFICATE_VERIFY_FAILED.
+        #       If it is true, we may remove this block
         log.warning("network_certificate_verify_failed")
         error_code = FeedError.network_ssl_connection_error
         raise errors.LoadError(feed_error_code=error_code) from e
