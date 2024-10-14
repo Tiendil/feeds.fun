@@ -17,6 +17,11 @@ from ffun.feeds_collections.collections import collections
 logger = logging.get_module_logger()
 
 
+def initialize_user_settings() -> None:
+    logger.info("initialize_user_settings")
+    import ffun.application.user_settings  # noqa: F401
+
+
 @contextlib.asynccontextmanager
 async def use_postgresql() -> AsyncGenerator[None, None]:
     logger.info("initialize_postgresql")
@@ -121,6 +126,8 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
             await app.router.startup()
 
             await collections.initialize()
+
+            initialize_user_settings()
 
             yield
 
