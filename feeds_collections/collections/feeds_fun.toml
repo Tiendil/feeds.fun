@@ -7,3 +7,8 @@ description = "News of our project and related topics."
   url = "https://blog.feeds.fun/en/feeds/atom"
   title = "Feeds Fun Blog"
   description = "News and documentation of the Feeds Fun project"
+
+[[feeds]]
+  url = "https://www.reddit.com/r/feedsfun/.rss"
+  title = "Feeds Fun Subreddit"
+  description = "News, community discussions and feedback for the Feeds Fun project"
