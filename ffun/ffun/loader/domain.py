@@ -53,6 +53,10 @@ async def load_content_with_proxies(url: str) -> httpx.Response:  # noqa: CCR001
     # but in case of full problem with url, we'll be doing unnecessary requests
     # and in case of HTTP-only urls we'll be doing unnecessary requests too
     #
+    # ATTENTION: we iterate over protocols even if the user has specified the port, because
+    #            1. We do not trust users.
+    #            2. We check urls duplicates by removing ports (see domain.urls.url_to_uid
+    #
     # TODO: build a separate system of choosing protocol for the url with caching and periodic checks
     for protocol in ("https", "http"):
         url_object.scheme = protocol
