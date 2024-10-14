@@ -45,13 +45,17 @@ async def load_content_with_proxies(url: str) -> httpx.Response:  # noqa: CCR001
         raise errors.AllProxiesSuspended()
 
     # We try different protocols because users often make mistakes in the urls
-    # to fix them we unity similar urls like http://example.com and https://example.com
+    # to fix them we unite similar urls like http://example.com and https://example.com
     # => we need to check both protocols
     #
     # For now it is straightforward solution, but it should work
     # Most of the domains should support HTTPS => HTTP urls will not be used
     # but in case of full problem with url, we'll be doing unnecessary requests
     # and in case of HTTP-only urls we'll be doing unnecessary requests too
+    #
+    # ATTENTION: we iterate over protocols even if the user has specified the port, because
+    #            1. We do not trust users.
+    #            2. We check urls duplicates by removing ports (see domain.urls.url_to_uid
     #
     # TODO: build a separate system of choosing protocol for the url with caching and periodic checks
     for protocol in ("https", "http"):
