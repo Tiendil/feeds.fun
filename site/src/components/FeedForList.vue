@@ -91,7 +91,7 @@
 
   const properties = defineProps<{feed: t.Feed}>();
 
-const noDescription = "No description";
+  const noDescription = "No description";
 
   const purifiedTitle = computed(() => {
     if (properties.feed.title === null) {
@@ -101,7 +101,7 @@ const noDescription = "No description";
     let title = DOMPurify.sanitize(properties.feed.title, {ALLOWED_TAGS: []}).trim();
 
     if (title.length === 0) {
-      return  properties.feed.url;
+      return properties.feed.url;
     }
 
     return title;
@@ -112,7 +112,7 @@ const noDescription = "No description";
       return noDescription;
     }
 
-    let description =  DOMPurify.sanitize(properties.feed.description).trim();
+    let description = DOMPurify.sanitize(properties.feed.description).trim();
 
     if (description.length === 0) {
       return noDescription;
