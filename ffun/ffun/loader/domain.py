@@ -45,7 +45,7 @@ async def load_content_with_proxies(url: str) -> httpx.Response:  # noqa: CCR001
         raise errors.AllProxiesSuspended()
 
     # We try different protocols because users often make mistakes in the urls
-    # to fix them we unity similar urls like http://example.com and https://example.com
+    # to fix them we unite similar urls like http://example.com and https://example.com
     # => we need to check both protocols
     #
     # For now it is straightforward solution, but it should work

@@ -81,6 +81,9 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         elif message == "All connection attempts failed":
             log.warning("network_all_connection_attempts_failed")
             error_code = FeedError.network_all_connection_attempts_failed
+        elif '[SSL: WRONG_VERSION_NUMBER]' in message:
+            log.warning("wrong_ssl_version")
+            error_code = FeedError.network_wrong_ssl_version
         else:
             log.exception("connection_error_while_loading_feed")
 

@@ -35,6 +35,7 @@ class FeedError(enum.IntEnum):
     network_decoding_error = 1017
     network_read_error = 1018
     network_temporary_failure_in_name_resolution = 1019
+    network_wrong_ssl_version = 1020
 
     parsing_unknown = 2000
     parsing_base_error = 2001
