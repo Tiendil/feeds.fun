@@ -29,7 +29,12 @@ export const useFeedsStore = defineStore("feedsStore", () => {
 
   async function unsubscribe(feedId: t.FeedId) {
     await api.unsubscribe({feedId: feedId});
-    globalSettings.updateDataVersion();
+
+    // Attention, do not call globalSettings.updateDataVersion
+    // it cause a lot of unnecessary requests to the server without any benefit
+    // we just remove feed from frontend
+
+    delete feeds.value[feedId];
   }
 
   async function subscribe(url: t.URL) {
