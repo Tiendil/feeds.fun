@@ -87,6 +87,9 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         elif "[SSL: CERTIFICATE_VERIFY_FAILED]" in message:
             log.warning("network_certificate_verify_failed")
             error_code = FeedError.network_certificate_verify_failed
+        elif "[SSL:" in message and "UNRECOGNIZED_NAME]" in message:
+            log.warning("network_sll_unrecognized_name")
+            error_code = FeedError.network_wrong_ssl_version
         else:
             log.exception("connection_error_while_loading_feed")
 
