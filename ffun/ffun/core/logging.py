@@ -18,16 +18,16 @@ class Renderer(str, enum.Enum):
 
 
 class Settings(pydantic_settings.BaseSettings):
-    log_evel: str = "INFO"
+    level: str = "INFO"
     renderer: Renderer = Renderer.console
 
     model_config = pydantic_settings.SettingsConfigDict(
-        env_nested_delimiter="__", env_file=".env", env_prefix="FFUN_", extra="allow"
+        env_nested_delimiter="__", env_file=".env", env_prefix="FFUN_LOGS_", extra="allow"
     )
 
     @property
     def structlog_level(self) -> int:
-        return getattr(logging, self.log_evel.upper())  # type: ignore
+        return getattr(logging, self.level.upper())  # type: ignore
 
 
 settings = Settings()
