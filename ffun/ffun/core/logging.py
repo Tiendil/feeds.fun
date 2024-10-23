@@ -11,7 +11,7 @@ import contextlib
 import pydantic_settings
 import structlog
 from sentry_sdk import capture_message
-from structlog.contextvars import bound_contextvars, get_merged_contextvars
+from structlog import contextvars as structlog_contextvars
 
 from ffun.core import errors
 
@@ -259,12 +259,12 @@ def function_args_to_log(*args) -> Callable[[FUNC], FUNC]:
     def wrapper(func: FUNC) -> FUNC:
         @functools.wraps(func)
         def wrapped(**kwargs: Any) -> Any:
-            with bound_contextvars(**{c.name: c(kwargs) for c in constructors}):
+            with structlog_contextvars.bound_contextvars(**{c.name: c(kwargs) for c in constructors}):
                 return func(**kwargs)
 
         @functools.wraps(func)
         async def async_wrapped(**kwargs: Any) -> Any:
-            with bound_contextvars(**{c.name: c(kwargs) for c in constructors}):
+            with structlog_contextvars.bound_contextvars(**{c.name: c(kwargs) for c in constructors}):
                 return await func(**kwargs)
 
         if inspect.iscoroutinefunction(func):
@@ -286,7 +286,7 @@ def bound_log_args(**kwargs: Any) -> None:
     if kwargs.keys() & {"m_labels", "m_value"}:
         raise errors.ReservedLogArguments()
 
-    with bound_contextvars(**kwargs):
+    with structlog_contextvars.bound_contextvars(**kwargs):
         yield
 
 
@@ -298,7 +298,7 @@ def bound_measure_labels(**labels: dict[str, str | int]) -> None:
         yield
         return
 
-    bound_labels = get_merged_contextvars()
+    bound_labels = structlog_contextvars.get_contextvars()
 
     if "m_labels" in bound_labels:
         if labels.keys() & bound_labels["m_labels"].keys():
@@ -308,5 +308,5 @@ def bound_measure_labels(**labels: dict[str, str | int]) -> None:
 
     bound_labels["m_labels"].update(labels)
 
-    with bound_contextvars(**bound_labels):
+    with structlog_contextvars.bound_contextvars(**bound_labels):
         yield

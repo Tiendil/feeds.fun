@@ -1,4 +1,5 @@
 import uuid
+import functools
 from typing import Any
 
 import fastapi
@@ -56,11 +57,42 @@ async def request_id_middleware(request: fastapi.Request, call_next: Any) -> fas
         return await call_next(request)  # type: ignore
 
 
+# TODO: tests
+def _normalize_path(url: str) -> str:
+    return url.lower().strip('/')
+
+
+# TODO: test
+@functools.cache
+def _existed_route_urls() -> set[str]:
+    # TODO: move somewhere?
+    from ffun.application.application import app
+
+    urls = set()
+
+    for route in app.routes:
+        url = _normalize_path(route.path)
+
+        if '{' in url:
+            raise NotImplementedError()
+
+        urls.add(url)
+
+    return urls
+
+
 async def request_measure_middleware(request: fastapi.Request, call_next: Any) -> fastapi.Response:
 
-    route = request.scope.get("route")
+    app = request.scope.get('app')
 
-    with logger.measure_block_time("request_time", path=route.path) as extra_labels:
+    assert app is not None
+
+    path = _normalize_path(request.scope.get('path'))
+
+    if path not in _existed_route_urls():
+        path = 'wrong'
+
+    with logger.measure_block_time("request_time", path=path) as extra_labels:
         extra_labels['success'] = 'success'
 
         try:
