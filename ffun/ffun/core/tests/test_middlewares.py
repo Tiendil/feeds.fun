@@ -30,3 +30,22 @@ class TestHandleExpectedError:
 
         assert response.status_code == 500
         assert json.parse(response.body) == {"status":"error","code":"FakeError","message":"Unknown error","data":None}
+
+
+class TestHandleUnexpectedError:
+
+    @pytest.mark.asyncio
+    async def test(self, mocker: MockerFixture) -> None:
+        capture_exception = mocker.patch("sentry_sdk.capture_exception")
+
+        error = Exception("some message")
+
+        with capture_logs() as logs:
+            response = await _handle_unexpected_error(MagicMock(), error)
+
+        capture_exception.assert_called_once_with(error)
+
+        assert logs == [{"event": "Exception", "log_level": "error", "exc_info": True, "module": "ffun.core.middlewares", "sentry_skip": True}]
+
+        assert response.status_code == 500
+        assert json.parse(response.body) == {"status":"error","code":"Exception","message":"An unexpected error appeared. We are working on fixing it.","data":None}

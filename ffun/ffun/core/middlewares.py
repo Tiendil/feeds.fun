@@ -23,18 +23,17 @@ async def _handle_expected_error(_: fastapi.Request, error: Error) -> JSONRespon
     return JSONResponse(status_code=500, content=api_error.model_dump())
 
 
-# TODO: tests
 async def _handle_unexpected_error(_: fastapi.Request, error: Exception) -> JSONResponse:
     # TODO: improve error processing
     api_error = api.APIError(
         code=error.__class__.__name__, message="An unexpected error appeared. We are working on fixing it."
     )
 
-    sentry_skip.capture_exception(error)
+    sentry_sdk.capture_exception(error)
 
     logger.exception(error.__class__.__name__, sentry_skip=True)
 
-    return JSONResponse(status_code=500, content=api_error.dict())
+    return JSONResponse(status_code=500, content=api_error.model_dump())
 
 
 # TODO: move somewhere?
