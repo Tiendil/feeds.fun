@@ -3,9 +3,9 @@ import datetime
 from collections import Counter
 from types import TracebackType
 from typing import Any, Callable, MutableMapping, Optional, Type
-from structlog import contextvars as structlog_contextvars
 
 import pytest
+from structlog import contextvars as structlog_contextvars
 
 from ffun.core.postgresql import execute
 

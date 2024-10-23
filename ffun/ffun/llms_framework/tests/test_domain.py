@@ -2,7 +2,6 @@ import uuid
 from decimal import Decimal
 
 import pytest
-from pytest_mock import MockerFixture
 
 from ffun.application.resources import Resource as AppResource
 from ffun.domain.datetime_intervals import month_interval_start
