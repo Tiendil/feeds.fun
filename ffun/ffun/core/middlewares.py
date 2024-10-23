@@ -43,6 +43,7 @@ def initialize_error_processors(app: fastapi.FastAPI) -> fastapi.FastAPI:
 
 
 async def final_errors_middleware(request: fastapi.Request, call_next: Any) -> fastapi.Response:
+    print('final_errors_middleware')
     try:
         return await call_next(request)  # type: ignore
     except Error as e:
@@ -53,6 +54,7 @@ async def final_errors_middleware(request: fastapi.Request, call_next: Any) -> f
 
 # TODO: test
 async def request_id_middleware(request: fastapi.Request, call_next: Any) -> fastapi.Response:
+    print('request_id_middleware')
     with logging.bound_log_args(request_uid=uuid.uuid4().hex):
         return await call_next(request)  # type: ignore
 
@@ -82,7 +84,7 @@ def _existed_route_urls() -> set[str]:
 
 
 async def request_measure_middleware(request: fastapi.Request, call_next: Any) -> fastapi.Response:
-
+    print('request_measure_middleware')
     app = request.scope.get("app")
 
     assert app is not None

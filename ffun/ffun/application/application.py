@@ -155,10 +155,8 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
         allow_headers=[],
     )
 
-    # TODO: check the order of middlewares
     app.middleware("http")(middlewares.request_measure_middleware)
 
-    # TODO: check the order of middlewares
     app.middleware("http")(middlewares.request_id_middleware)
 
     logger.info("app_created")

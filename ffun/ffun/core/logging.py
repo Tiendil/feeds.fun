@@ -157,7 +157,7 @@ def processors_list(use_sentry: bool) -> list[LogProcessorType]:
     return [p for p in processors_list if p is not None]  # type: ignore
 
 
-class MeasuringBoundLogger(Protocol, structlog.typing.FilteringBoundLogger):
+class MeasuringBoundLogger(structlog.typing.FilteringBoundLogger):
     def measure(self, event: str, value: float | int, **labels: str | int) -> None:
         pass
 
