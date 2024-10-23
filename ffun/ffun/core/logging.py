@@ -162,7 +162,9 @@ class MeasuringBoundLogger(structlog.typing.FilteringBoundLogger):
     def measure(self, event: str, value: float | int, **labels: str | int) -> None:
         pass
 
-    def measure_block_time(self, event: str, **labels: str | int) -> ContextManager[dict[str, str | int]]:
+    def measure_block_time(  # type: ignore
+        self, event: str, **labels: str | int
+    ) -> ContextManager[dict[str, str | int]]:
         pass
 
 
