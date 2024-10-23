@@ -166,7 +166,15 @@ class MeasuringBoundLogger(structlog.typing.FilteringBoundLogger):
 
 
 class MeasuringBoundLoggerMixin:
-    # TODO: tests
+    """We extend a logger class with additional metrics logic.
+
+    This mixin is required to work with metrics in 100% the same way as with logs.
+
+    By calling `logging.measure(...)` and other methods, we guarantee that metrics will have the exact attributes
+    as expected from log messages (both custom and general like "module"), so the third-party software
+    would be able to filter/process messages universally.
+    """
+
     def measure(self, event: str, value: float | int, **labels: str | int) -> Any:
         if not labels:
             return self.info(event, m_kind="measure", m_value=value)  # type: ignore
@@ -174,7 +182,6 @@ class MeasuringBoundLoggerMixin:
         with bound_measure_labels(**labels):
             return self.info(event, m_kind="measure", m_value=value)  # type: ignore
 
-    # TODO: tests
     @contextlib.contextmanager
     def measure_block_time(self, event: str, **labels: str | int) -> Iterator[dict[str, str | int]]:
         started_at = time.monotonic()
@@ -294,6 +301,8 @@ def bound_log_args(**kwargs: Any) -> Iterator[None]:
 
 
 # TODO: tests
+# TODO: test recursive
+# TODO: test redifinition
 @contextlib.contextmanager
 def bound_measure_labels(**labels: str | int) -> Iterator[None]:
 
@@ -301,15 +310,15 @@ def bound_measure_labels(**labels: str | int) -> Iterator[None]:
         yield
         return
 
-    bound_labels = structlog_contextvars.get_contextvars()
+    bound_vars = structlog_contextvars.get_contextvars()
 
-    if "m_labels" in bound_labels:
-        if labels.keys() & bound_labels["m_labels"].keys():
+    if "m_labels" in bound_vars:
+        if labels.keys() & bound_vars["m_labels"].keys():
             raise errors.DuplicatedMeasureLabels()
     else:
-        bound_labels["m_labels"] = {}
+        bound_vars["m_labels"] = {}
 
-    bound_labels["m_labels"].update(labels)
+    bound_vars["m_labels"].update(labels)
 
-    with structlog_contextvars.bound_contextvars(**bound_labels):
+    with structlog_contextvars.bound_contextvars(**bound_vars):
         yield

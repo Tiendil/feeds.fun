@@ -137,7 +137,6 @@ class TestSearchForAPIKey:
         fake_llm_provider: ProviderTest,
         llm_config: LLMConfiguration,
         cataloged_entry: Entry,
-        mocker: MockerFixture,
     ) -> None:
         # Here we test meta logic => we can check the simplest case (general api key)
         # plus check the all parameters passed to selection function
@@ -165,7 +164,6 @@ class TestSearchForAPIKey:
         fake_llm_provider: ProviderTest,
         llm_config: LLMConfiguration,
         cataloged_entry: Entry,
-        mocker: MockerFixture,
     ) -> None:
         # Here we test meta logic => we can check the simplest case (general api key)
         # plus check the all parameters passed to selection function

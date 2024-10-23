@@ -3,6 +3,7 @@ import datetime
 from collections import Counter
 from types import TracebackType
 from typing import Any, Callable, MutableMapping, Optional, Type
+from structlog import contextvars as structlog_contextvars
 
 import pytest
 
@@ -175,6 +176,13 @@ def assert_logs(logs: list[MutableMapping[str, Any]], **kwargs: int) -> None:
             pytest.fail(
                 f"Key {key} not found {expected_count} times in logs, but found {found_enents.get(key, 0)} times"
             )
+
+
+def assert_log_context_vars(**expected: Any) -> None:
+    bound_vars = structlog_contextvars.get_contextvars()
+
+    for key, value in expected.items():
+        assert bound_vars.get(key) == value, f"Key {key} = {bound_vars} not equal to expected {value}"
 
 
 def assert_logs_levels(logs: list[MutableMapping[str, Any]], **kwargs: str) -> None:
