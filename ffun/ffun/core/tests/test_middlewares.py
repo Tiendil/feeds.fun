@@ -87,3 +87,19 @@ class TestRequestIdMiddleware:
         call_2 = bound_log_args.call_args_list[1]
 
         assert call_1[1]["request_uid"] != call_2[1]["request_uid"]
+
+
+class TestNormalizePath:
+
+    @pytest.mark.parametrize("url, expected", [
+        ("/test", "/test"),
+        ("/test/", "/test"),
+        ("/test//", "/test"),
+        ("/test/b", "/test/b"),
+        ("/test/b/", "/test/b"),
+        ("/test/b//", "/test/b"),
+        ("/test//test", None),
+        ("/test//test/", None),
+    ])
+    def test(self, url: str, expected: str) -> None:
+        assert _normalize_path(url) == expected
