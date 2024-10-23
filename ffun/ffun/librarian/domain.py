@@ -69,7 +69,7 @@ async def plan_processor_queue(processor_id: int, fill_when_below: int, chunk: i
 
 @logging.function_args_to_log("processor.name", "entry.id")
 async def process_entry(processor_id: int, processor: Processor, entry: Entry) -> None:
-    logger.info("dicover_tags", entry_id=entry.id)
+    logger.info("dicover_tags")
 
     try:
         tags = await processor.process(entry)
