@@ -6,7 +6,7 @@ import inspect
 import logging
 import time
 import uuid
-from typing import Any, Callable, Iterable, Protocol, TypeVar
+from typing import Any, Callable, Iterable, Protocol, TypeVar, Iterator, ContextManager
 
 import pydantic_settings
 import structlog
@@ -157,26 +157,29 @@ def processors_list(use_sentry: bool) -> list[LogProcessorType]:
     return [p for p in processors_list if p is not None]  # type: ignore
 
 
-class MeasuringBoundLogger(structlog.typing.FilteringBoundLogger):
-    def measure(self, event: str, value: float | int, **labels: dict[str, str | int]) -> None:
+class MeasuringBoundLogger(Protocol, structlog.typing.FilteringBoundLogger):
+    def measure(self, event: str, value: float | int, **labels: str | int) -> None:
+        pass
+
+    def measure_block_time(self, event: str, **labels: str | int) -> ContextManager[dict[str, str | int]]:
         pass
 
 
 class MeasuringBoundLoggerMixin:
     # TODO: tests
-    def measure(self, event: str, value: float | int, **labels: dict[str, str | int]) -> None:
+    def measure(self, event: str, value: float | int, **labels: str | int) -> Any:
         if not labels:
-            return self.info(event, m_kind="measure", m_value=value)
+            return self.info(event, m_kind="measure", m_value=value)  # type: ignore
 
         with bound_measure_labels(**labels):
-            return self.info(event, m_kind="measure", m_value=value)
+            return self.info(event, m_kind="measure", m_value=value)  # type: ignore
 
     # TODO: tests
     @contextlib.contextmanager
-    def measure_block_time(self, event: str, **labels: dict[str, str | int]) -> Callable[[dict[str, str | int]], None]:
+    def measure_block_time(self, event: str, **labels: str | int) -> Iterator[dict[str, str | int]]:
         started_at = time.monotonic()
 
-        extra_labels = {}
+        extra_labels: dict[str, str | int] = {}
 
         with bound_measure_labels(**labels):
             try:
@@ -185,10 +188,10 @@ class MeasuringBoundLoggerMixin:
                 self.measure(event, time.monotonic() - started_at, **extra_labels)
 
 
-def make_measuring_bound_logger(level: str) -> type[MeasuringBoundLogger]:
+def make_measuring_bound_logger(level: int) -> type[MeasuringBoundLogger]:
     filtering_logger_class = structlog.make_filtering_bound_logger(level)
 
-    class _MeasuringBoundLogger(MeasuringBoundLoggerMixin, filtering_logger_class):
+    class _MeasuringBoundLogger(MeasuringBoundLoggerMixin, filtering_logger_class):  # type: ignore
         pass
 
     return _MeasuringBoundLogger
@@ -247,8 +250,8 @@ class ArgumentConstructor(Constructor):
 
 
 # TODO: test
-def function_args_to_log(*args) -> Callable[[FUNC], FUNC]:
-    constructors = []
+def function_args_to_log(*args: str) -> Callable[[FUNC], FUNC]:
+    constructors: list[Constructor] = []
 
     for arg in args:
         if "." not in arg:
@@ -277,7 +280,7 @@ def function_args_to_log(*args) -> Callable[[FUNC], FUNC]:
 
 # TODO: tests
 @contextlib.contextmanager
-def bound_log_args(**kwargs: Any) -> None:
+def bound_log_args(**kwargs: Any) -> Iterator[None]:
 
     if not kwargs:
         yield
@@ -292,7 +295,7 @@ def bound_log_args(**kwargs: Any) -> None:
 
 # TODO: tests
 @contextlib.contextmanager
-def bound_measure_labels(**labels: dict[str, str | int]) -> None:
+def bound_measure_labels(**labels: str | int) -> Iterator[None]:
 
     if not labels:
         yield

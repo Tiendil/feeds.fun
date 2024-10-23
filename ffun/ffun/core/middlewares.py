@@ -71,7 +71,7 @@ def _existed_route_urls() -> set[str]:
     urls = set()
 
     for route in app.routes:
-        url = _normalize_path(route.path)
+        url = _normalize_path(route.path)  # type: ignore
 
         if "{" in url:
             raise NotImplementedError()
@@ -87,7 +87,7 @@ async def request_measure_middleware(request: fastapi.Request, call_next: Any) -
 
     assert app is not None
 
-    path = _normalize_path(request.scope.get("path"))
+    path = _normalize_path(request.scope.get("path"))  # type: ignore
 
     if path not in _existed_route_urls():
         path = "wrong"
@@ -101,5 +101,7 @@ async def request_measure_middleware(request: fastapi.Request, call_next: Any) -
             extra_labels["success"] = "exception"
 
         extra_labels["status_code"] = response.status_code
+
+        assert isinstance(response, fastapi.Response)
 
         return response
