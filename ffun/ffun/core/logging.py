@@ -1,3 +1,4 @@
+import copy
 import contextlib
 import datetime
 import enum
@@ -295,16 +296,18 @@ def bound_log_args(**kwargs: Any) -> Iterator[None]:
     if kwargs.keys() & {"m_labels", "m_value", "m_kind"}:
         raise errors.ReservedLogArguments()
 
+    bound_vars = structlog_contextvars.get_contextvars()
+
+    if bound_vars.keys() & kwargs.keys():
+        raise errors.DuplicatedLogArguments()
+
     with structlog_contextvars.bound_contextvars(**kwargs):
         yield
 
 
-# TODO: tests
-# TODO: test recursive
 # TODO: test redifinition
 @contextlib.contextmanager
 def bound_measure_labels(**labels: str | int) -> Iterator[None]:
-
     if not labels:
         yield
         return
@@ -314,10 +317,13 @@ def bound_measure_labels(**labels: str | int) -> Iterator[None]:
     if "m_labels" in bound_vars:
         if labels.keys() & bound_vars["m_labels"].keys():
             raise errors.DuplicatedMeasureLabels()
+
+        new_labels = copy.copy(bound_vars["m_labels"])
+
     else:
-        bound_vars["m_labels"] = {}
+        new_labels = {}
 
-    bound_vars["m_labels"].update(labels)
+    new_labels.update(labels)
 
-    with structlog_contextvars.bound_contextvars(**bound_vars):
+    with structlog_contextvars.bound_contextvars(m_labels=new_labels):
         yield

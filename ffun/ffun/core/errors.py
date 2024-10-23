@@ -30,3 +30,7 @@ class ReservedLogArguments(CoreError):
 
 class DuplicatedMeasureLabels(CoreError):
     pass
+
+
+class DuplicatedLogArguments(CoreError):
+    pass

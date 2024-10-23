@@ -183,3 +183,37 @@ class TestBoundLogArgs:
             assert_log_context_vars(x=1)
 
         assert_log_context_vars()
+
+    def test_duplicated_args(self) -> None:
+        with pytest.raises(errors.DuplicatedLogArguments):
+            with bound_log_args(x=1):
+                with bound_log_args(x=2):
+                    pass
+
+
+class TestBoundMeasureLabels:
+
+    def test_no_labels(self) -> None:
+        with bound_measure_labels():
+            assert_log_context_vars()
+
+    def test_with_labels(self) -> None:
+        with bound_measure_labels(x=1, y='a'):
+            assert_log_context_vars(m_labels={'x': 1, 'y': 'a'})
+
+    def test_recursive(self) -> None:
+        with bound_measure_labels(x=1):
+            assert_log_context_vars(m_labels={'x': 1})
+
+            with bound_measure_labels(y=2):
+                assert_log_context_vars(m_labels={'x': 1, 'y': 2})
+
+            assert_log_context_vars(m_labels={'x': 1})
+
+        assert_log_context_vars()
+
+    def test_duplicated_labels(self) -> None:
+        with pytest.raises(errors.DuplicatedMeasureLabels):
+            with bound_measure_labels(x=1):
+                with bound_measure_labels(x=2):
+                    pass
