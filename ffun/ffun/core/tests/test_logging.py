@@ -5,7 +5,8 @@ from unittest import mock
 from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 from structlog import contextvars as structlog_contextvars
-from ffun.core.logging import MeasuringBoundLoggerMixin, get_module_logger, IdentityConstructor, ArgumentConstructor, function_args_to_log
+from ffun.core import errors
+from ffun.core.logging import MeasuringBoundLoggerMixin, get_module_logger, IdentityConstructor, ArgumentConstructor, function_args_to_log, bound_log_args, bound_measure_labels
 from ffun.core.tests.helpers import assert_logs, assert_logs_levels, assert_log_context_vars
 
 
@@ -156,3 +157,29 @@ class TestFunctionArgsToLog:
             await func(y=1, x=X('abc'), z=2)
 
         assert logs == [{'module': 'ffun.core.tests.test_logging', 'event': 'my_event', 'log_level': 'info'}]
+
+
+class TestBoundLogArgs:
+
+    def test_no_args(self) -> None:
+        with bound_log_args():
+            assert_log_context_vars()
+
+    def test_with_args(self) -> None:
+        with bound_log_args(x=1, y='a'):
+            assert_log_context_vars(x=1, y='a')
+
+    @pytest.mark.parametrize('protected', ['m_labels', 'm_value', 'm_kind'])
+    def test_reserved(self, protected: str) -> None:
+        with pytest.raises(errors.ReservedLogArguments):
+            with bound_log_args(**{protected: 1}):
+                pass
+
+    def test_recursive(self) -> None:
+        with bound_log_args(x=1):
+            with bound_log_args(y=2):
+                assert_log_context_vars(x=1, y=2)
+
+            assert_log_context_vars(x=1)
+
+        assert_log_context_vars()

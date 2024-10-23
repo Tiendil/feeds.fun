@@ -285,7 +285,6 @@ def function_args_to_log(*args: str) -> Callable[[FUNC], FUNC]:
     return wrapper
 
 
-# TODO: tests
 @contextlib.contextmanager
 def bound_log_args(**kwargs: Any) -> Iterator[None]:
 
