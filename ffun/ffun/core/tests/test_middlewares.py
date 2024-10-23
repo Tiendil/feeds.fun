@@ -1,12 +1,18 @@
+import uuid
 from ffun.core import json
 import pytest
 from structlog.testing import capture_logs
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock
 from pytest_mock import MockerFixture
 from ffun.core.middlewares import ( _handle_expected_error, _handle_unexpected_error, final_errors_middleware, initialize_error_processors, request_id_middleware, _normalize_path, _existed_route_urls, request_measure_middleware)
 from ffun.core import errors
 from ffun.core.tests.helpers import assert_logs
 from fastapi.responses import JSONResponse
+from ffun.core import logging
+from ffun.core.tests.helpers import assert_log_context_vars
+
+logger = logging.get_module_logger()
+
 
 
 class FakeError(errors.Error):
@@ -49,3 +55,35 @@ class TestHandleUnexpectedError:
 
         assert response.status_code == 500
         assert json.parse(response.body) == {"status":"error","code":"Exception","message":"An unexpected error appeared. We are working on fixing it.","data":None}
+
+
+class TestRequestIdMiddleware:
+
+    @pytest.mark.asyncio
+    async def test(self, mocker: MockerFixture) -> None:
+        bound_log_args = mocker.patch("ffun.core.logging.bound_log_args")
+
+        await request_id_middleware(MagicMock(), AsyncMock())
+        logger.info("request_id_test")
+
+        assert bound_log_args.call_count == 1
+
+        call = bound_log_args.call_args_list[0]
+
+        assert uuid.UUID(call[1]["request_uid"])
+
+    @pytest.mark.asyncio
+    async def test_uniqueness(self, mocker: MockerFixture) -> None:
+        bound_log_args = mocker.patch("ffun.core.logging.bound_log_args")
+
+        await request_id_middleware(MagicMock(), AsyncMock())
+        await request_id_middleware(MagicMock(), AsyncMock())
+
+        logger.info("request_id_test")
+
+        assert bound_log_args.call_count == 2
+
+        call_1 = bound_log_args.call_args_list[0]
+        call_2 = bound_log_args.call_args_list[1]
+
+        assert call_1[1]["request_uid"] != call_2[1]["request_uid"]
