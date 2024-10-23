@@ -101,8 +101,9 @@ async def extract_feeds_from_a(soup: BeautifulSoup) -> list[p_entities.FeedInfo]
 
 # TODO: this is very straightforward implementation, it should be improved
 # TODO: check already saved feeds, but remember, that there may be saved only part of the feeds from url
-@logging.bound_function()
+@logging.function_args_to_log('url')
 async def discover(url: str, stop: bool = False) -> list[p_entities.FeedInfo]:
+
     url = fix_url(url)
 
     logger.info("fixed_url", url=url)

@@ -196,17 +196,58 @@ def get_module_logger() -> MeasuringBoundLogger:
 FUNC = TypeVar("FUNC", bound=Callable[..., Any])
 
 
-# TODO: remove this decorator in favor of explicit context manager
-def bound_function(skip: Iterable[str] = ()) -> Callable[[FUNC], FUNC]:
+class Constructor:
+    __slots__ = ('name',)
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    def __call__(self, kwargs: dict[str, Any]) -> Any:
+        raise NotImplementedError('You must implement "__call__" in child class')
+
+
+# TODO: test
+class IdentityConstructor(Constructor):
+    __slots__ = ()
+
+    def __init__(self, arg: str) -> None:
+        super().__init__(name=arg)
+
+    def __call__(self, kwargs: dict[str, Any]) -> Any:
+        return kwargs[self.name]
+
+
+# TODO: test
+class ArgumentConstructor(Constructor):
+    __slots__ = ('key', 'attribute')
+
+    def __init__(self, arg: str) -> None:
+        super().__init__(name=arg.replace('.', '_'))
+        self.key, self.attribute = arg.split('.', 1)
+
+    def __call__(self, kwargs: dict[str, Any]) -> Any:
+        return getattr(kwargs[self.key], self.attribute)
+
+
+# TODO: test
+def function_args_to_log(*args) -> Callable[[FUNC], FUNC]:
+    constructors = []
+
+    for arg in args:
+        if '.' not in arg:
+            constructors.append(IdentityConstructor(arg))
+        else:
+            constructors.append(ArgumentConstructor(arg))
+
     def wrapper(func: FUNC) -> FUNC:
         @functools.wraps(func)
         def wrapped(**kwargs: Any) -> Any:
-            with bound_contextvars(**{k: v for k, v in kwargs.items() if k not in skip}):
+            with bound_contextvars(**{c.name: c(kwargs) for c in constructors}):
                 return func(**kwargs)
 
         @functools.wraps(func)
         async def async_wrapped(**kwargs: Any) -> Any:
-            with bound_contextvars(**{k: v for k, v in kwargs.items() if k not in skip}):
+            with bound_contextvars(**{c.name: c(kwargs) for c in constructors}):
                 return await func(**kwargs)
 
         if inspect.iscoroutinefunction(func):
@@ -252,3 +293,6 @@ def bound_measure_labels(**labels: dict[str, str | int]) -> None:
 
     with bound_contextvars(**bound_labels):
         yield
+
+
+# TODO: add request_id to all request to track full logs of a concreate request
