@@ -22,3 +22,11 @@ class CoreError(Error):
 
 class EntityAlreadyRegistered(CoreError):
     pass
+
+
+class ReservedLogArguments(CoreError):
+    pass
+
+
+class DuplicatedMeasureLabels(CoreError):
+    pass

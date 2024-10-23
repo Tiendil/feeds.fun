@@ -5,11 +5,14 @@ import inspect
 import logging
 import uuid
 from typing import Any, Callable, Iterable, Protocol, TypeVar
+import contextlib
 
 import pydantic_settings
 import structlog
 from sentry_sdk import capture_message
-from structlog.contextvars import bound_contextvars
+from structlog.contextvars import bound_contextvars, get_merged_contextvars
+
+from ffun.core import errors
 
 
 class Renderer(str, enum.Enum):
@@ -153,17 +156,38 @@ def processors_list(use_sentry: bool) -> list[LogProcessorType]:
     return [p for p in processors_list if p is not None]  # type: ignore
 
 
+class MeasuringBoundLogger(structlog.typing.FilteringBoundLogger):
+    def measure(self, event: str, value: float | int, **labels: dict[str, str | int]) -> None:
+        pass
+
+
+def make_measuring_bound_logger(level: str) -> type[MeasuringBoundLogger]:
+    filtering_logger_class = structlog.make_filtering_bound_logger(level)
+
+    class _MeasuringBoundLogger(filtering_logger_class):
+
+        # TODO: tests
+        def measure(self, event: str, value: float | int, **labels: dict[str, str | int]) -> None:
+            if not labels:
+                return self._proxy_to_logger("measure", event, m_value=value)
+
+            with bound_log_args(m_labels=labels):
+                return self._proxy_to_logger("measure", event, m_value=value)
+
+    return _MeasuringBoundLogger
+
+
 def initialize(use_sentry: bool) -> None:
     structlog.configure(
         processors=processors_list(use_sentry=use_sentry),  # type: ignore
-        wrapper_class=structlog.make_filtering_bound_logger(settings.structlog_level),
+        wrapper_class=make_measuring_bound_logger(settings.structlog_level),
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=True,
     )
 
 
-def get_module_logger() -> structlog.stdlib.BoundLogger:
+def get_module_logger() -> MeasuringBoundLogger:
     caller_frame = inspect.currentframe().f_back  # type: ignore
     module = inspect.getmodule(caller_frame)
     return structlog.get_logger(module=module.__name__)  # type: ignore
@@ -172,6 +196,7 @@ def get_module_logger() -> structlog.stdlib.BoundLogger:
 FUNC = TypeVar("FUNC", bound=Callable[..., Any])
 
 
+# TODO: remove this decorator in favor of explicit context manager
 def bound_function(skip: Iterable[str] = ()) -> Callable[[FUNC], FUNC]:
     def wrapper(func: FUNC) -> FUNC:
         @functools.wraps(func)
@@ -190,3 +215,40 @@ def bound_function(skip: Iterable[str] = ()) -> Callable[[FUNC], FUNC]:
         return wrapped  # type: ignore
 
     return wrapper
+
+
+# TODO: tests
+@contextlib.contextmanager
+def bound_log_args(**kwargs: Any) -> None:
+
+    if not kwargs:
+        yield
+        return
+
+    if kwargs.keys() & {"m_labels", "m_value"}:
+        raise errors.ReservedLogArguments()
+
+    with bound_contextvars(**kwargs):
+        yield
+
+
+# TODO: tests
+@contextlib.contextmanager
+def bound_measure_labels(**labels: dict[str, str | int]) -> None:
+
+    if not labels:
+        yield
+        return
+
+    bound_labels = get_merged_contextvars()
+
+    if "m_labels" in bound_labels:
+        if labels.keys() & bound_labels["m_labels"].keys():
+            raise errors.DuplicatedMeasureLabels()
+    else:
+        bound_labels["m_labels"] = {}
+
+    bound_labels["m_labels"].update(labels)
+
+    with bound_contextvars(**bound_labels):
+        yield
