@@ -257,7 +257,6 @@ class ArgumentConstructor(Constructor):
         return getattr(kwargs[self.key], self.attribute, None)
 
 
-# TODO: test
 def function_args_to_log(*args: str) -> Callable[[FUNC], FUNC]:
     constructors: list[Constructor] = []
 

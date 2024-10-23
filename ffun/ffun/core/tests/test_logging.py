@@ -5,11 +5,16 @@ from unittest import mock
 from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 from structlog import contextvars as structlog_contextvars
-from ffun.core.logging import MeasuringBoundLoggerMixin, get_module_logger, IdentityConstructor, ArgumentConstructor
+from ffun.core.logging import MeasuringBoundLoggerMixin, get_module_logger, IdentityConstructor, ArgumentConstructor, function_args_to_log
 from ffun.core.tests.helpers import assert_logs, assert_logs_levels, assert_log_context_vars
 
 
 logger = get_module_logger()
+
+
+class X:
+    def __init__(self, my_arg: str) -> None:
+        self.my_arg = my_arg
 
 
 class TestMeasuringBoundLoggerMixin:
@@ -101,10 +106,6 @@ class TestIdentityConstructor:
 
 class TestArgumentConstructor:
 
-    class X:
-        def __init__(self, my_arg: str) -> None:
-            self.my_arg = my_arg
-
     def test_init(self) -> None:
         constructor = ArgumentConstructor('x.my_arg')
 
@@ -115,7 +116,7 @@ class TestArgumentConstructor:
     def test_works(self) -> None:
         constructor = ArgumentConstructor('x.my_arg')
 
-        assert constructor({'x': self.X('abc')}) == 'abc'
+        assert constructor({'x': X('abc')}) == 'abc'
 
     def test_no_argument(self) -> None:
         constructor = ArgumentConstructor('x.my_arg')
@@ -125,4 +126,33 @@ class TestArgumentConstructor:
     def test_no_attribute(self) -> None:
         constructor = ArgumentConstructor('x.wrong_arg')
 
-        assert constructor({'x': self.X('abc')}) is None
+        assert constructor({'x': X('abc')}) is None
+
+
+class TestFunctionArgsToLog:
+
+    def test_sync(self) -> None:
+
+        @function_args_to_log('y', 'x.my_arg')
+        def func(y: int, x: X, z: int) -> None:
+            logger.info('my_event')
+            assert_log_context_vars(y=1, x_my_arg='abc')
+
+        with capture_logs() as logs:
+            func(y=1, x=X('abc'), z=2)
+
+        assert logs == [{'module': 'ffun.core.tests.test_logging', 'event': 'my_event', 'log_level': 'info'}]
+
+    @pytest.mark.asyncio
+    async def test_async(self) -> None:
+
+        @function_args_to_log('y', 'x.my_arg')
+        async def func(y: int, x: X, z: int) -> None:
+            await asyncio.sleep(0)
+            logger.info('my_event')
+            assert_log_context_vars(y=1, x_my_arg='abc')
+
+        with capture_logs() as logs:
+            await func(y=1, x=X('abc'), z=2)
+
+        assert logs == [{'module': 'ffun.core.tests.test_logging', 'event': 'my_event', 'log_level': 'info'}]
