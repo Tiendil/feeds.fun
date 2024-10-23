@@ -12,9 +12,17 @@ from ffun.core.errors import Error
 logger = logging.get_module_logger()
 
 
-async def _handle_expected_error(_: fastapi.Request, error: Error) -> JSONResponse:
+_exception_code = "exception_code"
+
+
+async def _handle_expected_error(request: fastapi.Request, error: Error) -> JSONResponse:
     # TODO: improve error processing
-    api_error = api.APIError(code=error.__class__.__name__)
+    code = error.__class__.__name__
+
+    api_error = api.APIError(code=code)
+
+    # TODO: test
+    setattr(request.state, _exception_code, code)
 
     sentry_sdk.capture_exception(error)
 
@@ -23,11 +31,15 @@ async def _handle_expected_error(_: fastapi.Request, error: Error) -> JSONRespon
     return JSONResponse(status_code=500, content=api_error.model_dump())
 
 
-async def _handle_unexpected_error(_: fastapi.Request, error: Exception) -> JSONResponse:
+async def _handle_unexpected_error(request: fastapi.Request, error: Exception) -> JSONResponse:
     # TODO: improve error processing
-    api_error = api.APIError(
-        code=error.__class__.__name__, message="An unexpected error appeared. We are working on fixing it."
-    )
+
+    code = error.__class__.__name__
+
+    api_error = api.APIError(code=code, message="An unexpected error appeared. We are working on fixing it.")
+
+    # TODO: test
+    setattr(request.state, _exception_code, code)
 
     sentry_sdk.capture_exception(error)
 
@@ -82,6 +94,7 @@ def _existed_route_urls(app: fastapi.FastAPI) -> set[str]:
     return urls
 
 
+# TODO: add support for special exceptions raised from views
 async def request_measure_middleware(request: fastapi.Request, call_next: Any) -> fastapi.Response:
     app = request.scope.get("app")
 
@@ -93,14 +106,17 @@ async def request_measure_middleware(request: fastapi.Request, call_next: Any) -
         path = "wrong"
 
     with logger.measure_block_time("request_time", http_path=path) as extra_labels:
-        extra_labels["success"] = "success"
+        extra_labels["result"] = "success"
+        extra_labels["status_code"] = None
+        extra_labels["error_code"] = None
 
-        try:
-            response = await call_next(request)
-        except BaseException:
-            extra_labels["success"] = "exception"
+        response = await call_next(request)
 
         extra_labels["status_code"] = response.status_code
+
+        if hasattr(request.state, _exception_code):
+            extra_labels["error_code"] = getattr(request.state, _exception_code)
+            extra_labels["result"] = "error"
 
         assert isinstance(response, fastapi.Response)
 

@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import fastapi
 import pytest
+from httpx import AsyncClient
 from pytest_mock import MockerFixture
-from structlog.testing import capture_logs
 
 from ffun.core import errors, json, logging
 from ffun.core.middlewares import (
@@ -14,6 +14,7 @@ from ffun.core.middlewares import (
     _normalize_path,
     request_id_middleware,
 )
+from ffun.core.tests.helpers import capture_logs
 
 logger = logging.get_module_logger()
 
@@ -171,39 +172,70 @@ class TestExistedRouteUrls:
         }
 
 
-# class TestRequestMeasureMiddleware:
+class TestRequestMeasureMiddleware:
 
-#     @pytest.mark.asyncio
-#     async def test(self, client: AsyncClient) -> None:
-#         bound_measure_labels = mocker.patch("ffun.core.logging.bound_measure_labels")
+    @pytest.mark.asyncio
+    async def test(self, client: AsyncClient) -> None:
+        with capture_logs() as logs:
+            await client.post("/api/ok")
 
-#         with capture_logs() as logs:
-#             response = await client.get("/api/ok")
+        assert logs == [
+            {
+                "module": "ffun.core.middlewares",
+                "m_kind": "measure",
+                "m_value": logs[0]["m_value"],
+                "event": "request_time",
+                "request_uid": logs[0]["request_uid"],
+                "m_labels": {"http_path": "/api/ok", "result": "success", "status_code": 200, "error_code": None},
+                "log_level": "info",
+            }
+        ]
 
-#         assert logs == [{"event": "request_time", "log_level": "info", "http_path": "/api/ok", "success": "success"}]
+    @pytest.mark.asyncio
+    async def test_other_status_code(self, client: AsyncClient) -> None:
+        with capture_logs() as logs:
+            await client.get("/api/ok")
 
-# @pytest.mark.asyncio
-# async def test_wrong_path(self, mocker: MockerFixture) -> None:
-#     app = MagicMock()
-#     app.routes = [MagicMock(path="/test")]
+        assert logs == [
+            {
+                "module": "ffun.core.middlewares",
+                "m_kind": "measure",
+                "m_value": logs[0]["m_value"],
+                "event": "request_time",
+                "request_uid": logs[0]["request_uid"],
+                "m_labels": {"http_path": "/api/ok", "result": "success", "status_code": 405, "error_code": None},
+                "log_level": "info",
+            }
+        ]
 
-#     request = MagicMock()
-#     request.scope = {"app": app, "path": "/wrong"}
+    @pytest.mark.asyncio
+    async def test_wrong_url(self, client: AsyncClient) -> None:
+        with capture_logs() as logs:
+            await client.post("/api/bla-bla-bla")
 
-#     with capture_logs() as logs:
-#         await request_measure_middleware(request, AsyncMock())
+        assert logs == [
+            {
+                "module": "ffun.core.middlewares",
+                "m_kind": "measure",
+                "m_value": logs[0]["m_value"],
+                "event": "request_time",
+                "request_uid": logs[0]["request_uid"],
+                "m_labels": {"http_path": "wrong", "result": "success", "status_code": 404, "error_code": None},
+                "log_level": "info",
+            }
+        ]
 
-#     assert logs == [{"event": "request_time", "log_level": "info", "http_path": "wrong", "success": "success"}]
+    @pytest.mark.asyncio
+    async def test_error(self, client: AsyncClient) -> None:
+        with capture_logs() as logs:
+            await client.post("/api/error")
 
-# @pytest.mark.asyncio
-# async def test_exception(self, mocker: MockerFixture) -> None:
-#     app = MagicMock()
-#     app.routes = [MagicMock(path="/test")]
-
-#     request = MagicMock()
-#     request.scope = {"app": app, "path": "/test"}
-
-#     with capture_logs() as logs:
-#         await request_measure_middleware(request, AsyncMock(side_effect=Exception()))
-
-#     assert logs == [{"event": "request_time", "log_level": "info", "http_path": "/test", "success": "exception"}]
+        assert logs[1] == {
+            "module": "ffun.core.middlewares",
+            "m_kind": "measure",
+            "m_value": logs[1]["m_value"],
+            "event": "request_time",
+            "request_uid": logs[1]["request_uid"],
+            "m_labels": {"http_path": "/api/error", "result": "error", "status_code": 500, "error_code": "Exception"},
+            "log_level": "info",
+        }
