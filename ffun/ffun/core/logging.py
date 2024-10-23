@@ -233,7 +233,6 @@ class Constructor:
         raise NotImplementedError('You must implement "__call__" in child class')
 
 
-# TODO: test
 class IdentityConstructor(Constructor):
     __slots__ = ()
 
@@ -241,10 +240,9 @@ class IdentityConstructor(Constructor):
         super().__init__(name=arg)
 
     def __call__(self, kwargs: dict[str, Any]) -> Any:
-        return kwargs[self.name]
+        return kwargs.get(self.name)
 
 
-# TODO: test
 class ArgumentConstructor(Constructor):
     __slots__ = ("key", "attribute")
 
@@ -253,7 +251,10 @@ class ArgumentConstructor(Constructor):
         self.key, self.attribute = arg.split(".", 1)
 
     def __call__(self, kwargs: dict[str, Any]) -> Any:
-        return getattr(kwargs[self.key], self.attribute)
+        if self.key not in kwargs:
+            return None
+
+        return getattr(kwargs[self.key], self.attribute, None)
 
 
 # TODO: test
