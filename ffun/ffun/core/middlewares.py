@@ -92,7 +92,7 @@ async def request_measure_middleware(request: fastapi.Request, call_next: Any) -
     if path not in _existed_route_urls():
         path = 'wrong'
 
-    with logger.measure_block_time("request_time", path=path) as extra_labels:
+    with logger.measure_block_time("request_time", http_path=path) as extra_labels:
         extra_labels['success'] = 'success'
 
         try:
