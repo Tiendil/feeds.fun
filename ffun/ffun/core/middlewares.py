@@ -3,8 +3,8 @@ import uuid
 from typing import Any
 
 import fastapi
-from fastapi.responses import JSONResponse
 import sentry_sdk
+from fastapi.responses import JSONResponse
 
 from ffun.core import api, logging
 from ffun.core.errors import Error
@@ -59,7 +59,7 @@ async def request_id_middleware(request: fastapi.Request, call_next: Any) -> fas
 def _normalize_path(url: str) -> str | None:
     url = url.lower().rstrip("/")
 
-    if '//' in url:
+    if "//" in url:
         return None
 
     return url

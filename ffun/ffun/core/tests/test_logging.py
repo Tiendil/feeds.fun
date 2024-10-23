@@ -1,8 +1,6 @@
 import asyncio
-from unittest import mock
 
 import pytest
-from pytest_mock import MockerFixture
 
 from ffun.core import errors
 from ffun.core.logging import (
@@ -58,7 +56,7 @@ class TestMeasuringBoundLoggerMixin:
                 "m_value": 42,
                 "event": "my_event",
                 "log_level": "info",
-                "m_labels": {"x": "a", "y": 2}
+                "m_labels": {"x": "a", "y": 2},
             }
         ]
 
@@ -98,11 +96,10 @@ class TestMeasuringBoundLoggerMixin:
                 "m_value": logs[0]["m_value"],
                 "event": "my_event",
                 "log_level": "info",
-                'm_labels': {
-                'x': 'a',
-               'y': 2,
-           }
-
+                "m_labels": {
+                    "x": "a",
+                    "y": 2,
+                },
             }
         ]
 
@@ -123,11 +120,7 @@ class TestMeasuringBoundLoggerMixin:
                 "m_value": logs[0]["m_value"],
                 "event": "my_event",
                 "log_level": "info",
-    "m_labels": {
-        "x": "a",
-        "y": 2,
-        "z": 3
-    }
+                "m_labels": {"x": "a", "y": 2, "z": 3},
             }
         ]
 
@@ -187,8 +180,15 @@ class TestFunctionArgsToLog:
         with capture_logs() as logs:
             func(y=1, x=X("abc"), z=2)
 
-        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", 'x_my_arg': 'abc',
-          'y': 1,}]
+        assert logs == [
+            {
+                "module": "ffun.core.tests.test_logging",
+                "event": "my_event",
+                "log_level": "info",
+                "x_my_arg": "abc",
+                "y": 1,
+            }
+        ]
 
     @pytest.mark.asyncio
     async def test_async(self) -> None:
@@ -202,8 +202,15 @@ class TestFunctionArgsToLog:
         with capture_logs() as logs:
             await func(y=1, x=X("abc"), z=2)
 
-        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", 'x_my_arg': 'abc',
-          'y': 1,}]
+        assert logs == [
+            {
+                "module": "ffun.core.tests.test_logging",
+                "event": "my_event",
+                "log_level": "info",
+                "x_my_arg": "abc",
+                "y": 1,
+            }
+        ]
 
 
 class TestBoundLogArgs:
@@ -215,8 +222,17 @@ class TestBoundLogArgs:
                 logger.measure("my_event", 42, z=3)
                 assert_log_context_vars()
 
-        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b"},
-                        {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 42, "event": "my_event", "log_level": "info", "m_labels": {"z": 3}}]
+        assert logs == [
+            {"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b"},
+            {
+                "module": "ffun.core.tests.test_logging",
+                "m_kind": "measure",
+                "m_value": 42,
+                "event": "my_event",
+                "log_level": "info",
+                "m_labels": {"z": 3},
+            },
+        ]
 
     def test_with_args(self) -> None:
         with capture_logs() as logs:
@@ -225,8 +241,26 @@ class TestBoundLogArgs:
                 logger.measure("my_event", 42, z=3)
                 assert_log_context_vars(x=1, y="a")
 
-        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b", "x": 1, "y": "a"},
-                        {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 42, "event": "my_event", "log_level": "info", "x": 1, "y": "a","m_labels": { "z": 3}}]
+        assert logs == [
+            {
+                "module": "ffun.core.tests.test_logging",
+                "event": "my_event",
+                "log_level": "info",
+                "a": "b",
+                "x": 1,
+                "y": "a",
+            },
+            {
+                "module": "ffun.core.tests.test_logging",
+                "m_kind": "measure",
+                "m_value": 42,
+                "event": "my_event",
+                "log_level": "info",
+                "x": 1,
+                "y": "a",
+                "m_labels": {"z": 3},
+            },
+        ]
 
     @pytest.mark.parametrize("protected", ["m_labels", "m_value", "m_kind"])
     def test_reserved(self, protected: str) -> None:
@@ -249,10 +283,36 @@ class TestBoundLogArgs:
 
             assert_log_context_vars()
 
-        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b", "x": 1, "y": 2},
-                        {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 42, "event": "my_event", "log_level": "info", "x": 1, "y": 2, "m_labels": {"z": 3}},
-                        {"module": "ffun.core.tests.test_logging", "event": "my_event_2", "log_level": "info", "a": "c", "x": 1},
-                        {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 43, "event": "my_event_2", "log_level": "info", "x": 1,  "m_labels": {"z": 4}}]
+        assert logs == [
+            {
+                "module": "ffun.core.tests.test_logging",
+                "event": "my_event",
+                "log_level": "info",
+                "a": "b",
+                "x": 1,
+                "y": 2,
+            },
+            {
+                "module": "ffun.core.tests.test_logging",
+                "m_kind": "measure",
+                "m_value": 42,
+                "event": "my_event",
+                "log_level": "info",
+                "x": 1,
+                "y": 2,
+                "m_labels": {"z": 3},
+            },
+            {"module": "ffun.core.tests.test_logging", "event": "my_event_2", "log_level": "info", "a": "c", "x": 1},
+            {
+                "module": "ffun.core.tests.test_logging",
+                "m_kind": "measure",
+                "m_value": 43,
+                "event": "my_event_2",
+                "log_level": "info",
+                "x": 1,
+                "m_labels": {"z": 4},
+            },
+        ]
 
     def test_duplicated_args(self) -> None:
         with pytest.raises(errors.DuplicatedLogArguments):
@@ -270,8 +330,17 @@ class TestBoundMeasureLabels:
                 logger.measure("my_event", 42, z=3)
                 assert_log_context_vars()
 
-        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b"},
-                        {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 42, "event": "my_event", "log_level": "info", "m_labels": {"z": 3}}]
+        assert logs == [
+            {"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b"},
+            {
+                "module": "ffun.core.tests.test_logging",
+                "m_kind": "measure",
+                "m_value": 42,
+                "event": "my_event",
+                "log_level": "info",
+                "m_labels": {"z": 3},
+            },
+        ]
 
     def test_with_labels(self) -> None:
         with capture_logs() as logs:
@@ -280,8 +349,23 @@ class TestBoundMeasureLabels:
                 logger.measure("my_event", 42, z=3)
                 assert_log_context_vars(m_labels={"x": 1, "y": "a"})
 
-        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b", "m_labels": {"x": 1, "y": "a"}},
-                        {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 42, "event": "my_event", "log_level": "info", "m_labels": {"x": 1, "y": "a", "z": 3}}]
+        assert logs == [
+            {
+                "module": "ffun.core.tests.test_logging",
+                "event": "my_event",
+                "log_level": "info",
+                "a": "b",
+                "m_labels": {"x": 1, "y": "a"},
+            },
+            {
+                "module": "ffun.core.tests.test_logging",
+                "m_kind": "measure",
+                "m_value": 42,
+                "event": "my_event",
+                "log_level": "info",
+                "m_labels": {"x": 1, "y": "a", "z": 3},
+            },
+        ]
 
     def test_recursive(self) -> None:
         with capture_logs() as logs:
@@ -301,10 +385,36 @@ class TestBoundMeasureLabels:
             assert_log_context_vars()
 
         assert logs == [
-            {"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b", "m_labels": {"x": 1, "y": 2}},
-            {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 42, "event": "my_event", "log_level": "info", "m_labels": {"x": 1, "y": 2, "z": 3}},
-            {"module": "ffun.core.tests.test_logging", "event": "my_event_2", "log_level": "info", "a": "c", "m_labels": {"x": 1}},
-            {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 43, "event": "my_event_2", "log_level": "info", "m_labels": {"x": 1, "z": 4}},
+            {
+                "module": "ffun.core.tests.test_logging",
+                "event": "my_event",
+                "log_level": "info",
+                "a": "b",
+                "m_labels": {"x": 1, "y": 2},
+            },
+            {
+                "module": "ffun.core.tests.test_logging",
+                "m_kind": "measure",
+                "m_value": 42,
+                "event": "my_event",
+                "log_level": "info",
+                "m_labels": {"x": 1, "y": 2, "z": 3},
+            },
+            {
+                "module": "ffun.core.tests.test_logging",
+                "event": "my_event_2",
+                "log_level": "info",
+                "a": "c",
+                "m_labels": {"x": 1},
+            },
+            {
+                "module": "ffun.core.tests.test_logging",
+                "m_kind": "measure",
+                "m_value": 43,
+                "event": "my_event_2",
+                "log_level": "info",
+                "m_labels": {"x": 1, "z": 4},
+            },
         ]
 
     def test_duplicated_labels(self) -> None:

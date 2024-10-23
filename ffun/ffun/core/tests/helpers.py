@@ -1,15 +1,15 @@
+import contextlib
 import copy
 import datetime
-import contextlib
 from collections import Counter
 from types import TracebackType
-from typing import Any, Callable, MutableMapping, Optional, Type, Generator
+from typing import Any, Callable, Generator, MutableMapping, Optional, Type
 
 import pytest
-from structlog import contextvars as structlog_contextvars
-from structlog.types import EventDict
-from structlog.testing import LogCapture
 from structlog import _config as structlog_config
+from structlog import contextvars as structlog_contextvars
+from structlog.testing import LogCapture
+from structlog.types import EventDict
 
 from ffun.core.postgresql import execute
 
