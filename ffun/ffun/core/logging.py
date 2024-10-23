@@ -1,12 +1,12 @@
+import contextlib
 import datetime
-import time
 import enum
 import functools
 import inspect
 import logging
+import time
 import uuid
 from typing import Any, Callable, Iterable, Protocol, TypeVar
-import contextlib
 
 import pydantic_settings
 import structlog
@@ -214,7 +214,7 @@ FUNC = TypeVar("FUNC", bound=Callable[..., Any])
 
 
 class Constructor:
-    __slots__ = ('name',)
+    __slots__ = ("name",)
 
     def __init__(self, name: str) -> None:
         self.name = name
@@ -236,11 +236,11 @@ class IdentityConstructor(Constructor):
 
 # TODO: test
 class ArgumentConstructor(Constructor):
-    __slots__ = ('key', 'attribute')
+    __slots__ = ("key", "attribute")
 
     def __init__(self, arg: str) -> None:
-        super().__init__(name=arg.replace('.', '_'))
-        self.key, self.attribute = arg.split('.', 1)
+        super().__init__(name=arg.replace(".", "_"))
+        self.key, self.attribute = arg.split(".", 1)
 
     def __call__(self, kwargs: dict[str, Any]) -> Any:
         return getattr(kwargs[self.key], self.attribute)
@@ -251,7 +251,7 @@ def function_args_to_log(*args) -> Callable[[FUNC], FUNC]:
     constructors = []
 
     for arg in args:
-        if '.' not in arg:
+        if "." not in arg:
             constructors.append(IdentityConstructor(arg))
         else:
             constructors.append(ArgumentConstructor(arg))

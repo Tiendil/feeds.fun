@@ -1,5 +1,5 @@
-import uuid
 import functools
+import uuid
 from typing import Any
 
 import fastapi
@@ -59,7 +59,7 @@ async def request_id_middleware(request: fastapi.Request, call_next: Any) -> fas
 
 # TODO: tests
 def _normalize_path(url: str) -> str:
-    return url.lower().rstrip('/')
+    return url.lower().rstrip("/")
 
 
 # TODO: test
@@ -73,7 +73,7 @@ def _existed_route_urls() -> set[str]:
     for route in app.routes:
         url = _normalize_path(route.path)
 
-        if '{' in url:
+        if "{" in url:
             raise NotImplementedError()
 
         urls.add(url)
@@ -83,23 +83,23 @@ def _existed_route_urls() -> set[str]:
 
 async def request_measure_middleware(request: fastapi.Request, call_next: Any) -> fastapi.Response:
 
-    app = request.scope.get('app')
+    app = request.scope.get("app")
 
     assert app is not None
 
-    path = _normalize_path(request.scope.get('path'))
+    path = _normalize_path(request.scope.get("path"))
 
     if path not in _existed_route_urls():
-        path = 'wrong'
+        path = "wrong"
 
     with logger.measure_block_time("request_time", http_path=path) as extra_labels:
-        extra_labels['success'] = 'success'
+        extra_labels["success"] = "success"
 
         try:
             response = await call_next(request)
         except BaseException:
-            extra_labels['success'] = 'exception'
+            extra_labels["success"] = "exception"
 
-        extra_labels['status_code'] = response.status_code
+        extra_labels["status_code"] = response.status_code
 
         return response

@@ -67,7 +67,7 @@ async def plan_processor_queue(processor_id: int, fill_when_below: int, chunk: i
     await push_entries_and_move_pointer(next_pointer, [entry[0] for entry in next_entries])
 
 
-@logging.function_args_to_log('processor.name', 'entry.id')
+@logging.function_args_to_log("processor.name", "entry.id")
 async def process_entry(processor_id: int, processor: Processor, entry: Entry) -> None:
     logger.info("dicover_tags", entry_id=entry.id)
 

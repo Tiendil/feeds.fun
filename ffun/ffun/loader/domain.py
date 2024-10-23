@@ -144,7 +144,7 @@ async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None
     logger.info("entries_stored", entries_number=len(prepared_entries))
 
 
-@logging.function_args_to_log('feed.id', 'feed.url')
+@logging.function_args_to_log("feed.id", "feed.url")
 async def process_feed(feed: Feed) -> None:
     logger.info("loading_feed")
 
