@@ -307,7 +307,6 @@ def bound_log_args(**kwargs: Any) -> Iterator[None]:
         yield
 
 
-# TODO: test redifinition
 @contextlib.contextmanager
 def bound_measure_labels(**labels: str | int) -> Iterator[None]:
     if not labels:
