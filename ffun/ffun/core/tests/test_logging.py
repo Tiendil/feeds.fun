@@ -3,7 +3,6 @@ from unittest import mock
 
 import pytest
 from pytest_mock import MockerFixture
-from structlog.testing import capture_logs
 
 from ffun.core import errors
 from ffun.core.logging import (
@@ -14,7 +13,7 @@ from ffun.core.logging import (
     function_args_to_log,
     get_module_logger,
 )
-from ffun.core.tests.helpers import assert_log_context_vars
+from ffun.core.tests.helpers import assert_log_context_vars, capture_logs
 
 logger = get_module_logger()
 
@@ -48,9 +47,7 @@ class TestMeasuringBoundLoggerMixin:
             }
         ]
 
-    def test_measure__has_labels(self, mocker: MockerFixture) -> None:
-        bound_measure_labels = mocker.patch("ffun.core.logging.bound_measure_labels")
-
+    def test_measure__has_labels(self) -> None:
         with capture_logs() as logs:
             logger.measure("my_event", 42, x="a", y=2)
 
@@ -61,10 +58,9 @@ class TestMeasuringBoundLoggerMixin:
                 "m_value": 42,
                 "event": "my_event",
                 "log_level": "info",
+                "m_labels": {"x": "a", "y": 2}
             }
         ]
-
-        bound_measure_labels.assert_called_once_with(x="a", y=2)
 
     @pytest.mark.asyncio
     async def test_measure_block_time__no_labels(self) -> None:
@@ -102,14 +98,17 @@ class TestMeasuringBoundLoggerMixin:
                 "m_value": logs[0]["m_value"],
                 "event": "my_event",
                 "log_level": "info",
+                'm_labels': {
+                'x': 'a',
+               'y': 2,
+           }
+
             }
         ]
 
     @pytest.mark.asyncio
-    async def test_measure_block_time__extra_labels(self, mocker: MockerFixture) -> None:
+    async def test_measure_block_time__extra_labels(self) -> None:
         delta = 0.1
-
-        bound_measure_labels = mocker.patch("ffun.core.logging.bound_measure_labels")
 
         with capture_logs() as logs:
             with logger.measure_block_time("my_event", x="a", y=2) as extra_labels:
@@ -124,10 +123,13 @@ class TestMeasuringBoundLoggerMixin:
                 "m_value": logs[0]["m_value"],
                 "event": "my_event",
                 "log_level": "info",
+    "m_labels": {
+        "x": "a",
+        "y": 2,
+        "z": 3
+    }
             }
         ]
-
-        bound_measure_labels.assert_has_calls([mock.call(x="a", y=2), mock.call(z=3)], any_order=True)
 
 
 class TestIdentityConstructor:
@@ -185,7 +187,8 @@ class TestFunctionArgsToLog:
         with capture_logs() as logs:
             func(y=1, x=X("abc"), z=2)
 
-        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info"}]
+        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", 'x_my_arg': 'abc',
+          'y': 1,}]
 
     @pytest.mark.asyncio
     async def test_async(self) -> None:
@@ -199,18 +202,31 @@ class TestFunctionArgsToLog:
         with capture_logs() as logs:
             await func(y=1, x=X("abc"), z=2)
 
-        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info"}]
+        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", 'x_my_arg': 'abc',
+          'y': 1,}]
 
 
 class TestBoundLogArgs:
 
     def test_no_args(self) -> None:
-        with bound_log_args():
-            assert_log_context_vars()
+        with capture_logs() as logs:
+            with bound_log_args():
+                logger.info("my_event", a="b")
+                logger.measure("my_event", 42, z=3)
+                assert_log_context_vars()
+
+        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b"},
+                        {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 42, "event": "my_event", "log_level": "info", "m_labels": {"z": 3}}]
 
     def test_with_args(self) -> None:
-        with bound_log_args(x=1, y="a"):
-            assert_log_context_vars(x=1, y="a")
+        with capture_logs() as logs:
+            with bound_log_args(x=1, y="a"):
+                logger.info("my_event", a="b")
+                logger.measure("my_event", 42, z=3)
+                assert_log_context_vars(x=1, y="a")
+
+        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b", "x": 1, "y": "a"},
+                        {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 42, "event": "my_event", "log_level": "info", "x": 1, "y": "a","m_labels": { "z": 3}}]
 
     @pytest.mark.parametrize("protected", ["m_labels", "m_value", "m_kind"])
     def test_reserved(self, protected: str) -> None:
@@ -219,13 +235,24 @@ class TestBoundLogArgs:
                 pass
 
     def test_recursive(self) -> None:
-        with bound_log_args(x=1):
-            with bound_log_args(y=2):
-                assert_log_context_vars(x=1, y=2)
+        with capture_logs() as logs:
+            with bound_log_args(x=1):
+                with bound_log_args(y=2):
+                    logger.info("my_event", a="b")
+                    logger.measure("my_event", 42, z=3)
+                    assert_log_context_vars(x=1, y=2)
 
-            assert_log_context_vars(x=1)
+                logger.info("my_event_2", a="c")
+                logger.measure("my_event_2", 43, z=4)
 
-        assert_log_context_vars()
+                assert_log_context_vars(x=1)
+
+            assert_log_context_vars()
+
+        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b", "x": 1, "y": 2},
+                        {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 42, "event": "my_event", "log_level": "info", "x": 1, "y": 2, "m_labels": {"z": 3}},
+                        {"module": "ffun.core.tests.test_logging", "event": "my_event_2", "log_level": "info", "a": "c", "x": 1},
+                        {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 43, "event": "my_event_2", "log_level": "info", "x": 1,  "m_labels": {"z": 4}}]
 
     def test_duplicated_args(self) -> None:
         with pytest.raises(errors.DuplicatedLogArguments):
@@ -237,23 +264,48 @@ class TestBoundLogArgs:
 class TestBoundMeasureLabels:
 
     def test_no_labels(self) -> None:
-        with bound_measure_labels():
-            assert_log_context_vars()
+        with capture_logs() as logs:
+            with bound_measure_labels():
+                logger.info("my_event", a="b")
+                logger.measure("my_event", 42, z=3)
+                assert_log_context_vars()
+
+        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b"},
+                        {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 42, "event": "my_event", "log_level": "info", "m_labels": {"z": 3}}]
 
     def test_with_labels(self) -> None:
-        with bound_measure_labels(x=1, y="a"):
-            assert_log_context_vars(m_labels={"x": 1, "y": "a"})
+        with capture_logs() as logs:
+            with bound_measure_labels(x=1, y="a"):
+                logger.info("my_event", a="b")
+                logger.measure("my_event", 42, z=3)
+                assert_log_context_vars(m_labels={"x": 1, "y": "a"})
+
+        assert logs == [{"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b", "m_labels": {"x": 1, "y": "a"}},
+                        {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 42, "event": "my_event", "log_level": "info", "m_labels": {"x": 1, "y": "a", "z": 3}}]
 
     def test_recursive(self) -> None:
-        with bound_measure_labels(x=1):
-            assert_log_context_vars(m_labels={"x": 1})
+        with capture_logs() as logs:
+            with bound_measure_labels(x=1):
+                assert_log_context_vars(m_labels={"x": 1})
 
-            with bound_measure_labels(y=2):
-                assert_log_context_vars(m_labels={"x": 1, "y": 2})
+                with bound_measure_labels(y=2):
+                    logger.info("my_event", a="b")
+                    logger.measure("my_event", 42, z=3)
+                    assert_log_context_vars(m_labels={"x": 1, "y": 2})
 
-            assert_log_context_vars(m_labels={"x": 1})
+                logger.info("my_event_2", a="c")
+                logger.measure("my_event_2", 43, z=4)
 
-        assert_log_context_vars()
+                assert_log_context_vars(m_labels={"x": 1})
+
+            assert_log_context_vars()
+
+        assert logs == [
+            {"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b", "m_labels": {"x": 1, "y": 2}},
+            {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 42, "event": "my_event", "log_level": "info", "m_labels": {"x": 1, "y": 2, "z": 3}},
+            {"module": "ffun.core.tests.test_logging", "event": "my_event_2", "log_level": "info", "a": "c", "m_labels": {"x": 1}},
+            {"module": "ffun.core.tests.test_logging", "m_kind": "measure", "m_value": 43, "event": "my_event_2", "log_level": "info", "m_labels": {"x": 1, "z": 4}},
+        ]
 
     def test_duplicated_labels(self) -> None:
         with pytest.raises(errors.DuplicatedMeasureLabels):

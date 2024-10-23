@@ -1,11 +1,15 @@
 import copy
 import datetime
+import contextlib
 from collections import Counter
 from types import TracebackType
-from typing import Any, Callable, MutableMapping, Optional, Type
+from typing import Any, Callable, MutableMapping, Optional, Type, Generator
 
 import pytest
 from structlog import contextvars as structlog_contextvars
+from structlog.types import EventDict
+from structlog.testing import LogCapture
+from structlog import _config as structlog_config
 
 from ffun.core.postgresql import execute
 
@@ -195,3 +199,30 @@ def assert_logs_have_no_errors(logs: list[MutableMapping[str, Any]]) -> None:
     for record in logs:
         if record["log_level"].lower() == "error":
             pytest.fail(f"Error found in logs: {record}")
+
+
+@contextlib.contextmanager
+def capture_logs() -> Generator[list[EventDict], None, None]:
+    """
+    This is a modified version of capture_logs from structlog.testing
+
+    Differences:
+
+    - merge contextvars
+    """
+    cap = LogCapture()
+
+    processors = structlog_config.get_config()["processors"]
+    old_processors = processors.copy()
+    try:
+        # clear processors list and use LogCapture for testing
+        processors.clear()
+        processors.append(structlog_contextvars.merge_contextvars)
+        processors.append(cap)
+        structlog_config.configure(processors=processors)
+        yield cap.entries
+    finally:
+        # remove LogCapture and restore original processors
+        processors.clear()
+        processors.extend(old_processors)
+        structlog_config.configure(processors=processors)

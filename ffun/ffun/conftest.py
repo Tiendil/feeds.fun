@@ -1,10 +1,10 @@
 import pytest
+from httpx import ASGITransport, AsyncClient
 from typing import AsyncGenerator, Generator
 from pytest_mock import MockerFixture
 import fastapi
 import pytest_asyncio
 from unittest import mock
-from fastapi.testclient import TestClient
 from ffun.application import application
 from ffun.core import migrations
 from ffun.feeds.tests.fixtures import *  # noqa
@@ -36,6 +36,7 @@ async def app(prepare_db: None) -> AsyncGenerator[fastapi.FastAPI, None]:
             yield app
 
 
-@pytest.fixture
-def client(app: fastapi.FastAPI) -> Generator[TestClient, None, None]:
-    yield TestClient(app, raise_server_exceptions=True, follow_redirects=False)
+@pytest_asyncio.fixture()
+async def client(app: fastapi.FastAPI) -> Generator[AsyncClient, None, None]:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url='http://test') as client:
+        yield client

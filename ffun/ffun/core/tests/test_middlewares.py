@@ -1,8 +1,8 @@
 import uuid
 import fastapi
 from ffun.core import json
-from fastapi.testclient import TestClient
 import pytest
+from httpx import ASGITransport, AsyncClient
 from structlog.testing import capture_logs
 from unittest.mock import MagicMock, AsyncMock
 from pytest_mock import MockerFixture
@@ -110,7 +110,7 @@ class TestNormalizePath:
 class TestExistedRouteUrls:
 
     @pytest.mark.asyncio
-    async def test(self, app: fastapi.FastAPI, client: TestClient) -> None:
+    async def test(self, app: fastapi.FastAPI) -> None:
         assert _existed_route_urls(app) == {'/api/get-rules',
                                             '/api/get-collections',
                                             '/api/add-opml',
@@ -137,3 +137,41 @@ class TestExistedRouteUrls:
                                             '/api/update-rule',
                                             '/api/openapi.json',
                                             '/api/remove-marker'}
+
+
+# class TestRequestMeasureMiddleware:
+
+#     @pytest.mark.asyncio
+#     async def test(self, client: AsyncClient) -> None:
+#         bound_measure_labels = mocker.patch("ffun.core.logging.bound_measure_labels")
+
+#         with capture_logs() as logs:
+#             response = await client.get("/api/ok")
+
+#         assert logs == [{"event": "request_time", "log_level": "info", "http_path": "/api/ok", "success": "success"}]
+
+    # @pytest.mark.asyncio
+    # async def test_wrong_path(self, mocker: MockerFixture) -> None:
+    #     app = MagicMock()
+    #     app.routes = [MagicMock(path="/test")]
+
+    #     request = MagicMock()
+    #     request.scope = {"app": app, "path": "/wrong"}
+
+    #     with capture_logs() as logs:
+    #         await request_measure_middleware(request, AsyncMock())
+
+    #     assert logs == [{"event": "request_time", "log_level": "info", "http_path": "wrong", "success": "success"}]
+
+    # @pytest.mark.asyncio
+    # async def test_exception(self, mocker: MockerFixture) -> None:
+    #     app = MagicMock()
+    #     app.routes = [MagicMock(path="/test")]
+
+    #     request = MagicMock()
+    #     request.scope = {"app": app, "path": "/test"}
+
+    #     with capture_logs() as logs:
+    #         await request_measure_middleware(request, AsyncMock(side_effect=Exception()))
+
+    #     assert logs == [{"event": "request_time", "log_level": "info", "http_path": "/test", "success": "exception"}]
