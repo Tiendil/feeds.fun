@@ -1,4 +1,5 @@
 import datetime
+import time
 import enum
 import functools
 import inspect
@@ -161,18 +162,34 @@ class MeasuringBoundLogger(structlog.typing.FilteringBoundLogger):
         pass
 
 
+class MeasuringBoundLoggerMixin:
+    # TODO: tests
+    def measure(self, event: str, value: float | int, **labels: dict[str, str | int]) -> None:
+        if not labels:
+            return self._proxy_to_logger("measure", event, m_value=value)
+
+        with bound_measure_labels(**labels):
+            return self._proxy_to_logger("measure", event, m_value=value)
+
+    # TODO: tests
+    @contextlib.contextmanager
+    def measure_block_time(self, event: str, **labels: dict[str, str | int]) -> Callable[[dict[str, str | int]], None]:
+        started_at = time.monotonic()
+
+        extra_labels = {}
+
+        with bound_measure_labels(**labels):
+            try:
+                yield extra_labels
+            finally:
+                self.measure(event, time.monotonic() - started_at, **extra_labels)
+
+
 def make_measuring_bound_logger(level: str) -> type[MeasuringBoundLogger]:
     filtering_logger_class = structlog.make_filtering_bound_logger(level)
 
-    class _MeasuringBoundLogger(filtering_logger_class):
-
-        # TODO: tests
-        def measure(self, event: str, value: float | int, **labels: dict[str, str | int]) -> None:
-            if not labels:
-                return self._proxy_to_logger("measure", event, m_value=value)
-
-            with bound_log_args(m_labels=labels):
-                return self._proxy_to_logger("measure", event, m_value=value)
+    class _MeasuringBoundLogger(MeasuringBoundLoggerMixin, filtering_logger_class):
+        pass
 
     return _MeasuringBoundLogger
 
@@ -293,6 +310,3 @@ def bound_measure_labels(**labels: dict[str, str | int]) -> None:
 
     with bound_contextvars(**bound_labels):
         yield
-
-
-# TODO: add request_id to all request to track full logs of a concreate request

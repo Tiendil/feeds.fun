@@ -155,6 +155,10 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
         allow_headers=[],
     )
 
+    app.add_middleware(middlewares.request_measure_middleware)
+
+    app.add_middleware(middlewares.request_id_middleware)
+
     logger.info("app_created")
 
     return app

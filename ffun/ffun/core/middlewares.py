@@ -1,3 +1,4 @@
+import uuid
 from typing import Any
 
 import fastapi
@@ -47,3 +48,26 @@ async def final_errors_middleware(request: fastapi.Request, call_next: Any) -> f
         return await _handle_expected_error(request, e)
     except Exception as e:
         return await _handle_unexpected_error(request, e)
+
+
+# TODO: test
+async def request_id_middleware(request: fastapi.Request, call_next: Any) -> fastapi.Response:
+    with logging.bound_log_args(request_uid=uuid.uuid4().hex):
+        return await call_next(request)  # type: ignore
+
+
+async def request_measure_middleware(request: fastapi.Request, call_next: Any) -> fastapi.Response:
+
+    route = request.scope.get("route")
+
+    with logger.measure_block_time("request_time", path=route.path) as extra_labels:
+        extra_labels['success'] = 'success'
+
+        try:
+            response = await call_next(request)
+        except BaseException:
+            extra_labels['success'] = 'exception'
+
+        extra_labels['status_code'] = response.status_code
+
+        return response
