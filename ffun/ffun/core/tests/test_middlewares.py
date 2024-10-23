@@ -1,5 +1,7 @@
 import uuid
+import fastapi
 from ffun.core import json
+from fastapi.testclient import TestClient
 import pytest
 from structlog.testing import capture_logs
 from unittest.mock import MagicMock, AsyncMock
@@ -103,3 +105,35 @@ class TestNormalizePath:
     ])
     def test(self, url: str, expected: str) -> None:
         assert _normalize_path(url) == expected
+
+
+class TestExistedRouteUrls:
+
+    @pytest.mark.asyncio
+    async def test(self, app: fastapi.FastAPI, client: TestClient) -> None:
+        assert _existed_route_urls(app) == {'/api/get-rules',
+                                            '/api/get-collections',
+                                            '/api/add-opml',
+                                            '/api/delete-rule',
+                                            '/api/add-feed',
+                                            '/api/unsubscribe',
+                                            '/api/docs',
+                                            '/api/get-entries-by-ids',
+                                            '/api/get-last-entries',
+                                            '/api/subscribe-to-collections',
+                                            '/api/ok',
+                                            '/api/set-user-setting',
+                                            '/api/error',
+                                            '/api/get-collection-feeds',
+                                            '/api/set-marker',
+                                            '/api/get-score-details',
+                                            '/api/discover-feeds',
+                                            '/api/get-user-settings',
+                                            '/api/get-resource-history',
+                                            '/api/create-or-update-rule',
+                                            '/api/get-feeds',
+                                            '/api/get-info',
+                                            '/api/get-tags-info',
+                                            '/api/update-rule',
+                                            '/api/openapi.json',
+                                            '/api/remove-marker'}

@@ -65,11 +65,9 @@ def _normalize_path(url: str) -> str | None:
     return url
 
 
-# TODO: test
 @functools.cache
-def _existed_route_urls() -> set[str]:
-    # TODO: move somewhere?
-    from ffun.application.application import app
+def _existed_route_urls(app: fastapi.FastAPI) -> set[str]:
+    # cache should be all right here because app is singleton
 
     urls = set()
 
@@ -91,7 +89,7 @@ async def request_measure_middleware(request: fastapi.Request, call_next: Any) -
 
     path = _normalize_path(request.scope.get("path"))  # type: ignore
 
-    if path not in _existed_route_urls():
+    if path not in _existed_route_urls(app):
         path = "wrong"
 
     with logger.measure_block_time("request_time", http_path=path) as extra_labels:

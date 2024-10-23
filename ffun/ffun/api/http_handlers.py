@@ -37,6 +37,11 @@ async def api_error() -> None:
     raise Exception("test_error")
 
 
+@router.post("/api/ok")
+async def api_error() -> None:
+    return None
+
+
 @router.post("/api/get-feeds")
 async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entities.GetFeedsResponse:
     linked_feeds = await fl_domain.get_linked_feeds(user.id)
