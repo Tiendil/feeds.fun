@@ -59,7 +59,7 @@ async def request_id_middleware(request: fastapi.Request, call_next: Any) -> fas
 
 # TODO: tests
 def _normalize_path(url: str) -> str:
-    return url.lower().strip('/')
+    return url.lower().rstrip('/')
 
 
 # TODO: test

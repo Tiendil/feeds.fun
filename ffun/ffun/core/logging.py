@@ -166,10 +166,10 @@ class MeasuringBoundLoggerMixin:
     # TODO: tests
     def measure(self, event: str, value: float | int, **labels: dict[str, str | int]) -> None:
         if not labels:
-            return self._proxy_to_logger("measure", event, m_value=value)
+            return self.info(event, m_kind="measure", m_value=value)
 
         with bound_measure_labels(**labels):
-            return self._proxy_to_logger("measure", event, m_value=value)
+            return self.info(event, m_kind="measure", m_value=value)
 
     # TODO: tests
     @contextlib.contextmanager
@@ -199,7 +199,7 @@ def initialize(use_sentry: bool) -> None:
         processors=processors_list(use_sentry=use_sentry),  # type: ignore
         wrapper_class=make_measuring_bound_logger(settings.structlog_level),
         context_class=dict,
-        logger_factory=structlog.PrintLoggerFactory(),
+        logger_factory=structlog.WriteLoggerFactory(),
         cache_logger_on_first_use=True,
     )
 
@@ -283,7 +283,7 @@ def bound_log_args(**kwargs: Any) -> None:
         yield
         return
 
-    if kwargs.keys() & {"m_labels", "m_value"}:
+    if kwargs.keys() & {"m_labels", "m_value", "m_kind"}:
         raise errors.ReservedLogArguments()
 
     with structlog_contextvars.bound_contextvars(**kwargs):
