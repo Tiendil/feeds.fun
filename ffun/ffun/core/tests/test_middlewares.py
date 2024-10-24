@@ -31,8 +31,12 @@ class TestHandleExpectedError:
 
         error = FakeError(message="some message")
 
+        request = MagicMock()
+
         with capture_logs() as logs:
-            response = await _handle_expected_error(MagicMock(), error)
+            response = await _handle_expected_error(request, error)
+
+        assert request.state.exception_code == 'FakeError'
 
         capture_exception.assert_called_once_with(error)
 
@@ -61,16 +65,20 @@ class TestHandleUnexpectedError:
     async def test(self, mocker: MockerFixture) -> None:
         capture_exception = mocker.patch("sentry_sdk.capture_exception")
 
-        error = Exception("some message")
+        error = FakeError(message="some message")
+
+        request = MagicMock()
 
         with capture_logs() as logs:
-            response = await _handle_unexpected_error(MagicMock(), error)
+            response = await _handle_unexpected_error(request, error)
+
+        assert request.state.exception_code == 'FakeError'
 
         capture_exception.assert_called_once_with(error)
 
         assert logs == [
             {
-                "event": "Exception",
+                "event": "FakeError",
                 "log_level": "error",
                 "exc_info": True,
                 "module": "ffun.core.middlewares",
@@ -81,7 +89,7 @@ class TestHandleUnexpectedError:
         assert response.status_code == 500
         assert json.parse(response.body) == {
             "status": "error",
-            "code": "Exception",
+            "code": "FakeError",
             "message": "An unexpected error appeared. We are working on fixing it.",
             "data": None,
         }

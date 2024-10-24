@@ -21,7 +21,6 @@ async def _handle_expected_error(request: fastapi.Request, error: Error) -> JSON
 
     api_error = api.APIError(code=code)
 
-    # TODO: test
     setattr(request.state, _exception_code, code)
 
     sentry_sdk.capture_exception(error)
@@ -38,7 +37,6 @@ async def _handle_unexpected_error(request: fastapi.Request, error: Exception) -
 
     api_error = api.APIError(code=code, message="An unexpected error appeared. We are working on fixing it.")
 
-    # TODO: test
     setattr(request.state, _exception_code, code)
 
     sentry_sdk.capture_exception(error)
