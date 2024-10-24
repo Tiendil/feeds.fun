@@ -7,24 +7,24 @@ import sentry_sdk
 from fastapi.responses import JSONResponse
 
 from ffun.core import api, logging
-from ffun.core.errors import Error, APIError
+from ffun.core import errors
 
 logger = logging.get_module_logger()
 
 
-async def _handle_api_error(request: fastapi.Request, error: APIError) -> JSONResponse:
+async def _handle_api_error(request: fastapi.Request, error: errors.APIError) -> JSONResponse:
     # TODO: improve error processing
 
-    api_error = api.APIError(code=error.code, message=error.message)
+    api_error = api.APIError(code=error.code, message=error.message)  # type: ignore
 
-    logger.info('api_error', code=error.code, message=error.message)
+    logger.info("api_error", code=error.code, message=error.message)  # type: ignore
 
-    request.state.api_error_code = error.code
+    request.state.api_error_code = error.code  # type: ignore
 
     return JSONResponse(status_code=200, content=api_error.model_dump())
 
 
-async def _handle_unexpected_error(request: fastapi.Request, error: Exception) -> JSONResponse:
+async def _handle_unexpected_error(request: fastapi.Request, error: BaseException) -> JSONResponse:
     # TODO: improve error processing
 
     code = error.__class__.__name__
@@ -42,14 +42,14 @@ async def _handle_unexpected_error(request: fastapi.Request, error: Exception) -
 
 # TODO: move somewhere?
 def initialize_error_processors(app: fastapi.FastAPI) -> fastapi.FastAPI:
-    app.exception_handler(Error)(_handle_api_error)
+    app.exception_handler(errors.Error)(_handle_api_error)
     return app
 
 
 async def final_errors_middleware(request: fastapi.Request, call_next: Any) -> fastapi.Response:
     try:
         return await call_next(request)  # type: ignore
-    except APIError as e:
+    except errors.APIError as e:
         return await _handle_api_error(request, e)
     except BaseException as e:
         return await _handle_unexpected_error(request, e)
@@ -78,6 +78,9 @@ def _existed_route_urls(app: fastapi.FastAPI) -> set[str]:
     for route in app.routes:
         url = _normalize_path(route.path)  # type: ignore
 
+        if url is None:
+            raise NotImplementedError()
+
         if "{" in url:
             raise NotImplementedError()
 
@@ -105,11 +108,11 @@ async def request_measure_middleware(request: fastapi.Request, call_next: Any) -
 
         extra_labels["status_code"] = response.status_code
 
-        if hasattr(request.state, 'api_error_code'):
+        if hasattr(request.state, "api_error_code"):
             extra_labels["error_code"] = request.state.api_error_code
             extra_labels["result"] = "api_error"
 
-        if hasattr(request.state, 'internal_error_code'):
+        if hasattr(request.state, "internal_error_code"):
             extra_labels["error_code"] = request.state.internal_error_code
             extra_labels["result"] = "internal_error"
 

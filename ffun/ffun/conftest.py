@@ -37,6 +37,6 @@ async def app(prepare_db: None) -> AsyncGenerator[fastapi.FastAPI, None]:
 
 
 @pytest_asyncio.fixture()
-async def client(app: fastapi.FastAPI) -> Generator[AsyncClient, None, None]:
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+async def client(app: fastapi.FastAPI) -> AsyncGenerator[AsyncClient, None]:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:  # type: ignore
         yield client

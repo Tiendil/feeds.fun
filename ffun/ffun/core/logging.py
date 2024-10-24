@@ -17,6 +17,9 @@ from structlog import contextvars as structlog_contextvars
 from ffun.core import errors
 
 
+LabelValue = int | str | None
+
+
 class Renderer(str, enum.Enum):
     console = "console"
     json = "json"
@@ -159,12 +162,12 @@ def processors_list(use_sentry: bool) -> list[LogProcessorType]:
 
 
 class MeasuringBoundLogger(structlog.typing.FilteringBoundLogger):
-    def measure(self, event: str, value: float | int, **labels: str | int) -> None:
+    def measure(self, event: str, value: float | int, **labels: LabelValue) -> None:
         pass
 
     def measure_block_time(  # type: ignore
-        self, event: str, **labels: str | int
-    ) -> ContextManager[dict[str, str | int]]:
+        self, event: str, **labels: LabelValue
+    ) -> ContextManager[dict[str, LabelValue]]:
         pass
 
 
@@ -178,7 +181,7 @@ class MeasuringBoundLoggerMixin:
     would be able to filter/process messages universally.
     """
 
-    def measure(self, event: str, value: float | int, **labels: str | int) -> Any:
+    def measure(self, event: str, value: float | int, **labels: LabelValue) -> Any:
         if not labels:
             return self.info(event, m_kind="measure", m_value=value)  # type: ignore
 
@@ -186,10 +189,10 @@ class MeasuringBoundLoggerMixin:
             return self.info(event, m_kind="measure", m_value=value)  # type: ignore
 
     @contextlib.contextmanager
-    def measure_block_time(self, event: str, **labels: str | int) -> Iterator[dict[str, str | int]]:
+    def measure_block_time(self, event: str, **labels: LabelValue) -> Iterator[dict[str, LabelValue]]:
         started_at = time.monotonic()
 
-        extra_labels: dict[str, str | int] = {}
+        extra_labels: dict[str, LabelValue] = {}
 
         with bound_measure_labels(**labels):
             try:
@@ -308,7 +311,7 @@ def bound_log_args(**kwargs: Any) -> Iterator[None]:
 
 
 @contextlib.contextmanager
-def bound_measure_labels(**labels: str | int) -> Iterator[None]:
+def bound_measure_labels(**labels: LabelValue) -> Iterator[None]:
     if not labels:
         yield
         return

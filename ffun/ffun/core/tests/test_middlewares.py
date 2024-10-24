@@ -29,14 +29,14 @@ class TestHandleAPIError:
     async def test(self, mocker: MockerFixture) -> None:
         capture_exception = mocker.patch("sentry_sdk.capture_exception")
 
-        error = errors.APIError(code='some.error.code', message="some message")
+        error = errors.APIError(code="some.error.code", message="some message")
 
         request = MagicMock()
 
         with capture_logs() as logs:
             response = await _handle_api_error(request, error)
 
-        assert request.state.api_error_code == 'some.error.code'
+        assert request.state.api_error_code == "some.error.code"
 
         capture_exception.assert_not_called()
 
@@ -52,7 +52,7 @@ class TestHandleAPIError:
 
         assert response.status_code == 200
 
-        assert json.parse(response.body) == {
+        assert json.parse(response.body.decode()) == {
             "status": "error",
             "code": "some.error.code",
             "message": "some message",
@@ -73,7 +73,7 @@ class TestHandleUnexpectedError:
         with capture_logs() as logs:
             response = await _handle_unexpected_error(request, error)
 
-        assert request.state.internal_error_code == 'FakeError'
+        assert request.state.internal_error_code == "FakeError"
 
         capture_exception.assert_called_once_with(error)
 
@@ -88,7 +88,7 @@ class TestHandleUnexpectedError:
         ]
 
         assert response.status_code == 500
-        assert json.parse(response.body) == {
+        assert json.parse(response.body.decode()) == {
             "status": "error",
             "code": "FakeError",
             "message": "An unexpected error appeared. We are working on fixing it.",
@@ -246,7 +246,12 @@ class TestRequestMeasureMiddleware:
             "m_value": logs[1]["m_value"],
             "event": "request_time",
             "request_uid": logs[1]["request_uid"],
-            "m_labels": {"http_path": "/api/test/internal-error", "result": "internal_error", "status_code": 500, "error_code": "Exception"},
+            "m_labels": {
+                "http_path": "/api/test/internal-error",
+                "result": "internal_error",
+                "status_code": 500,
+                "error_code": "Exception",
+            },
             "log_level": "info",
         }
 
@@ -261,6 +266,11 @@ class TestRequestMeasureMiddleware:
             "m_value": logs[1]["m_value"],
             "event": "request_time",
             "request_uid": logs[1]["request_uid"],
-            "m_labels": {"http_path": "/api/test/expected-error", "result": "api_error", "status_code": 200, "error_code": "expected_test_error"},
+            "m_labels": {
+                "http_path": "/api/test/expected-error",
+                "result": "api_error",
+                "status_code": 200,
+                "error_code": "expected_test_error",
+            },
             "log_level": "info",
         }
