@@ -6,8 +6,7 @@ import fastapi
 import sentry_sdk
 from fastapi.responses import JSONResponse
 
-from ffun.core import api, logging
-from ffun.core import errors
+from ffun.core import api, errors, logging
 
 logger = logging.get_module_logger()
 

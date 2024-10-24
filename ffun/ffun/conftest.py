@@ -1,4 +1,4 @@
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator
 from unittest import mock
 
 import fastapi

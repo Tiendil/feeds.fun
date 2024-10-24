@@ -16,7 +16,6 @@ from structlog import contextvars as structlog_contextvars
 
 from ffun.core import errors
 
-
 LabelValue = int | str | None
 
 
