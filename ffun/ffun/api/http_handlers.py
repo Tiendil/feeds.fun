@@ -11,6 +11,7 @@ from ffun.api import entities
 from ffun.api.settings import settings
 from ffun.auth.dependencies import User
 from ffun.core import logging
+from ffun.core.errors import APIError
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_discoverer import domain as fd_domain
@@ -32,13 +33,18 @@ router = fastapi.APIRouter()
 logger = logging.get_module_logger()
 
 
-@router.post("/api/error")
-async def api_error() -> None:
+@router.post("/api/test/internal-error")
+async def api_internal_error() -> None:
     raise Exception("test_error")
 
 
-@router.post("/api/ok")
-async def api_error() -> None:
+@router.post("/api/test/expected-error")
+async def api_expected_error() -> None:
+    raise APIError(code="expected_test_error", message="Expected test error")
+
+
+@router.post("/api/test/ok")
+async def api_ok() -> None:
     return None
 
 

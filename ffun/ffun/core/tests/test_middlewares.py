@@ -9,7 +9,7 @@ from pytest_mock import MockerFixture
 from ffun.core import errors, json, logging
 from ffun.core.middlewares import (
     _existed_route_urls,
-    _handle_expected_error,
+    _handle_api_error,
     _handle_unexpected_error,
     _normalize_path,
     request_id_middleware,
@@ -23,38 +23,39 @@ class FakeError(errors.Error):
     pass
 
 
-class TestHandleExpectedError:
+class TestHandleAPIError:
 
     @pytest.mark.asyncio
     async def test(self, mocker: MockerFixture) -> None:
         capture_exception = mocker.patch("sentry_sdk.capture_exception")
 
-        error = FakeError(message="some message")
+        error = errors.APIError(code='some.error.code', message="some message")
 
         request = MagicMock()
 
         with capture_logs() as logs:
-            response = await _handle_expected_error(request, error)
+            response = await _handle_api_error(request, error)
 
-        assert request.state.exception_code == 'FakeError'
+        assert request.state.api_error_code == 'some.error.code'
 
-        capture_exception.assert_called_once_with(error)
+        capture_exception.assert_not_called()
 
         assert logs == [
             {
-                "event": "FakeError",
-                "log_level": "error",
-                "exc_info": True,
+                "event": "api_error",
+                "log_level": "info",
                 "module": "ffun.core.middlewares",
-                "sentry_skip": True,
+                "code": "some.error.code",
+                "message": "some message",
             }
         ]
 
-        assert response.status_code == 500
+        assert response.status_code == 200
+
         assert json.parse(response.body) == {
             "status": "error",
-            "code": "FakeError",
-            "message": "Unknown error",
+            "code": "some.error.code",
+            "message": "some message",
             "data": None,
         }
 
@@ -72,7 +73,7 @@ class TestHandleUnexpectedError:
         with capture_logs() as logs:
             response = await _handle_unexpected_error(request, error)
 
-        assert request.state.exception_code == 'FakeError'
+        assert request.state.internal_error_code == 'FakeError'
 
         capture_exception.assert_called_once_with(error)
 
@@ -161,9 +162,10 @@ class TestExistedRouteUrls:
             "/api/get-entries-by-ids",
             "/api/get-last-entries",
             "/api/subscribe-to-collections",
-            "/api/ok",
+            "/api/test/ok",
             "/api/set-user-setting",
-            "/api/error",
+            "/api/test/internal-error",
+            "/api/test/expected-error",
             "/api/get-collection-feeds",
             "/api/set-marker",
             "/api/get-score-details",
@@ -185,7 +187,7 @@ class TestRequestMeasureMiddleware:
     @pytest.mark.asyncio
     async def test(self, client: AsyncClient) -> None:
         with capture_logs() as logs:
-            await client.post("/api/ok")
+            await client.post("/api/test/ok")
 
         assert logs == [
             {
@@ -194,7 +196,7 @@ class TestRequestMeasureMiddleware:
                 "m_value": logs[0]["m_value"],
                 "event": "request_time",
                 "request_uid": logs[0]["request_uid"],
-                "m_labels": {"http_path": "/api/ok", "result": "success", "status_code": 200, "error_code": None},
+                "m_labels": {"http_path": "/api/test/ok", "result": "success", "status_code": 200, "error_code": None},
                 "log_level": "info",
             }
         ]
@@ -202,7 +204,7 @@ class TestRequestMeasureMiddleware:
     @pytest.mark.asyncio
     async def test_other_status_code(self, client: AsyncClient) -> None:
         with capture_logs() as logs:
-            await client.get("/api/ok")
+            await client.get("/api/test/ok")
 
         assert logs == [
             {
@@ -211,7 +213,7 @@ class TestRequestMeasureMiddleware:
                 "m_value": logs[0]["m_value"],
                 "event": "request_time",
                 "request_uid": logs[0]["request_uid"],
-                "m_labels": {"http_path": "/api/ok", "result": "success", "status_code": 405, "error_code": None},
+                "m_labels": {"http_path": "/api/test/ok", "result": "success", "status_code": 405, "error_code": None},
                 "log_level": "info",
             }
         ]
@@ -234,9 +236,9 @@ class TestRequestMeasureMiddleware:
         ]
 
     @pytest.mark.asyncio
-    async def test_error(self, client: AsyncClient) -> None:
+    async def test_internal_error(self, client: AsyncClient) -> None:
         with capture_logs() as logs:
-            await client.post("/api/error")
+            await client.post("/api/test/internal-error")
 
         assert logs[1] == {
             "module": "ffun.core.middlewares",
@@ -244,6 +246,21 @@ class TestRequestMeasureMiddleware:
             "m_value": logs[1]["m_value"],
             "event": "request_time",
             "request_uid": logs[1]["request_uid"],
-            "m_labels": {"http_path": "/api/error", "result": "error", "status_code": 500, "error_code": "Exception"},
+            "m_labels": {"http_path": "/api/test/internal-error", "result": "internal_error", "status_code": 500, "error_code": "Exception"},
+            "log_level": "info",
+        }
+
+    @pytest.mark.asyncio
+    async def test_expected_error(self, client: AsyncClient) -> None:
+        with capture_logs() as logs:
+            await client.post("/api/test/expected-error")
+
+        assert logs[1] == {
+            "module": "ffun.core.middlewares",
+            "m_kind": "measure",
+            "m_value": logs[1]["m_value"],
+            "event": "request_time",
+            "request_uid": logs[1]["request_uid"],
+            "m_labels": {"http_path": "/api/test/expected-error", "result": "api_error", "status_code": 200, "error_code": "expected_test_error"},
             "log_level": "info",
         }

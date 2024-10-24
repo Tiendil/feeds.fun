@@ -20,6 +20,11 @@ class CoreError(Error):
     pass
 
 
+class APIError(CoreError):
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(code=code, message=message)
+
+
 class EntityAlreadyRegistered(CoreError):
     pass
 

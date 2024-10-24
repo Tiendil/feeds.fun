@@ -7,27 +7,21 @@ import sentry_sdk
 from fastapi.responses import JSONResponse
 
 from ffun.core import api, logging
-from ffun.core.errors import Error
+from ffun.core.errors import Error, APIError
 
 logger = logging.get_module_logger()
 
 
-_exception_code = "exception_code"
-
-
-async def _handle_expected_error(request: fastapi.Request, error: Error) -> JSONResponse:
+async def _handle_api_error(request: fastapi.Request, error: APIError) -> JSONResponse:
     # TODO: improve error processing
-    code = error.__class__.__name__
 
-    api_error = api.APIError(code=code)
+    api_error = api.APIError(code=error.code, message=error.message)
 
-    setattr(request.state, _exception_code, code)
+    logger.info('api_error', code=error.code, message=error.message)
 
-    sentry_sdk.capture_exception(error)
+    request.state.api_error_code = error.code
 
-    logger.exception(error.__class__.__name__, sentry_skip=True)
-
-    return JSONResponse(status_code=500, content=api_error.model_dump())
+    return JSONResponse(status_code=200, content=api_error.model_dump())
 
 
 async def _handle_unexpected_error(request: fastapi.Request, error: Exception) -> JSONResponse:
@@ -37,7 +31,7 @@ async def _handle_unexpected_error(request: fastapi.Request, error: Exception) -
 
     api_error = api.APIError(code=code, message="An unexpected error appeared. We are working on fixing it.")
 
-    setattr(request.state, _exception_code, code)
+    request.state.internal_error_code = code
 
     sentry_sdk.capture_exception(error)
 
@@ -48,16 +42,16 @@ async def _handle_unexpected_error(request: fastapi.Request, error: Exception) -
 
 # TODO: move somewhere?
 def initialize_error_processors(app: fastapi.FastAPI) -> fastapi.FastAPI:
-    app.exception_handler(Error)(_handle_expected_error)
+    app.exception_handler(Error)(_handle_api_error)
     return app
 
 
 async def final_errors_middleware(request: fastapi.Request, call_next: Any) -> fastapi.Response:
     try:
         return await call_next(request)  # type: ignore
-    except Error as e:
-        return await _handle_expected_error(request, e)
-    except Exception as e:
+    except APIError as e:
+        return await _handle_api_error(request, e)
+    except BaseException as e:
         return await _handle_unexpected_error(request, e)
 
 
@@ -92,7 +86,6 @@ def _existed_route_urls(app: fastapi.FastAPI) -> set[str]:
     return urls
 
 
-# TODO: add support for special exceptions raised from views
 async def request_measure_middleware(request: fastapi.Request, call_next: Any) -> fastapi.Response:
     app = request.scope.get("app")
 
@@ -112,9 +105,13 @@ async def request_measure_middleware(request: fastapi.Request, call_next: Any) -
 
         extra_labels["status_code"] = response.status_code
 
-        if hasattr(request.state, _exception_code):
-            extra_labels["error_code"] = getattr(request.state, _exception_code)
-            extra_labels["result"] = "error"
+        if hasattr(request.state, 'api_error_code'):
+            extra_labels["error_code"] = request.state.api_error_code
+            extra_labels["result"] = "api_error"
+
+        if hasattr(request.state, 'internal_error_code'):
+            extra_labels["error_code"] = request.state.internal_error_code
+            extra_labels["result"] = "internal_error"
 
         assert isinstance(response, fastapi.Response)
 
