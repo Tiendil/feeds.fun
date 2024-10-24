@@ -2,7 +2,6 @@ import uuid
 from decimal import Decimal
 
 import pytest
-from pytest_mock import MockerFixture
 
 from ffun.application.resources import Resource as AppResource
 from ffun.domain.datetime_intervals import month_interval_start
@@ -137,7 +136,6 @@ class TestSearchForAPIKey:
         fake_llm_provider: ProviderTest,
         llm_config: LLMConfiguration,
         cataloged_entry: Entry,
-        mocker: MockerFixture,
     ) -> None:
         # Here we test meta logic => we can check the simplest case (general api key)
         # plus check the all parameters passed to selection function
@@ -165,7 +163,6 @@ class TestSearchForAPIKey:
         fake_llm_provider: ProviderTest,
         llm_config: LLMConfiguration,
         cataloged_entry: Entry,
-        mocker: MockerFixture,
     ) -> None:
         # Here we test meta logic => we can check the simplest case (general api key)
         # plus check the all parameters passed to selection function

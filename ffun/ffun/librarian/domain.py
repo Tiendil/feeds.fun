@@ -67,9 +67,9 @@ async def plan_processor_queue(processor_id: int, fill_when_below: int, chunk: i
     await push_entries_and_move_pointer(next_pointer, [entry[0] for entry in next_entries])
 
 
-@logging.bound_function(skip=("processor",))
+@logging.function_args_to_log("processor.name", "entry.id")
 async def process_entry(processor_id: int, processor: Processor, entry: Entry) -> None:
-    logger.info("dicover_tags", entry=entry, processor_id=processor_id)
+    logger.info("dicover_tags")
 
     try:
         tags = await processor.process(entry)
@@ -86,7 +86,7 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
         # do nothing in such case, see: https://github.com/Tiendil/feeds.fun/issues/176
         logger.warning("processor_requested_to_skip_entry", error_info=str(e))
     except Exception as e:
-        logger.exception("processor_failed", entry_id=entry.id, processor_id=processor_id)
+        logger.exception("processor_failed")
         await operations.add_entries_to_failed_storage(processor_id, [entry.id])
         raise errors.UnexpectedErrorInProcessor(processor_id=processor_id, entry_id=entry.id) from e
     finally:
