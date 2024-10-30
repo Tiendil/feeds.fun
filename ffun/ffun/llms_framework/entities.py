@@ -1,7 +1,6 @@
 import datetime
 import decimal
 import enum
-import uuid
 from typing import Annotated, NewType
 
 import pydantic

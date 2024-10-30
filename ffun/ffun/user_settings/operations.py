@@ -1,10 +1,9 @@
-import uuid
 from typing import Iterable
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
-from ffun.user_settings.entities import UserSettings
 from ffun.domain.entities import UserId
+from ffun.user_settings.entities import UserSettings
 
 logger = logging.get_module_logger()
 
@@ -21,9 +20,7 @@ async def save_setting(user_id: UserId, kind: int, value: str) -> None:
     await execute(sql, {"user_id": user_id, "kind": kind, "value": value})
 
 
-async def load_settings_for_users(
-    user_ids: Iterable[UserId], kinds: Iterable[int]
-) -> dict[UserId, UserSettings]:
+async def load_settings_for_users(user_ids: Iterable[UserId], kinds: Iterable[int]) -> dict[UserId, UserSettings]:
     sql = """
         SELECT *
         FROM us_settings

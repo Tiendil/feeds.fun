@@ -3,9 +3,9 @@ from typing import Any, Iterable
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
+from ffun.domain.entities import UserId
 from ffun.feeds.entities import FeedId
 from ffun.feeds_links.entities import FeedLink
-from ffun.domain.entities import UserId
 
 logger = logging.get_module_logger()
 

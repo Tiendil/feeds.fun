@@ -3,9 +3,9 @@ import uuid
 
 import pytest
 
+from ffun.domain.entities import UserId
 from ffun.user_settings import operations
 from ffun.user_settings.tests import asserts
-from ffun.domain.entities import UserId
 
 _kind_1 = 1234
 _kind_2 = 5678
@@ -26,9 +26,7 @@ class TestSave:
         await asserts.has_settings(internal_user_id, {_kind_1: "abc", _kind_2: "def"})
 
     @pytest.mark.asyncio
-    async def test_save_load_multiple_users(
-        self, internal_user_id: UserId, another_internal_user_id: UserId
-    ) -> None:
+    async def test_save_load_multiple_users(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
         await operations.save_setting(internal_user_id, _kind_1, "abc")
         await operations.save_setting(another_internal_user_id, _kind_1, "def")
 
@@ -54,9 +52,7 @@ class TestLoadSettingsForUsers:
         assert settings == {internal_user_id: {}, another_internal_user_id: {}}
 
     @pytest.mark.asyncio
-    async def test_some_settings_stored(
-        self, internal_user_id: UserId, another_internal_user_id: UserId
-    ) -> None:
+    async def test_some_settings_stored(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
         await operations.save_setting(internal_user_id, _kind_1, "abc")
         await operations.save_setting(internal_user_id, _kind_2, "def")
         await operations.save_setting(another_internal_user_id, _kind_1, "ghi")

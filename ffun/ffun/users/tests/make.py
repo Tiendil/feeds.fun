@@ -1,8 +1,8 @@
 import uuid
 
+from ffun.domain.entities import UserId
 from ffun.users import operations
 from ffun.users.entities import Service
-from ffun.domain.entities import UserId
 
 
 async def fake_user_id() -> UserId:

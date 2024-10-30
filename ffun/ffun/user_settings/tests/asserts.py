@@ -1,8 +1,7 @@
-import uuid
 from typing import Iterable
 
-from ffun.user_settings import operations
 from ffun.domain.entities import UserId
+from ffun.user_settings import operations
 
 
 async def has_settings(user_id: UserId, values: dict[int, str]) -> None:

@@ -1,4 +1,3 @@
-import uuid
 from typing import Iterable
 
 from ffun.core import logging
@@ -12,7 +11,6 @@ from ffun.library import domain as l_domain
 from ffun.markers import domain as m_domain
 from ffun.ontology import domain as o_domain
 from ffun.parsers import entities as p_entities
-
 
 logger = logging.get_module_logger()
 

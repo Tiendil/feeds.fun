@@ -1,10 +1,10 @@
 import contextlib
 import datetime
-import uuid
 from decimal import Decimal
 from typing import Any, AsyncGenerator, Collection, Iterable, Protocol
 
 from ffun.core import logging
+from ffun.domain.entities import UserId
 from ffun.feeds.entities import FeedId
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_links import domain as fl_domain
@@ -22,8 +22,6 @@ from ffun.llms_framework.entities import (
 from ffun.llms_framework.provider_interface import ProviderInterface
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
-from ffun.domain.entities import UserId
-
 
 logger = logging.get_module_logger()
 

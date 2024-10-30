@@ -5,6 +5,7 @@ from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
 from ffun.core.tests.helpers import assert_logs
+from ffun.domain.entities import UserId
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections.collections import collections
@@ -16,7 +17,6 @@ from ffun.loader.domain import check_proxies_availability, detect_orphaned, proc
 from ffun.loader.settings import Proxy, settings
 from ffun.parsers import entities as p_entities
 from ffun.parsers.tests import make as p_make
-from ffun.domain.entities import UserId
 
 
 def assert_entriy_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:
@@ -209,9 +209,7 @@ class TestProcessFeed:
         assert not loaded_entries
 
     @pytest.mark.asyncio
-    async def test_success(
-        self, internal_user_id: UserId, saved_feed: f_entities.Feed, mocker: MockerFixture
-    ) -> None:
+    async def test_success(self, internal_user_id: UserId, saved_feed: f_entities.Feed, mocker: MockerFixture) -> None:
         n = 3
 
         entry_infos = [p_make.fake_entry_info() for _ in range(n)]

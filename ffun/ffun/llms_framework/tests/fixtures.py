@@ -4,8 +4,8 @@ from decimal import Decimal
 import pytest
 import pytest_asyncio
 
-from ffun.domain.entities import UserId
 from ffun.domain.datetime_intervals import month_interval_start
+from ffun.domain.entities import UserId
 from ffun.llms_framework.entities import LLMApiKey, LLMProvider, USDCost, UserKeyInfo
 from ffun.llms_framework.keys_rotator import _cost_points, _get_user_key_infos
 from ffun.llms_framework.keys_statuses import Statuses

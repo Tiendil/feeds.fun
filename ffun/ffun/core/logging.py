@@ -13,9 +13,9 @@ import pydantic_settings
 import structlog
 from sentry_sdk import capture_message
 from structlog import contextvars as structlog_contextvars
-from ffun.domain.entities import UserId
 
 from ffun.core import errors
+from ffun.domain.entities import UserId
 
 LabelValue = int | str | None
 
@@ -217,9 +217,9 @@ class BusinessBoundLoggerMixin:
 def make_measuring_bound_logger(level: int) -> type[FFunBoundLogger]:
     filtering_logger_class = structlog.make_filtering_bound_logger(level)
 
-    class _FFunBoundLogger(MeasuringBoundLoggerMixin,
-                           BusinessBoundLoggerMixin,
-                           filtering_logger_class):   # type: ignore
+    class _FFunBoundLogger(
+        MeasuringBoundLoggerMixin, BusinessBoundLoggerMixin, filtering_logger_class
+    ):  # type: ignore
         pass
 
     return _FFunBoundLogger

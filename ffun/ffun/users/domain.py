@@ -1,9 +1,6 @@
-import uuid
-
+from ffun.domain.entities import UserId
 from ffun.users import errors, operations
 from ffun.users.entities import Service, User
-from ffun.domain.entities import UserId
-
 
 add_mapping = operations.add_mapping
 get_mapping = operations.get_mapping

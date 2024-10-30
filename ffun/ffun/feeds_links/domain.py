@@ -1,10 +1,9 @@
-import uuid
 from typing import Iterable
 
 from ffun.core.postgresql import ExecuteType, run_in_transaction
+from ffun.domain.entities import UserId
 from ffun.feeds.entities import FeedId
 from ffun.feeds_links import operations
-from ffun.domain.entities import UserId
 
 add_link = operations.add_link
 remove_link = operations.remove_link

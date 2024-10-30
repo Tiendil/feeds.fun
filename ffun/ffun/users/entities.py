@@ -1,5 +1,4 @@
 import enum
-import uuid
 
 import pydantic
 

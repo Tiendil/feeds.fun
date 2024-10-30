@@ -5,8 +5,8 @@ import pytest
 import pytest_asyncio
 
 from ffun.core.postgresql import execute
-from ffun.domain.urls import url_to_source_uid
 from ffun.domain.entities import UserId
+from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
 from ffun.feeds_links import domain as fl_domain

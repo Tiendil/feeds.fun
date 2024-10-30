@@ -7,11 +7,10 @@ import pytest
 
 from ffun.core.register import Register
 from ffun.core.tests.helpers import TableSizeDecreased, TableSizeNotChanged
+from ffun.domain.entities import UserId
 from ffun.user_settings import domain, errors, operations, types
 from ffun.user_settings.tests import asserts
 from ffun.user_settings.values import SettingsRegister, Value
-from ffun.domain.entities import UserId
-
 
 _kind_1 = 1234
 _kind_2 = 5678

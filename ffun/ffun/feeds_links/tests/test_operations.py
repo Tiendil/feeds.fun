@@ -1,9 +1,8 @@
-import uuid
-
 import pytest
 
 from ffun.core.postgresql import transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
+from ffun.domain.entities import UserId
 from ffun.feeds.entities import FeedId
 from ffun.feeds.tests import make as f_make
 from ffun.feeds_links.entities import FeedLink
@@ -16,7 +15,6 @@ from ffun.feeds_links.operations import (
     tech_merge_feeds,
 )
 from ffun.users.tests import make as u_make
-from ffun.domain.entities import UserId
 
 
 class TestAddLink:

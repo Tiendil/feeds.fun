@@ -1,14 +1,11 @@
-import uuid
-
 import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
+from ffun.domain.domain import new_user_id
+from ffun.domain.entities import UserId
 from ffun.users import errors
 from ffun.users.entities import Service
-from ffun.domain.entities import UserId
-from ffun.domain.domain import new_user_id
-
 
 logger = logging.get_module_logger()
 

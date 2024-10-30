@@ -3,9 +3,9 @@ import uuid
 import pytest
 import pytest_asyncio
 
+from ffun.domain.entities import UserId
 from ffun.users.domain import get_or_create_user_id
 from ffun.users.entities import Service
-from ffun.domain.entities import UserId
 
 
 @pytest.fixture

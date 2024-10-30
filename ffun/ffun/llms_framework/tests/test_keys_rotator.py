@@ -9,6 +9,7 @@ from pytest_mock import MockerFixture
 from ffun.application.resources import Resource as AppResource
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.domain.domain import new_user_id
+from ffun.domain.entities import UserId
 from ffun.feeds.entities import FeedId
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import CollectionId
@@ -50,7 +51,6 @@ from ffun.llms_framework.provider_interface import ProviderInterface, ProviderTe
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
 from ffun.user_settings import domain as us_domain
-from ffun.domain.entities import UserId
 
 _llm_config = LLMConfiguration(
     model="test-model",
