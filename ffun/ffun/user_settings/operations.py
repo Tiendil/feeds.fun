@@ -15,11 +15,14 @@ async def save_setting(user_id: UserId, kind: int, value: str) -> None:
         ON CONFLICT (user_id, kind)
         DO UPDATE SET value = %(value)s,
                       updated_at = NOW()
+        RETURNING created_at, updated_at
     """
 
-    await execute(sql, {"user_id": user_id, "kind": kind, "value": value})
+    results = await execute(sql, {"user_id": user_id, "kind": kind, "value": value})
 
-    logger.business_event("setting_updated", user_id=user_id, kind=kind)
+    first_set = results[0]['created_at'] == results[0]['updated_at']
+
+    logger.business_event("setting_updated", user_id=user_id, kind=kind, first_set=first_set)
 
 
 async def load_settings_for_users(user_ids: Iterable[UserId], kinds: Iterable[int]) -> dict[UserId, UserSettings]:

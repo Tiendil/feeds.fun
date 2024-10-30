@@ -24,7 +24,16 @@ class TestSave:
         with capture_logs() as logs:
             await operations.save_setting(internal_user_id, _kind_1, "xxx")
 
-        assert_logs_has_business_event(logs, "setting_updated", user_id=internal_user_id, kind=_kind_1)
+        assert_logs_has_business_event(logs, "setting_updated", user_id=internal_user_id, kind=_kind_1, first_set=True)
+
+    @pytest.mark.asyncio
+    async def test_update_on_existed_setting(self, internal_user_id: UserId) -> None:
+        await operations.save_setting(internal_user_id, _kind_1, "xxx")
+
+        with capture_logs() as logs:
+            await operations.save_setting(internal_user_id, _kind_1, "yyy")
+
+        assert_logs_has_business_event(logs, "setting_updated", user_id=internal_user_id, kind=_kind_1, first_set=False)
 
     @pytest.mark.asyncio
     async def test_save_load_multiple_kinds(self, internal_user_id: UserId) -> None:
