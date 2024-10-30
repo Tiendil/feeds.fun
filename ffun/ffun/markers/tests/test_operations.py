@@ -2,12 +2,59 @@ import pytest
 
 from ffun.core.postgresql import transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
+from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, capture_logs, assert_logs_has_no_business_event, assert_logs_has_business_event
 from ffun.feeds.entities import Feed
 from ffun.library.entities import Entry
 from ffun.library.tests import make as l_make
 from ffun.markers.entities import Marker
-from ffun.markers.operations import get_markers, remove_markers_for_entries, set_marker, tech_merge_markers
+from ffun.markers.operations import get_markers, remove_markers_for_entries, set_marker, tech_merge_markers, remove_marker
 from ffun.users.tests import make as u_make
+from ffun.domain.entities import UserId
+
+
+class TestSetMarker:
+
+    @pytest.mark.asyncio
+    async def test_set_marker(self, internal_user_id: UserId, new_entry: Entry) -> None:
+        with capture_logs() as logs:
+            async with TableSizeDelta("m_markers", delta=1):
+                await set_marker(internal_user_id, Marker.read, new_entry.id)
+
+        assert_logs_has_business_event(logs, "marker_set", user_id=internal_user_id, entry_id=new_entry.id, marker=Marker.read)
+
+    @pytest.mark.asyncio
+    async def test_set_marker_twice(self, internal_user_id: UserId, new_entry: Entry) -> None:
+        await set_marker(internal_user_id, Marker.read, new_entry.id)
+
+        with capture_logs() as logs:
+            async with TableSizeNotChanged("m_markers"):
+                await set_marker(internal_user_id, Marker.read, new_entry.id)
+
+        assert_logs_has_no_business_event(logs, "marker_set")
+
+
+class TestRemoveMarker:
+
+    @pytest.mark.asyncio
+    async def test_remove_marker(self, internal_user_id: UserId, new_entry: Entry) -> None:
+        await set_marker(internal_user_id, Marker.read, new_entry.id)
+
+        with capture_logs() as logs:
+            async with TableSizeDelta("m_markers", delta=-1):
+                await remove_marker(internal_user_id, Marker.read, new_entry.id)
+
+        assert_logs_has_business_event(logs, "marker_removed", user_id=internal_user_id, entry_id=new_entry.id, marker=Marker.read)
+
+    @pytest.mark.asyncio
+    async def test_remove_marker_twice(self, internal_user_id: UserId, new_entry: Entry) -> None:
+        await set_marker(internal_user_id, Marker.read, new_entry.id)
+        await remove_marker(internal_user_id, Marker.read, new_entry.id)
+
+        with capture_logs() as logs:
+            async with TableSizeNotChanged("m_markers"):
+                await remove_marker(internal_user_id, Marker.read, new_entry.id)
+
+        assert_logs_has_no_business_event(logs, "marker_removed")
 
 
 class TestMergeFeeds:

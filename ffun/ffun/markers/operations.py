@@ -14,9 +14,13 @@ async def set_marker(user_id: uuid.UUID, marker: Marker, entry_id: uuid.UUID) ->
         INSERT INTO m_markers (id, user_id, marker, entry_id)
         VALUES (%(id)s, %(user_id)s, %(marker)s, %(entry_id)s)
         ON CONFLICT (user_id, marker, entry_id) DO NOTHING
+        RETURNING id
     """
 
-    await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "marker": marker, "entry_id": entry_id})
+    results = await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "marker": marker, "entry_id": entry_id})
+
+    if results:
+        logger.business_event("marker_set", user_id=user_id, marker=marker, entry_id=entry_id)
 
 
 # TODO: tests
@@ -24,9 +28,14 @@ async def remove_marker(user_id: uuid.UUID, marker: Marker, entry_id: uuid.UUID)
     sql = """
         DELETE FROM m_markers
         WHERE user_id = %(user_id)s AND marker = %(marker)s AND entry_id = %(entry_id)s
+        RETURNING id
     """
 
-    await execute(sql, {"user_id": user_id, "marker": marker, "entry_id": entry_id})
+    resuts = await execute(sql, {"user_id": user_id, "marker": marker, "entry_id": entry_id})
+
+    # TODO: check that other metrics are protected by the same condition
+    if resuts:
+        logger.business_event("marker_removed", user_id=user_id, marker=marker, entry_id=entry_id)
 
 
 # TODO: tests
@@ -53,6 +62,7 @@ async def get_markers(user_id: uuid.UUID, entries_ids: Iterable[uuid.UUID]) -> d
     return result
 
 
+# TODO: add business events?
 async def tech_merge_markers(execute: ExecuteType, from_entry_id: uuid.UUID, to_entry_id: uuid.UUID) -> None:
     sql = """
         DELETE FROM m_markers AS m
