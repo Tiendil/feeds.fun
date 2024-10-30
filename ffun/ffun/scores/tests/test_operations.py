@@ -119,8 +119,11 @@ class TestDeleteRule:
     async def test_delete_not_existed_rule(
         self, internal_user_id: uuid.UUID, three_tags_ids: tuple[int, int, int]
     ) -> None:
-        async with TableSizeNotChanged("s_rules"):
-            await operations.delete_rule(internal_user_id, uuid.uuid4())
+        with capture_logs() as logs:
+            async with TableSizeNotChanged("s_rules"):
+                await operations.delete_rule(internal_user_id, uuid.uuid4())
+
+        assert_logs_has_no_business_event(logs, "rule_deleted")
 
     @pytest.mark.asyncio
     async def test_delete_for_wrong_user(

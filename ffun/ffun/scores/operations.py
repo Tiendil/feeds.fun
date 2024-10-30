@@ -66,11 +66,13 @@ async def delete_rule(user_id: uuid.UUID, rule_id: uuid.UUID) -> None:
     sql = """
         DELETE FROM s_rules
         WHERE user_id = %(user_id)s AND id = %(rule_id)s
+        RETURNING id
         """
 
-    await execute(sql, {"user_id": user_id, "rule_id": rule_id})
+    result = await execute(sql, {"user_id": user_id, "rule_id": rule_id})
 
-    logger.business_event("rule_deleted", user_id=user_id, rule_id=rule_id)
+    if result:
+        logger.business_event("rule_deleted", user_id=user_id, rule_id=rule_id)
 
 
 async def update_rule(user_id: uuid.UUID, rule_id: uuid.UUID, tags: Iterable[int], score: int) -> Rule:

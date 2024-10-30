@@ -8,7 +8,6 @@ from ffun.markers.entities import Marker
 logger = logging.get_module_logger()
 
 
-# TODO: tests
 async def set_marker(user_id: uuid.UUID, marker: Marker, entry_id: uuid.UUID) -> None:
     sql = """
         INSERT INTO m_markers (id, user_id, marker, entry_id)
@@ -23,7 +22,6 @@ async def set_marker(user_id: uuid.UUID, marker: Marker, entry_id: uuid.UUID) ->
         logger.business_event("marker_set", user_id=user_id, marker=marker, entry_id=entry_id)
 
 
-# TODO: tests
 async def remove_marker(user_id: uuid.UUID, marker: Marker, entry_id: uuid.UUID) -> None:
     sql = """
         DELETE FROM m_markers
@@ -33,7 +31,6 @@ async def remove_marker(user_id: uuid.UUID, marker: Marker, entry_id: uuid.UUID)
 
     resuts = await execute(sql, {"user_id": user_id, "marker": marker, "entry_id": entry_id})
 
-    # TODO: check that other metrics are protected by the same condition
     if resuts:
         logger.business_event("marker_removed", user_id=user_id, marker=marker, entry_id=entry_id)
 
