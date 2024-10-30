@@ -218,8 +218,8 @@ def make_measuring_bound_logger(level: int) -> type[FFunBoundLogger]:
     filtering_logger_class = structlog.make_filtering_bound_logger(level)
 
     class _FFunBoundLogger(
-        MeasuringBoundLoggerMixin, BusinessBoundLoggerMixin, filtering_logger_class
-    ):  # type: ignore
+        MeasuringBoundLoggerMixin, BusinessBoundLoggerMixin, filtering_logger_class  # type: ignore
+    ):
         pass
 
     return _FFunBoundLogger

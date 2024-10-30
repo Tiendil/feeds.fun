@@ -228,8 +228,8 @@ def capture_logs() -> Generator[list[EventDict], None, None]:
         structlog_config.configure(processors=processors)
 
 
-def assert_logs_has_business_event(
-    logs: list[MutableMapping[str, Any]], name: str, **atributes: Any  # noqa: CCR001
+def assert_logs_has_business_event(  # noqa: CCR001
+    logs: list[MutableMapping[str, Any]], name: str, **atributes: Any
 ) -> None:
     for record in logs:
         if record.get("b_kind") == "event" and record["event"] == name:
