@@ -1,11 +1,16 @@
-
 import pytest
 
+from ffun.core.tests.helpers import (
+    TableSizeDelta,
+    TableSizeNotChanged,
+    assert_logs_has_business_event,
+    assert_logs_has_no_business_event,
+    capture_logs,
+)
 from ffun.domain.entities import UserId
-from ffun.core.tests.helpers import TableSizeNotChanged, TableSizeDelta, assert_logs_has_business_event, capture_logs, assert_logs_has_no_business_event
-from ffun.users.operations import add_mapping, get_mapping
-from ffun.users.entities import Service
 from ffun.users import errors
+from ffun.users.entities import Service
+from ffun.users.operations import add_mapping, get_mapping
 
 
 class TestAddMapping:

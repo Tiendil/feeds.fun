@@ -1,7 +1,7 @@
 import pytest
 
 from ffun.core.postgresql import transaction
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, capture_logs, assert_logs_has_no_business_event, assert_logs_has_business_event
+from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs_has_business_event, capture_logs
 from ffun.domain.entities import UserId
 from ffun.feeds.entities import FeedId
 from ffun.feeds.tests import make as f_make

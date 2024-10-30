@@ -2,8 +2,13 @@ import uuid
 
 import pytest
 
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, capture_logs, assert_logs_has_no_business_event, assert_logs_has_business_event
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
+from ffun.core.tests.helpers import (
+    TableSizeDelta,
+    TableSizeNotChanged,
+    assert_logs_has_business_event,
+    assert_logs_has_no_business_event,
+    capture_logs,
+)
 from ffun.scores import domain, errors, operations
 
 
@@ -22,7 +27,14 @@ class TestCreateOrUpdateRule:
         assert created_rule.tags == set(three_tags_ids)
         assert created_rule.score == 13
 
-        assert_logs_has_business_event(logs, "rule_created", user_id=internal_user_id, rule_id=created_rule.id, tags=list(three_tags_ids), score=13)
+        assert_logs_has_business_event(
+            logs,
+            "rule_created",
+            user_id=internal_user_id,
+            rule_id=created_rule.id,
+            tags=list(three_tags_ids),
+            score=13,
+        )
         assert_logs_has_no_business_event(logs, "rule_updated")
 
     @pytest.mark.asyncio
@@ -57,7 +69,14 @@ class TestCreateOrUpdateRule:
         assert updated_rule.tags == set(three_tags_ids)
         assert updated_rule.score == 17
 
-        assert_logs_has_business_event(logs, "rule_updated", user_id=internal_user_id, rule_id=updated_rule.id, tags=list(three_tags_ids), score=17)
+        assert_logs_has_business_event(
+            logs,
+            "rule_updated",
+            user_id=internal_user_id,
+            rule_id=updated_rule.id,
+            tags=list(three_tags_ids),
+            score=17,
+        )
         assert_logs_has_no_business_event(logs, "rule_created")
 
     @pytest.mark.asyncio
@@ -142,7 +161,9 @@ class TestUpdateRule:
 
         with capture_logs() as logs:
             async with TableSizeNotChanged("s_rules"):
-                updated_rule = await operations.update_rule(internal_user_id, rule_to_update.id, three_tags_ids[:2], 17)
+                updated_rule = await operations.update_rule(
+                    internal_user_id, rule_to_update.id, three_tags_ids[:2], 17
+                )
 
         assert updated_rule.id == rule_to_update.id
         assert updated_rule.user_id == internal_user_id
@@ -153,7 +174,14 @@ class TestUpdateRule:
 
         assert rules == [updated_rule]
 
-        assert_logs_has_business_event(logs, "rule_updated", user_id=internal_user_id, rule_id=rule_to_update.id, tags=list(three_tags_ids[:2]), score=17)
+        assert_logs_has_business_event(
+            logs,
+            "rule_updated",
+            user_id=internal_user_id,
+            rule_id=rule_to_update.id,
+            tags=list(three_tags_ids[:2]),
+            score=17,
+        )
 
     @pytest.mark.asyncio
     async def test_update_not_existed_rule(

@@ -20,7 +20,7 @@ async def save_setting(user_id: UserId, kind: int, value: str) -> None:
 
     results = await execute(sql, {"user_id": user_id, "kind": kind, "value": value})
 
-    first_set = results[0]['created_at'] == results[0]['updated_at']
+    first_set = results[0]["created_at"] == results[0]["updated_at"]
 
     logger.business_event("setting_updated", user_id=user_id, kind=kind, first_set=first_set)
 
