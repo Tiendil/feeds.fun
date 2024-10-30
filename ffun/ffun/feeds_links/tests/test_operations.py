@@ -1,7 +1,7 @@
 import pytest
 
 from ffun.core.postgresql import transaction
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
+from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, capture_logs, assert_logs_has_no_business_event, assert_logs_has_business_event
 from ffun.domain.entities import UserId
 from ffun.feeds.entities import FeedId
 from ffun.feeds.tests import make as f_make
@@ -21,8 +21,11 @@ class TestAddLink:
 
     @pytest.mark.asyncio
     async def test_add_link(self, internal_user_id: UserId, saved_feed_id: FeedId) -> None:
-        async with TableSizeDelta("fl_links", delta=1):
-            await add_link(internal_user_id, saved_feed_id)
+        with capture_logs() as logs:
+            async with TableSizeDelta("fl_links", delta=1):
+                await add_link(internal_user_id, saved_feed_id)
+
+        assert_logs_has_business_event(logs, "feed_linked", user_id=internal_user_id, feed_id=saved_feed_id)
 
         links = await get_linked_feeds(internal_user_id)
 
@@ -80,11 +83,14 @@ class TestAddLink:
 class TestRemoveLink:
 
     @pytest.mark.asyncio
-    async def test_add_link(self, internal_user_id: UserId, saved_feed_id: FeedId) -> None:
+    async def test_remove_link(self, internal_user_id: UserId, saved_feed_id: FeedId) -> None:
         await add_link(internal_user_id, saved_feed_id)
 
-        async with TableSizeDelta("fl_links", delta=-1):
-            await remove_link(internal_user_id, saved_feed_id)
+        with capture_logs() as logs:
+            async with TableSizeDelta("fl_links", delta=-1):
+                await remove_link(internal_user_id, saved_feed_id)
+
+        assert_logs_has_business_event(logs, "feed_unlinked", user_id=internal_user_id, feed_id=saved_feed_id)
 
         links = await get_linked_feeds(internal_user_id)
 
