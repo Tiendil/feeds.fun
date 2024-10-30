@@ -1,3 +1,4 @@
+import uuid
 import asyncio
 
 import pytest
@@ -11,7 +12,7 @@ from ffun.core.logging import (
     function_args_to_log,
     get_module_logger,
 )
-from ffun.core.tests.helpers import assert_log_context_vars, capture_logs
+from ffun.core.tests.helpers import assert_log_context_vars, capture_logs, assert_logs_has_business_event
 
 logger = get_module_logger()
 
@@ -25,9 +26,6 @@ class TestMeasuringBoundLoggerMixin:
     """Test mixin methods after they applied to the logger class.
 
     Because it is more convinient, rather than testing the mixin itself.
-
-    ATTENTION: `capture_logs` does not apply processorts => does not merge `m_labels`
-               => we test them separately where it is possible
     """
 
     def test_measure__no_labels(self) -> None:
@@ -123,6 +121,48 @@ class TestMeasuringBoundLoggerMixin:
                 "m_labels": {"x": "a", "y": 2, "z": 3},
             }
         ]
+
+
+class TestBusinessBoundLoggerMixin:
+    """Test mixin methods after they applied to the logger class.
+
+    Because it is more convinient, rather than testing the mixin itself.
+    """
+
+    def test_business_event(self) -> None:
+        user_id = uuid.uuid4()
+
+        with capture_logs() as logs:
+            logger.business_event("my_event", user_id=user_id, a="b")
+
+        assert logs == [
+            {
+                "module": "ffun.core.tests.test_logging",
+                "event": "my_event",
+                "log_level": "info",
+                "user_id": user_id,
+                "b_kind": "event",
+                "a": "b",
+            }
+        ]
+
+        assert_logs_has_business_event(logs, "my_event", user_id=user_id, a="b")
+        assert_logs_has_business_event(logs, "my_event", a="b")
+        assert_logs_has_business_event(logs, "my_event", user_id=user_id)
+
+    @pytest.mark.xfail
+    def test_business_event__helper_expected_to_fail_because_of_arguments(self) -> None:
+        with capture_logs() as logs:
+            logger.business_event("my_event", user_id=uuid.uuid4(), a="b")
+
+        assert_logs_has_business_event(logs, "my_event", user_id=uuid.uuid4())
+
+    @pytest.mark.xfail
+    def test_business_event__helper_expected_to_fail_because_event_name(self) -> None:
+        with capture_logs() as logs:
+            logger.business_event("my_event", user_id=uuid.uuid4(), a="b")
+
+        assert_logs_has_business_event(logs, "wrong_event", a="b")
 
 
 class TestIdentityConstructor:
@@ -262,7 +302,7 @@ class TestBoundLogArgs:
             },
         ]
 
-    @pytest.mark.parametrize("protected", ["m_labels", "m_value", "m_kind"])
+    @pytest.mark.parametrize("protected", ["m_labels", "m_value", "m_kind", "b_kind"])
     def test_reserved(self, protected: str) -> None:
         with pytest.raises(errors.ReservedLogArguments):
             with bound_log_args(**{protected: 1}):

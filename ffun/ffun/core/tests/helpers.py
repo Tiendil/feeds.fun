@@ -226,3 +226,16 @@ def capture_logs() -> Generator[list[EventDict], None, None]:
         processors.clear()
         processors.extend(old_processors)
         structlog_config.configure(processors=processors)
+
+
+def assert_logs_has_business_event(logs: list[MutableMapping[str, Any]],  # noqa: CCR001
+                                   name: str,
+                                   **atributes: Any) -> None:
+    for record in logs:
+        if record.get("b_kind") == "event" and record["event"] == name:
+            for key, value in atributes.items():
+                assert record[key] == value, f"Key {key} = {record.get(key)} not equal to expected {value}"
+
+            break
+    else:
+        pytest.fail(f"Event {name} not found in logs")

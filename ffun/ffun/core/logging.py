@@ -200,10 +200,22 @@ class MeasuringBoundLoggerMixin:
                 self.measure(event, time.monotonic() - started_at, **extra_labels)
 
 
+class BusinessBoundLoggerMixin:
+    """We extend a logger class with additional business events logic.
+
+    This mixin is required to work with business events in 100% the same way as with logs.
+    """
+
+    def business_event(self, event: str, user_id: uuid.UUID | None, **attributes: LabelValue) -> Any:
+        return self.info(event, b_kind="event", user_id=user_id, **attributes)  # type: ignore
+
+
 def make_measuring_bound_logger(level: int) -> type[MeasuringBoundLogger]:
     filtering_logger_class = structlog.make_filtering_bound_logger(level)
 
-    class _MeasuringBoundLogger(MeasuringBoundLoggerMixin, filtering_logger_class):  # type: ignore
+    class _MeasuringBoundLogger(MeasuringBoundLoggerMixin,  # type: ignore
+                                BusinessBoundLoggerMixin,
+                                filtering_logger_class):
         pass
 
     return _MeasuringBoundLogger
@@ -297,7 +309,7 @@ def bound_log_args(**kwargs: Any) -> Iterator[None]:
         yield
         return
 
-    if kwargs.keys() & {"m_labels", "m_value", "m_kind"}:
+    if kwargs.keys() & {"m_labels", "m_value", "m_kind", "b_kind"}:
         raise errors.ReservedLogArguments()
 
     bound_vars = structlog_contextvars.get_contextvars()
