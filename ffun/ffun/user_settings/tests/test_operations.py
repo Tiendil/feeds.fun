@@ -6,6 +6,7 @@ import pytest
 from ffun.domain.entities import UserId
 from ffun.user_settings import operations
 from ffun.user_settings.tests import asserts
+from ffun.core.tests.helpers import TableSizeNotChanged, TableSizeDelta, assert_logs_has_business_event, capture_logs, assert_logs_has_no_business_event
 
 _kind_1 = 1234
 _kind_2 = 5678
@@ -17,6 +18,13 @@ class TestSave:
         for value in ("abc", "def"):
             await operations.save_setting(internal_user_id, _kind_1, value)
             await asserts.has_settings(internal_user_id, {_kind_1: value})
+
+    @pytest.mark.asyncio
+    async def test_save_business_event(self, internal_user_id: UserId) -> None:
+        with capture_logs() as logs:
+            await operations.save_setting(internal_user_id, _kind_1, "xxx")
+
+        assert_logs_has_business_event(logs, "setting_updated", user_id=internal_user_id, kind=_kind_1)
 
     @pytest.mark.asyncio
     async def test_save_load_multiple_kinds(self, internal_user_id: UserId) -> None:

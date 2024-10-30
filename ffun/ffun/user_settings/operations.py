@@ -17,6 +17,8 @@ async def save_setting(user_id: UserId, kind: int, value: str) -> None:
                       updated_at = NOW()
     """
 
+    logger.business_event("setting_updated", user_id=user_id, kind=kind)
+
     await execute(sql, {"user_id": user_id, "kind": kind, "value": value})
 
 
