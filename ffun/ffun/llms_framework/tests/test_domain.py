@@ -1,10 +1,10 @@
-import uuid
 from decimal import Decimal
 
 import pytest
 
 from ffun.application.resources import Resource as AppResource
 from ffun.domain.datetime_intervals import month_interval_start
+from ffun.domain.entities import UserId
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
 from ffun.llms_framework.domain import call_llm, search_for_api_key, split_text, split_text_according_to_tokens
@@ -203,7 +203,7 @@ class TestCallLLM:
         self,
         fake_llm_provider: ProviderTest,
         llm_config: LLMConfiguration,
-        internal_user_id: uuid.UUID,
+        internal_user_id: UserId,
         fake_llm_api_key: LLMApiKey,
     ) -> None:
 

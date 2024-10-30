@@ -1,10 +1,10 @@
 import contextlib
 import datetime
-import uuid
 from decimal import Decimal
 from typing import Any, AsyncGenerator, Collection, Iterable, Protocol
 
 from ffun.core import logging
+from ffun.domain.entities import UserId
 from ffun.feeds.entities import FeedId
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_links import domain as fl_domain
@@ -115,7 +115,7 @@ async def _choose_user(
 
 # TODO: test that works for openai and gemini
 async def _get_user_key_infos(  # pylint: disable=R0914
-    provider: LLMProvider, user_ids: Iterable[uuid.UUID], interval_started_at: datetime.datetime
+    provider: LLMProvider, user_ids: Iterable[UserId], interval_started_at: datetime.datetime
 ) -> list[UserKeyInfo]:
     from ffun.application.resources import Resource as AppResource
     from ffun.application.user_settings import UserSetting

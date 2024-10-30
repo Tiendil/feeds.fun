@@ -1,9 +1,8 @@
-import uuid
-
 import pytest
 
 from ffun.core.postgresql import transaction
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
+from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs_has_business_event, capture_logs
+from ffun.domain.entities import UserId
 from ffun.feeds.entities import FeedId
 from ffun.feeds.tests import make as f_make
 from ffun.feeds_links.entities import FeedLink
@@ -21,16 +20,19 @@ from ffun.users.tests import make as u_make
 class TestAddLink:
 
     @pytest.mark.asyncio
-    async def test_add_link(self, internal_user_id: uuid.UUID, saved_feed_id: FeedId) -> None:
-        async with TableSizeDelta("fl_links", delta=1):
-            await add_link(internal_user_id, saved_feed_id)
+    async def test_add_link(self, internal_user_id: UserId, saved_feed_id: FeedId) -> None:
+        with capture_logs() as logs:
+            async with TableSizeDelta("fl_links", delta=1):
+                await add_link(internal_user_id, saved_feed_id)
+
+        assert_logs_has_business_event(logs, "feed_linked", user_id=internal_user_id, feed_id=saved_feed_id)
 
         links = await get_linked_feeds(internal_user_id)
 
         assert links == [FeedLink(user_id=internal_user_id, feed_id=saved_feed_id, created_at=links[0].created_at)]
 
     @pytest.mark.asyncio
-    async def test_duplicated(self, internal_user_id: uuid.UUID, saved_feed_id: FeedId) -> None:
+    async def test_duplicated(self, internal_user_id: UserId, saved_feed_id: FeedId) -> None:
         await add_link(internal_user_id, saved_feed_id)
 
         async with TableSizeNotChanged("fl_links"):
@@ -42,7 +44,7 @@ class TestAddLink:
 
     @pytest.mark.asyncio
     async def test_multiple_links(
-        self, five_internal_user_ids: list[uuid.UUID], five_saved_feed_ids: list[FeedId]
+        self, five_internal_user_ids: list[UserId], five_saved_feed_ids: list[FeedId]
     ) -> None:
         user_1_id, user_2_id, user_3_id = five_internal_user_ids[:3]
 
@@ -81,18 +83,21 @@ class TestAddLink:
 class TestRemoveLink:
 
     @pytest.mark.asyncio
-    async def test_add_link(self, internal_user_id: uuid.UUID, saved_feed_id: FeedId) -> None:
+    async def test_remove_link(self, internal_user_id: UserId, saved_feed_id: FeedId) -> None:
         await add_link(internal_user_id, saved_feed_id)
 
-        async with TableSizeDelta("fl_links", delta=-1):
-            await remove_link(internal_user_id, saved_feed_id)
+        with capture_logs() as logs:
+            async with TableSizeDelta("fl_links", delta=-1):
+                await remove_link(internal_user_id, saved_feed_id)
+
+        assert_logs_has_business_event(logs, "feed_unlinked", user_id=internal_user_id, feed_id=saved_feed_id)
 
         links = await get_linked_feeds(internal_user_id)
 
         assert links == []
 
     @pytest.mark.asyncio
-    async def test_create_after_remove(self, internal_user_id: uuid.UUID, saved_feed_id: FeedId) -> None:
+    async def test_create_after_remove(self, internal_user_id: UserId, saved_feed_id: FeedId) -> None:
         await add_link(internal_user_id, saved_feed_id)
         await remove_link(internal_user_id, saved_feed_id)
 
@@ -105,7 +110,7 @@ class TestRemoveLink:
 
     @pytest.mark.asyncio
     async def test_remove_only_required(
-        self, five_internal_user_ids: list[uuid.UUID], five_saved_feed_ids: list[FeedId]
+        self, five_internal_user_ids: list[UserId], five_saved_feed_ids: list[FeedId]
     ) -> None:
         user_1_id, user_2_id, user_3_id = five_internal_user_ids[:3]
 
@@ -142,7 +147,7 @@ class TestGetLinkedFeeds:
     """This functions is validated by other tests."""
 
     @pytest.mark.asyncio
-    async def test_empty(self, internal_user_id: uuid.UUID) -> None:
+    async def test_empty(self, internal_user_id: UserId) -> None:
         links = await get_linked_feeds(internal_user_id)
 
         assert links == []
@@ -158,7 +163,7 @@ class TestGetLinkedUsers:
 
     @pytest.mark.asyncio
     async def test_returns_only_required(
-        self, five_internal_user_ids: list[uuid.UUID], saved_feed_id: FeedId, another_saved_feed_id: FeedId
+        self, five_internal_user_ids: list[UserId], saved_feed_id: FeedId, another_saved_feed_id: FeedId
     ) -> None:
         user_1_id, user_2_id, user_3_id = five_internal_user_ids[:3]
 
@@ -189,7 +194,7 @@ class TestHasLinkedUsers:
         assert not await has_linked_users(saved_feed_id)
 
     @pytest.mark.asyncio
-    async def test_has_users(self, internal_user_id: uuid.UUID, saved_feed_id: FeedId) -> None:
+    async def test_has_users(self, internal_user_id: UserId, saved_feed_id: FeedId) -> None:
         await add_link(internal_user_id, saved_feed_id)
 
         assert await has_linked_users(saved_feed_id)

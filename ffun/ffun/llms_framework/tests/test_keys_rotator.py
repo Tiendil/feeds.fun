@@ -8,6 +8,8 @@ from pytest_mock import MockerFixture
 
 from ffun.application.resources import Resource as AppResource
 from ffun.domain.datetime_intervals import month_interval_start
+from ffun.domain.domain import new_user_id
+from ffun.domain.entities import UserId
 from ffun.feeds.entities import FeedId
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import CollectionId
@@ -211,7 +213,7 @@ class TestGetUserKeyInfos:
         assert await _get_user_key_infos(LLMProvider.test, user_ids=[], interval_started_at=interval_started_at) == []
 
     @pytest.mark.asyncio
-    async def test_works(self, five_internal_user_ids: list[uuid.UUID]) -> None:
+    async def test_works(self, five_internal_user_ids: list[UserId]) -> None:
         from ffun.application.resources import Resource as AppResource
         from ffun.application.user_settings import UserSetting
 
@@ -297,7 +299,7 @@ class TestGetCandidates:
         fake_llm_provider: ProviderTest,
         saved_feed_id: FeedId,
         another_saved_feed_id: FeedId,
-        five_internal_user_ids: list[uuid.UUID],
+        five_internal_user_ids: list[UserId],
     ) -> None:
         for user_id in five_internal_user_ids[:2]:
             await fl_domain.add_link(user_id, saved_feed_id)
@@ -311,7 +313,7 @@ class TestGetCandidates:
         filter_2_users = five_internal_user_ids
         filter_3_users = five_internal_user_ids[1:]
 
-        def create_filter(filter_users: list[uuid.UUID]) -> Any:
+        def create_filter(filter_users: list[UserId]) -> Any:
             async def _filter(infos: list[UserKeyInfo], **kwargs: Any) -> list[UserKeyInfo]:
                 return [info for info in infos if info.user_id in filter_users]
 
@@ -331,7 +333,7 @@ class TestGetCandidates:
 
     @pytest.mark.asyncio
     async def test_all_users_excluded(
-        self, fake_llm_provider: ProviderTest, saved_feed_id: FeedId, five_internal_user_ids: list[uuid.UUID]
+        self, fake_llm_provider: ProviderTest, saved_feed_id: FeedId, five_internal_user_ids: list[UserId]
     ) -> None:
         for user_id in five_internal_user_ids:
             await fl_domain.add_link(user_id, saved_feed_id)
@@ -340,7 +342,7 @@ class TestGetCandidates:
 
         filter_1_users = [five_internal_user_ids[0], five_internal_user_ids[2], five_internal_user_ids[4]]
 
-        def create_filter(filter_users: list[uuid.UUID]) -> Any:
+        def create_filter(filter_users: list[UserId]) -> Any:
             async def _filter(infos: list[UserKeyInfo], **kwargs: Any) -> list[UserKeyInfo]:
                 return [info for info in infos if info.user_id in filter_users]
 
@@ -383,7 +385,7 @@ class TestFindBestUserWithKey:
         for user_key_info in five_user_key_infos:
             await fl_domain.add_link(user_key_info.user_id, saved_feed_id)
 
-        chosen_users: set[uuid.UUID] = set()
+        chosen_users: set[UserId] = set()
 
         interval_started_at = month_interval_start()
 
@@ -595,7 +597,7 @@ class TestChooseApiKey:
             assert api_key is not None
 
             return APIKeyUsage(
-                user_id=uuid.uuid4(),
+                user_id=new_user_id(),
                 api_key=api_key,
                 reserved_cost=context.reserved_cost,
                 used_cost=None,
@@ -644,7 +646,7 @@ class TestChooseApiKey:
 class TestUseApiKey:
 
     @pytest.mark.asyncio
-    async def test_success(self, internal_user_id: uuid.UUID, fake_llm_api_key: LLMApiKey) -> None:
+    async def test_success(self, internal_user_id: UserId, fake_llm_api_key: LLMApiKey) -> None:
 
         interval_started_at = month_interval_start()
 
@@ -692,7 +694,7 @@ class TestUseApiKey:
         }
 
     @pytest.mark.asyncio
-    async def test_no_used_tokens_specified(self, internal_user_id: uuid.UUID, fake_llm_api_key: LLMApiKey) -> None:
+    async def test_no_used_tokens_specified(self, internal_user_id: UserId, fake_llm_api_key: LLMApiKey) -> None:
 
         interval_started_at = month_interval_start()
 
@@ -739,7 +741,7 @@ class TestUseApiKey:
         }
 
     @pytest.mark.asyncio
-    async def test_exception_in_child_code(self, internal_user_id: uuid.UUID, fake_llm_api_key: LLMApiKey) -> None:
+    async def test_exception_in_child_code(self, internal_user_id: UserId, fake_llm_api_key: LLMApiKey) -> None:
 
         interval_started_at = month_interval_start()
 

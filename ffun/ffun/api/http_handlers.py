@@ -1,4 +1,3 @@
-import uuid
 from importlib import metadata
 from typing import Any, Iterable
 
@@ -12,6 +11,7 @@ from ffun.api.settings import settings
 from ffun.auth.dependencies import User
 from ffun.core import logging
 from ffun.core.errors import APIError
+from ffun.domain.entities import UserId
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_discoverer import domain as fd_domain
@@ -67,7 +67,7 @@ async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entiti
 
 
 async def _external_entries(  # pylint: disable=R0914
-    entries: Iterable[l_entities.Entry], with_body: bool, user_id: uuid.UUID
+    entries: Iterable[l_entities.Entry], with_body: bool, user_id: UserId
 ) -> list[entities.Entry]:
     entries_ids = [entry.id for entry in entries]
 

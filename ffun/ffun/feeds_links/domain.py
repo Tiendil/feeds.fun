@@ -1,7 +1,7 @@
-import uuid
 from typing import Iterable
 
 from ffun.core.postgresql import ExecuteType, run_in_transaction
+from ffun.domain.entities import UserId
 from ffun.feeds.entities import FeedId
 from ffun.feeds_links import operations
 
@@ -12,7 +12,7 @@ get_linked_users = operations.get_linked_users
 has_linked_users = operations.has_linked_users
 
 
-async def get_linked_users_flat(feed_ids: Iterable[FeedId]) -> set[uuid.UUID]:
+async def get_linked_users_flat(feed_ids: Iterable[FeedId]) -> set[UserId]:
     users = await operations.get_linked_users(feed_ids)
 
     answer = set()

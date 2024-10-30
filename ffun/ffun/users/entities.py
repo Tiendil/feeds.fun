@@ -1,7 +1,8 @@
 import enum
-import uuid
 
 import pydantic
+
+from ffun.domain.entities import UserId
 
 
 class Service(int, enum.Enum):
@@ -10,4 +11,4 @@ class Service(int, enum.Enum):
 
 
 class User(pydantic.BaseModel):
-    id: uuid.UUID
+    id: UserId

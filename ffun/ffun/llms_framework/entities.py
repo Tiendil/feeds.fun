@@ -1,13 +1,13 @@
 import datetime
 import decimal
 import enum
-import uuid
 from typing import Annotated, NewType
 
 import pydantic
 
 from ffun.core.entities import BaseEntity
 from ffun.domain.datetime_intervals import month_interval_start
+from ffun.domain.entities import UserId
 from ffun.feeds.entities import FeedId
 
 LLMApiKey = NewType("LLMApiKey", str)
@@ -87,7 +87,7 @@ class ChatResponse(BaseEntity):
 class APIKeyUsage(BaseEntity):
     model_config = pydantic.ConfigDict(frozen=False)
 
-    user_id: uuid.UUID | None
+    user_id: UserId | None
     api_key: LLMApiKey
     reserved_cost: USDCost
     input_tokens: LLMTokens | None
@@ -103,7 +103,7 @@ class APIKeyUsage(BaseEntity):
 
 
 class UserKeyInfo(BaseEntity):
-    user_id: uuid.UUID
+    user_id: UserId
     api_key: LLMApiKey | None
     max_tokens_cost_in_month: USDCost
     process_entries_not_older_than: datetime.timedelta

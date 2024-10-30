@@ -9,7 +9,7 @@ import pydantic
 
 from ffun.core import api
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import EntryId, FeedId
+from ffun.domain.entities import EntryId, FeedId, UserId
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.feeds_links import entities as fl_entities
@@ -484,4 +484,4 @@ class GetInfoRequest(api.APIRequest):
 
 
 class GetInfoResponse(api.APISuccess):
-    userId: uuid.UUID
+    userId: UserId

@@ -5,6 +5,7 @@ import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
+from ffun.domain.entities import UserId
 from ffun.scores import errors
 from ffun.scores.entities import Rule
 
@@ -30,7 +31,7 @@ def row_to_rule(row: dict[str, Any]) -> Rule:
     )
 
 
-async def create_or_update_rule(user_id: uuid.UUID, tags: Iterable[int], score: int) -> Rule:
+async def create_or_update_rule(user_id: UserId, tags: Iterable[int], score: int) -> Rule:
     tags = _normalize_tags(tags)
 
     key = _key_from_tags(tags)
@@ -43,6 +44,8 @@ async def create_or_update_rule(user_id: uuid.UUID, tags: Iterable[int], score: 
 
     try:
         result = await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "tags": tags, "key": key, "score": score})
+
+        logger.business_event("rule_created", user_id=user_id, rule_id=result[0]["id"], tags=tags, score=score)
     except psycopg.errors.UniqueViolation:
         logger.info("rule_already_exists_change_score", key=key)
 
@@ -55,19 +58,25 @@ async def create_or_update_rule(user_id: uuid.UUID, tags: Iterable[int], score: 
 
         result = await execute(sql, {"user_id": user_id, "key": key, "score": score})
 
+        logger.business_event("rule_updated", user_id=user_id, rule_id=result[0]["id"], tags=tags, score=score)
+
     return row_to_rule(result[0])
 
 
-async def delete_rule(user_id: uuid.UUID, rule_id: uuid.UUID) -> None:
+async def delete_rule(user_id: UserId, rule_id: uuid.UUID) -> None:
     sql = """
         DELETE FROM s_rules
         WHERE user_id = %(user_id)s AND id = %(rule_id)s
+        RETURNING id
         """
 
-    await execute(sql, {"user_id": user_id, "rule_id": rule_id})
+    result = await execute(sql, {"user_id": user_id, "rule_id": rule_id})
+
+    if result:
+        logger.business_event("rule_deleted", user_id=user_id, rule_id=rule_id)
 
 
-async def update_rule(user_id: uuid.UUID, rule_id: uuid.UUID, tags: Iterable[int], score: int) -> Rule:
+async def update_rule(user_id: UserId, rule_id: uuid.UUID, tags: Iterable[int], score: int) -> Rule:
     tags = _normalize_tags(tags)
     key = _key_from_tags(tags)
 
@@ -83,10 +92,12 @@ async def update_rule(user_id: uuid.UUID, rule_id: uuid.UUID, tags: Iterable[int
     if not result:
         raise errors.NoRuleFound()
 
+    logger.business_event("rule_updated", user_id=user_id, rule_id=result[0]["id"], tags=tags, score=score)
+
     return row_to_rule(result[0])
 
 
-async def get_rules(user_id: uuid.UUID) -> list[Rule]:
+async def get_rules(user_id: UserId) -> list[Rule]:
     sql = """
     SELECT *
     FROM s_rules

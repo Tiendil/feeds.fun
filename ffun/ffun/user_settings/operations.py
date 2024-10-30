@@ -1,28 +1,31 @@
-import uuid
 from typing import Iterable
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
+from ffun.domain.entities import UserId
 from ffun.user_settings.entities import UserSettings
 
 logger = logging.get_module_logger()
 
 
-async def save_setting(user_id: uuid.UUID, kind: int, value: str) -> None:
+async def save_setting(user_id: UserId, kind: int, value: str) -> None:
     sql = """
         INSERT INTO us_settings (user_id, kind, value)
         VALUES (%(user_id)s, %(kind)s, %(value)s)
         ON CONFLICT (user_id, kind)
         DO UPDATE SET value = %(value)s,
                       updated_at = NOW()
+        RETURNING created_at, updated_at
     """
 
-    await execute(sql, {"user_id": user_id, "kind": kind, "value": value})
+    results = await execute(sql, {"user_id": user_id, "kind": kind, "value": value})
+
+    first_set = results[0]["created_at"] == results[0]["updated_at"]
+
+    logger.business_event("setting_updated", user_id=user_id, kind=kind, first_set=first_set)
 
 
-async def load_settings_for_users(
-    user_ids: Iterable[uuid.UUID], kinds: Iterable[int]
-) -> dict[uuid.UUID, UserSettings]:
+async def load_settings_for_users(user_ids: Iterable[UserId], kinds: Iterable[int]) -> dict[UserId, UserSettings]:
     sql = """
         SELECT *
         FROM us_settings
@@ -32,21 +35,19 @@ async def load_settings_for_users(
 
     result = await execute(sql, {"user_ids": list(user_ids), "kinds": list(kinds)})
 
-    values: dict[uuid.UUID, UserSettings] = {user_id: {} for user_id in user_ids}
+    values: dict[UserId, UserSettings] = {user_id: {} for user_id in user_ids}
 
     for row in result:
         user_id = row["user_id"]
         kind = row["kind"]
         value = row["value"]
 
-        assert isinstance(user_id, uuid.UUID)
-
         values[user_id][kind] = value
 
     return values
 
 
-async def get_users_with_setting(kind: int, value: str) -> set[uuid.UUID]:
+async def get_users_with_setting(kind: int, value: str) -> set[UserId]:
     sql = """
         SELECT user_id
         FROM us_settings

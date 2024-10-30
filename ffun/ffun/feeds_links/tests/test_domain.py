@@ -1,8 +1,6 @@
-import uuid
-
 import pytest
 
-from ffun.domain.entities import FeedId
+from ffun.domain.entities import FeedId, UserId
 from ffun.feeds_links.domain import get_linked_users_flat
 from ffun.feeds_links.operations import add_link
 
@@ -17,7 +15,7 @@ class TestGetLinkedUsersFlat:
 
     @pytest.mark.asyncio
     async def test_returns_only_required(
-        self, five_internal_user_ids: list[uuid.UUID], saved_feed_id: FeedId, another_saved_feed_id: FeedId
+        self, five_internal_user_ids: list[UserId], saved_feed_id: FeedId, another_saved_feed_id: FeedId
     ) -> None:
         user_1_id, user_2_id, user_3_id = five_internal_user_ids[:3]
 
