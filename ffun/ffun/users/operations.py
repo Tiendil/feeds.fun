@@ -20,10 +20,11 @@ async def add_mapping(service: Service, external_id: str) -> UserId:
 
     try:
         await execute(sql, {"service_id": service, "external_id": external_id, "internal_id": internal_id})
+
+        logger.business_event("user_created", user_id=internal_id)
+
     except psycopg.errors.UniqueViolation:
         return await get_mapping(service, external_id)
-
-    logger.business_event("user_created", user_id=internal_id)
 
     return internal_id
 

@@ -21,9 +21,9 @@ async def add_link(user_id: UserId, feed_id: FeedId) -> None:
         ON CONFLICT (user_id, feed_id) DO NOTHING
     """
 
-    logger.business_event("feed_linked", user_id=user_id, feed_id=feed_id)
-
     await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "feed_id": feed_id})
+
+    logger.business_event("feed_linked", user_id=user_id, feed_id=feed_id)
 
 
 async def remove_link(user_id: UserId, feed_id: FeedId) -> None:
@@ -31,9 +31,9 @@ async def remove_link(user_id: UserId, feed_id: FeedId) -> None:
         DELETE FROM fl_links WHERE user_id = %(user_id)s AND feed_id = %(feed_id)s
     """
 
-    logger.business_event("feed_unlinked", user_id=user_id, feed_id=feed_id)
-
     await execute(sql, {"user_id": user_id, "feed_id": feed_id})
+
+    logger.business_event("feed_unlinked", user_id=user_id, feed_id=feed_id)
 
 
 async def get_linked_feeds(user_id: UserId) -> list[FeedLink]:

@@ -17,9 +17,9 @@ async def save_setting(user_id: UserId, kind: int, value: str) -> None:
                       updated_at = NOW()
     """
 
-    logger.business_event("setting_updated", user_id=user_id, kind=kind)
-
     await execute(sql, {"user_id": user_id, "kind": kind, "value": value})
+
+    logger.business_event("setting_updated", user_id=user_id, kind=kind)
 
 
 async def load_settings_for_users(user_ids: Iterable[UserId], kinds: Iterable[int]) -> dict[UserId, UserSettings]:
