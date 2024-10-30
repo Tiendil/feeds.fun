@@ -13,6 +13,7 @@ import pydantic_settings
 import structlog
 from sentry_sdk import capture_message
 from structlog import contextvars as structlog_contextvars
+from ffun.domain.entities import UserId
 
 from ffun.core import errors
 
@@ -160,13 +161,16 @@ def processors_list(use_sentry: bool) -> list[LogProcessorType]:
     return [p for p in processors_list if p is not None]  # type: ignore
 
 
-class MeasuringBoundLogger(structlog.typing.FilteringBoundLogger):
+class FFunBoundLogger(structlog.typing.FilteringBoundLogger):
     def measure(self, event: str, value: float | int, **labels: LabelValue) -> None:
         pass
 
     def measure_block_time(  # type: ignore
         self, event: str, **labels: LabelValue
     ) -> ContextManager[dict[str, LabelValue]]:
+        pass
+
+    def business_event(self, event: str, user_id: UserId | None, **attributes: LabelValue) -> Any:
         pass
 
 
@@ -206,19 +210,19 @@ class BusinessBoundLoggerMixin:
     This mixin is required to work with business events in 100% the same way as with logs.
     """
 
-    def business_event(self, event: str, user_id: uuid.UUID | None, **attributes: LabelValue) -> Any:
+    def business_event(self, event: str, user_id: UserId | None, **attributes: LabelValue) -> Any:
         return self.info(event, b_kind="event", user_id=user_id, **attributes)  # type: ignore
 
 
-def make_measuring_bound_logger(level: int) -> type[MeasuringBoundLogger]:
+def make_measuring_bound_logger(level: int) -> type[FFunBoundLogger]:
     filtering_logger_class = structlog.make_filtering_bound_logger(level)
 
-    class _MeasuringBoundLogger(MeasuringBoundLoggerMixin,  # type: ignore
-                                BusinessBoundLoggerMixin,
-                                filtering_logger_class):
+    class _FFunBoundLogger(MeasuringBoundLoggerMixin,
+                           BusinessBoundLoggerMixin,
+                           filtering_logger_class):   # type: ignore
         pass
 
-    return _MeasuringBoundLogger
+    return _FFunBoundLogger
 
 
 def initialize(use_sentry: bool) -> None:
@@ -231,7 +235,7 @@ def initialize(use_sentry: bool) -> None:
     )
 
 
-def get_module_logger() -> MeasuringBoundLogger:
+def get_module_logger() -> FFunBoundLogger:
     caller_frame = inspect.currentframe().f_back  # type: ignore
     module = inspect.getmodule(caller_frame)
     return structlog.get_logger(module=module.__name__)  # type: ignore

@@ -22,6 +22,8 @@ from ffun.llms_framework.entities import (
 from ffun.llms_framework.provider_interface import ProviderInterface
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
+from ffun.domain.entities import UserId
+
 
 logger = logging.get_module_logger()
 
@@ -115,7 +117,7 @@ async def _choose_user(
 
 # TODO: test that works for openai and gemini
 async def _get_user_key_infos(  # pylint: disable=R0914
-    provider: LLMProvider, user_ids: Iterable[uuid.UUID], interval_started_at: datetime.datetime
+    provider: LLMProvider, user_ids: Iterable[UserId], interval_started_at: datetime.datetime
 ) -> list[UserKeyInfo]:
     from ffun.application.resources import Resource as AppResource
     from ffun.application.user_settings import UserSetting

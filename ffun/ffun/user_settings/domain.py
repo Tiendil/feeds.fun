@@ -4,9 +4,10 @@ from typing import Any, Iterable
 from ffun.user_settings import operations
 from ffun.user_settings.entities import UserSettings
 from ffun.user_settings.values import SettingsRegister, user_settings
+from ffun.domain.entities import UserId
 
 
-async def save_setting(user_id: uuid.UUID, kind: int, value: Any, register: SettingsRegister = user_settings) -> None:
+async def save_setting(user_id: UserId, kind: int, value: Any, register: SettingsRegister = user_settings) -> None:
     value_to_save = register.get(kind).type.serialize(value)
 
     await operations.save_setting(user_id, kind, value_to_save)
@@ -31,7 +32,7 @@ def _full_settings(values: dict[int, Any], kinds: Iterable[int], register: Setti
 
 
 async def load_settings(
-    user_id: uuid.UUID, kinds: Iterable[int], register: SettingsRegister = user_settings
+    user_id: UserId, kinds: Iterable[int], register: SettingsRegister = user_settings
 ) -> UserSettings:
     values = await operations.load_settings_for_users([user_id], kinds)
 
@@ -41,14 +42,14 @@ async def load_settings(
 
 
 async def load_settings_for_users(
-    user_ids: Iterable[uuid.UUID], kinds: Iterable[int], register: SettingsRegister = user_settings
-) -> dict[uuid.UUID, UserSettings]:
+    user_ids: Iterable[UserId], kinds: Iterable[int], register: SettingsRegister = user_settings
+) -> dict[UserId, UserSettings]:
     values = await operations.load_settings_for_users(user_ids, kinds)
 
     return {user_id: _full_settings(user_values, kinds, register=register) for user_id, user_values in values.items()}
 
 
-async def get_users_with_setting(kind: int, value: Any, register: SettingsRegister = user_settings) -> set[uuid.UUID]:
+async def get_users_with_setting(kind: int, value: Any, register: SettingsRegister = user_settings) -> set[UserId]:
     value_to_find = register.get(kind).type.serialize(value)
 
     return await operations.get_users_with_setting(kind, value_to_find)

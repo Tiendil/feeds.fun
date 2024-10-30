@@ -2,12 +2,14 @@ import uuid
 
 from ffun.users import errors, operations
 from ffun.users.entities import Service, User
+from ffun.domain.entities import UserId
+
 
 add_mapping = operations.add_mapping
 get_mapping = operations.get_mapping
 
 
-async def get_or_create_user_id(service: Service, external_id: str) -> uuid.UUID:
+async def get_or_create_user_id(service: Service, external_id: str) -> UserId:
     try:
         return await get_mapping(service, external_id)
     except errors.NoUserMappingFound:

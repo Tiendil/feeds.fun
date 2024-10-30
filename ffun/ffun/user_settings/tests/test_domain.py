@@ -10,6 +10,8 @@ from ffun.core.tests.helpers import TableSizeDecreased, TableSizeNotChanged
 from ffun.user_settings import domain, errors, operations, types
 from ffun.user_settings.tests import asserts
 from ffun.user_settings.values import SettingsRegister, Value
+from ffun.domain.entities import UserId
+
 
 _kind_1 = 1234
 _kind_2 = 5678
@@ -50,12 +52,12 @@ register.add(
 
 class TestSave:
     @pytest.mark.asyncio
-    async def test_save_with_conversion(self, internal_user_id: uuid.UUID) -> None:
+    async def test_save_with_conversion(self, internal_user_id: UserId) -> None:
         await domain.save_setting(internal_user_id, Setting.kind_integer, 124, register=register)
         await asserts.has_settings(internal_user_id, {Setting.kind_integer: "124"})
 
     @pytest.mark.asyncio
-    async def test_do_not_save_after_error(self, internal_user_id: uuid.UUID) -> None:
+    async def test_do_not_save_after_error(self, internal_user_id: UserId) -> None:
         with pytest.raises(errors.WrongValueType):
             await domain.save_setting(
                 internal_user_id, Setting.kind_integer, "string instead of int", register=register
@@ -92,7 +94,7 @@ class TestFullSettings:
 
 class TestLoadSettings:
     @pytest.mark.asyncio
-    async def test_no_settings(self, internal_user_id: uuid.UUID) -> None:
+    async def test_no_settings(self, internal_user_id: UserId) -> None:
         settings = await domain.load_settings(internal_user_id, kinds=list(Setting), register=register)
 
         assert settings == {
@@ -103,7 +105,7 @@ class TestLoadSettings:
         }
 
     @pytest.mark.asyncio
-    async def test_has_settings(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+    async def test_has_settings(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
         await domain.save_setting(internal_user_id, Setting.kind_integer, 124, register=register)
         await domain.save_setting(internal_user_id, Setting.kind_string, "xxxyyy", register=register)
         await domain.save_setting(another_internal_user_id, Setting.kind_integer, 421, register=register)
@@ -125,7 +127,7 @@ class TestLoadSettings:
         }
 
     @pytest.mark.asyncio
-    async def test_filter_by_kinds(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+    async def test_filter_by_kinds(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
         await domain.save_setting(internal_user_id, Setting.kind_integer, 124, register=register)
         await domain.save_setting(internal_user_id, Setting.kind_string, "xxxyyy", register=register)
 
@@ -137,7 +139,7 @@ class TestLoadSettings:
 
 class TestLoadSettingsForUsers:
     @pytest.mark.asyncio
-    async def test(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+    async def test(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
         await domain.save_setting(internal_user_id, Setting.kind_integer, 124, register=register)
         await domain.save_setting(internal_user_id, Setting.kind_string, "xxxyyy", register=register)
         await domain.save_setting(another_internal_user_id, Setting.kind_integer, 421, register=register)
@@ -173,7 +175,7 @@ class TestGetUsersWithSetting:
         assert user_ids == set()
 
     @pytest.mark.asyncio
-    async def test_found_users(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+    async def test_found_users(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
         value = uuid.uuid4().hex
 
         await domain.save_setting(internal_user_id, Setting.kind_string, value, register=register)
@@ -193,7 +195,7 @@ class TestGetUsersWithSetting:
 class TestRemoveDeprecatedSettings:
 
     @pytest.mark.asyncio
-    async def test_nothing_to_remove(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+    async def test_nothing_to_remove(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
         # cleanup table for this test
         await domain.remove_deprecated_settings(register=register)
 
@@ -223,7 +225,7 @@ class TestRemoveDeprecatedSettings:
         }
 
     @pytest.mark.asyncio
-    async def test_remove(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+    async def test_remove(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
         str_values = [uuid.uuid4().hex, uuid.uuid4().hex]
         int_values = [uuid.uuid4().int, uuid.uuid4().int]
 

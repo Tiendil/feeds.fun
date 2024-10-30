@@ -6,17 +6,20 @@ from ffun.core import logging
 from ffun.core.postgresql import execute
 from ffun.users import errors
 from ffun.users.entities import Service
+from ffun.domain.entities import UserId
+from ffun.domain.domain import new_user_id
+
 
 logger = logging.get_module_logger()
 
 
-async def add_mapping(service: Service, external_id: str) -> uuid.UUID:
+async def add_mapping(service: Service, external_id: str) -> UserId:
     sql = """
         INSERT INTO u_mapping (service_id, external_id, internal_id)
         VALUES (%(service_id)s, %(external_id)s, %(internal_id)s)
     """
 
-    internal_id = uuid.uuid4()
+    internal_id = new_user_id()
 
     try:
         await execute(sql, {"service_id": service, "external_id": external_id, "internal_id": internal_id})
@@ -26,7 +29,7 @@ async def add_mapping(service: Service, external_id: str) -> uuid.UUID:
     return internal_id
 
 
-async def get_mapping(service: Service, external_id: str) -> uuid.UUID:
+async def get_mapping(service: Service, external_id: str) -> UserId:
     sql = """
         SELECT internal_id
         FROM u_mapping
@@ -39,6 +42,4 @@ async def get_mapping(service: Service, external_id: str) -> uuid.UUID:
     if not result:
         raise errors.NoUserMappingFound(service=service, external_id=external_id)
 
-    assert isinstance(result[0]["internal_id"], uuid.UUID)
-
-    return result[0]["internal_id"]
+    return result[0]["internal_id"]  # type: ignore

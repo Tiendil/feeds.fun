@@ -3,7 +3,7 @@ from typing import Iterable
 
 from ffun.core import logging
 from ffun.domain.domain import new_feed_id
-from ffun.domain.entities import EntryId
+from ffun.domain.entities import EntryId, UserId
 from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
@@ -12,6 +12,7 @@ from ffun.library import domain as l_domain
 from ffun.markers import domain as m_domain
 from ffun.ontology import domain as o_domain
 from ffun.parsers import entities as p_entities
+
 
 logger = logging.get_module_logger()
 
@@ -28,7 +29,7 @@ async def remove_entries(entries_ids: Iterable[EntryId]) -> None:
     await l_domain.remove_entries_by_ids(entries_to_remove)
 
 
-async def add_feeds(feed_infos: list[p_entities.FeedInfo], user_id: uuid.UUID) -> None:
+async def add_feeds(feed_infos: list[p_entities.FeedInfo], user_id: UserId) -> None:
 
     urls_to_sources_uids = {feed_info.url: url_to_source_uid(feed_info.url) for feed_info in feed_infos}
 

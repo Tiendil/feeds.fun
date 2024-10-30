@@ -3,6 +3,8 @@ import uuid
 
 import pydantic
 
+from ffun.domain.entities import UserId
+
 
 class Service(int, enum.Enum):
     supertokens = 1
@@ -10,4 +12,4 @@ class Service(int, enum.Enum):
 
 
 class User(pydantic.BaseModel):
-    id: uuid.UUID
+    id: UserId

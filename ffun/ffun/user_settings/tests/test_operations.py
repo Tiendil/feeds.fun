@@ -5,6 +5,7 @@ import pytest
 
 from ffun.user_settings import operations
 from ffun.user_settings.tests import asserts
+from ffun.domain.entities import UserId
 
 _kind_1 = 1234
 _kind_2 = 5678
@@ -12,13 +13,13 @@ _kind_2 = 5678
 
 class TestSave:
     @pytest.mark.asyncio
-    async def test_save_load(self, internal_user_id: uuid.UUID) -> None:
+    async def test_save_load(self, internal_user_id: UserId) -> None:
         for value in ("abc", "def"):
             await operations.save_setting(internal_user_id, _kind_1, value)
             await asserts.has_settings(internal_user_id, {_kind_1: value})
 
     @pytest.mark.asyncio
-    async def test_save_load_multiple_kinds(self, internal_user_id: uuid.UUID) -> None:
+    async def test_save_load_multiple_kinds(self, internal_user_id: UserId) -> None:
         await operations.save_setting(internal_user_id, _kind_1, "abc")
         await operations.save_setting(internal_user_id, _kind_2, "def")
 
@@ -26,7 +27,7 @@ class TestSave:
 
     @pytest.mark.asyncio
     async def test_save_load_multiple_users(
-        self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID
+        self, internal_user_id: UserId, another_internal_user_id: UserId
     ) -> None:
         await operations.save_setting(internal_user_id, _kind_1, "abc")
         await operations.save_setting(another_internal_user_id, _kind_1, "def")
@@ -41,11 +42,11 @@ class TestLoadSettingsForUsers:
         assert await operations.load_settings_for_users([], [_kind_1]) == {}
 
     @pytest.mark.asyncio
-    async def test_no_kinds(self, internal_user_id: uuid.UUID) -> None:
+    async def test_no_kinds(self, internal_user_id: UserId) -> None:
         assert await operations.load_settings_for_users([internal_user_id], []) == {internal_user_id: {}}
 
     @pytest.mark.asyncio
-    async def test_no_settings_stored(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+    async def test_no_settings_stored(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
         settings = await operations.load_settings_for_users(
             [internal_user_id, another_internal_user_id], [_kind_1, _kind_2]
         )
@@ -54,7 +55,7 @@ class TestLoadSettingsForUsers:
 
     @pytest.mark.asyncio
     async def test_some_settings_stored(
-        self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID
+        self, internal_user_id: UserId, another_internal_user_id: UserId
     ) -> None:
         await operations.save_setting(internal_user_id, _kind_1, "abc")
         await operations.save_setting(internal_user_id, _kind_2, "def")
@@ -77,7 +78,7 @@ class TestGetUsersWithSetting:
 
     @pytest.mark.asyncio
     async def test_ignore_value_with_wrong_kind(
-        self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID
+        self, internal_user_id: UserId, another_internal_user_id: UserId
     ) -> None:
         value_1 = uuid.uuid4().hex
 
@@ -88,7 +89,7 @@ class TestGetUsersWithSetting:
         assert await operations.get_users_with_setting(_kind_2, value_1) == {another_internal_user_id}
 
     @pytest.mark.asyncio
-    async def test_has_users(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+    async def test_has_users(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
         value_1 = uuid.uuid4().hex
         value_2 = uuid.uuid4().hex
         value_3 = uuid.uuid4().hex
@@ -113,7 +114,7 @@ class TestGetUsersWithSetting:
 
 class TestRemoveSettingForAllUsers:
     @pytest.mark.asyncio
-    async def test(self, five_internal_user_ids: list[uuid.UUID]) -> None:
+    async def test(self, five_internal_user_ids: list[UserId]) -> None:
         value = uuid.uuid4().hex
 
         await operations.save_setting(five_internal_user_ids[0], _kind_1, value)
@@ -137,7 +138,7 @@ class TestRemoveSettingForAllUsers:
 class TestFindAllKinds:
 
     @pytest.mark.asyncio
-    async def test_test(self, internal_user_id: uuid.UUID) -> None:
+    async def test_test(self, internal_user_id: UserId) -> None:
         kinds_before = await operations.find_all_kinds()
 
         while new_kind := random.randint(1, 1000000):

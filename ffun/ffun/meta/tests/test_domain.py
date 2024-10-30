@@ -6,6 +6,7 @@ import pytest_asyncio
 
 from ffun.core.postgresql import execute
 from ffun.domain.urls import url_to_source_uid
+from ffun.domain.entities import UserId
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
 from ffun.feeds_links import domain as fl_domain
@@ -77,11 +78,11 @@ class TestRemoveEntries:
 class TestAddFeeds:
 
     @pytest.mark.asyncio
-    async def test_no_feeds_to_add(self, internal_user_id: uuid.UUID) -> None:
+    async def test_no_feeds_to_add(self, internal_user_id: UserId) -> None:
         await add_feeds([], internal_user_id)
 
     @pytest.mark.asyncio
-    async def test_add(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+    async def test_add(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
 
         feeds = [
             p_entities.FeedInfo(

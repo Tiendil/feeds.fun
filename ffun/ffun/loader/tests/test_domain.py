@@ -16,6 +16,7 @@ from ffun.loader.domain import check_proxies_availability, detect_orphaned, proc
 from ffun.loader.settings import Proxy, settings
 from ffun.parsers import entities as p_entities
 from ffun.parsers.tests import make as p_make
+from ffun.domain.entities import UserId
 
 
 def assert_entriy_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:
@@ -51,7 +52,7 @@ class TestDetectOrphaned:
         assert loaded_feed.state != f_entities.FeedState.orphaned
 
     @pytest.mark.asyncio
-    async def test_not_orphaned(self, internal_user_id: f_entities.FeedId, saved_feed_id: f_entities.FeedId) -> None:
+    async def test_not_orphaned(self, internal_user_id: UserId, saved_feed_id: f_entities.FeedId) -> None:
         await fl_domain.add_link(internal_user_id, saved_feed_id)
 
         assert not await detect_orphaned(saved_feed_id)
@@ -193,7 +194,7 @@ class TestProcessFeed:
 
     @pytest.mark.asyncio
     async def test_can_not_extract_feed(
-        self, internal_user_id: f_entities.FeedId, saved_feed: f_entities.Feed, mocker: MockerFixture
+        self, internal_user_id: UserId, saved_feed: f_entities.Feed, mocker: MockerFixture
     ) -> None:
         extract_feed_info = mocker.patch("ffun.loader.domain.extract_feed_info", return_value=None)
 
@@ -209,7 +210,7 @@ class TestProcessFeed:
 
     @pytest.mark.asyncio
     async def test_success(
-        self, internal_user_id: f_entities.FeedId, saved_feed: f_entities.Feed, mocker: MockerFixture
+        self, internal_user_id: UserId, saved_feed: f_entities.Feed, mocker: MockerFixture
     ) -> None:
         n = 3
 
@@ -247,7 +248,7 @@ class TestProcessFeed:
 
     @pytest.mark.asyncio
     async def test_remove_too_long_entries_tail(
-        self, internal_user_id: f_entities.FeedId, saved_feed: f_entities.Feed, mocker: MockerFixture
+        self, internal_user_id: UserId, saved_feed: f_entities.Feed, mocker: MockerFixture
     ) -> None:
         n = 5
         m = 3
