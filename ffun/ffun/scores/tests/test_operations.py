@@ -9,12 +9,13 @@ from ffun.core.tests.helpers import (
     assert_logs_has_no_business_event,
     capture_logs,
 )
+from ffun.domain.entities import UserId
 from ffun.scores import domain, errors, operations
 
 
 class TestCreateOrUpdateRule:
     @pytest.mark.asyncio
-    async def test_create_new_rule(self, internal_user_id: uuid.UUID, three_tags_ids: tuple[int, int, int]) -> None:
+    async def test_create_new_rule(self, internal_user_id: UserId, three_tags_ids: tuple[int, int, int]) -> None:
         with capture_logs() as logs:
             async with TableSizeDelta("s_rules", delta=1):
                 created_rule = await operations.create_or_update_rule(internal_user_id, three_tags_ids, 13)
@@ -39,7 +40,7 @@ class TestCreateOrUpdateRule:
 
     @pytest.mark.asyncio
     async def test_tags_order_does_not_affect_creation(
-        self, internal_user_id: uuid.UUID, three_tags_ids: tuple[int, int, int]
+        self, internal_user_id: UserId, three_tags_ids: tuple[int, int, int]
     ) -> None:
         async with TableSizeDelta("s_rules", delta=1):
             created_rule_1 = await operations.create_or_update_rule(internal_user_id, three_tags_ids, 13)
@@ -53,7 +54,7 @@ class TestCreateOrUpdateRule:
 
     @pytest.mark.asyncio
     async def test_update_scores_of_existed_rule(
-        self, internal_user_id: uuid.UUID, three_tags_ids: tuple[int, int, int]
+        self, internal_user_id: UserId, three_tags_ids: tuple[int, int, int]
     ) -> None:
         await operations.create_or_update_rule(internal_user_id, three_tags_ids, 13)
 
@@ -81,7 +82,7 @@ class TestCreateOrUpdateRule:
 
     @pytest.mark.asyncio
     async def test_multiple_entities(
-        self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID, three_tags_ids: tuple[int, int, int]
+        self, internal_user_id: UserId, another_internal_user_id: UserId, three_tags_ids: tuple[int, int, int]
     ) -> None:
         await operations.create_or_update_rule(internal_user_id, three_tags_ids[:2], 3)
         await operations.create_or_update_rule(another_internal_user_id, three_tags_ids[:2], 5)
@@ -114,7 +115,7 @@ class TestCreateOrUpdateRule:
 class TestDeleteRule:
     @pytest.mark.asyncio
     async def test_delete_rule(
-        self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID, three_tags_ids: tuple[int, int, int]
+        self, internal_user_id: UserId, another_internal_user_id: UserId, three_tags_ids: tuple[int, int, int]
     ) -> None:
         rule_to_delete = await operations.create_or_update_rule(internal_user_id, three_tags_ids, 13)
         rule_2 = await operations.create_or_update_rule(internal_user_id, three_tags_ids[:2], 17)
@@ -136,7 +137,7 @@ class TestDeleteRule:
 
     @pytest.mark.asyncio
     async def test_delete_not_existed_rule(
-        self, internal_user_id: uuid.UUID, three_tags_ids: tuple[int, int, int]
+        self, internal_user_id: UserId, three_tags_ids: tuple[int, int, int]
     ) -> None:
         with capture_logs() as logs:
             async with TableSizeNotChanged("s_rules"):
@@ -146,7 +147,7 @@ class TestDeleteRule:
 
     @pytest.mark.asyncio
     async def test_delete_for_wrong_user(
-        self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID, three_tags_ids: tuple[int, int, int]
+        self, internal_user_id: UserId, another_internal_user_id: UserId, three_tags_ids: tuple[int, int, int]
     ) -> None:
         rule_to_delete = await operations.create_or_update_rule(internal_user_id, three_tags_ids, 13)
 
@@ -156,7 +157,7 @@ class TestDeleteRule:
 
 class TestUpdateRule:
     @pytest.mark.asyncio
-    async def test_update_rule(self, internal_user_id: uuid.UUID, three_tags_ids: tuple[int, int, int]) -> None:
+    async def test_update_rule(self, internal_user_id: UserId, three_tags_ids: tuple[int, int, int]) -> None:
         rule_to_update = await operations.create_or_update_rule(internal_user_id, three_tags_ids, 13)
 
         with capture_logs() as logs:
@@ -185,7 +186,7 @@ class TestUpdateRule:
 
     @pytest.mark.asyncio
     async def test_update_not_existed_rule(
-        self, internal_user_id: uuid.UUID, three_tags_ids: tuple[int, int, int]
+        self, internal_user_id: UserId, three_tags_ids: tuple[int, int, int]
     ) -> None:
         with capture_logs() as logs:
             async with TableSizeNotChanged("s_rules"):
@@ -196,7 +197,7 @@ class TestUpdateRule:
 
     @pytest.mark.asyncio
     async def test_wrong_user(
-        self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID, three_tags_ids: tuple[int, int, int]
+        self, internal_user_id: UserId, another_internal_user_id: UserId, three_tags_ids: tuple[int, int, int]
     ) -> None:
         rule_to_update = await operations.create_or_update_rule(internal_user_id, three_tags_ids, 13)
 
@@ -212,7 +213,7 @@ class TestUpdateRule:
 # most of the logic of this function is validated in other tests
 class TestGetRules:
     @pytest.mark.asyncio
-    async def test_no_rules(self, internal_user_id: uuid.UUID) -> None:
+    async def test_no_rules(self, internal_user_id: UserId) -> None:
         rules = await domain.get_rules(internal_user_id)
 
         assert rules == []

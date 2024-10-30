@@ -170,7 +170,7 @@ class FFunBoundLogger(structlog.typing.FilteringBoundLogger):
     ) -> ContextManager[dict[str, LabelValue]]:
         pass
 
-    def business_event(self, event: str, user_id: UserId | None, **attributes: LabelValue) -> Any:
+    def business_event(self, event: str, user_id: UserId | None, **attributes: Any) -> Any:
         pass
 
 

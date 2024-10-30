@@ -5,6 +5,7 @@ import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
+from ffun.domain.entities import UserId
 from ffun.scores import errors
 from ffun.scores.entities import Rule
 
@@ -30,7 +31,7 @@ def row_to_rule(row: dict[str, Any]) -> Rule:
     )
 
 
-async def create_or_update_rule(user_id: uuid.UUID, tags: Iterable[int], score: int) -> Rule:
+async def create_or_update_rule(user_id: UserId, tags: Iterable[int], score: int) -> Rule:
     tags = _normalize_tags(tags)
 
     key = _key_from_tags(tags)
@@ -62,7 +63,7 @@ async def create_or_update_rule(user_id: uuid.UUID, tags: Iterable[int], score: 
     return row_to_rule(result[0])
 
 
-async def delete_rule(user_id: uuid.UUID, rule_id: uuid.UUID) -> None:
+async def delete_rule(user_id: UserId, rule_id: uuid.UUID) -> None:
     sql = """
         DELETE FROM s_rules
         WHERE user_id = %(user_id)s AND id = %(rule_id)s
@@ -75,7 +76,7 @@ async def delete_rule(user_id: uuid.UUID, rule_id: uuid.UUID) -> None:
         logger.business_event("rule_deleted", user_id=user_id, rule_id=rule_id)
 
 
-async def update_rule(user_id: uuid.UUID, rule_id: uuid.UUID, tags: Iterable[int], score: int) -> Rule:
+async def update_rule(user_id: UserId, rule_id: uuid.UUID, tags: Iterable[int], score: int) -> Rule:
     tags = _normalize_tags(tags)
     key = _key_from_tags(tags)
 
@@ -96,7 +97,7 @@ async def update_rule(user_id: uuid.UUID, rule_id: uuid.UUID, tags: Iterable[int
     return row_to_rule(result[0])
 
 
-async def get_rules(user_id: uuid.UUID) -> list[Rule]:
+async def get_rules(user_id: UserId) -> list[Rule]:
     sql = """
     SELECT *
     FROM s_rules

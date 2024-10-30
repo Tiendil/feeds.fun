@@ -3,6 +3,8 @@ import uuid
 
 import pydantic
 
+from ffun.domain.entities import UserId
+
 
 class BaseRule(pydantic.BaseModel):
     tags: set[int]
@@ -11,6 +13,6 @@ class BaseRule(pydantic.BaseModel):
 
 class Rule(BaseRule):
     id: uuid.UUID
-    user_id: uuid.UUID
+    user_id: UserId
     created_at: datetime.datetime
     updated_at: datetime.datetime
