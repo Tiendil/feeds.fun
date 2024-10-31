@@ -234,7 +234,7 @@ def assert_logs_has_business_event(  # noqa: CCR001
 ) -> None:
 
     if user_id is not None:
-        user_id = str(user_id)
+        user_id = str(user_id)  # type: ignore
 
     for record in logs:
 
@@ -245,7 +245,9 @@ def assert_logs_has_business_event(  # noqa: CCR001
 
         for key, value in atributes.items():
             assert key in record["b_attributes"], f"Key {key} not found in record"
-            assert record["b_attributes"][key] == value, f"Key {key} = {record["b_attributes"][key]!r} not equal to expected {value!r}"
+            assert (
+                record["b_attributes"][key] == value
+            ), f"Key {key} = {record["b_attributes"][key]!r} not equal to expected {value!r}"
 
         break
     else:
