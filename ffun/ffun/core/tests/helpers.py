@@ -244,7 +244,8 @@ def assert_logs_has_business_event(  # noqa: CCR001
         assert "b_uid" in record, "b_uid not found in record"
 
         for key, value in atributes.items():
-            assert record["b_attributes"][key] == value, f"Key {key} = {record.get(key)} not equal to expected {value}"
+            assert key in record["b_attributes"], f"Key {key} not found in record"
+            assert record["b_attributes"][key] == value, f"Key {key} = {record["b_attributes"][key]!r} not equal to expected {value!r}"
 
         break
     else:

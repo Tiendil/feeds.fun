@@ -7,8 +7,8 @@ import inspect
 import logging
 import time
 import uuid
-from typing import Any, Callable, ContextManager, Iterable, Iterator, Protocol, TypeVar
 from collections import abc
+from typing import Any, Callable, ContextManager, Iterable, Iterator, Protocol, TypeVar
 
 import pydantic_settings
 import structlog
@@ -225,7 +225,11 @@ class BusinessBoundLoggerMixin:
 
     def business_event(self, event: str, user_id: UserId | None, **attributes: LabelValue) -> Any:
         return self.info(  # type: ignore
-            event, b_kind="event", b_user_id=str(user_id), b_uid=str(uuid.uuid4()), b_attributes=self._normalize_value(attributes)
+            event,
+            b_kind="event",
+            b_user_id=str(user_id),
+            b_uid=str(uuid.uuid4()),
+            b_attributes=self._normalize_value(attributes),
         )
 
 

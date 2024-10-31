@@ -25,7 +25,7 @@ class TestAddLink:
             async with TableSizeDelta("fl_links", delta=1):
                 await add_link(internal_user_id, saved_feed_id)
 
-        assert_logs_has_business_event(logs, "feed_linked", user_id=internal_user_id, feed_id=saved_feed_id)
+        assert_logs_has_business_event(logs, "feed_linked", user_id=internal_user_id, feed_id=str(saved_feed_id))
 
         links = await get_linked_feeds(internal_user_id)
 
@@ -90,7 +90,7 @@ class TestRemoveLink:
             async with TableSizeDelta("fl_links", delta=-1):
                 await remove_link(internal_user_id, saved_feed_id)
 
-        assert_logs_has_business_event(logs, "feed_unlinked", user_id=internal_user_id, feed_id=saved_feed_id)
+        assert_logs_has_business_event(logs, "feed_unlinked", user_id=internal_user_id, feed_id=str(saved_feed_id))
 
         links = await get_linked_feeds(internal_user_id)
 

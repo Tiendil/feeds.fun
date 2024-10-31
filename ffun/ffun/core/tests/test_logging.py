@@ -179,12 +179,18 @@ class TestBusinessBoundLoggerMixin:
 
         assert_logs_has_business_event(logs, "wrong_event", user_id=user_id, a="b")
 
-    @pytest.mark.parametrize("in_attrs, expected",
-                             [({}, {}),
-                              ({"a": "b", "c": 1, 13: 2.5, "e": None}, {"a": "b", "c": 1, "13": 2.5, "e": None}),
-                              ({"a": uuid.UUID("12345678-1234-5678-1234-567812345678")}, {"a": "12345678-1234-5678-1234-567812345678"}),
-                              ({"a": {"b": {"c": 1}, "d": [2, {"e": 3}]}, "f": [4, None, 6]}, {"a": {"b": {"c": 1}, "d": [2, {"e": 3}]}, "f": [4, None, 6]})
-                              ])
+    @pytest.mark.parametrize(
+        "in_attrs, expected",
+        [
+            ({}, {}),
+            ({"a": "b", "c": 1, 13: 2.5, "e": None}, {"a": "b", "c": 1, "13": 2.5, "e": None}),
+            ({"a": uuid.UUID("12345678-1234-5678-1234-567812345678")}, {"a": "12345678-1234-5678-1234-567812345678"}),
+            (
+                {"a": {"b": {"c": 1}, "d": [2, {"e": 3}]}, "f": [4, None, 6]},
+                {"a": {"b": {"c": 1}, "d": [2, {"e": 3}]}, "f": [4, None, 6]},
+            ),
+        ],
+    )
     def test_normalize_value(self, in_attrs: dict[str, Any], expected: dict[str, Any]) -> None:
         assert logger._normalize_value(in_attrs) == expected
 

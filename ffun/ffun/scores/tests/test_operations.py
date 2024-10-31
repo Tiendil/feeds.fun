@@ -32,7 +32,7 @@ class TestCreateOrUpdateRule:
             logs,
             "rule_created",
             user_id=internal_user_id,
-            rule_id=created_rule.id,
+            rule_id=str(created_rule.id),
             tags=list(three_tags_ids),
             score=13,
         )
@@ -74,7 +74,7 @@ class TestCreateOrUpdateRule:
             logs,
             "rule_updated",
             user_id=internal_user_id,
-            rule_id=updated_rule.id,
+            rule_id=str(updated_rule.id),
             tags=list(three_tags_ids),
             score=17,
         )
@@ -125,7 +125,7 @@ class TestDeleteRule:
             async with TableSizeDelta("s_rules", delta=-1):
                 await operations.delete_rule(internal_user_id, rule_to_delete.id)
 
-        assert_logs_has_business_event(logs, "rule_deleted", user_id=internal_user_id, rule_id=rule_to_delete.id)
+        assert_logs_has_business_event(logs, "rule_deleted", user_id=internal_user_id, rule_id=str(rule_to_delete.id))
 
         rules = await domain.get_rules(internal_user_id)
 
@@ -179,7 +179,7 @@ class TestUpdateRule:
             logs,
             "rule_updated",
             user_id=internal_user_id,
-            rule_id=rule_to_update.id,
+            rule_id=str(rule_to_update.id),
             tags=list(three_tags_ids[:2]),
             score=17,
         )
