@@ -32,7 +32,7 @@ class TestSetMarker:
                 await set_marker(internal_user_id, Marker.read, new_entry.id)
 
         assert_logs_has_business_event(
-            logs, "marker_set", user_id=internal_user_id, entry_id=new_entry.id, marker=Marker.read
+            logs, "marker_set", user_id=internal_user_id, entry_id=str(new_entry.id), marker=Marker.read
         )
 
     @pytest.mark.asyncio
@@ -57,7 +57,7 @@ class TestRemoveMarker:
                 await remove_marker(internal_user_id, Marker.read, new_entry.id)
 
         assert_logs_has_business_event(
-            logs, "marker_removed", user_id=internal_user_id, entry_id=new_entry.id, marker=Marker.read
+            logs, "marker_removed", user_id=internal_user_id, entry_id=str(new_entry.id), marker=Marker.read
         )
 
     @pytest.mark.asyncio
