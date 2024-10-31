@@ -1,5 +1,5 @@
 import asyncio
-
+import uuid
 import pytest
 
 from ffun.core import errors
@@ -140,18 +140,29 @@ class TestBusinessBoundLoggerMixin:
                 "module": "ffun.core.tests.test_logging",
                 "event": "my_event",
                 "log_level": "info",
-                "user_id": user_id,
+                "b_user_id": user_id,
                 "b_kind": "event",
-                "a": "b",
+                "b_uid": logs[0]["b_uid"],
+                "b_attributes": {"a": "b"},
             }
         ]
 
+        assert isinstance(logs[0]["b_uid"], uuid.UUID)
+
         assert_logs_has_business_event(logs, "my_event", user_id=user_id, a="b")
-        assert_logs_has_business_event(logs, "my_event", a="b")
         assert_logs_has_business_event(logs, "my_event", user_id=user_id)
 
     @pytest.mark.xfail
     def test_business_event__helper_expected_to_fail_because_of_arguments(self) -> None:
+        user_id = new_user_id()
+
+        with capture_logs() as logs:
+            logger.business_event("my_event", user_id=user_id, a="b")
+
+        assert_logs_has_business_event(logs, "my_event", user_id=user_id, a="c")
+
+    @pytest.mark.xfail
+    def test_business_event__helper_expected_to_fail_because_of_user_id(self) -> None:
         with capture_logs() as logs:
             logger.business_event("my_event", user_id=new_user_id(), a="b")
 
@@ -159,10 +170,12 @@ class TestBusinessBoundLoggerMixin:
 
     @pytest.mark.xfail
     def test_business_event__helper_expected_to_fail_because_event_name(self) -> None:
-        with capture_logs() as logs:
-            logger.business_event("my_event", user_id=new_user_id(), a="b")
+        user_id = new_user_id()
 
-        assert_logs_has_business_event(logs, "wrong_event", a="b")
+        with capture_logs() as logs:
+            logger.business_event("my_event", user_id=user_id, a="b")
+
+        assert_logs_has_business_event(logs, "wrong_event", user_id=user_id, a="b")
 
 
 class TestIdentityConstructor:

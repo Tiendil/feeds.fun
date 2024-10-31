@@ -211,7 +211,11 @@ class BusinessBoundLoggerMixin:
     """
 
     def business_event(self, event: str, user_id: UserId | None, **attributes: LabelValue) -> Any:
-        return self.info(event, b_kind="event", user_id=user_id, **attributes)  # type: ignore
+        return self.info(event,
+                         b_kind="event",
+                         b_user_id=user_id,
+                         b_uid=uuid.uuid4(),
+                         b_attributes=attributes)
 
 
 def make_measuring_bound_logger(level: int) -> type[FFunBoundLogger]:
