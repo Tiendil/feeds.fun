@@ -8,6 +8,7 @@ import logging
 import time
 import uuid
 from typing import Any, Callable, ContextManager, Iterable, Iterator, Protocol, TypeVar
+from collections import abc
 
 import pydantic_settings
 import structlog
@@ -210,9 +211,21 @@ class BusinessBoundLoggerMixin:
     This mixin is required to work with business events in 100% the same way as with logs.
     """
 
+    def _normalize_value(self, value: Any) -> Any:
+        if isinstance(value, int | str | float | None):
+            return value
+
+        if isinstance(value, abc.Mapping):
+            return {str(k): self._normalize_value(v) for k, v in value.items()}
+
+        if isinstance(value, abc.Sequence):
+            return [self._normalize_value(v) for v in value]
+
+        return str(value)
+
     def business_event(self, event: str, user_id: UserId | None, **attributes: LabelValue) -> Any:
         return self.info(  # type: ignore
-            event, b_kind="event", b_user_id=user_id, b_uid=uuid.uuid4(), b_attributes=attributes
+            event, b_kind="event", b_user_id=str(user_id), b_uid=str(uuid.uuid4()), b_attributes=self._normalize_value(attributes)
         )
 
 
