@@ -12,6 +12,7 @@ from structlog.testing import LogCapture
 from structlog.types import EventDict
 
 from ffun.core.postgresql import execute
+from ffun.domain.entities import UserId
 
 PRODUCER = Callable[[], Any]
 
@@ -229,14 +230,19 @@ def capture_logs() -> Generator[list[EventDict], None, None]:
 
 
 def assert_logs_has_business_event(  # noqa: CCR001
-    logs: list[MutableMapping[str, Any]], name: str, **atributes: Any
+    logs: list[MutableMapping[str, Any]], name: str, user_id: UserId | None, **atributes: Any
 ) -> None:
     for record in logs:
-        if record.get("b_kind") == "event" and record["event"] == name:
-            for key, value in atributes.items():
-                assert record[key] == value, f"Key {key} = {record.get(key)} not equal to expected {value}"
 
-            break
+        if not (record.get("b_kind") == "event" and record["event"] == name and record.get("b_user_id") == user_id):
+            continue
+
+        assert "b_uid" in record, "b_uid not found in record"
+
+        for key, value in atributes.items():
+            assert record["b_attributes"][key] == value, f"Key {key} = {record.get(key)} not equal to expected {value}"
+
+        break
     else:
         pytest.fail(f"Event {name} not found in logs")
 
