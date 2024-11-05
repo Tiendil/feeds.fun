@@ -5,6 +5,7 @@ from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.domain.entities import UserId
 from ffun.feeds.entities import FeedId
+from ffun.feeds_collections.collections import collections
 from ffun.feeds_links.entities import FeedLink
 
 logger = logging.get_module_logger()
@@ -23,7 +24,7 @@ async def add_link(user_id: UserId, feed_id: FeedId) -> None:
 
     await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "feed_id": feed_id})
 
-    logger.business_event("feed_linked", user_id=user_id, feed_id=feed_id)
+    logger.business_event("feed_linked", user_id=user_id, feed_id=feed_id, in_collection=collections.has_feed(feed_id))
 
 
 async def remove_link(user_id: UserId, feed_id: FeedId) -> None:
@@ -33,7 +34,9 @@ async def remove_link(user_id: UserId, feed_id: FeedId) -> None:
 
     await execute(sql, {"user_id": user_id, "feed_id": feed_id})
 
-    logger.business_event("feed_unlinked", user_id=user_id, feed_id=feed_id)
+    logger.business_event(
+        "feed_unlinked", user_id=user_id, feed_id=feed_id, in_collection=collections.has_feed(feed_id)
+    )
 
 
 async def get_linked_feeds(user_id: UserId) -> list[FeedLink]:
