@@ -372,9 +372,11 @@ async def api_set_user_setting(request: entities.SetUserSettingRequest, user: Us
 @router.post("/api/track-event")
 async def api_track_event(request: entities.TrackEventRequest, user: User) -> entities.TrackEventResponse:
     attributes = request.event.model_dump()
-    del attributes["event"]
+    event = attributes.pop("name")
 
-    logger.business_event(request.event.name, user_id=user.id, **attributes)
+    logger.business_event(event, user_id=user.id, **attributes)
+
+    return entities.TrackEventResponse()
 
 
 #######################
