@@ -7,6 +7,7 @@ from typing import Any, Iterable
 import markdown
 import pydantic
 
+from ffun.api import front_events
 from ffun.core import api
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import EntryId, FeedId, UserId
@@ -24,8 +25,6 @@ from ffun.resources import entities as r_entities
 from ffun.scores import entities as s_entities
 from ffun.user_settings import types as us_types
 from ffun.user_settings.values import user_settings
-
-from ffun.api import front_events
 
 
 class Marker(enum.StrEnum):

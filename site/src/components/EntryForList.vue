@@ -54,8 +54,8 @@
       <h2 class="mt-0"
         ><a
           :href="entry.url"
-           target="_blank"
-           @click="newsLinkOpenedEvent"
+          target="_blank"
+          @click="newsLinkOpenedEvent"
           >{{ purifiedTitle }}</a
         ></h2
       >
@@ -71,8 +71,8 @@
 <script lang="ts" setup>
   import _ from "lodash";
   import {computed, ref} from "vue";
-import type * as t from "@/logic/types";
-import * as events from "@/logic/events";
+  import type * as t from "@/logic/types";
+  import * as events from "@/logic/events";
   import * as e from "@/logic/enums";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
@@ -156,8 +156,8 @@ import * as events from "@/logic/events";
     return DOMPurify.sanitize(entry.value.body);
   });
 
-async function newsLinkOpenedEvent() {
-  await events.newsLinkOpened({entryId: entry.value.id});
+  async function newsLinkOpenedEvent() {
+    await events.newsLinkOpened({entryId: entry.value.id});
   }
 
   async function onTitleClick(event: MouseEvent) {
@@ -170,10 +170,9 @@ async function newsLinkOpenedEvent() {
       } else {
         displayBody();
       }
-    }
-    else {
+    } else {
       await newsLinkOpenedEvent();
-      }
+    }
 
     // TODO: is it will be too slow?
     if (showBody.value) {

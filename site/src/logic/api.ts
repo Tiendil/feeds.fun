@@ -277,6 +277,6 @@ export async function getInfo() {
   return response;
 }
 
-export async function trackEvent(data: {[key: string]: string|number|null}) {
+export async function trackEvent(data: {[key: string]: string | number | null}) {
   await post({url: API_TRACK_EVENT, data: {event: data}});
 }

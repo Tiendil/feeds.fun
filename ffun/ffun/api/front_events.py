@@ -1,7 +1,7 @@
+from typing import Literal
+
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import EntryId
-
-from typing import Literal
 
 
 class NewsLinkOpened(BaseEntity):
