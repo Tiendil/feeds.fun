@@ -28,6 +28,7 @@ const API_GET_USER_SETTINGS = `${ENTRY_POINT}/get-user-settings`;
 const API_SET_USER_SETTING = `${ENTRY_POINT}/set-user-setting`;
 const API_GET_RESOURCE_HISTORY = `${ENTRY_POINT}/get-resource-history`;
 const API_GET_INFO = `${ENTRY_POINT}/get-info`;
+const API_TRACK_EVENT = `${ENTRY_POINT}/track-event`;
 
 let _onSessionLost: () => void = () => {};
 
@@ -274,4 +275,8 @@ export async function getInfo() {
   const response = await post({url: API_GET_INFO, data: {}});
 
   return response;
+}
+
+export async function trackEvent({name, attributes}: {name: string; attributes: {[key: string]: string|number|null}}) {
+  await post({url: API_TRACK_EVENT, data: {name: name, attributes: attributes}});
 }
