@@ -55,6 +55,7 @@
         ><a
           :href="entry.url"
           target="_blank"
+          @click="newsLinkOpenedEvent"
           >{{ purifiedTitle }}</a
         ></h2
       >
@@ -71,6 +72,7 @@
   import _ from "lodash";
   import {computed, ref} from "vue";
   import type * as t from "@/logic/types";
+  import * as events from "@/logic/events";
   import * as e from "@/logic/enums";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
@@ -109,7 +111,7 @@
     return _.get(entry.value, properties.timeField, null);
   });
 
-  function displayBody() {
+  async function displayBody() {
     showBody.value = true;
 
     emit("entry:bodyVisibilityChanged", {entryId: properties.entryId, visible: true});
@@ -119,6 +121,8 @@
     }
 
     entriesStore.requestFullEntry({entryId: entry.value.id});
+
+    await events.newsBodyOpened({entryId: entry.value.id});
   }
 
   function hideBody() {
@@ -152,6 +156,10 @@
     return DOMPurify.sanitize(entry.value.body);
   });
 
+  async function newsLinkOpenedEvent() {
+    await events.newsLinkOpened({entryId: entry.value.id});
+  }
+
   async function onTitleClick(event: MouseEvent) {
     if (!event.ctrlKey) {
       event.preventDefault();
@@ -162,6 +170,8 @@
       } else {
         displayBody();
       }
+    } else {
+      await newsLinkOpenedEvent();
     }
 
     // TODO: is it will be too slow?

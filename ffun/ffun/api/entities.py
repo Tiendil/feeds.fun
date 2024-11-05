@@ -7,6 +7,7 @@ from typing import Any, Iterable
 import markdown
 import pydantic
 
+from ffun.api import front_events
 from ffun.core import api
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import EntryId, FeedId, UserId
@@ -485,3 +486,11 @@ class GetInfoRequest(api.APIRequest):
 
 class GetInfoResponse(api.APISuccess):
     userId: UserId
+
+
+class TrackEventRequest(api.APIRequest):
+    event: front_events.Event
+
+
+class TrackEventResponse(api.APISuccess):
+    pass
