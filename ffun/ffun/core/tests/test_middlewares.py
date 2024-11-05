@@ -179,6 +179,7 @@ class TestExistedRouteUrls:
             "/api/update-rule",
             "/api/openapi.json",
             "/api/remove-marker",
+            "/api/track-event",
         }
 
 
