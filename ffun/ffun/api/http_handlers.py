@@ -369,6 +369,14 @@ async def api_set_user_setting(request: entities.SetUserSettingRequest, user: Us
     return entities.SetUserSettingResponse()
 
 
+@router.post("/api/track-event")
+async def api_track_event(request: entities.TrackEventRequest, user: User) -> entities.TrackEventResponse:
+    attributes = request.event.model_dump()
+    del attributes["event"]
+
+    logger.business_event(request.event.name, user_id=user.id, **attributes)
+
+
 #######################
 # Swagger documentation
 #######################

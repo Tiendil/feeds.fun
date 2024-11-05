@@ -25,6 +25,8 @@ from ffun.scores import entities as s_entities
 from ffun.user_settings import types as us_types
 from ffun.user_settings.values import user_settings
 
+from ffun.api import front_events
+
 
 class Marker(enum.StrEnum):
     read = "read"
@@ -485,3 +487,11 @@ class GetInfoRequest(api.APIRequest):
 
 class GetInfoResponse(api.APISuccess):
     userId: UserId
+
+
+class TrackEventRequest(api.APIRequest):
+    event: front_events.Event
+
+
+class TrackEventResponse(api.APISuccess):
+    pass
