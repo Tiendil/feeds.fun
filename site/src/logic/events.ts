@@ -10,3 +10,4 @@ export async function newsLinkOpened({entryId}: {entryId: t.EntryId}) {
 
 export async function newsBodyOpened({entryId}: {entryId: t.EntryId}) {
   await api.trackEvent({name: "news_body_opened", entryId: entryId});
+}

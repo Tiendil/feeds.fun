@@ -54,7 +54,8 @@
       <h2 class="mt-0"
         ><a
           :href="entry.url"
-          target="_blank"
+           target="_blank"
+           @click="newsLinkOpenedEvent()"
           >{{ purifiedTitle }}</a
         ></h2
       >
@@ -155,6 +156,10 @@ import * as events from "@/logic/events";
     return DOMPurify.sanitize(entry.value.body);
   });
 
+async function newsLinkOpenedEvent() {
+  await events.newsLinkOpened({entryId: entry.value.id});
+  }
+
   async function onTitleClick(event: MouseEvent) {
     if (!event.ctrlKey) {
       event.preventDefault();
@@ -166,6 +171,9 @@ import * as events from "@/logic/events";
         displayBody();
       }
     }
+    else {
+      await newsLinkOpenedEvent();
+      }
 
     // TODO: is it will be too slow?
     if (showBody.value) {
