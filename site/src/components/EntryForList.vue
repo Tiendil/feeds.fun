@@ -55,7 +55,7 @@
         ><a
           :href="entry.url"
            target="_blank"
-           @click="newsLinkOpenedEvent()"
+           @click="newsLinkOpenedEvent"
           >{{ purifiedTitle }}</a
         ></h2
       >
@@ -111,7 +111,7 @@ import * as events from "@/logic/events";
     return _.get(entry.value, properties.timeField, null);
   });
 
-  function displayBody() {
+  async function displayBody() {
     showBody.value = true;
 
     emit("entry:bodyVisibilityChanged", {entryId: properties.entryId, visible: true});
@@ -122,7 +122,7 @@ import * as events from "@/logic/events";
 
     entriesStore.requestFullEntry({entryId: entry.value.id});
 
-    events.newsBodyOpened({entryId: entry.value.id});
+    await events.newsBodyOpened({entryId: entry.value.id});
   }
 
   function hideBody() {

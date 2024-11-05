@@ -278,5 +278,5 @@ export async function getInfo() {
 }
 
 export async function trackEvent({name, attributes}: {name: string; attributes: {[key: string]: string|number|null}}) {
-  await post({url: API_TRACK_EVENT, data: {name: name, attributes: attributes}});
+  // await post({url: API_TRACK_EVENT, data: {name: name, attributes: attributes}});
 }
