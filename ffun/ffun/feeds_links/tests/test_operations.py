@@ -1,11 +1,12 @@
 import pytest
-from ffun.feeds_collections.collections import collections
-from ffun.feeds_collections.entities import CollectionId
+
 from ffun.core.postgresql import transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs_has_business_event, capture_logs
 from ffun.domain.entities import UserId
 from ffun.feeds.entities import FeedId
 from ffun.feeds.tests import make as f_make
+from ffun.feeds_collections.collections import collections
+from ffun.feeds_collections.entities import CollectionId
 from ffun.feeds_links.entities import FeedLink
 from ffun.feeds_links.operations import (
     add_link,
@@ -22,7 +23,13 @@ class TestAddLink:
 
     @pytest.mark.parametrize("in_collection", [True, False])
     @pytest.mark.asyncio
-    async def test_add_link(self, internal_user_id: UserId, saved_feed_id: FeedId, in_collection: bool, collection_id_for_test_feeds: CollectionId) -> None:
+    async def test_add_link(
+        self,
+        internal_user_id: UserId,
+        saved_feed_id: FeedId,
+        in_collection: bool,
+        collection_id_for_test_feeds: CollectionId,
+    ) -> None:
         if in_collection:
             await collections.add_test_feed_to_collections(collection_id_for_test_feeds, saved_feed_id)
 
@@ -30,7 +37,9 @@ class TestAddLink:
             async with TableSizeDelta("fl_links", delta=1):
                 await add_link(internal_user_id, saved_feed_id)
 
-        assert_logs_has_business_event(logs, "feed_linked", user_id=internal_user_id, feed_id=str(saved_feed_id), in_collection=in_collection)
+        assert_logs_has_business_event(
+            logs, "feed_linked", user_id=internal_user_id, feed_id=str(saved_feed_id), in_collection=in_collection
+        )
 
         links = await get_linked_feeds(internal_user_id)
 
@@ -89,7 +98,13 @@ class TestRemoveLink:
 
     @pytest.mark.parametrize("in_collection", [True, False])
     @pytest.mark.asyncio
-    async def test_remove_link(self, internal_user_id: UserId, saved_feed_id: FeedId, in_collection: bool, collection_id_for_test_feeds: CollectionId) -> None:
+    async def test_remove_link(
+        self,
+        internal_user_id: UserId,
+        saved_feed_id: FeedId,
+        in_collection: bool,
+        collection_id_for_test_feeds: CollectionId,
+    ) -> None:
         if in_collection:
             await collections.add_test_feed_to_collections(collection_id_for_test_feeds, saved_feed_id)
 
@@ -99,7 +114,9 @@ class TestRemoveLink:
             async with TableSizeDelta("fl_links", delta=-1):
                 await remove_link(internal_user_id, saved_feed_id)
 
-        assert_logs_has_business_event(logs, "feed_unlinked", user_id=internal_user_id, feed_id=str(saved_feed_id), in_collection=in_collection)
+        assert_logs_has_business_event(
+            logs, "feed_unlinked", user_id=internal_user_id, feed_id=str(saved_feed_id), in_collection=in_collection
+        )
 
         links = await get_linked_feeds(internal_user_id)
 
