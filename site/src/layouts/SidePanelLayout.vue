@@ -119,8 +119,7 @@
                 class="ffun-header-link text-xl align-middle"
                 title="GitHub"
                 style="text-decoration: none"
-                @click="events.socialLinkClicked({linkType: 'github'})"
-                >
+                @click="events.socialLinkClicked({linkType: 'github'})">
                 <i class="ti ti-brand-github"></i
               ></a>
             </li>
@@ -155,7 +154,7 @@
   import {useRouter, RouterLink, RouterView} from "vue-router";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useGlobalState} from "@/stores/globalState";
-import {useSupertokens} from "@/stores/supertokens";
+  import {useSupertokens} from "@/stores/supertokens";
   import * as events from "@/logic/events";
   import * as e from "@/logic/enums";
   import * as settings from "@/logic/settings";
