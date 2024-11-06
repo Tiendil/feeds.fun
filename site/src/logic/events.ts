@@ -8,3 +8,7 @@ export async function newsLinkOpened({entryId}: {entryId: t.EntryId}) {
 export async function newsBodyOpened({entryId}: {entryId: t.EntryId}) {
   await api.trackEvent({name: "news_body_opened", entry_id: entryId});
 }
+
+export async function socialLinkClicked({linkType}: {linkType: string}) {
+  await api.trackEvent({name: "social_link_clicked", link_type: linkType});
+}

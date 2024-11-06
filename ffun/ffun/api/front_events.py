@@ -14,4 +14,9 @@ class NewsBodyOpened(BaseEntity):
     entry_id: EntryId
 
 
-Event = NewsLinkOpened | NewsBodyOpened
+class SocialLinkClicked(BaseEntity):
+    name: Literal["social_link_clicked"]
+    link_type: Literal["api", "blog", "reddit", "discord", "github"]
+
+
+Event = NewsLinkOpened | NewsBodyOpened | SocialLinkClicked
