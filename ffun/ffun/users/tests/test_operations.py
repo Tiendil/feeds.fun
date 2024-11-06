@@ -1,3 +1,4 @@
+import uuid
 import pytest
 
 from ffun.core.tests.helpers import (
@@ -6,11 +7,12 @@ from ffun.core.tests.helpers import (
     assert_logs_has_business_event,
     assert_logs_has_no_business_event,
     capture_logs,
+    Delta,
 )
 from ffun.domain.entities import UserId
 from ffun.users import errors
 from ffun.users.entities import Service
-from ffun.users.operations import add_mapping, get_mapping
+from ffun.users.operations import add_mapping, get_mapping, count_total_users
 
 
 class TestAddMapping:
@@ -59,3 +61,12 @@ class TestGetMapping:
 
         with pytest.raises(errors.NoUserMappingFound):
             await get_mapping(Service.single, external_user_id)
+
+
+class TestCountTotalUsers:
+
+    @pytest.mark.asyncio
+    async def test(self) -> None:
+        async with Delta(count_total_users, delta=3):
+            for _ in range(3):
+                await add_mapping(Service.supertokens, uuid.uuid4().hex)

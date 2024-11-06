@@ -43,3 +43,8 @@ async def get_mapping(service: Service, external_id: str) -> UserId:
         raise errors.NoUserMappingFound(service=service, external_id=external_id)
 
     return result[0]["internal_id"]  # type: ignore
+
+
+async def count_total_users() -> int:
+    result = await execute("SELECT COUNT(*) FROM u_mapping")
+    return result[0]["count"]
