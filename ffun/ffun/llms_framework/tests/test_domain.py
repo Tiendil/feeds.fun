@@ -212,6 +212,7 @@ class TestCallLLM:
         interval_started_at = month_interval_start()
 
         key_usage = APIKeyUsage(
+            provider=fake_llm_provider.provider,
             user_id=internal_user_id,
             api_key=fake_llm_api_key,
             reserved_cost=USDCost(Decimal(1005)),

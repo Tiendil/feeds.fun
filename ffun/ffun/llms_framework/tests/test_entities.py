@@ -1,13 +1,14 @@
 import decimal
 
 from ffun.core import utils
-from ffun.llms_framework.entities import APIKeyUsage, LLMApiKey, LLMTokens, USDCost
+from ffun.llms_framework.entities import APIKeyUsage, LLMApiKey, LLMProvider, LLMTokens, USDCost
 
 
 class TestAPIKeyUsage:
 
     def test_spent_tokens__setuped(self) -> None:
         usage = APIKeyUsage(
+            provider=LLMProvider.test,
             user_id=None,
             api_key=LLMApiKey("api_key"),
             reserved_cost=USDCost(decimal.Decimal(123)),
@@ -21,6 +22,7 @@ class TestAPIKeyUsage:
 
     def test_spent_tokens__not_setuped(self) -> None:
         usage = APIKeyUsage(
+            provider=LLMProvider.test,
             user_id=None,
             api_key=LLMApiKey("api_key"),
             reserved_cost=USDCost(decimal.Decimal(132)),

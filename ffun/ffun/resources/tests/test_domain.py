@@ -1,8 +1,7 @@
-import uuid
-
 import pytest
 
 from ffun.domain.datetime_intervals import month_interval_start
+from ffun.domain.entities import UserId
 from ffun.resources.domain import load_resource
 from ffun.resources.operations import initialize_resource, try_to_reserve
 
@@ -12,7 +11,7 @@ _another_kind = 215
 
 class TestLoadResource:
     @pytest.mark.asyncio
-    async def test_initialized(self, internal_user_id: uuid.UUID) -> None:
+    async def test_initialized(self, internal_user_id: UserId) -> None:
         interval_started_at = month_interval_start()
 
         await initialize_resource(user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at)
@@ -30,7 +29,7 @@ class TestLoadResource:
         assert resource.reserved == 13
 
     @pytest.mark.asyncio
-    async def test_not_initialized(self, internal_user_id: uuid.UUID) -> None:
+    async def test_not_initialized(self, internal_user_id: UserId) -> None:
         interval_started_at = month_interval_start()
 
         resource = await load_resource(user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at)

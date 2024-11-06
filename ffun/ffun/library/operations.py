@@ -241,6 +241,7 @@ async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
     await try_mark_as_orphanes(potential_orphanes)
 
 
+# TODO: metrics for orphaned entries and for feeds that produce them
 async def try_mark_as_orphanes(entry_ids: Iterable[EntryId]) -> None:
     feed_links = await get_feed_links_for_entries(entry_ids)
 
@@ -278,3 +279,8 @@ async def remove_entries_by_ids(execute: ExecuteType, entry_ids: Iterable[EntryI
     await execute("DELETE FROM l_feeds_to_entries WHERE entry_id = ANY(%(ids)s)", {"ids": ids})
     await execute("DELETE FROM l_entries WHERE id = ANY(%(ids)s)", {"ids": ids})
     await execute("DELETE FROM l_orphaned_entries WHERE entry_id = ANY(%(ids)s)", {"ids": ids})
+
+
+async def count_total_entries() -> int:
+    result = await execute("SELECT COUNT(*) FROM l_entries")
+    return result[0]["count"]  # type: ignore

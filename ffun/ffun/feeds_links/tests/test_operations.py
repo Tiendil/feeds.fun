@@ -10,6 +10,8 @@ from ffun.feeds_collections.entities import CollectionId
 from ffun.feeds_links.entities import FeedLink
 from ffun.feeds_links.operations import (
     add_link,
+    count_collection_feeds_per_user,
+    count_feeds_per_user,
     get_linked_feeds,
     get_linked_users,
     has_linked_users,
@@ -224,6 +226,60 @@ class TestHasLinkedUsers:
         await add_link(internal_user_id, saved_feed_id)
 
         assert await has_linked_users(saved_feed_id)
+
+
+class TestCountFeedsPerUser:
+
+    @pytest.mark.asyncio
+    async def test(self, five_internal_user_ids: list[UserId], five_saved_feed_ids: list[FeedId]) -> None:
+        u = five_internal_user_ids
+        f = five_saved_feed_ids
+
+        await add_link(u[0], f[0])
+        await add_link(u[0], f[1])
+        await add_link(u[0], f[2])
+        await add_link(u[1], f[2])
+        await add_link(u[1], f[3])
+        await add_link(u[2], f[3])
+
+        numbers_after = await count_feeds_per_user()
+
+        assert numbers_after[u[0]] == 3
+        assert numbers_after[u[1]] == 2
+        assert numbers_after[u[2]] == 1
+        assert u[3] not in numbers_after
+        assert u[4] not in numbers_after
+
+
+class TestCountCollectionFeedsPerUser:
+
+    @pytest.mark.asyncio
+    async def test(
+        self,
+        five_internal_user_ids: list[UserId],
+        five_saved_feed_ids: list[FeedId],
+        collection_id_for_test_feeds: CollectionId,
+    ) -> None:
+        u = five_internal_user_ids
+        f = five_saved_feed_ids
+
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, f[0])
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, f[2])
+
+        await add_link(u[0], f[0])
+        await add_link(u[0], f[1])
+        await add_link(u[0], f[2])
+        await add_link(u[1], f[2])
+        await add_link(u[1], f[3])
+        await add_link(u[2], f[3])
+
+        numbers_after = await count_collection_feeds_per_user()
+
+        assert numbers_after[u[0]] == 2
+        assert numbers_after[u[1]] == 1
+        assert u[2] not in numbers_after
+        assert u[3] not in numbers_after
+        assert u[4] not in numbers_after
 
 
 class TestMergeFeeds:

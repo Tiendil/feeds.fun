@@ -107,3 +107,10 @@ async def get_rules(user_id: UserId) -> list[Rule]:
     rows = await execute(sql, {"user_id": user_id})
 
     return [row_to_rule(row) for row in rows]
+
+
+async def count_rules_per_user() -> dict[UserId, int]:
+    # Not optimal implementation, but should work for a very long time
+    result = await execute("SELECT user_id, COUNT(*) FROM s_rules GROUP BY user_id")
+
+    return {row["user_id"]: row["count"] for row in result}

@@ -217,3 +217,20 @@ class TestGetRules:
         rules = await domain.get_rules(internal_user_id)
 
         assert rules == []
+
+
+class TestCountRulesPerUser:
+
+    @pytest.mark.asyncio
+    async def test_count_rules(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
+
+        numbers_before = await operations.count_rules_per_user()
+
+        await operations.create_or_update_rule(internal_user_id, [1, 2], 3)
+        await operations.create_or_update_rule(internal_user_id, [2, 3], 5)
+        await operations.create_or_update_rule(another_internal_user_id, [1, 2], 7)
+
+        numbers_after = await operations.count_rules_per_user()
+
+        assert numbers_after[internal_user_id] == numbers_before.get(internal_user_id, 0) + 2
+        assert numbers_after[another_internal_user_id] == numbers_before.get(another_internal_user_id, 0) + 1
