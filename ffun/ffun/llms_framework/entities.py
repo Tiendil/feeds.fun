@@ -87,6 +87,7 @@ class ChatResponse(BaseEntity):
 class APIKeyUsage(BaseEntity):
     model_config = pydantic.ConfigDict(frozen=False)
 
+    provider: LLMProvider
     user_id: UserId | None
     api_key: LLMApiKey
     reserved_cost: USDCost

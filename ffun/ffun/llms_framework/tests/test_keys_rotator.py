@@ -462,6 +462,7 @@ class TestChooseGeneralKey:
         usage = await _choose_general_key(fake_llm_provider, select_key_context)
 
         assert usage == APIKeyUsage(
+            provider=fake_llm_provider.provider,
             user_id=None,
             api_key=fake_llm_api_key,
             reserved_cost=select_key_context.reserved_cost,
@@ -508,6 +509,7 @@ class TestChooseCollectionsKey:
         usage = await _choose_collections_key(fake_llm_provider, select_key_context)
 
         assert usage == APIKeyUsage(
+            provider=fake_llm_provider.provider,
             user_id=None,
             api_key=fake_llm_api_key,
             reserved_cost=select_key_context.reserved_cost,
@@ -573,6 +575,7 @@ class TestChooseUserKey:
         usage = await _choose_user_key(fake_llm_provider, select_key_context)
 
         assert usage == APIKeyUsage(
+            provider=fake_llm_provider.provider,
             user_id=info.user_id,
             api_key=info.api_key,
             reserved_cost=select_key_context.reserved_cost,
@@ -597,6 +600,7 @@ class TestChooseApiKey:
             assert api_key is not None
 
             return APIKeyUsage(
+                provider=llm.provider,
                 user_id=new_user_id(),
                 api_key=api_key,
                 reserved_cost=context.reserved_cost,
@@ -667,6 +671,7 @@ class TestUseApiKey:
         used_cost = USDCost(Decimal(132))
 
         key_usage = APIKeyUsage(
+            provider=LLMProvider.test,
             user_id=internal_user_id,
             api_key=fake_llm_api_key,
             reserved_cost=reserved_cost,
@@ -713,6 +718,7 @@ class TestUseApiKey:
         )
 
         key_usage = APIKeyUsage(
+            provider=LLMProvider.test,
             user_id=internal_user_id,
             api_key=fake_llm_api_key,
             reserved_cost=reserved_cost,
@@ -764,6 +770,7 @@ class TestUseApiKey:
             pass
 
         key_usage = APIKeyUsage(
+            provider=LLMProvider.test,
             user_id=internal_user_id,
             api_key=fake_llm_api_key,
             reserved_cost=reserved_cost,
@@ -800,6 +807,7 @@ class TestUseApiKey:
         used_cost = USDCost(Decimal(214))
 
         key_usage = APIKeyUsage(
+            provider=LLMProvider.test,
             user_id=None,
             api_key=fake_llm_api_key,
             reserved_cost=reserved_cost,

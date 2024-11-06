@@ -238,6 +238,7 @@ async def _choose_general_key(llm: ProviderInterface, context: SelectKeyContext)
         return None
 
     return APIKeyUsage(
+        provider=llm.provider,
         user_id=None,
         api_key=key,
         reserved_cost=context.reserved_cost,
@@ -259,6 +260,7 @@ async def _choose_collections_key(llm: ProviderInterface, context: SelectKeyCont
         return None
 
     return APIKeyUsage(
+        provider=llm.provider,
         user_id=None,
         api_key=key,
         reserved_cost=context.reserved_cost,
@@ -290,6 +292,7 @@ async def _choose_user_key(llm: ProviderInterface, context: SelectKeyContext) ->
         raise NotImplementedError("imporssible keys")
 
     return APIKeyUsage(
+        provider=llm.provider,
         user_id=info.user_id,
         api_key=info.api_key,
         reserved_cost=context.reserved_cost,
@@ -340,6 +343,8 @@ async def use_api_key(key_usage: APIKeyUsage) -> AsyncGenerator[None, None]:
         log.info("convert_reserved_to_used", reserved_cost=key_usage.reserved_cost, used_cost=key_usage.used_cost)
 
         if key_usage.user_id is not None:
+            log.business_event("api_key_used", user_id=key_usage.user_id, llm_provider=key_usage.provider)
+
             await r_domain.convert_reserved_to_used(
                 user_id=key_usage.user_id,
                 kind=AppResource.tokens_cost,
