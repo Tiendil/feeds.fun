@@ -4,6 +4,9 @@ from typing import Sequence
 from ffun.scores import entities, operations
 
 
+count_rules_per_user = operations.count_rules_per_user
+
+
 def get_score_contributions(rules: Sequence[entities.BaseRule], tags: set[int]) -> tuple[int, dict[int, int]]:
     score = 0
     contributions: dict[int, int] = defaultdict(int)
