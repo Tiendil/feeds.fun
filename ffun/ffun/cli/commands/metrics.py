@@ -51,4 +51,4 @@ async def run_per_user() -> None:
 
 @cli_app.command()
 def per_user() -> None:
-    asyncio.run(run_system_wide())
+    asyncio.run(run_per_user())
