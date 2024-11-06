@@ -5,3 +5,4 @@
 - ff-142 — CLI command to track aggregated metrics.
 - ff-143 — Fixed a situation when, after removing a feed on the Feeds page, the feeds list was not updated.
 - ff-145 — Track users' interest in feeds.fun social channels.
+- ff-119 — Track OPML imports.
