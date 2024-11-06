@@ -72,6 +72,7 @@
                 target="_blank"
                 class="ffun-header-link"
                 style="text-decoration: none"
+                @click="events.socialLinkClicked({linkType: 'api'})"
                 >API</a
               >
             </li>
@@ -82,6 +83,7 @@
                 target="_blank"
                 class="ffun-header-link"
                 style="text-decoration: none"
+                @click="events.socialLinkClicked({linkType: 'blog'})"
                 >Blog</a
               >
             </li>
@@ -93,6 +95,7 @@
                 class="ffun-header-link text-xl align-middle"
                 title="Reddit"
                 style="text-decoration: none"
+                @click="events.socialLinkClicked({linkType: 'reddit'})"
                 ><i class="ti ti-brand-reddit"></i
               ></a>
             </li>
@@ -104,6 +107,7 @@
                 class="ffun-header-link text-xl align-middle"
                 title="Discord"
                 style="text-decoration: none"
+                @click="events.socialLinkClicked({linkType: 'discord'})"
                 ><i class="ti ti-brand-discord"></i
               ></a>
             </li>
@@ -114,7 +118,8 @@
                 target="_blank"
                 class="ffun-header-link text-xl align-middle"
                 title="GitHub"
-                style="text-decoration: none">
+                style="text-decoration: none"
+                @click="events.socialLinkClicked({linkType: 'github'})">
                 <i class="ti ti-brand-github"></i
               ></a>
             </li>
@@ -150,6 +155,7 @@
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useGlobalState} from "@/stores/globalState";
   import {useSupertokens} from "@/stores/supertokens";
+  import * as events from "@/logic/events";
   import * as e from "@/logic/enums";
   import * as settings from "@/logic/settings";
 
