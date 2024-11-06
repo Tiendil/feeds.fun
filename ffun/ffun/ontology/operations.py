@@ -215,7 +215,6 @@ async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[E
     await execute(sql, {"entries_ids": entries_ids})
 
 
-# TODO: tests
 async def count_total_tags() -> int:
     result = await execute("SELECT COUNT(*) FROM o_tags")
     return result[0]["count"]
