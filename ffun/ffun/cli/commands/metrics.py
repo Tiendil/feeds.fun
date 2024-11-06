@@ -12,6 +12,7 @@ from ffun.ontology import domain as o_domain
 from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
 from ffun.users import domain as u_domain
+from ffun.feeds_collections.collections import collections
 
 logger = logging.get_module_logger()
 
@@ -70,15 +71,18 @@ async def system_slice_users() -> None:
     logger.business_slice("users_total", user_id=None, total=users_total)
 
 
-async def run_system() -> None:
+async def system_slice_collections() -> None:
+    logger.business_slice("collections_total", user_id=None, total=collections.count_total_feeds())
 
-    pass
+
+async def run_system() -> None:
 
     async with with_app():
         await system_slice_tags()
         await system_slice_feeds()
         await system_slice_entries()
         await system_slice_users()
+        await system_slice_collections()
 
 
 @cli_app.command()
