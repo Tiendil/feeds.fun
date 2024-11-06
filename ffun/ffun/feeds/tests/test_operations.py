@@ -338,24 +338,28 @@ class TestCountTotalFeedsPerLastError:
     async def test(self) -> None:
         numbers_before = await count_total_feeds_per_last_error()
 
-        await save_feeds(
-            [
-                await make.fake_feed(last_error=FeedError.network_unknown),
-                await make.fake_feed(last_error=FeedError.network_wrong_ssl_version),
-                await make.fake_feed(last_error=FeedError.network_unknown),
-                await make.fake_feed(last_error=FeedError.network_wrong_ssl_version),
-                await make.fake_feed(last_error=FeedError.protocol_no_entries_in_feed),
-            ]
+        feeds = await make.n_feeds(5)
+
+        await mark_feed_as_loaded(feed_id=feeds[0].id)
+        await mark_feed_as_failed(
+            feed_id=feeds[1].id, state=FeedState.damaged, error=FeedError.network_wrong_ssl_version
+        )
+        await mark_feed_as_loaded(feed_id=feeds[2].id)
+        await mark_feed_as_failed(
+            feed_id=feeds[3].id, state=FeedState.damaged, error=FeedError.network_wrong_ssl_version
+        )
+        await mark_feed_as_failed(
+            feed_id=feeds[4].id, state=FeedState.damaged, error=FeedError.protocol_no_entries_in_feed
         )
 
         numbers_after = await count_total_feeds_per_last_error()
 
-        assert numbers_after[FeedError.network_unknown] == numbers_before.get(FeedError.network_unknown, 0) + 2
+        assert numbers_after[None] == numbers_before[None] + 2
         assert (
             numbers_after[FeedError.network_wrong_ssl_version]
-            == numbers_before.get(FeedError.network_wrong_ssl_version, 0) + 2
+            == numbers_before[FeedError.network_wrong_ssl_version] + 2
         )
         assert (
             numbers_after[FeedError.protocol_no_entries_in_feed]
-            == numbers_before.get(FeedError.protocol_no_entries_in_feed, 0) + 1
+            == numbers_before[FeedError.protocol_no_entries_in_feed] + 1
         )

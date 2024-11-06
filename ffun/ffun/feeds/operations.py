@@ -201,10 +201,12 @@ async def count_total_feeds_per_state() -> dict[FeedState, int]:
 async def count_total_feeds_per_last_error() -> dict[FeedError, int]:
 
     numbers: dict[FeedError, int] = {error: 0 for error in FeedError}
+    numbers[None] = 0
 
     result = await execute("SELECT last_error, COUNT(*) FROM f_feeds GROUP BY last_error")
 
     for row in result:
-        numbers[FeedError(row["last_error"])] = row["count"]
+        error = FeedError(row["last_error"]) if row["last_error"] is not None else None
+        numbers[error] = row["count"]
 
     return numbers
