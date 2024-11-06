@@ -179,3 +179,35 @@ async def tech_remove_feed(feed_id: FeedId) -> None:
     """
 
     await execute(sql, {"feed_id": feed_id})
+
+
+# TODO: tests
+async def count_total_feeds() -> int:
+    result = await execute("SELECT COUNT(*) FROM f_feeds")
+    return result[0]["count"]
+
+
+# TODO: tests
+async def count_total_feeds_per_state() -> dict[FeedState, int]:
+
+    numbers: dict[FeedState, int] = {state: 0 for state in FeedState}
+
+    result = await execute("SELECT state, COUNT(*) FROM f_feeds GROUP BY state")
+
+    for row in result:
+        numbers[FeedState(row["state"])] = row["count"]
+
+    return numbers
+
+
+# TODO: tests
+async def count_total_feeds_per_last_error() -> dict[FeedError, int]:
+
+    numbers: dict[FeedError, int] = {error: 0 for error in FeedError}
+
+    result = await execute("SELECT last_error, COUNT(*) FROM f_feeds GROUP BY last_error")
+
+    for row in result:
+        numbers[FeedError(row["last_error"])] = row["count"]
+
+    return numbers
