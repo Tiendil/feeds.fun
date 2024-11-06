@@ -261,6 +261,8 @@ async def api_add_opml(request: entities.AddOpmlRequest, user: User) -> entities
 
     await meta_domain.add_feeds(feed_infos, user.id)
 
+    logger.business_event("opml_import", user_id=user.id, feeds_count=len(feed_infos))
+
     return entities.AddOpmlResponse()
 
 
