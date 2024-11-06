@@ -7,7 +7,7 @@ from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.domain.entities import EntryId
 from ffun.ontology import errors
-from ffun.ontology.entities import TagProperty, TagPropertyType
+from ffun.ontology.entities import TagProperty, TagPropertyType, TagCategory
 
 logger = logging.get_module_logger()
 
@@ -213,3 +213,29 @@ async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[E
     sql = "DELETE FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"
 
     await execute(sql, {"entries_ids": entries_ids})
+
+
+# TODO: tests
+async def count_total_tags() -> int:
+    result = await execute("SELECT COUNT(*) FROM o_tags")
+    return result[0]["count"]
+
+
+# TODO: tests
+async def count_total_tags_per_category() -> dict[TagCategory, int]:
+
+    numbers: dict[TagCategory, int] = {}
+
+    sql = """
+    SELECT count(*)
+    FROM o_tags_properties
+    WHERE type = %(type)s AND value LIKE %(value)s
+    """
+
+    for category in TagCategory:
+        result = await execute(sql, {"type": TagPropertyType.categories,
+                                     "value": f"%{category.value}%"})
+
+        numbers[category] = result[0]["count"]
+
+    return numbers

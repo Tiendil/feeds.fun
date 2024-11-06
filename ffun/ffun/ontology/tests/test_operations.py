@@ -1,7 +1,8 @@
+import uuid
 import pytest
 
 from ffun.core.postgresql import execute, transaction
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
+from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, Delta
 from ffun.domain.entities import EntryId
 from ffun.library.entities import Entry
 from ffun.ontology import errors
@@ -15,6 +16,9 @@ from ffun.ontology.operations import (
     get_tags_properties,
     remove_relations_for_entries,
     tech_copy_relations,
+    count_total_tags,
+    count_total_tags_per_category,
+    get_or_create_id_by_tag,
 )
 from ffun.ontology.tests.helpers import assert_has_tags
 
@@ -351,3 +355,11 @@ class TestApplyTagsProperties:
         async with TableSizeNotChanged("o_tags_properties"):
             with pytest.raises(errors.DuplicatedTagPropeties):
                 await apply_tags_properties(execute, properties)
+
+
+class TestCountTotalTags:
+    @pytest.mark.asyncio
+    async def test_no_tags(self) -> None:
+        async with Delta(count_total_tags, delta=3):
+            for _ in range(3):
+                await get_or_create_id_by_tag(uuid.uuid4().hex)

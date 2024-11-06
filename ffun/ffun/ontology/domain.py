@@ -49,7 +49,6 @@ async def get_tags_by_ids(ids: Iterable[int]) -> dict[int, str]:
     return result
 
 
-# TODO: tests
 async def normalize_tags(tags: Iterable[ProcessorTag]) -> dict[str, str]:
     return {tag.raw_uid: converters.normalize(tag.raw_uid) for tag in tags}
 

@@ -235,6 +235,15 @@ class BusinessBoundLoggerMixin:
             b_attributes=self._normalize_value(attributes),
         )
 
+    def business_slice(self, event: str, user_id: UserId | None, **attributes: LabelValue) -> Any:
+        return self.info(  # type: ignore
+            event,
+            b_kind="slice",
+            b_user_id=str(user_id),
+            b_uid=str(uuid.uuid4()),
+            b_attributes=self._normalize_value(attributes),
+        )
+
 
 def make_measuring_bound_logger(level: int) -> type[FFunBoundLogger]:
     filtering_logger_class = structlog.make_filtering_bound_logger(level)

@@ -13,7 +13,7 @@ cli_app = typer.Typer()
 
 async def run_system_wide(chunk: int) -> None:
     async with with_app():
-        # TOTAL tags
+        # TOTAL tags, total and by category
         # TOTAL feeds
         # TOTAL entries
         # TOTAL users
