@@ -183,7 +183,7 @@ async def tech_remove_feed(feed_id: FeedId) -> None:
 
 async def count_total_feeds() -> int:
     result = await execute("SELECT COUNT(*) FROM f_feeds")
-    return result[0]["count"]
+    return result[0]["count"]  # type: ignore
 
 
 async def count_total_feeds_per_state() -> dict[FeedState, int]:
@@ -201,12 +201,13 @@ async def count_total_feeds_per_state() -> dict[FeedState, int]:
 async def count_total_feeds_per_last_error() -> dict[FeedError, int]:
 
     numbers: dict[FeedError, int] = {error: 0 for error in FeedError}
-    numbers[None] = 0
 
     result = await execute("SELECT last_error, COUNT(*) FROM f_feeds GROUP BY last_error")
 
     for row in result:
-        error = FeedError(row["last_error"]) if row["last_error"] is not None else None
-        numbers[error] = row["count"]
+        if row["last_error"] is None:
+            continue
+
+        numbers[FeedError(row["last_error"])] = row["count"]
 
     return numbers

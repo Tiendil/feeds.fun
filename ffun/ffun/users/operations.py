@@ -47,4 +47,4 @@ async def get_mapping(service: Service, external_id: str) -> UserId:
 
 async def count_total_users() -> int:
     result = await execute("SELECT COUNT(*) FROM u_mapping")
-    return result[0]["count"]
+    return result[0]["count"]  # type: ignore

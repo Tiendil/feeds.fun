@@ -217,7 +217,7 @@ async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[E
 
 async def count_total_tags() -> int:
     result = await execute("SELECT COUNT(*) FROM o_tags")
-    return result[0]["count"]
+    return result[0]["count"]  # type: ignore
 
 
 async def count_total_tags_per_category() -> dict[TagCategory, int]:

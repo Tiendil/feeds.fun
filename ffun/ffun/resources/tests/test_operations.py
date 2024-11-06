@@ -1,8 +1,8 @@
 import datetime
-import uuid
 
 import pytest
 
+from ffun.domain.entities import UserId
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.resources import errors
@@ -28,7 +28,7 @@ _another_kind = 215
 
 class TestInitializeResource:
     @pytest.mark.asyncio
-    async def test_new_record(self, internal_user_id: uuid.UUID, interval_started_at: datetime.datetime) -> None:
+    async def test_new_record(self, internal_user_id: UserId, interval_started_at: datetime.datetime) -> None:
         async with TableSizeDelta("r_resources", delta=1):
             resource = await initialize_resource(
                 user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at
@@ -49,7 +49,7 @@ class TestInitializeResource:
 
     @pytest.mark.asyncio
     async def test_do_not_reinitialized_if_exists(
-        self, internal_user_id: uuid.UUID, interval_started_at: datetime.datetime
+        self, internal_user_id: UserId, interval_started_at: datetime.datetime
     ) -> None:
         await initialize_resource(user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at)
 
@@ -76,7 +76,7 @@ class TestLoadResources:
 
     @pytest.mark.asyncio
     async def test_initialize_if_not_found(
-        self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID, interval_started_at: datetime.datetime
+        self, internal_user_id: UserId, another_internal_user_id: UserId, interval_started_at: datetime.datetime
     ) -> None:
         await initialize_resource(user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at)
 
@@ -114,7 +114,7 @@ class TestTryToReserve:
     @pytest.mark.parametrize("amount", [0, 1, 100])
     @pytest.mark.asyncio
     async def test_for_not_existed_resource(
-        self, amount: int, internal_user_id: uuid.UUID, interval_started_at: datetime.datetime
+        self, amount: int, internal_user_id: UserId, interval_started_at: datetime.datetime
     ) -> None:
         result = await try_to_reserve(
             user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at, amount=amount, limit=100
@@ -129,7 +129,7 @@ class TestTryToReserve:
 
     @pytest.mark.asyncio
     async def test_for_existed_resource(
-        self, internal_user_id: uuid.UUID, interval_started_at: datetime.datetime
+        self, internal_user_id: UserId, interval_started_at: datetime.datetime
     ) -> None:
         result = await try_to_reserve(
             user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at, amount=1, limit=100
@@ -147,7 +147,7 @@ class TestTryToReserve:
         assert resource.reserved == 14
 
     @pytest.mark.asyncio
-    async def test_not_enough(self, internal_user_id: uuid.UUID, interval_started_at: datetime.datetime) -> None:
+    async def test_not_enough(self, internal_user_id: UserId, interval_started_at: datetime.datetime) -> None:
         result = await try_to_reserve(
             user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at, amount=101, limit=100
         )
@@ -163,7 +163,7 @@ class TestConvertReservedToUsed:
     @pytest.mark.asyncio
     async def test_converted(  # noqa: CFQ002
         self,
-        internal_user_id: uuid.UUID,
+        internal_user_id: UserId,
         interval_started_at: datetime.datetime,
         reserved: int,
         converted_reserved: int,
@@ -189,7 +189,7 @@ class TestConvertReservedToUsed:
         assert resource.reserved == expected_reserved
 
     @pytest.mark.asyncio
-    async def test_not_enough(self, internal_user_id: uuid.UUID, interval_started_at: datetime.datetime) -> None:
+    async def test_not_enough(self, internal_user_id: UserId, interval_started_at: datetime.datetime) -> None:
         await try_to_reserve(
             user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at, amount=13, limit=100
         )
@@ -200,7 +200,7 @@ class TestConvertReservedToUsed:
             )
 
     @pytest.mark.asyncio
-    async def test_no_resource(self, internal_user_id: uuid.UUID, interval_started_at: datetime.datetime) -> None:
+    async def test_no_resource(self, internal_user_id: UserId, interval_started_at: datetime.datetime) -> None:
         with pytest.raises(errors.CanNotConvertReservedToUsed):
             await convert_reserved_to_used(
                 user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at, reserved=0, used=13
@@ -209,13 +209,13 @@ class TestConvertReservedToUsed:
 
 class TestLoadResourceHistory:
     @pytest.mark.asyncio
-    async def test_no_history(self, internal_user_id: uuid.UUID) -> None:
+    async def test_no_history(self, internal_user_id: UserId) -> None:
         history = await load_resource_history(user_id=internal_user_id, kind=_kind)
 
         assert len(history) == 0
 
     @pytest.mark.asyncio
-    async def test_with_history(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+    async def test_with_history(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
         internal_1 = datetime.datetime(2020, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc)
         internal_2 = datetime.datetime(2020, 2, 1, 0, 0, 0, tzinfo=datetime.timezone.utc)
         internal_3 = datetime.datetime(2020, 3, 1, 0, 0, 0, tzinfo=datetime.timezone.utc)
@@ -260,7 +260,7 @@ class TestLoadResourceHistory:
 class TestCountTotalResourcesPerUser:
 
     @pytest.mark.asyncio
-    async def test(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
+    async def test(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
         await try_to_reserve(
             user_id=internal_user_id,
             kind=_kind,

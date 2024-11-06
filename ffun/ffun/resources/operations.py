@@ -1,7 +1,7 @@
 import datetime
-import uuid
 from typing import Any, Iterable
 
+from ffun.domain.entities import UserId
 from ffun.core import logging
 from ffun.core.postgresql import execute
 from ffun.resources import errors
@@ -20,7 +20,7 @@ def row_to_entry(row: dict[str, Any]) -> Resource:
     )
 
 
-async def initialize_resource(user_id: uuid.UUID, kind: int, interval_started_at: datetime.datetime) -> Resource:
+async def initialize_resource(user_id: UserId, kind: int, interval_started_at: datetime.datetime) -> Resource:
     sql = """
         INSERT INTO r_resources (user_id, kind, interval_started_at)
         VALUES (%(user_id)s, %(kind)s, %(interval_started_at)s)
@@ -40,8 +40,8 @@ async def initialize_resource(user_id: uuid.UUID, kind: int, interval_started_at
 
 
 async def load_resources(
-    user_ids: Iterable[uuid.UUID], kind: int, interval_started_at: datetime.datetime
-) -> dict[uuid.UUID, Resource]:
+    user_ids: Iterable[UserId], kind: int, interval_started_at: datetime.datetime
+) -> dict[UserId, Resource]:
     sql = """
         SELECT * FROM r_resources
         WHERE user_id = ANY(%(user_ids)s) AND kind = %(kind)s AND interval_started_at = %(interval_started_at)s
@@ -64,7 +64,7 @@ async def load_resources(
 
 
 async def try_to_reserve(
-    user_id: uuid.UUID, kind: int, interval_started_at: datetime.datetime, amount: int, limit: int
+    user_id: UserId, kind: int, interval_started_at: datetime.datetime, amount: int, limit: int
 ) -> bool:
     await initialize_resource(user_id, kind, interval_started_at)
 
@@ -94,7 +94,7 @@ async def try_to_reserve(
 
 
 async def convert_reserved_to_used(
-    user_id: uuid.UUID, kind: int, interval_started_at: datetime.datetime, used: int, reserved: int
+    user_id: UserId, kind: int, interval_started_at: datetime.datetime, used: int, reserved: int
 ) -> None:
     sql = """
         UPDATE r_resources
@@ -123,7 +123,7 @@ async def convert_reserved_to_used(
         raise errors.CanNotConvertReservedToUsed()
 
 
-async def load_resource_history(user_id: uuid.UUID, kind: int) -> list[Resource]:
+async def load_resource_history(user_id: UserId, kind: int) -> list[Resource]:
     sql = """
         SELECT * FROM r_resources
         WHERE user_id = %(user_id)s AND kind = %(kind)s
@@ -135,7 +135,7 @@ async def load_resource_history(user_id: uuid.UUID, kind: int) -> list[Resource]
     return [row_to_entry(row) for row in results]
 
 
-async def count_total_resources_per_user(kind: int) -> dict[uuid.UUID, int]:
+async def count_total_resources_per_user(kind: int) -> dict[UserId, int]:
     sql = """
         SELECT user_id, SUM(used) AS count
         FROM r_resources

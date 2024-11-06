@@ -354,7 +354,6 @@ class TestCountTotalFeedsPerLastError:
 
         numbers_after = await count_total_feeds_per_last_error()
 
-        assert numbers_after[None] == numbers_before[None] + 2
         assert (
             numbers_after[FeedError.network_wrong_ssl_version]
             == numbers_before[FeedError.network_wrong_ssl_version] + 2

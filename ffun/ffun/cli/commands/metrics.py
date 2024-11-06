@@ -3,6 +3,7 @@ import asyncio
 import typer
 
 from ffun.application.application import with_app
+from ffun.domain.entities import UserId
 from ffun.core import logging
 from ffun.feeds import domain as f_domain
 from ffun.feeds_links import domain as fl_domain
@@ -104,10 +105,10 @@ async def users_slice_feeds_links() -> None:
         logger.business_slice("collection_feeds_per_user", user_id=user_id, total=count)
 
 
-async def users_slice_resources() -> None:
+async def users_slice_resources() -> None:  # noqa: CCR001
     from ffun.application.resources import Resource
 
-    users = {}
+    users: dict[UserId, dict[str, int]] = {}
 
     resource_by_kind = {}
 

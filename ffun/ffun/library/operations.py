@@ -283,4 +283,4 @@ async def remove_entries_by_ids(execute: ExecuteType, entry_ids: Iterable[EntryI
 
 async def count_total_entries() -> int:
     result = await execute("SELECT COUNT(*) FROM l_entries")
-    return result[0]["count"]
+    return result[0]["count"]  # type: ignore

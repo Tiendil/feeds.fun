@@ -345,7 +345,7 @@ async def use_api_key(key_usage: APIKeyUsage) -> AsyncGenerator[None, None]:
 
         new_key_status = llm_providers.get(key_usage.provider).provider.api_keys_statuses.get(key_usage.api_key)
 
-        log.business_event(
+        log.business_event(  # type: ignore
             "llm_api_key_used",
             user_id=key_usage.user_id,
             llm_provider=key_usage.provider,
