@@ -85,13 +85,17 @@ async def users_slice_feeds_links() -> None:
     for user_id, count in feeds_per_user.items():
         logger.business_slice("feeds_per_user", user_id=user_id, total=count)
 
+    collection_feeds_per_user = await fl_domain.count_collection_feeds_per_user()
+
+    for user_id, count in collection_feeds_per_user.items():
+        logger.business_slice("collection_feeds_per_user", user_id=user_id, total=count)
+
 
 async def run_users() -> None:
     async with with_app():
         await users_slice_rules()
         await users_slice_feeds_links()
 
-        # TODO: feeds per user: custom, collections, total
         # TODO: has api key: yes/no, active/inactive
         # TODO: money spent
         pass

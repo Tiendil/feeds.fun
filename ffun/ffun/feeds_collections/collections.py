@@ -26,6 +26,9 @@ class Collections:
     def collections(self) -> list[Collection]:
         return list(self._collections)
 
+    def all_feed_ids(self) -> list[FeedId]:
+        return list(self._feeds_in_collections.keys())
+
     def collection(self, collection_id: CollectionId) -> Collection:
         for collection in self._collections:
             if collection.id == collection_id:

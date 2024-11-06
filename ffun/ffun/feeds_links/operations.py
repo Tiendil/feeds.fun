@@ -90,6 +90,16 @@ async def count_feeds_per_user() -> dict[UserId, int]:
     return {row["user_id"]: row["count"] for row in result}
 
 
+async def count_collection_feeds_per_user() -> dict[UserId, int]:
+    sql = """
+        SELECT user_id, COUNT(*) FROM fl_links WHERE feed_id = ANY(%(collection_feed_ids)s) GROUP BY user_id
+    """
+
+    result = await execute(sql, {"collection_feed_ids": collections.all_feed_ids()})
+
+    return {row["user_id"]: row["count"] for row in result}
+
+
 async def tech_merge_feeds(execute: ExecuteType, from_feed_id: FeedId, to_feed_id: FeedId) -> None:
     sql = """
     DELETE FROM fl_links as fll

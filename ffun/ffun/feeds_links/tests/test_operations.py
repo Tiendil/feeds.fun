@@ -16,6 +16,7 @@ from ffun.feeds_links.operations import (
     remove_link,
     tech_merge_feeds,
     count_feeds_per_user,
+    count_collection_feeds_per_user
 )
 from ffun.users.tests import make as u_make
 
@@ -246,6 +247,34 @@ class TestCountFeedsPerUser:
         assert numbers_after[u[0]] == 3
         assert numbers_after[u[1]] == 2
         assert numbers_after[u[2]] == 1
+        assert u[3] not in numbers_after
+        assert u[4] not in numbers_after
+
+
+class TestCountCollectionFeedsPerUser:
+
+    @pytest.mark.asyncio
+    async def test(self, five_internal_user_ids: list[UserId], five_saved_feed_ids: list[FeedId], collection_id_for_test_feeds: CollectionId,) -> None:
+        u = five_internal_user_ids
+        f = five_saved_feed_ids
+
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, f[0])
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, f[2])
+
+        await add_link(u[0], f[0])
+        await add_link(u[0], f[1])
+        await add_link(u[0], f[2])
+        await add_link(u[1], f[2])
+        await add_link(u[1], f[3])
+        await add_link(u[2], f[3])
+
+        numbers_after = await count_collection_feeds_per_user()
+
+        assert numbers_after[u[0]] == 2
+        assert numbers_after[u[1]] == 1
+        assert u[2] not in numbers_after
+        assert u[3] not in numbers_after
+        assert u[4] not in numbers_after
 
 
 class TestMergeFeeds:

@@ -11,6 +11,7 @@ get_linked_feeds = operations.get_linked_feeds
 get_linked_users = operations.get_linked_users
 has_linked_users = operations.has_linked_users
 count_feeds_per_user = operations.count_feeds_per_user
+count_collection_feeds_per_user = operations.count_collection_feeds_per_user
 
 
 async def get_linked_users_flat(feed_ids: Iterable[FeedId]) -> set[UserId]:
