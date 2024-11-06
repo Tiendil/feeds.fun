@@ -1,9 +1,9 @@
 import datetime
 from typing import Any, Iterable
 
-from ffun.domain.entities import UserId
 from ffun.core import logging
 from ffun.core.postgresql import execute
+from ffun.domain.entities import UserId
 from ffun.resources import errors
 from ffun.resources.entities import Resource
 

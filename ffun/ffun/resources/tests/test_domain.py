@@ -1,8 +1,7 @@
-
-
 import pytest
-from ffun.domain.entities import UserId
+
 from ffun.domain.datetime_intervals import month_interval_start
+from ffun.domain.entities import UserId
 from ffun.resources.domain import load_resource
 from ffun.resources.operations import initialize_resource, try_to_reserve
 

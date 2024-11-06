@@ -3,8 +3,8 @@ import asyncio
 import typer
 
 from ffun.application.application import with_app
-from ffun.domain.entities import UserId
 from ffun.core import logging
+from ffun.domain.entities import UserId
 from ffun.feeds import domain as f_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
