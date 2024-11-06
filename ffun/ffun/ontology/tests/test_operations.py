@@ -6,7 +6,7 @@ from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, Delta
 from ffun.domain.entities import EntryId
 from ffun.library.entities import Entry
 from ffun.ontology import errors
-from ffun.ontology.entities import ProcessorTag
+from ffun.ontology.entities import ProcessorTag, TagCategory, TagPropertyType
 from ffun.ontology.operations import (
     _get_relations_for_entry_and_tags,
     _register_relations_processors,
@@ -18,8 +18,10 @@ from ffun.ontology.operations import (
     tech_copy_relations,
     count_total_tags,
     count_total_tags_per_category,
+    count_total_tags_per_type,
     get_or_create_id_by_tag,
 )
+from ffun.ontology.domain import apply_tags_to_entry
 from ffun.ontology.tests.helpers import assert_has_tags
 
 
@@ -363,3 +365,47 @@ class TestCountTotalTags:
         async with Delta(count_total_tags, delta=3):
             for _ in range(3):
                 await get_or_create_id_by_tag(uuid.uuid4().hex)
+
+
+class TestCountTotalTagsPerCategory:
+
+    @pytest.mark.asyncio
+    async def test(self, cataloged_entry: Entry) -> None:
+        tags = [uuid.uuid4().hex for _ in range(5)]
+
+        processor_tags = [ProcessorTag(raw_uid=tags[0]),
+                          ProcessorTag(raw_uid=tags[1], categories={TagCategory.network_domain}),
+                          ProcessorTag(raw_uid=tags[2], categories={TagCategory.feed_tag}),
+                          ProcessorTag(raw_uid=tags[3], categories={TagCategory.network_domain, TagCategory.feed_tag}),
+                          ProcessorTag(raw_uid=tags[4], categories={TagCategory.feed_tag})]
+
+        numbers_before = await count_total_tags_per_category()
+
+        await apply_tags_to_entry(cataloged_entry.id, 1, processor_tags)
+
+        numbers_after = await count_total_tags_per_category()
+
+        assert numbers_after[TagCategory.network_domain] == numbers_before[TagCategory.network_domain] + 2
+        assert numbers_after[TagCategory.feed_tag] == numbers_before[TagCategory.feed_tag] + 3
+
+
+class TestCountTotalTagsPerType:
+
+    @pytest.mark.asyncio
+    async def test(self, cataloged_entry: Entry) -> None:
+        tags = [uuid.uuid4().hex for _ in range(5)]
+
+        processor_tags = [ProcessorTag(raw_uid=tags[0]),
+                          ProcessorTag(raw_uid=tags[1], link="https://example.com"),
+                          ProcessorTag(raw_uid=tags[2], link="https://example.com", categories={TagCategory.network_domain}),
+                          ProcessorTag(raw_uid=tags[3], link="https://example.com", categories={TagCategory.feed_tag}),
+                          ProcessorTag(raw_uid=tags[4], link="https://example.com")]
+
+        numbers_before = await count_total_tags_per_type()
+
+        await apply_tags_to_entry(cataloged_entry.id, 1, processor_tags)
+
+        numbers_after = await count_total_tags_per_type()
+
+        assert numbers_after[TagPropertyType.link] == numbers_before.get(TagPropertyType.link, 0) + 4
+        assert numbers_after[TagPropertyType.categories] == numbers_before.get(TagPropertyType.categories, 0) + 2

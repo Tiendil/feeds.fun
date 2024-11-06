@@ -220,7 +220,6 @@ async def count_total_tags() -> int:
     return result[0]["count"]
 
 
-# TODO: tests
 async def count_total_tags_per_category() -> dict[TagCategory, int]:
 
     numbers: dict[TagCategory, int] = {}
@@ -236,5 +235,23 @@ async def count_total_tags_per_category() -> dict[TagCategory, int]:
                                      "value": f"%{category.value}%"})
 
         numbers[category] = result[0]["count"]
+
+    return numbers
+
+
+async def count_total_tags_per_type() -> dict[TagPropertyType, int]:
+
+    numbers: dict[TagPropertyType, int] = {}
+
+    sql = """
+    SELECT type, count(*)
+    FROM o_tags_properties
+    GROUP BY type
+    """
+
+    result = await execute(sql)
+
+    for row in result:
+        numbers[TagPropertyType(row["type"])] = row["count"]
 
     return numbers
