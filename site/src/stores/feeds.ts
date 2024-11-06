@@ -1,4 +1,4 @@
-import {computed, ref, watch} from "vue";
+import {computed, ref, watch, triggerRef} from "vue";
 import {useRouter} from "vue-router";
 import {defineStore} from "pinia";
 
@@ -30,19 +30,25 @@ export const useFeedsStore = defineStore("feedsStore", () => {
   async function unsubscribe(feedId: t.FeedId) {
     await api.unsubscribe({feedId: feedId});
 
-    // Attention, do not call globalSettings.updateDataVersion
+    // Attention, do not update globalSettings.updateDataVersion here
     // it cause a lot of unnecessary requests to the server without any benefit
     // we just remove feed from frontend
 
     delete feeds.value[feedId];
+
+    triggerRef(feeds);
   }
 
   async function subscribe(url: t.URL) {
-    await api.addFeed({
+    const newFeed = await api.addFeed({
       url: url
     });
 
-    globalSettings.updateDataVersion();
+    // Attention, do not update globalSettings.updateDataVersion here (see above)
+
+    feeds.value[newFeed.id] = newFeed;
+
+    triggerRef(feeds);
   }
 
   return {

@@ -2,7 +2,7 @@ from typing import Iterable
 
 from ffun.core import logging
 from ffun.domain.domain import new_feed_id
-from ffun.domain.entities import EntryId, UserId
+from ffun.domain.entities import EntryId, FeedId, UserId
 from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
@@ -27,7 +27,7 @@ async def remove_entries(entries_ids: Iterable[EntryId]) -> None:
     await l_domain.remove_entries_by_ids(entries_to_remove)
 
 
-async def add_feeds(feed_infos: list[p_entities.FeedInfo], user_id: UserId) -> None:
+async def add_feeds(feed_infos: list[p_entities.FeedInfo], user_id: UserId) -> list[FeedId]:
 
     urls_to_sources_uids = {feed_info.url: url_to_source_uid(feed_info.url) for feed_info in feed_infos}
 
@@ -48,6 +48,8 @@ async def add_feeds(feed_infos: list[p_entities.FeedInfo], user_id: UserId) -> N
 
     for feed_id in real_feeds_ids:
         await fl_domain.add_link(user_id=user_id, feed_id=feed_id)
+
+    return real_feeds_ids
 
 
 async def clean_orphaned_entries(chunk: int) -> int:
