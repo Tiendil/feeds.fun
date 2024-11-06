@@ -5,6 +5,7 @@ import typer
 from ffun.application.application import with_app
 from ffun.core import logging
 from ffun.ontology import domain as o_domain
+from ffun.feeds import domain as f_domain
 
 logger = logging.get_module_logger()
 
@@ -28,7 +29,18 @@ async def run_system() -> None:
         for tag_category, count in tags_per_category.items():
             metrics[f"tags_category_{tag_category.name}"] = count
 
-        # TOTAL feeds
+        feeds_total = await f_domain.count_total_feeds()
+        feeds_per_state = await f_domain.count_total_feeds_per_state()
+        feeds_per_last_error = await f_domain.count_total_feeds_per_last_error()
+
+        metrics["feeds_total"] = feeds_total
+
+        for feed_state, count in feeds_per_state.items():
+            metrics[f"feeds_state_{feed_state.name}"] = count
+
+        for feed_error, count in feeds_per_last_error.items():
+            metrics[f"feeds_error_{feed_error.name}"] = count
+
         # TOTAL entries
         # TOTAL users
 

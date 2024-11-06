@@ -181,13 +181,11 @@ async def tech_remove_feed(feed_id: FeedId) -> None:
     await execute(sql, {"feed_id": feed_id})
 
 
-# TODO: tests
 async def count_total_feeds() -> int:
     result = await execute("SELECT COUNT(*) FROM f_feeds")
     return result[0]["count"]
 
 
-# TODO: tests
 async def count_total_feeds_per_state() -> dict[FeedState, int]:
 
     numbers: dict[FeedState, int] = {state: 0 for state in FeedState}
@@ -200,7 +198,6 @@ async def count_total_feeds_per_state() -> dict[FeedState, int]:
     return numbers
 
 
-# TODO: tests
 async def count_total_feeds_per_last_error() -> dict[FeedError, int]:
 
     numbers: dict[FeedError, int] = {error: 0 for error in FeedError}
