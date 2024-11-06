@@ -177,6 +177,9 @@ class FFunBoundLogger(structlog.typing.FilteringBoundLogger):
     def business_event(self, event: str, user_id: UserId | None, **attributes: Any) -> Any:
         pass
 
+    def business_slice(self, event: str, user_id: UserId | None, **attributes: LabelValue) -> Any:
+        pass
+
 
 class MeasuringBoundLoggerMixin:
     """We extend a logger class with additional metrics logic.
@@ -235,6 +238,7 @@ class BusinessBoundLoggerMixin:
             b_attributes=self._normalize_value(attributes),
         )
 
+    # TODO: test
     def business_slice(self, event: str, user_id: UserId | None, **attributes: LabelValue) -> Any:
         return self.info(  # type: ignore
             event,

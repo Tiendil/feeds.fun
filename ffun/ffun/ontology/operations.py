@@ -241,7 +241,7 @@ async def count_total_tags_per_category() -> dict[TagCategory, int]:
 
 async def count_total_tags_per_type() -> dict[TagPropertyType, int]:
 
-    numbers: dict[TagPropertyType, int] = {}
+    numbers: dict[TagPropertyType, int] = {type_: 0 for type_ in TagPropertyType}
 
     sql = """
     SELECT type, count(*)

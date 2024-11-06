@@ -8,6 +8,12 @@ from ffun.ontology import operations
 from ffun.ontology.entities import ProcessorTag, Tag, TagCategory, TagPropertyType
 from ffun.tags import converters
 
+
+count_total_tags = operations.count_total_tags
+count_total_tags_per_type = operations.count_total_tags_per_type
+count_total_tags_per_category = operations.count_total_tags_per_category
+
+
 _tags_cache: bidict[str, int] = bidict()
 
 
