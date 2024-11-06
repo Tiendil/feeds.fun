@@ -12,6 +12,7 @@ from ffun.feeds_links.operations import (
     add_link,
     count_collection_feeds_per_user,
     count_feeds_per_user,
+    get_link,
     get_linked_feeds,
     get_linked_users,
     has_linked_users,
@@ -179,6 +180,25 @@ class TestGetLinkedFeeds:
         links = await get_linked_feeds(internal_user_id)
 
         assert links == []
+
+
+class TestGetLink:
+
+    @pytest.mark.asyncio
+    async def test_no_link(self, internal_user_id: UserId, saved_feed_id: FeedId) -> None:
+        link = await get_link(internal_user_id, saved_feed_id)
+
+        assert link is None
+
+    @pytest.mark.asyncio
+    async def test_has_link(self, internal_user_id: UserId, saved_feed_id: FeedId) -> None:
+        await add_link(internal_user_id, saved_feed_id)
+
+        link = await get_link(internal_user_id, saved_feed_id)
+
+        assert link is not None
+
+        assert link == FeedLink(user_id=internal_user_id, feed_id=saved_feed_id, created_at=link.created_at)
 
 
 class TestGetLinkedUsers:

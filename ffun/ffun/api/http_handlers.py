@@ -242,9 +242,17 @@ async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities
     if feed_info is None:
         raise fastapi.HTTPException(status_code=400, detail="Not a feed")
 
-    await meta_domain.add_feeds([feed_info], user.id)
+    ids = await meta_domain.add_feeds([feed_info], user.id)
 
-    return entities.AddFeedResponse()
+    feed = await f_domain.get_feed(ids[0])
+
+    collection_ids = collections.collections_for_feed(feed.id)
+
+    link = await fl_domain.get_link(user.id, feed.id)
+
+    assert link is not None
+
+    return entities.AddFeedResponse(feed=entities.Feed.from_internal(feed, link=link, collection_ids=collection_ids))
 
 
 @router.post("/api/add-opml")

@@ -177,7 +177,9 @@ export async function discoverFeeds({url}: {url: string}) {
 }
 
 export async function addFeed({url}: {url: string}) {
-  await post({url: API_ADD_FEED, data: {url: url}});
+  const response = await post({url: API_ADD_FEED, data: {url: url}});
+
+  return t.feedFromJSON(response.feed);
 }
 
 export async function addOPML({content}: {content: string}) {

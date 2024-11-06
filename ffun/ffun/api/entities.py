@@ -388,7 +388,7 @@ class AddFeedRequest(api.APIRequest):
 
 
 class AddFeedResponse(api.APISuccess):
-    pass
+    feed: Feed
 
 
 class AddOpmlRequest(api.APIRequest):
