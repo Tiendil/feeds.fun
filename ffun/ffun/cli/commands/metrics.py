@@ -6,6 +6,7 @@ from ffun.application.application import with_app
 from ffun.core import logging
 from ffun.ontology import domain as o_domain
 from ffun.feeds import domain as f_domain
+from ffun.library import domain as l_domain
 
 logger = logging.get_module_logger()
 
@@ -41,7 +42,10 @@ async def run_system() -> None:
         for feed_error, count in feeds_per_last_error.items():
             metrics[f"feeds_error_{feed_error.name}"] = count
 
-        # TOTAL entries
+        entries_total = await l_domain.count_total_entries()
+
+        metrics["entries_total"] = entries_total
+
         # TOTAL users
 
         logger.business_slice("system_metrics", user_id=None, **metrics)

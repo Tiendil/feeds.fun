@@ -8,7 +8,7 @@ from structlog.testing import capture_logs
 
 from ffun.core import utils
 from ffun.core.postgresql import execute
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs, assert_times_is_near
+from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs, assert_times_is_near, Delta
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import FeedId
 from ffun.feeds import domain as f_domain
@@ -30,6 +30,7 @@ from ffun.library.operations import (
     try_mark_as_orphanes,
     unlink_feed_tail,
     update_external_url,
+    count_total_entries,
 )
 from ffun.library.tests import make
 
@@ -599,3 +600,11 @@ class TestTryMarkAsOrphanes:
         orphaned_entries = await get_orphaned_entries(limit=100500)
 
         assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries[3:]}
+
+
+class TestCountTotalEntries:
+
+    @pytest.mark.asyncio
+    async def test(self, loaded_feed: Feed) -> None:
+        async with Delta(count_total_entries, delta=3):
+            await make.n_entries_list(loaded_feed, n=3)
