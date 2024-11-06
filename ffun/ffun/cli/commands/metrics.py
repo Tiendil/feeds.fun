@@ -10,6 +10,7 @@ from ffun.library import domain as l_domain
 from ffun.users import domain as u_domain
 from ffun.scores import domain as s_domain
 from ffun.feeds_links import domain as fl_domain
+from ffun.resources import domain as r_domain
 
 logger = logging.get_module_logger()
 
@@ -91,13 +92,32 @@ async def users_slice_feeds_links() -> None:
         logger.business_slice("collection_feeds_per_user", user_id=user_id, total=count)
 
 
+async def users_slice_resources() -> None:
+    from ffun.application.resources import Resource
+
+    users = {}
+
+    resource_by_kind = {}
+
+    for kind in Resource:
+        resource_by_kind[kind] = await r_domain.count_total_resources_per_user(kind)
+
+    for kind, resource_per_user in resource_by_kind.items():
+        for user_id, count in resource_per_user.items():
+            if user_id not in users:
+                users[user_id] = {}
+
+            users[user_id][kind.name] = count
+
+    for user_id, resources in users.items():
+        logger.business_slice("resources_per_user", user_id=user_id, **resources)
+
+
 async def run_users() -> None:
     async with with_app():
         await users_slice_rules()
         await users_slice_feeds_links()
-
-        # TODO: money spent
-        pass
+        await users_slice_resources()
 
 
 @cli_app.command()

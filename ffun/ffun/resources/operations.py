@@ -133,3 +133,16 @@ async def load_resource_history(user_id: uuid.UUID, kind: int) -> list[Resource]
     results = await execute(sql, {"user_id": user_id, "kind": kind})
 
     return [row_to_entry(row) for row in results]
+
+
+async def count_total_resources_per_user(kind: int) -> dict[uuid.UUID, int]:
+    sql = """
+        SELECT user_id, SUM(used) AS count
+        FROM r_resources
+        WHERE kind = %(kind)s
+        GROUP BY user_id
+    """
+
+    results = await execute(sql, {"kind": kind})
+
+    return {row["user_id"]: row["count"] for row in results}
