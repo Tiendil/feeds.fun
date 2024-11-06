@@ -6,6 +6,8 @@ from typing import Any
 import pytest
 from pytest_mock import MockerFixture
 
+from ffun.llms_framework.providers import llm_providers
+from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs_has_business_event, capture_logs
 from ffun.application.resources import Resource as AppResource
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.domain.domain import new_user_id
@@ -681,8 +683,16 @@ class TestUseApiKey:
             interval_started_at=interval_started_at,
         )
 
-        async with use_api_key(key_usage):
-            key_usage.used_cost = used_cost
+        with capture_logs() as logs:
+            async with use_api_key(key_usage):
+                key_usage.used_cost = used_cost
+
+        assert_logs_has_business_event(
+            logs, "llm_api_key_used",
+            user_id=internal_user_id,
+            llm_provider=LLMProvider.test,
+            new_key_status=KeyStatus.unknown,
+        )
 
         resources = await r_domain.load_resources(
             user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
@@ -728,9 +738,18 @@ class TestUseApiKey:
             interval_started_at=interval_started_at,
         )
 
-        with pytest.raises(errors.UsedTokensHasNotSpecified):
-            async with use_api_key(key_usage):
-                assert key_usage.used_cost is None
+        with capture_logs() as logs:
+            with pytest.raises(errors.UsedTokensHasNotSpecified):
+                async with use_api_key(key_usage):
+                    assert key_usage.used_cost is None
+                    llm_providers.get(key_usage.provider).provider.api_keys_statuses.set(key_usage.api_key, KeyStatus.works)
+
+        assert_logs_has_business_event(
+            logs, "llm_api_key_used",
+            user_id=internal_user_id,
+            llm_provider=LLMProvider.test,
+            new_key_status=KeyStatus.works,
+        )
 
         resources = await r_domain.load_resources(
             user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
@@ -780,9 +799,17 @@ class TestUseApiKey:
             interval_started_at=interval_started_at,
         )
 
-        with pytest.raises(FakeError):
-            async with use_api_key(key_usage):
-                raise FakeError()
+        with capture_logs() as logs:
+            with pytest.raises(FakeError):
+                async with use_api_key(key_usage):
+                    raise FakeError()
+
+        assert_logs_has_business_event(
+            logs, "llm_api_key_used",
+            user_id=internal_user_id,
+            llm_provider=LLMProvider.test,
+            new_key_status=KeyStatus.unknown,
+        )
 
         resources = await r_domain.load_resources(
             user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
@@ -817,5 +844,14 @@ class TestUseApiKey:
             interval_started_at=interval_started_at,
         )
 
-        async with use_api_key(key_usage):
-            key_usage.used_cost = used_cost
+        with capture_logs() as logs:
+            async with use_api_key(key_usage):
+                key_usage.used_cost = used_cost
+
+        assert_logs_has_business_event(
+            logs,
+            "llm_api_key_used",
+            user_id=None,
+            llm_provider=LLMProvider.test,
+            new_key_status=KeyStatus.unknown,
+        )

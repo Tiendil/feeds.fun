@@ -237,7 +237,6 @@ def assert_logs_has_business_event(  # noqa: CCR001
         user_id = str(user_id)  # type: ignore
 
     for record in logs:
-
         if not (record.get("b_kind") == "event" and record["event"] == name and record.get("b_user_id") == user_id):
             continue
 

@@ -233,7 +233,7 @@ class BusinessBoundLoggerMixin:
         return self.info(  # type: ignore
             event,
             b_kind="event",
-            b_user_id=str(user_id),
+            b_user_id=str(user_id) if user_id is not None else None,
             b_uid=str(uuid.uuid4()),
             b_attributes=self._normalize_value(attributes),
         )
@@ -243,7 +243,7 @@ class BusinessBoundLoggerMixin:
         return self.info(  # type: ignore
             event,
             b_kind="slice",
-            b_user_id=str(user_id),
+            b_user_id=str(user_id) if user_id is not None else None,
             b_uid=str(uuid.uuid4()),
             b_attributes=self._normalize_value(attributes),
         )

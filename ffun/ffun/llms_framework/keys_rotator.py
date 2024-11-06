@@ -327,6 +327,7 @@ async def choose_api_key(
 
 @contextlib.asynccontextmanager
 async def use_api_key(key_usage: APIKeyUsage) -> AsyncGenerator[None, None]:
+    from ffun.llms_framework.providers import llm_providers
     from ffun.application.resources import Resource as AppResource
 
     log = logger.bind(function="_use_key", user_id=key_usage.user_id)
@@ -342,9 +343,14 @@ async def use_api_key(key_usage: APIKeyUsage) -> AsyncGenerator[None, None]:
     finally:
         log.info("convert_reserved_to_used", reserved_cost=key_usage.reserved_cost, used_cost=key_usage.used_cost)
 
-        if key_usage.user_id is not None:
-            log.business_event("api_key_used", user_id=key_usage.user_id, llm_provider=key_usage.provider)
+        new_key_status = llm_providers.get(key_usage.provider).provider.api_keys_statuses.get(key_usage.api_key)
 
+        log.business_event("llm_api_key_used",
+                           user_id=key_usage.user_id,
+                           llm_provider=key_usage.provider,
+                           new_key_status=new_key_status)
+
+        if key_usage.user_id is not None:
             await r_domain.convert_reserved_to_used(
                 user_id=key_usage.user_id,
                 kind=AppResource.tokens_cost,

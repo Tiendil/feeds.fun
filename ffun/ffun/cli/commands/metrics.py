@@ -96,7 +96,6 @@ async def run_users() -> None:
         await users_slice_rules()
         await users_slice_feeds_links()
 
-        # TODO: has api key: yes/no, active/inactive
         # TODO: money spent
         pass
 
