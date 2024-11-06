@@ -3,7 +3,6 @@ from typing import Sequence
 
 from ffun.scores import entities, operations
 
-
 count_rules_per_user = operations.count_rules_per_user
 
 

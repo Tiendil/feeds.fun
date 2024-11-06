@@ -6,9 +6,8 @@ from typing import Any
 import pytest
 from pytest_mock import MockerFixture
 
-from ffun.llms_framework.providers import llm_providers
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs_has_business_event, capture_logs
 from ffun.application.resources import Resource as AppResource
+from ffun.core.tests.helpers import assert_logs_has_business_event, capture_logs
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.domain.domain import new_user_id
 from ffun.domain.entities import UserId
@@ -50,6 +49,7 @@ from ffun.llms_framework.keys_rotator import (
     use_api_key,
 )
 from ffun.llms_framework.provider_interface import ProviderInterface, ProviderTest
+from ffun.llms_framework.providers import llm_providers
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
 from ffun.user_settings import domain as us_domain
@@ -688,7 +688,8 @@ class TestUseApiKey:
                 key_usage.used_cost = used_cost
 
         assert_logs_has_business_event(
-            logs, "llm_api_key_used",
+            logs,
+            "llm_api_key_used",
             user_id=internal_user_id,
             llm_provider=LLMProvider.test,
             new_key_status=KeyStatus.unknown,
@@ -742,10 +743,13 @@ class TestUseApiKey:
             with pytest.raises(errors.UsedTokensHasNotSpecified):
                 async with use_api_key(key_usage):
                     assert key_usage.used_cost is None
-                    llm_providers.get(key_usage.provider).provider.api_keys_statuses.set(key_usage.api_key, KeyStatus.works)
+                    llm_providers.get(key_usage.provider).provider.api_keys_statuses.set(
+                        key_usage.api_key, KeyStatus.works
+                    )
 
         assert_logs_has_business_event(
-            logs, "llm_api_key_used",
+            logs,
+            "llm_api_key_used",
             user_id=internal_user_id,
             llm_provider=LLMProvider.test,
             new_key_status=KeyStatus.works,
@@ -805,7 +809,8 @@ class TestUseApiKey:
                     raise FakeError()
 
         assert_logs_has_business_event(
-            logs, "llm_api_key_used",
+            logs,
+            "llm_api_key_used",
             user_id=internal_user_id,
             llm_provider=LLMProvider.test,
             new_key_status=KeyStatus.unknown,

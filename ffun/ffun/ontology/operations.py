@@ -7,7 +7,7 @@ from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.domain.entities import EntryId
 from ffun.ontology import errors
-from ffun.ontology.entities import TagProperty, TagPropertyType, TagCategory
+from ffun.ontology.entities import TagCategory, TagProperty, TagPropertyType
 
 logger = logging.get_module_logger()
 
@@ -231,8 +231,7 @@ async def count_total_tags_per_category() -> dict[TagCategory, int]:
     """
 
     for category in TagCategory:
-        result = await execute(sql, {"type": TagPropertyType.categories,
-                                     "value": f"%{category.value}%"})
+        result = await execute(sql, {"type": TagPropertyType.categories, "value": f"%{category.value}%"})
 
         numbers[category] = result[0]["count"]
 

@@ -3,9 +3,9 @@ import asyncio
 import typer
 
 from ffun.cli.commands import cleaner  # noqa: F401
+from ffun.cli.commands import metrics  # noqa: F401
 from ffun.cli.commands import processors_quality  # noqa: F401
 from ffun.cli.commands import user_settings  # noqa: F401
-from ffun.cli.commands import metrics  # noqa: F401
 
 app = typer.Typer()
 

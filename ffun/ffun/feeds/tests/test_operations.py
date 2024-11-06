@@ -5,13 +5,16 @@ import uuid
 import pytest
 
 from ffun.core import utils
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, Delta
+from ffun.core.tests.helpers import Delta, TableSizeDelta, TableSizeNotChanged
 from ffun.domain.domain import new_feed_id
 from ffun.domain.entities import FeedId
 from ffun.feeds import errors
 from ffun.feeds.domain import get_feed, save_feeds
 from ffun.feeds.entities import Feed, FeedError, FeedState
 from ffun.feeds.operations import (
+    count_total_feeds,
+    count_total_feeds_per_last_error,
+    count_total_feeds_per_state,
     get_feeds,
     get_next_feeds_to_load,
     get_source_ids,
@@ -21,9 +24,6 @@ from ffun.feeds.operations import (
     save_feed,
     tech_remove_feed,
     update_feed_info,
-    count_total_feeds,
-    count_total_feeds_per_state,
-    count_total_feeds_per_last_error
 )
 from ffun.feeds.tests import make
 
@@ -315,11 +315,15 @@ class TestCountTotalFeedsPerState:
     async def test(self) -> None:
         numbers_before = await count_total_feeds_per_state()
 
-        await save_feeds([await make.fake_feed(state=FeedState.loaded),
-                          await make.fake_feed(state=FeedState.damaged),
-                          await make.fake_feed(state=FeedState.loaded),
-                          await make.fake_feed(state=FeedState.orphaned),
-                          await make.fake_feed(state=FeedState.loaded)])
+        await save_feeds(
+            [
+                await make.fake_feed(state=FeedState.loaded),
+                await make.fake_feed(state=FeedState.damaged),
+                await make.fake_feed(state=FeedState.loaded),
+                await make.fake_feed(state=FeedState.orphaned),
+                await make.fake_feed(state=FeedState.loaded),
+            ]
+        )
 
         numbers_after = await count_total_feeds_per_state()
 
@@ -334,14 +338,24 @@ class TestCountTotalFeedsPerLastError:
     async def test(self) -> None:
         numbers_before = await count_total_feeds_per_last_error()
 
-        await save_feeds([await make.fake_feed(last_error=FeedError.network_unknown),
-                          await make.fake_feed(last_error=FeedError.network_wrong_ssl_version),
-                          await make.fake_feed(last_error=FeedError.network_unknown),
-                          await make.fake_feed(last_error=FeedError.network_wrong_ssl_version),
-                          await make.fake_feed(last_error=FeedError.protocol_no_entries_in_feed)])
+        await save_feeds(
+            [
+                await make.fake_feed(last_error=FeedError.network_unknown),
+                await make.fake_feed(last_error=FeedError.network_wrong_ssl_version),
+                await make.fake_feed(last_error=FeedError.network_unknown),
+                await make.fake_feed(last_error=FeedError.network_wrong_ssl_version),
+                await make.fake_feed(last_error=FeedError.protocol_no_entries_in_feed),
+            ]
+        )
 
         numbers_after = await count_total_feeds_per_last_error()
 
         assert numbers_after[FeedError.network_unknown] == numbers_before.get(FeedError.network_unknown, 0) + 2
-        assert numbers_after[FeedError.network_wrong_ssl_version] == numbers_before.get(FeedError.network_wrong_ssl_version, 0) + 2
-        assert numbers_after[FeedError.protocol_no_entries_in_feed] == numbers_before.get(FeedError.protocol_no_entries_in_feed, 0) + 1
+        assert (
+            numbers_after[FeedError.network_wrong_ssl_version]
+            == numbers_before.get(FeedError.network_wrong_ssl_version, 0) + 2
+        )
+        assert (
+            numbers_after[FeedError.protocol_no_entries_in_feed]
+            == numbers_before.get(FeedError.protocol_no_entries_in_feed, 0) + 1
+        )

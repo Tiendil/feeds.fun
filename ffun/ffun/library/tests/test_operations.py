@@ -8,7 +8,7 @@ from structlog.testing import capture_logs
 
 from ffun.core import utils
 from ffun.core.postgresql import execute
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs, assert_times_is_near, Delta
+from ffun.core.tests.helpers import Delta, TableSizeDelta, TableSizeNotChanged, assert_logs, assert_times_is_near
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import FeedId
 from ffun.feeds import domain as f_domain
@@ -20,6 +20,7 @@ from ffun.library.operations import (
     _catalog_entry,
     all_entries_iterator,
     catalog_entries,
+    count_total_entries,
     find_stored_entries_for_feed,
     get_entries_after_pointer,
     get_entries_by_filter,
@@ -30,7 +31,6 @@ from ffun.library.operations import (
     try_mark_as_orphanes,
     unlink_feed_tail,
     update_external_url,
-    count_total_entries,
 )
 from ffun.library.tests import make
 

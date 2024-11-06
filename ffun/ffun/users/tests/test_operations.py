@@ -1,18 +1,19 @@
 import uuid
+
 import pytest
 
 from ffun.core.tests.helpers import (
+    Delta,
     TableSizeDelta,
     TableSizeNotChanged,
     assert_logs_has_business_event,
     assert_logs_has_no_business_event,
     capture_logs,
-    Delta,
 )
 from ffun.domain.entities import UserId
 from ffun.users import errors
 from ffun.users.entities import Service
-from ffun.users.operations import add_mapping, get_mapping, count_total_users
+from ffun.users.operations import add_mapping, count_total_users, get_mapping
 
 
 class TestAddMapping:

@@ -9,11 +9,11 @@ from ffun.resources import errors
 from ffun.resources.domain import load_resource
 from ffun.resources.operations import (
     convert_reserved_to_used,
+    count_total_resources_per_user,
     initialize_resource,
     load_resource_history,
     load_resources,
     try_to_reserve,
-    count_total_resources_per_user
 )
 
 
@@ -261,20 +261,80 @@ class TestCountTotalResourcesPerUser:
 
     @pytest.mark.asyncio
     async def test(self, internal_user_id: uuid.UUID, another_internal_user_id: uuid.UUID) -> None:
-        await try_to_reserve(user_id=internal_user_id, kind=_kind, interval_started_at=datetime.datetime(2020, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc), amount=13, limit=100)
-        await convert_reserved_to_used(user_id=internal_user_id, kind=_kind, interval_started_at=datetime.datetime(2020, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc), reserved=10, used=10)
+        await try_to_reserve(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=datetime.datetime(2020, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
+            amount=13,
+            limit=100,
+        )
+        await convert_reserved_to_used(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=datetime.datetime(2020, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
+            reserved=10,
+            used=10,
+        )
 
-        await try_to_reserve(user_id=internal_user_id, kind=_kind, interval_started_at=datetime.datetime(2020, 3, 1, 0, 0, 0, tzinfo=datetime.timezone.utc), amount=14, limit=100)
-        await convert_reserved_to_used(user_id=internal_user_id, kind=_kind, interval_started_at=datetime.datetime(2020, 3, 1, 0, 0, 0, tzinfo=datetime.timezone.utc), reserved=14, used=14)
+        await try_to_reserve(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=datetime.datetime(2020, 3, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
+            amount=14,
+            limit=100,
+        )
+        await convert_reserved_to_used(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=datetime.datetime(2020, 3, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
+            reserved=14,
+            used=14,
+        )
 
-        await try_to_reserve(user_id=internal_user_id, kind=_another_kind, interval_started_at=datetime.datetime(2020, 3, 1, 0, 0, 0, tzinfo=datetime.timezone.utc), amount=6, limit=100)
-        await convert_reserved_to_used(user_id=internal_user_id, kind=_another_kind, interval_started_at=datetime.datetime(2020, 3, 1, 0, 0, 0, tzinfo=datetime.timezone.utc), reserved=6, used=6)
+        await try_to_reserve(
+            user_id=internal_user_id,
+            kind=_another_kind,
+            interval_started_at=datetime.datetime(2020, 3, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
+            amount=6,
+            limit=100,
+        )
+        await convert_reserved_to_used(
+            user_id=internal_user_id,
+            kind=_another_kind,
+            interval_started_at=datetime.datetime(2020, 3, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
+            reserved=6,
+            used=6,
+        )
 
-        await try_to_reserve(user_id=another_internal_user_id, kind=_kind, interval_started_at=datetime.datetime(2020, 2, 1, 0, 0, 0, tzinfo=datetime.timezone.utc), amount=15, limit=100)
-        await convert_reserved_to_used(user_id=another_internal_user_id, kind=_kind, interval_started_at=datetime.datetime(2020, 2, 1, 0, 0, 0, tzinfo=datetime.timezone.utc), reserved=14, used=14)
+        await try_to_reserve(
+            user_id=another_internal_user_id,
+            kind=_kind,
+            interval_started_at=datetime.datetime(2020, 2, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
+            amount=15,
+            limit=100,
+        )
+        await convert_reserved_to_used(
+            user_id=another_internal_user_id,
+            kind=_kind,
+            interval_started_at=datetime.datetime(2020, 2, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
+            reserved=14,
+            used=14,
+        )
 
-        await try_to_reserve(user_id=another_internal_user_id, kind=_another_kind, interval_started_at=datetime.datetime(2020, 2, 1, 0, 0, 0, tzinfo=datetime.timezone.utc), amount=6, limit=100)
-        await convert_reserved_to_used(user_id=another_internal_user_id, kind=_another_kind, interval_started_at=datetime.datetime(2020, 2, 1, 0, 0, 0, tzinfo=datetime.timezone.utc), reserved=6, used=6)
+        await try_to_reserve(
+            user_id=another_internal_user_id,
+            kind=_another_kind,
+            interval_started_at=datetime.datetime(2020, 2, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
+            amount=6,
+            limit=100,
+        )
+        await convert_reserved_to_used(
+            user_id=another_internal_user_id,
+            kind=_another_kind,
+            interval_started_at=datetime.datetime(2020, 2, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
+            reserved=6,
+            used=6,
+        )
 
         numbers = await count_total_resources_per_user(kind=_kind)
 

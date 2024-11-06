@@ -1,11 +1,13 @@
 import uuid
+
 import pytest
 
 from ffun.core.postgresql import execute, transaction
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, Delta
+from ffun.core.tests.helpers import Delta, TableSizeDelta, TableSizeNotChanged
 from ffun.domain.entities import EntryId
 from ffun.library.entities import Entry
 from ffun.ontology import errors
+from ffun.ontology.domain import apply_tags_to_entry
 from ffun.ontology.entities import ProcessorTag, TagCategory, TagPropertyType
 from ffun.ontology.operations import (
     _get_relations_for_entry_and_tags,
@@ -13,15 +15,14 @@ from ffun.ontology.operations import (
     _save_tags,
     apply_tags,
     apply_tags_properties,
-    get_tags_properties,
-    remove_relations_for_entries,
-    tech_copy_relations,
     count_total_tags,
     count_total_tags_per_category,
     count_total_tags_per_type,
     get_or_create_id_by_tag,
+    get_tags_properties,
+    remove_relations_for_entries,
+    tech_copy_relations,
 )
-from ffun.ontology.domain import apply_tags_to_entry
 from ffun.ontology.tests.helpers import assert_has_tags
 
 
@@ -373,11 +374,13 @@ class TestCountTotalTagsPerCategory:
     async def test(self, cataloged_entry: Entry) -> None:
         tags = [uuid.uuid4().hex for _ in range(5)]
 
-        processor_tags = [ProcessorTag(raw_uid=tags[0]),
-                          ProcessorTag(raw_uid=tags[1], categories={TagCategory.network_domain}),
-                          ProcessorTag(raw_uid=tags[2], categories={TagCategory.feed_tag}),
-                          ProcessorTag(raw_uid=tags[3], categories={TagCategory.network_domain, TagCategory.feed_tag}),
-                          ProcessorTag(raw_uid=tags[4], categories={TagCategory.feed_tag})]
+        processor_tags = [
+            ProcessorTag(raw_uid=tags[0]),
+            ProcessorTag(raw_uid=tags[1], categories={TagCategory.network_domain}),
+            ProcessorTag(raw_uid=tags[2], categories={TagCategory.feed_tag}),
+            ProcessorTag(raw_uid=tags[3], categories={TagCategory.network_domain, TagCategory.feed_tag}),
+            ProcessorTag(raw_uid=tags[4], categories={TagCategory.feed_tag}),
+        ]
 
         numbers_before = await count_total_tags_per_category()
 
@@ -395,11 +398,13 @@ class TestCountTotalTagsPerType:
     async def test(self, cataloged_entry: Entry) -> None:
         tags = [uuid.uuid4().hex for _ in range(5)]
 
-        processor_tags = [ProcessorTag(raw_uid=tags[0]),
-                          ProcessorTag(raw_uid=tags[1], link="https://example.com"),
-                          ProcessorTag(raw_uid=tags[2], link="https://example.com", categories={TagCategory.network_domain}),
-                          ProcessorTag(raw_uid=tags[3], link="https://example.com", categories={TagCategory.feed_tag}),
-                          ProcessorTag(raw_uid=tags[4], link="https://example.com")]
+        processor_tags = [
+            ProcessorTag(raw_uid=tags[0]),
+            ProcessorTag(raw_uid=tags[1], link="https://example.com"),
+            ProcessorTag(raw_uid=tags[2], link="https://example.com", categories={TagCategory.network_domain}),
+            ProcessorTag(raw_uid=tags[3], link="https://example.com", categories={TagCategory.feed_tag}),
+            ProcessorTag(raw_uid=tags[4], link="https://example.com"),
+        ]
 
         numbers_before = await count_total_tags_per_type()
 

@@ -4,13 +4,13 @@ import typer
 
 from ffun.application.application import with_app
 from ffun.core import logging
-from ffun.ontology import domain as o_domain
 from ffun.feeds import domain as f_domain
-from ffun.library import domain as l_domain
-from ffun.users import domain as u_domain
-from ffun.scores import domain as s_domain
 from ffun.feeds_links import domain as fl_domain
+from ffun.library import domain as l_domain
+from ffun.ontology import domain as o_domain
 from ffun.resources import domain as r_domain
+from ffun.scores import domain as s_domain
+from ffun.users import domain as u_domain
 
 logger = logging.get_module_logger()
 
@@ -24,11 +24,17 @@ async def system_slice_tags() -> None:
 
     tags_per_type = await o_domain.count_total_tags_per_type()
 
-    logger.business_slice("tags_per_type", user_id=None, **{tag_type.name: count for tag_type, count in tags_per_type.items()})
+    logger.business_slice(
+        "tags_per_type", user_id=None, **{tag_type.name: count for tag_type, count in tags_per_type.items()}
+    )
 
     tags_per_category = await o_domain.count_total_tags_per_category()
 
-    logger.business_slice("tags_per_category", user_id=None, **{tag_category.name: count for tag_category, count in tags_per_category.items()})
+    logger.business_slice(
+        "tags_per_category",
+        user_id=None,
+        **{tag_category.name: count for tag_category, count in tags_per_category.items()}
+    )
 
 
 async def system_slice_feeds() -> None:
@@ -38,11 +44,17 @@ async def system_slice_feeds() -> None:
 
     feeds_per_state = await f_domain.count_total_feeds_per_state()
 
-    logger.business_slice("feeds_per_state", user_id=None, **{feed_state.name: count for feed_state, count in feeds_per_state.items()})
+    logger.business_slice(
+        "feeds_per_state", user_id=None, **{feed_state.name: count for feed_state, count in feeds_per_state.items()}
+    )
 
     feeds_per_last_error = await f_domain.count_total_feeds_per_last_error()
 
-    logger.business_slice("feeds_per_last_error", user_id=None, **{feed_error.name: count for feed_error, count in feeds_per_last_error.items()})
+    logger.business_slice(
+        "feeds_per_last_error",
+        user_id=None,
+        **{feed_error.name: count for feed_error, count in feeds_per_last_error.items()}
+    )
 
 
 async def system_slice_entries() -> None:
@@ -59,7 +71,7 @@ async def system_slice_users() -> None:
 
 async def run_system() -> None:
 
-    metrics = {}
+    pass
 
     async with with_app():
         await system_slice_tags()

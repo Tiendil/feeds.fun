@@ -10,13 +10,13 @@ from ffun.feeds_collections.entities import CollectionId
 from ffun.feeds_links.entities import FeedLink
 from ffun.feeds_links.operations import (
     add_link,
+    count_collection_feeds_per_user,
+    count_feeds_per_user,
     get_linked_feeds,
     get_linked_users,
     has_linked_users,
     remove_link,
     tech_merge_feeds,
-    count_feeds_per_user,
-    count_collection_feeds_per_user
 )
 from ffun.users.tests import make as u_make
 
@@ -254,7 +254,12 @@ class TestCountFeedsPerUser:
 class TestCountCollectionFeedsPerUser:
 
     @pytest.mark.asyncio
-    async def test(self, five_internal_user_ids: list[UserId], five_saved_feed_ids: list[FeedId], collection_id_for_test_feeds: CollectionId,) -> None:
+    async def test(
+        self,
+        five_internal_user_ids: list[UserId],
+        five_saved_feed_ids: list[FeedId],
+        collection_id_for_test_feeds: CollectionId,
+    ) -> None:
         u = five_internal_user_ids
         f = five_saved_feed_ids
 
