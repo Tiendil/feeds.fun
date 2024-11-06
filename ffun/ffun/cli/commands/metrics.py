@@ -7,6 +7,7 @@ from ffun.core import logging
 from ffun.ontology import domain as o_domain
 from ffun.feeds import domain as f_domain
 from ffun.library import domain as l_domain
+from ffun.users import domain as u_domain
 
 logger = logging.get_module_logger()
 
@@ -46,7 +47,9 @@ async def run_system() -> None:
 
         metrics["entries_total"] = entries_total
 
-        # TOTAL users
+        users_total = await u_domain.count_total_users()
+
+        metrics["users_total"] = users_total
 
         logger.business_slice("system_metrics", user_id=None, **metrics)
 
