@@ -1,4 +1,4 @@
-import {computed, ref, watch} from "vue";
+import {computed, ref, watch, triggerRef} from "vue";
 import {useRouter} from "vue-router";
 import {defineStore} from "pinia";
 
@@ -35,6 +35,8 @@ export const useFeedsStore = defineStore("feedsStore", () => {
     // we just remove feed from frontend
 
     delete feeds.value[feedId];
+
+    triggerRef(feeds);
   }
 
   async function subscribe(url: t.URL) {
