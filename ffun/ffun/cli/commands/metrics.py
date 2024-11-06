@@ -14,44 +14,55 @@ logger = logging.get_module_logger()
 cli_app = typer.Typer()
 
 
+async def slice_tags() -> None:
+    tags_total = await o_domain.count_total_tags()
+
+    logger.business_slice("tags_total", user_id=None, total=tags_total)
+
+    tags_per_type = await o_domain.count_total_tags_per_type()
+
+    logger.business_slice("tags_per_type", user_id=None, **{tag_type.name: count for tag_type, count in tags_per_type.items()})
+
+    tags_per_category = await o_domain.count_total_tags_per_category()
+
+    logger.business_slice("tags_per_category", user_id=None, **{tag_category.name: count for tag_category, count in tags_per_category.items()})
+
+
+async def slice_feeds() -> None:
+    feeds_total = await f_domain.count_total_feeds()
+
+    logger.business_slice("feeds_total", user_id=None, total=feeds_total)
+
+    feeds_per_state = await f_domain.count_total_feeds_per_state()
+
+    logger.business_slice("feeds_per_state", user_id=None, **{feed_state.name: count for feed_state, count in feeds_per_state.items()})
+
+    feeds_per_last_error = await f_domain.count_total_feeds_per_last_error()
+
+    logger.business_slice("feeds_per_last_error", user_id=None, **{feed_error.name: count for feed_error, count in feeds_per_last_error.items()})
+
+
+async def slice_entries() -> None:
+    entries_total = await l_domain.count_total_entries()
+
+    logger.business_slice("entries_total", user_id=None, total=entries_total)
+
+
+async def slice_users() -> None:
+    users_total = await u_domain.count_total_users()
+
+    logger.business_slice("users_total", user_id=None, total=users_total)
+
+
 async def run_system() -> None:
 
     metrics = {}
 
     async with with_app():
-        tags_total = await o_domain.count_total_tags()
-        tags_per_type = await o_domain.count_total_tags_per_type()
-        tags_per_category = await o_domain.count_total_tags_per_category()
-
-        metrics["tags_total"] = tags_total
-
-        for tag_type, count in tags_per_type.items():
-            metrics[f"tags_type_{tag_type.name}"] = count
-
-        for tag_category, count in tags_per_category.items():
-            metrics[f"tags_category_{tag_category.name}"] = count
-
-        feeds_total = await f_domain.count_total_feeds()
-        feeds_per_state = await f_domain.count_total_feeds_per_state()
-        feeds_per_last_error = await f_domain.count_total_feeds_per_last_error()
-
-        metrics["feeds_total"] = feeds_total
-
-        for feed_state, count in feeds_per_state.items():
-            metrics[f"feeds_state_{feed_state.name}"] = count
-
-        for feed_error, count in feeds_per_last_error.items():
-            metrics[f"feeds_error_{feed_error.name}"] = count
-
-        entries_total = await l_domain.count_total_entries()
-
-        metrics["entries_total"] = entries_total
-
-        users_total = await u_domain.count_total_users()
-
-        metrics["users_total"] = users_total
-
-        logger.business_slice("system_metrics", user_id=None, **metrics)
+        await slice_tags()
+        await slice_feeds()
+        await slice_entries()
+        await slice_users()
 
 
 @cli_app.command()
