@@ -9,6 +9,7 @@ from ffun.feeds import domain as f_domain
 from ffun.library import domain as l_domain
 from ffun.users import domain as u_domain
 from ffun.scores import domain as s_domain
+from ffun.feeds_links import domain as fl_domain
 
 logger = logging.get_module_logger()
 
@@ -78,9 +79,17 @@ async def users_slice_rules() -> None:
         logger.business_slice("rules_per_user", user_id=user_id, total=count)
 
 
+async def users_slice_feeds_links() -> None:
+    feeds_per_user = await fl_domain.count_feeds_per_user()
+
+    for user_id, count in feeds_per_user.items():
+        logger.business_slice("feeds_per_user", user_id=user_id, total=count)
+
+
 async def run_users() -> None:
     async with with_app():
         await users_slice_rules()
+        await users_slice_feeds_links()
 
         # TODO: feeds per user: custom, collections, total
         # TODO: has api key: yes/no, active/inactive

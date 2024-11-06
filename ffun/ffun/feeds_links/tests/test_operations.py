@@ -15,6 +15,7 @@ from ffun.feeds_links.operations import (
     has_linked_users,
     remove_link,
     tech_merge_feeds,
+    count_feeds_per_user,
 )
 from ffun.users.tests import make as u_make
 
@@ -224,6 +225,27 @@ class TestHasLinkedUsers:
         await add_link(internal_user_id, saved_feed_id)
 
         assert await has_linked_users(saved_feed_id)
+
+
+class TestCountFeedsPerUser:
+
+    @pytest.mark.asyncio
+    async def test(self, five_internal_user_ids: list[UserId], five_saved_feed_ids: list[FeedId]) -> None:
+        u = five_internal_user_ids
+        f = five_saved_feed_ids
+
+        await add_link(u[0], f[0])
+        await add_link(u[0], f[1])
+        await add_link(u[0], f[2])
+        await add_link(u[1], f[2])
+        await add_link(u[1], f[3])
+        await add_link(u[2], f[3])
+
+        numbers_after = await count_feeds_per_user()
+
+        assert numbers_after[u[0]] == 3
+        assert numbers_after[u[1]] == 2
+        assert numbers_after[u[2]] == 1
 
 
 class TestMergeFeeds:
