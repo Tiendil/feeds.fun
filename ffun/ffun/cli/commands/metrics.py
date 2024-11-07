@@ -100,7 +100,7 @@ async def users_slice_rules() -> None:
         logger.business_slice("rules_per_user", user_id=user_id, total=count)
 
 
-async def count_collections_for_users() -> None:
+async def count_collections_for_users() -> None:  # noqa: CCR001
     collection_users: dict[UserId, dict[CollectionId, int]] = {}
 
     for collection in collections.collections():
@@ -122,7 +122,7 @@ async def count_collections_for_users() -> None:
         logger.business_slice("collection_feeds_per_user", user_id=user_id, **attributes)
 
 
-async def count_feeds_fun_news_for_users() -> None:
+async def count_feeds_fun_news_for_users() -> None:  # noqa: CCR001
     feeds_fun_collection_id = CollectionId(uuid.UUID("09887b50-48b0-420a-b614-772e85617cb7"))
 
     feeds_fun_users: dict[UserId, dict[FeedId, int]] = {}
