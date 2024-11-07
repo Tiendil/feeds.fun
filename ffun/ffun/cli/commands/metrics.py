@@ -95,10 +95,12 @@ async def users_slice_rules() -> None:
     rules_per_user = await s_domain.count_rules_per_user()
 
     for user_id, count in rules_per_user.items():
+        if count == 0:
+            continue
         logger.business_slice("rules_per_user", user_id=user_id, total=count)
 
 
-async def count_collections_for_users() -> None:
+async def count_collections_for_users() -> None:  # noqa: CCR001
     collection_users: dict[UserId, dict[CollectionId, int]] = {}
 
     for collection in collections.collections():
@@ -113,11 +115,14 @@ async def count_collections_for_users() -> None:
             collection_users[user_id][collection.id] = count
 
     for user_id, counts in collection_users.items():
+        if all(count == 0 for count in counts.values()):
+            continue
+
         attributes = {f"collection_{collection_id}": count for collection_id, count in counts.items()}
         logger.business_slice("collection_feeds_per_user", user_id=user_id, **attributes)
 
 
-async def count_feeds_fun_news_for_users() -> None:
+async def count_feeds_fun_news_for_users() -> None:  # noqa: CCR001
     feeds_fun_collection_id = CollectionId(uuid.UUID("09887b50-48b0-420a-b614-772e85617cb7"))
 
     feeds_fun_users: dict[UserId, dict[FeedId, int]] = {}
@@ -134,6 +139,9 @@ async def count_feeds_fun_news_for_users() -> None:
             feeds_fun_users[user_id][feed_info.feed_id] = count
 
     for user_id, counts in feeds_fun_users.items():
+        if all(count == 0 for count in counts.values()):
+            continue
+
         attributes = {f"feed_{feed_id}": count for feed_id, count in counts.items()}
         logger.business_slice("feeds_fun_feeds_per_user", user_id=user_id, **attributes)
 
@@ -143,6 +151,9 @@ async def users_slice_feeds_links() -> None:  # noqa: CCR001
     feeds_per_user = await fl_domain.count_feeds_per_user()
 
     for user_id, count in feeds_per_user.items():
+        if count == 0:
+            continue
+
         logger.business_slice("feeds_per_user", user_id=user_id, total=count)
 
     await count_collections_for_users()
@@ -168,6 +179,8 @@ async def users_slice_resources() -> None:  # noqa: CCR001
             users[user_id][kind.name] = count
 
     for user_id, resources in users.items():
+        if all(count == 0 for count in resources.values()):
+            continue
         logger.business_slice("resources_per_user", user_id=user_id, **resources)
 
 
