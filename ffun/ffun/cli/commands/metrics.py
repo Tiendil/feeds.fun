@@ -4,15 +4,15 @@ import typer
 
 from ffun.application.application import with_app
 from ffun.core import logging
-from ffun.domain.entities import UserId
+from ffun.domain.entities import CollectionId, FeedId, UserId
 from ffun.feeds import domain as f_domain
+from ffun.feeds_collections.collections import collections
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.ontology import domain as o_domain
 from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
 from ffun.users import domain as u_domain
-from ffun.feeds_collections.collections import collections
 
 logger = logging.get_module_logger()
 
@@ -35,7 +35,7 @@ async def system_slice_tags() -> None:
     logger.business_slice(
         "tags_per_category",
         user_id=None,
-        **{tag_category.name: count for tag_category, count in tags_per_category.items()}
+        **{tag_category.name: count for tag_category, count in tags_per_category.items()},
     )
 
 
@@ -55,7 +55,7 @@ async def system_slice_feeds() -> None:
     logger.business_slice(
         "feeds_per_last_error",
         user_id=None,
-        **{feed_error.name: count for feed_error, count in feeds_per_last_error.items()}
+        **{feed_error.name: count for feed_error, count in feeds_per_last_error.items()},
     )
 
 
@@ -97,16 +97,16 @@ async def users_slice_rules() -> None:
         logger.business_slice("rules_per_user", user_id=user_id, total=count)
 
 
-async def users_slice_feeds_links() -> None:
+async def users_slice_feeds_links() -> None:  # noqa: CCR001
     feeds_per_user = await fl_domain.count_feeds_per_user()
 
     for user_id, count in feeds_per_user.items():
         logger.business_slice("feeds_per_user", user_id=user_id, total=count)
 
-    users = {}
+    users: dict[UserId, dict[CollectionId, int]] = {}
 
     for collection in collections.collections():
-        feed_ids = [feed_info.feed_id for feed_info in collection.feeds]
+        feed_ids: list[FeedId] = [feed_info.feed_id for feed_info in collection.feeds]  # type: ignore
 
         counts_for_collection = await fl_domain.count_subset_feeds_per_user(feed_ids)
 
@@ -117,7 +117,7 @@ async def users_slice_feeds_links() -> None:
             users[user_id][collection.id] = count
 
     for user_id, counts in users.items():
-        attributes = {f'collection_{collection_id}': count for collection_id, count in counts.items()}
+        attributes = {f"collection_{collection_id}": count for collection_id, count in counts.items()}
         logger.business_slice("collection_feeds_per_user", user_id=user_id, **attributes)
 
 

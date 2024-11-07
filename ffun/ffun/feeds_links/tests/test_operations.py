@@ -10,8 +10,8 @@ from ffun.feeds_collections.entities import CollectionId
 from ffun.feeds_links.entities import FeedLink
 from ffun.feeds_links.operations import (
     add_link,
-    count_subset_feeds_per_user,
     count_feeds_per_user,
+    count_subset_feeds_per_user,
     get_link,
     get_linked_feeds,
     get_linked_users,
