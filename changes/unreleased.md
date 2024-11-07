@@ -17,3 +17,4 @@ Changes:
 - ff-145 — Track users' interest in feeds.fun social channels.
 - ff-119 — Track OPML imports.
 - ff-112 — Track subscriptions on feeds from collections.
+- ff-131 — Track subscription dynamics on feeds.fun news channels.
