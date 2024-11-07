@@ -10,8 +10,8 @@ from ffun.feeds_collections.entities import CollectionId
 from ffun.feeds_links.entities import FeedLink
 from ffun.feeds_links.operations import (
     add_link,
-    count_collection_feeds_per_user,
     count_feeds_per_user,
+    count_subset_feeds_per_user,
     get_link,
     get_linked_feeds,
     get_linked_users,
@@ -271,7 +271,7 @@ class TestCountFeedsPerUser:
         assert u[4] not in numbers_after
 
 
-class TestCountCollectionFeedsPerUser:
+class TestCountSubsetFeedsPerUser:
 
     @pytest.mark.asyncio
     async def test(
@@ -283,9 +283,6 @@ class TestCountCollectionFeedsPerUser:
         u = five_internal_user_ids
         f = five_saved_feed_ids
 
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, f[0])
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, f[2])
-
         await add_link(u[0], f[0])
         await add_link(u[0], f[1])
         await add_link(u[0], f[2])
@@ -293,7 +290,7 @@ class TestCountCollectionFeedsPerUser:
         await add_link(u[1], f[3])
         await add_link(u[2], f[3])
 
-        numbers_after = await count_collection_feeds_per_user()
+        numbers_after = await count_subset_feeds_per_user([f[0], f[2]])
 
         assert numbers_after[u[0]] == 2
         assert numbers_after[u[1]] == 1

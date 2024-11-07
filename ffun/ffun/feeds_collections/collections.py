@@ -29,6 +29,9 @@ class Collections:
     def all_feed_ids(self) -> list[FeedId]:
         return list(self._feeds_in_collections.keys())
 
+    def count_total_feeds(self) -> int:
+        return len(self._feeds_in_collections)
+
     def collection(self, collection_id: CollectionId) -> Collection:
         for collection in self._collections:
             if collection.id == collection_id:

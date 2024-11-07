@@ -73,6 +73,9 @@ class TestCollections:
         for feed in feeds:
             assert feed.source_id == source_ids[url_to_source_uid(feed.url)]
 
+        assert collections.count_total_feeds() == len(feeds)
+        assert set(collections.all_feed_ids()) == {feed.id for feed in feeds}
+
     @pytest.mark.asyncio
     async def test_collections(self, collections: Collections) -> None:
         assert collections.collections() == collections._collections
