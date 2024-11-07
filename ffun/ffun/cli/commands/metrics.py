@@ -103,10 +103,22 @@ async def users_slice_feeds_links() -> None:
     for user_id, count in feeds_per_user.items():
         logger.business_slice("feeds_per_user", user_id=user_id, total=count)
 
-    collection_feeds_per_user = await fl_domain.count_collection_feeds_per_user()
+    users = {}
 
-    for user_id, count in collection_feeds_per_user.items():
-        logger.business_slice("collection_feeds_per_user", user_id=user_id, total=count)
+    for collection in collections.collections():
+        feed_ids = [feed_info.feed_id for feed_info in collection.feeds]
+
+        counts_for_collection = await fl_domain.count_subset_feeds_per_user(feed_ids)
+
+        for user_id, count in counts_for_collection.items():
+            if user_id not in users:
+                users[user_id] = {}
+
+            users[user_id][collection.id] = count
+
+    for user_id, counts in users.items():
+        attributes = {f'collection_{collection_id}': count for collection_id, count in counts.items()}
+        logger.business_slice("collection_feeds_per_user", user_id=user_id, **attributes)
 
 
 async def users_slice_resources() -> None:  # noqa: CCR001
