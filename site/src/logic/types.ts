@@ -184,19 +184,7 @@ export class Entry {
   }
 }
 
-export function entryFromJSON({
-  id,
-  feedId,
-  title,
-  url,
-  tags,
-  markers,
-  score,
-  scoreContributions,
-  publishedAt,
-  catalogedAt,
-  body
-}: {
+export function entryFromJSON(rawEntry: {
   id: string;
   feedId: string;
   title: string;
@@ -204,29 +192,39 @@ export function entryFromJSON({
   tags: string[];
   markers: string[];
   score: number;
-  scoreContributions: {[key: string]: number};
+  scoreContributions: {[key: number]: number};
   publishedAt: string;
   catalogedAt: string;
   body: string | null;
-}): Entry {
+},
+  tagsMapping: {[key: number]: string}): Entry {
+
+    const contributions: {[key: string]: number} = {};
+
+    for (const key in rawEntry.scoreContributions) {
+      contributions[tagsMapping[key]] = rawEntry.scoreContributions[key];
+    }
+
   return new Entry({
-    id: toEntryId(id),
-    feedId: toFeedId(feedId),
-    title,
-    url: toURL(url),
-    tags: tags,
-    markers: markers.map((m: string) => {
+    id: toEntryId(rawEntry.id),
+    feedId: toFeedId(rawEntry.feedId),
+    title: rawEntry.title,
+    url: toURL(rawEntry.url),
+    tags: rawEntry.tags.map((t: string) => tagsMapping[t]),
+    markers: rawEntry.markers.map((m: string) => {
       if (m in e.reverseMarker) {
         return e.reverseMarker[m];
       }
 
       throw new Error(`Unknown marker: ${m}`);
     }),
-    score: score,
-    scoreContributions: scoreContributions,
-    publishedAt: new Date(publishedAt),
-    catalogedAt: new Date(catalogedAt),
-    body: body
+    score: rawEntry.score,
+    // map keys from int to string
+    scoreContributions: contributions,
+    publishedAt: new Date(rawEntry.publishedAt),
+    catalogedAt: new Date(rawEntry.catalogedAt),
+
+    body: rawEntry.body
   });
 }
 

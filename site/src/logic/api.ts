@@ -76,7 +76,7 @@ export async function getLastEntries({period}: {period: number}) {
   const entries = [];
 
   for (let rawEntry of response.entries) {
-    const entry = t.entryFromJSON(rawEntry);
+    const entry = t.entryFromJSON(rawEntry, response.tagsMapping);
     entries.push(entry);
   }
 
