@@ -188,7 +188,8 @@ addopts = """-x -vv --strict-markers -p no:cacheprovider"""
 filterwarnings = [
   "error",
   "ignore::DeprecationWarning:feedparser.encodings:29",
-  "ignore::pytest.PytestDeprecationWarning:pytest_asyncio.plugin:208"
+  "ignore::pytest.PytestDeprecationWarning:pytest_asyncio.plugin:208",
+  "ignore::PendingDeprecationWarning:starlette:12"
 ]
 
 [tool.flake8]
