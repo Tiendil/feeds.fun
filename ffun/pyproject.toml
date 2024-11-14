@@ -88,6 +88,7 @@ furl = "2.1.*"
 # TODO: move to dev dependencies?
 python-frontmatter = "1.1.*"
 toml = "0.10.*"
+orjson = "3.10.*"
 
 [tool.poetry.dev-dependencies]
 

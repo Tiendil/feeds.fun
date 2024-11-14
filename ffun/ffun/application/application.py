@@ -4,6 +4,7 @@ from typing import AsyncGenerator
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import ORJSONResponse
 
 from ffun.api import http_handlers as api_http_handlers
 from ffun.application import errors
@@ -138,6 +139,7 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
         docs_url=None,
         redoc_url=None,
         openapi_url=None,
+        default_response_class=ORJSONResponse,
     )
 
     middlewares.initialize_error_processors(app)
