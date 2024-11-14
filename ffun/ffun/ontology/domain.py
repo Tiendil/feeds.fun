@@ -96,6 +96,7 @@ async def get_tags_ids_for_entries(entries_ids: list[EntryId]) -> dict[EntryId, 
     return await operations.get_tags_for_entries(execute, entries_ids)
 
 
+# TODO: remove, not used in real code
 async def get_tags_for_entries(entries_ids: list[EntryId]) -> dict[EntryId, set[str]]:
     tags_ids = await operations.get_tags_for_entries(execute, entries_ids)
 
