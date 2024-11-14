@@ -86,9 +86,9 @@ async def _external_entries(  # pylint: disable=R0914
 
         tags_mapping = await o_domain.get_tags_by_ids(contributions_by_ids.keys())
 
-        # contributions_by_str = {
-        #     tags_mapping[tag_id]: contribution for tag_id, contribution in contributions_by_ids.items()
-        # }
+        contributions_by_str = {
+            tags_mapping[tag_id]: contribution for tag_id, contribution in contributions_by_ids.items()
+        }
 
         external_markers = [entities.Marker.from_internal(marker) for marker in markers.get(entry.id, ())]
 
@@ -97,7 +97,7 @@ async def _external_entries(  # pylint: disable=R0914
             tags=tags.get(entry.id, ()),
             markers=external_markers,
             score=score,
-            # score_contributions=contributions_by_str,
+            score_contributions=contributions_by_str,
             with_body=with_body,
         )
 
@@ -121,26 +121,6 @@ async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: Us
     external_entries = await _external_entries(entries, with_body=False, user_id=user.id)
 
     return entities.GetLastEntriesResponse(entries=external_entries)
-
-
-@router.post("/api/get-score-contributions")
-async def api_get_score_contributions(request: entities.GetScoreContributionsRequest, user: User) -> entities.GetScoreContributionsResponse:
-
-    entry_id = request.entry_id
-
-    rules = await s_domain.get_rules(user.id)
-
-    tags_ids = await o_domain.get_tags_ids_for_entries([entry_id])
-
-    _score, contributions_by_ids = s_domain.get_score_contributions(rules, tags_ids.get(entry_id, ()))
-
-    tags_mapping = await o_domain.get_tags_by_ids(contributions_by_ids.keys())
-
-    contributions_by_str = {
-        tags_mapping[tag_id]: contribution for tag_id, contribution in contributions_by_ids.items()
-    }
-
-    return entities.GetScoreContributionsResponse(contributions=contributions_by_str)
 
 
 @router.post("/api/get-entries-by-ids")
