@@ -68,7 +68,7 @@ async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entiti
 
 async def _external_entries(  # pylint: disable=R0914
     entries: Iterable[l_entities.Entry], with_body: bool, user_id: UserId
-) -> list[entities.Entry]:
+) -> tuple[list[entities.Entry], dict[int, str]]:
     entries_ids = [entry.id for entry in entries]
 
     tags_ids = await o_domain.get_tags_ids_for_entries(entries_ids)

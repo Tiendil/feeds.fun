@@ -190,7 +190,7 @@ export function entryFromJSON(
     feedId: string;
     title: string;
     url: string;
-    tags: string[];
+    tags: number[];
     markers: string[];
     score: number;
     scoreContributions: {[key: number]: number};
@@ -211,7 +211,7 @@ export function entryFromJSON(
     feedId: toFeedId(rawEntry.feedId),
     title: rawEntry.title,
     url: toURL(rawEntry.url),
-    tags: rawEntry.tags.map((t: string) => tagsMapping[t]),
+    tags: rawEntry.tags.map((t: number) => tagsMapping[t]),
     markers: rawEntry.markers.map((m: string) => {
       if (m in e.reverseMarker) {
         return e.reverseMarker[m];
