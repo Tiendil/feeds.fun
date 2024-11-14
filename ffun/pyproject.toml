@@ -88,6 +88,7 @@ furl = "2.1.*"
 # TODO: move to dev dependencies?
 python-frontmatter = "1.1.*"
 toml = "0.10.*"
+orjson = "3.10.*"
 
 [tool.poetry.dev-dependencies]
 
@@ -187,7 +188,8 @@ addopts = """-x -vv --strict-markers -p no:cacheprovider"""
 filterwarnings = [
   "error",
   "ignore::DeprecationWarning:feedparser.encodings:29",
-  "ignore::pytest.PytestDeprecationWarning:pytest_asyncio.plugin:208"
+  "ignore::pytest.PytestDeprecationWarning:pytest_asyncio.plugin:208",
+  "ignore::PendingDeprecationWarning:starlette:12"
 ]
 
 [tool.flake8]
@@ -204,6 +206,7 @@ ignore = [
   "D400",
   "D401",
   "S101",
+  "S113",
   "S311",
   "W503",
   "CFQ004",

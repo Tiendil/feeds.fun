@@ -44,13 +44,15 @@ class TestEntriesProcessors:
 
         assert_logs(logs, no_entries_to_process=0)
 
-        tags = await o_domain.get_tags_for_entries(list(entries))
+        tags = await o_domain.get_tags_ids_for_entries(list(entries))
+
+        expected_ids = await o_domain.get_ids_by_uids({"fake-constant-tag-1", "fake-constant-tag-2"})
 
         for entry in entries_list[: fake_entries_processor.concurrency]:
-            assert tags[entry.id] == {"fake-constant-tag-1", "fake-constant-tag-2"}
+            assert tags[entry.id] == set(expected_ids.values())
 
         for entry in entries_list[fake_entries_processor.concurrency :]:
-            assert tags[entry.id] == set()
+            assert entry.id not in tags
 
     @pytest.mark.asyncio
     async def test_entries_less_than_concurrency(
@@ -70,10 +72,12 @@ class TestEntriesProcessors:
 
         assert_logs(logs, no_entries_to_process=0)
 
-        tags = await o_domain.get_tags_for_entries(list(entries))
+        tags = await o_domain.get_tags_ids_for_entries(list(entries))
+
+        expected_ids = await o_domain.get_ids_by_uids({"fake-constant-tag-1", "fake-constant-tag-2"})
 
         for entry in entries_list:
-            assert tags[entry.id] == {"fake-constant-tag-1", "fake-constant-tag-2"}
+            assert tags[entry.id] == set(expected_ids.values())
 
     @pytest.mark.asyncio
     async def test_unexisted_entries_in_queue(
@@ -99,10 +103,12 @@ class TestEntriesProcessors:
 
         assert_logs(logs, no_entries_to_process=0, unexisted_entry_in_queue=3)
 
-        tags = await o_domain.get_tags_for_entries(list(entries))
+        tags = await o_domain.get_tags_ids_for_entries(list(entries))
+
+        expected_ids = await o_domain.get_ids_by_uids({"fake-constant-tag-1", "fake-constant-tag-2"})
 
         for entry in entries_list:
-            assert tags[entry.id] == {"fake-constant-tag-1", "fake-constant-tag-2"}
+            assert tags[entry.id] == set(expected_ids.values())
 
         entities_in_queue = await operations.get_entries_to_process(processor_id=fake_entries_processor.id, limit=100)
 

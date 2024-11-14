@@ -70,10 +70,10 @@ class Entry(BaseEntity):
     id: EntryId
     title: str
     url: str
-    tags: list[str]
+    tags: list[int]
     markers: list[Marker] = []
     score: int
-    scoreContributions: dict[str, int]
+    scoreContributions: dict[int, int]
     publishedAt: datetime.datetime
     catalogedAt: datetime.datetime
     body: str | None = None
@@ -82,10 +82,10 @@ class Entry(BaseEntity):
     def from_internal(  # noqa: CFQ002
         cls,
         entry: l_entities.Entry,
-        tags: Iterable[str],
+        tags: Iterable[int],
         markers: Iterable[Marker],
         score: int,
-        score_contributions: dict[str, int],
+        score_contributions: dict[int, int],
         with_body: bool = False,
     ) -> "Entry":
         return cls(
@@ -304,6 +304,7 @@ class GetLastEntriesRequest(api.APIRequest):
 
 class GetLastEntriesResponse(api.APISuccess):
     entries: list[Entry]
+    tagsMapping: dict[int, str]
 
 
 class GetEntriesByIdsRequest(api.APIRequest):
@@ -312,6 +313,7 @@ class GetEntriesByIdsRequest(api.APIRequest):
 
 class GetEntriesByIdsResponse(api.APISuccess):
     entries: list[Entry]
+    tagsMapping: dict[int, str]
 
 
 class CreateOrUpdateRuleRequest(api.APIRequest):

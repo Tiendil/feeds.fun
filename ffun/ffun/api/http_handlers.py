@@ -68,12 +68,14 @@ async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entiti
 
 async def _external_entries(  # pylint: disable=R0914
     entries: Iterable[l_entities.Entry], with_body: bool, user_id: UserId
-) -> list[entities.Entry]:
+) -> tuple[list[entities.Entry], dict[int, str]]:
     entries_ids = [entry.id for entry in entries]
 
-    tags = await o_domain.get_tags_for_entries(entries_ids)
-
     tags_ids = await o_domain.get_tags_ids_for_entries(entries_ids)
+
+    whole_tags = set.union(*tags_ids.values())
+
+    tags_mapping = await o_domain.get_tags_by_ids(whole_tags)
 
     markers = await m_domain.get_markers(user_id=user_id, entries_ids=entries_ids)
 
@@ -84,20 +86,14 @@ async def _external_entries(  # pylint: disable=R0914
     for entry in entries:
         score, contributions_by_ids = s_domain.get_score_contributions(rules, tags_ids.get(entry.id, set()))
 
-        tags_mapping = await o_domain.get_tags_by_ids(contributions_by_ids.keys())
-
-        contributions_by_str = {
-            tags_mapping[tag_id]: contribution for tag_id, contribution in contributions_by_ids.items()
-        }
-
         external_markers = [entities.Marker.from_internal(marker) for marker in markers.get(entry.id, ())]
 
         external_entry = entities.Entry.from_internal(
             entry=entry,
-            tags=tags.get(entry.id, ()),
+            tags=tags_ids.get(entry.id, ()),
             markers=external_markers,
             score=score,
-            score_contributions=contributions_by_str,
+            score_contributions=contributions_by_ids,
             with_body=with_body,
         )
 
@@ -105,7 +101,7 @@ async def _external_entries(  # pylint: disable=R0914
 
     external_entries.sort(key=lambda entry: entry.score, reverse=True)
 
-    return external_entries
+    return external_entries, tags_mapping
 
 
 @router.post("/api/get-last-entries")
@@ -118,9 +114,9 @@ async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: Us
         feeds_ids=linked_feeds_ids, period=request.period, limit=settings.max_returned_entries
     )
 
-    external_entries = await _external_entries(entries, with_body=False, user_id=user.id)
+    external_entries, tags_mapping = await _external_entries(entries, with_body=False, user_id=user.id)
 
-    return entities.GetLastEntriesResponse(entries=external_entries)
+    return entities.GetLastEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
 
 
 @router.post("/api/get-entries-by-ids")
@@ -137,9 +133,9 @@ async def api_get_entries_by_ids(
 
     found_entries = [entry for entry in entries.values() if entry is not None]
 
-    external_entries = await _external_entries(found_entries, with_body=True, user_id=user.id)
+    external_entries, tags_mapping = await _external_entries(found_entries, with_body=True, user_id=user.id)
 
-    return entities.GetEntriesByIdsResponse(entries=external_entries)
+    return entities.GetEntriesByIdsResponse(entries=external_entries, tagsMapping=tags_mapping)
 
 
 @router.post("/api/create-or-update-rule")

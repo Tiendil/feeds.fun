@@ -87,7 +87,6 @@ services:
   backend:
     image: ffun-backend
 
-
     depends_on:
       postgresql:
         condition: service_healthy
