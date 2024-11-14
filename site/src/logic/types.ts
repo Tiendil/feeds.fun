@@ -184,26 +184,27 @@ export class Entry {
   }
 }
 
-export function entryFromJSON(rawEntry: {
-  id: string;
-  feedId: string;
-  title: string;
-  url: string;
-  tags: string[];
-  markers: string[];
-  score: number;
-  scoreContributions: {[key: number]: number};
-  publishedAt: string;
-  catalogedAt: string;
-  body: string | null;
-},
-  tagsMapping: {[key: number]: string}): Entry {
+export function entryFromJSON(
+  rawEntry: {
+    id: string;
+    feedId: string;
+    title: string;
+    url: string;
+    tags: string[];
+    markers: string[];
+    score: number;
+    scoreContributions: {[key: number]: number};
+    publishedAt: string;
+    catalogedAt: string;
+    body: string | null;
+  },
+  tagsMapping: {[key: number]: string}
+): Entry {
+  const contributions: {[key: string]: number} = {};
 
-    const contributions: {[key: string]: number} = {};
-
-    for (const key in rawEntry.scoreContributions) {
-      contributions[tagsMapping[key]] = rawEntry.scoreContributions[key];
-    }
+  for (const key in rawEntry.scoreContributions) {
+    contributions[tagsMapping[key]] = rawEntry.scoreContributions[key];
+  }
 
   return new Entry({
     id: toEntryId(rawEntry.id),
