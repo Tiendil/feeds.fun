@@ -133,10 +133,9 @@ async def api_get_entries_by_ids(
 
     found_entries = [entry for entry in entries.values() if entry is not None]
 
-    external_entries, _tags_mapping = await _external_entries(found_entries, with_body=True, user_id=user.id)
+    external_entries, tags_mapping = await _external_entries(found_entries, with_body=True, user_id=user.id)
 
-    # TODO: add tags_mapping
-    return entities.GetEntriesByIdsResponse(entries=external_entries)
+    return entities.GetEntriesByIdsResponse(entries=external_entries, tagsMapping=tags_mapping)
 
 
 @router.post("/api/create-or-update-rule")

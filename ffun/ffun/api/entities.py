@@ -313,6 +313,7 @@ class GetEntriesByIdsRequest(api.APIRequest):
 
 class GetEntriesByIdsResponse(api.APISuccess):
     entries: list[Entry]
+    tagsMapping: dict[int, str]
 
 
 class CreateOrUpdateRuleRequest(api.APIRequest):
