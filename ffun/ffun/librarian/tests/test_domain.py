@@ -200,9 +200,11 @@ class TestProcessEntry:
 
         assert_logs(logs, processor_successed=1, processor_requested_to_skip_entry=0, entry_processed=1)
 
-        tags = await o_domain.get_tags_for_entries([cataloged_entry.id])
+        tags = await o_domain.get_tags_ids_for_entries([cataloged_entry.id])
 
-        assert tags[cataloged_entry.id] == {"tag-1", "tag-2"}
+        expected_ids = await o_domain.get_ids_by_uids({"tag-1", "tag-2"})
+
+        assert tags[cataloged_entry.id] == set(expected_ids.values())
 
         entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, limit=100500)
 
@@ -230,9 +232,9 @@ class TestProcessEntry:
 
         assert_logs(logs, processor_successed=0, processor_requested_to_skip_entry=1, entry_processed=1)
 
-        tags = await o_domain.get_tags_for_entries([cataloged_entry.id])
+        tags = await o_domain.get_tags_ids_for_entries([cataloged_entry.id])
 
-        assert tags[cataloged_entry.id] == set()
+        assert cataloged_entry.id not in tags
 
         entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, limit=100500)
 
@@ -261,9 +263,9 @@ class TestProcessEntry:
 
         assert_logs(logs, processor_successed=0, processor_requested_to_skip_entry=0, entry_processed=0)
 
-        tags = await o_domain.get_tags_for_entries([cataloged_entry.id])
+        tags = await o_domain.get_tags_ids_for_entries([cataloged_entry.id])
 
-        assert tags[cataloged_entry.id] == set()
+        assert cataloged_entry.id not in tags
 
         entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, limit=100500)
 

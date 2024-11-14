@@ -96,26 +96,6 @@ async def get_tags_ids_for_entries(entries_ids: list[EntryId]) -> dict[EntryId, 
     return await operations.get_tags_for_entries(execute, entries_ids)
 
 
-# TODO: remove, not used in real code
-async def get_tags_for_entries(entries_ids: list[EntryId]) -> dict[EntryId, set[str]]:
-    tags_ids = await operations.get_tags_for_entries(execute, entries_ids)
-
-    all_tags = set()
-
-    for tags in tags_ids.values():
-        all_tags.update(tags)
-
-    tags_mapping = await get_tags_by_ids(all_tags)
-
-    result = {entry_id: {tags_mapping[tag_id] for tag_id in tags} for entry_id, tags in tags_ids.items()}
-
-    for entry_id in entries_ids:
-        if entry_id not in result:
-            result[entry_id] = set()
-
-    return result
-
-
 async def get_tags_info(tags_ids: Iterable[int]) -> dict[int, Tag]:  # noqa: CCR001
     # we expect that properties will be sorted by date from the newest to the oldest
     properties = await operations.get_tags_properties(tags_ids)
