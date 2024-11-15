@@ -2,8 +2,7 @@
 # TODO: add all named persons
 # TODO: add memes, memeplexes
 tags_must_have = [
-  'memetics',
-  'richard-dawkins',
+  'memetics'
 ]
 
 tags_should_have = [
@@ -112,6 +111,7 @@ tags_should_have = [
   'political-science',
   'psychology',
   'religious-memes',
+  'richard-dawkins',
   'scott-atran',
   'semiotics',
   'social-memes',
