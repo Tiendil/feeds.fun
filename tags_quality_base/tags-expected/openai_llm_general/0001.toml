@@ -2,10 +2,10 @@ tags_must_have = [
   'book-reviews',
   'forecasting',
   'nate-silver',
-  'statistics',
   'the-signal-and-the-noise',
 ]
 tags_should_have = [
+  'statistics',
   'analysis',
   'analytical-methods',
   'analytical-techniques',

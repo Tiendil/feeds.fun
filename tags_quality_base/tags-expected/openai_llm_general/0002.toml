@@ -2,12 +2,10 @@ tags_must_have = [
   'book-reviews',
   'forecasting',
   'nate-silver',
-  'statistics',
-  # for russian version of the text we expect simpler name
-  # 'the-signal-and-the-noise',
-  'signal-and-noise',
+  'the-signal-and-the-noise'
 ]
 tags_should_have = [
+  'statistics',
   'analysis',
   'analytical-methods',
   'analytical-techniques',
@@ -81,7 +79,6 @@ tags_should_have = [
   'strategic-planning',
   'successful-forecasts',
   'system-dynamics',
-  'the-signal-and-the-noise',
   'uncertainty',
   'united-states-elections',
   'us-elections',

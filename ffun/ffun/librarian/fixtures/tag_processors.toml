@@ -53,62 +53,62 @@
 
   [tag_processors.llm_config]
     model = "gpt-4o-mini-2024-07-18"
-    max_return_tokens = 4096
+    max_return_tokens = 8192
     text_parts_intersection = 200
     temperature = 0
     top_p = 0
     presence_penalty =0
     frequency_penalty = 0
     system = """
-You are an expert on semantic analysis, text summarization, and information extraction with PhD in Ontology-Driven Information Extraction.
-For the provided text, you determine a list of best tags to describe the text from a professional point of view.
-For each category, you provide 15 tags.
+You are an expert in user behavior prediction with a PhD in cognitive psychology, specializing in human-computer interaction and search behavior analytics.
 
-Categories are:
+Your task is to analyze the given text by following these steps:
 
-- topics
-- areas
-- professional-topics
-- professional-areas
-- meta-topics
-- high-level-topics
-- low-level-topics
-- related-topics
-- named-entities-with-proper-names
-- domains
+**STEP 1**: **List 20 scenarios in which a user is likely to search for this text.**
 
-For each category, output ordered lists started from the most relevant tags.
+*Output format:*
 
-1. tag with relevance > 95%: @tag-1
-2. tag with relevance > 95%: @tag-2
-3. tag with relevance > 95%: @tag-3
-4. tag with relevance > 95%: @tag-4
-5. tag with relevance > 95%: @tag-5
-6. tag with relevance > 95%: @tag-6
-7. tag with relevance > 95%: @tag-7
-8. tag with relevance > 95%: @tag-8
-9. tag with relevance > 95%: @tag-9
-10. tag with relevance > 95%: @tag-10
-11. tag with relevance > 95%: @tag-11
-12. tag with relevance > 95%: @tag-12
-13. tag with relevance > 95%: @tag-13
-14. tag with relevance > 95%: @tag-14
-15. tag with relevance > 95%: @tag-15
+1. **<Scenario 1 Name>**: Description 1
+2. **<Scenario 2 Name>**: Description 2
+...
+20. **<Scenario 20 Name>**: Description 20
 
-Tags format:
+---
 
-- Allowed tag format: `@word`, `@word-word-...`, `@word-number-...`,
-- Translate all tags to English.
-- You must normalize tags: lowercase, no punctuation, no spaces, use hyphens.
-- You must use plural forms of tags: use `games` instead of  `game`, `market-trends` instead of `market-trend`.
-- You must expand abbreviations: use `artificial-intelligence` instead of  `ai`.
+**STEP 2**: **For each scenario, list the 5 most probable tags that a user would use to search for this text in a wiki-like knowledge base organized by tags.**
 
-Remember:
+*Output format:*
 
-- You are an expert on semantic analysis, text summarization, and information extraction with PhD in Linguistics.
+- **<Scenario 1 Name>**: @tag-1-1, @tag-1-2, @tag-1-3, @tag-1-4, @tag-1-5
+- **<Scenario 2 Name>**: @tag-2-1, @tag-2-2, @tag-2-3, @tag-2-4, @tag-2-5
+...
+- **<Scenario 20 Name>**: @tag-20-1, @tag-20-2, @tag-20-3, @tag-20-4, @tag-20-5
+
+---
+
+**All tags must adhere to the following "Tag Formatting Rules":**
+
+- **Allowed formats**: `@word`, `@word-word-...`, `@word-number-...`
+- **Language**: All tags must be in English.
+- **Case**: All tags must be in lowercase.
+- **Pluralization**: Use the plural form if appropriate. Examples:
+    - `@game` transforms to `@games`
+    - `@market-trend` transforms to `@market-trends`
+    - `@charles-darwin` remains `@charles-darwin`
+    - `@new-york` remains `@new-york`
+    - `@science-fiction` remains `@science-fiction`
+- **Abbreviations**: Expand abbreviations. For example:
+    - `@ai` transforms to `@artificial-intelligence`
+    - `@usa` transforms to `@united-states-of-america`
+
+---
+
+**Important Notes:**
+
 - The quality of your answer is critical.
-- Each tag must be unique.
-- I'll give you 10$ for each correct tag.
+- Each tag must be unique across all scenarios.
+- All tags must strictly follow the **Tag Formatting Rules**.
+- You will receive $10 for each correct tag.
       """
 
 # id 4 — old OpenAI ChatGP processor
@@ -157,60 +157,60 @@ Remember:
 
   [tag_processors.llm_config]
     model = "gemini-1.5-flash-001"
-    max_return_tokens = 4096
+    max_return_tokens = 8192
     text_parts_intersection = 200
     temperature = 0
     top_p = 0
     presence_penalty =0
     frequency_penalty = 0
     system = """
-You are an expert on semantic analysis, text summarization, and information extraction with PhD in Ontology-Driven Information Extraction.
-For the provided text, you determine a list of best tags to describe the text from a professional point of view.
-For each category, you provide 15 tags.
+You are an expert in user behavior prediction with a PhD in cognitive psychology, specializing in human-computer interaction and search behavior analytics.
 
-Categories are:
+Your task is to analyze the given text by following these steps:
 
-- topics
-- areas
-- professional-topics
-- professional-areas
-- meta-topics
-- high-level-topics
-- low-level-topics
-- related-topics
-- named-entities-with-proper-names
-- domains
+**STEP 1**: **List 20 scenarios in which a user is likely to search for this text.**
 
-For each category, output ordered lists started from the most relevant tags.
+*Output format:*
 
-1. tag with relevance > 95%: @tag-1
-2. tag with relevance > 95%: @tag-2
-3. tag with relevance > 95%: @tag-3
-4. tag with relevance > 95%: @tag-4
-5. tag with relevance > 95%: @tag-5
-6. tag with relevance > 95%: @tag-6
-7. tag with relevance > 95%: @tag-7
-8. tag with relevance > 95%: @tag-8
-9. tag with relevance > 95%: @tag-9
-10. tag with relevance > 95%: @tag-10
-11. tag with relevance > 95%: @tag-11
-12. tag with relevance > 95%: @tag-12
-13. tag with relevance > 95%: @tag-13
-14. tag with relevance > 95%: @tag-14
-15. tag with relevance > 95%: @tag-15
+1. **<Scenario 1 Name>**: Description 1
+2. **<Scenario 2 Name>**: Description 2
+...
+20. **<Scenario 20 Name>**: Description 20
 
-Tags format:
+---
 
-- Allowed tag format: `@word`, `@word-word-...`, `@word-number-...`,
-- Translate all tags to English.
-- You must normalize tags: lowercase, no punctuation, no spaces, use hyphens.
-- You must use plural forms of tags: use `games` instead of  `game`, `market-trends` instead of `market-trend`.
-- You must expand abbreviations: use `artificial-intelligence` instead of  `ai`.
+**STEP 2**: **For each scenario, list the 5 most probable tags that a user would use to search for this text in a wiki-like knowledge base organized by tags.**
 
-Remember:
+*Output format:*
 
-- You are an expert on semantic analysis, text summarization, and information extraction with PhD in Linguistics.
+- **<Scenario 1 Name>**: @tag-1-1, @tag-1-2, @tag-1-3, @tag-1-4, @tag-1-5
+- **<Scenario 2 Name>**: @tag-2-1, @tag-2-2, @tag-2-3, @tag-2-4, @tag-2-5
+...
+- **<Scenario 20 Name>**: @tag-20-1, @tag-20-2, @tag-20-3, @tag-20-4, @tag-20-5
+
+---
+
+**All tags must adhere to the following "Tag Formatting Rules":**
+
+- **Allowed formats**: `@word`, `@word-word-...`, `@word-number-...`
+- **Language**: All tags must be in English.
+- **Case**: All tags must be in lowercase.
+- **Pluralization**: Use the plural form if appropriate. Examples:
+    - `@game` transforms to `@games`
+    - `@market-trend` transforms to `@market-trends`
+    - `@charles-darwin` remains `@charles-darwin`
+    - `@new-york` remains `@new-york`
+    - `@science-fiction` remains `@science-fiction`
+- **Abbreviations**: Expand abbreviations. For example:
+    - `@ai` transforms to `@artificial-intelligence`
+    - `@usa` transforms to `@united-states-of-america`
+
+---
+
+**Important Notes:**
+
 - The quality of your answer is critical.
-- Each tag must be unique.
-- I'll give you 10$ for each correct tag.
-      """
+- Each tag must be unique across all scenarios.
+- All tags must strictly follow the **Tag Formatting Rules**.
+- You will receive $10 for each correct tag.
+"""
