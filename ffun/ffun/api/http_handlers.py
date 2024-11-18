@@ -73,7 +73,10 @@ async def _external_entries(  # pylint: disable=R0914
 
     tags_ids = await o_domain.get_tags_ids_for_entries(entries_ids)
 
-    whole_tags = set.union(*tags_ids.values())
+    if tags_ids:
+        whole_tags = set.union(*tags_ids.values())
+    else:
+        whole_tags = set()
 
     tags_mapping = await o_domain.get_tags_by_ids(whole_tags)
 
