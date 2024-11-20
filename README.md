@@ -269,3 +269,8 @@ Algorithm:
 - Start services. You can skip this step if you plan to upgrade to the next version immediately.
 
 Also, pay attention to breaking changes and notes in the CHANGELOG.
+
+
+## Profiling
+
+To profile a cli command, run `py-spy record -o profile.svg -- python ./ffun/cli/application.py <command name>`

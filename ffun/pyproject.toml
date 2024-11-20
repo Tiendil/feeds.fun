@@ -98,6 +98,8 @@ pytest = "8.3.*"
 pytest-asyncio = "0.24.*"
 pytest-mock = "3.14.*"
 
+py-spy = "0.4.*"
+
 respx = "0.21.*"
 
 isort = "5.13.*"
