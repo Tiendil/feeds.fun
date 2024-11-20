@@ -163,15 +163,24 @@ async def apply_tags_properties(execute: ExecuteType, properties: Sequence[TagPr
 
 
 async def get_tags_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> dict[EntryId, set[int]]:
-    sql = """SELECT entry_id, tag_id FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"""
+    # TODO: check tag_id::text
+    # TODO: check how entry_id::text affects postgresql performance
+    sql = """SELECT entry_id::text, tag_id FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"""
 
     rows = await execute(sql, {"entries_ids": entries_ids})
 
     result: dict[EntryId, set[int]] = {}
 
+    entry_ids_mapping: dict[str, EntryId] = {}
+
     for row in rows:
-        entry_id = row["entry_id"]
+        raw_entry_id = row["entry_id"]
         tag_id = row["tag_id"]
+
+        if raw_entry_id not in entry_ids_mapping:
+            entry_ids_mapping[raw_entry_id] = EntryId(raw_entry_id)
+
+        entry_id = entry_ids_mapping[raw_entry_id]
 
         if entry_id not in result:
             result[entry_id] = set()
