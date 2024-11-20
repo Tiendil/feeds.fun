@@ -40,6 +40,8 @@ async def profiled_code() -> None:
 
     external_entries, tags_mapping = await _external_entries(entries, with_body=False, user_id=user_id)
 
+    logger.info("almost_finishied", entries_number=len(external_entries), tags_number=len(tags_mapping))
+
     return GetLastEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
 
 
@@ -47,7 +49,8 @@ async def run_experiment() -> None:
     async with with_app():
         logger.info("experiment_started")
 
-        await profiled_code()
+        for _ in range(100):
+            await profiled_code()
 
         logger.info("experiment_finished")
 
