@@ -163,7 +163,7 @@ async def apply_tags_properties(execute: ExecuteType, properties: Sequence[TagPr
 
 
 async def get_tags_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> dict[EntryId, set[int]]:
-    sql = """SELECT * FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"""
+    sql = """SELECT entry_id, tag_id FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"""
 
     rows = await execute(sql, {"entries_ids": entries_ids})
 
