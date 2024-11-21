@@ -26,7 +26,7 @@ class ExecuteType(Protocol):
         pass
 
 
-class PGAsyncCursor(psycopg.AsyncCursor):  # type: ignore
+class PGAsyncCursor(psycopg.AsyncCursor):
     async def execute_and_extract(self, command: str, arguments: SQL_ARGUMENTS | None = None) -> DB_RESULT:
         await self.execute(command, arguments)
 
@@ -36,12 +36,12 @@ class PGAsyncCursor(psycopg.AsyncCursor):  # type: ignore
         # see for details
         # https://github.com/psycopg/psycopg/blob/ea76ab81ba1d797eee2baf2a1464be51e608b8bd/psycopg/psycopg/pq/_enums.py
         if self.pgresult.status in (ExecStatus.TUPLES_OK, ExecStatus.SINGLE_TUPLE):
-            return await self.fetchall()
+            return await self.fetchall()  # type: ignore
 
         return []
 
 
-class PGPAsyncConnection(psycopg.AsyncConnection):  # type: ignore
+class PGPAsyncConnection(psycopg.AsyncConnection):
     def __init__(self, *argv, row_factory=dict_row, cursor_factory=PGAsyncCursor, **kwargs):  # type: ignore
         super().__init__(*argv, row_factory=row_factory, **kwargs)  # type: ignore
         self.cursor_factory = cursor_factory
