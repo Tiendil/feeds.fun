@@ -163,7 +163,7 @@ async def apply_tags_properties(execute: ExecuteType, properties: Sequence[TagPr
 
 
 async def get_tags_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> dict[EntryId, set[int]]:
-    sql = """SELECT entry_id::text, tag_id FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"""
+    sql = """SELECT CONCAT(entry_id::text, '|', tag_id::text) AS ids FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"""
 
     rows = await execute(sql, {"entries_ids": entries_ids})
 
@@ -172,11 +172,12 @@ async def get_tags_for_entries(execute: ExecuteType, entries_ids: list[EntryId])
     entry_ids_mapping: dict[str, EntryId] = {}
 
     for row in rows:
-        raw_entry_id = row["entry_id"]
-        tag_id = row["tag_id"]
+        raw_entry_id, tag_id = row["ids"].split("|")
 
         if raw_entry_id not in entry_ids_mapping:
             entry_ids_mapping[raw_entry_id] = EntryId(raw_entry_id)
+
+        tag_id = int(tag_id)
 
         entry_id = entry_ids_mapping[raw_entry_id]
 
