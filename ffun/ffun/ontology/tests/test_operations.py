@@ -414,3 +414,7 @@ class TestCountTotalTagsPerType:
 
         assert numbers_after[TagPropertyType.link] == numbers_before.get(TagPropertyType.link, 0) + 4
         assert numbers_after[TagPropertyType.categories] == numbers_before.get(TagPropertyType.categories, 0) + 2
+
+
+class TestGetTagsForEntries:
+    """Tested in other tests & code."""

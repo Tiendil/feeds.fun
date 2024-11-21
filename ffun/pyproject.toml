@@ -60,7 +60,7 @@ beautifulsoup4 = "4.12.*"
 
 async-lru = "2.0.*"
 
-psycopg = "3.1.*"
+psycopg = "3.2.*"
 psycopg-pool = "3.2.*"
 yoyo-migrations = "9.0.*"
 PyPika = "0.48.*"
@@ -97,6 +97,8 @@ changy = "0.*"
 pytest = "8.3.*"
 pytest-asyncio = "0.24.*"
 pytest-mock = "3.14.*"
+
+py-spy = "0.4.*"
 
 respx = "0.21.*"
 
