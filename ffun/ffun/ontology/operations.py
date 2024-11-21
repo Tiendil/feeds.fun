@@ -173,12 +173,12 @@ async def get_tags_for_entries(execute: ExecuteType, entries_ids: list[EntryId])
     entry_ids_mapping: dict[str, EntryId] = {}
 
     for row in rows:
-        raw_entry_id, tag_id = row["ids"].split("|")
+        raw_entry_id, raw_tag_id = row["ids"].split("|")
 
         if raw_entry_id not in entry_ids_mapping:
             entry_ids_mapping[raw_entry_id] = EntryId(uuid.UUID(raw_entry_id))
 
-        tag_id = int(tag_id)
+        tag_id = int(raw_tag_id)
 
         entry_id = entry_ids_mapping[raw_entry_id]
 
