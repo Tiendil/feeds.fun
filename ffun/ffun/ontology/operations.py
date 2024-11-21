@@ -1,3 +1,4 @@
+import uuid
 from typing import Iterable, Sequence
 
 from bidict import bidict
@@ -175,7 +176,7 @@ async def get_tags_for_entries(execute: ExecuteType, entries_ids: list[EntryId])
         raw_entry_id, tag_id = row["ids"].split("|")
 
         if raw_entry_id not in entry_ids_mapping:
-            entry_ids_mapping[raw_entry_id] = EntryId(raw_entry_id)
+            entry_ids_mapping[raw_entry_id] = EntryId(uuid.UUID(raw_entry_id))
 
         tag_id = int(tag_id)
 
