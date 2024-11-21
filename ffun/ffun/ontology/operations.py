@@ -163,8 +163,6 @@ async def apply_tags_properties(execute: ExecuteType, properties: Sequence[TagPr
 
 
 async def get_tags_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> dict[EntryId, set[int]]:
-    # TODO: check tag_id::text
-    # TODO: check how entry_id::text affects postgresql performance
     sql = """SELECT entry_id::text, tag_id FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"""
 
     rows = await execute(sql, {"entries_ids": entries_ids})
