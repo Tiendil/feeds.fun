@@ -37,7 +37,11 @@ def _fake_schema_for_url(url: str) -> str:
     return f"//{url}"
 
 
-def normalize_classic_url(url: str, original_url: str) -> str | None:
+def normalize_classic_url(url: str, original_url: str | None = None) -> str | None:
+    if original_url is None:
+        # TODO: add test
+        original_url = url
+
     url = _fake_schema_for_url(url)
     original_url = _fake_schema_for_url(original_url)
 

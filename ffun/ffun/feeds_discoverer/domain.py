@@ -1,153 +1,160 @@
+# TODO: do we need yarl? we have furl already
+# TODO: check logging
 import yarl
 from bs4 import BeautifulSoup
 
+from ffun.domain.urls import normalize_classic_url
 from ffun.core import logging
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
 from ffun.parsers import entities as p_entities
+from ffun.feeds_discoverer.entities import Result, Context, Status, Discoverer
 
 logger = logging.get_module_logger()
 
 
-def fix_url(raw_url: str) -> str:
-    url = yarl.URL(raw_url)
+# TODO: test
+async def _discover_normalize_url(context: Context) -> tuple[Context, Result | None]:
+    context.url = normalize_classic_url(context.raw_url)
 
-    if url.is_absolute():
-        if not url.scheme:
-            url = url.with_scheme("http")
+    if context.url is None:
+        return context, Result(feeds=[], status=Status.incorrect_url)
 
-    else:
-        url = yarl.URL("http://" + raw_url)
-
-    return url.human_repr()
+    return context, None
 
 
-async def extract_content(url: str) -> str | None:
-    logger.info("extract_content")
+# TODO: test
+async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
+    assert context.url is not None
 
     try:
-        response = await lo_domain.load_content_with_proxies(url)
-        content = await lo_domain.decode_content(response)
+        response = await lo_domain.load_content_with_proxies(context.url)
+        context.content = await lo_domain.decode_content(response)
     except lo_errors.LoadError:
         logger.info("can_not_access_content")
-        return None
+        # TODO: different error name?
+        return context, Result(feeds=[], status=Status.no_content_at_url)
     except Exception:
         logger.exception("unexpected_error_while_parsing_feed")
-        return None
+        # TODO: different error name?
+        return context, Result(feeds=[], status=Status.no_content_at_url)
 
-    return content
+    return context, None
 
 
-async def extract_feed_info(content: str, original_url: str) -> p_entities.FeedInfo | None:
-    logger.info("extract_feed_info")
+# TODO: test
+async def _discover_extract_feed_info(context: Context) -> tuple[Context, Result | None]:
+    assert context.url is not None
+    assert context.content is not None
 
     try:
-        return await lo_domain.parse_content(content, original_url=original_url)
+        feed_info = await lo_domain.parse_content(context.content, original_url=context.url)
     except lo_errors.LoadError:
         logger.info("feed_not_found_at_start_url")
+        return context, None
     except Exception:
         logger.exception("unexpected_error_while_parsing_feed")
+        return context, None
 
-    return None
+    return context, Result(feeds=[feed_info], status=Status.feeds_found)
 
 
-def construct_soup(content: str) -> BeautifulSoup | None:
-    logger.info("construct_soup")
+# TODO: test
+async def _discover_create_soup(context: Context) -> tuple[Context, Result | None]:
+    assert context.content is not None
 
     try:
-        return BeautifulSoup(content, "html.parser")
+        context.soup = BeautifulSoup(context.content, "html.parser")
     except Exception:
         logger.exception("unexpected_error_while_parsing_html")
+        return context, Result(feeds=[], status=Status.not_html)
 
-    return None
+    return context, None
 
 
-async def extract_feeds_from_links(soup: BeautifulSoup) -> list[p_entities.FeedInfo]:
-    results = []
+# TODO: test
+async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context, Result | None]:
+    assert context.soup is not None
+
     links_to_check = set()
 
-    for link in soup("link"):
+    for link in context.soup("link"):
         if link.has_attr("href"):
             links_to_check.add(link["href"])
 
     logger.info("links_to_check", links_to_check=links_to_check)
 
-    for link in links_to_check:
-        results.extend(await discover(url=link, stop=True))
+    context.candidate_urls.extend(links_to_check)
 
-    logger.info("results", result_links=[feed_info.url for feed_info in results])
-
-    return results
+    return context, None
 
 
-async def extract_feeds_from_a(soup: BeautifulSoup) -> list[p_entities.FeedInfo]:
+# TODO: test
+async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Context, Result | None]:
+    assert context.soup is not None
+
     results = []
     links_to_check = set()
 
     # TODO: can be very-very long, must be improved
-    for link in list(soup("a")):
+    for link in list(context.soup("a")):
         if link.has_attr("href"):
             links_to_check.add(link["href"])
 
     logger.info("links_to_check", links_to_check=links_to_check)
 
-    for link in links_to_check:
-        results.extend(await discover(url=link, stop=True))
+    context.candidate_urls.extend(links_to_check)
 
-    logger.info("results", result_links=[feed_info.url for feed_info in results])
-
-    return results
+    return context, None
 
 
-# TODO: this is very straightforward implementation, it should be improved
-# TODO: check already saved feeds, but remember, that there may be saved only part of the feeds from url
-@logging.function_args_to_log("url")
-async def discover(url: str, stop: bool = False) -> list[p_entities.FeedInfo]:
+# TODO: test
+async def _discover_check_candidate_links(context: Context) -> tuple[Context, Result | None]:
+    feeds = []
 
-    url = fix_url(url)
+    for link in context.candidate_urls:
+        # TODO: add concurrency
+        # TODO: check depth
+        feeds.extend(await discover(url=link, depth=context.depth - 1, discoverers=context.discoverers)
 
-    logger.info("fixed_url", url=url)
+    logger.info("feeds", result_links=[feed_info.url for feed_info in feeds])
 
-    logger.info("start_discover")
-
-    content = await extract_content(url)
-
-    if content is None:
-        return []
-
-    feed_info = await extract_feed_info(content, original_url=url)
-
-    if feed_info is not None:
-        return [feed_info]
-
-    if stop:
-        return []
-
-    logger.info("extract_feeds_candidates")
-
-    soup = construct_soup(content)
-
-    if soup is None:
-        return []
-
-    logger.info("search_link_candidates")
-
-    results = await extract_feeds_from_links(soup)
-
-    if results:
-        # Here we expect "correct" sites behavior "if there are links to feeds, then they will contain all feeds"
-        # it is not always be true, but it is good enough for now
-        return results
-
-    results = await extract_feeds_from_links(soup)
-
-    return results
-
-
-async def check_if_feed(url: str) -> p_entities.FeedInfo | None:
-    feeds = await discover(url=url, stop=True)
+    context.candidate_urls.clear()
 
     if not feeds:
-        return None
+        return context, None
 
-    return feeds[0]
+    return context, Result(feeds=feeds, status=Status.feeds_found)
+
+
+# TODO: teest
+async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | None]:
+    if context.depth == 0:
+        return context, Result(feeds=[], status=Status.no_feeds_found)
+
+    return context, None
+
+
+# TODO: test list
+_discoverers = [_discover_normalize_url,
+                _discover_load_url,
+                _discover_extract_feed_info,
+                _discover_stop_recursion,
+                _discover_create_soup,
+                _discover_extract_feeds_from_links,
+                _discover_check_candidate_links,
+                _discover_extract_feeds_from_anchors,
+                _discover_check_candidate_links]
+
+
+# TODO: test
+async def discover(url: str, depth: int, discoverers: list[Discoverer] = _discoverers) -> Result:
+    context = Context(raw_url=url, depth=depth, discoverers=discoverers)
+
+    for discoverer in discoverers:
+        context, result = await discoverer(context)
+
+        if result is not None:
+            return result
+
+    return Result(feeds=[], status=Status.no_feeds_found)
