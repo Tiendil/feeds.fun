@@ -15,7 +15,7 @@ from ffun.domain.entities import UserId
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_discoverer import domain as fd_domain
-from ffun.feeds_discoverer import entity as fd_entity
+from ffun.feeds_discoverer import entities as fd_entities
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
@@ -241,7 +241,7 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
 async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities.AddFeedResponse:
     discover_result = await fd_domain.discover(url=request.url, depth=0)
 
-    if discover_result.status != fd_entity.Status.feeds_found:
+    if discover_result.status != fd_entities.Status.feeds_found:
         raise fastapi.HTTPException(status_code=400, detail="Not a feed")
 
     feed_info = discover_result.feeds[0]

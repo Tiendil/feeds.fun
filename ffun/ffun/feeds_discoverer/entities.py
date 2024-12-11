@@ -1,6 +1,6 @@
 import datetime
 import enum
-from typing import Any, Protocol
+from typing import Any, Protocol, Union
 import pydantic
 
 from ffun.core import utils
@@ -12,7 +12,7 @@ from ffun.parsers import entities as p_entities
 # async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Context, Result | None]:
 
 class Discoverer(Protocol):
-    async def __call__(self, context: 'Context') -> tuple['Context', 'Result' | None]:
+    async def __call__(self, context: 'Context') -> tuple['Context', Union[None, 'Result']]:
         pass
 
 
@@ -24,18 +24,19 @@ class Status(enum.StrEnum):
     no_feeds_found = "no_feeds_found"
 
 
-class Context:
+class Context(BaseEntity):
     raw_url: str
-    url: str | None
-    content: str | None
-    soup: Any | None
-    depth: int
+    url: str | None = None
+    content: str | None = None
+    soup: Any | None = None
+    depth: int = 1
     candidate_urls: list[str] = pydantic.Field(default_factory=list)
-    discoverers: list[Discoverer] = pydantic.Field(default_factory=list)
+    discoverers: list[Any] = pydantic.Field(default_factory=list)
 
-    model_config = pydantic.ConfigDict(frozen=False)
+    model_config = pydantic.ConfigDict(frozen=False,
+                                       arbitrary_types_allowed=True)
 
 
-class Result:
+class Result(BaseEntity):
     feeds: list[p_entities.FeedInfo]
     status: Status

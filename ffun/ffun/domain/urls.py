@@ -17,6 +17,24 @@ RE_SCHEMA = re.compile(r"^(\w+):")
 
 
 # TODO: add tests
+def fix_full_url(url: str) -> str | None:
+    url = url.strip()
+
+    if url.startswith("//"):
+        return str(furl(url))
+
+    if RE_SCHEMA.match(url):
+        return str(furl(url))
+
+    # we should have proper domains
+    # TODO: refactor to some ideomatic way
+    if "." not in url.split("/")[0]:
+        return None
+
+    return str(furl(f"//{url}"))
+
+
+# TODO: add tests
 # is required for correct parsing by furl
 # will be removed before returning result
 def _fake_schema_for_url(url: str) -> str:

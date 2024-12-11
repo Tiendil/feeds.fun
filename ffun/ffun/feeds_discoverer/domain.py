@@ -3,7 +3,7 @@
 import yarl
 from bs4 import BeautifulSoup
 
-from ffun.domain.urls import normalize_classic_url
+from ffun.domain.urls import fix_full_url
 from ffun.core import logging
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
@@ -15,7 +15,7 @@ logger = logging.get_module_logger()
 
 # TODO: test
 async def _discover_normalize_url(context: Context) -> tuple[Context, Result | None]:
-    context.url = normalize_classic_url(context.raw_url)
+    context.url = fix_full_url(context.raw_url)
 
     if context.url is None:
         return context, Result(feeds=[], status=Status.incorrect_url)
@@ -115,7 +115,7 @@ async def _discover_check_candidate_links(context: Context) -> tuple[Context, Re
     for link in context.candidate_urls:
         # TODO: add concurrency
         # TODO: check depth
-        feeds.extend(await discover(url=link, depth=context.depth - 1, discoverers=context.discoverers)
+        feeds.extend(await discover(url=link, depth=context.depth - 1, discoverers=context.discoverers))
 
     logger.info("feeds", result_links=[feed_info.url for feed_info in feeds])
 
