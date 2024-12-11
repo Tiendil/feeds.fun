@@ -13,7 +13,6 @@ from ffun.feeds_discoverer.entities import Result, Context, Status, Discoverer
 logger = logging.get_module_logger()
 
 
-# TODO: test
 async def _discover_normalize_url(context: Context) -> tuple[Context, Result | None]:
     context.url = fix_full_url(context.raw_url)
 
@@ -23,7 +22,6 @@ async def _discover_normalize_url(context: Context) -> tuple[Context, Result | N
     return context, None
 
 
-# TODO: test
 async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
     assert context.url is not None
 
@@ -32,12 +30,10 @@ async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
         context.content = await lo_domain.decode_content(response)
     except lo_errors.LoadError:
         logger.info("can_not_access_content")
-        # TODO: different error name?
-        return context, Result(feeds=[], status=Status.no_content_at_url)
+        return context, Result(feeds=[], status=Status.cannot_access_url)
     except Exception:
         logger.exception("unexpected_error_while_parsing_feed")
-        # TODO: different error name?
-        return context, Result(feeds=[], status=Status.no_content_at_url)
+        return context, Result(feeds=[], status=Status.cannot_access_url)
 
     return context, None
 

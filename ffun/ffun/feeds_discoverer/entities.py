@@ -19,7 +19,7 @@ class Discoverer(Protocol):
 class Status(enum.StrEnum):
     feeds_found = "feeds_found"
     incorrect_url = "incorrect_url"
-    no_content_at_url = "no_content_at_url"
+    cannot_access_url = "cannot_access_url"
     not_html = "not_html"
     no_feeds_found = "no_feeds_found"
 
