@@ -37,7 +37,7 @@ def is_expected_furl_error(error: Exception) -> bool:
 
 # TODO: add tests
 # ATTENTION: see note at the top of the file
-def fix_full_url(url: UnknownUrl) -> AbsoluteUrl | None:
+def fix_full_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noqa: CCR001
     url = UnknownUrl(url.strip())
 
     if url.startswith("//"):

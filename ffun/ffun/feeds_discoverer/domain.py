@@ -101,7 +101,7 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
 
 
 # TODO: test
-async def _discover_check_candidate_links(context: Context) -> tuple[Context, Result | None]:
+async def _discover_check_candidate_links(context: Context) -> tuple[Context, Result | None]:  # noqa: CCR001
     results: list[Result] = []
 
     for link in context.candidate_urls:
