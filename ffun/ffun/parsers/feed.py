@@ -5,6 +5,7 @@ import feedparser
 
 from ffun.core import logging
 from ffun.domain import urls
+from ffun.domain.entities import AbsoluteUrl
 from ffun.parsers.entities import EntryInfo, FeedInfo
 
 logger = logging.get_module_logger()
@@ -47,13 +48,13 @@ def _extract_external_id(entry: Any) -> str:
     return entry.get("link")  # type: ignore
 
 
-def _extract_external_url(entry: Any, original_url: str) -> str | None:
+def _extract_external_url(entry: Any, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     url = entry.get("link")
 
     return urls.normalize_external_url(url, original_url)
 
 
-def parse_feed(content: str, original_url: str) -> FeedInfo | None:
+def parse_feed(content: str, original_url: AbsoluteUrl) -> FeedInfo | None:
     channel = feedparser.parse(content)
 
     if getattr(channel, "version", "") == "" and not channel.entries:

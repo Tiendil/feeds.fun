@@ -10,7 +10,7 @@ import pydantic
 from ffun.api import front_events
 from ffun.core import api
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import EntryId, FeedId, UserId
+from ffun.domain.entities import EntryId, FeedId, UserId, UnknownUrl, AbsoluteUrl
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.feeds_links import entities as fl_entities
@@ -42,7 +42,7 @@ class Feed(BaseEntity):
     id: FeedId
     title: str | None
     description: str | None
-    url: str
+    url: AbsoluteUrl
     state: str
     lastError: str | None = None
     loadedAt: datetime.datetime | None
@@ -69,7 +69,7 @@ class Feed(BaseEntity):
 class Entry(BaseEntity):
     id: EntryId
     title: str
-    url: str
+    url: AbsoluteUrl
     tags: list[int]
     markers: list[Marker] = []
     score: int
@@ -123,7 +123,7 @@ class Rule(BaseEntity):
 class EntryInfo(BaseEntity):
     title: str
     body: str
-    url: str | None
+    url: AbsoluteUrl | None
     published_at: datetime.datetime
 
     @classmethod
@@ -132,7 +132,7 @@ class EntryInfo(BaseEntity):
 
 
 class FeedInfo(BaseEntity):
-    url: str
+    url: AbsoluteUrl
     title: str
     description: str
 
@@ -268,7 +268,7 @@ class Collection(pydantic.BaseModel):
 
 
 class CollectionFeedInfo(pydantic.BaseModel):
-    url: str
+    url: AbsoluteUrl
     title: str
     description: str
     id: f_entities.FeedId
@@ -378,7 +378,7 @@ class RemoveMarkerResponse(api.APISuccess):
 
 
 class DiscoverFeedsRequest(api.APIRequest):
-    url: str
+    url: UnknownUrl
 
 
 class DiscoverFeedsResponse(api.APISuccess):
@@ -386,7 +386,7 @@ class DiscoverFeedsResponse(api.APISuccess):
 
 
 class AddFeedRequest(api.APIRequest):
-    url: str
+    url: UnknownUrl
 
 
 class AddFeedResponse(api.APISuccess):

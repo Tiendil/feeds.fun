@@ -3,12 +3,14 @@ from typing import Any
 
 import pydantic
 
+from ffun.domain.entities import AbsoluteUrl
+
 
 class EntryInfo(pydantic.BaseModel):
     title: str
     body: str
     external_id: str
-    external_url: str | None
+    external_url: AbsoluteUrl | None
     external_tags: set[str]
     published_at: datetime.datetime
 
@@ -17,7 +19,7 @@ class EntryInfo(pydantic.BaseModel):
 
 
 class FeedInfo(pydantic.BaseModel):
-    url: str
+    url: AbsoluteUrl
     title: str
     description: str
 

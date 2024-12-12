@@ -1,14 +1,14 @@
 import pydantic
 
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import CollectionId
+from ffun.domain.entities import CollectionId, AbsoluteUrl
 from ffun.feeds.entities import FeedId
 
 
 class FeedInfo(BaseEntity):
     model_config = pydantic.ConfigDict(frozen=False)
 
-    url: str
+    url: AbsoluteUrl
 
     # Some feeds define title and description in their data
     # But, currently, it looks more convenient to define them here

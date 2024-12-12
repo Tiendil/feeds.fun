@@ -2,6 +2,7 @@
 from bs4 import BeautifulSoup
 
 from ffun.domain.urls import fix_full_url, normalize_classic_url
+from ffun.domain.entities import UnknownUrl, AbsoluteUrl
 from ffun.core import logging
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
@@ -99,12 +100,27 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
 
 # TODO: test
 async def _discover_check_candidate_links(context: Context) -> tuple[Context, Result | None]:
-    feeds = []
+    results: list[Result] = []
 
     for link in context.candidate_urls:
         # TODO: add concurrency
         # TODO: check depth
-        feeds.extend(await discover(url=link, depth=context.depth - 1, discoverers=context.discoverers))
+        results.append(await discover(url=link, depth=context.depth - 1, discoverers=context.discoverers))
+
+    feeds_mapping: dict[AbsoluteUrl, p_entities.FeedInfo] = {}
+
+    for result in results:
+        for feed_info in result.feeds:
+
+            # TODO: replace by uid?
+            if feed_info.url in feeds_mapping:
+                logger.info("feed_already_found", feed_url=feed_info.url)
+                continue
+
+            feeds_mapping[feed_info.url] = feed_info
+
+    feeds = list(feeds_mapping.values())
+    feeds.sort(key=lambda feed_info: feed_info.title)
 
     logger.info("feeds", result_links=[feed_info.url for feed_info in feeds])
 
@@ -137,7 +153,7 @@ _discoverers = [_discover_normalize_url,
 
 
 # TODO: test
-async def discover(url: str, depth: int, discoverers: list[Discoverer] = _discoverers) -> Result:
+async def discover(url: UnknownUrl, depth: int, discoverers: list[Discoverer] = _discoverers) -> Result:
     context = Context(raw_url=url, depth=depth, discoverers=discoverers)
 
     for discoverer in discoverers:

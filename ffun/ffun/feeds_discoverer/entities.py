@@ -5,11 +5,9 @@ import pydantic
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import EntryId, FeedId, SourceId
+from ffun.domain.entities import EntryId, FeedId, SourceId, AbsoluteUrl, UnknownUrl
 from ffun.parsers import entities as p_entities
 
-
-# async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Context, Result | None]:
 
 class Discoverer(Protocol):
     async def __call__(self, context: 'Context') -> tuple['Context', Union[None, 'Result']]:
@@ -25,12 +23,12 @@ class Status(enum.StrEnum):
 
 
 class Context(BaseEntity):
-    raw_url: str
-    url: str | None = None
+    raw_url: UnknownUrl
+    url: AbsoluteUrl | None = None
     content: str | None = None
     soup: Any | None = None
     depth: int = 1
-    candidate_urls: set[str] = pydantic.Field(default_factory=set)
+    candidate_urls: set[UnknownUrl] = pydantic.Field(default_factory=set)
     discoverers: list[Any] = pydantic.Field(default_factory=list)
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)

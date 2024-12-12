@@ -2,6 +2,8 @@ import xml.etree.ElementTree as ET  # noqa
 from typing import Generator
 
 from ffun.parsers.entities import FeedInfo
+from ffun.domain.entities import UnknownUrl
+from ffun.domain.urls import normalize_classic_unknown_url
 
 
 def _extract_body(data: str) -> ET.Element:
@@ -41,8 +43,13 @@ def extract_feeds(data: str) -> list[FeedInfo]:
 def extract_feeds_records(body: ET.Element) -> Generator[FeedInfo, None, None]:
     for outline in body:
         if outline.attrib.get("type") == "rss":
+            url = normalize_classic_unknown_url(UnknownUrl(outline.attrib["xmlUrl"]))
+
+            if url is None:
+                continue
+
             yield FeedInfo(
-                url=outline.attrib["xmlUrl"],
+                url=url,
                 title=outline.attrib.get("title", ""),
                 description="",
                 entries=[],

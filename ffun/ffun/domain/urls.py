@@ -7,7 +7,7 @@ from orderedmultidict import omdict
 
 from ffun.core import logging
 
-from ffun.domain.entities import AbsoluteUrl, RelativeUrl, UnknowUrl, UrlUid, SourceUid
+from ffun.domain.entities import AbsoluteUrl, RelativeUrl, UnknownUrl, UrlUid, SourceUid
 
 logger = logging.get_module_logger()
 
@@ -38,8 +38,8 @@ def is_expected_furl_error(error: Exception) -> bool:
 
 # TODO: add tests
 # ATTENTION: see note at the top of the file
-def fix_full_url(url: UnknowUrl) -> AbsoluteUrl | None:
-    url = url.strip()
+def fix_full_url(url: UnknownUrl) -> AbsoluteUrl | None:
+    url = UnknownUrl(url.strip())
 
     if url.startswith("//"):
         return AbsoluteUrl(str(furl(url)))
@@ -69,30 +69,44 @@ def fix_full_url(url: UnknowUrl) -> AbsoluteUrl | None:
 
 # TODO: tests
 # ATTENTION: see note at the top of the file
-def is_full_url(url: UnknowUrl) -> bool:
+def is_full_url(url: UnknownUrl) -> bool:
     return fix_full_url(url) is not None
 
 
 # TODO: tests
 # ATTENTION: see note at the top of the file
-def normalize_classic_full_url(url: UnknowUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
-    url = fix_full_url(url)
-    original_url = fix_full_url(original_url) # TODO: remove conversion?
+def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:
+    fixed_url = fix_full_url(url)
 
-    f_original_url = furl(original_url)
-    f_url = furl(url)
+    if fix_full_url is None:
+        return None
 
-    if not f_url.scheme:
-        f_url.scheme = f_original_url.scheme
+    assert fixed_url is not None
 
-    return str(f_url)
+    f_url = furl(fixed_url)
+
+    return AbsoluteUrl(str(f_url))
 
 
 # TODO: tests
 # ATTENTION: see note at the top of the file
-def normalize_classic_relative_url(url: UnknowUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
-    original_url = fix_full_url(original_url) # TODO: remove conversion?
+def normalize_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
+    fixed_url = fix_full_url(url)
 
+    assert fixed_url is not None
+
+    f_original_url = furl(original_url)
+    f_url = furl(fixed_url)
+
+    if not f_url.scheme:
+        f_url.scheme = f_original_url.scheme
+
+    return AbsoluteUrl(str(f_url))
+
+
+# TODO: tests
+# ATTENTION: see note at the top of the file
+def normalize_classic_relative_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     f_url = furl(original_url)
 
     f_url.remove(query_params=True, fragment=True)
@@ -105,36 +119,32 @@ def normalize_classic_relative_url(url: UnknowUrl, original_url: AbsoluteUrl) ->
 
         raise
 
-    return str(f_url)
+    return AbsoluteUrl(str(f_url))
 
 
 # ATTENTION: see note at the top of the file
-def normalize_classic_url(url: UnknowUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
-    if not is_full_url(original_url):
-        # TODO: custom exception
-        raise NotImplementedError("Can not normalize classic relative url without original full url")
-
+def normalize_classic_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     if is_full_url(url):
         return normalize_classic_full_url(url, original_url)
 
     return normalize_classic_relative_url(url, original_url)
 
 
-def is_magnetic_url(url: UnknowUrl) -> bool:
+def is_magnetic_url(url: UnknownUrl) -> bool:
     return url.startswith("magnet:")
 
 
-def normalize_magnetic_url(url: UnknowUrl) -> AbsoluteUrl:
+def normalize_magnetic_url(url: UnknownUrl) -> AbsoluteUrl:
     if not is_magnetic_url(url):
         # TODO: test
         # TODO: custom exception
         raise NotImplementedError(f"Can not parse url: {url}")
 
-    return url
+    return AbsoluteUrl(url)
 
 
 # ATTENTION: see note at the top of the file
-def normalize_external_url(url: UnknowUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
+def normalize_external_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     if is_magnetic_url(url):
         return normalize_magnetic_url(url)
 
@@ -222,4 +232,4 @@ def url_to_source_uid(url: AbsoluteUrl) -> SourceUid:
 
     assert isinstance(domain, str)
 
-    return domain
+    return SourceUid(domain)

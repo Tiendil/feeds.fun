@@ -1,5 +1,5 @@
 from ffun.domain import urls as d_urls
-from ffun.domain.entities import EntryId, FeedId
+from ffun.domain.entities import EntryId, FeedId, UnknownUrl
 from ffun.feeds import domain as f_domain
 from ffun.library import operations
 from ffun.library.entities import Entry, EntryChange
@@ -49,7 +49,7 @@ async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange
 
     feed = await f_domain.get_feed(feed_id)
 
-    new_external_url = d_urls.normalize_external_url(entry.external_url, feed.url)
+    new_external_url = d_urls.normalize_external_url(UnknownUrl(entry.external_url), feed.url)
 
     changes = []
 
