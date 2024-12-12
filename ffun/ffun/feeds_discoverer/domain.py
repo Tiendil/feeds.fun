@@ -38,7 +38,6 @@ async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
     return context, None
 
 
-# TODO: test
 async def _discover_extract_feed_info(context: Context) -> tuple[Context, Result | None]:
     assert context.url is not None
     assert context.content is not None

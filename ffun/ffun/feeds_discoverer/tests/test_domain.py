@@ -57,3 +57,32 @@ class TestDiscoverLoadUrl:
 
         assert new_context == context.replace(content=expected_content)
         assert result is None
+
+
+class TestDiscoverExtractFeedInfo:
+
+    @pytest.mark.asyncio
+    async def test_not_a_feed(self) -> None:
+        context = Context(raw_url="http://localhost/test",
+                          url="http://localhost/test",
+                          content="some text content")
+
+        new_context, result = await _discover_extract_feed_info(context)
+
+        assert new_context == context
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_a_feed(self, raw_feed_content: str) -> None:
+
+        context = Context(raw_url="http://localhost/test",
+                          url="http://localhost/test",
+                          content=raw_feed_content)
+
+        new_context, result = await _discover_extract_feed_info(context)
+
+        assert new_context == context
+
+        assert result.status == Status.feeds_found
+        assert len(result.feeds) == 1
+        assert result.feeds[0].url == "http://localhost/test"
