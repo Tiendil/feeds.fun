@@ -1,13 +1,13 @@
 # TODO: check logging
 from bs4 import BeautifulSoup
 
-from ffun.domain.urls import fix_full_url, normalize_classic_url
-from ffun.domain.entities import UnknownUrl, AbsoluteUrl
 from ffun.core import logging
+from ffun.domain.entities import AbsoluteUrl, UnknownUrl
+from ffun.domain.urls import fix_full_url, normalize_classic_url
+from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
 from ffun.parsers import entities as p_entities
-from ffun.feeds_discoverer.entities import Result, Context, Status, Discoverer
 
 logger = logging.get_module_logger()
 
@@ -73,7 +73,9 @@ async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context,
 
     for link in context.soup("link"):
         if link.has_attr("href"):
-            if link.has_attr("rel") and any(rel in link["rel"] for rel in ["author", "help", "icon", "license", "pingback", "search", "stylesheet"]):
+            if link.has_attr("rel") and any(
+                rel in link["rel"] for rel in ["author", "help", "icon", "license", "pingback", "search", "stylesheet"]
+            ):
                 continue
             links_to_check.add(normalize_classic_url(link["href"], context.url))
 
@@ -141,15 +143,17 @@ async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | 
 
 
 # TODO: test list
-_discoverers = [_discover_normalize_url,
-                _discover_load_url,
-                _discover_extract_feed_info,
-                _discover_stop_recursion,
-                _discover_create_soup,
-                _discover_extract_feeds_from_links,
-                _discover_check_candidate_links,
-                _discover_extract_feeds_from_anchors,
-                _discover_check_candidate_links]
+_discoverers = [
+    _discover_normalize_url,
+    _discover_load_url,
+    _discover_extract_feed_info,
+    _discover_stop_recursion,
+    _discover_create_soup,
+    _discover_extract_feeds_from_links,
+    _discover_check_candidate_links,
+    _discover_extract_feeds_from_anchors,
+    _discover_check_candidate_links,
+]
 
 
 # TODO: test

@@ -2,9 +2,9 @@ import uuid
 from typing import Any
 
 from ffun.core import utils
-from ffun.parsers.entities import EntryInfo
 from ffun.domain.entities import AbsoluteUrl, UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url
+from ffun.parsers.entities import EntryInfo
 
 
 def fake_url() -> AbsoluteUrl:

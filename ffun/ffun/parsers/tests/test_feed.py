@@ -1,13 +1,10 @@
-import os
-
 import pytest
-from pathlib import Path
 
+from ffun.domain.entities import UnknownUrl
+from ffun.domain.urls import normalize_classic_unknown_url
 from ffun.parsers.entities import FeedInfo
 from ffun.parsers.feed import parse_feed
-from ffun.parsers.tests.helpers import feeds_fixtures_names, feeds_fixtures_directory
-from ffun.domain.urls import normalize_classic_unknown_url
-from ffun.domain.entities import UnknownUrl
+from ffun.parsers.tests.helpers import feeds_fixtures_directory, feeds_fixtures_names
 
 
 class TestParseFeed:

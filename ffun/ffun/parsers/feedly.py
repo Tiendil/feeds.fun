@@ -1,9 +1,9 @@
 import xml.etree.ElementTree as ET  # noqa
 from typing import Generator
 
-from ffun.parsers.entities import FeedInfo
 from ffun.domain.entities import UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url
+from ffun.parsers.entities import FeedInfo
 
 
 def _extract_body(data: str) -> ET.Element:

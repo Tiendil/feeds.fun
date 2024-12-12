@@ -6,8 +6,7 @@ from furl import furl
 from orderedmultidict import omdict
 
 from ffun.core import logging
-
-from ffun.domain.entities import AbsoluteUrl, RelativeUrl, UnknownUrl, UrlUid, SourceUid
+from ffun.domain.entities import AbsoluteUrl, SourceUid, UnknownUrl, UrlUid
 
 logger = logging.get_module_logger()
 

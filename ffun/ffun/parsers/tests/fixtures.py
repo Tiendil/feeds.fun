@@ -1,9 +1,6 @@
-
-import os
-from pathlib import Path
 import pytest
 
-from ffun.parsers.tests.helpers import feeds_fixtures_names, feeds_fixtures_directory
+from ffun.parsers.tests.helpers import feeds_fixtures_directory, feeds_fixtures_names
 
 
 @pytest.fixture

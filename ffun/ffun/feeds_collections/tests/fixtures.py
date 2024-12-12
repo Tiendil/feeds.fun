@@ -20,7 +20,11 @@ async def collection_id_for_test_feeds(collection_configs_must_be_none_in_tests:
 
     feed_id_ = uuid.uuid4().hex
 
-    feed = FeedInfo(url=str_to_absolute_url(f"http://example.com/{feed_id_}"), title=f"Feed {feed_id_}", description=f"Feed {feed_id_}")
+    feed = FeedInfo(
+        url=str_to_absolute_url(f"http://example.com/{feed_id_}"),
+        title=f"Feed {feed_id_}",
+        description=f"Feed {feed_id_}",
+    )
 
     collection = Collection(
         id=new_collection_id(), gui_order=1, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[feed]

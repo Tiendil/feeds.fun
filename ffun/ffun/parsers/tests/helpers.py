@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 
-
 _excluded_suffixes = [".expected.json", "~", "#"]
 
 

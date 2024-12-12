@@ -4,7 +4,7 @@ from typing import Any
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import EntryId, FeedId, SourceId, AbsoluteUrl
+from ffun.domain.entities import AbsoluteUrl, EntryId, FeedId, SourceId
 
 
 class ProcessedState(int, enum.Enum):

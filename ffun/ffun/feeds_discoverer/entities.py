@@ -1,16 +1,15 @@
-import datetime
 import enum
 from typing import Any, Protocol, Union
+
 import pydantic
 
-from ffun.core import utils
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import EntryId, FeedId, SourceId, AbsoluteUrl, UnknownUrl
+from ffun.domain.entities import AbsoluteUrl, UnknownUrl
 from ffun.parsers import entities as p_entities
 
 
 class Discoverer(Protocol):
-    async def __call__(self, context: 'Context') -> tuple['Context', Union[None, 'Result']]:
+    async def __call__(self, context: "Context") -> tuple["Context", Union[None, "Result"]]:
         pass
 
 

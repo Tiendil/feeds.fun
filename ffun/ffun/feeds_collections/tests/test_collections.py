@@ -5,7 +5,7 @@ import pytest
 import pytest_asyncio
 
 from ffun.domain.domain import new_collection_id, new_feed_id
-from ffun.domain.urls import url_to_source_uid, str_to_absolute_url
+from ffun.domain.urls import str_to_absolute_url, url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections import errors
 from ffun.feeds_collections.collections import Collections

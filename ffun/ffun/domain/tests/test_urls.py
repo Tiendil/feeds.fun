@@ -1,7 +1,7 @@
 import pytest
 
 from ffun.domain import urls
-from ffun.domain.entities import AbsoluteUrl, UnknownUrl, UrlUid, SourceUid
+from ffun.domain.entities import AbsoluteUrl, SourceUid, UnknownUrl, UrlUid
 
 
 class TestNormalizeClassicUrl:
@@ -26,14 +26,12 @@ class TestNormalizeClassicUrl:
             ("https://example.com/feed/", "path", "https://example.com/feed/path"),
             ("https://example.com/feed/", "?c=d", "https://example.com/feed/?c=d"),
             ("https://example.com/feed/", "another.domain", "https://another.domain"),
-
             ("https://example.com", "another.domain/path/a/b?c=d", "https://another.domain/path/a/b?c=d"),
             ("https://example.com", "/path/a/b?c=d", "https://example.com/path/a/b?c=d"),
             ("https://example.com", "path/a/b?c=d", "https://example.com/path/a/b?c=d"),
             ("https://example.com", "path", "https://example.com/path"),
             ("https://example.com", "?c=d", "https://example.com?c=d"),
             ("https://example.com", "another.domain", "https://another.domain"),
-
             ("example.com/feed/", "https://example.com", "https://example.com"),
             ("example.com/feed/", "example.com/path/a/b?c=d", "//example.com/path/a/b?c=d"),
             ("example.com/feed/", "http://another.domain:666/path/a/b?c=d", "http://another.domain:666/path/a/b?c=d"),
@@ -46,7 +44,9 @@ class TestNormalizeClassicUrl:
             ("example.com/feed/", "another.domain", "//another.domain"),
         ],
     )
-    def test_base_transformations(self, original_url: AbsoluteUrl, raw_url: UnknownUrl, normalized_url: AbsoluteUrl) -> None:
+    def test_base_transformations(
+        self, original_url: AbsoluteUrl, raw_url: UnknownUrl, normalized_url: AbsoluteUrl
+    ) -> None:
         assert urls.is_absolute_url(original_url)
         assert urls.is_absolute_url(normalized_url)
 
