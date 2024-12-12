@@ -134,11 +134,6 @@ def is_magnetic_url(url: UnknownUrl) -> bool:
 
 
 def adjust_magnetic_url(url: UnknownUrl) -> AbsoluteUrl:
-    if not is_magnetic_url(url):
-        # TODO: test
-        # TODO: custom exception
-        raise NotImplementedError(f"Can not parse url: {url}")
-
     return AbsoluteUrl(url)
 
 
