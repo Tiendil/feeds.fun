@@ -338,3 +338,18 @@ class TestAdjustClassicRelativeUrl:
             )
             == "https://example.com/a/b"
         )
+
+
+class TestUrlHasExtension:
+
+    def test_has(self) -> None:
+        assert urls.url_has_extension(urls.str_to_absolute_url("https://example.com/feed.xml"), [".xml"])
+        assert urls.url_has_extension(urls.str_to_absolute_url("https://example.com/feed.second..xml"), [".xml"])
+        assert urls.url_has_extension(urls.str_to_absolute_url("https://example.com/feed.second.xml"), [".rss", ".xml", '.html'])
+        assert urls.url_has_extension(urls.str_to_absolute_url("https://example.com/feed/second"), [""])
+
+    def test_has_no(self) -> None:
+        assert not urls.url_has_extension(urls.str_to_absolute_url("https://example.com/feed.xml"), [])
+        assert not urls.url_has_extension(urls.str_to_absolute_url("https://example.com/feed.second..xml"), [])
+        assert not urls.url_has_extension(urls.str_to_absolute_url("https://example.com/feed.second.xml"), [".rss", '.html'])
+        assert not urls.url_has_extension(urls.str_to_absolute_url("https://example.com/feed/second"), [])
