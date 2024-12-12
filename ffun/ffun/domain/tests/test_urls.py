@@ -248,3 +248,12 @@ class TestStrToAbsoluteUrl:
     def test_not_ok(self) -> None:
         with pytest.raises(errors.UrlIsNotAbsolute):
             assert urls.str_to_absolute_url('example_com')
+
+
+class TestIsAbsoluteUrl:
+
+    def test_ok(self) -> None:
+        assert urls.is_absolute_url('http://example.com')
+
+    def test_not_ok(self) -> None:
+        assert not urls.is_absolute_url('http://example.com?')

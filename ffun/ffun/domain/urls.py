@@ -81,9 +81,9 @@ def str_to_absolute_url(url: str) -> AbsoluteUrl:
     return absolute_url
 
 
-# TODO: tests
 # ATTENTION: see note at the top of the file
 def is_absolute_url(url: str) -> bool:
+    """Check if the URL is absolute and is normalized"""
     return normalize_classic_unknown_url(UnknownUrl(url)) == url
 
 
