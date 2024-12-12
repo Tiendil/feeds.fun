@@ -6,7 +6,7 @@ import pytest_asyncio
 
 from ffun.core.postgresql import execute
 from ffun.domain.entities import UserId
-from ffun.domain.urls import url_to_source_uid
+from ffun.domain.urls import url_to_source_uid, str_to_absolute_url
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
 from ffun.feeds_links import domain as fl_domain
@@ -86,13 +86,13 @@ class TestAddFeeds:
 
         feeds = [
             p_entities.FeedInfo(
-                url=f"{uuid.uuid4().hex}.com", title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[]
+                url=str_to_absolute_url(f"{uuid.uuid4().hex}.com"), title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[]
             ),
             p_entities.FeedInfo(
-                url=f"{uuid.uuid4().hex}.com", title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[]
+                url=str_to_absolute_url(f"{uuid.uuid4().hex}.com"), title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[]
             ),
             p_entities.FeedInfo(
-                url=f"{uuid.uuid4().hex}.com", title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[]
+                url=str_to_absolute_url(f"{uuid.uuid4().hex}.com"), title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[]
             ),
         ]
 

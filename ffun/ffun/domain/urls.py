@@ -89,6 +89,23 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:
 
 
 # TODO: tests
+def str_to_absolute_url(url: str) -> AbsoluteUrl:
+    absolute_url = normalize_classic_unknown_url(UnknownUrl(url))
+
+    if absolute_url is None:
+        # TODO: custom excepttion
+        raise NotImplementedError()
+
+    return absolute_url
+
+
+# TODO: tests
+# ATTENTION: see note at the top of the file
+def is_absolute_url(url: str) -> bool:
+    return normalize_classic_unknown_url(UnknownUrl(url)) == url
+
+
+# TODO: tests
 # ATTENTION: see note at the top of the file
 def normalize_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     fixed_url = fix_full_url(url)
