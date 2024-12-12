@@ -257,3 +257,20 @@ class TestIsAbsoluteUrl:
 
     def test_not_ok(self) -> None:
         assert not urls.is_absolute_url('http://example.com?')
+
+
+class TestAdjustClassicFullUrl:
+
+    def test_no_schema(self) -> None:
+        assert urls.adjust_classic_full_url('example.com', 'https://example.com') == 'https://example.com'
+        assert urls.adjust_classic_full_url('example.com', 'http://example.com') == 'http://example.com'
+
+        assert urls.adjust_classic_full_url('abc.com', 'http://example.com') == 'http://abc.com'
+        assert urls.adjust_classic_full_url('abc.com', 'https://example.com') == 'https://abc.com'
+
+    def test_has_schema(self) -> None:
+        assert urls.adjust_classic_full_url('https://example.com', 'https://example.com') == 'https://example.com'
+        assert urls.adjust_classic_full_url('https://example.com', 'http://example.com') == 'https://example.com'
+
+        assert urls.adjust_classic_full_url('http://abc.com', 'http://example.com') == 'http://abc.com'
+        assert urls.adjust_classic_full_url('http://abc.com', 'https://example.com') == 'http://abc.com'

@@ -97,6 +97,8 @@ def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl) -> Absol
     f_original_url = furl(original_url)
     f_url = furl(fixed_url)
 
+    # own schema has priority over origin schema
+    # we expect that owner of site (who specify urls) know what they are doing
     if not f_url.scheme:
         f_url.scheme = f_original_url.scheme
 
