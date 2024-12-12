@@ -86,3 +86,27 @@ class TestDiscoverExtractFeedInfo:
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 1
         assert result.feeds[0].url == "http://localhost/test"
+
+
+class TestDiscoverCreateSoup:
+
+    @pytest.mark.xfail(reason="need to find a case when BeautifulSoup raises an exception")
+    @pytest.mark.asyncio
+    async def test_not_html(self) -> None:
+        context = Context(raw_url="http://localhost/test",
+                          content="some text content")
+
+        new_context, result = await _discover_create_soup(context)
+
+        assert new_context == context
+        assert result == Result(feeds=[], status=Status.not_html)
+
+    @pytest.mark.asyncio
+    async def test_html(self, raw_feed_content: str) -> None:
+        context = Context(raw_url="http://localhost/test",
+                          content="<html></html>")
+
+        new_context, result = await _discover_create_soup(context)
+
+        assert new_context.soup is not None
+        assert result is None

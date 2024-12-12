@@ -14,12 +14,12 @@ logger = logging.get_module_logger()
 
 
 async def _discover_normalize_url(context: Context) -> tuple[Context, Result | None]:
-    context.url = fix_full_url(context.raw_url)
+    url = fix_full_url(context.raw_url)
 
-    if context.url is None:
+    if url is None:
         return context, Result(feeds=[], status=Status.incorrect_url)
 
-    return context, None
+    return context.replace(url=url), None
 
 
 async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
@@ -27,7 +27,7 @@ async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
 
     try:
         response = await lo_domain.load_content_with_proxies(context.url)
-        context.content = await lo_domain.decode_content(response)
+        content = await lo_domain.decode_content(response)
     except lo_errors.LoadError:
         logger.info("can_not_access_content")
         return context, Result(feeds=[], status=Status.cannot_access_url)
@@ -35,7 +35,7 @@ async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
         logger.exception("unexpected_error_while_parsing_feed")
         return context, Result(feeds=[], status=Status.cannot_access_url)
 
-    return context, None
+    return context.replace(content=content), None
 
 
 async def _discover_extract_feed_info(context: Context) -> tuple[Context, Result | None]:
@@ -54,17 +54,16 @@ async def _discover_extract_feed_info(context: Context) -> tuple[Context, Result
     return context, Result(feeds=[feed_info], status=Status.feeds_found)
 
 
-# TODO: test
 async def _discover_create_soup(context: Context) -> tuple[Context, Result | None]:
     assert context.content is not None
 
     try:
-        context.soup = BeautifulSoup(context.content, "html.parser")
+        soup = BeautifulSoup(context.content, "html.parser")
     except Exception:
         logger.exception("unexpected_error_while_parsing_html")
         return context, Result(feeds=[], status=Status.not_html)
 
-    return context, None
+    return context.replace(soup=soup), None
 
 
 # TODO: test
@@ -79,16 +78,13 @@ async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context,
 
     logger.info("links_to_check", links_to_check=links_to_check)
 
-    context.candidate_urls.extend(links_to_check)
-
-    return context, None
+    return context.replace(candidate_urls=context.candidate_urls + links_to_check), None
 
 
 # TODO: test
 async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Context, Result | None]:
     assert context.soup is not None
 
-    results = []
     links_to_check = set()
 
     # TODO: can be very-very long, must be improved
@@ -98,9 +94,7 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
 
     logger.info("links_to_check", links_to_check=links_to_check)
 
-    context.candidate_urls.extend(links_to_check)
-
-    return context, None
+    return context.replace(candidate_urls=context.candidate_urls + links_to_check), None
 
 
 # TODO: test
