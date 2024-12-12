@@ -231,3 +231,10 @@ class TestFixFullUrl:
 
     def test_ok(self) -> None:
         assert urls.fix_full_url(UnknownUrl('example.com?')) == '//example.com'
+
+
+class TestIsFullUrl:
+
+    def test(self) -> None:
+        assert urls.is_full_url(UnknownUrl('http://example.com'))
+        assert not urls.is_full_url(UnknownUrl('localhost'))

@@ -61,7 +61,6 @@ def fix_full_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noqa: CCR001
     return AbsoluteUrl(str(furl(f"//{url}")))
 
 
-# TODO: tests
 # ATTENTION: see note at the top of the file
 def is_full_url(url: UnknownUrl) -> bool:
     return fix_full_url(url) is not None
