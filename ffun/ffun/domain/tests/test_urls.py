@@ -1,7 +1,7 @@
 import pytest
 
 from furl import furl
-from ffun.domain import urls
+from ffun.domain import urls, errors
 from ffun.domain.entities import AbsoluteUrl, SourceUid, UnknownUrl, UrlUid
 
 
@@ -238,3 +238,13 @@ class TestIsFullUrl:
     def test(self) -> None:
         assert urls.is_full_url(UnknownUrl('http://example.com'))
         assert not urls.is_full_url(UnknownUrl('abc'))
+
+
+class TestStrToAbsoluteUrl:
+
+    def test_ok(self) -> None:
+        assert urls.str_to_absolute_url('http://example.com?') == 'http://example.com'
+
+    def test_not_ok(self) -> None:
+        with pytest.raises(errors.UrlIsNotAbsolute):
+            assert urls.str_to_absolute_url('example_com')

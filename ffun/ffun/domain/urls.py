@@ -7,6 +7,7 @@ from orderedmultidict import omdict
 
 from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl, SourceUid, UnknownUrl, UrlUid
+from ffun.domain import errors
 
 logger = logging.get_module_logger()
 
@@ -66,13 +67,16 @@ def is_full_url(url: UnknownUrl) -> bool:
     return normalize_classic_unknown_url(url) is not None
 
 
-# TODO: tests
 def str_to_absolute_url(url: str) -> AbsoluteUrl:
+    """Convert or raise Exception
+
+    It is shortcut method mostly for tests.
+    Use `normalize_classic_unknown_url` in the production code.
+    """
     absolute_url = normalize_classic_unknown_url(UnknownUrl(url))
 
     if absolute_url is None:
-        # TODO: custom excepttion
-        raise NotImplementedError()
+        raise errors.UrlIsNotAbsolute(url=url)
 
     return absolute_url
 
