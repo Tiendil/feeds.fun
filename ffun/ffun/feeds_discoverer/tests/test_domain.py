@@ -3,6 +3,8 @@ import pytest
 import httpx
 from respx.router import MockRouter
 from ffun.domain.domain import new_feed_id
+from ffun.domain.entities import UnknownUrl, AbsoluteUrl
+from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds_discoverer.domain import _discover_normalize_url, _discover_load_url, _discover_extract_feed_info, _discover_create_soup, _discover_extract_feeds_from_links, _discover_extract_feeds_from_anchors, _discover_check_candidate_links, _discover_stop_recursion, _discoverers, discover
 from ffun.feeds_discoverer.entities import Result, Context, Status, Discoverer
 
@@ -11,7 +13,7 @@ class TestDiscoverNormalizeUrl:
 
     @pytest.mark.asyncio
     async def test_wrong_url(self) -> None:
-        context = Context(raw_url="wrong_url")
+        context = Context(raw_url=UnknownUrl("wrong_url"))
 
         new_context, result = await _discover_normalize_url(context)
 
@@ -20,11 +22,11 @@ class TestDiscoverNormalizeUrl:
 
     @pytest.mark.asyncio
     async def test_good_url(self) -> None:
-        context = Context(raw_url="https://example.com?")
+        context = Context(raw_url=UnknownUrl("https://example.com?"))
 
         new_context, result = await _discover_normalize_url(context)
 
-        assert new_context == context.replace(url="https://example.com")
+        assert new_context == context.replace(url=AbsoluteUrl("https://example.com"))
         assert result is None
 
 
@@ -34,8 +36,8 @@ class TestDiscoverLoadUrl:
     async def test_error(self, respx_mock: MockRouter) -> None:
         respx_mock.get("/test").mock(side_effect=httpx.ConnectTimeout("some message"))
 
-        context = Context(raw_url="http://localhost/test",
-                          url="http://localhost/test")
+        context = Context(raw_url=UnknownUrl("http://localhost/test"),
+                          url=str_to_absolute_url("http://localhost/test"))
 
         new_context, result = await _discover_load_url(context)
 
@@ -50,8 +52,8 @@ class TestDiscoverLoadUrl:
 
         respx_mock.get("/test").mock(return_value=mocked_response)
 
-        context = Context(raw_url="http://localhost/test",
-                          url="http://localhost/test")
+        context = Context(raw_url=UnknownUrl("http://localhost/test"),
+                          url=str_to_absolute_url("http://localhost/test"))
 
         new_context, result = await _discover_load_url(context)
 
@@ -63,8 +65,8 @@ class TestDiscoverExtractFeedInfo:
 
     @pytest.mark.asyncio
     async def test_not_a_feed(self) -> None:
-        context = Context(raw_url="http://localhost/test",
-                          url="http://localhost/test",
+        context = Context(raw_url=UnknownUrl("http://localhost/test"),
+                          url=str_to_absolute_url("http://localhost/test"),
                           content="some text content")
 
         new_context, result = await _discover_extract_feed_info(context)
@@ -75,17 +77,19 @@ class TestDiscoverExtractFeedInfo:
     @pytest.mark.asyncio
     async def test_a_feed(self, raw_feed_content: str) -> None:
 
-        context = Context(raw_url="http://localhost/test",
-                          url="http://localhost/test",
+        context = Context(raw_url=UnknownUrl("http://localhost/test"),
+                          url=str_to_absolute_url("http://localhost/test"),
                           content=raw_feed_content)
 
         new_context, result = await _discover_extract_feed_info(context)
+
+        assert result is not None
 
         assert new_context == context
 
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 1
-        assert result.feeds[0].url == "http://localhost/test"
+        assert result.feeds[0].url == AbsoluteUrl("http://localhost/test")
 
 
 class TestDiscoverCreateSoup:
@@ -93,7 +97,7 @@ class TestDiscoverCreateSoup:
     @pytest.mark.xfail(reason="need to find a case when BeautifulSoup raises an exception")
     @pytest.mark.asyncio
     async def test_not_html(self) -> None:
-        context = Context(raw_url="http://localhost/test",
+        context = Context(raw_url=UnknownUrl("http://localhost/test"),
                           content="some text content")
 
         new_context, result = await _discover_create_soup(context)
@@ -103,7 +107,7 @@ class TestDiscoverCreateSoup:
 
     @pytest.mark.asyncio
     async def test_html(self, raw_feed_content: str) -> None:
-        context = Context(raw_url="http://localhost/test",
+        context = Context(raw_url=UnknownUrl("http://localhost/test"),
                           content="<html></html>")
 
         new_context, result = await _discover_create_soup(context)
@@ -116,8 +120,8 @@ class TestDiscoverExtractFeedsFromLinks:
 
     @pytest.mark.asyncio
     async def test_no_links(self) -> None:
-        intro_context = Context(raw_url="http://localhost/test",
-                                url="http://localhost/test",
+        intro_context = Context(raw_url=UnknownUrl("http://localhost/test"),
+                                url=str_to_absolute_url("http://localhost/test"),
                                 content="<html></html>")
 
         context, result = await _discover_create_soup(intro_context)
@@ -154,19 +158,19 @@ class TestDiscoverExtractFeedsFromLinks:
         </html>
         '''
 
-        intro_context = Context(raw_url="http://localhost/test/xxx",
-                          url="http://localhost/test/xxx",
+        intro_context = Context(raw_url=UnknownUrl("http://localhost/test/xxx"),
+                          url=str_to_absolute_url("http://localhost/test/xxx"),
                           content=html)
 
         context, result = await _discover_create_soup(intro_context)
 
         new_context, result = await _discover_extract_feeds_from_links(context)
 
-        expected_links = {"http://localhost/feed1",
-                          "http://localhost/feed9",
-                          "http://localhost/feed10",
-                          "http://localhost/test/feed11",
-                          "http://localhost/feed12"}
+        expected_links = {AbsoluteUrl("http://localhost/feed1"),
+                          AbsoluteUrl("http://localhost/feed9"),
+                          AbsoluteUrl("http://localhost/feed10"),
+                          AbsoluteUrl("http://localhost/test/feed11"),
+                          AbsoluteUrl("http://localhost/feed12")}
 
         assert new_context == context.replace(candidate_urls=expected_links)
         assert result is None
