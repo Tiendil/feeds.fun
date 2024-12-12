@@ -87,7 +87,6 @@ def is_absolute_url(url: str) -> bool:
     return normalize_classic_unknown_url(UnknownUrl(url)) == url
 
 
-# TODO: tests
 # ATTENTION: see note at the top of the file
 def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     fixed_url = normalize_classic_unknown_url(url)
@@ -105,7 +104,6 @@ def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl) -> Absol
     return AbsoluteUrl(str(f_url))
 
 
-# TODO: tests
 # ATTENTION: see note at the top of the file
 def adjust_classic_relative_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     f_url = furl(original_url)

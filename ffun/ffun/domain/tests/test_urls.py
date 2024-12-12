@@ -274,3 +274,15 @@ class TestAdjustClassicFullUrl:
 
         assert urls.adjust_classic_full_url('http://abc.com', 'http://example.com') == 'http://abc.com'
         assert urls.adjust_classic_full_url('http://abc.com', 'https://example.com') == 'http://abc.com'
+
+
+class TestAdjustClassicRelativeUrl:
+
+    def test_cleanup_original(self) -> None:
+        assert urls.adjust_classic_relative_url('a/b', 'https://example.com?x=y#z') == 'https://example.com/a/b'
+
+    def test_same_level(self) -> None:
+        assert urls.adjust_classic_relative_url('./a/b', 'https://example.com/feed/part?x=y#z') == 'https://example.com/feed/a/b'
+
+    def test_upper_level(self) -> None:
+        assert urls.adjust_classic_relative_url('../a/b', 'https://example.com/feed/part?x=y#z') == 'https://example.com/a/b'
