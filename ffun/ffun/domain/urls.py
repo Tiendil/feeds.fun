@@ -10,6 +10,11 @@ from ffun.core import logging
 logger = logging.get_module_logger()
 
 
+# ATTENTION: in case of modification, you MUST check:
+#            - that the logic of dependent functions is not broken
+#            - that the UIDs generation is not changed (check on backup)
+#            - in case UIDs generation is changed, you MUST update all affected entities
+
 RE_SCHEMA = re.compile(r"^(\w+):")
 
 
@@ -37,6 +42,7 @@ def fix_full_url(url: str) -> str | None:
 # TODO: add tests
 # is required for correct parsing by furl
 # will be removed before returning result
+# ATTENTION: see note at the top of the file
 def _fake_schema_for_url(url: str) -> str:
     url = url.strip()
 
@@ -55,6 +61,7 @@ def _fake_schema_for_url(url: str) -> str:
     return f"//{url}"
 
 
+# ATTENTION: see note at the top of the file
 def normalize_classic_url(url: str, original_url: str | None = None) -> str | None:
     if original_url is None:
         # TODO: add test
@@ -99,6 +106,7 @@ def normalize_magnetic_url(url: str) -> str:
     return url
 
 
+# ATTENTION: see note at the top of the file
 def normalize_external_url(url: str, original_url: str) -> str | None:
     if is_magnetic_url(url):
         return normalize_magnetic_url(url)
@@ -106,6 +114,7 @@ def normalize_external_url(url: str, original_url: str) -> str | None:
     return normalize_classic_url(url, original_url)
 
 
+# ATTENTION: see note at the top of the file
 def url_to_uid(url: str) -> str:
     # The goal of this function is to detect URLs that most likely (99.(9)%) point to the same resource
     # It normalizes and simplifies a URL according to heuristics
@@ -162,6 +171,7 @@ def url_to_uid(url: str) -> str:
     return resulted_url
 
 
+# ATTENTION: see note at the top of the file
 def url_to_source_uid(url: str) -> str:
     # Because some portals (Reddit, ArXiv) provide customizable feed URLs,
     # we could see the same news entry in different feeds
