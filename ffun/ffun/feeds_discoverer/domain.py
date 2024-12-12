@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 
 from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl, UnknownUrl
-from ffun.domain.urls import normalize_classic_unknown_url, adjust_classic_url
+from ffun.domain.urls import adjust_classic_url, normalize_classic_unknown_url
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors

@@ -6,8 +6,8 @@ from furl import furl
 from orderedmultidict import omdict
 
 from ffun.core import logging
-from ffun.domain.entities import AbsoluteUrl, SourceUid, UnknownUrl, UrlUid
 from ffun.domain import errors
+from ffun.domain.entities import AbsoluteUrl, SourceUid, UnknownUrl, UrlUid
 
 logger = logging.get_module_logger()
 
@@ -18,6 +18,7 @@ logger = logging.get_module_logger()
 #            - in case UIDs generation is changed, you MUST update all affected entities
 
 # TODO: there a lot of refactoring done, check if UIDs update is required
+# TODO: test manually
 
 
 RE_SCHEMA = re.compile(r"^(\w+):")

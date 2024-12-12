@@ -5,11 +5,11 @@ from respx.router import MockRouter
 from ffun.domain.entities import AbsoluteUrl, UnknownUrl
 from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds_discoverer.domain import (
+    _discover_adjust_url,
     _discover_create_soup,
     _discover_extract_feed_info,
     _discover_extract_feeds_from_links,
     _discover_load_url,
-    _discover_adjust_url,
 )
 from ffun.feeds_discoverer.entities import Context, Result, Status
 
