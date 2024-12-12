@@ -266,33 +266,68 @@ class TestIsAbsoluteUrl:
 class TestAdjustClassicFullUrl:
 
     def test_no_schema(self) -> None:
-        assert urls.adjust_classic_full_url("example.com", "https://example.com") == "https://example.com"
-        assert urls.adjust_classic_full_url("example.com", "http://example.com") == "http://example.com"
+        assert (
+            urls.adjust_classic_full_url(UnknownUrl("example.com"), urls.str_to_absolute_url("https://example.com"))
+            == "https://example.com"
+        )
+        assert (
+            urls.adjust_classic_full_url(UnknownUrl("example.com"), urls.str_to_absolute_url("http://example.com"))
+            == "http://example.com"
+        )
 
-        assert urls.adjust_classic_full_url("abc.com", "http://example.com") == "http://abc.com"
-        assert urls.adjust_classic_full_url("abc.com", "https://example.com") == "https://abc.com"
+        assert (
+            urls.adjust_classic_full_url(UnknownUrl("abc.com"), urls.str_to_absolute_url("http://example.com"))
+            == "http://abc.com"
+        )
+        assert (
+            urls.adjust_classic_full_url(UnknownUrl("abc.com"), urls.str_to_absolute_url("https://example.com"))
+            == "https://abc.com"
+        )
 
     def test_has_schema(self) -> None:
-        assert urls.adjust_classic_full_url("https://example.com", "https://example.com") == "https://example.com"
-        assert urls.adjust_classic_full_url("https://example.com", "http://example.com") == "https://example.com"
+        assert (
+            urls.adjust_classic_full_url(
+                UnknownUrl("https://example.com"), urls.str_to_absolute_url("https://example.com")
+            )
+            == "https://example.com"
+        )
+        assert (
+            urls.adjust_classic_full_url(
+                UnknownUrl("https://example.com"), urls.str_to_absolute_url("http://example.com")
+            )
+            == "https://example.com"
+        )
 
-        assert urls.adjust_classic_full_url("http://abc.com", "http://example.com") == "http://abc.com"
-        assert urls.adjust_classic_full_url("http://abc.com", "https://example.com") == "http://abc.com"
+        assert (
+            urls.adjust_classic_full_url(UnknownUrl("http://abc.com"), urls.str_to_absolute_url("http://example.com"))
+            == "http://abc.com"
+        )
+        assert (
+            urls.adjust_classic_full_url(UnknownUrl("http://abc.com"), urls.str_to_absolute_url("https://example.com"))
+            == "http://abc.com"
+        )
 
 
 class TestAdjustClassicRelativeUrl:
 
     def test_cleanup_original(self) -> None:
-        assert urls.adjust_classic_relative_url("a/b", "https://example.com?x=y#z") == "https://example.com/a/b"
+        assert (
+            urls.adjust_classic_relative_url(UnknownUrl("a/b"), urls.str_to_absolute_url("https://example.com?x=y#z"))
+            == "https://example.com/a/b"
+        )
 
     def test_same_level(self) -> None:
         assert (
-            urls.adjust_classic_relative_url("./a/b", "https://example.com/feed/part?x=y#z")
+            urls.adjust_classic_relative_url(
+                UnknownUrl("./a/b"), urls.str_to_absolute_url("https://example.com/feed/part?x=y#z")
+            )
             == "https://example.com/feed/a/b"
         )
 
     def test_upper_level(self) -> None:
         assert (
-            urls.adjust_classic_relative_url("../a/b", "https://example.com/feed/part?x=y#z")
+            urls.adjust_classic_relative_url(
+                UnknownUrl("../a/b"), urls.str_to_absolute_url("https://example.com/feed/part?x=y#z")
+            )
             == "https://example.com/a/b"
         )
