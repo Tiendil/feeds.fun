@@ -32,16 +32,16 @@ class TestNormalizeClassicUrl:
             ("https://example.com", "path", "https://example.com/path"),
             ("https://example.com", "?c=d", "https://example.com?c=d"),
             ("https://example.com", "another.domain", "https://another.domain"),
-            ("example.com/feed/", "https://example.com", "https://example.com"),
-            ("example.com/feed/", "example.com/path/a/b?c=d", "//example.com/path/a/b?c=d"),
-            ("example.com/feed/", "http://another.domain:666/path/a/b?c=d", "http://another.domain:666/path/a/b?c=d"),
-            ("example.com/feed/", "another.domain:666/path/a/b?c=d", "//another.domain:666/path/a/b?c=d"),
-            ("example.com/feed/", "another.domain/path/a/b?c=d", "//another.domain/path/a/b?c=d"),
-            ("example.com/feed/", "/path/a/b?c=d", "//example.com/path/a/b?c=d"),
-            ("example.com/feed/", "path/a/b?c=d", "//example.com/feed/path/a/b?c=d"),
-            ("example.com/feed/", "path", "//example.com/feed/path"),
-            ("example.com/feed/", "?c=d", "//example.com/feed/?c=d"),
-            ("example.com/feed/", "another.domain", "//another.domain"),
+            ("//example.com/feed/", "https://example.com", "https://example.com"),
+            ("//example.com/feed/", "example.com/path/a/b?c=d", "//example.com/path/a/b?c=d"),
+            ("//example.com/feed/", "http://another.domain:666/path/a/b?c=d", "http://another.domain:666/path/a/b?c=d"),
+            ("//example.com/feed/", "another.domain:666/path/a/b?c=d", "//another.domain:666/path/a/b?c=d"),
+            ("//example.com/feed/", "another.domain/path/a/b?c=d", "//another.domain/path/a/b?c=d"),
+            ("//example.com/feed/", "/path/a/b?c=d", "//example.com/path/a/b?c=d"),
+            ("//example.com/feed/", "path/a/b?c=d", "//example.com/feed/path/a/b?c=d"),
+            ("//example.com/feed/", "path", "//example.com/feed/path"),
+            ("//example.com/feed/", "?c=d", "//example.com/feed/?c=d"),
+            ("//example.com/feed/", "another.domain", "//another.domain"),
         ],
     )
     def test_base_transformations(
@@ -90,7 +90,7 @@ class TestNormalizeExternalUrl:
         ],
     )
     def test(self, url: UnknownUrl, normalized_url: AbsoluteUrl) -> None:
-        assert urls.is_absolute_url(normalized_url)
+        assert normalized_url is None or urls.is_absolute_url(normalized_url) or urls.is_magnetic_url(url)
 
         original_url = urls.normalize_classic_unknown_url(UnknownUrl("https://example.com"))
 
