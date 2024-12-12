@@ -236,6 +236,13 @@ class TestNormalizeClassicUnknownUrl:
     def test_ok(self) -> None:
         assert urls.normalize_classic_unknown_url(UnknownUrl("example.com/a/b/c?x=y")) == "//example.com/a/b/c?x=y"
 
+    def test_remove_segment(self) -> None:
+        # short logic path
+        assert urls.normalize_classic_unknown_url(UnknownUrl("//example.com/a/b/c?x=y#z")) == "//example.com/a/b/c?x=y"
+
+        # longest logic path
+        assert urls.normalize_classic_unknown_url(UnknownUrl("example.com/a/b/c?x=y#z")) == "//example.com/a/b/c?x=y"
+
 
 class TestIsFullUrl:
 

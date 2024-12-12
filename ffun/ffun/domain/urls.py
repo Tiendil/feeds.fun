@@ -46,6 +46,8 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noq
 
         raise
 
+    f_url.remove(fragment=True)
+
     if url.startswith("//"):
         return AbsoluteUrl(str(f_url))
 
@@ -60,7 +62,10 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noq
     if "." not in url.split("/")[0]:
         return None
 
-    return AbsoluteUrl(str(furl(f"//{url}")))
+    f_url = furl(f"//{url}")
+    f_url.remove(fragment=True)
+
+    return AbsoluteUrl(str(f_url))
 
 
 # ATTENTION: see note at the top of the file
