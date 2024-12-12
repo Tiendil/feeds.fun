@@ -1,5 +1,6 @@
 import pytest
 
+from furl import furl
 from ffun.domain import urls
 from ffun.domain.entities import AbsoluteUrl, SourceUid, UnknownUrl, UrlUid
 
@@ -184,3 +185,22 @@ class TestUrlToSourceUid:
     )
     def test(self, url: AbsoluteUrl, source_uid: SourceUid) -> None:
         assert urls.url_to_source_uid(url) == source_uid
+
+
+class TestIsExpectedFurlError:
+
+    def test_invalid_port(self) -> None:
+        try:
+            furl("https://example.com:666666")
+        except Exception as e:
+            assert urls.is_expected_furl_error(e)
+        else:
+            assert False, "Expected Exception"
+
+    def test_another_error(self) -> None:
+        try:
+            1 / 0
+        except Exception as e:
+            assert not urls.is_expected_furl_error(e)
+        else:
+            assert False, "Expected Exception"

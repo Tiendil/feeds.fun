@@ -22,10 +22,6 @@ logger = logging.get_module_logger()
 RE_SCHEMA = re.compile(r"^(\w+):")
 
 
-# TODO: maybe switch to https://github.com/tktech/can_ada
-
-
-# TODO: test
 def is_expected_furl_error(error: Exception) -> bool:
     message = str(error)
 
