@@ -7,6 +7,8 @@ from orderedmultidict import omdict
 
 from ffun.core import logging
 
+from ffun.domain.entities import AbsoluteUrl, RelativeUrl, UnknowUrl, UrlUid, SourceUid
+
 logger = logging.get_module_logger()
 
 
@@ -17,7 +19,6 @@ logger = logging.get_module_logger()
 
 # TODO: there a lot of refactoring done, check if UIDs update is required
 
-# TODO: specify types: AbsoluteURL, RelativeURL, UnknowURL
 
 RE_SCHEMA = re.compile(r"^(\w+):")
 
@@ -25,70 +26,90 @@ RE_SCHEMA = re.compile(r"^(\w+):")
 # TODO: maybe switch to https://github.com/tktech/can_ada
 
 
+# TODO: test
+def is_expected_furl_error(error: Exception) -> bool:
+    message = str(error)
+
+    if "Invalid port" in message:
+        return True
+
+    return False
+
+
 # TODO: add tests
 # ATTENTION: see note at the top of the file
-def fix_full_url(url: str) -> str | None:
+def fix_full_url(url: UnknowUrl) -> AbsoluteUrl | None:
     url = url.strip()
 
     if url.startswith("//"):
-        return str(furl(url))
+        return AbsoluteUrl(str(furl(url)))
 
     if url.startswith("./") or url.startswith("../"):
         return None
 
+    # check if url is parsable
+    try:
+        f_url = furl(url)
+    except ValueError as e:
+        if is_expected_furl_error(e):
+            return None
+
+        raise
+
     if RE_SCHEMA.match(url):
-        return str(furl(url))
+        return AbsoluteUrl(str(f_url))
 
     # we should have proper domains
     # TODO: refactor to some ideomatic way
     if "." not in url.split("/")[0]:
         return None
 
-    return str(furl(f"//{url}"))
+    return AbsoluteUrl(str(furl(f"//{url}")))
 
 
 # TODO: tests
 # ATTENTION: see note at the top of the file
-def is_full_url(url: str) -> bool:
+def is_full_url(url: UnknowUrl) -> bool:
     return fix_full_url(url) is not None
 
 
 # TODO: tests
 # ATTENTION: see note at the top of the file
-def normalize_classic_full_url(url: str, original_url: str) -> str | None:
+def normalize_classic_full_url(url: UnknowUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     url = fix_full_url(url)
-    original_url = fix_full_url(original_url)
+    original_url = fix_full_url(original_url) # TODO: remove conversion?
 
     f_original_url = furl(original_url)
     f_url = furl(url)
 
-    print(f_original_url.__dict__)
-    print(f_url.__dict__)
-
     if not f_url.scheme:
         f_url.scheme = f_original_url.scheme
-
-    print(f_url.__dict__)
-    print(str(f_url))
 
     return str(f_url)
 
 
 # TODO: tests
 # ATTENTION: see note at the top of the file
-def normalize_classic_relative_url(url: str, original_url: str) -> str | None:
-    original_url = fix_full_url(original_url)
+def normalize_classic_relative_url(url: UnknowUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
+    original_url = fix_full_url(original_url) # TODO: remove conversion?
 
     f_url = furl(original_url)
 
     f_url.remove(query_params=True, fragment=True)
-    f_url.join(url)
+
+    try:
+        f_url.join(url)
+    except ValueError as e:
+        if is_expected_furl_error(e):
+            return None
+
+        raise
 
     return str(f_url)
 
 
 # ATTENTION: see note at the top of the file
-def normalize_classic_url(url: str, original_url: str) -> str | None:
+def normalize_classic_url(url: UnknowUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     if not is_full_url(original_url):
         # TODO: custom exception
         raise NotImplementedError("Can not normalize classic relative url without original full url")
@@ -99,16 +120,21 @@ def normalize_classic_url(url: str, original_url: str) -> str | None:
     return normalize_classic_relative_url(url, original_url)
 
 
-def is_magnetic_url(url: str) -> bool:
+def is_magnetic_url(url: UnknowUrl) -> bool:
     return url.startswith("magnet:")
 
 
-def normalize_magnetic_url(url: str) -> str:
+def normalize_magnetic_url(url: UnknowUrl) -> AbsoluteUrl:
+    if not is_magnetic_url(url):
+        # TODO: test
+        # TODO: custom exception
+        raise NotImplementedError(f"Can not parse url: {url}")
+
     return url
 
 
 # ATTENTION: see note at the top of the file
-def normalize_external_url(url: str, original_url: str) -> str | None:
+def normalize_external_url(url: UnknowUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     if is_magnetic_url(url):
         return normalize_magnetic_url(url)
 
@@ -116,7 +142,7 @@ def normalize_external_url(url: str, original_url: str) -> str | None:
 
 
 # ATTENTION: see note at the top of the file
-def url_to_uid(url: str) -> str:
+def url_to_uid(url: AbsoluteUrl) -> UrlUid:
     # The goal of this function is to detect URLs that most likely (99.(9)%) point to the same resource
     # It normalizes and simplifies a URL according to heuristics
     # I.e. there is a small possibility that two different URLs will be normalized to the same uid
@@ -133,7 +159,7 @@ def url_to_uid(url: str) -> str:
     # - readability is better than technical representation
     # - it is ok to loss some corner URL forms, unless there is an explicit request to support them
 
-    normalized_url = _fake_schema_for_url(url.lower().strip())
+    normalized_url = url.lower().strip()
 
     normalized_url = unquote(normalized_url)  # unquote all
     normalized_url = quote_plus(normalized_url)  # quoute with replacing spaces with pluses
@@ -169,19 +195,17 @@ def url_to_uid(url: str) -> str:
     if resulted_url.startswith("//"):
         resulted_url = resulted_url[2:]
 
-    return resulted_url
+    return UrlUid(resulted_url)
 
 
 # ATTENTION: see note at the top of the file
-def url_to_source_uid(url: str) -> str:
+def url_to_source_uid(url: AbsoluteUrl) -> SourceUid:
     # Because some portals (Reddit, ArXiv) provide customizable feed URLs,
     # we could see the same news entry in different feeds
     # => we should track the entry's source not by feed but by the portal
     # that will help us to ensure the entry's uniqueness.
 
     normalized_url = unicodedata.normalize("NFC", url).lower().strip()
-
-    normalized_url = _fake_schema_for_url(normalized_url)
 
     url_object = furl(normalized_url)
 

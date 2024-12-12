@@ -46,7 +46,6 @@ class TestNormalizeClassicUrl:
         ],
     )
     def test_base_transformations(self, original_url: str, raw_url: str, normalized_url: str) -> None:
-        print(original_url, raw_url, normalized_url)
         assert urls.normalize_classic_url(raw_url, original_url) == normalized_url
 
 
