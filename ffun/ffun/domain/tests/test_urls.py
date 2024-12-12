@@ -230,11 +230,20 @@ class TestFixFullUrl:
         assert urls.fix_full_url(UnknownUrl('localhost/x/y?a=b')) is None
 
     def test_ok(self) -> None:
-        assert urls.fix_full_url(UnknownUrl('example.com?')) == '//example.com'
+        assert urls.fix_full_url(UnknownUrl('example.com/a/b/c?x=y')) == '//example.com/a/b/c?x=y'
 
 
 class TestIsFullUrl:
 
     def test(self) -> None:
         assert urls.is_full_url(UnknownUrl('http://example.com'))
-        assert not urls.is_full_url(UnknownUrl('localhost'))
+        assert not urls.is_full_url(UnknownUrl('abc'))
+
+
+class TestNormalizeClassicUnknownUrl:
+
+    def test_bad_url(self) -> None:
+        assert urls.normalize_classic_unknown_url(UnknownUrl('abc')) is None
+
+    def test_ok(self) -> None:
+        assert urls.normalize_classic_unknown_url(UnknownUrl('example.com/a/b/c?x=y')) == '//example.com/a/b/c?x=y'

@@ -71,7 +71,7 @@ def is_full_url(url: UnknownUrl) -> bool:
 def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:
     fixed_url = fix_full_url(url)
 
-    if fix_full_url is None:
+    if fixed_url is None:
         return None
 
     assert fixed_url is not None
