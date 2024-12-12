@@ -15,6 +15,10 @@ logger = logging.get_module_logger()
 #            - that the UIDs generation is not changed (check on backup)
 #            - in case UIDs generation is changed, you MUST update all affected entities
 
+# TODO: there a lot of refactoring done, check if UIDs update is required
+
+# TODO: specify types: AbsoluteURL, RelativeURL, UnknowURL
+
 RE_SCHEMA = re.compile(r"^(\w+):")
 
 
@@ -22,11 +26,15 @@ RE_SCHEMA = re.compile(r"^(\w+):")
 
 
 # TODO: add tests
+# ATTENTION: see note at the top of the file
 def fix_full_url(url: str) -> str | None:
     url = url.strip()
 
     if url.startswith("//"):
         return str(furl(url))
+
+    if url.startswith("./") or url.startswith("../"):
+        return None
 
     if RE_SCHEMA.match(url):
         return str(furl(url))
@@ -39,63 +47,56 @@ def fix_full_url(url: str) -> str | None:
     return str(furl(f"//{url}"))
 
 
-# TODO: add tests
-# is required for correct parsing by furl
-# will be removed before returning result
+# TODO: tests
 # ATTENTION: see note at the top of the file
-def _fake_schema_for_url(url: str) -> str:
-    url = url.strip()
-
-    if url.startswith("//"):
-        return url
-
-    if RE_SCHEMA.match(url):
-        return url
-
-    # TODO: this logic is required only for normalize_classic_url and has wrong behavior for top-level domains
-    #       like localhost or any other one-part domain that user will define locally
-    if "." not in url.split("/")[0]:
-        # if there is no domain, just return the url
-        return url
-
-    return f"//{url}"
+def is_full_url(url: str) -> bool:
+    return fix_full_url(url) is not None
 
 
+# TODO: tests
 # ATTENTION: see note at the top of the file
-def normalize_classic_url(url: str, original_url: str | None = None) -> str | None:
-    if original_url is None:
-        # TODO: add test
-        original_url = url
-
-    url = _fake_schema_for_url(url)
-    original_url = _fake_schema_for_url(original_url)
-
-    try:
-        external_url = furl(url)
-    except ValueError as e:
-        error = str(e)
-
-        logger.warning("invalid_url", url=url, error=error)
-
-        if "Invalid port" in error:
-            return None
-
-        raise
+def normalize_classic_full_url(url: str, original_url: str) -> str | None:
+    url = fix_full_url(url)
+    original_url = fix_full_url(original_url)
 
     f_original_url = furl(original_url)
+    f_url = furl(url)
 
-    if not external_url.scheme:
-        external_url.set(scheme=f_original_url.scheme)
+    print(f_original_url.__dict__)
+    print(f_url.__dict__)
 
-    if not external_url.netloc:
-        external_url.set(netloc=f_original_url.netloc)
+    if not f_url.scheme:
+        f_url.scheme = f_original_url.scheme
 
-    result_url = str(external_url)
+    print(f_url.__dict__)
+    print(str(f_url))
 
-    if result_url.startswith("//"):
-        result_url = result_url[2:]
+    return str(f_url)
 
-    return result_url
+
+# TODO: tests
+# ATTENTION: see note at the top of the file
+def normalize_classic_relative_url(url: str, original_url: str) -> str | None:
+    original_url = fix_full_url(original_url)
+
+    f_url = furl(original_url)
+
+    f_url.remove(query_params=True, fragment=True)
+    f_url.join(url)
+
+    return str(f_url)
+
+
+# ATTENTION: see note at the top of the file
+def normalize_classic_url(url: str, original_url: str) -> str | None:
+    if not is_full_url(original_url):
+        # TODO: custom exception
+        raise NotImplementedError("Can not normalize classic relative url without original full url")
+
+    if is_full_url(url):
+        return normalize_classic_full_url(url, original_url)
+
+    return normalize_classic_relative_url(url, original_url)
 
 
 def is_magnetic_url(url: str) -> bool:

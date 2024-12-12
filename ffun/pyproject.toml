@@ -67,8 +67,6 @@ PyPika = "0.48.*"
 
 structlog = "24.2.*"
 
-yarl = "1.9.*"
-
 python-multipart = "0.0.*"
 
 supertokens-python = "0.21.*"

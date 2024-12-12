@@ -30,7 +30,7 @@ class Context(BaseEntity):
     content: str | None = None
     soup: Any | None = None
     depth: int = 1
-    candidate_urls: list[str] = pydantic.Field(default_factory=list)
+    candidate_urls: set[str] = pydantic.Field(default_factory=set)
     discoverers: list[Any] = pydantic.Field(default_factory=list)
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)

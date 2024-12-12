@@ -110,3 +110,63 @@ class TestDiscoverCreateSoup:
 
         assert new_context.soup is not None
         assert result is None
+
+
+class TestDiscoverExtractFeedsFromLinks:
+
+    @pytest.mark.asyncio
+    async def test_no_links(self) -> None:
+        intro_context = Context(raw_url="http://localhost/test",
+                                url="http://localhost/test",
+                                content="<html></html>")
+
+        context, result = await _discover_create_soup(intro_context)
+
+        new_context, result = await _discover_extract_feeds_from_links(context)
+
+        assert new_context == context
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_links(self) -> None:
+        # "author", "help", "icon", "license", "pingback", "search", "stylesheet"
+        html = '''
+        <html>
+          <head>
+            <link href="http://localhost/feed1">
+
+            <!-- ignore these -->
+            <link rel="author" href="http://localhost/feed2">
+            <link rel="help" href="http://localhost/feed3">
+            <link rel="icon" href="http://localhost/feed4">
+            <link rel="license" href="http://localhost/feed5">
+            <link rel="pingback" href="http://localhost/feed6">
+            <link rel="search" href="http://localhost/feed7">
+            <link rel="stylesheet" href="http://localhost/feed8">
+
+            <link rel="random-rel" href="http://localhost/feed9">
+            <link rel="random-rel" href="/feed10">
+            <link rel="random-rel" href="feed11">
+         </head>
+         <body>
+           <link href="http://localhost/feed12">
+        </body>
+        </html>
+        '''
+
+        intro_context = Context(raw_url="http://localhost/test/xxx",
+                          url="http://localhost/test/xxx",
+                          content=html)
+
+        context, result = await _discover_create_soup(intro_context)
+
+        new_context, result = await _discover_extract_feeds_from_links(context)
+
+        expected_links = {"http://localhost/feed1",
+                          "http://localhost/feed9",
+                          "http://localhost/feed10",
+                          "http://localhost/test/feed11",
+                          "http://localhost/feed12"}
+
+        assert new_context == context.replace(candidate_urls=expected_links)
+        assert result is None

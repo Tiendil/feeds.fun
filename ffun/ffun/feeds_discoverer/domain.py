@@ -1,9 +1,7 @@
-# TODO: do we need yarl? we have furl already
 # TODO: check logging
-import yarl
 from bs4 import BeautifulSoup
 
-from ffun.domain.urls import fix_full_url
+from ffun.domain.urls import fix_full_url, normalize_classic_url
 from ffun.core import logging
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
@@ -66,19 +64,21 @@ async def _discover_create_soup(context: Context) -> tuple[Context, Result | Non
     return context.replace(soup=soup), None
 
 
-# TODO: test
 async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context, Result | None]:
+    assert context.url is not None
     assert context.soup is not None
 
     links_to_check = set()
 
     for link in context.soup("link"):
         if link.has_attr("href"):
-            links_to_check.add(link["href"])
+            if link.has_attr("rel") and any(rel in link["rel"] for rel in ["author", "help", "icon", "license", "pingback", "search", "stylesheet"]):
+                continue
+            links_to_check.add(normalize_classic_url(link["href"], context.url))
 
     logger.info("links_to_check", links_to_check=links_to_check)
 
-    return context.replace(candidate_urls=context.candidate_urls + links_to_check), None
+    return context.replace(candidate_urls=context.candidate_urls | links_to_check), None
 
 
 # TODO: test
@@ -94,7 +94,7 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
 
     logger.info("links_to_check", links_to_check=links_to_check)
 
-    return context.replace(candidate_urls=context.candidate_urls + links_to_check), None
+    return context.replace(candidate_urls=context.candidate_urls | links_to_check), None
 
 
 # TODO: test
