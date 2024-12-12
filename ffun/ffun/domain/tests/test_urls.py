@@ -206,31 +206,31 @@ class TestIsExpectedFurlError:
             assert False, "Expected Exception"
 
 
-class TestFixFullUrl:
+class TestNormalizeClassicUnknownUrl:
 
     def test_general_sceme(self) -> None:
-        assert urls.fix_full_url(UnknownUrl('//example.com?')) == '//example.com'
+        assert urls.normalize_classic_unknown_url(UnknownUrl('//example.com?')) == '//example.com'
 
     def test_relative_same_level(self) -> None:
-        assert urls.fix_full_url(UnknownUrl('./a/b?x=y')) is None
+        assert urls.normalize_classic_unknown_url(UnknownUrl('./a/b?x=y')) is None
 
     def test_relative_upper_level(self) -> None:
-        assert urls.fix_full_url(UnknownUrl('../a/b?x=y')) is None
-        assert urls.fix_full_url(UnknownUrl('../../a/b?x=y')) is None
+        assert urls.normalize_classic_unknown_url(UnknownUrl('../a/b?x=y')) is None
+        assert urls.normalize_classic_unknown_url(UnknownUrl('../../a/b?x=y')) is None
 
     def test_furl_error(self) -> None:
-        assert urls.fix_full_url(UnknownUrl('//example.com:9999999?')) is None
+        assert urls.normalize_classic_unknown_url(UnknownUrl('//example.com:9999999?')) is None
 
     def test_has_scheme(self) -> None:
-        assert urls.fix_full_url(UnknownUrl('http://example.com?')) == 'http://example.com'
-        assert urls.fix_full_url(UnknownUrl('https://example.com?')) == 'https://example.com'
+        assert urls.normalize_classic_unknown_url(UnknownUrl('http://example.com?')) == 'http://example.com'
+        assert urls.normalize_classic_unknown_url(UnknownUrl('https://example.com?')) == 'https://example.com'
 
     def test_no_domain(self) -> None:
-        assert urls.fix_full_url(UnknownUrl('a/b?x=y')) is None
-        assert urls.fix_full_url(UnknownUrl('localhost/x/y?a=b')) is None
+        assert urls.normalize_classic_unknown_url(UnknownUrl('a/b?x=y')) is None
+        assert urls.normalize_classic_unknown_url(UnknownUrl('localhost/x/y?a=b')) is None
 
     def test_ok(self) -> None:
-        assert urls.fix_full_url(UnknownUrl('example.com/a/b/c?x=y')) == '//example.com/a/b/c?x=y'
+        assert urls.normalize_classic_unknown_url(UnknownUrl('example.com/a/b/c?x=y')) == '//example.com/a/b/c?x=y'
 
 
 class TestIsFullUrl:
@@ -238,12 +238,3 @@ class TestIsFullUrl:
     def test(self) -> None:
         assert urls.is_full_url(UnknownUrl('http://example.com'))
         assert not urls.is_full_url(UnknownUrl('abc'))
-
-
-class TestNormalizeClassicUnknownUrl:
-
-    def test_bad_url(self) -> None:
-        assert urls.normalize_classic_unknown_url(UnknownUrl('abc')) is None
-
-    def test_ok(self) -> None:
-        assert urls.normalize_classic_unknown_url(UnknownUrl('example.com/a/b/c?x=y')) == '//example.com/a/b/c?x=y'

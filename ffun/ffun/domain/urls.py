@@ -32,7 +32,7 @@ def is_expected_furl_error(error: Exception) -> bool:
 
 
 # ATTENTION: see note at the top of the file
-def fix_full_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noqa: CCR001
+def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noqa: CCR001
     url = UnknownUrl(url.strip())
 
     # check if url is parsable
@@ -63,22 +63,7 @@ def fix_full_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noqa: CCR001
 
 # ATTENTION: see note at the top of the file
 def is_full_url(url: UnknownUrl) -> bool:
-    return fix_full_url(url) is not None
-
-
-# TODO: tests
-# ATTENTION: see note at the top of the file
-def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:
-    fixed_url = fix_full_url(url)
-
-    if fixed_url is None:
-        return None
-
-    assert fixed_url is not None
-
-    f_url = furl(fixed_url)
-
-    return AbsoluteUrl(str(f_url))
+    return normalize_classic_unknown_url(url) is not None
 
 
 # TODO: tests
@@ -101,7 +86,7 @@ def is_absolute_url(url: str) -> bool:
 # TODO: tests
 # ATTENTION: see note at the top of the file
 def normalize_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
-    fixed_url = fix_full_url(url)
+    fixed_url = normalize_classic_unknown_url(url)
 
     assert fixed_url is not None
 

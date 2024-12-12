@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 
 from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl, UnknownUrl
-from ffun.domain.urls import fix_full_url, normalize_classic_url
+from ffun.domain.urls import normalize_classic_unknown_url, normalize_classic_url
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
@@ -13,7 +13,7 @@ logger = logging.get_module_logger()
 
 
 async def _discover_normalize_url(context: Context) -> tuple[Context, Result | None]:
-    url = fix_full_url(context.raw_url)
+    url = normalize_classic_unknown_url(context.raw_url)
 
     if url is None:
         return context, Result(feeds=[], status=Status.incorrect_url)
