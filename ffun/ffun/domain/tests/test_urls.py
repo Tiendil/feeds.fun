@@ -5,9 +5,9 @@ from ffun.domain import urls, errors
 from ffun.domain.entities import AbsoluteUrl, SourceUid, UnknownUrl, UrlUid
 
 
-class TestNormalizeClassicUrl:
+class TestAdjustClassicUrl:
     @pytest.mark.parametrize(
-        "original_url, raw_url, normalized_url",
+        "original_url, raw_url, adjusted_url",
         [
             ("https://example.com/feed/", "https://example.com", "https://example.com"),
             ("https://example.com/feed/", "https://example.com/path/a/b?c=d", "https://example.com/path/a/b?c=d"),
@@ -46,12 +46,12 @@ class TestNormalizeClassicUrl:
         ],
     )
     def test_base_transformations(
-        self, original_url: AbsoluteUrl, raw_url: UnknownUrl, normalized_url: AbsoluteUrl
+        self, original_url: AbsoluteUrl, raw_url: UnknownUrl, adjusted_url: AbsoluteUrl
     ) -> None:
         assert urls.is_absolute_url(original_url)
-        assert urls.is_absolute_url(normalized_url)
+        assert urls.is_absolute_url(adjusted_url)
 
-        assert urls.normalize_classic_url(raw_url, original_url) == normalized_url
+        assert urls.adjust_classic_url(raw_url, original_url) == adjusted_url
 
 
 class TestIsMagneticUrl:
@@ -70,15 +70,15 @@ class TestIsMagneticUrl:
         assert urls.is_magnetic_url(url) == is_magnetic
 
 
-class TestNormalizeMagneticUrl:
+class TestAdjustMagneticUrl:
     def test(self) -> None:
         url = "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80"  # noqa
-        assert urls.normalize_magnetic_url(UnknownUrl(url)) == url
+        assert urls.adjust_magnetic_url(UnknownUrl(url)) == url
 
 
-class TestNormalizeExternalUrl:
+class TestAdjustExternalUrl:
     @pytest.mark.parametrize(
-        "url, normalized_url",
+        "url, adjusted_url",
         [
             ("https://example.com/path/a/b?c=d", "https://example.com/path/a/b?c=d"),
             ("http://another.domain:666/path/a/b?c=d", "http://another.domain:666/path/a/b?c=d"),
@@ -90,14 +90,14 @@ class TestNormalizeExternalUrl:
             ("http://www.usinenouvelle.comhttps://www.usine-digitale.fr/article/christophe", None),
         ],
     )
-    def test(self, url: UnknownUrl, normalized_url: AbsoluteUrl) -> None:
-        assert normalized_url is None or urls.is_absolute_url(normalized_url) or urls.is_magnetic_url(url)
+    def test(self, url: UnknownUrl, adjusted_url: AbsoluteUrl) -> None:
+        assert adjusted_url is None or urls.is_absolute_url(adjusted_url) or urls.is_magnetic_url(url)
 
         original_url = urls.normalize_classic_unknown_url(UnknownUrl("https://example.com"))
 
         assert original_url is not None
 
-        assert urls.normalize_external_url(url, original_url=original_url) == normalized_url
+        assert urls.adjust_external_url(url, original_url=original_url) == adjusted_url
 
 
 class TestUrlToUid:

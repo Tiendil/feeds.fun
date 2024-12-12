@@ -9,18 +9,18 @@ from ffun.feeds_discoverer.domain import (
     _discover_extract_feed_info,
     _discover_extract_feeds_from_links,
     _discover_load_url,
-    _discover_normalize_url,
+    _discover_adjust_url,
 )
 from ffun.feeds_discoverer.entities import Context, Result, Status
 
 
-class TestDiscoverNormalizeUrl:
+class TestDiscoverAdjustUrl:
 
     @pytest.mark.asyncio
     async def test_wrong_url(self) -> None:
         context = Context(raw_url=UnknownUrl("wrong_url"))
 
-        new_context, result = await _discover_normalize_url(context)
+        new_context, result = await _discover_adjust_url(context)
 
         assert new_context == context
         assert result == Result(feeds=[], status=Status.incorrect_url)
@@ -29,7 +29,7 @@ class TestDiscoverNormalizeUrl:
     async def test_good_url(self) -> None:
         context = Context(raw_url=UnknownUrl("https://example.com?"))
 
-        new_context, result = await _discover_normalize_url(context)
+        new_context, result = await _discover_adjust_url(context)
 
         assert new_context == context.replace(url=AbsoluteUrl("https://example.com"))
         assert result is None

@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 
 from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl, UnknownUrl
-from ffun.domain.urls import normalize_classic_unknown_url, normalize_classic_url
+from ffun.domain.urls import normalize_classic_unknown_url, adjust_classic_url
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
@@ -12,7 +12,7 @@ from ffun.parsers import entities as p_entities
 logger = logging.get_module_logger()
 
 
-async def _discover_normalize_url(context: Context) -> tuple[Context, Result | None]:
+async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None]:
     url = normalize_classic_unknown_url(context.raw_url)
 
     if url is None:
@@ -77,7 +77,7 @@ async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context,
                 rel in link["rel"] for rel in ["author", "help", "icon", "license", "pingback", "search", "stylesheet"]
             ):
                 continue
-            links_to_check.add(normalize_classic_url(link["href"], context.url))
+            links_to_check.add(adjust_classic_url(link["href"], context.url))
 
     logger.info("links_to_check", links_to_check=links_to_check)
 
@@ -144,7 +144,7 @@ async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | 
 
 # TODO: test list
 _discoverers = [
-    _discover_normalize_url,
+    _discover_adjust_url,
     _discover_load_url,
     _discover_extract_feed_info,
     _discover_stop_recursion,

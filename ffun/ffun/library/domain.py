@@ -49,7 +49,7 @@ async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange
 
     feed = await f_domain.get_feed(feed_id)
 
-    new_external_url = d_urls.normalize_external_url(UnknownUrl(entry.external_url), feed.url)
+    new_external_url = d_urls.adjust_external_url(UnknownUrl(entry.external_url), feed.url)
 
     changes = []
 

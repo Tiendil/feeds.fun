@@ -89,7 +89,7 @@ def is_absolute_url(url: str) -> bool:
 
 # TODO: tests
 # ATTENTION: see note at the top of the file
-def normalize_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
+def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     fixed_url = normalize_classic_unknown_url(url)
 
     assert fixed_url is not None
@@ -105,7 +105,7 @@ def normalize_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl) -> Ab
 
 # TODO: tests
 # ATTENTION: see note at the top of the file
-def normalize_classic_relative_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
+def adjust_classic_relative_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     f_url = furl(original_url)
 
     f_url.remove(query_params=True, fragment=True)
@@ -122,18 +122,18 @@ def normalize_classic_relative_url(url: UnknownUrl, original_url: AbsoluteUrl) -
 
 
 # ATTENTION: see note at the top of the file
-def normalize_classic_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
+def adjust_classic_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     if is_full_url(url):
-        return normalize_classic_full_url(url, original_url)
+        return adjust_classic_full_url(url, original_url)
 
-    return normalize_classic_relative_url(url, original_url)
+    return adjust_classic_relative_url(url, original_url)
 
 
 def is_magnetic_url(url: UnknownUrl) -> bool:
     return url.startswith("magnet:")
 
 
-def normalize_magnetic_url(url: UnknownUrl) -> AbsoluteUrl:
+def adjust_magnetic_url(url: UnknownUrl) -> AbsoluteUrl:
     if not is_magnetic_url(url):
         # TODO: test
         # TODO: custom exception
@@ -143,11 +143,11 @@ def normalize_magnetic_url(url: UnknownUrl) -> AbsoluteUrl:
 
 
 # ATTENTION: see note at the top of the file
-def normalize_external_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
+def adjust_external_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
     if is_magnetic_url(url):
-        return normalize_magnetic_url(url)
+        return adjust_magnetic_url(url)
 
-    return normalize_classic_url(url, original_url)
+    return adjust_classic_url(url, original_url)
 
 
 # ATTENTION: see note at the top of the file
