@@ -20,7 +20,7 @@ logger = logging.get_module_logger()
 
 
 async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R0915
-    url: str, proxy: Proxy, user_agent: str
+    url: AbsoluteUrl, proxy: Proxy, user_agent: str
 ) -> httpx.Response:
     error_code = FeedError.network_unknown
 
