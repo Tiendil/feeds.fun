@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 
 from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl, UnknownUrl
-from ffun.domain.urls import adjust_classic_url, normalize_classic_unknown_url
+from ffun.domain.urls import adjust_classic_url, normalize_classic_unknown_url, url_has_etension
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
@@ -84,20 +84,38 @@ async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context,
     return context.replace(candidate_urls=context.candidate_urls | links_to_check), None
 
 
-# TODO: test
 async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Context, Result | None]:
+
+    allowed_extensions = [
+        ".xml",
+        ".rss",
+        ".atom",
+        ".rdf",
+        ".feed",
+        ".php",
+        ".asp",
+        ".aspx",
+        ".json",
+        ".cgi",
+        ""
+    ]
+
     assert context.soup is not None
 
-    links_to_check = set()
+    anchors_to_check = set()
 
-    # TODO: can be very-very long, must be improved
-    for link in list(context.soup("a")):
-        if link.has_attr("href"):
-            links_to_check.add(link["href"])
+    for anchor in list(context.soup("a")):
+        if anchor.has_attr("href"):
+            url = anchor["href"]
 
-    logger.info("links_to_check", links_to_check=links_to_check)
+            if not url_has_etension(url, allowed_extensions):
+                continue
 
-    return context.replace(candidate_urls=context.candidate_urls | links_to_check), None
+            anchors_to_check.add(adjust_classic_url(url, context.url))
+
+    logger.info("anchors_to_check", anchors_to_check=anchors_to_check)
+
+    return context.replace(candidate_urls=context.candidate_urls | anchors_to_check), None
 
 
 # TODO: test

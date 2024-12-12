@@ -233,3 +233,17 @@ def url_to_source_uid(url: AbsoluteUrl) -> SourceUid:
     assert isinstance(domain, str)
 
     return SourceUid(domain)
+
+
+# TODO: tests
+def url_has_etension(url: AbsoluteUrl, expected_extensions: list[str]) -> bool:
+    f_url = furl(url)
+
+    last_segment = f_url.path.segments[-1]
+
+    if '.' not in last_segment:
+        return '' in expected_extensions
+
+    extension = last_segment.rsplit(".")[-1].strip()
+
+    return f".{extension}" in expected_extensions
