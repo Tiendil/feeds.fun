@@ -31,16 +31,9 @@ def is_expected_furl_error(error: Exception) -> bool:
     return False
 
 
-# TODO: add tests
 # ATTENTION: see note at the top of the file
 def fix_full_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noqa: CCR001
     url = UnknownUrl(url.strip())
-
-    if url.startswith("//"):
-        return AbsoluteUrl(str(furl(url)))
-
-    if url.startswith("./") or url.startswith("../"):
-        return None
 
     # check if url is parsable
     try:
@@ -50,6 +43,12 @@ def fix_full_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noqa: CCR001
             return None
 
         raise
+
+    if url.startswith("//"):
+        return AbsoluteUrl(str(f_url))
+
+    if url.startswith("./") or url.startswith("../"):
+        return None
 
     if RE_SCHEMA.match(url):
         return AbsoluteUrl(str(f_url))

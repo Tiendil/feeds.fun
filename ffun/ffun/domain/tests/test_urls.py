@@ -204,3 +204,30 @@ class TestIsExpectedFurlError:
             assert not urls.is_expected_furl_error(e)
         else:
             assert False, "Expected Exception"
+
+
+class TestFixFullUrl:
+
+    def test_general_sceme(self) -> None:
+        assert urls.fix_full_url(UnknownUrl('//example.com?')) == '//example.com'
+
+    def test_relative_same_level(self) -> None:
+        assert urls.fix_full_url(UnknownUrl('./a/b?x=y')) is None
+
+    def test_relative_upper_level(self) -> None:
+        assert urls.fix_full_url(UnknownUrl('../a/b?x=y')) is None
+        assert urls.fix_full_url(UnknownUrl('../../a/b?x=y')) is None
+
+    def test_furl_error(self) -> None:
+        assert urls.fix_full_url(UnknownUrl('//example.com:9999999?')) is None
+
+    def test_has_scheme(self) -> None:
+        assert urls.fix_full_url(UnknownUrl('http://example.com?')) == 'http://example.com'
+        assert urls.fix_full_url(UnknownUrl('https://example.com?')) == 'https://example.com'
+
+    def test_no_domain(self) -> None:
+        assert urls.fix_full_url(UnknownUrl('a/b?x=y')) is None
+        assert urls.fix_full_url(UnknownUrl('localhost/x/y?a=b')) is None
+
+    def test_ok(self) -> None:
+        assert urls.fix_full_url(UnknownUrl('example.com?')) == '//example.com'
