@@ -1,4 +1,3 @@
-# TODO: check logging
 import asyncio
 from bs4 import BeautifulSoup
 
@@ -15,6 +14,8 @@ logger = logging.get_module_logger()
 
 async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None]:
     url = normalize_classic_unknown_url(context.raw_url)
+
+    logger.info("discovering_normalize_url", raw_url=context.raw_url, adjusted_url=url)
 
     if url is None:
         return context, Result(feeds=[], status=Status.incorrect_url)
@@ -35,6 +36,8 @@ async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
         logger.exception("unexpected_error_while_parsing_feed")
         return context, Result(feeds=[], status=Status.cannot_access_url)
 
+    logger.info("discovering_content_loaded", url=context.url, content_size=len(content))
+
     return context.replace(content=content), None
 
 
@@ -51,6 +54,8 @@ async def _discover_extract_feed_info(context: Context) -> tuple[Context, Result
         logger.exception("unexpected_error_while_parsing_feed")
         return context, None
 
+    logger.info("discovering_feed_info_extracted", feed_info=feed_info)
+
     return context, Result(feeds=[feed_info], status=Status.feeds_found)
 
 
@@ -62,6 +67,8 @@ async def _discover_create_soup(context: Context) -> tuple[Context, Result | Non
     except Exception:
         logger.exception("unexpected_error_while_parsing_html")
         return context, Result(feeds=[], status=Status.not_html)
+
+    logger.info("discovering_soup_created")
 
     return context.replace(soup=soup), None
 
@@ -80,7 +87,7 @@ async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context,
                 continue
             links_to_check.add(adjust_classic_url(link["href"], context.url))
 
-    logger.info("links_to_check", links_to_check=links_to_check)
+    logger.info("discovering_links_extracted", links_to_check=links_to_check)
 
     return context.replace(candidate_urls=context.candidate_urls | links_to_check), None
 
@@ -114,7 +121,7 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
 
             anchors_to_check.add(adjust_classic_url(url, context.url))
 
-    logger.info("anchors_to_check", anchors_to_check=anchors_to_check)
+    logger.info("discovering_anchors_extracted", anchors_to_check=anchors_to_check)
 
     return context.replace(candidate_urls=context.candidate_urls | anchors_to_check), None
 
@@ -137,7 +144,7 @@ async def _discover_check_candidate_links(context: Context) -> tuple[Context, Re
 
     feeds.sort(key=lambda feed_info: feed_info.title)
 
-    logger.info("feeds", result_links=[feed_info.url for feed_info in feeds])
+    logger.info("discovering_feeds_found", result_links=[feed_info.url for feed_info in feeds])
 
     if not feeds:
         return context.replace(candidate_urls=set()), None
@@ -166,12 +173,18 @@ _discoverers = [
 
 
 async def discover(url: UnknownUrl, depth: int, discoverers: list[Discoverer] = _discoverers) -> Result:
+
+    logger.info("discovering_start", url=url, depth=depth)
+
     context = Context(raw_url=url, depth=depth, discoverers=discoverers)
 
     for discoverer in discoverers:
         context, result = await discoverer(context)
 
         if result is not None:
+            logger.info("discovering_finished", feeds_found=len(result.feeds))
             return result
+
+    logger.info("discovering_finished", feeds_found=0)
 
     return Result(feeds=[], status=Status.no_feeds_found)
