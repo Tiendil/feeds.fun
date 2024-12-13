@@ -243,6 +243,13 @@ class TestNormalizeClassicUnknownUrl:
         # longest logic path
         assert urls.normalize_classic_unknown_url(UnknownUrl("example.com/a/b/c?x=y#z")) == "//example.com/a/b/c?x=y"
 
+    def remove_trailing_root_slash(self) -> None:
+        assert urls.normalize_classic_unknown_url(UnknownUrl("example.com")) == "//example.com"
+        assert urls.normalize_classic_unknown_url(UnknownUrl("example.com/")) == "//example.com"
+        assert urls.normalize_classic_unknown_url(UnknownUrl("example.com//")) == "//example.com"
+        assert urls.normalize_classic_unknown_url(UnknownUrl("example.com///")) == "//example.com"
+        assert urls.normalize_classic_unknown_url(UnknownUrl("example.com////")) == "//example.com"
+
 
 class TestIsFullUrl:
 
@@ -374,3 +381,19 @@ class TestFilterOutDuplicatedUrls:
         assert urls.filter_out_duplicated_urls(
             ["https://example.com/feed1?a=b&c=d", "https://example.com/feed2", "https://example.com/feed1?c=d&a=b"]
         ) == ["https://example.com/feed1?a=b&c=d", "https://example.com/feed2"]
+
+
+class TestGetParentUrl:
+
+    def test_no_parent(self) -> None:
+        assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com")) is None
+        assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/")) is None
+        assert urls.get_parent_url(urls.str_to_absolute_url("https://subdomain.example.com")) is None
+
+    def test_has_parent(self) -> None:
+        assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed")) == "https://example.com"
+        assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed/")) == "https://example.com/feed"
+        assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed/part")) == "https://example.com/feed/"
+        assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed/")) == "https://example.com/feed"
+        assert urls.get_parent_url(urls.str_to_absolute_url("https://subdomain.example.com/feed/part")) == "https://subdomain.example.com/feed/"
+        assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed/part/second")) == "https://example.com/feed/part/"

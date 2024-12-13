@@ -9,6 +9,7 @@ from ffun.domain.urls import (
     filter_out_duplicated_urls,
     normalize_classic_unknown_url,
     url_has_extension,
+    get_parent_url
 )
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain
@@ -120,6 +121,26 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
     return context.replace(candidate_urls=context.candidate_urls | anchors_to_check), None
 
 
+async def _discover_check_parent_urls(context: Context) -> tuple[Context, Result | None]:
+    assert context.url is not None
+
+    parent_url = get_parent_url(context.url)
+
+    if parent_url is None:
+        logger.info("discovering_no_parent")
+        return context, None
+
+    # always check parents on depth of 1 (a.k.a., we expect html with links to feeds)
+    result = await discover(url=parent_url, depth=1, discoverers=context.discoverers)
+
+    if result.feeds:
+        logger.info("discovering_parent_extracted", parent_url=parent_url)
+        return context, result
+
+    logger.info("discovering_no_parent_extracted")
+    return context, None
+
+
 async def _discover_check_candidate_links(context: Context) -> tuple[Context, Result | None]:  # noqa: CCR001
 
     filtered_links = filter_out_duplicated_urls(context.candidate_urls)
@@ -166,6 +187,7 @@ _discoverers = [
     _discover_check_candidate_links,
     _discover_extract_feeds_from_anchors,
     _discover_check_candidate_links,
+    _discover_check_parent_urls,
 ]
 
 

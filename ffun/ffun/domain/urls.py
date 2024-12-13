@@ -33,6 +33,13 @@ def is_expected_furl_error(error: Exception) -> bool:
     return False
 
 
+def _simplify_furl(f_url: furl) -> None:
+    f_url.remove(fragment=True)
+
+    if f_url.path == '/':
+        f_url.path = None
+
+
 # ATTENTION: see note at the top of the file
 def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noqa: CCR001
     url = UnknownUrl(url.strip())
@@ -46,7 +53,7 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noq
 
         raise
 
-    f_url.remove(fragment=True)
+    _simplify_furl(f_url)
 
     if url.startswith("//"):
         return AbsoluteUrl(str(f_url))
@@ -63,7 +70,8 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noq
         return None
 
     f_url = furl(f"//{url}")
-    f_url.remove(fragment=True)
+
+    _simplify_furl(f_url)
 
     return AbsoluteUrl(str(f_url))
 
@@ -263,3 +271,19 @@ def filter_out_duplicated_urls(urls: list[AbsoluteUrl]) -> list[AbsoluteUrl]:
         result.append(url)
 
     return result
+
+
+def get_parent_url(url: AbsoluteUrl) -> AbsoluteUrl | None:
+    f_url = furl(url)
+
+    if not f_url.path.segments or f_url.path == "/":
+        return None
+
+    f_url.remove(query_params=True, fragment=True)
+
+    if f_url.path.segments[-1] == "":
+        f_url.path.segments = f_url.path.segments[:-1]
+    else:
+        f_url.path.segments[-1] = ""
+
+    return normalize_classic_unknown_url(UnknownUrl(str(f_url)))
