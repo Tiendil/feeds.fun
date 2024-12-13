@@ -227,14 +227,14 @@ async def api_remove_marker(request: entities.RemoveMarkerRequest, user: User) -
 async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User) -> entities.DiscoverFeedsResponse:
     result = await fd_domain.discover(url=request.url, depth=1)
 
-    linked_feeds = await fl_domain.get_linked_feeds(user.id)
+    await fl_domain.get_linked_feeds(user.id)
 
     # feeds_to_links = {link.feed_id: link for link in linked_feeds}
 
     # feeds = await f_domain.get_feeds(ids=list(feeds_to_links.keys()))
 
-    for feed in result.feeds[:settings.max_feeds_suggestions_for_site]:
-        feed.entries = feed.entries[:settings.max_entries_suggestions_for_site]
+    for feed in result.feeds[: settings.max_feeds_suggestions_for_site]:
+        feed.entries = feed.entries[: settings.max_entries_suggestions_for_site]
 
     external_feeds = [entities.FeedInfo.from_internal(feed) for feed in result.feeds]
 

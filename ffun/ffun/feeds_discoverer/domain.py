@@ -1,9 +1,15 @@
 import asyncio
+
 from bs4 import BeautifulSoup
 
 from ffun.core import logging
-from ffun.domain.entities import AbsoluteUrl, UnknownUrl, UrlUid
-from ffun.domain.urls import adjust_classic_url, normalize_classic_unknown_url, url_has_extension, url_to_uid, filter_out_duplicated_urls
+from ffun.domain.entities import UnknownUrl
+from ffun.domain.urls import (
+    adjust_classic_url,
+    filter_out_duplicated_urls,
+    normalize_classic_unknown_url,
+    url_has_extension,
+)
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
@@ -94,19 +100,7 @@ async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context,
 
 async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Context, Result | None]:
 
-    allowed_extensions = [
-        ".xml",
-        ".rss",
-        ".atom",
-        ".rdf",
-        ".feed",
-        ".php",
-        ".asp",
-        ".aspx",
-        ".json",
-        ".cgi",
-        ""
-    ]
+    allowed_extensions = [".xml", ".rss", ".atom", ".rdf", ".feed", ".php", ".asp", ".aspx", ".json", ".cgi", ""]
 
     assert context.soup is not None
 

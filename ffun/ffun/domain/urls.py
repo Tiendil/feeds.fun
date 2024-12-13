@@ -240,8 +240,8 @@ def url_has_extension(url: AbsoluteUrl, expected_extensions: list[str]) -> bool:
 
     last_segment = f_url.path.segments[-1]
 
-    if '.' not in last_segment:
-        return '' in expected_extensions
+    if "." not in last_segment:
+        return "" in expected_extensions
 
     extension = last_segment.rsplit(".")[-1].strip()
 

@@ -6,15 +6,15 @@ from ffun.domain.entities import AbsoluteUrl, UnknownUrl
 from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds_discoverer.domain import (
     _discover_adjust_url,
+    _discover_check_candidate_links,
     _discover_create_soup,
     _discover_extract_feed_info,
-    _discover_extract_feeds_from_links,
     _discover_extract_feeds_from_anchors,
+    _discover_extract_feeds_from_links,
     _discover_load_url,
-    _discover_check_candidate_links,
     _discover_stop_recursion,
     _discoverers,
-    discover
+    discover,
 )
 from ffun.feeds_discoverer.entities import Context, Result, Status
 
@@ -275,9 +275,7 @@ class TestDiscoverCheckCandidateLinks:
     @pytest.mark.asyncio
     async def test_no_links(self) -> None:
         context = Context(
-            raw_url=UnknownUrl("http://localhost/test/xxx"),
-            candidate_urls=set(),
-            discoverers = _discoverers
+            raw_url=UnknownUrl("http://localhost/test/xxx"), candidate_urls=set(), discoverers=_discoverers
         )
 
         new_context, result = await _discover_check_candidate_links(context)
@@ -296,7 +294,7 @@ class TestDiscoverCheckCandidateLinks:
                 AbsoluteUrl("http://localhost/feed1"),
                 AbsoluteUrl("http://localhost/feed2"),
             },
-            discoverers = _discoverers
+            discoverers=_discoverers,
         )
 
         new_context, result = await _discover_check_candidate_links(context)
@@ -305,7 +303,9 @@ class TestDiscoverCheckCandidateLinks:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_works__feeds_found(self, respx_mock: MockRouter, raw_feed_content: str, another_raw_feed_content: str) -> None:
+    async def test_works__feeds_found(
+        self, respx_mock: MockRouter, raw_feed_content: str, another_raw_feed_content: str
+    ) -> None:
         respx_mock.get("/feed1").mock(return_value=httpx.Response(200, content=raw_feed_content))
         respx_mock.get("/feed2").mock(return_value=httpx.Response(200, content=another_raw_feed_content))
 
@@ -315,7 +315,7 @@ class TestDiscoverCheckCandidateLinks:
                 AbsoluteUrl("http://localhost/feed1"),
                 AbsoluteUrl("http://localhost/feed2"),
             },
-            discoverers = _discoverers
+            discoverers=_discoverers,
         )
 
         new_context, result = await _discover_check_candidate_links(context)
@@ -334,11 +334,7 @@ class TestDiscoverStopRecursion:
 
     @pytest.mark.asyncio
     async def test_depth_zero(self) -> None:
-        context = Context(
-            raw_url=UnknownUrl("http://localhost/test"),
-            depth=0,
-            discoverers = _discoverers
-        )
+        context = Context(raw_url=UnknownUrl("http://localhost/test"), depth=0, discoverers=_discoverers)
 
         new_context, result = await _discover_stop_recursion(context)
 
@@ -347,11 +343,7 @@ class TestDiscoverStopRecursion:
 
     @pytest.mark.asyncio
     async def test_depth_not_zero(self) -> None:
-        context = Context(
-            raw_url=UnknownUrl("http://localhost/test"),
-            depth=1,
-            discoverers = _discoverers
-        )
+        context = Context(raw_url=UnknownUrl("http://localhost/test"), depth=1, discoverers=_discoverers)
 
         new_context, result = await _discover_stop_recursion(context)
 
@@ -376,7 +368,9 @@ def test_discoverers_list_not_changed():
 class TestDiscover:
 
     @pytest.mark.asyncio
-    async def test_long_run__stop_on_links(self, respx_mock: MockRouter, raw_feed_content: str, another_raw_feed_content: str) -> None:
+    async def test_long_run__stop_on_links(
+        self, respx_mock: MockRouter, raw_feed_content: str, another_raw_feed_content: str
+    ) -> None:
         test_html = """
         <html>
           <head>
@@ -408,7 +402,9 @@ class TestDiscover:
         }
 
     @pytest.mark.asyncio
-    async def test_long_run__stop_on_anchorts(self, respx_mock: MockRouter, raw_feed_content: str, another_raw_feed_content: str) -> None:
+    async def test_long_run__stop_on_anchorts(
+        self, respx_mock: MockRouter, raw_feed_content: str, another_raw_feed_content: str
+    ) -> None:
         test_html = """
         <html>
           <head>

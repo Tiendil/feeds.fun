@@ -23,7 +23,7 @@ _load_semaphor = asyncio.Semaphore(settings.max_concurrent_http_requests)
 
 
 async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R0915
-        url: AbsoluteUrl, proxy: Proxy, user_agent: str, semaphore: asyncio.Semaphore = _load_semaphor
+    url: AbsoluteUrl, proxy: Proxy, user_agent: str, semaphore: asyncio.Semaphore = _load_semaphor
 ) -> httpx.Response:
     error_code = FeedError.network_unknown
 
