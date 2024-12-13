@@ -3,7 +3,7 @@ from typing import Any
 
 import pydantic
 
-from ffun.domain.entities import AbsoluteUrl
+from ffun.domain.entities import AbsoluteUrl, UrlUid
 
 
 class EntryInfo(pydantic.BaseModel):
@@ -22,6 +22,7 @@ class FeedInfo(pydantic.BaseModel):
     url: AbsoluteUrl
     title: str
     description: str
+    uid: UrlUid
 
     entries: list[EntryInfo]
 

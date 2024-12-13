@@ -65,6 +65,7 @@ def parse_feed(content: str, original_url: AbsoluteUrl) -> FeedInfo | None:
         title=channel.feed.get("title", ""),
         description=channel.feed.get("description", ""),
         entries=[],
+        uid=urls.url_to_uid(original_url),
     )
 
     for entry in channel.entries:
