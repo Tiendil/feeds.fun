@@ -246,3 +246,21 @@ def url_has_extension(url: AbsoluteUrl, expected_extensions: list[str]) -> bool:
     extension = last_segment.rsplit(".")[-1].strip()
 
     return f".{extension}" in expected_extensions
+
+
+# TODO: tests
+def filter_out_duplicated_urls(urls: list[AbsoluteUrl]) -> list[AbsoluteUrl]:
+    seen = set()
+
+    result = []
+
+    for url in urls:
+        uid = url_to_uid(url)
+
+        if uid in seen:
+            continue
+
+        seen.add(uid)
+        result.append(url)
+
+    return result

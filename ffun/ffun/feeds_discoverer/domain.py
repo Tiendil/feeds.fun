@@ -1,9 +1,10 @@
 # TODO: check logging
+import asyncio
 from bs4 import BeautifulSoup
 
 from ffun.core import logging
-from ffun.domain.entities import AbsoluteUrl, UnknownUrl
-from ffun.domain.urls import adjust_classic_url, normalize_classic_unknown_url, url_has_extension
+from ffun.domain.entities import AbsoluteUrl, UnknownUrl, UrlUid
+from ffun.domain.urls import adjust_classic_url, normalize_classic_unknown_url, url_has_extension, url_to_uid, filter_out_duplicated_urls
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
@@ -118,38 +119,30 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
     return context.replace(candidate_urls=context.candidate_urls | anchors_to_check), None
 
 
-# TODO: test
 async def _discover_check_candidate_links(context: Context) -> tuple[Context, Result | None]:  # noqa: CCR001
-    results: list[Result] = []
 
-    for link in context.candidate_urls:
-        # TODO: add concurrency
-        # TODO: check depth
-        results.append(await discover(url=link, depth=context.depth - 1, discoverers=context.discoverers))
+    filtered_links = filter_out_duplicated_urls(context.candidate_urls)
 
-    feeds_mapping: dict[AbsoluteUrl, p_entities.FeedInfo] = {}
+    tasks = []
+
+    for link in filtered_links:
+        tasks.append(discover(url=link, depth=context.depth - 1, discoverers=context.discoverers))
+
+    results: list[Result] = await asyncio.gather(*tasks)
+
+    feeds: list[p_entities.FeedInfo] = []
 
     for result in results:
-        for feed_info in result.feeds:
+        feeds.extend(result.feeds)
 
-            # TODO: replace by uid?
-            if feed_info.url in feeds_mapping:
-                logger.info("feed_already_found", feed_url=feed_info.url)
-                continue
-
-            feeds_mapping[feed_info.url] = feed_info
-
-    feeds = list(feeds_mapping.values())
     feeds.sort(key=lambda feed_info: feed_info.title)
 
     logger.info("feeds", result_links=[feed_info.url for feed_info in feeds])
 
-    context.candidate_urls.clear()
-
     if not feeds:
-        return context, None
+        return context.replace(candidate_urls=set()), None
 
-    return context, Result(feeds=feeds, status=Status.feeds_found)
+    return context.replace(candidate_urls=set()), Result(feeds=feeds, status=Status.feeds_found)
 
 
 # TODO: teest

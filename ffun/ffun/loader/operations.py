@@ -12,15 +12,18 @@ from ffun.domain.entities import AbsoluteUrl
 from ffun.feeds.entities import FeedError
 from ffun.loader import errors
 from ffun.loader.entities import ProxyState
-from ffun.loader.settings import Proxy
+from ffun.loader.settings import Proxy, settings
 from ffun.parsers import entities as p_entities
 from ffun.parsers.domain import parse_feed
 
 logger = logging.get_module_logger()
 
 
+_load_semaphor = asyncio.Semaphore(settings.max_concurrent_http_requests)
+
+
 async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R0915
-    url: AbsoluteUrl, proxy: Proxy, user_agent: str
+        url: AbsoluteUrl, proxy: Proxy, user_agent: str, semaphore: asyncio.Semaphore = _load_semaphor
 ) -> httpx.Response:
     error_code = FeedError.network_unknown
 
@@ -31,8 +34,9 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
 
         headers = {"user-agent": user_agent, "accept-encoding": "br;q=1.0, gzip;q=0.9, deflate;q=0.8"}
 
-        async with httpx.AsyncClient(proxies=proxy.url, headers=headers) as client:
-            response = await client.get(url, follow_redirects=True)
+        async with semaphore:
+            async with httpx.AsyncClient(proxies=proxy.url, headers=headers) as client:
+                response = await client.get(url, follow_redirects=True)
 
     except httpx.RemoteProtocolError as e:
         message = str(e)

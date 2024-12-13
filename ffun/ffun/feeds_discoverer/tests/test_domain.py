@@ -11,6 +11,9 @@ from ffun.feeds_discoverer.domain import (
     _discover_extract_feeds_from_links,
     _discover_extract_feeds_from_anchors,
     _discover_load_url,
+    _discover_check_candidate_links,
+    _discover_stop_recursion,
+    _discoverers
 )
 from ffun.feeds_discoverer.entities import Context, Result, Status
 
@@ -264,3 +267,63 @@ class TestDiscoverExtractFeedsFromAnchors:
 
         assert new_context == context.replace(candidate_urls=expected_links)
         assert result is None
+
+
+class TestDiscoverCheckCandidateLinks:
+
+    @pytest.mark.asyncio
+    async def test_no_links(self) -> None:
+        context = Context(
+            raw_url=UnknownUrl("http://localhost/test/xxx"),
+            candidate_urls=set(),
+            discoverers = _discoverers
+        )
+
+        new_context, result = await _discover_check_candidate_links(context)
+
+        assert new_context == context
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_works__no_feeds_found(self, respx_mock: MockRouter) -> None:
+        respx_mock.get("/feed1").mock(side_effect=httpx.ConnectTimeout("some message"))
+        respx_mock.get("/feed2").mock(side_effect=httpx.ConnectTimeout("some message"))
+
+        context = Context(
+            raw_url=UnknownUrl("http://localhost/test"),
+            candidate_urls={
+                AbsoluteUrl("http://localhost/feed1"),
+                AbsoluteUrl("http://localhost/feed2"),
+            },
+            discoverers = _discoverers
+        )
+
+        new_context, result = await _discover_check_candidate_links(context)
+
+        assert new_context == context.replace(candidate_urls=set())
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_works__feeds_found(self, respx_mock: MockRouter, raw_feed_content: str, another_raw_feed_content: str) -> None:
+        respx_mock.get("/feed1").mock(return_value=httpx.Response(200, content=raw_feed_content))
+        respx_mock.get("/feed2").mock(return_value=httpx.Response(200, content=another_raw_feed_content))
+
+        context = Context(
+            raw_url=UnknownUrl("http://localhost/test"),
+            candidate_urls={
+                AbsoluteUrl("http://localhost/feed1"),
+                AbsoluteUrl("http://localhost/feed2"),
+            },
+            discoverers = _discoverers
+        )
+
+        new_context, result = await _discover_check_candidate_links(context)
+
+        assert new_context == context.replace(candidate_urls=set())
+
+        assert result.status == Status.feeds_found
+        assert len(result.feeds) == 2
+        assert {feed.url for feed in result.feeds} == {
+            AbsoluteUrl("http://localhost/feed1"),
+            AbsoluteUrl("http://localhost/feed2"),
+        }

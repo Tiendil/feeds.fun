@@ -9,3 +9,11 @@ def raw_feed_content() -> str:
 
     with open(feeds_fixtures_directory / fixture_filename, encoding="utf-8") as f:
         return f.read()
+
+
+@pytest.fixture
+def another_raw_feed_content() -> str:
+    fixture_filename = feeds_fixtures_names()[1]
+
+    with open(feeds_fixtures_directory / fixture_filename, encoding="utf-8") as f:
+        return f.read()
