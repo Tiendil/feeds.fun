@@ -165,7 +165,6 @@ _discoverers = [
 ]
 
 
-# TODO: test
 async def discover(url: UnknownUrl, depth: int, discoverers: list[Discoverer] = _discoverers) -> Result:
     context = Context(raw_url=url, depth=depth, discoverers=discoverers)
 
