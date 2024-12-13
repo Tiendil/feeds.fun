@@ -481,3 +481,20 @@ export function collectionFeedInfoFromJSON({
     id: toFeedId(id)
   });
 }
+
+
+export class ApiMessage {
+  readonly type: string;
+  readonly code: string;
+  readonly message: string;
+
+  constructor({type, code, message}: {type: string; code: string; message: string}) {
+    this.type = type;
+    this.code = code;
+    this.message = message;
+  }
+}
+
+export function apiMessageFromJSON({type, code, message}: {type: string; code: string; message: string}): ApiMessage {
+  return new ApiMessage({type, code, message});
+}

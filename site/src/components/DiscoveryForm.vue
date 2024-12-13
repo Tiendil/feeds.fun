@@ -24,10 +24,19 @@
 
   <div v-else-if="foundFeeds === null"></div>
 
-  <p
+  <div
     v-else-if="foundFeeds.length === 0"
     class="ffun-info-attention"
-    >No feeds found.</p
+    >
+    <p class="ffun-info-error"
+       v-for="message in messages">
+      {{ message.message }}
+    </p>
+
+    <p v-if="messages.length === 0">
+      No feeds found.
+    </p>
+  </div
                       >
 
   <div
@@ -52,8 +61,7 @@
       <p
         v-else
         class="ffun-info-good"
-        >Feed added</p
-                     >
+        >Feed added</p>
       </template>
     </div>
   </div>
@@ -79,7 +87,9 @@
 
   const searhedUrl = ref("");
 
-  const addedFeeds = ref<{[key: string]: boolean}>({});
+const addedFeeds = ref<{[key: string]: boolean}>({});
+
+let messages = ref<t.ApiMessage[]>([]);
 
   const foundFeeds = computedAsync(async () => {
     if (searhedUrl.value === "") {
@@ -87,11 +97,14 @@
     }
 
     searching.value = true;
+    messages.value = [];
 
     let feeds: t.FeedInfo[] = [];
 
     try {
-      feeds = await api.discoverFeeds({url: searhedUrl.value});
+      const answer = await api.discoverFeeds({url: searhedUrl.value});
+      feeds = answer.feeds;
+      messages.value = answer.messages;
     } catch (e) {
       console.error(e);
     }
