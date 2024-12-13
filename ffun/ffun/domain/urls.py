@@ -246,6 +246,10 @@ def url_to_source_uid(url: AbsoluteUrl) -> SourceUid:
 def url_has_extension(url: AbsoluteUrl, expected_extensions: list[str]) -> bool:
     f_url = furl(url)
 
+    # TODO: test
+    if not f_url.path.segments:
+        return "" in expected_extensions
+
     last_segment = f_url.path.segments[-1]
 
     if "." not in last_segment:
