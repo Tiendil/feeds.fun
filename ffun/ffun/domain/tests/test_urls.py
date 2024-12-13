@@ -386,14 +386,23 @@ class TestFilterOutDuplicatedUrls:
         assert urls.filter_out_duplicated_urls([]) == []
 
     def test_no_duplicates(self) -> None:
-        assert urls.filter_out_duplicated_urls([urls.str_to_absolute_url("https://example.com/feed1"), urls.str_to_absolute_url("https://example.com/feed2")]) == [
+        assert urls.filter_out_duplicated_urls(
+            [
+                urls.str_to_absolute_url("https://example.com/feed1"),
+                urls.str_to_absolute_url("https://example.com/feed2"),
+            ]
+        ) == [
             "https://example.com/feed1",
             "https://example.com/feed2",
         ]
 
     def test_duplicates(self) -> None:
         assert urls.filter_out_duplicated_urls(
-            [urls.str_to_absolute_url("https://example.com/feed1?a=b&c=d"), urls.str_to_absolute_url("https://example.com/feed2"), urls.str_to_absolute_url("https://example.com/feed1?c=d&a=b")]
+            [
+                urls.str_to_absolute_url("https://example.com/feed1?a=b&c=d"),
+                urls.str_to_absolute_url("https://example.com/feed2"),
+                urls.str_to_absolute_url("https://example.com/feed1?c=d&a=b"),
+            ]
         ) == ["https://example.com/feed1?a=b&c=d", "https://example.com/feed2"]
 
 

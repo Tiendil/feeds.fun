@@ -3,7 +3,7 @@ import asyncio
 from bs4 import BeautifulSoup
 
 from ffun.core import logging
-from ffun.domain.entities import UnknownUrl, AbsoluteUrl
+from ffun.domain.entities import AbsoluteUrl, UnknownUrl
 from ffun.domain.urls import (
     adjust_classic_url,
     filter_out_duplicated_urls,
@@ -175,7 +175,7 @@ async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | 
     return context, None
 
 
-# Note: we do not add internal feed discoverer here (url -> uid -> feed_id), because
+# Note: we do not add internal feed discoverer here (like db check: url -> uid -> feed_id), because
 #       - we do not expect significant performance improvement
 #       - internal feed data (news list) may be slightly outdated (not containing the latest news)
 _discoverers = [

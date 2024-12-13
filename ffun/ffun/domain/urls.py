@@ -1,8 +1,8 @@
 import contextlib
 import re
 import unicodedata
+from typing import Iterable, Iterator
 from urllib.parse import quote_plus, unquote
-from typing import Iterator, Iterable
 
 import tldextract
 from furl import furl

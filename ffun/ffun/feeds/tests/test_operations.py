@@ -8,7 +8,7 @@ from ffun.core import utils
 from ffun.core.tests.helpers import Delta, TableSizeDelta, TableSizeNotChanged
 from ffun.domain.domain import new_feed_id
 from ffun.domain.entities import FeedId
-from ffun.domain.urls import url_to_uid, str_to_absolute_url
+from ffun.domain.urls import str_to_absolute_url, url_to_uid
 from ffun.feeds import errors
 from ffun.feeds.domain import get_feed, save_feeds
 from ffun.feeds.entities import Feed, FeedError, FeedState
@@ -264,7 +264,11 @@ class TestGetFeedIdsByUids:
 
     @pytest.mark.asyncio
     async def test_load(self, saved_feed: Feed, another_saved_feed: Feed) -> None:
-        uids = [url_to_uid(saved_feed.url), url_to_uid(another_saved_feed.url), url_to_uid(str_to_absolute_url(f"http://{uuid.uuid4().hex}.com/"))]
+        uids = [
+            url_to_uid(saved_feed.url),
+            url_to_uid(another_saved_feed.url),
+            url_to_uid(str_to_absolute_url(f"http://{uuid.uuid4().hex}.com/")),
+        ]
 
         ids = await get_feed_ids_by_uids(uids)
 
