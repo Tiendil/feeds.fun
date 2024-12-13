@@ -8,6 +8,7 @@ from ffun.core import utils
 from ffun.core.tests.helpers import Delta, TableSizeDelta, TableSizeNotChanged
 from ffun.domain.domain import new_feed_id
 from ffun.domain.entities import FeedId
+from ffun.domain.urls import url_to_uid
 from ffun.feeds import errors
 from ffun.feeds.domain import get_feed, save_feeds
 from ffun.feeds.entities import Feed, FeedError, FeedState
@@ -24,6 +25,7 @@ from ffun.feeds.operations import (
     save_feed,
     tech_remove_feed,
     update_feed_info,
+    get_feed_ids_by_uids
 )
 from ffun.feeds.tests import make
 
@@ -250,6 +252,26 @@ class TestGetFeeds:
         assert len(loaded_feeds) == n
 
         assert set(feed_ids[1:-1]) == {feed.id for feed in loaded_feeds}
+
+
+class TestGetFeedIdsByUids:
+
+    @pytest.mark.asyncio
+    async def test_no_uids_passed(self) -> None:
+        ids = await get_feed_ids_by_uids([])
+
+        assert ids == {}
+
+    @pytest.mark.asyncio
+    async def test_load(self, saved_feed: Feed, another_saved_feed: Feed) -> None:
+        uids = [url_to_uid(saved_feed.url), url_to_uid(another_saved_feed.url), uuid.uuid4().hex]
+
+        ids = await get_feed_ids_by_uids(uids)
+
+        assert len(ids) == 2
+
+        assert ids[uids[0]] == saved_feed.id
+        assert ids[uids[1]] == another_saved_feed.id
 
 
 class TestGetSourceIds:

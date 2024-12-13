@@ -10,6 +10,7 @@ from ffun.api import entities
 from ffun.api.settings import settings
 from ffun.auth.dependencies import User
 from ffun.core import logging
+from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
 from ffun.domain.entities import UserId
 from ffun.feeds import domain as f_domain
@@ -222,23 +223,40 @@ async def api_remove_marker(request: entities.RemoveMarkerRequest, user: User) -
     return entities.RemoveMarkerResponse()
 
 
-# TODO: check if user has already subscribed to this feed
 @router.post("/api/discover-feeds")
 async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User) -> entities.DiscoverFeedsResponse:
     result = await fd_domain.discover(url=request.url, depth=1)
 
-    await fl_domain.get_linked_feeds(user.id)
+    messages = []
 
-    # feeds_to_links = {link.feed_id: link for link in linked_feeds}
+    # descriptive user friendly error messages
+    results_to_messages = {
+        fd_entities.Status.incorrect_url: "The URL has incorrect format",
+        fd_entities.Status.cannot_access_url: "Cannot access the URL",
+        fd_entities.Status.not_html: "Can not parse content of the page",
+        fd_entities.Status.no_feeds_found: "No feeds found by the URL",
+    }
 
-    # feeds = await f_domain.get_feeds(ids=list(feeds_to_links.keys()))
+    if result.status == fd_entities.Status.feeds_found:
+        pass
+    elif result.status in results_to_messages:
+        messages.append(Message(type=MessageType.error,
+                                code=f'discover_feeds_error:{result.status.name}',
+                                message=results_to_messages[result.status]))
+    else:
+        raise NotImplementedError(f"Unknown status: {result.status}")
+
+    linked_feeds = await fl_domain.get_linked_feeds(user.id)
+    linked_uids = {link.feed_uid for link in linked_feeds}
 
     for feed in result.feeds[: settings.max_feeds_suggestions_for_site]:
         feed.entries = feed.entries[: settings.max_entries_suggestions_for_site]
 
-    external_feeds = [entities.FeedInfo.from_internal(feed) for feed in result.feeds]
+    external_feeds = [entities.FeedInfo.from_internal(feed, is_linked=feed.uid in linked_uids)
+                      for feed in result.feeds]
 
-    return entities.DiscoverFeedsResponse(feeds=external_feeds)
+    return entities.DiscoverFeedsResponse(feeds=external_feeds,
+                                          messages=messages)
 
 
 # TODO: check manually

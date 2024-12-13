@@ -135,15 +135,17 @@ class FeedInfo(BaseEntity):
     url: AbsoluteUrl
     title: str
     description: str
+    is_linked: bool
 
     entries: list[EntryInfo]
 
     @classmethod
-    def from_internal(cls, feed: p_entities.FeedInfo) -> "FeedInfo":
+    def from_internal(cls, feed: p_entities.FeedInfo, is_linked: bool) -> "FeedInfo":
         return cls(
             url=feed.url,
             title=feed.title,
             description=feed.description,
+            is_linked=is_linked,
             entries=[EntryInfo.from_internal(entry) for entry in feed.entries],
         )
 

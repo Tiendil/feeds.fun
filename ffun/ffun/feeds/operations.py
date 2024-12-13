@@ -8,7 +8,7 @@ from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain import urls as domain_urls
 from ffun.domain.domain import new_source_id
-from ffun.domain.entities import SourceId
+from ffun.domain.entities import SourceId, UrlUid
 from ffun.feeds.entities import Feed, FeedError, FeedId, FeedState
 
 logger = logging.get_module_logger()
@@ -54,12 +54,12 @@ async def save_feed(feed: Feed) -> FeedId:
     except psycopg.errors.UniqueViolation as e:
         logger.warning("unique_violation_while_saving_feed", feed=feed)
 
-        result = await execute("SELECT id FROM f_feeds WHERE uid = %(uid)s", {"uid": uid})
+        found_ids = await get_feed_ids_by_uids([uid])
 
-        if not result:
+        if not found_ids:
             raise NotImplementedError("something went wrong") from e
 
-        return FeedId(result[0]["id"])
+        return found_ids[uid]
 
 
 @run_in_transaction
@@ -149,6 +149,18 @@ async def get_feeds(ids: Iterable[FeedId]) -> list[Feed]:
     rows = await execute(sql, {"ids": list(ids)})
 
     return [row_to_feed(row) for row in rows]
+
+
+async def get_feed_ids_by_uids(uids: Iterable[str]) -> dict[UrlUid, FeedId]:
+    sql = """
+    SELECT id, uid
+    FROM f_feeds
+    WHERE uid = ANY(%(uids)s)
+    """
+
+    rows = await execute(sql, {"uids": list(uids)})
+
+    return {row["uid"]: row["id"] for row in rows}
 
 
 async def get_source_ids(source_uids: Iterable[str]) -> dict[str, SourceId]:
