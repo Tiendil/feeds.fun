@@ -241,9 +241,13 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
     if result.status == fd_entities.Status.feeds_found:
         pass
     elif result.status in results_to_messages:
-        messages.append(Message(type=MessageType.error,
-                                code=f'discover_feeds_error:{result.status.name}',
-                                message=results_to_messages[result.status]))
+        messages.append(
+            Message(
+                type=MessageType.error,
+                code=f"discover_feeds_error:{result.status.name}",
+                message=results_to_messages[result.status],
+            )
+        )
     else:
         raise NotImplementedError(f"Unknown status: {result.status}")
 
@@ -255,11 +259,12 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
     for feed in result.feeds[: settings.max_feeds_suggestions_for_site]:
         feed.entries = feed.entries[: settings.max_entries_suggestions_for_site]
 
-    external_feeds = [entities.FeedInfo.from_internal(feed, is_linked=feed.uid in found_ids and found_ids[feed.uid] in linked_ids)
-                      for feed in result.feeds]
+    external_feeds = [
+        entities.FeedInfo.from_internal(feed, is_linked=feed.uid in found_ids and found_ids[feed.uid] in linked_ids)
+        for feed in result.feeds
+    ]
 
-    return entities.DiscoverFeedsResponse(feeds=external_feeds,
-                                          messages=messages)
+    return entities.DiscoverFeedsResponse(feeds=external_feeds, messages=messages)
 
 
 @router.post("/api/add-feed")
@@ -338,8 +343,11 @@ async def api_subscribe_to_collections(
         for feed_info in collection.feeds:
             feeds.append(
                 p_entities.FeedInfo(
-                    url=feed_info.url, title=feed_info.title, description=feed_info.description, entries=[],
-                    uid=url_to_uid(feed_info.url)
+                    url=feed_info.url,
+                    title=feed_info.title,
+                    description=feed_info.description,
+                    entries=[],
+                    uid=url_to_uid(feed_info.url),
                 )
             )
 

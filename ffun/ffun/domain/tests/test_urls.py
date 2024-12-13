@@ -21,7 +21,11 @@ class TestAdjustClassicUrl:
                 "another.domain.com:666/path/a/b?c=d",
                 "https://another.domain.com:666/path/a/b?c=d",
             ),
-            ("https://example.com/feed/", "another.domain.com/path/a/b?c=d", "https://another.domain.com/path/a/b?c=d"),
+            (
+                "https://example.com/feed/",
+                "another.domain.com/path/a/b?c=d",
+                "https://another.domain.com/path/a/b?c=d",
+            ),
             ("https://example.com/feed/", "/path/a/b?c=d", "https://example.com/path/a/b?c=d"),
             ("https://example.com/feed/", "path/a/b?c=d", "https://example.com/feed/path/a/b?c=d"),
             ("https://example.com/feed/", "path", "https://example.com/feed/path"),
@@ -92,16 +96,18 @@ class TestAdjustExternalUrl:
                 "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80",  # noqa
             ),
             ("http://www.usinenouvelle.comhttps://www.usine-digitale.fr/article/christophe", None),
-            ("x"*100, "https://example.com/" + "x"*100),  # noqa
-            ("x-x"*100, "https://example.com/" + "x-x"*100),  # noqa
+            ("x" * 100, "https://example.com/" + "x" * 100),  # noqa
+            ("x-x" * 100, "https://example.com/" + "x-x" * 100),  # noqa
             ("xxx.com", "https://xxx.com"),  # noqa
-            ("x"*100 + '.html', "https://example.com/" + "x"*100 + '.html'),  # noqa
+            ("x" * 100 + ".html", "https://example.com/" + "x" * 100 + ".html"),  # noqa
             ("x.html", "https://example.com/x.html"),  # noqa
             # TODO: what if ip addreses?
         ],
     )
     def test(self, url: UnknownUrl, adjusted_url: AbsoluteUrl) -> None:
-        assert adjusted_url is None or urls.is_absolute_url(adjusted_url) or urls.is_magnetic_url(url), "Wrong test parameters"
+        assert (
+            adjusted_url is None or urls.is_absolute_url(adjusted_url) or urls.is_magnetic_url(url)
+        ), "Wrong test parameters"
 
         original_url = urls.normalize_classic_unknown_url(UnknownUrl("https://example.com"))
 
@@ -401,7 +407,16 @@ class TestGetParentUrl:
     def test_has_parent(self) -> None:
         assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed")) == "https://example.com"
         assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed/")) == "https://example.com/feed"
-        assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed/part")) == "https://example.com/feed/"
+        assert (
+            urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed/part"))
+            == "https://example.com/feed/"
+        )
         assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed/")) == "https://example.com/feed"
-        assert urls.get_parent_url(urls.str_to_absolute_url("https://subdomain.example.com/feed/part")) == "https://subdomain.example.com/feed/"
-        assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed/part/second")) == "https://example.com/feed/part/"
+        assert (
+            urls.get_parent_url(urls.str_to_absolute_url("https://subdomain.example.com/feed/part"))
+            == "https://subdomain.example.com/feed/"
+        )
+        assert (
+            urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed/part/second"))
+            == "https://example.com/feed/part/"
+        )

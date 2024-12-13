@@ -72,8 +72,11 @@ class TestSyncFeedInfo:
         assert saved_feed.description
 
         feed_info = p_entities.FeedInfo(
-            url=saved_feed.url, title=saved_feed.title, description=saved_feed.description, entries=[],
-            uid=url_to_uid(saved_feed.url)
+            url=saved_feed.url,
+            title=saved_feed.title,
+            description=saved_feed.description,
+            entries=[],
+            uid=url_to_uid(saved_feed.url),
         )
 
         await sync_feed_info(saved_feed, feed_info)
@@ -83,8 +86,11 @@ class TestSyncFeedInfo:
     @pytest.mark.asyncio
     async def test_sync_required(self, saved_feed: f_entities.Feed) -> None:
         feed_info = p_entities.FeedInfo(
-            url=saved_feed.url, title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[],
-            uid=url_to_uid(saved_feed.url)
+            url=saved_feed.url,
+            title=uuid.uuid4().hex,
+            description=uuid.uuid4().hex,
+            entries=[],
+            uid=url_to_uid(saved_feed.url),
         )
 
         await sync_feed_info(saved_feed, feed_info)
@@ -101,8 +107,11 @@ class TestSyncFeedInfo:
         await collections.add_test_feed_to_collections(collection_id_for_test_feeds, saved_feed.id)
 
         feed_info = p_entities.FeedInfo(
-            url=saved_feed.url, title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[],
-            uid=url_to_uid(saved_feed.url)
+            url=saved_feed.url,
+            title=uuid.uuid4().hex,
+            description=uuid.uuid4().hex,
+            entries=[],
+            uid=url_to_uid(saved_feed.url),
         )
 
         await sync_feed_info(saved_feed, feed_info)
@@ -223,8 +232,11 @@ class TestProcessFeed:
         assert saved_feed.description
 
         feed_info = p_entities.FeedInfo(
-            url=saved_feed.url, title=saved_feed.title, description=saved_feed.description, entries=entry_infos,
-            uid=url_to_uid(saved_feed.url)
+            url=saved_feed.url,
+            title=saved_feed.title,
+            description=saved_feed.description,
+            entries=entry_infos,
+            uid=url_to_uid(saved_feed.url),
         )
 
         extract_feed_info = mocker.patch("ffun.loader.domain.extract_feed_info", return_value=feed_info)
@@ -263,8 +275,11 @@ class TestProcessFeed:
         assert saved_feed.description
 
         feed_info = p_entities.FeedInfo(
-            url=saved_feed.url, title=saved_feed.title, description=saved_feed.description, entries=entry_infos,
-            uid=url_to_uid(saved_feed.url)
+            url=saved_feed.url,
+            title=saved_feed.title,
+            description=saved_feed.description,
+            entries=entry_infos,
+            uid=url_to_uid(saved_feed.url),
         )
 
         mocker.patch("ffun.loader.domain.extract_feed_info", return_value=feed_info)

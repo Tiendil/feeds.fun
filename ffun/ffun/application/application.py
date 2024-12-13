@@ -13,8 +13,8 @@ from ffun.auth import supertokens as st
 from ffun.auth.settings import AuthMode
 from ffun.auth.settings import settings as auth_settings
 from ffun.core import logging, middlewares, postgresql, sentry
-from ffun.feeds_collections.collections import collections
 from ffun.domain.urls import initialize_tld_cache
+from ffun.feeds_collections.collections import collections
 
 logger = logging.get_module_logger()
 

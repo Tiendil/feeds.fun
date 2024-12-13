@@ -12,10 +12,18 @@
 
     <div class="ffun-info-good">
       <p>
-        <a href="https://en.wikipedia.org/wiki/OPML" target="_blank">OPML</a> is a widely-used format for transferring news feed lists between platforms.
+        <a
+          href="https://en.wikipedia.org/wiki/OPML"
+          target="_blank"
+          >OPML</a
+        >
+        is a widely-used format for transferring news feed lists between platforms.
       </p>
 
-      <p>Export your feeds from your old reader in OPML format and import them into our reader to seamlessly transition!</p>
+      <p
+        >Export your feeds from your old reader in OPML format and import them into our reader to seamlessly
+        transition!</p
+      >
     </div>
 
     <opml-upload />

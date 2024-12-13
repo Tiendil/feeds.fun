@@ -7,9 +7,9 @@ from ffun.domain.entities import UnknownUrl
 from ffun.domain.urls import (
     adjust_classic_url,
     filter_out_duplicated_urls,
+    get_parent_url,
     normalize_classic_unknown_url,
     url_has_extension,
-    get_parent_url
 )
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain

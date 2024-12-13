@@ -1,9 +1,9 @@
-import re
 import contextlib
-import tldextract
+import re
 import unicodedata
 from urllib.parse import quote_plus, unquote
 
+import tldextract
 from furl import furl
 from orderedmultidict import omdict
 
@@ -42,7 +42,7 @@ def check_furl_error() -> None:
 def _simplify_furl(f_url: furl) -> None:
     f_url.remove(fragment=True)
 
-    if f_url.path == '/':
+    if f_url.path == "/":
         f_url.path = None
 
 
@@ -86,7 +86,7 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noq
     domain_part = url.split("/")[0]
 
     # simple protection from processing special domains
-    if '.' not in domain_part:
+    if "." not in domain_part:
         return None
 
     # check if url has a proper domain

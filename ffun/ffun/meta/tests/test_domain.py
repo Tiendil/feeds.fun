@@ -102,11 +102,7 @@ class TestAddFeeds:
                 uid=url_to_uid(urls[1]),
             ),
             p_entities.FeedInfo(
-                url=urls[2],
-                title=uuid.uuid4().hex,
-                description=uuid.uuid4().hex,
-                entries=[],
-                uid=url_to_uid(urls[2])
+                url=urls[2], title=uuid.uuid4().hex, description=uuid.uuid4().hex, entries=[], uid=url_to_uid(urls[2])
             ),
         ]
 

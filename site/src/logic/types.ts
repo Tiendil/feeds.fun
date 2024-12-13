@@ -294,7 +294,7 @@ export function feedInfoFromJSON({
   title,
   description,
   entries,
-  isLinked,
+  isLinked
 }: {
   url: string;
   title: string;
@@ -307,7 +307,7 @@ export function feedInfoFromJSON({
     title,
     description,
     entries: entries.map(entryInfoFromJSON),
-    isLinked,
+    isLinked
   };
 }
 
@@ -481,7 +481,6 @@ export function collectionFeedInfoFromJSON({
     id: toFeedId(id)
   });
 }
-
 
 export class ApiMessage {
   readonly type: string;

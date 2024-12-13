@@ -16,6 +16,7 @@ from ffun.feeds.operations import (
     count_total_feeds,
     count_total_feeds_per_last_error,
     count_total_feeds_per_state,
+    get_feed_ids_by_uids,
     get_feeds,
     get_next_feeds_to_load,
     get_source_ids,
@@ -25,7 +26,6 @@ from ffun.feeds.operations import (
     save_feed,
     tech_remove_feed,
     update_feed_info,
-    get_feed_ids_by_uids
 )
 from ffun.feeds.tests import make
 

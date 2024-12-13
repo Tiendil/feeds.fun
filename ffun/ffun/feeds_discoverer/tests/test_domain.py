@@ -7,14 +7,13 @@ from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds_discoverer.domain import (
     _discover_adjust_url,
     _discover_check_candidate_links,
+    _discover_check_parent_urls,
     _discover_create_soup,
     _discover_extract_feed_info,
     _discover_extract_feeds_from_anchors,
     _discover_extract_feeds_from_links,
     _discover_load_url,
     _discover_stop_recursion,
-    _discover_check_parent_urls,
-    _discover_check_candidate_links,
     _discoverers,
     discover,
 )
@@ -279,7 +278,7 @@ class TestDiscoverCheckParentUrls:
         context = Context(
             raw_url=UnknownUrl("http://example.com"),
             url=str_to_absolute_url("http://example.com"),
-            discoverers=_discoverers
+            discoverers=_discoverers,
         )
 
         new_context, result = await _discover_check_parent_urls(context)
@@ -306,9 +305,7 @@ class TestDiscoverCheckParentUrls:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_found(
-        self, respx_mock: MockRouter, raw_feed_content: str, another_raw_feed_content: str
-    ) -> None:
+    async def test_found(self, respx_mock: MockRouter, raw_feed_content: str, another_raw_feed_content: str) -> None:
         test_html = """
         <html>
           <head>
@@ -442,7 +439,7 @@ def test_discoverers_list_not_changed():
         _discover_check_candidate_links,
         _discover_extract_feeds_from_anchors,
         _discover_check_candidate_links,
-        _discover_check_parent_urls
+        _discover_check_parent_urls,
     ]
 
 
@@ -526,7 +523,9 @@ class TestDiscover:
         assert result == Result(feeds=[], status=Status.no_feeds_found)
 
     @pytest.mark.asyncio
-    async def test_found_in_parent(self, respx_mock: MockRouter, raw_feed_content: str, another_raw_feed_content: str) -> None:
+    async def test_found_in_parent(
+        self, respx_mock: MockRouter, raw_feed_content: str, another_raw_feed_content: str
+    ) -> None:
         test_html = """
         <html>
           <head>
