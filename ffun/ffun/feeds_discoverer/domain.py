@@ -145,7 +145,6 @@ async def _discover_check_candidate_links(context: Context) -> tuple[Context, Re
     return context.replace(candidate_urls=set()), Result(feeds=feeds, status=Status.feeds_found)
 
 
-# TODO: teest
 async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | None]:
     if context.depth == 0:
         return context, Result(feeds=[], status=Status.no_feeds_found)
@@ -153,7 +152,6 @@ async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | 
     return context, None
 
 
-# TODO: test list
 _discoverers = [
     _discover_adjust_url,
     _discover_load_url,

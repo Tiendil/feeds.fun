@@ -327,3 +327,46 @@ class TestDiscoverCheckCandidateLinks:
             AbsoluteUrl("http://localhost/feed1"),
             AbsoluteUrl("http://localhost/feed2"),
         }
+
+
+class TestDiscoverStopRecursion:
+
+    @pytest.mark.asyncio
+    async def test_depth_zero(self) -> None:
+        context = Context(
+            raw_url=UnknownUrl("http://localhost/test"),
+            depth=0,
+            discoverers = _discoverers
+        )
+
+        new_context, result = await _discover_stop_recursion(context)
+
+        assert new_context == context
+        assert result.status == Status.no_feeds_found
+
+    @pytest.mark.asyncio
+    async def test_depth_not_zero(self) -> None:
+        context = Context(
+            raw_url=UnknownUrl("http://localhost/test"),
+            depth=1,
+            discoverers = _discoverers
+        )
+
+        new_context, result = await _discover_stop_recursion(context)
+
+        assert new_context == context
+        assert result is None
+
+
+def test_discoverers_list_not_changed():
+    assert _discoverers == [
+        _discover_adjust_url,
+        _discover_load_url,
+        _discover_extract_feed_info,
+        _discover_stop_recursion,
+        _discover_create_soup,
+        _discover_extract_feeds_from_links,
+        _discover_check_candidate_links,
+        _discover_extract_feeds_from_anchors,
+        _discover_check_candidate_links,
+    ]
