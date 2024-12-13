@@ -353,3 +353,20 @@ class TestUrlHasExtension:
         assert not urls.url_has_extension(urls.str_to_absolute_url("https://example.com/feed.second..xml"), [])
         assert not urls.url_has_extension(urls.str_to_absolute_url("https://example.com/feed.second.xml"), [".rss", '.html'])
         assert not urls.url_has_extension(urls.str_to_absolute_url("https://example.com/feed/second"), [])
+
+
+class TestFilterOutDuplicatedUrls:
+
+    def test_no_urls(self) -> None:
+        assert urls.filter_out_duplicated_urls([]) == []
+
+    def test_no_duplicates(self) -> None:
+        assert urls.filter_out_duplicated_urls(["https://example.com/feed1", "https://example.com/feed2"]) == [
+            "https://example.com/feed1",
+            "https://example.com/feed2",
+        ]
+
+    def test_duplicates(self) -> None:
+        assert urls.filter_out_duplicated_urls(
+            ["https://example.com/feed1?a=b&c=d", "https://example.com/feed2", "https://example.com/feed1?c=d&a=b"]
+        ) == ["https://example.com/feed1?a=b&c=d", "https://example.com/feed2"]

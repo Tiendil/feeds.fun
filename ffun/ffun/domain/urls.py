@@ -248,7 +248,6 @@ def url_has_extension(url: AbsoluteUrl, expected_extensions: list[str]) -> bool:
     return f".{extension}" in expected_extensions
 
 
-# TODO: tests
 def filter_out_duplicated_urls(urls: list[AbsoluteUrl]) -> list[AbsoluteUrl]:
     seen = set()
 
