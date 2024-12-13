@@ -13,6 +13,7 @@ from ffun.core import logging
 from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
 from ffun.domain.entities import UserId
+from ffun.domain.urls import url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_discoverer import domain as fd_domain
@@ -261,7 +262,6 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
                                           messages=messages)
 
 
-# TODO: check manually
 @router.post("/api/add-feed")
 async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities.AddFeedResponse:
     discover_result = await fd_domain.discover(url=request.url, depth=0)
@@ -338,7 +338,8 @@ async def api_subscribe_to_collections(
         for feed_info in collection.feeds:
             feeds.append(
                 p_entities.FeedInfo(
-                    url=feed_info.url, title=feed_info.title, description=feed_info.description, entries=[]
+                    url=feed_info.url, title=feed_info.title, description=feed_info.description, entries=[],
+                    uid=url_to_uid(feed_info.url)
                 )
             )
 
