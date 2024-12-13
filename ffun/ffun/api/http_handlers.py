@@ -234,8 +234,6 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
         fd_entities.Status.incorrect_url: "The URL has incorrect format",
         fd_entities.Status.cannot_access_url: "Cannot access the URL",
         fd_entities.Status.not_html: "Can not parse content of the page",
-
-        # TODO: send senty message in that case?
         fd_entities.Status.no_feeds_found: "No feeds found at the specified URL",
     }
 
