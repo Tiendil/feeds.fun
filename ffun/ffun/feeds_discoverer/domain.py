@@ -3,7 +3,7 @@ import asyncio
 from bs4 import BeautifulSoup
 
 from ffun.core import logging
-from ffun.domain.entities import UnknownUrl
+from ffun.domain.entities import UnknownUrl, AbsoluteUrl
 from ffun.domain.urls import (
     adjust_classic_url,
     filter_out_duplicated_urls,
@@ -100,6 +100,7 @@ async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context,
 
 
 async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Context, Result | None]:
+    assert context.url is not None
 
     allowed_extensions = [".xml", ".rss", ".atom", ".rdf", ".feed", ".php", ".asp", ".aspx", ".json", ".cgi", ""]
 
@@ -191,7 +192,7 @@ _discoverers = [
 ]
 
 
-async def discover(url: UnknownUrl, depth: int, discoverers: list[Discoverer] = _discoverers) -> Result:
+async def discover(url: UnknownUrl | AbsoluteUrl, depth: int, discoverers: list[Discoverer] = _discoverers) -> Result:
 
     logger.info("discovering_start", url=url, depth=depth)
 

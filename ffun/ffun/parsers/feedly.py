@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET  # noqa
 from typing import Generator
 
 from ffun.domain.entities import UnknownUrl
-from ffun.domain.urls import normalize_classic_unknown_url
+from ffun.domain.urls import normalize_classic_unknown_url, url_to_uid
 from ffun.parsers.entities import FeedInfo
 
 
@@ -40,6 +40,7 @@ def extract_feeds(data: str) -> list[FeedInfo]:
     return feeds
 
 
+# TODO: test manually
 def extract_feeds_records(body: ET.Element) -> Generator[FeedInfo, None, None]:
     for outline in body:
         if outline.attrib.get("type") == "rss":
@@ -53,6 +54,7 @@ def extract_feeds_records(body: ET.Element) -> Generator[FeedInfo, None, None]:
                 title=outline.attrib.get("title", ""),
                 description="",
                 entries=[],
+                uid=url_to_uid(url),
             )
             continue
 

@@ -120,8 +120,6 @@ class TestAddFeeds:
         assert {feed.url for feed in feeds_1} == {feed.url for feed in feeds[:2]}
         assert {feed.url for feed in feeds_2} == {feed.url for feed in feeds[1:]}
 
-        urls = {feed.url for feed in feeds}
-
         source_uids = {url: url_to_source_uid(url) for url in urls}
         source_ids = await f_domain.get_source_ids(source_uids.values())
 

@@ -2,6 +2,7 @@ import contextlib
 import re
 import unicodedata
 from urllib.parse import quote_plus, unquote
+from typing import Iterator
 
 import tldextract
 from furl import furl
@@ -27,7 +28,7 @@ RE_SCHEMA = re.compile(r"^(\w+):")
 
 
 @contextlib.contextmanager
-def check_furl_error() -> None:
+def check_furl_error() -> Iterator[None]:
     try:
         yield
     except ValueError as e:
@@ -46,7 +47,7 @@ def _simplify_furl(f_url: furl) -> None:
         f_url.path = None
 
 
-def _construct_f_url(url: UnknownUrl) -> furl | None:
+def _construct_f_url(url: UnknownUrl | AbsoluteUrl | str) -> furl | None:
     try:
         with check_furl_error():
             f_url = furl(url)
