@@ -1,39 +1,45 @@
 <template>
-  <div>
-    <form @submit.prevent="searhedUrl = search">
-      <input
-        type="text"
-        class="ffun-input mr-1"
-        v-model="search"
-        :disabled="disableInputs"
-        placeholder="Enter a site URL" />
+<div>
+  <form @submit.prevent="searhedUrl = search">
+    <input
+      type="text"
+      class="ffun-input mr-1"
+      v-model="search"
+      :disabled="disableInputs"
+      placeholder="Enter a site URL" />
 
-      <button
-        type="submit"
-        class="ffun-form-button"
-        :disabled="disableInputs">
-        Search
-      </button>
-    </form>
+    <button
+      type="submit"
+      class="ffun-form-button"
+      :disabled="disableInputs">
+      Search
+    </button>
+  </form>
 
-    <p
-      v-if="searching"
-      class="ffun-info-attention"
-      >Searching for feeds…</p
-    >
+  <p
+    v-if="searching"
+    class="ffun-info-attention"
+    >Searching for feeds…</p
+                           >
 
-    <div v-else-if="foundFeeds === null"></div>
+  <div v-else-if="foundFeeds === null"></div>
 
-    <p
-      v-else-if="foundFeeds.length === 0"
-      class="ffun-info-attention"
-      >No feeds found.</p
-    >
+  <p
+    v-else-if="foundFeeds.length === 0"
+    class="ffun-info-attention"
+    >No feeds found.</p
+                      >
 
-    <div
-      v-for="feed in foundFeeds"
-      :key="feed.url">
-      <feed-info :feed="feed" />
+  <div
+    v-for="feed in foundFeeds"
+    :key="feed.url">
+    <feed-info :feed="feed" />
+
+    <p v-if="feed.isLinked" class="ffun-info-good">
+      You are already subscribed to this feed.
+    </p>
+
+    <template v-else>
 
       <button
         class="ffun-form-button"
@@ -47,7 +53,8 @@
         v-else
         class="ffun-info-good"
         >Feed added</p
-      >
+                     >
+      </template>
     </div>
   </div>
 </template>

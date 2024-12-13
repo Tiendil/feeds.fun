@@ -135,7 +135,7 @@ class FeedInfo(BaseEntity):
     url: AbsoluteUrl
     title: str
     description: str
-    is_linked: bool
+    isLinked: bool
 
     entries: list[EntryInfo]
 
@@ -145,7 +145,7 @@ class FeedInfo(BaseEntity):
             url=feed.url,
             title=feed.title,
             description=feed.description,
-            is_linked=is_linked,
+            isLinked=is_linked,
             entries=[EntryInfo.from_internal(entry) for entry in feed.entries],
         )
 

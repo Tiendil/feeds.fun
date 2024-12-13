@@ -293,18 +293,21 @@ export function feedInfoFromJSON({
   url,
   title,
   description,
-  entries
+  entries,
+  isLinked,
 }: {
   url: string;
   title: string;
   description: string;
   entries: any[];
+  isLinked: boolean;
 }): FeedInfo {
   return {
     url: toURL(url),
     title,
     description,
-    entries: entries.map(entryInfoFromJSON)
+    entries: entries.map(entryInfoFromJSON),
+    isLinked,
   };
 }
 

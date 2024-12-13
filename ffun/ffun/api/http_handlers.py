@@ -249,12 +249,14 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
         raise NotImplementedError(f"Unknown status: {result.status}")
 
     linked_feeds = await fl_domain.get_linked_feeds(user.id)
-    linked_uids = {link.feed_uid for link in linked_feeds}
+    linked_ids = {link.feed_id for link in linked_feeds}
+
+    found_ids = await f_domain.get_feed_ids_by_uids([feed.uid for feed in result.feeds])
 
     for feed in result.feeds[: settings.max_feeds_suggestions_for_site]:
         feed.entries = feed.entries[: settings.max_entries_suggestions_for_site]
 
-    external_feeds = [entities.FeedInfo.from_internal(feed, is_linked=feed.uid in linked_uids)
+    external_feeds = [entities.FeedInfo.from_internal(feed, is_linked=feed.uid in found_ids and found_ids[feed.uid] in linked_ids)
                       for feed in result.feeds]
 
     return entities.DiscoverFeedsResponse(feeds=external_feeds,
