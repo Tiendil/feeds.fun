@@ -228,8 +228,7 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
     result = await fd_domain.discover(url=request.url, depth=1)
 
     for feed in result.feeds:
-        # TODO: should we limit entities number there?
-        feed.entries = feed.entries[:3]
+        feed.entries = feed.entries[:settings.max_feeds_suggestions_for_site]
 
     external_feeds = [entities.FeedInfo.from_internal(feed) for feed in result.feeds]
 
