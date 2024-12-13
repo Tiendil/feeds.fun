@@ -7,3 +7,7 @@ class Error(errors.Error):
 
 class UrlIsNotAbsolute(Error):
     pass
+
+
+class ExpectedFUrlError(Error):
+    pass

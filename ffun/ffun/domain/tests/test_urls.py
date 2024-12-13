@@ -92,10 +92,16 @@ class TestAdjustExternalUrl:
                 "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80",  # noqa
             ),
             ("http://www.usinenouvelle.comhttps://www.usine-digitale.fr/article/christophe", None),
+            ("x"*100, "https://example.com/" + "x"*100),  # noqa
+            ("x-x"*100, "https://example.com/" + "x-x"*100),  # noqa
+            ("xxx.com", "https://xxx.com"),  # noqa
+            ("x"*100 + '.html', "https://example.com/" + "x"*100 + '.html'),  # noqa
+            # TODO: uncomment
+            # ("x.html", "https://example.com/x.html"),  # noqa
         ],
     )
     def test(self, url: UnknownUrl, adjusted_url: AbsoluteUrl) -> None:
-        assert adjusted_url is None or urls.is_absolute_url(adjusted_url) or urls.is_magnetic_url(url)
+        assert adjusted_url is None or urls.is_absolute_url(adjusted_url) or urls.is_magnetic_url(url), "Wrong test parameters"
 
         original_url = urls.normalize_classic_unknown_url(UnknownUrl("https://example.com"))
 

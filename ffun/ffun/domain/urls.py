@@ -1,4 +1,5 @@
 import re
+import contextlib
 import unicodedata
 from urllib.parse import quote_plus, unquote
 
@@ -24,13 +25,20 @@ logger = logging.get_module_logger()
 RE_SCHEMA = re.compile(r"^(\w+):")
 
 
-def is_expected_furl_error(error: Exception) -> bool:
-    message = str(error)
+@contextlib.contextmanager
+def check_furl_error() -> None:
+    try:
+        yield
+    except ValueError as e:
+        message = str(e)
 
-    if "Invalid port" in message:
-        return True
+        if "label empty or too long" in message:
+            raise errors.ExpectedFUrlError(message=message) from e
 
-    return False
+        if "Invalid port" in message:
+            raise errors.ExpectedFUrlError(message=message) from e
+
+        raise
 
 
 def _simplify_furl(f_url: furl) -> None:
@@ -40,20 +48,27 @@ def _simplify_furl(f_url: furl) -> None:
         f_url.path = None
 
 
+def _construct_f_url(url: UnknownUrl) -> furl | None:
+    try:
+        with check_furl_error():
+            f_url = furl(url)
+    except errors.ExpectedFUrlError:
+        return None
+
+    _simplify_furl(f_url)
+
+    return f_url
+
+
 # ATTENTION: see note at the top of the file
 def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noqa: CCR001
     url = UnknownUrl(url.strip())
 
     # check if url is parsable
-    try:
-        f_url = furl(url)
-    except ValueError as e:
-        if is_expected_furl_error(e):
-            return None
+    f_url = _construct_f_url(url)
 
-        raise
-
-    _simplify_furl(f_url)
+    if f_url is None:
+        return None
 
     if url.startswith("//"):
         return AbsoluteUrl(str(f_url))
@@ -69,9 +84,10 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noq
     if "." not in url.split("/")[0]:
         return None
 
-    f_url = furl(f"//{url}")
+    f_url = _construct_f_url(f"//{url}")
 
-    _simplify_furl(f_url)
+    if f_url is None:
+        return None
 
     return AbsoluteUrl(str(f_url))
 
@@ -103,8 +119,10 @@ def is_absolute_url(url: str) -> bool:
 
 # ATTENTION: see note at the top of the file
 def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
+    print("url", url)
+    print("original_url", original_url)
     fixed_url = normalize_classic_unknown_url(url)
-
+    print('fixed_url', fixed_url)
     assert fixed_url is not None
 
     f_original_url = furl(original_url)
@@ -120,17 +138,18 @@ def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl) -> Absol
 
 # ATTENTION: see note at the top of the file
 def adjust_classic_relative_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
-    f_url = furl(original_url)
+    f_url = _construct_f_url(original_url)
+
+    if f_url is None:
+        return None
 
     f_url.remove(query_params=True, fragment=True)
 
     try:
-        f_url.join(url)
-    except ValueError as e:
-        if is_expected_furl_error(e):
-            return None
-
-        raise
+        with check_furl_error():
+            f_url.join(url)
+    except errors.ExpectedFUrlError:
+        return None
 
     return AbsoluteUrl(str(f_url))
 
