@@ -196,7 +196,7 @@ async def discover(url: UnknownUrl | AbsoluteUrl, depth: int, discoverers: list[
 
     logger.info("discovering_start", url=url, depth=depth)
 
-    context = Context(raw_url=url, depth=depth, discoverers=discoverers)
+    context = Context(raw_url=UnknownUrl(url), depth=depth, discoverers=discoverers)
 
     for discoverer in discoverers:
         context, result = await discoverer(context)

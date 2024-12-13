@@ -339,6 +339,8 @@ class TestDiscoverCheckParentUrls:
 
         assert new_context == context
 
+        assert result is not None
+
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 2
         assert {feed.url for feed in result.feeds} == {
@@ -399,6 +401,7 @@ class TestDiscoverCheckCandidateLinks:
 
         assert new_context == context.replace(candidate_urls=set())
 
+        assert result is not None
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 2
         assert {feed.url for feed in result.feeds} == {
@@ -416,6 +419,7 @@ class TestDiscoverStopRecursion:
         new_context, result = await _discover_stop_recursion(context)
 
         assert new_context == context
+        assert result is not None
         assert result.status == Status.no_feeds_found
 
     @pytest.mark.asyncio
@@ -428,7 +432,7 @@ class TestDiscoverStopRecursion:
         assert result is None
 
 
-def test_discoverers_list_not_changed():
+def test_discoverers_list_not_changed() -> None:
     assert _discoverers == [
         _discover_adjust_url,
         _discover_load_url,

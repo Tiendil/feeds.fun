@@ -2,7 +2,7 @@ import contextlib
 import re
 import unicodedata
 from urllib.parse import quote_plus, unquote
-from typing import Iterator
+from typing import Iterator, Iterable
 
 import tldextract
 from furl import furl
@@ -285,7 +285,7 @@ def url_has_extension(url: AbsoluteUrl, expected_extensions: list[str]) -> bool:
     return f".{extension}" in expected_extensions
 
 
-def filter_out_duplicated_urls(urls: list[AbsoluteUrl]) -> list[AbsoluteUrl]:
+def filter_out_duplicated_urls(urls: Iterable[AbsoluteUrl]) -> list[AbsoluteUrl]:
     seen = set()
 
     result = []
