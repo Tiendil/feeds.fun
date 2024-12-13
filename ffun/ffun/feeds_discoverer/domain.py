@@ -159,6 +159,9 @@ async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | 
     return context, None
 
 
+# Note: we do not add internal feed discoverer here (url -> uid -> feed_id), because
+#       - we do not expect significant performance improvement
+#       - internal feed data (news list) may be slightly outdated (not containing the latest news)
 _discoverers = [
     _discover_adjust_url,
     _discover_load_url,
