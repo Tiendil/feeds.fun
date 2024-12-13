@@ -13,40 +13,40 @@ class TestAdjustClassicUrl:
             ("https://example.com/feed/", "https://example.com/path/a/b?c=d", "https://example.com/path/a/b?c=d"),
             (
                 "https://example.com/feed/",
-                "http://another.domain:666/path/a/b?c=d",
-                "http://another.domain:666/path/a/b?c=d",
+                "http://another.domain.com:666/path/a/b?c=d",
+                "http://another.domain.com:666/path/a/b?c=d",
             ),
             (
                 "https://example.com/feed/",
-                "another.domain:666/path/a/b?c=d",
-                "https://another.domain:666/path/a/b?c=d",
+                "another.domain.com:666/path/a/b?c=d",
+                "https://another.domain.com:666/path/a/b?c=d",
             ),
-            ("https://example.com/feed/", "another.domain/path/a/b?c=d", "https://another.domain/path/a/b?c=d"),
+            ("https://example.com/feed/", "another.domain.com/path/a/b?c=d", "https://another.domain.com/path/a/b?c=d"),
             ("https://example.com/feed/", "/path/a/b?c=d", "https://example.com/path/a/b?c=d"),
             ("https://example.com/feed/", "path/a/b?c=d", "https://example.com/feed/path/a/b?c=d"),
             ("https://example.com/feed/", "path", "https://example.com/feed/path"),
             ("https://example.com/feed/", "?c=d", "https://example.com/feed/?c=d"),
-            ("https://example.com/feed/", "another.domain", "https://another.domain"),
-            ("https://example.com", "another.domain/path/a/b?c=d", "https://another.domain/path/a/b?c=d"),
+            ("https://example.com/feed/", "another.domain.com", "https://another.domain.com"),
+            ("https://example.com", "another.domain.com/path/a/b?c=d", "https://another.domain.com/path/a/b?c=d"),
             ("https://example.com", "/path/a/b?c=d", "https://example.com/path/a/b?c=d"),
             ("https://example.com", "path/a/b?c=d", "https://example.com/path/a/b?c=d"),
             ("https://example.com", "path", "https://example.com/path"),
             ("https://example.com", "?c=d", "https://example.com?c=d"),
-            ("https://example.com", "another.domain", "https://another.domain"),
+            ("https://example.com", "another.domain.com", "https://another.domain.com"),
             ("//example.com/feed/", "https://example.com", "https://example.com"),
             ("//example.com/feed/", "example.com/path/a/b?c=d", "//example.com/path/a/b?c=d"),
             (
                 "//example.com/feed/",
-                "http://another.domain:666/path/a/b?c=d",
-                "http://another.domain:666/path/a/b?c=d",
+                "http://another.domain.com:666/path/a/b?c=d",
+                "http://another.domain.com:666/path/a/b?c=d",
             ),
-            ("//example.com/feed/", "another.domain:666/path/a/b?c=d", "//another.domain:666/path/a/b?c=d"),
-            ("//example.com/feed/", "another.domain/path/a/b?c=d", "//another.domain/path/a/b?c=d"),
+            ("//example.com/feed/", "another.domain.com:666/path/a/b?c=d", "//another.domain.com:666/path/a/b?c=d"),
+            ("//example.com/feed/", "another.domain.com/path/a/b?c=d", "//another.domain.com/path/a/b?c=d"),
             ("//example.com/feed/", "/path/a/b?c=d", "//example.com/path/a/b?c=d"),
             ("//example.com/feed/", "path/a/b?c=d", "//example.com/feed/path/a/b?c=d"),
             ("//example.com/feed/", "path", "//example.com/feed/path"),
             ("//example.com/feed/", "?c=d", "//example.com/feed/?c=d"),
-            ("//example.com/feed/", "another.domain", "//another.domain"),
+            ("//example.com/feed/", "another.domain.com", "//another.domain.com"),
         ],
     )
     def test_base_transformations(
@@ -67,7 +67,7 @@ class TestIsMagneticUrl:
                 True,
             ),
             ("https://example.com/path/a/b?c=d", False),
-            ("http://another.domain:666/path/a/b?c=d", False),
+            ("http://another.domain.com:666/path/a/b?c=d", False),
         ],
     )
     def test(self, url: UnknownUrl, is_magnetic: bool) -> None:
@@ -85,7 +85,7 @@ class TestAdjustExternalUrl:
         "url, adjusted_url",
         [
             ("https://example.com/path/a/b?c=d", "https://example.com/path/a/b?c=d"),
-            ("http://another.domain:666/path/a/b?c=d", "http://another.domain:666/path/a/b?c=d"),
+            ("http://another.domain.com:666/path/a/b?c=d", "http://another.domain.com:666/path/a/b?c=d"),
             ("/path/a/b?c=d", "https://example.com/path/a/b?c=d"),
             (
                 "magnet:?xt=urn:btih:123456789abcdef0123456789abcdef0123456789&dn=Example+File.mp4&tr=udp%3A%2F%2Ftracker.example.com%3A80",  # noqa
@@ -96,8 +96,8 @@ class TestAdjustExternalUrl:
             ("x-x"*100, "https://example.com/" + "x-x"*100),  # noqa
             ("xxx.com", "https://xxx.com"),  # noqa
             ("x"*100 + '.html', "https://example.com/" + "x"*100 + '.html'),  # noqa
-            # TODO: uncomment
-            # ("x.html", "https://example.com/x.html"),  # noqa
+            ("x.html", "https://example.com/x.html"),  # noqa
+            # TODO: what if ip addreses?
         ],
     )
     def test(self, url: UnknownUrl, adjusted_url: AbsoluteUrl) -> None:
@@ -197,23 +197,17 @@ class TestUrlToSourceUid:
         assert urls.url_to_source_uid(url) == source_uid
 
 
-class TestIsExpectedFurlError:
+class TestCheckFurlError:
 
     def test_invalid_port(self) -> None:
-        try:
-            furl("https://example.com:666666")
-        except Exception as e:
-            assert urls.is_expected_furl_error(e)
-        else:
-            assert False, "Expected Exception"
+        with pytest.raises(errors.ExpectedFUrlError):
+            with urls.check_furl_error():
+                furl("https://example.com:666666")
 
     def test_another_error(self) -> None:
-        try:
-            1 / 0
-        except Exception as e:
-            assert not urls.is_expected_furl_error(e)
-        else:
-            assert False, "Expected Exception"
+        with pytest.raises(ZeroDivisionError):
+            with urls.check_furl_error():
+                1 / 0
 
 
 class TestNormalizeClassicUnknownUrl:

@@ -1,5 +1,6 @@
 import re
 import contextlib
+import tldextract
 import unicodedata
 from urllib.parse import quote_plus, unquote
 
@@ -32,9 +33,6 @@ def check_furl_error() -> None:
     except ValueError as e:
         message = str(e)
 
-        if "label empty or too long" in message:
-            raise errors.ExpectedFUrlError(message=message) from e
-
         if "Invalid port" in message:
             raise errors.ExpectedFUrlError(message=message) from e
 
@@ -60,6 +58,12 @@ def _construct_f_url(url: UnknownUrl) -> furl | None:
     return f_url
 
 
+def initialize_tld_cache() -> None:
+    logger.info("initializing_tld_cache")
+    tldextract.extract("example.com")
+    logger.info("tld_cache_initialized")
+
+
 # ATTENTION: see note at the top of the file
 def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noqa: CCR001
     url = UnknownUrl(url.strip())
@@ -79,9 +83,14 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noq
     if RE_SCHEMA.match(url):
         return AbsoluteUrl(str(f_url))
 
-    # we should have proper domains
-    # TODO: refactor to some ideomatic way
-    if "." not in url.split("/")[0]:
+    domain_part = url.split("/")[0]
+
+    # simple protection from processing special domains
+    if '.' not in domain_part:
+        return None
+
+    # check if url has a proper domain
+    if tldextract.extract(domain_part).suffix == "":
         return None
 
     f_url = _construct_f_url(f"//{url}")
@@ -119,10 +128,7 @@ def is_absolute_url(url: str) -> bool:
 
 # ATTENTION: see note at the top of the file
 def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
-    print("url", url)
-    print("original_url", original_url)
     fixed_url = normalize_classic_unknown_url(url)
-    print('fixed_url', fixed_url)
     assert fixed_url is not None
 
     f_original_url = furl(original_url)
