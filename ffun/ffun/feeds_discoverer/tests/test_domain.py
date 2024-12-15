@@ -2,8 +2,8 @@ import httpx
 import pytest
 from respx.router import MockRouter
 
-from ffun.domain.entities import AbsoluteUrl, UnknownUrl, FeedUrl
-from ffun.domain.urls import str_to_absolute_url, str_to_feed_url
+from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
+from ffun.domain.urls import str_to_feed_url
 from ffun.feeds_discoverer.domain import (
     _discover_adjust_url,
     _discover_check_candidate_links,
@@ -47,9 +47,7 @@ class TestDiscoverLoadUrl:
     async def test_error(self, respx_mock: MockRouter) -> None:
         respx_mock.get("/test").mock(side_effect=httpx.ConnectTimeout("some message"))
 
-        context = Context(
-            raw_url=UnknownUrl("http://localhost/test"), url=str_to_feed_url("http://localhost/test")
-        )
+        context = Context(raw_url=UnknownUrl("http://localhost/test"), url=str_to_feed_url("http://localhost/test"))
 
         new_context, result = await _discover_load_url(context)
 
@@ -64,9 +62,7 @@ class TestDiscoverLoadUrl:
 
         respx_mock.get("/test").mock(return_value=mocked_response)
 
-        context = Context(
-            raw_url=UnknownUrl("http://localhost/test"), url=str_to_feed_url("http://localhost/test")
-        )
+        context = Context(raw_url=UnknownUrl("http://localhost/test"), url=str_to_feed_url("http://localhost/test"))
 
         new_context, result = await _discover_load_url(context)
 

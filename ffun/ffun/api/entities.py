@@ -10,7 +10,7 @@ import pydantic
 from ffun.api import front_events
 from ffun.core import api
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import AbsoluteUrl, EntryId, FeedId, UnknownUrl, UserId, FeedUrl
+from ffun.domain.entities import AbsoluteUrl, EntryId, FeedId, FeedUrl, UnknownUrl, UserId
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.feeds_links import entities as fl_entities

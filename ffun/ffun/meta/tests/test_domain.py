@@ -6,7 +6,7 @@ import pytest_asyncio
 
 from ffun.core.postgresql import execute
 from ffun.domain.entities import UserId
-from ffun.domain.urls import str_to_absolute_url, url_to_source_uid, url_to_uid, to_feed_url, str_to_feed_url
+from ffun.domain.urls import str_to_feed_url, url_to_source_uid, url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
 from ffun.feeds_links import domain as fl_domain

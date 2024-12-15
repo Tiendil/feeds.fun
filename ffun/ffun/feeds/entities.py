@@ -3,7 +3,7 @@ import enum
 from typing import Any
 
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import AbsoluteUrl, FeedId, SourceId, FeedUrl
+from ffun.domain.entities import FeedId, FeedUrl, SourceId
 
 
 class FeedState(int, enum.Enum):

@@ -9,8 +9,8 @@ from ffun.domain.urls import (
     filter_out_duplicated_urls,
     get_parent_url,
     normalize_classic_unknown_url,
+    to_feed_url,
     url_has_extension,
-    to_feed_url
 )
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain

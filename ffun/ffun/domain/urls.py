@@ -10,7 +10,7 @@ from orderedmultidict import omdict
 
 from ffun.core import logging
 from ffun.domain import errors
-from ffun.domain.entities import AbsoluteUrl, SourceUid, UnknownUrl, UrlUid, FeedUrl
+from ffun.domain.entities import AbsoluteUrl, FeedUrl, SourceUid, UnknownUrl, UrlUid
 
 logger = logging.get_module_logger()
 

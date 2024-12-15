@@ -1,7 +1,7 @@
 import pydantic
 
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import AbsoluteUrl, CollectionId, FeedUrl
+from ffun.domain.entities import CollectionId, FeedUrl
 from ffun.feeds.entities import FeedId
 
 

@@ -4,7 +4,7 @@ from typing import Any, Protocol, Union
 import pydantic
 
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import AbsoluteUrl, UnknownUrl, FeedUrl
+from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.parsers import entities as p_entities
 
 

@@ -5,7 +5,7 @@ import pytest
 import pytest_asyncio
 
 from ffun.domain.domain import new_collection_id, new_feed_id
-from ffun.domain.urls import str_to_absolute_url, url_to_source_uid, to_feed_url
+from ffun.domain.urls import str_to_absolute_url, to_feed_url, url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections import errors
 from ffun.feeds_collections.collections import Collections
@@ -115,7 +115,9 @@ class TestCollections:
     async def test_validate_collections_ids(self) -> None:
         collections = Collections()
 
-        feed_1 = FeedInfo(url=to_feed_url(str_to_absolute_url("http://example.com/feed1")), title="Feed 1", description="Feed 1")
+        feed_1 = FeedInfo(
+            url=to_feed_url(str_to_absolute_url("http://example.com/feed1")), title="Feed 1", description="Feed 1"
+        )
 
         collection_1 = Collection(
             id=new_collection_id(), gui_order=1, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[feed_1]
@@ -134,7 +136,9 @@ class TestCollections:
     async def test_validate_gui_order(self) -> None:
         collections = Collections()
 
-        feed_1 = FeedInfo(url=to_feed_url(str_to_absolute_url("http://example.com/feed1")), title="Feed 1", description="Feed 1")
+        feed_1 = FeedInfo(
+            url=to_feed_url(str_to_absolute_url("http://example.com/feed1")), title="Feed 1", description="Feed 1"
+        )
 
         collection_1 = Collection(
             id=new_collection_id(), gui_order=1, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[feed_1]
@@ -153,7 +157,9 @@ class TestCollections:
     async def test_validate_emptiness(self) -> None:
         collections = Collections()
 
-        feed_1 = FeedInfo(url=to_feed_url(str_to_absolute_url("http://example.com/feed1")), title="Feed 1", description="Feed 1")
+        feed_1 = FeedInfo(
+            url=to_feed_url(str_to_absolute_url("http://example.com/feed1")), title="Feed 1", description="Feed 1"
+        )
 
         collection_1 = Collection(
             id=new_collection_id(), gui_order=1, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[feed_1]

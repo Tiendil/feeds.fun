@@ -2,7 +2,7 @@ import pytest
 from furl import furl
 
 from ffun.domain import errors, urls
-from ffun.domain.entities import AbsoluteUrl, SourceUid, UnknownUrl, UrlUid, FeedUrl
+from ffun.domain.entities import AbsoluteUrl, FeedUrl, SourceUid, UnknownUrl, UrlUid
 
 
 class TestAdjustClassicUrl:
@@ -51,9 +51,12 @@ class TestAdjustClassicUrl:
             ("//example.com/feed/", "path", "//example.com/feed/path"),
             ("//example.com/feed/", "?c=d", "//example.com/feed/?c=d"),
             ("//example.com/feed/", "another.domain.com", "//another.domain.com"),
-
             # test keeping fragment
-            ("https://example.com/feed/", "https://example.com/path/a/b?c=d#fragment", "https://example.com/path/a/b?c=d#fragment"),
+            (
+                "https://example.com/feed/",
+                "https://example.com/path/a/b?c=d#fragment",
+                "https://example.com/path/a/b?c=d#fragment",
+            ),
             ("//example.com/feed/", "/path/a/b?c=d#z=q", "//example.com/path/a/b?c=d#z=q"),
         ],
     )
@@ -268,7 +271,9 @@ class TestNormalizeClassicUnknownUrl:
 
     def test_keepsegment(self) -> None:
         # short logic path
-        assert urls.normalize_classic_unknown_url(UnknownUrl("//example.com/a/b/c?x=y#z")) == "//example.com/a/b/c?x=y#z"
+        assert (
+            urls.normalize_classic_unknown_url(UnknownUrl("//example.com/a/b/c?x=y#z")) == "//example.com/a/b/c?x=y#z"
+        )
 
         # longest logic path
         assert urls.normalize_classic_unknown_url(UnknownUrl("example.com/a/b/c?x=y#z")) == "//example.com/a/b/c?x=y#z"

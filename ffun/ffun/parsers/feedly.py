@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET  # noqa
 from typing import Generator
 
 from ffun.domain.entities import UnknownUrl
-from ffun.domain.urls import normalize_classic_unknown_url, url_to_uid, to_feed_url
+from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url, url_to_uid
 from ffun.parsers.entities import FeedInfo
 
 
