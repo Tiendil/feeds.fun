@@ -40,7 +40,6 @@ def extract_feeds(data: str) -> list[FeedInfo]:
     return feeds
 
 
-# TODO: test manually
 def extract_feeds_records(body: ET.Element) -> Generator[FeedInfo, None, None]:
     for outline in body:
         if outline.attrib.get("type") == "rss":

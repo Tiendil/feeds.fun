@@ -20,9 +20,6 @@ logger = logging.get_module_logger()
 #            - that the UIDs generation is not changed (check on backup)
 #            - in case UIDs generation is changed, you MUST update all affected entities
 
-# TODO: there a lot of refactoring done, check if UIDs update is required
-# TODO: test manually
-
 
 RE_SCHEMA = re.compile(r"^(\w+):")
 
@@ -119,7 +116,6 @@ def str_to_absolute_url(url: str) -> AbsoluteUrl:
     return absolute_url
 
 
-# TODO: tests
 # it is a shortcut method for tests
 def str_to_feed_url(url: str) -> FeedUrl:
     return to_feed_url(str_to_absolute_url(url))
