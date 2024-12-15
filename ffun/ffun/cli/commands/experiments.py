@@ -5,6 +5,7 @@ import typer
 from ffun.application.application import with_app
 from ffun.core import logging
 from ffun.core.postgresql import execute
+from ffun.domain.entities import UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url, url_to_source_uid, url_to_uid
 from ffun.library.operations import all_entries_iterator, count_total_entries
 
@@ -40,8 +41,7 @@ async def run_check_entries() -> None:
             if "#" in entry.external_url or "magnet" in entry.external_url:
                 continue
 
-            if normalize_classic_unknown_url(entry.external_url) != entry.external_url:
-                print(repr(entry.external_url), " -> ", repr(normalize_classic_unknown_url(entry.external_url)))
+            if normalize_classic_unknown_url(UnknownUrl(entry.external_url)) != entry.external_url:
                 wrong_urls += 1
 
         logger.info("experiment_finished", wrong_urls=wrong_urls)
