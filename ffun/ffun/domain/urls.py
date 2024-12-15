@@ -41,6 +41,8 @@ def check_furl_error() -> Iterator[None]:
 
 
 def _simplify_furl(f_url: furl) -> None:
+    # TODO: we should keep fragment for the entry's URLs
+    #       but remove it for the feed's URLs
     f_url.remove(fragment=True)
 
     if f_url.path == "/":
