@@ -2,11 +2,15 @@ import uuid
 from typing import Any
 
 from ffun.core import utils
+from ffun.domain.entities import AbsoluteUrl, UnknownUrl
+from ffun.domain.urls import normalize_classic_unknown_url
 from ffun.parsers.entities import EntryInfo
 
 
-def fake_url() -> str:
-    return f"https://{uuid.uuid4().hex}.com"
+def fake_url() -> AbsoluteUrl:
+    url = normalize_classic_unknown_url(UnknownUrl(f"https://{uuid.uuid4().hex}.com"))
+    assert url is not None
+    return url
 
 
 def fake_title() -> str:

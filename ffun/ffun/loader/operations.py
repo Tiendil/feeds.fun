@@ -8,18 +8,22 @@ from pypika import functions as pypika_fn
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
+from ffun.domain.entities import AbsoluteUrl, FeedUrl
 from ffun.feeds.entities import FeedError
 from ffun.loader import errors
 from ffun.loader.entities import ProxyState
-from ffun.loader.settings import Proxy
+from ffun.loader.settings import Proxy, settings
 from ffun.parsers import entities as p_entities
 from ffun.parsers.domain import parse_feed
 
 logger = logging.get_module_logger()
 
 
+_load_semaphor = asyncio.Semaphore(settings.max_concurrent_http_requests)
+
+
 async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R0915
-    url: str, proxy: Proxy, user_agent: str
+    url: AbsoluteUrl, proxy: Proxy, user_agent: str, semaphore: asyncio.Semaphore = _load_semaphor
 ) -> httpx.Response:
     error_code = FeedError.network_unknown
 
@@ -30,8 +34,9 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
 
         headers = {"user-agent": user_agent, "accept-encoding": "br;q=1.0, gzip;q=0.9, deflate;q=0.8"}
 
-        async with httpx.AsyncClient(proxies=proxy.url, headers=headers) as client:
-            response = await client.get(url, follow_redirects=True)
+        async with semaphore:
+            async with httpx.AsyncClient(proxies=proxy.url, headers=headers) as client:
+                response = await client.get(url, follow_redirects=True)
 
     except httpx.RemoteProtocolError as e:
         message = str(e)
@@ -197,7 +202,7 @@ async def decode_content(response: httpx.Response) -> str:
 
 
 # TODO: tests
-async def parse_content(content: str, original_url: str) -> p_entities.FeedInfo:
+async def parse_content(content: str, original_url: FeedUrl) -> p_entities.FeedInfo:
     try:
         feed_info = parse_feed(content, original_url=original_url)
     except Exception as e:

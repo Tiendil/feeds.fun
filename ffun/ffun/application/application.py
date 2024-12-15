@@ -13,6 +13,7 @@ from ffun.auth import supertokens as st
 from ffun.auth.settings import AuthMode
 from ffun.auth.settings import settings as auth_settings
 from ffun.core import logging, middlewares, postgresql, sentry
+from ffun.domain.urls import initialize_tld_cache
 from ffun.feeds_collections.collections import collections
 
 logger = logging.get_module_logger()
@@ -100,6 +101,8 @@ def smart_url(domain: str, port: int) -> str:
 
 def create_app() -> fastapi.FastAPI:  # noqa: CCR001
     logging.initialize(use_sentry=settings.enable_sentry)
+
+    initialize_tld_cache()
 
     logger.info("create_app")
 

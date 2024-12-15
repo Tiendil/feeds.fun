@@ -287,24 +287,28 @@ export type FeedInfo = {
   readonly title: string;
   readonly description: string;
   readonly entries: EntryInfo[];
+  readonly isLinked: boolean;
 };
 
 export function feedInfoFromJSON({
   url,
   title,
   description,
-  entries
+  entries,
+  isLinked
 }: {
   url: string;
   title: string;
   description: string;
   entries: any[];
+  isLinked: boolean;
 }): FeedInfo {
   return {
     url: toURL(url),
     title,
     description,
-    entries: entries.map(entryInfoFromJSON)
+    entries: entries.map(entryInfoFromJSON),
+    isLinked
   };
 }
 
@@ -477,4 +481,20 @@ export function collectionFeedInfoFromJSON({
     description: description,
     id: toFeedId(id)
   });
+}
+
+export class ApiMessage {
+  readonly type: string;
+  readonly code: string;
+  readonly message: string;
+
+  constructor({type, code, message}: {type: string; code: string; message: string}) {
+    this.type = type;
+    this.code = code;
+    this.message = message;
+  }
+}
+
+export function apiMessageFromJSON({type, code, message}: {type: string; code: string; message: string}): ApiMessage {
+  return new ApiMessage({type, code, message});
 }

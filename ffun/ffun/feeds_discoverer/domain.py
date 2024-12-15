@@ -1,7 +1,18 @@
-import yarl
+import asyncio
+
 from bs4 import BeautifulSoup
 
 from ffun.core import logging
+from ffun.domain.entities import AbsoluteUrl, UnknownUrl
+from ffun.domain.urls import (
+    adjust_classic_url,
+    filter_out_duplicated_urls,
+    get_parent_url,
+    normalize_classic_unknown_url,
+    to_feed_url,
+    url_has_extension,
+)
+from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
 from ffun.parsers import entities as p_entities
@@ -9,145 +20,197 @@ from ffun.parsers import entities as p_entities
 logger = logging.get_module_logger()
 
 
-def fix_url(raw_url: str) -> str:
-    url = yarl.URL(raw_url)
+async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None]:
 
-    if url.is_absolute():
-        if not url.scheme:
-            url = url.with_scheme("http")
+    absolute_url = normalize_classic_unknown_url(context.raw_url)
 
-    else:
-        url = yarl.URL("http://" + raw_url)
+    logger.info("discovering_absolute_url", raw_url=context.raw_url, adjusted_url=absolute_url)
 
-    return url.human_repr()
+    if absolute_url is None:
+        return context, Result(feeds=[], status=Status.incorrect_url)
+
+    url = to_feed_url(absolute_url)
+
+    logger.info("discovering_normalized_url", raw_url=context.raw_url, adjusted_url=url)
+
+    return context.replace(url=url), None
 
 
-async def extract_content(url: str) -> str | None:
-    logger.info("extract_content")
+async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
+    assert context.url is not None
 
     try:
-        response = await lo_domain.load_content_with_proxies(url)
+        response = await lo_domain.load_content_with_proxies(context.url)
         content = await lo_domain.decode_content(response)
     except lo_errors.LoadError:
         logger.info("can_not_access_content")
-        return None
+        return context, Result(feeds=[], status=Status.cannot_access_url)
     except Exception:
         logger.exception("unexpected_error_while_parsing_feed")
-        return None
+        return context, Result(feeds=[], status=Status.cannot_access_url)
 
-    return content
+    logger.info("discovering_content_loaded", url=context.url, content_size=len(content))
+
+    return context.replace(content=content), None
 
 
-async def extract_feed_info(content: str, original_url: str) -> p_entities.FeedInfo | None:
-    logger.info("extract_feed_info")
+async def _discover_extract_feed_info(context: Context) -> tuple[Context, Result | None]:
+    assert context.url is not None
+    assert context.content is not None
 
     try:
-        return await lo_domain.parse_content(content, original_url=original_url)
+        feed_info = await lo_domain.parse_content(context.content, original_url=context.url)
     except lo_errors.LoadError:
         logger.info("feed_not_found_at_start_url")
+        return context, None
     except Exception:
         logger.exception("unexpected_error_while_parsing_feed")
+        return context, None
 
-    return None
+    logger.info("discovering_feed_info_extracted", feed_info=feed_info)
+
+    return context, Result(feeds=[feed_info], status=Status.feeds_found)
 
 
-def construct_soup(content: str) -> BeautifulSoup | None:
-    logger.info("construct_soup")
+async def _discover_create_soup(context: Context) -> tuple[Context, Result | None]:
+    assert context.content is not None
 
     try:
-        return BeautifulSoup(content, "html.parser")
+        soup = BeautifulSoup(context.content, "html.parser")
     except Exception:
         logger.exception("unexpected_error_while_parsing_html")
+        return context, Result(feeds=[], status=Status.not_html)
 
-    return None
+    logger.info("discovering_soup_created")
+
+    return context.replace(soup=soup), None
 
 
-async def extract_feeds_from_links(soup: BeautifulSoup) -> list[p_entities.FeedInfo]:
-    results = []
+async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context, Result | None]:
+    assert context.url is not None
+    assert context.soup is not None
+
     links_to_check = set()
 
-    for link in soup("link"):
+    for link in context.soup("link"):
         if link.has_attr("href"):
-            links_to_check.add(link["href"])
+            if link.has_attr("rel") and any(
+                rel in link["rel"] for rel in ["author", "help", "icon", "license", "pingback", "search", "stylesheet"]
+            ):
+                continue
+            links_to_check.add(adjust_classic_url(link["href"], context.url))
 
-    logger.info("links_to_check", links_to_check=links_to_check)
+    logger.info("discovering_links_extracted", links_to_check=links_to_check)
 
-    for link in links_to_check:
-        results.extend(await discover(url=link, stop=True))
-
-    logger.info("results", result_links=[feed_info.url for feed_info in results])
-
-    return results
-
-
-async def extract_feeds_from_a(soup: BeautifulSoup) -> list[p_entities.FeedInfo]:
-    results = []
-    links_to_check = set()
-
-    # TODO: can be very-very long, must be improved
-    for link in list(soup("a")):
-        if link.has_attr("href"):
-            links_to_check.add(link["href"])
-
-    logger.info("links_to_check", links_to_check=links_to_check)
-
-    for link in links_to_check:
-        results.extend(await discover(url=link, stop=True))
-
-    logger.info("results", result_links=[feed_info.url for feed_info in results])
-
-    return results
+    return context.replace(candidate_urls=context.candidate_urls | links_to_check), None
 
 
-# TODO: this is very straightforward implementation, it should be improved
-# TODO: check already saved feeds, but remember, that there may be saved only part of the feeds from url
-@logging.function_args_to_log("url")
-async def discover(url: str, stop: bool = False) -> list[p_entities.FeedInfo]:
+async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Context, Result | None]:
+    assert context.url is not None
 
-    url = fix_url(url)
+    allowed_extensions = [".xml", ".rss", ".atom", ".rdf", ".feed", ".php", ".asp", ".aspx", ".json", ".cgi", ""]
 
-    logger.info("fixed_url", url=url)
+    assert context.soup is not None
 
-    logger.info("start_discover")
+    anchors_to_check = set()
 
-    content = await extract_content(url)
+    for anchor in list(context.soup("a")):
+        if anchor.has_attr("href"):
+            url = anchor["href"]
 
-    if content is None:
-        return []
+            if not url_has_extension(url, allowed_extensions):
+                continue
 
-    feed_info = await extract_feed_info(content, original_url=url)
+            anchors_to_check.add(adjust_classic_url(url, context.url))
 
-    if feed_info is not None:
-        return [feed_info]
+    logger.info("discovering_anchors_extracted", anchors_to_check=anchors_to_check)
 
-    if stop:
-        return []
-
-    logger.info("extract_feeds_candidates")
-
-    soup = construct_soup(content)
-
-    if soup is None:
-        return []
-
-    logger.info("search_link_candidates")
-
-    results = await extract_feeds_from_links(soup)
-
-    if results:
-        # Here we expect "correct" sites behavior "if there are links to feeds, then they will contain all feeds"
-        # it is not always be true, but it is good enough for now
-        return results
-
-    results = await extract_feeds_from_links(soup)
-
-    return results
+    return context.replace(candidate_urls=context.candidate_urls | anchors_to_check), None
 
 
-async def check_if_feed(url: str) -> p_entities.FeedInfo | None:
-    feeds = await discover(url=url, stop=True)
+async def _discover_check_parent_urls(context: Context) -> tuple[Context, Result | None]:
+    assert context.url is not None
+
+    parent_url = get_parent_url(context.url)
+
+    if parent_url is None:
+        logger.info("discovering_no_parent")
+        return context, None
+
+    # always check parents on depth of 1 (a.k.a., we expect html with links to feeds)
+    result = await discover(url=parent_url, depth=1, discoverers=context.discoverers)
+
+    if result.feeds:
+        logger.info("discovering_parent_extracted", parent_url=parent_url)
+        return context, result
+
+    logger.info("discovering_no_parent_extracted")
+    return context, None
+
+
+async def _discover_check_candidate_links(context: Context) -> tuple[Context, Result | None]:  # noqa: CCR001
+
+    filtered_links = filter_out_duplicated_urls(context.candidate_urls)
+
+    tasks = []
+
+    for link in filtered_links:
+        tasks.append(discover(url=link, depth=context.depth - 1, discoverers=context.discoverers))
+
+    results: list[Result] = await asyncio.gather(*tasks)
+
+    feeds: list[p_entities.FeedInfo] = []
+
+    for result in results:
+        feeds.extend(result.feeds)
+
+    feeds.sort(key=lambda feed_info: feed_info.title)
+
+    logger.info("discovering_feeds_found", result_links=[feed_info.url for feed_info in feeds])
 
     if not feeds:
-        return None
+        return context.replace(candidate_urls=set()), None
 
-    return feeds[0]
+    return context.replace(candidate_urls=set()), Result(feeds=feeds, status=Status.feeds_found)
+
+
+async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | None]:
+    if context.depth == 0:
+        return context, Result(feeds=[], status=Status.no_feeds_found)
+
+    return context, None
+
+
+# Note: we do not add internal feed discoverer here (like db check: url -> uid -> feed_id), because
+#       - we do not expect significant performance improvement
+#       - internal feed data (news list) may be slightly outdated (not containing the latest news)
+_discoverers = [
+    _discover_adjust_url,
+    _discover_load_url,
+    _discover_extract_feed_info,
+    _discover_stop_recursion,
+    _discover_create_soup,
+    _discover_extract_feeds_from_links,
+    _discover_check_candidate_links,
+    _discover_extract_feeds_from_anchors,
+    _discover_check_candidate_links,
+    _discover_check_parent_urls,
+]
+
+
+async def discover(url: UnknownUrl | AbsoluteUrl, depth: int, discoverers: list[Discoverer] = _discoverers) -> Result:
+
+    logger.info("discovering_start", url=url, depth=depth)
+
+    context = Context(raw_url=UnknownUrl(url), depth=depth, discoverers=discoverers)
+
+    for discoverer in discoverers:
+        context, result = await discoverer(context)
+
+        if result is not None:
+            logger.info("discovering_finished", feeds_found=len(result.feeds))
+            return result
+
+    logger.info("discovering_finished", feeds_found=0)
+
+    return Result(feeds=[], status=Status.no_feeds_found)

@@ -10,15 +10,25 @@
 
     <h2>Lood feeds from an OPML file</h2>
 
+    <div class="ffun-info-good">
+      <p>
+        <a
+          href="https://en.wikipedia.org/wiki/OPML"
+          target="_blank"
+          >OPML</a
+        >
+        is a widely-used format for transferring news feed lists between platforms.
+      </p>
+
+      <p
+        >Export your feeds from your old reader in OPML format and import them into our reader to seamlessly
+        transition!</p
+      >
+    </div>
+
     <opml-upload />
 
     <h2>Search for a feed</h2>
-
-    <div class="ffun-info-attention">
-      <p> The discovery feature is experimental and might not work on all websites. </p>
-
-      <p> If we can’t find a feed for a site, try finding the feed's URL manually, then enter it in the form. </p>
-    </div>
 
     <discovery-form />
   </side-panel-layout>

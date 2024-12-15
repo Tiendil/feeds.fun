@@ -2,6 +2,7 @@
   "url": "https://example.com/feed/",
   "title": "Some author",
   "description": "",
+  "uid": "example.com/feed",
   "entries": [
     {
       "title": "Entry title 1",

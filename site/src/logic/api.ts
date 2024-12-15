@@ -167,13 +167,19 @@ export async function discoverFeeds({url}: {url: string}) {
   const response = await post({url: API_DISCOVER_FEEDS, data: {url: url}});
 
   const feeds = [];
+  const messages = [];
 
   for (let rawFeed of response.feeds) {
     const feed = t.feedInfoFromJSON(rawFeed);
     feeds.push(feed);
   }
 
-  return feeds;
+  for (let rawMessage of response.messages) {
+    const message = t.apiMessageFromJSON(rawMessage);
+    messages.push(message);
+  }
+
+  return {feeds, messages};
 }
 
 export async function addFeed({url}: {url: string}) {

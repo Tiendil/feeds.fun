@@ -9,6 +9,7 @@ mark_feed_as_loaded = operations.mark_feed_as_loaded
 mark_feed_as_failed = operations.mark_feed_as_failed
 mark_feed_as_orphaned = operations.mark_feed_as_orphaned
 get_feeds = operations.get_feeds
+get_feed_ids_by_uids = operations.get_feed_ids_by_uids
 get_source_ids = operations.get_source_ids
 tech_remove_feed = operations.tech_remove_feed
 count_total_feeds = operations.count_total_feeds

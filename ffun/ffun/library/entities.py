@@ -4,7 +4,7 @@ from typing import Any
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import EntryId, FeedId, SourceId
+from ffun.domain.entities import AbsoluteUrl, EntryId, FeedId, SourceId
 
 
 class ProcessedState(int, enum.Enum):
@@ -19,7 +19,7 @@ class Entry(BaseEntity):
     title: str
     body: str
     external_id: str
-    external_url: str
+    external_url: AbsoluteUrl
     external_tags: set[str]
     published_at: datetime.datetime
 

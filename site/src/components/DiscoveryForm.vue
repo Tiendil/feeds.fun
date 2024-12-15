@@ -24,30 +24,44 @@
 
     <div v-else-if="foundFeeds === null"></div>
 
-    <p
+    <div
       v-else-if="foundFeeds.length === 0"
-      class="ffun-info-attention"
-      >No feeds found.</p
-    >
+      class="ffun-info-attention">
+      <p
+        class="ffun-info-error"
+        v-for="message in messages">
+        {{ message.message }}
+      </p>
+
+      <p v-if="messages.length === 0"> No feeds found. </p>
+    </div>
 
     <div
       v-for="feed in foundFeeds"
       :key="feed.url">
       <feed-info :feed="feed" />
 
-      <button
-        class="ffun-form-button"
-        v-if="!addedFeeds[feed.url]"
-        :disabled="disableInputs"
-        @click.prevent="addFeed(feed.url)">
-        Add
-      </button>
-
       <p
-        v-else
-        class="ffun-info-good"
-        >Feed added</p
-      >
+        v-if="feed.isLinked"
+        class="ffun-info-good">
+        You are already subscribed to this feed.
+      </p>
+
+      <template v-else>
+        <button
+          class="ffun-form-button"
+          v-if="!addedFeeds[feed.url]"
+          :disabled="disableInputs"
+          @click.prevent="addFeed(feed.url)">
+          Add
+        </button>
+
+        <p
+          v-else
+          class="ffun-info-good"
+          >Feed added</p
+        >
+      </template>
     </div>
   </div>
 </template>
@@ -74,17 +88,22 @@
 
   const addedFeeds = ref<{[key: string]: boolean}>({});
 
+  let messages = ref<t.ApiMessage[]>([]);
+
   const foundFeeds = computedAsync(async () => {
     if (searhedUrl.value === "") {
       return null;
     }
 
     searching.value = true;
+    messages.value = [];
 
     let feeds: t.FeedInfo[] = [];
 
     try {
-      feeds = await api.discoverFeeds({url: searhedUrl.value});
+      const answer = await api.discoverFeeds({url: searhedUrl.value});
+      feeds = answer.feeds;
+      messages.value = answer.messages;
     } catch (e) {
       console.error(e);
     }

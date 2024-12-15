@@ -12,6 +12,7 @@ from ffun.core.tests.helpers import (
     assert_logs_have_no_errors,
     assert_logs_levels,
 )
+from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds.entities import FeedError
 from ffun.loader import errors
 from ffun.loader.entities import ProxyState
@@ -152,7 +153,7 @@ class TestLoadContent:
         respx_mock.get("/test").mock(return_value=mocked_response)
 
         response = await load_content(
-            url="http://example.com/test", proxy=Proxy(name="test", url=None), user_agent="test"
+            url=str_to_absolute_url("http://example.com/test"), proxy=Proxy(name="test", url=None), user_agent="test"
         )
 
         assert response.text == expected_content
@@ -161,7 +162,9 @@ class TestLoadContent:
     async def test_accept_encoding_header(self, respx_mock: MockRouter) -> None:
         respx_mock.get("/test").mock()
 
-        await load_content(url="http://example.com/test", proxy=Proxy(name="test", url=None), user_agent="test")
+        await load_content(
+            url=str_to_absolute_url("http://example.com/test"), proxy=Proxy(name="test", url=None), user_agent="test"
+        )
 
         assert respx_mock.calls[0].request.headers["Accept-Encoding"] == "br;q=1.0, gzip;q=0.9, deflate;q=0.8"
 
@@ -172,7 +175,9 @@ class TestLoadContent:
         with capture_logs() as logs:
             with pytest.raises(errors.LoadError) as expected_error:
                 await load_content(
-                    url="http://example.com/test", proxy=Proxy(name="test", url=None), user_agent="test"
+                    url=str_to_absolute_url("http://example.com/test"),
+                    proxy=Proxy(name="test", url=None),
+                    user_agent="test",
                 )
 
         assert expected_error.value.feed_error_code == FeedError.network_connection_timeout
@@ -187,7 +192,9 @@ class TestLoadContent:
         with capture_logs() as logs:
             with pytest.raises(errors.LoadError) as expected_error:
                 await load_content(
-                    url="http://example.com/test", proxy=Proxy(name="test", url=None), user_agent="test"
+                    url=str_to_absolute_url("http://example.com/test"),
+                    proxy=Proxy(name="test", url=None),
+                    user_agent="test",
                 )
 
         assert expected_error.value.feed_error_code == FeedError.network_unknown

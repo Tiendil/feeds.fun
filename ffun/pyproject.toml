@@ -67,8 +67,6 @@ PyPika = "0.48.*"
 
 structlog = "24.2.*"
 
-yarl = "1.9.*"
-
 python-multipart = "0.0.*"
 
 supertokens-python = "0.21.*"
@@ -84,6 +82,9 @@ cryptography = "42.0.*"
 markdown = "3.6.*"
 
 furl = "2.1.*"
+
+# version locked by supertokens supertokens-python
+# tldextract = "5.1.*"
 
 # TODO: move to dev dependencies?
 python-frontmatter = "1.1.*"
@@ -178,6 +179,11 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "frontmatter.*"
+ignore_missing_imports = true
+
+# TODO: remove after upgrading to a new tlsextract
+[[tool.mypy.overrides]]
+module = "tldextract.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

@@ -10,11 +10,14 @@ from ffun.api import entities
 from ffun.api.settings import settings
 from ffun.auth.dependencies import User
 from ffun.core import logging
+from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
 from ffun.domain.entities import UserId
+from ffun.domain.urls import url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_discoverer import domain as fd_domain
+from ffun.feeds_discoverer import entities as fd_entities
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
@@ -223,23 +226,55 @@ async def api_remove_marker(request: entities.RemoveMarkerRequest, user: User) -
 
 @router.post("/api/discover-feeds")
 async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User) -> entities.DiscoverFeedsResponse:
-    feeds = await fd_domain.discover(url=request.url)
+    result = await fd_domain.discover(url=request.url, depth=1)
 
-    for feed in feeds:
-        # TODO: should we limit entities number there?
-        feed.entries = feed.entries[:3]
+    messages = []
 
-    external_feeds = [entities.FeedInfo.from_internal(feed) for feed in feeds]
+    # descriptive user friendly error messages
+    results_to_messages = {
+        fd_entities.Status.incorrect_url: "The URL has incorrect format",
+        fd_entities.Status.cannot_access_url: "Cannot access the URL",
+        fd_entities.Status.not_html: "Can not parse content of the page",
+        fd_entities.Status.no_feeds_found: "No feeds found at the specified URL",
+    }
 
-    return entities.DiscoverFeedsResponse(feeds=external_feeds)
+    if result.status == fd_entities.Status.feeds_found:
+        pass
+    elif result.status in results_to_messages:
+        messages.append(
+            Message(
+                type=MessageType.error,
+                code=f"discover_feeds_error:{result.status.name}",
+                message=results_to_messages[result.status],
+            )
+        )
+    else:
+        raise NotImplementedError(f"Unknown status: {result.status}")
+
+    linked_feeds = await fl_domain.get_linked_feeds(user.id)
+    linked_ids = {link.feed_id for link in linked_feeds}
+
+    found_ids = await f_domain.get_feed_ids_by_uids([feed.uid for feed in result.feeds])
+
+    for feed in result.feeds[: settings.max_feeds_suggestions_for_site]:
+        feed.entries = feed.entries[: settings.max_entries_suggestions_for_site]
+
+    external_feeds = [
+        entities.FeedInfo.from_internal(feed, is_linked=feed.uid in found_ids and found_ids[feed.uid] in linked_ids)
+        for feed in result.feeds
+    ]
+
+    return entities.DiscoverFeedsResponse(feeds=external_feeds, messages=messages)
 
 
 @router.post("/api/add-feed")
 async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities.AddFeedResponse:
-    feed_info = await fd_domain.check_if_feed(url=request.url)
+    discover_result = await fd_domain.discover(url=request.url, depth=0)
 
-    if feed_info is None:
+    if discover_result.status != fd_entities.Status.feeds_found:
         raise fastapi.HTTPException(status_code=400, detail="Not a feed")
+
+    feed_info = discover_result.feeds[0]
 
     ids = await meta_domain.add_feeds([feed_info], user.id)
 
@@ -308,7 +343,11 @@ async def api_subscribe_to_collections(
         for feed_info in collection.feeds:
             feeds.append(
                 p_entities.FeedInfo(
-                    url=feed_info.url, title=feed_info.title, description=feed_info.description, entries=[]
+                    url=feed_info.url,
+                    title=feed_info.title,
+                    description=feed_info.description,
+                    entries=[],
+                    uid=url_to_uid(feed_info.url),
                 )
             )
 

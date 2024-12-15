@@ -43,6 +43,9 @@
   import * as api from "@/logic/api";
   import {computedAsync} from "@vueuse/core";
   import {useEntriesStore} from "@/stores/entries";
+  import {useGlobalSettingsStore} from "@/stores/globalSettings";
+
+  const globalSettings = useGlobalSettingsStore();
 
   const opmlFile = ref<File | null>(null);
 
@@ -75,6 +78,10 @@
 
     try {
       await api.addOPML({content: content});
+
+      // loading an OPML file is pretty rare and significantly changes the list of feeds
+      // => we can force data to be reloaded
+      globalSettings.updateDataVersion();
 
       loading.value = false;
       loaded.value = true;

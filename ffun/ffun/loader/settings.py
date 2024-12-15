@@ -13,6 +13,7 @@ class Proxy(pydantic.BaseModel):
 
 class Settings(BaseSettings):
     loaders_number: int = 5
+    max_concurrent_http_requests: int = 10
     minimum_period: datetime.timedelta = datetime.timedelta(hours=1)
     proxies: list[Proxy] = [Proxy(name="default", url=None)]
 
