@@ -287,6 +287,7 @@ export type FeedInfo = {
   readonly title: string;
   readonly description: string;
   readonly entries: EntryInfo[];
+  readonly isLinked: boolean;
 };
 
 export function feedInfoFromJSON({
