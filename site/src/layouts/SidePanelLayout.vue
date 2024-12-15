@@ -35,7 +35,7 @@
         class="ffun-form-button p-1 my-1 block w-full text-center"
         v-if="reloadButton"
         href="#"
-        @click="globalSettings.dataVersion += 1"
+        @click="globalSettings.updateDataVersion()"
         >Reload</a
       >
 
