@@ -3,7 +3,7 @@ from furl import furl
 
 from ffun.core import logging, utils
 from ffun.domain.domain import new_entry_id
-from ffun.domain.entities import AbsoluteUrl
+from ffun.domain.entities import AbsoluteUrl, FeedUrl
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedId, FeedState
 from ffun.feeds_collections.collections import collections
@@ -33,7 +33,7 @@ def initialize(user_agent: str) -> None:
 
 
 # TODO: tests
-async def load_content_with_proxies(url: AbsoluteUrl) -> httpx.Response:  # noqa: CCR001
+async def load_content_with_proxies(url: FeedUrl) -> httpx.Response:  # noqa: CCR001
     url_object = furl(url)
 
     first_exception = None

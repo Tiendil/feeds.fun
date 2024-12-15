@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET  # noqa
 from typing import Generator
 
 from ffun.domain.entities import UnknownUrl
-from ffun.domain.urls import normalize_classic_unknown_url, url_to_uid
+from ffun.domain.urls import normalize_classic_unknown_url, url_to_uid, to_feed_url
 from ffun.parsers.entities import FeedInfo
 
 
@@ -49,12 +49,14 @@ def extract_feeds_records(body: ET.Element) -> Generator[FeedInfo, None, None]:
             if url is None:
                 continue
 
+            feed_url = to_feed_url(url)
+
             yield FeedInfo(
-                url=url,
+                url=feed_url,
                 title=outline.attrib.get("title", ""),
                 description="",
                 entries=[],
-                uid=url_to_uid(url),
+                uid=url_to_uid(feed_url),
             )
             continue
 

@@ -2,8 +2,8 @@ import httpx
 import pytest
 from respx.router import MockRouter
 
-from ffun.domain.entities import AbsoluteUrl, UnknownUrl
-from ffun.domain.urls import str_to_absolute_url
+from ffun.domain.entities import AbsoluteUrl, UnknownUrl, FeedUrl
+from ffun.domain.urls import str_to_absolute_url, str_to_feed_url
 from ffun.feeds_discoverer.domain import (
     _discover_adjust_url,
     _discover_check_candidate_links,
@@ -48,7 +48,7 @@ class TestDiscoverLoadUrl:
         respx_mock.get("/test").mock(side_effect=httpx.ConnectTimeout("some message"))
 
         context = Context(
-            raw_url=UnknownUrl("http://localhost/test"), url=str_to_absolute_url("http://localhost/test")
+            raw_url=UnknownUrl("http://localhost/test"), url=str_to_feed_url("http://localhost/test")
         )
 
         new_context, result = await _discover_load_url(context)
@@ -65,7 +65,7 @@ class TestDiscoverLoadUrl:
         respx_mock.get("/test").mock(return_value=mocked_response)
 
         context = Context(
-            raw_url=UnknownUrl("http://localhost/test"), url=str_to_absolute_url("http://localhost/test")
+            raw_url=UnknownUrl("http://localhost/test"), url=str_to_feed_url("http://localhost/test")
         )
 
         new_context, result = await _discover_load_url(context)
@@ -80,7 +80,7 @@ class TestDiscoverExtractFeedInfo:
     async def test_not_a_feed(self) -> None:
         context = Context(
             raw_url=UnknownUrl("http://localhost/test"),
-            url=str_to_absolute_url("http://localhost/test"),
+            url=str_to_feed_url("http://localhost/test"),
             content="some text content",
         )
 
@@ -94,7 +94,7 @@ class TestDiscoverExtractFeedInfo:
 
         context = Context(
             raw_url=UnknownUrl("http://localhost/test"),
-            url=str_to_absolute_url("http://localhost/test"),
+            url=str_to_feed_url("http://localhost/test"),
             content=raw_feed_content,
         )
 
@@ -106,7 +106,7 @@ class TestDiscoverExtractFeedInfo:
 
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 1
-        assert result.feeds[0].url == AbsoluteUrl("http://localhost/test")
+        assert result.feeds[0].url == FeedUrl("http://localhost/test")
 
 
 class TestDiscoverCreateSoup:
@@ -137,7 +137,7 @@ class TestDiscoverExtractFeedsFromLinks:
     async def test_no_links(self) -> None:
         intro_context = Context(
             raw_url=UnknownUrl("http://localhost/test"),
-            url=str_to_absolute_url("http://localhost/test"),
+            url=str_to_feed_url("http://localhost/test"),
             content="<html></html>",
         )
 
@@ -178,7 +178,7 @@ class TestDiscoverExtractFeedsFromLinks:
 
         intro_context = Context(
             raw_url=UnknownUrl("http://localhost/test/xxx"),
-            url=str_to_absolute_url("http://localhost/test/xxx"),
+            url=str_to_feed_url("http://localhost/test/xxx"),
             content=html,
         )
 
@@ -204,7 +204,7 @@ class TestDiscoverExtractFeedsFromAnchors:
     async def test_no_anchorts(self) -> None:
         intro_context = Context(
             raw_url=UnknownUrl("http://localhost/test"),
-            url=str_to_absolute_url("http://localhost/test"),
+            url=str_to_feed_url("http://localhost/test"),
             content="<html></html>",
         )
 
@@ -243,7 +243,7 @@ class TestDiscoverExtractFeedsFromAnchors:
 
         intro_context = Context(
             raw_url=UnknownUrl("http://localhost/test/xxx"),
-            url=str_to_absolute_url("http://localhost/test/xxx"),
+            url=str_to_feed_url("http://localhost/test/xxx"),
             content=html,
         )
 
@@ -277,7 +277,7 @@ class TestDiscoverCheckParentUrls:
     async def test_parents(self) -> None:
         context = Context(
             raw_url=UnknownUrl("http://example.com"),
-            url=str_to_absolute_url("http://example.com"),
+            url=str_to_feed_url("http://example.com"),
             discoverers=_discoverers,
         )
 
@@ -295,7 +295,7 @@ class TestDiscoverCheckParentUrls:
 
         context = Context(
             raw_url=UnknownUrl("http://localhost/test/feed"),
-            url=str_to_absolute_url("http://localhost/test/feed"),
+            url=str_to_feed_url("http://localhost/test/feed"),
             discoverers=_discoverers,
         )
 
@@ -331,7 +331,7 @@ class TestDiscoverCheckParentUrls:
 
         context = Context(
             raw_url=UnknownUrl("http://localhost/test/abc"),
-            url=str_to_absolute_url("http://localhost/test/abc"),
+            url=str_to_feed_url("http://localhost/test/abc"),
             discoverers=_discoverers,
         )
 
@@ -344,8 +344,8 @@ class TestDiscoverCheckParentUrls:
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 2
         assert {feed.url for feed in result.feeds} == {
-            AbsoluteUrl("http://localhost/feed2"),
-            AbsoluteUrl("http://localhost/feed3"),
+            FeedUrl("http://localhost/feed2"),
+            FeedUrl("http://localhost/feed3"),
         }
 
 
@@ -405,8 +405,8 @@ class TestDiscoverCheckCandidateLinks:
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 2
         assert {feed.url for feed in result.feeds} == {
-            AbsoluteUrl("http://localhost/feed1"),
-            AbsoluteUrl("http://localhost/feed2"),
+            FeedUrl("http://localhost/feed1"),
+            FeedUrl("http://localhost/feed2"),
         }
 
 
@@ -480,8 +480,8 @@ class TestDiscover:
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 2
         assert {feed.url for feed in result.feeds} == {
-            AbsoluteUrl("http://localhost/feed1"),
-            AbsoluteUrl("http://localhost/feed4"),
+            FeedUrl("http://localhost/feed1"),
+            FeedUrl("http://localhost/feed4"),
         }
 
     @pytest.mark.asyncio
@@ -514,8 +514,8 @@ class TestDiscover:
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 2
         assert {feed.url for feed in result.feeds} == {
-            AbsoluteUrl("http://localhost/feed2"),
-            AbsoluteUrl("http://localhost/feed3"),
+            FeedUrl("http://localhost/feed2"),
+            FeedUrl("http://localhost/feed3"),
         }
 
     @pytest.mark.asyncio
@@ -559,6 +559,6 @@ class TestDiscover:
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 2
         assert {feed.url for feed in result.feeds} == {
-            AbsoluteUrl("http://localhost/feed2"),
-            AbsoluteUrl("http://localhost/feed3"),
+            FeedUrl("http://localhost/feed2"),
+            FeedUrl("http://localhost/feed3"),
         }

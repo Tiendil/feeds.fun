@@ -4,7 +4,7 @@ from typing import Any, Protocol, Union
 import pydantic
 
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import AbsoluteUrl, UnknownUrl
+from ffun.domain.entities import AbsoluteUrl, UnknownUrl, FeedUrl
 from ffun.parsers import entities as p_entities
 
 
@@ -23,7 +23,7 @@ class Status(enum.StrEnum):
 
 class Context(BaseEntity):
     raw_url: UnknownUrl
-    url: AbsoluteUrl | None = None
+    url: FeedUrl | None = None
     content: str | None = None
     soup: Any | None = None
     depth: int = 1

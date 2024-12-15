@@ -2,7 +2,7 @@ import pytest
 from furl import furl
 
 from ffun.domain import errors, urls
-from ffun.domain.entities import AbsoluteUrl, SourceUid, UnknownUrl, UrlUid
+from ffun.domain.entities import AbsoluteUrl, SourceUid, UnknownUrl, UrlUid, FeedUrl
 
 
 class TestAdjustClassicUrl:
@@ -298,6 +298,16 @@ class TestStrToAbsoluteUrl:
             assert urls.str_to_absolute_url("example_com")
 
 
+class TestStrToFeedUrl:
+
+    def test_ok(self) -> None:
+        assert urls.str_to_feed_url("http://example.com?") == "http://example.com"
+
+    def test_not_ok(self) -> None:
+        with pytest.raises(errors.UrlIsNotAbsolute):
+            assert urls.str_to_feed_url("example_com")
+
+
 class TestIsAbsoluteUrl:
 
     def test_ok(self) -> None:
@@ -465,5 +475,5 @@ class TestToFeedUrl:
             ("https://example.com/feed#fragment", "https://example.com/feed"),
         ],
     )
-    def test(self, url: AbsoluteUrl, feed_url: AbsoluteUrl) -> None:
+    def test(self, url: AbsoluteUrl, feed_url: FeedUrl) -> None:
         assert urls.to_feed_url(url) == feed_url

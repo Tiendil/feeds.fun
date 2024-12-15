@@ -1,7 +1,7 @@
 import pytest
 
 from ffun.domain.entities import UnknownUrl
-from ffun.domain.urls import normalize_classic_unknown_url
+from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url
 from ffun.parsers.entities import FeedInfo
 from ffun.parsers.feed import parse_feed
 from ffun.parsers.tests.helpers import feeds_fixtures_directory, feeds_fixtures_names
@@ -23,6 +23,6 @@ class TestParseFeed:
 
         assert url is not None
 
-        feed_info = parse_feed(raw_fixture, url)
+        feed_info = parse_feed(raw_fixture, to_feed_url(url))
 
         assert feed_info == FeedInfo.model_validate_json(expected_fixture)

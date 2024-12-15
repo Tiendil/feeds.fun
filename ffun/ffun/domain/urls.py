@@ -10,7 +10,7 @@ from orderedmultidict import omdict
 
 from ffun.core import logging
 from ffun.domain import errors
-from ffun.domain.entities import AbsoluteUrl, SourceUid, UnknownUrl, UrlUid
+from ffun.domain.entities import AbsoluteUrl, SourceUid, UnknownUrl, UrlUid, FeedUrl
 
 logger = logging.get_module_logger()
 
@@ -55,7 +55,7 @@ def initialize_tld_cache() -> None:
 
 
 # ATTENTION: see note at the top of the file
-def _fix_classic_url_to_absolute(url: UnknownUrl) -> AbsoluteUrl | None:
+def _fix_classic_url_to_absolute(url: str) -> AbsoluteUrl | None:
     domain_part = url.split("/")[0]
 
     # simple protection from processing special domains
@@ -104,6 +104,7 @@ def is_full_url(url: UnknownUrl) -> bool:
     return normalize_classic_unknown_url(url) is not None
 
 
+# it is a shortcut method for tests
 def str_to_absolute_url(url: str) -> AbsoluteUrl:
     """Convert or raise Exception
 
@@ -118,6 +119,12 @@ def str_to_absolute_url(url: str) -> AbsoluteUrl:
     return absolute_url
 
 
+# TODO: tests
+# it is a shortcut method for tests
+def str_to_feed_url(url: str) -> FeedUrl:
+    return to_feed_url(str_to_absolute_url(url))
+
+
 # ATTENTION: see note at the top of the file
 def is_absolute_url(url: str) -> bool:
     """Check if the URL is absolute and is normalized"""
@@ -125,7 +132,7 @@ def is_absolute_url(url: str) -> bool:
 
 
 # ATTENTION: see note at the top of the file
-def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
+def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
     fixed_url = normalize_classic_unknown_url(url)
     assert fixed_url is not None
 
@@ -141,7 +148,7 @@ def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl) -> Absol
 
 
 # ATTENTION: see note at the top of the file
-def adjust_classic_relative_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
+def adjust_classic_relative_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
     f_url = _construct_f_url(original_url)
 
     if f_url is None:
@@ -159,7 +166,7 @@ def adjust_classic_relative_url(url: UnknownUrl, original_url: AbsoluteUrl) -> A
 
 
 # ATTENTION: see note at the top of the file
-def adjust_classic_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
+def adjust_classic_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
     if is_full_url(url):
         return adjust_classic_full_url(url, original_url)
 
@@ -175,7 +182,7 @@ def adjust_magnetic_url(url: UnknownUrl) -> AbsoluteUrl:
 
 
 # ATTENTION: see note at the top of the file
-def adjust_external_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteUrl | None:
+def adjust_external_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
     if is_magnetic_url(url):
         return adjust_magnetic_url(url)
 
@@ -183,7 +190,7 @@ def adjust_external_url(url: UnknownUrl, original_url: AbsoluteUrl) -> AbsoluteU
 
 
 # ATTENTION: see note at the top of the file
-def url_to_uid(url: AbsoluteUrl) -> UrlUid:
+def url_to_uid(url: AbsoluteUrl | FeedUrl) -> UrlUid:
     # The goal of this function is to detect URLs that most likely (99.(9)%) point to the same resource
     # It normalizes and simplifies a URL according to heuristics
     # I.e. there is a small possibility that two different URLs will be normalized to the same uid
@@ -240,7 +247,7 @@ def url_to_uid(url: AbsoluteUrl) -> UrlUid:
 
 
 # ATTENTION: see note at the top of the file
-def url_to_source_uid(url: AbsoluteUrl) -> SourceUid:
+def url_to_source_uid(url: AbsoluteUrl | FeedUrl) -> SourceUid:
     # Because some portals (Reddit, ArXiv) provide customizable feed URLs,
     # we could see the same news entry in different feeds
     # => we should track the entry's source not by feed but by the portal
@@ -299,7 +306,7 @@ def filter_out_duplicated_urls(urls: Iterable[AbsoluteUrl]) -> list[AbsoluteUrl]
     return result
 
 
-def get_parent_url(url: AbsoluteUrl) -> AbsoluteUrl | None:
+def get_parent_url(url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
     f_url = furl(url)
 
     if not f_url.path.segments or f_url.path == "/":
@@ -315,9 +322,9 @@ def get_parent_url(url: AbsoluteUrl) -> AbsoluteUrl | None:
     return normalize_classic_unknown_url(UnknownUrl(str(f_url)))
 
 
-def to_feed_url(url: AbsoluteUrl) -> AbsoluteUrl:
+def to_feed_url(url: AbsoluteUrl) -> FeedUrl:
     f_url = furl(url)
 
     f_url.fragment = None
 
-    return AbsoluteUrl(str(f_url))
+    return FeedUrl(str(f_url))

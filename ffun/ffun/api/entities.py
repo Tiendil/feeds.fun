@@ -10,7 +10,7 @@ import pydantic
 from ffun.api import front_events
 from ffun.core import api
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import AbsoluteUrl, EntryId, FeedId, UnknownUrl, UserId
+from ffun.domain.entities import AbsoluteUrl, EntryId, FeedId, UnknownUrl, UserId, FeedUrl
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.feeds_links import entities as fl_entities
@@ -42,7 +42,7 @@ class Feed(BaseEntity):
     id: FeedId
     title: str | None
     description: str | None
-    url: AbsoluteUrl
+    url: FeedUrl
     state: str
     lastError: str | None = None
     loadedAt: datetime.datetime | None
@@ -132,7 +132,7 @@ class EntryInfo(BaseEntity):
 
 
 class FeedInfo(BaseEntity):
-    url: AbsoluteUrl
+    url: FeedUrl
     title: str
     description: str
     isLinked: bool
@@ -270,7 +270,7 @@ class Collection(pydantic.BaseModel):
 
 
 class CollectionFeedInfo(pydantic.BaseModel):
-    url: AbsoluteUrl
+    url: FeedUrl
     title: str
     description: str
     id: f_entities.FeedId

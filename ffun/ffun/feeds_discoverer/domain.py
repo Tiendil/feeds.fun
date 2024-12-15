@@ -21,12 +21,17 @@ logger = logging.get_module_logger()
 
 
 async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None]:
-    url = to_feed_url(normalize_classic_unknown_url(context.raw_url))
 
-    logger.info("discovering_normalize_url", raw_url=context.raw_url, adjusted_url=url)
+    absolute_url = normalize_classic_unknown_url(context.raw_url)
 
-    if url is None:
+    logger.info("discovering_absolute_url", raw_url=context.raw_url, adjusted_url=absolute_url)
+
+    if absolute_url is None:
         return context, Result(feeds=[], status=Status.incorrect_url)
+
+    url = to_feed_url(absolute_url)
+
+    logger.info("discovering_normalized_url", raw_url=context.raw_url, adjusted_url=url)
 
     return context.replace(url=url), None
 
