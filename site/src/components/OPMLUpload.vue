@@ -42,8 +42,8 @@
   import * as e from "@/logic/enums";
   import * as api from "@/logic/api";
   import {computedAsync} from "@vueuse/core";
-import {useEntriesStore} from "@/stores/entries";
-import {useGlobalSettingsStore} from "@/stores/globalSettings";
+  import {useEntriesStore} from "@/stores/entries";
+  import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
   const globalSettings = useGlobalSettingsStore();
 
@@ -81,7 +81,7 @@ import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
       // loading an OPML file is pretty rare and significantly changes the list of feeds
       // => we can force data to be reloaded
-      globalSettings.updateDataVersion()
+      globalSettings.updateDataVersion();
 
       loading.value = false;
       loaded.value = true;
