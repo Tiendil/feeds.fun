@@ -61,7 +61,7 @@ def parse_feed(content: str, original_url: AbsoluteUrl) -> FeedInfo | None:
         return None
 
     feed_info = FeedInfo(
-        url=original_url,
+        url=urls.to_feed_url(original_url),
         title=channel.feed.get("title", ""),
         description=channel.feed.get("description", ""),
         entries=[],

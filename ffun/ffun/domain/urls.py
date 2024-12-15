@@ -40,25 +40,12 @@ def check_furl_error() -> Iterator[None]:
         raise
 
 
-def _simplify_furl(f_url: furl) -> None:
-    # TODO: we should keep fragment for the entry's URLs
-    #       but remove it for the feed's URLs
-    f_url.remove(fragment=True)
-
-    if f_url.path == "/":
-        f_url.path = None
-
-
 def _construct_f_url(url: UnknownUrl | AbsoluteUrl | str) -> furl | None:
     try:
         with check_furl_error():
-            f_url = furl(url)
+            return furl(url)
     except errors.ExpectedFUrlError:
         return None
-
-    _simplify_furl(f_url)
-
-    return f_url
 
 
 def initialize_tld_cache() -> None:
@@ -68,24 +55,7 @@ def initialize_tld_cache() -> None:
 
 
 # ATTENTION: see note at the top of the file
-def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noqa: CCR001
-    url = UnknownUrl(url.strip())
-
-    # check if url is parsable
-    f_url = _construct_f_url(url)
-
-    if f_url is None:
-        return None
-
-    if url.startswith("//"):
-        return AbsoluteUrl(str(f_url))
-
-    if url.startswith("./") or url.startswith("../"):
-        return None
-
-    if RE_SCHEMA.match(url):
-        return AbsoluteUrl(str(f_url))
-
+def _fix_classic_url_to_absolute(url: UnknownUrl) -> AbsoluteUrl | None:
     domain_part = url.split("/")[0]
 
     # simple protection from processing special domains
@@ -101,7 +71,32 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noq
     if f_url is None:
         return None
 
-    return AbsoluteUrl(str(f_url))
+    return normalize_classic_unknown_url(UnknownUrl(str(f_url)))
+
+
+# ATTENTION: see note at the top of the file
+def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:
+    url = UnknownUrl(url.strip())
+
+    # check if url is parsable
+    f_url = _construct_f_url(url)
+
+    if f_url is None:
+        return None
+
+    if f_url.path == "/":
+        f_url.path = None
+
+    if url.startswith("//"):
+        return AbsoluteUrl(str(f_url))
+
+    if url.startswith("./") or url.startswith("../"):
+        return None
+
+    if RE_SCHEMA.match(url):
+        return AbsoluteUrl(str(f_url))
+
+    return _fix_classic_url_to_absolute(url)
 
 
 # ATTENTION: see note at the top of the file
@@ -318,3 +313,11 @@ def get_parent_url(url: AbsoluteUrl) -> AbsoluteUrl | None:
         f_url.path.segments[-1] = ""
 
     return normalize_classic_unknown_url(UnknownUrl(str(f_url)))
+
+
+def to_feed_url(url: AbsoluteUrl) -> AbsoluteUrl:
+    f_url = furl(url)
+
+    f_url.fragment = None
+
+    return AbsoluteUrl(str(f_url))

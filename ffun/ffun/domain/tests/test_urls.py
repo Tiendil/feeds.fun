@@ -51,6 +51,10 @@ class TestAdjustClassicUrl:
             ("//example.com/feed/", "path", "//example.com/feed/path"),
             ("//example.com/feed/", "?c=d", "//example.com/feed/?c=d"),
             ("//example.com/feed/", "another.domain.com", "//another.domain.com"),
+
+            # test keeping fragment
+            ("https://example.com/feed/", "https://example.com/path/a/b?c=d#fragment", "https://example.com/path/a/b?c=d#fragment"),
+            ("//example.com/feed/", "/path/a/b?c=d#z=q", "//example.com/path/a/b?c=d#z=q"),
         ],
     )
     def test_base_transformations(
@@ -216,6 +220,26 @@ class TestCheckFurlError:
                 1 / 0
 
 
+class TestFixClassicUrlToAbsolute:
+
+    def test_no_dot_in_domain(self) -> None:
+        assert urls._fix_classic_url_to_absolute("localhost") is None
+        assert urls._fix_classic_url_to_absolute("examplecom") is None
+
+    def test_no_public_suffix(self) -> None:
+        assert urls._fix_classic_url_to_absolute("example") is None
+        assert urls._fix_classic_url_to_absolute("example.myprivatezone") is None
+
+    def test_can_not_construct_furl(self) -> None:
+        assert urls._fix_classic_url_to_absolute("example.com:666666") is None
+
+    def test_ok(self) -> None:
+        assert urls._fix_classic_url_to_absolute("example.com") == "//example.com"
+        assert urls._fix_classic_url_to_absolute("example.com/path") == "//example.com/path"
+        assert urls._fix_classic_url_to_absolute("example.com/path?x=y") == "//example.com/path?x=y"
+        assert urls._fix_classic_url_to_absolute("example.com/path?x=y#fragment") == "//example.com/path?x=y#fragment"
+
+
 class TestNormalizeClassicUnknownUrl:
 
     def test_general_sceme(self) -> None:
@@ -242,12 +266,12 @@ class TestNormalizeClassicUnknownUrl:
     def test_ok(self) -> None:
         assert urls.normalize_classic_unknown_url(UnknownUrl("example.com/a/b/c?x=y")) == "//example.com/a/b/c?x=y"
 
-    def test_remove_segment(self) -> None:
+    def test_keepsegment(self) -> None:
         # short logic path
-        assert urls.normalize_classic_unknown_url(UnknownUrl("//example.com/a/b/c?x=y#z")) == "//example.com/a/b/c?x=y"
+        assert urls.normalize_classic_unknown_url(UnknownUrl("//example.com/a/b/c?x=y#z")) == "//example.com/a/b/c?x=y#z"
 
         # longest logic path
-        assert urls.normalize_classic_unknown_url(UnknownUrl("example.com/a/b/c?x=y#z")) == "//example.com/a/b/c?x=y"
+        assert urls.normalize_classic_unknown_url(UnknownUrl("example.com/a/b/c?x=y#z")) == "//example.com/a/b/c?x=y#z"
 
     def remove_trailing_root_slash(self) -> None:
         assert urls.normalize_classic_unknown_url(UnknownUrl("example.com")) == "//example.com"
@@ -429,3 +453,17 @@ class TestGetParentUrl:
             urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed/part/second"))
             == "https://example.com/feed/part/"
         )
+
+
+class TestToFeedUrl:
+
+    @pytest.mark.parametrize(
+        "url, feed_url",
+        [
+            ("https://example.com/feed", "https://example.com/feed"),
+            ("https://example.com/feed/", "https://example.com/feed/"),
+            ("https://example.com/feed#fragment", "https://example.com/feed"),
+        ],
+    )
+    def test(self, url: AbsoluteUrl, feed_url: AbsoluteUrl) -> None:
+        assert urls.to_feed_url(url) == feed_url

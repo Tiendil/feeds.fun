@@ -10,6 +10,7 @@ from ffun.domain.urls import (
     get_parent_url,
     normalize_classic_unknown_url,
     url_has_extension,
+    to_feed_url
 )
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain
@@ -20,7 +21,7 @@ logger = logging.get_module_logger()
 
 
 async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None]:
-    url = normalize_classic_unknown_url(context.raw_url)
+    url = to_feed_url(normalize_classic_unknown_url(context.raw_url))
 
     logger.info("discovering_normalize_url", raw_url=context.raw_url, adjusted_url=url)
 
