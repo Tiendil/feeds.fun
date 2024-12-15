@@ -4,10 +4,9 @@ import typer
 
 from ffun.application.application import with_app
 from ffun.core import logging
-from ffun.meta.domain import clean_orphaned_entries
-from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.core.postgresql import execute
+from ffun.domain.urls import normalize_classic_unknown_url, url_to_source_uid, url_to_uid
 from ffun.library.operations import all_entries_iterator, count_total_entries
-from ffun.domain.urls import url_to_uid, url_to_source_uid, normalize_classic_unknown_url
 
 logger = logging.get_module_logger()
 
@@ -31,13 +30,18 @@ async def run_check_entries() -> None:
             counter += 1
 
             if counter % chunk == 0:
-                logger.info("processed_entries", counter=counter, percentage=round((counter / total) * 100, 2), wrong_urls=wrong_urls)
+                logger.info(
+                    "processed_entries",
+                    counter=counter,
+                    percentage=round((counter / total) * 100, 2),
+                    wrong_urls=wrong_urls,
+                )
 
-            if '#' in entry.external_url or 'magnet' in entry.external_url:
+            if "#" in entry.external_url or "magnet" in entry.external_url:
                 continue
 
             if normalize_classic_unknown_url(entry.external_url) != entry.external_url:
-                print(repr(entry.external_url), ' -> ', repr(normalize_classic_unknown_url(entry.external_url)))
+                print(repr(entry.external_url), " -> ", repr(normalize_classic_unknown_url(entry.external_url)))
                 wrong_urls += 1
 
         logger.info("experiment_finished", wrong_urls=wrong_urls)
@@ -48,23 +52,23 @@ async def run_check_feeds() -> None:
 
         logger.info("start_experiment")
 
-        sources = await execute('SELECT id, uid FROM f_sources')
+        sources = await execute("SELECT id, uid FROM f_sources")
 
-        source_ids = {row['id']: row['uid'] for row in sources}
+        source_ids = {row["id"]: row["uid"] for row in sources}
 
         counter = 0
         wrong_urls = 0
         wrong_sources = 0
 
-        feeds = await execute('SELECT url, source_id, uid FROM f_feeds')
+        feeds = await execute("SELECT url, source_id, uid FROM f_feeds")
 
         total = len(feeds)
 
         for row in feeds:
             counter += 1
 
-            url = row['url']
-            uid = row['uid']
+            url = row["url"]
+            uid = row["uid"]
 
             expected_uid = url_to_uid(url)
             expected_source_uid = url_to_source_uid(url)
@@ -72,11 +76,17 @@ async def run_check_feeds() -> None:
             if uid != expected_uid:
                 wrong_urls += 1
 
-            if source_ids[row['source_id']] != expected_source_uid:
+            if source_ids[row["source_id"]] != expected_source_uid:
                 wrong_sources += 1
 
             if counter % 100 == 0:
-                logger.info("processed_entries", counter=counter, percentage=round((counter / total) * 100, 2), wrong_urls=wrong_urls, wrong_sources=wrong_sources)
+                logger.info(
+                    "processed_entries",
+                    counter=counter,
+                    percentage=round((counter / total) * 100, 2),
+                    wrong_urls=wrong_urls,
+                    wrong_sources=wrong_sources,
+                )
 
         logger.info("experiment_finished", wrong_urls=wrong_urls, wrong_sources=wrong_sources)
 
