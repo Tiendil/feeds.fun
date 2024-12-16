@@ -1,10 +1,10 @@
 import contextlib
-from xml.dom import minidom
 import copy
 import datetime
 from collections import Counter
 from types import TracebackType
 from typing import Any, Callable, Generator, MutableMapping, Optional, Type
+from xml.dom import minidom
 
 import pytest
 from structlog import _config as structlog_config

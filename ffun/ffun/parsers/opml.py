@@ -3,8 +3,8 @@ from typing import Generator
 
 from ffun.domain.entities import UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url, url_to_uid
-from ffun.parsers.entities import FeedInfo
 from ffun.feeds.entities import Feed
+from ffun.parsers.entities import FeedInfo
 
 
 def _extract_body(data: str) -> ET.Element:
@@ -80,11 +80,6 @@ def create_opml(feeds: list[Feed]) -> None:
     outline = ET.SubElement(body, "outline", {"title": "uncategorized", "text": "uncategorized"})
 
     for feed in feeds:
-        ET.SubElement(outline,
-                      "outline",
-                      {"title": feed.title,
-                       "text": feed.title,
-                       "type": "rss",
-                       "xmlUrl": feed.url})
+        ET.SubElement(outline, "outline", {"title": feed.title, "text": feed.title, "type": "rss", "xmlUrl": feed.url})
 
     return ET.tostring(opml, encoding="utf-8", method="xml")

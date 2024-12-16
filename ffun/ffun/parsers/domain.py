@@ -1,6 +1,5 @@
-from ffun.parsers import feed
+from ffun.parsers import feed, opml
 from ffun.parsers.entities import FeedInfo
-from ffun.parsers import opml
 
 
 def parse_opml(data: str) -> list[FeedInfo]:

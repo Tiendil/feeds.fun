@@ -1,13 +1,8 @@
-import pytest
-
 from ffun.core.tests.helpers import assert_compare_xml
-from ffun.domain.entities import UnknownUrl
-from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url
+from ffun.domain.urls import url_to_uid
+from ffun.feeds.entities import Feed
 from ffun.parsers.entities import FeedInfo
 from ffun.parsers.opml import create_opml, extract_feeds
-from ffun.parsers.tests.helpers import feeds_fixtures_directory, feeds_fixtures_names
-from ffun.feeds.entities import Feed
-from ffun.domain.urls import url_to_uid
 
 
 class TestCreateOpml:
@@ -36,12 +31,10 @@ class TestExtractFeeds:
 
         infos.sort(key=lambda info: info.title)
 
-        assert infos[0] == FeedInfo(url=feeds[0].url,
-       title=feeds[0].title,
-       description="", entries=[],
-       uid=url_to_uid(feeds[0].url))
+        assert infos[0] == FeedInfo(
+            url=feeds[0].url, title=feeds[0].title, description="", entries=[], uid=url_to_uid(feeds[0].url)
+        )
 
-        assert infos[1] == FeedInfo(url=feeds[1].url,
-         title=feeds[1].title,
-            description="", entries=[],
-            uid=url_to_uid(feeds[1].url))
+        assert infos[1] == FeedInfo(
+            url=feeds[1].url, title=feeds[1].title, description="", entries=[], uid=url_to_uid(feeds[1].url)
+        )
