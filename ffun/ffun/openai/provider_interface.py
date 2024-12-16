@@ -12,12 +12,17 @@ from ffun.llms_framework import errors as llmsf_errors
 from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, LLMProvider
 from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.provider_interface import ChatRequest, ChatResponse, ProviderInterface
+from ffun.openai.settings import settings
 
 logger = logging.get_module_logger()
 
 
 class OpenAIChatRequest(ChatRequest):
     messages: list[ChatCompletionMessageParam]
+
+
+def _client(api_key: str) -> openai.AsyncOpenAI:
+    return openai.AsyncOpenAI(api_key=api_key, base_url=settings.api_entry_point, timeout=settings.api_timeout)
 
 
 class OpenAIChatResponse(ChatResponse):
@@ -82,7 +87,7 @@ class OpenAIInterface(ProviderInterface):
     ) -> OpenAIChatResponse:
         try:
             with track_key_status(api_key, self.api_keys_statuses):
-                answer = await openai.AsyncOpenAI(api_key=api_key).chat.completions.create(
+                answer = await _client(api_key=api_key).chat.completions.create(
                     model=config.model,
                     temperature=float(config.temperature),
                     max_tokens=config.max_return_tokens,
@@ -127,7 +132,7 @@ class OpenAIInterface(ProviderInterface):
     async def check_api_key(self, config: LLMConfiguration, api_key: str) -> KeyStatus:
         with track_key_status(api_key, self.api_keys_statuses):
             try:
-                await openai.AsyncOpenAI(api_key=api_key).models.list()
+                await _client(api_key=api_key).models.list()
             except openai.APIError:
                 pass
 

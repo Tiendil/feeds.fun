@@ -109,6 +109,17 @@ You can set the API key for collections in the processor's config.
 
 **DANGER!!!** You can set the "general API key" in the processor's config; in this case, the processor will use it to process **ALL** news. It may be convenient if you self-host the service and fully control who has access to it.
 
+#### Specify API entry points
+
+You can set custom URLs as entry points for OpenAi and Gemini API by setting nthe ext environment variables:
+
+```
+FFUN_OPENAI_API_ENTRY_POINT="<your url>"
+FFUN_GOOGLE_GEMINI_API_ENTRY_POINT="<your url>"
+```
+
+That will allow you to use any compatible API provider.
+
 ## Backend
 
 ```
