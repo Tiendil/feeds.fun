@@ -25,6 +25,10 @@
         off-text="last" />
     </template>
 
+    <template #side-menu-item-4>
+      <a href="/api/get-opml" target="_blank">Download OPML</a>
+    </template>
+
     <template #main-header>
       Feeds
       <span v-if="sortedFeeds"> [{{ sortedFeeds.length }}] </span>
