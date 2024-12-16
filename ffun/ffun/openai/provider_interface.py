@@ -22,9 +22,7 @@ class OpenAIChatRequest(ChatRequest):
 
 
 def _client(api_key: str) -> openai.AsyncOpenAI:
-    return openai.AsyncOpenAI(api_key=api_key,
-                              base_url=settings.api_entry_point,
-                              timeout=settings.api_timeout)
+    return openai.AsyncOpenAI(api_key=api_key, base_url=settings.api_entry_point, timeout=settings.api_timeout)
 
 
 class OpenAIChatResponse(ChatResponse):
