@@ -4,6 +4,7 @@ import datetime
 from collections import Counter
 from types import TracebackType
 from typing import Any, Callable, Generator, MutableMapping, Optional, Type
+from xml.dom import minidom  # noqa: S408
 
 import pytest
 from structlog import _config as structlog_config
@@ -257,3 +258,7 @@ def assert_logs_has_no_business_event(logs: list[MutableMapping[str, Any]], name
     for record in logs:
         if record.get("b_kind") == "event" and record["event"] == name:
             pytest.fail(f"Event {name} found in logs")
+
+
+def assert_compare_xml(a: str, b: str) -> None:
+    assert minidom.parseString(a).toprettyxml() == minidom.parseString(b).toprettyxml()  # noqa: S318

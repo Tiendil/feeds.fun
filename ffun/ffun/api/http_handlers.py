@@ -4,7 +4,7 @@ from typing import Any, Iterable
 import fastapi
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 
 from ffun.api import entities
 from ffun.api.settings import settings
@@ -298,6 +298,21 @@ async def api_add_opml(request: entities.AddOpmlRequest, user: User) -> entities
     logger.business_event("opml_import", user_id=user.id, feeds_count=len(feed_infos))
 
     return entities.AddOpmlResponse()
+
+
+@router.get("/api/get-opml")
+async def api_get_opml(user: User) -> PlainTextResponse:
+    linked_feeds = await fl_domain.get_linked_feeds(user.id)
+
+    linked_feeds_ids = [link.feed_id for link in linked_feeds]
+
+    feeds = await f_domain.get_feeds(ids=linked_feeds_ids)
+
+    content = p_domain.create_opml(feeds=feeds)
+
+    headers = {"Content-Disposition": "attachment; filename=feeds-fun.opml"}
+
+    return PlainTextResponse(content=content, media_type="application/xml", headers=headers)
 
 
 @router.post("/api/unsubscribe")

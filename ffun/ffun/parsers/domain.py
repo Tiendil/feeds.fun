@@ -1,10 +1,12 @@
-from ffun.parsers import feed
+from ffun.parsers import feed, opml
 from ffun.parsers.entities import FeedInfo
-from ffun.parsers.feedly import extract_feeds
 
 
 def parse_opml(data: str) -> list[FeedInfo]:
-    return extract_feeds(data)
+    return opml.extract_feeds(data)
+
+
+create_opml = opml.create_opml
 
 
 parse_feed = feed.parse_feed
