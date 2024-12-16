@@ -4,6 +4,7 @@ from typing import Generator
 from ffun.domain.entities import UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url, url_to_uid
 from ffun.parsers.entities import FeedInfo
+from ffun.feeds.entities import Feed
 
 
 def _extract_body(data: str) -> ET.Element:
@@ -60,3 +61,27 @@ def extract_feeds_records(body: ET.Element) -> Generator[FeedInfo, None, None]:
             continue
 
         yield from extract_feeds_records(outline)
+
+
+def create_opml(feeds: list[Feed]) -> None:
+
+    feeds.sort(key=lambda feed: feed.title)
+
+    opml = ET.Element("opml", version="2.0")
+
+    head = ET.SubElement(opml, "head")
+    title = ET.SubElement(head, "title")
+    title.text = "Your subscriptions in feeds.fun"
+
+    body = ET.SubElement(opml, "body")
+
+    outline = ET.SubElement(body, "outline", {"text": "uncategorized", "title": "uncategorized"})
+
+    for feed in feeds:
+        ET.SubElement(outline,
+                      "outline",
+                      {"text": feed.title,
+                       "type": "rss",
+                       "xmlUrl": feed.url})
+
+    return ET.tostring(opml, encoding="utf-8", method="xml")
