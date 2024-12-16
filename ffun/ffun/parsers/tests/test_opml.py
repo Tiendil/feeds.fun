@@ -1,28 +1,47 @@
 import pytest
 
+from ffun.core.tests.helpers import assert_compare_xml
 from ffun.domain.entities import UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url
 from ffun.parsers.entities import FeedInfo
-from ffun.parsers.feed import parse_feed
+from ffun.parsers.opml import create_opml, extract_feeds
 from ffun.parsers.tests.helpers import feeds_fixtures_directory, feeds_fixtures_names
+from ffun.feeds.entities import Feed
+from ffun.domain.urls import url_to_uid
 
 
-class TestParseFeed:
-    @pytest.mark.parametrize("raw_fixture_name", feeds_fixtures_names())
-    def test_on_row_fixtures(self, raw_fixture_name: str) -> None:
-        raw_fixture_path = feeds_fixtures_directory / raw_fixture_name
-        expected_fixture_path = str(raw_fixture_path) + ".expected.json"
+class TestCreateOpml:
 
-        with open(raw_fixture_path, "r", encoding="utf-8") as raw_fixture_file:
-            raw_fixture = raw_fixture_file.read()
+    def test(self, saved_feed: Feed, another_saved_feed: Feed) -> None:
 
-        with open(expected_fixture_path, "r", encoding="utf-8") as expected_fixture_file:
-            expected_fixture = expected_fixture_file.read()
+        feeds = [saved_feed, another_saved_feed]
+        feeds.sort(key=lambda feed: feed.title)
 
-        url = normalize_classic_unknown_url(UnknownUrl("https://example.com/feed/"))
+        content = create_opml(feeds)
 
-        assert url is not None
+        expected_content = f'<opml version="2.0"><head><title>Your subscriptions in feeds.fun</title></head><body><outline title="uncategorized" text="uncategorized"><outline title="{feeds[0].title}" text="{feeds[0].title}" type="rss" xmlUrl="{feeds[0].url}" /><outline title="{feeds[1].title}" text="{feeds[1].title}" type="rss" xmlUrl="{feeds[1].url}" /></outline></body></opml>'
 
-        feed_info = parse_feed(raw_fixture, to_feed_url(url))
+        assert_compare_xml(content, expected_content.strip())
 
-        assert feed_info == FeedInfo.model_validate_json(expected_fixture)
+
+class TestExtractFeeds:
+
+    def test(self, saved_feed: Feed, another_saved_feed: Feed) -> None:
+        feeds = [saved_feed, another_saved_feed]
+        feeds.sort(key=lambda feed: feed.title)
+
+        content = create_opml(feeds)
+
+        infos = extract_feeds(content)
+
+        infos.sort(key=lambda info: info.title)
+
+        assert infos[0] == FeedInfo(url=feeds[0].url,
+       title=feeds[0].title,
+       description="", entries=[],
+       uid=url_to_uid(feeds[0].url))
+
+        assert infos[1] == FeedInfo(url=feeds[1].url,
+         title=feeds[1].title,
+            description="", entries=[],
+            uid=url_to_uid(feeds[1].url))

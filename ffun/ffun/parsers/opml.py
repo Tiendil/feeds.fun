@@ -51,6 +51,8 @@ def extract_feeds_records(body: ET.Element) -> Generator[FeedInfo, None, None]:
 
             feed_url = to_feed_url(url)
 
+            print(outline)
+
             yield FeedInfo(
                 url=feed_url,
                 title=outline.attrib.get("title", ""),
@@ -75,12 +77,13 @@ def create_opml(feeds: list[Feed]) -> None:
 
     body = ET.SubElement(opml, "body")
 
-    outline = ET.SubElement(body, "outline", {"text": "uncategorized", "title": "uncategorized"})
+    outline = ET.SubElement(body, "outline", {"title": "uncategorized", "text": "uncategorized"})
 
     for feed in feeds:
         ET.SubElement(outline,
                       "outline",
-                      {"text": feed.title,
+                      {"title": feed.title,
+                       "text": feed.title,
                        "type": "rss",
                        "xmlUrl": feed.url})
 

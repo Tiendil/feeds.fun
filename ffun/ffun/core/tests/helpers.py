@@ -1,4 +1,5 @@
 import contextlib
+from xml.dom import minidom
 import copy
 import datetime
 from collections import Counter
@@ -257,3 +258,7 @@ def assert_logs_has_no_business_event(logs: list[MutableMapping[str, Any]], name
     for record in logs:
         if record.get("b_kind") == "event" and record["event"] == name:
             pytest.fail(f"Event {name} found in logs")
+
+
+def assert_compare_xml(a: str, b: str):
+    assert minidom.parseString(a).toprettyxml() == minidom.parseString(b).toprettyxml()  # noqa: S318
