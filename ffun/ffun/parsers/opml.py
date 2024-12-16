@@ -81,4 +81,4 @@ def create_opml(feeds: list[Feed]) -> str:
         feed_title = feed.title if feed.title is not None else "unknown"
         ET.SubElement(outline, "outline", {"title": feed_title, "text": feed_title, "type": "rss", "xmlUrl": feed.url})
 
-    return ET.tostring(opml, encoding="utf-8", method="xml").encode("utf-8")  # type: ignore
+    return ET.tostring(opml, encoding="utf-8", method="xml").decode("utf-8")  # type: ignore
