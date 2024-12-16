@@ -26,7 +26,7 @@
     </template>
 
     <template #side-menu-item-4>
-      <a href="/api/get-opml" target="_blank">Download OPML</a>
+      <a class="ffun-form-button p-1 my-1 block w-full text-center" href="/api/get-opml" target="_blank">Download OPML</a>
     </template>
 
     <template #main-header>
