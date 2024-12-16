@@ -155,6 +155,7 @@ class TestExistedRouteUrls:
             "/api/get-rules",
             "/api/get-collections",
             "/api/add-opml",
+            "/api/get-opml",
             "/api/delete-rule",
             "/api/add-feed",
             "/api/unsubscribe",
