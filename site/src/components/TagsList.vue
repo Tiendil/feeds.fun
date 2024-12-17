@@ -6,6 +6,7 @@
         :key="tag"
         :uid="tag"
         :count="tagsCount[tag]"
+        :secondary-mode="tagMode(tag)"
         count-mode="tooltip" />
 
       <span

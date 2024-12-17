@@ -31,6 +31,7 @@ const tagsStates = inject<tagsFilterState.Storage>("tagsStates");
     uid: string;
     count?: number | null;
     countMode?: string | null;
+    secondaryMode?: string | null;
     // mode?: string | null;
   }>();
 
@@ -70,6 +71,10 @@ const mode = computed(() => {
       result[mode.value] = true;
     }
 
+    if (properties.secondaryMode) {
+      result[properties.secondaryMode] = true;
+    }
+
     return result;
   });
 
@@ -93,13 +98,14 @@ const tooltip = computed(() => {
 
   /* TODO: what with required/positive and excluded/negative styles/states?
           currently they use the same colors
-   */
+ */
+  /* TODO: improve visual styles, make them more separatable */
   .tag.required {
-    @apply text-green-700;
+    @apply text-green-700 font-bold;
   }
 
   .tag.excluded {
-    @apply text-red-700;
+    @apply text-red-700 font-bold;
   }
 
   .tag.positive {
