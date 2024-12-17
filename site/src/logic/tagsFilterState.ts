@@ -33,7 +33,7 @@ export class Storage {
     }
   }
 
-  onTagClicked({tag}: {tag: string}) {
+  onTagReversed({tag}: {tag: string}) {
     if (!(tag in this.selectedTags)) {
       this.onTagStateChanged({tag: tag, state: "required"});
     } else if (this.requiredTags[tag]) {
@@ -42,6 +42,14 @@ export class Storage {
       this.onTagStateChanged({tag: tag, state: "required"});
     } else {
       throw new Error(`Unknown tag state: ${tag}`);
+    }
+  }
+
+  onTagClicked({tag}: {tag: string}) {
+    if (tag in this.selectedTags) {
+      this.onTagStateChanged({tag: tag, state: "none"});
+    } else {
+      this.onTagStateChanged({tag: tag, state: "required"});
     }
   }
 

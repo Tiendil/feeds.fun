@@ -10,7 +10,7 @@
         <a
           href="#"
           @click.prevent="deselect(tag)"
-          >[X]</a
+          >⇄</a
         >
         <ffun-tag
           class="ml-1"
@@ -145,24 +145,6 @@ const tagsStates = inject<tagsFilterState.Storage>('tagsStates');
     return values;
   });
 
-  // function onTagClicked(tag: string) {
-  //   const state = tagStates.value[tag] || "none";
-
-  //   if (state === "none") {
-  //     tagStates.value[tag] = "required";
-  //     selectedTags.value[tag] = true;
-  //   } else if (state === "required") {
-  //     tagStates.value[tag] = "excluded";
-  //     selectedTags.value[tag] = true;
-  //   } else if (state === "excluded") {
-  //     tagStates.value[tag] = "required";
-  //     selectedTags.value[tag] = true;
-  //   } else {
-  //     throw new Error(`Unknown tag state: ${state}`);
-  //   }
-
-  //   // emit("tag:stateChanged", {tag: tag, state: tagStates.value[tag]});
-  // }
 
 // TODO: move to tag component?
   function deselect(tag: string) {
@@ -170,7 +152,7 @@ const tagsStates = inject<tagsFilterState.Storage>('tagsStates');
     // tagStates.value[tag] = "none";
 
     // todo: add sugar for this
-    tagsStates.value.onTagStateChanged({tag, state: "none"})
+    tagsStates.value.onTagReversed({tag});
 
     // emit("tag:stateChanged", {tag: tag, state: tagStates.value[tag]});
   }
