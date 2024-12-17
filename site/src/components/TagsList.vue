@@ -72,10 +72,8 @@
     }
 
     values.sort((a, b) => {
-      console.log(a, b);
       const aContributions = Math.abs(properties.contributions[a] || 0);
       const bContributions = Math.abs(properties.contributions[b] || 0);
-      console.log('contr', aContributions, bContributions);
 
       if (aContributions > bContributions) {
         return -1;
