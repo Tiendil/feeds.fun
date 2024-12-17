@@ -7,15 +7,11 @@
         v-for="tag of displayedSelectedTags"
         :key="tag"
         class="whitespace-nowrap line-clamp-1">
-        <a
-          href="#"
-          @click.prevent="deselect(tag)"
-          >⇄</a
-        >
         <ffun-tag
           class="ml-1"
           :uid="tag"
           :count="tags[tag] ?? 0"
+          :showSwitch="true"
           count-mode="no"/>
       </li>
     </ul>
@@ -145,15 +141,4 @@ const tagsStates = inject<tagsFilterState.Storage>('tagsStates');
     return values;
   });
 
-
-// TODO: move to tag component?
-  function deselect(tag: string) {
-    // selectedTags.value[tag] = false;
-    // tagStates.value[tag] = "none";
-
-    // todo: add sugar for this
-    tagsStates.value.onTagReversed({tag});
-
-    // emit("tag:stateChanged", {tag: tag, state: tagStates.value[tag]});
-  }
 </script>

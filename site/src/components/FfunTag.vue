@@ -1,4 +1,12 @@
 <template>
+  <div class="inline-block">
+        <a
+          href="#"
+          v-if="showSwitch"
+          class="pr-1"
+          @click.prevent="onRevers(tag)"
+          >⇄</a
+              >
   <div
     :class="classes"
     :title="tooltip"
@@ -16,6 +24,7 @@
       &#8599;
     </a>
   </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -32,6 +41,7 @@ const tagsStates = inject<tagsFilterState.Storage>("tagsStates");
     count?: number | null;
     countMode?: string | null;
     secondaryMode?: string | null;
+    showSwitch?: boolean | null;
     // mode?: string | null;
   }>();
 
@@ -80,6 +90,10 @@ const mode = computed(() => {
 
 function onClick() {
   tagsStates.value.onTagClicked({tag: properties.uid});
+}
+
+function onRevers() {
+  tagsStates.value.onTagReversed({tag: properties.uid});
 }
 
 const tooltip = computed(() => {
