@@ -24,8 +24,7 @@
     </template>
 
     <template #side-footer>
-      <tags-filter
-        :tags="tagsCount"/>
+      <tags-filter :tags="tagsCount" />
     </template>
 
     <template #main-header>
@@ -66,9 +65,9 @@
   const globalSettings = useGlobalSettingsStore();
   const entriesStore = useEntriesStore();
 
-const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
+  const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
-provide("tagsStates", tagsStates);
+  provide("tagsStates", tagsStates);
 
   globalSettings.mainPanelMode = e.MainPanelMode.Entries;
 

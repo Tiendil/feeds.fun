@@ -1,29 +1,29 @@
 <template>
   <div class="inline-block">
-        <a
-          href="#"
-          v-if="showSwitch"
-          class="pr-1"
-          @click.prevent="onRevers(tag)"
-          >⇄</a
-              >
-  <div
-    :class="classes"
-    :title="tooltip"
-    @click.prevent="onClick()">
-    <span v-if="countMode == 'prefix'">[{{ count }}]</span>
-
-    {{ tagInfo.name }}
-
     <a
-      v-if="tagInfo.link"
-      :href="tagInfo.link"
-      target="_blank"
-      @click.stop=""
-      rel="noopener noreferrer">
-      &#8599;
-    </a>
-  </div>
+      href="#"
+      v-if="showSwitch"
+      class="pr-1"
+      @click.prevent="onRevers(tag)"
+      >⇄</a
+    >
+    <div
+      :class="classes"
+      :title="tooltip"
+      @click.prevent="onClick()">
+      <span v-if="countMode == 'prefix'">[{{ count }}]</span>
+
+      {{ tagInfo.name }}
+
+      <a
+        v-if="tagInfo.link"
+        :href="tagInfo.link"
+        target="_blank"
+        @click.stop=""
+        rel="noopener noreferrer">
+        &#8599;
+      </a>
+    </div>
   </div>
 </template>
 
@@ -32,9 +32,9 @@
   import {computed, ref, inject} from "vue";
   import {useTagsStore} from "@/stores/tags";
 
-const tagsStore = useTagsStore();
+  const tagsStore = useTagsStore();
 
-const tagsStates = inject<tagsFilterState.Storage>("tagsStates");
+  const tagsStates = inject<tagsFilterState.Storage>("tagsStates");
 
   const properties = defineProps<{
     uid: string;
@@ -56,17 +56,17 @@ const tagsStates = inject<tagsFilterState.Storage>("tagsStates");
     return t.noInfoTag(properties.uid);
   });
 
-// TODO: refactor somehow
-const mode = computed(() => {
-  if (tagsStates.value.requiredTags[properties.uid]) {
-    return "required";
-  }
+  // TODO: refactor somehow
+  const mode = computed(() => {
+    if (tagsStates.value.requiredTags[properties.uid]) {
+      return "required";
+    }
 
-  if (tagsStates.value.excludedTags[properties.uid]) {
-    return "excluded";
-  }
+    if (tagsStates.value.excludedTags[properties.uid]) {
+      return "excluded";
+    }
 
-  return "none";
+    return "none";
   });
 
   const classes = computed(() => {
@@ -85,16 +85,16 @@ const mode = computed(() => {
     return result;
   });
 
-function onClick() {
-  tagsStates.value.onTagClicked({tag: properties.uid});
-}
+  function onClick() {
+    tagsStates.value.onTagClicked({tag: properties.uid});
+  }
 
-function onRevers() {
-  tagsStates.value.onTagReversed({tag: properties.uid});
-}
+  function onRevers() {
+    tagsStates.value.onTagReversed({tag: properties.uid});
+  }
 
-const tooltip = computed(() => {
-  // TODO: highligh the tag under the cursor
+  const tooltip = computed(() => {
+    // TODO: highligh the tag under the cursor
     if (properties.countMode == "tooltip" && properties.count) {
       return `articles with this tag: ${properties.count}`;
     }

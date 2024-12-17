@@ -2,11 +2,11 @@ import typer
 
 from ffun.cli.commands import cleaner  # noqa: F401
 from ffun.cli.commands import experiments  # noqa: F401
+from ffun.cli.commands import fixtures  # noqa: F401
 from ffun.cli.commands import metrics  # noqa: F401
 from ffun.cli.commands import processors_quality  # noqa: F401
 from ffun.cli.commands import profile  # noqa: F401
 from ffun.cli.commands import user_settings  # noqa: F401
-from ffun.cli.commands import fixtures  # noqa: F401
 from ffun.core import logging
 
 app = typer.Typer()

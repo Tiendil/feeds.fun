@@ -9,27 +9,24 @@ This code is intended to be used by developers to simplify our work, therefore:
 """
 
 import asyncio
+import uuid
 
 import typer
-import uuid
-from typing import Any
+
 from ffun.application.application import with_app
-from ffun.core import logging, utils
-from ffun.core.postgresql import execute
-from ffun.domain.entities import UserId, FeedId, EntryId, SourceId
-from ffun.domain.domain import new_feed_id, new_entry_id
-from ffun.domain.urls import normalize_classic_unknown_url, url_to_source_uid, url_to_uid, adjust_classic_relative_url
-from ffun.library.operations import all_entries_iterator, count_total_entries
 from ffun.auth.settings import settings as a_settings
-from ffun.users import domain as u_domain
-from ffun.users import entities as u_entities
-from ffun.library.entities import Entry
-from ffun.library.domain import catalog_entries, get_entries_by_ids
-from ffun.feeds.entities import Feed, FeedState
+from ffun.core import logging, utils
+from ffun.domain.domain import new_entry_id, new_feed_id
+from ffun.domain.urls import adjust_classic_relative_url, url_to_source_uid
 from ffun.feeds.domain import get_feeds, get_source_ids, save_feed
+from ffun.feeds.entities import Feed, FeedState
+from ffun.feeds_links.domain import add_link
+from ffun.library.domain import catalog_entries, get_entries_by_ids
+from ffun.library.entities import Entry
 from ffun.ontology.domain import apply_tags_to_entry
 from ffun.ontology.entities import ProcessorTag
-from ffun.feeds_links.domain import add_link
+from ffun.users import domain as u_domain
+from ffun.users import entities as u_entities
 
 logger = logging.get_module_logger()
 
@@ -56,8 +53,8 @@ async def fake_feed() -> Feed:
         last_error=None,
         load_attempted_at=timestamp,
         loaded_at=timestamp,
-        title=f'Title {_id}',
-        description=f'Description {_id}',
+        title=f"Title {_id}",
+        description=f"Description {_id}",
     )
 
     feed_id = await save_feed(feed)
@@ -72,13 +69,13 @@ async def fake_entry(feed: Feed) -> Entry:
 
     timestamp = utils.now()
 
-    url = adjust_classic_relative_url(f'enrty-{_id}', feed.url)
+    url = adjust_classic_relative_url(f"enrty-{_id}", feed.url)
 
     entry = Entry(
         id=new_entry_id(),
         source_id=feed.source_id,
-        title=f'Title {_id}',
-        body=f'Body {_id}',
+        title=f"Title {_id}",
+        body=f"Body {_id}",
         external_id=uuid.uuid4().hex,
         external_url=url,
         external_tags=set(),
@@ -111,7 +108,7 @@ async def run_fill_db(feeds_number: int, entries_per_feed: int, tags_per_entry: 
                 tags = []
 
                 for j, _ in enumerate(range(tags_per_entry), start=1):
-                    raw_uid = f'some-long-tag-name-{j}-{i % j}'
+                    raw_uid = f"some-long-tag-name-{j}-{i % j}"
                     tags.append(ProcessorTag(raw_uid=raw_uid))
 
                 await apply_tags_to_entry(entry.id, 100500, tags)

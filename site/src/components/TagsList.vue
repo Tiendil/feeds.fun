@@ -16,7 +16,6 @@
         v-if="!showAll"
         >{{ tagsNumber - showLimit }} more</span
       >
-
     </div>
   </div>
 </template>
@@ -108,5 +107,4 @@
 
     return values;
   });
-
 </script>

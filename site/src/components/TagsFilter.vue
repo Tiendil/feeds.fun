@@ -12,7 +12,7 @@
           :uid="tag"
           :count="tags[tag] ?? 0"
           :showSwitch="true"
-          count-mode="no"/>
+          count-mode="no" />
       </li>
     </ul>
 
@@ -32,7 +32,7 @@
         <ffun-tag
           :uid="tag"
           :count="tags[tag]"
-          count-mode="prefix"/>
+          count-mode="prefix" />
       </li>
     </ul>
 
@@ -53,7 +53,7 @@
   import type * as tagsFilterState from "@/logic/tagsFilterState";
   const tagsStore = useTagsStore();
 
-const tagsStates = inject<tagsFilterState.Storage>('tagsStates');
+  const tagsStates = inject<tagsFilterState.Storage>("tagsStates");
 
   const properties = defineProps<{tags: {[key: string]: number}}>();
 
@@ -134,5 +134,4 @@ const tagsStates = inject<tagsFilterState.Storage>('tagsStates');
 
     return values;
   });
-
 </script>
