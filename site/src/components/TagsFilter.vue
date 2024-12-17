@@ -49,11 +49,14 @@
 
 <script lang="ts" setup>
   import {computed, ref, inject} from "vue";
+  import type {Ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
   import type * as tagsFilterState from "@/logic/tagsFilterState";
+  import * as asserts from "@/logic/asserts";
   const tagsStore = useTagsStore();
 
-  const tagsStates = inject<tagsFilterState.Storage>("tagsStates");
+  const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
+  asserts.defined(tagsStates);
 
   const properties = defineProps<{tags: {[key: string]: number}}>();
 

@@ -4,7 +4,7 @@
       href="#"
       v-if="showSwitch"
       class="pr-1"
-      @click.prevent="onRevers(tag)"
+      @click.prevent="onRevers()"
       >⇄</a
     >
     <div
@@ -30,11 +30,16 @@
 <script lang="ts" setup>
   import * as t from "@/logic/types";
   import {computed, ref, inject} from "vue";
+  import type {Ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
+  import * as tagsFilterState from "@/logic/tagsFilterState";
+  import * as asserts from "@/logic/asserts";
 
   const tagsStore = useTagsStore();
 
-  const tagsStates = inject<tagsFilterState.Storage>("tagsStates");
+  const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
+
+  asserts.defined(tagsStates);
 
   const properties = defineProps<{
     uid: string;
@@ -86,10 +91,12 @@
   });
 
   function onClick() {
+    asserts.defined(tagsStates);
     tagsStates.value.onTagClicked({tag: properties.uid});
   }
 
   function onRevers() {
+    asserts.defined(tagsStates);
     tagsStates.value.onTagReversed({tag: properties.uid});
   }
 

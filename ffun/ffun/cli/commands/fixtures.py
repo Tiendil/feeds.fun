@@ -17,7 +17,8 @@ from ffun.application.application import with_app
 from ffun.auth.settings import settings as a_settings
 from ffun.core import logging, utils
 from ffun.domain.domain import new_entry_id, new_feed_id
-from ffun.domain.urls import adjust_classic_relative_url, url_to_source_uid
+from ffun.domain.entities import UnknownUrl
+from ffun.domain.urls import adjust_classic_relative_url, str_to_feed_url, url_to_source_uid
 from ffun.feeds.domain import get_feeds, get_source_ids, save_feed
 from ffun.feeds.entities import Feed, FeedState
 from ffun.feeds_links.domain import add_link
@@ -37,7 +38,7 @@ async def fake_feed() -> Feed:
 
     _id = uuid.uuid4().hex
 
-    url = f"https://{_id}.com"
+    url = str_to_feed_url(f"https://{_id}.com")
 
     source_uid = url_to_source_uid(url)
 
@@ -69,7 +70,9 @@ async def fake_entry(feed: Feed) -> Entry:
 
     timestamp = utils.now()
 
-    url = adjust_classic_relative_url(f"enrty-{_id}", feed.url)
+    url = adjust_classic_relative_url(UnknownUrl(f"enrty-{_id}"), feed.url)
+
+    assert url is not None
 
     entry = Entry(
         id=new_entry_id(),
@@ -87,7 +90,13 @@ async def fake_entry(feed: Feed) -> Entry:
 
     entries = await get_entries_by_ids([entry.id])
 
-    return entries[entry.id]
+    assert entry is not None
+
+    returned_entry = entries[entry.id]
+
+    assert returned_entry is not None
+
+    return returned_entry
 
 
 async def run_fill_db(feeds_number: int, entries_per_feed: int, tags_per_entry: int) -> None:
