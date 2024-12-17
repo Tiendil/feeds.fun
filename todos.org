@@ -1,0 +1,14 @@
+
+* TODO remove this file
+
+* TODO open/hide tags with a entries body
+
+* TODO clicks on tags in entries should behave like clicks on tags in the filter
+
+* TODO remove old create rule interface
+
+* TODO add new create rule interface
+
+** On the top of the main section?
+
+** as a button in filter?
