@@ -42,7 +42,6 @@ const tagsStates = inject<tagsFilterState.Storage>("tagsStates");
     countMode?: string | null;
     secondaryMode?: string | null;
     showSwitch?: boolean | null;
-    // mode?: string | null;
   }>();
 
   const tagInfo = computed(() => {
@@ -56,8 +55,6 @@ const tagsStates = inject<tagsFilterState.Storage>("tagsStates");
 
     return t.noInfoTag(properties.uid);
   });
-
-// const emit = defineEmits(["tag:clicked"]);
 
 // TODO: refactor somehow
 const mode = computed(() => {

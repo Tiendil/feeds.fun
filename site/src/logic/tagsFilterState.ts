@@ -4,6 +4,7 @@ interface ReturnTagsForEntity {
   (entity: any): string[];
 }
 
+// TODO: refactor to something nicer
 export class Storage {
   requiredTags: {[key: string]: boolean};
   excludedTags: {[key: string]: boolean};

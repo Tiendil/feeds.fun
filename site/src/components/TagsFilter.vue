@@ -53,12 +53,6 @@
   import type * as tagsFilterState from "@/logic/tagsFilterState";
   const tagsStore = useTagsStore();
 
-  // const selectedTags = ref<{[key: string]: boolean}>({});
-
-  // const tagStates = ref<{[key: string]: tagsFilterState.State}>({});
-
-// const emit = defineEmits(["tag:stateChanged"]);
-
 const tagsStates = inject<tagsFilterState.Storage>('tagsStates');
 
   const properties = defineProps<{tags: {[key: string]: number}}>();
