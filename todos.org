@@ -7,6 +7,9 @@
 
 * TODO remove old create rule interface
 
+** component: rule-constructor
+** remove css class for "selected for rule" tags
+
 * TODO add new create rule interface
 
 ** On the top of the main section?
@@ -16,3 +19,5 @@
 * DONE remove show tags filter (it's hides main feature of the app)
 
 * TODO refactor "show read" to something better / more convinient?
+
+* TODO check if hiden news in the news list processed correctly by vue.js (not affecting the performance)

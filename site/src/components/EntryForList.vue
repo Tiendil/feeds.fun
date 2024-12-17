@@ -34,6 +34,7 @@
         class="mt-0 pt-0"
         :tags="entry.tags"
         :tags-count="tagsCount"
+        :show-all="showBody"
         :contributions="entry.scoreContributions" />
     </div>
 

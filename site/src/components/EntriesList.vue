@@ -9,7 +9,6 @@
           <entry-for-list
             :entryId="entryId"
             :time-field="timeField"
-            :show-tags="showTags"
             :tags-count="tagsCount"
             @entry:bodyVisibilityChanged="onBodyVisibilityChanged" />
         </li>
@@ -35,7 +34,6 @@
   const properties = defineProps<{
     entriesIds: Array<t.EntryId>;
     timeField: string;
-    showTags: boolean;
     showFromStart: number;
     showPerPage: number;
     tagsCount: {[key: string]: number};
