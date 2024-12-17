@@ -27,3 +27,5 @@
 * TODO apply text filter in tags filter to the tags in entries too?
 
 ** It may be too slow/compliated
+
+* TODO fix RulesView

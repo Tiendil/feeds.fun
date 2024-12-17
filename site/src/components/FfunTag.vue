@@ -20,16 +20,18 @@
 
 <script lang="ts" setup>
   import * as t from "@/logic/types";
-  import {computed, ref} from "vue";
+  import {computed, ref, inject} from "vue";
   import {useTagsStore} from "@/stores/tags";
 
-  const tagsStore = useTagsStore();
+const tagsStore = useTagsStore();
+
+const tagsStates = inject<tagsFilterState.Storage>("tagsStates");
 
   const properties = defineProps<{
     uid: string;
     count?: number | null;
     countMode?: string | null;
-    mode?: string | null;
+    // mode?: string | null;
   }>();
 
   const tagInfo = computed(() => {
@@ -44,23 +46,36 @@
     return t.noInfoTag(properties.uid);
   });
 
-  const emit = defineEmits(["tag:clicked"]);
+// const emit = defineEmits(["tag:clicked"]);
+
+// TODO: refactor somehow
+const mode = computed(() => {
+  if (tagsStates.value.requiredTags[properties.uid]) {
+    return "required";
+  }
+
+  if (tagsStates.value.excludedTags[properties.uid]) {
+    return "excluded";
+  }
+
+  return "none";
+  });
 
   const classes = computed(() => {
     const result: {[key: string]: boolean} = {
       tag: true
     };
 
-    if (properties.mode) {
-      result[properties.mode] = true;
+    if (mode.value) {
+      result[mode.value] = true;
     }
 
     return result;
   });
 
-  function onClick() {
-    emit("tag:clicked", properties.uid);
-  }
+function onClick() {
+  tagsStates.value.onTagClicked({tag: properties.uid});
+}
 
 const tooltip = computed(() => {
   // TODO: highligh the tag under the cursor

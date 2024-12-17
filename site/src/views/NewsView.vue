@@ -25,8 +25,7 @@
 
     <template #side-footer>
       <tags-filter
-        :tags="tagsCount"
-        @tag:stateChanged="onTagStateChanged" />
+        :tags="tagsCount"/>
     </template>
 
     <template #main-header>
@@ -54,7 +53,7 @@
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref, onUnmounted, watch} from "vue";
+  import {computed, ref, onUnmounted, watch, provide} from "vue";
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
   import * as tagsFilterState from "@/logic/tagsFilterState";
@@ -67,7 +66,9 @@
   const globalSettings = useGlobalSettingsStore();
   const entriesStore = useEntriesStore();
 
-  const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
+const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
+
+provide("tagsStates", tagsStates);
 
   globalSettings.mainPanelMode = e.MainPanelMode.Entries;
 
@@ -183,10 +184,6 @@
 
     return orderProperties.timeField;
   });
-
-  function onTagStateChanged({tag, state}: {tag: string; state: tagsFilterState.State}) {
-    tagsStates.value.onTagStateChanged({tag, state});
-  }
 
   function onBodyVisibilityChanged({entryId, visible}: {entryId: t.EntryId; visible: boolean}) {
     entriesWithOpenedBody.value[entryId] = visible;

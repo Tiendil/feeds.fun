@@ -16,10 +16,7 @@
           class="ml-1"
           :uid="tag"
           :count="tags[tag] ?? 0"
-          count-mode="no"
-          :mode="tagStates[tag]"
-          @tag:clicked="onTagClicked">
-        </ffun-tag>
+          count-mode="no"/>
       </li>
     </ul>
 
@@ -39,9 +36,7 @@
         <ffun-tag
           :uid="tag"
           :count="tags[tag]"
-          count-mode="prefix"
-          :mode="null"
-          @tag:clicked="onTagClicked" />
+          count-mode="prefix"/>
       </li>
     </ul>
 
@@ -57,16 +52,18 @@
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref} from "vue";
+  import {computed, ref, inject} from "vue";
   import {useTagsStore} from "@/stores/tags";
   import type * as tagsFilterState from "@/logic/tagsFilterState";
   const tagsStore = useTagsStore();
 
-  const selectedTags = ref<{[key: string]: boolean}>({});
+  // const selectedTags = ref<{[key: string]: boolean}>({});
 
-  const tagStates = ref<{[key: string]: tagsFilterState.State}>({});
+  // const tagStates = ref<{[key: string]: tagsFilterState.State}>({});
 
-  const emit = defineEmits(["tag:stateChanged"]);
+// const emit = defineEmits(["tag:stateChanged"]);
+
+const tagsStates = inject<tagsFilterState.Storage>('tagsStates');
 
   const properties = defineProps<{tags: {[key: string]: number}}>();
 
@@ -100,10 +97,10 @@
   }
 
   const displayedSelectedTags = computed(() => {
-    let values = Object.keys(selectedTags.value);
+    let values = Object.keys(tagsStates.value.selectedTags);
 
     values = values.filter((tag) => {
-      return selectedTags.value[tag] === true;
+      return tagsStates.value.selectedTags[tag] === true;
     });
 
     values.sort(tagComparator);
@@ -117,7 +114,7 @@
     //       I.e. by excluding tag `x` you exclude concreate entries => you can exclude more tags,
     //       if they only belong to the excluded entries)
     //       => value is not accurate, but it is ok for now
-    return Object.keys(properties.tags).length + Object.keys(selectedTags.value).length;
+    return Object.keys(properties.tags).length + Object.keys(tagsStates.value.selectedTags).length;
   });
 
   const displayedTags = computed(() => {
@@ -128,7 +125,7 @@
     }
 
     values = values.filter((tag) => {
-      return selectedTags.value[tag] !== true;
+      return tagsStates.value.selectedTags[tag] !== true;
     });
 
     values = values.filter((tag) => {
@@ -148,29 +145,33 @@
     return values;
   });
 
-  function onTagClicked(tag: string) {
-    const state = tagStates.value[tag] || "none";
+  // function onTagClicked(tag: string) {
+  //   const state = tagStates.value[tag] || "none";
 
-    if (state === "none") {
-      tagStates.value[tag] = "required";
-      selectedTags.value[tag] = true;
-    } else if (state === "required") {
-      tagStates.value[tag] = "excluded";
-      selectedTags.value[tag] = true;
-    } else if (state === "excluded") {
-      tagStates.value[tag] = "required";
-      selectedTags.value[tag] = true;
-    } else {
-      throw new Error(`Unknown tag state: ${state}`);
-    }
+  //   if (state === "none") {
+  //     tagStates.value[tag] = "required";
+  //     selectedTags.value[tag] = true;
+  //   } else if (state === "required") {
+  //     tagStates.value[tag] = "excluded";
+  //     selectedTags.value[tag] = true;
+  //   } else if (state === "excluded") {
+  //     tagStates.value[tag] = "required";
+  //     selectedTags.value[tag] = true;
+  //   } else {
+  //     throw new Error(`Unknown tag state: ${state}`);
+  //   }
 
-    emit("tag:stateChanged", {tag: tag, state: tagStates.value[tag]});
-  }
+  //   // emit("tag:stateChanged", {tag: tag, state: tagStates.value[tag]});
+  // }
 
+// TODO: move to tag component?
   function deselect(tag: string) {
-    selectedTags.value[tag] = false;
-    tagStates.value[tag] = "none";
+    // selectedTags.value[tag] = false;
+    // tagStates.value[tag] = "none";
 
-    emit("tag:stateChanged", {tag: tag, state: tagStates.value[tag]});
+    // todo: add sugar for this
+    tagsStates.value.onTagStateChanged({tag, state: "none"})
+
+    // emit("tag:stateChanged", {tag: tag, state: tagStates.value[tag]});
   }
 </script>

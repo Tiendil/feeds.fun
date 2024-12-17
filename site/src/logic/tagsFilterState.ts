@@ -7,24 +7,41 @@ interface ReturnTagsForEntity {
 export class Storage {
   requiredTags: {[key: string]: boolean};
   excludedTags: {[key: string]: boolean};
+  selectedTags: {[key: string]: boolean}; // TODO: make calculated property?
 
   constructor() {
     this.requiredTags = {};
     this.excludedTags = {};
+    this.selectedTags = {};
   }
 
   onTagStateChanged({tag, state}: {tag: string; state: State}) {
     if (state === "required") {
       this.requiredTags[tag] = true;
       this.excludedTags[tag] = false;
+      this.selectedTags[tag] = true;
     } else if (state === "excluded") {
       this.excludedTags[tag] = true;
       this.requiredTags[tag] = false;
+      this.selectedTags[tag] = true;
     } else if (state === "none") {
       this.excludedTags[tag] = false;
       this.requiredTags[tag] = false;
+      delete this.selectedTags[tag];
     } else {
       throw new Error(`Unknown tag state: ${state}`);
+    }
+  }
+
+  onTagClicked({tag}: {tag: string}) {
+    if (!(tag in this.selectedTags)) {
+      this.onTagStateChanged({tag: tag, state: "required"});
+    } else if (this.requiredTags[tag]) {
+      this.onTagStateChanged({tag: tag, state: "excluded"});
+    } else if (this.excludedTags[tag]) {
+      this.onTagStateChanged({tag: tag, state: "required"});
+    } else {
+      throw new Error(`Unknown tag state: ${tag}`);
     }
   }
 
