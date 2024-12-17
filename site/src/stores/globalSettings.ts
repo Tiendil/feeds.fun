@@ -18,7 +18,6 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   // Entries
   const lastEntriesPeriod = ref(e.LastEntriesPeriod.Day3);
   const entriesOrder = ref(e.EntriesOrder.Score);
-  const showEntriesTags = ref(true);
   const showRead = ref(true);
 
   // Feeds
@@ -64,7 +63,6 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     mainPanelMode,
     lastEntriesPeriod,
     entriesOrder,
-    showEntriesTags,
     showRead,
     dataVersion,
     updateDataVersion,

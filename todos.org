@@ -12,3 +12,7 @@
 ** On the top of the main section?
 
 ** as a button in filter?
+
+* DONE remove show tags filter (it's hides main feature of the app)
+
+* TODO refactor "show read" to something better / more convinient?

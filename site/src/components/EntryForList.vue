@@ -31,7 +31,6 @@
       </a>
 
       <tags-list
-        v-if="showTags"
         class="mt-0 pt-0"
         :tags="entry.tags"
         :tags-count="tagsCount"
@@ -83,7 +82,6 @@
   const properties = defineProps<{
     entryId: t.EntryId;
     timeField: string;
-    showTags: boolean;
     tagsCount: {[key: string]: number};
   }>();
 

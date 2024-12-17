@@ -15,15 +15,6 @@
     </template>
 
     <template #side-menu-item-3>
-      Show tags:
-      <config-flag
-        style="min-width: 2.5rem"
-        v-model:flag="globalSettings.showEntriesTags"
-        on-text="no"
-        off-text="yes" />
-    </template>
-
-    <template #side-menu-item-4>
       Show read:
       <config-flag
         style="min-width: 2.5rem"
@@ -55,7 +46,6 @@
     <entries-list
       :entriesIds="entriesReport"
       :time-field="timeField"
-      :show-tags="globalSettings.showEntriesTags"
       :tags-count="tagsCount"
       :showFromStart="25"
       :showPerPage="25"
