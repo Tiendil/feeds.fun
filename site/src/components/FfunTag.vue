@@ -62,9 +62,10 @@
     emit("tag:clicked", properties.uid);
   }
 
-  const tooltip = computed(() => {
+const tooltip = computed(() => {
+  // TODO: highligh the tag under the cursor
     if (properties.countMode == "tooltip" && properties.count) {
-      return `articles with the tag: ${properties.count} (${properties.uid})`;
+      return `articles with this tag: ${properties.count}`;
     }
     return "";
   });
@@ -75,10 +76,9 @@
     @apply inline-block cursor-pointer p-0 mr-2 whitespace-nowrap;
   }
 
-  .tag.selected {
-    @apply font-bold text-purple-700;
-  }
-
+  /* TODO: what with required/positive and excluded/negative styles/states?
+          currently they use the same colors
+   */
   .tag.required {
     @apply text-green-700;
   }

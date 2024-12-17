@@ -114,6 +114,8 @@
   const totalTags = computed(() => {
     // TODO: this is not correct, because selected tags are treated differently
     //       depending on their status: required or excluded.
+    //       I.e. by excluding tag `x` you exclude concreate entries => you can exclude more tags,
+    //       if they only belong to the excluded entries)
     //       => value is not accurate, but it is ok for now
     return Object.keys(properties.tags).length + Object.keys(selectedTags.value).length;
   });

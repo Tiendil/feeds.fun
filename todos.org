@@ -7,9 +7,9 @@
 
 * TODO remove old create rule interface
 
-** component: rule-constructor
-** remove css class for "selected for rule" tags
-
+** TODO component: rule-constructor
+** DONE remove css class for "selected for rule" tags
+** TODO what with required/positive and excluded/negative tag styles/states? Currently they use the same visual scemas.
 * TODO add new create rule interface
 
 ** On the top of the main section?
@@ -21,3 +21,9 @@
 * TODO refactor "show read" to something better / more convinient?
 
 * TODO check if hiden news in the news list processed correctly by vue.js (not affecting the performance)
+
+* TODO show article body & tags by clicking on [x more] element?
+
+* TODO apply text filter in tags filter to the tags in entries too?
+
+** It may be too slow/compliated
