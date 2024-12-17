@@ -36,7 +36,7 @@
         v-if="reloadButton"
         href="#"
         @click="globalSettings.updateDataVersion()"
-        >Reload</a
+        >Refresh</a
       >
 
       <hr v-if="hasSideFooter" />
