@@ -24,6 +24,8 @@
 </template>
 
 <script lang="ts" setup>
+  // TODO: update rules visualization with excluded tags
+  // TODO: update rules filtering?
   import {computed, ref, onUnmounted, watch, provide} from "vue";
   import {computedAsync} from "@vueuse/core";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";

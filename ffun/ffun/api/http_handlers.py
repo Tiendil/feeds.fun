@@ -148,9 +148,13 @@ async def api_get_entries_by_ids(
 async def api_create_or_update_rule(
     request: entities.CreateOrUpdateRuleRequest, user: User
 ) -> entities.CreateOrUpdateRuleResponse:
-    tags_ids = await o_domain.get_ids_by_uids(request.tags)
+    required_tags_ids = await o_domain.get_ids_by_uids(request.required_tags)
+    excluded_tags_ids = await o_domain.get_ids_by_uids(request.excluded_tags)
 
-    await s_domain.create_or_update_rule(user_id=user.id, tags=set(tags_ids.values()), score=request.score)
+    await s_domain.create_or_update_rule(user_id=user.id,
+                                         score=request.score,
+                                         required_tags=required_tags_ids,
+                                         excluded_tags=excluded_tags_ids)
 
     return entities.CreateOrUpdateRuleResponse()
 
@@ -162,11 +166,17 @@ async def api_delete_rule(request: entities.DeleteRuleRequest, user: User) -> en
     return entities.DeleteRuleResponse()
 
 
+# TODO: do we need this?
 @router.post("/api/update-rule")
 async def api_update_rule(request: entities.UpdateRuleRequest, user: User) -> entities.UpdateRuleResponse:
-    tags_ids = await o_domain.get_ids_by_uids(request.tags)
+    required_tags_ids = await o_domain.get_ids_by_uids(request.required_tags)
+    excluded_tags_ids = await o_domain.get_ids_by_uids(request.excluded_tags)
 
-    await s_domain.update_rule(user_id=user.id, rule_id=request.id, score=request.score, tags=tags_ids.values())
+    await s_domain.update_rule(user_id=user.id,
+                               rule_id=request.id,
+                               score=request.score,
+                               required_tags=required_tags_ids,
+                               excluded_tags=excluded_tags_ids)
 
     return entities.UpdateRuleResponse()
 

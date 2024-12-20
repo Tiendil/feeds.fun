@@ -104,7 +104,8 @@ class Entry(BaseEntity):
 
 class Rule(BaseEntity):
     id: uuid.UUID
-    tags: list[str]
+    required_tags: list[str]
+    excluded_tags: list[str]
     score: int
     createdAt: datetime.datetime
     updatedAt: datetime.datetime
@@ -113,7 +114,8 @@ class Rule(BaseEntity):
     def from_internal(cls, rule: s_entities.Rule, tags_mapping: dict[int, str]) -> "Rule":
         return cls(
             id=rule.id,
-            tags=[tags_mapping[tag_id] for tag_id in rule.tags],
+            required_tags=[tags_mapping[tag_id] for tag_id in rule.required_tags],
+            excluded_tags=[tags_mapping[tag_id] for tag_id in rule.excluded_tags],
             score=rule.score,
             createdAt=rule.created_at,
             updatedAt=rule.updated_at,
@@ -319,7 +321,8 @@ class GetEntriesByIdsResponse(api.APISuccess):
 
 
 class CreateOrUpdateRuleRequest(api.APIRequest):
-    tags: list[str]
+    required_tags: list[str]
+    excluded_tags: list[str]
     score: int
 
 
@@ -337,7 +340,8 @@ class DeleteRuleResponse(api.APISuccess):
 
 class UpdateRuleRequest(api.APIRequest):
     id: uuid.UUID
-    tags: list[str]
+    required_tags: list[str]
+    excluded_tags: list[str]
     score: int
 
 

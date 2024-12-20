@@ -7,7 +7,8 @@ from ffun.domain.entities import UserId
 
 
 class BaseRule(pydantic.BaseModel):
-    tags: set[int]
+    required_tags: set[int]
+    excluded_tags: set[int]
     score: int
 
 
