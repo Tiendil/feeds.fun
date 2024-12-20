@@ -19,7 +19,7 @@
     <input
       class="ffun-input w-full"
       type="text"
-      placeholder="Input part of tag..."
+      placeholder="Input part of a tag…"
       v-model="tagNameFilter" />
 
     <ul
