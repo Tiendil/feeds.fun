@@ -5,7 +5,6 @@ from ffun.scores import entities, operations
 count_rules_per_user = operations.count_rules_per_user
 
 
-# TODO: support excluded tags
 def get_score_rules(rules: list[entities.Rule], tags: set[int]) -> list[entities.Rule]:
     score_rules = []
 
@@ -19,14 +18,16 @@ def get_score_rules(rules: list[entities.Rule], tags: set[int]) -> list[entities
     return score_rules
 
 
-# TODO: support excluded tags
 def get_score_contributions(rules: Sequence[entities.BaseRule], tags: set[int]) -> tuple[int, dict[int, int]]:
     score = 0
     contributions: dict[int, int] = {}
 
     for rule in get_score_rules(rules, tags):
         score += rule.score
-        for tag in rule.tags:
+
+        # We may want to think about calculating contributions for excluded tags
+        # but currently there is no visible need for that
+        for tag in rule.required_tags:
             contributions[tag] = contributions.get(tag, 0) + rule.score
 
     return score, contributions
