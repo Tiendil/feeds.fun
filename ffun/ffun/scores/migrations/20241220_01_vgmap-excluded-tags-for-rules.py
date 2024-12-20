@@ -7,7 +7,7 @@ from typing import Any, Iterable
 from psycopg import Connection
 from yoyo import step
 
-__depends__ = {'20230813_01_l7qop-updated-at-field'}
+__depends__ = {"20230813_01_l7qop-updated-at-field"}
 
 
 # TODO: check if migration is applied correctly to prod data
@@ -28,8 +28,7 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
     for row in result:
         cursor.execute(
             "UPDATE s_rules SET key = %(key)s WHERE id = %(id)s",
-            {"id": row["id"],
-             "key": _key_from_tags(row["required_tags"], [])}
+            {"id": row["id"], "key": _key_from_tags(row["required_tags"], [])},
         )
 
 

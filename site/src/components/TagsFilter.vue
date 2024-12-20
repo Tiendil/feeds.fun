@@ -27,12 +27,12 @@
       href="#"
       @click=""
       >Create Rule</a
-                    >
+    >
 
     <!-- TODO: better text and style? -->
-    <p class="ffun-info-good"
-       v-if="displayedSelectedTags.length == 0"
-       >
+    <p
+      class="ffun-info-good"
+      v-if="displayedSelectedTags.length == 0">
       Select tags to create a rule.
     </p>
 

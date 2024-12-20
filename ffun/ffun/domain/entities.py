@@ -6,6 +6,7 @@ EntryId = NewType("EntryId", uuid.UUID)
 FeedId = NewType("FeedId", uuid.UUID)
 CollectionId = NewType("CollectionId", uuid.UUID)
 SourceId = NewType("SourceId", uuid.UUID)
+RuleId = NewType("RuleId", uuid.UUID)
 
 # URL types for better normalization control in code
 # conversion schemas:

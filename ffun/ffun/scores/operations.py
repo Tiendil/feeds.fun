@@ -5,7 +5,7 @@ import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
-from ffun.domain.entities import UserId
+from ffun.domain.entities import RuleId, UserId
 from ffun.scores import errors
 from ffun.scores.entities import Rule
 
@@ -33,7 +33,9 @@ def row_to_rule(row: dict[str, Any]) -> Rule:
     )
 
 
-async def create_or_update_rule(user_id: UserId, required_tags: Iterable[int], excluded_tags: Iterable[int], score: int) -> Rule:
+async def create_or_update_rule(
+    user_id: UserId, required_tags: Iterable[int], excluded_tags: Iterable[int], score: int
+) -> Rule:
     required_tags = set(required_tags)
     excluded_tags = set(excluded_tags)
 
@@ -53,19 +55,26 @@ async def create_or_update_rule(user_id: UserId, required_tags: Iterable[int], e
         """
 
     try:
-        result = await execute(sql, {"id": uuid.uuid4(),
-                                     "user_id": user_id,
-                                     "required_tags": required_tags,
-                                     "excluded_tags": excluded_tags,
-                                     "key": key,
-                                     "score": score})
+        result = await execute(
+            sql,
+            {
+                "id": uuid.uuid4(),
+                "user_id": user_id,
+                "required_tags": required_tags,
+                "excluded_tags": excluded_tags,
+                "key": key,
+                "score": score,
+            },
+        )
 
-        logger.business_event("rule_created",
-                              user_id=user_id,
-                              rule_id=result[0]["id"],
-                              required_tags=required_tags,
-                              excluded_tags=excluded_tags,
-                              score=score)
+        logger.business_event(
+            "rule_created",
+            user_id=user_id,
+            rule_id=result[0]["id"],
+            required_tags=required_tags,
+            excluded_tags=excluded_tags,
+            score=score,
+        )
     except psycopg.errors.UniqueViolation:
         logger.info("rule_already_exists_change_score", key=key)
 
@@ -78,17 +87,19 @@ async def create_or_update_rule(user_id: UserId, required_tags: Iterable[int], e
 
         result = await execute(sql, {"user_id": user_id, "key": key, "score": score})
 
-        logger.business_event("rule_updated",
-                              user_id=user_id,
-                              rule_id=result[0]["id"],
-                              required_tags=required_tags,
-                              excluded_tags=excluded_tags,
-                              score=score)
+        logger.business_event(
+            "rule_updated",
+            user_id=user_id,
+            rule_id=result[0]["id"],
+            required_tags=required_tags,
+            excluded_tags=excluded_tags,
+            score=score,
+        )
 
     return row_to_rule(result[0])
 
 
-async def delete_rule(user_id: UserId, rule_id: uuid.UUID) -> None:
+async def delete_rule(user_id: UserId, rule_id: RuleId) -> None:
     sql = """
         DELETE FROM s_rules
         WHERE user_id = %(user_id)s AND id = %(rule_id)s
@@ -103,7 +114,9 @@ async def delete_rule(user_id: UserId, rule_id: uuid.UUID) -> None:
 
 # TODO: RuleId
 # TODO: remove?
-async def update_rule(user_id: UserId, rule_id: uuid.UUID, required_tags: Iterable[int], excluded_tags: Iterable[int], score: int) -> Rule:
+async def update_rule(
+    user_id: UserId, rule_id: RuleId, required_tags: Iterable[int], excluded_tags: Iterable[int], score: int
+) -> Rule:
     required_tags = set(required_tags)
     excluded_tags = set(excluded_tags)
 
@@ -123,12 +136,29 @@ async def update_rule(user_id: UserId, rule_id: uuid.UUID, required_tags: Iterab
     returning *
     """
 
-    result = await execute(sql, {"user_id": user_id, "rule_id": rule_id, "required_tags": required_tags, "excluded_tags": excluded_tags, "key": key, "score": score})
+    result = await execute(
+        sql,
+        {
+            "user_id": user_id,
+            "rule_id": rule_id,
+            "required_tags": required_tags,
+            "excluded_tags": excluded_tags,
+            "key": key,
+            "score": score,
+        },
+    )
 
     if not result:
         raise errors.NoRuleFound()
 
-    logger.business_event("rule_updated", user_id=user_id, rule_id=result[0]["id"], required_tags=required_tags, excluded_tags=excluded_tags, score=score)
+    logger.business_event(
+        "rule_updated",
+        user_id=user_id,
+        rule_id=result[0]["id"],
+        required_tags=required_tags,
+        excluded_tags=excluded_tags,
+        score=score,
+    )
 
     return row_to_rule(result[0])
 

@@ -1,6 +1,5 @@
 import datetime
 import enum
-import uuid
 from decimal import Decimal
 from typing import Any, Iterable
 
@@ -10,7 +9,7 @@ import pydantic
 from ffun.api import front_events
 from ffun.core import api
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import AbsoluteUrl, EntryId, FeedId, FeedUrl, UnknownUrl, UserId
+from ffun.domain.entities import AbsoluteUrl, EntryId, FeedId, FeedUrl, RuleId, UnknownUrl, UserId
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.feeds_links import entities as fl_entities
@@ -103,7 +102,7 @@ class Entry(BaseEntity):
 
 
 class Rule(BaseEntity):
-    id: uuid.UUID
+    id: RuleId
     required_tags: list[str]
     excluded_tags: list[str]
     score: int
@@ -331,7 +330,7 @@ class CreateOrUpdateRuleResponse(api.APISuccess):
 
 
 class DeleteRuleRequest(api.APIRequest):
-    id: uuid.UUID
+    id: RuleId
 
 
 class DeleteRuleResponse(api.APISuccess):
@@ -339,7 +338,7 @@ class DeleteRuleResponse(api.APISuccess):
 
 
 class UpdateRuleRequest(api.APIRequest):
-    id: uuid.UUID
+    id: RuleId
     required_tags: list[str]
     excluded_tags: list[str]
     score: int

@@ -13,8 +13,7 @@
     </template>
 
     <template #side-footer>
-      <tags-filter
-        :tags="tagsCount" />
+      <tags-filter :tags="tagsCount" />
     </template>
 
     <rules-list

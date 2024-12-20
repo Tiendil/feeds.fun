@@ -43,5 +43,7 @@ def five_tags_ids(five_tags_by_uids: dict[str, int]) -> tuple[int, int, int, int
 
 
 @pytest.fixture
-def five_processor_tags(five_tags_by_ids: dict[int, str]) -> tuple[ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag]:
+def five_processor_tags(
+    five_tags_by_ids: dict[int, str]
+) -> tuple[ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag]:
     return tuple(ProcessorTag(raw_uid=tag) for tag in five_tags_by_ids.values())  # type: ignore

@@ -151,10 +151,9 @@ async def api_create_or_update_rule(
     required_tags_ids = await o_domain.get_ids_by_uids(request.required_tags)
     excluded_tags_ids = await o_domain.get_ids_by_uids(request.excluded_tags)
 
-    await s_domain.create_or_update_rule(user_id=user.id,
-                                         score=request.score,
-                                         required_tags=required_tags_ids,
-                                         excluded_tags=excluded_tags_ids)
+    await s_domain.create_or_update_rule(
+        user_id=user.id, score=request.score, required_tags=required_tags_ids, excluded_tags=excluded_tags_ids
+    )
 
     return entities.CreateOrUpdateRuleResponse()
 
@@ -172,11 +171,13 @@ async def api_update_rule(request: entities.UpdateRuleRequest, user: User) -> en
     required_tags_ids = await o_domain.get_ids_by_uids(request.required_tags)
     excluded_tags_ids = await o_domain.get_ids_by_uids(request.excluded_tags)
 
-    await s_domain.update_rule(user_id=user.id,
-                               rule_id=request.id,
-                               score=request.score,
-                               required_tags=required_tags_ids,
-                               excluded_tags=excluded_tags_ids)
+    await s_domain.update_rule(
+        user_id=user.id,
+        rule_id=request.id,
+        score=request.score,
+        required_tags=required_tags_ids,
+        excluded_tags=excluded_tags_ids,
+    )
 
     return entities.UpdateRuleResponse()
 

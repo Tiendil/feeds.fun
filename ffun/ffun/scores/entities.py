@@ -1,9 +1,8 @@
 import datetime
-import uuid
 
 import pydantic
 
-from ffun.domain.entities import UserId
+from ffun.domain.entities import RuleId, UserId
 
 
 class BaseRule(pydantic.BaseModel):
@@ -13,7 +12,7 @@ class BaseRule(pydantic.BaseModel):
 
 
 class Rule(BaseRule):
-    id: uuid.UUID
+    id: RuleId
     user_id: UserId
     created_at: datetime.datetime
     updated_at: datetime.datetime

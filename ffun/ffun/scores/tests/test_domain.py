@@ -1,5 +1,3 @@
-import pytest
-
 from ffun.scores import domain, entities
 
 
@@ -14,9 +12,7 @@ class TestGetScoreRules:
         assert domain.get_score_rules([], {1, 2, 3}) == []
 
     def test_only_required_tags(self) -> None:
-        rules = [ rule(2, {1, 2, 3}, set()),
-                  rule(3, {1, 3}, set()),
-                  rule(5, {2}, set()) ]
+        rules = [rule(2, {1, 2, 3}, set()), rule(3, {1, 3}, set()), rule(5, {2}, set())]
 
         assert domain.get_score_rules(rules, set()) == []
         assert domain.get_score_rules(rules, {1, 2, 3}) == rules
@@ -26,9 +22,7 @@ class TestGetScoreRules:
         assert domain.get_score_rules(rules, {2}) == [rules[2]]
 
     def test_only_excluded_tags(self) -> None:
-        rules = [ rule(2, set(), {1, 2, 3}),
-                  rule(3, set(), {1, 3}),
-                  rule(5, set(), {2}) ]
+        rules = [rule(2, set(), {1, 2, 3}), rule(3, set(), {1, 3}), rule(5, set(), {2})]
 
         assert domain.get_score_rules(rules, set()) == rules
         assert domain.get_score_rules(rules, {1, 2, 3}) == []
@@ -39,9 +33,7 @@ class TestGetScoreRules:
         assert domain.get_score_rules(rules, {1}) == [rules[2]]
 
     def test_required_and_excluded_tags(self) -> None:
-        rules = [ rule(2, {1, 2, 3}, {4}),
-                  rule(3, {1, 3}, {2}),
-                  rule(5, {2}, {1, 3}) ]
+        rules = [rule(2, {1, 2, 3}, {4}), rule(3, {1, 3}, {2}), rule(5, {2}, {1, 3})]
 
         assert domain.get_score_rules(rules, set()) == []
         assert domain.get_score_rules(rules, {1, 2, 3}) == [rules[0]]
@@ -59,9 +51,7 @@ class TestGetScore:
         assert domain.get_score_contributions([], {1, 2, 3}) == (0, {})
 
     def test_only_required_tags(self) -> None:
-        rules = [ rule(2, {1, 2, 3}, set()),
-                  rule(3, {1, 3}, set()),
-                  rule(5, {2}, set()) ]
+        rules = [rule(2, {1, 2, 3}, set()), rule(3, {1, 3}, set()), rule(5, {2}, set())]
 
         assert domain.get_score_contributions(rules, set()) == (0, {})
         assert domain.get_score_contributions(rules, {1, 2, 3}) == (10, {1: 5, 2: 7, 3: 5})
@@ -71,9 +61,7 @@ class TestGetScore:
         assert domain.get_score_contributions(rules, {2}) == (5, {2: 5})
 
     def test_only_excluded_tags(self) -> None:
-        rules = [ rule(2, set(), {1, 2, 3}),
-                  rule(3, set(), {1, 3}),
-                  rule(5, set(), {2}) ]
+        rules = [rule(2, set(), {1, 2, 3}), rule(3, set(), {1, 3}), rule(5, set(), {2})]
 
         assert domain.get_score_contributions(rules, set()) == (10, {})
         assert domain.get_score_contributions(rules, {1, 2, 3}) == (0, {})
@@ -84,9 +72,7 @@ class TestGetScore:
         assert domain.get_score_contributions(rules, {1}) == (5, {})
 
     def test_required_and_excluded_tags(self) -> None:
-        rules = [ rule(2, {1, 2, 3}, {4}),
-                  rule(3, {1, 3}, {2}),
-                  rule(5, {2}, {1, 3}) ]
+        rules = [rule(2, {1, 2, 3}, {4}), rule(3, {1, 3}, {2}), rule(5, {2}, {1, 3})]
 
         assert domain.get_score_contributions(rules, set()) == (0, {})
         assert domain.get_score_contributions(rules, {1, 2, 3}) == (2, {1: 2, 2: 2, 3: 2})
