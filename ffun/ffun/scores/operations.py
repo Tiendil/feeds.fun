@@ -101,6 +101,7 @@ async def delete_rule(user_id: UserId, rule_id: uuid.UUID) -> None:
         logger.business_event("rule_deleted", user_id=user_id, rule_id=rule_id)
 
 
+# TODO: RuleId
 # TODO: remove?
 async def update_rule(user_id: UserId, rule_id: uuid.UUID, required_tags: Iterable[int], excluded_tags: Iterable[int], score: int) -> Rule:
     required_tags = set(required_tags)
