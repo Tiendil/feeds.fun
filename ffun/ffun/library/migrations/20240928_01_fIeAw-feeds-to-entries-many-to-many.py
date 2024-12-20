@@ -83,42 +83,25 @@ WHERE x.entry_id = l_entries.id
 """
 
 
-# TODO: remove prints after migration applied to prod
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor(row_factory=dict_row)
 
-    print("Creating l_feeds_to_entries table")  # noqa
-
     cursor.execute(sql_create_feeds_to_entries_table)
-
-    print("Creating l_orphaned_entries table")  # noqa
 
     cursor.execute(sql_create_orphaned_entries_table)
 
-    print("Filling l_feeds_to_entries table")  # noqa
-
     cursor.execute(sql_fill_from_entries_table)
-
-    print("Filling l_orphaned_entries table")  # noqa
 
     cursor.execute(sql_fill_orphaned_entries)
 
     cursor.execute("CREATE INDEX l_feeds_to_entries_entry_id_idx ON l_feeds_to_entries (entry_id)")
 
-    print("Filling duplicated entries")  # noqa
-
     cursor.execute(sql_fill_duplicated_entries)
-
-    print("Removing duplicated entries")  # noqa
 
     cursor.execute(sql_remove_duplicated_entries)
 
-    print("Creating unique index on l_entries")  # noqa
-
     # external_id goes first to optimize queries
     cursor.execute("CREATE UNIQUE INDEX l_entries_source_id_external_id_idx ON l_entries (external_id, source_id)")
-
-    print("Removing feed_id column from l_entries")  # noqa
 
     cursor.execute("ALTER TABLE l_entries DROP COLUMN feed_id")
 
@@ -128,8 +111,6 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
     )
 
     cursor.execute("CREATE INDEX l_entries_created_at_idx ON l_entries (created_at ASC)")
-
-    print("Completed")  # noqa
 
 
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:
