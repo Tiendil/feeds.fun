@@ -15,17 +15,22 @@ from ffun.scores import domain, errors, operations
 
 class TestCreateOrUpdateRule:
     @pytest.mark.asyncio
-    async def test_create_new_rule(self, internal_user_id: UserId, three_tags_ids: tuple[int, int, int]) -> None:
+    async def test_create_new_rule(self, internal_user_id: UserId, five_tags_ids: tuple[int, int, int, int, int]) -> None:
+        required_tags = five_tags_ids[:3]
+        excluded_tags = five_tags_ids[3:]
+
         with capture_logs() as logs:
             async with TableSizeDelta("s_rules", delta=1):
-                created_rule = await operations.create_or_update_rule(internal_user_id, three_tags_ids, 13)
+                created_rule = await operations.create_or_update_rule(internal_user_id, score=13,
+                                                                      required_tags=required_tags, excluded_tags=excluded_tags)
 
         rules = await domain.get_rules(internal_user_id)
 
         assert rules == [created_rule]
 
         assert created_rule.user_id == internal_user_id
-        assert created_rule.tags == set(three_tags_ids)
+        assert created_rule.required_tags == set(required_tags)
+        assert created_rule.excluded_tags == set(excluded_tags)
         assert created_rule.score == 13
 
         assert_logs_has_business_event(
@@ -33,20 +38,27 @@ class TestCreateOrUpdateRule:
             "rule_created",
             user_id=internal_user_id,
             rule_id=str(created_rule.id),
-            tags=list(three_tags_ids),
+            required_tags=list(required_tags),
+            excluded_tags=list(excluded_tags),
             score=13,
         )
         assert_logs_has_no_business_event(logs, "rule_updated")
 
     @pytest.mark.asyncio
     async def test_tags_order_does_not_affect_creation(
-        self, internal_user_id: UserId, three_tags_ids: tuple[int, int, int]
+        self, internal_user_id: UserId, five_tags_ids: tuple[int, int, int, int, int]
     ) -> None:
-        async with TableSizeDelta("s_rules", delta=1):
-            created_rule_1 = await operations.create_or_update_rule(internal_user_id, three_tags_ids, 13)
-            created_rule_2 = await operations.create_or_update_rule(internal_user_id, reversed(three_tags_ids), 17)
+        required_tags = list(five_tags_ids[:3])
+        excluded_tags = list(five_tags_ids[3:])
 
-        assert created_rule_1.tags == created_rule_2.tags
+        async with TableSizeDelta("s_rules", delta=1):
+            created_rule_1 = await operations.create_or_update_rule(internal_user_id, required_tags=required_tags, excluded_tags=excluded_tags, score=13)
+            print(required_tags, excluded_tags)
+            print(reversed(required_tags), reversed(excluded_tags))
+            created_rule_2 = await operations.create_or_update_rule(internal_user_id, required_tags=reversed(required_tags), excluded_tags=reversed(excluded_tags), score=17)
+
+        assert created_rule_1.required_tags == created_rule_2.required_tags
+        assert created_rule_1.excluded_tags == created_rule_2.excluded_tags
 
         rules = await domain.get_rules(internal_user_id)
 
@@ -54,20 +66,24 @@ class TestCreateOrUpdateRule:
 
     @pytest.mark.asyncio
     async def test_update_scores_of_existed_rule(
-        self, internal_user_id: UserId, three_tags_ids: tuple[int, int, int]
+        self, internal_user_id: UserId, five_tags_ids: tuple[int, int, int, int, int]
     ) -> None:
-        await operations.create_or_update_rule(internal_user_id, three_tags_ids, 13)
+        required_tags = list(five_tags_ids[:3])
+        excluded_tags = list(five_tags_ids[3:])
+
+        await operations.create_or_update_rule(internal_user_id, score=13, required_tags=required_tags, excluded_tags=excluded_tags)
 
         with capture_logs() as logs:
             async with TableSizeNotChanged("s_rules"):
-                updated_rule = await operations.create_or_update_rule(internal_user_id, three_tags_ids, 17)
+                updated_rule = await operations.create_or_update_rule(internal_user_id, score=17, required_tags=required_tags, excluded_tags=excluded_tags)
 
         rules = await domain.get_rules(internal_user_id)
 
         assert rules == [updated_rule]
 
         assert updated_rule.user_id == internal_user_id
-        assert updated_rule.tags == set(three_tags_ids)
+        assert updated_rule.required_tags == set(required_tags)
+        assert updated_rule.excluded_tags == set(excluded_tags)
         assert updated_rule.score == 17
 
         assert_logs_has_business_event(
@@ -75,26 +91,28 @@ class TestCreateOrUpdateRule:
             "rule_updated",
             user_id=internal_user_id,
             rule_id=str(updated_rule.id),
-            tags=list(three_tags_ids),
+            required_tags=required_tags,
+            excluded_tags=excluded_tags,
             score=17,
         )
         assert_logs_has_no_business_event(logs, "rule_created")
 
     @pytest.mark.asyncio
     async def test_multiple_entities(
-        self, internal_user_id: UserId, another_internal_user_id: UserId, three_tags_ids: tuple[int, int, int]
+        self, internal_user_id: UserId, another_internal_user_id: UserId, five_tags_ids: tuple[int, int, int, int, int]
     ) -> None:
-        await operations.create_or_update_rule(internal_user_id, three_tags_ids[:2], 3)
-        await operations.create_or_update_rule(another_internal_user_id, three_tags_ids[:2], 5)
-        await operations.create_or_update_rule(another_internal_user_id, three_tags_ids[1:], 7)
-        await operations.create_or_update_rule(internal_user_id, three_tags_ids[:2], 11)
+        await operations.create_or_update_rule(internal_user_id, required_tags=five_tags_ids[:2], excluded_tags=five_tags_ids[-2:], score=3)
+        await operations.create_or_update_rule(another_internal_user_id, required_tags=five_tags_ids[:2], excluded_tags=five_tags_ids[-2:], score=5)
+        await operations.create_or_update_rule(another_internal_user_id, required_tags=five_tags_ids[1:], excluded_tags=five_tags_ids[:1], score=7)
+        await operations.create_or_update_rule(internal_user_id, required_tags=five_tags_ids[:2], excluded_tags=five_tags_ids[-2:], score=11)
 
         rules = await domain.get_rules(internal_user_id)
 
         assert len(rules) == 1
 
         assert rules[0].user_id == internal_user_id
-        assert rules[0].tags == set(three_tags_ids[:2])
+        assert rules[0].required_tags == set(five_tags_ids[:2])
+        assert rules[0].excluded_tags == set(five_tags_ids[-2:])
         assert rules[0].score == 11
 
         rules = await domain.get_rules(another_internal_user_id)
@@ -104,12 +122,32 @@ class TestCreateOrUpdateRule:
         assert len(rules) == 2
 
         assert rules[0].user_id == another_internal_user_id
-        assert rules[0].tags == set(three_tags_ids[:2])
+        assert rules[0].required_tags == set(five_tags_ids[:2])
+        assert rules[0].excluded_tags == set(five_tags_ids[-2:])
         assert rules[0].score == 5
 
         assert rules[1].user_id == another_internal_user_id
-        assert rules[1].tags == set(three_tags_ids[1:])
+        assert rules[1].required_tags == set(five_tags_ids[1:])
+        assert rules[1].excluded_tags == set(five_tags_ids[:1])
         assert rules[1].score == 7
+
+    @pytest.mark.asyncio
+    async def test_tags_intersection(self, internal_user_id: UserId, five_tags_ids: tuple[int, int, int, int, int]) -> None:
+        required_tags = five_tags_ids[:3]
+        excluded_tags = five_tags_ids[2:]
+
+        assert len(set(required_tags) & set(excluded_tags)) == 1
+
+        with capture_logs() as logs:
+            with pytest.raises(errors.TagsIntersection):
+                async with TableSizeNotChanged("s_rules"):
+                    await operations.create_or_update_rule(internal_user_id, required_tags=required_tags, excluded_tags=excluded_tags, score=13)
+
+        rules = await domain.get_rules(internal_user_id)
+
+        assert rules == []
+
+        assert_logs_has_no_business_event(logs, "rule_created")
 
 
 class TestDeleteRule:

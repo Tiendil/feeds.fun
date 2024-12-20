@@ -34,6 +34,13 @@ def row_to_rule(row: dict[str, Any]) -> Rule:
 
 
 async def create_or_update_rule(user_id: UserId, required_tags: Iterable[int], excluded_tags: Iterable[int], score: int) -> Rule:
+    required_tags = set(required_tags)
+    excluded_tags = set(excluded_tags)
+
+    if required_tags & excluded_tags:
+        # TODO: test
+        raise errors.TagsIntersection()
+
     required_tags = _normalize_tags(required_tags)
     excluded_tags = _normalize_tags(excluded_tags)
 
@@ -75,7 +82,8 @@ async def create_or_update_rule(user_id: UserId, required_tags: Iterable[int], e
                               user_id=user_id,
                               rule_id=result[0]["id"],
                               required_tags=required_tags,
-                              excluded_tags=excluded_tags, score=score)
+                              excluded_tags=excluded_tags,
+                              score=score)
 
     return row_to_rule(result[0])
 
@@ -95,6 +103,13 @@ async def delete_rule(user_id: UserId, rule_id: uuid.UUID) -> None:
 
 # TODO: remove?
 async def update_rule(user_id: UserId, rule_id: uuid.UUID, required_tags: Iterable[int], excluded_tags: Iterable[int], score: int) -> Rule:
+    required_tags = set(required_tags)
+    excluded_tags = set(excluded_tags)
+
+    if required_tags & excluded_tags:
+        # TODO: test
+        raise errors.TagsIntersection()
+
     required_tags = _normalize_tags(required_tags)
     excluded_tags = _normalize_tags(excluded_tags)
 
