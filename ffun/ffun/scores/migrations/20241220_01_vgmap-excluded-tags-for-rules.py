@@ -18,8 +18,6 @@ def _key_from_tags(required_tags: Iterable[int], excluded_tags: Iterable[int]) -
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
 
-    # sql = "ALTER TABLE f_feeds ADD COLUMN uid TEXT DEFAULT NULL"
-
     cursor.execute("ALTER TABLE s_rules RENAME COLUMN tags TO required_tags")
     cursor.execute("ALTER TABLE s_rules ADD COLUMN excluded_tags BIGINT[] DEFAULT ARRAY[]::BIGINT[]")
 

@@ -1,5 +1,3 @@
-import uuid
-
 import pytest
 
 from ffun.core.tests.helpers import (
@@ -9,6 +7,7 @@ from ffun.core.tests.helpers import (
     assert_logs_has_no_business_event,
     capture_logs,
 )
+from ffun.domain.domain import new_rule_id
 from ffun.domain.entities import UserId
 from ffun.scores import domain, errors, operations
 
@@ -58,8 +57,7 @@ class TestCreateOrUpdateRule:
             created_rule_1 = await operations.create_or_update_rule(
                 internal_user_id, required_tags=required_tags, excluded_tags=excluded_tags, score=13
             )
-            print(required_tags, excluded_tags)
-            print(reversed(required_tags), reversed(excluded_tags))
+
             created_rule_2 = await operations.create_or_update_rule(
                 internal_user_id,
                 required_tags=reversed(required_tags),
@@ -209,7 +207,7 @@ class TestDeleteRule:
     async def test_delete_not_existed_rule(self, internal_user_id: UserId) -> None:
         with capture_logs() as logs:
             async with TableSizeNotChanged("s_rules"):
-                await operations.delete_rule(internal_user_id, uuid.uuid4())
+                await operations.delete_rule(internal_user_id, new_rule_id())
 
         assert_logs_has_no_business_event(logs, "rule_deleted")
 
@@ -274,7 +272,7 @@ class TestUpdateRule:
                 with pytest.raises(errors.NoRuleFound):
                     await operations.update_rule(
                         internal_user_id,
-                        uuid.uuid4(),
+                        new_rule_id(),
                         required_tags=three_tags_ids[:2],
                         excluded_tags=three_tags_ids[2:],
                         score=17,

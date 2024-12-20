@@ -1,10 +1,10 @@
-import uuid
 from typing import Any, Iterable
 
 import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
+from ffun.domain.domain import new_rule_id
 from ffun.domain.entities import RuleId, UserId
 from ffun.scores import errors
 from ffun.scores.entities import Rule
@@ -58,7 +58,7 @@ async def create_or_update_rule(
         result = await execute(
             sql,
             {
-                "id": uuid.uuid4(),
+                "id": new_rule_id(),
                 "user_id": user_id,
                 "required_tags": required_tags,
                 "excluded_tags": excluded_tags,
@@ -131,7 +131,11 @@ async def update_rule(
 
     sql = """
     UPDATE s_rules
-    SET required_tags = %(required_tags)s, excluded_tags = %(excluded_tags)s, key = %(key)s, score = %(score)s, updated_at = NOW()
+    SET required_tags = %(required_tags)s,
+        excluded_tags = %(excluded_tags)s,
+        key = %(key)s,
+        score = %(score)s,
+        updated_at = NOW()
     WHERE user_id = %(user_id)s AND id = %(rule_id)s
     returning *
     """

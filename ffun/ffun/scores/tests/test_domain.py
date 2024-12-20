@@ -1,8 +1,18 @@
+from ffun.core import utils
+from ffun.domain.domain import new_rule_id, new_user_id
 from ffun.scores import domain, entities
 
 
-def rule(score: int, required_tags: set[int], excluded_tags: set[int]) -> entities.BaseRule:
-    return entities.BaseRule(score=score, required_tags=required_tags, excluded_tags=excluded_tags)
+def rule(score: int, required_tags: set[int], excluded_tags: set[int]) -> entities.Rule:
+    return entities.Rule(
+        id=new_rule_id(),
+        user_id=new_user_id(),
+        score=score,
+        required_tags=required_tags,
+        excluded_tags=excluded_tags,
+        created_at=utils.now(),
+        updated_at=utils.now(),
+    )
 
 
 class TestGetScoreRules:

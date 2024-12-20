@@ -1,6 +1,6 @@
 import uuid
 
-from ffun.domain.entities import CollectionId, EntryId, FeedId, SourceId, UserId
+from ffun.domain.entities import CollectionId, EntryId, FeedId, RuleId, SourceId, UserId
 
 
 def new_user_id() -> UserId:
@@ -21,3 +21,7 @@ def new_collection_id() -> CollectionId:
 
 def new_source_id() -> SourceId:
     return SourceId(uuid.uuid4())
+
+
+def new_rule_id() -> RuleId:
+    return RuleId(uuid.uuid4())
