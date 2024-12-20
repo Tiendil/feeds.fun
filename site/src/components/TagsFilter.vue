@@ -29,6 +29,7 @@
       >Create Rule</a
                     >
 
+    <!-- TODO: better text and style? -->
     <p class="ffun-info-good"
        v-if="displayedSelectedTags.length == 0"
        >
