@@ -16,6 +16,25 @@
       </li>
     </ul>
 
+    <score-selector
+      v-if="displayedSelectedTags.length > 0"
+      class="inline-block mr-2"
+      v-model="currentScore" />
+
+    <a
+      class="ffun-form-button p-1 my-1 block text-center inline-block"
+      v-if="displayedSelectedTags.length > 0"
+      href="#"
+      @click=""
+      >Create Rule</a
+                    >
+
+    <p class="ffun-info-good"
+       v-if="displayedSelectedTags.length == 0"
+       >
+      Select tags to create a rule.
+    </p>
+
     <input
       class="ffun-input w-full"
       type="text"
@@ -48,6 +67,7 @@
 </template>
 
 <script lang="ts" setup>
+  // TODO: do not reset scores on tag selection change
   import {computed, ref, inject} from "vue";
   import type {Ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
