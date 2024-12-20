@@ -14,8 +14,7 @@
 
     <template #side-footer>
       <tags-filter
-        :tags="tags"
-        @tag:stateChanged="onTagStateChanged" />
+        :tags="tagsCount" />
     </template>
 
     <rules-list
@@ -25,7 +24,7 @@
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref, onUnmounted, watch} from "vue";
+  import {computed, ref, onUnmounted, watch, provide} from "vue";
   import {computedAsync} from "@vueuse/core";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import _ from "lodash";
@@ -34,7 +33,10 @@
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import * as tagsFilterState from "@/logic/tagsFilterState";
+
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
+
+  provide("tagsStates", tagsStates);
 
   const globalSettings = useGlobalSettingsStore();
 
@@ -46,7 +48,7 @@
     return await api.getRules();
   }, null);
 
-  const tags = computed(() => {
+  const tagsCount = computed(() => {
     if (!rules.value) {
       return {};
     }
@@ -117,8 +119,4 @@
 
     return sorted;
   });
-
-  function onTagStateChanged({tag, state}: {tag: string; state: tagsFilterState.State}) {
-    tagsStates.value.onTagStateChanged({tag, state});
-  }
 </script>
