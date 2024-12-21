@@ -57,7 +57,11 @@
     const tags: {[key: string]: number} = {};
 
     for (const rule of rules.value) {
-      for (const tag of rule.tags) {
+      for (const tag of rule.requiredTags) {
+        tags[tag] = (tags[tag] || 0) + 1;
+      }
+
+      for (const tag of rule.excludedTags) {
         tags[tag] = (tags[tag] || 0) + 1;
       }
     }
@@ -72,7 +76,7 @@
 
     let sorted = rules.value.slice();
 
-    sorted = tagsStates.value.filterByTags(sorted, (rule) => rule.tags);
+    sorted = tagsStates.value.filterByTags(sorted, (rule) => rule.requiredTags.concat(rule.excludedTags));
 
     const orderProperties = e.RulesOrderProperties.get(globalSettings.rulesOrder);
 

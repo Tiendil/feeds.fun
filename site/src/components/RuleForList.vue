@@ -18,8 +18,17 @@
         @input="updateSelected" />
 
       <div class="flex-grow">
+
+        <!-- TODO: show that it is positive tag -->
         <template
-          v-for="tag of rule.tags"
+          v-for="tag of rule.requiredTags"
+          :key="tag">
+          <ffun-tag :uid="tag" />&nbsp;
+        </template>
+
+        <!-- TODO: show that it is negative tag -->
+        <template
+          v-for="tag of rule.excludedTags"
           :key="tag">
           <ffun-tag :uid="tag" />&nbsp;
         </template>

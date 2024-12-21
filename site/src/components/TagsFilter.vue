@@ -17,6 +17,8 @@
       </li>
     </ul>
 
+    <!-- TODO: hide on rules view -->
+    <!-- TODO: move out of tags filter into a separate component? -->
     <div class="flex items-center">
 
       <div class="flex-none">
@@ -36,6 +38,8 @@
     </div>
   </div>
 
+    <!-- TODO: hide on rules view -->
+    <!-- TODO: move out of tags filter into a separate component? -->
     <p
       class="ffun-info-good"
       v-else>
