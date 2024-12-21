@@ -103,8 +103,8 @@ class Entry(BaseEntity):
 
 class Rule(BaseEntity):
     id: RuleId
-    required_tags: list[str]
-    excluded_tags: list[str]
+    requiredTags: list[str]
+    excludedTags: list[str]
     score: int
     createdAt: datetime.datetime
     updatedAt: datetime.datetime
@@ -113,8 +113,8 @@ class Rule(BaseEntity):
     def from_internal(cls, rule: s_entities.Rule, tags_mapping: dict[int, str]) -> "Rule":
         return cls(
             id=rule.id,
-            required_tags=[tags_mapping[tag_id] for tag_id in rule.required_tags],
-            excluded_tags=[tags_mapping[tag_id] for tag_id in rule.excluded_tags],
+            requiredTags=[tags_mapping[tag_id] for tag_id in rule.required_tags],
+            excludedTags=[tags_mapping[tag_id] for tag_id in rule.excluded_tags],
             score=rule.score,
             createdAt=rule.created_at,
             updatedAt=rule.updated_at,

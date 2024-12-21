@@ -239,22 +239,26 @@ export type Rule = {
 
 export function ruleFromJSON({
   id,
-  tags,
+  requiredTags,
+  excludedTags,
   score,
   createdAt,
   updatedAt
 }: {
   id: string;
-  tags: string[];
+  requiredTags: string[];
+  excludedTags: string[];
   score: number;
   createdAt: string;
   updatedAt: string;
 }): Rule {
-  tags = tags.sort();
+  requiredTags = requiredTags.sort();
+  excludedTags = excludedTags.sort();
 
   return {
     id: toRuleId(id),
-    tags: tags,
+    requiredTags: requiredTags,
+    excludedTags: excludedTags,
     score: score,
     createdAt: new Date(createdAt),
     updatedAt: new Date(updatedAt)
