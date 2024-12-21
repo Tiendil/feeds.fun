@@ -9,19 +9,20 @@
         :secondary-mode="tagMode(tag)"
         count-mode="tooltip" />
 
-      <span
-        class="cursor-default"
+      <a
+        class=""
         title="Click on the news title to open it and see all tags"
         href="#"
+        @click.prevent="emit('request-to-show-all')"
         v-if="!showAll"
-        >{{ tagsNumber - showLimit }} more</span
+        >[{{ tagsNumber - showLimit }} more]</a
       >
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref} from "vue";
+  import {computed, ref, emit} from "vue";
 
   const showLimit = 5;
 
@@ -31,6 +32,8 @@
     tagsCount: {[key: string]: number};
     showAll: boolean;
   }>();
+
+  const emit = defineEmits(["request-to-show-all"]);
 
   const tagsNumber = computed(() => {
     return properties.tags.length;

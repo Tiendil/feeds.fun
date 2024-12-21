@@ -25,7 +25,7 @@
       <a
         :href="entry.url"
         target="_blank"
-        :class="[{'font-bold': isRead}, 'flex-grow', 'min-w-fit', 'line-clamp-1', 'pr-4', 'mb-0']"
+        :class="[{'font-bold': !isRead}, 'flex-grow', 'min-w-fit', 'line-clamp-1', 'pr-4', 'mb-0']"
         @click="onTitleClick">
         {{ purifiedTitle }}
       </a>
@@ -35,6 +35,7 @@
         :tags="entry.tags"
         :tags-count="tagsCount"
         :show-all="showBody"
+        @request-to-show-all="displayBody()"
         :contributions="entry.scoreContributions" />
     </div>
 
@@ -96,8 +97,8 @@
     throw new Error(`Unknown entry: ${properties.entryId}`);
   });
 
-  const isRead = computed(() => {
-    return !entriesStore.entries[entry.value.id].hasMarker(e.Marker.Read);
+const isRead = computed(() => {
+    return entriesStore.entries[entry.value.id].hasMarker(e.Marker.Read);
   });
 
   const showBody = ref(false);
@@ -120,6 +121,13 @@
     }
 
     entriesStore.requestFullEntry({entryId: entry.value.id});
+
+    if (!isRead.value) {
+      await entriesStore.setMarker({
+        entryId: properties.entryId,
+        marker: e.Marker.Read
+      });
+    }
 
     await events.newsBodyOpened({entryId: entry.value.id});
   }
@@ -171,14 +179,6 @@
       }
     } else {
       await newsLinkOpenedEvent();
-    }
-
-    // TODO: is it will be too slow?
-    if (showBody.value) {
-      await entriesStore.setMarker({
-        entryId: properties.entryId,
-        marker: e.Marker.Read
-      });
     }
   }
 </script>

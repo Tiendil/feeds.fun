@@ -188,6 +188,8 @@
     return orderProperties.timeField;
   });
 
+// TODO: should we have only single entry with opened body?
+//       in such case, remove this signal
   function onBodyVisibilityChanged({entryId, visible}: {entryId: t.EntryId; visible: boolean}) {
     entriesWithOpenedBody.value[entryId] = visible;
   }

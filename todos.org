@@ -20,7 +20,7 @@
 
 * DONE check if hiden news in the news list processed correctly by vue.js (not affecting the performance)
 
-* TODO show article body & tags by clicking on [x more] element?
+* DONE show article body & tags by clicking on [x more] element?
 * DONE fix RulesView
 
 * TODO on small screens, the short tags for entries shown in multiple lines, fix to always use one line
