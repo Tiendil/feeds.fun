@@ -1,16 +1,16 @@
 
 * TODO remove this file
 
-* TODO open/hide tags with a entries body
+* DONE open/hide tags with a entries body
 
-* TODO clicks on tags in entries should behave like clicks on tags in the filter
+* DONE clicks on tags in entries should behave like clicks on tags in the filter
 
 * TODO remove old create rule interface
 
-** TODO component: rule-constructor
+** DONE component: rule-constructor
 ** DONE remove css class for "selected for rule" tags
 ** TODO what with required/positive and excluded/negative tag styles/states? Currently they use the same visual scemas.
-* TODO add new create rule interface
+* DONE add new create rule interface
 
 ** On the top of the main section?
 
@@ -23,11 +23,6 @@
 * TODO check if hiden news in the news list processed correctly by vue.js (not affecting the performance)
 
 * TODO show article body & tags by clicking on [x more] element?
-
-* TODO apply text filter in tags filter to the tags in entries too?
-
-** It may be too slow/compliated
-
-* TODO fix RulesView
+* DONE fix RulesView
 
 * TODO on small screens, the short tags for entries shown in multiple lines, fix to always use one line
