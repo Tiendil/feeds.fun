@@ -76,7 +76,8 @@
     await api.updateRule({
       id: properties.rule.id,
       score: newScore,
-      tags: properties.rule.tags
+      requiredTags: properties.rule.requiredTags,
+      excludedTags: properties.rule.excludedTags
     });
 
     scoreChanged.value = true;
