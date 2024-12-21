@@ -23,8 +23,6 @@
 * DONE show article body & tags by clicking on [x more] element?
 * DONE fix RulesView
 
-* TODO on small screens, the short tags for entries shown in multiple lines, fix to always use one line
-
 * DONE fix main invitation to create first rule
 
 * DONE add instruction how to create rules to the rules view
