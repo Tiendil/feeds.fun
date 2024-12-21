@@ -29,3 +29,5 @@
 ** It may be too slow/compliated
 
 * TODO fix RulesView
+
+* TODO on small screens, the short tags for entries shown in multiple lines, fix to always use one line

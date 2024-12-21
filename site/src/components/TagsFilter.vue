@@ -1,7 +1,8 @@
 <template>
-  <div>
+<div>
+
+  <div v-if="displayedSelectedTags.length > 0">
     <ul
-      v-if="displayedSelectedTags.length > 0"
       class="pl-0 mb-0">
       <li
         v-for="tag of displayedSelectedTags"
@@ -16,23 +17,29 @@
       </li>
     </ul>
 
-    <score-selector
-      v-if="displayedSelectedTags.length > 0"
-      class="inline-block mr-2"
-      v-model="currentScore" />
+    <div class="flex items-center">
 
-    <a
-      class="ffun-form-button p-1 my-1 block text-center inline-block"
-      v-if="displayedSelectedTags.length > 0"
-      href="#"
-      @click=""
-      >Create Rule</a
-    >
+      <div class="flex-none">
+        <score-selector
+          v-if="displayedSelectedTags.length > 0"
+          class="inline-block mr-2 my-auto"
+          v-model="currentScore" />
+      </div>
+
+      <a
+        class="ffun-form-button p-1 my-1 block text-center inline-block flex-grow"
+        v-if="displayedSelectedTags.length > 0"
+        href="#"
+        @click=""
+        >Create Rule</a
+                      >
+    </div>
+  </div>
 
     <!-- TODO: better text and style? -->
     <p
       class="ffun-info-good"
-      v-if="displayedSelectedTags.length == 0">
+      v-else>
       Select tags to create a rule.
     </p>
 
@@ -75,6 +82,8 @@
   import type * as tagsFilterState from "@/logic/tagsFilterState";
   import * as asserts from "@/logic/asserts";
   const tagsStore = useTagsStore();
+
+  const currentScore = ref(1);
 
   const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
   asserts.defined(tagsStates);
