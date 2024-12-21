@@ -20,7 +20,6 @@ def _key_from_tags(required_tags: Iterable[int], excluded_tags: Iterable[int]) -
     return ",".join(map(str, required_tags)) + "|" + ",".join(map(str, excluded_tags))
 
 
-# TODO: migration
 def row_to_rule(row: dict[str, Any]) -> Rule:
     return Rule(
         id=row["id"],
@@ -40,7 +39,6 @@ async def create_or_update_rule(
     excluded_tags = set(excluded_tags)
 
     if required_tags & excluded_tags:
-        # TODO: test
         raise errors.TagsIntersection()
 
     required_tags = _normalize_tags(required_tags)
@@ -112,8 +110,6 @@ async def delete_rule(user_id: UserId, rule_id: RuleId) -> None:
         logger.business_event("rule_deleted", user_id=user_id, rule_id=rule_id)
 
 
-# TODO: RuleId
-# TODO: remove?
 async def update_rule(
     user_id: UserId, rule_id: RuleId, required_tags: Iterable[int], excluded_tags: Iterable[int], score: int
 ) -> Rule:
@@ -121,7 +117,6 @@ async def update_rule(
     excluded_tags = set(excluded_tags)
 
     if required_tags & excluded_tags:
-        # TODO: test
         raise errors.TagsIntersection()
 
     required_tags = _normalize_tags(required_tags)
