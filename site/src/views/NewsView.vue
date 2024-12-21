@@ -24,7 +24,9 @@
     </template>
 
     <template #side-footer>
-      <tags-filter :tags="tagsCount" :show-create-rule="true"/>
+      <tags-filter
+        :tags="tagsCount"
+        :show-create-rule="true" />
     </template>
 
     <template #main-header>
@@ -75,10 +77,10 @@
 
   const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
 
-// TODO: separate by 3 steps / computed attributes:
-// 1. get slice
-// 2. sort (because sort changing is less common)
-// 3. filter
+  // TODO: separate by 3 steps / computed attributes:
+  // 1. get slice
+  // 2. sort (because sort changing is less common)
+  // 3. filter
   const entriesReport = computed(() => {
     if (entriesStore.loadedEntriesReport === null) {
       return [];
@@ -188,9 +190,9 @@
     return orderProperties.timeField;
   });
 
-// TODO: should we have only single entry with opened body?
-//       in such case, remove this signal
-// Remember, that EntryForList component tracks its own showBody state
+  // TODO: should we have only single entry with opened body?
+  //       in such case, remove this signal
+  // Remember, that EntryForList component tracks its own showBody state
   function onBodyVisibilityChanged({entryId, visible}: {entryId: t.EntryId; visible: boolean}) {
     entriesWithOpenedBody.value[entryId] = visible;
   }

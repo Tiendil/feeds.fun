@@ -1,35 +1,29 @@
 <template>
-<div>
+  <div>
+    <div
+      v-if="hasSelectedTags"
+      class="flex items-center">
+      <div class="flex-none">
+        <score-selector
+          class="inline-block mr-2 my-auto"
+          v-model="currentScore" />
+      </div>
 
-  <div v-if="hasSelectedTags"
-       class="flex items-center">
-
-    <div class="flex-none">
-      <score-selector
-        class="inline-block mr-2 my-auto"
-        v-model="currentScore" />
+      <a
+        class="ffun-form-button p-1 my-1 block text-center inline-block flex-grow"
+        href="#"
+        @click.prevent="createOrUpdateRule()"
+        >Create Rule</a
+      >
     </div>
 
-    <a
-      class="ffun-form-button p-1 my-1 block text-center inline-block flex-grow"
-      href="#"
-      @click.prevent="createOrUpdateRule()"
-      >Create Rule</a
-                    >
+    <p
+      class="ffun-info-good"
+      v-else>
+      <template v-if="showSuccess"> Rule created. </template>
+      <template v-else> Select tags to create a rule. </template>
+    </p>
   </div>
-
-  <p
-    class="ffun-info-good"
-    v-else>
-    <template v-if="showSuccess">
-      Rule created.
-    </template>
-    <template v-else>
-      Select tags to create a rule.
-    </template>
-  </p>
-
-</div>
 </template>
 
 <script lang="ts" setup>
@@ -38,22 +32,22 @@
   import type {Ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
   import type * as tagsFilterState from "@/logic/tagsFilterState";
-import * as asserts from "@/logic/asserts";
-import * as api from "@/logic/api";
+  import * as asserts from "@/logic/asserts";
+  import * as api from "@/logic/api";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
-const tagsStore = useTagsStore();
+  const tagsStore = useTagsStore();
 
   const globalSettings = useGlobalSettingsStore();
 
-const currentScore = ref(1);
+  const currentScore = ref(1);
 
-const showSuccess = ref(false);
+  const showSuccess = ref(false);
 
   const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
   asserts.defined(tagsStates);
 
-// TODO: unify with the code from notifications/Block.vue
+  // TODO: unify with the code from notifications/Block.vue
   const hasSelectedTags = computed(() => {
     let values = Object.keys(tagsStates.value.selectedTags);
 
@@ -64,20 +58,20 @@ const showSuccess = ref(false);
     return values.length > 0;
   });
 
-
-watch(hasSelectedTags, () => {
-  // This condition is needed to prevent immediate reset of the success message
-  // right after the rule is created in createOrUpdateRule
-  if (hasSelectedTags.value) {
-    showSuccess.value = false;
-  }
-
+  watch(hasSelectedTags, () => {
+    // This condition is needed to prevent immediate reset of the success message
+    // right after the rule is created in createOrUpdateRule
+    if (hasSelectedTags.value) {
+      showSuccess.value = false;
+    }
   });
 
   async function createOrUpdateRule() {
-    await api.createOrUpdateRule({requiredTags: tagsStates.value.requiredTagsList(),
-                                  excludedTags: tagsStates.value.excludedTagsList(),
-                                  score: currentScore.value});
+    await api.createOrUpdateRule({
+      requiredTags: tagsStates.value.requiredTagsList(),
+      excludedTags: tagsStates.value.excludedTagsList(),
+      score: currentScore.value
+    });
 
     tagsStates.value.clear();
 
@@ -90,5 +84,4 @@ watch(hasSelectedTags, () => {
     //       - maybe, without reordering too
     globalSettings.updateDataVersion();
   }
-
 </script>

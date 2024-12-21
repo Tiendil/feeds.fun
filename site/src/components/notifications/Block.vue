@@ -8,8 +8,8 @@
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch, inject} from "vue";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
-import {useCollectionsStore} from "@/stores/collections";
-import * as tagsFilterState from "@/logic/tagsFilterState";
+  import {useCollectionsStore} from "@/stores/collections";
+  import * as tagsFilterState from "@/logic/tagsFilterState";
 
   const properties = defineProps<{
     apiKey: boolean;
@@ -19,15 +19,15 @@ import * as tagsFilterState from "@/logic/tagsFilterState";
   }>();
 
   const collections = useCollectionsStore();
-const globalSettings = useGlobalSettingsStore();
+  const globalSettings = useGlobalSettingsStore();
 
-const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates", null);
+  const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates", null);
 
-// TODO: unify with the code from RuleConstructor.vue
-const hasSelectedTags = computed(() => {
-  if (!tagsStates) {
-    return false;
-  }
+  // TODO: unify with the code from RuleConstructor.vue
+  const hasSelectedTags = computed(() => {
+    if (!tagsStates) {
+      return false;
+    }
 
     let values = Object.keys(tagsStates.value.selectedTags);
 
@@ -51,8 +51,8 @@ const hasSelectedTags = computed(() => {
     return (
       properties.collectionsNotification_ &&
       globalSettings.userSettings &&
-        !globalSettings.userSettings.hide_message_about_adding_collections.value &&
-        !hasSelectedTags.value
+      !globalSettings.userSettings.hide_message_about_adding_collections.value &&
+      !hasSelectedTags.value
     );
   });
 

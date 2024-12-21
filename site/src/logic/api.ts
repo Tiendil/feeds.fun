@@ -99,13 +99,22 @@ export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
   return entries;
 }
 
-export async function createOrUpdateRule({requiredTags, excludedTags, score}: {requiredTags: string[]; excludedTags: string[]; score: number}) {
+export async function createOrUpdateRule({
+  requiredTags,
+  excludedTags,
+  score
+}: {
+  requiredTags: string[];
+  excludedTags: string[];
+  score: number;
+}) {
   const response = await post({
     url: API_CREATE_OR_UPDATE_RULE,
     data: {
       requiredTags: requiredTags,
       excludedTags: excludedTags,
-      score: score}
+      score: score
+    }
   });
   return response;
 }
@@ -115,13 +124,20 @@ export async function deleteRule({id}: {id: t.RuleId}) {
   return response;
 }
 
-export async function updateRule({id, requiredTags, excludedTags, score}: {id: t.RuleId; requiredTags: string[]; excludedTags: string[], score: number}) {
+export async function updateRule({
+  id,
+  requiredTags,
+  excludedTags,
+  score
+}: {
+  id: t.RuleId;
+  requiredTags: string[];
+  excludedTags: string[];
+  score: number;
+}) {
   const response = await post({
     url: API_UPDATE_RULE,
-    data: {id: id,
-      score: score,
-      requiredTags: requiredTags,
-      excludedTags: excludedTags}
+    data: {id: id, score: score, requiredTags: requiredTags, excludedTags: excludedTags}
   });
   return response;
 }

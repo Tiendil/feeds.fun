@@ -17,7 +17,15 @@
     </template>
 
     <div class="ffun-info-good">
-      <p>You can create new rules on the <a href="#" @click.prevent="goToNews()">news</a> tab.</p>
+      <p
+        >You can create new rules on the
+        <a
+          href="#"
+          @click.prevent="goToNews()"
+          >news</a
+        >
+        tab.</p
+      >
     </div>
 
     <rules-list
@@ -38,7 +46,7 @@
   import * as api from "@/logic/api";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
-import * as tagsFilterState from "@/logic/tagsFilterState";
+  import * as tagsFilterState from "@/logic/tagsFilterState";
 
   const router = useRouter();
 
@@ -48,7 +56,7 @@ import * as tagsFilterState from "@/logic/tagsFilterState";
 
   const globalSettings = useGlobalSettingsStore();
 
-globalSettings.mainPanelMode = e.MainPanelMode.Rules;
+  globalSettings.mainPanelMode = e.MainPanelMode.Rules;
 
   function goToNews() {
     router.push({name: e.MainPanelMode.Entries, params: {}});
@@ -104,8 +112,10 @@ globalSettings.mainPanelMode = e.MainPanelMode.Rules;
 
     sorted = sorted.sort((a: t.Rule, b: t.Rule) => {
       if (globalSettings.rulesOrder === e.RulesOrder.Tags) {
-        return utils.compareLexicographically(a.requiredTags.concat(a.excludedTags),
-                                              b.requiredTags.concat(a.excludedTags));
+        return utils.compareLexicographically(
+          a.requiredTags.concat(a.excludedTags),
+          b.requiredTags.concat(a.excludedTags)
+        );
       }
 
       const valueA = _.get(a, orderField, null);

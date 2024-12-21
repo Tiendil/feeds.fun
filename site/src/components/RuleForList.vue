@@ -18,7 +18,6 @@
         @input="updateSelected" />
 
       <div class="flex-grow">
-
         <!-- TODO: show that it is positive tag -->
         <template
           v-for="tag of rule.requiredTags"

@@ -1,7 +1,7 @@
 <template>
-<div>
-
-    <ul v-if="displayedSelectedTags.length > 0"
+  <div>
+    <ul
+      v-if="displayedSelectedTags.length > 0"
       class="pl-0 mb-0">
       <li
         v-for="tag of displayedSelectedTags"
@@ -16,7 +16,7 @@
       </li>
     </ul>
 
-    <rule-constructor v-if="showCreateRule"/>
+    <rule-constructor v-if="showCreateRule" />
 
     <input
       class="ffun-input w-full"
@@ -55,11 +55,11 @@
   import type {Ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
   import type * as tagsFilterState from "@/logic/tagsFilterState";
-import * as asserts from "@/logic/asserts";
-import * as api from "@/logic/api";
+  import * as asserts from "@/logic/asserts";
+  import * as api from "@/logic/api";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
-const tagsStore = useTagsStore();
+  const tagsStore = useTagsStore();
 
   const globalSettings = useGlobalSettingsStore();
 
@@ -68,8 +68,7 @@ const tagsStore = useTagsStore();
   const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
   asserts.defined(tagsStates);
 
-const properties = defineProps<{tags: {[key: string]: number},
-                                showCreateRule?: boolean}>();
+  const properties = defineProps<{tags: {[key: string]: number}; showCreateRule?: boolean}>();
 
   const showFromStart = ref(25);
 
@@ -148,6 +147,4 @@ const properties = defineProps<{tags: {[key: string]: number},
 
     return values;
   });
-
-
 </script>

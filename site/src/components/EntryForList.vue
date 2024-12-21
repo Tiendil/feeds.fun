@@ -97,7 +97,7 @@
     throw new Error(`Unknown entry: ${properties.entryId}`);
   });
 
-const isRead = computed(() => {
+  const isRead = computed(() => {
     return entriesStore.entries[entry.value.id].hasMarker(e.Marker.Read);
   });
 
