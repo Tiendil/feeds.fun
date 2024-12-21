@@ -75,6 +75,10 @@
 
   const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
 
+// TODO: separate by 3 steps / computed attributes:
+// 1. get slice
+// 2. sort (because sort changing is less common)
+// 3. filter
   const entriesReport = computed(() => {
     if (entriesStore.loadedEntriesReport === null) {
       return [];
