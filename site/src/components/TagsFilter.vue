@@ -50,7 +50,6 @@
 </template>
 
 <script lang="ts" setup>
-  // TODO: do not reset scores on tag selection change
   import {computed, ref, inject} from "vue";
   import type {Ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
