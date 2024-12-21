@@ -29,4 +29,4 @@
 
 * DONE add instruction how to create rules to the rules view
 
-* TODO do not show collection suggestion why filtering by tags
+* DONE do not show collection suggestion why filtering by tags

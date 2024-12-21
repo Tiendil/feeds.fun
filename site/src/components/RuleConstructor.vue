@@ -53,6 +53,7 @@ const showSuccess = ref(false);
   const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
   asserts.defined(tagsStates);
 
+// TODO: unify with the code from notifications/Block.vue
   const hasSelectedTags = computed(() => {
     let values = Object.keys(tagsStates.value.selectedTags);
 

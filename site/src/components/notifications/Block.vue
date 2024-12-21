@@ -6,9 +6,10 @@
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref, onUnmounted, watch} from "vue";
+  import {computed, ref, onUnmounted, watch, inject} from "vue";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
-  import {useCollectionsStore} from "@/stores/collections";
+import {useCollectionsStore} from "@/stores/collections";
+import * as tagsFilterState from "@/logic/tagsFilterState";
 
   const properties = defineProps<{
     apiKey: boolean;
@@ -18,7 +19,24 @@
   }>();
 
   const collections = useCollectionsStore();
-  const globalSettings = useGlobalSettingsStore();
+const globalSettings = useGlobalSettingsStore();
+
+const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates", null);
+
+// TODO: unify with the code from RuleConstructor.vue
+const hasSelectedTags = computed(() => {
+  if (!tagsStates) {
+    return false;
+  }
+
+    let values = Object.keys(tagsStates.value.selectedTags);
+
+    values = values.filter((tag) => {
+      return tagsStates.value.selectedTags[tag] === true;
+    });
+
+    return values.length > 0;
+  });
 
   const showApiKeyMessage = computed(() => {
     return (
@@ -33,7 +51,8 @@
     return (
       properties.collectionsNotification_ &&
       globalSettings.userSettings &&
-      !globalSettings.userSettings.hide_message_about_adding_collections.value
+        !globalSettings.userSettings.hide_message_about_adding_collections.value &&
+        !hasSelectedTags.value
     );
   });
 
