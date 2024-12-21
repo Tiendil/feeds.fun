@@ -231,7 +231,8 @@ export function entryFromJSON(
 
 export type Rule = {
   readonly id: RuleId;
-  readonly tags: string[];
+  readonly requiredTags: string[];
+  readonly excludedTags: string[];
   readonly score: number;
   readonly createdAt: Date;
   readonly updatedAt: Date;

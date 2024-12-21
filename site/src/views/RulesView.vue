@@ -112,6 +112,7 @@
 
     sorted = sorted.sort((a: t.Rule, b: t.Rule) => {
       if (globalSettings.rulesOrder === e.RulesOrder.Tags) {
+        // TODO: move requiredTags.concat(a.excludedTags) to a class method
         return utils.compareLexicographically(
           a.requiredTags.concat(a.excludedTags),
           b.requiredTags.concat(a.excludedTags)
@@ -122,7 +123,7 @@
       const valueB = _.get(b, orderField, null);
 
       if (valueA === null && valueB === null) {
-        return utils.compareLexicographically(a.tags, b.tags);
+        return utils.compareLexicographically(a.requiredTags.concat(a.excludedTags), b.requiredTags.concat(b.excludedTags));
       }
 
       if (valueA === null) {
@@ -141,7 +142,7 @@
         return -1 * direction;
       }
 
-      return utils.compareLexicographically(a.tags, b.tags);
+      return utils.compareLexicographically(a.requiredTags.concat(a.excludedTags), b.requiredTags.concat(b.excludedTags));
     });
 
     return sorted;

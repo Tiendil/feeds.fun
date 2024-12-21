@@ -7,6 +7,7 @@
 
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch, inject} from "vue";
+import type {Ref} from "vue";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useCollectionsStore} from "@/stores/collections";
   import * as tagsFilterState from "@/logic/tagsFilterState";
@@ -21,7 +22,7 @@
   const collections = useCollectionsStore();
   const globalSettings = useGlobalSettingsStore();
 
-  const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates", null);
+  const tagsStates = inject<Ref<tagsFilterState.Storage>|null>("tagsStates", null);
 
   // TODO: unify with the code from RuleConstructor.vue
   const hasSelectedTags = computed(() => {

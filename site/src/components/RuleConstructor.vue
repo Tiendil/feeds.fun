@@ -66,7 +66,8 @@
     }
   });
 
-  async function createOrUpdateRule() {
+async function createOrUpdateRule() {
+    asserts.defined(tagsStates);
     await api.createOrUpdateRule({
       requiredTags: tagsStates.value.requiredTagsList(),
       excludedTags: tagsStates.value.excludedTagsList(),

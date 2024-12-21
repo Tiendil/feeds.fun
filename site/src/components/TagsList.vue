@@ -22,7 +22,7 @@
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref, emit} from "vue";
+  import {computed, ref} from "vue";
 
   const showLimit = 5;
 
