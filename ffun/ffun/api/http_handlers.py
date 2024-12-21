@@ -168,7 +168,6 @@ async def api_delete_rule(request: entities.DeleteRuleRequest, user: User) -> en
     return entities.DeleteRuleResponse()
 
 
-# TODO: do we need this?
 @router.post("/api/update-rule")
 async def api_update_rule(request: entities.UpdateRuleRequest, user: User) -> entities.UpdateRuleResponse:
     required_tags_ids = await o_domain.get_ids_by_uids(request.requiredTags)
