@@ -190,6 +190,7 @@
 
 // TODO: should we have only single entry with opened body?
 //       in such case, remove this signal
+// Remember, that EntryForList component tracks its own showBody state
   function onBodyVisibilityChanged({entryId, visible}: {entryId: t.EntryId; visible: boolean}) {
     entriesWithOpenedBody.value[entryId] = visible;
   }
