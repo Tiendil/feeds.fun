@@ -24,7 +24,7 @@
     </template>
 
     <template #side-footer>
-      <tags-filter :tags="tagsCount" />
+      <tags-filter :tags="tagsCount" :show-create-rule="true"/>
     </template>
 
     <template #main-header>

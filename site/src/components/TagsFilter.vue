@@ -1,8 +1,7 @@
 <template>
 <div>
 
-  <div v-if="displayedSelectedTags.length > 0">
-    <ul
+    <ul v-if="displayedSelectedTags.length > 0"
       class="pl-0 mb-0">
       <li
         v-for="tag of displayedSelectedTags"
@@ -17,34 +16,7 @@
       </li>
     </ul>
 
-    <!-- TODO: hide on rules view -->
-    <!-- TODO: move out of tags filter into a separate component? -->
-    <div class="flex items-center">
-
-      <div class="flex-none">
-        <score-selector
-          v-if="displayedSelectedTags.length > 0"
-          class="inline-block mr-2 my-auto"
-          v-model="currentScore" />
-      </div>
-
-      <a
-        class="ffun-form-button p-1 my-1 block text-center inline-block flex-grow"
-        v-if="displayedSelectedTags.length > 0"
-        href="#"
-        @click.prevent="createOrUpdateRule()"
-        >Create Rule</a
-                      >
-    </div>
-  </div>
-
-    <!-- TODO: hide on rules view -->
-    <!-- TODO: move out of tags filter into a separate component? -->
-    <p
-      class="ffun-info-good"
-      v-else>
-      Select tags to create a rule.
-    </p>
+    <rule-constructor v-if="showCreateRule"/>
 
     <input
       class="ffun-input w-full"
@@ -96,7 +68,8 @@ const tagsStore = useTagsStore();
   const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
   asserts.defined(tagsStates);
 
-  const properties = defineProps<{tags: {[key: string]: number}}>();
+const properties = defineProps<{tags: {[key: string]: number},
+                                showCreateRule?: boolean}>();
 
   const showFromStart = ref(25);
 
@@ -176,17 +149,5 @@ const tagsStore = useTagsStore();
     return values;
   });
 
-  async function createOrUpdateRule() {
-    await api.createOrUpdateRule({requiredTags: tagsStates.value.requiredTagsList(),
-                                  excludedTags: tagsStates.value.excludedTagsList(),
-                                  score: currentScore.value});
-
-    // this line leads to the reloading of news and any other data
-    // not an elegant solution, but it works with the current API implementation
-    // TODO: try to refactor to only update scores of news:
-    //       - without reloading
-    //       - maybe, without reordering too
-    globalSettings.updateDataVersion();
-  }
 
 </script>
