@@ -30,13 +30,12 @@
         class="ffun-form-button p-1 my-1 block text-center inline-block flex-grow"
         v-if="displayedSelectedTags.length > 0"
         href="#"
-        @click=""
+        @click.prevent="createOrUpdateRule()"
         >Create Rule</a
                       >
     </div>
   </div>
 
-    <!-- TODO: better text and style? -->
     <p
       class="ffun-info-good"
       v-else>
@@ -80,8 +79,13 @@
   import type {Ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
   import type * as tagsFilterState from "@/logic/tagsFilterState";
-  import * as asserts from "@/logic/asserts";
-  const tagsStore = useTagsStore();
+import * as asserts from "@/logic/asserts";
+import * as api from "@/logic/api";
+  import {useGlobalSettingsStore} from "@/stores/globalSettings";
+
+const tagsStore = useTagsStore();
+
+  const globalSettings = useGlobalSettingsStore();
 
   const currentScore = ref(1);
 
@@ -167,4 +171,18 @@
 
     return values;
   });
+
+  async function createOrUpdateRule() {
+    await api.createOrUpdateRule({requiredTags: tagsStates.value.requiredTagsList(),
+                                  excludedTags: tagsStates.value.excludedTagsList(),
+                                  score: currentScore.value});
+
+    // this line leads to the reloading of news and any other data
+    // not an elegant solution, but it works with the current API implementation
+    // TODO: try to refactor to only update scores of news:
+    //       - without reloading
+    //       - maybe, without reordering too
+    globalSettings.updateDataVersion();
+  }
+
 </script>

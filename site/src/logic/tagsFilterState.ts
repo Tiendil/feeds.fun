@@ -16,6 +16,14 @@ export class Storage {
     this.selectedTags = {};
   }
 
+  requiredTagsList() {
+    return Object.keys(this.requiredTags).filter((tag) => this.requiredTags[tag]);
+  }
+
+  excludedTagsList() {
+    return Object.keys(this.excludedTags).filter((tag) => this.excludedTags[tag]);
+  }
+
   onTagStateChanged({tag, state}: {tag: string; state: State}) {
     if (state === "required") {
       this.requiredTags[tag] = true;

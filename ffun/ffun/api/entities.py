@@ -320,8 +320,8 @@ class GetEntriesByIdsResponse(api.APISuccess):
 
 
 class CreateOrUpdateRuleRequest(api.APIRequest):
-    required_tags: list[str]
-    excluded_tags: list[str]
+    requiredTags: list[str]
+    excludedTags: list[str]
     score: int
 
 
@@ -339,8 +339,8 @@ class DeleteRuleResponse(api.APISuccess):
 
 class UpdateRuleRequest(api.APIRequest):
     id: RuleId
-    required_tags: list[str]
-    excluded_tags: list[str]
+    requiredTags: list[str]
+    excludedTags: list[str]
     score: int
 
 

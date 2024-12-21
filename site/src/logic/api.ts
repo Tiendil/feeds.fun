@@ -99,10 +99,13 @@ export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
   return entries;
 }
 
-export async function createOrUpdateRule({tags, score}: {tags: string[]; score: number}) {
+export async function createOrUpdateRule({requiredTags, excludedTags, score}: {requiredTags: string[]; excludedTags: string[]; score: number}) {
   const response = await post({
     url: API_CREATE_OR_UPDATE_RULE,
-    data: {tags: tags, score: score}
+    data: {
+      requiredTags: requiredTags,
+      excludedTags: excludedTags,
+      score: score}
   });
   return response;
 }
