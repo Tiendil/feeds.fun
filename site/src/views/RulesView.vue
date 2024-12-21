@@ -16,6 +16,10 @@
       <tags-filter :tags="tagsCount" />
     </template>
 
+    <div class="ffun-info-good">
+      <p>You can create new rules on the <a href="#" @click.prevent="goToNews()">news</a> tab.</p>
+    </div>
+
     <rules-list
       v-if="rules"
       :rules="sortedRules" />
@@ -26,6 +30,7 @@
   // TODO: update rules visualization with excluded tags
   // TODO: update rules filtering?
   import {computed, ref, onUnmounted, watch, provide} from "vue";
+  import {useRouter} from "vue-router";
   import {computedAsync} from "@vueuse/core";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import _ from "lodash";
@@ -33,7 +38,9 @@
   import * as api from "@/logic/api";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
-  import * as tagsFilterState from "@/logic/tagsFilterState";
+import * as tagsFilterState from "@/logic/tagsFilterState";
+
+  const router = useRouter();
 
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
@@ -41,7 +48,11 @@
 
   const globalSettings = useGlobalSettingsStore();
 
-  globalSettings.mainPanelMode = e.MainPanelMode.Rules;
+globalSettings.mainPanelMode = e.MainPanelMode.Rules;
+
+  function goToNews() {
+    router.push({name: e.MainPanelMode.Entries, params: {}});
+  }
 
   const rules = computedAsync(async () => {
     // force refresh
