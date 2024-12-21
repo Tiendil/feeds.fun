@@ -21,7 +21,12 @@
   <p
     class="ffun-info-good"
     v-else>
-    Select tags to create a rule.
+    <template v-if="showSuccess">
+      Rule created.
+    </template>
+    <template v-else>
+      Select tags to create a rule.
+    </template>
   </p>
 
 </div>
@@ -29,7 +34,7 @@
 
 <script lang="ts" setup>
   // TODO: do not reset scores on tag selection change
-  import {computed, ref, inject} from "vue";
+  import {computed, ref, inject, watch} from "vue";
   import type {Ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
   import type * as tagsFilterState from "@/logic/tagsFilterState";
@@ -41,7 +46,9 @@ const tagsStore = useTagsStore();
 
   const globalSettings = useGlobalSettingsStore();
 
-  const currentScore = ref(1);
+const currentScore = ref(1);
+
+const showSuccess = ref(false);
 
   const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
   asserts.defined(tagsStates);
@@ -56,10 +63,24 @@ const tagsStore = useTagsStore();
     return values.length > 0;
   });
 
+
+watch(hasSelectedTags, () => {
+  // This condition is needed to prevent immediate reset of the success message
+  // right after the rule is created in createOrUpdateRule
+  if (hasSelectedTags.value) {
+    showSuccess.value = false;
+  }
+
+  });
+
   async function createOrUpdateRule() {
     await api.createOrUpdateRule({requiredTags: tagsStates.value.requiredTagsList(),
                                   excludedTags: tagsStates.value.excludedTagsList(),
                                   score: currentScore.value});
+
+    tagsStates.value.clear();
+
+    showSuccess.value = true;
 
     // this line leads to the reloading of news and any other data
     // not an elegant solution, but it works with the current API implementation

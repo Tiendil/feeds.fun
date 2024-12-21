@@ -85,4 +85,10 @@ export class Storage {
 
     return report;
   }
+
+  clear() {
+    this.requiredTags = {};
+    this.excludedTags = {};
+    this.selectedTags = {};
+  }
 }
