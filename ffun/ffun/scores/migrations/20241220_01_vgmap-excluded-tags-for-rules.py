@@ -10,7 +10,6 @@ from yoyo import step
 __depends__ = {"20230813_01_l7qop-updated-at-field"}
 
 
-# TODO: check if migration is applied correctly to prod data
 def _key_from_tags(required_tags: Iterable[int], excluded_tags: Iterable[int]) -> str:
     return ",".join(map(str, required_tags)) + "|" + ",".join(map(str, excluded_tags))
 
@@ -25,9 +24,12 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
     for row in result:
         cursor.execute(
-            "UPDATE s_rules SET key = %(key)s WHERE id = %(id)s",
-            {"id": row["id"], "key": _key_from_tags(row["required_tags"], [])},
+            "UPDATE s_rules SET key = %(key)s, excluded_tags = ARRAY[]::BIGINT[] WHERE id = %(id)s",
+            {"id": row[0], "key": _key_from_tags(row[1], [])},
         )
+
+    cursor.execute("ALTER TABLE s_rules ALTER COLUMN excluded_tags SET NOT NULL")
+    cursor.execute("ALTER TABLE s_rules ALTER COLUMN excluded_tags DROP DEFAULT")
 
 
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:
