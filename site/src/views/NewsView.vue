@@ -48,8 +48,7 @@
       :time-field="timeField"
       :tags-count="tagsCount"
       :showFromStart="25"
-      :showPerPage="25"
-      @entry:bodyVisibilityChanged="onBodyVisibilityChanged" />
+      :showPerPage="25"/>
   </side-panel-layout>
 </template>
 
@@ -128,7 +127,7 @@ const _visibleEntries = computed(() => {
 
     if (!globalSettings.showRead) {
       report = report.filter((entryId) => {
-        if (entriesWithOpenedBody.value[entryId]) {
+        if (entriesStore.displayedEntryId == entryId) {
           // always show read entries with open body
           // otherwise, they will hide right after opening it
           return true;
@@ -201,11 +200,6 @@ const entriesReport = computed(() => {
     return orderProperties.timeField;
   });
 
-  // TODO: should we have only single entry with opened body?
-  // Remember, that EntryForList component tracks its own showBody state
-  function onBodyVisibilityChanged({entryId, visible}: {entryId: t.EntryId; visible: boolean}) {
-    entriesWithOpenedBody.value[entryId] = visible;
-  }
 </script>
 
 <style></style>

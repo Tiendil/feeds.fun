@@ -8,12 +8,14 @@ import * as api from "@/logic/api";
 import {Timer} from "@/logic/timer";
 import {computedAsync} from "@vueuse/core";
 import {useGlobalSettingsStore} from "@/stores/globalSettings";
+  import * as events from "@/logic/events";
 
 export const useEntriesStore = defineStore("entriesStore", () => {
   const globalSettings = useGlobalSettingsStore();
 
   const entries = ref<{[key: t.EntryId]: t.Entry}>({});
   const requestedEntries = ref<{[key: t.EntryId]: boolean}>({});
+  const displayedEntryId = ref<t.EntryId | null>(null);
 
   function registerEntry(entry: t.Entry) {
     if (entry.id in entries.value) {
@@ -95,11 +97,35 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     }
   }
 
+  async function displayEntry({entryId}: {entryId: t.EntryId}) {
+    displayedEntryId.value = entryId;
+
+    requestFullEntry({entryId: entryId});
+
+    if (!entries.value[entryId].hasMarker(e.Marker.Read)) {
+      await setMarker({
+        entryId: entryId,
+        marker: e.Marker.Read
+      });
+    }
+
+    await events.newsBodyOpened({entryId: entryId});
+  }
+
+  function hideEntry({entryId}: {entryId: t.EntryId}) {
+    if (displayedEntryId.value === entryId) {
+      displayedEntryId.value = null;
+    }
+  }
+
   return {
     entries,
     requestFullEntry,
     setMarker,
     removeMarker,
-    loadedEntriesReport
+    loadedEntriesReport,
+    displayedEntryId,
+    displayEntry,
+    hideEntry
   };
 });
