@@ -77,52 +77,59 @@
 const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
 
 const _sortedEntries = computed(() => {
-    if (entriesStore.loadedEntriesReport === null) {
+
+  if (entriesStore.loadedEntriesReport === null) {
       return [];
-    }
+  }
 
-    let report = entriesStore.loadedEntriesReport.slice();
+  const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
 
-    report = report.sort((a: t.EntryId, b: t.EntryId) => {
-      const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
+  if (orderProperties === undefined) {
+    throw new Error(`Unknown order ${globalSettings.entriesOrder}`);
+  }
 
-      if (orderProperties === undefined) {
-        throw new Error(`Unknown order ${globalSettings.entriesOrder}`);
-      }
+  const field = orderProperties.orderField;
+  const direction = orderProperties.direction;
 
-      const field = orderProperties.orderField;
+  // let report = entriesStore.loadedEntriesReport.slice();
 
-      const valueA = _.get(entriesStore.entries[a], field, null);
-      const valueB = _.get(entriesStore.entries[b], field, null);
+  // Pre-map to avoid repeated lookups in the comparator
+  const mapped = entriesStore.loadedEntriesReport.map(entryId => {
+    return { entryId, value: entriesStore.entries[entryId][field] };
+  });
 
-      if (valueA === null && valueB === null) {
+    mapped.sort((a: t.EntryId, b: t.EntryId) => {
+      if (a.value === null && b.value === null) {
         return 0;
       }
 
-      if (valueA === null) {
+      if (a.value === null) {
         return 1;
       }
 
-      if (valueB === null) {
+      if (b.value === null) {
         return -1;
       }
 
-      if (valueA < valueB) {
-        return orderProperties.direction;
+      if (a.value < b.value) {
+        return direction;
       }
 
-      if (valueA > valueB) {
-        return -orderProperties.direction;
+      if (a.value > b.value) {
+        return -direction;
       }
 
       return 0;
     });
+
+  const report = mapped.map(x => x.entryId);
 
   return report;
 });
 
 
 const _visibleEntries = computed(() => {
+
     let report = _sortedEntries.value.slice();
 
     if (!globalSettings.showRead) {
@@ -144,12 +151,12 @@ const entriesReport = computed(() => {
 
     let report = _visibleEntries.value.slice();
 
-    report = tagsStates.value.filterByTags(report, (entryId) => entriesStore.entries[entryId].tags);
+  report = tagsStates.value.filterByTags(report, (entryId) => entriesStore.entries[entryId].tags);
 
     return report;
   });
 
-  const tagsCount = computed(() => {
+const tagsCount = computed(() => {
     const tagsCount: {[key: string]: number} = {};
 
     for (const entryId of entriesReport.value) {
