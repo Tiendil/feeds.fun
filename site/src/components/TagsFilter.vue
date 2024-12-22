@@ -101,10 +101,6 @@
   const displayedSelectedTags = computed(() => {
     let values = Object.keys(tagsStates.value.selectedTags);
 
-    values = values.filter((tag) => {
-      return tagsStates.value.selectedTags[tag] === true;
-    });
-
     values.sort(tagComparator);
 
     return values;
@@ -119,31 +115,47 @@
     return Object.keys(properties.tags).length + Object.keys(tagsStates.value.selectedTags).length;
   });
 
-  const displayedTags = computed(() => {
-    let values = Object.keys(properties.tags);
+const _sortedTags = computed(() => {
+  console.time("_sortedTags");
+  let values = Object.keys(properties.tags);
 
-    if (values.length === 0) {
-      return [];
+  values.sort(tagComparator);
+
+  console.timeEnd("_sortedTags");
+
+  return values;
+});
+
+const _visibleTags = computed(() => {
+console.time("_visibleTags");
+    let values = _sortedTags.value.slice();
+
+    if (tagNameFilter.value) {
+      values = values.filter((tag) => {
+        const tagInfo = tagsStore.tags[tag];
+
+        if (tagInfo === undefined || tagInfo.name === null) {
+          return tag.includes(tagNameFilter.value);
+        }
+
+        return tagInfo.name.includes(tagNameFilter.value);
+      });
     }
 
-    values = values.filter((tag) => {
-      return tagsStates.value.selectedTags[tag] !== true;
-    });
-
-    values = values.filter((tag) => {
-      const tagInfo = tagsStore.tags[tag];
-
-      if (tagInfo === undefined || tagInfo.name === null) {
-        return tag.includes(tagNameFilter.value);
-      }
-
-      return tagInfo.name.includes(tagNameFilter.value);
-    });
-
-    values.sort(tagComparator);
-
-    values = values.slice(0, showEntries.value);
+console.timeEnd("_visibleTags");
 
     return values;
-  });
+});
+
+
+const displayedTags = computed(() => {
+console.time("displayedTags");
+    let values = _visibleTags.value.slice(0, showEntries.value);
+
+console.timeEnd("displayedTags");
+
+    return values;
+});
+
+
 </script>

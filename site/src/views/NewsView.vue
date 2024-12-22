@@ -148,15 +148,16 @@ const _visibleEntries = computed(() => {
   });
 
 const entriesReport = computed(() => {
-
+console.time("entriesReport");
     let report = _visibleEntries.value.slice();
 
   report = tagsStates.value.filterByTags(report, (entryId) => entriesStore.entries[entryId].tags);
-
+console.timeEnd("entriesReport");
     return report;
   });
 
 const tagsCount = computed(() => {
+  console.time("tagsCount");
     const tagsCount: {[key: string]: number} = {};
 
     for (const entryId of entriesReport.value) {
@@ -170,6 +171,8 @@ const tagsCount = computed(() => {
         }
       }
     }
+
+  console.timeEnd("tagsCount");
 
     return tagsCount;
   });
