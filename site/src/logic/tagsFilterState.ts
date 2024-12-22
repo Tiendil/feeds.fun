@@ -1,4 +1,5 @@
 import {ref, computed, reactive} from "vue";
+import type {ComputedRef} from "vue";
 
 export type State = "required" | "excluded" | "none";
 
@@ -9,8 +10,8 @@ interface ReturnTagsForEntity {
 export class Storage {
   requiredTags: {[key: string]: boolean};
   excludedTags: {[key: string]: boolean};
-  selectedTags: {[key: string]: boolean};
-  hasSelectedTags: boolean;
+  selectedTags: ComputedRef<{[key: string]: boolean}>;
+  hasSelectedTags: ComputedRef<boolean>;
 
   constructor() {
     this.requiredTags = reactive({});

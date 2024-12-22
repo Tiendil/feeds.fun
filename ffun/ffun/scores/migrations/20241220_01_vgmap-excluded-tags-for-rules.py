@@ -14,7 +14,7 @@ def _key_from_tags(required_tags: Iterable[int], excluded_tags: Iterable[int]) -
     return ",".join(map(str, required_tags)) + "|" + ",".join(map(str, excluded_tags))
 
 
-def apply_step(conn: Connection[dict[str, Any]]) -> None:
+def apply_step(conn: Connection[Any]) -> None:
     cursor = conn.cursor()
 
     cursor.execute("ALTER TABLE s_rules RENAME COLUMN tags TO required_tags")

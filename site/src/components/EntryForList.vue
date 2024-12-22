@@ -154,7 +154,10 @@
         entriesStore.hideEntry({entryId: entry.value.id});
       } else {
         await entriesStore.displayEntry({entryId: entry.value.id});
-        topElement.value.scrollIntoView({behavior: "instant"});
+
+        if (topElement.value) {
+          topElement.value.scrollIntoView({behavior: "instant"});
+        }
       }
     } else {
       await newsLinkOpenedEvent();

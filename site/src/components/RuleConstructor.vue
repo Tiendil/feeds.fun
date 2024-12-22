@@ -51,7 +51,7 @@
     () => {
       // This condition is needed to prevent immediate reset of the success message
       // right after the rule is created in createOrUpdateRule
-      if (tagsStates.value.hasSelectedTags.value) {
+      if (tagsStates.value.hasSelectedTags) {
         showSuccess.value = false;
       }
     }

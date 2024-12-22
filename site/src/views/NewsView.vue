@@ -94,6 +94,7 @@
 
     // Pre-map to avoid repeated lookups in the comparator
     const mapped = entriesStore.loadedEntriesReport.map((entryId) => {
+      // @ts-ignore
       return {entryId, value: entriesStore.entries[entryId][field]};
     });
 
