@@ -75,31 +75,14 @@
 
   globalSettings.updateDataVersion();
 
-  const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
+const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
 
-  // TODO: separate by 3 steps / computed attributes:
-  // 1. get slice
-  // 2. sort (because sort changing is less common)
-  // 3. filter
-  const entriesReport = computed(() => {
+const _sortedEntries = computed(() => {
     if (entriesStore.loadedEntriesReport === null) {
       return [];
     }
 
     let report = entriesStore.loadedEntriesReport.slice();
-
-    if (!globalSettings.showRead) {
-      report = report.filter((entryId) => {
-        if (entriesWithOpenedBody.value[entryId]) {
-          // always show read entries with open body
-          // otherwise, they will hide right after opening it
-          return true;
-        }
-        return !entriesStore.entries[entryId].hasMarker(e.Marker.Read);
-      });
-    }
-
-    report = tagsStates.value.filterByTags(report, (entryId) => entriesStore.entries[entryId].tags);
 
     report = report.sort((a: t.EntryId, b: t.EntryId) => {
       const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
@@ -135,6 +118,34 @@
 
       return 0;
     });
+
+  return report;
+});
+
+
+const _visibleEntries = computed(() => {
+    let report = _sortedEntries.value.slice();
+
+    if (!globalSettings.showRead) {
+      report = report.filter((entryId) => {
+        if (entriesWithOpenedBody.value[entryId]) {
+          // always show read entries with open body
+          // otherwise, they will hide right after opening it
+          return true;
+        }
+        return !entriesStore.entries[entryId].hasMarker(e.Marker.Read);
+      });
+    }
+
+  return report;
+
+  });
+
+const entriesReport = computed(() => {
+
+    let report = _visibleEntries.value.slice();
+
+    report = tagsStates.value.filterByTags(report, (entryId) => entriesStore.entries[entryId].tags);
 
     return report;
   });
