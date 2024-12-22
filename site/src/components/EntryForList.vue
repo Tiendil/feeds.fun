@@ -1,5 +1,5 @@
 <template>
-  <div class="flex">
+  <div class="flex text-lg">
     <div class="flex-shrink-0 w-8 text-right pr-1">
       <value-score
         :value="entry.score"
@@ -9,7 +9,7 @@
     <div class="flex-shrink-0 w-8 text-right pr-1">
       <favicon-element
         :url="entry.url"
-        class="w-4 h-4 align-text-bottom mx-1 inline" />
+        class="w-5 h-5 align-text-bottom mx-1 inline" />
     </div>
 
     <div class="flex-shrink-0 text-right">

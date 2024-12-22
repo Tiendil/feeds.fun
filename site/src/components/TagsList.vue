@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="text-sm">
+    <div class="text-base">
       <ffun-tag
         v-for="tag of displayedTags"
         :key="tag"

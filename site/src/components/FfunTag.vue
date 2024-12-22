@@ -61,26 +61,17 @@
     return t.noInfoTag(properties.uid);
   });
 
-  // TODO: refactor somehow
-  const mode = computed(() => {
-    if (tagsStates.value.requiredTags[properties.uid]) {
-      return "required";
-    }
-
-    if (tagsStates.value.excludedTags[properties.uid]) {
-      return "excluded";
-    }
-
-    return "none";
-  });
-
   const classes = computed(() => {
     const result: {[key: string]: boolean} = {
       tag: true
     };
 
-    if (mode.value) {
-      result[mode.value] = true;
+    if (tagsStates.value.requiredTags[properties.uid]) {
+      result["required"] = true;
+    }
+
+    if (tagsStates.value.excludedTags[properties.uid]) {
+      result["excluded"] = true;
     }
 
     if (properties.secondaryMode) {
@@ -101,7 +92,6 @@
   }
 
   const tooltip = computed(() => {
-    // TODO: highligh the tag under the cursor
     if (properties.countMode == "tooltip" && properties.count) {
       return `articles with this tag: ${properties.count}`;
     }
@@ -110,14 +100,10 @@
 </script>
 
 <style scoped>
-  .tag {
-    @apply inline-block cursor-pointer p-0 mr-2 whitespace-nowrap;
+.tag {
+    @apply inline-block cursor-pointer p-0 mr-2 whitespace-nowrap hover:bg-green-100 px-1 hover:rounded-lg;
   }
 
-  /* TODO: what with required/positive and excluded/negative styles/states?
-          currently they use the same colors
- */
-  /* TODO: improve visual styles, make them more separatable */
   .tag.required {
     @apply text-green-700 font-bold;
   }

@@ -56,7 +56,11 @@
 </script>
 
 <style scoped>
+  .entry-block {
+  }
+
   .entry-block:not(:last-child) {
-    border-bottom-width: 1px;
+      border-bottom-width: 1px;
+      @apply py-1;
   }
 </style>
