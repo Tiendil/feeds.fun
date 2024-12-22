@@ -75,9 +75,13 @@
 
   const tagNameFilter = ref("");
 
+function createTagComparator() {
+
+  const counts = properties.tags;
+
   function tagComparator(a: string, b: string) {
-    const aCount = properties.tags[a];
-    const bCount = properties.tags[b];
+    const aCount = counts[a];
+    const bCount = counts[b];
 
     if (aCount > bCount) {
       return -1;
@@ -98,10 +102,14 @@
     return 0;
   }
 
+  return tagComparator;
+}
+
   const displayedSelectedTags = computed(() => {
     let values = Object.keys(tagsStates.value.selectedTags);
 
-    values.sort(tagComparator);
+    const comparator = createTagComparator();
+    values.sort(comparator);
 
     return values;
   });
@@ -116,18 +124,16 @@
   });
 
 const _sortedTags = computed(() => {
-  console.time("_sortedTags");
   let values = Object.keys(properties.tags);
 
-  values.sort(tagComparator);
+  const comparator = createTagComparator();
 
-  console.timeEnd("_sortedTags");
+  values.sort(comparator);
 
   return values;
 });
 
 const _visibleTags = computed(() => {
-console.time("_visibleTags");
     let values = _sortedTags.value.slice();
 
     if (tagNameFilter.value) {
@@ -142,19 +148,12 @@ console.time("_visibleTags");
       });
     }
 
-console.timeEnd("_visibleTags");
-
     return values;
 });
 
 
 const displayedTags = computed(() => {
-console.time("displayedTags");
-    let values = _visibleTags.value.slice(0, showEntries.value);
-
-console.timeEnd("displayedTags");
-
-    return values;
+    return _visibleTags.value.slice(0, showEntries.value);
 });
 
 
