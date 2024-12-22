@@ -110,7 +110,6 @@
 
     sorted = sorted.sort((a: t.Rule, b: t.Rule) => {
       if (globalSettings.rulesOrder === e.RulesOrder.Tags) {
-        // TODO: move requiredTags.concat(a.excludedTags) to a class method
         return utils.compareLexicographically(
           a.allTags,
           b.allTags
