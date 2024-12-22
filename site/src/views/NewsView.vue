@@ -98,7 +98,7 @@
       return {entryId, value: entriesStore.entries[entryId][field]};
     });
 
-    mapped.sort((a: t.EntryId, b: t.EntryId) => {
+    mapped.sort((a: { entryId: t.EntryId; value: any; }, b: { entryId: t.EntryId; value: any; }) => {
       if (a.value === null && b.value === null) {
         return 0;
       }
