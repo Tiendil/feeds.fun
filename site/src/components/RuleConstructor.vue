@@ -1,7 +1,7 @@
 <template>
   <div>
     <div
-      v-if="hasSelectedTags"
+      v-if="tagsStates.hasSelectedTags"
       class="flex items-center">
       <div class="flex-none">
         <score-selector
@@ -43,21 +43,11 @@
 
   const showSuccess = ref(false);
 
+// TODO: check create rule on empty db
   const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
   asserts.defined(tagsStates);
 
-  // TODO: unify with the code from notifications/Block.vue
-  const hasSelectedTags = computed(() => {
-    let values = Object.keys(tagsStates.value.selectedTags);
-
-    values = values.filter((tag) => {
-      return tagsStates.value.selectedTags[tag] === true;
-    });
-
-    return values.length > 0;
-  });
-
-  watch(hasSelectedTags, () => {
+  watch(() => tagsStates.value.hasSelectedTags, () => {
     // This condition is needed to prevent immediate reset of the success message
     // right after the rule is created in createOrUpdateRule
     if (hasSelectedTags.value) {
@@ -68,8 +58,8 @@
 async function createOrUpdateRule() {
     asserts.defined(tagsStates);
     await api.createOrUpdateRule({
-      requiredTags: tagsStates.value.requiredTagsList(),
-      excludedTags: tagsStates.value.excludedTagsList(),
+      requiredTags: Object.keys(tagsStates.value.requiredTags),
+      excludedTags: Object.keys(tagsStates.value.excludedTags),
       score: currentScore.value
     });
 

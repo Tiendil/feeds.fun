@@ -24,21 +24,6 @@ import type {Ref} from "vue";
 
   const tagsStates = inject<Ref<tagsFilterState.Storage>|null>("tagsStates", null);
 
-  // TODO: unify with the code from RuleConstructor.vue
-  const hasSelectedTags = computed(() => {
-    if (!tagsStates) {
-      return false;
-    }
-
-    let values = Object.keys(tagsStates.value.selectedTags);
-
-    values = values.filter((tag) => {
-      return tagsStates.value.selectedTags[tag] === true;
-    });
-
-    return values.length > 0;
-  });
-
   const showApiKeyMessage = computed(() => {
     return (
       globalSettings.userSettings &&
@@ -48,12 +33,13 @@ import type {Ref} from "vue";
     );
   });
 
+// TODO: check on empty db
   const showCollectionsNotification = computed(() => {
     return (
       properties.collectionsNotification_ &&
       globalSettings.userSettings &&
       !globalSettings.userSettings.hide_message_about_adding_collections.value &&
-      !hasSelectedTags.value
+      !tagsStates.value.hasSelectedTags
     );
   });
 

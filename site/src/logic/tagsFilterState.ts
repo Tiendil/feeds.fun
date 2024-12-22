@@ -1,42 +1,51 @@
+import { ref, computed, reactive } from 'vue';
+
+
 export type State = "required" | "excluded" | "none";
 
 interface ReturnTagsForEntity {
   (entity: any): string[];
 }
 
-// TODO: refactor to something nicer
 export class Storage {
   requiredTags: {[key: string]: boolean};
   excludedTags: {[key: string]: boolean};
-  selectedTags: {[key: string]: boolean}; // TODO: make calculated property?
+  selectedTags: {[key: string]: boolean};
+  hasSelectedTags: boolean;
 
   constructor() {
-    this.requiredTags = {};
-    this.excludedTags = {};
-    this.selectedTags = {};
-  }
+    this.requiredTags = reactive({});
+    this.excludedTags = reactive({});
 
-  requiredTagsList() {
-    return Object.keys(this.requiredTags).filter((tag) => this.requiredTags[tag]);
-  }
+    this.selectedTags = computed(() => {
+      return {...this.requiredTags, ...this.excludedTags};
+    });
 
-  excludedTagsList() {
-    return Object.keys(this.excludedTags).filter((tag) => this.excludedTags[tag]);
+    this.hasSelectedTags = computed(() => {
+      return Object.keys(this.selectedTags).length > 0;
+    });
   }
 
   onTagStateChanged({tag, state}: {tag: string; state: State}) {
     if (state === "required") {
       this.requiredTags[tag] = true;
-      this.excludedTags[tag] = false;
-      this.selectedTags[tag] = true;
+      if (this.excludedTags[tag]) {
+        delete this.excludedTags[tag];
+      }
     } else if (state === "excluded") {
       this.excludedTags[tag] = true;
-      this.requiredTags[tag] = false;
-      this.selectedTags[tag] = true;
+      if (this.requiredTags[tag]) {
+        delete this.requiredTags[tag];
+      }
     } else if (state === "none") {
-      this.excludedTags[tag] = false;
-      this.requiredTags[tag] = false;
-      delete this.selectedTags[tag];
+      if (this.requiredTags[tag]) {
+        delete this.requiredTags[tag];
+      }
+
+      if (this.excludedTags[tag]) {
+        delete this.excludedTags[tag];
+      }
+
     } else {
       throw new Error(`Unknown tag state: ${state}`);
     }
@@ -87,8 +96,7 @@ export class Storage {
   }
 
   clear() {
-    this.requiredTags = {};
-    this.excludedTags = {};
-    this.selectedTags = {};
+    Object.assign(this.requiredTags, {});
+    Object.assign(this.excludedTags, {});
   }
 }
