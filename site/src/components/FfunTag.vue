@@ -100,7 +100,7 @@
 </script>
 
 <style scoped>
-.tag {
+  .tag {
     @apply inline-block cursor-pointer p-0 mr-2 whitespace-nowrap hover:bg-green-100 px-1 hover:rounded-lg;
   }
 

@@ -7,7 +7,7 @@
 
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch, inject} from "vue";
-import type {Ref} from "vue";
+  import type {Ref} from "vue";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useCollectionsStore} from "@/stores/collections";
   import * as tagsFilterState from "@/logic/tagsFilterState";
@@ -22,7 +22,7 @@ import type {Ref} from "vue";
   const collections = useCollectionsStore();
   const globalSettings = useGlobalSettingsStore();
 
-  const tagsStates = inject<Ref<tagsFilterState.Storage>|null>("tagsStates", null);
+  const tagsStates = inject<Ref<tagsFilterState.Storage> | null>("tagsStates", null);
 
   const showApiKeyMessage = computed(() => {
     return (
@@ -32,7 +32,6 @@ import type {Ref} from "vue";
       !globalSettings.userSettings.hide_message_about_setting_up_key.value
     );
   });
-
 
   const showCollectionsNotification = computed(() => {
     return (

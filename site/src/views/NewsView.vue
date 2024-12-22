@@ -48,7 +48,7 @@
       :time-field="timeField"
       :tags-count="tagsCount"
       :showFromStart="25"
-      :showPerPage="25"/>
+      :showPerPage="25" />
   </side-panel-layout>
 </template>
 
@@ -74,29 +74,28 @@
 
   globalSettings.updateDataVersion();
 
-const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
+  const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
 
-const _sortedEntries = computed(() => {
-
-  if (entriesStore.loadedEntriesReport === null) {
+  const _sortedEntries = computed(() => {
+    if (entriesStore.loadedEntriesReport === null) {
       return [];
-  }
+    }
 
-  const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
+    const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
 
-  if (orderProperties === undefined) {
-    throw new Error(`Unknown order ${globalSettings.entriesOrder}`);
-  }
+    if (orderProperties === undefined) {
+      throw new Error(`Unknown order ${globalSettings.entriesOrder}`);
+    }
 
-  const field = orderProperties.orderField;
-  const direction = orderProperties.direction;
+    const field = orderProperties.orderField;
+    const direction = orderProperties.direction;
 
-  // let report = entriesStore.loadedEntriesReport.slice();
+    // let report = entriesStore.loadedEntriesReport.slice();
 
-  // Pre-map to avoid repeated lookups in the comparator
-  const mapped = entriesStore.loadedEntriesReport.map(entryId => {
-    return { entryId, value: entriesStore.entries[entryId][field] };
-  });
+    // Pre-map to avoid repeated lookups in the comparator
+    const mapped = entriesStore.loadedEntriesReport.map((entryId) => {
+      return {entryId, value: entriesStore.entries[entryId][field]};
+    });
 
     mapped.sort((a: t.EntryId, b: t.EntryId) => {
       if (a.value === null && b.value === null) {
@@ -122,14 +121,12 @@ const _sortedEntries = computed(() => {
       return 0;
     });
 
-  const report = mapped.map(x => x.entryId);
+    const report = mapped.map((x) => x.entryId);
 
-  return report;
-});
+    return report;
+  });
 
-
-const _visibleEntries = computed(() => {
-
+  const _visibleEntries = computed(() => {
     let report = _sortedEntries.value.slice();
 
     if (!globalSettings.showRead) {
@@ -143,18 +140,17 @@ const _visibleEntries = computed(() => {
       });
     }
 
-  return report;
-
-  });
-
-const entriesReport = computed(() => {
-    let report = _visibleEntries.value.slice();
-
-  report = tagsStates.value.filterByTags(report, (entryId) => entriesStore.entries[entryId].tags);
     return report;
   });
 
-const tagsCount = computed(() => {
+  const entriesReport = computed(() => {
+    let report = _visibleEntries.value.slice();
+
+    report = tagsStates.value.filterByTags(report, (entryId) => entriesStore.entries[entryId].tags);
+    return report;
+  });
+
+  const tagsCount = computed(() => {
     const tagsCount: {[key: string]: number} = {};
 
     for (const entryId of entriesReport.value) {
@@ -204,7 +200,6 @@ const tagsCount = computed(() => {
 
     return orderProperties.timeField;
   });
-
 </script>
 
 <style></style>

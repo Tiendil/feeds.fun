@@ -110,10 +110,7 @@
 
     sorted = sorted.sort((a: t.Rule, b: t.Rule) => {
       if (globalSettings.rulesOrder === e.RulesOrder.Tags) {
-        return utils.compareLexicographically(
-          a.allTags,
-          b.allTags
-        );
+        return utils.compareLexicographically(a.allTags, b.allTags);
       }
 
       const valueA = _.get(a, orderField, null);

@@ -46,7 +46,6 @@
     }
     return properties.entriesIds.slice(0, showEntries.value);
   });
-
 </script>
 
 <style scoped>
@@ -54,7 +53,7 @@
   }
 
   .entry-block:not(:last-child) {
-      border-bottom-width: 1px;
-      @apply py-1;
+    border-bottom-width: 1px;
+    @apply py-1;
   }
 </style>

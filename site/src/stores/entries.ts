@@ -8,7 +8,7 @@ import * as api from "@/logic/api";
 import {Timer} from "@/logic/timer";
 import {computedAsync} from "@vueuse/core";
 import {useGlobalSettingsStore} from "@/stores/globalSettings";
-  import * as events from "@/logic/events";
+import * as events from "@/logic/events";
 
 export const useEntriesStore = defineStore("entriesStore", () => {
   const globalSettings = useGlobalSettingsStore();

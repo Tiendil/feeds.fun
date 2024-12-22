@@ -1,6 +1,5 @@
 <template>
-<div>
-
+  <div>
     <div
       v-if="tagsStates.hasSelectedTags"
       class="flex items-center">
@@ -47,15 +46,18 @@
   const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
   asserts.defined(tagsStates);
 
-  watch(() => tagsStates.value.hasSelectedTags, () => {
-    // This condition is needed to prevent immediate reset of the success message
-    // right after the rule is created in createOrUpdateRule
-    if (tagsStates.value.hasSelectedTags.value) {
-      showSuccess.value = false;
+  watch(
+    () => tagsStates.value.hasSelectedTags,
+    () => {
+      // This condition is needed to prevent immediate reset of the success message
+      // right after the rule is created in createOrUpdateRule
+      if (tagsStates.value.hasSelectedTags.value) {
+        showSuccess.value = false;
+      }
     }
-  });
+  );
 
-async function createOrUpdateRule() {
+  async function createOrUpdateRule() {
     asserts.defined(tagsStates);
     await api.createOrUpdateRule({
       requiredTags: Object.keys(tagsStates.value.requiredTags),

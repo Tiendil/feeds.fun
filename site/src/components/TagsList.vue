@@ -14,7 +14,7 @@
         title="Click on the news title to open it and see all tags"
         href="#"
         @click.prevent="emit('request-to-show-all')"
-        v-if="!showAll && (tagsNumber - showLimit > 0)"
+        v-if="!showAll && tagsNumber - showLimit > 0"
         >[{{ tagsNumber - showLimit }} more]</a
       >
     </div>

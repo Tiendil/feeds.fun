@@ -1,5 +1,7 @@
 <template>
-  <div ref="entryTop" class="flex text-lg">
+  <div
+    ref="entryTop"
+    class="flex text-lg">
     <div class="flex-shrink-0 w-8 text-right pr-1">
       <value-score
         :value="entry.score"
@@ -79,9 +81,9 @@
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
 
-const entriesStore = useEntriesStore();
+  const entriesStore = useEntriesStore();
 
-const topElement = useTemplateRef("entryTop");
+  const topElement = useTemplateRef("entryTop");
 
   const properties = defineProps<{
     entryId: t.EntryId;

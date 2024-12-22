@@ -1,5 +1,4 @@
-import { ref, computed, reactive } from 'vue';
-
+import {ref, computed, reactive} from "vue";
 
 export type State = "required" | "excluded" | "none";
 
@@ -45,7 +44,6 @@ export class Storage {
       if (this.excludedTags[tag]) {
         delete this.excludedTags[tag];
       }
-
     } else {
       throw new Error(`Unknown tag state: ${state}`);
     }
@@ -96,11 +94,11 @@ export class Storage {
   }
 
   clear() {
-    Object.keys(this.requiredTags).forEach(key => {
+    Object.keys(this.requiredTags).forEach((key) => {
       delete this.requiredTags[key];
     });
 
-    Object.keys(this.excludedTags).forEach(key => {
+    Object.keys(this.excludedTags).forEach((key) => {
       delete this.excludedTags[key];
     });
   }

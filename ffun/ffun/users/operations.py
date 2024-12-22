@@ -1,7 +1,7 @@
 import psycopg
 
 from ffun.core import logging
-from ffun.core.postgresql import execute, run_in_transaction, ExecuteType
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain.domain import new_user_id
 from ffun.domain.entities import UserId
 from ffun.users import errors
@@ -53,7 +53,8 @@ async def count_total_users() -> int:
 # Use only for development and testing purposes
 @run_in_transaction
 async def tech_move_user(execute: ExecuteType, from_user_id: UserId, to_user_id: UserId) -> None:
-    await execute('DELETE FROM u_mapping WHERE internal_id = %(internal_id)s', {"internal_id": from_user_id})
-    await execute('UPDATE u_mapping SET internal_id = %(from_user_id)s WHERE internal_id = %(to_user_id)s',
-                  {"from_user_id": from_user_id,
-                   "to_user_id": to_user_id})
+    await execute("DELETE FROM u_mapping WHERE internal_id = %(internal_id)s", {"internal_id": from_user_id})
+    await execute(
+        "UPDATE u_mapping SET internal_id = %(from_user_id)s WHERE internal_id = %(to_user_id)s",
+        {"from_user_id": from_user_id, "to_user_id": to_user_id},
+    )
