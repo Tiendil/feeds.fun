@@ -19,9 +19,19 @@
 
       <div class="flex-grow">
         <template
-          v-for="tag of rule.tags"
+          v-for="tag of rule.requiredTags"
           :key="tag">
-          <ffun-tag :uid="tag" />&nbsp;
+          <ffun-tag
+            :uid="tag"
+            secondary-mode="positive" />&nbsp;
+        </template>
+
+        <template
+          v-for="tag of rule.excludedTags"
+          :key="tag">
+          <ffun-tag
+            :uid="tag"
+            secondary-mode="negative" />&nbsp;
         </template>
       </div>
     </div>
@@ -67,7 +77,8 @@
     await api.updateRule({
       id: properties.rule.id,
       score: newScore,
-      tags: properties.rule.tags
+      requiredTags: properties.rule.requiredTags,
+      excludedTags: properties.rule.excludedTags
     });
 
     scoreChanged.value = true;

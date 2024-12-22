@@ -1,6 +1,5 @@
 import datetime
 import enum
-import uuid
 from decimal import Decimal
 from typing import Any, Iterable
 
@@ -10,7 +9,7 @@ import pydantic
 from ffun.api import front_events
 from ffun.core import api
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import AbsoluteUrl, EntryId, FeedId, FeedUrl, UnknownUrl, UserId
+from ffun.domain.entities import AbsoluteUrl, EntryId, FeedId, FeedUrl, RuleId, UnknownUrl, UserId
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.feeds_links import entities as fl_entities
@@ -103,8 +102,9 @@ class Entry(BaseEntity):
 
 
 class Rule(BaseEntity):
-    id: uuid.UUID
-    tags: list[str]
+    id: RuleId
+    requiredTags: list[str]
+    excludedTags: list[str]
     score: int
     createdAt: datetime.datetime
     updatedAt: datetime.datetime
@@ -113,7 +113,8 @@ class Rule(BaseEntity):
     def from_internal(cls, rule: s_entities.Rule, tags_mapping: dict[int, str]) -> "Rule":
         return cls(
             id=rule.id,
-            tags=[tags_mapping[tag_id] for tag_id in rule.tags],
+            requiredTags=[tags_mapping[tag_id] for tag_id in rule.required_tags],
+            excludedTags=[tags_mapping[tag_id] for tag_id in rule.excluded_tags],
             score=rule.score,
             createdAt=rule.created_at,
             updatedAt=rule.updated_at,
@@ -319,7 +320,8 @@ class GetEntriesByIdsResponse(api.APISuccess):
 
 
 class CreateOrUpdateRuleRequest(api.APIRequest):
-    tags: list[str]
+    requiredTags: list[str]
+    excludedTags: list[str]
     score: int
 
 
@@ -328,7 +330,7 @@ class CreateOrUpdateRuleResponse(api.APISuccess):
 
 
 class DeleteRuleRequest(api.APIRequest):
-    id: uuid.UUID
+    id: RuleId
 
 
 class DeleteRuleResponse(api.APISuccess):
@@ -336,8 +338,9 @@ class DeleteRuleResponse(api.APISuccess):
 
 
 class UpdateRuleRequest(api.APIRequest):
-    id: uuid.UUID
-    tags: list[str]
+    id: RuleId
+    requiredTags: list[str]
+    excludedTags: list[str]
     score: int
 
 

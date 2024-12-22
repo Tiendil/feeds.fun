@@ -7,7 +7,7 @@
       v-for="score of scores"
       :value="score"
       :selected="modelValue === score">
-      {{ score }}
+      {{ addSign(score) }}
     </option>
   </select>
 </template>
@@ -18,8 +18,7 @@
 
   const properties = withDefaults(defineProps<{scores?: number[]; modelValue: number}>(), {
     scores: () => [
-      1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, -1, -2, -3, -5, -8, -13, -21, -34, -55, -89, -144, -233,
-      -377, -610
+      1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, -1, -2, -3, -5, -8, -13, -21, -34, -55, -89, -144, -233
     ],
     modelValue: 1
   });
@@ -31,6 +30,14 @@
 
     const newScore = Number(target.value);
     emit("update:modelValue", newScore);
+  }
+
+  function addSign(score: number) {
+    if (score > 0) {
+      return `+${score}`;
+    }
+
+    return score.toString();
   }
 </script>
 

@@ -1,42 +1,73 @@
 <template>
-  <div class="">
-    <score-selector
-      class="inline-block mr-2"
-      v-model="currentScore" />
+  <div>
+    <div
+      v-if="tagsStates.hasSelectedTags"
+      class="flex items-center">
+      <div class="flex-none">
+        <score-selector
+          class="inline-block mr-2 my-auto"
+          v-model="currentScore" />
+      </div>
 
-    <a
-      class="ffun-form-button"
-      href="#"
-      v-if="canCreateRule"
-      @click.prevent="createOrUpdateRule()"
-      >create rule</a
-    >
+      <a
+        class="ffun-form-button p-1 my-1 block text-center inline-block flex-grow"
+        href="#"
+        @click.prevent="createOrUpdateRule()"
+        >Create Rule</a
+      >
+    </div>
 
-    <p class="ffun-info-attention"> The news list will be updated right after you create a rule. </p>
+    <p
+      class="ffun-info-good"
+      v-else>
+      <template v-if="showSuccess"> Rule created. </template>
+      <template v-else> Select tags to create a rule. </template>
+    </p>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref} from "vue";
-  import {useGlobalSettingsStore} from "@/stores/globalSettings";
+  import {computed, ref, inject, watch} from "vue";
+  import type {Ref} from "vue";
+  import {useTagsStore} from "@/stores/tags";
+  import type * as tagsFilterState from "@/logic/tagsFilterState";
+  import * as asserts from "@/logic/asserts";
   import * as api from "@/logic/api";
-  const properties = defineProps<{tags: string[]}>();
+  import {useGlobalSettingsStore} from "@/stores/globalSettings";
+
+  const tagsStore = useTagsStore();
 
   const globalSettings = useGlobalSettingsStore();
 
-  const emit = defineEmits(["rule-constructor:created"]);
-
-  // fibonacci numbers
-  const scores = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610];
-
   const currentScore = ref(1);
 
-  const canCreateRule = computed(() => {
-    return properties.tags.length > 0;
-  });
+  const showSuccess = ref(false);
+
+  const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
+  asserts.defined(tagsStates);
+
+  watch(
+    () => tagsStates.value.hasSelectedTags,
+    () => {
+      // This condition is needed to prevent immediate reset of the success message
+      // right after the rule is created in createOrUpdateRule
+      if (tagsStates.value.hasSelectedTags) {
+        showSuccess.value = false;
+      }
+    }
+  );
 
   async function createOrUpdateRule() {
-    await api.createOrUpdateRule({tags: properties.tags, score: currentScore.value});
+    asserts.defined(tagsStates);
+    await api.createOrUpdateRule({
+      requiredTags: Object.keys(tagsStates.value.requiredTags),
+      excludedTags: Object.keys(tagsStates.value.excludedTags),
+      score: currentScore.value
+    });
+
+    tagsStates.value.clear();
+
+    showSuccess.value = true;
 
     // this line leads to the reloading of news and any other data
     // not an elegant solution, but it works with the current API implementation
@@ -44,7 +75,5 @@
     //       - without reloading
     //       - maybe, without reordering too
     globalSettings.updateDataVersion();
-
-    emit("rule-constructor:created");
   }
 </script>

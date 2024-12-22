@@ -1,5 +1,7 @@
 <template>
-  <div class="flex">
+  <div
+    ref="entryTop"
+    class="flex text-lg">
     <div class="flex-shrink-0 w-8 text-right pr-1">
       <value-score
         :value="entry.score"
@@ -9,7 +11,7 @@
     <div class="flex-shrink-0 w-8 text-right pr-1">
       <favicon-element
         :url="entry.url"
-        class="w-4 h-4 align-text-bottom mx-1 inline" />
+        class="w-5 h-5 align-text-bottom mx-1 inline" />
     </div>
 
     <div class="flex-shrink-0 text-right">
@@ -25,16 +27,17 @@
       <a
         :href="entry.url"
         target="_blank"
-        :class="[{'font-bold': isRead}, 'flex-grow', 'min-w-fit', 'line-clamp-1', 'pr-4', 'mb-0']"
+        :class="[{'font-bold': !isRead}, 'flex-grow', 'min-w-fit', 'line-clamp-1', 'pr-4', 'mb-0']"
         @click="onTitleClick">
         {{ purifiedTitle }}
       </a>
 
       <tags-list
-        v-if="showTags"
         class="mt-0 pt-0"
         :tags="entry.tags"
         :tags-count="tagsCount"
+        :show-all="showBody"
+        @request-to-show-all="entriesStore.displayEntry({entryId: entry.id})"
         :contributions="entry.scoreContributions" />
     </div>
 
@@ -70,7 +73,7 @@
 
 <script lang="ts" setup>
   import _ from "lodash";
-  import {computed, ref} from "vue";
+  import {computed, ref, useTemplateRef} from "vue";
   import type * as t from "@/logic/types";
   import * as events from "@/logic/events";
   import * as e from "@/logic/enums";
@@ -80,14 +83,13 @@
 
   const entriesStore = useEntriesStore();
 
+  const topElement = useTemplateRef("entryTop");
+
   const properties = defineProps<{
     entryId: t.EntryId;
     timeField: string;
-    showTags: boolean;
     tagsCount: {[key: string]: number};
   }>();
-
-  const emit = defineEmits(["entry:bodyVisibilityChanged"]);
 
   const entry = computed(() => {
     if (properties.entryId in entriesStore.entries) {
@@ -98,10 +100,12 @@
   });
 
   const isRead = computed(() => {
-    return !entriesStore.entries[entry.value.id].hasMarker(e.Marker.Read);
+    return entriesStore.entries[entry.value.id].hasMarker(e.Marker.Read);
   });
 
-  const showBody = ref(false);
+  const showBody = computed(() => {
+    return entry.value.id == entriesStore.displayedEntryId;
+  });
 
   const timeFor = computed(() => {
     if (entry.value === null) {
@@ -110,25 +114,6 @@
 
     return _.get(entry.value, properties.timeField, null);
   });
-
-  async function displayBody() {
-    showBody.value = true;
-
-    emit("entry:bodyVisibilityChanged", {entryId: properties.entryId, visible: true});
-
-    if (entry.value === null) {
-      throw new Error("entry is null");
-    }
-
-    entriesStore.requestFullEntry({entryId: entry.value.id});
-
-    await events.newsBodyOpened({entryId: entry.value.id});
-  }
-
-  function hideBody() {
-    showBody.value = false;
-    emit("entry:bodyVisibilityChanged", {entryId: properties.entryId, visible: false});
-  }
 
   const purifiedTitle = computed(() => {
     if (entry.value === null) {
@@ -166,20 +151,16 @@
       event.stopPropagation();
 
       if (showBody.value) {
-        hideBody();
+        entriesStore.hideEntry({entryId: entry.value.id});
       } else {
-        displayBody();
+        await entriesStore.displayEntry({entryId: entry.value.id});
+
+        if (topElement.value) {
+          topElement.value.scrollIntoView({behavior: "instant"});
+        }
       }
     } else {
       await newsLinkOpenedEvent();
-    }
-
-    // TODO: is it will be too slow?
-    if (showBody.value) {
-      await entriesStore.setMarker({
-        entryId: properties.entryId,
-        marker: e.Marker.Read
-      });
     }
   }
 </script>

@@ -15,15 +15,6 @@
     </template>
 
     <template #side-menu-item-3>
-      Show tags:
-      <config-flag
-        style="min-width: 2.5rem"
-        v-model:flag="globalSettings.showEntriesTags"
-        on-text="no"
-        off-text="yes" />
-    </template>
-
-    <template #side-menu-item-4>
       Show read:
       <config-flag
         style="min-width: 2.5rem"
@@ -35,7 +26,7 @@
     <template #side-footer>
       <tags-filter
         :tags="tagsCount"
-        @tag:stateChanged="onTagStateChanged" />
+        :show-create-rule="true" />
     </template>
 
     <template #main-header>
@@ -55,16 +46,14 @@
     <entries-list
       :entriesIds="entriesReport"
       :time-field="timeField"
-      :show-tags="globalSettings.showEntriesTags"
       :tags-count="tagsCount"
       :showFromStart="25"
-      :showPerPage="25"
-      @entry:bodyVisibilityChanged="onBodyVisibilityChanged" />
+      :showPerPage="25" />
   </side-panel-layout>
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref, onUnmounted, watch} from "vue";
+  import {computed, ref, onUnmounted, watch, provide} from "vue";
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
   import * as tagsFilterState from "@/logic/tagsFilterState";
@@ -79,22 +68,71 @@
 
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
+  provide("tagsStates", tagsStates);
+
   globalSettings.mainPanelMode = e.MainPanelMode.Entries;
 
   globalSettings.updateDataVersion();
 
   const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
 
-  const entriesReport = computed(() => {
+  const _sortedEntries = computed(() => {
     if (entriesStore.loadedEntriesReport === null) {
       return [];
     }
 
-    let report = entriesStore.loadedEntriesReport.slice();
+    const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
+
+    if (orderProperties === undefined) {
+      throw new Error(`Unknown order ${globalSettings.entriesOrder}`);
+    }
+
+    const field = orderProperties.orderField;
+    const direction = orderProperties.direction;
+
+    // let report = entriesStore.loadedEntriesReport.slice();
+
+    // Pre-map to avoid repeated lookups in the comparator
+    const mapped = entriesStore.loadedEntriesReport.map((entryId) => {
+      // @ts-ignore
+      return {entryId, value: entriesStore.entries[entryId][field]};
+    });
+
+    mapped.sort((a: {entryId: t.EntryId; value: any}, b: {entryId: t.EntryId; value: any}) => {
+      if (a.value === null && b.value === null) {
+        return 0;
+      }
+
+      if (a.value === null) {
+        return 1;
+      }
+
+      if (b.value === null) {
+        return -1;
+      }
+
+      if (a.value < b.value) {
+        return direction;
+      }
+
+      if (a.value > b.value) {
+        return -direction;
+      }
+
+      return 0;
+    });
+
+    const report = mapped.map((x) => x.entryId);
+
+    return report;
+  });
+
+  const _visibleEntries = computed(() => {
+    let report = _sortedEntries.value.slice();
 
     if (!globalSettings.showRead) {
       report = report.filter((entryId) => {
-        if (entriesWithOpenedBody.value[entryId]) {
+        if (entriesStore.displayedEntryId == entryId) {
           // always show read entries with open body
           // otherwise, they will hide right after opening it
           return true;
@@ -103,43 +141,13 @@
       });
     }
 
+    return report;
+  });
+
+  const entriesReport = computed(() => {
+    let report = _visibleEntries.value.slice();
+
     report = tagsStates.value.filterByTags(report, (entryId) => entriesStore.entries[entryId].tags);
-
-    report = report.sort((a: t.EntryId, b: t.EntryId) => {
-      const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
-
-      if (orderProperties === undefined) {
-        throw new Error(`Unknown order ${globalSettings.entriesOrder}`);
-      }
-
-      const field = orderProperties.orderField;
-
-      const valueA = _.get(entriesStore.entries[a], field, null);
-      const valueB = _.get(entriesStore.entries[b], field, null);
-
-      if (valueA === null && valueB === null) {
-        return 0;
-      }
-
-      if (valueA === null) {
-        return 1;
-      }
-
-      if (valueB === null) {
-        return -1;
-      }
-
-      if (valueA < valueB) {
-        return orderProperties.direction;
-      }
-
-      if (valueA > valueB) {
-        return -orderProperties.direction;
-      }
-
-      return 0;
-    });
-
     return report;
   });
 
@@ -193,14 +201,6 @@
 
     return orderProperties.timeField;
   });
-
-  function onTagStateChanged({tag, state}: {tag: string; state: tagsFilterState.State}) {
-    tagsStates.value.onTagStateChanged({tag, state});
-  }
-
-  function onBodyVisibilityChanged({entryId, visible}: {entryId: t.EntryId; visible: boolean}) {
-    entriesWithOpenedBody.value[entryId] = visible;
-  }
 </script>
 
 <style></style>

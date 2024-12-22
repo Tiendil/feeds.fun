@@ -2,6 +2,7 @@ import typer
 
 from ffun.cli.commands import cleaner  # noqa: F401
 from ffun.cli.commands import experiments  # noqa: F401
+from ffun.cli.commands import fixtures  # noqa: F401
 from ffun.cli.commands import metrics  # noqa: F401
 from ffun.cli.commands import processors_quality  # noqa: F401
 from ffun.cli.commands import profile  # noqa: F401
@@ -19,6 +20,7 @@ app.add_typer(cleaner.cli_app, name="cleaner")
 app.add_typer(metrics.cli_app, name="metrics")
 app.add_typer(profile.cli_app, name="profile")
 app.add_typer(experiments.cli_app, name="experiments")
+app.add_typer(fixtures.cli_app, name="fixtures")
 
 
 if __name__ == "__main__":

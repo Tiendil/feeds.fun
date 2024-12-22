@@ -1,72 +1,53 @@
 <template>
   <div>
-    <div class="text-sm">
+    <div class="text-base">
       <ffun-tag
         v-for="tag of displayedTags"
         :key="tag"
         :uid="tag"
-        :mode="tagMode(tag)"
         :count="tagsCount[tag]"
-        count-mode="tooltip"
-        @tag:clicked="onTagClicked" />
+        :secondary-mode="tagMode(tag)"
+        count-mode="tooltip" />
 
       <a
-        class="ffun-normal-link"
+        class=""
+        title="Click on the news title to open it and see all tags"
         href="#"
-        v-if="canShowAll"
-        @click.prevent="showAll = true"
-        >{{ tagsNumber - showLimit }} more</a
-      >
-
-      <a
-        class="ffun-normal-link"
-        href="#"
-        v-if="canHide"
-        @click.prevent="showAll = false"
-        >hide</a
+        @click.prevent="emit('request-to-show-all')"
+        v-if="!showAll && tagsNumber - showLimit > 0"
+        >[{{ tagsNumber - showLimit }} more]</a
       >
     </div>
-
-    <rule-constructor
-      v-if="selectedTagsList.length > 0"
-      :tags="selectedTagsList"
-      @rule-constructor:created="onRuleCreated" />
   </div>
 </template>
 
 <script lang="ts" setup>
   import {computed, ref} from "vue";
 
-  const showAll = ref(false);
-  const showLimit = ref(5);
-
-  const selectedTags = ref<{[key: string]: boolean}>({});
+  const showLimit = 5;
 
   const properties = defineProps<{
     tags: string[];
     contributions: {[key: string]: number};
     tagsCount: {[key: string]: number};
+    showAll: boolean;
   }>();
+
+  const emit = defineEmits(["request-to-show-all"]);
 
   const tagsNumber = computed(() => {
     return properties.tags.length;
   });
 
   const displayedTags = computed(() => {
-    if (showAll.value) {
+    if (properties.showAll) {
       return preparedTags.value;
     }
 
-    return preparedTags.value.slice(0, showLimit.value);
+    return preparedTags.value.slice(0, showLimit);
   });
 
   function tagMode(tag: string) {
-    if (!!selectedTags.value[tag]) {
-      return "selected";
-    }
-
-    // return null;
-
     if (!properties.contributions) {
       return null;
     }
@@ -129,37 +110,4 @@
 
     return values;
   });
-
-  const canShowAll = computed(() => {
-    return !showAll.value && showLimit.value < preparedTags.value.length;
-  });
-
-  const canHide = computed(() => {
-    return showAll.value && showLimit.value < preparedTags.value.length;
-  });
-
-  function onTagClicked(tag: string) {
-    if (!!selectedTags.value[tag]) {
-      delete selectedTags.value[tag];
-    } else {
-      selectedTags.value[tag] = true;
-      showAll.value = true;
-    }
-  }
-
-  const selectedTagsList = computed(() => {
-    const values = [];
-
-    for (const tag in selectedTags.value) {
-      values.push(tag);
-    }
-
-    values.sort();
-
-    return values;
-  });
-
-  function onRuleCreated() {
-    selectedTags.value = {};
-  }
 </script>

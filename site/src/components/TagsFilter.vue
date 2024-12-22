@@ -7,26 +7,21 @@
         v-for="tag of displayedSelectedTags"
         :key="tag"
         class="whitespace-nowrap line-clamp-1">
-        <a
-          href="#"
-          @click.prevent="deselect(tag)"
-          >[X]</a
-        >
         <ffun-tag
           class="ml-1"
           :uid="tag"
           :count="tags[tag] ?? 0"
-          count-mode="no"
-          :mode="tagStates[tag]"
-          @tag:clicked="onTagClicked">
-        </ffun-tag>
+          :showSwitch="true"
+          count-mode="no" />
       </li>
     </ul>
+
+    <rule-constructor v-if="showCreateRule" />
 
     <input
       class="ffun-input w-full"
       type="text"
-      placeholder="Input part of tag..."
+      placeholder="Input part of a tag…"
       v-model="tagNameFilter" />
 
     <ul
@@ -39,9 +34,7 @@
         <ffun-tag
           :uid="tag"
           :count="tags[tag]"
-          count-mode="prefix"
-          :mode="null"
-          @tag:clicked="onTagClicked" />
+          count-mode="prefix" />
       </li>
     </ul>
 
@@ -57,18 +50,24 @@
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref} from "vue";
+  import {computed, ref, inject} from "vue";
+  import type {Ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
   import type * as tagsFilterState from "@/logic/tagsFilterState";
+  import * as asserts from "@/logic/asserts";
+  import * as api from "@/logic/api";
+  import {useGlobalSettingsStore} from "@/stores/globalSettings";
+
   const tagsStore = useTagsStore();
 
-  const selectedTags = ref<{[key: string]: boolean}>({});
+  const globalSettings = useGlobalSettingsStore();
 
-  const tagStates = ref<{[key: string]: tagsFilterState.State}>({});
+  const currentScore = ref(1);
 
-  const emit = defineEmits(["tag:stateChanged"]);
+  const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
+  asserts.defined(tagsStates);
 
-  const properties = defineProps<{tags: {[key: string]: number}}>();
+  const properties = defineProps<{tags: {[key: string]: number}; showCreateRule?: boolean}>();
 
   const showFromStart = ref(25);
 
@@ -76,37 +75,40 @@
 
   const tagNameFilter = ref("");
 
-  function tagComparator(a: string, b: string) {
-    const aCount = properties.tags[a];
-    const bCount = properties.tags[b];
+  function createTagComparator() {
+    const counts = properties.tags;
 
-    if (aCount > bCount) {
-      return -1;
+    function tagComparator(a: string, b: string) {
+      const aCount = counts[a];
+      const bCount = counts[b];
+
+      if (aCount > bCount) {
+        return -1;
+      }
+
+      if (aCount < bCount) {
+        return 1;
+      }
+
+      if (a > b) {
+        return 1;
+      }
+
+      if (a < b) {
+        return -1;
+      }
+
+      return 0;
     }
 
-    if (aCount < bCount) {
-      return 1;
-    }
-
-    if (a > b) {
-      return 1;
-    }
-
-    if (a < b) {
-      return -1;
-    }
-
-    return 0;
+    return tagComparator;
   }
 
   const displayedSelectedTags = computed(() => {
-    let values = Object.keys(selectedTags.value);
+    let values = Object.keys(tagsStates.value.selectedTags);
 
-    values = values.filter((tag) => {
-      return selectedTags.value[tag] === true;
-    });
-
-    values.sort(tagComparator);
+    const comparator = createTagComparator();
+    values.sort(comparator);
 
     return values;
   });
@@ -114,22 +116,38 @@
   const totalTags = computed(() => {
     // TODO: this is not correct, because selected tags are treated differently
     //       depending on their status: required or excluded.
+    //       I.e. by excluding tag `x` you exclude concreate entries => you can exclude more tags,
+    //       if they only belong to the excluded entries)
     //       => value is not accurate, but it is ok for now
-    return Object.keys(properties.tags).length + Object.keys(selectedTags.value).length;
+    return Object.keys(properties.tags).length + Object.keys(tagsStates.value.selectedTags).length;
   });
 
-  const displayedTags = computed(() => {
+  const _sortedTags = computed(() => {
     let values = Object.keys(properties.tags);
 
-    if (values.length === 0) {
-      return [];
-    }
+    const comparator = createTagComparator();
+
+    values.sort(comparator);
+
+    return values;
+  });
+
+  const _visibleTags = computed(() => {
+    let values = _sortedTags.value.slice();
+
+    const textFilter = tagNameFilter.value.trim().toLowerCase();
+
+    const selectedTags = Object.keys(tagsStates.value.selectedTags);
 
     values = values.filter((tag) => {
-      return selectedTags.value[tag] !== true;
-    });
+      if (selectedTags.includes(tag)) {
+        return false;
+      }
 
-    values = values.filter((tag) => {
+      if (!textFilter) {
+        return true;
+      }
+
       const tagInfo = tagsStore.tags[tag];
 
       if (tagInfo === undefined || tagInfo.name === null) {
@@ -139,36 +157,10 @@
       return tagInfo.name.includes(tagNameFilter.value);
     });
 
-    values.sort(tagComparator);
-
-    values = values.slice(0, showEntries.value);
-
     return values;
   });
 
-  function onTagClicked(tag: string) {
-    const state = tagStates.value[tag] || "none";
-
-    if (state === "none") {
-      tagStates.value[tag] = "required";
-      selectedTags.value[tag] = true;
-    } else if (state === "required") {
-      tagStates.value[tag] = "excluded";
-      selectedTags.value[tag] = true;
-    } else if (state === "excluded") {
-      tagStates.value[tag] = "required";
-      selectedTags.value[tag] = true;
-    } else {
-      throw new Error(`Unknown tag state: ${state}`);
-    }
-
-    emit("tag:stateChanged", {tag: tag, state: tagStates.value[tag]});
-  }
-
-  function deselect(tag: string) {
-    selectedTags.value[tag] = false;
-    tagStates.value[tag] = "none";
-
-    emit("tag:stateChanged", {tag: tag, state: tagStates.value[tag]});
-  }
+  const displayedTags = computed(() => {
+    return _visibleTags.value.slice(0, showEntries.value);
+  });
 </script>

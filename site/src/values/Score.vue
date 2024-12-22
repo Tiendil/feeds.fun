@@ -30,7 +30,7 @@
     for (const rule of rules) {
       const tags = [];
 
-      for (const tagId of rule.tags) {
+      for (const tagId of rule.requiredTags) {
         const tagInfo = tagsStore.tags[tagId];
         if (tagInfo) {
           tags.push(tagInfo.name);
@@ -39,7 +39,16 @@
         }
       }
 
-      strings.push(rule.score.toString().padStart(2, " ") + " — " + tags.join(", "));
+      for (const tagId of rule.excludedTags) {
+        const tagInfo = tagsStore.tags[tagId];
+        if (tagInfo) {
+          tags.push("NOT " + tagInfo.name);
+        } else {
+          tags.push("NOT " + tagId);
+        }
+      }
+
+      strings.push(rule.score.toString().padStart(2, " ") + " — " + tags.join(" AND "));
     }
 
     alert(strings.join("\n"));

@@ -1,18 +1,16 @@
 import datetime
-import uuid
 
-import pydantic
-
-from ffun.domain.entities import UserId
+from ffun.core.entities import BaseEntity
+from ffun.domain.entities import RuleId, UserId
 
 
-class BaseRule(pydantic.BaseModel):
-    tags: set[int]
+class Rule(BaseEntity):
+    id: RuleId
+    user_id: UserId
+
+    required_tags: set[int]
+    excluded_tags: set[int]
     score: int
 
-
-class Rule(BaseRule):
-    id: uuid.UUID
-    user_id: UserId
     created_at: datetime.datetime
     updated_at: datetime.datetime

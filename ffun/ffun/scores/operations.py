@@ -1,11 +1,11 @@
-import uuid
 from typing import Any, Iterable
 
 import psycopg
 
 from ffun.core import logging
 from ffun.core.postgresql import execute
-from ffun.domain.entities import UserId
+from ffun.domain.domain import new_rule_id
+from ffun.domain.entities import RuleId, UserId
 from ffun.scores import errors
 from ffun.scores.entities import Rule
 
@@ -16,36 +16,63 @@ def _normalize_tags(tags: Iterable[int]) -> list[int]:
     return list(sorted(tags))
 
 
-def _key_from_tags(tags: Iterable[int]) -> str:
-    return ",".join(map(str, tags))
+def _key_from_tags(required_tags: Iterable[int], excluded_tags: Iterable[int]) -> str:
+    return ",".join(map(str, required_tags)) + "|" + ",".join(map(str, excluded_tags))
 
 
 def row_to_rule(row: dict[str, Any]) -> Rule:
     return Rule(
         id=row["id"],
         user_id=row["user_id"],
-        tags=set(row["tags"]),
+        required_tags=row["required_tags"],
+        excluded_tags=row["excluded_tags"],
         score=row["score"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
 
 
-async def create_or_update_rule(user_id: UserId, tags: Iterable[int], score: int) -> Rule:
-    tags = _normalize_tags(tags)
+async def create_or_update_rule(
+    user_id: UserId, required_tags: Iterable[int], excluded_tags: Iterable[int], score: int
+) -> Rule:
+    required_tags = set(required_tags)
+    excluded_tags = set(excluded_tags)
 
-    key = _key_from_tags(tags)
+    if required_tags & excluded_tags:
+        raise errors.TagsIntersection()
+
+    required_tags = _normalize_tags(required_tags)
+    excluded_tags = _normalize_tags(excluded_tags)
+
+    key = _key_from_tags(required_tags, excluded_tags)
 
     sql = """
-        INSERT INTO s_rules (id, user_id, tags, key, score)
-        VALUES (%(id)s, %(user_id)s, %(tags)s, %(key)s, %(score)s)
+        INSERT INTO s_rules (id, user_id, required_tags, excluded_tags, key, score)
+        VALUES (%(id)s, %(user_id)s, %(required_tags)s, %(excluded_tags)s, %(key)s, %(score)s)
         RETURNING *
         """
 
     try:
-        result = await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "tags": tags, "key": key, "score": score})
+        result = await execute(
+            sql,
+            {
+                "id": new_rule_id(),
+                "user_id": user_id,
+                "required_tags": required_tags,
+                "excluded_tags": excluded_tags,
+                "key": key,
+                "score": score,
+            },
+        )
 
-        logger.business_event("rule_created", user_id=user_id, rule_id=result[0]["id"], tags=tags, score=score)
+        logger.business_event(
+            "rule_created",
+            user_id=user_id,
+            rule_id=result[0]["id"],
+            required_tags=required_tags,
+            excluded_tags=excluded_tags,
+            score=score,
+        )
     except psycopg.errors.UniqueViolation:
         logger.info("rule_already_exists_change_score", key=key)
 
@@ -58,12 +85,19 @@ async def create_or_update_rule(user_id: UserId, tags: Iterable[int], score: int
 
         result = await execute(sql, {"user_id": user_id, "key": key, "score": score})
 
-        logger.business_event("rule_updated", user_id=user_id, rule_id=result[0]["id"], tags=tags, score=score)
+        logger.business_event(
+            "rule_updated",
+            user_id=user_id,
+            rule_id=result[0]["id"],
+            required_tags=required_tags,
+            excluded_tags=excluded_tags,
+            score=score,
+        )
 
     return row_to_rule(result[0])
 
 
-async def delete_rule(user_id: UserId, rule_id: uuid.UUID) -> None:
+async def delete_rule(user_id: UserId, rule_id: RuleId) -> None:
     sql = """
         DELETE FROM s_rules
         WHERE user_id = %(user_id)s AND id = %(rule_id)s
@@ -76,23 +110,54 @@ async def delete_rule(user_id: UserId, rule_id: uuid.UUID) -> None:
         logger.business_event("rule_deleted", user_id=user_id, rule_id=rule_id)
 
 
-async def update_rule(user_id: UserId, rule_id: uuid.UUID, tags: Iterable[int], score: int) -> Rule:
-    tags = _normalize_tags(tags)
-    key = _key_from_tags(tags)
+async def update_rule(
+    user_id: UserId, rule_id: RuleId, required_tags: Iterable[int], excluded_tags: Iterable[int], score: int
+) -> Rule:
+    required_tags = set(required_tags)
+    excluded_tags = set(excluded_tags)
+
+    if required_tags & excluded_tags:
+        raise errors.TagsIntersection()
+
+    required_tags = _normalize_tags(required_tags)
+    excluded_tags = _normalize_tags(excluded_tags)
+
+    key = _key_from_tags(required_tags, excluded_tags)
 
     sql = """
     UPDATE s_rules
-    SET tags = %(tags)s, key = %(key)s, score = %(score)s, updated_at = NOW()
+    SET required_tags = %(required_tags)s,
+        excluded_tags = %(excluded_tags)s,
+        key = %(key)s,
+        score = %(score)s,
+        updated_at = NOW()
     WHERE user_id = %(user_id)s AND id = %(rule_id)s
     returning *
     """
 
-    result = await execute(sql, {"user_id": user_id, "rule_id": rule_id, "tags": tags, "key": key, "score": score})
+    result = await execute(
+        sql,
+        {
+            "user_id": user_id,
+            "rule_id": rule_id,
+            "required_tags": required_tags,
+            "excluded_tags": excluded_tags,
+            "key": key,
+            "score": score,
+        },
+    )
 
     if not result:
         raise errors.NoRuleFound()
 
-    logger.business_event("rule_updated", user_id=user_id, rule_id=result[0]["id"], tags=tags, score=score)
+    logger.business_event(
+        "rule_updated",
+        user_id=user_id,
+        rule_id=result[0]["id"],
+        required_tags=required_tags,
+        excluded_tags=excluded_tags,
+        score=score,
+    )
 
     return row_to_rule(result[0])
 

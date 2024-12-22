@@ -7,3 +7,7 @@ class Error(errors.Error):
 
 class NoRuleFound(Error):
     pass
+
+
+class TagsIntersection(Error):
+    pass

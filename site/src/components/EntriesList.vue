@@ -9,9 +9,7 @@
           <entry-for-list
             :entryId="entryId"
             :time-field="timeField"
-            :show-tags="showTags"
-            :tags-count="tagsCount"
-            @entry:bodyVisibilityChanged="onBodyVisibilityChanged" />
+            :tags-count="tagsCount" />
         </li>
       </ul>
 
@@ -35,13 +33,10 @@
   const properties = defineProps<{
     entriesIds: Array<t.EntryId>;
     timeField: string;
-    showTags: boolean;
     showFromStart: number;
     showPerPage: number;
     tagsCount: {[key: string]: number};
   }>();
-
-  const emit = defineEmits(["entry:bodyVisibilityChanged"]);
 
   const showEntries = ref(properties.showFromStart);
 
@@ -51,14 +46,14 @@
     }
     return properties.entriesIds.slice(0, showEntries.value);
   });
-
-  function onBodyVisibilityChanged({entryId, visible}: {entryId: t.EntryId; visible: boolean}) {
-    emit("entry:bodyVisibilityChanged", {entryId, visible});
-  }
 </script>
 
 <style scoped>
+  .entry-block {
+  }
+
   .entry-block:not(:last-child) {
     border-bottom-width: 1px;
+    @apply py-1;
   }
 </style>

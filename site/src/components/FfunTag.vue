@@ -1,35 +1,52 @@
 <template>
-  <div
-    :class="classes"
-    :title="tooltip"
-    @click.prevent="onClick()">
-    <span v-if="countMode == 'prefix'">[{{ count }}]</span>
-
-    {{ tagInfo.name }}
-
+  <div class="inline-block">
     <a
-      v-if="tagInfo.link"
-      :href="tagInfo.link"
-      target="_blank"
-      @click.stop=""
-      rel="noopener noreferrer">
-      &#8599;
-    </a>
+      href="#"
+      v-if="showSwitch"
+      class="pr-1"
+      @click.prevent="onRevers()"
+      >⇄</a
+    >
+    <div
+      :class="classes"
+      :title="tooltip"
+      @click.prevent="onClick()">
+      <span v-if="countMode == 'prefix'">[{{ count }}]</span>
+
+      {{ tagInfo.name }}
+
+      <a
+        v-if="tagInfo.link"
+        :href="tagInfo.link"
+        target="_blank"
+        @click.stop=""
+        rel="noopener noreferrer">
+        &#8599;
+      </a>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
   import * as t from "@/logic/types";
-  import {computed, ref} from "vue";
+  import {computed, ref, inject} from "vue";
+  import type {Ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
+  import * as tagsFilterState from "@/logic/tagsFilterState";
+  import * as asserts from "@/logic/asserts";
 
   const tagsStore = useTagsStore();
+
+  const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
+
+  asserts.defined(tagsStates);
 
   const properties = defineProps<{
     uid: string;
     count?: number | null;
     countMode?: string | null;
-    mode?: string | null;
+    secondaryMode?: string | null;
+    showSwitch?: boolean | null;
   }>();
 
   const tagInfo = computed(() => {
@@ -44,27 +61,39 @@
     return t.noInfoTag(properties.uid);
   });
 
-  const emit = defineEmits(["tag:clicked"]);
-
   const classes = computed(() => {
     const result: {[key: string]: boolean} = {
       tag: true
     };
 
-    if (properties.mode) {
-      result[properties.mode] = true;
+    if (tagsStates.value.requiredTags[properties.uid]) {
+      result["required"] = true;
+    }
+
+    if (tagsStates.value.excludedTags[properties.uid]) {
+      result["excluded"] = true;
+    }
+
+    if (properties.secondaryMode) {
+      result[properties.secondaryMode] = true;
     }
 
     return result;
   });
 
   function onClick() {
-    emit("tag:clicked", properties.uid);
+    asserts.defined(tagsStates);
+    tagsStates.value.onTagClicked({tag: properties.uid});
+  }
+
+  function onRevers() {
+    asserts.defined(tagsStates);
+    tagsStates.value.onTagReversed({tag: properties.uid});
   }
 
   const tooltip = computed(() => {
     if (properties.countMode == "tooltip" && properties.count) {
-      return `articles with the tag: ${properties.count} (${properties.uid})`;
+      return `articles with this tag: ${properties.count}`;
     }
     return "";
   });
@@ -72,19 +101,15 @@
 
 <style scoped>
   .tag {
-    @apply inline-block cursor-pointer p-0 mr-2 whitespace-nowrap;
-  }
-
-  .tag.selected {
-    @apply font-bold text-purple-700;
+    @apply inline-block cursor-pointer p-0 mr-2 whitespace-nowrap hover:bg-green-100 px-1 hover:rounded-lg;
   }
 
   .tag.required {
-    @apply text-green-700;
+    @apply text-green-700 font-bold;
   }
 
   .tag.excluded {
-    @apply text-red-700;
+    @apply text-red-700 font-bold;
   }
 
   .tag.positive {
