@@ -134,21 +134,32 @@ const _sortedTags = computed(() => {
 });
 
 const _visibleTags = computed(() => {
-    let values = _sortedTags.value.slice();
+  let values = _sortedTags.value.slice();
 
-    if (tagNameFilter.value) {
-      values = values.filter((tag) => {
-        const tagInfo = tagsStore.tags[tag];
+  const textFilter = tagNameFilter.value.trim().toLowerCase();
 
-        if (tagInfo === undefined || tagInfo.name === null) {
-          return tag.includes(tagNameFilter.value);
-        }
+  const selectedTags = Object.keys(tagsStates.value.selectedTags);
 
-        return tagInfo.name.includes(tagNameFilter.value);
-      });
+  values = values.filter((tag) => {
+    if (selectedTags.includes(tag)) {
+      return false;
     }
 
-    return values;
+    if (!textFilter) {
+      return true;
+    }
+
+    const tagInfo = tagsStore.tags[tag];
+
+    if (tagInfo === undefined || tagInfo.name === null) {
+      return tag.includes(tagNameFilter.value);
+    }
+
+    return tagInfo.name.includes(tagNameFilter.value);
+  });
+
+
+  return values;
 });
 
 
