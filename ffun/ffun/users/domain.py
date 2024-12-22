@@ -5,7 +5,7 @@ from ffun.users.entities import Service, User
 add_mapping = operations.add_mapping
 get_mapping = operations.get_mapping
 count_total_users = operations.count_total_users
-tech_merge_user = operations.tech_merge_user
+tech_move_user = operations.tech_move_user
 
 
 async def get_or_create_user_id(service: Service, external_id: str) -> UserId:

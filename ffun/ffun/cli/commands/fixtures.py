@@ -134,7 +134,7 @@ async def run_supertokens_user_to_dev(intenal_user_id: UserId) -> None:
 
         to_user_id = await u_domain.get_or_create_user_id(u_entities.Service.single, external_user_id)
 
-        await u_domain.tech_merge_user(from_user_id=intenal_user_id, to_user_id=to_user_id)
+        await u_domain.tech_move_user(from_user_id=intenal_user_id, to_user_id=to_user_id)
 
 
 @cli_app.command()
