@@ -22,7 +22,7 @@ export class Storage {
     });
 
     this.hasSelectedTags = computed(() => {
-      return Object.keys(this.selectedTags).length > 0;
+      return Object.keys(this.selectedTags.value).length > 0;
     });
   }
 
@@ -74,21 +74,21 @@ export class Storage {
   filterByTags(entities: any[], getTags: ReturnTagsForEntity) {
     let report = entities.slice();
 
+    const requiredTags = Object.keys(this.requiredTags);
+
     report = report.filter((entity) => {
       for (const tag of getTags(entity)) {
         if (this.excludedTags[tag]) {
           return false;
         }
       }
-      return true;
-    });
 
-    report = report.filter((entity) => {
-      for (const tag of Object.keys(this.requiredTags)) {
-        if (this.requiredTags[tag] && !getTags(entity).includes(tag)) {
+      for (const tag of requiredTags) {
+        if (!getTags(entity).includes(tag)) {
           return false;
         }
       }
+
       return true;
     });
 
@@ -96,7 +96,12 @@ export class Storage {
   }
 
   clear() {
-    Object.assign(this.requiredTags, {});
-    Object.assign(this.excludedTags, {});
+    Object.keys(this.requiredTags).forEach(key => {
+      delete this.requiredTags[key];
+    });
+
+    Object.keys(this.excludedTags).forEach(key => {
+      delete this.excludedTags[key];
+    });
   }
 }

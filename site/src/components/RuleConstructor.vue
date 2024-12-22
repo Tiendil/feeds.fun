@@ -1,5 +1,6 @@
 <template>
-  <div>
+<div>
+
     <div
       v-if="tagsStates.hasSelectedTags"
       class="flex items-center">
@@ -43,14 +44,13 @@
 
   const showSuccess = ref(false);
 
-// TODO: check create rule on empty db
   const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
   asserts.defined(tagsStates);
 
   watch(() => tagsStates.value.hasSelectedTags, () => {
     // This condition is needed to prevent immediate reset of the success message
     // right after the rule is created in createOrUpdateRule
-    if (hasSelectedTags.value) {
+    if (tagsStates.value.hasSelectedTags.value) {
       showSuccess.value = false;
     }
   });
