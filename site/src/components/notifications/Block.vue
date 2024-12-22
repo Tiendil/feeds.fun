@@ -33,13 +33,13 @@ import type {Ref} from "vue";
     );
   });
 
-// TODO: check on empty db
+
   const showCollectionsNotification = computed(() => {
     return (
       properties.collectionsNotification_ &&
       globalSettings.userSettings &&
       !globalSettings.userSettings.hide_message_about_adding_collections.value &&
-      !tagsStates.value.hasSelectedTags
+      !tagsStates?.value.hasSelectedTags
     );
   });
 
