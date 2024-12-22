@@ -35,8 +35,6 @@
 </template>
 
 <script lang="ts" setup>
-  // TODO: update rules visualization with excluded tags
-  // TODO: update rules filtering?
   import {computed, ref, onUnmounted, watch, provide} from "vue";
   import {useRouter} from "vue-router";
   import {computedAsync} from "@vueuse/core";
@@ -114,8 +112,8 @@
       if (globalSettings.rulesOrder === e.RulesOrder.Tags) {
         // TODO: move requiredTags.concat(a.excludedTags) to a class method
         return utils.compareLexicographically(
-          a.requiredTags.concat(a.excludedTags),
-          b.requiredTags.concat(a.excludedTags)
+          a.allTags,
+          b.allTags
         );
       }
 
@@ -123,7 +121,7 @@
       const valueB = _.get(b, orderField, null);
 
       if (valueA === null && valueB === null) {
-        return utils.compareLexicographically(a.requiredTags.concat(a.excludedTags), b.requiredTags.concat(b.excludedTags));
+        return utils.compareLexicographically(a.allTags, b.allTags);
       }
 
       if (valueA === null) {
@@ -142,7 +140,7 @@
         return -1 * direction;
       }
 
-      return utils.compareLexicographically(a.requiredTags.concat(a.excludedTags), b.requiredTags.concat(b.excludedTags));
+      return utils.compareLexicographically(a.allTags, b.allTags);
     });
 
     return sorted;
