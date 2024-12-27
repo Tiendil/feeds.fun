@@ -6,7 +6,7 @@ import typer
 from ffun.application.application import with_app
 from ffun.core import logging
 from ffun.domain.entities import CollectionId, FeedUrl, UnknownUrl
-from ffun.domain.urls import normalize_classic_unknown_url
+from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url
 from ffun.feeds_collections.collections import collections
 from ffun.loader.domain import extract_feed_info
 
@@ -46,7 +46,9 @@ async def run_entries_per_day_for_feed(raw_feed_url: str) -> None:
     async with with_app():
         feed_url = normalize_classic_unknown_url(UnknownUrl(raw_feed_url))
 
-        entries_per_day = await _estimate_entries_per_day(feed_url)
+        assert feed_url is not None
+
+        entries_per_day = await _estimate_entries_per_day(to_feed_url(feed_url))
 
         logger.info("estimated_entries_for_feed_in_day", feed_url=feed_url, entries_per_day=entries_per_day)
 
@@ -59,7 +61,7 @@ async def run_entries_per_day_for_collection(collection_id: uuid.UUID) -> None:
 
         urls = {feed_info.url for feed_info in collection.feeds}
 
-        total_entries_per_day = 0
+        total_entries_per_day = 0.0
 
         for url in urls:
             entries_per_day = await _estimate_entries_per_day(url)

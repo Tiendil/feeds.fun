@@ -92,7 +92,7 @@ async def detect_orphaned(feed_id: FeedId) -> bool:
 
 
 # TODO: tests
-async def extract_feed_info(feed_id: FeedId | None, feed_url: str) -> p_entities.FeedInfo | None:
+async def extract_feed_info(feed_id: FeedId | None, feed_url: FeedUrl) -> p_entities.FeedInfo | None:
     try:
         response = await load_content_with_proxies(feed_url)
         content = await operations.decode_content(response)
