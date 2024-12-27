@@ -10,12 +10,12 @@ from ffun.feeds_discoverer.domain import (
     _discover_check_parent_urls,
     _discover_create_soup,
     _discover_extract_feed_info,
+    _discover_extract_feeds_for_reddit,
     _discover_extract_feeds_from_anchors,
     _discover_extract_feeds_from_links,
     _discover_load_url,
     _discover_stop_recursion,
     _discoverers,
-    _discover_extract_feeds_for_reddit,
     discover,
 )
 from ffun.feeds_discoverer.entities import Context, Result, Status
@@ -433,8 +433,9 @@ class TestDiscoverExtractFeedsForReddit:
 
     @pytest.mark.asyncio
     async def test_not_reddit(self) -> None:
-        context = Context(raw_url=UnknownUrl("http://example.com/test"),
-                          url=str_to_feed_url("http://example.com/test"))
+        context = Context(
+            raw_url=UnknownUrl("http://example.com/test"), url=str_to_feed_url("http://example.com/test")
+        )
 
         new_context, result = await _discover_extract_feeds_for_reddit(context)
 
@@ -443,23 +444,29 @@ class TestDiscoverExtractFeedsForReddit:
 
     @pytest.mark.asyncio
     async def test_old_reditt(self) -> None:
-        context = Context(raw_url=UnknownUrl("https://old.reddit.com/r/feedsfun/"),
-                          url=str_to_feed_url("https://old.reddit.com/r/feedsfun/"))
+        context = Context(
+            raw_url=UnknownUrl("https://old.reddit.com/r/feedsfun/"),
+            url=str_to_feed_url("https://old.reddit.com/r/feedsfun/"),
+        )
 
         new_context, result = await _discover_extract_feeds_for_reddit(context)
 
         assert new_context == context
         assert result is None
 
-    @pytest.mark.parametrize("url,expected_url", [("https://www.reddit.com/r/feedsfun/", "https://www.reddit.com/r/feedsfun/.rss"),
-                                                  ("https://www.reddit.com/r/feedsfun/?sd=x", "https://www.reddit.com/r/feedsfun/.rss"),
-                                                  ("https://www.reddit.com/r/feedsfun", "https://www.reddit.com/r/feedsfun/.rss"),
-                                                  ("https://reddit.com/r/feedsfun/", "https://reddit.com/r/feedsfun/.rss"),
-                                                  ("https://reddit.com/r/feedsfun", "https://reddit.com/r/feedsfun/.rss"),])
+    @pytest.mark.parametrize(
+        "url,expected_url",
+        [
+            ("https://www.reddit.com/r/feedsfun/", "https://www.reddit.com/r/feedsfun/.rss"),
+            ("https://www.reddit.com/r/feedsfun/?sd=x", "https://www.reddit.com/r/feedsfun/.rss"),
+            ("https://www.reddit.com/r/feedsfun", "https://www.reddit.com/r/feedsfun/.rss"),
+            ("https://reddit.com/r/feedsfun/", "https://reddit.com/r/feedsfun/.rss"),
+            ("https://reddit.com/r/feedsfun", "https://reddit.com/r/feedsfun/.rss"),
+        ],
+    )
     @pytest.mark.asyncio
     async def test_new_reddit(self, url: str, expected_url: FeedUrl) -> None:
-        context = Context(raw_url=UnknownUrl(url),
-                          url=str_to_feed_url(url))
+        context = Context(raw_url=UnknownUrl(url), url=str_to_feed_url(url))
 
         new_context, result = await _discover_extract_feeds_for_reddit(context)
 

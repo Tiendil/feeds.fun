@@ -1,18 +1,18 @@
 import asyncio
+import re
 
 from bs4 import BeautifulSoup
-import re
 
 from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl, UnknownUrl
 from ffun.domain.urls import (
     adjust_classic_url,
+    construct_f_url,
     filter_out_duplicated_urls,
     get_parent_url,
     normalize_classic_unknown_url,
     to_feed_url,
     url_has_extension,
-    construct_f_url,
 )
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain
@@ -216,7 +216,6 @@ async def _discover_extract_feeds_for_reddit(context: Context) -> tuple[Context,
     f_url.query = None
 
     return context.replace(candidate_urls={str(f_url)}), None
-
 
 
 # Note: we do not add internal feed discoverer here (like db check: url -> uid -> feed_id), because
