@@ -37,7 +37,7 @@ def check_furl_error() -> Iterator[None]:
         raise
 
 
-def _construct_f_url(url: UnknownUrl | AbsoluteUrl | str) -> furl | None:
+def construct_f_url(url: UnknownUrl | AbsoluteUrl | str) -> furl | None:
     try:
         with check_furl_error():
             return furl(url)
@@ -63,7 +63,7 @@ def _fix_classic_url_to_absolute(url: str) -> AbsoluteUrl | None:
     if tldextract.extract(domain_part).suffix == "":
         return None
 
-    f_url = _construct_f_url(f"//{url}")
+    f_url = construct_f_url(f"//{url}")
 
     if f_url is None:
         return None
@@ -76,7 +76,7 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:
     url = UnknownUrl(url.strip())
 
     # check if url is parsable
-    f_url = _construct_f_url(url)
+    f_url = construct_f_url(url)
 
     if f_url is None:
         return None
@@ -145,7 +145,7 @@ def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl
 
 # ATTENTION: see note at the top of the file
 def adjust_classic_relative_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
-    f_url = _construct_f_url(original_url)
+    f_url = construct_f_url(original_url)
 
     if f_url is None:
         return None

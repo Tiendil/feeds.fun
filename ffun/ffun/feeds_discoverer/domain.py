@@ -1,4 +1,5 @@
 import asyncio
+import re
 
 from bs4 import BeautifulSoup
 
@@ -6,6 +7,7 @@ from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl, UnknownUrl
 from ffun.domain.urls import (
     adjust_classic_url,
+    construct_f_url,
     filter_out_duplicated_urls,
     get_parent_url,
     normalize_classic_unknown_url,
@@ -181,6 +183,41 @@ async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | 
     return context, None
 
 
+_RE_REDDIT_PATH_PREFIX = re.compile(r"^/r/[^/]+/?")
+
+
+async def _discover_extract_feeds_for_reddit(context: Context) -> tuple[Context, Result | None]:
+    """New Reddit site has no links to RSS feeds => we construct them."""
+    assert context.url is not None
+
+    f_url = construct_f_url(context.url)
+
+    assert f_url is not None
+
+    if f_url.host not in ("www.reddit.com", "reddit.com", "old.reddit.com"):
+        # We are not interested in not reddit.com domains
+        return context, None
+
+    if f_url.host == "old.reddit.com":
+        # Old Reddit site has marked RSS urls in the header
+        return context, None
+
+    match = _RE_REDDIT_PATH_PREFIX.match(str(f_url.path))
+
+    if match is None:
+        return context, None
+
+    base_path = match.group()
+
+    if not base_path.endswith("/"):
+        base_path += "/"
+
+    f_url.path = f"{base_path}.rss"
+    f_url.query = None
+
+    return context.replace(candidate_urls={str(f_url)}), None
+
+
 # Note: we do not add internal feed discoverer here (like db check: url -> uid -> feed_id), because
 #       - we do not expect significant performance improvement
 #       - internal feed data (news list) may be slightly outdated (not containing the latest news)
@@ -189,6 +226,8 @@ _discoverers = [
     _discover_load_url,
     _discover_extract_feed_info,
     _discover_stop_recursion,
+    _discover_extract_feeds_for_reddit,
+    _discover_check_candidate_links,
     _discover_create_soup,
     _discover_extract_feeds_from_links,
     _discover_check_candidate_links,
