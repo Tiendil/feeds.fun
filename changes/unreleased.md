@@ -14,3 +14,4 @@ Changes:
   - Openned news items now always show all tags.
   - Only a single news item now can be opened.
   - Performance of the News page improved 2-3 times.
+- ff-172 — Added feeds collection "Entrepreneurship & Startups"
