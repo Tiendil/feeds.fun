@@ -1,0 +1,84 @@
+id = "6936a868-9b26-4d7c-bc45-aefde06f1fa0"
+gui_order = 2
+name = "Entrepreneurship & Startups"
+description = "For those who are interested in entrepreneurship and startups."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/Entrepreneur/.rss"
+  title = ""
+  description = ""
+
+[[feeds]]
+  url = "https://www.reddit.com/r/startups/.rss"
+  title = ""
+  description = ""
+
+[[feeds]]
+  url = "https://www.reddit.com/r/EntrepreneurRideAlong/.rss"
+  title = ""
+  description = ""
+
+[[feeds]]
+  url = "https://www.reddit.com/r/advancedentrepreneur/.rss"
+  title = ""
+  description = ""
+
+[[feeds]]
+  url = "https://www.reddit.com/r/Entrepreneurs/.rss"
+  title = ""
+  description = ""
+
+[[feeds]]
+  url = "https://www.reddit.com/r/cofounder/.rss"
+  title = ""
+  description = ""
+
+[[feeds]]
+  url = "https://www.reddit.com/r/juststart/.rss"
+  title = ""
+  description = ""
+
+[[feeds]]
+  url = "https://www.reddit.com/r/sweatystartup/.rss"
+  title = ""
+  description = ""
+
+[[feeds]]
+  url = "https://www.reddit.com/r/Startup_Ideas/.rss"
+  title = ""
+  description = ""
+
+[[feeds]]
+  url = "https://www.reddit.com/r/Business_Ideas/.rss"
+  title = ""
+  description = ""
+
+[[feeds]]
+  url = "https://www.reddit.com/r/SideProject/.rss"
+  title = ""
+  description = ""
+
+[[feeds]]
+  url = "https://www.reddit.com/r/IndieDev/.rss"
+  title = ""
+  description = ""
+
+[[feeds]]
+  url = "https://www.reddit.com/r/kickstarter/.rss"
+  title = ""
+  description = ""
+
+[[feeds]]
+  url = "https://www.reddit.com/r/ycombinator/.rss"
+  title = ""
+  description = ""
+
+[[feeds]]
+  url = "https://www.reddit.com/r/whitecoatinvestor/.rss"
+  title = ""
+  description = ""
+
+[[feeds]]
+  url = "https://www.reddit.com/r/manufacturing/.rss"
+  title = ""
+  description = ""
