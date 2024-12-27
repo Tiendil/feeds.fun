@@ -1,0 +1,99 @@
+id = "6936a868-9b26-4d7c-bc45-aefde06f1fa0"
+gui_order = 2
+name = "Entrepreneurship & Startups"
+description = "For those who are interested in entrepreneurship and startups."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/Entrepreneur/.rss"
+  title = "r/Entrepreneur"
+  description = "Our community brings together individuals driven by a shared commitment to problem-solving, professional networking, and collaborative innovation, all with the goal of making a positive impact. We welcome a diverse range of pursuits, from side projects and small businesses to venture-backed startups and solo ventures. However, this is a space for genuine connection and exchange of ideas, not self-promotion. Please refrain from promoting personal blogs, consulting services, books, podcasts, MLMs."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/startups/.rss"
+  title = "r/startups"
+  description = "Welcome to /r/startups, the place to discuss startup problems and solutions. Startups are companies that are designed to grow and scale rapidly. Be sure to read and follow all of our rules--we have specific places for common content and requests."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/EntrepreneurRideAlong/.rss"
+  title = "r/EntrepreneurRideAlong"
+  description = "A community of like minded individuals that are looking to solve issues, network without spamming, talk about the growth of your business (Ride Along), challenges and high points and collab on projects together. Stay classy, no racism, humble and work hard. Catch Localcasestudy at Rohangilkes.com"
+
+[[feeds]]
+  url = "https://www.reddit.com/r/advancedentrepreneur/.rss"
+  title = "r/advancedentrepreneur"
+  description = "A community for established entrepreneurs to share tips, tricks, and fundamentals on growing your business to the next level."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/Entrepreneurs/.rss"
+  title = "r/Entrepreneurs"
+  description = "Subreddit r/Entrepreneurs"
+
+[[feeds]]
+  url = "https://www.reddit.com/r/cofounder/.rss"
+  title = "r/cofounder"
+  description = "Find Your Co-Founder Here"
+
+[[feeds]]
+  url = "https://www.reddit.com/r/sweatystartup/.rss"
+  title = "r/sweatystartup"
+  description = "A hub for entrepreneurs of regular old fashioned businesses."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/Startup_Ideas/.rss"
+  title = "r/Startup_Ideas"
+  description = "This subreddit is for sharing innovative startup ideas. Links and discussion about startups and descriptions of startups are welcome! Share ideas. Improve ideas. Expand upon other ideas. Combine ideas. Implement ideas."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/Business_Ideas/.rss"
+  title = "r/Business_Ideas"
+  description = "Share and explore innovative business ideas, gain insights on initiating your venture, unravel the intricacies of 'Cost of Sale' (CoS), and decode the essentials of taxation – your nexus for entrepreneurial minds seeking to transform concepts into successful ventures."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/SideProject/.rss"
+  title = "r/SideProject"
+  description = "r/SideProject is a subreddit for sharing and receiving constructive feedback on side projects."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/IndieDev/.rss"
+  title = "r/IndieDev"
+  description = "This is the place for indie devs and gamers to share anything, be it game development, their favorite games or just cool images, GIFs and music from an indie game in a casual community-run environment. If you're an indie gamer, this place welcomes you too! After all, every gamer is a potential indie developer!"
+
+[[feeds]]
+  url = "https://www.reddit.com/r/kickstarter/.rss"
+  title = "r/kickstarter"
+  description = "At /r/Kickstarter we aim to promote a healthy space for project creators and backers to talk. Please check out our self-promotion sticky before posting your project."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/ycombinator/.rss"
+  title = "r/ycombinator"
+  description = "News and discussion around Y Combinator and Y Combinator companies. In 2005, Y Combinator created a new model for funding early stage startups. We invest $500,000 in every startup and work intensively with the founders for three months. For the life of their company, founders have access to the most powerful community in the world, essential advice, later-stage funding and programs, recruiting resources, and exclusive deals."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/manufacturing/.rss"
+  title = "r/manufacturing"
+  description = "A subreddit for anyone in the manufacturing industry. Content is very diverse: you'll find videos, articles and self posts just to name a few."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/artbusiness/.rss"
+  title = "r/artbusiness"
+  description = "r/artbusiness is a place to discuss everything related to the business side of art: from dealing with clients and contracts to marketing, social media and merch production. Please use the dedicated megathreads if you wish to share your business or ask about pricing your work. Join our Discord server to chat with members in real-time. Sister subreddit to r/ArtistLounge where you can discuss general art technique, life as an artist and art culture."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/SaaS/.rss"
+  title = "r/SaaS"
+  description = "Discussions and useful links for SaaS owners, online business owners, and more."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/GrowthHacking/.rss"
+  title = "r/GrowthHacking"
+  description = "Growth Hacking Reddit Community. A place for Growth Hacking practitioners and professionals to discuss and debate Growth Marketing. Share novel marketing experiments, new tools and startup growth marketing stories."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/Automate/.rss"
+  title = "r/Automate"
+  description = "A place for the discussion of automation, additive manufacturing, robotics, AI, and all the other tools we've created to enable a global paradise free of menial labor. All can share in our achievements in a world where food is produced, water is purified, and housing is constructed by machines."
+
+[[feeds]]
+  url = "https://www.reddit.com/r/ProductManagement/.rss"
+  title = "r/ProductManagement"
+  description = "Subreddit about Product Management"

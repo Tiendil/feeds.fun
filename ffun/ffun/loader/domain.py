@@ -92,17 +92,20 @@ async def detect_orphaned(feed_id: FeedId) -> bool:
 
 
 # TODO: tests
-async def extract_feed_info(feed: Feed) -> p_entities.FeedInfo | None:
+async def extract_feed_info(feed_id: FeedId | None, feed_url: FeedUrl) -> p_entities.FeedInfo | None:
     try:
-        response = await load_content_with_proxies(feed.url)
+        response = await load_content_with_proxies(feed_url)
         content = await operations.decode_content(response)
-        feed_info = await operations.parse_content(content, original_url=feed.url)
+        feed_info = await operations.parse_content(content, original_url=feed_url)
     except errors.AllProxiesSuspended:
         logger.info("all_proxies_suspended")
         return None
     except errors.LoadError as e:
         logger.info("feed_load_error", error_code=e.feed_error_code)
-        await f_domain.mark_feed_as_failed(feed.id, state=FeedState.damaged, error=e.feed_error_code)
+
+        if feed_id is not None:
+            await f_domain.mark_feed_as_failed(feed_id, state=FeedState.damaged, error=e.feed_error_code)
+
         return None
 
     logger.info("feed_loaded", entries_number=len(feed_info.entries))
@@ -152,7 +155,7 @@ async def process_feed(feed: Feed) -> None:
     if await detect_orphaned(feed.id):
         return
 
-    feed_info = await extract_feed_info(feed)
+    feed_info = await extract_feed_info(feed_id=feed.id, feed_url=feed.url)
 
     if feed_info is None:
         return
