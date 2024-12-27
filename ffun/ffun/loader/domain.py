@@ -155,7 +155,7 @@ async def process_feed(feed: Feed) -> None:
     if await detect_orphaned(feed.id):
         return
 
-    feed_info = await extract_feed_info(feed.id, feed.url)
+    feed_info = await extract_feed_info(feed_id=feed.id, feed_url=feed.url)
 
     if feed_info is None:
         return

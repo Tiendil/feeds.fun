@@ -215,7 +215,7 @@ class TestProcessFeed:
 
         await process_feed(feed=saved_feed)
 
-        extract_feed_info.assert_called_once_with(saved_feed)
+        extract_feed_info.assert_called_once_with(feed_id=saved_feed.id, feed_url=saved_feed.url)
 
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=1)
 
@@ -248,7 +248,7 @@ class TestProcessFeed:
 
         assert_logs(logs, feed_has_no_entries_tail=1, feed_entries_tail_removed=0)
 
-        extract_feed_info.assert_called_once_with(saved_feed)
+        extract_feed_info.assert_called_once_with(feed_id=saved_feed.id, feed_url=saved_feed.url)
 
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 
