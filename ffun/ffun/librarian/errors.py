@@ -9,6 +9,10 @@ class SkipEntryProcessing(Error):
     pass
 
 
+class TemporaryErrorInProcessor(Error):
+    pass
+
+
 class CanNotSaveUnexistingPointer(Error):
     pass
 

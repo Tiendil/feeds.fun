@@ -5,6 +5,7 @@ from ffun.librarian import errors
 from ffun.librarian.entities import TagsExtractor, TextCleaner
 from ffun.librarian.processors import base
 from ffun.library.entities import Entry
+from ffun.llms_framework import errors as llmsf_errors
 from ffun.llms_framework.domain import call_llm, search_for_api_key
 from ffun.llms_framework.entities import (
     ChatResponse,
@@ -70,9 +71,12 @@ class Processor(base.Processor):
         if api_key_usage is None:
             raise errors.SkipEntryProcessing(message="no api key found")
 
-        responses = await call_llm(
-            llm=self.llm_provider, llm_config=self.llm_config, api_key_usage=api_key_usage, requests=requests
-        )
+        try:
+            responses = await call_llm(
+                llm=self.llm_provider, llm_config=self.llm_config, api_key_usage=api_key_usage, requests=requests
+            )
+        except llmsf_errors.TemporaryError as e:
+            raise errors.TemporaryErrorInProcessor(message=str(e)) from e
 
         return self.extract_tags(responses)
 

@@ -72,3 +72,15 @@ class TestProcessor:
         tags.sort(key=lambda x: x.raw_uid)
 
         assert tags == [ProcessorTag(raw_uid="tag-1"), ProcessorTag(raw_uid="tag-2"), ProcessorTag(raw_uid="tag-3")]
+
+    @pytest.mark.asyncio
+    async def test_process__temporary_error_processing(
+        self, llm_processor: Processor, cataloged_entry: Entry, fake_llm_api_key: LLMApiKey
+    ) -> None:
+
+        entry = cataloged_entry.replace(title="@tag-1 @tag-2", body="raise TemporaryError")
+
+        llm_processor.general_api_key = LLMGeneralApiKey(fake_llm_api_key)
+
+        with pytest.raises(errors.TemporaryErrorInProcessor):
+            await llm_processor.process(entry)

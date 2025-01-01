@@ -13,7 +13,12 @@ from ffun.librarian.domain import (
     push_entries_and_move_pointer,
 )
 from ffun.librarian.entities import ProcessorPointer
-from ffun.librarian.processors.base import AlwaysConstantProcessor, AlwaysErrorProcessor, AlwaysSkipEntryProcessor
+from ffun.librarian.processors.base import (
+    AlwaysConstantProcessor,
+    AlwaysErrorProcessor,
+    AlwaysSkipEntryProcessor,
+    AlwaysTemporaryErrorProcessor,
+)
 from ffun.librarian.tests import helpers, make
 from ffun.library.entities import Entry
 from ffun.library.tests import make as l_make
@@ -230,7 +235,13 @@ class TestProcessEntry:
                 entry=cataloged_entry,
             )
 
-        assert_logs(logs, processor_successed=0, processor_requested_to_skip_entry=1, entry_processed=1)
+        assert_logs(
+            logs,
+            processor_successed=0,
+            processor_requested_to_skip_entry=1,
+            entry_processed=1,
+            processor_temporary_error=0,
+        )
 
         tags = await o_domain.get_tags_ids_for_entries([cataloged_entry.id])
 
@@ -242,6 +253,42 @@ class TestProcessEntry:
 
         failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
         assert cataloged_entry.id not in failed_entry_ids
+
+    @pytest.mark.asyncio
+    async def test_temporary_error_in_processor(
+        self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry
+    ) -> None:
+        await operations.clear_processor_queue(fake_processor_id)
+
+        await operations.push_entries_to_processor_queue(
+            execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
+        )
+
+        with capture_logs() as logs:
+            await process_entry(
+                processor_id=fake_processor_id,
+                processor=AlwaysTemporaryErrorProcessor(name="fake-processor"),
+                entry=cataloged_entry,
+            )
+
+        assert_logs(
+            logs,
+            processor_successed=0,
+            processor_requested_to_skip_entry=0,
+            entry_processed=1,
+            processor_temporary_error=1,
+        )
+
+        tags = await o_domain.get_tags_ids_for_entries([cataloged_entry.id])
+
+        assert cataloged_entry.id not in tags
+
+        entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, limit=100500)
+
+        assert set(entries_in_queue) == {another_cataloged_entry.id}
+
+        failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
+        assert cataloged_entry.id in failed_entry_ids
 
     @pytest.mark.asyncio
     async def test_unexpected_error(
@@ -261,7 +308,13 @@ class TestProcessEntry:
                     entry=cataloged_entry,
                 )
 
-        assert_logs(logs, processor_successed=0, processor_requested_to_skip_entry=0, entry_processed=0)
+        assert_logs(
+            logs,
+            processor_successed=0,
+            processor_requested_to_skip_entry=0,
+            entry_processed=0,
+            processor_temporary_error=0,
+        )
 
         tags = await o_domain.get_tags_ids_for_entries([cataloged_entry.id])
 
