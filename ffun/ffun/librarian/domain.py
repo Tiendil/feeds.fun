@@ -85,6 +85,12 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
     except errors.SkipEntryProcessing as e:
         # do nothing in such case, see: https://github.com/Tiendil/feeds.fun/issues/176
         logger.warning("processor_requested_to_skip_entry", error_info=str(e))
+    except errors.TemporaryErrorInProcessor as e:
+        # log the error and move the entry to the failed storage
+        # Note: it is a general plug, for some custome cases we may want to add custom processing
+        # Note: currently, there are no logic to process failed storage, entries will just accumulate there
+        logger.info("processor_temporary_error", error_info=str(e))
+        await operations.add_entries_to_failed_storage(processor_id, [entry.id])
     except Exception as e:
         logger.exception("processor_failed")
         await operations.add_entries_to_failed_storage(processor_id, [entry.id])
