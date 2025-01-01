@@ -83,10 +83,10 @@ class GoogleInterface(ProviderInterface):
             with track_key_status(api_key, self.api_keys_statuses):
                 answer = await client.generate_content(model=config.model, request=request, config=generation_config)
 
-        except Exception as e:
-            # temporary track all errors here till we do not implement good enough processing of them
-            logger.exception("google_api_error")
-            raise llmsf_errors.TemporaryError(message=str(e)) from e
+        except errors.ClientError as e:
+            message = str(e)
+            logger.info("google_api_error", message=message)
+            raise llmsf_errors.TemporaryError(message=message) from e
 
         logger.info("google_response")
 
