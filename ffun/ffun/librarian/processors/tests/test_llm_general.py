@@ -1,6 +1,5 @@
 import pytest
 
-from pytest_mock import MockerFixture
 from ffun.librarian import errors
 from ffun.librarian.processors.llm_general import Processor
 from ffun.librarian.tag_extractors import dog_tags_extractor
@@ -76,10 +75,10 @@ class TestProcessor:
 
     @pytest.mark.asyncio
     async def test_process__temporary_error_processing(
-            self, llm_processor: Processor, cataloged_entry: Entry, fake_llm_api_key: LLMApiKey
+        self, llm_processor: Processor, cataloged_entry: Entry, fake_llm_api_key: LLMApiKey
     ) -> None:
 
-        entry = cataloged_entry.replace(title="@tag-1 @tag-2", body='raise TemporaryError')
+        entry = cataloged_entry.replace(title="@tag-1 @tag-2", body="raise TemporaryError")
 
         llm_processor.general_api_key = LLMGeneralApiKey(fake_llm_api_key)
 

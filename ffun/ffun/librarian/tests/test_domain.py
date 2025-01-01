@@ -13,7 +13,12 @@ from ffun.librarian.domain import (
     push_entries_and_move_pointer,
 )
 from ffun.librarian.entities import ProcessorPointer
-from ffun.librarian.processors.base import AlwaysConstantProcessor, AlwaysErrorProcessor, AlwaysSkipEntryProcessor, AlwaysTemporaryErrorProcessor
+from ffun.librarian.processors.base import (
+    AlwaysConstantProcessor,
+    AlwaysErrorProcessor,
+    AlwaysSkipEntryProcessor,
+    AlwaysTemporaryErrorProcessor,
+)
 from ffun.librarian.tests import helpers, make
 from ffun.library.entities import Entry
 from ffun.library.tests import make as l_make
@@ -230,7 +235,13 @@ class TestProcessEntry:
                 entry=cataloged_entry,
             )
 
-        assert_logs(logs, processor_successed=0, processor_requested_to_skip_entry=1, entry_processed=1, processor_temporary_error=0)
+        assert_logs(
+            logs,
+            processor_successed=0,
+            processor_requested_to_skip_entry=1,
+            entry_processed=1,
+            processor_temporary_error=0,
+        )
 
         tags = await o_domain.get_tags_ids_for_entries([cataloged_entry.id])
 
@@ -260,7 +271,13 @@ class TestProcessEntry:
                 entry=cataloged_entry,
             )
 
-        assert_logs(logs, processor_successed=0, processor_requested_to_skip_entry=0, entry_processed=1, processor_temporary_error=1)
+        assert_logs(
+            logs,
+            processor_successed=0,
+            processor_requested_to_skip_entry=0,
+            entry_processed=1,
+            processor_temporary_error=1,
+        )
 
         tags = await o_domain.get_tags_ids_for_entries([cataloged_entry.id])
 
@@ -291,7 +308,13 @@ class TestProcessEntry:
                     entry=cataloged_entry,
                 )
 
-        assert_logs(logs, processor_successed=0, processor_requested_to_skip_entry=0, entry_processed=0, processor_temporary_error=0)
+        assert_logs(
+            logs,
+            processor_successed=0,
+            processor_requested_to_skip_entry=0,
+            entry_processed=0,
+            processor_temporary_error=0,
+        )
 
         tags = await o_domain.get_tags_ids_for_entries([cataloged_entry.id])
 

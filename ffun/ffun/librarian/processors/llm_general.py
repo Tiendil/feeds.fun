@@ -5,8 +5,8 @@ from ffun.librarian import errors
 from ffun.librarian.entities import TagsExtractor, TextCleaner
 from ffun.librarian.processors import base
 from ffun.library.entities import Entry
-from ffun.llms_framework.domain import call_llm, search_for_api_key
 from ffun.llms_framework import errors as llmsf_errors
+from ffun.llms_framework.domain import call_llm, search_for_api_key
 from ffun.llms_framework.entities import (
     ChatResponse,
     LLMCollectionApiKey,
