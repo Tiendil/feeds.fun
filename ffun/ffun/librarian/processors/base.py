@@ -46,3 +46,8 @@ class AlwaysErrorProcessor(Processor):
 
     async def process(self, entry: Entry) -> list[ProcessorTag]:
         raise self.CustomError()
+
+
+class AlwaysTemporaryErrorProcessor(Processor):
+    async def process(self, entry: Entry) -> list[ProcessorTag]:
+        raise errors.TemporaryErrorInProcessor()
