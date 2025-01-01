@@ -97,8 +97,9 @@ class OpenAIInterface(ProviderInterface):
                     messages=request.messages,
                 )
         except openai.APIError as e:
-            logger.info("openai_api_error", message=str(e))
-            raise llmsf_errors.TemporaryError(message=str(e)) from e
+            message = str(e)
+            logger.info("openai_api_error", message=message)
+            raise llmsf_errors.TemporaryError(message=message) from e
 
         logger.info("openai_response")
 
