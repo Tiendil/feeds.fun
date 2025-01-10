@@ -8,7 +8,7 @@
       :collections-notification_="false"
       :collections-warning_="true" />
 
-    <h2>Lood feeds from an OPML file</h2>
+    <h2>Load feeds from an OPML file</h2>
 
     <div class="ffun-info-good">
       <p>
