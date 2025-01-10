@@ -41,6 +41,8 @@ async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None
 async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
     assert context.url is not None
 
+    logger.info("discovering_loading_content", url=context.url)
+
     try:
         response = await lo_domain.load_content_with_proxies(context.url)
         content = await lo_domain.decode_content(response)
