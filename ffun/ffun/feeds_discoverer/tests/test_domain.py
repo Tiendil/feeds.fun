@@ -462,6 +462,7 @@ class TestDiscoverExtractFeedsForReddit:
             ("https://www.reddit.com/r/feedsfun", "https://www.reddit.com/r/feedsfun/.rss"),
             ("https://reddit.com/r/feedsfun/", "https://reddit.com/r/feedsfun/.rss"),
             ("https://reddit.com/r/feedsfun", "https://reddit.com/r/feedsfun/.rss"),
+            ("https://www.reddit.com/r/feedsfun/comments/1ho4k84/version_116_released_meet_enhanced_rules_creation/", "https://www.reddit.com/r/feedsfun/.rss"),
         ],
     )
     @pytest.mark.asyncio
@@ -471,6 +472,18 @@ class TestDiscoverExtractFeedsForReddit:
         new_context, result = await _discover_extract_feeds_for_reddit(context)
 
         assert new_context == context.replace(candidate_urls={expected_url})
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_already_reddit_rss_url(self) -> None:
+        context = Context(
+            raw_url=UnknownUrl("https://www.reddit.com/r/feedsfun/.rss"),
+            url=str_to_feed_url("https://www.reddit.com/r/feedsfun/.rss"),
+        )
+
+        new_context, result = await _discover_extract_feeds_for_reddit(context)
+
+        assert new_context == context
         assert result is None
 
 
