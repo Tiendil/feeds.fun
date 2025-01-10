@@ -60,6 +60,8 @@ async def load_content_with_proxies(url: FeedUrl) -> httpx.Response:  # noqa: CC
     #
     # TODO: build a separate system of choosing protocol for the url with caching and periodic checks
     for protocol in ("https", "http"):
+        logger.info("try_protocol", protocol=protocol)
+
         url_object.scheme = protocol
 
         for proxy in settings.proxies:
@@ -76,6 +78,10 @@ async def load_content_with_proxies(url: FeedUrl) -> httpx.Response:  # noqa: CC
 
                 if first_exception is None:
                     first_exception = e
+
+        logger.info("all_proxies_failed", protocol=protocol)
+
+    logger.info("all_protocols_failed")
 
     # in case of error raise the first exception occurred
     # because we should use the most common proxy first
