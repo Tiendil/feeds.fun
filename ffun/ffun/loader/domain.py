@@ -63,6 +63,8 @@ async def load_content_with_proxies(url: FeedUrl) -> httpx.Response:  # noqa: CC
         url_object.scheme = protocol
 
         for proxy in settings.proxies:
+            logger.info("try_proxy", proxy=proxy.name)
+
             if proxy_states[proxy.name] == ProxyState.suspended:
                 logger.info("skip_suspended_proxy", proxy=proxy.name)
                 continue
@@ -70,6 +72,8 @@ async def load_content_with_proxies(url: FeedUrl) -> httpx.Response:  # noqa: CC
             try:
                 return await operations.load_content(AbsoluteUrl(str(url_object)), proxy, _user_agent)
             except Exception as e:
+                logger.info("proxy_error", proxy=proxy.name, error=e)
+
                 if first_exception is None:
                     first_exception = e
 
