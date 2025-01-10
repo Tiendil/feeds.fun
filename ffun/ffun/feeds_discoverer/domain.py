@@ -167,7 +167,7 @@ async def _discover_check_parent_urls(context: Context) -> tuple[Context, Result
 
 async def _discover_check_candidate_links(context: Context) -> tuple[Context, Result | None]:  # noqa: CCR001
 
-    logger.info("discovering_checking_candidate_links", candidate_links=context.candidate_urls)
+    logger.info("discovering_checking_links", candidate_links=context.candidate_urls)
 
     filtered_links = filter_out_duplicated_urls(context.candidate_urls)
 
@@ -186,10 +186,10 @@ async def _discover_check_candidate_links(context: Context) -> tuple[Context, Re
     feeds.sort(key=lambda feed_info: feed_info.title)
 
     if not feeds:
-        logger.info("discovering_no_feeds_found")
+        logger.info("discovering_checking_links_no_feeds_found")
         return context.replace(candidate_urls=set()), None
 
-    logger.info("discovering_feeds_found", result_links=[feed_info.url for feed_info in feeds])
+    logger.info("discovering_checking_links_feeds_found", result_links=[feed_info.url for feed_info in feeds])
 
     return context.replace(candidate_urls=set()), Result(feeds=feeds, status=Status.feeds_found)
 
@@ -214,7 +214,7 @@ async def _discover_extract_feeds_for_reddit(context: Context) -> tuple[Context,
     """New Reddit site has no links to RSS feeds => we construct them."""
     assert context.url is not None
 
-    logger.info("discovering_extracting_feeds_for_reddit", url=context.url)
+    logger.info("discovering_reddit_extracting_feeds", url=context.url)
 
     f_url = construct_f_url(context.url)
 
@@ -222,18 +222,18 @@ async def _discover_extract_feeds_for_reddit(context: Context) -> tuple[Context,
 
     if f_url.host not in ("www.reddit.com", "reddit.com", "old.reddit.com"):
         # We are not interested in not reddit.com domains
-        logger.info("discovering_not_reddit_domain")
+        logger.info("discovering_reddit_not_reddit_domain")
         return context, None
 
     if f_url.host == "old.reddit.com":
         # Old Reddit site has marked RSS urls in the header
-        logger.info("discovering_old_reddit_domain")
+        logger.info("discovering_reddit_old_reddit_domain")
         return context, None
 
     match = _RE_REDDIT_PATH_PREFIX.match(str(f_url.path))
 
     if match is None:
-        logger.info("discovering_not_reddit_path")
+        logger.info("discovering_reddit_not_reddit_path")
         return context, None
 
     base_path = match.group()
@@ -243,6 +243,11 @@ async def _discover_extract_feeds_for_reddit(context: Context) -> tuple[Context,
 
     f_url.path = f"{base_path}.rss"
     f_url.query = None
+
+    # this check is required to stop recursion on _discover_check_candidate_links
+    if str(f_url) == context.url:
+        logger.info("discovering_reddit_same_url")
+        return context, None
 
     logger.info("discovering_reddit_feed", feed_url=f_url)
 
@@ -254,11 +259,18 @@ async def _discover_extract_feeds_for_reddit(context: Context) -> tuple[Context,
 #       - internal feed data (news list) may be slightly outdated (not containing the latest news)
 _discoverers = [
     _discover_adjust_url,
+
+    # This Reddit urls hack MUST go before loading url
+    # because Reddit blocks access to the non-rss urls for bots
+    #
+    # TODO: Should we simulate browser behavior?
+    #       Better not to, but it may be the only way to get the page data.
+    _discover_extract_feeds_for_reddit,
+    _discover_check_candidate_links,
+
     _discover_load_url,
     _discover_extract_feed_info,
     _discover_stop_recursion,
-    _discover_extract_feeds_for_reddit,
-    _discover_check_candidate_links,
     _discover_create_soup,
     _discover_extract_feeds_from_links,
     _discover_check_candidate_links,

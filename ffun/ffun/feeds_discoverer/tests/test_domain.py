@@ -477,11 +477,13 @@ class TestDiscoverExtractFeedsForReddit:
 def test_discoverers_list_not_changed() -> None:
     assert _discoverers == [
         _discover_adjust_url,
+
+        _discover_extract_feeds_for_reddit,
+        _discover_check_candidate_links,
+
         _discover_load_url,
         _discover_extract_feed_info,
         _discover_stop_recursion,
-        _discover_extract_feeds_for_reddit,
-        _discover_check_candidate_links,
         _discover_create_soup,
         _discover_extract_feeds_from_links,
         _discover_check_candidate_links,
