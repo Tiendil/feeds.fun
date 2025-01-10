@@ -462,7 +462,10 @@ class TestDiscoverExtractFeedsForReddit:
             ("https://www.reddit.com/r/feedsfun", "https://www.reddit.com/r/feedsfun/.rss"),
             ("https://reddit.com/r/feedsfun/", "https://reddit.com/r/feedsfun/.rss"),
             ("https://reddit.com/r/feedsfun", "https://reddit.com/r/feedsfun/.rss"),
-            ("https://www.reddit.com/r/feedsfun/comments/1ho4k84/version_116_released_meet_enhanced_rules_creation/", "https://www.reddit.com/r/feedsfun/.rss"),
+            (
+                "https://www.reddit.com/r/feedsfun/comments/1ho4k84/version_116_released_meet_enhanced_rules_creation/",  # noqa
+                "https://www.reddit.com/r/feedsfun/.rss",
+            ),
         ],
     )
     @pytest.mark.asyncio
@@ -490,10 +493,8 @@ class TestDiscoverExtractFeedsForReddit:
 def test_discoverers_list_not_changed() -> None:
     assert _discoverers == [
         _discover_adjust_url,
-
         _discover_extract_feeds_for_reddit,
         _discover_check_candidate_links,
-
         _discover_load_url,
         _discover_extract_feed_info,
         _discover_stop_recursion,

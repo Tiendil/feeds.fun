@@ -259,7 +259,6 @@ async def _discover_extract_feeds_for_reddit(context: Context) -> tuple[Context,
 #       - internal feed data (news list) may be slightly outdated (not containing the latest news)
 _discoverers = [
     _discover_adjust_url,
-
     # This Reddit urls hack MUST go before loading url
     # because Reddit blocks access to the non-rss urls for bots
     #
@@ -267,7 +266,6 @@ _discoverers = [
     #       Better not to, but it may be the only way to get the page data.
     _discover_extract_feeds_for_reddit,
     _discover_check_candidate_links,
-
     _discover_load_url,
     _discover_extract_feed_info,
     _discover_stop_recursion,
