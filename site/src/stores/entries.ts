@@ -82,11 +82,14 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   requestedEntriesTimer.start();
 
   async function setMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
-    await api.setMarker({entryId: entryId, marker: marker});
-
+    // This code must be before the actual API request
+    // to guarantee smooth UI transition to the new state
+    // otherwise the UI will be updated two times which leads to flickering
     if (entryId in entries.value) {
       entries.value[entryId].setMarker(marker);
     }
+
+    await api.setMarker({entryId: entryId, marker: marker});
   }
 
   async function removeMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
