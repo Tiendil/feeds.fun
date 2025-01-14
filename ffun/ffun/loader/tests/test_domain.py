@@ -315,10 +315,13 @@ class TestCheckProxiesAvailability:
         proxies = [Proxy(name=uuid.uuid4().hex, url=None) for _ in range(n)]
 
         mocker.patch("ffun.loader.settings.settings.proxies", proxies)
+        mocker.patch("ffun.loader.domain._user_agent", "test user agent")
 
         is_proxy_available = mocker.patch("ffun.loader.operations.is_proxy_available")
 
         await check_proxies_availability()
 
         for proxy in proxies:
-            is_proxy_available.assert_any_call(proxy=proxy, anchors=settings.proxy_anchors, user_agent="unknown")
+            is_proxy_available.assert_any_call(
+                proxy=proxy, anchors=settings.proxy_anchors, user_agent="test user agent"
+            )

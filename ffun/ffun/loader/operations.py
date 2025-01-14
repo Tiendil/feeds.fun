@@ -27,7 +27,7 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
 ) -> httpx.Response:
     error_code = FeedError.network_unknown
 
-    log = logger.bind(url=url, proxy=proxy.name, function="load_content")
+    log = logger.bind(url=url, proxy=proxy.name, function="load_content", user_agent=user_agent)
 
     try:
         log.info("loading_feed")
