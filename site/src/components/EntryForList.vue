@@ -172,7 +172,17 @@
         await entriesStore.displayEntry({entryId: entry.value.id});
 
         if (topElement.value) {
-          // topElement.value.scrollIntoView({behavior: "instant"});
+          const rect = topElement.value.getBoundingClientRect();
+
+          const isVisible =
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth);
+
+          if (!isVisible) {
+            topElement.value.scrollIntoView({behavior: "instant"});
+          }
         }
       }
     } else {
