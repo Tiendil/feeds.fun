@@ -33,8 +33,9 @@ My variants are (can be combined):
 Additional possible logic:
 
 - Soft/hard read state with different behaviour. Soft read is turned automatically, hard read is turned manually by user or by timer after soft read. Soft read news are always shown in the list, hard read news are hidden by default.
+- More "classical/enterprise" way of working with news. Allow select/deselct them and introduce operations for selected news items (mark as read, hide, etc).
 
-# How/when to hide/show read news.
+# How/when to hide/show read news
 
 My variants are:
 
@@ -60,10 +61,12 @@ My variants are:
 
 # Your task
 
-Based on the information I provided, propose alternative ways to solve the "critical problem"
+Based on the information I provided, propose more variants for "How/when to hide/show read news"
 
 --------
 
 Reformulate/formalize initial "critial problem" to allow seeking for a creative or non-standard solution.
 
 Based on the information I provided, propose alternative ways to solve the "critical problem"
+
+Based on the information I provided, propose more variants for "How/when to mark news as read"
