@@ -1,6 +1,6 @@
 <template>
   <div
-    class="inline-block cursor-pointer font-semibold text-purple-700"
+    class="inline-block cursor-pointer text-purple-700"
     @click.prevent="onClick()">
     {{ value }}
   </div>

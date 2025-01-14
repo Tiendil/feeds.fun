@@ -3,18 +3,20 @@
     <template v-if="hasMarker">
       <a
         href="#"
-        class="marked"
         @click.prevent="unmark()"
-        >{{ onText }}</a
+        >
+        <slot name="marked" />
+      </a
       >
     </template>
 
     <template v-else>
       <a
         href="#"
-        class="unmarked"
         @click.prevent="mark()"
-        >{{ offText }}</a
+        >
+        <slot name="unmarked" />
+        </a
       >
     </template>
   </div>
@@ -32,8 +34,6 @@
   const properties = defineProps<{
     marker: e.Marker;
     entryId: t.EntryId;
-    onText: string;
-    offText: string;
   }>();
 
   const hasMarker = computed(() => {
@@ -66,11 +66,4 @@ async function unmark() {
 </script>
 
 <style scoped>
-  .marked {
-    @apply text-green-700 no-underline;
-  }
-
-  .unmarked {
-    @apply text-orange-700 font-bold no-underline;
-  }
 </style>

@@ -2,7 +2,32 @@
   <div
     ref="entryTop"
     class="flex text-lg">
-    <div class="flex-shrink-0 w-8 text-right pr-1">
+
+    <div v-if="isRead" class="w-8">
+    </div>
+
+    <div class="flex-shrink-0 text-right">
+      <input-marker
+        class="w-7 mr-2"
+        :marker="e.Marker.Read"
+        :entry-id="entryId">
+
+        <template v-slot:marked>
+          <span class="text-green-700 no-underline">
+            <i class="ti ti-chevrons-left"/>
+          </span>
+        </template>
+
+        <template v-slot:unmarked>
+          <span class="text-orange-700 no-underline">
+            <i class="ti ti-chevrons-right"/>
+          </span>
+        </template>
+
+      </input-marker>
+    </div>
+
+    <div class="flex-shrink-0 w-8 text-center pr-1 ">
       <value-score
         :value="entry.score"
         :entry-id="entry.id" />
@@ -12,15 +37,6 @@
       <favicon-element
         :url="entry.url"
         class="w-5 h-5 align-text-bottom mx-1 inline" />
-    </div>
-
-    <div class="flex-shrink-0 text-right">
-      <input-marker
-        class="w-7 mr-2"
-        :marker="e.Marker.Read"
-        :entry-id="entryId"
-        on-text="read"
-        off-text="new" />
     </div>
 
     <div class="flex-grow">
@@ -156,7 +172,7 @@
         await entriesStore.displayEntry({entryId: entry.value.id});
 
         if (topElement.value) {
-          topElement.value.scrollIntoView({behavior: "instant"});
+          // topElement.value.scrollIntoView({behavior: "instant"});
         }
       }
     } else {
