@@ -13,13 +13,13 @@
         :entry-id="entryId">
 
         <template v-slot:marked>
-          <span class="text-green-700 no-underline">
+          <span class="text-green-700 no-underline" title="Mark as unread">
             <i class="ti ti-chevrons-left"/>
           </span>
         </template>
 
         <template v-slot:unmarked>
-          <span class="text-orange-700 no-underline">
+          <span class="text-orange-700 no-underline" title="Mark as read">
             <i class="ti ti-chevrons-right"/>
           </span>
         </template>
@@ -89,7 +89,7 @@
 
 <script lang="ts" setup>
   import _ from "lodash";
-  import {computed, ref, useTemplateRef} from "vue";
+  import {computed, ref, useTemplateRef, onMounted} from "vue";
   import type * as t from "@/logic/types";
   import * as events from "@/logic/events";
   import * as e from "@/logic/enums";
@@ -179,4 +179,9 @@
       await newsLinkOpenedEvent();
     }
   }
+
+onMounted(() => {
+  entriesStore.requestFullEntry({entryId: properties.entryId});
+});
+
 </script>
