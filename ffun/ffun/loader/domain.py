@@ -28,7 +28,7 @@ parse_content = operations.parse_content
 # TODO: tests
 def initialize(user_agent: str) -> None:
     global _user_agent
-
+    logger.info("initialize_loader", user_agent=user_agent)
     _user_agent = user_agent
 
 
