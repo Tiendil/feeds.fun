@@ -23,7 +23,7 @@
 <script lang="ts" setup>
   import {computed, ref} from "vue";
   import * as api from "@/logic/api";
-  import type * as e from "@/logic/enums";
+  import * as e from "@/logic/enums";
   import type * as t from "@/logic/types";
   import {useEntriesStore} from "@/stores/entries";
 
@@ -40,14 +40,24 @@
     return entriesStore.entries[properties.entryId].hasMarker(properties.marker);
   });
 
-  async function mark() {
+   async function mark() {
+
+     if (properties.marker === e.Marker.Read) {
+       entriesStore.hideEntry({entryId: properties.entryId});
+     }
+
     await entriesStore.setMarker({
       entryId: properties.entryId,
       marker: properties.marker
     });
   }
 
-  async function unmark() {
+async function unmark() {
+
+     if (properties.marker === e.Marker.Read) {
+       entriesStore.hideEntry({entryId: properties.entryId});
+     }
+
     await entriesStore.removeMarker({
       entryId: properties.entryId,
       marker: properties.marker
