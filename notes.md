@@ -59,9 +59,13 @@ My variants are:
 
 - I want minimal dynamic reordering of news list while the user is reading news / working with this list. Reordering will distract the user and break their reading flow.
 
+# Additional ideas
+
+- Visualize read news by shifting their caption to the right of main vertical line of the unread news items. Or align it to the right side of the list.
+
 # Your task
 
-Based on the information I provided, propose more variants for "How/when to hide/show read news"
+Based on the information I provided, propose more variants for "How to undo hiding of news"
 
 --------
 
@@ -70,3 +74,5 @@ Reformulate/formalize initial "critial problem" to allow seeking for a creative 
 Based on the information I provided, propose alternative ways to solve the "critical problem"
 
 Based on the information I provided, propose more variants for "How/when to mark news as read"
+
+Based on the information I provided, propose more variants for "How/when to hide/show read news"
