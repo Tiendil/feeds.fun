@@ -66,7 +66,7 @@ My variants are:
 
 # Your task
 
-Based on the information I provided, propose more variants for "How to undo hiding of news"
+Based on the information I provided, propose GUI for "hide read news mark as read before the timestamp"
 
 --------
 
@@ -77,3 +77,5 @@ Based on the information I provided, propose alternative ways to solve the "crit
 Based on the information I provided, propose more variants for "How/when to mark news as read"
 
 Based on the information I provided, propose more variants for "How/when to hide/show read news"
+
+Based on the information I provided, propose more variants for "How to undo hiding of news"
