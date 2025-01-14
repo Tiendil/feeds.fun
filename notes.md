@@ -45,6 +45,7 @@ My variants are:
 - Separate news into read/unread tabs with functionality of moving news between them.
 - Tab/panel for "resently hidden/read news" with functionality of moving news back to the main list.
 - Instead of hiding news, change their priority to always go to the bottom of the list.
+- Separate state "hidden" and "read", operate with them separately.
 
 # How to undo hiding of news
 
