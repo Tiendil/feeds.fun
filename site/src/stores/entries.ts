@@ -85,7 +85,6 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   requestedEntriesTimer.start();
 
   async function setMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
-
     if (marker === e.Marker.Read) {
       readHistory.value.push(entryId);
     }
@@ -101,11 +100,10 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }
 
   async function removeMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
-
     if (marker === e.Marker.Read) {
       _.pull(readHistory.value, entryId);
 
-       hideEntry({entryId: entryId});
+      hideEntry({entryId: entryId});
     }
 
     // This code must be before the actual API request, see comment above

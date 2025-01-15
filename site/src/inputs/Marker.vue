@@ -3,21 +3,17 @@
     <template v-if="hasMarker">
       <a
         href="#"
-        @click.prevent="unmark()"
-        >
+        @click.prevent="unmark()">
         <slot name="marked" />
-      </a
-      >
+      </a>
     </template>
 
     <template v-else>
       <a
         href="#"
-        @click.prevent="mark()"
-        >
+        @click.prevent="mark()">
         <slot name="unmarked" />
-        </a
-      >
+      </a>
     </template>
   </div>
 </template>
@@ -40,14 +36,14 @@
     return entriesStore.entries[properties.entryId].hasMarker(properties.marker);
   });
 
-   async function mark() {
+  async function mark() {
     await entriesStore.setMarker({
       entryId: properties.entryId,
       marker: properties.marker
     });
   }
 
-async function unmark() {
+  async function unmark() {
     await entriesStore.removeMarker({
       entryId: properties.entryId,
       marker: properties.marker
@@ -55,5 +51,4 @@ async function unmark() {
   }
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

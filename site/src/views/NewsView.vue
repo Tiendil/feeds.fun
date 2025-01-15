@@ -30,7 +30,6 @@
         @click="entriesStore.undoMarkRead()">
         ↶
       </button>
-
     </template>
 
     <template #side-footer>

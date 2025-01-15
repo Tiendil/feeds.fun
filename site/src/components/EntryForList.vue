@@ -2,29 +2,30 @@
   <div
     ref="entryTop"
     class="flex text-lg">
-
     <div :class="['flex-shrink-0', 'text-right', {'ml-8': isRead}]">
       <input-marker
         class="w-7 mr-2"
         :marker="e.Marker.Read"
         :entry-id="entryId">
-
         <template v-slot:marked>
-          <span class="text-green-700 no-underline" title="Mark as unread">
-            <i class="ti ti-chevrons-left"/>
+          <span
+            class="text-green-700 no-underline"
+            title="Mark as unread">
+            <i class="ti ti-chevrons-left" />
           </span>
         </template>
 
         <template v-slot:unmarked>
-          <span class="text-orange-700 no-underline" title="Mark as read">
-            <i class="ti ti-chevrons-right"/>
+          <span
+            class="text-orange-700 no-underline"
+            title="Mark as read">
+            <i class="ti ti-chevrons-right" />
           </span>
         </template>
-
       </input-marker>
     </div>
 
-    <div class="flex-shrink-0 w-8 text-center pr-1 ">
+    <div class="flex-shrink-0 w-8 text-center pr-1">
       <value-score
         :value="entry.score"
         :entry-id="entry.id" />
@@ -187,8 +188,7 @@
     }
   }
 
-onMounted(() => {
-  entriesStore.requestFullEntry({entryId: properties.entryId});
-});
-
+  onMounted(() => {
+    entriesStore.requestFullEntry({entryId: properties.entryId});
+  });
 </script>
