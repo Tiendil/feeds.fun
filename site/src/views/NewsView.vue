@@ -15,7 +15,7 @@
     </template>
 
     <template #side-menu-item-3>
-      Show read:
+      Show read
 
       <config-flag
         style="min-width: 2.5rem"
