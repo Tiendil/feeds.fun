@@ -16,6 +16,9 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   const entries = ref<{[key: t.EntryId]: t.Entry}>({});
   const requestedEntries = ref<{[key: t.EntryId]: boolean}>({});
   const displayedEntryId = ref<t.EntryId | null>(null);
+  const readHistory = ref<t.EntryId[]>([]);
+
+  const canUndoMarkRead = computed(() => readHistory.value.length > 0);
 
   function registerEntry(entry: t.Entry) {
     if (entry.id in entries.value) {
@@ -82,19 +85,33 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   requestedEntriesTimer.start();
 
   async function setMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
-    await api.setMarker({entryId: entryId, marker: marker});
+    if (marker === e.Marker.Read) {
+      readHistory.value.push(entryId);
+    }
 
+    // This code must be before the actual API request
+    // to guarantee smooth UI transition to the new state
+    // otherwise the UI will be updated two times which leads to flickering
     if (entryId in entries.value) {
       entries.value[entryId].setMarker(marker);
     }
+
+    await api.setMarker({entryId: entryId, marker: marker});
   }
 
   async function removeMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
-    await api.removeMarker({entryId: entryId, marker: marker});
+    if (marker === e.Marker.Read) {
+      _.pull(readHistory.value, entryId);
 
+      hideEntry({entryId: entryId});
+    }
+
+    // This code must be before the actual API request, see comment above
     if (entryId in entries.value) {
       entries.value[entryId].removeMarker(marker);
     }
+
+    await api.removeMarker({entryId: entryId, marker: marker});
   }
 
   async function displayEntry({entryId}: {entryId: t.EntryId}) {
@@ -118,6 +135,16 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     }
   }
 
+  function undoMarkRead() {
+    if (readHistory.value.length === 0) {
+      return;
+    }
+
+    const entryId = readHistory.value.pop() as t.EntryId;
+
+    removeMarker({entryId: entryId, marker: e.Marker.Read});
+  }
+
   return {
     entries,
     requestFullEntry,
@@ -126,6 +153,8 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     loadedEntriesReport,
     displayedEntryId,
     displayEntry,
-    hideEntry
+    hideEntry,
+    undoMarkRead,
+    canUndoMarkRead
   };
 });

@@ -1,6 +1,7 @@
 <template>
   <div
-    class="inline-block cursor-pointer font-semibold text-purple-700"
+    title="Click to see score details"
+    class="inline-block cursor-pointer text-purple-700"
     @click.prevent="onClick()">
     {{ value }}
   </div>

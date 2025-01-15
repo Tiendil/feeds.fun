@@ -131,7 +131,7 @@ async def api_get_entries_by_ids(
 ) -> entities.GetEntriesByIdsResponse:
     # TODO: check if belongs to user
 
-    if len(request.ids) > 10:
+    if len(request.ids) > settings.max_entries_details_requests:
         # TODO: better error processing
         raise fastapi.HTTPException(status_code=400, detail="Too many ids")
 

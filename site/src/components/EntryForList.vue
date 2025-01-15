@@ -2,7 +2,30 @@
   <div
     ref="entryTop"
     class="flex text-lg">
-    <div class="flex-shrink-0 w-8 text-right pr-1">
+    <div :class="['flex-shrink-0', 'text-right', {'ml-8': isRead}]">
+      <input-marker
+        class="w-7 mr-2"
+        :marker="e.Marker.Read"
+        :entry-id="entryId">
+        <template v-slot:marked>
+          <span
+            class="text-green-700 no-underline"
+            title="Mark as unread">
+            <i class="ti ti-chevrons-left" />
+          </span>
+        </template>
+
+        <template v-slot:unmarked>
+          <span
+            class="text-orange-700 no-underline"
+            title="Mark as read">
+            <i class="ti ti-chevrons-right" />
+          </span>
+        </template>
+      </input-marker>
+    </div>
+
+    <div class="flex-shrink-0 w-8 text-center pr-1">
       <value-score
         :value="entry.score"
         :entry-id="entry.id" />
@@ -12,15 +35,6 @@
       <favicon-element
         :url="entry.url"
         class="w-5 h-5 align-text-bottom mx-1 inline" />
-    </div>
-
-    <div class="flex-shrink-0 text-right">
-      <input-marker
-        class="w-7 mr-2"
-        :marker="e.Marker.Read"
-        :entry-id="entryId"
-        on-text="read"
-        off-text="new" />
     </div>
 
     <div class="flex-grow">
@@ -73,7 +87,7 @@
 
 <script lang="ts" setup>
   import _ from "lodash";
-  import {computed, ref, useTemplateRef} from "vue";
+  import {computed, ref, useTemplateRef, onMounted} from "vue";
   import type * as t from "@/logic/types";
   import * as events from "@/logic/events";
   import * as e from "@/logic/enums";
@@ -156,11 +170,25 @@
         await entriesStore.displayEntry({entryId: entry.value.id});
 
         if (topElement.value) {
-          topElement.value.scrollIntoView({behavior: "instant"});
+          const rect = topElement.value.getBoundingClientRect();
+
+          const isVisible =
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth);
+
+          if (!isVisible) {
+            topElement.value.scrollIntoView({behavior: "instant"});
+          }
         }
       }
     } else {
       await newsLinkOpenedEvent();
     }
   }
+
+  onMounted(() => {
+    entriesStore.requestFullEntry({entryId: properties.entryId});
+  });
 </script>

@@ -15,12 +15,21 @@
     </template>
 
     <template #side-menu-item-3>
-      Show read:
+      Show read
+
       <config-flag
         style="min-width: 2.5rem"
         v-model:flag="globalSettings.showRead"
         on-text="no"
         off-text="yes" />
+
+      <button
+        class="ffun-form-button py-0 ml-1"
+        title='Undo last "mark read" operation'
+        :disabled="!entriesStore.canUndoMarkRead"
+        @click="entriesStore.undoMarkRead()">
+        ↶
+      </button>
     </template>
 
     <template #side-footer>
