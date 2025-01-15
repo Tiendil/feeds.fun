@@ -3,10 +3,7 @@
     ref="entryTop"
     class="flex text-lg">
 
-    <div v-if="isRead" class="w-8">
-    </div>
-
-    <div class="flex-shrink-0 text-right">
+    <div :class="['flex-shrink-0', 'text-right', {'ml-8': isRead}]">
       <input-marker
         class="w-7 mr-2"
         :marker="e.Marker.Read"
