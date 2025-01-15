@@ -41,11 +41,6 @@
   });
 
    async function mark() {
-
-     if (properties.marker === e.Marker.Read) {
-       entriesStore.hideEntry({entryId: properties.entryId});
-     }
-
     await entriesStore.setMarker({
       entryId: properties.entryId,
       marker: properties.marker
@@ -53,11 +48,6 @@
   }
 
 async function unmark() {
-
-     if (properties.marker === e.Marker.Read) {
-       entriesStore.hideEntry({entryId: properties.entryId});
-     }
-
     await entriesStore.removeMarker({
       entryId: properties.entryId,
       marker: properties.marker

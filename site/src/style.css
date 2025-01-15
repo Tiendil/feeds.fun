@@ -81,7 +81,7 @@
   }
 
   .ffun-form-button {
-    @apply ffun-input-common border-blue-300 disabled:bg-blue-700/75 py-1;
+    @apply ffun-input-common border-blue-300 disabled:bg-blue-100/25 py-1;
   }
 
   .ffun-file-button {
