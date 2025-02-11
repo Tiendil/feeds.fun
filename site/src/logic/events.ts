@@ -27,5 +27,11 @@ export async function tagStateChanged({
   toState: TagState;
   source: TagChangeSource;
 }) {
-  await api.trackEvent({name: "tag_filter_state_changed", tag: tag, from_state: fromState, to_state: toState, source: source});
+  await api.trackEvent({
+    name: "tag_filter_state_changed",
+    tag: tag,
+    from_state: fromState,
+    to_state: toState,
+    source: source
+  });
 }

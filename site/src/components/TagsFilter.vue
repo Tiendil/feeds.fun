@@ -13,7 +13,7 @@
           :count="tags[tag] ?? 0"
           :show-switch="true"
           count-mode="no"
-          change-source="tag_filter"/>
+          change-source="tag_filter" />
       </li>
     </ul>
 
