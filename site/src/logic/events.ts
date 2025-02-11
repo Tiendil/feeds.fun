@@ -22,8 +22,8 @@ async function _tagFilterUsed({operation, tag, source}: {operation: string; tag:
 
 export async function tagStateChanged({
   tag,
-  from_state,
-  to_state,
+  fromState,
+  toState,
   source
 }: {
   tag: string;
@@ -31,5 +31,5 @@ export async function tagStateChanged({
   toState: TagState;
   source: TagChangeSource;
 }) {
-  await api.trackEvent({name: "tag_filter_tag_switched", tag: tag, from_state: fromSate, to_state: toState});
+  await api.trackEvent({name: "tag_filter_tag_switched", tag: tag, from_state: fromState, to_state: toState});
 }

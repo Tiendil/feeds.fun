@@ -48,7 +48,7 @@
       countMode?: string | null;
       secondaryMode?: string | null;
       showSwitch?: boolean | null;
-      changeSource: string
+      changeSource: events.TagChangeSource;
     }>();
 
     const tagInfo = computed(() => {
@@ -88,21 +88,19 @@
 
       let changeInfo = tagsStates.value.onTagClicked({tag: properties.uid});
 
-      changeInfo.tag = properties.uid;
-      changeInfo.source = properties.changeSource;
-
-      await events.tagClicked(changeInfo);
+      await events.tagStateChanged({tag: properties.uid,
+                                    source: properties.changeSource,
+                                    ...changeInfo});
     }
 
     function onRevers() {
       asserts.defined(tagsStates);
 
-      let changeInfotagsStates.value.onTagReversed({tag: properties.uid});
+      let changeInfo = tagsStates.value.onTagReversed({tag: properties.uid});
 
-      changeInfo.tag = properties.uid;
-      changeInfo.source = properties.changeSource;
-
-      await events.tagClicked(changeInfo);
+      await events.tagStateChanged({tag: properties.uid,
+                                    source: properties.changeSource,
+                                    ...changeInfo});
     }
 
     const tooltip = computed(() => {
