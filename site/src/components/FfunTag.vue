@@ -33,7 +33,8 @@
   import type {Ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
   import * as tagsFilterState from "@/logic/tagsFilterState";
-  import * as asserts from "@/logic/asserts";
+import * as asserts from "@/logic/asserts";
+import * as events from "@/logic/events";
 
   const tagsStore = useTagsStore();
 
@@ -47,6 +48,7 @@
     countMode?: string | null;
     secondaryMode?: string | null;
     showSwitch?: boolean | null;
+    changeSource: string
   }>();
 
   const tagInfo = computed(() => {
@@ -83,12 +85,24 @@
 
   function onClick() {
     asserts.defined(tagsStates);
-    tagsStates.value.onTagClicked({tag: properties.uid});
+
+    let changeInfo = tagsStates.value.onTagClicked({tag: properties.uid});
+
+    changeInfo.tag = properties.uid;
+    changeInfo.source = properties.changeSource;
+
+    await events.tagClicked(changeInfo);
   }
 
   function onRevers() {
     asserts.defined(tagsStates);
-    tagsStates.value.onTagReversed({tag: properties.uid});
+
+    let changeInfotagsStates.value.onTagReversed({tag: properties.uid});
+
+    changeInfo.tag = properties.uid;
+    changeInfo.source = properties.changeSource;
+
+    await events.tagClicked(changeInfo);
   }
 
   const tooltip = computed(() => {

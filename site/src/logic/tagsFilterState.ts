@@ -26,25 +26,33 @@ export class Storage {
     });
   }
 
-  onTagStateChanged({tag, state}: {tag: string; state: State}) {
+  onTagStateChanged({tag, state}: {tag: string; state: State}) -> {fromState: State; toState: State} {
     if (state === "required") {
       this.requiredTags[tag] = true;
       if (this.excludedTags[tag]) {
         delete this.excludedTags[tag];
+        return {"fromState": "excluded", "toState": "required"};
       }
+      return {"fromState": "none", "toState": "required"};
     } else if (state === "excluded") {
       this.excludedTags[tag] = true;
       if (this.requiredTags[tag]) {
         delete this.requiredTags[tag];
+        return {"fromState": "required", "toState": "excluded"};
       }
+      return {"fromState": "none", "toState": "excluded"};
     } else if (state === "none") {
       if (this.requiredTags[tag]) {
         delete this.requiredTags[tag];
+        return {"fromState": "required", "toState": "none"};
       }
 
       if (this.excludedTags[tag]) {
         delete this.excludedTags[tag];
+        return {"fromState": "excluded", "toState": "none"};
       }
+
+      return {"fromState": "none", "toState": "none"};
     } else {
       throw new Error(`Unknown tag state: ${state}`);
     }
@@ -52,11 +60,11 @@ export class Storage {
 
   onTagReversed({tag}: {tag: string}) {
     if (!(tag in this.selectedTags)) {
-      this.onTagStateChanged({tag: tag, state: "required"});
+      return this.onTagStateChanged({tag: tag, state: "required"});
     } else if (this.requiredTags[tag]) {
-      this.onTagStateChanged({tag: tag, state: "excluded"});
+      return this.onTagStateChanged({tag: tag, state: "excluded"});
     } else if (this.excludedTags[tag]) {
-      this.onTagStateChanged({tag: tag, state: "required"});
+      return this.onTagStateChanged({tag: tag, state: "required"});
     } else {
       throw new Error(`Unknown tag state: ${tag}`);
     }
@@ -64,9 +72,9 @@ export class Storage {
 
   onTagClicked({tag}: {tag: string}) {
     if (tag in this.selectedTags) {
-      this.onTagStateChanged({tag: tag, state: "none"});
+      return this.onTagStateChanged({tag: tag, state: "none"});
     } else {
-      this.onTagStateChanged({tag: tag, state: "required"});
+      return this.onTagStateChanged({tag: tag, state: "required"});
     }
   }
 

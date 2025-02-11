@@ -34,7 +34,8 @@
         <ffun-tag
           :uid="tag"
           :count="tags[tag]"
-          count-mode="prefix" />
+          count-mode="prefix"
+          changeSource="tag_filter"/>
       </li>
     </ul>
 
