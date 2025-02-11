@@ -34,6 +34,7 @@
   import {useTagsStore} from "@/stores/tags";
   import * as tagsFilterState from "@/logic/tagsFilterState";
   import * as asserts from "@/logic/asserts";
+  import * as events from "@/logic/events";
 
   const tagsStore = useTagsStore();
 
@@ -47,6 +48,7 @@
     countMode?: string | null;
     secondaryMode?: string | null;
     showSwitch?: boolean | null;
+    changeSource: events.TagChangeSource;
   }>();
 
   const tagInfo = computed(() => {
@@ -81,14 +83,20 @@
     return result;
   });
 
-  function onClick() {
+  async function onClick() {
     asserts.defined(tagsStates);
-    tagsStates.value.onTagClicked({tag: properties.uid});
+
+    let changeInfo = tagsStates.value.onTagClicked({tag: properties.uid});
+
+    await events.tagStateChanged({tag: properties.uid, source: properties.changeSource, ...changeInfo});
   }
 
-  function onRevers() {
+  async function onRevers() {
     asserts.defined(tagsStates);
-    tagsStates.value.onTagReversed({tag: properties.uid});
+
+    let changeInfo = tagsStates.value.onTagReversed({tag: properties.uid});
+
+    await events.tagStateChanged({tag: properties.uid, source: properties.changeSource, ...changeInfo});
   }
 
   const tooltip = computed(() => {
