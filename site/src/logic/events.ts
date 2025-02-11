@@ -16,10 +16,6 @@ export async function socialLinkClicked({linkType}: {linkType: string}) {
   await api.trackEvent({name: "social_link_clicked", link_type: linkType});
 }
 
-async function _tagFilterUsed({operation, tag, source}: {operation: string; tag: string; source: string}) {
-  await api.trackEvent({name: "tag_filter_used", operation: operation, tag: tag, source: source});
-}
-
 export async function tagStateChanged({
   tag,
   fromState,
@@ -31,5 +27,5 @@ export async function tagStateChanged({
   toState: TagState;
   source: TagChangeSource;
 }) {
-  await api.trackEvent({name: "tag_filter_tag_switched", tag: tag, from_state: fromState, to_state: toState});
+  await api.trackEvent({name: "tag_filter_state_changed", tag: tag, from_state: fromState, to_state: toState, source: source});
 }

@@ -11,8 +11,9 @@
           class="ml-1"
           :uid="tag"
           :count="tags[tag] ?? 0"
-          :showSwitch="true"
-          count-mode="no" />
+          :show-switch="true"
+          count-mode="no"
+          change-source="tag_filter"/>
       </li>
     </ul>
 

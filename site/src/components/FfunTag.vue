@@ -83,7 +83,7 @@
     return result;
   });
 
-  function onClick() {
+  async function onClick() {
     asserts.defined(tagsStates);
 
     let changeInfo = tagsStates.value.onTagClicked({tag: properties.uid});
@@ -91,7 +91,7 @@
     await events.tagStateChanged({tag: properties.uid, source: properties.changeSource, ...changeInfo});
   }
 
-  function onRevers() {
+  async function onRevers() {
     asserts.defined(tagsStates);
 
     let changeInfo = tagsStates.value.onTagReversed({tag: properties.uid});

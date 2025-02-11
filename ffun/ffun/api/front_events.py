@@ -19,4 +19,12 @@ class SocialLinkClicked(BaseEntity):
     link_type: Literal["api", "blog", "reddit", "discord", "github"]
 
 
-Event = NewsLinkOpened | NewsBodyOpened | SocialLinkClicked
+class TagFilterStateChanged(BaseEntity):
+    name: Literal["tag_filter_state_changed"]
+    tag: str
+    from_state: Literal["required", "excluded", "none"]
+    to_state: Literal["required", "excluded", "none"]
+    source: Literal["tag_filter", "entry_record"]
+
+
+Event = NewsLinkOpened | NewsBodyOpened | SocialLinkClicked | TagFilterStateChanged
