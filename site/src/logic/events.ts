@@ -1,6 +1,6 @@
 import * as api from "@/logic/api";
 import type * as t from "@/logic/types";
-import type State as TagState from "@/logic/tagsFilterState";
+import type {State as TagState} from "@/logic/tagsFilterState";
 
 export type TagChangeSource = "tag_filter" | "entry_record";
 
@@ -20,10 +20,16 @@ async function _tagFilterUsed({operation, tag, source}: {operation: string; tag:
   await api.trackEvent({name: "tag_filter_used", operation: operation, tag: tag, source: source});
 }
 
-
-export async function tagStateChanged(
-  {tag, from_state, to_state, source}:
-  {tag: string; fromState: TagState; toState: TagState, source: TagChangeSource}) {
-
+export async function tagStateChanged({
+  tag,
+  from_state,
+  to_state,
+  source
+}: {
+  tag: string;
+  fromState: TagState;
+  toState: TagState;
+  source: TagChangeSource;
+}) {
   await api.trackEvent({name: "tag_filter_tag_switched", tag: tag, from_state: fromSate, to_state: toState});
 }

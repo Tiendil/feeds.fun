@@ -26,33 +26,33 @@ export class Storage {
     });
   }
 
-  onTagStateChanged({tag, state}: {tag: string; state: State}) -> {fromState: State; toState: State} {
+  onTagStateChanged({tag, state}: {tag: string; state: State}): {fromState: State; toState: State} {
     if (state === "required") {
       this.requiredTags[tag] = true;
       if (this.excludedTags[tag]) {
         delete this.excludedTags[tag];
-        return {"fromState": "excluded", "toState": "required"};
+        return {fromState: "excluded", toState: "required"};
       }
-      return {"fromState": "none", "toState": "required"};
+      return {fromState: "none", toState: "required"};
     } else if (state === "excluded") {
       this.excludedTags[tag] = true;
       if (this.requiredTags[tag]) {
         delete this.requiredTags[tag];
-        return {"fromState": "required", "toState": "excluded"};
+        return {fromState: "required", toState: "excluded"};
       }
-      return {"fromState": "none", "toState": "excluded"};
+      return {fromState: "none", toState: "excluded"};
     } else if (state === "none") {
       if (this.requiredTags[tag]) {
         delete this.requiredTags[tag];
-        return {"fromState": "required", "toState": "none"};
+        return {fromState: "required", toState: "none"};
       }
 
       if (this.excludedTags[tag]) {
         delete this.excludedTags[tag];
-        return {"fromState": "excluded", "toState": "none"};
+        return {fromState: "excluded", toState: "none"};
       }
 
-      return {"fromState": "none", "toState": "none"};
+      return {fromState: "none", toState: "none"};
     } else {
       throw new Error(`Unknown tag state: ${state}`);
     }

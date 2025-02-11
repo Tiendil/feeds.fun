@@ -8,7 +8,7 @@
         :count="tagsCount[tag]"
         :secondary-mode="tagMode(tag)"
         count-mode="tooltip"
-        changeSource="entry_record"/>
+        changeSource="entry_record" />
 
       <a
         class=""
