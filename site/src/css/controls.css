@@ -1,0 +1,65 @@
+@layer components {
+  .ffun-normalized-text ul {
+    @apply list-disc list-inside;
+  }
+
+  .ffun-normalized-text code {
+    @apply bg-slate-800 px-1 rounded bg-opacity-10 text-sm;
+  }
+
+  .ffun-info-common {
+    @apply ffun-normalized-text border-2 p-2 my-1 rounded border-slate-200;
+  }
+
+  .ffun-info-good {
+    @apply ffun-info-common bg-green-50;
+  }
+
+  .ffun-info-bad {
+    @apply ffun-info-common bg-red-50;
+  }
+
+  .ffun-info-warning {
+    @apply ffun-info-common bg-orange-50;
+  }
+
+  .ffun-info-attention {
+    @apply ffun-info-common bg-purple-50;
+  }
+
+  .ffun-header-link {
+    @apply text-blue-600 hover:text-blue-900 cursor-pointer text-lg;
+  }
+
+  .ffun-normal-link {
+    @apply text-blue-600 hover:text-blue-800 cursor-pointer;
+  }
+
+  .ffun-header-link-disabled {
+    @apply text-lg underline underline-offset-4;
+  }
+
+  .ffun-input-common {
+    @apply border-2 rounded bg-slate-50 hover:bg-blue-50 enabled:hover:border-blue-400 px-1 disabled:bg-orange-50;
+  }
+
+  .ffun-form-button {
+    @apply ffun-input-common border-blue-300 disabled:bg-blue-100/25 py-1;
+  }
+
+  .ffun-file-button {
+    @apply file:border-2 file:rounded file:bg-slate-50 file:hover:bg-blue-50 file:enabled:hover:border-blue-400 file:px-1 file:disabled:bg-orange-50  file:border-blue-300 file:disabled:bg-blue-700/75 file:py-1 file:shadow-none file:border-solid text-slate-500;
+  }
+
+  .ffun-config-flag {
+    @apply ffun-input-common border-blue-300 disabled:bg-blue-700/75 py-0;
+  }
+
+  .ffun-input {
+    @apply ffun-input-common border-blue-200 focus:border-blue-300 focus:outline-none placeholder-gray-500 py-1;
+  }
+
+  .ffun-checkbox {
+    @apply ffun-input-common h-4 w-4 align-middle;
+  }
+}

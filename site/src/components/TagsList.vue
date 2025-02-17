@@ -7,6 +7,7 @@
         :uid="tag"
         :count="tagsCount[tag]"
         :secondary-mode="tagMode(tag)"
+        cssModifier="ffun-tags-list"
         count-mode="tooltip"
         change-source="entry_record" />
 

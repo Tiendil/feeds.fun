@@ -12,6 +12,7 @@
           :uid="tag"
           :count="tags[tag] ?? 0"
           :show-switch="true"
+          cssModifier="ffun-tags-filter"
           count-mode="no"
           change-source="tag_filter" />
       </li>

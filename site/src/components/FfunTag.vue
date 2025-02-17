@@ -49,6 +49,7 @@
     secondaryMode?: string | null;
     showSwitch?: boolean | null;
     changeSource: events.TagChangeSource;
+    cssModifier: string;
   }>();
 
   const tagInfo = computed(() => {
@@ -64,9 +65,10 @@
   });
 
   const classes = computed(() => {
-    const result: {[key: string]: boolean} = {
-      tag: true
-    };
+    const result: {[key: string]: boolean} = {}
+
+    result[properties.cssModifier] = true;
+    result["ffun-tag"] = true;
 
     if (tagsStates.value.requiredTags[properties.uid]) {
       result["required"] = true;
@@ -106,25 +108,3 @@
     return "";
   });
 </script>
-
-<style scoped>
-  .tag {
-    @apply inline-block cursor-pointer p-0 mr-2 whitespace-nowrap hover:bg-green-100 px-1 hover:rounded-lg;
-  }
-
-  .tag.required {
-    @apply text-green-700 font-bold;
-  }
-
-  .tag.excluded {
-    @apply text-red-700 font-bold;
-  }
-
-  .tag.positive {
-    @apply text-green-700;
-  }
-
-  .tag.negative {
-    @apply text-red-700;
-  }
-</style>

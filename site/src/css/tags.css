@@ -1,0 +1,56 @@
+
+@layer components {
+
+  .ffun-tag {
+      @apply border inline-block cursor-pointer rounded whitespace-nowrap;
+      @apply mr-1 mb-1 py-0.5 px-1.5 bg-slate-200 text-slate-800;
+      @apply hover:bg-slate-300;
+
+      &.positive {
+          @apply bg-green-50 text-green-800;
+          @apply hover:bg-green-100;
+      }
+
+      &.negative {
+          @apply bg-red-50 text-red-800;
+          @apply hover:bg-red-100;
+      }
+
+      &.required {
+      }
+
+      &.excluded {
+      }
+
+      &.ffun-tags-list {
+          &.positive {
+          }
+
+          &.negative {
+          }
+
+          &.required {
+              @apply border-amber-500;
+          }
+
+          &.excluded {
+          }
+      }
+
+      &.ffun-tags-filter {
+          &.positive {
+          }
+
+          &.negative {
+          }
+
+          &.required {
+              @apply font-bold text-green-700;
+          }
+
+          &.excluded {
+              @apply font-bold text-red-700;
+          }
+      }
+  }
+}
