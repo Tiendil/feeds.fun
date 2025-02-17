@@ -30,7 +30,8 @@
           }
 
           &.required {
-              @apply border-amber-500;
+              /* @apply border-amber-500; */
+              @apply border-orange-400;
           }
 
           &.excluded {
