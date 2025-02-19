@@ -67,7 +67,7 @@
   <div
     v-if="showBody"
     class="flex justify-center my-1">
-    <div class="max-w-3xl flex-1 bg-slate-50 border rounded p-4">
+    <div class="max-w-3xl flex-1 bg-white border rounded p-4">
       <h2 class="mt-0"
         ><a
           :href="entry.url"
