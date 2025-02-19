@@ -1,6 +1,10 @@
 
 @layer components {
 
+    .ffun-x-side-panel-header-text {
+        @apply text-2xl;
+    }
+
     .ffun-side-panel-layout {
         @apply flex divide-x;
 
@@ -8,7 +12,7 @@
             @apply p-4 w-60 bg-slate-50 flex-shrink-0;
 
             .ffun-side-panel-header {
-                @apply leading-8 my-0 text-2xl cursor-default;
+                @apply leading-8 my-0 cursor-default ffun-x-side-panel-header-text;
             }
 
             .ffun-side-panel-controls-list {
@@ -36,12 +40,12 @@
                 }
 
                 .ffun-body-panel-header-link {
-                    @apply text-blue-600 cursor-pointer text-2xl no-underline px-2 py-1;
-                    @apply underline-offset-4 hover:bg-slate-200 rounded;
+                    @apply text-black cursor-pointer no-underline px-2 py-1 ffun-x-side-panel-header-text;
+                    @apply underline-offset-4 hover:bg-blue-100 rounded;
                 }
 
                 .ffun-body-panel-header-link-disabled {
-                    @apply text-2xl underline underline-offset-4 cursor-default px-2 py-1;
+                    @apply text-black underline underline-offset-4 cursor-default px-2 py-1 ffun-x-side-panel-header-text;
                 }
             }
         }
