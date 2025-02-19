@@ -1,6 +1,6 @@
 <template>
   <div class="flex">
-    <div class="flex-shrink-0 w-16 text-right pr-1">
+    <div class="flex-shrink-0 w-20 text-right">
       <a
         href="#"
         v-if="!subscribed"
@@ -28,9 +28,9 @@
   </div>
 
   <div class="flex">
-    <div class="flex-shrink-0 w-16 pr-1"> </div>
+    <div class="flex-shrink-0 w-20 mr-1"> </div>
 
-    <div class="max-w-3xl flex-1 bg-slate-50 border-2 rounded p-4">
+    <div class="max-w-3xl flex-1 bg-white border-2 rounded p-4">
       <p>{{ feed.description }}</p>
     </div>
   </div>
