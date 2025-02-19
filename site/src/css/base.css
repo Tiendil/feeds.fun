@@ -1,7 +1,8 @@
 @layer base {
 
     html {
-        @apply font-serif bg-slate-100;
+        @apply font-serif;
+        @apply bg-white;
     }
 
     h1 {

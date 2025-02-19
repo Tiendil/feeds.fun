@@ -1,8 +1,8 @@
 <template>
   <div
     ref="entryTop"
-    class="flex text-lg">
-    <div :class="['flex-shrink-0', 'text-right', {'ml-8': isRead}]">
+    :class="['flex', 'text-lg', {'ml-8': isRead}]">
+    <div :class="['flex-shrink-0', 'text-right']">
       <input-marker
         class="w-7 mr-2"
         :marker="e.Marker.Read"
@@ -67,7 +67,7 @@
   <div
     v-if="showBody"
     class="flex justify-center my-1">
-    <div class="max-w-3xl flex-1 bg-slate-50 border-2 rounded p-4">
+    <div class="max-w-3xl flex-1 bg-slate-50 border rounded p-4">
       <h2 class="mt-0"
         ><a
           :href="entry.url"

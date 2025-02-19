@@ -44,8 +44,8 @@
       <slot name="side-footer"></slot>
     </div>
 
-    <div class="flex-grow p-4">
-      <header class="flex items-center leading-8">
+    <div class="flex-grow">
+      <header class="flex items-center leading-8 px-4 pt-4">
         <div class="display:flex items-center mr-auto">
           <ul class="list-none m-0 p-0 flex space-x-2">
             <li
@@ -138,7 +138,7 @@
 
       <hr class="my-2 border-slate-400" />
 
-      <main class="mb-4">
+      <main class="mb-4 px-4">
         <slot></slot>
       </main>
 
