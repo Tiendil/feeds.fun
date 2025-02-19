@@ -2,14 +2,14 @@
 @layer components {
 
     .ffun-x-side-panel-header-text {
-        @apply text-2xl text-black;
+        @apply text-xl text-black;
     }
 
     .ffun-side-panel-layout {
         @apply flex divide-x;
 
         .ffun-side-panel {
-            @apply p-4 w-60 bg-slate-50 flex-shrink-0;
+            @apply p-4 w-64 bg-slate-50 flex-shrink-0;
 
             .ffun-side-panel-header {
                 @apply leading-8 my-0 cursor-default ffun-x-side-panel-header-text;

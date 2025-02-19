@@ -1,7 +1,7 @@
 @layer base {
 
     html {
-        @apply font-serif;
+        @apply font-sans;
         @apply bg-white;
     }
 
