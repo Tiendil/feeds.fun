@@ -1,14 +1,12 @@
 <template>
   <div>
     <div class="text-base">
-      <ffun-tag
+      <entry-tag
         v-for="tag of displayedTags"
         :key="tag"
         :uid="tag"
+        :css-modifier="tagMode(tag)"
         :count="tagsCount[tag]"
-        :secondary-mode="tagMode(tag)"
-        cssModifier="ffun-tags-list"
-        count-mode="tooltip"
         change-source="entry_record" />
 
       <a
@@ -51,15 +49,15 @@
 
   function tagMode(tag: string) {
     if (!properties.contributions) {
-      return null;
+      return "neurtral";
     }
 
     if (!(tag in properties.contributions)) {
-      return null;
+      return "neurtral";
     }
 
     if (properties.contributions[tag] == 0) {
-      return null;
+      return "neurtral";
     }
 
     if (properties.contributions[tag] > 0) {

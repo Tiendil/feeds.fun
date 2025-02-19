@@ -1,21 +1,10 @@
 <template>
-  <div class="inline-block">
-    <a
-      href="#"
-      v-if="showSwitch"
-      class="pr-1"
-      @click.prevent="onRevers()"
-      >⇄</a
-    >
-    <div
-      :class="classes"
-      :title="tooltip"
-      @click.prevent="onClick()">
-      <span v-if="countMode == 'prefix'">[{{ count }}]</span>
-
-      <tag-base :uid="properties.uid" />
-    </div>
-  </div>
+<div
+  :class="classes"
+  :title="tooltip"
+  @click.prevent="onClick()">
+  <tag-base :uid="properties.uid" />
+</div>
 </template>
 
 <script lang="ts" setup>
@@ -35,12 +24,9 @@
 
   const properties = defineProps<{
     uid: string;
-    count?: number | null;
-    countMode?: string | null;
-    secondaryMode?: string | null;
-    showSwitch?: boolean | null;
     changeSource: events.TagChangeSource;
     cssModifier: string;
+    count: number;
   }>();
 
   const tagInfo = computed(() => {
@@ -59,7 +45,7 @@
     const result: {[key: string]: boolean} = {}
 
     result[properties.cssModifier] = true;
-    result["ffun-tag"] = true;
+    result["ffun-entry-tag"] = true;
 
     if (tagsStates.value.requiredTags[properties.uid]) {
       result["required"] = true;
@@ -93,9 +79,6 @@
   }
 
   const tooltip = computed(() => {
-    if (properties.countMode == "tooltip" && properties.count) {
-      return `articles with this tag: ${properties.count}`;
-    }
-    return "";
+    return `Articles with this tag: ${properties.count}`;
   });
 </script>
