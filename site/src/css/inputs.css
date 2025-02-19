@@ -13,7 +13,10 @@
 
     .ffun-file-button {
         @apply text-slate-500;
-        @apply file:border-2 file:rounded file:bg-slate-50 file:hover:bg-blue-50 file:enabled:hover:border-blue-400 file:px-1 file:disabled:bg-orange-50  file:border-blue-300 file:disabled:bg-blue-700/75 file:py-1 file:shadow-none file:border-solid;
+        @apply file:border file:rounded file:px-1 file:py-1 file:shadow-none file:bg-white file:border-slate-200 file:border-solid file:outline-none;
+        @apply file:disabled:bg-slate-100 file:disabled:hover:bg-slate-100 file:disabled:hover:border-slate-200;
+        @apply file:enabled:hover:border-blue-400;
+        @apply file:focus:border-blue-400;
     }
 
     .ffun-config-flag {
