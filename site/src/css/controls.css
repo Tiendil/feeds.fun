@@ -27,16 +27,8 @@
     @apply ffun-info-common bg-purple-50;
   }
 
-  .ffun-header-link {
-    @apply text-blue-600 hover:text-blue-900 cursor-pointer text-lg;
-  }
-
   .ffun-normal-link {
     @apply text-blue-600 hover:text-blue-800 cursor-pointer;
-  }
-
-  .ffun-header-link-disabled {
-    @apply text-lg underline underline-offset-4;
   }
 
   .ffun-input-common {

@@ -1,0 +1,49 @@
+
+@layer components {
+
+    .ffun-side-panel-layout {
+        @apply flex divide-x;
+
+        .ffun-side-panel {
+            @apply p-4 w-60 bg-slate-50 flex-shrink-0;
+
+            .ffun-side-panel-header {
+                @apply leading-8 my-0 text-2xl cursor-default;
+            }
+
+            .ffun-side-panel-controls-list {
+                @apply space-y-2;
+            }
+
+            /* TODO: move this style our layout? */
+            .ffun-side-panel-refresh-button {
+                @apply ffun-form-button p-1 my-1 block w-full text-center;
+            }
+        }
+
+        .ffun-body-panel {
+            @apply flex-grow;
+
+            .ffun-body-panel-header {
+                @apply flex items-center leading-8 px-4 pt-4;
+
+                .ffun-body-panel-header-left-block {
+                    @apply items-center mr-auto list-none m-0 p-0 flex space-x-2;
+                }
+
+                .ffun-body-panel-header-right-block {
+                    @apply items-center list-none m-0 p-0 flex space-x-2;
+                }
+
+                .ffun-body-panel-header-link {
+                    @apply text-blue-600 cursor-pointer text-2xl no-underline px-2 py-1;
+                    @apply underline-offset-4 hover:bg-slate-200 rounded;
+                }
+
+                .ffun-body-panel-header-link-disabled {
+                    @apply text-2xl underline underline-offset-4 cursor-default px-2 py-1;
+                }
+            }
+        }
+    }
+}

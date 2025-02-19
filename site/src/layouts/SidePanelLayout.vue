@@ -1,13 +1,13 @@
 <template>
-  <div class="flex divide-x">
-    <div class="p-4 w-60 bg-slate-50 flex-shrink-0">
-      <h2 class="leading-8 my-0">
+  <div class="ffun-side-panel-layout">
+    <div class="ffun-side-panel">
+      <h2 class="ffun-side-panel-header">
         <slot name="main-header"></slot>
       </h2>
 
       <hr />
 
-      <ul class="space-y-2">
+      <ul class="ffun-side-panel-controls-list">
         <li v-if="hasSideMenuItem(1)">
           <slot name="side-menu-item-1"></slot>
         </li>
@@ -32,7 +32,7 @@
       <hr v-if="reloadButton" />
 
       <a
-        class="ffun-form-button p-1 my-1 block w-full text-center"
+        class="ffun-side-panel-refresh-button"
         v-if="reloadButton"
         href="#"
         @click="globalSettings.updateDataVersion()"
@@ -44,23 +44,22 @@
       <slot name="side-footer"></slot>
     </div>
 
-    <div class="flex-grow">
-      <header class="flex items-center leading-8 px-4 pt-4">
-        <div class="display:flex items-center mr-auto">
-          <ul class="list-none m-0 p-0 flex space-x-2">
+    <div class="ffun-body-panel">
+      <header class="ffun-body-panel-header">
+          <ul class="ffun-body-panel-header-left-block">
             <li
               v-for="[mode, props] of e.MainPanelModeProperties"
               :key="mode">
               <a
                 v-if="globalSettings.mainPanelMode !== mode"
                 :href="router.resolve({name: mode, params: {}}).href"
-                class="ffun-header-link"
+                class="ffun-body-panel-header-link"
                 @click.prevent="router.push({name: mode, params: {}})">
                 {{ props.text }}
               </a>
 
               <span
-                class="ffun-header-link-disabled cursor-default"
+                class="ffun-body-panel-header-link-disabled"
                 v-else
                 >{{ props.text }}</span
               >
@@ -70,8 +69,7 @@
               <a
                 href="/api/docs"
                 target="_blank"
-                class="ffun-header-link"
-                style="text-decoration: none"
+                class="ffun-body-panel-header-link"
                 @click="events.socialLinkClicked({linkType: 'api'})"
                 >API</a
               >
@@ -81,8 +79,7 @@
               <a
                 :href="settings.blog"
                 target="_blank"
-                class="ffun-header-link"
-                style="text-decoration: none"
+                class="ffun-body-panel-header-link"
                 @click="events.socialLinkClicked({linkType: 'blog'})"
                 >Blog</a
               >
@@ -92,9 +89,8 @@
               <a
                 :href="settings.redditSubreddit"
                 target="_blank"
-                class="ffun-header-link text-xl align-middle"
+                class="ffun-body-panel-header-link text-xl align-middle"
                 title="Reddit"
-                style="text-decoration: none"
                 @click="events.socialLinkClicked({linkType: 'reddit'})"
                 ><i class="ti ti-brand-reddit"></i
               ></a>
@@ -104,9 +100,8 @@
               <a
                 :href="settings.discordInvite"
                 target="_blank"
-                class="ffun-header-link text-xl align-middle"
+                class="ffun-body-panel-header-link text-xl align-middle"
                 title="Discord"
-                style="text-decoration: none"
                 @click="events.socialLinkClicked({linkType: 'discord'})"
                 ><i class="ti ti-brand-discord"></i
               ></a>
@@ -116,24 +111,25 @@
               <a
                 :href="settings.githubRepo"
                 target="_blank"
-                class="ffun-header-link text-xl align-middle"
+                class="ffun-body-panel-header-link text-xl align-middle"
                 title="GitHub"
-                style="text-decoration: none"
                 @click="events.socialLinkClicked({linkType: 'github'})">
                 <i class="ti ti-brand-github"></i
               ></a>
             </li>
           </ul>
-        </div>
 
-        <div class="flex items-center ml-4">
-          <a
-            href="#"
-            class="ffun-header-link"
-            @click.prevent="logout()"
-            >logout</a
-          >
-        </div>
+          <ul class="ffun-body-panel-header-right-block">
+            <li>
+              <a
+                href="#"
+                class="ffun-body-panel-header-link"
+                @click.prevent="logout()"
+                >logout</a
+                         >
+            </li>
+          </ul>
+
       </header>
 
       <hr class="my-2 border-slate-400" />
