@@ -1,10 +1,22 @@
 <template>
-<div
-  :class="classes"
-  :title="tooltip"
-  @click.prevent="onClick()">
-  <tag-base :uid="properties.uid" />
-</div>
+  <div class="inline-block w-full">
+    <a
+      href="#"
+      v-if="showSwitch"
+      class="pr-1 ffun-tag-switch"
+      :title="switchTooltip"
+      @click.prevent="onRevers()"
+      >⇄</a
+    >
+    <span
+      :class="classes"
+      :title="tagTooltip"
+      @click.prevent="onClick()">
+      <span v-if="showCount" class="pr-1">[{{ count }}]</span>
+
+      <tag-base :uid="properties.uid" />
+    </span>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -24,8 +36,9 @@
 
   const properties = defineProps<{
     uid: string;
-    cssModifier: string;
-    count: number;
+    count?: number | null;
+    showCount: boolean;
+    showSwitch: boolean;
   }>();
 
   const tagInfo = computed(() => {
@@ -43,8 +56,9 @@
   const classes = computed(() => {
     const result: {[key: string]: boolean} = {}
 
-    result[properties.cssModifier] = true;
-    result["ffun-entry-tag"] = true;
+    result["ffun-filter-tag"] = true;
+    result["inline-block"] = true;
+    result["w-full"] = true;
 
     if (tagsStates.value.requiredTags[properties.uid]) {
       result["required"] = true;
@@ -54,14 +68,10 @@
       result["excluded"] = true;
     }
 
-    if (properties.secondaryMode) {
-      result[properties.secondaryMode] = true;
-    }
-
     return result;
   });
 
-const changeSource = "entry_record";
+const changeSource = "tag_filter";
 
   async function onClick() {
     asserts.defined(tagsStates);
@@ -79,7 +89,23 @@ const changeSource = "entry_record";
     await events.tagStateChanged({tag: properties.uid, source: changeSource, ...changeInfo});
   }
 
-  const tooltip = computed(() => {
-    return `Articles with this tag: ${properties.count}`;
+  const switchTooltip = computed(() => {
+    if (tagsStates.value.requiredTags[properties.uid]) {
+      return "Switch to show news without this tag";
+    }
+
+    if (tagsStates.value.excludedTags[properties.uid]) {
+      return "Switch to show news with this tag";
+    }
+
+    return "Click to toggle";
   });
+
+const tagTooltip = computed(() => {
+  if (!tagsStates.value.requiredTags[properties.uid] && !tagsStates.value.excludedTags[properties.uid]) {
+    return "Show news with this tag";
+  }
+
+  return "Stop filtering by this tag";
+});
 </script>

@@ -7,14 +7,11 @@
         v-for="tag of displayedSelectedTags"
         :key="tag"
         class="whitespace-nowrap line-clamp-1">
-        <ffun-tag
-          class="ml-1"
+        <filter-tag
           :uid="tag"
           :count="tags[tag] ?? 0"
           :show-switch="true"
-          cssModifier="ffun-tags-filter"
-          count-mode="no"
-          change-source="tag_filter" />
+          :show-count="false"/>
       </li>
     </ul>
 
@@ -33,12 +30,11 @@
         v-for="tag of displayedTags"
         :key="tag"
         class="truncate">
-        <ffun-tag
+        <filter-tag
           :uid="tag"
           :count="tags[tag]"
-          cssModifier="ffun-tags-filter"
-          count-mode="prefix"
-          changeSource="tag_filter" />
+          :show-switch="false"
+          :show-count="true" />
       </li>
     </ul>
 

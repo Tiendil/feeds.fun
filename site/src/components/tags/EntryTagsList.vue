@@ -6,8 +6,7 @@
         :key="tag"
         :uid="tag"
         :css-modifier="tagMode(tag)"
-        :count="tagsCount[tag]"
-        change-source="entry_record" />
+        :count="tagsCount[tag]"/>
 
       <a
         class=""

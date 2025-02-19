@@ -30,6 +30,7 @@ import UserSettingForNotification from "./components/UserSettingForNotification.
 import TagBase from "./components/tags/Base.vue";
 import EntryTag from "./components/tags/EntryTag.vue";
 import EntryTagsList from "./components/tags/EntryTagsList.vue";
+import FilterTag from "./components/tags/FilterTag.vue";
 
 import NotificationsApiKey from "./components/notifications/ApiKey.vue";
 import NotificationsCreateRuleHelp from "./components/notifications/CreateRuleHelp.vue";
@@ -84,6 +85,7 @@ app.component("UserSettingForNotification", UserSettingForNotification);
 app.component("TagBase", TagBase);
 app.component("EntryTag", EntryTag);
 app.component("EntryTagsList", EntryTagsList);
+app.component("FilterTag", FilterTag);
 
 app.component("NotificationsApiKey", NotificationsApiKey);
 app.component("NotificationsCreateRuleHelp", NotificationsCreateRuleHelp);
