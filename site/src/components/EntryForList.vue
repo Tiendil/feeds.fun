@@ -46,7 +46,7 @@
         {{ purifiedTitle }}
       </a>
 
-      <tags-list
+      <entry-tags-list
         class="mt-0 pt-0"
         :tags="entry.tags"
         :tags-count="tagsCount"

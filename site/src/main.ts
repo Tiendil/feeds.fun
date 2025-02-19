@@ -9,7 +9,6 @@ import "./style.css";
 import FeedsList from "./components/FeedsList.vue";
 import EntriesList from "./components/EntriesList.vue";
 import RulesList from "./components/RulesList.vue";
-import TagsList from "./components/TagsList.vue";
 import ConfigSelector from "./components/ConfigSelector.vue";
 import ConfigFlag from "./components/ConfigFlag.vue";
 import EntryForList from "./components/EntryForList.vue";
@@ -30,6 +29,7 @@ import UserSettingForNotification from "./components/UserSettingForNotification.
 
 import TagBase from "./components/tags/Base.vue";
 import EntryTag from "./components/tags/EntryTag.vue";
+import EntryTagsList from "./components/tags/EntryTagsList.vue";
 
 import NotificationsApiKey from "./components/notifications/ApiKey.vue";
 import NotificationsCreateRuleHelp from "./components/notifications/CreateRuleHelp.vue";
@@ -63,7 +63,6 @@ const app = createApp(App);
 app.component("FeedsList", FeedsList);
 app.component("EntriesList", EntriesList);
 app.component("RulesList", RulesList);
-app.component("TagsList", TagsList);
 app.component("ConfigSelector", ConfigSelector);
 app.component("ConfigFlag", ConfigFlag);
 app.component("EntryForList", EntryForList);
@@ -84,6 +83,7 @@ app.component("UserSettingForNotification", UserSettingForNotification);
 
 app.component("TagBase", TagBase);
 app.component("EntryTag", EntryTag);
+app.component("EntryTagsList", EntryTagsList);
 
 app.component("NotificationsApiKey", NotificationsApiKey);
 app.component("NotificationsCreateRuleHelp", NotificationsCreateRuleHelp);
