@@ -1,7 +1,7 @@
 <template>
   <side-panel-layout>
     <template #side-menu-item-1>
-      Show descriptions:
+      Show descriptions
       <config-flag
         style="min-width: 2.5rem"
         v-model:flag="globalSettings.showFeedsDescriptions"
