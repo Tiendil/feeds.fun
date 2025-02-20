@@ -67,8 +67,8 @@
   <div
     v-if="showBody"
     class="flex justify-center my-1">
-    <div class="max-w-3xl flex-1 bg-white border rounded p-4">
-      <h2 class="mt-0"
+    <div class="ffun-entry-body">
+      <h2 class=""
         ><a
           :href="entry.url"
           target="_blank"
@@ -76,10 +76,10 @@
           >{{ purifiedTitle }}</a
         ></h2
       >
-      <p v-if="entry.body === null">loading...</p>
+      <p v-if="entry.body === null">loading…</p>
       <div
         v-if="entry.body !== null"
-        class="prose max-w-none"
+        class="ffun-entry-body-text"
         v-html="purifiedBody" />
     </div>
   </div>

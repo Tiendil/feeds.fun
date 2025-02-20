@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="text-base">
+    <div class="overflow-y-auto max-h-36">
       <entry-tag
         v-for="tag of displayedTags"
         :key="tag"
@@ -9,7 +9,7 @@
         :count="tagsCount[tag]"/>
 
       <a
-        class=""
+        class="text-base"
         title="Click on the news title to open it and see all tags"
         href="#"
         @click.prevent="emit('request-to-show-all')"
