@@ -1,32 +1,6 @@
 @layer components {
-  .ffun-normalized-text ul {
-    @apply list-disc list-inside;
-  }
 
-  .ffun-normalized-text code {
-    @apply bg-slate-800 px-1 rounded bg-opacity-10 text-sm;
-  }
-
-  .ffun-info-common {
-    @apply ffun-normalized-text border-2 p-2 my-1 rounded border-slate-200;
-  }
-
-  .ffun-info-good {
-    @apply ffun-info-common bg-green-50;
-  }
-
-  .ffun-info-bad {
-    @apply ffun-info-common bg-red-50;
-  }
-
-  .ffun-info-warning {
-    @apply ffun-info-common bg-orange-50;
-  }
-
-  .ffun-info-attention {
-    @apply ffun-info-common bg-purple-50;
-  }
-
+  /* TODO: remove? */
   .ffun-normal-link {
     @apply text-blue-600 hover:text-blue-800 cursor-pointer;
   }

@@ -1,9 +1,10 @@
 <template>
-  <button
+  <a
     v-if="setting"
+    href=""
     @click.prevent="updateFlag(true)"
-    class="ffun-normal-link"
-    >{{ text }}</button
+    class=""
+    >{{ text }}</a
   >
 </template>
 

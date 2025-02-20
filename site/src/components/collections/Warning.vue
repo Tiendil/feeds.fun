@@ -1,6 +1,6 @@
 <template>
-  <div class="ffun-info-attention">
-    <h3>Check your feed URLs</h3>
+  <div class="ffun-info-common">
+    <h4>Check your feed URLs</h4>
 
     <p
       >Websites like

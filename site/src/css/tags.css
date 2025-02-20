@@ -1,47 +1,47 @@
 
 @layer components {
 
-  .ffun-entry-tag {
-      @apply border inline-block cursor-pointer rounded whitespace-nowrap;
-      @apply mr-1 mb-1 py-0.5 px-1.5 bg-slate-200 text-slate-800;
-      @apply hover:bg-slate-300;
+    .ffun-entry-tag {
+        @apply border inline-block cursor-pointer rounded whitespace-nowrap;
+        @apply mr-1 mb-1 py-0.5 px-1.5 bg-slate-200 text-slate-800;
+        @apply hover:bg-slate-300;
 
-      &.positive {
-          @apply bg-green-50 text-green-800;
-          @apply hover:bg-green-100;
-      }
+        &.positive {
+            @apply bg-green-50 text-green-800;
+            @apply hover:bg-green-100;
+        }
 
-      &.negative {
-          @apply bg-red-50 text-red-800;
-          @apply hover:bg-red-100;
-      }
+        &.negative {
+            @apply bg-red-50 text-red-800;
+            @apply hover:bg-red-100;
+        }
 
-      &.required {
-          @apply border-orange-400;
-      }
+        &.required {
+            @apply border-orange-400;
+        }
 
-      &.excluded {
-      }
+        &.excluded {
+        }
 
-  }
+    }
 
-  .ffun-filter-tag {
-      @apply inline-block cursor-pointer rounded whitespace-nowrap w-fit;
-      @apply py-0.5 px-1;
-      @apply hover:bg-blue-100;
+    .ffun-filter-tag {
+        @apply inline-block cursor-pointer rounded whitespace-nowrap w-fit;
+        @apply py-0.5 px-1;
+        @apply hover:bg-blue-100;
 
-      &.required {
-          @apply font-bold text-green-700;
-      }
+        &.required {
+            @apply font-bold text-green-700;
+        }
 
-      &.excluded {
-          @apply font-bold text-red-700;
-      }
-  }
+        &.excluded {
+            @apply font-bold text-red-700;
+        }
+    }
 
     .ffun-tag-switch {
-      @apply inline-block cursor-pointer rounded whitespace-nowrap w-fit;
-      @apply py-0.5 px-1;
-      @apply hover:bg-blue-100;
+        @apply inline-block cursor-pointer rounded whitespace-nowrap w-fit;
+        @apply py-0.5 px-1;
+        @apply hover:bg-blue-100;
     }
 }

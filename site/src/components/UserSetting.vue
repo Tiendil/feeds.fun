@@ -46,7 +46,7 @@
     </template>
 
     <div
-      class="ffun-normalized-text"
+      class="ffun-info-settings"
       v-if="setting.description"
       v-html="setting.description" />
   </div>
