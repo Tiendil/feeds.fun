@@ -7,13 +7,13 @@
       <a
         href="https://reddit.com"
         target="_blank"
-        >Reddit</a
+        >Reddit <i class="ti ti-external-link"/></a
       >
       or
       <a
         href="https://arxiv.org"
         target="_blank"
-        >arXiv</a
+        >arXiv <i class="ti ti-external-link"/></a
       >
       provide multiple feeds by:</p
     >

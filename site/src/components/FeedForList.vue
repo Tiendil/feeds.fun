@@ -13,7 +13,7 @@
 
     <div
       class="flex-shrink-0 w-12 pr-2 text-right cursor-default"
-      title="Time of last load">
+      title="How long ago the feed was last checked for news">
       <value-date-time
         :value="feed.loadedAt"
         :reversed="true" />
@@ -21,7 +21,7 @@
 
     <div
       class="flex-shrink-0 w-12 pr-2 text-right cursor-default"
-      title="When was added">
+      title="How long ago the feed was added">
       <value-date-time
         :value="feed.linkedAt"
         :reversed="true" />
