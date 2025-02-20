@@ -18,19 +18,19 @@
 
     <p
       v-if="loading"
-      class="ffun-info-attention"
+      class="ffun-info-attention mt-4"
       >Loading...</p
     >
 
     <p
       v-if="loaded"
-      class="ffun-info-good"
+      class="ffun-info-good mt-4"
       >Feeds added!</p
     >
 
     <p
       v-if="error"
-      class="ffun-info-bad"
+      class="ffun-info-bad mt-4"
       >Error occurred! Maybe you chose a wrong file?</p
     >
   </div>

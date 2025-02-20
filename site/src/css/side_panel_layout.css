@@ -21,7 +21,7 @@
 
             /* TODO: move this style our layout? */
             .ffun-side-panel-refresh-button {
-                @apply ffun-form-button p-1 my-1 block w-full text-center;
+                @apply ffun-form-button my-1 block w-full text-center;
             }
         }
 

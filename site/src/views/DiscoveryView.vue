@@ -26,7 +26,7 @@
       >
     </div>
 
-    <opml-upload />
+    <opml-upload class="mt-4" />
 
     <h2>Search for a feed</h2>
 

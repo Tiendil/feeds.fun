@@ -26,7 +26,7 @@
 
     <template v-else-if="!editing">
       <button
-        class="ffun-form-button ml-1"
+        class="ffun-form-button short ml-1"
         @click.prevent="startEditing()"
         >Edit</button
       >

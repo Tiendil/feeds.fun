@@ -32,7 +32,7 @@
       <hr v-if="reloadButton" />
 
       <a
-        class="ffun-side-panel-refresh-button"
+        class="ffun-side-panel-refresh-button short"
         v-if="reloadButton"
         href="#"
         @click="globalSettings.updateDataVersion()"

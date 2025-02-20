@@ -3,14 +3,14 @@
     {{ realShowEntries }} of {{ total }}
 
     <button
-      class="ffun-form-button ml-2"
+      class="ffun-form-button short ml-2"
       v-if="canShowMore"
       @click.prevent="showMore()">
       next {{ realShowPerPage }}
     </button>
 
     <button
-      class="ffun-form-button ml-2"
+      class="ffun-form-button short ml-2"
       v-if="canHide"
       @click.prevent="hideAll()"
       >hide</button
