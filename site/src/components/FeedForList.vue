@@ -19,18 +19,18 @@
       title="How long ago the feed was added"
       :time="feed.linkedAt" />
 
-    <div class="flex-shrink-0 w-8 pr-1 text-right cursor-default">
-      <span
+    <div class="flex-shrink-0 w-10 pr-1 text-right cursor-default cursor-default text-2xl">
+      <i
         v-if="feed.isOk"
         title="everything is ok"
-        class="text-green-700 cursor-default"
-        >ok</span
+        class="text-green-700 ti ti-mood-smile"
+        ></i
       >
-      <span
+      <i
         v-else
         :title="feed.lastError || 'unknown error'"
-        class="text-red-700 cursor-default"
-        >⚠</span
+        class="text-red-700 ti ti-mood-sad"
+        ></i
       >
     </div>
 
