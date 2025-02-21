@@ -1,55 +1,53 @@
 <template>
   <div class="ffun-info-common">
-    <h4>Check your feed URLs</h4>
+    <h4>Pay attention to your feed URLs</h4>
 
-    <p
-      >Websites like
-      <a
-        href="https://reddit.com"
-        target="_blank"
-        >Reddit <i class="ti ti-external-link"/></a
-      >
+    <p>
+      Some websites, like
+      <a href="https://reddit.com" target="_blank">
+        Reddit <i class="ti ti-external-link"/></a
+                                                 >
       or
-      <a
-        href="https://arxiv.org"
-        target="_blank"
-        >arXiv <i class="ti ti-external-link"/></a
-      >
-      provide multiple feeds by:</p
-    >
+      <a href="https://arxiv.org" target="_blank">
+        arXiv <i class="ti ti-external-link"/></a
+                                                >,
+      provide multiple URLs for feeds:
+    </p>
 
     <ul>
-      <li
-        >Customizing news categories lists in URL (like
-        <code class="inline-block">https://site.com/feed/rss?category1+category2</code>) instead of using separate
-        URLs.</li
-      >
-      <li
-        >Supporting different feed formats (like <code class="inline-block">https://site.com/feed/rss</code> and
-        <code class="inline-block">https://site.com/feed/atom</code>).</li
-      >
+      <li>
+        By customizing the list of categories, like
+        <code class="inline-block">https://example.org/feed/rss?category1+category2</code>.
+      </li>
+      <li>
+        By supporting different feed formats, like
+        <code class="inline-block">https://example.org/feed/rss</code> and
+        <code class="inline-block">https://example.org/feed/atom</code>.
+      </li>
     </ul>
 
-    <p
-      >This can lead to the same news item appearing in multiple feeds, not being recognized as news from collections,
-      and being processed with your API key. We do our best to detect such news, but there are always exceptions.</p
-    >
+    <p>
+      Consequently, the same news may appear in multiple feeds.
+    </p>
 
-    <p><strong>To get the most from free tagging in collections:</strong></p>
+    <p>
+      We do our best to detect duplicates, but in some cases, they may slip through and lead to extra usage of your API key.
+    </p>
+
+    <p><strong>Please follow these recommendations:</strong></p>
 
     <ul>
-      <li>Use specific, granular feed URLs.</li>
-      <li
-        >Add feeds directly from
-        <a
-          class="ffun-normal-link"
-          href="#"
-          @click.prevent="goToCollections()"
-          >collections</a
-        >
-        instead of using URLs from sites.</li
-      >
+      <li>Use short, granular feed URLs.</li>
+      <li>If a feed URL can be split into multiple simpler URLs, add them separately.</li>
+      <li>
+        Add feeds directly from
+        <a class="ffun-normal-link" href="#" @click.prevent="goToCollections()">
+          collections</a
+                       >
+        instead of using URLs from websites.
+      </li>
     </ul>
+
 
     <user-setting-for-notification
       class=""

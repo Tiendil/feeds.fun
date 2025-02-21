@@ -30,6 +30,7 @@
         class="ffun-form-button p-1 my-1 block w-full text-center"
         href="/api/get-opml"
         target="_blank"
+        title="Download OPML file with all your feeds"
         >Download OPML</a
       >
     </template>
