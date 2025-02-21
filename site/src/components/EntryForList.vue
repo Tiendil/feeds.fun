@@ -31,11 +31,7 @@
         :entry-id="entry.id" />
     </div>
 
-    <div class="flex-shrink-0 w-8 text-right pr-1">
-      <favicon-element
-        :url="entry.url"
-        class="w-5 h-5 align-text-bottom mx-1 inline" />
-    </div>
+    <body-list-favicon-column :url="entry.url"/>
 
     <div class="flex-grow">
       <a

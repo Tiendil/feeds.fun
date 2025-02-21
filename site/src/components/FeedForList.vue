@@ -34,11 +34,7 @@
       >
     </div>
 
-    <div class="flex-shrink-0 w-8 text-right pr-1">
-      <favicon-element
-        :url="feed.url"
-        class="w-4 h-4 align-text-bottom mx-1 inline" />
-    </div>
+    <body-list-favicon-column :url="feed.url"/>
 
     <div class="flex-grow">
       <value-url

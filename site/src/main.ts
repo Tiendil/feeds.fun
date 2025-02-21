@@ -52,6 +52,7 @@ import ValueDateTime from "./values/DateTime.vue";
 import ValueScore from "./values/Score.vue";
 
 import BodyListReverseTimeColumn from "./components/body_list/ReverseTimeColumn.vue";
+import BodyListFaviconColumn from "./components/body_list/FaviconColumn.vue";
 
 import WideLayout from "./layouts/WideLayout.vue";
 import SidePanelLayout from "./layouts/SidePanelLayout.vue";
@@ -108,6 +109,7 @@ app.component("ValueDateTime", ValueDateTime);
 app.component("ValueScore", ValueScore);
 
 app.component("BodyListReverseTimeColumn", BodyListReverseTimeColumn);
+app.component("BodyListFaviconColumn", BodyListFaviconColumn);
 
 app.component("WideLayout", WideLayout);
 app.component("SidePanelLayout", SidePanelLayout);
