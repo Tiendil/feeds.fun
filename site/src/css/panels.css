@@ -1,21 +1,5 @@
 @layer components {
 
-    /* Entry body */
-
-    .ffun-entry-body {
-        @apply max-w-3xl flex-1 bg-white border rounded p-4;
-    }
-
-    .ffun-entry-body h2 {
-        @apply mt-0;
-    }
-
-    .ffun-entry-body .ffun-entry-body-text {
-        @apply prose max-w-none;
-    }
-
-    /* Panels with text */
-
     .ffun-x-panel ul {
         @apply list-disc list-inside;
     }

@@ -57,25 +57,15 @@
 
   </div>
 
-  <div
+  <body-list-entry-body
     v-if="showBody"
-    class="flex justify-center my-1">
-    <div class="ffun-entry-body">
-      <h2 class=""
-        ><a
-          :href="entry.url"
-          target="_blank"
-          @click="newsLinkOpenedEvent"
-          >{{ purifiedTitle }}</a
-        ></h2
-      >
-      <p v-if="entry.body === null">loading…</p>
-      <div
-        v-if="entry.body !== null"
-        class="ffun-entry-body-text"
-        v-html="purifiedBody" />
-    </div>
-  </div>
+    class="justify-center"
+    :url="entry.url"
+    :title="purifiedTitle"
+    :loading="entry.body === null"
+    :text="purifiedBody"
+    @body-title-clicked="newsLinkOpenedEvent" />
+
 </template>
 
 <script lang="ts" setup>

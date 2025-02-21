@@ -52,14 +52,17 @@
           </template>
         </span>
       </template>
-      <template v-if="globalSettings.showFeedsDescriptions">
-        <br />
-        <div class="max-w-3xl flex-1 bg-slate-50 border-2 rounded p-4">
-          <div v-html="purifiedDescription" />
-        </div>
-      </template>
     </div>
+
   </div>
+
+  <body-list-entry-body
+    v-if="globalSettings.showFeedsDescriptions"
+    class="ml-64"
+    :url="null"
+    :title="null"
+    :loading="false"
+    :text="purifiedDescription"/>
 </template>
 
 <script lang="ts" setup>
