@@ -2,12 +2,12 @@
   <div
     v-if="feed !== null"
     class="flex text-lg">
-    <div class="flex-shrink-0 min-w-fit pr-2">
+    <div class="flex-shrink-0 min-w-fit pr-2 text-2xl text-red-500 hover:text-red-600">
       <a
         href="#"
-        class="ffun-normal-link"
+        class="ti ti-x"
+        title="Unsubscribe"
         @click.prevent="feedsStore.unsubscribe(feed.id)">
-        remove
       </a>
     </div>
 
@@ -58,7 +58,7 @@
 
   <body-list-entry-body
     v-if="globalSettings.showFeedsDescriptions"
-    class="ml-64"
+    class="ml-56"
     :url="null"
     :title="null"
     :loading="false"
