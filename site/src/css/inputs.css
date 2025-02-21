@@ -21,6 +21,7 @@
     }
 
     .ffun-file-button {
+        @apply text-slate-500;
         @apply file:text-white file:font-semibold;
         @apply file:border file:rounded file:px-4 file:py-2 file:shadow-none file:bg-blue-500 file:border-slate-300 file:border-solid file:outline-none;
         @apply file:disabled:bg-blue-300 file:disabled:text-slate-400 file:disabled:cursor-not-allowed;

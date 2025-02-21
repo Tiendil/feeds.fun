@@ -50,4 +50,12 @@
             }
         }
     }
+
+    .ffun-body-list-entry {
+        @apply mb-1;
+    }
+
+    .ffun-body-list-entry:not(:last-child) {
+        @apply border-b py-1;
+    }
 }

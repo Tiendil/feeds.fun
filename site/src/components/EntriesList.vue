@@ -5,7 +5,7 @@
         <li
           v-for="entryId in entriesToShow"
           :key="entryId"
-          class="mb-1 entry-block">
+          class="ffun-body-list-entry">
           <entry-for-list
             :entryId="entryId"
             :time-field="timeField"
@@ -47,13 +47,3 @@
     return properties.entriesIds.slice(0, showEntries.value);
   });
 </script>
-
-<style scoped>
-  .entry-block {
-  }
-
-  .entry-block:not(:last-child) {
-    border-bottom-width: 1px;
-    @apply py-1;
-  }
-</style>

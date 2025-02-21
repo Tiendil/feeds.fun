@@ -56,15 +56,8 @@
         @apply ffun-x-info bg-red-50 border-red-200 text-red-800;
     }
 
-    /* .ffun-info-warning { */
-    /*     @apply ffun-info-common bg-orange-50; */
-    /* } */
-
+    /* TODO: remove? */
     .ffun-info-attention {
-        @apply ffun-info-common bg-purple-50;
-    }
-
-    .ffun-normal-link {
-        @apply text-blue-600 hover:text-blue-800 cursor-pointer;
+        @apply ffun-x-info bg-purple-50 border-purple-200 text-purple-800;
     }
 }

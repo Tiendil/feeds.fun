@@ -21,7 +21,7 @@
       </p>
 
       <p
-        >Export your feeds from your old reader in OPML format and import them into our reader to seamlessly
+        >Export your feeds from your old reader in OPML format and import them into Feeds Fun to seamlessly
         transition!</p
       >
     </div>
