@@ -1,4 +1,5 @@
 import _ from "lodash";
+import DOMPurify from "dompurify";
 
 export function timeSince(date: Date) {
   const now = new Date();
@@ -66,4 +67,32 @@ export function faviconForUrl(url: string): string | null {
     console.error("Invalid URL:", error);
     return null;
   }
+}
+
+export function purifyTitle({raw, default_}: {raw: string|null; default_: string;}) {
+  if (raw === null) {
+    return default_;
+  }
+
+  let title = DOMPurify.sanitize(raw, {ALLOWED_TAGS: []}).trim();
+
+  if (title.length === 0) {
+    return default_;
+  }
+
+  return title;
+}
+
+export function purifyBody({raw, default_}: {raw: string|null; default_: string;}) {
+  if (raw === null) {
+    return default_;
+  }
+
+  let body = DOMPurify.sanitize(raw).trim();
+
+  if (body.length === 0) {
+    return default_;
+  }
+
+  return body;
 }

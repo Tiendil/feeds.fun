@@ -73,7 +73,8 @@
   import {computed, ref, useTemplateRef, onMounted} from "vue";
   import type * as t from "@/logic/types";
   import * as events from "@/logic/events";
-  import * as e from "@/logic/enums";
+import * as e from "@/logic/enums";
+  import * as utils from "@/logic/utils";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
@@ -128,30 +129,14 @@ const timeForTooltip = computed(() => {
   return "";
   });
 
-  const purifiedTitle = computed(() => {
-    if (entry.value === null) {
-      return "";
-    }
-
-    // TODO: remove emojis?
-    let title = DOMPurify.sanitize(entry.value.title, {ALLOWED_TAGS: []});
-
-    if (title.length === 0) {
-      title = "No title";
-    }
-
-    return title;
+const purifiedTitle = computed(() => {
+  return utils.purifyTitle({raw: entry.value.title,
+                            default_: "No title"});
   });
 
-  const purifiedBody = computed(() => {
-    if (entry.value === null) {
-      return "";
-    }
-
-    if (entry.value.body === null) {
-      return "";
-    }
-    return DOMPurify.sanitize(entry.value.body);
+const purifiedBody = computed(() => {
+  return utils.purifyBody({raw: entry.value.body,
+                           default_: "No description"});
   });
 
   async function newsLinkOpenedEvent() {

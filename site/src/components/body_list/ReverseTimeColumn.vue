@@ -22,7 +22,7 @@
   const topElement = useTemplateRef("entryTop");
 
   const properties = defineProps<{
-    time: Date;
+    time: Date|null;
     title: string;
   }>();
 

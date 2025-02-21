@@ -69,7 +69,8 @@
   import {computed, ref} from "vue";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
-  import * as api from "@/logic/api";
+import * as api from "@/logic/api";
+  import * as utils from "@/logic/utils";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
@@ -82,33 +83,13 @@
 
   const properties = defineProps<{feed: t.Feed}>();
 
-  const noDescription = "No description";
-
-  const purifiedTitle = computed(() => {
-    if (properties.feed.title === null) {
-      return properties.feed.url;
-    }
-
-    let title = DOMPurify.sanitize(properties.feed.title, {ALLOWED_TAGS: []}).trim();
-
-    if (title.length === 0) {
-      return properties.feed.url;
-    }
-
-    return title;
+const purifiedTitle = computed(() => {
+  return utils.purifyTitle({raw: properties.feed.title,
+                            default_: properties.feed.url});
   });
 
-  const purifiedDescription = computed(() => {
-    if (properties.feed.description === null) {
-      return noDescription;
-    }
-
-    let description = DOMPurify.sanitize(properties.feed.description).trim();
-
-    if (description.length === 0) {
-      return noDescription;
-    }
-
-    return description;
+const purifiedDescription = computed(() => {
+  return utils.purifyBody({raw: properties.feed.description,
+                           default_: "No description"});
   });
 </script>
