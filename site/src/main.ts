@@ -51,6 +51,8 @@ import ValueFeedId from "./values/FeedId.vue";
 import ValueDateTime from "./values/DateTime.vue";
 import ValueScore from "./values/Score.vue";
 
+import BodyListReverseTimeColumn from "./components/body_list/ReverseTimeColumn.vue";
+
 import WideLayout from "./layouts/WideLayout.vue";
 import SidePanelLayout from "./layouts/SidePanelLayout.vue";
 
@@ -104,6 +106,8 @@ app.component("ValueUrl", ValueUrl);
 app.component("ValueFeedId", ValueFeedId);
 app.component("ValueDateTime", ValueDateTime);
 app.component("ValueScore", ValueScore);
+
+app.component("BodyListReverseTimeColumn", BodyListReverseTimeColumn);
 
 app.component("WideLayout", WideLayout);
 app.component("SidePanelLayout", SidePanelLayout);

@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="feed !== null"
-    class="flex mb-1">
+    class="flex text-lg">
     <div class="flex-shrink-0 min-w-fit pr-2">
       <a
         href="#"
@@ -11,21 +11,13 @@
       </a>
     </div>
 
-    <div
-      class="flex-shrink-0 w-12 pr-2 text-right cursor-default"
-      title="How long ago the feed was last checked for news">
-      <value-date-time
-        :value="feed.loadedAt"
-        :reversed="true" />
-    </div>
+    <body-list-reverse-time-column
+      title="How long ago the feed was last checked for news"
+      :time="feed.loadedAt" />
 
-    <div
-      class="flex-shrink-0 w-12 pr-2 text-right cursor-default"
-      title="How long ago the feed was added">
-      <value-date-time
-        :value="feed.linkedAt"
-        :reversed="true" />
-    </div>
+    <body-list-reverse-time-column
+      title="How long ago the feed was added"
+      :time="feed.linkedAt" />
 
     <div class="flex-shrink-0 w-8 pr-1 text-right cursor-default">
       <span

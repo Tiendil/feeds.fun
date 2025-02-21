@@ -55,13 +55,10 @@
         :contributions="entry.scoreContributions" />
     </div>
 
-    <div class="flex flex-shrink-0">
-      <div class="w-7">
-        <value-date-time
-          :value="timeFor"
-          :reversed="true" />
-      </div>
-    </div>
+    <body-list-reverse-time-column
+      :title="timeForTooltip"
+      :time="timeFor" />
+
   </div>
 
   <div
@@ -127,6 +124,22 @@
     }
 
     return _.get(entry.value, properties.timeField, null);
+  });
+
+const timeForTooltip = computed(() => {
+    if (entry.value === null) {
+      return "";
+    }
+
+  if (properties.timeField === "publishedAt") {
+    return "How long ago the news was published";
+  }
+
+  if (properties.timeField === "catalogedAt") {
+    return "How long ago the news was collected";
+  }
+
+  return "";
   });
 
   const purifiedTitle = computed(() => {
