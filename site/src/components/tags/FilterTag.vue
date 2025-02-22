@@ -39,6 +39,7 @@
     count?: number | null;
     showCount: boolean;
     showSwitch: boolean;
+    changeSource: "news_tags_filter" | "rules_tags_filter";
   }>();
 
   const tagInfo = computed(() => {
@@ -71,14 +72,12 @@
     return result;
   });
 
-const changeSource = "tag_filter";
-
   async function onClick() {
     asserts.defined(tagsStates);
 
     let changeInfo = tagsStates.value.onTagClicked({tag: properties.uid});
 
-    await events.tagStateChanged({tag: properties.uid, source: changeSource, ...changeInfo});
+    await events.tagStateChanged({tag: properties.uid, source: properties.changeSource, ...changeInfo});
   }
 
   async function onRevers() {
@@ -86,7 +85,7 @@ const changeSource = "tag_filter";
 
     let changeInfo = tagsStates.value.onTagReversed({tag: properties.uid});
 
-    await events.tagStateChanged({tag: properties.uid, source: changeSource, ...changeInfo});
+    await events.tagStateChanged({tag: properties.uid, source: properties.changeSource, ...changeInfo});
   }
 
   const switchTooltip = computed(() => {

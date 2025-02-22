@@ -2,7 +2,7 @@ import * as api from "@/logic/api";
 import type * as t from "@/logic/types";
 import type {State as TagState} from "@/logic/tagsFilterState";
 
-export type TagChangeSource = "tag_filter" | "entry_record";
+export type TagChangeSource = "news_tags_filter" | "rules_tags_filter" | "entry_record" | "rule_record";
 
 export async function newsLinkOpened({entryId}: {entryId: t.EntryId}) {
   await api.trackEvent({name: "news_link_opened", entry_id: entryId});

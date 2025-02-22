@@ -11,7 +11,8 @@
           :uid="tag"
           :count="tags[tag] ?? 0"
           :show-switch="true"
-          :show-count="false"/>
+          :show-count="false"
+          :change-source="changeSource"/>
       </li>
     </ul>
 
@@ -34,7 +35,8 @@
           :uid="tag"
           :count="tags[tag]"
           :show-switch="false"
-          :show-count="true" />
+          :show-count="true"
+          :change-source="changeSource" />
       </li>
     </ul>
 
@@ -67,7 +69,9 @@
   const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
   asserts.defined(tagsStates);
 
-  const properties = defineProps<{tags: {[key: string]: number}; showCreateRule?: boolean}>();
+const properties = defineProps<{tags: {[key: string]: number};
+                                showCreateRule?: boolean;
+                                changeSource: "news_tags_filter" | "rules_tags_filter"}>();
 
   const showFromStart = ref(25);
 

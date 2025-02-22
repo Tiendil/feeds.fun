@@ -30,6 +30,7 @@ import EntryTag from "./components/tags/EntryTag.vue";
 import EntryTagsList from "./components/tags/EntryTagsList.vue";
 import FilterTag from "./components/tags/FilterTag.vue";
 import TagsFilter from "./components/tags/TagsFilter.vue";
+import RuleTag from "./components/tags/RuleTag.vue";
 
 import NotificationsApiKey from "./components/notifications/ApiKey.vue";
 import NotificationsCreateRuleHelp from "./components/notifications/CreateRuleHelp.vue";
@@ -88,6 +89,7 @@ app.component("EntryTag", EntryTag);
 app.component("EntryTagsList", EntryTagsList);
 app.component("FilterTag", FilterTag);
 app.component("TagsFilter", TagsFilter);
+app.component("RuleTag", RuleTag);
 
 app.component("NotificationsApiKey", NotificationsApiKey);
 app.component("NotificationsCreateRuleHelp", NotificationsCreateRuleHelp);

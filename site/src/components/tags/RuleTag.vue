@@ -1,7 +1,6 @@
 <template>
 <div
   :class="classes"
-  :title="tooltip"
   @click.prevent="onClick()">
   <tag-base :uid="properties.uid" />
 </div>
@@ -25,7 +24,6 @@
   const properties = defineProps<{
     uid: string;
     cssModifier: string;
-    count: number;
   }>();
 
   const tagInfo = computed(() => {
@@ -54,14 +52,10 @@
       result["excluded"] = true;
     }
 
-    if (properties.secondaryMode) {
-      result[properties.secondaryMode] = true;
-    }
-
     return result;
   });
 
-const changeSource = "entry_record";
+const changeSource = "rule_record";
 
   async function onClick() {
     asserts.defined(tagsStates);
@@ -71,7 +65,4 @@ const changeSource = "entry_record";
     await events.tagStateChanged({tag: properties.uid, source: changeSource, ...changeInfo});
   }
 
-  const tooltip = computed(() => {
-    return `Articles with this tag: ${properties.count}`;
-  });
 </script>

@@ -18,21 +18,17 @@
         @input="updateSelected" />
 
       <div class="flex-grow">
-        <template
-          v-for="tag of rule.requiredTags"
-          :key="tag">
-          <ffun-tag
+          <rule-tag
+            v-for="tag of rule.requiredTags"
+            :key="tag"
             :uid="tag"
-            secondary-mode="positive" />&nbsp;
-        </template>
+            css-modifier="positive"/>
 
-        <template
-          v-for="tag of rule.excludedTags"
-          :key="tag">
-          <ffun-tag
+          <rule-tag
+            v-for="tag of rule.excludedTags"
+            :key="tag"
             :uid="tag"
-            secondary-mode="negative" />&nbsp;
-        </template>
+            css-modifier="negative"/>
       </div>
     </div>
 

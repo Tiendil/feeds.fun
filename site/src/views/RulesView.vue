@@ -13,10 +13,12 @@
     </template>
 
     <template #side-footer>
-      <tags-filter :tags="tagsCount" />
+      <tags-filter :tags="tagsCount"
+                   :show-create-rule="false"
+                   change-source="rules_tags_filter"/>
     </template>
 
-    <div class="ffun-info-good">
+    <div class="ffun-info-common mb-2">
       <p
         >You can create new rules on the
         <a
