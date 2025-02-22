@@ -2,7 +2,8 @@
   <ul>
     <li
       v-for="rule in rules"
-      :key="rule.id">
+      :key="rule.id"
+      class="ffun-body-list-entry">
       <rule-for-list :rule="rule" />
     </li>
   </ul>

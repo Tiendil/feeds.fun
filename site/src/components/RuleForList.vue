@@ -40,9 +40,9 @@
       Score updated
       <a
         href="#"
-        class="ffun-form-button"
+        class=""
         @click.prevent="scoreChanged = false"
-        >close</a
+        >[close]</a
       >
     </p>
   </div>
