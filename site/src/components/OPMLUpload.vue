@@ -18,7 +18,7 @@
 
     <p
       v-if="loading"
-      class="ffun-info-attention mt-4"
+      class="ffun-info-waiting mt-2"
       >Loading...</p
     >
 
