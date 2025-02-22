@@ -19,17 +19,17 @@
       title="How long ago the feed was added"
       :time="feed.linkedAt" />
 
-    <div class="flex-shrink-0 w-10 pr-1 text-right cursor-default cursor-default text-2xl">
+    <div class="flex-shrink-0 w-10 pr-1 text-right cursor-default cursor-default text-xl">
       <i
         v-if="feed.isOk"
         title="everything is ok"
-        class="text-green-700 ti ti-mood-smile"
+        class="text-green-700 ti ti-mood-smile align-middle"
         ></i
       >
       <i
         v-else
         :title="feed.lastError || 'unknown error'"
-        class="text-red-700 ti ti-mood-sad"
+        class="text-red-700 ti ti-mood-sad align-middle"
         ></i
       >
     </div>
