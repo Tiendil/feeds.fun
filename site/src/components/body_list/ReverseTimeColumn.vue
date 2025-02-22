@@ -1,7 +1,8 @@
 <template>
 <div class="flex-shrink-0 w-16 cursor-default text-right"
      :title="title">
-      <value-date-time
+  <value-date-time
+    class=""
         :value="time"
         :reversed="true" />
 </div>

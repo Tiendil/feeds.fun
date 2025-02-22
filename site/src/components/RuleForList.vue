@@ -4,10 +4,10 @@
       v-if="rule !== null"
       class="flex mb-1">
 
-      <div class="flex-shrink-0 min-w-fit text-xl text-red-500 hover:text-red-600 mr-2">
+      <div class="ffun-body-list-icon-column">
         <a
           href="#"
-          class="ti ti-x align-middle"
+          class="ti ti-x text-red-500 hover:text-red-600"
           title="Remove this rule"
           @click.prevent="deleteRule()">
         </a>

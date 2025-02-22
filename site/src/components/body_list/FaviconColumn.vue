@@ -2,7 +2,7 @@
   <div class="flex-shrink-0 w-8 text-right pr-1">
     <favicon-element
       :url="url"
-      class="w-5 h-5 mx-1 inline" />
+      class="w-5 h-5 mx-1 inline align-text-bottom" />
   </div>
 </template>
 

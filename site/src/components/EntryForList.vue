@@ -2,27 +2,18 @@
   <div
     ref="entryTop"
     :class="['flex', 'text-lg', {'ml-8': isRead}]">
-    <div :class="['flex-shrink-0', 'text-right', 'text-xl']">
-      <input-marker
-        class="w-7 mr-2"
-        :marker="e.Marker.Read"
-        :entry-id="entryId">
-        <template v-slot:marked>
-          <span
-            class="text-green-700 no-underline"
-            title="Mark as unread">
-            <i class="ti ti-chevrons-left" />
-          </span>
-        </template>
+    <div class="ffun-body-list-icon-column">
+        <a v-if="isRead"
+           href="#"
+           @click.prevent="markUnread()"
+           title="Mark as unread"
+           class="text-green-700 ti ti-chevrons-left" />
 
-        <template v-slot:unmarked>
-          <span
-            class="text-orange-700 no-underline"
-            title="Mark as read">
-            <i class="ti ti-chevrons-right" />
-          </span>
-        </template>
-      </input-marker>
+        <a v-else
+           href="#"
+           @click.prevent="markRead()"
+           title="Mark as read"
+           class="text-orange-700 ti ti-chevrons-right" />
     </div>
 
     <div class="flex-shrink-0 w-8 text-center pr-1">
@@ -175,4 +166,18 @@ const purifiedBody = computed(() => {
   onMounted(() => {
     entriesStore.requestFullEntry({entryId: properties.entryId});
   });
+
+async function markUnread() {
+    await entriesStore.removeMarker({
+      entryId: properties.entryId,
+      marker: e.Marker.Read
+    });
+}
+
+async function markRead() {
+    await entriesStore.setMarker({
+      entryId: properties.entryId,
+      marker: e.Marker.Read
+    });
+  }
 </script>

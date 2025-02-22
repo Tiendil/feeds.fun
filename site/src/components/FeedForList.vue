@@ -2,10 +2,10 @@
   <div
     v-if="feed !== null"
     class="flex text-lg">
-    <div class="flex-shrink-0 min-w-fit text-xl text-red-500 hover:text-red-600">
+    <div class="ffun-body-list-icon-column">
       <a
         href="#"
-        class="ti ti-x align-middle"
+        class="ti ti-x text-red-500 hover:text-red-600"
         title="Unsubscribe"
         @click.prevent="feedsStore.unsubscribe(feed.id)">
       </a>
@@ -19,11 +19,11 @@
       title="How long ago the feed was added"
       :time="feed.linkedAt" />
 
-    <div class="flex-shrink-0 w-10 pr-1 text-right cursor-default cursor-default text-xl">
+    <div class="ffun-body-list-icon-column ml-3">
       <i
         v-if="feed.isOk"
         title="everything is ok"
-        class="text-green-700 ti ti-mood-smile align-middle"
+        class="text-green-700 ti ti-mood-smile"
         ></i
       >
       <i

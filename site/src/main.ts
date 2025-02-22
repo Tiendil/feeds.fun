@@ -45,7 +45,6 @@ import CollectionsSubscribingProgress from "./components/collections/Subscribing
 import CollectionsFeedItem from "./components/collections/FeedItem.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
-import InputMarker from "./inputs/Marker.vue";
 
 import ValueUrl from "./values/URL.vue";
 import ValueFeedId from "./values/FeedId.vue";
@@ -104,7 +103,6 @@ app.component("CollectionsSubscribingProgress", CollectionsSubscribingProgress);
 app.component("CollectionsFeedItem", CollectionsFeedItem);
 
 app.component("ScoreSelector", ScoreSelector);
-app.component("InputMarker", InputMarker);
 
 app.component("ValueUrl", ValueUrl);
 app.component("ValueFeedId", ValueFeedId);

@@ -58,4 +58,8 @@
     .ffun-body-list-entry:not(:last-child) {
         @apply border-b py-1;
     }
+
+    .ffun-body-list-icon-column {
+        @apply flex-shrink-0 mr-2 text-center cursor-default text-2xl;
+    }
 }

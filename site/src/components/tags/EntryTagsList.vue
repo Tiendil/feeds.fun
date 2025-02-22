@@ -9,7 +9,7 @@
         :count="tagsCount[tag]"/>
 
       <a
-        class="text-base"
+        class="text-base whitespace-nowrap"
         title="Click on the news title to open it and see all tags"
         href="#"
         @click.prevent="emit('request-to-show-all')"
