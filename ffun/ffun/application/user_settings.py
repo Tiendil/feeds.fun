@@ -5,13 +5,13 @@ from ffun.user_settings import types
 from ffun.user_settings.values import Value, user_settings
 
 
+# TODO: remove descriptions
+
 class UserSetting(enum.IntEnum):
-    # TODO: add gemini key
     openai_api_key = 1
 
     # openai_max_tokens_in_month = 2  # noqa
 
-    # TODO: rename and update for Gemini
     hide_message_about_setting_up_key = 3
 
     process_entries_not_older_than = 4
@@ -132,7 +132,7 @@ user_settings.add(
 user_settings.add(
     Value(
         key=UserSetting.process_entries_not_older_than,
-        name="Use OpenAI key only for entries not older than N days",
+        name="Use API key only for entries not older than N days",
         type=types.Integer(),
         default=1,
         description=description_process_entries_not_older_than,

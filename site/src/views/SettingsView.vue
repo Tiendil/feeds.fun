@@ -2,25 +2,69 @@
   <side-panel-layout :reload-button="false">
     <template #main-header> Settings </template>
 
-    <ul>
-      <li>
-        <strong class="mr-1">User id</strong>
-        <input
-          class="ffun-input w-72"
-          disabled
-          :value="userId" />
-      </li>
-    </ul>
+    <h3>General</h3>
 
-    <hr />
+    <label class="mr-1">User id</label>
+    <input
+      class="ffun-input w-72 cursor-pointer"
+      disabled
+      :value="userId" />
 
-    <template v-for="kind of settingsOrder">
-      <user-setting :kind="kind" />
-      <hr />
-    </template>
+    <div class="ffun-info-common mt-4">
+      <p>
+        User id is used to identify you in the system. Please provide it when you search for help or report a bug.
+      </p>
+    </div>
+
+    <h3>Messages</h3>
+
+    <user-setting v-for="kind of messagesSettings"
+                  key="kind"
+                  :kind="kind"
+                  :show-description="true"/>
+
+    <h3>Artificial Intelligence & tagging</h3>
+
+    <div class="ffun-info-common">
+      <p>
+        All feeds from
+        <a class="ffun-normal-link" href="#" @click.prevent="goToCollections()">collections</a>
+        are tagged for free.
+      </p>
+
+      <p>
+        If you want to tag your own feeds, we kindly ask you to provide an OpenAI or/and Gemini API key.
+      </p>
+
+      <p><strong>Here's how your API key will be used:</strong></p>
+
+      <ul>
+        <li>We use your key only for your feeds, that are not part of predefined collections.</li>
+        <li>We track your key usage and stop using it if it exceed your monthly limit.</li>
+        <li>If a feed has multiple subscribers with API keys, we'll use a key with the lowest usage in the current month.</li>
+        <li>We limit the age of news to be processed with your API key, to safe your resources.</li>
+      </ul>
+
+      <p><strong>The more users set up an API key, the cheaper Feeds Fun becomes for everyone.</strong></p>
+
+      <p>API key usage statistics is available on this page.</p>
+    </div>
+
+    <user-setting kind="openai_api_key" class="mt-4" :show-description="false"/>
+    <user-setting kind="gemini_api_key" :show-description="false"/>
+    <user-setting kind="max_tokens_cost_in_month" :show-description="false"/>
+
+    <div class="ffun-info-common mb-4">
+      <p>
+        The age of a news item is calculated based on the time it was published (according to the data in the feed).
+      </p>
+    </div>
+
+    <user-setting kind="process_entries_not_older_than" :show-description="false"/>
 
     <h3>API usage</h3>
 
+    <div class="ffun-info-common mb-4">
     <p>Estimated tokens cost for your API keys usage per month.</p>
 
     <ul class="list-disc list-inside">
@@ -31,6 +75,7 @@
       </li>
       <li> <strong>Estimated Total USD</strong> — the estimated total cost of tokens used in the month. </li>
     </ul>
+    </div>
 
     <p v-if="tokensCostData == null">Loading...</p>
 
@@ -68,7 +113,8 @@
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
   import * as t from "@/logic/types";
-  import * as e from "@/logic/enums";
+import * as e from "@/logic/enums";
+  import {useRouter} from "vue-router";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
   const globalSettings = useGlobalSettingsStore();
@@ -87,16 +133,17 @@
     return globalSettings.info.userId;
   });
 
-  // TODO: refactor, this is the temporary code to display settings in the right order
-  const settingsOrder = [
-    "openai_api_key",
-    "gemini_api_key",
-    "max_tokens_cost_in_month",
-    "process_entries_not_older_than",
+  const messagesSettings = [
     "hide_message_about_setting_up_key",
     "hide_message_about_adding_collections",
-    "hide_message_check_your_feed_urls"
+    "hide_message_check_your_feed_urls",
   ];
+
+  const router = useRouter();
+
+  function goToCollections() {
+    router.push({name: e.MainPanelMode.Collections, params: {}});
+  }
 </script>
 
 <style></style>

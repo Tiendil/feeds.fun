@@ -2,7 +2,7 @@
   <div
     v-if="setting !== null"
     class="mb-4">
-    <span class="font-semibold mr-1">{{ setting.name }}</span>
+    <span class="mr-1">{{ setting.name }}</span>
 
     <input
       class="ffun-input"
@@ -47,7 +47,7 @@
 
     <div
       class="ffun-info-settings"
-      v-if="setting.description"
+      v-if="showDescription && setting.description"
       v-html="setting.description" />
   </div>
 </template>
@@ -62,7 +62,8 @@
 
   const globalSettings = useGlobalSettingsStore();
 
-  const properties = defineProps<{kind: string}>();
+const properties = defineProps<{kind: string,
+                               showDescription?: boolean}>();
 
   const value = ref<string | boolean | number | null>(null);
 

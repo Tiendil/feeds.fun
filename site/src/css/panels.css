@@ -20,6 +20,10 @@
         @apply font-semibold text-lg mb-2;
     }
 
+    .ffun-x-panel p:last-child {
+        @apply pb-0 mb-0;
+    }
+
     .ffun-x-info {
         @apply ffun-x-panel border p-4 rounded-md;
     }
