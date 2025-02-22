@@ -2,8 +2,8 @@
   <div>
     <p
       v-if="loading"
-      class="ffun-info-attention"
-      >Subscribing...</p
+      class="ffun-info-waiting"
+      >Subscribing…</p
     >
 
     <p

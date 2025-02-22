@@ -4,12 +4,12 @@
     <p class="">{{ collection.description }}</p>
 
     <div v-if="showFeeds">
-      <div
+      <ul
         v-for="feed in feeds"
         :key="feed.url"
-        class="mb-2 pb-2 collection-feed-block">
+        class="ffun-body-list-entry">
         <collections-feed-item :feed="feed" />
-      </div>
+      </ul>
     </div>
 
     <button
@@ -35,6 +35,7 @@
     >
 
     <collections-subscribing-progress
+      class="mt-2"
       :loading="loading"
       :loaded="loaded"
       :error="error" />
@@ -107,9 +108,3 @@
     {lazy: true}
   );
 </script>
-
-<style scoped>
-  .collection-feed-block:not(:last-child) {
-    border-bottom-width: 1px;
-  }
-</style>
