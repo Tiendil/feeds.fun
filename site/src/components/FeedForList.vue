@@ -2,10 +2,10 @@
   <div
     v-if="feed !== null"
     class="flex text-lg">
-    <div class="flex-shrink-0 min-w-fit pr-2 text-2xl text-red-500 hover:text-red-600">
+    <div class="flex-shrink-0 min-w-fit text-xl text-red-500 hover:text-red-600">
       <a
         href="#"
-        class="ti ti-x"
+        class="ti ti-x align-middle"
         title="Unsubscribe"
         @click.prevent="feedsStore.unsubscribe(feed.id)">
       </a>

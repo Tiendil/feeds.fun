@@ -3,12 +3,13 @@
     <div
       v-if="rule !== null"
       class="flex mb-1">
-      <div class="flex-shrink-0 min-w-fit mr-2">
+
+      <div class="flex-shrink-0 min-w-fit text-xl text-red-500 hover:text-red-600 mr-2">
         <a
           href="#"
-          class="ffun-normal-link"
+          class="ti ti-x align-middle"
+          title="Remove this rule"
           @click.prevent="deleteRule()">
-          remove
         </a>
       </div>
 

@@ -2,7 +2,7 @@
   <div
     ref="entryTop"
     :class="['flex', 'text-lg', {'ml-8': isRead}]">
-    <div :class="['flex-shrink-0', 'text-right']">
+    <div :class="['flex-shrink-0', 'text-right', 'text-xl']">
       <input-marker
         class="w-7 mr-2"
         :marker="e.Marker.Read"
