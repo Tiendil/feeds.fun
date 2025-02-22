@@ -12,10 +12,11 @@
         </a>
       </div>
 
-      <score-selector
-        class="flex-shrink-0 mr-2"
-        :modelValue="rule.score"
-        @input="updateSelected" />
+      <div class="flex-shrink-0 min-w-fit mr-2">
+        <score-selector
+          :modelValue="rule.score"
+          @input="updateSelected" />
+      </div>
 
       <div class="flex-grow">
           <rule-tag
