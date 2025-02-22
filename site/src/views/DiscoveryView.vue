@@ -10,7 +10,7 @@
 
     <h3>Load feeds from an OPML file</h3>
 
-    <div class="ffun-info-good">
+    <div class="ffun-info-common">
       <p>
         <a
           href="https://en.wikipedia.org/wiki/OPML"
