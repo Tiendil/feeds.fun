@@ -4,24 +4,23 @@
 
     <h3>General</h3>
 
+    <div class="ffun-info-common mb-4">
+      <p>
+        User id is used to identify you in the system. Please provide it when you search for help or report a bug.
+      </p>
+    </div>
+
     <label class="mr-1">User id</label>
     <input
       class="ffun-input w-72 cursor-pointer"
       disabled
       :value="userId" />
 
-    <div class="ffun-info-common mt-4">
-      <p>
-        User id is used to identify you in the system. Please provide it when you search for help or report a bug.
-      </p>
-    </div>
-
     <h3>Messages</h3>
 
     <user-setting v-for="kind of messagesSettings"
                   key="kind"
-                  :kind="kind"
-                  :show-description="true"/>
+                  :kind="kind"/>
 
     <h3>Artificial Intelligence & tagging</h3>
 
@@ -33,7 +32,8 @@
       </p>
 
       <p>
-        If you want to tag your own feeds, we kindly ask you to provide an OpenAI or/and Gemini API key.
+        If you want to tag your own feeds, we kindly ask you to provide an
+        <a href="">OpenAI</a> or/and Gemini API key.
       </p>
 
       <p><strong>Here's how your API key will be used:</strong></p>
@@ -50,9 +50,9 @@
       <p>API key usage statistics is available on this page.</p>
     </div>
 
-    <user-setting kind="openai_api_key" class="mt-4" :show-description="false"/>
-    <user-setting kind="gemini_api_key" :show-description="false"/>
-    <user-setting kind="max_tokens_cost_in_month" :show-description="false"/>
+    <user-setting kind="openai_api_key" class="mt-4"/>
+    <user-setting kind="gemini_api_key"/>
+    <user-setting kind="max_tokens_cost_in_month"/>
 
     <div class="ffun-info-common mb-4">
       <p>
@@ -60,7 +60,7 @@
       </p>
     </div>
 
-    <user-setting kind="process_entries_not_older_than" :show-description="false"/>
+    <user-setting kind="process_entries_not_older_than"/>
 
     <h3>API usage</h3>
 
@@ -144,6 +144,7 @@ import * as e from "@/logic/enums";
   function goToCollections() {
     router.push({name: e.MainPanelMode.Collections, params: {}});
   }
-</script>
 
-<style></style>
+// TODO: check api keys on setup
+// TODO: basic integer checks
+</script>

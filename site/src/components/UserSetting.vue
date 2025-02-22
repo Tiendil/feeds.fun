@@ -21,8 +21,8 @@
       style="min-width: 2.5rem"
       :flag="setting.value"
       @update:flag="updateFlag($event)"
-      on-text="No"
-      off-text="Yes" />
+      on-text="no"
+      off-text="yes" />
 
     <template v-else-if="!editing">
       <button
@@ -45,10 +45,6 @@
       >
     </template>
 
-    <div
-      class="ffun-info-settings"
-      v-if="showDescription && setting.description"
-      v-html="setting.description" />
   </div>
 </template>
 
@@ -62,8 +58,7 @@
 
   const globalSettings = useGlobalSettingsStore();
 
-const properties = defineProps<{kind: string,
-                               showDescription?: boolean}>();
+const properties = defineProps<{kind: string}>();
 
   const value = ref<string | boolean | number | null>(null);
 
@@ -90,7 +85,7 @@ const properties = defineProps<{kind: string,
     const type = setting.value.type;
 
     if (type == "boolean") {
-      return v ? "Yes" : "No";
+      return v ? "yes" : "no";
     }
 
     if (v == null || v == "") {

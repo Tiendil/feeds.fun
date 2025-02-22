@@ -33,19 +33,19 @@ register: SettingsRegister = Register()
 
 
 register.add(
-    Value(key=Setting.kind_integer, name="integer", type=types.Integer(), default=_integer_default, description="")
+    Value(key=Setting.kind_integer, name="integer", type=types.Integer(), default=_integer_default)
 )
 
 register.add(
-    Value(key=Setting.kind_string, name="string", type=types.String(), default=_string_default, description="")
+    Value(key=Setting.kind_string, name="string", type=types.String(), default=_string_default)
 )
 
 register.add(
-    Value(key=Setting.kind_boolean, name="boolean", type=types.Boolean(), default=_boolean_default, description="")
+    Value(key=Setting.kind_boolean, name="boolean", type=types.Boolean(), default=_boolean_default)
 )
 
 register.add(
-    Value(key=Setting.kind_secret, name="secret", type=types.Secret(), default=_secret_default, description="")
+    Value(key=Setting.kind_secret, name="secret", type=types.Secret(), default=_secret_default)
 )
 
 

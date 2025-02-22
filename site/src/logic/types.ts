@@ -349,7 +349,6 @@ export type UserSetting = {
   readonly type: string;
   value: string | number | boolean;
   readonly name: string;
-  readonly description: string;
 };
 
 export function userSettingFromJSON({
