@@ -52,8 +52,8 @@ we politely ask you to set up your own OpenAI API key.
 description_gemini_api_key = f"""
 Feeds Fun can use Google Gemini to determine tags for texts.
 
-Because, for now, our service is free to use and OpenAI API costs money, \
-we politely ask you to set up your own OpenAI API key.
+Because, for now, our service is free to use and Gemini API costs money, \
+we politely ask you to set up your own Gemini API key.
 
 {_key_rules}
 """
