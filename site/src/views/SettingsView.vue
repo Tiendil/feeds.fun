@@ -33,7 +33,10 @@
 
       <p>
         If you want to tag your own feeds, we kindly ask you to provide an
-        <a href="">OpenAI</a> or/and Gemini API key.
+        <external-url url="https://platform.openai.com/docs/api-reference/introduction" text="OpenAI"/>
+        or/and
+        <external-url url="https://ai.google.dev/gemini-api/docs/api-key" text="Gemini"/>
+        API key.
       </p>
 
       <p><strong>Here's how your API key will be used:</strong></p>

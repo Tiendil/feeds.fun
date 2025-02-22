@@ -12,13 +12,9 @@
 
     <div class="ffun-info-common">
       <p>
-        <a
-          href="https://en.wikipedia.org/wiki/OPML"
-          target="_blank"
-          >OPML
-          <i class="ti ti-external-link"/>
-        </a
-        >
+        <external-url
+          url="https://en.wikipedia.org/wiki/OPML"
+          text="OPML"/>
         is a widely-used format for transferring news feed lists between platforms.
       </p>
 

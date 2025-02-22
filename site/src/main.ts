@@ -46,7 +46,7 @@ import CollectionsFeedItem from "./components/collections/FeedItem.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 
-import ValueUrl from "./values/URL.vue";
+import ExternalUrl from "./values/ExternalUrl.vue";
 import ValueFeedId from "./values/FeedId.vue";
 import ValueDateTime from "./values/DateTime.vue";
 import ValueScore from "./values/Score.vue";
@@ -104,7 +104,7 @@ app.component("CollectionsFeedItem", CollectionsFeedItem);
 
 app.component("ScoreSelector", ScoreSelector);
 
-app.component("ValueUrl", ValueUrl);
+app.component("ExternalUrl", ExternalUrl);
 app.component("ValueFeedId", ValueFeedId);
 app.component("ValueDateTime", ValueDateTime);
 app.component("ValueScore", ValueScore);

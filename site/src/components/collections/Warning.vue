@@ -4,13 +4,15 @@
 
     <p>
       Some websites, like
-      <a href="https://reddit.com" target="_blank">
-        Reddit <i class="ti ti-external-link"/></a
-                                                 >
+      <external-url
+        url="https://www.reddit.com"
+        text="Reddit" />
+
       or
-      <a href="https://arxiv.org" target="_blank">
-        arXiv <i class="ti ti-external-link"/></a
-                                                >,
+      <external-url
+        url="https://arxiv.org"
+        text="arXiv" />,
+
       provide multiple URLs for feeds:
     </p>
 

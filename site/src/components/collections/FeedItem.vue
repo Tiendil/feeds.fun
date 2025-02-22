@@ -18,9 +18,9 @@
     <body-list-favicon-column :url="feed.url"/>
 
     <div class="flex-grow">
-      <value-url
+      <external-url
         class="ffun-normal-link"
-        :value="feed.url"
+        :url="feed.url"
         :text="purifiedTitle" />
     </div>
   </div>
