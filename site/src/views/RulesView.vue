@@ -95,7 +95,7 @@
 
     let sorted = rules.value.slice();
 
-    sorted = tagsStates.value.filterByTags(sorted, (rule) => rule.requiredTags.concat(rule.excludedTags));
+    sorted = tagsStates.value.filterByTags(sorted, (rule) => rule.allTags);
 
     const orderProperties = e.RulesOrderProperties.get(globalSettings.rulesOrder);
 

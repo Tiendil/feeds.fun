@@ -261,7 +261,7 @@ export function ruleFromJSON({
     id: toRuleId(id),
     requiredTags: requiredTags,
     excludedTags: excludedTags,
-    allTags: requiredTags.concat(excludedTags),
+    allTags: requiredTags.concat(excludedTags).sort(),
     score: score,
     createdAt: new Date(createdAt),
     updatedAt: new Date(updatedAt)

@@ -21,16 +21,10 @@
 
       <div class="flex-grow">
           <rule-tag
-            v-for="tag of rule.requiredTags"
+            v-for="tag of rule.allTags"
             :key="tag"
             :uid="tag"
-            css-modifier="positive"/>
-
-          <rule-tag
-            v-for="tag of rule.excludedTags"
-            :key="tag"
-            :uid="tag"
-            css-modifier="negative"/>
+            :css-modifier="cssModifiers[tag]"/>
       </div>
     </div>
 
@@ -83,4 +77,15 @@
 
     globalSettings.updateDataVersion();
   }
+
+const cssModifiers = {};
+
+for (const tag of properties.rule.allTags) {
+  if (properties.rule.excludedTags.includes(tag)) {
+    cssModifiers[tag] = "negative";
+    continue;
+  }
+  cssModifiers[tag] = "positive";
+}
+
 </script>
