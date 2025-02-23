@@ -35,7 +35,6 @@
     >
 
     <collections-subscribing-progress
-      class="mt-2"
       :loading="loading"
       :loaded="loaded"
       :error="error" />

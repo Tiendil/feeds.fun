@@ -1,21 +1,21 @@
 <template>
-  <div>
+  <div v-if="loading"
+       class="ffun-info-waiting mt-4">
     <p
-      v-if="loading"
-      class="ffun-info-waiting"
       >Subscribing…</p
-    >
+                     >
+  </div>
 
-    <p
+    <div
       v-if="loaded"
-      class="ffun-info-good"
-      >Feeds added!</p
+      class="ffun-info-good mt-4"
+      ><p>Feeds added!</p
     >
-
-    <p
+</div>
+    <div
       v-if="error"
-      class="ffun-info-bad"
-      >Unknown error occurred! Please, try later.</p
+      class="ffun-info-bad mt-4"
+      ><p>Unknown error occurred! Please, try later.</p
     >
   </div>
 </template>
