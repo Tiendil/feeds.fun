@@ -15,84 +15,95 @@
     <div class="bg-white text-center p-5">
       <h1 class="m-0 text-3xl my-5">How Feeds Fun Works</h1>
 
-      <div class="max-w-3xl flex mx-auto justify-center items-center my-4">
-        <div class="w-1/2 h-32 bg-blue-200 rounded-l-md">
-          <i class="ti ti-number-1"></i> Subscribe to news feeds
-        </div>
-        <div class="w-1/2 h-32 bg-slate-200 rounded-r-md">
-          All major content providers as well the most private blogs support delivering news feeds. You can subscribe to the sites like Reddit, ArXiv.org, Medium, as well as to the blogs of your friends and access all the news in one place.
-        </div>
-      </div>
+<div class="max-w-3xl mx-auto space-y-6">
 
-      <div class="max-w-3xl flex mx-auto justify-center items-center my-4">
-        <div class="w-1/2 h-32 bg-blue-200 rounded-l-md">
-          <i class="ti ti-number-2"></i> Feeds Fun tags every news article
-        </div>
-        <div class="w-1/2 h-32 bg-slate-200 rounded-r-md">
-          Feeds Fun automatically assigns tags to every news article, according to its content. Tags will represent people, places, topics, games, etc.
-        </div>
-      </div>
-
-      <div class="max-w-3xl flex mx-auto justify-center items-center my-4">
-        <div class="w-1/2 h-32 bg-blue-200 rounded-l-md">
-          <i class="ti ti-number-3"></i> Create rules to score news
-        </div>
-        <div class="w-1/2 h-32 bg-slate-200 rounded-r-md">
-          You can create rules to score news based on tags. For example, you can create a rule to score news with the "Python" tag higher than news with the "Java" tag. Or to exclude all news with the "Politics" tag.
-        </div>
-      </div>
-
-      <div class="max-w-3xl flex mx-auto justify-center items-center my-4">
-        <div class="w-1/2 h-32 bg-blue-200 rounded-l-md">
-          <i class="ti ti-number-4"></i>Read only news that matters to you
-        </div>
-        <div class="w-1/2 h-32 bg-slate-200 rounded-r-md">
-          Feeds Fun will sort and filter news according to your rules. The most important news for your will be always on top.
-        </div>
-      </div>
-
-      <div class="max-w-3xl flex mx-auto justify-center items-center my-4">
-        <div class="w-1/2 h-32 bg-blue-200 rounded-l-md">
-          <i class="ti ti-number-5"></i>Do not loose transparency
-        </div>
-        <div class="w-1/2 h-32 bg-slate-200 rounded-r-md">
-          Since we use straightforward approach to scoring news, you can always check how your rules affect the news order, which news has lower score and why. No magic, no black boxes, your news are totally under your control. Don't trust by words? Check our <external-url url="https://github.com/Tiendil/feeds.fun" text="source code"/>.
-        </div>
-      </div>
-
-      <div class="max-w-5xl mx-auto flex flex-wrap justify-center gap-6 lg:gap-8">
-        <div class="bg-slate-100 p-6 rounded-md w-72 text-left">
-        <h3 class="text-lg font-bold mb-2">Smart Tagging</h3>
-        <p class="text-sm">
-          Automatically assigns relevant tags to news articles for better
-          organization.
-        </p>
-      </div>
-      <div class="bg-slate-100 p-6 rounded-md w-72 text-left">
-        <h3 class="text-lg font-bold mb-2">Custom Scoring</h3>
-        <p class="text-sm">
-          Create rules to score news based on your preferred tags and topics.
-        </p>
-      </div>
-      <div class="bg-slate-100 p-6 rounded-md w-72 text-left">
-        <h3 class="text-lg font-bold mb-2">Filtered Feed</h3>
-        <p class="text-sm">
-          Sort and filter news so you only read the most important stories.
-        </p>
-      </div>
-      <div class="bg-slate-100 p-6 rounded-md w-72 text-left">
-        <h3 class="text-lg font-bold mb-2">Curated Collections</h3>
-        <p class="text-sm">
-          Explore handpicked thematic collections of feeds for quick insights.
-        </p>
-      </div>
-      <div class="bg-slate-100 p-6 rounded-md w-72 text-left">
-        <h3 class="text-lg font-bold mb-2">Transparent &amp; Open</h3>
-        <p class="text-sm">
-          Open source, self-hosted – no hidden algorithms or ads.
-        </p>
-      </div>
+  <div class="flex items-stretch bg-white rounded-xl overflow-hidden">
+    <div class="w-1/3 bg-blue-500 text-white p-6 flex items-center justify-center text-lg font-bold space-x-2">
+      <i class="ti ti-number-1 text-3xl"></i>
+      <span>Subscribe to feeds</span>
     </div>
+    <div class="w-2/3 bg-gray-100 p-6 text-gray-800 flex items-center">
+      Stay updated with news from major sites like Reddit, ArXiv.org, Medium, or even your friends’ blogs—all in one place.
+    </div>
+  </div>
+
+  <div class="flex items-stretch bg-white rounded-xl overflow-hidden">
+    <div class="w-1/3 bg-blue-500 text-white p-6 flex items-center justify-center text-lg font-bold space-x-2">
+      <i class="ti ti-number-2 text-3xl"></i>
+      <span>Automatic tagging</span>
+    </div>
+    <div class="w-2/3 bg-gray-100 p-6 text-gray-800 flex items-center">
+      Feeds Fun automatically tags news articles based on their content—people, places, topics, games, and more.
+    </div>
+  </div>
+
+  <div class="flex items-stretch bg-white rounded-xl overflow-hidden">
+    <div class="w-1/3 bg-blue-500 text-white p-6 flex items-center justify-center text-lg font-bold space-x-2">
+      <i class="ti ti-number-3 text-3xl"></i>
+      <span>Score your news</span>
+    </div>
+    <div class="w-2/3 bg-gray-100 p-6 text-gray-800 flex items-center">
+      Set rules to rank news. Want Python over Java? No politics? You decide what comes first.
+    </div>
+  </div>
+
+  <div class="flex items-stretch bg-white rounded-xl overflow-hidden">
+    <div class="w-1/3 bg-blue-500 text-white p-6 flex items-center justify-center text-lg font-bold space-x-2">
+      <i class="ti ti-number-4 text-3xl"></i>
+      <span>Read what matters</span>
+    </div>
+    <div class="w-2/3 bg-gray-100 p-6 text-gray-800 flex items-center">
+      Feeds Fun filters and sorts news based on your rules, so the most relevant stories are always on top.
+    </div>
+  </div>
+
+  <div class="flex items-stretch bg-white rounded-xl overflow-hidden">
+    <div class="w-1/3 bg-blue-500 text-white p-6 flex items-center justify-center text-lg font-bold space-x-2">
+      <i class="ti ti-number-5 text-3xl"></i>
+      <span>Full transparency</span>
+    </div>
+    <div class="w-2/3 bg-gray-100 p-6 text-gray-800 flex items-center">
+      See exactly how your rules shape your feed—no black boxes, no hidden algorithms. Check our
+      <external-url url="https://github.com/Tiendil/feeds.fun" text="source code"/>.
+    </div>
+  </div>
+
+</div>
+
+
+      <!-- <div class="max-w-5xl mx-auto flex flex-wrap justify-center gap-6 lg:gap-8"> -->
+      <!--   <div class="bg-slate-100 p-6 rounded-md w-72 text-left"> -->
+      <!--   <h3 class="text-lg font-bold mb-2">Smart Tagging</h3> -->
+      <!--   <p class="text-sm"> -->
+      <!--     Automatically assigns relevant tags to news articles for better -->
+      <!--     organization. -->
+      <!--   </p> -->
+      <!-- </div> -->
+      <!-- <div class="bg-slate-100 p-6 rounded-md w-72 text-left"> -->
+      <!--   <h3 class="text-lg font-bold mb-2">Custom Scoring</h3> -->
+      <!--   <p class="text-sm"> -->
+      <!--     Create rules to score news based on your preferred tags and topics. -->
+      <!--   </p> -->
+      <!-- </div> -->
+      <!-- <div class="bg-slate-100 p-6 rounded-md w-72 text-left"> -->
+      <!--   <h3 class="text-lg font-bold mb-2">Filtered Feed</h3> -->
+      <!--   <p class="text-sm"> -->
+      <!--     Sort and filter news so you only read the most important stories. -->
+      <!--   </p> -->
+      <!-- </div> -->
+      <!-- <div class="bg-slate-100 p-6 rounded-md w-72 text-left"> -->
+      <!--   <h3 class="text-lg font-bold mb-2">Curated Collections</h3> -->
+      <!--   <p class="text-sm"> -->
+      <!--     Explore handpicked thematic collections of feeds for quick insights. -->
+      <!--   </p> -->
+      <!-- </div> -->
+      <!-- <div class="bg-slate-100 p-6 rounded-md w-72 text-left"> -->
+      <!--   <h3 class="text-lg font-bold mb-2">Transparent &amp; Open</h3> -->
+      <!--   <p class="text-sm"> -->
+      <!--     Open source, self-hosted – no hidden algorithms or ads. -->
+      <!--   </p> -->
+      <!-- </div> -->
+    <!-- </div> -->
 
     </div>
 
