@@ -61,7 +61,7 @@ user_settings.add(
 user_settings.add(
     Value(
         key=UserSetting.max_tokens_cost_in_month,
-        name="Max spendings (USD/month)",
+        name="Max spending (USD/month)",
         type=types.Decimal(),
         default=Decimal("10"),
     )

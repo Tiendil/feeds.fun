@@ -16,7 +16,7 @@
                   key="kind"
                   :kind="kind"/>
 
-    <h3>Artificial Intelligence & tagging</h3>
+    <h3>Tagging</h3>
 
     <div class="ffun-info-common">
       <p>
@@ -33,18 +33,18 @@
         API key.
       </p>
 
-      <p><strong>Here's how your API key will be used:</strong></p>
+      <p><strong>Here is how we use your API key:</strong></p>
 
       <ul>
-        <li>We use your key only for your feeds, that are not part of predefined collections.</li>
+        <li>We use your key only for your feeds that are not part of predefined collections.</li>
         <li>We stop using your key when its usage exceeds the monthly limit you set.</li>
         <li>If a feed has multiple subscribers with API keys, we'll use a key with the lowest usage in the current month.</li>
-        <li>We limit the age of news processed with your API key, to safe your resources.</li>
+        <li>We do not process old news until you tell us to.</li>
       </ul>
 
       <p><strong>The more users set up an API key, the cheaper Feeds Fun becomes for everyone.</strong></p>
 
-      <p>API key usage statistics is available on this page.</p>
+      <p>API key usage statistics are available on this page.</p>
     </div>
 
     <user-setting kind="openai_api_key" class="mt-4"/>
@@ -67,7 +67,7 @@
     <ul class="list-disc list-inside">
       <li> <strong>Estimated Used USD</strong> — the estimated cost of tokens in processed requests. </li>
       <li>
-        <strong>Estimated Reserved USD</strong> — the estimated cost of tokens reserved for requests that currently are
+        <strong>Estimated Reserved USD</strong> — the estimated cost of tokens reserved for requests that are currently
         processing or were not processed correctly.
       </li>
       <li> <strong>Estimated Total USD</strong> — the estimated total cost of tokens used in the month. </li>
