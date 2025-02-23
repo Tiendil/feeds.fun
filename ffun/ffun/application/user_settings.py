@@ -5,8 +5,6 @@ from ffun.user_settings import types
 from ffun.user_settings.values import Value, user_settings
 
 
-# TODO: remove descriptions
-
 class UserSetting(enum.IntEnum):
     openai_api_key = 1
 
@@ -47,7 +45,6 @@ user_settings.add(
 )
 
 
-# TODO: hide in GUI
 user_settings.add(
     Value(
         key=UserSetting.test_api_key,
