@@ -1,6 +1,6 @@
 <template>
   <div class="ffun-info-common">
-    <h4>Create your first sorting rule</h4>
+    <h4>Create your first rule</h4>
 
     <ol class="list-decimal list-inside">
       <li><strong>Click on a tag</strong> that interests you.</li>
