@@ -35,12 +35,12 @@
     <template v-else>
       <button
         @click.prevent="save()"
-        class="ffun-form-button ml-1"
+        class="ffun-form-button short ml-1"
         >Save</button
       >
       <button
         @click.prevent="cancel()"
-        class="ffun-form-button ml-1"
+        class="ffun-form-button short ml-1"
         >Cancel</button
       >
     </template>
