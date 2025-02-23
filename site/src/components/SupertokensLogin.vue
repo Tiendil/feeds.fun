@@ -26,7 +26,7 @@
         <button
           class="ffun-form-button"
           type="submit"
-          >Login</button
+          >Log In</button
         >
       </form>
     </template>
