@@ -1,14 +1,17 @@
 <template>
   <div>
-    <h2>
-      <a
+
+    <h3>
+      <favicon-element
+        :url="feed.url"
+        class="w-5 h-5 mx-1 mb-1 inline align-middle" />
+
+      <external-url
         class="ffun-normal-link"
-        :href="feed.url"
-        target="_blank"
-        rel="noopener noreferrer">
-        {{ feed.title }}
-      </a>
-    </h2>
+        :url="feed.url"
+        :text="feed.title"/>
+
+    </h3>
 
     <p v-html="feed.description" />
 
@@ -16,13 +19,11 @@
       <li
         v-for="entry in feed.entries"
         :key="entry.url">
-        <a
+
+        <external-url
           class="ffun-normal-link"
-          :href="entry.url"
-          target="_blank"
-          rel="noopener noreferrer">
-          {{ entry.title }}
-        </a>
+          :url="entry.url"
+          :text="entry.title"/>
       </li>
     </ul>
   </div>

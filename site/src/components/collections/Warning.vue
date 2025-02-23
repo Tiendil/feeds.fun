@@ -43,7 +43,7 @@
       <li>If a feed URL can be split into multiple simpler URLs, add them separately.</li>
       <li>
         Add feeds directly from
-        <a class="ffun-normal-link" href="#" @click.prevent="goToCollections()">
+        <a href="#" @click.prevent="goToCollections()">
           collections</a
                        >
         instead of using URLs from websites.

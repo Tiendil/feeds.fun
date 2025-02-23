@@ -21,7 +21,7 @@
     <div class="ffun-info-common">
       <p>
         All feeds from
-        <a class="ffun-normal-link" href="#" @click.prevent="goToCollections()">collections</a>
+        <a href="#" @click.prevent="goToCollections()">collections</a>
         are tagged for free.
       </p>
 

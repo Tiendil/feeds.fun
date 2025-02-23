@@ -31,4 +31,9 @@
     p a {
         @apply text-blue-600 hover:text-blue-800 cursor-pointer;
     }
+
+    /* TODO: move somewhere or remove in the honor of more specialized classes */
+    .ffun-normal-link {
+        @apply text-blue-600 hover:text-blue-800 cursor-pointer;
+    }
 }
