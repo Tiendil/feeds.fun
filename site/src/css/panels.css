@@ -47,9 +47,4 @@
     .ffun-info-waiting {
         @apply ffun-x-info bg-yellow-50 border-yellow-200 text-yellow-800;
     }
-
-    /* TODO: remove? */
-    .ffun-info-attention {
-        @apply ffun-x-info bg-purple-50 border-purple-200 text-purple-800;
-    }
 }
