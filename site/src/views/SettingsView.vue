@@ -4,12 +4,6 @@
 
     <h3>General</h3>
 
-    <div class="ffun-info-common mb-4">
-      <p>
-        User id is used to identify you in the system. Please provide it when you search for help or report a bug.
-      </p>
-    </div>
-
     <label class="mr-1">User id</label>
     <input
       class="ffun-input w-72 cursor-pointer"
@@ -34,7 +28,7 @@
       <p>
         If you want to tag your own feeds, we kindly ask you to provide an
         <external-url url="https://platform.openai.com/docs/api-reference/introduction" text="OpenAI"/>
-        or/and
+        or
         <external-url url="https://ai.google.dev/gemini-api/docs/api-key" text="Gemini"/>
         API key.
       </p>
@@ -43,9 +37,9 @@
 
       <ul>
         <li>We use your key only for your feeds, that are not part of predefined collections.</li>
-        <li>We track your key usage and stop using it if it exceed your monthly limit.</li>
+        <li>We stop using your key when its usage exceeds the monthly limit you set.</li>
         <li>If a feed has multiple subscribers with API keys, we'll use a key with the lowest usage in the current month.</li>
-        <li>We limit the age of news to be processed with your API key, to safe your resources.</li>
+        <li>We limit the age of news processed with your API key, to safe your resources.</li>
       </ul>
 
       <p><strong>The more users set up an API key, the cheaper Feeds Fun becomes for everyone.</strong></p>
@@ -57,13 +51,13 @@
     <user-setting kind="gemini_api_key"/>
     <user-setting kind="max_tokens_cost_in_month"/>
 
+    <user-setting kind="process_entries_not_older_than"/>
+
     <div class="ffun-info-common mb-4">
       <p>
         The age of a news item is calculated based on the time it was published (according to the data in the feed).
       </p>
     </div>
-
-    <user-setting kind="process_entries_not_older_than"/>
 
     <h3>API usage</h3>
 

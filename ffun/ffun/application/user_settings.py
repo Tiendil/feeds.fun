@@ -61,7 +61,7 @@ user_settings.add(
 user_settings.add(
     Value(
         key=UserSetting.max_tokens_cost_in_month,
-        name="Max spendings on API keys USD/month",
+        name="Max spendings (USD/month)",
         type=types.Decimal(),
         default=Decimal("10"),
     )
@@ -81,7 +81,7 @@ user_settings.add(
 user_settings.add(
     Value(
         key=UserSetting.process_entries_not_older_than,
-        name="Use API key only for entries not older than N days",
+        name="Process entries not older than N days",
         type=types.Integer(),
         default=1,
     )
