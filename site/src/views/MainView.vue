@@ -159,11 +159,11 @@
 
               <main-news-title title="New mission on Mars" :score="21" />
 
-              <main-news-title title="Sci-fi novel about UFO in New Yourk" :score="13" />
+              <main-news-title class="opacity-75" title="Sci-fi novel about UFO in New Yourk" :score="13" />
 
-              <i class="block ti ti-dots justify-self-center"></i>
+              <i class="opacity-65 block ti ti-dots justify-self-center"></i>
 
-              <main-news-title title="UFO crashes in Central Park" :score="-26" />
+              <main-news-title class="opacity-55" title="UFO crashes in Central Park" :score="-26" />
 
             </div>
 

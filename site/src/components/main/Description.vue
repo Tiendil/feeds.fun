@@ -1,11 +1,11 @@
 <template>
 
-<div class="flex items-stretch bg-white rounded-xl overflow-hidden">
-  <div class="w-12 bg-blue-600 text-white flex items-center justify-center text-2xl font-bold">
+<div class="flex items-stretch bg-white rounded-xl overflow-hidden min-h-28 max-h-28">
+  <div class="w-12 bg-blue-600 text-white flex items-center justify-center text-4xl font-bold">
     <i :class="['ti', icon]"></i>
   </div>
 
-  <div class="w-1/3 bg-blue-500 text-white p-6 flex items-center text-lg font-bold">
+  <div class="w-1/3 bg-blue-500 text-white p-6 flex items-center text-xl font-medium">
     <slot name="caption"/>
   </div>
 
