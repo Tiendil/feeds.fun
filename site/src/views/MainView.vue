@@ -154,13 +154,17 @@
 
           <template #description>
 
-            <span class="block text-lg font-bold">New mission on Mars</span>
+            <div class="justify-items-start">
 
-            <span class="block text-lg font-bold">New sci-fi about UFO in New Yourk</span>
+              <span class="block text-lg font-bold">New mission on Mars</span>
 
-            <i class="block ti ti-dots"></i>
+              <span class="block text-lg font-bold">New sci-fi about UFO in New Yourk</span>
 
-            <span class="block text-lg font-bold">UFO crashes in Central Park</span>
+              <i class="block ti ti-dots"></i>
+
+              <span class="block text-lg font-bold">UFO crashes in Central Park</span>
+
+            </div>
 
             <!-- Feeds Fun filters and sorts news based on your rules, so the most relevant stories are always on top. -->
           </template>
