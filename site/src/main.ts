@@ -6,6 +6,8 @@ import router from "./router";
 
 import "./style.css";
 
+import MainDescription from "./components/MainDescription.vue";
+
 import FeedsList from "./components/FeedsList.vue";
 import EntriesList from "./components/EntriesList.vue";
 import RulesList from "./components/RulesList.vue";
@@ -63,6 +65,8 @@ import {useSupertokens} from "@/stores/supertokens";
 import VueCountdown from "@chenfengyuan/vue-countdown";
 
 const app = createApp(App);
+
+app.component("MainDescription", MainDescription);
 
 app.component("FeedsList", FeedsList);
 app.component("EntriesList", EntriesList);

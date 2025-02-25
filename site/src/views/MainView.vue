@@ -2,8 +2,8 @@
   <wide-layout>
 
     <header class="bg-blue-500 text-white p-5 text-center">
-      <h1 class="m-0 text-4xl">Feeds Fun</h1>
-      <p class="mt-2 text-xl">Personalized News for Professionals</p>
+      <h1 class="m-0 text-5xl">Feeds Fun</h1>
+      <p class="mt-2 text-2xl">Personalized News for Professionals</p>
     </header>
 
     <div class="bg-slate-200 text-center p-5">
@@ -23,69 +23,55 @@
 
       <div class="max-w-3xl mx-auto space-y-6">
 
-        <div class="flex items-stretch bg-white rounded-xl overflow-hidden">
-          <!-- Number div -->
-          <div class="w-12 bg-blue-600 text-white flex items-center justify-center text-2xl font-bold">
-            <i class="ti ti-number-1"></i>
-          </div>
-          <!-- Caption div -->
-          <div class="w-1/3 bg-blue-500 text-white p-6 flex items-center text-lg font-bold">
+        <main-description icon="ti-number-1">
+          <template #caption>
             Subscribe to feeds
-          </div>
-          <!-- Description div -->
-          <div class="flex-1 bg-gray-100 p-6 text-gray-800 flex items-center">
+          </template>
+
+          <template #description>
             Stay updated with news from major sites like Reddit, ArXiv.org, Medium, or even your friends’ blogs—all in one place.
-          </div>
-        </div>
+          </template>
+        </main-description>
 
-        <div class="flex items-stretch bg-white rounded-xl overflow-hidden">
-          <div class="w-12 bg-blue-600 text-white flex items-center justify-center text-2xl font-bold">
-            <i class="ti ti-number-2"></i>
-          </div>
-          <div class="w-1/3 bg-blue-500 text-white p-6 flex items-center text-lg font-bold">
+        <main-description icon="ti-number-2">
+          <template #caption>
             Automatic tagging
-          </div>
-          <div class="flex-1 bg-gray-100 p-6 text-gray-800 flex items-center">
+          </template>
+
+          <template #description>
             Feeds Fun automatically tags news articles based on their content—people, places, topics, games, and more.
-          </div>
-        </div>
+          </template>
+        </main-description>
 
-        <div class="flex items-stretch bg-white rounded-xl overflow-hidden">
-          <div class="w-12 bg-blue-600 text-white flex items-center justify-center text-2xl font-bold">
-            <i class="ti ti-number-3"></i>
-          </div>
-          <div class="w-1/3 bg-blue-500 text-white p-6 flex items-center text-lg font-bold">
+        <main-description icon="ti-number-3">
+          <template #caption>
             Score your news
-          </div>
-          <div class="flex-1 bg-gray-100 p-6 text-gray-800 flex items-center">
+          </template>
+
+          <template #description>
             Set rules to rank news. Want Python over Java? No politics? You decide what comes first.
-          </div>
-        </div>
+          </template>
+        </main-description>
 
-        <div class="flex items-stretch bg-white rounded-xl overflow-hidden">
-          <div class="w-12 bg-blue-600 text-white flex items-center justify-center text-2xl font-bold">
-            <i class="ti ti-number-4"></i>
-          </div>
-          <div class="w-1/3 bg-blue-500 text-white p-6 flex items-center text-lg font-bold">
+        <main-description icon="ti-number-4">
+          <template #caption>
             Read what matters
-          </div>
-          <div class="flex-1 bg-gray-100 p-6 text-gray-800 flex items-center">
-            Feeds Fun filters and sorts news based on your rules, so the most relevant stories are always on top.
-          </div>
-        </div>
+          </template>
 
-        <div class="flex items-stretch bg-white rounded-xl overflow-hidden">
-          <div class="w-12 bg-blue-600 text-white flex items-center justify-center text-2xl font-bold">
-            <i class="ti ti-number-5"></i>
-          </div>
-          <div class="w-1/3 bg-blue-500 text-white p-6 flex items-center text-lg font-bold">
+          <template #description>
+            Feeds Fun filters and sorts news based on your rules, so the most relevant stories are always on top.
+          </template>
+        </main-description>
+
+        <main-description icon="ti-number-5">
+          <template #caption>
             Full transparency
-          </div>
-          <div class="flex-1 bg-gray-100 p-6 text-gray-800 flex items-center">
+          </template>
+
+          <template #description>
             See exactly how your rules shape your feed—no black boxes, no hidden algorithms. Check our
-            <external-url url="https://github.com/Tiendil/feeds.fun" text="source code"/>.
-          </div>
-        </div>
+          </template>
+        </main-description>
 
       </div>
     </div>
