@@ -20,7 +20,8 @@
     </div>
 
     <div class="bg-white text-center p-5">
-      <h1 class="m-0 text-3xl mb-4">How Feeds Fun Works</h1>
+      <!-- <h1 class="m-0 text-3xl mb-4">How Feeds Fun Works</h1> -->
+      <h1 class="m-0 text-3xl mb-4">Smarter Way to Read News</h1>
 
       <div class="max-w-3xl mx-auto space-y-6">
 
