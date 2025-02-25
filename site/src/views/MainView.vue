@@ -42,7 +42,7 @@
           <template #description>
             <!-- <p>Feeds Fun automatically tags news articles based on their content—people, places, topics, games, and more.</p> -->
 
-            <span class="block text-lg font-bold">UFO Crashes in Central Park</span>
+            <span class="block text-lg font-bold">UFO crashes in Central Park</span>
 
             <fake-tag
               uid="ufo"
@@ -126,11 +126,13 @@
 
           <template #description>
 
-            <span class="block text-lg font-bold">NASA Discovered New Planet</span>
+            <span class="block text-lg font-bold">New mission on Mars</span>
 
             <span class="block text-lg font-bold">New sci-fi about UFO in New Yourk</span>
 
-            <span class="block text-lg font-bold">UFO Crashes in Central Park</span>
+            <i class="block ti ti-dots"></i>
+
+            <span class="block text-lg font-bold">UFO crashes in Central Park</span>
 
             <!-- Feeds Fun filters and sorts news based on your rules, so the most relevant stories are always on top. -->
           </template>

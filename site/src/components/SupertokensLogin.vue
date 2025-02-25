@@ -10,7 +10,7 @@
 
   <div v-else>
     <template v-if="!requested">
-      <p class="text-left">We'll send you an email with a login link.</p>
+      <p class="text-left">We'll send you an email with a login link, no password required.</p>
 
       <!-- <p class="text-left">If you don&apos;t have an account, one will be created.</p> -->
 
