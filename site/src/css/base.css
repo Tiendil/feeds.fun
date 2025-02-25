@@ -3,6 +3,8 @@
     html {
         @apply font-sans;
         @apply bg-white;
+        /* TODO: maybe replace bg to slate-50? */
+        /* @apply bg-slate-50; */
     }
 
     h1 {
