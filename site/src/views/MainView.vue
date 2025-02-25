@@ -169,15 +169,15 @@
           </template>
         </main-description>
 
-        <main-description icon="ti-number-5">
-          <template #caption>
-            Full transparency
-          </template>
+        <!-- <main-description icon="ti-number-5"> -->
+        <!--   <template #caption> -->
+        <!--     Full transparency -->
+        <!--   </template> -->
 
-          <template #description>
-            See exactly how your rules shape your feed—no black boxes, no hidden algorithms. Check our
-          </template>
-        </main-description>
+        <!--   <template #description> -->
+        <!--     See exactly how your rules shape your feed—no black boxes, no hidden algorithms. Check our -->
+        <!--   </template> -->
+        <!-- </main-description> -->
 
       </div>
     </div>
