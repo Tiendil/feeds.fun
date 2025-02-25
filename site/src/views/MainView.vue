@@ -13,7 +13,7 @@
     </div>
 
     <div class="max-w-3xl mx-auto mt-4">
-      <div class="ffun-info-good">
+      <div class="ffun-info-good text-center">
         <h2 class="my-0">Single e-mail to log in</h2>
         <supertokens-login />
       </div>
@@ -41,8 +41,8 @@
 
           <template #description>
             <!-- <p>Feeds Fun automatically tags news articles based on their content—people, places, topics, games, and more.</p> -->
-
-            <main-news-title title="UFO crashes in Central Park" :score="null" />
+            <div>
+              <main-news-title class="" title="UFO crashes in Central Park" :score="null" />
 
             <fake-tag
               uid="ufo"
@@ -67,6 +67,8 @@
               name="space-exploration"
               :link="null"
               css-modifier="positive" />
+
+            </div>
 
           </template>
         </main-description>
