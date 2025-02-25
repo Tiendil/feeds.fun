@@ -30,7 +30,7 @@
           </template>
 
           <template #description>
-            Most sites provide RSS or ATOM feeds of their updates, that anyone can subscribe to.
+            <p class="text-lg font-medium">Give us the site URL and we do the rest.</p>
           </template>
         </main-description>
 
@@ -42,7 +42,7 @@
           <template #description>
             <!-- <p>Feeds Fun automatically tags news articles based on their content—people, places, topics, games, and more.</p> -->
 
-            <span class="block text-lg font-bold">UFO crashes in Central Park</span>
+            <main-news-title title="UFO crashes in Central Park" :score="null" />
 
             <fake-tag
               uid="ufo"
@@ -73,7 +73,7 @@
 
         <main-description icon="ti-number-3">
           <template #caption>
-            Create sorting rules
+            Create scoring rules
           </template>
 
           <template #description>
@@ -85,7 +85,6 @@
                 <fake-tag
                   uid="sci-fi"
                   name="sci-fi"
-                  link="http://example.com"
                   css-modifier="positive" />
 
                 <i class="ti ti-arrow-right"></i>
@@ -104,7 +103,7 @@
 
                 <i class="ti ti-arrow-right"></i>
 
-                <span class="cursor-pointer text-purple-700 text-xl">-34</span>
+                <span class="cursor-pointer text-purple-700 text-xl">-55</span>
 
               </div>
 
@@ -156,13 +155,13 @@
 
             <div class="justify-items-start">
 
-              <span class="block text-lg font-bold">New mission on Mars</span>
+              <main-news-title title="New mission on Mars" :score="21" />
 
-              <span class="block text-lg font-bold">New sci-fi about UFO in New Yourk</span>
+              <main-news-title title="Sci-fi novel about UFO in New Yourk" :score="13" />
 
-              <i class="block ti ti-dots"></i>
+              <i class="block ti ti-dots justify-self-center"></i>
 
-              <span class="block text-lg font-bold">UFO crashes in Central Park</span>
+              <main-news-title title="UFO crashes in Central Park" :score="-26" />
 
             </div>
 
