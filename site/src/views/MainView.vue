@@ -114,6 +114,41 @@
 
               </div>
 
+              <div class="">
+
+                <fake-tag
+                  uid="sci-fi"
+                  name="sci-fi"
+                  link="http://example.com"
+                  css-modifier="positive" />
+
+                <i class="ti ti-arrow-right"></i>
+
+                <span class="cursor-pointer text-purple-700 text-xl">+5</span>
+
+              </div>
+
+              <div class="">
+                <fake-tag
+                  uid="space-exploration"
+                  name="space-exploration"
+                  :link="null"
+                  css-modifier="positive" />
+
+                <i class="ti ti-plus"></i>
+
+                <fake-tag
+                  uid="mars"
+                  name="mars"
+                  :link="null"
+                  css-modifier="positive" />
+
+                <i class="ti ti-arrow-right"></i>
+
+                <span class="cursor-pointer text-purple-700 text-xl">+21</span>
+
+              </div>
+
             </div>
 
           </template>
