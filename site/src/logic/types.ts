@@ -344,6 +344,10 @@ export function noInfoTag(uid: string): TagInfo {
   return {uid, name: uid, link: null, categories: []};
 }
 
+export function fakeTag({uid, name, link, categories}: TagInfo): TagInfo {
+  return {uid, name, link, categories};
+}
+
 export type UserSetting = {
   readonly kind: string;
   readonly type: string;

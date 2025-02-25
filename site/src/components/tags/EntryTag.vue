@@ -3,7 +3,7 @@
   :class="classes"
   :title="tooltip"
   @click.prevent="onClick()">
-  <tag-base :uid="properties.uid" />
+  <tag-base :tag-info="tagInfo" />
 </div>
 </template>
 

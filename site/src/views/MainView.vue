@@ -12,8 +12,9 @@
       </p>
     </div>
 
-    <div class="max-w-lg mx-auto mt-4">
+    <div class="max-w-3xl mx-auto mt-4">
       <div class="ffun-info-good">
+        <h2 class="my-0">Register without password</h2>
         <supertokens-login />
       </div>
     </div>
@@ -25,11 +26,11 @@
 
         <main-description icon="ti-number-1">
           <template #caption>
-            Subscribe to feeds
+            Subscribe to news
           </template>
 
           <template #description>
-            Stay updated with news from major sites like Reddit, ArXiv.org, Medium, or even your friends’ blogs—all in one place.
+            Most sites provide RSS or ATOM feeds of their updates, that anyone can subscribe to.
           </template>
         </main-description>
 
@@ -39,13 +40,44 @@
           </template>
 
           <template #description>
-            Feeds Fun automatically tags news articles based on their content—people, places, topics, games, and more.
+            <!-- <p>Feeds Fun automatically tags news articles based on their content—people, places, topics, games, and more.</p> -->
+
+            <h3>UFO Crashes in Central Park</h3>
+
+            <fake-tag
+              uid="ufo"
+              name="ufo"
+              :link="null"
+              css-modifier="positive"
+              :count="100500" />
+
+            <fake-tag
+              uid="news-dot-fake"
+              name="news.fake"
+              link="http://example.com"
+              css-modifier="negative"
+              :count="13" />
+
+            <fake-tag
+              uid="new-york"
+              name="new-york"
+              :link="null"
+              css-modifier="positive"
+              :count="3" />
+
+            <fake-tag
+              uid="space-exploration"
+              name="space-exploration"
+              :link="null"
+              css-modifier="positive"
+              :count="31" />
+
           </template>
         </main-description>
 
         <main-description icon="ti-number-3">
           <template #caption>
-            Score your news
+            Score tags
           </template>
 
           <template #description>

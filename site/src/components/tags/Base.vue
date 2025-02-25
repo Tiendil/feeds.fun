@@ -22,26 +22,8 @@
   import * as asserts from "@/logic/asserts";
   import * as events from "@/logic/events";
 
-  const tagsStore = useTagsStore();
-
-  const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
-
-  asserts.defined(tagsStates);
-
   const properties = defineProps<{
-    uid: string;
+    tagInfo: t.TagInfo;
   }>();
-
-  const tagInfo = computed(() => {
-    const tagInfo = tagsStore.tags[properties.uid];
-
-    if (tagInfo) {
-      return tagInfo;
-    }
-
-    tagsStore.requestTagInfo({tagUid: properties.uid});
-
-    return t.noInfoTag(properties.uid);
-  });
 
 </script>

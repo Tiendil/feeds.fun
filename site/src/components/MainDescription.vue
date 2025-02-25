@@ -10,7 +10,9 @@
   </div>
 
   <div class="flex-1 bg-gray-100 p-6 text-gray-800 flex items-center">
-    <slot name="description"/>
+    <div>
+      <slot name="description"/>
+    </div>
   </div>
 </div>
 </template>

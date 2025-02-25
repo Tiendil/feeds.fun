@@ -2,7 +2,7 @@
 <div
   :class="classes"
   @click.prevent="onClick()">
-  <tag-base :uid="properties.uid" />
+  <tag-base :tag-info="tagInfo" />
 </div>
 </template>
 

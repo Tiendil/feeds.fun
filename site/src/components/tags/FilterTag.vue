@@ -14,7 +14,7 @@
       @click.prevent="onClick()">
       <span v-if="showCount" class="pr-1">[{{ count }}]</span>
 
-      <tag-base :uid="properties.uid" />
+      <tag-base :tag-info="tagInfo" />
     </span>
   </div>
 </template>
