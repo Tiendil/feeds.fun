@@ -6,8 +6,6 @@ import router from "./router";
 
 import "./style.css";
 
-import MainDescription from "./components/MainDescription.vue";
-
 import FeedsList from "./components/FeedsList.vue";
 import EntriesList from "./components/EntriesList.vue";
 import RulesList from "./components/RulesList.vue";
@@ -58,6 +56,8 @@ import BodyListReverseTimeColumn from "./components/body_list/ReverseTimeColumn.
 import BodyListFaviconColumn from "./components/body_list/FaviconColumn.vue";
 import BodyListEntryBody from "./components/body_list/EntryBody.vue";
 
+import MainDescription from "./components/main/Description.vue";
+
 import WideLayout from "./layouts/WideLayout.vue";
 import SidePanelLayout from "./layouts/SidePanelLayout.vue";
 
@@ -66,8 +66,6 @@ import {useSupertokens} from "@/stores/supertokens";
 import VueCountdown from "@chenfengyuan/vue-countdown";
 
 const app = createApp(App);
-
-app.component("MainDescription", MainDescription);
 
 app.component("FeedsList", FeedsList);
 app.component("EntriesList", EntriesList);
@@ -118,6 +116,8 @@ app.component("ValueScore", ValueScore);
 app.component("BodyListReverseTimeColumn", BodyListReverseTimeColumn);
 app.component("BodyListFaviconColumn", BodyListFaviconColumn);
 app.component("BodyListEntryBody", BodyListEntryBody);
+
+app.component("MainDescription", MainDescription);
 
 app.component("WideLayout", WideLayout);
 app.component("SidePanelLayout", SidePanelLayout);
