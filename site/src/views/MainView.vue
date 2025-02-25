@@ -14,7 +14,7 @@
 
     <div class="max-w-3xl mx-auto mt-4">
       <div class="ffun-info-good">
-        <h2 class="my-0">Register without password</h2>
+        <h2 class="my-0">Single e-mail to log in</h2>
         <supertokens-login />
       </div>
     </div>
@@ -26,7 +26,7 @@
 
         <main-description icon="ti-number-1">
           <template #caption>
-            Subscribe to news
+            Subscribe to sites
           </template>
 
           <template #description>
@@ -36,52 +36,86 @@
 
         <main-description icon="ti-number-2">
           <template #caption>
-            Automatic tagging
+            Get automatic tagging
           </template>
 
           <template #description>
             <!-- <p>Feeds Fun automatically tags news articles based on their content—people, places, topics, games, and more.</p> -->
 
-            <h3>UFO Crashes in Central Park</h3>
+            <span class="block text-lg font-bold">UFO Crashes in Central Park</span>
 
             <fake-tag
               uid="ufo"
               name="ufo"
               :link="null"
-              css-modifier="positive"
-              :count="100500" />
+              css-modifier="positive"/>
 
             <fake-tag
               uid="news-dot-fake"
               name="news.fake"
               link="http://example.com"
-              css-modifier="negative"
-              :count="13" />
+              css-modifier="negative" />
 
             <fake-tag
               uid="new-york"
               name="new-york"
               :link="null"
-              css-modifier="positive"
-              :count="3" />
+              css-modifier="positive" />
 
             <fake-tag
               uid="space-exploration"
               name="space-exploration"
               :link="null"
-              css-modifier="positive"
-              :count="31" />
+              css-modifier="positive" />
 
           </template>
         </main-description>
 
         <main-description icon="ti-number-3">
           <template #caption>
-            Score tags
+            Create sorting rules
           </template>
 
           <template #description>
-            Set rules to rank news. Want Python over Java? No politics? You decide what comes first.
+
+            <div class="grid grid-cols-2">
+              <div class="">
+                <fake-tag
+                  uid="ufo"
+                  name="ufo"
+                  :link="null"
+                  css-modifier="positive" />
+
+                <i class="ti ti-plus"></i>
+
+                <fake-tag
+                  uid="new-york"
+                  name="new-york"
+                  :link="null"
+                  css-modifier="positive" />
+
+                <i class="ti ti-arrow-right"></i>
+
+                <span class="cursor-pointer text-purple-700 text-xl">+8</span>
+
+              </div>
+
+              <div class="">
+
+                <fake-tag
+                  uid="news-dot-fake"
+                  name="news.fake"
+                  link="http://example.com"
+                  css-modifier="negative" />
+
+                <i class="ti ti-arrow-right"></i>
+
+                <span class="cursor-pointer text-purple-700 text-xl">-21</span>
+
+              </div>
+
+            </div>
+
           </template>
         </main-description>
 
@@ -91,7 +125,14 @@
           </template>
 
           <template #description>
-            Feeds Fun filters and sorts news based on your rules, so the most relevant stories are always on top.
+
+            <span class="block text-lg font-bold">NASA Discovered New Planet</span>
+
+            <span class="block text-lg font-bold">New sci-fi about UFO in New Yourk</span>
+
+            <span class="block text-lg font-bold">UFO Crashes in Central Park</span>
+
+            <!-- Feeds Fun filters and sorts news based on your rules, so the most relevant stories are always on top. -->
           </template>
         </main-description>
 

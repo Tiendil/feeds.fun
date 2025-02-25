@@ -1,7 +1,6 @@
 <template>
 <div
-  :class="classes"
-  :title="tooltip">
+  :class="classes">
   <tag-base :tag-info="tagInfo" />
 </div>
 </template>
@@ -20,7 +19,6 @@
     name: string;
     link: string|null;
     cssModifier: string;
-    count: number;
   }>();
 
 const tagInfo = computed(() => {
@@ -39,7 +37,4 @@ const tagInfo = computed(() => {
     return result;
   });
 
-  const tooltip = computed(() => {
-    return `Articles with this tag: ${properties.count}`;
-  });
 </script>
