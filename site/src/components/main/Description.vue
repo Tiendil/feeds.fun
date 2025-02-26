@@ -9,7 +9,7 @@
     <slot name="caption"/>
   </div>
 
-  <div class="flex-1 bg-gray-100 p-6 text-gray-800 flex items-center">
+  <div class="flex-1 bg-slate-100 p-6 text-gray-800 flex items-center">
     <div class="w-full">
       <slot name="description"/>
     </div>
