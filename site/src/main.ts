@@ -60,6 +60,7 @@ import BodyListEntryBody from "./components/body_list/EntryBody.vue";
 
 import MainDescription from "./components/main/Description.vue";
 import MainNewsTitle from "./components/main/NewsTitle.vue";
+import MainHeaderLine from "./components/main/HeaderLine.vue";
 
 import WideLayout from "./layouts/WideLayout.vue";
 import SidePanelLayout from "./layouts/SidePanelLayout.vue";
@@ -124,6 +125,7 @@ app.component("BodyListEntryBody", BodyListEntryBody);
 
 app.component("MainDescription", MainDescription);
 app.component("MainNewsTitle", MainNewsTitle);
+app.component("MainHeaderLine", MainHeaderLine);
 
 app.component("WideLayout", WideLayout);
 app.component("SidePanelLayout", SidePanelLayout);

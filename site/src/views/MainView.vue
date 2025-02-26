@@ -15,50 +15,43 @@
     <p class="mt-2 text-2xl">Transparent Personalized News</p>
   </div>
 
-    <div class="bg-slate-200 text-center p-5">
-      <p class="text-3xl font-medium">
-        Save over <strong class="text-green-700">80%</strong> of news-browsing time by focusing on what truly matters to you
-      </p>
+  <main-header-line>
+    Save over <strong class="text-green-700">80%</strong> of news-browsing time by focusing on what truly matters to you
+  </main-header-line>
+
+  <div class="max-w-xl mx-auto my-5">
+    <div class="ffun-info-good text-center">
+      <h2 class="my-0">Single e-mail to log in</h2>
+      <supertokens-login />
     </div>
+  </div>
 
-    <div class="max-w-xl mx-auto my-5">
-      <div class="ffun-info-good text-center">
-        <h2 class="my-0">Single e-mail to log in</h2>
-        <supertokens-login />
-      </div>
-    </div>
+  <main-header-line>
+    Smarter way to read news
+  </main-header-line>
 
-    <div class="bg-slate-200 text-center p-5">
-      <p class="text-3xl font-medium">
-        Smarter way to read news
-      </p>
-    </div>
+  <div class="bg-white text-center my-5">
+    <div class="max-w-3xl mx-auto space-y-6">
 
-    <div class="bg-white text-center my-5">
-      <!-- <h1 class="m-0 text-3xl mb-4">How Feeds Fun Works</h1> -->
-      <!-- <h1 class="m-0 text-3xl mb-4">Smarter Way to Read News</h1> -->
+      <main-description icon="ti-number-1">
+        <template #caption>
+          Subscribe to sites
+        </template>
 
-      <div class="max-w-3xl mx-auto space-y-6">
+        <template #description>
+          <p class="text-lg font-medium">Give us the site URL and we do the rest.</p>
+        </template>
+      </main-description>
 
-        <main-description icon="ti-number-1">
-          <template #caption>
-            Subscribe to sites
-          </template>
+      <main-description icon="ti-number-2">
+        <template #caption>
+          Get automatic tagging
+        </template>
 
-          <template #description>
-            <p class="text-lg font-medium">Give us the site URL and we do the rest.</p>
-          </template>
-        </main-description>
-
-        <main-description icon="ti-number-2">
-          <template #caption>
-            Get automatic tagging
-          </template>
-
-          <template #description>
-            <!-- <p>Feeds Fun automatically tags news articles based on their content—people, places, topics, games, and more.</p> -->
-            <div>
-              <main-news-title class="" title="UFO crashes in Central Park" :score="null" />
+        <template #description>
+          <!-- <p>Feeds Fun automatically tags news articles based on their content—people, places, topics, games, and more.</p> -->
+          <div>
+            <main-news-title class="" title="UFO crashes in Central Park" :score="null" />
 
             <fake-tag
               uid="ufo"
@@ -84,127 +77,116 @@
               :link="null"
               css-modifier="positive" />
 
-            </div>
+          </div>
 
-          </template>
-        </main-description>
+        </template>
+      </main-description>
 
-        <main-description icon="ti-number-3">
-          <template #caption>
-            Create scoring rules
-          </template>
+      <main-description icon="ti-number-3">
+        <template #caption>
+          Create scoring rules
+        </template>
 
-          <template #description>
+        <template #description>
 
-            <div class="grid grid-cols-2 justify-items-start">
+          <div class="grid grid-cols-2 justify-items-start">
 
-              <div class="">
+            <div class="">
 
-                <fake-tag
-                  uid="sci-fi"
-                  name="sci-fi"
-                  css-modifier="positive" />
+              <fake-tag
+                uid="sci-fi"
+                name="sci-fi"
+                :link="null"
+                css-modifier="positive" />
 
-                <i class="ti ti-arrow-right"></i>
+              <i class="ti ti-arrow-right"></i>
 
-                <span class="cursor-pointer text-purple-700 text-xl">+5</span>
-
-              </div>
-
-              <div class="">
-
-                <fake-tag
-                  uid="news-dot-fake"
-                  name="news.fake"
-                  link="http://example.com"
-                  css-modifier="negative" />
-
-                <i class="ti ti-arrow-right"></i>
-
-                <span class="cursor-pointer text-purple-700 text-xl">-55</span>
-
-              </div>
-
-              <div class="">
-                <fake-tag
-                  uid="ufo"
-                  name="ufo"
-                  :link="null"
-                  css-modifier="positive" />
-
-                <i class="ti ti-plus"></i>
-
-                <fake-tag
-                  uid="new-york"
-                  name="new-york"
-                  :link="null"
-                  css-modifier="positive" />
-
-                <i class="ti ti-arrow-right"></i>
-
-                <span class="cursor-pointer text-purple-700 text-xl">+8</span>
-
-              </div>
-
-              <div class="">
-                <fake-tag
-                  uid="space-exploration"
-                  name="space-exploration"
-                  :link="null"
-                  css-modifier="positive" />
-
-                <i class="ti ti-arrow-right"></i>
-
-                <span class="cursor-pointer text-purple-700 text-xl">+21</span>
-
-              </div>
+              <span class="cursor-pointer text-purple-700 text-xl">+5</span>
 
             </div>
 
-          </template>
-        </main-description>
+            <div class="">
 
-        <main-description icon="ti-number-4">
-          <template #caption>
-            Read what matters
-          </template>
+              <fake-tag
+                uid="news-dot-fake"
+                name="news.fake"
+                link="http://example.com"
+                css-modifier="negative" />
 
-          <template #description>
+              <i class="ti ti-arrow-right"></i>
 
-            <div class="justify-items-start">
+              <span class="cursor-pointer text-purple-700 text-xl">-55</span>
 
-              <main-news-title title="New mission on Mars" :score="21" />
+            </div>
 
-              <main-news-title class="opacity-75" title="Sci-fi novel about UFO in New Yourk" :score="13" />
+            <div class="">
+              <fake-tag
+                uid="ufo"
+                name="ufo"
+                :link="null"
+                css-modifier="positive" />
 
-              <i class="opacity-65 block ti ti-dots justify-self-center"></i>
+              <i class="ti ti-plus"></i>
+
+              <fake-tag
+                uid="new-york"
+                name="new-york"
+                :link="null"
+                css-modifier="positive" />
+
+              <i class="ti ti-arrow-right"></i>
+
+              <span class="cursor-pointer text-purple-700 text-xl">+8</span>
+
+            </div>
+
+            <div class="">
+              <fake-tag
+                uid="space-exploration"
+                name="space-exploration"
+                :link="null"
+                css-modifier="positive" />
+
+              <i class="ti ti-arrow-right"></i>
+
+              <span class="cursor-pointer text-purple-700 text-xl">+21</span>
+
+            </div>
+
+          </div>
+
+        </template>
+      </main-description>
+
+      <main-description icon="ti-number-4">
+        <template #caption>
+          Read what matters
+        </template>
+
+        <template #description>
+
+          <div class="justify-items-start">
+
+            <main-news-title title="New mission on Mars" :score="21" />
+
+            <main-news-title class="opacity-75" title="Sci-fi novel about UFO in New Yourk" :score="13" />
+
+            <i class="opacity-65 block ti ti-dots justify-self-center"></i>
 
               <main-news-title class="opacity-55" title="UFO crashes in Central Park" :score="-26" />
 
             </div>
 
             <!-- Feeds Fun filters and sorts news based on your rules, so the most relevant stories are always on top. -->
-          </template>
-        </main-description>
+        </template>
+      </main-description>
 
-        <!-- <main-description icon="ti-number-5"> -->
-        <!--   <template #caption> -->
-        <!--     Full transparency -->
-        <!--   </template> -->
-
-        <!--   <template #description> -->
-        <!--     See exactly how your rules shape your feed—no black boxes, no hidden algorithms. Check our -->
-        <!--   </template> -->
-        <!-- </main-description> -->
-
-      </div>
     </div>
+  </div>
 
-    <div class="bg-slate-200 text-center p-5">
-      <p class="text-3xl font-medium">
-        Check our collections TODO
-      </p>
-    </div>
+  <main-header-line>
+    Check our collections TODO
+  </main-header-line>
 
     <div class="bg-white text-center p-5">
       <h1 class="m-0 text-3xl mb-4">How Feeds Looks Like</h1>
