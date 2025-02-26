@@ -21,8 +21,6 @@
 
   const entriesStore = useEntriesStore();
 
-  const topElement = useTemplateRef("entryTop");
-
   const properties = defineProps<{
     time: Date | null;
     title: string;

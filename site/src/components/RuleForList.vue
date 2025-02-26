@@ -77,7 +77,7 @@
     globalSettings.updateDataVersion();
   }
 
-  const cssModifiers = {};
+  const cssModifiers: {[key: string]: string} = {};
 
   for (const tag of properties.rule.allTags) {
     if (properties.rule.excludedTags.includes(tag)) {

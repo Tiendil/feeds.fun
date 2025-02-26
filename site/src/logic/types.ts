@@ -372,8 +372,7 @@ export function userSettingFromJSON({
     kind,
     type,
     value: type === "decimal" ? parseFloat(value as string) : value,
-    name,
-    description
+    name
   };
 }
 

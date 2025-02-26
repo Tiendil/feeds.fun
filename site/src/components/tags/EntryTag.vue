@@ -54,10 +54,6 @@
       result["excluded"] = true;
     }
 
-    if (properties.secondaryMode) {
-      result[properties.secondaryMode] = true;
-    }
-
     return result;
   });
 
