@@ -59,6 +59,7 @@ import BodyListFaviconColumn from "./components/body_list/FaviconColumn.vue";
 import BodyListEntryBody from "./components/body_list/EntryBody.vue";
 
 import MainDescription from "./components/main/Description.vue";
+import MainItem from "./components/main/Item.vue";
 import MainNewsTitle from "./components/main/NewsTitle.vue";
 import MainHeaderLine from "./components/main/HeaderLine.vue";
 
@@ -124,6 +125,7 @@ app.component("BodyListFaviconColumn", BodyListFaviconColumn);
 app.component("BodyListEntryBody", BodyListEntryBody);
 
 app.component("MainDescription", MainDescription);
+app.component("MainItem", MainItem);
 app.component("MainNewsTitle", MainNewsTitle);
 app.component("MainHeaderLine", MainHeaderLine);
 
