@@ -1,10 +1,15 @@
 <template>
-  <wide-layout>
+<wide-layout>
 
-    <header class="bg-blue-500 text-white p-5 text-center">
-      <h1 class="m-0 text-5xl">Feeds Fun</h1>
-      <p class="mt-2 text-2xl">Personalized News for Professionals</p>
-    </header>
+  <header class="ffun-body-panel-header min-h-10 bg-slate-600">
+    <ul class="ffun-body-panel-header-left-block">
+    </ul>
+  </header>
+
+  <div class="bg-blue-500 text-white p-5 text-center">
+    <h1 class="m-0 text-5xl">Feeds Fun</h1>
+    <p class="mt-2 text-2xl">Personalized News for Professionals</p>
+  </div>
 
     <div class="bg-slate-200 text-center p-5">
       <p class="text-3xl font-medium">

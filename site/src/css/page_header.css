@@ -1,0 +1,31 @@
+@layer components {
+
+    .ffun-x-header-text {
+        @apply text-xl text-black px-2 py-1;
+    }
+
+    .ffun-page-header {
+        @apply px-4 pt-4 m-0 flex items-center cursor-default;
+    }
+
+    .ffun-page-header-left-block {
+        @apply items-center mr-auto list-none m-0 p-0 flex space-x-2;
+    }
+
+    .ffun-page-header-right-block {
+        @apply items-center list-none m-0 p-0 flex space-x-2;
+    }
+
+    .ffun-page-header-link {
+        @apply cursor-pointer no-underline ffun-x-header-text;
+        @apply underline-offset-4 hover:bg-blue-100 rounded;
+    }
+
+    .ffun-page-header-link-disabled {
+        @apply underline underline-offset-4 ffun-x-header-text;
+    }
+
+    .ffun-page-header-title {
+        @apply font-semibold ffun-x-header-text;
+    }
+}

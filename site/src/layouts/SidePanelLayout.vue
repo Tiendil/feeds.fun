@@ -1,9 +1,11 @@
 <template>
   <div class="ffun-side-panel-layout">
     <div class="ffun-side-panel">
-      <h2 class="ffun-side-panel-header">
-        <slot name="main-header"></slot>
-      </h2>
+      <div class="ffun-page-header">
+        <div class="ffun-page-header-title">
+          <slot name="main-header"></slot>
+        </div>
+      </div>
 
       <hr />
 
@@ -45,92 +47,84 @@
     </div>
 
     <div class="ffun-body-panel">
-      <header class="ffun-body-panel-header">
-          <ul class="ffun-body-panel-header-left-block">
-            <li
+      <div class="ffun-page-header">
+          <div class="ffun-page-header-left-block">
+            <template
               v-for="[mode, props] of e.MainPanelModeProperties"
               :key="mode">
               <a
                 v-if="globalSettings.mainPanelMode !== mode"
                 :href="router.resolve({name: mode, params: {}}).href"
-                class="ffun-body-panel-header-link"
+                class="ffun-page-header-link"
                 @click.prevent="router.push({name: mode, params: {}})">
                 {{ props.text }}
               </a>
 
               <span
-                class="ffun-body-panel-header-link-disabled"
+                class="ffun-page-header-link-disabled"
                 v-else
                 >{{ props.text }}</span
               >
-            </li>
+            </template>
 
-            <li class="">
               <a
                 href="/api/docs"
                 target="_blank"
-                class="ffun-body-panel-header-link"
+                class="ffun-page-header-link"
                 @click="events.socialLinkClicked({linkType: 'api'})"
                 >API</a
               >
-            </li>
 
-            <li v-if="settings.blog">
               <a
+                v-if="settings.blog"
                 :href="settings.blog"
                 target="_blank"
-                class="ffun-body-panel-header-link"
+                class="ffun-page-header-link"
                 @click="events.socialLinkClicked({linkType: 'blog'})"
                 >Blog</a
               >
-            </li>
 
-            <li v-if="settings.redditSubreddit">
               <a
+                v-if="settings.redditSubreddit"
                 :href="settings.redditSubreddit"
                 target="_blank"
-                class="ffun-body-panel-header-link text-xl align-middle"
+                class="ffun-page-header-link text-xl align-middle"
                 title="Reddit"
                 @click="events.socialLinkClicked({linkType: 'reddit'})"
                 ><i class="ti ti-brand-reddit"></i
               ></a>
-            </li>
 
-            <li v-if="settings.discordInvite">
               <a
+                v-if="settings.discordInvite"
                 :href="settings.discordInvite"
                 target="_blank"
-                class="ffun-body-panel-header-link text-xl align-middle"
+                class="ffun-page-header-link text-xl align-middle"
                 title="Discord"
                 @click="events.socialLinkClicked({linkType: 'discord'})"
                 ><i class="ti ti-brand-discord"></i
               ></a>
-            </li>
 
-            <li v-if="settings.githubRepo">
               <a
+                v-if="settings.githubRepo"
                 :href="settings.githubRepo"
                 target="_blank"
-                class="ffun-body-panel-header-link text-xl align-middle"
+                class="ffun-page-header-link text-xl align-middle"
                 title="GitHub"
                 @click="events.socialLinkClicked({linkType: 'github'})">
                 <i class="ti ti-brand-github"></i
               ></a>
-            </li>
-          </ul>
+          </div>
 
-          <ul class="ffun-body-panel-header-right-block">
-            <li>
+          <div class="ffun-page-header-right-block">
               <a
                 href="#"
-                class="ffun-body-panel-header-link"
+                class="ffun-page-header-link"
                 @click.prevent="logout()"
                 >logout</a
                          >
-            </li>
-          </ul>
+          </div>
 
-      </header>
+      </div>
 
       <hr class="my-2 border-slate-400" />
 
