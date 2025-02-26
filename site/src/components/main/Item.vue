@@ -5,7 +5,7 @@
     <slot name="caption"/>
   </div>
 
-  <div class="flex-1 bg-slate-100 py-1 text-gray-800 flex items-center">
+  <div class="flex-1 bg-slate-100 p-2 text-gray-800 flex items-center">
     <div class="">
       <slot name="description"/>
     </div>
