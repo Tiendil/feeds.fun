@@ -180,7 +180,7 @@
   </div>
 
   <main-header-line>
-    Ready-to-use news collections
+    Curated news collections for easy start
   </main-header-line>
 
 
@@ -209,7 +209,7 @@
   </div>
 
   <main-header-line>
-    How Feeds Fun looks like
+    Want a look?
   </main-header-line>
     <div class="text-center p-5">
       <img
