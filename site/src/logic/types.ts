@@ -416,25 +416,29 @@ export class Collection {
   readonly name: string;
   readonly description: string;
   readonly feedsNumber: number;
+  readonly showOnMain: boolean;
 
   constructor({
     id,
     guiOrder,
     name,
     description,
-    feedsNumber
+    feedsNumber,
+    showOnMain,
   }: {
     id: CollectionId;
     guiOrder: number;
     name: string;
     description: string;
     feedsNumber: number;
+    showOnMain: boolean;
   }) {
     this.id = id;
     this.guiOrder = guiOrder;
     this.name = name;
     this.description = description;
     this.feedsNumber = feedsNumber;
+    this.showOnMain = showOnMain;
   }
 }
 
@@ -443,20 +447,23 @@ export function collectionFromJSON({
   guiOrder,
   name,
   description,
-  feedsNumber
+  feedsNumber,
+  showOnMain,
 }: {
   id: string;
   guiOrder: number;
   name: string;
   description: string;
   feedsNumber: number;
+  showOnMain: boolean;
 }): Collection {
   return {
     id: toCollectionId(id),
     guiOrder: guiOrder,
     name: name,
     description: description,
-    feedsNumber: feedsNumber
+    feedsNumber: feedsNumber,
+    showOnMain: showOnMain,
   };
 }
 

@@ -25,3 +25,4 @@ class Collection(BaseEntity):
     name: str
     description: str
     feeds: list[FeedInfo]
+    show_on_main: bool

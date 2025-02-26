@@ -256,6 +256,7 @@ class Collection(pydantic.BaseModel):
     name: str
     description: str
     feedsNumber: int
+    showOnMain: bool
 
     @classmethod
     def from_internal(cls, record: fc_entities.Collection) -> "Collection":
@@ -265,6 +266,7 @@ class Collection(pydantic.BaseModel):
             name=record.name,
             description=record.description,
             feedsNumber=len(record.feeds),
+            showOnMain=record.show_on_main
         )
 
 

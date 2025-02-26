@@ -2,6 +2,7 @@ id = "eb66a806-7168-450a-81c8-166f7624bf97"
 gui_order = 3
 name = "Scientific Papers"
 description = "New scientific papers and preprints from official sources."
+show_on_main = true
 
 [[feeds]]
 url = "https://rss.arxiv.org/rss/cs.AI"

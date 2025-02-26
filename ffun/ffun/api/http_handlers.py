@@ -339,7 +339,7 @@ async def api_unsubscribe(request: entities.UnsubscribeRequest, user: User) -> e
 
 @router.post("/api/get-collections")
 async def api_get_feeds_collections(
-    request: entities.GetFeedsCollectionsRequest, user: User
+    request: entities.GetFeedsCollectionsRequest
 ) -> entities.GetFeedsCollectionsResponse:
 
     internal_collections = collections.collections()

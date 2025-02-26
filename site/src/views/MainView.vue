@@ -1,7 +1,8 @@
 <template>
+  <!-- TODO: mobile screens -->
 <wide-layout>
 
-  <div class="ffun-page-header bg-white">
+  <div class="ffun-page-header">
     <div class="ffun-page-header-center-block">
       <page-header-external-links :show-api="false"/>
     </div>
@@ -29,9 +30,7 @@
     Smarter way to read news
   </main-header-line>
 
-  <div class="bg-white text-center my-5">
-    <div class="max-w-3xl mx-auto space-y-6">
-
+  <div class="text-center my-5 max-w-3xl mx-auto space-y-6">
       <main-description icon="ti-number-1">
         <template #caption>
           Subscribe to sites
@@ -178,16 +177,37 @@
         </template>
       </main-description>
 
-    </div>
   </div>
 
   <main-header-line>
-    Check our collections TODO
+    Ready-to-use news collections
   </main-header-line>
 
-    <div class="bg-white text-center p-5">
-      <h1 class="m-0 text-3xl mb-4">How Feeds Looks Like</h1>
 
+  <div class="text-center my-5 max-w-3xl mx-auto space-y-6">
+
+    <template
+      v-for="collectionId in collections.collectionsOrder"
+      :key="collectionId">
+
+      <main-description v-if="collections.collections[collectionId].showOnMain" icon="ti-arrow-narrow-right">
+        <template #caption>
+          {{collections.collections[collectionId].name}}
+        </template>
+
+        <template #description>
+          {{collections.collections[collectionId].description}}
+        </template>
+      </main-description>
+
+    </template>
+
+  </div>
+
+  <main-header-line>
+    How Feeds Fun looks like
+  </main-header-line>
+    <div class="text-center p-5">
       <img
         class="border-2 rounded border-slate-300 mx-auto"
         src="/news-filtering-example.png"
@@ -199,4 +219,7 @@
 
 <script lang="ts" setup>
   import * as settings from "@/logic/settings";
+import {useCollectionsStore} from "@/stores/collections";
+
+  const collections = useCollectionsStore();
 </script>

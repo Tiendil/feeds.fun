@@ -2,6 +2,7 @@ id = "6936a868-9b26-4d7c-bc45-aefde06f1fa0"
 gui_order = 2
 name = "Entrepreneurship & Startups"
 description = "For those interested in entrepreneurship and startups."
+show_on_main = true
 
 [[feeds]]
   url = "https://www.reddit.com/r/Entrepreneur/.rss"
