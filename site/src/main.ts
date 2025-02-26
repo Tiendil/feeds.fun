@@ -33,6 +33,8 @@ import TagsFilter from "./components/tags/TagsFilter.vue";
 import RuleTag from "./components/tags/RuleTag.vue";
 import FakeTag from "./components/tags/FakeTag.vue";
 
+import PageHeaderExternalLinks from "./components/page_header/ExternalLinks.vue";
+
 import NotificationsApiKey from "./components/notifications/ApiKey.vue";
 import NotificationsCreateRuleHelp from "./components/notifications/CreateRuleHelp.vue";
 import Notifications from "./components/notifications/Block.vue";
@@ -94,6 +96,8 @@ app.component("FilterTag", FilterTag);
 app.component("TagsFilter", TagsFilter);
 app.component("RuleTag", RuleTag);
 app.component("FakeTag", FakeTag);
+
+app.component("PageHeaderExternalLinks", PageHeaderExternalLinks);
 
 app.component("NotificationsApiKey", NotificationsApiKey);
 app.component("NotificationsCreateRuleHelp", NotificationsCreateRuleHelp);

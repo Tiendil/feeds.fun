@@ -1,10 +1,13 @@
 <template>
 <wide-layout>
 
-  <header class="ffun-body-panel-header min-h-10 bg-slate-600">
-    <ul class="ffun-body-panel-header-left-block">
-    </ul>
-  </header>
+  <div class="ffun-page-header bg-white">
+    <div class="ffun-page-header-center-block">
+      <page-header-external-links :show-api="false"/>
+    </div>
+  </div>
+
+  <hr/>
 
   <div class="bg-blue-500 text-white p-5 text-center">
     <h1 class="m-0 text-5xl">Feeds Fun</h1>

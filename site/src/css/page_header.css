@@ -9,11 +9,15 @@
     }
 
     .ffun-page-header-left-block {
-        @apply items-center mr-auto list-none m-0 p-0 flex space-x-2;
+        @apply items-center mr-auto m-0 p-0 flex space-x-2;
     }
 
     .ffun-page-header-right-block {
-        @apply items-center list-none m-0 p-0 flex space-x-2;
+        @apply items-center m-0 p-0 flex space-x-2;
+    }
+
+    .ffun-page-header-center-block {
+        @apply items-center mx-auto m-0 p-0 flex space-x-2;
     }
 
     .ffun-page-header-link {
