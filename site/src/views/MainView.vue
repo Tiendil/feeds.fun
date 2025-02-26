@@ -185,7 +185,7 @@
       </div>
     </div>
 
-    <main-header-line> Want to take a peek? </main-header-line>
+    <main-header-line> Here, take a peek </main-header-line>
     <div class="text-center p-5">
       <img
         class="border-2 rounded border-slate-300 mx-auto"
