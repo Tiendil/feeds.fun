@@ -27,7 +27,12 @@ async def collection_id_for_test_feeds(collection_configs_must_be_none_in_tests:
     )
 
     collection = Collection(
-        id=new_collection_id(), gui_order=1, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[feed]
+        id=new_collection_id(),
+        gui_order=1,
+        name=uuid.uuid4().hex,
+        description=uuid.uuid4().hex,
+        feeds=[feed],
+        show_on_main=True,
     )
 
     await collections.add_test_collection(collection)
