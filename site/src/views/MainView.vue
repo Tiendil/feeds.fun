@@ -9,9 +9,10 @@
 
   <hr/>
 
-  <div class="bg-blue-500 text-white p-5 text-center">
+  <div class="p-5 text-center">
     <h1 class="m-0 text-5xl">Feeds Fun</h1>
-    <p class="mt-2 text-2xl">Personalized News for Professionals</p>
+    <!-- <p class="mt-2 text-2xl">Personalized News for Professionals</p> -->
+    <p class="mt-2 text-2xl">Transparent Personalized News</p>
   </div>
 
     <div class="bg-slate-200 text-center p-5">
