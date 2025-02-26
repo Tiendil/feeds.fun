@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-slate-200 text-center p-5">
+  <div class="bg-slate-200 text-center p-5 border border-x-0 border-slate-400">
     <p class="text-3xl font-medium">
       <slot></slot>
     </p>
