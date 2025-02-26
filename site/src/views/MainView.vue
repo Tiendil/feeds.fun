@@ -14,6 +14,7 @@
       <p class="mt-2 text-2xl">Transparent Personalized News</p>
     </div>
 
+    <!-- TODO: can I use an exect number? -->
     <main-header-line>
       Save over <strong class="text-green-700">80%</strong> of news-browsing time by focusing on what truly matters to
       you
