@@ -12,16 +12,22 @@
       </p>
     </div>
 
-    <div class="max-w-3xl mx-auto mt-4">
+    <div class="max-w-xl mx-auto my-5">
       <div class="ffun-info-good text-center">
         <h2 class="my-0">Single e-mail to log in</h2>
         <supertokens-login />
       </div>
     </div>
 
-    <div class="bg-white text-center p-5">
+    <div class="bg-slate-200 text-center p-5">
+      <p class="text-3xl font-medium">
+        Smarter Way to Read News
+      </p>
+    </div>
+
+    <div class="bg-white text-center my-5">
       <!-- <h1 class="m-0 text-3xl mb-4">How Feeds Fun Works</h1> -->
-      <h1 class="m-0 text-3xl mb-4">Smarter Way to Read News</h1>
+      <!-- <h1 class="m-0 text-3xl mb-4">Smarter Way to Read News</h1> -->
 
       <div class="max-w-3xl mx-auto space-y-6">
 

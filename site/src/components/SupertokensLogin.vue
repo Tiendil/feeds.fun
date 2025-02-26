@@ -16,7 +16,7 @@
         @submit.prevent="login()"
         class="w-full flex justify-center">
         <input
-          class="ffun-input flex-grow p-1 mr-2 max-w-sm"
+          class="ffun-input flex-grow p-1 mr-2"
           type="email"
           v-model="email"
           required
