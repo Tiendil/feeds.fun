@@ -8,12 +8,13 @@ from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 
 from ffun.api import entities
 from ffun.api.settings import settings
-from ffun.auth.dependencies import User
+from ffun.auth.dependencies import User, OptionalUser
 from ffun.core import logging
 from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
 from ffun.domain.entities import UserId
 from ffun.domain.urls import url_to_uid
+from ffun.domain.domain import no_user_id
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_discoverer import domain as fd_domain
@@ -447,11 +448,13 @@ async def api_set_user_setting(request: entities.SetUserSettingRequest, user: Us
 
 
 @router.post("/api/track-event")
-async def api_track_event(request: entities.TrackEventRequest, user: User) -> entities.TrackEventResponse:
+async def api_track_event(request: entities.TrackEventRequest, user: OptionalUser) -> entities.TrackEventResponse:
     attributes = request.event.model_dump()
     event = attributes.pop("name")
 
-    logger.business_event(event, user_id=user.id, **attributes)
+    user_id = user.id if user is not None else no_user_id()
+
+    logger.business_event(event, user_id=user_id, **attributes)
 
     return entities.TrackEventResponse()
 
