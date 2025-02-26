@@ -12,13 +12,11 @@
     <template v-if="!requested">
       <p class="text-center">We'll send you an email with a login link, no password required.</p>
 
-      <!-- <p class="text-left">If you don&apos;t have an account, one will be created.</p> -->
-
       <form
         @submit.prevent="login()"
-        class="w-full flex">
+        class="w-full flex justify-center">
         <input
-          class="ffun-input flex-grow p-1 mr-2"
+          class="ffun-input flex-grow p-1 mr-2 max-w-sm"
           type="email"
           v-model="email"
           required
