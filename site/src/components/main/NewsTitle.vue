@@ -1,9 +1,12 @@
 <template>
   <span class="block text-lg">
+    <span
+      v-if="score"
+      class="cursor-pointer text-purple-700 inline-block w-12"
+      >{{ score }}</span
+    >
 
-    <span v-if="score" class="cursor-pointer text-purple-700 inline-block w-12">{{score}}</span>
-
-    <span class="font-bold">{{title}}</span>
+    <span class="font-bold">{{ title }}</span>
   </span>
 </template>
 
@@ -18,7 +21,6 @@
 
   const properties = defineProps<{
     title: string;
-    score: number|null;
+    score: number | null;
   }>();
-
 </script>

@@ -11,9 +11,7 @@
       or
       <external-url
         url="https://arxiv.org"
-        text="arXiv" />,
-
-      provide multiple URLs for feeds:
+        text="arXiv" />, provide multiple URLs for feeds:
     </p>
 
     <ul>
@@ -28,12 +26,11 @@
       </li>
     </ul>
 
-    <p>
-      Consequently, the same news may appear in multiple feeds.
-    </p>
+    <p> Consequently, the same news may appear in multiple feeds. </p>
 
     <p>
-      We do our best to detect duplicates, but in some cases, they may slip through and lead to extra usage of your API key.
+      We do our best to detect duplicates, but in some cases, they may slip through and lead to extra usage of your API
+      key.
     </p>
 
     <p><strong>Please follow these recommendations:</strong></p>
@@ -43,13 +40,14 @@
       <li>If a feed URL can be split into multiple simpler URLs, add them separately.</li>
       <li>
         Add feeds directly from
-        <a href="#" @click.prevent="goToCollections()">
+        <a
+          href="#"
+          @click.prevent="goToCollections()">
           collections</a
-                       >
+        >
         instead of using URLs from websites.
       </li>
     </ul>
-
 
     <user-setting-for-notification
       class=""

@@ -1,15 +1,16 @@
 <template>
-<div class="flex-shrink-0 w-16 cursor-default text-right"
-     :title="title">
-  <value-date-time
-    class=""
-        :value="time"
-        :reversed="true" />
-</div>
+  <div
+    class="flex-shrink-0 w-16 cursor-default text-right"
+    :title="title">
+    <value-date-time
+      class=""
+      :value="time"
+      :reversed="true" />
+  </div>
 </template>
 
 <script lang="ts" setup>
-    import _ from "lodash";
+  import _ from "lodash";
   import {computed, ref, useTemplateRef, onMounted} from "vue";
   import type * as t from "@/logic/types";
   import * as events from "@/logic/events";
@@ -23,8 +24,7 @@
   const topElement = useTemplateRef("entryTop");
 
   const properties = defineProps<{
-    time: Date|null;
+    time: Date | null;
     title: string;
   }>();
-
 </script>

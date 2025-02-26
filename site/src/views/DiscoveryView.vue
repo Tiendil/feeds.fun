@@ -14,7 +14,7 @@
       <p>
         <external-url
           url="https://en.wikipedia.org/wiki/OPML"
-          text="OPML"/>
+          text="OPML" />
         is a widely-used format for transferring news feed lists between platforms.
       </p>
 

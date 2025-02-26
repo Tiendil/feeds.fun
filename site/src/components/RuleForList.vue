@@ -3,7 +3,6 @@
     <div
       v-if="rule !== null"
       class="flex mb-1">
-
       <div class="ffun-body-list-icon-column">
         <a
           href="#"
@@ -20,11 +19,11 @@
       </div>
 
       <div class="flex-grow">
-          <rule-tag
-            v-for="tag of rule.allTags"
-            :key="tag"
-            :uid="tag"
-            :css-modifier="cssModifiers[tag]"/>
+        <rule-tag
+          v-for="tag of rule.allTags"
+          :key="tag"
+          :uid="tag"
+          :css-modifier="cssModifiers[tag]" />
       </div>
     </div>
 
@@ -78,14 +77,13 @@
     globalSettings.updateDataVersion();
   }
 
-const cssModifiers = {};
+  const cssModifiers = {};
 
-for (const tag of properties.rule.allTags) {
-  if (properties.rule.excludedTags.includes(tag)) {
-    cssModifiers[tag] = "negative";
-    continue;
+  for (const tag of properties.rule.allTags) {
+    if (properties.rule.excludedTags.includes(tag)) {
+      cssModifiers[tag] = "negative";
+      continue;
+    }
+    cssModifiers[tag] = "positive";
   }
-  cssModifiers[tag] = "positive";
-}
-
 </script>

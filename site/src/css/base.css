@@ -1,41 +1,40 @@
 @layer base {
+  html {
+    @apply font-sans;
+    @apply bg-white;
+    /* TODO: maybe replace bg to slate-50? */
+    /* @apply bg-slate-50; */
+  }
 
-    html {
-        @apply font-sans;
-        @apply bg-white;
-        /* TODO: maybe replace bg to slate-50? */
-        /* @apply bg-slate-50; */
-    }
+  h1 {
+    @apply text-3xl font-bold leading-tight my-4;
+  }
 
-    h1 {
-        @apply text-3xl font-bold leading-tight my-4;
-    }
+  h2 {
+    @apply text-2xl font-semibold leading-relaxed my-3;
+  }
 
-    h2 {
-        @apply text-2xl font-semibold leading-relaxed my-3;
-    }
+  h3 {
+    @apply text-xl font-semibold leading-relaxed my-2;
+  }
 
-    h3 {
-        @apply text-xl font-semibold leading-relaxed my-2;
-    }
+  hr {
+    @apply border-slate-400 my-2;
+  }
 
-    hr {
-        @apply border-slate-400 my-2;
-    }
+  p,
+  ul,
+  ol,
+  table {
+    @apply mb-1;
+  }
 
-    p,
-    ul,
-    ol,
-    table {
-        @apply mb-1;
-    }
+  p a {
+    @apply text-blue-600 hover:text-blue-800 cursor-pointer;
+  }
 
-    p a {
-        @apply text-blue-600 hover:text-blue-800 cursor-pointer;
-    }
-
-    /* TODO: move somewhere or remove in the honor of more specialized classes */
-    .ffun-normal-link {
-        @apply text-blue-600 hover:text-blue-800 cursor-pointer;
-    }
+  /* TODO: move somewhere or remove in the honor of more specialized classes */
+  .ffun-normal-link {
+    @apply text-blue-600 hover:text-blue-800 cursor-pointer;
+  }
 }

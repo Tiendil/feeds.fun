@@ -1,10 +1,10 @@
 <template>
-<div
-  :class="classes"
-  :title="tooltip"
-  @click.prevent="onClick()">
-  <tag-base :tag-info="tagInfo" />
-</div>
+  <div
+    :class="classes"
+    :title="tooltip"
+    @click.prevent="onClick()">
+    <tag-base :tag-info="tagInfo" />
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -41,7 +41,7 @@
   });
 
   const classes = computed(() => {
-    const result: {[key: string]: boolean} = {}
+    const result: {[key: string]: boolean} = {};
 
     result[properties.cssModifier] = true;
     result["ffun-entry-tag"] = true;
@@ -61,7 +61,7 @@
     return result;
   });
 
-const changeSource = "entry_record";
+  const changeSource = "entry_record";
 
   async function onClick() {
     asserts.defined(tagsStates);

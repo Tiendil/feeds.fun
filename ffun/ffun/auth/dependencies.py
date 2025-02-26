@@ -13,7 +13,9 @@ async def _supertokens_user(session: SessionContainer = fastapi.Depends(verify_s
     return await u_domain.get_or_create_user(u_entities.Service.supertokens, session.user_id)
 
 
-async def _supertokens_optional_user(session: SessionContainer = fastapi.Depends(verify_session(session_required=False))) -> u_entities.User | None:
+async def _supertokens_optional_user(
+    session: SessionContainer = fastapi.Depends(verify_session(session_required=False)),
+) -> u_entities.User | None:
     if session is None:
         return None
 

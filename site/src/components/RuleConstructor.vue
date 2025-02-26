@@ -18,8 +18,16 @@
     </div>
 
     <template v-else>
-      <p v-if="showSuccess" class="ffun-info-good">Rule created.</p>
-      <p v-else class="ffun-info-common">Select tags to create a rule.</p>
+      <p
+        v-if="showSuccess"
+        class="ffun-info-good"
+        >Rule created.</p
+      >
+      <p
+        v-else
+        class="ffun-info-common"
+        >Select tags to create a rule.</p
+      >
     </template>
   </div>
 </template>

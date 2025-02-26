@@ -27,8 +27,7 @@
     <div
       v-else-if="foundFeeds.length === 0"
       class="ffun-info-bad mt-2">
-      <p
-        v-for="message in messages">
+      <p v-for="message in messages">
         {{ message.message }}
       </p>
 

@@ -15,7 +15,5 @@
       <li><strong>Click the "Create Rule" button</strong>.</li>
       <li>See how Feeds Fun reorganizes news based on your rule.</li>
     </ol>
-
   </div>
-
 </template>

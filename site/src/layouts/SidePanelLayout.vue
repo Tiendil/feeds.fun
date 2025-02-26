@@ -48,37 +48,36 @@
 
     <div class="ffun-body-panel">
       <div class="ffun-page-header">
-          <div class="ffun-page-header-left-block">
-            <template
-              v-for="[mode, props] of e.MainPanelModeProperties"
-              :key="mode">
-              <a
-                v-if="globalSettings.mainPanelMode !== mode"
-                :href="router.resolve({name: mode, params: {}}).href"
-                class="ffun-page-header-link"
-                @click.prevent="router.push({name: mode, params: {}})">
-                {{ props.text }}
-              </a>
+        <div class="ffun-page-header-left-block">
+          <template
+            v-for="[mode, props] of e.MainPanelModeProperties"
+            :key="mode">
+            <a
+              v-if="globalSettings.mainPanelMode !== mode"
+              :href="router.resolve({name: mode, params: {}}).href"
+              class="ffun-page-header-link"
+              @click.prevent="router.push({name: mode, params: {}})">
+              {{ props.text }}
+            </a>
 
-              <span
-                class="ffun-page-header-link-disabled"
-                v-else
-                >{{ props.text }}</span
-              >
-            </template>
+            <span
+              class="ffun-page-header-link-disabled"
+              v-else
+              >{{ props.text }}</span
+            >
+          </template>
 
-            <page-header-external-links :show-api="true"/>
-          </div>
+          <page-header-external-links :show-api="true" />
+        </div>
 
-          <div class="ffun-page-header-right-block">
-              <a
-                href="#"
-                class="ffun-page-header-link"
-                @click.prevent="logout()"
-                >logout</a
-                         >
-          </div>
-
+        <div class="ffun-page-header-right-block">
+          <a
+            href="#"
+            class="ffun-page-header-link"
+            @click.prevent="logout()"
+            >logout</a
+          >
+        </div>
       </div>
 
       <hr class="my-2 border-slate-400" />

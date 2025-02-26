@@ -1,8 +1,7 @@
 <template>
-<div
-  :class="classes">
-  <tag-base :tag-info="tagInfo" />
-</div>
+  <div :class="classes">
+    <tag-base :tag-info="tagInfo" />
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -17,24 +16,20 @@
   const properties = defineProps<{
     uid: string;
     name: string;
-    link: string|null;
+    link: string | null;
     cssModifier: string;
   }>();
 
-const tagInfo = computed(() => {
-  return t.fakeTag({uid: properties.uid,
-                    name: properties.name,
-                    link: properties.link,
-                    categories: []});
-});
+  const tagInfo = computed(() => {
+    return t.fakeTag({uid: properties.uid, name: properties.name, link: properties.link, categories: []});
+  });
 
   const classes = computed(() => {
-    const result: {[key: string]: boolean} = {}
+    const result: {[key: string]: boolean} = {};
 
     result[properties.cssModifier] = true;
     result["ffun-entry-tag"] = true;
 
     return result;
   });
-
 </script>

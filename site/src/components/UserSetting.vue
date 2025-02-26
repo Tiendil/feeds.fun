@@ -44,7 +44,6 @@
         >Cancel</button
       >
     </template>
-
   </div>
 </template>
 
@@ -58,7 +57,7 @@
 
   const globalSettings = useGlobalSettingsStore();
 
-const properties = defineProps<{kind: string}>();
+  const properties = defineProps<{kind: string}>();
 
   const value = ref<string | boolean | number | null>(null);
 

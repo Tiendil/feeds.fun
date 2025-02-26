@@ -8,13 +8,13 @@ from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 
 from ffun.api import entities
 from ffun.api.settings import settings
-from ffun.auth.dependencies import User, OptionalUser
+from ffun.auth.dependencies import OptionalUser, User
 from ffun.core import logging
 from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
+from ffun.domain.domain import no_user_id
 from ffun.domain.entities import UserId
 from ffun.domain.urls import url_to_uid
-from ffun.domain.domain import no_user_id
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_discoverer import domain as fd_domain
@@ -339,7 +339,7 @@ async def api_unsubscribe(request: entities.UnsubscribeRequest, user: User) -> e
 
 @router.post("/api/get-collections")
 async def api_get_feeds_collections(
-    request: entities.GetFeedsCollectionsRequest
+    request: entities.GetFeedsCollectionsRequest,
 ) -> entities.GetFeedsCollectionsResponse:
 
     internal_collections = collections.collections()

@@ -6,7 +6,7 @@
         :key="tag"
         :uid="tag"
         :css-modifier="tagMode(tag)"
-        :count="tagsCount[tag]"/>
+        :count="tagsCount[tag]" />
 
       <a
         class="text-base whitespace-nowrap"

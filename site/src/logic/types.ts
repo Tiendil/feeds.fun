@@ -424,7 +424,7 @@ export class Collection {
     name,
     description,
     feedsNumber,
-    showOnMain,
+    showOnMain
   }: {
     id: CollectionId;
     guiOrder: number;
@@ -448,7 +448,7 @@ export function collectionFromJSON({
   name,
   description,
   feedsNumber,
-  showOnMain,
+  showOnMain
 }: {
   id: string;
   guiOrder: number;
@@ -463,7 +463,7 @@ export function collectionFromJSON({
     name: name,
     description: description,
     feedsNumber: feedsNumber,
-    showOnMain: showOnMain,
+    showOnMain: showOnMain
   };
 }
 

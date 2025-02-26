@@ -1,6 +1,5 @@
 <template>
   <div>
-
     <h3>
       <favicon-element
         :url="feed.url"
@@ -9,8 +8,7 @@
       <external-url
         class="ffun-normal-link"
         :url="feed.url"
-        :text="feed.title"/>
-
+        :text="feed.title" />
     </h3>
 
     <p v-html="feed.description" />
@@ -19,11 +17,10 @@
       <li
         v-for="entry in feed.entries"
         :key="entry.url">
-
         <external-url
           class="ffun-normal-link"
           :url="entry.url"
-          :text="entry.title"/>
+          :text="entry.title" />
       </li>
     </ul>
   </div>

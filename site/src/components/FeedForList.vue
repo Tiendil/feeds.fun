@@ -23,18 +23,14 @@
       <i
         v-if="feed.isOk"
         title="everything is ok"
-        class="text-green-700 ti ti-mood-smile"
-        ></i
-      >
+        class="text-green-700 ti ti-mood-smile"></i>
       <i
         v-else
         :title="feed.lastError || 'unknown error'"
-        class="text-red-700 ti ti-mood-sad align-middle"
-        ></i
-      >
+        class="text-red-700 ti ti-mood-sad align-middle"></i>
     </div>
 
-    <body-list-favicon-column :url="feed.url"/>
+    <body-list-favicon-column :url="feed.url" />
 
     <div class="flex-grow">
       <external-url
@@ -53,7 +49,6 @@
         </span>
       </template>
     </div>
-
   </div>
 
   <body-list-entry-body
@@ -62,14 +57,14 @@
     :url="null"
     :title="null"
     :loading="false"
-    :text="purifiedDescription"/>
+    :text="purifiedDescription" />
 </template>
 
 <script lang="ts" setup>
   import {computed, ref} from "vue";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
-import * as api from "@/logic/api";
+  import * as api from "@/logic/api";
   import * as utils from "@/logic/utils";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
@@ -83,13 +78,11 @@ import * as api from "@/logic/api";
 
   const properties = defineProps<{feed: t.Feed}>();
 
-const purifiedTitle = computed(() => {
-  return utils.purifyTitle({raw: properties.feed.title,
-                            default_: properties.feed.url});
+  const purifiedTitle = computed(() => {
+    return utils.purifyTitle({raw: properties.feed.title, default_: properties.feed.url});
   });
 
-const purifiedDescription = computed(() => {
-  return utils.purifyBody({raw: properties.feed.description,
-                           default_: "No description"});
+  const purifiedDescription = computed(() => {
+    return utils.purifyBody({raw: properties.feed.description, default_: "No description"});
   });
 </script>

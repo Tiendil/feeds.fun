@@ -36,7 +36,7 @@
       <tags-filter
         :tags="tagsCount"
         :show-create-rule="true"
-        change-source="news_tags_filter"/>
+        change-source="news_tags_filter" />
     </template>
 
     <template #main-header>

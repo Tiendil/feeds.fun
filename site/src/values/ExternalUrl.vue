@@ -2,12 +2,10 @@
   <a
     :href="url"
     target="_blank"
-    rel="noopener noreferrer"
-    >
+    rel="noopener noreferrer">
     {{ renderedText }}
-     <i class="ti ti-external-link"/>
-  </a
-  >
+    <i class="ti ti-external-link" />
+  </a>
 </template>
 
 <script lang="ts" setup>

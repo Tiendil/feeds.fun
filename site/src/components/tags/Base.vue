@@ -1,15 +1,15 @@
 <template>
   <span>
-      {{ tagInfo.name }}
+    {{ tagInfo.name }}
 
-      <a
-        v-if="tagInfo.link"
-        :href="tagInfo.link"
-        target="_blank"
-        @click.stop=""
-        rel="noopener noreferrer">
-        <i class="ti ti-external-link align-middle"/>
-      </a>
+    <a
+      v-if="tagInfo.link"
+      :href="tagInfo.link"
+      target="_blank"
+      @click.stop=""
+      rel="noopener noreferrer">
+      <i class="ti ti-external-link align-middle" />
+    </a>
   </span>
 </template>
 
@@ -25,5 +25,4 @@
   const properties = defineProps<{
     tagInfo: t.TagInfo;
   }>();
-
 </script>

@@ -3,17 +3,19 @@
     ref="entryTop"
     :class="['flex', 'text-lg', {'ml-8': isRead}]">
     <div class="ffun-body-list-icon-column">
-        <a v-if="isRead"
-           href="#"
-           @click.prevent="markUnread()"
-           title="Mark as unread"
-           class="text-green-700 ti ti-chevrons-left" />
+      <a
+        v-if="isRead"
+        href="#"
+        @click.prevent="markUnread()"
+        title="Mark as unread"
+        class="text-green-700 ti ti-chevrons-left" />
 
-        <a v-else
-           href="#"
-           @click.prevent="markRead()"
-           title="Mark as read"
-           class="text-orange-700 ti ti-chevrons-right" />
+      <a
+        v-else
+        href="#"
+        @click.prevent="markRead()"
+        title="Mark as read"
+        class="text-orange-700 ti ti-chevrons-right" />
     </div>
 
     <div class="flex-shrink-0 w-8 text-center pr-1">
@@ -22,7 +24,7 @@
         :entry-id="entry.id" />
     </div>
 
-    <body-list-favicon-column :url="entry.url"/>
+    <body-list-favicon-column :url="entry.url" />
 
     <div class="flex-grow">
       <a
@@ -45,7 +47,6 @@
     <body-list-reverse-time-column
       :title="timeForTooltip"
       :time="timeFor" />
-
   </div>
 
   <body-list-entry-body
@@ -56,7 +57,6 @@
     :loading="entry.body === null"
     :text="purifiedBody"
     @body-title-clicked="newsLinkOpenedEvent" />
-
 </template>
 
 <script lang="ts" setup>
@@ -64,7 +64,7 @@
   import {computed, ref, useTemplateRef, onMounted} from "vue";
   import type * as t from "@/logic/types";
   import * as events from "@/logic/events";
-import * as e from "@/logic/enums";
+  import * as e from "@/logic/enums";
   import * as utils from "@/logic/utils";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
@@ -104,30 +104,28 @@ import * as e from "@/logic/enums";
     return _.get(entry.value, properties.timeField, null);
   });
 
-const timeForTooltip = computed(() => {
+  const timeForTooltip = computed(() => {
     if (entry.value === null) {
       return "";
     }
 
-  if (properties.timeField === "publishedAt") {
-    return "How long ago the news was published";
-  }
+    if (properties.timeField === "publishedAt") {
+      return "How long ago the news was published";
+    }
 
-  if (properties.timeField === "catalogedAt") {
-    return "How long ago the news was collected";
-  }
+    if (properties.timeField === "catalogedAt") {
+      return "How long ago the news was collected";
+    }
 
-  return "";
+    return "";
   });
 
-const purifiedTitle = computed(() => {
-  return utils.purifyTitle({raw: entry.value.title,
-                            default_: "No title"});
+  const purifiedTitle = computed(() => {
+    return utils.purifyTitle({raw: entry.value.title, default_: "No title"});
   });
 
-const purifiedBody = computed(() => {
-  return utils.purifyBody({raw: entry.value.body,
-                           default_: "No description"});
+  const purifiedBody = computed(() => {
+    return utils.purifyBody({raw: entry.value.body, default_: "No description"});
   });
 
   async function newsLinkOpenedEvent() {
@@ -167,14 +165,14 @@ const purifiedBody = computed(() => {
     entriesStore.requestFullEntry({entryId: properties.entryId});
   });
 
-async function markUnread() {
+  async function markUnread() {
     await entriesStore.removeMarker({
       entryId: properties.entryId,
       marker: e.Marker.Read
     });
-}
+  }
 
-async function markRead() {
+  async function markRead() {
     await entriesStore.setMarker({
       entryId: properties.entryId,
       marker: e.Marker.Read

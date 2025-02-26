@@ -69,7 +69,7 @@ export function faviconForUrl(url: string): string | null {
   }
 }
 
-export function purifyTitle({raw, default_}: {raw: string|null; default_: string;}) {
+export function purifyTitle({raw, default_}: {raw: string | null; default_: string}) {
   if (raw === null) {
     return default_;
   }
@@ -83,7 +83,7 @@ export function purifyTitle({raw, default_}: {raw: string|null; default_: string
   return title;
 }
 
-export function purifyBody({raw, default_}: {raw: string|null; default_: string;}) {
+export function purifyBody({raw, default_}: {raw: string | null; default_: string}) {
   if (raw === null) {
     return default_;
   }

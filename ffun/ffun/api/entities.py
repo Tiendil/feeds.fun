@@ -3,7 +3,6 @@ import enum
 from decimal import Decimal
 from typing import Any, Iterable
 
-import markdown
 import pydantic
 
 from ffun.api import front_events
@@ -266,7 +265,7 @@ class Collection(pydantic.BaseModel):
             name=record.name,
             description=record.description,
             feedsNumber=len(record.feeds),
-            showOnMain=record.show_on_main
+            showOnMain=record.show_on_main,
         )
 
 

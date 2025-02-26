@@ -12,7 +12,11 @@
       :class="classes"
       :title="tagTooltip"
       @click.prevent="onClick()">
-      <span v-if="showCount" class="pr-1">[{{ count }}]</span>
+      <span
+        v-if="showCount"
+        class="pr-1"
+        >[{{ count }}]</span
+      >
 
       <tag-base :tag-info="tagInfo" />
     </span>
@@ -55,7 +59,7 @@
   });
 
   const classes = computed(() => {
-    const result: {[key: string]: boolean} = {}
+    const result: {[key: string]: boolean} = {};
 
     result["ffun-filter-tag"] = true;
     result["inline-block"] = true;
@@ -100,11 +104,11 @@
     return "Click to toggle";
   });
 
-const tagTooltip = computed(() => {
-  if (!tagsStates.value.requiredTags[properties.uid] && !tagsStates.value.excludedTags[properties.uid]) {
-    return "Show news with this tag";
-  }
+  const tagTooltip = computed(() => {
+    if (!tagsStates.value.requiredTags[properties.uid] && !tagsStates.value.excludedTags[properties.uid]) {
+      return "Show news with this tag";
+    }
 
-  return "Stop filtering by this tag";
-});
+    return "Stop filtering by this tag";
+  });
 </script>

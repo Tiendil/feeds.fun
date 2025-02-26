@@ -7,7 +7,7 @@
 </template>
 
 <script lang="ts" setup>
-    import _ from "lodash";
+  import _ from "lodash";
   import {computed, ref, useTemplateRef, onMounted} from "vue";
   import type * as t from "@/logic/types";
   import * as events from "@/logic/events";
@@ -23,5 +23,4 @@
   const properties = defineProps<{
     url: string;
   }>();
-
 </script>
