@@ -2,7 +2,8 @@
   <ul>
     <li
       v-for="feed in feeds"
-      :key="feed.id">
+      :key="feed.id"
+      class="ffun-body-list-entry">
       <feed-for-list :feed="feed" />
     </li>
   </ul>

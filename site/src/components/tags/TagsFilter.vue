@@ -7,13 +7,12 @@
         v-for="tag of displayedSelectedTags"
         :key="tag"
         class="whitespace-nowrap line-clamp-1">
-        <ffun-tag
-          class="ml-1"
+        <filter-tag
           :uid="tag"
           :count="tags[tag] ?? 0"
           :show-switch="true"
-          count-mode="no"
-          change-source="tag_filter" />
+          :show-count="false"
+          :change-source="changeSource" />
       </li>
     </ul>
 
@@ -32,11 +31,12 @@
         v-for="tag of displayedTags"
         :key="tag"
         class="truncate">
-        <ffun-tag
+        <filter-tag
           :uid="tag"
           :count="tags[tag]"
-          count-mode="prefix"
-          changeSource="tag_filter" />
+          :show-switch="false"
+          :show-count="true"
+          :change-source="changeSource" />
       </li>
     </ul>
 
@@ -69,7 +69,11 @@
   const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
   asserts.defined(tagsStates);
 
-  const properties = defineProps<{tags: {[key: string]: number}; showCreateRule?: boolean}>();
+  const properties = defineProps<{
+    tags: {[key: string]: number};
+    showCreateRule?: boolean;
+    changeSource: "news_tags_filter" | "rules_tags_filter";
+  }>();
 
   const showFromStart = ref(25);
 

@@ -9,11 +9,12 @@
       v-model="model"
       checked />
     <label
-      class="ml-2"
+      class="ml-2 inline-block"
       :for="collection.id">
       <div class="inline-block">
-        <span class="text-green-700 font-bold">{{ collection.name }}</span> [feeds: {{ collection.feedsNumber }}]
-        <p class="">{{ collection.description }}</p>
+        <span class="text-green-700 font-bold">{{ collection.name }}</span>
+        — {{ collection.feedsNumber }} feeds —
+        {{ collection.description }}
       </div>
     </label>
   </div>

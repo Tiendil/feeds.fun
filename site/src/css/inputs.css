@@ -1,0 +1,49 @@
+@layer components {
+  .ffun-x-input-common {
+    @apply border border-slate-300 rounded px-2 py-1;
+    @apply bg-white text-slate-700;
+    @apply focus:border-blue-400 focus:outline-none focus:ring focus:ring-blue-100;
+    @apply hover:border-blue-400;
+    @apply disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed;
+    @apply transition-colors duration-150;
+  }
+
+  .ffun-form-button {
+    @apply ffun-x-input-common font-semibold text-white;
+    @apply px-4 py-2;
+    @apply bg-blue-500 hover:bg-blue-600 focus:ring-0;
+    @apply disabled:bg-blue-300 disabled:text-slate-50;
+  }
+
+  .ffun-form-button.short {
+    @apply p-1 px-2;
+  }
+
+  .ffun-form-button.bad {
+    @apply bg-red-500 hover:bg-red-600;
+    @apply disabled:bg-red-300;
+  }
+
+  .ffun-file-button {
+    @apply text-slate-500;
+    @apply file:text-white file:font-semibold;
+    @apply file:border file:rounded file:px-4 file:py-2 file:shadow-none file:bg-blue-500 file:border-slate-300 file:border-solid file:outline-none;
+    @apply file:disabled:bg-blue-300 file:disabled:text-slate-400 file:disabled:cursor-not-allowed;
+    @apply file:enabled:hover:border-blue-400;
+    @apply file:focus:ring-0;
+    @apply file:cursor-pointer;
+  }
+
+  .ffun-config-flag {
+    @apply ffun-x-input-common px-2 py-0;
+  }
+
+  .ffun-input {
+    @apply ffun-x-input-common placeholder-gray-500;
+  }
+
+  .ffun-checkbox {
+    @apply ffun-x-input-common h-4 w-4 align-middle;
+    @apply bg-white;
+  }
+}

@@ -1,0 +1,49 @@
+@layer components {
+  .ffun-x-panel ul {
+    @apply list-disc list-inside;
+  }
+
+  .ffun-x-panel ol {
+    @apply list-decimal list-inside;
+  }
+
+  .ffun-x-panel code {
+    @apply bg-slate-800 px-1 rounded bg-opacity-10 text-sm;
+  }
+
+  .ffun-x-panel a {
+    @apply text-red-600 hover:text-red-800;
+  }
+
+  .ffun-x-panel h4 {
+    @apply font-semibold text-lg mb-2;
+  }
+
+  .ffun-x-panel p:last-child {
+    @apply pb-0 mb-0;
+  }
+
+  .ffun-x-info {
+    @apply ffun-x-panel border p-4 rounded-md;
+  }
+
+  .ffun-info-settings {
+    @apply ffun-x-info;
+  }
+
+  .ffun-info-common {
+    @apply ffun-x-info bg-blue-50 border-blue-200 text-blue-800;
+  }
+
+  .ffun-info-good {
+    @apply ffun-x-info bg-green-50 border-green-200 text-green-800;
+  }
+
+  .ffun-info-bad {
+    @apply ffun-x-info bg-red-50 border-red-200 text-red-800;
+  }
+
+  .ffun-info-waiting {
+    @apply ffun-x-info bg-yellow-50 border-yellow-200 text-yellow-800;
+  }
+}

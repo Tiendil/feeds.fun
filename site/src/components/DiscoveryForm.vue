@@ -18,7 +18,7 @@
 
     <p
       v-if="searching"
-      class="ffun-info-attention"
+      class="ffun-info-waiting mt-2"
       >Searching for feeds…</p
     >
 
@@ -26,10 +26,8 @@
 
     <div
       v-else-if="foundFeeds.length === 0"
-      class="ffun-info-attention">
-      <p
-        class="ffun-info-error"
-        v-for="message in messages">
+      class="ffun-info-bad mt-2">
+      <p v-for="message in messages">
         {{ message.message }}
       </p>
 

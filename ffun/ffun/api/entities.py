@@ -3,7 +3,6 @@ import enum
 from decimal import Decimal
 from typing import Any, Iterable
 
-import markdown
 import pydantic
 
 from ffun.api import front_events
@@ -192,7 +191,6 @@ class UserSetting(BaseEntity):
     type: us_types.TypeId  # should not differ between front & back => no need to convert
     value: Any
     name: str
-    description: str | None
 
     @classmethod
     def from_internal(cls, kind: int, value: str | int | float | bool) -> "UserSetting":
@@ -209,7 +207,6 @@ class UserSetting(BaseEntity):
             type=real_setting.type.id,
             value=real_setting.type.normalize(value),
             name=real_setting.name,
-            description=markdown.markdown(real_setting.description) if real_setting.description else None,
         )
 
 
@@ -258,6 +255,7 @@ class Collection(pydantic.BaseModel):
     name: str
     description: str
     feedsNumber: int
+    showOnMain: bool
 
     @classmethod
     def from_internal(cls, record: fc_entities.Collection) -> "Collection":
@@ -267,6 +265,7 @@ class Collection(pydantic.BaseModel):
             name=record.name,
             description=record.description,
             feedsNumber=len(record.feeds),
+            showOnMain=record.show_on_main,
         )
 
 

@@ -1,13 +1,15 @@
 <template>
-  <div class="flex divide-x">
-    <div class="p-4 w-60 bg-slate-200 flex-shrink-0">
-      <h2 class="leading-8 my-0">
-        <slot name="main-header"></slot>
-      </h2>
+  <div class="ffun-side-panel-layout">
+    <div class="ffun-side-panel">
+      <div class="ffun-page-header">
+        <div class="ffun-page-header-title">
+          <slot name="main-header"></slot>
+        </div>
+      </div>
 
       <hr />
 
-      <ul class="space-y-2">
+      <ul class="ffun-side-panel-controls-list">
         <li v-if="hasSideMenuItem(1)">
           <slot name="side-menu-item-1"></slot>
         </li>
@@ -32,7 +34,7 @@
       <hr v-if="reloadButton" />
 
       <a
-        class="ffun-form-button p-1 my-1 block w-full text-center"
+        class="ffun-side-panel-refresh-button short"
         v-if="reloadButton"
         href="#"
         @click="globalSettings.updateDataVersion()"
@@ -44,101 +46,43 @@
       <slot name="side-footer"></slot>
     </div>
 
-    <div class="flex-grow p-4">
-      <header class="flex items-center leading-8">
-        <div class="display:flex items-center mr-auto">
-          <ul class="list-none m-0 p-0 flex space-x-2">
-            <li
-              v-for="[mode, props] of e.MainPanelModeProperties"
-              :key="mode">
-              <a
-                v-if="globalSettings.mainPanelMode !== mode"
-                :href="router.resolve({name: mode, params: {}}).href"
-                class="ffun-header-link"
-                @click.prevent="router.push({name: mode, params: {}})">
-                {{ props.text }}
-              </a>
+    <div class="ffun-body-panel">
+      <div class="ffun-page-header">
+        <div class="ffun-page-header-left-block">
+          <template
+            v-for="[mode, props] of e.MainPanelModeProperties"
+            :key="mode">
+            <a
+              v-if="globalSettings.mainPanelMode !== mode"
+              :href="router.resolve({name: mode, params: {}}).href"
+              class="ffun-page-header-link"
+              @click.prevent="router.push({name: mode, params: {}})">
+              {{ props.text }}
+            </a>
 
-              <span
-                class="ffun-header-link-disabled cursor-default"
-                v-else
-                >{{ props.text }}</span
-              >
-            </li>
+            <span
+              class="ffun-page-header-link-disabled"
+              v-else
+              >{{ props.text }}</span
+            >
+          </template>
 
-            <li class="">
-              <a
-                href="/api/docs"
-                target="_blank"
-                class="ffun-header-link"
-                style="text-decoration: none"
-                @click="events.socialLinkClicked({linkType: 'api'})"
-                >API</a
-              >
-            </li>
-
-            <li v-if="settings.blog">
-              <a
-                :href="settings.blog"
-                target="_blank"
-                class="ffun-header-link"
-                style="text-decoration: none"
-                @click="events.socialLinkClicked({linkType: 'blog'})"
-                >Blog</a
-              >
-            </li>
-
-            <li v-if="settings.redditSubreddit">
-              <a
-                :href="settings.redditSubreddit"
-                target="_blank"
-                class="ffun-header-link text-xl align-middle"
-                title="Reddit"
-                style="text-decoration: none"
-                @click="events.socialLinkClicked({linkType: 'reddit'})"
-                ><i class="ti ti-brand-reddit"></i
-              ></a>
-            </li>
-
-            <li v-if="settings.discordInvite">
-              <a
-                :href="settings.discordInvite"
-                target="_blank"
-                class="ffun-header-link text-xl align-middle"
-                title="Discord"
-                style="text-decoration: none"
-                @click="events.socialLinkClicked({linkType: 'discord'})"
-                ><i class="ti ti-brand-discord"></i
-              ></a>
-            </li>
-
-            <li v-if="settings.githubRepo">
-              <a
-                :href="settings.githubRepo"
-                target="_blank"
-                class="ffun-header-link text-xl align-middle"
-                title="GitHub"
-                style="text-decoration: none"
-                @click="events.socialLinkClicked({linkType: 'github'})">
-                <i class="ti ti-brand-github"></i
-              ></a>
-            </li>
-          </ul>
+          <page-header-external-links :show-api="true" />
         </div>
 
-        <div class="flex items-center ml-4">
+        <div class="ffun-page-header-right-block">
           <a
             href="#"
-            class="ffun-header-link"
+            class="ffun-page-header-link"
             @click.prevent="logout()"
             >logout</a
           >
         </div>
-      </header>
+      </div>
 
       <hr class="my-2 border-slate-400" />
 
-      <main class="mb-4">
+      <main class="mb-4 px-4 min-h-screen">
         <slot></slot>
       </main>
 

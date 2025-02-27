@@ -1,7 +1,7 @@
 <template>
   <side-panel-layout>
     <template #side-menu-item-1>
-      Show descriptions:
+      Show descriptions
       <config-flag
         style="min-width: 2.5rem"
         v-model:flag="globalSettings.showFeedsDescriptions"
@@ -30,6 +30,7 @@
         class="ffun-form-button p-1 my-1 block w-full text-center"
         href="/api/get-opml"
         target="_blank"
+        title="Download OPML file with all your feeds"
         >Download OPML</a
       >
     </template>
@@ -44,7 +45,7 @@
       :create-rule-help="false"
       :api-key="false"
       :collections-notification_="sortedFeeds === null || sortedFeeds.length == 0"
-      :collections-warning_="true" />
+      :collections-warning_="false" />
 
     <feeds-list
       v-if="sortedFeeds"

@@ -17,12 +17,18 @@
       >
     </div>
 
-    <p
-      class="ffun-info-good"
-      v-else>
-      <template v-if="showSuccess"> Rule created. </template>
-      <template v-else> Select tags to create a rule. </template>
-    </p>
+    <template v-else>
+      <p
+        v-if="showSuccess"
+        class="ffun-info-good"
+        >Rule created.</p
+      >
+      <p
+        v-else
+        class="ffun-info-common"
+        >Select tags to create a rule.</p
+      >
+    </template>
   </div>
 </template>
 

@@ -3,36 +3,27 @@
     <div
       v-if="rule !== null"
       class="flex mb-1">
-      <div class="flex-shrink-0 min-w-fit mr-2">
+      <div class="ffun-body-list-icon-column">
         <a
           href="#"
-          class="ffun-normal-link"
+          class="ti ti-x text-red-500 hover:text-red-600"
+          title="Remove this rule"
           @click.prevent="deleteRule()">
-          remove
         </a>
       </div>
 
-      <score-selector
-        class="flex-shrink-0 mr-2"
-        :modelValue="rule.score"
-        @input="updateSelected" />
+      <div class="flex-shrink-0 min-w-fit mr-2">
+        <score-selector
+          :modelValue="rule.score"
+          @input="updateSelected" />
+      </div>
 
       <div class="flex-grow">
-        <template
-          v-for="tag of rule.requiredTags"
-          :key="tag">
-          <ffun-tag
-            :uid="tag"
-            secondary-mode="positive" />&nbsp;
-        </template>
-
-        <template
-          v-for="tag of rule.excludedTags"
-          :key="tag">
-          <ffun-tag
-            :uid="tag"
-            secondary-mode="negative" />&nbsp;
-        </template>
+        <rule-tag
+          v-for="tag of rule.allTags"
+          :key="tag"
+          :uid="tag"
+          :css-modifier="cssModifiers[tag]" />
       </div>
     </div>
 
@@ -42,9 +33,9 @@
       Score updated
       <a
         href="#"
-        class="ffun-form-button"
+        class=""
         @click.prevent="scoreChanged = false"
-        >close</a
+        >[close]</a
       >
     </p>
   </div>
@@ -84,5 +75,15 @@
     scoreChanged.value = true;
 
     globalSettings.updateDataVersion();
+  }
+
+  const cssModifiers: {[key: string]: string} = {};
+
+  for (const tag of properties.rule.allTags) {
+    if (properties.rule.excludedTags.includes(tag)) {
+      cssModifiers[tag] = "negative";
+      continue;
+    }
+    cssModifiers[tag] = "positive";
   }
 </script>

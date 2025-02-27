@@ -1,57 +1,41 @@
 <template>
   <div
     v-if="feed !== null"
-    class="flex mb-1">
-    <div class="flex-shrink-0 min-w-fit pr-2">
+    class="flex text-lg">
+    <div class="ffun-body-list-icon-column">
       <a
         href="#"
-        class="ffun-normal-link"
+        class="ti ti-x text-red-500 hover:text-red-600"
+        title="Unsubscribe"
         @click.prevent="feedsStore.unsubscribe(feed.id)">
-        remove
       </a>
     </div>
 
-    <div
-      class="flex-shrink-0 w-12 pr-2 text-right cursor-default"
-      title="Time of last load">
-      <value-date-time
-        :value="feed.loadedAt"
-        :reversed="true" />
-    </div>
+    <body-list-reverse-time-column
+      title="How long ago the feed was last checked for news"
+      :time="feed.loadedAt" />
 
-    <div
-      class="flex-shrink-0 w-12 pr-2 text-right cursor-default"
-      title="When was added">
-      <value-date-time
-        :value="feed.linkedAt"
-        :reversed="true" />
-    </div>
+    <body-list-reverse-time-column
+      title="How long ago the feed was added"
+      :time="feed.linkedAt" />
 
-    <div class="flex-shrink-0 w-8 pr-1 text-right cursor-default">
-      <span
+    <div class="ffun-body-list-icon-column ml-3">
+      <i
         v-if="feed.isOk"
         title="everything is ok"
-        class="text-green-700 cursor-default"
-        >ok</span
-      >
-      <span
+        class="text-green-700 ti ti-mood-smile"></i>
+      <i
         v-else
         :title="feed.lastError || 'unknown error'"
-        class="text-red-700 cursor-default"
-        >⚠</span
-      >
+        class="text-red-700 ti ti-mood-sad align-middle"></i>
     </div>
 
-    <div class="flex-shrink-0 w-8 text-right pr-1">
-      <favicon-element
-        :url="feed.url"
-        class="w-4 h-4 align-text-bottom mx-1 inline" />
-    </div>
+    <body-list-favicon-column :url="feed.url" />
 
     <div class="flex-grow">
-      <value-url
+      <external-url
         class="ffun-normal-link"
-        :value="feed.url"
+        :url="feed.url"
         :text="purifiedTitle" />
 
       <template v-if="feed.collectionIds.length > 0">
@@ -64,14 +48,16 @@
           </template>
         </span>
       </template>
-      <template v-if="globalSettings.showFeedsDescriptions">
-        <br />
-        <div class="max-w-3xl flex-1 bg-slate-50 border-2 rounded p-4">
-          <div v-html="purifiedDescription" />
-        </div>
-      </template>
     </div>
   </div>
+
+  <body-list-entry-body
+    v-if="globalSettings.showFeedsDescriptions"
+    class="ml-56"
+    :url="null"
+    :title="null"
+    :loading="false"
+    :text="purifiedDescription" />
 </template>
 
 <script lang="ts" setup>
@@ -79,6 +65,7 @@
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import * as api from "@/logic/api";
+  import * as utils from "@/logic/utils";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
@@ -91,33 +78,11 @@
 
   const properties = defineProps<{feed: t.Feed}>();
 
-  const noDescription = "No description";
-
   const purifiedTitle = computed(() => {
-    if (properties.feed.title === null) {
-      return properties.feed.url;
-    }
-
-    let title = DOMPurify.sanitize(properties.feed.title, {ALLOWED_TAGS: []}).trim();
-
-    if (title.length === 0) {
-      return properties.feed.url;
-    }
-
-    return title;
+    return utils.purifyTitle({raw: properties.feed.title, default_: properties.feed.url});
   });
 
   const purifiedDescription = computed(() => {
-    if (properties.feed.description === null) {
-      return noDescription;
-    }
-
-    let description = DOMPurify.sanitize(properties.feed.description).trim();
-
-    if (description.length === 0) {
-      return noDescription;
-    }
-
-    return description;
+    return utils.purifyBody({raw: properties.feed.description, default_: "No description"});
   });
 </script>

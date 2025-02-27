@@ -1,39 +1,37 @@
 <template>
-  <div class="flex">
-    <div class="flex-shrink-0 w-16 text-right pr-1">
+  <div class="flex text-lg">
+    <div class="ffun-body-list-icon-column">
       <a
+        v-if="subscribed"
         href="#"
-        v-if="!subscribed"
-        @click.prevent.stop="feedsStore.subscribe(feed.url)"
-        class="text-blue-700"
-        >subscribe</a
-      >
+        @click.prevent="feedsStore.unsubscribe(feed.id)"
+        title="Unsubscribe from this feed"
+        class="text-red-500 hover:text-red-600 ti ti-x" />
 
-      <span
+      <a
         v-else
-        class="text-green-700 cursor-default"
-        >subscribed</span
-      >
+        href="#"
+        @click.prevent="feedsStore.subscribe(feed.url)"
+        title="Subscribe to this feed"
+        class="text-green-600 hover:text-green-700 ti ti-plus" />
     </div>
 
-    <div class="flex-shrink-0 w-8 text-right pr-1">
-      <favicon-element
-        :url="feed.url"
-        class="w-4 h-4 align-text-bottom mx-1 inline" />
-    </div>
+    <body-list-favicon-column :url="feed.url" />
 
     <div class="flex-grow">
-      <strong>{{ feed.title }}</strong>
+      <external-url
+        class="ffun-normal-link"
+        :url="feed.url"
+        :text="purifiedTitle" />
     </div>
   </div>
 
-  <div class="flex">
-    <div class="flex-shrink-0 w-16 pr-1"> </div>
-
-    <div class="max-w-3xl flex-1 bg-slate-50 border-2 rounded p-4">
-      <p>{{ feed.description }}</p>
-    </div>
-  </div>
+  <body-list-entry-body
+    class="ml-8"
+    :url="null"
+    :title="null"
+    :loading="false"
+    :text="purifiedDescription" />
 </template>
 
 <script lang="ts" setup>
@@ -41,6 +39,7 @@
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import * as api from "@/logic/api";
+  import * as utils from "@/logic/utils";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
@@ -57,6 +56,14 @@
   const globalSettings = useGlobalSettingsStore();
 
   const subscribed = computed(() => properties.feed.id in feedsStore.feeds);
+
+  const purifiedTitle = computed(() => {
+    return utils.purifyTitle({raw: properties.feed.title, default_: properties.feed.url});
+  });
+
+  const purifiedDescription = computed(() => {
+    return utils.purifyBody({raw: properties.feed.description, default_: "No description"});
+  });
 </script>
 
 <style scoped></style>

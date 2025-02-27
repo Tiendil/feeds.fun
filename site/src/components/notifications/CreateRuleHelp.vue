@@ -1,20 +1,19 @@
 <template>
-  <div class="ffun-info-attention">
-    <h3>Create your first news score rule</h3>
-    <p>Set up a rule to filter your news:</p>
+  <div class="ffun-info-common">
+    <h4>Create your first rule</h4>
+
     <ol class="list-decimal list-inside">
-      <li><strong>Click</strong> any tag on a news item.</li>
-      <li>See how news is filtered by the chosen tag.</li>
-      <li>Locate the <strong>Create Rule</strong> panel in the left sidebar.</li>
+      <li><strong>Click on a tag</strong> that interests you.</li>
+      <li>See how Feeds Fun filters news based on the selected tag.</li>
       <li>
-        Assign a numeric score for filtered news:
+        <strong>Assign a score</strong> to the filtered news in the "Create Rule" block in the left sidebar:
         <ul>
-          <li>Use higher scores (above zero) for important or engaging content.</li>
-          <li>Use lower (below zero) scores for uninteresting or irrelevant content.</li>
+          <li>Use positive scores for important or engaging content.</li>
+          <li>Use negative scores for irrelevant or boring content.</li>
         </ul>
       </li>
-      <li>Click <strong>Create Rule</strong>.</li>
-      <li>Watch the news reorganize based on your scores.</li>
+      <li><strong>Click the "Create Rule" button</strong>.</li>
+      <li>See how Feeds Fun reorganizes news based on your rule.</li>
     </ol>
   </div>
 </template>

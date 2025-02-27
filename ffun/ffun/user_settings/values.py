@@ -11,13 +11,11 @@ class Value(Entity):
         name: str,
         type: Type,
         default: str | int | bool | decimal.Decimal | None,
-        description: str | None,
     ) -> None:
         super().__init__(key=key)
         self.name = name
         self.type = type
         self.default = default
-        self.description = description
 
 
 SettingsRegister = Register[Value]

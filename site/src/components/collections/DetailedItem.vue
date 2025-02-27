@@ -4,12 +4,12 @@
     <p class="">{{ collection.description }}</p>
 
     <div v-if="showFeeds">
-      <div
+      <ul
         v-for="feed in feeds"
         :key="feed.url"
-        class="mb-2 pb-2 collection-feed-block">
+        class="ffun-body-list-entry">
         <collections-feed-item :feed="feed" />
-      </div>
+      </ul>
     </div>
 
     <button
@@ -17,7 +17,7 @@
       class="ffun-form-button mr-2">
       <template v-if="collection.feedsNumber === 1"> Subscribe to 1 feed </template>
 
-      <template v-else> Subscribe to all {{ collection.feedsNumber }} feeds </template>
+      <template v-else> Subscribe to {{ collection.feedsNumber }} feeds </template>
     </button>
 
     <button
@@ -107,9 +107,3 @@
     {lazy: true}
   );
 </script>
-
-<style scoped>
-  .collection-feed-block:not(:last-child) {
-    border-bottom-width: 1px;
-  }
-</style>

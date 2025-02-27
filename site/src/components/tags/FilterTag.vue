@@ -1,29 +1,25 @@
 <template>
-  <div class="inline-block">
+  <div class="inline-block w-full">
     <a
       href="#"
       v-if="showSwitch"
-      class="pr-1"
+      class="pr-1 ffun-tag-switch"
+      :title="switchTooltip"
       @click.prevent="onRevers()"
       >⇄</a
     >
-    <div
+    <span
       :class="classes"
-      :title="tooltip"
+      :title="tagTooltip"
       @click.prevent="onClick()">
-      <span v-if="countMode == 'prefix'">[{{ count }}]</span>
+      <span
+        v-if="showCount"
+        class="pr-1"
+        >[{{ count }}]</span
+      >
 
-      {{ tagInfo.name }}
-
-      <a
-        v-if="tagInfo.link"
-        :href="tagInfo.link"
-        target="_blank"
-        @click.stop=""
-        rel="noopener noreferrer">
-        &#8599;
-      </a>
-    </div>
+      <tag-base :tag-info="tagInfo" />
+    </span>
   </div>
 </template>
 
@@ -45,10 +41,9 @@
   const properties = defineProps<{
     uid: string;
     count?: number | null;
-    countMode?: string | null;
-    secondaryMode?: string | null;
-    showSwitch?: boolean | null;
-    changeSource: events.TagChangeSource;
+    showCount: boolean;
+    showSwitch: boolean;
+    changeSource: "news_tags_filter" | "rules_tags_filter";
   }>();
 
   const tagInfo = computed(() => {
@@ -64,9 +59,11 @@
   });
 
   const classes = computed(() => {
-    const result: {[key: string]: boolean} = {
-      tag: true
-    };
+    const result: {[key: string]: boolean} = {};
+
+    result["ffun-filter-tag"] = true;
+    result["inline-block"] = true;
+    result["w-full"] = true;
 
     if (tagsStates.value.requiredTags[properties.uid]) {
       result["required"] = true;
@@ -74,10 +71,6 @@
 
     if (tagsStates.value.excludedTags[properties.uid]) {
       result["excluded"] = true;
-    }
-
-    if (properties.secondaryMode) {
-      result[properties.secondaryMode] = true;
     }
 
     return result;
@@ -99,32 +92,23 @@
     await events.tagStateChanged({tag: properties.uid, source: properties.changeSource, ...changeInfo});
   }
 
-  const tooltip = computed(() => {
-    if (properties.countMode == "tooltip" && properties.count) {
-      return `articles with this tag: ${properties.count}`;
+  const switchTooltip = computed(() => {
+    if (tagsStates.value.requiredTags[properties.uid]) {
+      return "Switch to show news without this tag";
     }
-    return "";
+
+    if (tagsStates.value.excludedTags[properties.uid]) {
+      return "Switch to show news with this tag";
+    }
+
+    return "Click to toggle";
+  });
+
+  const tagTooltip = computed(() => {
+    if (!tagsStates.value.requiredTags[properties.uid] && !tagsStates.value.excludedTags[properties.uid]) {
+      return "Show news with this tag";
+    }
+
+    return "Stop filtering by this tag";
   });
 </script>
-
-<style scoped>
-  .tag {
-    @apply inline-block cursor-pointer p-0 mr-2 whitespace-nowrap hover:bg-green-100 px-1 hover:rounded-lg;
-  }
-
-  .tag.required {
-    @apply text-green-700 font-bold;
-  }
-
-  .tag.excluded {
-    @apply text-red-700 font-bold;
-  }
-
-  .tag.positive {
-    @apply text-green-700;
-  }
-
-  .tag.negative {
-    @apply text-red-700;
-  }
-</style>

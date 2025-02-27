@@ -261,7 +261,7 @@ export function ruleFromJSON({
     id: toRuleId(id),
     requiredTags: requiredTags,
     excludedTags: excludedTags,
-    allTags: requiredTags.concat(excludedTags),
+    allTags: requiredTags.concat(excludedTags).sort(),
     score: score,
     createdAt: new Date(createdAt),
     updatedAt: new Date(updatedAt)
@@ -344,12 +344,15 @@ export function noInfoTag(uid: string): TagInfo {
   return {uid, name: uid, link: null, categories: []};
 }
 
+export function fakeTag({uid, name, link, categories}: TagInfo): TagInfo {
+  return {uid, name, link, categories};
+}
+
 export type UserSetting = {
   readonly kind: string;
   readonly type: string;
   value: string | number | boolean;
   readonly name: string;
-  readonly description: string;
 };
 
 export function userSettingFromJSON({
@@ -369,8 +372,7 @@ export function userSettingFromJSON({
     kind,
     type,
     value: type === "decimal" ? parseFloat(value as string) : value,
-    name,
-    description
+    name
   };
 }
 
@@ -413,25 +415,29 @@ export class Collection {
   readonly name: string;
   readonly description: string;
   readonly feedsNumber: number;
+  readonly showOnMain: boolean;
 
   constructor({
     id,
     guiOrder,
     name,
     description,
-    feedsNumber
+    feedsNumber,
+    showOnMain
   }: {
     id: CollectionId;
     guiOrder: number;
     name: string;
     description: string;
     feedsNumber: number;
+    showOnMain: boolean;
   }) {
     this.id = id;
     this.guiOrder = guiOrder;
     this.name = name;
     this.description = description;
     this.feedsNumber = feedsNumber;
+    this.showOnMain = showOnMain;
   }
 }
 
@@ -440,20 +446,23 @@ export function collectionFromJSON({
   guiOrder,
   name,
   description,
-  feedsNumber
+  feedsNumber,
+  showOnMain
 }: {
   id: string;
   guiOrder: number;
   name: string;
   description: string;
   feedsNumber: number;
+  showOnMain: boolean;
 }): Collection {
   return {
     id: toCollectionId(id),
     guiOrder: guiOrder,
     name: name,
     description: description,
-    feedsNumber: feedsNumber
+    feedsNumber: feedsNumber,
+    showOnMain: showOnMain
   };
 }
 

@@ -120,11 +120,21 @@ class TestCollections:
         )
 
         collection_1 = Collection(
-            id=new_collection_id(), gui_order=1, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[feed_1]
+            id=new_collection_id(),
+            gui_order=1,
+            name=uuid.uuid4().hex,
+            description=uuid.uuid4().hex,
+            feeds=[feed_1],
+            show_on_main=True,
         )
 
         collection_2 = Collection(
-            id=collection_1.id, gui_order=2, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[feed_1]
+            id=collection_1.id,
+            gui_order=2,
+            name=uuid.uuid4().hex,
+            description=uuid.uuid4().hex,
+            feeds=[feed_1],
+            show_on_main=True,
         )
 
         await collections.add_test_collection(collection_1)
@@ -141,11 +151,21 @@ class TestCollections:
         )
 
         collection_1 = Collection(
-            id=new_collection_id(), gui_order=1, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[feed_1]
+            id=new_collection_id(),
+            gui_order=1,
+            name=uuid.uuid4().hex,
+            description=uuid.uuid4().hex,
+            feeds=[feed_1],
+            show_on_main=True,
         )
 
         collection_2 = Collection(
-            id=new_collection_id(), gui_order=1, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[feed_1]
+            id=new_collection_id(),
+            gui_order=1,
+            name=uuid.uuid4().hex,
+            description=uuid.uuid4().hex,
+            feeds=[feed_1],
+            show_on_main=True,
         )
 
         await collections.add_test_collection(collection_1)
@@ -162,11 +182,21 @@ class TestCollections:
         )
 
         collection_1 = Collection(
-            id=new_collection_id(), gui_order=1, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[feed_1]
+            id=new_collection_id(),
+            gui_order=1,
+            name=uuid.uuid4().hex,
+            description=uuid.uuid4().hex,
+            feeds=[feed_1],
+            show_on_main=True,
         )
 
         collection_2 = Collection(
-            id=new_collection_id(), gui_order=2, name=uuid.uuid4().hex, description=uuid.uuid4().hex, feeds=[]
+            id=new_collection_id(),
+            gui_order=2,
+            name=uuid.uuid4().hex,
+            description=uuid.uuid4().hex,
+            feeds=[],
+            show_on_main=True,
         )
 
         await collections.add_test_collection(collection_1)

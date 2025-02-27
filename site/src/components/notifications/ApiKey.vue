@@ -1,5 +1,7 @@
 <template>
-  <div class="ffun-info-attention">
+  <div class="ffun-info-common">
+    <h4>Setup API keys</h4>
+
     <p>
       Please
       <a
@@ -7,17 +9,24 @@
         @click.prevent="goToSettings()"
         >set up</a
       >
-      your own OpenAI and/or Gemini API keys to tag your personal feeds.
+      your own
+      <external-url
+        url="https://platform.openai.com/docs/api-reference/introduction"
+        text="OpenAI" />
+      or
+      <external-url
+        url="https://ai.google.dev/gemini-api/docs/api-key"
+        text="Gemini" />
+      API keys to tag your personal feeds.
     </p>
 
     <p>
-      Remember, Feeds Fun provides tags for feeds from
       <a
         href="#"
         @click.prevent="goToCollections()"
-        >collections</a
+        >Collection</a
       >
-      for free. You do not need to set up your own API keys to have tags in news from collections.
+      feeds are tagged automatically, so no actions are required for them.
     </p>
 
     <user-setting-for-notification

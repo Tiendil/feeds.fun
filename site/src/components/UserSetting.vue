@@ -2,7 +2,7 @@
   <div
     v-if="setting !== null"
     class="mb-4">
-    <span class="font-semibold mr-1">{{ setting.name }}</span>
+    <span class="mr-1">{{ setting.name }}</span>
 
     <input
       class="ffun-input"
@@ -21,12 +21,12 @@
       style="min-width: 2.5rem"
       :flag="setting.value"
       @update:flag="updateFlag($event)"
-      on-text="No"
-      off-text="Yes" />
+      on-text="no"
+      off-text="yes" />
 
     <template v-else-if="!editing">
       <button
-        class="ffun-form-button ml-1"
+        class="ffun-form-button short ml-1"
         @click.prevent="startEditing()"
         >Edit</button
       >
@@ -35,20 +35,15 @@
     <template v-else>
       <button
         @click.prevent="save()"
-        class="ffun-form-button ml-1"
+        class="ffun-form-button short ml-1"
         >Save</button
       >
       <button
         @click.prevent="cancel()"
-        class="ffun-form-button ml-1"
+        class="ffun-form-button short ml-1"
         >Cancel</button
       >
     </template>
-
-    <div
-      class="ffun-normalized-text"
-      v-if="setting.description"
-      v-html="setting.description" />
   </div>
 </template>
 
@@ -89,7 +84,7 @@
     const type = setting.value.type;
 
     if (type == "boolean") {
-      return v ? "Yes" : "No";
+      return v ? "yes" : "no";
     }
 
     if (v == null || v == "") {

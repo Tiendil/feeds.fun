@@ -1,6 +1,6 @@
 <template>
   <div v-if="globalState.isLoggedIn">
-    <p class="">You have already logged in.</p>
+    <h3 class="">You have already logged in</h3>
     <button
       class="text-blue-600 hover:text-blue-800 text-xl pt-0"
       @click.prevent="goToWorkspace()"
@@ -9,14 +9,13 @@
   </div>
 
   <div v-else>
+    <h2 class="my-0">Single e-mail to log in</h2>
     <template v-if="!requested">
-      <p class="text-left">We'll send you an email with a login link.</p>
-
-      <p class="text-left">If you don&apos;t have an account, one will be created.</p>
+      <p class="text-center">We'll send you an email with a login link, no password required.</p>
 
       <form
         @submit.prevent="login()"
-        class="w-full flex">
+        class="w-full flex justify-center">
         <input
           class="ffun-input flex-grow p-1 mr-2"
           type="email"
@@ -26,7 +25,7 @@
         <button
           class="ffun-form-button"
           type="submit"
-          >Login</button
+          >Log In</button
         >
       </form>
     </template>

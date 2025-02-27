@@ -9,24 +9,31 @@ import "./style.css";
 import FeedsList from "./components/FeedsList.vue";
 import EntriesList from "./components/EntriesList.vue";
 import RulesList from "./components/RulesList.vue";
-import TagsList from "./components/TagsList.vue";
 import ConfigSelector from "./components/ConfigSelector.vue";
 import ConfigFlag from "./components/ConfigFlag.vue";
 import EntryForList from "./components/EntryForList.vue";
 import RuleConstructor from "./components/RuleConstructor.vue";
-import TagsFilter from "./components/TagsFilter.vue";
 import DiscoveryForm from "./components/DiscoveryForm.vue";
 import FeedInfo from "./components/FeedInfo.vue";
 import OpmlUpload from "./components/OPMLUpload.vue";
 import FeedForList from "./components/FeedForList.vue";
 import SupertokensLogin from "./components/SupertokensLogin.vue";
-import FfunTag from "./components/FfunTag.vue";
 import SimplePagination from "./components/SimplePagination.vue";
 import UserSetting from "./components/UserSetting.vue";
 import TokensCost from "./components/TokensCost.vue";
 import FaviconElement from "./components/FaviconElement.vue";
 import RuleForList from "./components/RuleForList.vue";
 import UserSettingForNotification from "./components/UserSettingForNotification.vue";
+
+import TagBase from "./components/tags/Base.vue";
+import EntryTag from "./components/tags/EntryTag.vue";
+import EntryTagsList from "./components/tags/EntryTagsList.vue";
+import FilterTag from "./components/tags/FilterTag.vue";
+import TagsFilter from "./components/tags/TagsFilter.vue";
+import RuleTag from "./components/tags/RuleTag.vue";
+import FakeTag from "./components/tags/FakeTag.vue";
+
+import PageHeaderExternalLinks from "./components/page_header/ExternalLinks.vue";
 
 import NotificationsApiKey from "./components/notifications/ApiKey.vue";
 import NotificationsCreateRuleHelp from "./components/notifications/CreateRuleHelp.vue";
@@ -41,12 +48,21 @@ import CollectionsSubscribingProgress from "./components/collections/Subscribing
 import CollectionsFeedItem from "./components/collections/FeedItem.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
-import InputMarker from "./inputs/Marker.vue";
 
-import ValueUrl from "./values/URL.vue";
+import ExternalUrl from "./values/ExternalUrl.vue";
 import ValueFeedId from "./values/FeedId.vue";
 import ValueDateTime from "./values/DateTime.vue";
 import ValueScore from "./values/Score.vue";
+
+import BodyListReverseTimeColumn from "./components/body_list/ReverseTimeColumn.vue";
+import BodyListFaviconColumn from "./components/body_list/FaviconColumn.vue";
+import BodyListEntryBody from "./components/body_list/EntryBody.vue";
+
+import MainDescription from "./components/main/Description.vue";
+import MainItem from "./components/main/Item.vue";
+import MainNewsTitle from "./components/main/NewsTitle.vue";
+import MainHeaderLine from "./components/main/HeaderLine.vue";
+import MainBlock from "./components/main/Block.vue";
 
 import WideLayout from "./layouts/WideLayout.vue";
 import SidePanelLayout from "./layouts/SidePanelLayout.vue";
@@ -60,24 +76,31 @@ const app = createApp(App);
 app.component("FeedsList", FeedsList);
 app.component("EntriesList", EntriesList);
 app.component("RulesList", RulesList);
-app.component("TagsList", TagsList);
 app.component("ConfigSelector", ConfigSelector);
 app.component("ConfigFlag", ConfigFlag);
 app.component("EntryForList", EntryForList);
 app.component("RuleConstructor", RuleConstructor);
-app.component("TagsFilter", TagsFilter);
 app.component("DiscoveryForm", DiscoveryForm);
 app.component("FeedInfo", FeedInfo);
 app.component("OpmlUpload", OpmlUpload);
 app.component("FeedForList", FeedForList);
 app.component("SupertokensLogin", SupertokensLogin);
-app.component("FfunTag", FfunTag);
 app.component("SimplePagination", SimplePagination);
 app.component("UserSetting", UserSetting);
 app.component("TokensCost", TokensCost);
 app.component("FaviconElement", FaviconElement);
 app.component("RuleForList", RuleForList);
 app.component("UserSettingForNotification", UserSettingForNotification);
+
+app.component("TagBase", TagBase);
+app.component("EntryTag", EntryTag);
+app.component("EntryTagsList", EntryTagsList);
+app.component("FilterTag", FilterTag);
+app.component("TagsFilter", TagsFilter);
+app.component("RuleTag", RuleTag);
+app.component("FakeTag", FakeTag);
+
+app.component("PageHeaderExternalLinks", PageHeaderExternalLinks);
 
 app.component("NotificationsApiKey", NotificationsApiKey);
 app.component("NotificationsCreateRuleHelp", NotificationsCreateRuleHelp);
@@ -92,12 +115,21 @@ app.component("CollectionsSubscribingProgress", CollectionsSubscribingProgress);
 app.component("CollectionsFeedItem", CollectionsFeedItem);
 
 app.component("ScoreSelector", ScoreSelector);
-app.component("InputMarker", InputMarker);
 
-app.component("ValueUrl", ValueUrl);
+app.component("ExternalUrl", ExternalUrl);
 app.component("ValueFeedId", ValueFeedId);
 app.component("ValueDateTime", ValueDateTime);
 app.component("ValueScore", ValueScore);
+
+app.component("BodyListReverseTimeColumn", BodyListReverseTimeColumn);
+app.component("BodyListFaviconColumn", BodyListFaviconColumn);
+app.component("BodyListEntryBody", BodyListEntryBody);
+
+app.component("MainDescription", MainDescription);
+app.component("MainItem", MainItem);
+app.component("MainNewsTitle", MainNewsTitle);
+app.component("MainHeaderLine", MainHeaderLine);
+app.component("MainBlock", MainBlock);
 
 app.component("WideLayout", WideLayout);
 app.component("SidePanelLayout", SidePanelLayout);

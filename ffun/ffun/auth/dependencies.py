@@ -13,16 +13,29 @@ async def _supertokens_user(session: SessionContainer = fastapi.Depends(verify_s
     return await u_domain.get_or_create_user(u_entities.Service.supertokens, session.user_id)
 
 
+async def _supertokens_optional_user(
+    session: SessionContainer = fastapi.Depends(verify_session(session_required=False)),
+) -> u_entities.User | None:
+    if session is None:
+        return None
+
+    return await u_domain.get_or_create_user(u_entities.Service.supertokens, session.user_id)
+
+
 async def _single_user() -> u_entities.User:
     return await u_domain.get_or_create_user(u_entities.Service.single, settings.single_user.external_id)
 
 
 if settings.mode == AuthMode.single_user:
     user = fastapi.Depends(_single_user)
+    optional_user = fastapi.Depends(_single_user)
 elif settings.mode == AuthMode.supertokens:
     user = fastapi.Depends(_supertokens_user)
+    optional_user = fastapi.Depends(_supertokens_optional_user)
 else:
     raise NotImplementedError(f"AuthMode {settings.mode} not implemented")
 
 
 User = Annotated[u_entities.User, user]
+
+OptionalUser = Annotated[u_entities.User | None, optional_user]

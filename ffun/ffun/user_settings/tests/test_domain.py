@@ -32,21 +32,13 @@ _secret_default = "secret"  # noqa: S105
 register: SettingsRegister = Register()
 
 
-register.add(
-    Value(key=Setting.kind_integer, name="integer", type=types.Integer(), default=_integer_default, description="")
-)
+register.add(Value(key=Setting.kind_integer, name="integer", type=types.Integer(), default=_integer_default))
 
-register.add(
-    Value(key=Setting.kind_string, name="string", type=types.String(), default=_string_default, description="")
-)
+register.add(Value(key=Setting.kind_string, name="string", type=types.String(), default=_string_default))
 
-register.add(
-    Value(key=Setting.kind_boolean, name="boolean", type=types.Boolean(), default=_boolean_default, description="")
-)
+register.add(Value(key=Setting.kind_boolean, name="boolean", type=types.Boolean(), default=_boolean_default))
 
-register.add(
-    Value(key=Setting.kind_secret, name="secret", type=types.Secret(), default=_secret_default, description="")
-)
+register.add(Value(key=Setting.kind_secret, name="secret", type=types.Secret(), default=_secret_default))
 
 
 class TestSave:

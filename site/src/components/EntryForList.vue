@@ -1,28 +1,21 @@
 <template>
   <div
     ref="entryTop"
-    class="flex text-lg">
-    <div :class="['flex-shrink-0', 'text-right', {'ml-8': isRead}]">
-      <input-marker
-        class="w-7 mr-2"
-        :marker="e.Marker.Read"
-        :entry-id="entryId">
-        <template v-slot:marked>
-          <span
-            class="text-green-700 no-underline"
-            title="Mark as unread">
-            <i class="ti ti-chevrons-left" />
-          </span>
-        </template>
+    :class="['flex', 'text-lg', {'ml-8': isRead}]">
+    <div class="ffun-body-list-icon-column">
+      <a
+        v-if="isRead"
+        href="#"
+        @click.prevent="markUnread()"
+        title="Mark as unread"
+        class="text-green-700 ti ti-chevrons-left" />
 
-        <template v-slot:unmarked>
-          <span
-            class="text-orange-700 no-underline"
-            title="Mark as read">
-            <i class="ti ti-chevrons-right" />
-          </span>
-        </template>
-      </input-marker>
+      <a
+        v-else
+        href="#"
+        @click.prevent="markRead()"
+        title="Mark as read"
+        class="text-orange-700 ti ti-chevrons-right" />
     </div>
 
     <div class="flex-shrink-0 w-8 text-center pr-1">
@@ -31,11 +24,7 @@
         :entry-id="entry.id" />
     </div>
 
-    <div class="flex-shrink-0 w-8 text-right pr-1">
-      <favicon-element
-        :url="entry.url"
-        class="w-5 h-5 align-text-bottom mx-1 inline" />
-    </div>
+    <body-list-favicon-column :url="entry.url" />
 
     <div class="flex-grow">
       <a
@@ -46,7 +35,7 @@
         {{ purifiedTitle }}
       </a>
 
-      <tags-list
+      <entry-tags-list
         class="mt-0 pt-0"
         :tags="entry.tags"
         :tags-count="tagsCount"
@@ -55,34 +44,19 @@
         :contributions="entry.scoreContributions" />
     </div>
 
-    <div class="flex flex-shrink-0">
-      <div class="w-7">
-        <value-date-time
-          :value="timeFor"
-          :reversed="true" />
-      </div>
-    </div>
+    <body-list-reverse-time-column
+      :title="timeForTooltip"
+      :time="timeFor" />
   </div>
 
-  <div
+  <body-list-entry-body
     v-if="showBody"
-    class="flex justify-center my-1">
-    <div class="max-w-3xl flex-1 bg-slate-50 border-2 rounded p-4">
-      <h2 class="mt-0"
-        ><a
-          :href="entry.url"
-          target="_blank"
-          @click="newsLinkOpenedEvent"
-          >{{ purifiedTitle }}</a
-        ></h2
-      >
-      <p v-if="entry.body === null">loading...</p>
-      <div
-        v-if="entry.body !== null"
-        class="prose max-w-none"
-        v-html="purifiedBody" />
-    </div>
-  </div>
+    class="justify-center"
+    :url="entry.url"
+    :title="purifiedTitle"
+    :loading="entry.body === null"
+    :text="purifiedBody"
+    @body-title-clicked="newsLinkOpenedEvent" />
 </template>
 
 <script lang="ts" setup>
@@ -91,6 +65,7 @@
   import type * as t from "@/logic/types";
   import * as events from "@/logic/events";
   import * as e from "@/logic/enums";
+  import * as utils from "@/logic/utils";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
@@ -129,30 +104,28 @@
     return _.get(entry.value, properties.timeField, null);
   });
 
-  const purifiedTitle = computed(() => {
+  const timeForTooltip = computed(() => {
     if (entry.value === null) {
       return "";
     }
 
-    // TODO: remove emojis?
-    let title = DOMPurify.sanitize(entry.value.title, {ALLOWED_TAGS: []});
-
-    if (title.length === 0) {
-      title = "No title";
+    if (properties.timeField === "publishedAt") {
+      return "How long ago the news was published";
     }
 
-    return title;
+    if (properties.timeField === "catalogedAt") {
+      return "How long ago the news was collected";
+    }
+
+    return "";
+  });
+
+  const purifiedTitle = computed(() => {
+    return utils.purifyTitle({raw: entry.value.title, default_: "No title"});
   });
 
   const purifiedBody = computed(() => {
-    if (entry.value === null) {
-      return "";
-    }
-
-    if (entry.value.body === null) {
-      return "";
-    }
-    return DOMPurify.sanitize(entry.value.body);
+    return utils.purifyBody({raw: entry.value.body, default_: "No description"});
   });
 
   async function newsLinkOpenedEvent() {
@@ -191,4 +164,18 @@
   onMounted(() => {
     entriesStore.requestFullEntry({entryId: properties.entryId});
   });
+
+  async function markUnread() {
+    await entriesStore.removeMarker({
+      entryId: properties.entryId,
+      marker: e.Marker.Read
+    });
+  }
+
+  async function markRead() {
+    await entriesStore.setMarker({
+      entryId: properties.entryId,
+      marker: e.Marker.Read
+    });
+  }
 </script>

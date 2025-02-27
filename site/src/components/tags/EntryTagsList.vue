@@ -1,17 +1,15 @@
 <template>
   <div>
-    <div class="text-base">
-      <ffun-tag
+    <div class="overflow-y-auto max-h-36">
+      <entry-tag
         v-for="tag of displayedTags"
         :key="tag"
         :uid="tag"
-        :count="tagsCount[tag]"
-        :secondary-mode="tagMode(tag)"
-        count-mode="tooltip"
-        change-source="entry_record" />
+        :css-modifier="tagMode(tag)"
+        :count="tagsCount[tag]" />
 
       <a
-        class=""
+        class="text-base whitespace-nowrap"
         title="Click on the news title to open it and see all tags"
         href="#"
         @click.prevent="emit('request-to-show-all')"
@@ -50,15 +48,15 @@
 
   function tagMode(tag: string) {
     if (!properties.contributions) {
-      return null;
+      return "neurtral";
     }
 
     if (!(tag in properties.contributions)) {
-      return null;
+      return "neurtral";
     }
 
     if (properties.contributions[tag] == 0) {
-      return null;
+      return "neurtral";
     }
 
     if (properties.contributions[tag] > 0) {

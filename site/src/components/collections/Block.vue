@@ -9,7 +9,7 @@
 
       <button
         type="submit"
-        class="ffun-form-button"
+        class="ffun-form-button mt-4"
         >Subscribe</button
       >
 

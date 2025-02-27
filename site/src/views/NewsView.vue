@@ -35,7 +35,8 @@
     <template #side-footer>
       <tags-filter
         :tags="tagsCount"
-        :show-create-rule="true" />
+        :show-create-rule="true"
+        change-source="news_tags_filter" />
     </template>
 
     <template #main-header>
