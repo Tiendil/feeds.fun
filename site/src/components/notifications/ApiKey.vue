@@ -9,11 +9,15 @@
         @click.prevent="goToSettings()"
         >set up</a
       >
-      your own <external-url
-          url="https://platform.openai.com/docs/api-reference/introduction"
-          text="OpenAI" /> or <external-url
-          url="https://ai.google.dev/gemini-api/docs/api-key"
-          text="Gemini" /> API keys to tag your personal feeds.
+      your own
+      <external-url
+        url="https://platform.openai.com/docs/api-reference/introduction"
+        text="OpenAI" />
+      or
+      <external-url
+        url="https://ai.google.dev/gemini-api/docs/api-key"
+        text="Gemini" />
+      API keys to tag your personal feeds.
     </p>
 
     <p>
@@ -21,7 +25,7 @@
         href="#"
         @click.prevent="goToCollections()"
         >Collection</a
-                      >
+      >
       feeds are tagged automatically, so no actions are required for them.
     </p>
 
