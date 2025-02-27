@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col items-stretch rounded-xl overflow-hidden min-h-28 max-h-28">
+  <div class="flex flex-col items-stretch rounded-xl overflow-hidden min-h-28 max-h-28 mx-2">
     <div class="bg-blue-100 py-1 items-center text-xl font-medium">
       <slot name="caption" />
     </div>

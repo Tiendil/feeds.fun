@@ -21,7 +21,7 @@
     </main-header-line>
 
     <div class="max-w-xl mx-auto my-5">
-      <div class="ffun-info-good text-center">
+      <div class="ffun-info-good text-center mx-2">
         <h2 class="my-0">Single e-mail to log in</h2>
         <supertokens-login />
       </div>
@@ -167,7 +167,7 @@
     <main-header-line> Curated news collections for easy start </main-header-line>
 
     <div class="text-center my-5 max-w-3xl mx-auto space-y-6">
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid sm:grid-cols-1 md:grid-cols-2 gap-4">
         <template
           v-for="collectionId in collections.collectionsOrder"
           :key="collectionId">
