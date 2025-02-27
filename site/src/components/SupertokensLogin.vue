@@ -1,6 +1,6 @@
 <template>
   <div v-if="globalState.isLoggedIn">
-    <p class="">You have already logged in.</p>
+    <h3 class="">You have already logged in</h3>
     <button
       class="text-blue-600 hover:text-blue-800 text-xl pt-0"
       @click.prevent="goToWorkspace()"
@@ -9,6 +9,8 @@
   </div>
 
   <div v-else>
+
+    <h2 class="my-0">Single e-mail to log in</h2>
     <template v-if="!requested">
       <p class="text-center">We'll send you an email with a login link, no password required.</p>
 

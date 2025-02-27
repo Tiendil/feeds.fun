@@ -22,7 +22,6 @@
 
     <main-block>
       <div class="max-w-xl md:mx-auto ffun-info-good text-center mx-2">
-        <h2 class="my-0">Single e-mail to log in</h2>
         <supertokens-login />
       </div>
     </main-block>
