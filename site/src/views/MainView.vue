@@ -1,5 +1,4 @@
 <template>
-  <!-- TODO: mobile screens -->
   <wide-layout>
     <div class="ffun-page-header">
       <div class="ffun-page-header-center-block">
