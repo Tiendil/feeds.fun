@@ -162,7 +162,7 @@
       </main-description>
     </main-block>
 
-    <main-header-line> Curated news collections <br class="md:hidden" />for easy start </main-header-line>
+    <main-header-line v-if="collections.collectionsOrder.length > 0"> Curated news collections <br class="md:hidden" />for easy start </main-header-line>
 
     <main-block>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
