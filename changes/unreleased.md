@@ -1,2 +1,2 @@
 
-No changes.
+- ff-225 — Full GUI restyling.
