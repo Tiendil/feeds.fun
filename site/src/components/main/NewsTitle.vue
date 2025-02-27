@@ -1,5 +1,5 @@
 <template>
-  <span class="block text-lg">
+  <span class="block text-base md:text-lg">
     <span
       v-if="score"
       class="cursor-pointer text-purple-700 inline-block w-12"

@@ -9,10 +9,10 @@
 
     <hr />
 
-    <div class="p-5 text-center">
+    <main-block>
       <h1 class="m-0 text-5xl">Feeds Fun</h1>
       <p class="mt-2 text-2xl">Transparent Personalized News</p>
-    </div>
+    </main-block>
 
     <main-header-line>
       <!-- TODO: uncomment this claim after we have some statistics on long-term users -->
@@ -20,16 +20,16 @@
       Save news-browsing time by focusing on what truly matters
     </main-header-line>
 
-    <div class="max-w-xl mx-auto my-5">
-      <div class="ffun-info-good text-center mx-2">
+    <main-block>
+      <div class="max-w-xl md:mx-auto ffun-info-good text-center mx-2">
         <h2 class="my-0">Single e-mail to log in</h2>
         <supertokens-login />
       </div>
-    </div>
+    </main-block>
 
     <main-header-line> Smarter way to read news </main-header-line>
 
-    <div class="text-center my-5 max-w-3xl mx-auto space-y-6">
+    <main-block>
       <main-description icon="ti-number-1">
         <template #caption> Subscribe to sites </template>
 
@@ -89,7 +89,7 @@
 
               <i class="ti ti-arrow-right"></i>
 
-              <span class="cursor-pointer text-purple-700 text-xl">+5</span>
+              <span class="cursor-default text-purple-700 text-lg md:text-xl">+5</span>
             </div>
 
             <div class="">
@@ -101,7 +101,7 @@
 
               <i class="ti ti-arrow-right"></i>
 
-              <span class="cursor-pointer text-purple-700 text-xl">-55</span>
+              <span class="cursor-default text-purple-700 text-lg md:text-xl">-55</span>
             </div>
 
             <div class="">
@@ -121,7 +121,7 @@
 
               <i class="ti ti-arrow-right"></i>
 
-              <span class="cursor-pointer text-purple-700 text-xl">+8</span>
+              <span class="cursor-default-purple-700 text-lg md:text-xl">+8</span>
             </div>
 
             <div class="">
@@ -133,7 +133,7 @@
 
               <i class="ti ti-arrow-right"></i>
 
-              <span class="cursor-pointer text-purple-700 text-xl">+21</span>
+              <span class="cursor-default text-purple-700 text-lg md:text-xl">+21</span>
             </div>
           </div>
         </template>
@@ -162,11 +162,11 @@
           </div>
         </template>
       </main-description>
-    </div>
+    </main-block>
 
-    <main-header-line> Curated news collections for easy start </main-header-line>
+    <main-header-line> Curated news collections <br class="md:hidden"/>for easy start </main-header-line>
 
-    <div class="text-center my-5 max-w-3xl mx-auto space-y-6">
+    <main-block>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <template
           v-for="collectionId in collections.collectionsOrder"
@@ -184,7 +184,7 @@
           </main-item>
         </template>
       </div>
-    </div>
+    </main-block>
 
     <main-header-line> Here, take a peek </main-header-line>
     <div class="text-center p-5">

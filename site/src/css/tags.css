@@ -1,6 +1,6 @@
 @layer components {
   .ffun-entry-tag {
-    @apply border inline-block cursor-pointer rounded whitespace-nowrap text-base;
+    @apply border inline-block cursor-pointer rounded whitespace-nowrap text-sm md:text-base;
     @apply mr-1 mb-1 py-0.5 px-1.5 bg-slate-200 text-slate-800;
     @apply hover:bg-slate-300;
 
