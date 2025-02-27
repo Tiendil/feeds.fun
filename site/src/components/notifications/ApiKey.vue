@@ -9,17 +9,20 @@
         @click.prevent="goToSettings()"
         >set up</a
       >
-      your own OpenAI and/or Gemini API keys to tag your personal feeds.
+      your own <external-url
+          url="https://platform.openai.com/docs/api-reference/introduction"
+          text="OpenAI" /> or <external-url
+          url="https://ai.google.dev/gemini-api/docs/api-key"
+          text="Gemini" /> API keys to tag your personal feeds.
     </p>
 
     <p>
-      Remember, Feeds Fun provides tags for feeds from
       <a
         href="#"
         @click.prevent="goToCollections()"
-        >collections</a
-      >
-      for free. You do not need to set up your own API keys to have tags in news from collections.
+        >Collection</a
+                      >
+      feeds are tagged automatically, so no actions are required for them.
     </p>
 
     <user-setting-for-notification
