@@ -167,7 +167,7 @@
     <main-header-line> Curated news collections for easy start </main-header-line>
 
     <div class="text-center my-5 max-w-3xl mx-auto space-y-6">
-      <div class="grid sm:grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <template
           v-for="collectionId in collections.collectionsOrder"
           :key="collectionId">
