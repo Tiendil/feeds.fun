@@ -66,6 +66,7 @@ import MainBlock from "./components/main/Block.vue";
 
 import WideLayout from "./layouts/WideLayout.vue";
 import SidePanelLayout from "./layouts/SidePanelLayout.vue";
+import PublicSidePanelLayout from "./layouts/PublicSidePanelLayout.vue";
 
 import {useSupertokens} from "@/stores/supertokens";
 

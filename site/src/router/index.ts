@@ -54,7 +54,12 @@ const router = createRouter({
       path: "/settings",
       name: e.MainPanelMode.Settings,
       component: SettingsView
-    }
+    },
+    {
+      path: "/public-collection",
+      name: "public-collection",
+      component: PublicCollectionsView
+    },
   ]
 });
 
