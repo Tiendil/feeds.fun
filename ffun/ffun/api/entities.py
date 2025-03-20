@@ -309,6 +309,22 @@ class GetLastEntriesResponse(api.APISuccess):
     tagsMapping: dict[int, str]
 
 
+class GetLastCollectionEntriesRequest(api.APIRequest):
+    collectionId: fc_entities.CollectionId
+    period: datetime.timedelta | None = None
+
+    @pydantic.field_validator("period")
+    def validate_period(cls, v: None | datetime.timedelta) -> None | datetime.timedelta:
+        if v is not None and v.total_seconds() < 0:
+            raise ValueError("period must be positive")
+        return v
+
+
+class GetLastCollectionEntriesResponse(api.APISuccess):
+    entries: list[Entry]
+    tagsMapping: dict[int, str]
+
+
 class GetEntriesByIdsRequest(api.APIRequest):
     ids: list[EntryId]
 
