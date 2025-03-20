@@ -76,6 +76,8 @@
   const globalSettings = useGlobalSettingsStore();
   const entriesStore = useEntriesStore();
 
+  entriesStore.setPublicCollectionMode($route.params.collectionSlug);
+
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
   provide("tagsStates", tagsStates);

@@ -10,6 +10,12 @@ import {computedAsync} from "@vueuse/core";
 import {useGlobalSettingsStore} from "@/stores/globalSettings";
 import * as events from "@/logic/events";
 
+
+enum Mode {
+  News = "news",
+  PublicCollection = "public-collection",
+}
+
 export const useEntriesStore = defineStore("entriesStore", () => {
   const globalSettings = useGlobalSettingsStore();
 
@@ -19,6 +25,31 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   const readHistory = ref<t.EntryId[]>([]);
 
   const canUndoMarkRead = computed(() => readHistory.value.length > 0);
+
+  const mode = ref<Mode>(Mode.News);
+  const modePublicCollectionSlug = ref<t.CollectionSlug|null>(null);
+
+  function setNewsMode() {
+    if (mode.value == Mode.News) {
+      return;
+    }
+
+    mode.value = Mode.News;
+
+    globalSettings.updateDataVersion();
+  }
+
+  function setPublicCollectionMode(collectionSlug: t.CollectionSlug) {
+
+    if (mode.value == Mode.PublicCollection && modePublicCollectionSlug.value === collectionSlug) {
+      return;
+    }
+
+    mode.value = Mode.PublicCollection;
+    modePublicCollectionSlug.value = collectionSlug;
+
+    globalSettings.updateDataVersion();
+  }
 
   function registerEntry(entry: t.Entry) {
     if (entry.id in entries.value) {
@@ -30,7 +61,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     entries.value[entry.id] = entry;
   }
 
-  const loadedEntriesReport = computedAsync(async () => {
+  async function loadEntriesAccordingToMode() {
     const periodProperties = e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod);
 
     if (periodProperties === undefined) {
@@ -39,12 +70,25 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     const period = periodProperties.seconds;
 
+    if (mode.value === Mode.News) {
+      return await api.getLastEntries({
+        period: period
+      });
+    }
+
+    if (mode.value === Mode.PublicCollection) {
+      return await api.getLastCollectionEntries({
+        period: period,
+        collectionSlug: modePublicCollectionSlug.value
+      });
+    }
+  }
+
+  const loadedEntriesReport = computedAsync(async () => {
     // force refresh
     globalSettings.dataVersion;
 
-    const loadedEntries = await api.getLastEntries({
-      period: period
-    });
+    const loadedEntries = await loadEntriesAccordingToMode();
 
     const report = [];
 
@@ -155,6 +199,8 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     displayEntry,
     hideEntry,
     undoMarkRead,
-    canUndoMarkRead
+    canUndoMarkRead,
+    setNewsMode,
+    setPublicCollectionMode,
   };
 });

@@ -3,13 +3,14 @@ import pathlib
 import toml
 
 from ffun.core import logging
+from ffun.domain.entities import CollectionId, CollectionSlug
 from ffun.domain.domain import new_feed_id
 from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.domain import get_source_ids
 from ffun.feeds.entities import Feed, FeedId
 from ffun.feeds_collections import errors
-from ffun.feeds_collections.entities import Collection, CollectionId, FeedInfo
+from ffun.feeds_collections.entities import Collection, FeedInfo
 from ffun.feeds_collections.settings import settings
 
 logger = logging.get_module_logger()
@@ -39,6 +40,14 @@ class Collections:
 
         raise errors.CollectionNotFound()
 
+    # TODO: test
+    def collection_by_slug(self, slug: CollectionSlug) -> Collection:
+        for collection in self._collections:
+            if collection.slug == slug:
+                return collection
+
+        raise errors.CollectionNotFound()
+
     def load(self, collection_configs: pathlib.Path) -> None:
         """Loads all collection configs from the given directory."""
         collections = []
@@ -57,6 +66,13 @@ class Collections:
 
         if len(ids) != len(self._collections):
             raise errors.DuplicateCollectionIds()
+
+    # TODO: test
+    def validate_collection_slugs(self) -> None:
+        ids = {c.slug for c in self._collections}
+
+        if len(ids) != len(self._collections):
+            raise errors.DuplicateCollectionSlugs()
 
     def validate_collection_gui_order(self) -> None:
         orders = {c.gui_order for c in self._collections}
@@ -124,6 +140,7 @@ class Collections:
             self.load(collection_configs)
 
         self.validate_collection_ids()
+        self.validate_collection_slugs()
         self.validate_collection_gui_order()
         self.validate_collection_is_not_empty()
 

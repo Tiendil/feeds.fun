@@ -1,4 +1,5 @@
 id = "eb66a806-7168-450a-81c8-166f7624bf97"
+slug = "scientific-papers"
 gui_order = 3
 name = "Scientific Papers"
 description = "New scientific papers and preprints from official sources."

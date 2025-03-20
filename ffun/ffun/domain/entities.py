@@ -5,6 +5,7 @@ UserId = NewType("UserId", uuid.UUID)
 EntryId = NewType("EntryId", uuid.UUID)
 FeedId = NewType("FeedId", uuid.UUID)
 CollectionId = NewType("CollectionId", uuid.UUID)
+CollectionSlug = NewType("CollectionSlug", str)
 SourceId = NewType("SourceId", uuid.UUID)
 RuleId = NewType("RuleId", uuid.UUID)
 

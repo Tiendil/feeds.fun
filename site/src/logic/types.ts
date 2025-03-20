@@ -24,6 +24,12 @@ export function toCollectionId(id: string): CollectionId {
   return id as CollectionId;
 }
 
+export type CollectionSlug = string & {readonly __brand: unique symbol};
+
+export function toCollectionSlug(slug: string): CollectionSlug {
+  return slug as CollectionSlug;
+}
+
 export type URL = string & {readonly __brand: unique symbol};
 
 export function toURL(url: string): URL {

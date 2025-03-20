@@ -84,11 +84,11 @@ export async function getLastEntries({period}: {period: number}) {
   return entries;
 }
 
-export async function getLastCollectionEntries({period, collectionId}: {period: number, collectionId: t.CollectionId}) {
+export async function getLastCollectionEntries({period, collectionSlug}: {period: number, collectionSlug: t.CollectionSlug | null}) {
   const response = await post({
     url: API_GET_LAST_ENTRIES,
     data: {period: period,
-      collectionId: collectionId}
+      collectionSlug: collectionSlug}
   });
 
   const entries = [];

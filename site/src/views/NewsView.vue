@@ -74,7 +74,9 @@
   import _ from "lodash";
 
   const globalSettings = useGlobalSettingsStore();
-  const entriesStore = useEntriesStore();
+const entriesStore = useEntriesStore();
+
+entriesStore.setNewsMode();
 
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
