@@ -7,31 +7,6 @@
         v-model:property="globalSettings.lastEntriesPeriod" />
     </template>
 
-    <template #side-menu-item-2>
-      Sort by
-      <config-selector
-        :values="e.EntriesOrderProperties"
-        v-model:property="globalSettings.entriesOrder" />
-    </template>
-
-    <template #side-menu-item-3>
-      Show read
-
-      <config-flag
-        style="min-width: 2.5rem"
-        v-model:flag="globalSettings.showRead"
-        on-text="no"
-        off-text="yes" />
-
-      <button
-        class="ffun-form-button py-0 ml-1"
-        title='Undo last "mark read" operation'
-        :disabled="!entriesStore.canUndoMarkRead"
-        @click="entriesStore.undoMarkRead()">
-        ↶
-      </button>
-    </template>
-
     <template #side-footer>
       <tags-filter
         :tags="tagsCount"
@@ -46,16 +21,9 @@
 
     <template #main-footer> </template>
 
-    <notifications
-      v-if="entriesStore.loadedEntriesReport !== null"
-      :create-rule-help="hasEntries && !hasRules"
-      :api-key="true"
-      :collections-notification_="!hasEntries"
-      :collections-warning_="false" />
-
     <entries-list
       :entriesIds="entriesReport"
-      :time-field="timeField"
+      :time-field="e.EntriesOrderProperties.Published.timeField"
       :tags-count="tagsCount"
       :showFromStart="25"
       :showPerPage="25" />
@@ -63,6 +31,7 @@
 </template>
 
 <script lang="ts" setup>
+  // TODO: unify code with NewsView.vue, move into a separate module
   import {computed, ref, onUnmounted, watch, provide} from "vue";
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
@@ -81,8 +50,6 @@
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
   provide("tagsStates", tagsStates);
-
-  globalSettings.mainPanelMode = e.MainPanelMode.Entries;
 
   globalSettings.updateDataVersion();
 
@@ -185,34 +152,6 @@
     return entriesReport.value.length;
   });
 
-  const hasEntries = computed(() => {
-    return entriesNumber.value > 0;
-  });
-
-  const hasRules = computed(() => {
-    if (entriesStore.loadedEntriesReport === null) {
-      return false;
-    }
-
-    // TODO: it is a heuristic (score could be 0 even with rules)
-    //       must be refactored to something more stable
-    for (const entryId of entriesStore.loadedEntriesReport) {
-      if (entriesStore.entries[entryId].score != 0) {
-        return true;
-      }
-    }
-    return false;
-  });
-
-  const timeField = computed(() => {
-    const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
-
-    if (orderProperties === undefined) {
-      throw new Error(`Unknown entries order: ${globalSettings.entriesOrder}`);
-    }
-
-    return orderProperties.timeField;
-  });
 </script>
 
 <style></style>
