@@ -86,7 +86,7 @@ export async function getLastEntries({period}: {period: number}) {
 
 export async function getLastCollectionEntries({period, collectionSlug}: {period: number, collectionSlug: t.CollectionSlug | null}) {
   const response = await post({
-    url: API_GET_LAST_ENTRIES,
+    url: API_GET_LAST_COLLECTION_ENTRIES,
     data: {period: period,
       collectionSlug: collectionSlug}
   });

@@ -134,6 +134,7 @@ app.component("MainBlock", MainBlock);
 
 app.component("WideLayout", WideLayout);
 app.component("SidePanelLayout", SidePanelLayout);
+app.component("PublicSidePanelLayout", PublicSidePanelLayout);
 
 app.component("vue-countdown", VueCountdown);
 

@@ -23,7 +23,7 @@
 
     <entries-list
       :entriesIds="entriesReport"
-      :time-field="e.EntriesOrderProperties.Published.timeField"
+      :time-field="orderProperties.timeField"
       :tags-count="tagsCount"
       :showFromStart="25"
       :showPerPage="25" />
@@ -33,6 +33,7 @@
 <script lang="ts" setup>
   // TODO: unify code with NewsView.vue, move into a separate module
   import {computed, ref, onUnmounted, watch, provide} from "vue";
+import { useRoute } from 'vue-router'
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
   import * as tagsFilterState from "@/logic/tagsFilterState";
@@ -40,12 +41,15 @@
   import type * as t from "@/logic/types";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useEntriesStore} from "@/stores/entries";
-  import _ from "lodash";
+import _ from "lodash";
+
+
+const route = useRoute();
 
   const globalSettings = useGlobalSettingsStore();
   const entriesStore = useEntriesStore();
 
-  entriesStore.setPublicCollectionMode($route.params.collectionSlug);
+  entriesStore.setPublicCollectionMode(route.params.collectionSlug);
 
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
@@ -53,18 +57,20 @@
 
   globalSettings.updateDataVersion();
 
-  const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
+const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
+
+const orderProperties = e.EntriesOrderProperties.get(e.EntriesOrder.Published);
 
   const _sortedEntries = computed(() => {
     if (entriesStore.loadedEntriesReport === null) {
       return [];
     }
 
-    const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
+    // const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
 
-    if (orderProperties === undefined) {
-      throw new Error(`Unknown order ${globalSettings.entriesOrder}`);
-    }
+    // if (orderProperties === undefined) {
+    //   throw new Error(`Unknown order ${globalSettings.entriesOrder}`);
+    // }
 
     const field = orderProperties.orderField;
     const direction = orderProperties.direction;

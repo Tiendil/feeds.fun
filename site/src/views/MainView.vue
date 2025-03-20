@@ -179,7 +179,15 @@
             </template>
 
             <template #description>
-              {{ collections.collections[collectionId].description }}
+              <div>{{ collections.collections[collectionId].description }}</div>
+              <div class="mt-2">
+                <!-- TODO: specify concrete href -->
+                <a href="#"
+                   @click.prevent="goToPublicCollection(collections.collections[collectionId].slug)"
+                   class="ffun-normal-link pt-4">
+                  Check last news
+                </a>
+              </div>
             </template>
           </main-item>
         </template>
@@ -198,7 +206,14 @@
 
 <script lang="ts" setup>
   import * as settings from "@/logic/settings";
-  import {useCollectionsStore} from "@/stores/collections";
+  import {useRouter, RouterLink, RouterView} from "vue-router";
+import {useCollectionsStore} from "@/stores/collections";
+  import * as t from "@/logic/types";
 
-  const collections = useCollectionsStore();
+const router = useRouter();
+const collections = useCollectionsStore();
+
+function goToPublicCollection(collectionSlug: t.CollectionSlug) {
+  router.push({name: "public-collection", params: {collectionSlug: collectionSlug}});
+}
 </script>

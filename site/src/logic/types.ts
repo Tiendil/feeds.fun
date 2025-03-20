@@ -417,6 +417,7 @@ export function resourceHistoryRecordFromJSON({
 
 export class Collection {
   readonly id: CollectionId;
+  readonly slug: CollectionSlug;
   readonly guiOrder: number;
   readonly name: string;
   readonly description: string;
@@ -425,6 +426,7 @@ export class Collection {
 
   constructor({
     id,
+    slug,
     guiOrder,
     name,
     description,
@@ -432,6 +434,7 @@ export class Collection {
     showOnMain
   }: {
     id: CollectionId;
+    slug: CollectionSlug;
     guiOrder: number;
     name: string;
     description: string;
@@ -439,6 +442,7 @@ export class Collection {
     showOnMain: boolean;
   }) {
     this.id = id;
+    this.slug = slug;
     this.guiOrder = guiOrder;
     this.name = name;
     this.description = description;
@@ -449,6 +453,7 @@ export class Collection {
 
 export function collectionFromJSON({
   id,
+  slug,
   guiOrder,
   name,
   description,
@@ -456,6 +461,7 @@ export function collectionFromJSON({
   showOnMain
 }: {
   id: string;
+  slug: string;
   guiOrder: number;
   name: string;
   description: string;
@@ -464,6 +470,7 @@ export function collectionFromJSON({
 }): Collection {
   return {
     id: toCollectionId(id),
+    slug: toCollectionSlug(slug),
     guiOrder: guiOrder,
     name: name,
     description: description,

@@ -151,7 +151,7 @@ async def api_get_last_collection_entries(
         feeds_ids=feed_ids, period=request.period, limit=settings.max_returned_entries
     )
 
-    external_entries, tags_mapping = await _external_entries(entries, with_body=False)
+    external_entries, tags_mapping = await _external_entries(entries, with_body=False, user_id=None)
 
     return entities.GetLastCollectionEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
 
