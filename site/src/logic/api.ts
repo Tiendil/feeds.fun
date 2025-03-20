@@ -7,6 +7,7 @@ const ENTRY_POINT = "/api";
 
 const API_GET_FEEDS = `${ENTRY_POINT}/get-feeds`;
 const API_GET_LAST_ENTRIES = `${ENTRY_POINT}/get-last-entries`;
+const API_GET_LAST_COLLECTION_ENTRIES = `${ENTRY_POINT}/get-last-collection-entries`;
 const API_GET_ENTRIES_BY_IDS = `${ENTRY_POINT}/get-entries-by-ids`;
 const API_CREATE_OR_UPDATE_RULE = `${ENTRY_POINT}/create-or-update-rule`;
 
@@ -71,6 +72,23 @@ export async function getLastEntries({period}: {period: number}) {
   const response = await post({
     url: API_GET_LAST_ENTRIES,
     data: {period: period}
+  });
+
+  const entries = [];
+
+  for (let rawEntry of response.entries) {
+    const entry = t.entryFromJSON(rawEntry, response.tagsMapping);
+    entries.push(entry);
+  }
+
+  return entries;
+}
+
+export async function getLastCollectionEntries({period, collectionId}: {period: number, collectionId: t.CollectionId}) {
+  const response = await post({
+    url: API_GET_LAST_ENTRIES,
+    data: {period: period,
+      collectionId: collectionId}
   });
 
   const entries = [];
