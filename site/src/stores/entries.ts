@@ -9,6 +9,7 @@ import {Timer} from "@/logic/timer";
 import {computedAsync} from "@vueuse/core";
 import {useGlobalSettingsStore} from "@/stores/globalSettings";
 import * as events from "@/logic/events";
+import {useGlobalState} from "@/stores/globalState";
 
 
 enum Mode {
@@ -18,6 +19,7 @@ enum Mode {
 
 export const useEntriesStore = defineStore("entriesStore", () => {
   const globalSettings = useGlobalSettingsStore();
+  const globalState = useGlobalState();
 
   const entries = ref<{[key: t.EntryId]: t.Entry}>({});
   const requestedEntries = ref<{[key: t.EntryId]: boolean}>({});
@@ -145,7 +147,11 @@ export const useEntriesStore = defineStore("entriesStore", () => {
       entries.value[entryId].setMarker(marker);
     }
 
-    await api.setMarker({entryId: entryId, marker: marker});
+    // This method may be called from public access pages, like public collections
+    // In such case user may be not logged in and we should not send API requests
+    if (globalState.isLoggedIn) {
+      await api.setMarker({entryId: entryId, marker: marker});
+    }
   }
 
   async function removeMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
@@ -160,7 +166,11 @@ export const useEntriesStore = defineStore("entriesStore", () => {
       entries.value[entryId].removeMarker(marker);
     }
 
-    await api.removeMarker({entryId: entryId, marker: marker});
+    // This method may be called from public access pages, like public collections
+    // In such case user may be not logged in and we should not send API requests
+    if (globalState.isLoggedIn) {
+      await api.removeMarker({entryId: entryId, marker: marker});
+    }
   }
 
   async function displayEntry({entryId}: {entryId: t.EntryId}) {

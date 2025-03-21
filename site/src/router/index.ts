@@ -57,7 +57,7 @@ const router = createRouter({
       component: SettingsView
     },
     {
-      path: "/public-collection/:collectionSlug",
+      path: "/public/collections/:collectionSlug",
       name: "public-collection",
       component: PublicCollectionView
     },
