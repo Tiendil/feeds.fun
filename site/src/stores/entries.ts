@@ -26,7 +26,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
   const canUndoMarkRead = computed(() => readHistory.value.length > 0);
 
-  const mode = ref<Mode>(Mode.News);
+  const mode = ref<Mode|null>(null);
   const modePublicCollectionSlug = ref<t.CollectionSlug|null>(null);
 
   function setNewsMode() {
@@ -87,6 +87,11 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   const loadedEntriesReport = computedAsync(async () => {
     // force refresh
     globalSettings.dataVersion;
+
+    if (mode.value === null) {
+      // Do nothing until the mode is set
+      return [];
+    }
 
     const loadedEntries = await loadEntriesAccordingToMode();
 
