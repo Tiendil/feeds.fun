@@ -1,5 +1,6 @@
-import {ref, computed, reactive} from "vue";
+import {ref, computed, reactive, watch} from "vue";
 import type {ComputedRef} from "vue";
+import _ from "lodash";
 
 export type State = "required" | "excluded" | "none";
 
@@ -139,4 +140,22 @@ export class Storage {
       delete this.excludedTags[key];
     });
   }
+}
+
+
+// must be cold synchoronous from the view
+export function setSyncingTagsWithRoute({tagsStates, route, router}: {tagsStates: Storage; route: any; router: any}) {
+
+  tagsStates.setTagsFromUrl(route.params.tags);
+
+  watch(tagsStates, () => {
+    const newParams = _.clone(route.params);
+    newParams.tags = tagsStates.tagsForUrl();
+
+    router.push({
+      replace: true,
+      name: route.name,
+      params: newParams,
+    });
+  });
 }

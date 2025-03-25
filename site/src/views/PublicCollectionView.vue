@@ -74,7 +74,9 @@ const router = useRouter();
 
 provide("tagsStates", tagsStates);
 
-tagsStates.value.setTagsFromUrl(route.params.tags);
+tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value,
+                                         route,
+                                         router});
 
   globalSettings.updateDataVersion();
 
@@ -177,18 +179,6 @@ const orderProperties = e.EntriesOrderProperties.get(e.EntriesOrder.Published);
 
   const entriesNumber = computed(() => {
     return entriesReport.value.length;
-});
-
-watch(tagsStates.value, () => {
-  const newParams = _.clone(route.params);
-  newParams.tags = tagsStates.value.tagsForUrl();
-
-  router.push({
-    replace: true,
-    name: route.name,
-    params: newParams,
-  });
-
 });
 
 
