@@ -57,7 +57,8 @@ const router = createRouter({
       component: SettingsView
     },
     {
-      path: "/show/:collectionSlug",
+      // TODO: adapt all other routes with tags to this approach
+      path: "/show/:collectionSlug/:tags*",
       name: "public-collection",
       component: PublicCollectionView
     },

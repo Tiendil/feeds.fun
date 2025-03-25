@@ -102,6 +102,34 @@ export class Storage {
     return report;
   }
 
+  tagsForUrl() {
+    const selectedTags = Object.keys(this.selectedTags).sort();
+
+    const tags = [];
+
+    for (const tag of selectedTags) {
+      if (this.requiredTags[tag]) {
+        tags.push(tag);
+      } else {
+        tags.push(`-${tag}`);
+      }
+    }
+
+    return tags;
+  }
+
+  setTagsFromUrl(tags: string[]) {
+    this.clear();
+
+    for (const tag of tags) {
+      if (tag.startsWith("-")) {
+        this.excludedTags[tag.slice(1)] = true;
+      } else {
+        this.requiredTags[tag] = true;
+      }
+    }
+  }
+
   clear() {
     Object.keys(this.requiredTags).forEach((key) => {
       delete this.requiredTags[key];

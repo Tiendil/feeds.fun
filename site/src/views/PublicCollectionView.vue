@@ -51,7 +51,7 @@
 <script lang="ts" setup>
   // TODO: unify code with NewsView.vue, move into a separate module
   import {computed, ref, onUnmounted, watch, provide} from "vue";
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
   import * as tagsFilterState from "@/logic/tagsFilterState";
@@ -63,6 +63,7 @@ import _ from "lodash";
 
 
 const route = useRoute();
+const router = useRouter();
 
   const globalSettings = useGlobalSettingsStore();
   const entriesStore = useEntriesStore();
@@ -71,7 +72,9 @@ const route = useRoute();
 
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
-  provide("tagsStates", tagsStates);
+provide("tagsStates", tagsStates);
+
+tagsStates.value.setTagsFromUrl(route.params.tags);
 
   globalSettings.updateDataVersion();
 
@@ -174,7 +177,22 @@ const orderProperties = e.EntriesOrderProperties.get(e.EntriesOrder.Published);
 
   const entriesNumber = computed(() => {
     return entriesReport.value.length;
+});
+
+watch(tagsStates.value, () => {
+  const tags = tagsStates.value.tagsForUrl();
+
+  router.push({
+    replace: true,
+    name: route.name,
+    params: {
+      collectionSlug: route.params.collectionSlug,
+      tags: tags
+    },
   });
+
+});
+
 
 </script>
 
