@@ -180,15 +180,13 @@ const orderProperties = e.EntriesOrderProperties.get(e.EntriesOrder.Published);
 });
 
 watch(tagsStates.value, () => {
-  const tags = tagsStates.value.tagsForUrl();
+  const newParams = _.clone(route.params);
+  newParams.tags = tagsStates.value.tagsForUrl();
 
   router.push({
     replace: true,
     name: route.name,
-    params: {
-      collectionSlug: route.params.collectionSlug,
-      tags: tags
-    },
+    params: newParams,
   });
 
 });
