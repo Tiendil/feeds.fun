@@ -35,8 +35,7 @@
     <template #side-footer>
       <tags-filter
         :tags="tagsCount"
-        :show-create-rule="true"
-        change-source="news_tags_filter" />
+        :show-create-rule="true"/>
     </template>
 
     <template #main-header>
@@ -85,8 +84,9 @@ entriesStore.setNewsMode();
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
 provide("tagsStates", tagsStates);
+provide("eventsViewName", "news");
 
-tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value,
+tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value as unknown as tagsFilterState.Storage,
                                          route,
                                          router});
 

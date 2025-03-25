@@ -11,8 +11,7 @@
           :uid="tag"
           :count="tags[tag] ?? 0"
           :show-switch="true"
-          :show-count="false"
-          :change-source="changeSource" />
+          :show-count="false" />
       </li>
     </ul>
 
@@ -35,8 +34,7 @@
           :uid="tag"
           :count="tags[tag]"
           :show-switch="false"
-          :show-count="true"
-          :change-source="changeSource" />
+          :show-count="true" />
       </li>
     </ul>
 
@@ -72,7 +70,6 @@
   const properties = defineProps<{
     tags: {[key: string]: number};
     showCreateRule?: boolean;
-    changeSource: "news_tags_filter" | "rules_tags_filter";
   }>();
 
   const showFromStart = ref(25);

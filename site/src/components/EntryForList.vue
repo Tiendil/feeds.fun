@@ -40,7 +40,7 @@
         :tags="entry.tags"
         :tags-count="tagsCount"
         :show-all="showBody"
-        @request-to-show-all="entriesStore.displayEntry({entryId: entry.id})"
+        @request-to-show-all="entriesStore.displayEntry({entryId: entry.id, view: eventsView})"
         :contributions="entry.scoreContributions" />
     </div>
 
@@ -61,16 +61,21 @@
 
 <script lang="ts" setup>
   import _ from "lodash";
-  import {computed, ref, useTemplateRef, onMounted} from "vue";
+  import {computed, ref, useTemplateRef, onMounted, inject} from "vue";
   import type * as t from "@/logic/types";
   import * as events from "@/logic/events";
   import * as e from "@/logic/enums";
-  import * as utils from "@/logic/utils";
+import * as utils from "@/logic/utils";
+  import * as asserts from "@/logic/asserts";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
 
-  const entriesStore = useEntriesStore();
+const entriesStore = useEntriesStore();
+
+const eventsView = inject<events.EventsViewName>("eventsViewName");
+
+asserts.defined(eventsView);
 
   const topElement = useTemplateRef("entryTop");
 
@@ -128,11 +133,14 @@
     return utils.purifyBody({raw: entry.value.body, default_: "No description"});
   });
 
-  async function newsLinkOpenedEvent() {
-    await events.newsLinkOpened({entryId: entry.value.id});
+async function newsLinkOpenedEvent() {
+  asserts.defined(eventsView);
+    await events.newsLinkOpened({entryId: entry.value.id, view: eventsView});
   }
 
-  async function onTitleClick(event: MouseEvent) {
+async function onTitleClick(event: MouseEvent) {
+  asserts.defined(eventsView);
+
     if (!event.ctrlKey) {
       event.preventDefault();
       event.stopPropagation();
@@ -140,7 +148,7 @@
       if (showBody.value) {
         entriesStore.hideEntry({entryId: entry.value.id});
       } else {
-        await entriesStore.displayEntry({entryId: entry.value.id});
+        await entriesStore.displayEntry({entryId: entry.value.id, view: eventsView});
 
         if (topElement.value) {
           const rect = topElement.value.getBoundingClientRect();

@@ -120,7 +120,7 @@
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref, onUnmounted, watch} from "vue";
+  import {computed, ref, onUnmounted, watch, provide} from "vue";
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
   import * as t from "@/logic/types";
@@ -128,7 +128,9 @@
   import {useRouter} from "vue-router";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
-  const globalSettings = useGlobalSettingsStore();
+const globalSettings = useGlobalSettingsStore();
+
+provide("eventsViewName", "settings");
 
   globalSettings.mainPanelMode = e.MainPanelMode.Settings;
 

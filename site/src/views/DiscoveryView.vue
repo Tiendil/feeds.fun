@@ -33,14 +33,16 @@
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref, onUnmounted, watch} from "vue";
+  import {computed, ref, onUnmounted, watch, provide} from "vue";
   import {computedAsync} from "@vueuse/core";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import * as api from "@/logic/api";
   import * as t from "@/logic/types";
   import * as e from "@/logic/enums";
 
-  const globalSettings = useGlobalSettingsStore();
+const globalSettings = useGlobalSettingsStore();
+
+provide("eventsViewName", "discovery");
 
   globalSettings.mainPanelMode = e.MainPanelMode.Discovery;
 </script>

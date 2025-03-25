@@ -34,16 +34,17 @@
 
   const tagsStore = useTagsStore();
 
-  const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
+const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
+const eventsView = inject<events.EventsViewName>("eventsViewName");
 
-  asserts.defined(tagsStates);
+asserts.defined(tagsStates);
+asserts.defined(eventsView);
 
   const properties = defineProps<{
     uid: string;
     count?: number | null;
     showCount: boolean;
     showSwitch: boolean;
-    changeSource: "news_tags_filter" | "rules_tags_filter";
   }>();
 
   const tagInfo = computed(() => {
@@ -78,18 +79,20 @@
 
   async function onClick() {
     asserts.defined(tagsStates);
+    asserts.defined(eventsView);
 
     let changeInfo = tagsStates.value.onTagClicked({tag: properties.uid});
 
-    await events.tagStateChanged({tag: properties.uid, source: properties.changeSource, ...changeInfo});
+    await events.tagStateChanged({tag: properties.uid, view: eventsView, source: "tags_filter", ...changeInfo});
   }
 
   async function onRevers() {
     asserts.defined(tagsStates);
+    asserts.defined(eventsView);
 
     let changeInfo = tagsStates.value.onTagReversed({tag: properties.uid});
 
-    await events.tagStateChanged({tag: properties.uid, source: properties.changeSource, ...changeInfo});
+    await events.tagStateChanged({tag: properties.uid, view: eventsView, source: "tags_filter", ...changeInfo});
   }
 
   const switchTooltip = computed(() => {

@@ -84,6 +84,8 @@ export const useEntriesStore = defineStore("entriesStore", () => {
         collectionSlug: modePublicCollectionSlug.value
       });
     }
+
+    throw new Error(`Unknown mode ${mode.value}`);
   }
 
   const loadedEntriesReport = computedAsync(async () => {
@@ -173,7 +175,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     }
   }
 
-  async function displayEntry({entryId}: {entryId: t.EntryId}) {
+  async function displayEntry({entryId, view}: {entryId: t.EntryId; view: events.EventsViewName}) {
     displayedEntryId.value = entryId;
 
     requestFullEntry({entryId: entryId});
@@ -185,7 +187,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
       });
     }
 
-    await events.newsBodyOpened({entryId: entryId});
+    await events.newsBodyOpened({entryId: entryId, view: view});
   }
 
   function hideEntry({entryId}: {entryId: t.EntryId}) {

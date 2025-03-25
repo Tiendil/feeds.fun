@@ -205,13 +205,16 @@
 </template>
 
 <script lang="ts" setup>
+  import {computed, ref, onUnmounted, watch, provide} from "vue";
   import * as settings from "@/logic/settings";
   import {useRouter, RouterLink, RouterView} from "vue-router";
-import {useCollectionsStore} from "@/stores/collections";
+  import {useCollectionsStore} from "@/stores/collections";
   import * as t from "@/logic/types";
 
 const router = useRouter();
 const collections = useCollectionsStore();
+
+provide("eventsViewName", "main");
 
 function goToPublicCollection(collectionSlug: t.CollectionSlug) {
   router.push({name: "public-collection", params: {collectionSlug: collectionSlug}});

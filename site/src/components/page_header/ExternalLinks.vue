@@ -4,7 +4,7 @@
     href="/api/docs"
     target="_blank"
     class="ffun-page-header-link"
-    @click="events.socialLinkClicked({linkType: 'api'})"
+    @click="events.socialLinkClicked({linkType: 'api', view: eventsView})"
     >API</a
   >
 
@@ -13,7 +13,7 @@
     :href="settings.blog"
     target="_blank"
     class="ffun-page-header-link"
-    @click="events.socialLinkClicked({linkType: 'blog'})"
+    @click="events.socialLinkClicked({linkType: 'blog', view: eventsView})"
     >Blog</a
   >
 
@@ -23,7 +23,7 @@
     target="_blank"
     class="ffun-page-header-link text-xl align-middle"
     title="Reddit"
-    @click="events.socialLinkClicked({linkType: 'reddit'})"
+    @click="events.socialLinkClicked({linkType: 'reddit', view: eventsView})"
     ><i class="ti ti-brand-reddit"></i
   ></a>
 
@@ -33,7 +33,7 @@
     target="_blank"
     class="ffun-page-header-link text-xl align-middle"
     title="Discord"
-    @click="events.socialLinkClicked({linkType: 'discord'})"
+    @click="events.socialLinkClicked({linkType: 'discord', view: eventsView})"
     ><i class="ti ti-brand-discord"></i
   ></a>
 
@@ -43,16 +43,21 @@
     target="_blank"
     class="ffun-page-header-link text-xl align-middle"
     title="GitHub"
-    @click="events.socialLinkClicked({linkType: 'github'})">
+    @click="events.socialLinkClicked({linkType: 'github', view: eventsView})">
     <i class="ti ti-brand-github"></i
   ></a>
 </template>
 
 <script lang="ts" setup>
-  import {ref, computed, useSlots, onMounted, watch, watchEffect} from "vue";
+  import {inject} from "vue";
 
   import * as events from "@/logic/events";
-  import * as settings from "@/logic/settings";
+import * as settings from "@/logic/settings";
+  import * as asserts from "@/logic/asserts";
 
-  const properties = defineProps<{showApi: boolean}>();
+const properties = defineProps<{showApi: boolean}>();
+
+const eventsView = inject<events.EventsViewName>("eventsViewName");
+
+asserts.defined(eventsView);
 </script>

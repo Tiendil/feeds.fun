@@ -17,7 +17,7 @@
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref, onUnmounted, watch} from "vue";
+  import {computed, ref, onUnmounted, watch, provide} from "vue";
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
   import * as t from "@/logic/types";
@@ -27,7 +27,9 @@
 
   const globalSettings = useGlobalSettingsStore();
 
-  const collections = useCollectionsStore();
+const collections = useCollectionsStore();
+
+provide("eventsViewName", "collections");
 
   globalSettings.mainPanelMode = e.MainPanelMode.Collections;
 </script>

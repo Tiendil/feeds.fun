@@ -17,9 +17,11 @@
 
   const tagsStore = useTagsStore();
 
-  const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
+const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
+const eventsView = inject<events.EventsViewName>("eventsViewName");
 
-  asserts.defined(tagsStates);
+asserts.defined(tagsStates);
+asserts.defined(eventsView);
 
   const properties = defineProps<{
     uid: string;
@@ -55,13 +57,12 @@
     return result;
   });
 
-  const changeSource = "rule_record";
-
   async function onClick() {
     asserts.defined(tagsStates);
+    asserts.defined(eventsView);
 
     let changeInfo = tagsStates.value.onTagClicked({tag: properties.uid});
 
-    await events.tagStateChanged({tag: properties.uid, source: changeSource, ...changeInfo});
+    await events.tagStateChanged({tag: properties.uid, view: eventsView, source: "rule_record", ...changeInfo});
   }
 </script>

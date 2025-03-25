@@ -28,8 +28,7 @@
     <template #side-footer>
       <tags-filter
         :tags="tagsCount"
-        :show-create-rule="true"
-        change-source="public_collections_tags_filter" />
+        :show-create-rule="true" />
     </template>
 
     <template #main-header>
@@ -60,6 +59,7 @@ import { useRoute, useRouter } from 'vue-router'
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useEntriesStore} from "@/stores/entries";
 import _ from "lodash";
+import * as asserts from "@/logic/asserts";
 
 
 const route = useRoute();
@@ -68,13 +68,14 @@ const router = useRouter();
   const globalSettings = useGlobalSettingsStore();
   const entriesStore = useEntriesStore();
 
-  entriesStore.setPublicCollectionMode(route.params.collectionSlug);
+  entriesStore.setPublicCollectionMode(route.params.collectionSlug as t.CollectionSlug);
 
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
 provide("tagsStates", tagsStates);
+provide("eventsViewName", "public_collections");
 
-tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value,
+tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value as unknown as tagsFilterState.Storage,
                                          route,
                                          router});
 
@@ -83,6 +84,8 @@ tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value,
 const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
 
 const orderProperties = e.EntriesOrderProperties.get(e.EntriesOrder.Published);
+
+asserts.defined(orderProperties);
 
   const _sortedEntries = computed(() => {
     if (entriesStore.loadedEntriesReport === null) {
@@ -94,6 +97,8 @@ const orderProperties = e.EntriesOrderProperties.get(e.EntriesOrder.Published);
     // if (orderProperties === undefined) {
     //   throw new Error(`Unknown order ${globalSettings.entriesOrder}`);
     // }
+
+    // asserts.defined(orderProperties);
 
     const field = orderProperties.orderField;
     const direction = orderProperties.direction;

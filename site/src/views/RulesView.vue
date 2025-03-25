@@ -15,8 +15,7 @@
     <template #side-footer>
       <tags-filter
         :tags="tagsCount"
-        :show-create-rule="false"
-        change-source="rules_tags_filter" />
+        :show-create-rule="false" />
     </template>
 
     <div class="ffun-info-common mb-2">
@@ -55,8 +54,9 @@ const router = useRouter();
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
 provide("tagsStates", tagsStates);
+provide("eventsViewName", "rules");
 
-tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value,
+tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value as unknown as tagsFilterState.Storage,
                                          route,
                                          router});
 
