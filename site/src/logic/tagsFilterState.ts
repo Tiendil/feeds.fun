@@ -146,7 +146,12 @@ export class Storage {
 // must be cold synchoronous from the view
 export function setSyncingTagsWithRoute({tagsStates, route, router}: {tagsStates: Storage; route: any; router: any}) {
 
-  tagsStates.setTagsFromUrl(route.params.tags);
+  if (!route.params.tags) {
+    tagsStates.setTagsFromUrl([]);
+  }
+  else {
+    tagsStates.setTagsFromUrl(route.params.tags);
+  }
 
   watch(tagsStates, () => {
     const newParams = _.clone(route.params);

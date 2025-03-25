@@ -24,7 +24,8 @@ class TagFilterStateChanged(BaseEntity):
     tag: str
     from_state: Literal["required", "excluded", "none"]
     to_state: Literal["required", "excluded", "none"]
-    source: Literal["news_tags_filter", "rules_tags_filter", "entry_record", "rule_record"]
+    source: Literal["news_tags_filter", "rules_tags_filter", "public_collections_tags_filter",
+                    "entry_record", "rule_record"]
 
 
 Event = NewsLinkOpened | NewsBodyOpened | SocialLinkClicked | TagFilterStateChanged
