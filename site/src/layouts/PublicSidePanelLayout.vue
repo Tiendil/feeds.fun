@@ -39,7 +39,7 @@
     <div class="ffun-body-panel">
       <div class="ffun-page-header">
         <div class="ffun-page-header-left-block">
-          <page-header-external-links :show-api="true" />
+          <page-header-external-links :show-api="false" />
         </div>
 
         <div class="ffun-page-header-right-block">

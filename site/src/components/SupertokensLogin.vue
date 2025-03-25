@@ -9,6 +9,7 @@
   </div>
 
   <div v-else>
+    <!-- TODO: do we need h2 here? Check public collections view & main view-->
     <h2 class="my-0">Single e-mail to log in</h2>
     <template v-if="!requested">
       <p class="text-center">We'll send you an email with a login link, no password required.</p>

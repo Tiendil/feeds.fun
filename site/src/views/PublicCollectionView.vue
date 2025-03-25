@@ -1,6 +1,11 @@
 <template>
-  <public-side-panel-layout>
-    <template #side-menu-item-1>
+<public-side-panel-layout>
+  <template #side-menu-item-1>
+    <collections-public-selector v-if="collection" :collection-id="collection.id" />
+
+    <p v-if="collection"  class="ffun-info-common my-2">{{collection.description}}</p>
+  </template>
+    <template #side-menu-item-2>
       For
       <config-selector
         :values="e.LastEntriesPeriodProperties"
@@ -38,12 +43,17 @@
 
     <template #main-footer> </template>
 
-    <entries-list
-      :entriesIds="entriesReport"
-      :time-field="orderProperties.timeField"
-      :tags-count="tagsCount"
-      :showFromStart="25"
-      :showPerPage="25" />
+      <div class="inline-block max-w-xl min-w-xl ffun-info-good text-center mx-2">
+        <supertokens-login />
+      </div>
+
+      <entries-list
+        :entriesIds="entriesReport"
+        :time-field="orderProperties.timeField"
+        :tags-count="tagsCount"
+        :showFromStart="25"
+        :showPerPage="25" />
+
   </public-side-panel-layout>
 </template>
 
@@ -51,26 +61,41 @@
   // TODO: unify code with NewsView.vue, move into a separate module
   import {computed, ref, onUnmounted, watch, provide} from "vue";
 import { useRoute, useRouter } from 'vue-router'
-  import {computedAsync} from "@vueuse/core";
-  import * as api from "@/logic/api";
-  import * as tagsFilterState from "@/logic/tagsFilterState";
-  import * as e from "@/logic/enums";
-  import type * as t from "@/logic/types";
-  import {useGlobalSettingsStore} from "@/stores/globalSettings";
-  import {useEntriesStore} from "@/stores/entries";
+import {computedAsync} from "@vueuse/core";
+import * as api from "@/logic/api";
+import * as tagsFilterState from "@/logic/tagsFilterState";
+import * as e from "@/logic/enums";
+import type * as t from "@/logic/types";
+import {useGlobalSettingsStore} from "@/stores/globalSettings";
+import {useEntriesStore} from "@/stores/entries";
+import {useCollectionsStore} from "@/stores/collections";
 import _ from "lodash";
 import * as asserts from "@/logic/asserts";
-
 
 const route = useRoute();
 const router = useRouter();
 
-  const globalSettings = useGlobalSettingsStore();
-  const entriesStore = useEntriesStore();
+const globalSettings = useGlobalSettingsStore();
+const entriesStore = useEntriesStore();
+const collections = useCollectionsStore();
 
-  entriesStore.setPublicCollectionMode(route.params.collectionSlug as t.CollectionSlug);
+const collectionSlug = computed(() => route.params.collectionSlug as t.CollectionSlug);
 
-  const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
+const collection = computed(() => collections.getCollectionBySlug({slug: collectionSlug.value}));
+
+watch(collection, () => {
+  console.log("collection changed", collection.value);
+  if (!collection.value) {
+    return;
+  }
+  console.log("setting public collection mode", collection.value.slug);
+  // entriesStore.setPublicCollectionMode(collection.value.slug);
+},
+      {immediate: true});
+
+ entriesStore.setPublicCollectionMode(collectionSlug.value);
+
+ const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
 provide("tagsStates", tagsStates);
 provide("eventsViewName", "public_collections");

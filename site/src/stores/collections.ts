@@ -33,6 +33,10 @@ export const useCollectionsStore = defineStore("collectionsStore", () => {
     return order;
   });
 
+  const collectionsOrdered = computed(() => {
+    return collectionsOrder.value.map((id) => collections.value[id]);
+  });
+
   async function getFeeds({collectionId}: {collectionId: t.CollectionId}) {
     if (collectionId in feeds.value) {
       return feeds.value[collectionId];
@@ -45,9 +49,22 @@ export const useCollectionsStore = defineStore("collectionsStore", () => {
     return feeds.value[collectionId];
   }
 
+  function getCollectionBySlug({slug}: {slug: t.CollectionSlug}) {
+    for (const collection of Object.values(collections.value)) {
+      console.log(collection.slug, slug);
+      if (collection.slug === slug) {
+        return collection;
+      }
+    }
+
+    return null;
+  }
+
   return {
     collections,
-    collectionsOrder,
-    getFeeds
+  collectionsOrder,
+  collectionsOrdered,
+    getFeeds,
+    getCollectionBySlug
   };
 });
