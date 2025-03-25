@@ -32,12 +32,12 @@ const router = createRouter({
       component: FeedsView
     },
     {
-      path: "/news",
+      path: "/news/:tags*",
       name: e.MainPanelMode.Entries,
       component: NewsView
     },
     {
-      path: "/rules",
+      path: "/rules/:tags*",
       name: e.MainPanelMode.Rules,
       component: RulesView
     },
@@ -57,7 +57,6 @@ const router = createRouter({
       component: SettingsView
     },
     {
-      // TODO: adapt all other routes with tags to this approach
       path: "/show/:collectionSlug/:tags*",
       name: "public-collection",
       component: PublicCollectionView

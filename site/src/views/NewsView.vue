@@ -64,6 +64,7 @@
 
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch, provide} from "vue";
+import { useRoute, useRouter } from 'vue-router'
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
   import * as tagsFilterState from "@/logic/tagsFilterState";
@@ -76,11 +77,18 @@
   const globalSettings = useGlobalSettingsStore();
 const entriesStore = useEntriesStore();
 
+const route = useRoute();
+const router = useRouter();
+
 entriesStore.setNewsMode();
 
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
-  provide("tagsStates", tagsStates);
+provide("tagsStates", tagsStates);
+
+tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value,
+                                         route,
+                                         router});
 
   globalSettings.mainPanelMode = e.MainPanelMode.Entries;
 

@@ -39,7 +39,7 @@
 
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch, provide} from "vue";
-  import {useRouter} from "vue-router";
+import { useRoute, useRouter } from 'vue-router'
   import {computedAsync} from "@vueuse/core";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import _ from "lodash";
@@ -49,11 +49,16 @@
   import * as e from "@/logic/enums";
   import * as tagsFilterState from "@/logic/tagsFilterState";
 
-  const router = useRouter();
+const route = useRoute();
+const router = useRouter();
 
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
-  provide("tagsStates", tagsStates);
+provide("tagsStates", tagsStates);
+
+tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value,
+                                         route,
+                                         router});
 
   const globalSettings = useGlobalSettingsStore();
 
