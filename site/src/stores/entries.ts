@@ -53,14 +53,21 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     globalSettings.updateDataVersion();
   }
 
-  function registerEntry(entry: t.Entry) {
-    if (entry.id in entries.value) {
-      if (entry.body === null && entries.value[entry.id].body !== null) {
-        entry.body = entries.value[entry.id].body;
+  // We bulk update entries to avoid performance degradation
+  // on triggering multiple reactivity updates for each entry
+  function registerEntries(newEntries: t.Entry[]) {
+    let delta = {};
+
+    for (const entry of newEntries) {
+      if (entry.id in entries.value) {
+        if (entry.body === null && entries.value[entry.id].body !== null) {
+          entry.body = entries.value[entry.id].body;
+        }
       }
+      delta[entry.id] = entry;
     }
 
-    entries.value[entry.id] = entry;
+    entries.value = {...entries.value, ...delta};
   }
 
   async function loadEntriesAccordingToMode() {
@@ -101,8 +108,9 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     const report = [];
 
+    registerEntries(loadedEntries);
+
     for (const entry of loadedEntries) {
-      registerEntry(entry);
       report.push(entry.id);
     }
 
@@ -124,11 +132,9 @@ export const useEntriesStore = defineStore("entriesStore", () => {
       return;
     }
 
-    const entries = await api.getEntriesByIds({ids: ids});
+    const loadedEntries = await api.getEntriesByIds({ids: ids});
 
-    for (const entry of entries) {
-      registerEntry(entry);
-    }
+    registerEntries(loadedEntries);
 
     requestedEntries.value = {};
   }
