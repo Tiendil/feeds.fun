@@ -53,6 +53,7 @@
       :collections-warning_="false" />
 
     <entries-list
+      :loading="entriesStore.loading"
       :entriesIds="entriesReport"
       :time-field="timeField"
       :tags-count="tagsCount"
@@ -94,7 +95,7 @@ tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value as unknown
 
   globalSettings.updateDataVersion();
 
-  const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
+const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
 
   const _sortedEntries = computed(() => {
     if (entriesStore.loadedEntriesReport === null) {

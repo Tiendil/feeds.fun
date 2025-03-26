@@ -101,7 +101,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     if (mode.value === null) {
       // Do nothing until the mode is set
-      return [];
+      return null;
     }
 
     const loadedEntries = await loadEntriesAccordingToMode();
@@ -212,6 +212,10 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     removeMarker({entryId: entryId, marker: e.Marker.Read});
   }
 
+  const loading = computed(() => {
+    return loadedEntriesReport.value === null;
+  });
+
   return {
     entries,
     requestFullEntry,
@@ -225,5 +229,6 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     canUndoMarkRead,
     setNewsMode,
     setPublicCollectionMode,
+    loading
   };
 });

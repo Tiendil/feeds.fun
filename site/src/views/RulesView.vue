@@ -31,7 +31,7 @@
     </div>
 
     <rules-list
-      v-if="rules"
+      :loading="loading"
       :rules="sortedRules" />
   </side-panel-layout>
 </template>
@@ -67,6 +67,8 @@ tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value as unknown
   function goToNews() {
     router.push({name: e.MainPanelMode.Entries, params: {}});
   }
+
+const loading = computed(() => rules.value === null);
 
   const rules = computedAsync(async () => {
     // force refresh

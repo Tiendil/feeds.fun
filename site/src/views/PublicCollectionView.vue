@@ -87,6 +87,7 @@
       </div>
 
       <entries-list
+        :loading="entriesStore.loading"
         :entriesIds="entriesReport"
         :time-field="orderProperties.timeField"
         :tags-count="tagsCount"
