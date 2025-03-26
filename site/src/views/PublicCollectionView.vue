@@ -49,31 +49,22 @@
         <h4>Hi there!</h4>
 
         <p>
-          Welcome to the <strong>Feeds Fun</strong> and our <strong>{{collection.name}}</strong> news collection!
+          Welcome to <strong>Feeds Fun</strong> and our curated <strong>{{collection.name}}</strong> news collection!
         </p>
 
         <p>
-          <strong>Feeds Fun</strong> is a news reader with a transparent news ranging based on scoring news by tags.
-        </p>
-
-        <p>
-          To demonstrate the power of our tagging system we support a bunch of currated news collections, like this one. Hope you'll enjoy it!
-        </p>
-
-        <p>
-          Try to play with tags filter on the left to see how it works.
+          <strong>Feeds Fun</strong> ranks news based on tags, so you always see what matters most. We offer public collections to showcase our tagging system in action. Hope you'll enjoy it!
         </p>
 
         <p v-if="medianTag1 && medianTag2">
-          For example, try to filter news by
-
+          Try out the tag filters on the left, for example, filter news by tag
           <entry-tag
             v-if="medianTag1"
             :uid="medianTag1"
             css-modifier="neutral"
             :count="tagsCount[medianTag1] || 0" />
 
-          or even more specific by
+          or even by a more specific tag
 
           <entry-tag
             v-if="medianTag2"
@@ -83,11 +74,10 @@
         </p>
 
         <p>
-          If you like news that you see after filtering, you can create a custom rule to score them positively and display on the top of the list.
+          If you like the results, <a href="#" @click.prevent="router.push({name: 'main'})">register</a> to create your own scoring rules and automatically prioritize the news you’re most interested in.
         </p>
 
-        <p>
-          You need to <a href="#" @click.prevent="router.push({name: 'main'})">register</a> to create custom scoring rules and enjoy the full power of <strong>Feeds Fun</strong>!
+        <p><strong>All news in this collection is always up-to-date and tagged.</strong>
         </p>
 
       </div>

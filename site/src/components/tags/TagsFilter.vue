@@ -17,7 +17,7 @@
 
     <rule-constructor v-if="showCreateRule" />
 
-    <p v-if="showRegistrationInvitation" class="ffun-info-good">
+    <p v-if="showRegistrationInvitation" class="ffun-info-common">
       <a href="#" @click.prevent="router.push({name: 'main'})">Register</a> to score news by tags!
     </p>
 
