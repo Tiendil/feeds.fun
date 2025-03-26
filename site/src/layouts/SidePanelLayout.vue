@@ -49,29 +49,32 @@
     <div class="ffun-body-panel">
       <div class="ffun-page-header">
         <div class="ffun-page-header-left-block">
-          <template
-            v-for="[mode, props] of e.MainPanelModeProperties"
-            :key="mode">
-            <a
-              v-if="globalSettings.mainPanelMode !== mode"
-              :href="router.resolve({name: mode, params: {}}).href"
-              class="ffun-page-header-link"
-              @click.prevent="router.push({name: mode, params: {}})">
-              {{ props.text }}
-            </a>
+          <template v-if="globalState.isLoggedIn">
+            <template
+              v-for="[mode, props] of e.MainPanelModeProperties"
+              :key="mode">
+              <a
+                v-if="globalSettings.mainPanelMode !== mode"
+                :href="router.resolve({name: mode, params: {}}).href"
+                class="ffun-page-header-link"
+                @click.prevent="router.push({name: mode, params: {}})">
+                {{ props.text }}
+              </a>
 
-            <span
-              class="ffun-page-header-link-disabled"
-              v-else
-              >{{ props.text }}</span
-            >
+              <span
+                class="ffun-page-header-link-disabled"
+                v-else
+                >{{ props.text }}</span
+                                   >
+            </template>
           </template>
 
-          <page-header-external-links :show-api="true" />
+          <page-header-external-links :show-api="globalState.isLoggedIn" />
         </div>
 
         <div class="ffun-page-header-right-block">
           <a
+            v-if="globalState.isLoggedIn"
             href="#"
             class="ffun-page-header-link"
             @click.prevent="logout()"

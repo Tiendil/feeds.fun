@@ -1,5 +1,5 @@
 <template>
-<public-side-panel-layout>
+<side-panel-layout :reloadButton="false" :login-required="false">
   <template #side-menu-item-1>
     <collections-public-selector class="min-w-full" v-if="collection" :collection-id="collection.id" />
 
@@ -55,7 +55,7 @@
         :showFromStart="25"
         :showPerPage="25" />
 
-  </public-side-panel-layout>
+</side-panel-layout>
 </template>
 
 <script lang="ts" setup>
