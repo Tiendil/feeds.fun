@@ -4,3 +4,4 @@
     - Parameter `slug` was added to the collections config, set it to the name of collection you want see in URLs.
     - Set `FFUN_API_DEFAULT_PUBLIC_COLLECTION_SLUG` to the slug of the collection you want to access by default api request.
 - ff-232 — URL now changes to reflect the current tags filter state.
+- ff-232 — Improved performance of frontend on first loading of news list.
