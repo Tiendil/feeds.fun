@@ -143,7 +143,7 @@ export class Storage {
 }
 
 
-// must be cold synchoronous from the view
+// must be called synchoronously from the view
 export function setSyncingTagsWithRoute({tagsStates, route, router}: {tagsStates: Storage; route: any; router: any}) {
 
   if (!route.params.tags) {

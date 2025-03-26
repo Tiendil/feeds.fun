@@ -44,7 +44,7 @@
 
     <template #main-footer> </template>
 
-    <!-- TODO: add tags suggestion to notifications -->
+    <!-- TODO: add tags suggestion to other notifications -->
       <div v-if="collection && !globalState.isLoggedIn" class="inline-block ffun-info-good">
         <h4>Hi there!</h4>
 
@@ -123,11 +123,28 @@ const collections = useCollectionsStore();
 
 const collectionSlug = computed(() => route.params.collectionSlug as t.CollectionSlug);
 
-const collection = computed(() => collections.getCollectionBySlug({slug: collectionSlug.value}));
+const collection = computed(() => {
+  if (!collectionSlug.value) {
+    return null;
+  }
+
+  const result = collections.getCollectionBySlug({slug: collectionSlug.value})
+
+  if (!result) {
+    console.error(`Collection with slug ${collectionSlug.value} not found`);
+    // TODO: implement better behaviour for broken slugs
+    // router.push({name: "main"});
+  }
+
+  return result;
+});
 
 const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
 globalSettings.mainPanelMode = e.MainPanelMode.PublicCollection;
+
+// Required to separate real collection change (and reset tags filter) from the collection initialization
+const lastDefinedCollectionId = ref<t.CollectionId | null>(null);
 
 watch(collection, () => {
   if (!collection.value) {
@@ -136,7 +153,13 @@ watch(collection, () => {
 
   entriesStore.setPublicCollectionMode(collection.value.slug);
 
-  tagsStates.value.clear();
+  if (lastDefinedCollectionId.value !== null && lastDefinedCollectionId.value !== collection.value.id) {
+    tagsStates.value.clear();
+  }
+
+  if (lastDefinedCollectionId.value !== collection.value.id) {
+    lastDefinedCollectionId.value = collection.value.id;
+  }
 },
 {immediate: true});
 
