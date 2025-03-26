@@ -44,7 +44,7 @@
 
     <template #main-footer> </template>
 
-      <div class="inline-block ffun-info-good">
+      <div v-if="collection" class="inline-block ffun-info-good">
         <h4>Hi there!</h4>
 
         <p>
@@ -63,8 +63,30 @@
           Try to play with tags filter on the left to see how it works.
         </p>
 
+        <p v-if="medianTag1 && medianTag2">
+          For example, try to filter news by
+
+          <entry-tag
+            v-if="medianTag1"
+            :uid="medianTag1"
+            css-modifier="neutral"
+            :count="tagsCount[medianTag1] || 0" />
+
+          or even more specific by
+
+          <entry-tag
+            v-if="medianTag2"
+            :uid="medianTag2"
+            css-modifier="neutral"
+            :count="tagsCount[medianTag2] || 0" />
+        </p>
+
         <p>
-          Remember to <a href="#" @click.prevent="router.push({name: 'main'})">register</a> to create custom scoring rules and enjoy the full power of <strong>Feeds Fun</strong>!
+          If you like news that you see after filtering, you can create a custom rule to score them positively and display on the top of the list.
+        </p>
+
+        <p>
+          You need to <a href="#" @click.prevent="router.push({name: 'main'})">register</a> to create custom scoring rules and enjoy the full power of <strong>Feeds Fun</strong>!
         </p>
 
       </div>
@@ -87,6 +109,7 @@ import {computedAsync} from "@vueuse/core";
 import * as api from "@/logic/api";
 import * as tagsFilterState from "@/logic/tagsFilterState";
 import * as e from "@/logic/enums";
+import * as utils from "@/logic/utils";
 import type * as t from "@/logic/types";
 import {useGlobalSettingsStore} from "@/stores/globalSettings";
 import {useEntriesStore} from "@/stores/entries";
@@ -210,26 +233,44 @@ asserts.defined(orderProperties);
     return report;
   });
 
-  const tagsCount = computed(() => {
-    const tagsCount: {[key: string]: number} = {};
+const tagsCount = computed(() => {
+  // Todo refactor in other views
+  const entriesToProcess = entriesReport.value.map((entryId) => entriesStore.entries[entryId]);
 
-    for (const entryId of entriesReport.value) {
-      const entry = entriesStore.entries[entryId];
-
-      for (const tag of entry.tags) {
-        if (tag in tagsCount) {
-          tagsCount[tag] += 1;
-        } else {
-          tagsCount[tag] = 1;
-        }
-      }
-    }
-
-    return tagsCount;
-  });
+  return utils.countTagsForEntries(entriesToProcess);
+});
 
   const entriesNumber = computed(() => {
     return entriesReport.value.length;
+  });
+
+const medianTag1 = computed(() => {
+  // do not change tag when the filter changed
+  if (tagsStates.value.hasSelectedTags) {
+    return medianTag1.value;
+  }
+
+  const entriesNumber = entriesReport.value.length;
+
+  return utils.chooseTagByUsage({tagsCount: tagsCount.value,
+                                 border: 0.5 * entriesNumber});
+});
+
+const medianTag2 = computed(() => {
+  // do not change tag when the filter changed
+  if (tagsStates.value.hasSelectedTags) {
+    return medianTag2.value;
+  }
+
+  const entriesToProcess = entriesReport.value.map((entryId) => entriesStore.entries[entryId]).filter((entry) => entry.tags.includes(medianTag1.value));
+
+  const entriesNumber = entriesToProcess.length;
+
+  const counts = utils.countTagsForEntries(entriesToProcess);
+
+  return utils.chooseTagByUsage({tagsCount: counts,
+                                 border: 0.5 * entriesNumber,
+                                 exclude: [medianTag1.value]});
 });
 
 

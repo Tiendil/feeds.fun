@@ -96,3 +96,46 @@ export function purifyBody({raw, default_}: {raw: string | null; default_: strin
 
   return body;
 }
+
+export function chooseTagByUsage({tagsCount, border, exclude}: {tagsCount: {[key: string]: number}; percentile: number; exclude: string[]}) {
+
+  if (Object.keys(tagsCount).length === 0) {
+    return null;
+  }
+
+  if (!exclude) {
+    exclude = [];
+  }
+
+  // TODO: achive fixed order by using uid as the second sort key
+  const tags = _.toPairs(tagsCount).sort((a, b) => b[1] - a[1]);
+
+  for (let i = 0; i < tags.length; i++) {
+    if (exclude.includes(tags[i][0])) {
+      continue;
+    }
+
+    if (tags[i][1] < border) {
+      return tags[i][0];
+    }
+  }
+
+  return tags[tags.length - 1][0];
+}
+
+
+export function countTagsForEntries(entries: t.Entry[]) {
+    const tagsCount: {[key: string]: number} = {};
+
+    for (const entry of entries) {
+      for (const tag of entry.tags) {
+        if (tag in tagsCount) {
+          tagsCount[tag] += 1;
+        } else {
+          tagsCount[tag] = 1;
+        }
+      }
+    }
+
+  return tagsCount;
+}
