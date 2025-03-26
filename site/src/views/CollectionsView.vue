@@ -2,9 +2,14 @@
   <side-panel-layout :reload-button="false">
     <template #main-header> Collections </template>
 
-    <div class="ffun-info-common">
+    <div v-if="collections.collectionsOrder.length > 0" class="ffun-info-common">
       <p>We've prepared thematic collections just for you.</p>
       <p>News from collections are always tagged, ensuring you get the full power of Feeds Fun!</p>
+    </div>
+
+    <div v-else class="ffun-info-common">
+      <p>There are no collections.</p>
+      <p>Ask the server administrator to create some.</p>
     </div>
 
     <div
