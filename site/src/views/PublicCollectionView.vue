@@ -44,8 +44,29 @@
 
     <template #main-footer> </template>
 
-      <div class="inline-block max-w-xl min-w-xl ffun-info-good text-center mx-2">
-        <supertokens-login />
+      <div class="inline-block ffun-info-good">
+        <h4>Hi there!</h4>
+
+        <p>
+          Welcome to the <strong>Feeds Fun</strong> and our <strong>{{collection.name}}</strong> news collection!
+        </p>
+
+        <p>
+          <strong>Feeds Fun</strong> is a news reader with a transparent news ranging based on scoring news by tags.
+        </p>
+
+        <p>
+          To demonstrate the power of our tagging system we support a bunch of currated news collections, like this one. Hope you'll enjoy it!
+        </p>
+
+        <p>
+          Try to play with tags filter on the left to see how it works.
+        </p>
+
+        <p>
+          Remember to <a href="#" @click.prevent="router.push({name: 'main'})">register</a> to create custom scoring rules and enjoy the full power of <strong>Feeds Fun</strong>!
+        </p>
+
       </div>
 
       <entries-list
