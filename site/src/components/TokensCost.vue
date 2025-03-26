@@ -22,8 +22,6 @@
 
   const globalSettings = useGlobalSettingsStore();
 
-  globalSettings.mainPanelMode = e.MainPanelMode.Settings;
-
   const period = computed(() => {
     return properties.usage.intervalStartedAt.toLocaleString("default", {month: "long", year: "numeric"});
   });
