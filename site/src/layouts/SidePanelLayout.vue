@@ -49,6 +49,14 @@
     <div class="ffun-body-panel">
       <div class="ffun-page-header">
         <div class="ffun-page-header-left-block">
+          <a
+            v-if="homeButton"
+            href="#"
+            class="ffun-page-header-link"
+            @click.prevent="router.push({name: 'main', params: {}})"
+            >Home</a
+          >
+
           <template v-if="globalState.isLoggedIn">
             <template
               v-for="[mode, props] of e.MainPanelModeProperties"
@@ -113,9 +121,10 @@
   const router = useRouter();
   const slots = useSlots();
 
-  const properties = withDefaults(defineProps<{reloadButton?: boolean; loginRequired?: boolean}>(), {
+  const properties = withDefaults(defineProps<{reloadButton?: boolean; loginRequired?: boolean; homeButton?: boolean}>(), {
     reloadButton: true,
-    loginRequired: true
+    loginRequired: true,
+    homeButton: false
   });
 
   async function logout() {

@@ -1,5 +1,5 @@
 <template>
-<side-panel-layout :reloadButton="false" :login-required="false">
+<side-panel-layout :reloadButton="false" :login-required="false" :home-button="true">
   <template #side-menu-item-1>
     <collections-public-selector class="min-w-full" v-if="collection" :collection-id="collection.id" />
 
