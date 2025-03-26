@@ -130,10 +130,9 @@ const collection = computed(() => {
 
   const result = collections.getCollectionBySlug({slug: collectionSlug.value})
 
-  if (!result) {
-    console.error(`Collection with slug ${collectionSlug.value} not found`);
+  if (Object.keys(collections.collections).length > 0 && !result) {
     // TODO: implement better behaviour for broken slugs
-    // router.push({name: "main"});
+    router.push({name: "main"});
   }
 
   return result;
