@@ -33,7 +33,8 @@
     <template #side-footer>
       <tags-filter
         :tags="tagsCount"
-        :show-create-rule="true" />
+        :show-create-rule="false"
+        :show-registration-invitation="true"/>
     </template>
 
     <template #main-header>
@@ -83,6 +84,8 @@ const collectionSlug = computed(() => route.params.collectionSlug as t.Collectio
 
 const collection = computed(() => collections.getCollectionBySlug({slug: collectionSlug.value}));
 
+const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
+
 watch(collection, () => {
   if (!collection.value) {
     return;
@@ -93,8 +96,6 @@ watch(collection, () => {
   tagsStates.value.clear();
 },
 {immediate: true});
-
- const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
 provide("tagsStates", tagsStates);
 provide("eventsViewName", "public_collections");

@@ -17,6 +17,10 @@
 
     <rule-constructor v-if="showCreateRule" />
 
+    <p v-if="showRegistrationInvitation" class="ffun-info-good">
+      <a href="#" @click.prevent="router.push({name: 'main'})">Register</a> to score news by tags!
+    </p>
+
     <input
       class="ffun-input w-full"
       type="text"
@@ -51,12 +55,15 @@
 
 <script lang="ts" setup>
   import {computed, ref, inject} from "vue";
+import { useRoute, useRouter } from 'vue-router'
   import type {Ref} from "vue";
   import {useTagsStore} from "@/stores/tags";
   import type * as tagsFilterState from "@/logic/tagsFilterState";
   import * as asserts from "@/logic/asserts";
   import * as api from "@/logic/api";
-  import {useGlobalSettingsStore} from "@/stores/globalSettings";
+import {useGlobalSettingsStore} from "@/stores/globalSettings";
+
+const router = useRouter();
 
   const tagsStore = useTagsStore();
 
@@ -70,6 +77,7 @@
   const properties = defineProps<{
     tags: {[key: string]: number};
     showCreateRule?: boolean;
+    showRegistrationInvitation?: boolean;
   }>();
 
   const showFromStart = ref(25);
