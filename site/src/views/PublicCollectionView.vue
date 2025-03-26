@@ -44,6 +44,7 @@
 
     <template #main-footer> </template>
 
+    <!-- TODO: add tags suggestion to notifications -->
       <div v-if="collection" class="inline-block ffun-info-good">
         <h4>Hi there!</h4>
 
