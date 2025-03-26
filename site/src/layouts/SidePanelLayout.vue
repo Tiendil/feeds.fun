@@ -135,7 +135,10 @@
     }
 
     await supertokens.logout();
-    router.push({name: "main", params: {}});
+
+    if (properties.loginRequired) {
+      router.push({name: "main", params: {}});
+    }
   }
 
   const hasSideFooter = computed(() => {
