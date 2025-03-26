@@ -61,7 +61,10 @@ const router = createRouter({
       name: "public-collection",
       component: PublicCollectionView
     },
-  ]
+  ],
+  scrollBehavior (to, from, savedPosition) {
+    return { top: 0 };
+  }
 });
 
 export default router;
