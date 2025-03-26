@@ -1,12 +1,17 @@
 <template>
-  <ul>
+  <template v-if="rules.length > 0">
+<ul>
     <li
       v-for="rule in rules"
       :key="rule.id"
       class="ffun-body-list-entry">
       <rule-for-list :rule="rule" />
     </li>
-  </ul>
+</ul>
+</template>
+<template v-else>
+  <p class="ffun-info-common">No rules to show.</p>
+</template>
 </template>
 
 <script lang="ts" setup>

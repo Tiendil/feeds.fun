@@ -22,6 +22,12 @@
         :counterOnNewLine="false"
         v-model:showEntries="showEntries" />
     </template>
+
+    <template v-else>
+      <div class="ffun-info-common">
+        No news to show.
+      </div>
+    </template>
   </div>
 </template>
 
