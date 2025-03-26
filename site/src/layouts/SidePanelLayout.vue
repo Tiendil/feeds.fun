@@ -60,6 +60,7 @@
             <template
               v-for="[mode, props] of e.MainPanelModeProperties"
               :key="mode">
+              <template v-if="props.showInMenu">
               <a
                 v-if="globalSettings.mainPanelMode !== mode"
                 :href="router.resolve({name: mode, params: {}}).href"
@@ -73,6 +74,7 @@
                 v-else
                 >{{ props.text }}</span
                                    >
+              </template>
             </template>
           </template>
 

@@ -10,16 +10,18 @@ export enum MainPanelMode {
   Rules = "rules",
   Discovery = "discovery",
   Collections = "collections",
+  PublicCollection = "public-collection",
   Settings = "settings"
 }
 
-export const MainPanelModeProperties = new Map<MainPanelMode, {text: string}>([
-  [MainPanelMode.Entries, {text: "News"}],
-  [MainPanelMode.Feeds, {text: "Feeds"}],
-  [MainPanelMode.Rules, {text: "Rules"}],
-  [MainPanelMode.Discovery, {text: "Discovery"}],
-  [MainPanelMode.Collections, {text: "Collections"}],
-  [MainPanelMode.Settings, {text: "Settings"}]
+export const MainPanelModeProperties = new Map<MainPanelMode, {text: string, showInMenu: boolean}>([
+  [MainPanelMode.Entries, {text: "News", showInMenu: true}],
+  [MainPanelMode.Feeds, {text: "Feeds", showInMenu: true}],
+  [MainPanelMode.Rules, {text: "Rules", showInMenu: true}],
+  [MainPanelMode.Discovery, {text: "Discovery", showInMenu: true}],
+  [MainPanelMode.Collections, {text: "Collections", showInMenu: true}],
+  [MainPanelMode.PublicCollection, {text: "Public Collection", showInMenu: false}],
+  [MainPanelMode.Settings, {text: "Settings", showInMenu: true}]
 ]);
 
 export enum LastEntriesPeriod {

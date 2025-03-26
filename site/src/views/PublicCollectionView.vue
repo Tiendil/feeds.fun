@@ -45,7 +45,7 @@
     <template #main-footer> </template>
 
     <!-- TODO: add tags suggestion to notifications -->
-      <div v-if="collection" class="inline-block ffun-info-good">
+      <div v-if="collection && !globalState.isLoggedIn" class="inline-block ffun-info-good">
         <h4>Hi there!</h4>
 
         <p>
@@ -109,12 +109,14 @@ import type * as t from "@/logic/types";
 import {useGlobalSettingsStore} from "@/stores/globalSettings";
 import {useEntriesStore} from "@/stores/entries";
 import {useCollectionsStore} from "@/stores/collections";
+  import {useGlobalState} from "@/stores/globalState";
 import _ from "lodash";
 import * as asserts from "@/logic/asserts";
 
 const route = useRoute();
 const router = useRouter();
 
+  const globalState = useGlobalState();
 const globalSettings = useGlobalSettingsStore();
 const entriesStore = useEntriesStore();
 const collections = useCollectionsStore();
@@ -124,6 +126,8 @@ const collectionSlug = computed(() => route.params.collectionSlug as t.Collectio
 const collection = computed(() => collections.getCollectionBySlug({slug: collectionSlug.value}));
 
 const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
+
+globalSettings.mainPanelMode = e.MainPanelMode.PublicCollection;
 
 watch(collection, () => {
   if (!collection.value) {
