@@ -51,9 +51,8 @@
         <div class="ffun-page-header-left-block">
           <a
             v-if="homeButton"
-            href="#"
+            :href="router.resolve({name: 'main', params: {}}).href"
             class="ffun-page-header-link"
-            @click.prevent="router.push({name: 'main', params: {}})"
             >Home</a
           >
 
