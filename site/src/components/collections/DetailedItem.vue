@@ -32,6 +32,12 @@
       @click.prevent="hide"
       class="ffun-form-button"
       >Hide feeds</button
+                   >
+
+    <a
+      :href="router.resolve({name: 'public-collection', params: {collectionSlug: collection.slug}}).href"
+      class="ffun-normal-link ml-2"
+      >Go to collection news</a
     >
 
     <collections-subscribing-progress
@@ -43,6 +49,7 @@
 
 <script lang="ts" setup>
   import {computed, ref} from "vue";
+  import {useRouter} from "vue-router";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
   import * as api from "@/logic/api";
@@ -50,7 +57,9 @@
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
-  import {useCollectionsStore} from "@/stores/collections";
+import {useCollectionsStore} from "@/stores/collections";
+
+const router = useRouter();
 
   const properties = defineProps<{
     collectionId: t.CollectionId;
