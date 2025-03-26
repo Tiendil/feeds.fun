@@ -1,7 +1,7 @@
 <template>
 <public-side-panel-layout>
   <template #side-menu-item-1>
-    <collections-public-selector v-if="collection" :collection-id="collection.id" />
+    <collections-public-selector class="min-w-full" v-if="collection" :collection-id="collection.id" />
 
     <p v-if="collection"  class="ffun-info-common my-2">{{collection.description}}</p>
   </template>
@@ -84,16 +84,15 @@ const collectionSlug = computed(() => route.params.collectionSlug as t.Collectio
 const collection = computed(() => collections.getCollectionBySlug({slug: collectionSlug.value}));
 
 watch(collection, () => {
-  console.log("collection changed", collection.value);
   if (!collection.value) {
     return;
   }
-  console.log("setting public collection mode", collection.value.slug);
-  // entriesStore.setPublicCollectionMode(collection.value.slug);
-},
-      {immediate: true});
 
- entriesStore.setPublicCollectionMode(collectionSlug.value);
+  entriesStore.setPublicCollectionMode(collection.value.slug);
+
+  tagsStates.value.clear();
+},
+{immediate: true});
 
  const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
