@@ -18,7 +18,7 @@
         class="text-orange-700 ti ti-chevrons-right" />
     </div>
 
-    <div class="flex-shrink-0 w-8 text-center pr-1">
+    <div v-if="showScore" class="flex-shrink-0 w-8 text-center pr-1">
       <value-score
         :value="entry.score"
         :entry-id="entry.id" />
@@ -83,6 +83,7 @@ asserts.defined(eventsView);
     entryId: t.EntryId;
     timeField: string;
     tagsCount: {[key: string]: number};
+    showScore: boolean;
   }>();
 
   const entry = computed(() => {

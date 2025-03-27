@@ -91,6 +91,7 @@
         :entriesIds="entriesReport"
         :time-field="orderProperties.timeField"
         :tags-count="tagsCount"
+        :show-score="false"
         :showFromStart="25"
         :showPerPage="25" />
 

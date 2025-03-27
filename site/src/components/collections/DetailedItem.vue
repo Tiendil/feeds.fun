@@ -37,7 +37,7 @@
     <a
       :href="router.resolve({name: 'public-collection', params: {collectionSlug: collection.slug}}).href"
       class="ffun-normal-link ml-2"
-      >Go to collection news</a
+      >Read news in the collection</a
     >
 
     <collections-subscribing-progress

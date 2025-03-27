@@ -7,6 +7,7 @@
           :key="entryId"
           class="ffun-body-list-entry">
           <entry-for-list
+            :show-score="showScore"
             :entryId="entryId"
             :time-field="timeField"
             :tags-count="tagsCount" />
@@ -41,7 +42,8 @@ const properties = defineProps<{
     entriesIds: Array<t.EntryId>;
     timeField: string;
     showFromStart: number;
-    showPerPage: number;
+  showPerPage: number;
+  showScore: boolean;
     tagsCount: {[key: string]: number};
   }>();
 

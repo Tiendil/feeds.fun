@@ -57,6 +57,7 @@
       :entriesIds="entriesReport"
       :time-field="timeField"
       :tags-count="tagsCount"
+      :show-score="true"
       :showFromStart="25"
       :showPerPage="25" />
   </side-panel-layout>
