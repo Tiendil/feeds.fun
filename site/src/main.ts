@@ -47,6 +47,7 @@ import CollectionsDetailedItem from "./components/collections/DetailedItem.vue";
 import CollectionsSubscribingProgress from "./components/collections/SubscribingProgress.vue";
 import CollectionsFeedItem from "./components/collections/FeedItem.vue";
 import CollectionsPublicSelector from "./components/collections/PublicSelector.vue";
+import CollectionsPublicIntro from "./components/collections/PublicIntro.vue";
 
 import ScoreSelector from "./inputs/ScoreSelector.vue";
 
@@ -115,6 +116,7 @@ app.component("CollectionsDetailedItem", CollectionsDetailedItem);
 app.component("CollectionsSubscribingProgress", CollectionsSubscribingProgress);
 app.component("CollectionsFeedItem", CollectionsFeedItem);
 app.component("CollectionsPublicSelector", CollectionsPublicSelector);
+app.component("CollectionsPublicIntro", CollectionsPublicIntro);
 
 app.component("ScoreSelector", ScoreSelector);
 

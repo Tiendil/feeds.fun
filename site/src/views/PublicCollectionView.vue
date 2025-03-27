@@ -44,56 +44,22 @@
 
     <template #main-footer> </template>
 
-    <!-- TODO: add tags suggestion to other notifications -->
-      <div v-if="collection && !globalState.isLoggedIn" class="inline-block ffun-info-good">
-        <h4>Hi there!</h4>
+    <collections-public-intro
+      v-if="collection && !globalState.isLoggedIn"
+      :collectionId="collection.id"
+      :tag1Uid="medianTag1"
+      :tag1Count="tagsCount[medianTag1] || 0"
+      :tag2Uid="medianTag2"
+      :tag2Count="tagsCount[medianTag2] || 0" />
 
-        <p>
-          Welcome to <strong>Feeds Fun</strong> and our curated <strong>{{collection.name}}</strong> news collection!
-        </p>
-
-        <p>
-          <strong>Feeds Fun</strong> ranks news based on tags, so you always see what matters most. We offer public collections to showcase our tagging system in action. Hope you'll enjoy it!
-        </p>
-
-        <p v-if="medianTag1 && medianTag2">
-          Try out the tag filters on the left, for example, filter news by tag
-          <entry-tag
-            v-if="medianTag1"
-            :uid="medianTag1"
-            css-modifier="neutral"
-            :count="tagsCount[medianTag1] || 0" />
-
-          or even by a more specific tag
-
-          <entry-tag
-            v-if="medianTag2"
-            :uid="medianTag2"
-            css-modifier="neutral"
-            :count="tagsCount[medianTag2] || 0" />
-        </p>
-
-        <p>
-          If you like the results, <a href="#" @click.prevent="router.push({name: 'main'})">register</a> to create your own scoring rules and automatically prioritize the news you’re most interested in.
-        </p>
-
-        <p>
-          You can find more about scoring rules on the <a :href="router.resolve({name: 'main', params: {}}).href">main page</a>.
-        </p>
-
-        <p><strong>All news in this collection is always up-to-date and tagged.</strong>
-        </p>
-
-      </div>
-
-      <entries-list
-        :loading="entriesStore.loading"
-        :entriesIds="entriesReport"
-        :time-field="orderProperties.timeField"
-        :tags-count="tagsCount"
-        :show-score="false"
-        :showFromStart="25"
-        :showPerPage="25" />
+    <entries-list
+      :loading="entriesStore.loading"
+      :entriesIds="entriesReport"
+      :time-field="orderProperties.timeField"
+      :tags-count="tagsCount"
+      :show-score="false"
+      :showFromStart="25"
+      :showPerPage="25" />
 
 </side-panel-layout>
 </template>
