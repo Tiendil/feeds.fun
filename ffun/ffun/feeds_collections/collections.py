@@ -40,7 +40,6 @@ class Collections:
 
         raise errors.CollectionNotFound()
 
-    # TODO: test
     def collection_by_slug(self, slug: CollectionSlug) -> Collection:
         for collection in self._collections:
             if collection.slug == slug:
@@ -67,7 +66,6 @@ class Collections:
         if len(ids) != len(self._collections):
             raise errors.DuplicateCollectionIds()
 
-    # TODO: test
     def validate_collection_slugs(self) -> None:
         ids = {c.slug for c in self._collections}
 

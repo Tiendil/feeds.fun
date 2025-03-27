@@ -162,6 +162,7 @@ class TestExistedRouteUrls:
             "/api/docs",
             "/api/get-entries-by-ids",
             "/api/get-last-entries",
+            '/api/get-last-collection-entries',
             "/api/subscribe-to-collections",
             "/api/test/ok",
             "/api/set-user-setting",
