@@ -97,8 +97,6 @@ tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value as unknown
 
   globalSettings.updateDataVersion();
 
-const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
-
   const _sortedEntries = computed(() => {
     if (entriesStore.loadedEntriesReport === null) {
       return [];

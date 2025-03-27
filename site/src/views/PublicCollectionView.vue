@@ -173,8 +173,6 @@ tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value as unknown
 
   globalSettings.updateDataVersion();
 
-const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
-
 const orderProperties = e.EntriesOrderProperties.get(e.EntriesOrder.Published);
 
 asserts.defined(orderProperties);
