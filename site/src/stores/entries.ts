@@ -5,6 +5,7 @@ import _ from "lodash";
 import * as t from "@/logic/types";
 import * as e from "@/logic/enums";
 import * as api from "@/logic/api";
+import * as utils from "@/logic/utils";
 import {Timer} from "@/logic/timer";
 import {computedAsync} from "@vueuse/core";
 import {useGlobalSettingsStore} from "@/stores/globalSettings";
@@ -116,6 +117,39 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     return report;
   }, null);
+
+  const _sortedEntries = computed(() => {
+    if (loadedEntriesReport.value === null) {
+      return [];
+    }
+
+    const field = globalSettings.entriesOrderProperties.orderField;
+    const direction = globalSettings.entriesOrderProperties.direction;
+
+    const report = utils.sortIdsList({ids: loadedEntriesReport.value,
+                                      storage: entries.value,
+                                      field,
+                                      direction});
+
+    return report;
+  });
+
+  const visibleEntries = computed(() => {
+    let report = _sortedEntries.value.slice();
+
+    if (!globalSettings.showRead) {
+      report = report.filter((entryId) => {
+        if (displayedEntryId.value == entryId) {
+          // always show read entries with open body
+          // otherwise, they will hide right after opening it
+          return true;
+        }
+        return !entries.value[entryId].hasMarker(e.Marker.Read);
+      });
+    }
+
+    return report;
+  });
 
   function requestFullEntry({entryId}: {entryId: t.EntryId}) {
     if (entryId in entries.value && entries.value[entryId].body !== null) {
@@ -229,6 +263,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     canUndoMarkRead,
     setNewsMode,
     setPublicCollectionMode,
-    loading
+    loading,
+    visibleEntries
   };
 });

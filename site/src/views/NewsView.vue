@@ -97,44 +97,12 @@ tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value as unknown
 
   globalSettings.updateDataVersion();
 
-  const _sortedEntries = computed(() => {
-    if (entriesStore.loadedEntriesReport === null) {
-      return [];
-    }
+const entriesReport = computed(() => {
+  let report = entriesStore.visibleEntries.slice();
 
-    const field = globalSettings.entriesOrderProperties.orderField;
-    const direction = globalSettings.entriesOrderProperties.direction;
-
-    const report = utils.sortIdsList({ids: entriesStore.loadedEntriesReport,
-                                      storage: entriesStore.entries,
-                                      field,
-                                      direction});
-    return report;
-  });
-
-  const _visibleEntries = computed(() => {
-    let report = _sortedEntries.value.slice();
-
-    if (!globalSettings.showRead) {
-      report = report.filter((entryId) => {
-        if (entriesStore.displayedEntryId == entryId) {
-          // always show read entries with open body
-          // otherwise, they will hide right after opening it
-          return true;
-        }
-        return !entriesStore.entries[entryId].hasMarker(e.Marker.Read);
-      });
-    }
-
-    return report;
-  });
-
-  const entriesReport = computed(() => {
-    let report = _visibleEntries.value.slice();
-
-    report = tagsStates.value.filterByTags(report, (entryId) => entriesStore.entries[entryId].tags);
-    return report;
-  });
+  report = tagsStates.value.filterByTags(report, (entryId) => entriesStore.entries[entryId].tags);
+  return report;
+});
 
 const tagsCount = computed(() => {
   const entriesToProcess = entriesReport.value.map((entryId) => entriesStore.entries[entryId]);
