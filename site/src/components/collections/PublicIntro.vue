@@ -40,7 +40,6 @@
 </template>
 
 <script lang="ts" setup>
-  // TODO: unify code with NewsView.vue, move into a separate module
   import {computed} from "vue";
 import { useRouter } from 'vue-router'
 import type * as t from "@/logic/types";

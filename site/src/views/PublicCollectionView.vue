@@ -65,7 +65,6 @@
 </template>
 
 <script lang="ts" setup>
-  // TODO: unify code with NewsView.vue, move into a separate module
   import {computed, ref, onUnmounted, watch, provide} from "vue";
 import { useRoute, useRouter } from 'vue-router'
 import {computedAsync} from "@vueuse/core";
