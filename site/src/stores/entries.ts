@@ -60,26 +60,28 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   const activeOrderProperties = computed(() => {
     if (mode.value === null) {
       // Return most general order for the case when mode is not set yet
-      return e.EntriesOrderProperties.get(e.EntriesOrder.Published);
+      return e.EntriesOrderProperties.get(e.EntriesOrder.Published) as unknown as e.EntriesOrderProperty;
     }
 
     if (mode.value == Mode.News) {
       // use saved order mode for News view
-      return globalSettings.entriesOrderProperties;
+      return globalSettings.entriesOrderProperties as unknown as e.EntriesOrderProperty;
     }
 
     if (mode.value == Mode.PublicCollection) {
       // use fixed Published order for Public Collection view
-      return e.EntriesOrderProperties.get(e.EntriesOrder.Published);
+      return e.EntriesOrderProperties.get(e.EntriesOrder.Published) as unknown as e.EntriesOrderProperty;
     }
 
-    throw new Error(`Unknown mode ${mode.value}`);
+    console.error(`Unknown mode ${mode.value}`);
+
+    return e.EntriesOrderProperties.get(e.EntriesOrder.Published) as unknown as e.EntriesOrderProperty;
   });
 
   // We bulk update entries to avoid performance degradation
   // on triggering multiple reactivity updates for each entry
   function registerEntries(newEntries: t.Entry[]) {
-    let delta = {};
+    let delta: {[key: t.EntryId]: t.Entry} = {};
 
     for (const entry of newEntries) {
       if (entry.id in entries.value) {

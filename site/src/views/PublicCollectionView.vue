@@ -85,6 +85,7 @@
 
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch, provide} from "vue";
+import type { ComputedRef } from 'vue'
   import {useRoute, useRouter} from "vue-router";
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
@@ -179,7 +180,7 @@
     return entriesReport.value.length;
   });
 
-  const medianTag1 = computed(() => {
+  const medianTag1: ComputedRef<string> = computed(() => {
     // do not change tag when the filter changed
     if (tagsStates.value.hasSelectedTags) {
       return medianTag1.value;
@@ -187,10 +188,16 @@
 
     const entriesNumber = entriesReport.value.length;
 
-    return utils.chooseTagByUsage({tagsCount: tagsCount.value, border: 0.5 * entriesNumber});
+    const result = utils.chooseTagByUsage({tagsCount: tagsCount.value, border: 0.5 * entriesNumber, exclude: []});
+
+    if (result === null) {
+      return "";
+    }
+
+    return result;
   });
 
-  const medianTag2 = computed(() => {
+  const medianTag2: ComputedRef<string> = computed(() => {
     // do not change tag when the filter changed
     if (tagsStates.value.hasSelectedTags) {
       return medianTag2.value;
@@ -204,7 +211,13 @@
 
     const counts = utils.countTags(entriesToProcess);
 
-    return utils.chooseTagByUsage({tagsCount: counts, border: 0.5 * entriesNumber, exclude: [medianTag1.value]});
+    const result = utils.chooseTagByUsage({tagsCount: counts, border: 0.5 * entriesNumber, exclude: [medianTag1.value]});
+
+    if (result === null) {
+      return "";
+    }
+
+    return result;
   });
 </script>
 

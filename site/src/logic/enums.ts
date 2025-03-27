@@ -14,7 +14,12 @@ export enum MainPanelMode {
   Settings = "settings"
 }
 
-export const MainPanelModeProperties = new Map<MainPanelMode, {text: string; showInMenu: boolean}>([
+export type MainPanelModeProperty = {
+  readonly text: string;
+  readonly showInMenu: boolean
+};
+
+export const MainPanelModeProperties = new Map<MainPanelMode, MainPanelModeProperty>([
   [MainPanelMode.Entries, {text: "News", showInMenu: true}],
   [MainPanelMode.Feeds, {text: "Feeds", showInMenu: true}],
   [MainPanelMode.Rules, {text: "Rules", showInMenu: true}],
@@ -65,9 +70,18 @@ export enum EntriesOrder {
   Cataloged = "cataloged"
 }
 
+
+export type EntriesOrderProperty = {
+  readonly text: string;
+  readonly orderField: string;
+  readonly timeField: string;
+  readonly direction: number;
+};
+
+
 export const EntriesOrderProperties = new Map<
   EntriesOrder,
-  {text: string; orderField: string; timeField: string; direction: number}
+  EntriesOrderProperty
 >([
   [EntriesOrder.Score, {text: "score", orderField: "score", timeField: "catalogedAt", direction: 1}],
   [EntriesOrder.ScoreToZero, {text: "score ~ 0", orderField: "scoreToZero", timeField: "catalogedAt", direction: 1}],

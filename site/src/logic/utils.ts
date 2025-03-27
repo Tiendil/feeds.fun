@@ -1,4 +1,5 @@
 import _ from "lodash";
+import type * as t from "@/logic/types";
 import DOMPurify from "dompurify";
 
 export function timeSince(date: Date) {
@@ -102,7 +103,7 @@ export function chooseTagByUsage({
   exclude
 }: {
   tagsCount: {[key: string]: number};
-  percentile: number;
+  border: number;
   exclude: string[];
 }) {
   if (Object.keys(tagsCount).length === 0) {
@@ -154,14 +155,14 @@ export function countTags(entries: t.Entry[] | t.Rule[] | null) {
   return tagsCount;
 }
 
-export function sortIdsList<ID>({
+export function sortIdsList<ID extends string = string>({
   ids,
   storage,
   field,
   direction
 }: {
   ids: ID[];
-  storage: {[key: ID]: any};
+  storage: {[key: string]: any};
   field: string;
   direction: number;
 }) {

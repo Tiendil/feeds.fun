@@ -128,6 +128,10 @@
       return false;
     }
 
+    if (entriesStore.loadedEntriesReport === null) {
+      return false;
+    }
+
     // TODO: it is a heuristic (score could be 0 even with rules)
     //       must be refactored to something more stable
     for (const entryId of entriesStore.loadedEntriesReport) {
