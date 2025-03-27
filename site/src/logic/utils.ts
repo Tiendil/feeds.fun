@@ -147,3 +147,40 @@ export function countTags(entries: t.Entry[] | t.Rule[] | null) {
 
   return tagsCount;
 }
+
+
+export function sortIdsList<ID>({ids, storage, field, direction}: {ids: ID[]; storage: {[key: ID]: any}; field: string; direction: number}) {
+
+  // Pre-map to avoid repeated lookups in the comparator
+  // required for the cases when storage is reactive
+    const mapped = ids.map((id) => {
+      // @ts-ignore
+      return {id, value: storage[id][field]};
+    });
+
+  mapped.sort((a: {id: ID; value: any}, b: {id: ID; value: any}) => {
+      if (a.value === null && b.value === null) {
+        return 0;
+      }
+
+      if (a.value === null) {
+        return 1;
+      }
+
+      if (b.value === null) {
+        return -1;
+      }
+
+      if (a.value < b.value) {
+        return direction;
+      }
+
+      if (a.value > b.value) {
+        return -direction;
+      }
+
+      return 0;
+    });
+
+    return mapped.map((x) => x.id);
+};

@@ -193,39 +193,10 @@ asserts.defined(orderProperties);
     const field = orderProperties.orderField;
     const direction = orderProperties.direction;
 
-    // let report = entriesStore.loadedEntriesReport.slice();
-
-    // Pre-map to avoid repeated lookups in the comparator
-    const mapped = entriesStore.loadedEntriesReport.map((entryId) => {
-      // @ts-ignore
-      return {entryId, value: entriesStore.entries[entryId][field]};
-    });
-
-    mapped.sort((a: {entryId: t.EntryId; value: any}, b: {entryId: t.EntryId; value: any}) => {
-      if (a.value === null && b.value === null) {
-        return 0;
-      }
-
-      if (a.value === null) {
-        return 1;
-      }
-
-      if (b.value === null) {
-        return -1;
-      }
-
-      if (a.value < b.value) {
-        return direction;
-      }
-
-      if (a.value > b.value) {
-        return -direction;
-      }
-
-      return 0;
-    });
-
-    const report = mapped.map((x) => x.entryId);
+    const report = utils.sortIdsList({ids: entriesStore.loadedEntriesReport,
+                                      storage: entriesStore.entries,
+                                      field,
+                                      direction});
 
     return report;
   });
