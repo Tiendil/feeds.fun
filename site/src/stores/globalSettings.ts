@@ -28,11 +28,6 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   // Rules
   const rulesOrder = ref(e.RulesOrder.Tags);
 
-  // TODO: remove
-  // watch(mainPanelMode, (newValue, oldValue) => {
-  //   router.push({name: mainPanelMode.value, params: {}});
-  // });
-
   function updateDataVersion() {
     dataVersion.value++;
   }
