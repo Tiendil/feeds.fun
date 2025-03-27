@@ -55,7 +55,7 @@
     <entries-list
       :loading="entriesStore.loading"
       :entriesIds="entriesReport"
-      :time-field="orderProperties.timeField"
+      :time-field="globalSettings.entriesOrderProperties.timeField"
       :tags-count="tagsCount"
       :show-score="false"
       :showFromStart="25"
@@ -139,25 +139,15 @@ tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value as unknown
 
   globalSettings.updateDataVersion();
 
-const orderProperties = e.EntriesOrderProperties.get(e.EntriesOrder.Published);
-
-asserts.defined(orderProperties);
+globalSettings.entriesOrder = e.EntriesOrder.Published;
 
   const _sortedEntries = computed(() => {
     if (entriesStore.loadedEntriesReport === null) {
       return [];
     }
 
-    // const orderProperties = e.EntriesOrderProperties.get(globalSettings.entriesOrder);
-
-    // if (orderProperties === undefined) {
-    //   throw new Error(`Unknown order ${globalSettings.entriesOrder}`);
-    // }
-
-    // asserts.defined(orderProperties);
-
-    const field = orderProperties.orderField;
-    const direction = orderProperties.direction;
+    const field = globalSettings.entriesOrderProperties.orderField;
+    const direction = globalSettings.entriesOrderProperties.direction;
 
     const report = utils.sortIdsList({ids: entriesStore.loadedEntriesReport,
                                       storage: entriesStore.entries,

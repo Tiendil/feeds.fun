@@ -1,5 +1,4 @@
-import {ref, watch} from "vue";
-import {useRouter} from "vue-router";
+import {ref, computed} from "vue";
 import {defineStore} from "pinia";
 import {computedAsync} from "@vueuse/core";
 import {useGlobalState} from "@/stores/globalState";
@@ -8,7 +7,6 @@ import * as e from "@/logic/enums";
 import * as api from "@/logic/api";
 
 export const useGlobalSettingsStore = defineStore("globalSettings", () => {
-  const router = useRouter();
   const globalState = useGlobalState();
 
   // General
@@ -19,6 +17,10 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   const lastEntriesPeriod = ref(e.LastEntriesPeriod.Day3);
   const entriesOrder = ref(e.EntriesOrder.Score);
   const showRead = ref(true);
+
+  const entriesOrderProperties = computed(() => {
+    return e.EntriesOrderProperties.get(entriesOrder.value);
+  });
 
   // Feeds
   const showFeedsDescriptions = ref(true);
@@ -60,6 +62,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     lastEntriesPeriod,
     entriesOrder,
     showRead,
+    entriesOrderProperties,
     dataVersion,
     updateDataVersion,
     showFeedsDescriptions,
