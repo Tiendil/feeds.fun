@@ -54,6 +54,31 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     globalSettings.updateDataVersion();
   }
 
+  // Public collections uses fixed sorting order
+  // News uses dynamic sorting order and should keep it between switching views
+  // So, if we set globalSettings.entriesOrderProperties in PublicCollection view
+  // we'll break News view sorting and confuse users
+  // => we hardcode specific order properties for PublicCollection mode
+  const activeOrderProperties = computed(() => {
+    if (mode.value === null) {
+      // Return most general order for the case when mode is not set yet
+      return e.EntriesOrderProperties.get(e.EntriesOrder.Published);
+    }
+
+    if (mode.value == Mode.News) {
+      // use saved order mode for News view
+      return globalSettings.entriesOrderProperties;
+    }
+
+    if (mode.value == Mode.PublicCollection) {
+      // use fixed Published order for Public Collection view
+      return e.EntriesOrderProperties.get(e.EntriesOrder.Published);
+    }
+
+    throw new Error(`Unknown mode ${mode.value}`);
+  });
+
+
   // We bulk update entries to avoid performance degradation
   // on triggering multiple reactivity updates for each entry
   function registerEntries(newEntries: t.Entry[]) {
@@ -123,8 +148,8 @@ export const useEntriesStore = defineStore("entriesStore", () => {
       return [];
     }
 
-    const field = globalSettings.entriesOrderProperties.orderField;
-    const direction = globalSettings.entriesOrderProperties.direction;
+    const field = activeOrderProperties.value.orderField;
+    const direction = activeOrderProperties.value.direction;
 
     const report = utils.sortIdsList({ids: loadedEntriesReport.value,
                                       storage: entries.value,
@@ -264,6 +289,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     setNewsMode,
     setPublicCollectionMode,
     loading,
-    visibleEntries
+    visibleEntries,
+    activeOrderProperties
   };
 });

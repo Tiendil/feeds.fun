@@ -61,7 +61,7 @@
     <entries-list
       :loading="entriesStore.loading"
       :entriesIds="entriesReport"
-      :time-field="globalSettings.entriesOrderProperties.timeField"
+      :time-field="entriesStore.activeOrderProperties.timeField"
       :tags-count="tagsCount"
       :show-score="false"
       :showFromStart="25"
@@ -143,8 +143,6 @@ tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value as unknown
                                          router});
 
   globalSettings.updateDataVersion();
-
-globalSettings.entriesOrder = e.EntriesOrder.Published;
 
 const entriesReport = computed(() => {
   let report = entriesStore.visibleEntries.slice();

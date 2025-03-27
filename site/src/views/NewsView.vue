@@ -9,6 +9,9 @@
 
     <template #side-menu-item-2>
       Sort by
+      <!-- Remember that we should use entriesStore.activeOrderProperties everywhere in the News view-->
+      <!-- Here, It should be in sync with this selector (and globalSettings.entriesOrder) on the NewsView, -->
+      <!-- so, it should work fine -->
       <config-selector
         :values="e.EntriesOrderProperties"
         v-model:property="globalSettings.entriesOrder" />
@@ -55,7 +58,7 @@
     <entries-list
       :loading="entriesStore.loading"
       :entriesIds="entriesReport"
-      :time-field="globalSettings.entriesOrderProperties.timeField"
+      :time-field="entriesStore.activeOrderProperties.timeField"
       :tags-count="tagsCount"
       :show-score="true"
       :showFromStart="25"
@@ -95,7 +98,7 @@ tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value as unknown
 
   globalSettings.mainPanelMode = e.MainPanelMode.Entries;
 
-  globalSettings.updateDataVersion();
+globalSettings.updateDataVersion();
 
 const entriesReport = computed(() => {
   let report = entriesStore.visibleEntries.slice();
