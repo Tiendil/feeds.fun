@@ -41,7 +41,7 @@
         :tags-count="tagsCount"
         :show-all="showBody"
         @request-to-show-all="entriesStore.displayEntry({entryId: entry.id, view: eventsView})"
-        :contributions="entry.scoreContributions" />
+        :contributions="showScore ? entry.scoreContributions : {}" />
     </div>
 
     <body-list-reverse-time-column

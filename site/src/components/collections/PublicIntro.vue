@@ -1,5 +1,5 @@
 <template>
-  <div class="inline-block ffun-info-good">
+  <div class="ffun-info-good">
         <h4>Hi there!</h4>
 
         <p>

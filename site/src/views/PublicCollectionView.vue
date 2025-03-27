@@ -52,6 +52,12 @@
       :tag2Uid="medianTag2"
       :tag2Count="tagsCount[medianTag2] || 0" />
 
+  <div v-if="collection && globalState.isLoggedIn" class="ffun-info-good">
+    <p>Welcome to curated <strong>{{collection.name}}</strong> news collection!</p>
+
+    <p>Collection news are always shown in the order of publication.</p>
+  </div>
+
     <entries-list
       :loading="entriesStore.loading"
       :entriesIds="entriesReport"
