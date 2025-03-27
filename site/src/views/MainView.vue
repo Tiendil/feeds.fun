@@ -181,9 +181,7 @@
             <template #description>
               <div>{{ collections.collections[collectionId].description }}</div>
               <div class="mt-2">
-                <!-- TODO: specify concrete href -->
-                <a href="#"
-                   @click.prevent="goToPublicCollection(collections.collections[collectionId].slug)"
+                <a :href="publicCollectionHref(collections.collections[collectionId].slug)"
                    class="ffun-normal-link pt-4">
                   Read the news
                 </a>
@@ -216,7 +214,7 @@ const collections = useCollectionsStore();
 
 provide("eventsViewName", "main");
 
-function goToPublicCollection(collectionSlug: t.CollectionSlug) {
-  router.push({name: "public-collection", params: {collectionSlug: collectionSlug}});
+function publicCollectionHref(collectionSlug: t.CollectionSlug) {
+  return router.resolve({name: "public-collection", params: {collectionSlug: collectionSlug}}).href;
 }
 </script>
