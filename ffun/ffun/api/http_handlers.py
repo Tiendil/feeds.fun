@@ -136,9 +136,7 @@ async def api_get_last_collection_entries(
 
     collection = collections.collection_by_slug(request.collectionSlug)
 
-    feed_ids = [feed_info.feed_id
-                for feed_info in collection.feeds
-                if feed_info.feed_id is not None]
+    feed_ids = [feed_info.feed_id for feed_info in collection.feeds if feed_info.feed_id is not None]
 
     entries = await l_domain.get_entries_by_filter(
         feeds_ids=feed_ids, period=request.period, limit=settings.max_returned_entries

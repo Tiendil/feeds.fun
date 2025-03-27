@@ -85,7 +85,7 @@
 
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch, provide} from "vue";
-import type { ComputedRef } from 'vue'
+  import type {ComputedRef} from "vue";
   import {useRoute, useRouter} from "vue-router";
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
@@ -211,7 +211,11 @@ import type { ComputedRef } from 'vue'
 
     const counts = utils.countTags(entriesToProcess);
 
-    const result = utils.chooseTagByUsage({tagsCount: counts, border: 0.5 * entriesNumber, exclude: [medianTag1.value]});
+    const result = utils.chooseTagByUsage({
+      tagsCount: counts,
+      border: 0.5 * entriesNumber,
+      exclude: [medianTag1.value]
+    });
 
     if (result === null) {
       return "";
