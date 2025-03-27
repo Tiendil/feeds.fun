@@ -55,7 +55,7 @@
   <div v-if="collection && globalState.isLoggedIn" class="ffun-info-good">
     <p>Welcome to curated <strong>{{collection.name}}</strong> news collection!</p>
 
-    <p>Collection news are always shown in the order of publication.</p>
+    <p>Collection news is always shown in the order of publication.</p>
   </div>
 
     <entries-list
