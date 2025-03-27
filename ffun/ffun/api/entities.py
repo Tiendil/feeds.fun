@@ -312,7 +312,7 @@ class GetLastEntriesResponse(api.APISuccess):
 
 
 class GetLastCollectionEntriesRequest(api.APIRequest):
-    collectionSlug: CollectionSlug | None = None
+    collectionSlug: CollectionSlug
     period: datetime.timedelta | None = None
 
     @pydantic.field_validator("period")

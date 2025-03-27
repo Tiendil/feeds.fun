@@ -134,16 +134,7 @@ async def api_get_last_collection_entries(
     request: entities.GetLastCollectionEntriesRequest,
 ) -> entities.GetLastCollectionEntriesResponse:
 
-    if request.collectionSlug is None:
-        if settings.default_public_collection_slug is None:
-            raise APIError(code="no_default_public_collection",
-                           message="No default public collection is set in the project settings")
-
-        collection_slug = settings.default_public_collection_slug
-    else:
-        collection_slug = request.collectionSlug
-
-    collection = collections.collection_by_slug(collection_slug)
+    collection = collections.collection_by_slug(request.collectionSlug)
 
     feed_ids = [feed_info.feed_id for feed_info in collection.feeds]
 
