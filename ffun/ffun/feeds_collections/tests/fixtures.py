@@ -4,6 +4,7 @@ import pytest
 import pytest_asyncio
 
 from ffun.domain.domain import new_collection_id
+from ffun.domain.entities import CollectionSlug
 from ffun.domain.urls import str_to_absolute_url, to_feed_url
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import Collection, CollectionId, FeedInfo
@@ -28,7 +29,7 @@ async def collection_id_for_test_feeds(collection_configs_must_be_none_in_tests:
 
     collection = Collection(
         id=new_collection_id(),
-        slug=uuid.uuid4().hex,
+        slug=CollectionSlug(uuid.uuid4().hex),
         gui_order=1,
         name=uuid.uuid4().hex,
         description=uuid.uuid4().hex,

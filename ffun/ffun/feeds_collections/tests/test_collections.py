@@ -100,7 +100,7 @@ class TestCollections:
     @pytest.mark.asyncio
     async def test_collection_by_slug__no_collection(self, collections: Collections) -> None:
         with pytest.raises(errors.CollectionNotFound):
-            collections.collection_by_slug(uuid.uuid4().hex)
+            collections.collection_by_slug(CollectionSlug(uuid.uuid4().hex))
 
     @pytest.mark.asyncio
     async def test_has_feed(self, collections: Collections) -> None:
