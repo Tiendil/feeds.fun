@@ -1,7 +1,6 @@
 import pydantic_settings
 
 from ffun.core.settings import BaseSettings
-from ffun.domain.entities import CollectionSlug
 
 
 class Settings(BaseSettings):

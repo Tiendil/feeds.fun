@@ -12,10 +12,9 @@ import {useGlobalSettingsStore} from "@/stores/globalSettings";
 import * as events from "@/logic/events";
 import {useGlobalState} from "@/stores/globalState";
 
-
 enum Mode {
   News = "news",
-  PublicCollection = "public-collection",
+  PublicCollection = "public-collection"
 }
 
 export const useEntriesStore = defineStore("entriesStore", () => {
@@ -29,8 +28,8 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
   const canUndoMarkRead = computed(() => readHistory.value.length > 0);
 
-  const mode = ref<Mode|null>(null);
-  const modePublicCollectionSlug = ref<t.CollectionSlug|null>(null);
+  const mode = ref<Mode | null>(null);
+  const modePublicCollectionSlug = ref<t.CollectionSlug | null>(null);
 
   function setNewsMode() {
     if (mode.value == Mode.News) {
@@ -43,7 +42,6 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }
 
   function setPublicCollectionMode(collectionSlug: t.CollectionSlug) {
-
     if (mode.value == Mode.PublicCollection && modePublicCollectionSlug.value === collectionSlug) {
       return;
     }
@@ -77,7 +75,6 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     throw new Error(`Unknown mode ${mode.value}`);
   });
-
 
   // We bulk update entries to avoid performance degradation
   // on triggering multiple reactivity updates for each entry
@@ -151,10 +148,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     const field = activeOrderProperties.value.orderField;
     const direction = activeOrderProperties.value.direction;
 
-    const report = utils.sortIdsList({ids: loadedEntriesReport.value,
-                                      storage: entries.value,
-                                      field,
-                                      direction});
+    const report = utils.sortIdsList({ids: loadedEntriesReport.value, storage: entries.value, field, direction});
 
     return report;
   });

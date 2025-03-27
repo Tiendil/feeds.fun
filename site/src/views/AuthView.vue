@@ -24,9 +24,9 @@
 
   const supertokens = useSupertokens();
 
-const router = useRouter();
+  const router = useRouter();
 
-provide("eventsViewName", "auth");
+  provide("eventsViewName", "auth");
 
   const linkProcessed = ref(false);
 

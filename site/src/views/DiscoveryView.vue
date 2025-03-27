@@ -40,9 +40,9 @@
   import * as t from "@/logic/types";
   import * as e from "@/logic/enums";
 
-const globalSettings = useGlobalSettingsStore();
+  const globalSettings = useGlobalSettingsStore();
 
-provide("eventsViewName", "discovery");
+  provide("eventsViewName", "discovery");
 
   globalSettings.mainPanelMode = e.MainPanelMode.Discovery;
 </script>

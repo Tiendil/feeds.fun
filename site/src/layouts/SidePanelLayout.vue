@@ -61,19 +61,19 @@
               v-for="[mode, props] of e.MainPanelModeProperties"
               :key="mode">
               <template v-if="props.showInMenu">
-              <a
-                v-if="globalSettings.mainPanelMode !== mode"
-                :href="router.resolve({name: mode, params: {}}).href"
-                class="ffun-page-header-link"
-                @click.prevent="router.push({name: mode, params: {}})">
-                {{ props.text }}
-              </a>
+                <a
+                  v-if="globalSettings.mainPanelMode !== mode"
+                  :href="router.resolve({name: mode, params: {}}).href"
+                  class="ffun-page-header-link"
+                  @click.prevent="router.push({name: mode, params: {}})">
+                  {{ props.text }}
+                </a>
 
-              <span
-                class="ffun-page-header-link-disabled"
-                v-else
-                >{{ props.text }}</span
-                                   >
+                <span
+                  class="ffun-page-header-link-disabled"
+                  v-else
+                  >{{ props.text }}</span
+                >
               </template>
             </template>
           </template>
@@ -122,11 +122,14 @@
   const router = useRouter();
   const slots = useSlots();
 
-  const properties = withDefaults(defineProps<{reloadButton?: boolean; loginRequired?: boolean; homeButton?: boolean}>(), {
-    reloadButton: true,
-    loginRequired: true,
-    homeButton: false
-  });
+  const properties = withDefaults(
+    defineProps<{reloadButton?: boolean; loginRequired?: boolean; homeButton?: boolean}>(),
+    {
+      reloadButton: true,
+      loginRequired: true,
+      homeButton: false
+    }
+  );
 
   async function logout() {
     if (settings.authMode === settings.AuthMode.SingleUser) {

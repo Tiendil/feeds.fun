@@ -3,8 +3,8 @@ import pathlib
 import toml
 
 from ffun.core import logging
-from ffun.domain.entities import CollectionId, CollectionSlug
 from ffun.domain.domain import new_feed_id
+from ffun.domain.entities import CollectionId, CollectionSlug
 from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.domain import get_source_ids

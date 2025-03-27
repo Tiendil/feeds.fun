@@ -52,12 +52,12 @@
   import {inject} from "vue";
 
   import * as events from "@/logic/events";
-import * as settings from "@/logic/settings";
+  import * as settings from "@/logic/settings";
   import * as asserts from "@/logic/asserts";
 
-const properties = defineProps<{showApi: boolean}>();
+  const properties = defineProps<{showApi: boolean}>();
 
-const eventsView = inject<events.EventsViewName>("eventsViewName");
+  const eventsView = inject<events.EventsViewName>("eventsViewName");
 
-asserts.defined(eventsView);
+  asserts.defined(eventsView);
 </script>

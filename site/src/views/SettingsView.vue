@@ -128,9 +128,9 @@
   import {useRouter} from "vue-router";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
 
-const globalSettings = useGlobalSettingsStore();
+  const globalSettings = useGlobalSettingsStore();
 
-provide("eventsViewName", "settings");
+  provide("eventsViewName", "settings");
 
   globalSettings.mainPanelMode = e.MainPanelMode.Settings;
 

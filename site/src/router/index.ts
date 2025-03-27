@@ -62,12 +62,12 @@ const router = createRouter({
       component: PublicCollectionView
     },
     {
-      path: '/:pathMatch(.*)*',
-      redirect: '/'
+      path: "/:pathMatch(.*)*",
+      redirect: "/"
     }
   ],
-  scrollBehavior (to, from, savedPosition) {
-    return { top: 0 };
+  scrollBehavior(to, from, savedPosition) {
+    return {top: 0};
   }
 });
 

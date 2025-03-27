@@ -61,8 +61,8 @@ export const useCollectionsStore = defineStore("collectionsStore", () => {
 
   return {
     collections,
-  collectionsOrder,
-  collectionsOrdered,
+    collectionsOrder,
+    collectionsOrdered,
     getFeeds,
     getCollectionBySlug
   };

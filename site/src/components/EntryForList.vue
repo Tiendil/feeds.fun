@@ -18,7 +18,9 @@
         class="text-orange-700 ti ti-chevrons-right" />
     </div>
 
-    <div v-if="showScore" class="flex-shrink-0 w-8 text-center pr-1">
+    <div
+      v-if="showScore"
+      class="flex-shrink-0 w-8 text-center pr-1">
       <value-score
         :value="entry.score"
         :entry-id="entry.id" />
@@ -65,17 +67,17 @@
   import type * as t from "@/logic/types";
   import * as events from "@/logic/events";
   import * as e from "@/logic/enums";
-import * as utils from "@/logic/utils";
+  import * as utils from "@/logic/utils";
   import * as asserts from "@/logic/asserts";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
 
-const entriesStore = useEntriesStore();
+  const entriesStore = useEntriesStore();
 
-const eventsView = inject<events.EventsViewName>("eventsViewName");
+  const eventsView = inject<events.EventsViewName>("eventsViewName");
 
-asserts.defined(eventsView);
+  asserts.defined(eventsView);
 
   const topElement = useTemplateRef("entryTop");
 
@@ -134,13 +136,13 @@ asserts.defined(eventsView);
     return utils.purifyBody({raw: entry.value.body, default_: "No description"});
   });
 
-async function newsLinkOpenedEvent() {
-  asserts.defined(eventsView);
+  async function newsLinkOpenedEvent() {
+    asserts.defined(eventsView);
     await events.newsLinkOpened({entryId: entry.value.id, view: eventsView});
   }
 
-async function onTitleClick(event: MouseEvent) {
-  asserts.defined(eventsView);
+  async function onTitleClick(event: MouseEvent) {
+    asserts.defined(eventsView);
 
     if (!event.ctrlKey) {
       event.preventDefault();

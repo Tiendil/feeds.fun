@@ -38,7 +38,7 @@
 
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch, provide} from "vue";
-import { useRoute, useRouter } from 'vue-router'
+  import {useRoute, useRouter} from "vue-router";
   import {computedAsync} from "@vueuse/core";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import _ from "lodash";
@@ -48,17 +48,19 @@ import { useRoute, useRouter } from 'vue-router'
   import * as e from "@/logic/enums";
   import * as tagsFilterState from "@/logic/tagsFilterState";
 
-const route = useRoute();
-const router = useRouter();
+  const route = useRoute();
+  const router = useRouter();
 
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
-provide("tagsStates", tagsStates);
-provide("eventsViewName", "rules");
+  provide("tagsStates", tagsStates);
+  provide("eventsViewName", "rules");
 
-tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value as unknown as tagsFilterState.Storage,
-                                         route,
-                                         router});
+  tagsFilterState.setSyncingTagsWithRoute({
+    tagsStates: tagsStates.value as unknown as tagsFilterState.Storage,
+    route,
+    router
+  });
 
   const globalSettings = useGlobalSettingsStore();
 
@@ -68,7 +70,7 @@ tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value as unknown
     router.push({name: e.MainPanelMode.Entries, params: {}});
   }
 
-const loading = computed(() => rules.value === null);
+  const loading = computed(() => rules.value === null);
 
   const rules = computedAsync(async () => {
     // force refresh
@@ -132,13 +134,11 @@ const loading = computed(() => rules.value === null);
     return sorted;
   });
 
-const rulesNumber = computed(() => {
-  return sortedRules.value ? sortedRules.value.length : 0;
-});
-
-const tagsCount = computed(() => {
-  return utils.countTags(sortedRules.value);
+  const rulesNumber = computed(() => {
+    return sortedRules.value ? sortedRules.value.length : 0;
   });
 
-
+  const tagsCount = computed(() => {
+    return utils.countTags(sortedRules.value);
+  });
 </script>

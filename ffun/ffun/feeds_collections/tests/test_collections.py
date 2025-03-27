@@ -4,8 +4,8 @@ import uuid
 import pytest
 import pytest_asyncio
 
-from ffun.domain.entities import CollectionSlug
 from ffun.domain.domain import new_collection_id, new_feed_id
+from ffun.domain.entities import CollectionSlug
 from ffun.domain.urls import str_to_absolute_url, to_feed_url, url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections import errors

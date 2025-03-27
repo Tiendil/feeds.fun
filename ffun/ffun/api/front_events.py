@@ -3,7 +3,6 @@ from typing import Literal
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import EntryId
 
-
 EventsViewName = Literal["news", "rules", "public_collections"]
 
 

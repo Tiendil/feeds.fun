@@ -67,9 +67,9 @@
 
   const globalSettings = useGlobalSettingsStore();
 
-const feedsStore = useFeedsStore();
+  const feedsStore = useFeedsStore();
 
-provide("eventsViewName", "feeds");
+  provide("eventsViewName", "feeds");
 
   globalSettings.mainPanelMode = e.MainPanelMode.Feeds;
 

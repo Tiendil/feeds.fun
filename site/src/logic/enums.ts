@@ -14,7 +14,7 @@ export enum MainPanelMode {
   Settings = "settings"
 }
 
-export const MainPanelModeProperties = new Map<MainPanelMode, {text: string, showInMenu: boolean}>([
+export const MainPanelModeProperties = new Map<MainPanelMode, {text: string; showInMenu: boolean}>([
   [MainPanelMode.Entries, {text: "News", showInMenu: true}],
   [MainPanelMode.Feeds, {text: "Feeds", showInMenu: true}],
   [MainPanelMode.Rules, {text: "Rules", showInMenu: true}],

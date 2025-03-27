@@ -32,7 +32,7 @@
       @click.prevent="hide"
       class="ffun-form-button"
       >Hide feeds</button
-                   >
+    >
 
     <a
       :href="router.resolve({name: 'public-collection', params: {collectionSlug: collection.slug}}).href"
@@ -57,9 +57,9 @@
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
-import {useCollectionsStore} from "@/stores/collections";
+  import {useCollectionsStore} from "@/stores/collections";
 
-const router = useRouter();
+  const router = useRouter();
 
   const properties = defineProps<{
     collectionId: t.CollectionId;

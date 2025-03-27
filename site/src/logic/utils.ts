@@ -96,8 +96,15 @@ export function purifyBody({raw, default_}: {raw: string | null; default_: strin
   return body;
 }
 
-export function chooseTagByUsage({tagsCount, border, exclude}: {tagsCount: {[key: string]: number}; percentile: number; exclude: string[]}) {
-
+export function chooseTagByUsage({
+  tagsCount,
+  border,
+  exclude
+}: {
+  tagsCount: {[key: string]: number};
+  percentile: number;
+  exclude: string[];
+}) {
   if (Object.keys(tagsCount).length === 0) {
     return null;
   }
@@ -127,60 +134,67 @@ export function chooseTagByUsage({tagsCount, border, exclude}: {tagsCount: {[key
   return tags[tags.length - 1][0];
 }
 
-
 export function countTags(entries: t.Entry[] | t.Rule[] | null) {
   if (!entries) {
     return {};
   }
 
-    const tagsCount: {[key: string]: number} = {};
+  const tagsCount: {[key: string]: number} = {};
 
-    for (const entry of entries) {
-      for (const tag of entry.tags) {
-        if (tag in tagsCount) {
-          tagsCount[tag] += 1;
-        } else {
-          tagsCount[tag] = 1;
-        }
+  for (const entry of entries) {
+    for (const tag of entry.tags) {
+      if (tag in tagsCount) {
+        tagsCount[tag] += 1;
+      } else {
+        tagsCount[tag] = 1;
       }
     }
+  }
 
   return tagsCount;
 }
 
-
-export function sortIdsList<ID>({ids, storage, field, direction}: {ids: ID[]; storage: {[key: ID]: any}; field: string; direction: number}) {
-
+export function sortIdsList<ID>({
+  ids,
+  storage,
+  field,
+  direction
+}: {
+  ids: ID[];
+  storage: {[key: ID]: any};
+  field: string;
+  direction: number;
+}) {
   // Pre-map to avoid repeated lookups in the comparator
   // required for the cases when storage is reactive
-    const mapped = ids.map((id) => {
-      // @ts-ignore
-      return {id, value: storage[id][field]};
-    });
+  const mapped = ids.map((id) => {
+    // @ts-ignore
+    return {id, value: storage[id][field]};
+  });
 
   mapped.sort((a: {id: ID; value: any}, b: {id: ID; value: any}) => {
-      if (a.value === null && b.value === null) {
-        return 0;
-      }
-
-      if (a.value === null) {
-        return 1;
-      }
-
-      if (b.value === null) {
-        return -1;
-      }
-
-      if (a.value < b.value) {
-        return direction;
-      }
-
-      if (a.value > b.value) {
-        return -direction;
-      }
-
+    if (a.value === null && b.value === null) {
       return 0;
-    });
+    }
 
-    return mapped.map((x) => x.id);
-};
+    if (a.value === null) {
+      return 1;
+    }
+
+    if (b.value === null) {
+      return -1;
+    }
+
+    if (a.value < b.value) {
+      return direction;
+    }
+
+    if (a.value > b.value) {
+      return -direction;
+    }
+
+    return 0;
+  });
+
+  return mapped.map((x) => x.id);
+}

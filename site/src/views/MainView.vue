@@ -181,8 +181,9 @@
             <template #description>
               <div>{{ collections.collections[collectionId].description }}</div>
               <div class="mt-2">
-                <a :href="publicCollectionHref(collections.collections[collectionId].slug)"
-                   class="ffun-normal-link pt-4">
+                <a
+                  :href="publicCollectionHref(collections.collections[collectionId].slug)"
+                  class="ffun-normal-link pt-4">
                   Read the news
                 </a>
               </div>
@@ -209,12 +210,12 @@
   import {useCollectionsStore} from "@/stores/collections";
   import * as t from "@/logic/types";
 
-const router = useRouter();
-const collections = useCollectionsStore();
+  const router = useRouter();
+  const collections = useCollectionsStore();
 
-provide("eventsViewName", "main");
+  provide("eventsViewName", "main");
 
-function publicCollectionHref(collectionSlug: t.CollectionSlug) {
-  return router.resolve({name: "public-collection", params: {collectionSlug: collectionSlug}}).href;
-}
+  function publicCollectionHref(collectionSlug: t.CollectionSlug) {
+    return router.resolve({name: "public-collection", params: {collectionSlug: collectionSlug}}).href;
+  }
 </script>

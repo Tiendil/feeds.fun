@@ -142,14 +142,11 @@ export class Storage {
   }
 }
 
-
 // must be called synchoronously from the view
 export function setSyncingTagsWithRoute({tagsStates, route, router}: {tagsStates: Storage; route: any; router: any}) {
-
   if (!route.params.tags) {
     tagsStates.setTagsFromUrl([]);
-  }
-  else {
+  } else {
     tagsStates.setTagsFromUrl(route.params.tags);
   }
 
@@ -160,7 +157,7 @@ export function setSyncingTagsWithRoute({tagsStates, route, router}: {tagsStates
     router.push({
       replace: true,
       name: route.name,
-      params: newParams,
+      params: newParams
     });
   });
 }

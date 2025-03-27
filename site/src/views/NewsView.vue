@@ -38,7 +38,7 @@
     <template #side-footer>
       <tags-filter
         :tags="tagsCount"
-        :show-create-rule="true"/>
+        :show-create-rule="true" />
     </template>
 
     <template #main-header>
@@ -68,11 +68,11 @@
 
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch, provide} from "vue";
-import { useRoute, useRouter } from 'vue-router'
+  import {useRoute, useRouter} from "vue-router";
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
   import * as tagsFilterState from "@/logic/tagsFilterState";
-import * as e from "@/logic/enums";
+  import * as e from "@/logic/enums";
   import * as utils from "@/logic/utils";
   import type * as t from "@/logic/types";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
@@ -80,38 +80,40 @@ import * as e from "@/logic/enums";
   import _ from "lodash";
 
   const globalSettings = useGlobalSettingsStore();
-const entriesStore = useEntriesStore();
+  const entriesStore = useEntriesStore();
 
-const route = useRoute();
-const router = useRouter();
+  const route = useRoute();
+  const router = useRouter();
 
-entriesStore.setNewsMode();
+  entriesStore.setNewsMode();
 
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
-provide("tagsStates", tagsStates);
-provide("eventsViewName", "news");
+  provide("tagsStates", tagsStates);
+  provide("eventsViewName", "news");
 
-tagsFilterState.setSyncingTagsWithRoute({tagsStates: tagsStates.value as unknown as tagsFilterState.Storage,
-                                         route,
-                                         router});
+  tagsFilterState.setSyncingTagsWithRoute({
+    tagsStates: tagsStates.value as unknown as tagsFilterState.Storage,
+    route,
+    router
+  });
 
   globalSettings.mainPanelMode = e.MainPanelMode.Entries;
 
-globalSettings.updateDataVersion();
+  globalSettings.updateDataVersion();
 
-const entriesReport = computed(() => {
-  let report = entriesStore.visibleEntries.slice();
+  const entriesReport = computed(() => {
+    let report = entriesStore.visibleEntries.slice();
 
-  report = tagsStates.value.filterByTags(report, (entryId) => entriesStore.entries[entryId].tags);
-  return report;
-});
+    report = tagsStates.value.filterByTags(report, (entryId) => entriesStore.entries[entryId].tags);
+    return report;
+  });
 
-const tagsCount = computed(() => {
-  const entriesToProcess = entriesReport.value.map((entryId) => entriesStore.entries[entryId]);
+  const tagsCount = computed(() => {
+    const entriesToProcess = entriesReport.value.map((entryId) => entriesStore.entries[entryId]);
 
-  return utils.countTags(entriesToProcess);
-});
+    return utils.countTags(entriesToProcess);
+  });
 
   const entriesNumber = computed(() => {
     return entriesReport.value.length;

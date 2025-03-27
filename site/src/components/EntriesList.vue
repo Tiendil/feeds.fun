@@ -25,7 +25,9 @@
     </template>
 
     <template v-else>
-      <div v-if="!loading" class="ffun-info-common">
+      <div
+        v-if="!loading"
+        class="ffun-info-common">
         No news to show.
       </div>
     </template>
@@ -35,19 +37,19 @@
 <script lang="ts" setup>
   import {computed, ref} from "vue";
   import type * as t from "@/logic/types";
-import {computedAsync} from "@vueuse/core";
+  import {computedAsync} from "@vueuse/core";
 
-const properties = defineProps<{
-  loading: boolean;
+  const properties = defineProps<{
+    loading: boolean;
     entriesIds: Array<t.EntryId>;
     timeField: string;
     showFromStart: number;
-  showPerPage: number;
-  showScore: boolean;
+    showPerPage: number;
+    showScore: boolean;
     tagsCount: {[key: string]: number};
   }>();
 
-const showEntries = ref(properties.showFromStart);
+  const showEntries = ref(properties.showFromStart);
 
   const entriesToShow = computed(() => {
     if (properties.entriesIds == null) {

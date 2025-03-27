@@ -17,11 +17,11 @@
 
   const tagsStore = useTagsStore();
 
-const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
-const eventsView = inject<events.EventsViewName>("eventsViewName");
+  const tagsStates = inject<Ref<tagsFilterState.Storage>>("tagsStates");
+  const eventsView = inject<events.EventsViewName>("eventsViewName");
 
-asserts.defined(tagsStates);
-asserts.defined(eventsView);
+  asserts.defined(tagsStates);
+  asserts.defined(eventsView);
 
   const properties = defineProps<{
     uid: string;
