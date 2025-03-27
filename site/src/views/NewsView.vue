@@ -119,7 +119,7 @@ const tagsCount = computed(() => {
   });
 
   const hasRules = computed(() => {
-    if (entriesStore.loadedEntriesReport === null) {
+    if (entriesStore.loading) {
       return false;
     }
 
