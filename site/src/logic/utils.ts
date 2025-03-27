@@ -106,8 +106,13 @@ export function chooseTagByUsage({tagsCount, border, exclude}: {tagsCount: {[key
     exclude = [];
   }
 
-  // TODO: achive fixed order by using uid as the second sort key
-  const tags = _.toPairs(tagsCount).sort((a, b) => b[1] - a[1]);
+  const tags = _.toPairs(tagsCount).sort((a, b) => {
+    if (a[1] === b[1]) {
+      return a[0].localeCompare(b[0]);
+    }
+
+    return b[1] - a[1];
+  });
 
   for (let i = 0; i < tags.length; i++) {
     if (exclude.includes(tags[i][0])) {
