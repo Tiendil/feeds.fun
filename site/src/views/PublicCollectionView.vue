@@ -257,7 +257,6 @@ asserts.defined(orderProperties);
   });
 
 const tagsCount = computed(() => {
-  // Todo refactor in other views
   const entriesToProcess = entriesReport.value.map((entryId) => entriesStore.entries[entryId]);
 
   return utils.countTags(entriesToProcess);
