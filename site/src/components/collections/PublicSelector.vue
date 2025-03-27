@@ -27,8 +27,6 @@ const properties = defineProps<{collectionId: t.CollectionId}>();
 
 const collection = computed(() => collections.collections[properties.collectionId]);
 
-// TODO: grep for console.log and clean up
-
 function updateCollection(event: Event) {
   const target = event.target as HTMLSelectElement;
 

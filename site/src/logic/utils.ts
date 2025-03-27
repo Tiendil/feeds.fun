@@ -64,7 +64,6 @@ export function faviconForUrl(url: string): string | null {
     const parsedUrl = new URL(url);
     return `${parsedUrl.protocol}//${parsedUrl.host}/favicon.ico`;
   } catch (error) {
-    console.error("Invalid URL:", error);
     return null;
   }
 }

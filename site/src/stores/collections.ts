@@ -51,7 +51,6 @@ export const useCollectionsStore = defineStore("collectionsStore", () => {
 
   function getCollectionBySlug({slug}: {slug: t.CollectionSlug}) {
     for (const collection of Object.values(collections.value)) {
-      console.log(collection.slug, slug);
       if (collection.slug === slug) {
         return collection;
       }
