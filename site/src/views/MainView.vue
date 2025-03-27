@@ -185,7 +185,7 @@
                 <a href="#"
                    @click.prevent="goToPublicCollection(collections.collections[collectionId].slug)"
                    class="ffun-normal-link pt-4">
-                  Check how it works
+                  Read the news
                 </a>
               </div>
             </template>
