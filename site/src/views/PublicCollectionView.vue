@@ -260,7 +260,7 @@ const tagsCount = computed(() => {
   // Todo refactor in other views
   const entriesToProcess = entriesReport.value.map((entryId) => entriesStore.entries[entryId]);
 
-  return utils.countTagsForEntries(entriesToProcess);
+  return utils.countTags(entriesToProcess);
 });
 
   const entriesNumber = computed(() => {
@@ -289,7 +289,7 @@ const medianTag2 = computed(() => {
 
   const entriesNumber = entriesToProcess.length;
 
-  const counts = utils.countTagsForEntries(entriesToProcess);
+  const counts = utils.countTags(entriesToProcess);
 
   return utils.chooseTagByUsage({tagsCount: counts,
                                  border: 0.5 * entriesNumber,

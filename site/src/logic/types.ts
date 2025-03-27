@@ -239,7 +239,7 @@ export type Rule = {
   readonly id: RuleId;
   readonly requiredTags: string[];
   readonly excludedTags: string[];
-  readonly allTags: string[];
+  readonly tags: string[];
   readonly score: number;
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -267,7 +267,7 @@ export function ruleFromJSON({
     id: toRuleId(id),
     requiredTags: requiredTags,
     excludedTags: excludedTags,
-    allTags: requiredTags.concat(excludedTags).sort(),
+    tags: requiredTags.concat(excludedTags).sort(),
     score: score,
     createdAt: new Date(createdAt),
     updatedAt: new Date(updatedAt)

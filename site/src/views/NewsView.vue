@@ -69,7 +69,8 @@ import { useRoute, useRouter } from 'vue-router'
   import {computedAsync} from "@vueuse/core";
   import * as api from "@/logic/api";
   import * as tagsFilterState from "@/logic/tagsFilterState";
-  import * as e from "@/logic/enums";
+import * as e from "@/logic/enums";
+  import * as utils from "@/logic/utils";
   import type * as t from "@/logic/types";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useEntriesStore} from "@/stores/entries";
@@ -173,23 +174,11 @@ const entriesWithOpenedBody = ref<{[key: t.EntryId]: boolean}>({});
     return report;
   });
 
-  const tagsCount = computed(() => {
-    const tagsCount: {[key: string]: number} = {};
+const tagsCount = computed(() => {
+  const entriesToProcess = entriesReport.value.map((entryId) => entriesStore.entries[entryId]);
 
-    for (const entryId of entriesReport.value) {
-      const entry = entriesStore.entries[entryId];
-
-      for (const tag of entry.tags) {
-        if (tag in tagsCount) {
-          tagsCount[tag] += 1;
-        } else {
-          tagsCount[tag] = 1;
-        }
-      }
-    }
-
-    return tagsCount;
-  });
+  return utils.countTags(entriesToProcess);
+});
 
   const entriesNumber = computed(() => {
     return entriesReport.value.length;

@@ -2,7 +2,7 @@
   <side-panel-layout :reload-button="true">
     <template #main-header>
       Rules
-      <span v-if="rules">[{{ rules.length }}]</span>
+      <span v-if="rules">[{{ rulesNumber }}]</span>
     </template>
 
     <template #side-menu-item-2>
@@ -76,26 +76,6 @@ const loading = computed(() => rules.value === null);
     return await api.getRules();
   }, null);
 
-  const tagsCount = computed(() => {
-    if (!rules.value) {
-      return {};
-    }
-
-    const tags: {[key: string]: number} = {};
-
-    for (const rule of rules.value) {
-      for (const tag of rule.requiredTags) {
-        tags[tag] = (tags[tag] || 0) + 1;
-      }
-
-      for (const tag of rule.excludedTags) {
-        tags[tag] = (tags[tag] || 0) + 1;
-      }
-    }
-
-    return tags;
-  });
-
   const sortedRules = computed(() => {
     if (!rules.value) {
       return null;
@@ -103,7 +83,7 @@ const loading = computed(() => rules.value === null);
 
     let sorted = rules.value.slice();
 
-    sorted = tagsStates.value.filterByTags(sorted, (rule) => rule.allTags);
+    sorted = tagsStates.value.filterByTags(sorted, (rule) => rule.tags);
 
     const orderProperties = e.RulesOrderProperties.get(globalSettings.rulesOrder);
 
@@ -120,14 +100,14 @@ const loading = computed(() => rules.value === null);
 
     sorted = sorted.sort((a: t.Rule, b: t.Rule) => {
       if (globalSettings.rulesOrder === e.RulesOrder.Tags) {
-        return utils.compareLexicographically(a.allTags, b.allTags);
+        return utils.compareLexicographically(a.tags, b.tags);
       }
 
       const valueA = _.get(a, orderField, null);
       const valueB = _.get(b, orderField, null);
 
       if (valueA === null && valueB === null) {
-        return utils.compareLexicographically(a.allTags, b.allTags);
+        return utils.compareLexicographically(a.tags, b.tags);
       }
 
       if (valueA === null) {
@@ -146,9 +126,19 @@ const loading = computed(() => rules.value === null);
         return -1 * direction;
       }
 
-      return utils.compareLexicographically(a.allTags, b.allTags);
+      return utils.compareLexicographically(a.tags, b.tags);
     });
 
     return sorted;
   });
+
+const rulesNumber = computed(() => {
+  return sortedRules.value ? sortedRules.value.length : 0;
+});
+
+const tagsCount = computed(() => {
+  return utils.countTags(sortedRules.value);
+  });
+
+
 </script>

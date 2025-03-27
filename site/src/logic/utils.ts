@@ -128,7 +128,11 @@ export function chooseTagByUsage({tagsCount, border, exclude}: {tagsCount: {[key
 }
 
 
-export function countTagsForEntries(entries: t.Entry[]) {
+export function countTags(entries: t.Entry[] | t.Rule[] | null) {
+  if (!entries) {
+    return {};
+  }
+
     const tagsCount: {[key: string]: number} = {};
 
     for (const entry of entries) {
