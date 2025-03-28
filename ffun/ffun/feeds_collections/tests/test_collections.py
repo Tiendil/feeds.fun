@@ -165,7 +165,7 @@ class TestCollections:
 
         collection_1 = Collection(
             id=new_collection_id(),
-            slug=CollectionSlug("colleection-slug-1"),
+            slug=CollectionSlug("collection-slug-1"),
             gui_order=1,
             name=uuid.uuid4().hex,
             description=uuid.uuid4().hex,
