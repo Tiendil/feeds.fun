@@ -1,4 +1,3 @@
-import datetime
 from importlib import metadata
 from typing import Any, Iterable
 
@@ -14,7 +13,7 @@ from ffun.core import logging
 from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
 from ffun.domain.domain import no_user_id
-from ffun.domain.entities import FeedId, UserId
+from ffun.domain.entities import UserId
 from ffun.domain.urls import url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections.collections import collections
@@ -115,30 +114,16 @@ async def _external_entries(  # pylint: disable=R0914
     return external_entries, tags_mapping
 
 
-async def _get_entries_by_filter(feeds_ids: list[FeedId], period: datetime.timedelta | None) -> list[l_entities.Entry]:
-
-    entries = await l_domain.get_entries_by_filter(
-        feeds_ids=feeds_ids, period=period, limit=settings.max_returned_entries
-    )
-
-    if entries:
-        return entries
-
-    # if there is no news in requested interval try to get some older news
-    entries = await l_domain.get_entries_by_filter(
-        feeds_ids=feeds_ids, period=settings.news_outside_period_longer_period, limit=settings.news_outside_period
-    )
-
-    return entries
-
-
 @router.post("/api/get-last-entries")
 async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: User) -> entities.GetLastEntriesResponse:
     linked_feeds = await fl_domain.get_linked_feeds(user.id)
 
     linked_feeds_ids = [link.feed_id for link in linked_feeds]
 
-    entries = await _get_entries_by_filter(feeds_ids=linked_feeds_ids, period=request.period)
+    entries = await l_domain.get_entries_by_filter_with_fallback(feeds_ids=linked_feeds_ids,
+                                                                 period=request.period,
+                                                                 limit=settings.max_returned_entries,
+                                                                 fallback_limit=settings.news_outside_period)
 
     external_entries, tags_mapping = await _external_entries(entries, with_body=False, user_id=user.id)
 
@@ -154,7 +139,10 @@ async def api_get_last_collection_entries(
 
     feed_ids = [feed_info.feed_id for feed_info in collection.feeds if feed_info.feed_id is not None]
 
-    entries = await _get_entries_by_filter(feeds_ids=feed_ids, period=request.period)
+    entries = await l_domain.get_entries_by_filter_with_fallback(feeds_ids=feed_ids,
+                                                                 period=request.period,
+                                                                 limit=settings.max_returned_entries,
+                                                                 fallback_limit=settings.news_outside_period)
 
     external_entries, tags_mapping = await _external_entries(entries, with_body=False, user_id=None)
 
