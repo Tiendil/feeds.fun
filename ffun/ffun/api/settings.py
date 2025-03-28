@@ -1,3 +1,4 @@
+import datetime
 import pydantic_settings
 
 from ffun.core.settings import BaseSettings
@@ -8,6 +9,9 @@ class Settings(BaseSettings):
     max_feeds_suggestions_for_site: int = 100
     max_entries_suggestions_for_site: int = 3
     max_entries_details_requests: int = 100
+
+    news_outside_period_longer_period: datetime.timedelta = datetime.timedelta(days=10 * 365)
+    news_outside_period: int = 100
 
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_API_")
 
