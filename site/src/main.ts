@@ -38,6 +38,7 @@ import PageHeaderExternalLinks from "./components/page_header/ExternalLinks.vue"
 import NotificationsApiKey from "./components/notifications/ApiKey.vue";
 import NotificationsCreateRuleHelp from "./components/notifications/CreateRuleHelp.vue";
 import Notifications from "./components/notifications/Block.vue";
+import NotificationsLoadedOldNews from "./components/notifications/LoadedOldNews.vue";
 
 import CollectionsNotification from "./components/collections/Notification.vue";
 import CollectionsWarning from "./components/collections/Warning.vue";
@@ -107,6 +108,7 @@ app.component("PageHeaderExternalLinks", PageHeaderExternalLinks);
 app.component("NotificationsApiKey", NotificationsApiKey);
 app.component("NotificationsCreateRuleHelp", NotificationsCreateRuleHelp);
 app.component("Notifications", Notifications);
+app.component("NotificationsLoadedOldNews", NotificationsLoadedOldNews);
 
 app.component("CollectionsNotification", CollectionsNotification);
 app.component("CollectionsWarning", CollectionsWarning);

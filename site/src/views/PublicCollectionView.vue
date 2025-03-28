@@ -77,6 +77,10 @@
       <p>Collection news is always shown in the order of publication.</p>
     </div>
 
+    <notifications-loaded-old-news
+      :entries="entriesStore.loadedEntriesReport || []"
+      :period="e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod)" />
+
     <entries-list
       :loading="entriesStore.loading"
       :entriesIds="entriesReport"

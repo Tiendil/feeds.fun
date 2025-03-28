@@ -1,3 +1,5 @@
+import datetime
+
 from ffun.domain import urls as d_urls
 from ffun.domain.entities import EntryId, FeedId, UnknownUrl
 from ffun.feeds import domain as f_domain
@@ -61,3 +63,20 @@ async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange
             await operations.update_external_url(entry.id, new_external_url)
 
     return changes
+
+
+async def get_entries_by_filter_with_fallback(
+    feeds_ids: list[FeedId], period: datetime.timedelta | None, limit: int, fallback_limit: int
+) -> list[Entry]:
+
+    entries = await get_entries_by_filter(feeds_ids=feeds_ids, period=period, limit=limit)
+
+    if entries:
+        return entries
+
+    # if there is no news in requested interval try to get some older news
+    entries = await get_entries_by_filter(
+        feeds_ids=feeds_ids, period=datetime.timedelta(days=10 * 365), limit=fallback_limit
+    )
+
+    return entries
