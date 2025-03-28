@@ -24,7 +24,7 @@
   }
 
   .ffun-x-info {
-    @apply ffun-x-panel border p-4 rounded-md;
+    @apply ffun-x-panel border p-4 rounded-md my-2;
   }
 
   .ffun-info-settings {
