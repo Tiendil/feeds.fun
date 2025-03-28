@@ -27,7 +27,7 @@
 
   const properties = defineProps<{
     entries: t.EntryId[];
-    period: t.LastEntriesPeriodProperty;
+    period: e.LastEntriesPeriodProperty;
   }>();
 
   const allEntriesAreOlderThanPeriod = computed(() => {
@@ -41,7 +41,7 @@
 
     return properties.entries.every((entryId) => {
       const entry = entriesStore.entries[entryId];
-      return entry.publishedAt < Date.now() - properties.period.seconds * 1000;
+      return entry.publishedAt.getTime() < Date.now() - properties.period.seconds * 1000;
     });
   });
 </script>

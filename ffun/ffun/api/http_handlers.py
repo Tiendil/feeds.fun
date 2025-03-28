@@ -115,7 +115,7 @@ async def _external_entries(  # pylint: disable=R0914
     return external_entries, tags_mapping
 
 
-async def _get_entries_by_filter(feeds_ids: list[FeedId], period: datetime.timedelta) -> list[l_entities.Entry]:
+async def _get_entries_by_filter(feeds_ids: list[FeedId], period: datetime.timedelta | None) -> list[l_entities.Entry]:
 
     entries = await l_domain.get_entries_by_filter(
         feeds_ids=feeds_ids, period=period, limit=settings.max_returned_entries
