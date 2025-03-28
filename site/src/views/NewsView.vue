@@ -55,6 +55,10 @@
       :collections-notification_="!hasEntries"
       :collections-warning_="false" />
 
+    <notifications-loaded-old-news
+      :entries="entriesStore.loadedEntriesReport || []"
+      :period="e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod)" />
+
     <entries-list
       :loading="entriesStore.loading"
       :entriesIds="entriesReport"

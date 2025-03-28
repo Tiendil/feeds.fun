@@ -45,8 +45,14 @@ export enum LastEntriesPeriod {
   AllTime = "alltime"
 }
 
+
+export type LastEntriesPeriodProperty = {
+  readonly text: string;
+  readonly seconds: number;
+};
+
 // Map preserves the order of the keys
-export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, {text: string; seconds: number}>([
+export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, LastEntriesPeriodProperty>([
   [LastEntriesPeriod.Hour1, {text: "1 hour", seconds: c.hour}],
   [LastEntriesPeriod.Hour3, {text: "3 hours", seconds: 3 * c.hour}],
   [LastEntriesPeriod.Hour6, {text: "6 hours", seconds: 6 * c.hour}],

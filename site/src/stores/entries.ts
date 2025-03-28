@@ -267,6 +267,10 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     removeMarker({entryId: entryId, marker: e.Marker.Read});
   }
 
+  // TODO: Refactor for better loading tracking in the front code and in the GUI.
+  //       Currently, this property is working only for the first load.
+  //       => It should always be refactored to work correctly.
+  // ATTENTION: check every usage of this property while refactoring
   const loading = computed(() => {
     return loadedEntriesReport.value === null;
   });
