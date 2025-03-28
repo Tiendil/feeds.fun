@@ -65,14 +65,11 @@ async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange
     return changes
 
 
-async def get_entries_by_filter_with_fallback(feeds_ids: list[FeedId],
-                                              period: datetime.timedelta | None,
-                                              limit: int,
-                                              fallback_limit: int) -> list[Entry]:
+async def get_entries_by_filter_with_fallback(
+    feeds_ids: list[FeedId], period: datetime.timedelta | None, limit: int, fallback_limit: int
+) -> list[Entry]:
 
-    entries = await get_entries_by_filter(
-        feeds_ids=feeds_ids, period=period, limit=limit
-    )
+    entries = await get_entries_by_filter(feeds_ids=feeds_ids, period=period, limit=limit)
 
     if entries:
         return entries

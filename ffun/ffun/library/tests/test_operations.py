@@ -32,7 +32,7 @@ from ffun.library.operations import (
     unlink_feed_tail,
     update_external_url,
 )
-from ffun.library.tests import make, helpers
+from ffun.library.tests import helpers, make
 
 
 class TestCatalogEntry:
@@ -274,8 +274,9 @@ class TestGetEntriesByFilter:
         await catalog_entries(loaded_feed.id, [common_entry])
         await catalog_entries(another_loaded_feed.id, [common_entry])
 
-        await helpers.update_cataloged_time(entries_ids=[entries[0].id, another_entries[0].id],
-                                            new_time=time_border - datetime.timedelta(seconds=10))
+        await helpers.update_cataloged_time(
+            entries_ids=[entries[0].id, another_entries[0].id], new_time=time_border - datetime.timedelta(seconds=10)
+        )
 
         all_entries = await get_entries_by_ids(
             ids=[entry.id for entry in chain(entries, another_entries, [common_entry])]

@@ -1,7 +1,8 @@
 import datetime
 from typing import Iterable
-from ffun.domain.entities import EntryId
+
 from ffun.core.postgresql import execute
+from ffun.domain.entities import EntryId
 
 
 async def update_cataloged_time(entries_ids: Iterable[EntryId], new_time: datetime.datetime) -> None:

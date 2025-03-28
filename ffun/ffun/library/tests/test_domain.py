@@ -1,14 +1,14 @@
 import datetime
-import pytest
 
+import pytest
 import pytest_asyncio
+
 from ffun.core import utils
 from ffun.feeds.entities import Feed
 from ffun.library import operations
-from ffun.library.domain import get_entry, get_feeds_for_entry, normalize_entry, get_entries_by_filter_with_fallback
+from ffun.library.domain import get_entries_by_filter_with_fallback, get_entry, get_feeds_for_entry, normalize_entry
 from ffun.library.entities import Entry, EntryChange
-
-from ffun.library.tests import make, helpers
+from ffun.library.tests import helpers, make
 
 
 class TestNormalizeEntry:
@@ -98,86 +98,90 @@ class TestGetEntriesByFilterWithFallback:
         return utils.now() - time_delta
 
     @pytest_asyncio.fixture
-    async def prepared_entries(
-        self, loaded_feed: Feed, time_border: datetime.datetime
-    ) -> list[Entry]:
+    async def prepared_entries(self, loaded_feed: Feed, time_border: datetime.datetime) -> list[Entry]:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_cataloged_time(entries_ids=[entry.id for entry in entries],
-                                            new_time=time_border - datetime.timedelta(seconds=10))
-
-        all_entries = await operations.get_entries_by_ids(
-            ids=[entry.id for entry in entries]
+        await helpers.update_cataloged_time(
+            entries_ids=[entry.id for entry in entries], new_time=time_border - datetime.timedelta(seconds=10)
         )
 
-        all_entries_list = list(all_entries.values())
-        all_entries_list.sort(key=lambda entry: entry.cataloged_at)  # type: ignore
+        all_entries = await operations.get_entries_by_ids(ids=[entry.id for entry in entries])
+
+        all_entries_list = [entry for entry in all_entries.values() if entry is not None]
+        all_entries_list.sort(key=lambda entry: entry.cataloged_at)
 
         return all_entries_list
 
     @pytest.mark.asyncio
     async def test_no_entries_at_all(self, time_delta: datetime.timedelta) -> None:
-        entries = await get_entries_by_filter_with_fallback(feeds_ids=[],
-                                                            period=time_delta,
-                                                            limit=10,
-                                                            fallback_limit=10)
+        entries = await get_entries_by_filter_with_fallback(
+            feeds_ids=[], period=time_delta, limit=10, fallback_limit=10
+        )
 
         assert entries == []
 
     @pytest.mark.asyncio
-    async def test_has_new_entries(self, loaded_feed: Feed, time_border: datetime.datetime, time_delta: datetime.timedelta) -> None:
+    async def test_has_new_entries(
+        self, loaded_feed: Feed, time_border: datetime.datetime, time_delta: datetime.timedelta
+    ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_cataloged_time(entries_ids=[entries[-1].id],
-                                            new_time=time_border - datetime.timedelta(seconds=10))
+        await helpers.update_cataloged_time(
+            entries_ids=[entries[-1].id], new_time=time_border - datetime.timedelta(seconds=10)
+        )
 
-        loaded_entries = await get_entries_by_filter_with_fallback(feeds_ids=[loaded_feed.id],
-                                                                   period=time_delta,
-                                                                   limit=10,
-                                                                   fallback_limit=10)
+        loaded_entries = await get_entries_by_filter_with_fallback(
+            feeds_ids=[loaded_feed.id], period=time_delta, limit=10, fallback_limit=10
+        )
 
         assert {entry.id for entry in loaded_entries} == {entry.id for entry in entries if entry.id != entries[-1].id}
 
     @pytest.mark.asyncio
-    async def test_has_new_entries__limit(self, loaded_feed: Feed, time_border: datetime.datetime, time_delta: datetime.timedelta) -> None:
+    async def test_has_new_entries__limit(
+        self, loaded_feed: Feed, time_border: datetime.datetime, time_delta: datetime.timedelta
+    ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_cataloged_time(entries_ids=[entries[-1].id],
-                                            new_time=time_border - datetime.timedelta(seconds=10))
+        await helpers.update_cataloged_time(
+            entries_ids=[entries[-1].id], new_time=time_border - datetime.timedelta(seconds=10)
+        )
 
-        loaded_entries = await get_entries_by_filter_with_fallback(feeds_ids=[loaded_feed.id],
-                                                                   period=time_delta,
-                                                                   limit=1,
-                                                                   fallback_limit=10)
+        loaded_entries = await get_entries_by_filter_with_fallback(
+            feeds_ids=[loaded_feed.id], period=time_delta, limit=1, fallback_limit=10
+        )
 
         assert len(loaded_entries) == 1
         assert loaded_entries[0].id in {entry.id for entry in entries if entry.id != entries[-1].id}
 
     @pytest.mark.asyncio
-    async def test_no_new_entries(self, loaded_feed: Feed, time_border: datetime.datetime, time_delta: datetime.timedelta) -> None:
+    async def test_no_new_entries(
+        self, loaded_feed: Feed, time_border: datetime.datetime, time_delta: datetime.timedelta
+    ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_cataloged_time(entries_ids=[entry.id for entry in entries],
-                                            new_time=time_border - datetime.timedelta(seconds=10))
+        await helpers.update_cataloged_time(
+            entries_ids=[entry.id for entry in entries], new_time=time_border - datetime.timedelta(seconds=10)
+        )
 
-        loaded_entries = await get_entries_by_filter_with_fallback(feeds_ids=[loaded_feed.id],
-                                                                   period=time_delta,
-                                                                   limit=1,
-                                                                   fallback_limit=10)
+        loaded_entries = await get_entries_by_filter_with_fallback(
+            feeds_ids=[loaded_feed.id], period=time_delta, limit=1, fallback_limit=10
+        )
 
         assert {entry.id for entry in loaded_entries} == {entry.id for entry in entries}
 
     @pytest.mark.asyncio
-    async def test_no_new_entries__limit(self, loaded_feed: Feed, time_border: datetime.datetime, time_delta: datetime.timedelta) -> None:
+    async def test_no_new_entries__limit(
+        self, loaded_feed: Feed, time_border: datetime.datetime, time_delta: datetime.timedelta
+    ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_cataloged_time(entries_ids=[entry.id for entry in entries],
-                                            new_time=time_border - datetime.timedelta(seconds=10))
+        await helpers.update_cataloged_time(
+            entries_ids=[entry.id for entry in entries], new_time=time_border - datetime.timedelta(seconds=10)
+        )
 
-        loaded_entries = await get_entries_by_filter_with_fallback(feeds_ids=[loaded_feed.id],
-                                                                   period=time_delta,
-                                                                   limit=1,
-                                                                   fallback_limit=1)
+        loaded_entries = await get_entries_by_filter_with_fallback(
+            feeds_ids=[loaded_feed.id], period=time_delta, limit=1, fallback_limit=1
+        )
 
         assert len(loaded_entries) == 1
         assert loaded_entries[0].id in {entry.id for entry in entries}
