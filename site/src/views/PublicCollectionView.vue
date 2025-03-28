@@ -54,6 +54,11 @@
 
     <template #main-footer> </template>
 
+    <!-- currently we have a "nuance" with tags user experience in this block -->
+    <!-- The tags work as expected till the user selects their own tags from other places -->
+    <!-- after that we can get a situation, when, after clicking on a tag in the block, there will be no news displayed -->
+    <!-- because the user previously selected tags that have no common news with the tags in the block -->
+    <!-- That effect is possible only if the user has already interacted with the ags filter => should not be a problem -->
     <collections-public-intro
       v-if="collection && !globalState.isLoggedIn"
       :collectionId="collection.id"
