@@ -1,6 +1,6 @@
+import datetime
 from importlib import metadata
 from typing import Any, Iterable
-import datetime
 
 import fastapi
 from fastapi.openapi.docs import get_swagger_ui_html
@@ -14,7 +14,7 @@ from ffun.core import logging
 from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
 from ffun.domain.domain import no_user_id
-from ffun.domain.entities import UserId, FeedId
+from ffun.domain.entities import FeedId, UserId
 from ffun.domain.urls import url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections.collections import collections
@@ -115,9 +115,7 @@ async def _external_entries(  # pylint: disable=R0914
     return external_entries, tags_mapping
 
 
-async def _get_entries_by_filter(
-        feeds_ids: list[FeedId],
-        period: datetime.timedelta) -> list[l_entities.Entry]:
+async def _get_entries_by_filter(feeds_ids: list[FeedId], period: datetime.timedelta) -> list[l_entities.Entry]:
 
     entries = await l_domain.get_entries_by_filter(
         feeds_ids=feeds_ids, period=period, limit=settings.max_returned_entries
@@ -128,9 +126,7 @@ async def _get_entries_by_filter(
 
     # if there is no news in requested interval try to get some older news
     entries = await l_domain.get_entries_by_filter(
-        feeds_ids=feeds_ids,
-        period=settings.news_outside_period_longer_period,
-        limit=settings.news_outside_period
+        feeds_ids=feeds_ids, period=settings.news_outside_period_longer_period, limit=settings.news_outside_period
     )
 
     return entries

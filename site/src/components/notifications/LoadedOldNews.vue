@@ -1,15 +1,13 @@
 <template>
-
   <!-- TODO: Hide when loading new news from the server -->
   <!-- Currently, after changing the period, this message does not disappear -->
   <!-- until the backend returns a new response -->
   <!-- It confuses users because the period size is changing in the text at the beginning of the request. -->
-  <div v-if="allEntriesAreOlderThanPeriod" class="ffun-info-common">
-    <p>
-      We have not found any news that is newer than {{ period.text }}, so we loaded some older ones.
-    </p>
+  <div
+    v-if="allEntriesAreOlderThanPeriod"
+    class="ffun-info-common">
+    <p> We have not found any news that is newer than {{ period.text }}, so we loaded some older ones. </p>
   </div>
-
 </template>
 
 <script lang="ts" setup>
@@ -23,29 +21,27 @@
   import type * as t from "@/logic/types";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useEntriesStore} from "@/stores/entries";
-import _ from "lodash";
+  import _ from "lodash";
 
-const entriesStore = useEntriesStore();
+  const entriesStore = useEntriesStore();
 
   const properties = defineProps<{
     entries: t.EntryId[];
-    period: t.LastEntriesPeriodProperty
+    period: t.LastEntriesPeriodProperty;
   }>();
 
-const allEntriesAreOlderThanPeriod = computed(() => {
-  console.log("loading", entriesStore.loading);
-  if (entriesStore.loading) {
-    return false;
-  }
+  const allEntriesAreOlderThanPeriod = computed(() => {
+    if (entriesStore.loading) {
+      return false;
+    }
 
-  if (properties.entries.length == 0) {
-    return false;
-  }
+    if (properties.entries.length == 0) {
+      return false;
+    }
 
-  return properties.entries.every((entryId) => {
-    const entry = entriesStore.entries[entryId];
-    return entry.publishedAt < Date.now() - properties.period.seconds * 1000;
+    return properties.entries.every((entryId) => {
+      const entry = entriesStore.entries[entryId];
+      return entry.publishedAt < Date.now() - properties.period.seconds * 1000;
+    });
   });
-});
-
 </script>

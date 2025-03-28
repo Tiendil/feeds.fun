@@ -45,7 +45,6 @@ export enum LastEntriesPeriod {
   AllTime = "alltime"
 }
 
-
 export type LastEntriesPeriodProperty = {
   readonly text: string;
   readonly seconds: number;
