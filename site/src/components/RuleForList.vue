@@ -20,7 +20,7 @@
 
       <div class="flex-grow">
         <rule-tag
-          v-for="tag of rule.allTags"
+          v-for="tag of rule.tags"
           :key="tag"
           :uid="tag"
           :css-modifier="cssModifiers[tag]" />
@@ -79,7 +79,7 @@
 
   const cssModifiers: {[key: string]: string} = {};
 
-  for (const tag of properties.rule.allTags) {
+  for (const tag of properties.rule.tags) {
     if (properties.rule.excludedTags.includes(tag)) {
       cssModifiers[tag] = "negative";
       continue;

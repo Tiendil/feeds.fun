@@ -10,16 +10,23 @@ export enum MainPanelMode {
   Rules = "rules",
   Discovery = "discovery",
   Collections = "collections",
+  PublicCollection = "public-collection",
   Settings = "settings"
 }
 
-export const MainPanelModeProperties = new Map<MainPanelMode, {text: string}>([
-  [MainPanelMode.Entries, {text: "News"}],
-  [MainPanelMode.Feeds, {text: "Feeds"}],
-  [MainPanelMode.Rules, {text: "Rules"}],
-  [MainPanelMode.Discovery, {text: "Discovery"}],
-  [MainPanelMode.Collections, {text: "Collections"}],
-  [MainPanelMode.Settings, {text: "Settings"}]
+export type MainPanelModeProperty = {
+  readonly text: string;
+  readonly showInMenu: boolean;
+};
+
+export const MainPanelModeProperties = new Map<MainPanelMode, MainPanelModeProperty>([
+  [MainPanelMode.Entries, {text: "News", showInMenu: true}],
+  [MainPanelMode.Feeds, {text: "Feeds", showInMenu: true}],
+  [MainPanelMode.Rules, {text: "Rules", showInMenu: true}],
+  [MainPanelMode.Discovery, {text: "Discovery", showInMenu: true}],
+  [MainPanelMode.Collections, {text: "Collections", showInMenu: true}],
+  [MainPanelMode.PublicCollection, {text: "Public Collection", showInMenu: false}],
+  [MainPanelMode.Settings, {text: "Settings", showInMenu: true}]
 ]);
 
 export enum LastEntriesPeriod {
@@ -63,10 +70,14 @@ export enum EntriesOrder {
   Cataloged = "cataloged"
 }
 
-export const EntriesOrderProperties = new Map<
-  EntriesOrder,
-  {text: string; orderField: string; timeField: string; direction: number}
->([
+export type EntriesOrderProperty = {
+  readonly text: string;
+  readonly orderField: string;
+  readonly timeField: string;
+  readonly direction: number;
+};
+
+export const EntriesOrderProperties = new Map<EntriesOrder, EntriesOrderProperty>([
   [EntriesOrder.Score, {text: "score", orderField: "score", timeField: "catalogedAt", direction: 1}],
   [EntriesOrder.ScoreToZero, {text: "score ~ 0", orderField: "scoreToZero", timeField: "catalogedAt", direction: 1}],
   [EntriesOrder.ScoreBackward, {text: "score backward", orderField: "score", timeField: "catalogedAt", direction: -1}],

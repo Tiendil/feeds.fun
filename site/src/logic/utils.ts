@@ -1,4 +1,5 @@
 import _ from "lodash";
+import type * as t from "@/logic/types";
 import DOMPurify from "dompurify";
 
 export function timeSince(date: Date) {
@@ -64,7 +65,6 @@ export function faviconForUrl(url: string): string | null {
     const parsedUrl = new URL(url);
     return `${parsedUrl.protocol}//${parsedUrl.host}/favicon.ico`;
   } catch (error) {
-    console.error("Invalid URL:", error);
     return null;
   }
 }
@@ -95,4 +95,107 @@ export function purifyBody({raw, default_}: {raw: string | null; default_: strin
   }
 
   return body;
+}
+
+export function chooseTagByUsage({
+  tagsCount,
+  border,
+  exclude
+}: {
+  tagsCount: {[key: string]: number};
+  border: number;
+  exclude: string[];
+}) {
+  if (Object.keys(tagsCount).length === 0) {
+    return null;
+  }
+
+  if (!exclude) {
+    exclude = [];
+  }
+
+  const tags = _.toPairs(tagsCount).sort((a, b) => {
+    if (a[1] === b[1]) {
+      return a[0].localeCompare(b[0]);
+    }
+
+    return b[1] - a[1];
+  });
+
+  for (let i = 0; i < tags.length; i++) {
+    if (exclude.includes(tags[i][0])) {
+      continue;
+    }
+
+    if (tags[i][1] < border) {
+      return tags[i][0];
+    }
+  }
+
+  return tags[tags.length - 1][0];
+}
+
+export function countTags(entries: t.Entry[] | t.Rule[] | null) {
+  if (!entries) {
+    return {};
+  }
+
+  const tagsCount: {[key: string]: number} = {};
+
+  for (const entry of entries) {
+    for (const tag of entry.tags) {
+      if (tag in tagsCount) {
+        tagsCount[tag] += 1;
+      } else {
+        tagsCount[tag] = 1;
+      }
+    }
+  }
+
+  return tagsCount;
+}
+
+export function sortIdsList<ID extends string = string>({
+  ids,
+  storage,
+  field,
+  direction
+}: {
+  ids: ID[];
+  storage: {[key: string]: any};
+  field: string;
+  direction: number;
+}) {
+  // Pre-map to avoid repeated lookups in the comparator
+  // required for the cases when storage is reactive
+  const mapped = ids.map((id) => {
+    // @ts-ignore
+    return {id, value: storage[id][field]};
+  });
+
+  mapped.sort((a: {id: ID; value: any}, b: {id: ID; value: any}) => {
+    if (a.value === null && b.value === null) {
+      return 0;
+    }
+
+    if (a.value === null) {
+      return 1;
+    }
+
+    if (b.value === null) {
+      return -1;
+    }
+
+    if (a.value < b.value) {
+      return direction;
+    }
+
+    if (a.value > b.value) {
+      return -direction;
+    }
+
+    return 0;
+  });
+
+  return mapped.map((x) => x.id);
 }

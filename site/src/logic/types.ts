@@ -24,6 +24,12 @@ export function toCollectionId(id: string): CollectionId {
   return id as CollectionId;
 }
 
+export type CollectionSlug = string & {readonly __brand: unique symbol};
+
+export function toCollectionSlug(slug: string): CollectionSlug {
+  return slug as CollectionSlug;
+}
+
 export type URL = string & {readonly __brand: unique symbol};
 
 export function toURL(url: string): URL {
@@ -233,7 +239,7 @@ export type Rule = {
   readonly id: RuleId;
   readonly requiredTags: string[];
   readonly excludedTags: string[];
-  readonly allTags: string[];
+  readonly tags: string[];
   readonly score: number;
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -261,7 +267,7 @@ export function ruleFromJSON({
     id: toRuleId(id),
     requiredTags: requiredTags,
     excludedTags: excludedTags,
-    allTags: requiredTags.concat(excludedTags).sort(),
+    tags: requiredTags.concat(excludedTags).sort(),
     score: score,
     createdAt: new Date(createdAt),
     updatedAt: new Date(updatedAt)
@@ -411,6 +417,7 @@ export function resourceHistoryRecordFromJSON({
 
 export class Collection {
   readonly id: CollectionId;
+  readonly slug: CollectionSlug;
   readonly guiOrder: number;
   readonly name: string;
   readonly description: string;
@@ -419,6 +426,7 @@ export class Collection {
 
   constructor({
     id,
+    slug,
     guiOrder,
     name,
     description,
@@ -426,6 +434,7 @@ export class Collection {
     showOnMain
   }: {
     id: CollectionId;
+    slug: CollectionSlug;
     guiOrder: number;
     name: string;
     description: string;
@@ -433,6 +442,7 @@ export class Collection {
     showOnMain: boolean;
   }) {
     this.id = id;
+    this.slug = slug;
     this.guiOrder = guiOrder;
     this.name = name;
     this.description = description;
@@ -443,6 +453,7 @@ export class Collection {
 
 export function collectionFromJSON({
   id,
+  slug,
   guiOrder,
   name,
   description,
@@ -450,6 +461,7 @@ export function collectionFromJSON({
   showOnMain
 }: {
   id: string;
+  slug: string;
   guiOrder: number;
   name: string;
   description: string;
@@ -458,6 +470,7 @@ export function collectionFromJSON({
 }): Collection {
   return {
     id: toCollectionId(id),
+    slug: toCollectionSlug(slug),
     guiOrder: guiOrder,
     name: name,
     description: description,

@@ -7,6 +7,7 @@ import RulesView from "../views/RulesView.vue";
 import DiscoveryView from "../views/DiscoveryView.vue";
 import CollectionsView from "../views/CollectionsView.vue";
 import SettingsView from "../views/SettingsView.vue";
+import PublicCollectionView from "../views/PublicCollectionView.vue";
 import * as e from "@/logic/enums";
 
 // lazy view loading does not work with router.push function
@@ -31,12 +32,12 @@ const router = createRouter({
       component: FeedsView
     },
     {
-      path: "/news",
+      path: "/news/:tags*",
       name: e.MainPanelMode.Entries,
       component: NewsView
     },
     {
-      path: "/rules",
+      path: "/rules/:tags*",
       name: e.MainPanelMode.Rules,
       component: RulesView
     },
@@ -54,8 +55,20 @@ const router = createRouter({
       path: "/settings",
       name: e.MainPanelMode.Settings,
       component: SettingsView
+    },
+    {
+      path: "/show/:collectionSlug/:tags*",
+      name: "public-collection",
+      component: PublicCollectionView
+    },
+    {
+      path: "/:pathMatch(.*)*",
+      redirect: "/"
     }
-  ]
+  ],
+  scrollBehavior(to, from, savedPosition) {
+    return {top: 0};
+  }
 });
 
 export default router;

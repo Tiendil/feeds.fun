@@ -57,7 +57,7 @@
 
 <script lang="ts" setup>
   import _ from "lodash";
-  import {computed, ref, onUnmounted, watch} from "vue";
+  import {computed, ref, onUnmounted, watch, provide} from "vue";
   import {computedAsync} from "@vueuse/core";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useFeedsStore} from "@/stores/feeds";
@@ -68,6 +68,8 @@
   const globalSettings = useGlobalSettingsStore();
 
   const feedsStore = useFeedsStore();
+
+  provide("eventsViewName", "feeds");
 
   globalSettings.mainPanelMode = e.MainPanelMode.Feeds;
 

@@ -1,7 +1,7 @@
 import pydantic
 
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import CollectionId, FeedUrl
+from ffun.domain.entities import CollectionId, CollectionSlug, FeedUrl
 from ffun.feeds.entities import FeedId
 
 
@@ -21,6 +21,7 @@ class FeedInfo(BaseEntity):
 
 class Collection(BaseEntity):
     id: CollectionId
+    slug: CollectionSlug
     gui_order: int
     name: str
     description: str

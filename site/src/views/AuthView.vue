@@ -11,12 +11,12 @@
 </template>
 
 <script lang="ts" setup>
+  import {computed, ref, onUnmounted, watch, provide, onBeforeMount} from "vue";
   import {useRouter} from "vue-router";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useSupertokens} from "@/stores/supertokens";
   import {useGlobalState} from "@/stores/globalState";
   import {computedAsync} from "@vueuse/core";
-  import {computed, ref, onBeforeMount} from "vue";
   import * as settings from "@/logic/settings";
 
   const globalSettings = useGlobalSettingsStore();
@@ -25,6 +25,8 @@
   const supertokens = useSupertokens();
 
   const router = useRouter();
+
+  provide("eventsViewName", "auth");
 
   const linkProcessed = ref(false);
 

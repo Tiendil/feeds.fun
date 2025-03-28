@@ -18,7 +18,9 @@
         class="text-orange-700 ti ti-chevrons-right" />
     </div>
 
-    <div class="flex-shrink-0 w-8 text-center pr-1">
+    <div
+      v-if="showScore"
+      class="flex-shrink-0 w-8 text-center pr-1">
       <value-score
         :value="entry.score"
         :entry-id="entry.id" />
@@ -40,8 +42,8 @@
         :tags="entry.tags"
         :tags-count="tagsCount"
         :show-all="showBody"
-        @request-to-show-all="entriesStore.displayEntry({entryId: entry.id})"
-        :contributions="entry.scoreContributions" />
+        @request-to-show-all="entriesStore.displayEntry({entryId: entry.id, view: eventsView})"
+        :contributions="showScore ? entry.scoreContributions : {}" />
     </div>
 
     <body-list-reverse-time-column
@@ -61,16 +63,21 @@
 
 <script lang="ts" setup>
   import _ from "lodash";
-  import {computed, ref, useTemplateRef, onMounted} from "vue";
+  import {computed, ref, useTemplateRef, onMounted, inject} from "vue";
   import type * as t from "@/logic/types";
   import * as events from "@/logic/events";
   import * as e from "@/logic/enums";
   import * as utils from "@/logic/utils";
+  import * as asserts from "@/logic/asserts";
   import {computedAsync} from "@vueuse/core";
   import DOMPurify from "dompurify";
   import {useEntriesStore} from "@/stores/entries";
 
   const entriesStore = useEntriesStore();
+
+  const eventsView = inject<events.EventsViewName>("eventsViewName");
+
+  asserts.defined(eventsView);
 
   const topElement = useTemplateRef("entryTop");
 
@@ -78,6 +85,7 @@
     entryId: t.EntryId;
     timeField: string;
     tagsCount: {[key: string]: number};
+    showScore: boolean;
   }>();
 
   const entry = computed(() => {
@@ -129,10 +137,13 @@
   });
 
   async function newsLinkOpenedEvent() {
-    await events.newsLinkOpened({entryId: entry.value.id});
+    asserts.defined(eventsView);
+    await events.newsLinkOpened({entryId: entry.value.id, view: eventsView});
   }
 
   async function onTitleClick(event: MouseEvent) {
+    asserts.defined(eventsView);
+
     if (!event.ctrlKey) {
       event.preventDefault();
       event.stopPropagation();
@@ -140,7 +151,7 @@
       if (showBody.value) {
         entriesStore.hideEntry({entryId: entry.value.id});
       } else {
-        await entriesStore.displayEntry({entryId: entry.value.id});
+        await entriesStore.displayEntry({entryId: entry.value.id, view: eventsView});
 
         if (topElement.value) {
           const rect = topElement.value.getBoundingClientRect();

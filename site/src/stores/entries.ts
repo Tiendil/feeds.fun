@@ -5,13 +5,21 @@ import _ from "lodash";
 import * as t from "@/logic/types";
 import * as e from "@/logic/enums";
 import * as api from "@/logic/api";
+import * as utils from "@/logic/utils";
 import {Timer} from "@/logic/timer";
 import {computedAsync} from "@vueuse/core";
 import {useGlobalSettingsStore} from "@/stores/globalSettings";
 import * as events from "@/logic/events";
+import {useGlobalState} from "@/stores/globalState";
+
+enum Mode {
+  News = "news",
+  PublicCollection = "public-collection"
+}
 
 export const useEntriesStore = defineStore("entriesStore", () => {
   const globalSettings = useGlobalSettingsStore();
+  const globalState = useGlobalState();
 
   const entries = ref<{[key: t.EntryId]: t.Entry}>({});
   const requestedEntries = ref<{[key: t.EntryId]: boolean}>({});
@@ -20,17 +28,74 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
   const canUndoMarkRead = computed(() => readHistory.value.length > 0);
 
-  function registerEntry(entry: t.Entry) {
-    if (entry.id in entries.value) {
-      if (entry.body === null && entries.value[entry.id].body !== null) {
-        entry.body = entries.value[entry.id].body;
-      }
+  const mode = ref<Mode | null>(null);
+  const modePublicCollectionSlug = ref<t.CollectionSlug | null>(null);
+
+  function setNewsMode() {
+    if (mode.value == Mode.News) {
+      return;
     }
 
-    entries.value[entry.id] = entry;
+    mode.value = Mode.News;
+
+    globalSettings.updateDataVersion();
   }
 
-  const loadedEntriesReport = computedAsync(async () => {
+  function setPublicCollectionMode(collectionSlug: t.CollectionSlug) {
+    if (mode.value == Mode.PublicCollection && modePublicCollectionSlug.value === collectionSlug) {
+      return;
+    }
+
+    mode.value = Mode.PublicCollection;
+    modePublicCollectionSlug.value = collectionSlug;
+
+    globalSettings.updateDataVersion();
+  }
+
+  // Public collections uses fixed sorting order
+  // News uses dynamic sorting order and should keep it between switching views
+  // So, if we set globalSettings.entriesOrderProperties in PublicCollection view
+  // we'll break News view sorting and confuse users
+  // => we hardcode specific order properties for PublicCollection mode
+  const activeOrderProperties = computed(() => {
+    if (mode.value === null) {
+      // Return most general order for the case when mode is not set yet
+      return e.EntriesOrderProperties.get(e.EntriesOrder.Published) as unknown as e.EntriesOrderProperty;
+    }
+
+    if (mode.value == Mode.News) {
+      // use saved order mode for News view
+      return globalSettings.entriesOrderProperties as unknown as e.EntriesOrderProperty;
+    }
+
+    if (mode.value == Mode.PublicCollection) {
+      // use fixed Published order for Public Collection view
+      return e.EntriesOrderProperties.get(e.EntriesOrder.Published) as unknown as e.EntriesOrderProperty;
+    }
+
+    console.error(`Unknown mode ${mode.value}`);
+
+    return e.EntriesOrderProperties.get(e.EntriesOrder.Published) as unknown as e.EntriesOrderProperty;
+  });
+
+  // We bulk update entries to avoid performance degradation
+  // on triggering multiple reactivity updates for each entry
+  function registerEntries(newEntries: t.Entry[]) {
+    let delta: {[key: t.EntryId]: t.Entry} = {};
+
+    for (const entry of newEntries) {
+      if (entry.id in entries.value) {
+        if (entry.body === null && entries.value[entry.id].body !== null) {
+          entry.body = entries.value[entry.id].body;
+        }
+      }
+      delta[entry.id] = entry;
+    }
+
+    entries.value = {...entries.value, ...delta};
+  }
+
+  async function loadEntriesAccordingToMode() {
     const periodProperties = e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod);
 
     if (periodProperties === undefined) {
@@ -39,22 +104,73 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     const period = periodProperties.seconds;
 
+    if (mode.value === Mode.News) {
+      return await api.getLastEntries({
+        period: period
+      });
+    }
+
+    if (mode.value === Mode.PublicCollection) {
+      return await api.getLastCollectionEntries({
+        period: period,
+        collectionSlug: modePublicCollectionSlug.value
+      });
+    }
+
+    throw new Error(`Unknown mode ${mode.value}`);
+  }
+
+  const loadedEntriesReport = computedAsync(async () => {
     // force refresh
     globalSettings.dataVersion;
 
-    const loadedEntries = await api.getLastEntries({
-      period: period
-    });
+    if (mode.value === null) {
+      // Do nothing until the mode is set
+      return null;
+    }
+
+    const loadedEntries = await loadEntriesAccordingToMode();
 
     const report = [];
 
+    registerEntries(loadedEntries);
+
     for (const entry of loadedEntries) {
-      registerEntry(entry);
       report.push(entry.id);
     }
 
     return report;
   }, null);
+
+  const _sortedEntries = computed(() => {
+    if (loadedEntriesReport.value === null) {
+      return [];
+    }
+
+    const field = activeOrderProperties.value.orderField;
+    const direction = activeOrderProperties.value.direction;
+
+    const report = utils.sortIdsList({ids: loadedEntriesReport.value, storage: entries.value, field, direction});
+
+    return report;
+  });
+
+  const visibleEntries = computed(() => {
+    let report = _sortedEntries.value.slice();
+
+    if (!globalSettings.showRead) {
+      report = report.filter((entryId) => {
+        if (displayedEntryId.value == entryId) {
+          // always show read entries with open body
+          // otherwise, they will hide right after opening it
+          return true;
+        }
+        return !entries.value[entryId].hasMarker(e.Marker.Read);
+      });
+    }
+
+    return report;
+  });
 
   function requestFullEntry({entryId}: {entryId: t.EntryId}) {
     if (entryId in entries.value && entries.value[entryId].body !== null) {
@@ -71,11 +187,9 @@ export const useEntriesStore = defineStore("entriesStore", () => {
       return;
     }
 
-    const entries = await api.getEntriesByIds({ids: ids});
+    const loadedEntries = await api.getEntriesByIds({ids: ids});
 
-    for (const entry of entries) {
-      registerEntry(entry);
-    }
+    registerEntries(loadedEntries);
 
     requestedEntries.value = {};
   }
@@ -96,7 +210,11 @@ export const useEntriesStore = defineStore("entriesStore", () => {
       entries.value[entryId].setMarker(marker);
     }
 
-    await api.setMarker({entryId: entryId, marker: marker});
+    // This method may be called from public access pages, like public collections
+    // In such case user may be not logged in and we should not send API requests
+    if (globalState.isLoggedIn) {
+      await api.setMarker({entryId: entryId, marker: marker});
+    }
   }
 
   async function removeMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
@@ -111,10 +229,14 @@ export const useEntriesStore = defineStore("entriesStore", () => {
       entries.value[entryId].removeMarker(marker);
     }
 
-    await api.removeMarker({entryId: entryId, marker: marker});
+    // This method may be called from public access pages, like public collections
+    // In such case user may be not logged in and we should not send API requests
+    if (globalState.isLoggedIn) {
+      await api.removeMarker({entryId: entryId, marker: marker});
+    }
   }
 
-  async function displayEntry({entryId}: {entryId: t.EntryId}) {
+  async function displayEntry({entryId, view}: {entryId: t.EntryId; view: events.EventsViewName}) {
     displayedEntryId.value = entryId;
 
     requestFullEntry({entryId: entryId});
@@ -126,7 +248,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
       });
     }
 
-    await events.newsBodyOpened({entryId: entryId});
+    await events.newsBodyOpened({entryId: entryId, view: view});
   }
 
   function hideEntry({entryId}: {entryId: t.EntryId}) {
@@ -145,6 +267,10 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     removeMarker({entryId: entryId, marker: e.Marker.Read});
   }
 
+  const loading = computed(() => {
+    return loadedEntriesReport.value === null;
+  });
+
   return {
     entries,
     requestFullEntry,
@@ -155,6 +281,11 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     displayEntry,
     hideEntry,
     undoMarkRead,
-    canUndoMarkRead
+    canUndoMarkRead,
+    setNewsMode,
+    setPublicCollectionMode,
+    loading,
+    visibleEntries,
+    activeOrderProperties
   };
 });

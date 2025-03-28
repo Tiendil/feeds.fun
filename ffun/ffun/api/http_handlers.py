@@ -71,7 +71,7 @@ async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entiti
 
 
 async def _external_entries(  # pylint: disable=R0914
-    entries: Iterable[l_entities.Entry], with_body: bool, user_id: UserId
+    entries: Iterable[l_entities.Entry], with_body: bool, user_id: UserId | None
 ) -> tuple[list[entities.Entry], dict[int, str]]:
     entries_ids = [entry.id for entry in entries]
 
@@ -84,9 +84,12 @@ async def _external_entries(  # pylint: disable=R0914
 
     tags_mapping = await o_domain.get_tags_by_ids(whole_tags)
 
-    markers = await m_domain.get_markers(user_id=user_id, entries_ids=entries_ids)
-
-    rules = await s_domain.get_rules(user_id)
+    if user_id is not None:
+        markers = await m_domain.get_markers(user_id=user_id, entries_ids=entries_ids)
+        rules = await s_domain.get_rules(user_id)
+    else:
+        markers = {}
+        rules = []
 
     external_entries = []
 
@@ -126,11 +129,31 @@ async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: Us
     return entities.GetLastEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
 
 
+@router.post("/api/get-last-collection-entries")
+async def api_get_last_collection_entries(
+    request: entities.GetLastCollectionEntriesRequest,
+) -> entities.GetLastCollectionEntriesResponse:
+
+    collection = collections.collection_by_slug(request.collectionSlug)
+
+    feed_ids = [feed_info.feed_id for feed_info in collection.feeds if feed_info.feed_id is not None]
+
+    entries = await l_domain.get_entries_by_filter(
+        feeds_ids=feed_ids, period=request.period, limit=settings.max_returned_entries
+    )
+
+    external_entries, tags_mapping = await _external_entries(entries, with_body=False, user_id=None)
+
+    return entities.GetLastCollectionEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
+
+
 @router.post("/api/get-entries-by-ids")
 async def api_get_entries_by_ids(
-    request: entities.GetEntriesByIdsRequest, user: User
+    request: entities.GetEntriesByIdsRequest, user: OptionalUser
 ) -> entities.GetEntriesByIdsResponse:
-    # TODO: check if belongs to user
+    # TODO: check if belongs to user, but do not forget about public collections
+
+    user_id = user.id if user is not None else None
 
     if len(request.ids) > settings.max_entries_details_requests:
         # TODO: better error processing
@@ -140,7 +163,7 @@ async def api_get_entries_by_ids(
 
     found_entries = [entry for entry in entries.values() if entry is not None]
 
-    external_entries, tags_mapping = await _external_entries(found_entries, with_body=True, user_id=user.id)
+    external_entries, tags_mapping = await _external_entries(found_entries, with_body=True, user_id=user_id)
 
     return entities.GetEntriesByIdsResponse(entries=external_entries, tagsMapping=tags_mapping)
 
@@ -387,7 +410,7 @@ async def api_subscribe_to_collections(
 
 
 @router.post("/api/get-tags-info")
-async def api_get_tags_info(request: entities.GetTagsInfoRequest, user: User) -> entities.GetTagsInfoResponse:
+async def api_get_tags_info(request: entities.GetTagsInfoRequest) -> entities.GetTagsInfoResponse:
     tags_ids = await o_domain.get_ids_by_uids(request.uids)
 
     info = await o_domain.get_tags_info(tags_ids.values())

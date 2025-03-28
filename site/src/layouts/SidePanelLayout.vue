@@ -49,29 +49,41 @@
     <div class="ffun-body-panel">
       <div class="ffun-page-header">
         <div class="ffun-page-header-left-block">
-          <template
-            v-for="[mode, props] of e.MainPanelModeProperties"
-            :key="mode">
-            <a
-              v-if="globalSettings.mainPanelMode !== mode"
-              :href="router.resolve({name: mode, params: {}}).href"
-              class="ffun-page-header-link"
-              @click.prevent="router.push({name: mode, params: {}})">
-              {{ props.text }}
-            </a>
+          <a
+            v-if="homeButton"
+            :href="router.resolve({name: 'main', params: {}}).href"
+            class="ffun-page-header-link"
+            >Home</a
+          >
 
-            <span
-              class="ffun-page-header-link-disabled"
-              v-else
-              >{{ props.text }}</span
-            >
+          <template v-if="globalState.isLoggedIn">
+            <template
+              v-for="[mode, props] of e.MainPanelModeProperties"
+              :key="mode">
+              <template v-if="props.showInMenu">
+                <a
+                  v-if="globalSettings.mainPanelMode !== mode"
+                  :href="router.resolve({name: mode, params: {}}).href"
+                  class="ffun-page-header-link"
+                  @click.prevent="router.push({name: mode, params: {}})">
+                  {{ props.text }}
+                </a>
+
+                <span
+                  class="ffun-page-header-link-disabled"
+                  v-else
+                  >{{ props.text }}</span
+                >
+              </template>
+            </template>
           </template>
 
-          <page-header-external-links :show-api="true" />
+          <page-header-external-links :show-api="globalState.isLoggedIn" />
         </div>
 
         <div class="ffun-page-header-right-block">
           <a
+            v-if="globalState.isLoggedIn"
             href="#"
             class="ffun-page-header-link"
             @click.prevent="logout()"
@@ -110,10 +122,14 @@
   const router = useRouter();
   const slots = useSlots();
 
-  const properties = withDefaults(defineProps<{reloadButton?: boolean; loginRequired?: boolean}>(), {
-    reloadButton: true,
-    loginRequired: true
-  });
+  const properties = withDefaults(
+    defineProps<{reloadButton?: boolean; loginRequired?: boolean; homeButton?: boolean}>(),
+    {
+      reloadButton: true,
+      loginRequired: true,
+      homeButton: false
+    }
+  );
 
   async function logout() {
     if (settings.authMode === settings.AuthMode.SingleUser) {
@@ -122,7 +138,10 @@
     }
 
     await supertokens.logout();
-    router.push({name: "main", params: {}});
+
+    if (properties.loginRequired) {
+      router.push({name: "main", params: {}});
+    }
   }
 
   const hasSideFooter = computed(() => {

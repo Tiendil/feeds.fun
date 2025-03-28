@@ -8,7 +8,17 @@ import pydantic
 from ffun.api import front_events
 from ffun.core import api
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import AbsoluteUrl, EntryId, FeedId, FeedUrl, RuleId, UnknownUrl, UserId
+from ffun.domain.entities import (
+    AbsoluteUrl,
+    CollectionId,
+    CollectionSlug,
+    EntryId,
+    FeedId,
+    FeedUrl,
+    RuleId,
+    UnknownUrl,
+    UserId,
+)
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.feeds_links import entities as fl_entities
@@ -45,11 +55,11 @@ class Feed(BaseEntity):
     lastError: str | None = None
     loadedAt: datetime.datetime | None
     linkedAt: datetime.datetime | None
-    collectionIds: list[fc_entities.CollectionId]
+    collectionIds: list[CollectionId]
 
     @classmethod
     def from_internal(
-        cls, feed: f_entities.Feed, link: fl_entities.FeedLink, collection_ids: list[fc_entities.CollectionId]
+        cls, feed: f_entities.Feed, link: fl_entities.FeedLink, collection_ids: list[CollectionId]
     ) -> "Feed":
         return cls(
             id=feed.id,
@@ -250,7 +260,8 @@ class ResourceHistoryRecord(pydantic.BaseModel):
 
 
 class Collection(pydantic.BaseModel):
-    id: fc_entities.CollectionId
+    id: CollectionId
+    slug: CollectionSlug
     guiOrder: int
     name: str
     description: str
@@ -261,6 +272,7 @@ class Collection(pydantic.BaseModel):
     def from_internal(cls, record: fc_entities.Collection) -> "Collection":
         return cls(
             id=record.id,
+            slug=record.slug,
             guiOrder=record.gui_order,
             name=record.name,
             description=record.description,
@@ -305,6 +317,22 @@ class GetLastEntriesRequest(api.APIRequest):
 
 
 class GetLastEntriesResponse(api.APISuccess):
+    entries: list[Entry]
+    tagsMapping: dict[int, str]
+
+
+class GetLastCollectionEntriesRequest(api.APIRequest):
+    collectionSlug: CollectionSlug
+    period: datetime.timedelta | None = None
+
+    @pydantic.field_validator("period")
+    def validate_period(cls, v: None | datetime.timedelta) -> None | datetime.timedelta:
+        if v is not None and v.total_seconds() < 0:
+            raise ValueError("period must be positive")
+        return v
+
+
+class GetLastCollectionEntriesResponse(api.APISuccess):
     entries: list[Entry]
     tagsMapping: dict[int, str]
 

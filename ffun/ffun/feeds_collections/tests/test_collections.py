@@ -5,6 +5,7 @@ import pytest
 import pytest_asyncio
 
 from ffun.domain.domain import new_collection_id, new_feed_id
+from ffun.domain.entities import CollectionSlug
 from ffun.domain.urls import str_to_absolute_url, to_feed_url, url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections import errors
@@ -92,6 +93,16 @@ class TestCollections:
             collections.collection(new_collection_id())
 
     @pytest.mark.asyncio
+    async def test_collection_by_slug(self, collections: Collections) -> None:
+        for collection in collections._collections:
+            assert collections.collection_by_slug(collection.slug) == collection
+
+    @pytest.mark.asyncio
+    async def test_collection_by_slug__no_collection(self, collections: Collections) -> None:
+        with pytest.raises(errors.CollectionNotFound):
+            collections.collection_by_slug(CollectionSlug(uuid.uuid4().hex))
+
+    @pytest.mark.asyncio
     async def test_has_feed(self, collections: Collections) -> None:
         assert not collections.has_feed(new_feed_id())
 
@@ -112,7 +123,7 @@ class TestCollections:
         assert feed_info.feed_id == existed_feed_id
 
     @pytest.mark.asyncio
-    async def test_validate_collections_ids(self) -> None:
+    async def test_validate_collection_ids(self) -> None:
         collections = Collections()
 
         feed_1 = FeedInfo(
@@ -121,6 +132,7 @@ class TestCollections:
 
         collection_1 = Collection(
             id=new_collection_id(),
+            slug=CollectionSlug("collection-slug-1"),
             gui_order=1,
             name=uuid.uuid4().hex,
             description=uuid.uuid4().hex,
@@ -130,6 +142,7 @@ class TestCollections:
 
         collection_2 = Collection(
             id=collection_1.id,
+            slug=CollectionSlug("collection-slug-2"),
             gui_order=2,
             name=uuid.uuid4().hex,
             description=uuid.uuid4().hex,
@@ -143,7 +156,7 @@ class TestCollections:
             await collections.add_test_collection(collection_2)
 
     @pytest.mark.asyncio
-    async def test_validate_gui_order(self) -> None:
+    async def test_validate_collection_slugs(self) -> None:
         collections = Collections()
 
         feed_1 = FeedInfo(
@@ -152,6 +165,7 @@ class TestCollections:
 
         collection_1 = Collection(
             id=new_collection_id(),
+            slug=CollectionSlug("collection-slug-1"),
             gui_order=1,
             name=uuid.uuid4().hex,
             description=uuid.uuid4().hex,
@@ -161,6 +175,40 @@ class TestCollections:
 
         collection_2 = Collection(
             id=new_collection_id(),
+            slug=collection_1.slug,
+            gui_order=2,
+            name=uuid.uuid4().hex,
+            description=uuid.uuid4().hex,
+            feeds=[feed_1],
+            show_on_main=True,
+        )
+
+        await collections.add_test_collection(collection_1)
+
+        with pytest.raises(errors.DuplicateCollectionSlugs):
+            await collections.add_test_collection(collection_2)
+
+    @pytest.mark.asyncio
+    async def test_validate_gui_order(self) -> None:
+        collections = Collections()
+
+        feed_1 = FeedInfo(
+            url=to_feed_url(str_to_absolute_url("http://example.com/feed1")), title="Feed 1", description="Feed 1"
+        )
+
+        collection_1 = Collection(
+            id=new_collection_id(),
+            slug=CollectionSlug("collection-slug-1"),
+            gui_order=1,
+            name=uuid.uuid4().hex,
+            description=uuid.uuid4().hex,
+            feeds=[feed_1],
+            show_on_main=True,
+        )
+
+        collection_2 = Collection(
+            id=new_collection_id(),
+            slug=CollectionSlug("collection-slug-2"),
             gui_order=1,
             name=uuid.uuid4().hex,
             description=uuid.uuid4().hex,
@@ -183,6 +231,7 @@ class TestCollections:
 
         collection_1 = Collection(
             id=new_collection_id(),
+            slug=CollectionSlug("collection-slug-1"),
             gui_order=1,
             name=uuid.uuid4().hex,
             description=uuid.uuid4().hex,
@@ -192,6 +241,7 @@ class TestCollections:
 
         collection_2 = Collection(
             id=new_collection_id(),
+            slug=CollectionSlug("collection-slug-2"),
             gui_order=2,
             name=uuid.uuid4().hex,
             description=uuid.uuid4().hex,

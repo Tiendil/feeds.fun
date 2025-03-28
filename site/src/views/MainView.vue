@@ -179,7 +179,14 @@
             </template>
 
             <template #description>
-              {{ collections.collections[collectionId].description }}
+              <div>{{ collections.collections[collectionId].description }}</div>
+              <div class="mt-2">
+                <a
+                  :href="publicCollectionHref(collections.collections[collectionId].slug)"
+                  class="ffun-normal-link pt-4">
+                  Read the news
+                </a>
+              </div>
             </template>
           </main-item>
         </template>
@@ -197,8 +204,18 @@
 </template>
 
 <script lang="ts" setup>
+  import {computed, ref, onUnmounted, watch, provide} from "vue";
   import * as settings from "@/logic/settings";
+  import {useRouter, RouterLink, RouterView} from "vue-router";
   import {useCollectionsStore} from "@/stores/collections";
+  import * as t from "@/logic/types";
 
+  const router = useRouter();
   const collections = useCollectionsStore();
+
+  provide("eventsViewName", "main");
+
+  function publicCollectionHref(collectionSlug: t.CollectionSlug) {
+    return router.resolve({name: "public-collection", params: {collectionSlug: collectionSlug}}).href;
+  }
 </script>

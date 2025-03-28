@@ -7,6 +7,7 @@
           :key="entryId"
           class="ffun-body-list-entry">
           <entry-for-list
+            :show-score="showScore"
             :entryId="entryId"
             :time-field="timeField"
             :tags-count="tagsCount" />
@@ -22,6 +23,14 @@
         :counterOnNewLine="false"
         v-model:showEntries="showEntries" />
     </template>
+
+    <template v-else>
+      <div
+        v-if="!loading"
+        class="ffun-info-common">
+        No news to show.
+      </div>
+    </template>
   </div>
 </template>
 
@@ -31,10 +40,12 @@
   import {computedAsync} from "@vueuse/core";
 
   const properties = defineProps<{
+    loading: boolean;
     entriesIds: Array<t.EntryId>;
     timeField: string;
     showFromStart: number;
     showPerPage: number;
+    showScore: boolean;
     tagsCount: {[key: string]: number};
   }>();
 

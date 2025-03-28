@@ -2,7 +2,7 @@
   <side-panel-layout :reload-button="true">
     <template #main-header>
       Rules
-      <span v-if="rules">[{{ rules.length }}]</span>
+      <span v-if="rules">[{{ rulesNumber }}]</span>
     </template>
 
     <template #side-menu-item-2>
@@ -15,8 +15,7 @@
     <template #side-footer>
       <tags-filter
         :tags="tagsCount"
-        :show-create-rule="false"
-        change-source="rules_tags_filter" />
+        :show-create-rule="false" />
     </template>
 
     <div class="ffun-info-common mb-2">
@@ -32,14 +31,14 @@
     </div>
 
     <rules-list
-      v-if="rules"
+      :loading="loading"
       :rules="sortedRules" />
   </side-panel-layout>
 </template>
 
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch, provide} from "vue";
-  import {useRouter} from "vue-router";
+  import {useRoute, useRouter} from "vue-router";
   import {computedAsync} from "@vueuse/core";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import _ from "lodash";
@@ -49,11 +48,19 @@
   import * as e from "@/logic/enums";
   import * as tagsFilterState from "@/logic/tagsFilterState";
 
+  const route = useRoute();
   const router = useRouter();
 
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
   provide("tagsStates", tagsStates);
+  provide("eventsViewName", "rules");
+
+  tagsFilterState.setSyncingTagsWithRoute({
+    tagsStates: tagsStates.value as unknown as tagsFilterState.Storage,
+    route,
+    router
+  });
 
   const globalSettings = useGlobalSettingsStore();
 
@@ -63,31 +70,13 @@
     router.push({name: e.MainPanelMode.Entries, params: {}});
   }
 
+  const loading = computed(() => rules.value === null);
+
   const rules = computedAsync(async () => {
     // force refresh
     globalSettings.dataVersion;
     return await api.getRules();
   }, null);
-
-  const tagsCount = computed(() => {
-    if (!rules.value) {
-      return {};
-    }
-
-    const tags: {[key: string]: number} = {};
-
-    for (const rule of rules.value) {
-      for (const tag of rule.requiredTags) {
-        tags[tag] = (tags[tag] || 0) + 1;
-      }
-
-      for (const tag of rule.excludedTags) {
-        tags[tag] = (tags[tag] || 0) + 1;
-      }
-    }
-
-    return tags;
-  });
 
   const sortedRules = computed(() => {
     if (!rules.value) {
@@ -96,7 +85,7 @@
 
     let sorted = rules.value.slice();
 
-    sorted = tagsStates.value.filterByTags(sorted, (rule) => rule.allTags);
+    sorted = tagsStates.value.filterByTags(sorted, (rule) => rule.tags);
 
     const orderProperties = e.RulesOrderProperties.get(globalSettings.rulesOrder);
 
@@ -113,14 +102,14 @@
 
     sorted = sorted.sort((a: t.Rule, b: t.Rule) => {
       if (globalSettings.rulesOrder === e.RulesOrder.Tags) {
-        return utils.compareLexicographically(a.allTags, b.allTags);
+        return utils.compareLexicographically(a.tags, b.tags);
       }
 
       const valueA = _.get(a, orderField, null);
       const valueB = _.get(b, orderField, null);
 
       if (valueA === null && valueB === null) {
-        return utils.compareLexicographically(a.allTags, b.allTags);
+        return utils.compareLexicographically(a.tags, b.tags);
       }
 
       if (valueA === null) {
@@ -139,9 +128,17 @@
         return -1 * direction;
       }
 
-      return utils.compareLexicographically(a.allTags, b.allTags);
+      return utils.compareLexicographically(a.tags, b.tags);
     });
 
     return sorted;
+  });
+
+  const rulesNumber = computed(() => {
+    return sortedRules.value ? sortedRules.value.length : 0;
+  });
+
+  const tagsCount = computed(() => {
+    return utils.countTags(sortedRules.value);
   });
 </script>
