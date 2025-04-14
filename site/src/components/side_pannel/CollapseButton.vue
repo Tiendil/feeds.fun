@@ -1,7 +1,7 @@
 <template>
   <a
     href="#"
-    class="ffun-page-header-link text-2xl align-middle flex-none"
+    class="ffun-page-header-link text-2xl align-middle flex-none pb-0"
     :title="title"
     @click.prevent="onClick"
     >

@@ -1,10 +1,6 @@
 <template>
 <div class="ffun-side-panel-layout">
-  <div v-if="!globalSettings.showSidebar" class="ffun-side-panel-collapsed">
-    <div class="ffun-page-header px-0 mx-0 flex min-w-full">
-      <side-panel-collapse-button/>
-    </div>
-  </div>
+
     <div v-if="globalSettings.showSidebar" class="ffun-side-panel">
       <div class="ffun-page-header pr-0 mr-0 flex min-w-full">
         <div class="ffun-page-header-title grow">
@@ -50,7 +46,7 @@
         >Refresh</a
       >
 
-      <hr v-if="hasSideFooter" />
+      <hr v-if="hasSideFooter"/>
 
       <slot name="side-footer"></slot>
     </div>
@@ -58,6 +54,9 @@
     <div class="ffun-body-panel">
       <div class="ffun-page-header">
         <div class="ffun-page-header-left-block">
+
+          <side-panel-collapse-button v-if="!globalSettings.showSidebar"/>
+
           <a
             v-if="homeButton"
             :href="router.resolve({name: 'main', params: {}}).href"
@@ -101,7 +100,7 @@
         </div>
       </div>
 
-      <hr class="my-2 border-slate-400" />
+      <hr class="mx-4 my-2 border-slate-400" />
 
       <main class="mb-4 px-4 min-h-screen">
         <slot></slot>
