@@ -2,12 +2,7 @@
 <div class="ffun-side-panel-layout">
   <div v-if="!globalSettings.showSidebar" class="ffun-side-panel-collapsed">
     <div class="ffun-page-header px-0 mx-0 flex min-w-full">
-      <a
-        href="#"
-        class="ffun-page-header-link text-2xl align-middle flex-none"
-        title="Show sidebar"
-        @click.prevent="globalSettings.showSidebar = true"
-        ><i class="ti ti-layout-sidebar-left-expand"></i></a>
+      <side-panel-collapse-button/>
     </div>
   </div>
     <div v-if="globalSettings.showSidebar" class="ffun-side-panel">
@@ -17,12 +12,7 @@
         </div>
 
         <div>
-          <a
-            href="#"
-            class="ffun-page-header-link text-2xl align-middle flex-none"
-            title="Collapse sidebar"
-            @click.prevent="globalSettings.showSidebar = false"
-            ><i class="ti ti-layout-sidebar-left-collapse"></i></a>
+          <side-panel-collapse-button/>
         </div>
       </div>
 
