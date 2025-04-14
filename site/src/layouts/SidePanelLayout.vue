@@ -7,9 +7,8 @@
           <slot name="main-header"></slot>
         </div>
 
-        <div>
-          <side-panel-collapse-button/>
-        </div>
+        <side-panel-collapse-button/>
+
       </div>
 
       <hr />
