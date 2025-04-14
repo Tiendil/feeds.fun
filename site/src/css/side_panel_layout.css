@@ -15,6 +15,10 @@
       }
     }
 
+    .ffun-side-panel-collapsed {
+      @apply px-4 w-16 bg-slate-50 flex-shrink-0;
+    }
+
     .ffun-body-panel {
       @apply flex-grow;
     }

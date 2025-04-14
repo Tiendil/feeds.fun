@@ -1,9 +1,28 @@
 <template>
-  <div class="ffun-side-panel-layout">
-    <div class="ffun-side-panel">
-      <div class="ffun-page-header">
-        <div class="ffun-page-header-title">
+<div class="ffun-side-panel-layout">
+  <div v-if="!globalSettings.showSidebar" class="ffun-side-panel-collapsed">
+    <div class="ffun-page-header px-0 mx-0 flex min-w-full">
+      <a
+        href="#"
+        class="ffun-page-header-link text-2xl align-middle flex-none"
+        title="Show sidebar"
+        @click.prevent="globalSettings.showSidebar = true"
+        ><i class="ti ti-layout-sidebar-left-expand"></i></a>
+    </div>
+  </div>
+    <div v-if="globalSettings.showSidebar" class="ffun-side-panel">
+      <div class="ffun-page-header pr-0 mr-0 flex min-w-full">
+        <div class="ffun-page-header-title grow">
           <slot name="main-header"></slot>
+        </div>
+
+        <div>
+          <a
+            href="#"
+            class="ffun-page-header-link text-2xl align-middle flex-none"
+            title="Collapse sidebar"
+            @click.prevent="globalSettings.showSidebar = false"
+            ><i class="ti ti-layout-sidebar-left-collapse"></i></a>
         </div>
       </div>
 
