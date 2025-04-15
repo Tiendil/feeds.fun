@@ -1,10 +1,14 @@
 <template>
   <div class="ffun-side-panel-layout">
-    <div class="ffun-side-panel">
-      <div class="ffun-page-header">
-        <div class="ffun-page-header-title">
+    <div
+      v-if="globalSettings.showSidebar"
+      class="ffun-side-panel">
+      <div class="ffun-page-header pr-0 mr-0 flex min-w-full">
+        <div class="ffun-page-header-title grow">
           <slot name="main-header"></slot>
         </div>
+
+        <side-panel-collapse-button />
       </div>
 
       <hr />
@@ -49,6 +53,8 @@
     <div class="ffun-body-panel">
       <div class="ffun-page-header">
         <div class="ffun-page-header-left-block">
+          <side-panel-collapse-button v-if="!globalSettings.showSidebar" />
+
           <a
             v-if="homeButton"
             :href="router.resolve({name: 'main', params: {}}).href"
@@ -92,7 +98,7 @@
         </div>
       </div>
 
-      <hr class="my-2 border-slate-400" />
+      <hr class="mx-4 my-2 border-slate-400" />
 
       <main class="mb-4 px-4 min-h-screen">
         <slot></slot>

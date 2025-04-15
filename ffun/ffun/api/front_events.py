@@ -3,7 +3,7 @@ from typing import Literal
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import EntryId
 
-EventsViewName = Literal["news", "rules", "public_collections"]
+EventsViewName = Literal["news", "rules", "public_collections", "settings", "collections", "discovery", "feeds"]
 
 
 class NewsLinkOpened(BaseEntity):
@@ -33,4 +33,11 @@ class TagFilterStateChanged(BaseEntity):
     source: Literal["tags_filter", "entry_record", "rule_record"]
 
 
-Event = NewsLinkOpened | NewsBodyOpened | SocialLinkClicked | TagFilterStateChanged
+class SidebarStateChanged(BaseEntity):
+    name: Literal["sidebar_state_changed"]
+    view: EventsViewName
+    sub_event: Literal["show", "hide"]
+    source: Literal["top_sidebar_button"]
+
+
+Event = NewsLinkOpened | NewsBodyOpened | SocialLinkClicked | TagFilterStateChanged | SidebarStateChanged

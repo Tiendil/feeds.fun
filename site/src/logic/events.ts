@@ -15,6 +15,9 @@ export type EventsViewName =
   | "collections";
 export type TagChangeSource = "tags_filter" | "entry_record" | "rule_record";
 
+export type SidebarVisibilityChangeEvent = "hide" | "show";
+export type SidebarVisibilityChangeSource = "top_sidebar_button";
+
 export async function newsLinkOpened({entryId, view}: {entryId: t.EntryId; view: EventsViewName}) {
   await api.trackEvent({
     name: "news_link_opened",
@@ -36,6 +39,23 @@ export async function socialLinkClicked({linkType, view}: {linkType: string; vie
     name: "social_link_clicked",
     view: view,
     link_type: linkType
+  });
+}
+
+export async function sidebarStateChanged({
+  subEvent,
+  view,
+  source
+}: {
+  subEvent: SidebarVisibilityChangeEvent;
+  view: EventsViewName;
+  source: SidebarVisibilityChangeSource;
+}) {
+  await api.trackEvent({
+    name: "sidebar_state_changed",
+    view: view,
+    sub_event: subEvent,
+    source: source
   });
 }
 

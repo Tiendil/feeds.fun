@@ -56,13 +56,18 @@
   provide("tagsStates", tagsStates);
   provide("eventsViewName", "rules");
 
+  const globalSettings = useGlobalSettingsStore();
+
   tagsFilterState.setSyncingTagsWithRoute({
     tagsStates: tagsStates.value as unknown as tagsFilterState.Storage,
     route,
     router
   });
 
-  const globalSettings = useGlobalSettingsStore();
+  tagsFilterState.setSyncingTagsSidebarPoint({
+    tagsStates: tagsStates.value as unknown as tagsFilterState.Storage,
+    globalSettings
+  });
 
   globalSettings.mainPanelMode = e.MainPanelMode.Rules;
 
