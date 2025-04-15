@@ -3,7 +3,7 @@ from typing import Literal
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import EntryId
 
-EventsViewName = Literal["news", "rules", "public_collections"]
+EventsViewName = Literal["news", "rules", "public_collections", "settings", "collections", "discovery", "feeds"]
 
 
 class NewsLinkOpened(BaseEntity):
