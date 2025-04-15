@@ -156,7 +156,7 @@ Your task is to analyze the given text by following these steps:
   allowed_for_users = false
 
   [tag_processors.llm_config]
-    model = "gemini-1.5-flash-001"
+    model = "gemini-2.0-flash-001"
     max_return_tokens = 8192
     text_parts_intersection = 200
     temperature = 0
