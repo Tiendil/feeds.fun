@@ -46,7 +46,7 @@
   import * as api from "@/logic/api";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
-import * as tagsFilterState from "@/logic/tagsFilterState";
+  import * as tagsFilterState from "@/logic/tagsFilterState";
 
   const route = useRoute();
   const router = useRouter();
@@ -54,7 +54,7 @@ import * as tagsFilterState from "@/logic/tagsFilterState";
   const tagsStates = ref<tagsFilterState.Storage>(new tagsFilterState.Storage());
 
   provide("tagsStates", tagsStates);
-provide("eventsViewName", "rules");
+  provide("eventsViewName", "rules");
 
   const globalSettings = useGlobalSettingsStore();
 
@@ -66,7 +66,7 @@ provide("eventsViewName", "rules");
 
   tagsFilterState.setSyncingTagsSidebarPoint({
     tagsStates: tagsStates.value as unknown as tagsFilterState.Storage,
-    globalSettings,
+    globalSettings
   });
 
   globalSettings.mainPanelMode = e.MainPanelMode.Rules;

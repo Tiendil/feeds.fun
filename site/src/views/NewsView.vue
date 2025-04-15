@@ -104,7 +104,7 @@
 
   tagsFilterState.setSyncingTagsSidebarPoint({
     tagsStates: tagsStates.value as unknown as tagsFilterState.Storage,
-    globalSettings,
+    globalSettings
   });
 
   globalSettings.mainPanelMode = e.MainPanelMode.Entries;

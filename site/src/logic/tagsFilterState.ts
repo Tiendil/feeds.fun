@@ -162,11 +162,13 @@ export function setSyncingTagsWithRoute({tagsStates, route, router}: {tagsStates
   });
 }
 
-
 // must be called synchoronously from the view
 export function setSyncingTagsSidebarPoint({tagsStates, globalSettings}: {tagsStates: Storage; globalSettings: any}) {
-  watch(tagsStates, () => {
-    globalSettings.showSidebarPoint = tagsStates.hasSelectedTags;
-  },
-  {immediate: true});
+  watch(
+    tagsStates,
+    () => {
+      globalSettings.showSidebarPoint = tagsStates.hasSelectedTags;
+    },
+    {immediate: true}
+  );
 }

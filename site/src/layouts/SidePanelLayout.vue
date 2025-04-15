@@ -1,14 +1,14 @@
 <template>
-<div class="ffun-side-panel-layout">
-
-    <div v-if="globalSettings.showSidebar" class="ffun-side-panel">
+  <div class="ffun-side-panel-layout">
+    <div
+      v-if="globalSettings.showSidebar"
+      class="ffun-side-panel">
       <div class="ffun-page-header pr-0 mr-0 flex min-w-full">
         <div class="ffun-page-header-title grow">
           <slot name="main-header"></slot>
         </div>
 
-        <side-panel-collapse-button/>
-
+        <side-panel-collapse-button />
       </div>
 
       <hr />
@@ -45,7 +45,7 @@
         >Refresh</a
       >
 
-      <hr v-if="hasSideFooter"/>
+      <hr v-if="hasSideFooter" />
 
       <slot name="side-footer"></slot>
     </div>
@@ -53,8 +53,7 @@
     <div class="ffun-body-panel">
       <div class="ffun-page-header">
         <div class="ffun-page-header-left-block">
-
-          <side-panel-collapse-button v-if="!globalSettings.showSidebar"/>
+          <side-panel-collapse-button v-if="!globalSettings.showSidebar" />
 
           <a
             v-if="homeButton"

@@ -42,14 +42,20 @@ export async function socialLinkClicked({linkType, view}: {linkType: string; vie
   });
 }
 
-
-export async function sidebarStateChanged({subEvent, view, source}: {subEvent: SidebarVisibilityChangeEvent, view: EventsViewName, source: SidebarVisibilityChangeSource}) {
+export async function sidebarStateChanged({
+  subEvent,
+  view,
+  source
+}: {
+  subEvent: SidebarVisibilityChangeEvent;
+  view: EventsViewName;
+  source: SidebarVisibilityChangeSource;
+}) {
   await api.trackEvent({
     name: "sidebar_state_changed",
     view: view,
     sub_event: subEvent,
     source: source
-
   });
 }
 
