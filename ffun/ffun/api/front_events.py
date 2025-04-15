@@ -33,4 +33,11 @@ class TagFilterStateChanged(BaseEntity):
     source: Literal["tags_filter", "entry_record", "rule_record"]
 
 
-Event = NewsLinkOpened | NewsBodyOpened | SocialLinkClicked | TagFilterStateChanged
+class SidebarStateChanged(BaseEntity):
+    name: Literal["sidebar_state_changed"]
+    view: EventsViewName
+    sub_event: Literal["show", "hide"]
+    source: Literal["top_sidebar_button"]
+
+
+Event = NewsLinkOpened | NewsBodyOpened | SocialLinkClicked | TagFilterStateChanged | SidebarStateChanged
