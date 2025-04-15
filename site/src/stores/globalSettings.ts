@@ -13,6 +13,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   const mainPanelMode = ref(e.MainPanelMode.Entries);
   const dataVersion = ref(0);
   const showSidebar = ref(true);
+  const showSidebarPoint = ref(false);
 
   // Entries
   const lastEntriesPeriod = ref(e.LastEntriesPeriod.Day3);
@@ -72,6 +73,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     feedsOrder,
     failedFeedsFirst,
     rulesOrder,
-    showSidebar
+    showSidebar,
+    showSidebarPoint
   };
 });
