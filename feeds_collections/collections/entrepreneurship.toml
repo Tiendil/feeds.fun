@@ -99,3 +99,8 @@ show_on_main = true
   url = "https://www.reddit.com/r/ProductManagement/.rss"
   title = "r/ProductManagement"
   description = "Subreddit about Product Management"
+
+[[feeds]]
+  url = "https://www.reddit.com/r/SomebodyMakeThis/.rss"
+  title = "r/SomebodyMakeThis"
+  description = "The home for ideas by people who lack time, money, or skills. "
