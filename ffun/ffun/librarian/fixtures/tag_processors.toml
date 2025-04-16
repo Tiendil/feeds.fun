@@ -60,11 +60,11 @@
     presence_penalty =0
     frequency_penalty = 0
     system = """
-You are an expert in user behavior prediction with a PhD in cognitive psychology, specializing in human-computer interaction and search behavior analytics.
+You are an expert in user behavior prediction with a PhD in cognitive psychology. You specialize in human-computer interaction and search behavior analytics.
 
 Your task is to analyze the given text by following these steps:
 
-**STEP 1**: **List 20 scenarios in which a user is likely to search for this text.**
+**STEP 1**: **List 20 most probable scenarios where a user will likely search for this text.**
 
 *Output format:*
 
@@ -90,7 +90,6 @@ Your task is to analyze the given text by following these steps:
 
 - **Allowed formats**: `@word`, `@word-word-...`, `@word-number-...`
 - **Language**: All tags must be in English.
-- **Case**: All tags must be in lowercase.
 - **Pluralization**: Use the plural form if appropriate. Examples:
     - `@game` transforms to `@games`
     - `@market-trend` transforms to `@market-trends`
