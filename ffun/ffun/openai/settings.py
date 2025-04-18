@@ -10,7 +10,7 @@ _root = pathlib.Path(__file__).parent
 class Settings(BaseSettings):
 
     api_entry_point: str | None = None
-    api_timeout: float = 20.0
+    api_timeout: float = 60.0
 
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_OPENAI_")
 

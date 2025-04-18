@@ -43,6 +43,12 @@ class OpenAIChatResponse(ChatResponse):
 
 @functools.cache
 def _get_encoding(model: str) -> tiktoken.Encoding:
+    # TODO: rollback after tiktoken add support for new models
+    #       https://github.com/openai/tiktoken/issues/395
+    #       https://github.com/openai/tiktoken/pull/396
+    if "gpt-4.1" in model:
+        return tiktoken.encoding_for_model("gpt-4o")
+
     return tiktoken.encoding_for_model(model)
 
 

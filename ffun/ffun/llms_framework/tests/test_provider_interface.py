@@ -67,13 +67,13 @@ class TestBaseProviderInterfaceClass:
 
         mocker.patch.object(fake_llm_provider, "provider", LLMProvider.openai)
 
-        config_3 = config_1.replace(provider=LLMProvider.openai, model="chatgpt-4o-latest")
+        config_3 = config_1.replace(provider=LLMProvider.openai, model="gpt-4o")
 
         assert fake_llm_provider.get_model(config_3) == ModelInfo(
             provider=LLMProvider.openai,
-            name="chatgpt-4o-latest",
+            name="gpt-4o",
             max_context_size=LLMTokens(128000),
-            max_return_tokens=LLMTokens(16384),
+            max_return_tokens=LLMTokens(4096),
             max_tokens_per_entry=LLMTokens(300000),
             input_1m_tokens_cost=USDCost(Decimal("5")),
             output_1m_tokens_cost=USDCost(Decimal("15")),
@@ -82,7 +82,7 @@ class TestBaseProviderInterfaceClass:
     def test_wrong_provider(self, fake_llm_provider: ProviderTest, mocker: MockerFixture) -> None:
 
         config = LLMConfiguration(
-            model="chatgpt-4o-latest",
+            model="gpt-4o",
             system="system prompt",
             max_return_tokens=LLMTokens(143),
             text_parts_intersection=100,

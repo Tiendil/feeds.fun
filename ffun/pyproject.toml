@@ -49,8 +49,8 @@ httpx = "0.26.*"
 brotlicffi = "1.1.*"
 # zstandard = "0.22.*"
 
-openai = "1.30.*"
-tiktoken = "0.7.*"
+openai = "1.74.*"
+tiktoken = "0.9.*"
 
 bidict = "0.23.*"
 
