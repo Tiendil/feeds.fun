@@ -4,17 +4,16 @@
 
 <script setup lang="ts">
   import {onMounted} from "vue";
-import { watchEffect } from "vue";
-import {useRoute, useRouter} from "vue-router";
-import * as marketing from "@/logic/marketing";
+  import {watchEffect} from "vue";
+  import {useRoute, useRouter} from "vue-router";
+  import * as marketing from "@/logic/marketing";
 
-let route = useRoute();
-let router = useRouter();
+  let route = useRoute();
+  let router = useRouter();
 
-watchEffect(() => {
-  marketing.processUTM(route, router);
-});
-
+  watchEffect(() => {
+    marketing.processUTM(route, router);
+  });
 </script>
 
 <style scoped>

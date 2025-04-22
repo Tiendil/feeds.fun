@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 
 from ffun.api import http_handlers as api_http_handlers
-from ffun.application import errors
+from ffun.application import errors, marketing
 from ffun.application import utils as app_utils
 from ffun.application.settings import settings
 from ffun.auth import supertokens as st
@@ -17,7 +17,6 @@ from ffun.core import logging, middlewares, postgresql, sentry
 from ffun.domain.urls import initialize_tld_cache
 from ffun.feeds_collections.collections import collections
 from ffun.loader import domain as l_domain
-from ffun.application import marketing
 
 logger = logging.get_module_logger()
 
