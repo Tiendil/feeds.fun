@@ -15,7 +15,9 @@ logger = logging.get_module_logger()
 #    it sends a business event (in dependency) and removes cookies (in middleware)
 
 
-_utm_keys = {"ffun_utm_source": "utm_source", "ffun_utm_medium": "utm_medium", "ffun_utm_campaign": "utm_campaign"}
+_utm_keys = {"ffun_utm_source": "utm_source",
+             "ffun_utm_medium": "utm_medium",
+             "ffun_utm_campaign": "utm_campaign"}
 
 
 # TODO: test when supertokens is turned on
