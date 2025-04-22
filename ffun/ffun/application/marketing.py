@@ -18,6 +18,7 @@ logger = logging.get_module_logger()
 _utm_keys = {"ffun_utm_source": "utm_source", "ffun_utm_medium": "utm_medium", "ffun_utm_campaign": "utm_campaign"}
 
 
+# TODO: test when supertokens is turned on
 # TODO: test
 async def _process_utm(request: fastapi.Request, user: OptionalUser) -> None:
 
@@ -35,13 +36,20 @@ async def _process_utm(request: fastapi.Request, user: OptionalUser) -> None:
 
     logger.business_event("user_utm", user.id, **utm)
 
+    request.state.utm_cookies_processed = True
+
 
 process_utm = fastapi.Depends(_process_utm)
 
 
 # TODO: test
+# TODO: remove utm cookies only if they are recorded
 async def clean_utm_cookies_middleware(request: fastapi.Request, call_next: Any) -> fastapi.Response:
     response = await call_next(request)
+
+    # only remove utm cookies if they were processed
+    if not getattr(request.state, "utm_cookies_processed", False):
+        return response
 
     for cookie_name in _utm_keys.keys():
         if cookie_name in request.cookies:
