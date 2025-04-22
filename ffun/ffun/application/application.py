@@ -17,6 +17,7 @@ from ffun.core import logging, middlewares, postgresql, sentry
 from ffun.domain.urls import initialize_tld_cache
 from ffun.feeds_collections.collections import collections
 from ffun.loader import domain as l_domain
+from ffun.application import marketing
 
 logger = logging.get_module_logger()
 
@@ -147,6 +148,7 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
         redoc_url=None,
         openapi_url=None,
         default_response_class=ORJSONResponse,
+        dependencies=[marketing.process_utm],
     )
 
     middlewares.initialize_error_processors(app)
@@ -167,6 +169,8 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
     app.middleware("http")(middlewares.request_measure_middleware)
 
     app.middleware("http")(middlewares.request_id_middleware)
+
+    app.middleware("http")(marketing.clean_utm_cookies_middleware)
 
     logger.info("app_created")
 
