@@ -2,6 +2,7 @@ import * as _ from "lodash";
 import axios, {AxiosError} from "axios";
 import * as t from "@/logic/types";
 import type * as e from "@/logic/enums";
+import * as settings from "@/logic/settings";
 
 const ENTRY_POINT = "/api";
 
@@ -331,5 +332,9 @@ export async function getInfo() {
 }
 
 export async function trackEvent(data: {[key: string]: string | number | null}) {
+  if (!settings.trackEvents) {
+    return;
+  }
+
   await post({url: API_TRACK_EVENT, data: {event: data}});
 }

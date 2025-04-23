@@ -22,6 +22,10 @@ export const plausibleEnabled = import.meta.env.VITE_FFUN_PLAUSIBLE_ENABLED == "
 export const plausibleDomain = import.meta.env.VITE_FFUN_PLAUSIBLE_DOMAIN || "localhost";
 export const plausibleScript = import.meta.env.VITE_FFUN_PLAUSIBLE_SCRIPT || "";
 
+export const trackEvents = import.meta.env.VITE_FFUN_TRACK_EVENTS == "true" || false;
+
+export const utmLifetime = import.meta.env.VITE_FFUN_UTM_LIFETIME || 7; // days
+
 console.log("settings.appName", appName);
 console.log("settings.appDomain", appDomain);
 console.log("settings.appPort", appPort);
@@ -40,3 +44,7 @@ console.log("settings.redditSubreddit", redditSubreddit);
 console.log("settings.plausibleEnabled", plausibleEnabled);
 console.log("settings.plausibleDomain", plausibleDomain);
 console.log("settings.plausibleScript", plausibleScript);
+
+console.log("settings.trackEvents", trackEvents);
+
+console.log("settings.utmLifetime", utmLifetime);

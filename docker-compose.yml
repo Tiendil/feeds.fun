@@ -179,6 +179,8 @@ services:
       VITE_FFUN_PLAUSIBLE_DOMAIN: "${FFUN_PLAUSIBLE_DOMAIN:-localhost}"
       VITE_FFUN_PLAUSIBLE_SCRIPT: "${FFUN_PLAUSIBLE_SCRIPT:-not-specified}"
 
+      VITE_FFUN_TRACK_EVENTS: "true"
+
     ports:
       - "5173:5173"
 

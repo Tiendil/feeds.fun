@@ -192,6 +192,8 @@ class TestRequestMeasureMiddleware:
         with capture_logs() as logs:
             await client.post("/api/test/ok")
 
+        logs = [record for record in logs if record["event"] == "request_time"]
+
         assert logs == [
             {
                 "module": "ffun.core.middlewares",
@@ -208,6 +210,8 @@ class TestRequestMeasureMiddleware:
     async def test_other_status_code(self, client: AsyncClient) -> None:
         with capture_logs() as logs:
             await client.get("/api/test/ok")
+
+        logs = [record for record in logs if record["event"] == "request_time"]
 
         assert logs == [
             {
@@ -226,6 +230,8 @@ class TestRequestMeasureMiddleware:
         with capture_logs() as logs:
             await client.post("/api/bla-bla-bla")
 
+        logs = [record for record in logs if record["event"] == "request_time"]
+
         assert logs == [
             {
                 "module": "ffun.core.middlewares",
@@ -243,12 +249,14 @@ class TestRequestMeasureMiddleware:
         with capture_logs() as logs:
             await client.post("/api/test/internal-error")
 
-        assert logs[1] == {
+        logs = [record for record in logs if record["event"] == "request_time"]
+
+        assert logs[0] == {
             "module": "ffun.core.middlewares",
             "m_kind": "measure",
-            "m_value": logs[1]["m_value"],
+            "m_value": logs[0]["m_value"],
             "event": "request_time",
-            "request_uid": logs[1]["request_uid"],
+            "request_uid": logs[0]["request_uid"],
             "m_labels": {
                 "http_path": "/api/test/internal-error",
                 "result": "internal_error",
@@ -263,12 +271,14 @@ class TestRequestMeasureMiddleware:
         with capture_logs() as logs:
             await client.post("/api/test/expected-error")
 
-        assert logs[1] == {
+        logs = [record for record in logs if record["event"] == "request_time"]
+
+        assert logs[0] == {
             "module": "ffun.core.middlewares",
             "m_kind": "measure",
-            "m_value": logs[1]["m_value"],
+            "m_value": logs[0]["m_value"],
             "event": "request_time",
-            "request_uid": logs[1]["request_uid"],
+            "request_uid": logs[0]["request_uid"],
             "m_labels": {
                 "http_path": "/api/test/expected-error",
                 "result": "api_error",
