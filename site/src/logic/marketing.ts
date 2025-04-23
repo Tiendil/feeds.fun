@@ -1,8 +1,8 @@
 import {useRoute, useRouter} from "vue-router";
-import type {Route, Router} from "vue-router";
+import type {RouteLocationNormalizedLoaded, Router} from "vue-router";
 import * as settings from "@/logic/settings";
 
-export function processUTM(route: Route, router: Router, utmStorage: any) {
+export function processUTM(route: RouteLocationNormalizedLoaded, router: Router, utmStorage: any) {
   const utmParams = ["utm_source", "utm_medium", "utm_campaign"];
 
   // extract UTM parameters from the URL
@@ -10,8 +10,21 @@ export function processUTM(route: Route, router: Router, utmStorage: any) {
     (acc, param) => {
       const value = route.query[param];
 
+      if (!value) {
+        return acc;
+      }
+
+      if (Array.isArray(value)) {
+        if (value[0]) {
+          acc[param] = value[0];
+        }
+
+        return acc;
+      }
+
       if (value) {
-        acc[param] = Array.isArray(value) ? value[0] : value;
+        acc[param] = value;
+        return acc;
       }
 
       return acc;
