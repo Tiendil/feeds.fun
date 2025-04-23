@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 
 from ffun.api import http_handlers as api_http_handlers
-from ffun.application import errors, marketing
+from ffun.application import errors
 from ffun.application import utils as app_utils
 from ffun.application.settings import settings
 from ffun.auth import supertokens as st
@@ -147,7 +147,7 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
         redoc_url=None,
         openapi_url=None,
         default_response_class=ORJSONResponse,
-        dependencies=[marketing.process_utm],
+        dependencies=[],
     )
 
     middlewares.initialize_error_processors(app)
@@ -168,8 +168,6 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
     app.middleware("http")(middlewares.request_measure_middleware)
 
     app.middleware("http")(middlewares.request_id_middleware)
-
-    app.middleware("http")(marketing.clean_utm_cookies_middleware)
 
     logger.info("app_created")
 

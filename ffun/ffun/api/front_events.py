@@ -1,4 +1,6 @@
-from typing import Literal
+from typing import Literal, Annotated
+
+import pydantic
 
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import EntryId
@@ -40,4 +42,12 @@ class SidebarStateChanged(BaseEntity):
     source: Literal["top_sidebar_button"]
 
 
-Event = NewsLinkOpened | NewsBodyOpened | SocialLinkClicked | TagFilterStateChanged | SidebarStateChanged
+class UserUtm(BaseEntity):
+    name: Literal["user_utm"]
+    utm_source: str | None = None
+    utm_medium: str | None = None
+    utm_campaign: str | None = None
+
+
+Event = Annotated[NewsLinkOpened | NewsBodyOpened | SocialLinkClicked | TagFilterStateChanged | SidebarStateChanged | UserUtm,
+                  pydantic.Field(discriminator="name")]

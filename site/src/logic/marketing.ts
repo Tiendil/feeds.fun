@@ -1,9 +1,9 @@
 import {useRoute, useRouter} from "vue-router";
 import type {Route, Router} from "vue-router";
-import Cookies from "js-cookie";
 import * as settings from "@/logic/settings";
 
-export function processUTM(route: Route, router: Router) {
+
+export function processUTM(route: Route, router: Router, utmStorage: any) {
   const utmParams = ["utm_source", "utm_medium", "utm_campaign"];
 
   // extract UTM parameters from the URL
@@ -33,8 +33,11 @@ export function processUTM(route: Route, router: Router) {
     router.replace({query: newQuery});
   }
 
-  // set UTM as cookies
-  for (const [key, value] of Object.entries(utmData)) {
-    Cookies.set(`ffun_${key}`, value, {expires: settings.utmLifetime, secure: true, sameSite: "Strict"});
+  // store UTM in local storage
+
+  if (Object.keys(utmData).length == 0) {
+    return;
   }
+
+  utmStorage.value = utmData;
 }
