@@ -33,7 +33,6 @@ export function processUTM(route: Route, router: Router, utmStorage: any) {
   }
 
   // store UTM in local storage
-
   if (Object.keys(utmData).length == 0) {
     return;
   }
