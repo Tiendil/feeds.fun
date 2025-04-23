@@ -2,7 +2,6 @@ import {useRoute, useRouter} from "vue-router";
 import type {Route, Router} from "vue-router";
 import * as settings from "@/logic/settings";
 
-
 export function processUTM(route: Route, router: Router, utmStorage: any) {
   const utmParams = ["utm_source", "utm_medium", "utm_campaign"];
 

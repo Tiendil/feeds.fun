@@ -84,8 +84,15 @@ export async function tagStateChanged({
   });
 }
 
-
-export async function trackUtm({utm_source, utm_medium, utm_campaign}: {utm_source: string; utm_medium: string; utm_campaign: string}) {
+export async function trackUtm({
+  utm_source,
+  utm_medium,
+  utm_campaign
+}: {
+  utm_source: string;
+  utm_medium: string;
+  utm_campaign: string;
+}) {
   await api.trackEvent({
     name: "user_utm",
     utm_source: utm_source,

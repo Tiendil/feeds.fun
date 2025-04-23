@@ -332,7 +332,6 @@ export async function getInfo() {
 }
 
 export async function trackEvent(data: {[key: string]: string | number | null}) {
-
   if (!settings.trackEvents) {
     return;
   }

@@ -1,4 +1,4 @@
-from typing import Literal, Annotated
+from typing import Annotated, Literal
 
 import pydantic
 
@@ -49,5 +49,7 @@ class UserUtm(BaseEntity):
     utm_campaign: str | None = None
 
 
-Event = Annotated[NewsLinkOpened | NewsBodyOpened | SocialLinkClicked | TagFilterStateChanged | SidebarStateChanged | UserUtm,
-                  pydantic.Field(discriminator="name")]
+Event = Annotated[
+    NewsLinkOpened | NewsBodyOpened | SocialLinkClicked | TagFilterStateChanged | SidebarStateChanged | UserUtm,
+    pydantic.Field(discriminator="name"),
+]
