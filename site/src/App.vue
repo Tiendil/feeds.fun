@@ -6,14 +6,14 @@
   import {onMounted} from "vue";
   import {watchEffect} from "vue";
 import {useRoute, useRouter} from "vue-router";
-import { useStorage } from '@vueuse/core'
+import { StorageSerializers, useStorage } from '@vueuse/core'
   import {useGlobalState} from "@/stores/globalState";
 import * as marketing from "@/logic/marketing";
   import * as events from "@/logic/events";
 
   const route = useRoute();
   const router = useRouter();
-const utmStorage = useStorage('ffun_utm', null);
+const utmStorage = useStorage('ffun_utm', null, undefined, { serializer: StorageSerializers.object });
   const globalState = useGlobalState();
 
   watchEffect(() => {
