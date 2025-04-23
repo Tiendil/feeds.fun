@@ -147,7 +147,6 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
         redoc_url=None,
         openapi_url=None,
         default_response_class=ORJSONResponse,
-        dependencies=[],
     )
 
     middlewares.initialize_error_processors(app)
