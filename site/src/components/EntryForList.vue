@@ -8,14 +8,18 @@
         href="#"
         @click.prevent="markUnread()"
         title="Mark as unread"
-        class="text-green-700 ti ti-chevrons-left" />
+        class="text-green-700 inline-flex">
+        <icon icon="chevrons-left"/>
+      </a>
 
       <a
         v-else
         href="#"
         @click.prevent="markRead()"
         title="Mark as read"
-        class="text-orange-700 ti ti-chevrons-right" />
+        class="text-orange-700 inline-flex">
+        <icon icon="chevrons-right" />
+      </a>
     </div>
 
     <div
