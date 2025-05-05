@@ -3,12 +3,13 @@
     <div
       v-if="rule !== null"
       class="flex mb-1">
-      <div class="ffun-body-list-icon-column">
+      <div class="ffun-body-list-icon-column flex items-center">
         <a
           href="#"
-          class="ti ti-x text-red-500 hover:text-red-600"
+          class="text-red-500 hover:text-red-600 flex items-center"
           title="Remove this rule"
           @click.prevent="deleteRule()">
+          <icon icon="x"/>
         </a>
       </div>
 
