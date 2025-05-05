@@ -24,8 +24,9 @@
     class="ffun-page-header-link text-xl align-middle"
     title="Reddit"
     @click="events.socialLinkClicked({linkType: 'reddit', view: eventsView})"
-    ><i class="ti ti-brand-reddit"></i
-  ></a>
+  >
+  <icon icon="reddit" />
+  </a>
 
   <a
     v-if="settings.discordInvite"
@@ -34,8 +35,9 @@
     class="ffun-page-header-link text-xl align-middle"
     title="Discord"
     @click="events.socialLinkClicked({linkType: 'discord', view: eventsView})"
-    ><i class="ti ti-brand-discord"></i
-  ></a>
+    >
+  <icon icon="discord" />
+</a>
 
   <a
     v-if="settings.githubRepo"
@@ -44,8 +46,8 @@
     class="ffun-page-header-link text-xl align-middle"
     title="GitHub"
     @click="events.socialLinkClicked({linkType: 'github', view: eventsView})">
-    <i class="ti ti-brand-github"></i
-  ></a>
+  <icon icon="github" />
+</a>
 </template>
 
 <script lang="ts" setup>

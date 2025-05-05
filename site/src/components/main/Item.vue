@@ -22,6 +22,5 @@
   import * as events from "@/logic/events";
 
   const properties = defineProps<{
-    icon: string;
   }>();
 </script>
