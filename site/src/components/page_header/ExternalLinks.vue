@@ -21,7 +21,7 @@
     v-if="settings.redditSubreddit"
     :href="settings.redditSubreddit"
     target="_blank"
-    class="ffun-page-header-link text-xl align-middle"
+    class="ffun-page-header-link py-2 flex items-center justify-center"
     title="Reddit"
     @click="events.socialLinkClicked({linkType: 'reddit', view: eventsView})"
   >
@@ -32,7 +32,7 @@
     v-if="settings.discordInvite"
     :href="settings.discordInvite"
     target="_blank"
-    class="ffun-page-header-link text-xl align-middle"
+    class="ffun-page-header-link py-2 flex items-center justify-center"
     title="Discord"
     @click="events.socialLinkClicked({linkType: 'discord', view: eventsView})"
     >
@@ -43,7 +43,7 @@
     v-if="settings.githubRepo"
     :href="settings.githubRepo"
     target="_blank"
-    class="ffun-page-header-link text-xl align-middle"
+    class="ffun-page-header-link py-2 flex items-center justify-center"
     title="GitHub"
     @click="events.socialLinkClicked({linkType: 'github', view: eventsView})">
   <icon icon="github" />

@@ -8,7 +8,7 @@
 
 <script lang="ts" setup>
   import {computed} from "vue";
-import {IconArrowNarrowRight, IconArrowRight, IconPlus, IconDots, IconBrandReddit, IconBrandDiscord, IconBrandGithub, IconExternalLink, IconChevronsLeft, IconChevronsRight} from "@tabler/icons-vue";
+import {IconArrowNarrowRight, IconArrowRight, IconPlus, IconDots, IconBrandReddit, IconBrandDiscord, IconBrandGithub, IconExternalLink, IconChevronsLeft, IconChevronsRight, IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand} from "@tabler/icons-vue";
 
 const properties = defineProps<{icon: string,
                                 size?: string}>();
@@ -24,7 +24,10 @@ const iconMap = {
   'external-link': IconExternalLink,
   'chevrons-right': IconChevronsRight,
   'chevrons-left': IconChevronsLeft,
+  'sidebar-left-collapse': IconLayoutSidebarLeftCollapse,
+  'sidebar-left-expand': IconLayoutSidebarLeftExpand,
 };
+
 
 const sizeMap = {
   small: 16,

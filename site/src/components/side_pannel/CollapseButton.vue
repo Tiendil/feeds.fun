@@ -1,15 +1,15 @@
 <template>
   <a
     href="#"
-    class="ffun-page-header-link text-2xl align-middle flex-none pb-0 relative"
+    class="ffun-page-header-link py-2 flex items-center justify-center"
     :title="title"
     @click.prevent="onClick">
-    <i
+    <icon
       v-if="globalSettings.showSidebar"
-      class="ti ti-layout-sidebar-left-collapse"></i>
-    <i
+      icon="sidebar-left-collapse" size="large"/>
+    <icon
       v-else
-      class="ti ti-layout-sidebar-left-expand"></i>
+      icon="sidebar-left-expand" size="large"/>
 
     <span
       v-if="showPoint"
