@@ -4,7 +4,9 @@
     target="_blank"
     rel="noopener noreferrer">
     {{ renderedText }}
-    <icon icon="external-link" size="small"/>
+    <icon
+      icon="external-link"
+      size="small" />
   </a>
 </template>
 

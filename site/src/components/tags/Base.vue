@@ -8,7 +8,9 @@
       target="_blank"
       @click.stop=""
       rel="noopener noreferrer">
-      <icon icon="external-link" size="small"/>
+      <icon
+        icon="external-link"
+        size="small" />
     </a>
   </span>
 </template>

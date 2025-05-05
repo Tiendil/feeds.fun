@@ -7,8 +7,7 @@
         @click.prevent="feedsStore.unsubscribe(feed.id)"
         title="Unsubscribe from this feed"
         class="text-red-500 hover:text-red-600 flex items-center justify-center">
-        <icon icon="x"/>
-
+        <icon icon="x" />
       </a>
 
       <a
@@ -17,11 +16,13 @@
         @click.prevent="feedsStore.subscribe(feed.url)"
         title="Subscribe to this feed"
         class="text-green-600 hover:text-green-700 flex items-center justify-center">
-        <icon icon="plus"/>
+        <icon icon="plus" />
       </a>
     </div>
 
-    <body-list-favicon-column :url="feed.url" class="flex items-center justify-center" />
+    <body-list-favicon-column
+      :url="feed.url"
+      class="flex items-center justify-center" />
 
     <div class="flex-grow">
       <external-url

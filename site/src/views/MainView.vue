@@ -85,7 +85,10 @@
                 :link="null"
                 css-modifier="positive" />
 
-              <icon icon="arrow-right" size="small" class="mx-0.5"/>
+              <icon
+                icon="arrow-right"
+                size="small"
+                class="mx-0.5" />
 
               <span class="inline-block align-middle cursor-default text-purple-700 text-lg md:text-xl">+5</span>
             </div>
@@ -95,9 +98,12 @@
                 uid="news-dot-fake"
                 name="news.fake"
                 link="http://example.com"
-                css-modifier="negative"/>
+                css-modifier="negative" />
 
-              <icon icon="arrow-right" size="small" class="mx-0.5"/>
+              <icon
+                icon="arrow-right"
+                size="small"
+                class="mx-0.5" />
 
               <span class="inline-block align-middle cursor-default text-purple-700 text-lg md:text-xl">-55</span>
             </div>
@@ -109,7 +115,10 @@
                 :link="null"
                 css-modifier="positive" />
 
-              <icon icon="plus" size="small" class="mx-0.5"/>
+              <icon
+                icon="plus"
+                size="small"
+                class="mx-0.5" />
 
               <fake-tag
                 uid="new-york"
@@ -117,7 +126,10 @@
                 :link="null"
                 css-modifier="positive" />
 
-              <icon icon="arrow-right" size="small" class="mx-0.5"/>
+              <icon
+                icon="arrow-right"
+                size="small"
+                class="mx-0.5" />
 
               <span class="inline-block align-middle cursor-default text-purple-700 text-lg md:text-xl">+8</span>
             </div>
@@ -129,7 +141,10 @@
                 :link="null"
                 css-modifier="positive" />
 
-              <icon icon="arrow-right" size="small" class="mx-0.5"/>
+              <icon
+                icon="arrow-right"
+                size="small"
+                class="mx-0.5" />
 
               <span class="inline-block align-middle cursor-default text-purple-700 text-lg md:text-xl">+21</span>
             </div>
@@ -173,8 +188,7 @@
         <template
           v-for="collectionId in collections.collectionsOrder"
           :key="collectionId">
-          <main-item
-            v-if="collections.collections[collectionId].showOnMain">
+          <main-item v-if="collections.collections[collectionId].showOnMain">
             <template #caption>
               {{ collections.collections[collectionId].name }}
             </template>

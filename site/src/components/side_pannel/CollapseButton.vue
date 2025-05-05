@@ -6,10 +6,12 @@
     @click.prevent="onClick">
     <icon
       v-if="globalSettings.showSidebar"
-      icon="sidebar-left-collapse" size="large"/>
+      icon="sidebar-left-collapse"
+      size="large" />
     <icon
       v-else
-      icon="sidebar-left-expand" size="large"/>
+      icon="sidebar-left-expand"
+      size="large" />
 
     <span
       v-if="showPoint"

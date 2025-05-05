@@ -23,9 +23,8 @@
     target="_blank"
     class="ffun-page-header-link py-2 flex items-center justify-center"
     title="Reddit"
-    @click="events.socialLinkClicked({linkType: 'reddit', view: eventsView})"
-  >
-  <icon icon="reddit" />
+    @click="events.socialLinkClicked({linkType: 'reddit', view: eventsView})">
+    <icon icon="reddit" />
   </a>
 
   <a
@@ -34,10 +33,9 @@
     target="_blank"
     class="ffun-page-header-link py-2 flex items-center justify-center"
     title="Discord"
-    @click="events.socialLinkClicked({linkType: 'discord', view: eventsView})"
-    >
-  <icon icon="discord" />
-</a>
+    @click="events.socialLinkClicked({linkType: 'discord', view: eventsView})">
+    <icon icon="discord" />
+  </a>
 
   <a
     v-if="settings.githubRepo"
@@ -46,8 +44,8 @@
     class="ffun-page-header-link py-2 flex items-center justify-center"
     title="GitHub"
     @click="events.socialLinkClicked({linkType: 'github', view: eventsView})">
-  <icon icon="github" />
-</a>
+    <icon icon="github" />
+  </a>
 </template>
 
 <script lang="ts" setup>

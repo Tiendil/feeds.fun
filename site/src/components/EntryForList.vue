@@ -9,7 +9,7 @@
         @click.prevent="markUnread()"
         title="Mark as unread"
         class="text-green-700">
-        <icon icon="chevrons-left"/>
+        <icon icon="chevrons-left" />
       </a>
 
       <a

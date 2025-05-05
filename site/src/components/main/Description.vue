@@ -2,7 +2,7 @@
   <!-- PC -->
   <div class="hidden md:flex items-stretch rounded-xl overflow-hidden min-h-28 max-h-28 mx-2">
     <div class="w-12 bg-blue-200 flex items-center justify-center text-4xl font-medium">
-      {{step}}
+      {{ step }}
     </div>
 
     <div class="w-1/3 bg-blue-100 px-4 flex items-center text-xl font-medium">
@@ -20,7 +20,7 @@
   <div class="flex flex-col md:hidden flex items-stretch rounded-xl overflow-hidden min-h-28 max-h-28 mx-2">
     <div class="w-full flex">
       <div class="w-12 bg-blue-200 flex items-center justify-center text-lg font-medium">
-      {{step}}
+        {{ step }}
       </div>
 
       <div class="flex-grow bg-blue-100 px-4 flex justify-center text-lg font-medium">

@@ -8,7 +8,7 @@
         class="text-red-500 hover:text-red-600"
         title="Unsubscribe"
         @click.prevent="feedsStore.unsubscribe(feed.id)">
-        <icon icon="x"/>
+        <icon icon="x" />
       </a>
     </div>
 
@@ -25,12 +25,12 @@
         v-if="feed.isOk"
         title="everything is ok"
         icon="face-smile"
-        class="text-green-700"/>
+        class="text-green-700" />
       <icon
         v-else
         :title="feed.lastError || 'unknown error'"
         icon="face-sad"
-        class="text-red-700"/>
+        class="text-red-700" />
     </div>
 
     <body-list-favicon-column :url="feed.url" />

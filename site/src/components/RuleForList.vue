@@ -9,7 +9,7 @@
           class="text-red-500 hover:text-red-600 flex items-center"
           title="Remove this rule"
           @click.prevent="deleteRule()">
-          <icon icon="x"/>
+          <icon icon="x" />
         </a>
       </div>
 
