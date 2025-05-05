@@ -1,14 +1,14 @@
 <template>
   <component
     :is="componentName"
-    class="inline-block align-middle"
+    class="inline-block"
     v-bind="iconProperties"
     />
 </template>
 
 <script lang="ts" setup>
   import {computed} from "vue";
-import {IconArrowNarrowRight, IconArrowRight, IconPlus, IconDots, IconBrandReddit, IconBrandDiscord, IconBrandGithub, IconExternalLink, IconChevronsLeft, IconChevronsRight, IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand, IconX} from "@tabler/icons-vue";
+import {IconArrowNarrowRight, IconArrowRight, IconPlus, IconDots, IconBrandReddit, IconBrandDiscord, IconBrandGithub, IconExternalLink, IconChevronsLeft, IconChevronsRight, IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand, IconX, IconMoodSmile, IconMoodSad} from "@tabler/icons-vue";
 
 const properties = defineProps<{icon: string,
                                 size?: string}>();
@@ -27,6 +27,8 @@ const iconMap = {
   'sidebar-left-collapse': IconLayoutSidebarLeftCollapse,
   'sidebar-left-expand': IconLayoutSidebarLeftExpand,
   'x': IconX,
+  'face-smile': IconMoodSmile,
+  'face-sad': IconMoodSad,
 };
 
 
@@ -47,7 +49,6 @@ const componentName = computed(() => {
 const iconProperties = computed(() => {
   return {
     size: sizeMap[properties.size] || sizeMap.medium,
-    // "stroke-width": 2,
   };
 });
 

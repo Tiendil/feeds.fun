@@ -8,7 +8,7 @@
         href="#"
         @click.prevent="markUnread()"
         title="Mark as unread"
-        class="text-green-700 inline-flex">
+        class="text-green-700">
         <icon icon="chevrons-left"/>
       </a>
 
@@ -17,7 +17,7 @@
         href="#"
         @click.prevent="markRead()"
         title="Mark as read"
-        class="text-orange-700 inline-flex">
+        class="text-orange-700">
         <icon icon="chevrons-right" />
       </a>
     </div>

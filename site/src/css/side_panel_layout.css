@@ -33,6 +33,6 @@
   }
 
   .ffun-body-list-icon-column {
-    @apply flex-shrink-0 mr-2 text-center cursor-default text-2xl;
+    @apply flex-shrink-0 mr-2 cursor-default;
   }
 }
