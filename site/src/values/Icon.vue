@@ -25,8 +25,6 @@
     IconMoodSad
   } from "@tabler/icons-vue";
 
-  const properties = defineProps<{icon: string; size?: string}>();
-
   const iconMap = {
     reddit: IconBrandReddit,
     discord: IconBrandDiscord,
@@ -43,13 +41,19 @@
     x: IconX,
     "face-smile": IconMoodSmile,
     "face-sad": IconMoodSad
-  };
+  } as const;
+
+  type IconName = keyof typeof iconMap;
 
   const sizeMap = {
     small: 16,
     medium: 20,
     large: 24
-  };
+  } as const;
+
+  type IconSize = keyof typeof sizeMap;
+
+  const properties = defineProps<{icon: IconName; size?: IconSize}>();
 
   const componentName = computed(() => {
     if (properties.icon in iconMap) {
@@ -61,7 +65,7 @@
 
   const iconProperties = computed(() => {
     return {
-      size: sizeMap[properties.size] || sizeMap.medium
+      size: sizeMap[properties.size ?? "medium"]
     };
   });
 </script>
