@@ -85,7 +85,7 @@
                 :link="null"
                 css-modifier="positive" />
 
-              <icon icon="arrow-right" size="small"/>
+              <icon icon="arrow-right" size="small" class="mx-0.5"/>
 
               <span class="inline-block align-middle cursor-default text-purple-700 text-lg md:text-xl">+5</span>
             </div>
@@ -97,7 +97,7 @@
                 link="http://example.com"
                 css-modifier="negative"/>
 
-              <icon icon="arrow-right" size="small"/>
+              <icon icon="arrow-right" size="small" class="mx-0.5"/>
 
               <span class="inline-block align-middle cursor-default text-purple-700 text-lg md:text-xl">-55</span>
             </div>
@@ -109,7 +109,7 @@
                 :link="null"
                 css-modifier="positive" />
 
-              <icon icon="plus" size="small"/>
+              <icon icon="plus" size="small" class="mx-0.5"/>
 
               <fake-tag
                 uid="new-york"
@@ -117,7 +117,7 @@
                 :link="null"
                 css-modifier="positive" />
 
-              <icon icon="arrow-right" size="small"/>
+              <icon icon="arrow-right" size="small" class="mx-0.5"/>
 
               <span class="inline-block align-middle cursor-default text-purple-700 text-lg md:text-xl">+8</span>
             </div>
@@ -129,7 +129,7 @@
                 :link="null"
                 css-modifier="positive" />
 
-              <icon icon="arrow-right" size="small"/>
+              <icon icon="arrow-right" size="small" class="mx-0.5"/>
 
               <span class="inline-block align-middle cursor-default text-purple-700 text-lg md:text-xl">+21</span>
             </div>

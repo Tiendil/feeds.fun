@@ -1,15 +1,14 @@
 <template>
   <component
     :is="componentName"
-    class="inline-block align-middle m-1"
+    class="inline-block align-middle"
     v-bind="iconProperties"
     />
 </template>
 
 <script lang="ts" setup>
   import {computed} from "vue";
-import {IconArrowNarrowRight, IconArrowRight, IconPlus, IconDots, IconHome} from "@tabler/icons-vue";
-import {IconBrandReddit, IconBrandDiscord, IconBrandGithub} from "@tabler/icons-vue";
+import {IconArrowNarrowRight, IconArrowRight, IconPlus, IconDots, IconBrandReddit, IconBrandDiscord, IconBrandGithub, IconExternalLink} from "@tabler/icons-vue";
 
 const properties = defineProps<{icon: string,
                                 size?: string}>();
@@ -21,7 +20,8 @@ const iconMap = {
   'arrow-narrow-right': IconArrowNarrowRight,
   'arrow-right': IconArrowRight,
   plus: IconPlus,
-  dots: IconDots
+  dots: IconDots,
+  'external-link': IconExternalLink,
 };
 
 const sizeMap = {
