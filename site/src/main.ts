@@ -56,6 +56,7 @@ import ExternalUrl from "./values/ExternalUrl.vue";
 import ValueFeedId from "./values/FeedId.vue";
 import ValueDateTime from "./values/DateTime.vue";
 import ValueScore from "./values/Score.vue";
+import Icon from "./values/Icon.vue";
 
 import BodyListReverseTimeColumn from "./components/body_list/ReverseTimeColumn.vue";
 import BodyListFaviconColumn from "./components/body_list/FaviconColumn.vue";
@@ -128,6 +129,7 @@ app.component("ExternalUrl", ExternalUrl);
 app.component("ValueFeedId", ValueFeedId);
 app.component("ValueDateTime", ValueDateTime);
 app.component("ValueScore", ValueScore);
+app.component("Icon", Icon);
 
 app.component("BodyListReverseTimeColumn", BodyListReverseTimeColumn);
 app.component("BodyListFaviconColumn", BodyListFaviconColumn);

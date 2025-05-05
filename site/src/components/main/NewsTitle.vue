@@ -2,7 +2,7 @@
   <span class="block text-base md:text-lg">
     <span
       v-if="score"
-      class="cursor-pointer text-purple-700 inline-block w-12"
+      class="cursor-default text-purple-700 inline-block w-12"
       >{{ score }}</span
     >
 

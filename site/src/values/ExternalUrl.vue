@@ -4,7 +4,9 @@
     target="_blank"
     rel="noopener noreferrer">
     {{ renderedText }}
-    <i class="ti ti-external-link" />
+    <icon
+      icon="external-link"
+      size="small" />
   </a>
 </template>
 

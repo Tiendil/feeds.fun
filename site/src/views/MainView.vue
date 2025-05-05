@@ -28,7 +28,7 @@
     <main-header-line> Smarter way to read news </main-header-line>
 
     <main-block>
-      <main-description icon="ti-number-1">
+      <main-description step="1">
         <template #caption> Subscribe to sites </template>
 
         <template #description>
@@ -36,7 +36,7 @@
         </template>
       </main-description>
 
-      <main-description icon="ti-number-2">
+      <main-description step="2">
         <template #caption> Get automatic tagging </template>
 
         <template #description>
@@ -73,7 +73,7 @@
         </template>
       </main-description>
 
-      <main-description icon="ti-number-3">
+      <main-description step="3">
         <template #caption> Create scoring rules </template>
 
         <template #description>
@@ -85,9 +85,12 @@
                 :link="null"
                 css-modifier="positive" />
 
-              <i class="ti ti-arrow-right"></i>
+              <icon
+                icon="arrow-right"
+                size="small"
+                class="mx-0.5" />
 
-              <span class="cursor-default text-purple-700 text-lg md:text-xl">+5</span>
+              <span class="inline-block align-middle cursor-default text-purple-700 text-lg md:text-xl">+5</span>
             </div>
 
             <div class="">
@@ -97,9 +100,12 @@
                 link="http://example.com"
                 css-modifier="negative" />
 
-              <i class="ti ti-arrow-right"></i>
+              <icon
+                icon="arrow-right"
+                size="small"
+                class="mx-0.5" />
 
-              <span class="cursor-default text-purple-700 text-lg md:text-xl">-55</span>
+              <span class="inline-block align-middle cursor-default text-purple-700 text-lg md:text-xl">-55</span>
             </div>
 
             <div class="">
@@ -109,7 +115,10 @@
                 :link="null"
                 css-modifier="positive" />
 
-              <i class="ti ti-plus"></i>
+              <icon
+                icon="plus"
+                size="small"
+                class="mx-0.5" />
 
               <fake-tag
                 uid="new-york"
@@ -117,9 +126,12 @@
                 :link="null"
                 css-modifier="positive" />
 
-              <i class="ti ti-arrow-right"></i>
+              <icon
+                icon="arrow-right"
+                size="small"
+                class="mx-0.5" />
 
-              <span class="cursor-default-purple-700 text-lg md:text-xl">+8</span>
+              <span class="inline-block align-middle cursor-default text-purple-700 text-lg md:text-xl">+8</span>
             </div>
 
             <div class="">
@@ -129,15 +141,18 @@
                 :link="null"
                 css-modifier="positive" />
 
-              <i class="ti ti-arrow-right"></i>
+              <icon
+                icon="arrow-right"
+                size="small"
+                class="mx-0.5" />
 
-              <span class="cursor-default text-purple-700 text-lg md:text-xl">+21</span>
+              <span class="inline-block align-middle cursor-default text-purple-700 text-lg md:text-xl">+21</span>
             </div>
           </div>
         </template>
       </main-description>
 
-      <main-description icon="ti-number-4">
+      <main-description step="4">
         <template #caption> Read what matters </template>
 
         <template #description>
@@ -151,7 +166,9 @@
               title="Sci-fi novel about UFO in New Yourk"
               :score="13" />
 
-            <i class="opacity-65 block ti ti-dots justify-self-center"></i>
+            <div class="opacity-65 block justify-self-center">
+              <icon icon="dots" />
+            </div>
 
             <main-news-title
               class="opacity-55"
@@ -171,9 +188,7 @@
         <template
           v-for="collectionId in collections.collectionsOrder"
           :key="collectionId">
-          <main-item
-            v-if="collections.collections[collectionId].showOnMain"
-            icon="ti-arrow-narrow-right">
+          <main-item v-if="collections.collections[collectionId].showOnMain">
             <template #caption>
               {{ collections.collections[collectionId].name }}
             </template>

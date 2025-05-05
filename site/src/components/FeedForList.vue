@@ -5,9 +5,10 @@
     <div class="ffun-body-list-icon-column">
       <a
         href="#"
-        class="ti ti-x text-red-500 hover:text-red-600"
+        class="text-red-500 hover:text-red-600"
         title="Unsubscribe"
         @click.prevent="feedsStore.unsubscribe(feed.id)">
+        <icon icon="x" />
       </a>
     </div>
 
@@ -20,14 +21,16 @@
       :time="feed.linkedAt" />
 
     <div class="ffun-body-list-icon-column ml-3">
-      <i
+      <icon
         v-if="feed.isOk"
         title="everything is ok"
-        class="text-green-700 ti ti-mood-smile"></i>
-      <i
+        icon="face-smile"
+        class="text-green-700" />
+      <icon
         v-else
         :title="feed.lastError || 'unknown error'"
-        class="text-red-700 ti ti-mood-sad align-middle"></i>
+        icon="face-sad"
+        class="text-red-700" />
     </div>
 
     <body-list-favicon-column :url="feed.url" />

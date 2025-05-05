@@ -8,7 +8,9 @@
       target="_blank"
       @click.stop=""
       rel="noopener noreferrer">
-      <i class="ti ti-external-link align-middle" />
+      <icon
+        icon="external-link"
+        size="small" />
     </a>
   </span>
 </template>

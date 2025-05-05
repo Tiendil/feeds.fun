@@ -21,7 +21,5 @@
   import * as asserts from "@/logic/asserts";
   import * as events from "@/logic/events";
 
-  const properties = defineProps<{
-    icon: string;
-  }>();
+  const properties = defineProps<{}>();
 </script>
