@@ -33,7 +33,9 @@ import TagsFilter from "./components/tags/TagsFilter.vue";
 import RuleTag from "./components/tags/RuleTag.vue";
 import FakeTag from "./components/tags/FakeTag.vue";
 
+import PageHeaderHomeButton from "./components/page_header/HomeButton.vue";
 import PageHeaderExternalLinks from "./components/page_header/ExternalLinks.vue";
+import PageFooter from "./components/page_footer/Footer.vue";
 
 import NotificationsApiKey from "./components/notifications/ApiKey.vue";
 import NotificationsCreateRuleHelp from "./components/notifications/CreateRuleHelp.vue";
@@ -57,6 +59,7 @@ import ValueFeedId from "./values/FeedId.vue";
 import ValueDateTime from "./values/DateTime.vue";
 import ValueScore from "./values/Score.vue";
 import Icon from "./values/Icon.vue";
+import SocialLink from "./values/SocialLink.vue";
 
 import BodyListReverseTimeColumn from "./components/body_list/ReverseTimeColumn.vue";
 import BodyListFaviconColumn from "./components/body_list/FaviconColumn.vue";
@@ -106,7 +109,9 @@ app.component("TagsFilter", TagsFilter);
 app.component("RuleTag", RuleTag);
 app.component("FakeTag", FakeTag);
 
+app.component("PageHeaderHomeButton", PageHeaderHomeButton);
 app.component("PageHeaderExternalLinks", PageHeaderExternalLinks);
+app.component("PageFooter", PageFooter);
 
 app.component("NotificationsApiKey", NotificationsApiKey);
 app.component("NotificationsCreateRuleHelp", NotificationsCreateRuleHelp);
@@ -130,6 +135,7 @@ app.component("ValueFeedId", ValueFeedId);
 app.component("ValueDateTime", ValueDateTime);
 app.component("ValueScore", ValueScore);
 app.component("Icon", Icon);
+app.component("SocialLink", SocialLink);
 
 app.component("BodyListReverseTimeColumn", BodyListReverseTimeColumn);
 app.component("BodyListFaviconColumn", BodyListFaviconColumn);

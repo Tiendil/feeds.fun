@@ -20,7 +20,7 @@
   }
 
   .ffun-page-header-link {
-    @apply cursor-pointer no-underline ffun-x-header-text;
+    @apply cursor-pointer no-underline ffun-x-header-text whitespace-nowrap;
     @apply underline-offset-4 hover:bg-blue-100 rounded;
   }
 

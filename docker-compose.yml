@@ -181,6 +181,9 @@ services:
 
       VITE_FFUN_TRACK_EVENTS: "true"
 
+      VITE_FFUN_CRM_TERMS: "test <strong>terms</strong> content with <em>html</em>"
+      VITE_FFUN_CRM_PRIVACY: "test <strong>privacy</strong> content with <em>html</em>"
+
     ports:
       - "5173:5173"
 

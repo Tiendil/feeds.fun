@@ -2,6 +2,7 @@
   <a
     :href="url"
     target="_blank"
+    class="whitespace-nowrap"
     rel="noopener noreferrer">
     {{ renderedText }}
     <icon

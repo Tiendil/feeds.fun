@@ -55,12 +55,7 @@
         <div class="ffun-page-header-left-block">
           <side-panel-collapse-button v-if="!globalSettings.showSidebar" />
 
-          <a
-            v-if="homeButton"
-            :href="router.resolve({name: 'main', params: {}}).href"
-            class="ffun-page-header-link"
-            >Home</a
-          >
+          <page-header-home-button v-if="homeButton" />
 
           <template v-if="globalState.isLoggedIn">
             <template
@@ -109,11 +104,13 @@
       </footer>
     </div>
   </div>
+
+  <page-footer />
 </template>
 
 <script lang="ts" setup>
   import {ref, computed, useSlots, onMounted, watch, watchEffect} from "vue";
-  import {useRouter, RouterLink, RouterView} from "vue-router";
+  import {useRouter} from "vue-router";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useGlobalState} from "@/stores/globalState";
   import {useSupertokens} from "@/stores/supertokens";
