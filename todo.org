@@ -1,11 +1,11 @@
 
-* TODO footer component
+* DONE footer component
 
-* TODO add footer to the main page
+* DONE add footer to the main page
 
-* TODO add footer to the work pages
+* DONE add footer to the work pages
 
-* TODO links to external resources (github, discord, reddit, blog, api)
+* DONE links to external resources (github, discord, reddit, blog, api)
 
 * TODO Reference to tabler icons
 

@@ -109,6 +109,9 @@
       </footer>
     </div>
   </div>
+
+  <page-footer/>
+
 </template>
 
 <script lang="ts" setup>

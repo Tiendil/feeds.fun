@@ -1,51 +1,15 @@
 <template>
-  <a
-    v-if="showApi"
-    href="/api/docs"
-    target="_blank"
-    class="ffun-page-header-link"
-    @click="events.socialLinkClicked({linkType: 'api', view: eventsView})"
-    >API</a
-  >
 
-  <a
-    v-if="settings.blog"
-    :href="settings.blog"
-    target="_blank"
-    class="ffun-page-header-link"
-    @click="events.socialLinkClicked({linkType: 'blog', view: eventsView})"
-    >Blog</a
-  >
+<social-link v-if="showApi" kind="api" mode="text" class="ffun-page-header-link"/>
 
-  <a
-    v-if="settings.redditSubreddit"
-    :href="settings.redditSubreddit"
-    target="_blank"
-    class="ffun-page-header-link py-2 flex items-center justify-center"
-    title="Reddit"
-    @click="events.socialLinkClicked({linkType: 'reddit', view: eventsView})">
-    <icon icon="reddit" />
-  </a>
+<social-link kind="blog" mode="text" class="ffun-page-header-link"/>
 
-  <a
-    v-if="settings.discordInvite"
-    :href="settings.discordInvite"
-    target="_blank"
-    class="ffun-page-header-link py-2 flex items-center justify-center"
-    title="Discord"
-    @click="events.socialLinkClicked({linkType: 'discord', view: eventsView})">
-    <icon icon="discord" />
-  </a>
+<social-link kind="reddit" mode="icon" class="ffun-page-header-link py-2 flex items-center justify-center"/>
 
-  <a
-    v-if="settings.githubRepo"
-    :href="settings.githubRepo"
-    target="_blank"
-    class="ffun-page-header-link py-2 flex items-center justify-center"
-    title="GitHub"
-    @click="events.socialLinkClicked({linkType: 'github', view: eventsView})">
-    <icon icon="github" />
-  </a>
+<social-link kind="discord" mode="icon" class="ffun-page-header-link py-2 flex items-center justify-center"/>
+
+<social-link kind="github" mode="icon" class="ffun-page-header-link py-2 flex items-center justify-center"/>
+
 </template>
 
 <script lang="ts" setup>
