@@ -1,0 +1,16 @@
+
+* TODO footer component
+
+* TODO add footer to the main page
+
+* TODO add footer to the work pages
+
+* TODO links to external resources (github, discord, reddit, blog, api)
+
+* TODO Reference to tabler icons
+
+* TODO authorship
+
+* TODO configurable links to Users Aggreement and Privacy Policy
+
+* TODO Boilerplate for pages with User Agreement and Privacy Policy
