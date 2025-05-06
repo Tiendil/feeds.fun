@@ -7,10 +7,14 @@
 
 * DONE links to external resources (github, discord, reddit, blog, api)
 
-* TODO Reference to tabler icons
+* DONE Reference to tabler icons
 
-* TODO authorship
+* DONE authorship
 
 * TODO configurable links to Users Aggreement and Privacy Policy
 
 * TODO Boilerplate for pages with User Agreement and Privacy Policy
+
+* TODO Changes
+
+* DONE visually hightlight links in the footer
