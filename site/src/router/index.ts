@@ -67,13 +67,13 @@ const router = createRouter({
       path: "/terms",
       name: "terms",
       component: CRMView,
-      props: { content: settings.crmTerms, kind: "terms" }
+      props: {content: settings.crmTerms, kind: "terms"}
     },
     {
       path: "/privacy",
       name: "privacy",
       component: CRMView,
-      props: { content: settings.crmPrivacy, kind: "privacy" }
+      props: {content: settings.crmPrivacy, kind: "privacy"}
     },
     {
       path: "/:pathMatch(.*)*",

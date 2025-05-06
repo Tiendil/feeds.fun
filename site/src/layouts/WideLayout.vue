@@ -1,8 +1,7 @@
 <template>
-<slot></slot>
+  <slot></slot>
 
-<page-footer/>
-
+  <page-footer />
 </template>
 
 <script lang="ts" setup></script>

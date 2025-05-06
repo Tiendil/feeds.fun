@@ -1,15 +1,29 @@
 <template>
+  <social-link
+    v-if="showApi"
+    kind="api"
+    mode="text"
+    class="ffun-page-header-link" />
 
-<social-link v-if="showApi" kind="api" mode="text" class="ffun-page-header-link"/>
+  <social-link
+    kind="blog"
+    mode="text"
+    class="ffun-page-header-link" />
 
-<social-link kind="blog" mode="text" class="ffun-page-header-link"/>
+  <social-link
+    kind="reddit"
+    mode="icon"
+    class="ffun-page-header-link py-2 flex items-center justify-center" />
 
-<social-link kind="reddit" mode="icon" class="ffun-page-header-link py-2 flex items-center justify-center"/>
+  <social-link
+    kind="discord"
+    mode="icon"
+    class="ffun-page-header-link py-2 flex items-center justify-center" />
 
-<social-link kind="discord" mode="icon" class="ffun-page-header-link py-2 flex items-center justify-center"/>
-
-<social-link kind="github" mode="icon" class="ffun-page-header-link py-2 flex items-center justify-center"/>
-
+  <social-link
+    kind="github"
+    mode="icon"
+    class="ffun-page-header-link py-2 flex items-center justify-center" />
 </template>
 
 <script lang="ts" setup>

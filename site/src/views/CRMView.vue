@@ -1,9 +1,8 @@
 <template>
   <wide-layout>
-
     <div class="ffun-page-header">
       <div class="ffun-page-header-center-block">
-        <page-header-home-button/>
+        <page-header-home-button />
         <page-header-external-links :show-api="false" />
       </div>
     </div>
@@ -18,28 +17,25 @@
     <hr />
 
     <main-block>
-<div v-html="actualContent" class="prose max-w-none"/>
-</main-block>
-
+      <div
+        v-html="actualContent"
+        class="prose max-w-none" />
+    </main-block>
   </wide-layout>
 </template>
 
 <script lang="ts" setup>
-
   import {computed, provide} from "vue";
 
-const properties = defineProps<{content: string | null,
-                           kind: string}>();
+  const properties = defineProps<{content: string | null; kind: string}>();
 
   provide("eventsViewName", properties.kind);
 
-const actualContent = computed(() => {
+  const actualContent = computed(() => {
     if (properties.content === null) {
       return "You MUST define a content for this page in case you host public version of Feeds Fun.";
     }
 
     return properties.content;
   });
-
-
 </script>

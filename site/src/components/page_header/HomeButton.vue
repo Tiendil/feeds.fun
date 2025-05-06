@@ -4,14 +4,11 @@
     class="ffun-page-header-link"
     @click.prevent="router.push({name: 'main'})">
     Home</a
-           >
+  >
 </template>
 
 <script lang="ts" setup>
-
   import {useRouter} from "vue-router";
 
-    const router = useRouter();
-
-
+  const router = useRouter();
 </script>

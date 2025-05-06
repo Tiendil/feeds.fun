@@ -55,7 +55,7 @@
         <div class="ffun-page-header-left-block">
           <side-panel-collapse-button v-if="!globalSettings.showSidebar" />
 
-          <page-header-home-button v-if="homeButton"/>
+          <page-header-home-button v-if="homeButton" />
 
           <template v-if="globalState.isLoggedIn">
             <template
@@ -105,8 +105,7 @@
     </div>
   </div>
 
-  <page-footer/>
-
+  <page-footer />
 </template>
 
 <script lang="ts" setup>
