@@ -32,7 +32,7 @@
     <div class="flex flex-col items-center sm:items-start">
       <h3 class="text-lg font-semibold mb-4">For Users</h3>
 
-      <div>You can ask for help on Discord, Subreddit, or GitHub</div>
+      <div>You can ask for help on Discord, Reddit, or GitHub</div>
 
       <a
         v-if="settings.crmTerms"

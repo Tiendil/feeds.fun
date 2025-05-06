@@ -1,8 +1,9 @@
 <template>
   <a
-    :href="router.resolve({name: 'main', params: {}}).href"
+    :href="router.resolve({name: 'main'}).href"
     class="ffun-page-header-link"
-    >Home</a
+    @click.prevent="router.push({name: 'main'})">
+    Home</a
            >
 </template>
 
