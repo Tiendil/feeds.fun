@@ -7,6 +7,10 @@
     >
     <span v-if="mode === 'text'">
       {{ link.text }}
+
+      <icon
+        icon="external-link"
+        size="small" />
     </span>
 
     <icon v-else :icon="link.icon" />
