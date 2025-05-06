@@ -8,7 +8,9 @@ import DiscoveryView from "../views/DiscoveryView.vue";
 import CollectionsView from "../views/CollectionsView.vue";
 import SettingsView from "../views/SettingsView.vue";
 import PublicCollectionView from "../views/PublicCollectionView.vue";
+import CRMView from "../views/CRMView.vue";
 import * as e from "@/logic/enums";
+import * as settings from "@/logic/settings";
 
 // lazy view loading does not work with router.push function
 // first attempt to router.push into not loaded view, will cause its loading, but will not change components
@@ -60,6 +62,18 @@ const router = createRouter({
       path: "/show/:collectionSlug/:tags*",
       name: "public-collection",
       component: PublicCollectionView
+    },
+    {
+      path: "/terms",
+      name: "terms",
+      component: CRMView,
+      props: { content: settings.crmTerms, kind: "terms" }
+    },
+    {
+      path: "/privacy",
+      name: "privacy",
+      component: CRMView,
+      props: { content: settings.crmPrivacy, kind: "privacy" }
     },
     {
       path: "/:pathMatch(.*)*",

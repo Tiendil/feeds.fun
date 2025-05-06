@@ -18,3 +18,5 @@
 * TODO Changes
 
 * DONE visually hightlight links in the footer
+
+* TODO think good about external link icons, are they required?

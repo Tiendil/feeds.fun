@@ -33,6 +33,7 @@ import TagsFilter from "./components/tags/TagsFilter.vue";
 import RuleTag from "./components/tags/RuleTag.vue";
 import FakeTag from "./components/tags/FakeTag.vue";
 
+import PageHeaderHomeButton from "./components/page_header/HomeButton.vue";
 import PageHeaderExternalLinks from "./components/page_header/ExternalLinks.vue";
 import PageFooter from "./components/page_footer/Footer.vue";
 
@@ -108,6 +109,7 @@ app.component("TagsFilter", TagsFilter);
 app.component("RuleTag", RuleTag);
 app.component("FakeTag", FakeTag);
 
+app.component("PageHeaderHomeButton", PageHeaderHomeButton);
 app.component("PageHeaderExternalLinks", PageHeaderExternalLinks);
 app.component("PageFooter", PageFooter);
 

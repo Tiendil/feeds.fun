@@ -19,7 +19,7 @@
       </div>
     </div>
 
-    <div class="flex flex-col items-center sm:items-start">
+    <div class="flex flex-col items-center sm:items-start max-w-28">
       <h3 class="text-lg font-semibold mb-4">Community</h3>
       <div class="flex flex-col space-y-2">
         <social-link kind="blog"    mode="text" class="hover:underline ffun-normal-link"/>
@@ -30,8 +30,26 @@
     </div>
 
     <div class="flex flex-col items-center sm:items-start">
-      <h3 class="text-lg font-semibold mb-4">Legal</h3>
-      <!-- extra links or info here -->
+      <h3 class="text-lg font-semibold mb-4">For Users</h3>
+
+      <div>You can ask for help on Discord, Subreddit, or GitHub</div>
+
+      <a
+        v-if="settings.crmTerms"
+        :href="router.resolve({name: 'terms'}).href"
+        class="ffun-normal-link"
+        @click.prevent="router.push({name: 'terms'})">
+        Terms of Service
+      </a>
+
+      <a
+        v-if="settings.crmPrivacy"
+        :href="router.resolve({name: 'privacy'}).href"
+        class="ffun-normal-link"
+        @click.prevent="router.push({name: 'privacy'})">
+        Privacy Policy
+      </a>
+
     </div>
   </div>
 </footer>
@@ -40,10 +58,13 @@
 
 <script lang="ts" setup>
   import {inject, computed} from "vue";
+import {useRouter} from "vue-router";
 
   import * as events from "@/logic/events";
   import * as settings from "@/logic/settings";
-  import * as asserts from "@/logic/asserts";
+import * as asserts from "@/logic/asserts";
+
+  const router = useRouter();
 
   const eventsView = inject<events.EventsViewName>("eventsViewName");
 

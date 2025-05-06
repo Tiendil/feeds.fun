@@ -26,6 +26,9 @@ export const trackEvents = import.meta.env.VITE_FFUN_TRACK_EVENTS == "true" || f
 
 export const utmLifetime = import.meta.env.VITE_FFUN_UTM_LIFETIME || 7; // days
 
+export const crmTerms = import.meta.env.VITE_FFUN_CRM_TERMS || null;
+export const crmPrivacy = import.meta.env.VITE_FFUN_CRM_PRIVACY || null;
+
 console.log("settings.appName", appName);
 console.log("settings.appDomain", appDomain);
 console.log("settings.appPort", appPort);
@@ -48,3 +51,6 @@ console.log("settings.plausibleScript", plausibleScript);
 console.log("settings.trackEvents", trackEvents);
 
 console.log("settings.utmLifetime", utmLifetime);
+
+console.log("settings.crmTerms", crmTerms ? "set" : "not set");
+console.log("settings.crmPrivacy", crmPrivacy ? "set" : "not set");
