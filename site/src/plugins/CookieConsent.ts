@@ -4,14 +4,24 @@ import * as CookieConsent from "vanilla-cookieconsent";
 
 
 export const plugin = {
-    install(app: any, pluginConfig: any): void {
-        app.config.globalProperties.$CookieConsent = CookieConsent;
-        CookieConsent.run(pluginConfig);
-    }
+  install(app: any, pluginConfig: any): void {
+    app.config.globalProperties.$CookieConsent = CookieConsent;
+    CookieConsent.run(pluginConfig);
+  }
 };
 
 
 export const defaultConfig = {
+
+  revision: 1,
+
+  onConsent(args): void {
+    console.log('onConsent', args);
+  },
+
+  onChange(args): void {
+    console.log('onChange', args);
+  },
 
   categories: {
     necessary: {
