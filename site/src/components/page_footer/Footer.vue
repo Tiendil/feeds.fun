@@ -75,7 +75,7 @@
           href="#"
           class="ffun-normal-link"
           @click.prevent="$CookieConsent.show(true)">
-          Cookies Settings
+          Cookie Settings
         </a>
         </div>
       </div>
