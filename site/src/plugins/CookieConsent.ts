@@ -21,7 +21,7 @@ const plausibleId = 'plausible-script';
 
 function syncPlausible(enabled: boolean): void {
 
-  if (settings.plausibleEnabled) {
+  if (!settings.plausibleEnabled) {
     disablePlausible();
     return;
   }
@@ -54,6 +54,8 @@ function enablePlausible() {
     return;
   }
 
+  console.log('setup Plausible script');
+
   const script = document.createElement("script");
   script.id = plausibleId;
   script.src = settings.plausibleScript;
@@ -80,10 +82,13 @@ export const defaultConfig = {
 
   categories: {
     necessary: {
-      enabled: true,  // this category is enabled by default
-      readOnly: true  // this category cannot be disabled
+      enabled: true,
+      readOnly: true
     },
-    analytics: {}
+    analytics: {
+      enabled: true,
+      readOnly: false
+    }
   },
 
   language: {
