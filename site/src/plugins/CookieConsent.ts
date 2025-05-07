@@ -146,17 +146,19 @@ export const defaultConfig = {
                   description: "Description"
                 },
                 body: [
+                  (
+                    settings.plausibleEnabled ?
                   {
                     name: "Plausible",
                     domain: "plausible.io",
                     description: "EU-based, cookie-free service that helps us measure traffic and improve usability, without collecting personal data."
-                  },
+                  } : null),
                   {
                     name: "Feeds Fun",
                     domain: "feeds.fun",
                     description: "We collect our own analytics to improve the service. We do not share this data with third parties."
                   }
-                ]
+                ].filter((x) => x !== null)
               }
             }
           ]
