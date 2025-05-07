@@ -5,6 +5,10 @@ import * as CookieConsent from "vanilla-cookieconsent";
 import * as settings from "@/logic/settings";
 
 
+// TODO: translations
+// TODO: custom events tracking
+
+
 export const plugin = {
   install(app: any, pluginConfig: any): void {
     app.config.globalProperties.$CookieConsent = CookieConsent;
