@@ -208,16 +208,3 @@ async function onSessionLost() {
 }
 
 api.init({onSessionLost: onSessionLost});
-
-/////////////////////
-// plausible
-/////////////////////
-
-if (settings.plausibleEnabled) {
-  const script = document.createElement("script");
-  script.src = settings.plausibleScript;
-  script.async = true;
-  script.defer = true;
-  script.setAttribute("data-domain", settings.plausibleDomain);
-  document.body.appendChild(script);
-}

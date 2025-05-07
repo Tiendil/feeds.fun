@@ -2,6 +2,8 @@
 import "vanilla-cookieconsent/dist/cookieconsent.css";
 import * as CookieConsent from "vanilla-cookieconsent";
 
+import * as settings from "@/logic/settings";
+
 
 export const plugin = {
   install(app: any, pluginConfig: any): void {
@@ -11,16 +13,65 @@ export const plugin = {
 };
 
 
+const plausibleId = 'plausible-script';
+
+function syncPlausible(enabled: boolean): void {
+
+  if (settings.plausibleEnabled) {
+    disablePlausible();
+    return;
+  }
+
+  if (!enabled) {
+    disablePlausible();
+    return;
+  }
+
+  enablePlausible();
+}
+
+function isPlausibleEnabled() {
+  return document.getElementById(plausibleId) !== null;
+}
+
+function disablePlausible() {
+  if (!isPlausibleEnabled()) {
+    return;
+  }
+
+  // The simplest and straightforward way to disable smth is to reload the page
+  // We expect that users will not reevaluate the cookie consent modal often
+  window.location.reload();
+}
+
+function enablePlausible() {
+
+  if (isPlausibleEnabled()) {
+    return;
+  }
+
+  const script = document.createElement("script");
+  script.id = plausibleId;
+  script.src = settings.plausibleScript;
+  script.async = true;
+  script.defer = true;
+  script.setAttribute("data-domain", settings.plausibleDomain);
+  document.body.appendChild(script);
+}
+
+
 export const defaultConfig = {
 
   revision: 1,
 
-  onConsent(args): void {
-    console.log('onConsent', args);
+  onConsent({cookie}): void {
+    syncPlausible(cookie.categories.includes('analytics'));
+    console.log('onConsent', cookie);
   },
 
-  onChange(args): void {
-    console.log('onChange', args);
+  onChange({cookie}): void {
+    syncPlausible(cookie.categories.includes('analytics'));
+    console.log('onChange', cookie);
   },
 
   categories: {
