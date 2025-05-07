@@ -6,27 +6,32 @@ import * as settings from "@/logic/settings";
 
 
 // TODO: translations
-// TODO: custom events tracking
 
 
 export const plugin = {
   install(app: any, pluginConfig: any): void {
     app.config.globalProperties.$CookieConsent = CookieConsent;
     CookieConsent.run(pluginConfig);
-  }
+  },
+
 };
+
+
+export function isAnalyticsAllowed(): boolean {
+  return CookieConsent.acceptedCategory('analytics');
+}
 
 
 const plausibleId = 'plausible-script';
 
-function syncPlausible(enabled: boolean): void {
+function syncPlausible(): void {
 
   if (!settings.plausibleEnabled) {
     disablePlausible();
     return;
   }
 
-  if (!enabled) {
+  if (!isAnalyticsAllowed()) {
     disablePlausible();
     return;
   }
@@ -71,13 +76,11 @@ export const defaultConfig = {
   revision: 1,
 
   onConsent({cookie}): void {
-    syncPlausible(cookie.categories.includes('analytics'));
-    console.log('onConsent', cookie);
+    syncPlausible();
   },
 
   onChange({cookie}): void {
-    syncPlausible(cookie.categories.includes('analytics'));
-    console.log('onChange', cookie);
+    syncPlausible();
   },
 
   categories: {

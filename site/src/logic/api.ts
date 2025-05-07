@@ -3,6 +3,7 @@ import axios, {AxiosError} from "axios";
 import * as t from "@/logic/types";
 import type * as e from "@/logic/enums";
 import * as settings from "@/logic/settings";
+import * as cookieConsent from "@/plugins/CookieConsent";
 
 const ENTRY_POINT = "/api";
 
@@ -333,6 +334,10 @@ export async function getInfo() {
 
 export async function trackEvent(data: {[key: string]: string | number | null}) {
   if (!settings.trackEvents) {
+    return;
+  }
+
+  if (!cookieConsent.isAnalyticsAllowed()) {
     return;
   }
 
