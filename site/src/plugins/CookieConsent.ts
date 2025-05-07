@@ -5,9 +5,6 @@ import * as CookieConsent from "vanilla-cookieconsent";
 import * as settings from "@/logic/settings";
 
 
-// TODO: translations
-
-
 export const plugin = {
   install(app: any, pluginConfig: any): void {
     app.config.globalProperties.$CookieConsent = CookieConsent;
@@ -71,6 +68,9 @@ function enablePlausible() {
 }
 
 
+const _description = 'We use cookies and local storage for session tracking (required) and optional analytics. Please let us collect analytics to better understand how you use us and become the best news reader ever.';
+
+
 export const defaultConfig = {
 
   revision: 1,
@@ -99,38 +99,65 @@ export const defaultConfig = {
     translations: {
       en: {
         consentModal: {
-          title: 'We use cookies',
-          description: 'Cookie modal description',
+          title: 'We use cookies and local storage',
+          description: _description,
           acceptAllBtn: 'Accept all',
           acceptNecessaryBtn: 'Reject all',
-          showPreferencesBtn: 'Manage Individual preferences'
+          showPreferencesBtn: 'Manage preferences'
         },
         preferencesModal: {
-          title: 'Manage cookie preferences',
+          title: 'Manage privacy preferences',
           acceptAllBtn: 'Accept all',
           acceptNecessaryBtn: 'Reject all',
           savePreferencesBtn: 'Accept current selection',
-          closeIconLabel: 'Close modal',
+          closeIconLabel: 'Close',
           sections: [
             {
-              title: 'Somebody said ... cookies?',
-              description: 'I want one!'
+              description: _description
             },
             {
-              title: 'Strictly Necessary cookies',
-              description: 'These cookies are essential for the proper functioning of the website and cannot be disabled.',
+              title: 'Strictly necessary data',
+              description: 'This data is essential for the proper functioning of the website and cannot be disabled.',
 
-              //this field will generate a toggle linked to the 'necessary' category
-              linkedCategory: 'necessary'
+              linkedCategory: 'necessary',
+
+              cookieTable: {
+                headers: {
+                  name: "Data",
+                  description: "Description"
+                },
+                "body": [
+                  {
+                    name: "Session information",
+                    description: "We store your session information which is absolutely necessary for the website to work."
+                  }
+                ]
+              }
             },
             {
-              title: 'Performance and Analytics',
-              description: 'These cookies collect information about how you use our website. All of the data is anonymized and cannot be used to identify you.',
-              linkedCategory: 'analytics'
-            },
-            {
-              title: 'More information',
-              description: 'For any queries in relation to my policy on cookies and your choices, please <a href="#contact-page">contact us</a>'
+              title: 'Performance and analytics',
+              description: 'These services collect information about how you use our website.',
+              linkedCategory: 'analytics',
+
+              cookieTable: {
+                headers: {
+                  name: "Service",
+                  domain: "Domain",
+                  description: "Description"
+                },
+                body: [
+                  {
+                    name: "Plausible",
+                    domain: "plausible.io",
+                    description: "EU-based, cookie-free service that helps us measure traffic and improve usability, without collecting personal data."
+                  },
+                  {
+                    name: "Feeds Fun",
+                    domain: "feeds.fun",
+                    description: "We collect our own analytics to improve the service. We do not share this data with third parties."
+                  }
+                ]
+              }
             }
           ]
         }
