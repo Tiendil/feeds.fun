@@ -6,6 +6,8 @@ import router from "./router";
 
 import "./style.css";
 
+import * as CookieConsent from "./plugins/CookieConsent";
+
 import FeedsList from "./components/FeedsList.vue";
 import EntriesList from "./components/EntriesList.vue";
 import RulesList from "./components/RulesList.vue";
@@ -157,6 +159,8 @@ app.component("vue-countdown", VueCountdown);
 app.use(createPinia());
 app.use(router);
 
+app.use(CookieConsent.plugin, CookieConsent.defaultConfig);
+
 app.mount("#app");
 
 import * as api from "@/logic/api";
@@ -204,16 +208,3 @@ async function onSessionLost() {
 }
 
 api.init({onSessionLost: onSessionLost});
-
-/////////////////////
-// plausible
-/////////////////////
-
-if (settings.plausibleEnabled) {
-  const script = document.createElement("script");
-  script.src = settings.plausibleScript;
-  script.async = true;
-  script.defer = true;
-  script.setAttribute("data-domain", settings.plausibleDomain);
-  document.body.appendChild(script);
-}

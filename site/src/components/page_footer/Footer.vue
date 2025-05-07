@@ -52,23 +52,32 @@
       <div class="flex flex-col items-center sm:items-start">
         <h3 class="text-lg font-semibold mb-4">For Users</h3>
 
-        <div>You can ask for help on Discord, Reddit, or GitHub</div>
+        <div class="flex flex-col space-y-2">
+          <div>You can ask for help on Discord, Reddit, or GitHub</div>
 
-        <a
-          v-if="settings.crmTerms"
-          :href="router.resolve({name: 'terms'}).href"
-          class="ffun-normal-link"
-          @click.prevent="router.push({name: 'terms'})">
-          Terms of Service
-        </a>
+          <a
+            v-if="settings.crmTerms"
+            :href="router.resolve({name: 'terms'}).href"
+            class="ffun-normal-link"
+            @click.prevent="router.push({name: 'terms'})">
+            Terms of Service
+          </a>
 
-        <a
-          v-if="settings.crmPrivacy"
-          :href="router.resolve({name: 'privacy'}).href"
-          class="ffun-normal-link"
-          @click.prevent="router.push({name: 'privacy'})">
-          Privacy Policy
-        </a>
+          <a
+            v-if="settings.crmPrivacy"
+            :href="router.resolve({name: 'privacy'}).href"
+            class="ffun-normal-link"
+            @click.prevent="router.push({name: 'privacy'})">
+            Privacy Policy
+          </a>
+
+          <a
+            href="#"
+            class="ffun-normal-link"
+            @click.prevent="cookieConsent.showCookieConsent()">
+            Cookie Settings
+          </a>
+        </div>
       </div>
     </div>
   </footer>
@@ -81,6 +90,7 @@
   import * as events from "@/logic/events";
   import * as settings from "@/logic/settings";
   import * as asserts from "@/logic/asserts";
+  import * as cookieConsent from "@/plugins/CookieConsent";
 
   const router = useRouter();
 
