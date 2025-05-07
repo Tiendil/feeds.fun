@@ -6,7 +6,7 @@ import router from "./router";
 
 import "./style.css";
 
-import * as CookieConsent from './plugins/CookieConsent'
+import * as CookieConsent from "./plugins/CookieConsent";
 
 import FeedsList from "./components/FeedsList.vue";
 import EntriesList from "./components/EntriesList.vue";
