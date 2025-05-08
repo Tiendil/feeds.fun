@@ -1,6 +1,6 @@
 
-* TODO table to store records for all users
+* DONE table to store records for all users
 
-* TODO review metrics collection to correctly calculate number of users
-* TODO note about migrations to the changes
+* DONE review metrics collection to correctly calculate number of users
+* DONE note about migrations to the changes
 * TODO test that migration works on tables with some data

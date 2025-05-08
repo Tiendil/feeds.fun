@@ -9,7 +9,6 @@ from ffun.users import domain as u_domain
 logger = logging.get_module_logger()
 
 
-# TODO: test
 async def remove_user(user_id: UserId) -> None:
     auth_services_ids = await u_domain.get_user_external_ids(user_id)
 

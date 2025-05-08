@@ -82,7 +82,7 @@ async def unlink_user(service: Service, internal_id: UserId) -> None:
 
 
 async def count_total_users() -> int:
-    result = await execute("SELECT COUNT(*) FROM u_mapping")
+    result = await execute("SELECT COUNT(*) FROM u_users")
     return result[0]["count"]  # type: ignore
 
 
