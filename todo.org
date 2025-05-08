@@ -1,0 +1,4 @@
+
+* TODO table to store records for all users
+
+* TODO review metrics collection to correctly calculate number of users

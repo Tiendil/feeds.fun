@@ -31,6 +31,7 @@ from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 from ffun.user_settings import domain as us_domain
+from ffun.data_protection import domain as dp_domain
 
 router = fastapi.APIRouter()
 
@@ -486,6 +487,16 @@ async def api_track_event(request: entities.TrackEventRequest, user: OptionalUse
     logger.business_event(event, user_id=user_id, **attributes)
 
     return entities.TrackEventResponse()
+
+
+@router.post("/api/remove-user")
+async def api_remove_user(request: entities.RemoveUserRequest, user: User) -> entities.RemoveUserResponse:
+
+    await dp_domain.remove_user(user_id=user.id)
+
+    # TODO: logout
+
+    return entities.RemoveUserResponse()
 
 
 #######################

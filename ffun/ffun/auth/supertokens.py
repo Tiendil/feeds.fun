@@ -8,6 +8,7 @@ from supertokens_python.ingredients.emaildelivery.types import EmailDeliveryConf
 from supertokens_python.recipe import dashboard, emailverification, passwordless, session, usermetadata
 from supertokens_python.recipe.passwordless import ContactEmailOnlyConfig
 from supertokens_python.recipe.passwordless.types import EmailDeliveryOverrideInput, EmailTemplateVars
+from supertokens_python.syncio import delete_user
 
 from ffun.auth.settings import settings
 from ffun.core import logging
@@ -72,3 +73,10 @@ async def use_supertokens(
 
 def add_middlewares(app: FastAPI) -> None:
     app.add_middleware(get_middleware())
+
+
+# TODO: test
+async def remove_supertokens_user(user_id: str) -> None:
+    logger.info("removing supertokens user", user_id=user_id)
+    await delete_user(user_id=user_id)
+    logger.info("removed supertokens user")

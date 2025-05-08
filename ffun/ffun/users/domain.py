@@ -6,6 +6,8 @@ add_mapping = operations.add_mapping
 get_mapping = operations.get_mapping
 count_total_users = operations.count_total_users
 tech_move_user = operations.tech_move_user
+get_user_external_ids = operations.get_user_external_ids
+unlink_user = operations.unlink_user
 
 
 async def get_or_create_user_id(service: Service, external_id: str) -> UserId:

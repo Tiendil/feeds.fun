@@ -528,3 +528,11 @@ class TrackEventRequest(api.APIRequest):
 
 class TrackEventResponse(api.APISuccess):
     pass
+
+
+class RemoveUserRequest(api.APIRequest):
+    pass
+
+
+class RemoveUserResponse(api.APISuccess):
+    pass

@@ -10,6 +10,17 @@ from ffun.users.entities import Service
 logger = logging.get_module_logger()
 
 
+# TODO: test
+async def store_user(internal_id: UserId) -> None:
+    sql = """
+         INSERT INTO u_users (id, created_at)
+         VALUES (%(internal_id)s, NOW())
+         ON CONFLICT (id) DO NOTHING
+    """
+
+    await execute(sql, {"internal_id": internal_id})
+
+
 async def add_mapping(service: Service, external_id: str) -> UserId:
     sql = """
         INSERT INTO u_mapping (service_id, external_id, internal_id)
@@ -19,6 +30,8 @@ async def add_mapping(service: Service, external_id: str) -> UserId:
     internal_id = new_user_id()
 
     try:
+        await store_user(internal_id)
+
         await execute(sql, {"service_id": service, "external_id": external_id, "internal_id": internal_id})
 
         logger.business_event("user_created", user_id=internal_id)
@@ -43,6 +56,30 @@ async def get_mapping(service: Service, external_id: str) -> UserId:
         raise errors.NoUserMappingFound(service=service, external_id=external_id)
 
     return result[0]["internal_id"]  # type: ignore
+
+
+# TODO: test
+async def get_user_external_ids(internal_id: UserId) -> dict[Service, str]:
+    sql = """
+    SELECT service_id, external_id
+    FROM u_mapping
+    WHERE internal_id = %(internal_id)s
+    """
+
+    result = await execute(sql, {"internal_id": internal_id})
+
+    return {row["service_id"]: row["external_id"] for row in result}
+
+
+# TODO: test
+async def unlink_user(service: Service, internal_id: UserId) -> None:
+    sql = """
+    DELETE FROM u_mapping
+    WHERE service_id = %(service_id)s
+          AND internal_id = %(internal_id)s
+    """
+
+    await execute(sql, {"service_id": service, "internal_id": internal_id})
 
 
 async def count_total_users() -> int:
