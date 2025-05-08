@@ -75,8 +75,7 @@ def add_middlewares(app: FastAPI) -> None:
     app.add_middleware(get_middleware())
 
 
-# TODO: test
-async def remove_supertokens_user(user_id: str) -> None:
+async def remove_user(user_id: str) -> None:
     logger.info("removing supertokens user", user_id=user_id)
     await delete_user(user_id=user_id)
     logger.info("removed supertokens user")

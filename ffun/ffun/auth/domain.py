@@ -1,13 +1,12 @@
 
-from ffun.auth.supertokens import remove_supertokens_user
+from ffun.auth import supertokens
 from ffun.users import entities as u_entities
 
 
-# TODO: test
-async def remove_user(service: u_entities.Service, user_id: str) -> None:
+async def remove_user_from_external_service(service: u_entities.Service, external_user_id: str) -> None:
     match service:
         case u_entities.Service.supertokens:
-            await remove_supertokens_user(user_id)
+            await supertokens.remove_user(external_user_id)
         case u_entities.Service.single:
             # do nothing because we have no external service in this case
             pass
