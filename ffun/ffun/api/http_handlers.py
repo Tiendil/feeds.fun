@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from ffun.api import entities
 from ffun.api.settings import settings
 from ffun.auth.dependencies import OptionalUser, User
+from ffun.auth import domain as a_domain
 from ffun.core import logging
 from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
@@ -490,11 +491,11 @@ async def api_track_event(request: entities.TrackEventRequest, user: OptionalUse
 
 
 @router.post("/api/remove-user")
-async def api_remove_user(request: entities.RemoveUserRequest, user: User) -> entities.RemoveUserResponse:
+async def api_remove_user(_request: entities.RemoveUserRequest, user: User) -> entities.RemoveUserResponse:
 
     await dp_domain.remove_user(user_id=user.id)
 
-    # TODO: logout
+    await a_domain.logout_user_from_all_sessions(user_id=user.id)
 
     return entities.RemoveUserResponse()
 
