@@ -24,8 +24,12 @@
     @apply underline-offset-4 hover:bg-blue-100 rounded;
   }
 
-  .ffun-page-header-link-disabled {
+  .ffun-page-header-link-active {
     @apply underline underline-offset-4 ffun-x-header-text;
+  }
+
+  .ffun-page-header-link-disabled {
+      @apply ffun-x-header-text text-slate-400;
   }
 
   .ffun-page-header-title {

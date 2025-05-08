@@ -71,7 +71,7 @@
                 </a>
 
                 <span
-                  class="ffun-page-header-link-disabled"
+                  class="ffun-page-header-link-active"
                   v-else
                   >{{ props.text }}</span
                 >
@@ -84,11 +84,18 @@
 
         <div class="ffun-page-header-right-block">
           <a
-            v-if="globalState.isLoggedIn"
+            v-if="globalState.isLoggedIn && !settings.isSingleUserMode"
             href="#"
             class="ffun-page-header-link"
             @click.prevent="logout()"
             >logout</a
+          >
+
+          <span
+            v-if="settings.isSingleUserMode"
+            href="#"
+            class="ffun-page-header-link-disabled"
+            >single-user mode</span
           >
         </div>
       </div>

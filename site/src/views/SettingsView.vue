@@ -127,7 +127,7 @@
       </p>
     </div>
 
-    <div class="ffun-info-bad">
+    <div v-if="!settings.isSingleUserMode" class="ffun-info-bad">
       <button
         @click.prevent="removeAccount()"
         class="ffun-form-button bad short ml-1"
@@ -136,6 +136,12 @@
       <label class="ml-1">
         Permanently remove your account and all your data.
       </label>
+    </div>
+
+    <div v-else class="ffun-info-common">
+      <p>
+        Account removal in the single-user mode is not available.
+      </p>
     </div>
 
   </side-panel-layout>
@@ -147,6 +153,7 @@
   import * as api from "@/logic/api";
   import * as t from "@/logic/types";
   import * as e from "@/logic/enums";
+  import * as settings from "@/logic/settings";
   import {useRouter} from "vue-router";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
 

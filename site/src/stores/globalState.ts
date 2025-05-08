@@ -10,7 +10,7 @@ export const useGlobalState = defineStore("globalState", () => {
   const supertokens = useSupertokens();
 
   const isLoggedIn = computed(() => {
-    if (settings.authMode === settings.AuthMode.SingleUser) {
+    if (settings.isSingleUserMode) {
       return true;
     }
 
