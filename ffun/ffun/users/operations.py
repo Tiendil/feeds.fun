@@ -59,7 +59,6 @@ async def get_mapping(service: Service, external_id: str) -> UserId:
     return result[0]["internal_id"]  # type: ignore
 
 
-# TODO: test
 async def get_user_external_ids(internal_id: UserId) -> dict[Service, str]:
     sql = """
     SELECT service_id, external_id

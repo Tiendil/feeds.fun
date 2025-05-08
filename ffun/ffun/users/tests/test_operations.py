@@ -16,7 +16,7 @@ from ffun.domain.entities import UserId
 from ffun.domain.domain import new_user_id
 from ffun.users import errors
 from ffun.users.entities import Service
-from ffun.users.operations import add_mapping, count_total_users, get_mapping, store_user
+from ffun.users.operations import add_mapping, count_total_users, get_mapping, store_user, get_user_external_ids
 
 
 class TestAddMapping:
@@ -109,3 +109,19 @@ class TestStoreUser:
         assert len(result) == 1
         assert result[0]["id"] == user_id
         assert result[0]["created_at"] < timestamp
+
+
+class TestGetUserExternalIds:
+
+    @pytest.mark.asyncio
+    async def test_no_mappings(self) -> None:
+        user_id = new_user_id()
+        assert await get_user_external_ids(user_id) == {}
+
+    # currently we do not support multiple mappings for the same user
+    # TODO: add tests for multiple mappings when we support it
+    @pytest.mark.asyncio
+    async def test_single_mappings(self, internal_user_id: UserId, external_user_id: str) -> None:
+        mapping = await get_user_external_ids(internal_user_id)
+
+        assert mapping == {Service.supertokens: external_user_id}
