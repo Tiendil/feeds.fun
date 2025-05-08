@@ -9,3 +9,4 @@
 * DONE create tech debt database
 ** logout endpoint on the backend (current session, all sessions)
 ** support for linking multiple external services or drop it
+* TODO turn of account removing in single user mode

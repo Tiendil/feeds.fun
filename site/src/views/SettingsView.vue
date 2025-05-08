@@ -116,6 +116,28 @@
         </tr>
       </tbody>
     </table>
+
+    <h3>Danger Zone</h3>
+
+    <div class="ffun-info-bad">
+      <p><strong>ATTENTION!</strong></p>
+
+      <p>
+        Operations in this section are irreversible and may lead to data loss and even account deletion.
+      </p>
+    </div>
+
+    <div class="ffun-info-bad">
+      <button
+        @click.prevent="removeAccount()"
+        class="ffun-form-button bad short ml-1"
+        >Remove Account</button>
+
+      <label class="ml-1">
+        Permanently remove your account and all your data.
+      </label>
+    </div>
+
   </side-panel-layout>
 </template>
 
@@ -156,6 +178,12 @@
 
   function goToCollections() {
     router.push({name: e.MainPanelMode.Collections, params: {}});
+  }
+
+function removeAccount() {
+    if (confirm("Are you sure you want to remove your account? THIS OPERATION IS NOT REVERSIBLE!")) {
+      api.removeUser();
+    }
   }
 
   // TODO: check api keys on setup
