@@ -78,13 +78,11 @@ def add_middlewares(app: FastAPI) -> None:
 
 async def remove_user(user_id: str) -> None:
     logger.info("removing_supertokens_user", user_id=user_id)
-    # TODO: call as async
     await delete_user(user_id=user_id)
     logger.info("supertokens_user_removed")
 
 
 async def logout_user_from_all_sessions(user_id: str) -> None:
     logger.info("logging_out_supertokens_user", user_id=user_id)
-    # TODO: call as async
     await revoke_all_sessions_for_user(user_id=user_id)
     logger.info("supertokens_user_logged_out")
