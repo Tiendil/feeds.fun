@@ -1,12 +1,23 @@
 <template>
-  <wide-layout>
-    <template #header> Feeds Fun </template>
-
-    <div class="ffun-info-good">
-      <p v-if="!linkProcessed">Checking login status...</p>
-
-      <supertokens-login v-else />
+<wide-layout>
+    <div class="ffun-page-header">
+      <div class="ffun-page-header-center-block">
+        <page-header-external-links :show-api="false" />
+      </div>
     </div>
+
+    <hr />
+
+    <main-block>
+      <h1 class="m-0 text-5xl">Feeds Fun</h1>
+      <p class="mt-2 text-2xl">Transparent Personalized News</p>
+    </main-block>
+
+    <main-block>
+      <div class="max-w-xl md:mx-auto ffun-info-good text-center mx-2">
+        <p>Checking login status...</p>
+      </div>
+    </main-block>
   </wide-layout>
 </template>
 
@@ -28,10 +39,12 @@
 
   provide("eventsViewName", "auth");
 
-  const linkProcessed = ref(false);
-
   function goToWorkspace() {
     router.push({name: globalSettings.mainPanelMode, params: {}});
+  }
+
+function goToMain() {
+    router.push({name: "main", params: {}});
   }
 
   onBeforeMount(async () => {
@@ -46,6 +59,7 @@
 
     async function onSignFailed() {
       await supertokens.clearLoginAttempt();
+      goToMain();
     }
 
     if (await supertokens.hasInitialMagicLinkBeenSent()) {
@@ -54,9 +68,8 @@
         onSignIn: onSignIn,
         onSignFailed: onSignFailed
       });
-      linkProcessed.value = true;
     } else {
-      linkProcessed.value = true;
+      goToMain();
     }
   });
 </script>
