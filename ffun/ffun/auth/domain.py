@@ -21,7 +21,7 @@ async def logout_user_from_all_sessions_in_service(service: u_entities.Service, 
             pass
 
 
-async def logout_user_from_all_sessions(user_id: str) -> None:
+async def logout_user_from_all_sessions(user_id: u_entities.UserId) -> None:
     external_ids = await u_domain.get_user_external_ids(user_id)
 
     for service, external_id in external_ids.items():

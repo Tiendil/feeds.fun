@@ -95,7 +95,7 @@ class TestStoreUser:
         async with TableSizeDelta("u_users", delta=1):
             await store_user(execute, user_id)
 
-        result = await execute("SELECT * FROM u_users WHERE id = %s", (user_id,))
+        result = await execute("SELECT * FROM u_users WHERE id = %(id)s", {"id": user_id})
 
         assert len(result) == 1
         assert result[0]["id"] == user_id
@@ -111,7 +111,7 @@ class TestStoreUser:
         async with TableSizeNotChanged("u_users"):
             await store_user(execute, user_id)
 
-        result = await execute("SELECT * FROM u_users WHERE id = %s", (user_id,))
+        result = await execute("SELECT * FROM u_users WHERE id = %(id)s", {"id": user_id})
 
         assert len(result) == 1
         assert result[0]["id"] == user_id
