@@ -1,7 +1,7 @@
 import psycopg
 
 from ffun.core import logging
-from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
 from ffun.domain.domain import new_user_id
 from ffun.domain.entities import UserId
 from ffun.users import errors
@@ -10,8 +10,7 @@ from ffun.users.entities import Service
 logger = logging.get_module_logger()
 
 
-# TODO: test
-async def store_user(internal_id: UserId) -> None:
+async def store_user(execute: ExecuteType, internal_id: UserId) -> None:
     sql = """
          INSERT INTO u_users (id, created_at)
          VALUES (%(internal_id)s, NOW())
@@ -30,9 +29,11 @@ async def add_mapping(service: Service, external_id: str) -> UserId:
     internal_id = new_user_id()
 
     try:
-        await store_user(internal_id)
+        async with transaction() as execute:
+            await execute(sql, {"service_id": service, "external_id": external_id, "internal_id": internal_id})
 
-        await execute(sql, {"service_id": service, "external_id": external_id, "internal_id": internal_id})
+            # must be after mapping registration, to avoid storing fake internal_id
+            await store_user(execute, internal_id)
 
         logger.business_event("user_created", user_id=internal_id)
 
