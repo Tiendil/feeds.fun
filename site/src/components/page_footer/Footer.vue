@@ -72,6 +72,7 @@
           </a>
 
           <a
+            v-if="!settings.isSingleUserMode"
             href="#"
             class="ffun-normal-link"
             @click.prevent="cookieConsent.showCookieConsent()">

@@ -8,10 +8,12 @@ from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 
 from ffun.api import entities
 from ffun.api.settings import settings
+from ffun.auth import domain as a_domain
 from ffun.auth.dependencies import OptionalUser, User
 from ffun.core import logging
 from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
+from ffun.data_protection import domain as dp_domain
 from ffun.domain.domain import no_user_id
 from ffun.domain.entities import UserId
 from ffun.domain.urls import url_to_uid
@@ -486,6 +488,23 @@ async def api_track_event(request: entities.TrackEventRequest, user: OptionalUse
     logger.business_event(event, user_id=user_id, **attributes)
 
     return entities.TrackEventResponse()
+
+
+@router.post("/api/remove-user")
+async def api_remove_user(
+    request: fastapi.Request, _request: entities.RemoveUserRequest, user: User, response: fastapi.Response
+) -> entities.RemoveUserResponse:
+
+    await dp_domain.remove_user(user_id=user.id)
+
+    await a_domain.logout_user_from_all_sessions(user_id=user.id)
+
+    # remove all cookies to force client to detect that user is logged out
+    # also it ensures that consent cookies dialog is shown again
+    for cookie in request.cookies:
+        response.delete_cookie(cookie)
+
+    return entities.RemoveUserResponse()
 
 
 #######################

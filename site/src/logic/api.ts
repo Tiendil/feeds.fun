@@ -32,6 +32,7 @@ const API_SET_USER_SETTING = `${ENTRY_POINT}/set-user-setting`;
 const API_GET_RESOURCE_HISTORY = `${ENTRY_POINT}/get-resource-history`;
 const API_GET_INFO = `${ENTRY_POINT}/get-info`;
 const API_TRACK_EVENT = `${ENTRY_POINT}/track-event`;
+const API_REMOVE_USER = `${ENTRY_POINT}/remove-user`;
 
 let _onSessionLost: () => void = () => {};
 
@@ -342,4 +343,8 @@ export async function trackEvent(data: {[key: string]: string | number | null}) 
   }
 
   await post({url: API_TRACK_EVENT, data: {event: data}});
+}
+
+export async function removeUser() {
+  await post({url: API_REMOVE_USER, data: {}});
 }
