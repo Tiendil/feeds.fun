@@ -6,6 +6,6 @@
 * TODO test that migration works on tables with some data
 * TODO manually test logout
 * TODO manually test removing account
-* TODO create tech debt database
+* DONE create tech debt database
 ** logout endpoint on the backend (current session, all sessions)
 ** support for linking multiple external services or drop it
