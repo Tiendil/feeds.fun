@@ -7,7 +7,7 @@ from typing import Any
 from psycopg import Connection
 from yoyo import step
 
-__depends__ = {'20230527_01_soIr3-users-mapping'}
+__depends__ = {"20230527_01_soIr3-users-mapping"}
 
 
 sql_create_users_table = """

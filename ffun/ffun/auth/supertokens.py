@@ -9,7 +9,6 @@ from supertokens_python.recipe import dashboard, emailverification, passwordless
 from supertokens_python.recipe.passwordless import ContactEmailOnlyConfig
 from supertokens_python.recipe.passwordless.types import EmailDeliveryOverrideInput, EmailTemplateVars
 from supertokens_python.syncio import delete_user
-from supertokens_python.recipe.session.syncio import revoke_all_sessions_for_user
 
 from ffun.auth.settings import settings
 from ffun.core import logging

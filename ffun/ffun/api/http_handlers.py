@@ -8,11 +8,12 @@ from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 
 from ffun.api import entities
 from ffun.api.settings import settings
-from ffun.auth.dependencies import OptionalUser, User
 from ffun.auth import domain as a_domain
+from ffun.auth.dependencies import OptionalUser, User
 from ffun.core import logging
 from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
+from ffun.data_protection import domain as dp_domain
 from ffun.domain.domain import no_user_id
 from ffun.domain.entities import UserId
 from ffun.domain.urls import url_to_uid
@@ -32,7 +33,6 @@ from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 from ffun.user_settings import domain as us_domain
-from ffun.data_protection import domain as dp_domain
 
 router = fastapi.APIRouter()
 

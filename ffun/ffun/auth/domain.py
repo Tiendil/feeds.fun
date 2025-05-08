@@ -1,8 +1,6 @@
-
 from ffun.auth import supertokens
-from ffun.users import entities as u_entities
 from ffun.users import domain as u_domain
-from ffun.domain.entities import UserId
+from ffun.users import entities as u_entities
 
 
 async def remove_user_from_external_service(service: u_entities.Service, external_user_id: str) -> None:

@@ -12,11 +12,18 @@ from ffun.core.tests.helpers import (
     capture_logs,
 )
 from ffun.core.utils import now
-from ffun.domain.entities import UserId
 from ffun.domain.domain import new_user_id
+from ffun.domain.entities import UserId
 from ffun.users import errors
 from ffun.users.entities import Service
-from ffun.users.operations import add_mapping, count_total_users, get_mapping, store_user, get_user_external_ids, unlink_user
+from ffun.users.operations import (
+    add_mapping,
+    count_total_users,
+    get_mapping,
+    get_user_external_ids,
+    store_user,
+    unlink_user,
+)
 
 
 class TestAddMapping:

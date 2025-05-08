@@ -1,10 +1,7 @@
-
-from ffun.domain.entities import UserId
-
-from ffun.core import logging
 from ffun.auth import domain as a_domain
+from ffun.core import logging
+from ffun.domain.entities import UserId
 from ffun.users import domain as u_domain
-
 
 logger = logging.get_module_logger()
 

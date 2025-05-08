@@ -1,7 +1,11 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from ffun.auth.domain import remove_user_from_external_service, logout_user_from_all_sessions_in_service, logout_user_from_all_sessions
+from ffun.auth.domain import (
+    logout_user_from_all_sessions,
+    logout_user_from_all_sessions_in_service,
+    remove_user_from_external_service,
+)
 from ffun.users.entities import Service
 
 
@@ -9,7 +13,7 @@ class TestRemoveUserFromExternalService:
 
     @pytest.mark.asyncio
     async def test_remove_supertokens_user(self, external_user_id: str, mocker: MockerFixture):
-        remove_supertokens_user = mocker.patch('ffun.auth.supertokens.remove_user')
+        remove_supertokens_user = mocker.patch("ffun.auth.supertokens.remove_user")
 
         await remove_user_from_external_service(Service.supertokens, external_user_id)
 
@@ -17,7 +21,7 @@ class TestRemoveUserFromExternalService:
 
     @pytest.mark.asyncio
     async def test_remove_single_user(self, external_user_id: str, mocker: MockerFixture):
-        remove_supertokens_user = mocker.patch('ffun.auth.supertokens.remove_user')
+        remove_supertokens_user = mocker.patch("ffun.auth.supertokens.remove_user")
 
         await remove_user_from_external_service(Service.single, external_user_id)
 
@@ -28,7 +32,7 @@ class TestLogoutUserFromAllSessionsInService:
 
     @pytest.mark.asyncio
     async def test_logout_supertokens_user(self, external_user_id: str, mocker: MockerFixture):
-        logout_supertokens_user = mocker.patch('ffun.auth.supertokens.logout_user_from_all_sessions')
+        logout_supertokens_user = mocker.patch("ffun.auth.supertokens.logout_user_from_all_sessions")
 
         await logout_user_from_all_sessions_in_service(Service.supertokens, external_user_id)
 
@@ -36,7 +40,7 @@ class TestLogoutUserFromAllSessionsInService:
 
     @pytest.mark.asyncio
     async def test_logout_single_user(self, external_user_id: str, mocker: MockerFixture):
-        logout_supertokens_user = mocker.patch('ffun.auth.supertokens.logout_user_from_all_sessions')
+        logout_supertokens_user = mocker.patch("ffun.auth.supertokens.logout_user_from_all_sessions")
 
         await logout_user_from_all_sessions_in_service(Service.single, external_user_id)
 
@@ -47,11 +51,10 @@ class TestLogoutUserFromAllSessions:
 
     @pytest.mark.asyncio
     async def test_logout_user(self, internal_user_id: str, mocker: MockerFixture):
-        get_user_external_ids = mocker.patch('ffun.users.domain.get_user_external_ids')
-        get_user_external_ids.return_value = {Service.supertokens: "supertokens_id",
-                                              Service.single: "single_id"}
+        get_user_external_ids = mocker.patch("ffun.users.domain.get_user_external_ids")
+        get_user_external_ids.return_value = {Service.supertokens: "supertokens_id", Service.single: "single_id"}
 
-        logout_user = mocker.patch('ffun.auth.domain.logout_user_from_all_sessions_in_service')
+        logout_user = mocker.patch("ffun.auth.domain.logout_user_from_all_sessions_in_service")
 
         await logout_user_from_all_sessions(internal_user_id)
 
