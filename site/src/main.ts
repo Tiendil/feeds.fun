@@ -159,7 +159,9 @@ app.component("vue-countdown", VueCountdown);
 app.use(createPinia());
 app.use(router);
 
-app.use(CookieConsent.plugin, CookieConsent.defaultConfig);
+if (!settings.isSingleUserMode) {
+  app.use(CookieConsent.plugin, CookieConsent.defaultConfig);
+}
 
 app.mount("#app");
 
