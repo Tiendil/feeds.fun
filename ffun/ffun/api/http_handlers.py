@@ -491,7 +491,9 @@ async def api_track_event(request: entities.TrackEventRequest, user: OptionalUse
 
 
 @router.post("/api/remove-user")
-async def api_remove_user(request: fastapi.Request, _request: entities.RemoveUserRequest, user: User, response: fastapi.Response) -> entities.RemoveUserResponse:
+async def api_remove_user(
+    request: fastapi.Request, _request: entities.RemoveUserRequest, user: User, response: fastapi.Response
+) -> entities.RemoveUserResponse:
 
     await dp_domain.remove_user(user_id=user.id)
 
@@ -503,8 +505,6 @@ async def api_remove_user(request: fastapi.Request, _request: entities.RemoveUse
         response.delete_cookie(cookie)
 
     return entities.RemoveUserResponse()
-
-
 
 
 #######################

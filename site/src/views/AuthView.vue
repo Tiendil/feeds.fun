@@ -1,5 +1,5 @@
 <template>
-<wide-layout>
+  <wide-layout>
     <div class="ffun-page-header">
       <div class="ffun-page-header-center-block">
         <page-header-external-links :show-api="false" />
@@ -43,7 +43,7 @@
     router.push({name: globalSettings.mainPanelMode, params: {}});
   }
 
-function goToMain() {
+  function goToMain() {
     router.push({name: "main", params: {}});
   }
 

@@ -29,7 +29,7 @@
   }
 
   .ffun-page-header-link-disabled {
-      @apply ffun-x-header-text text-slate-400;
+    @apply ffun-x-header-text text-slate-400;
   }
 
   .ffun-page-header-title {

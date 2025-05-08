@@ -3,13 +3,13 @@ from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI
 from supertokens_python import InputAppInfo, SupertokensConfig, init
+from supertokens_python.asyncio import delete_user
 from supertokens_python.framework.fastapi import get_middleware
 from supertokens_python.ingredients.emaildelivery.types import EmailDeliveryConfig
 from supertokens_python.recipe import dashboard, emailverification, passwordless, session, usermetadata
 from supertokens_python.recipe.passwordless import ContactEmailOnlyConfig
 from supertokens_python.recipe.passwordless.types import EmailDeliveryOverrideInput, EmailTemplateVars
 from supertokens_python.recipe.session.asyncio import revoke_all_sessions_for_user
-from supertokens_python.asyncio import delete_user
 
 from ffun.auth.settings import settings
 from ffun.core import logging

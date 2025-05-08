@@ -55,4 +55,4 @@ console.log("settings.utmLifetime", utmLifetime);
 console.log("settings.crmTerms", crmTerms ? "set" : "not set");
 console.log("settings.crmPrivacy", crmPrivacy ? "set" : "not set");
 
-export const isSingleUserMode = ( authMode === AuthMode.SingleUser );
+export const isSingleUserMode = authMode === AuthMode.SingleUser;

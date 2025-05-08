@@ -122,28 +122,26 @@
     <div class="ffun-info-bad">
       <p><strong>ATTENTION!</strong></p>
 
-      <p>
-        Operations in this section are irreversible and may lead to data loss and even account deletion.
-      </p>
+      <p> Operations in this section are irreversible and may lead to data loss and even account deletion. </p>
     </div>
 
-    <div v-if="!settings.isSingleUserMode" class="ffun-info-bad">
+    <div
+      v-if="!settings.isSingleUserMode"
+      class="ffun-info-bad">
       <button
         @click.prevent="removeAccount()"
         class="ffun-form-button bad short ml-1"
-        >Remove Account</button>
+        >Remove Account</button
+      >
 
-      <label class="ml-1">
-        Permanently remove your account and all your data.
-      </label>
+      <label class="ml-1"> Permanently remove your account and all your data. </label>
     </div>
 
-    <div v-else class="ffun-info-common">
-      <p>
-        Account removal in the single-user mode is not available.
-      </p>
+    <div
+      v-else
+      class="ffun-info-common">
+      <p> Account removal in the single-user mode is not available. </p>
     </div>
-
   </side-panel-layout>
 </template>
 
@@ -187,7 +185,7 @@
     router.push({name: e.MainPanelMode.Collections, params: {}});
   }
 
-function removeAccount() {
+  function removeAccount() {
     if (confirm("Are you sure you want to remove your account? THIS OPERATION IS NOT REVERSIBLE!")) {
       api.removeUser();
     }

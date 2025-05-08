@@ -182,7 +182,7 @@ class TestExistedRouteUrls:
             "/api/openapi.json",
             "/api/remove-marker",
             "/api/track-event",
-            '/api/remove-user',
+            "/api/remove-user",
         }
 
 
