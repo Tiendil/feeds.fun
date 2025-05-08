@@ -71,7 +71,6 @@ async def get_user_external_ids(internal_id: UserId) -> dict[Service, str]:
     return {row["service_id"]: row["external_id"] for row in result}
 
 
-# TODO: test
 async def unlink_user(service: Service, internal_id: UserId) -> None:
     sql = """
     DELETE FROM u_mapping
