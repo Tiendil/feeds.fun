@@ -64,8 +64,11 @@ function enablePlausible() {
   document.body.appendChild(script);
 }
 
-const _description =
-  "We use cookies and local storage for session tracking (required) and optional analytics. Please let us collect analytics to better understand how you use us and become the best news reader ever.";
+const _description = `
+<p>We use cookies and local storage for session tracking (required) and optional analytics.</p>
+<p>Please let us collect analytics to better understand how you use us and become the best news reader ever.</p>
+<p>You can find more information in our <a href="/privacy" target="_blank" rel="noopener noreferrer">privacy policy</a>.</p>
+`;
 
 export const defaultConfig = {
   revision: 1,
