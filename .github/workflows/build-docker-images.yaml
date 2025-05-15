@@ -1,13 +1,8 @@
-name: Build docker images
+name: build docker images
 
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch to run on'
-        required: false
-        default: 'main'
-
       tag:
         description: 'Docker image tag'
         required: true
@@ -17,9 +12,47 @@ on:
   #     - '*'
 
 jobs:
-  build:
+  push_to_registry:
+    name: Build and push Docker image to Docker Hub
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
 
     steps:
-      - name: Checkout code
+      - name: Check out the repo
         uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3.4.0
+        with:
+          username: tiendil
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5.7.0
+        with:
+          images: tiendil/feeds-fun-backend
+
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@6.16.0
+        with:
+          context: .
+          file: ./docker/prod/backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ steps.meta.outputs.registry }}/${{ steps.meta.outputs.repository }}:${{ github.event.inputs.tag }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: index.docker.io/tiendil/feeds-fun-backend
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
