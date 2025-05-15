@@ -48,7 +48,7 @@ jobs:
           # tags: ${{ steps.meta.outputs.tags }}
           tags: |
             ${{ steps.meta.outputs.tags }}
-            ${{ steps.meta.outputs.registry }}/${{ steps.meta.outputs.repository }}:${{ github.event.inputs.tag }}
+            tiendil/feeds-fun-backend:${{ github.event.inputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Generate artifact attestation
