@@ -1,0 +1,25 @@
+name: Build docker images
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to run on'
+        required: false
+        default: 'main'
+
+      tag:
+        description: 'Docker image tag'
+        required: true
+
+  # push:
+  #   tags:
+  #     - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
