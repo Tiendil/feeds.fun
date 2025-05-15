@@ -21,8 +21,8 @@ services:
         tmpfs:
           size: 2g
       # - ffun_postgresql_data:/var/lib/postgresql/data
-      - ./docker/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
-      - ./docker/postgresql/healthcheck.sh:/healthcheck.sh
+      - ./docker/dev/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./docker/dev/postgresql/healthcheck.sh:/healthcheck.sh
 
     environment:
       POSTGRES_MULTIPLE_DATABASES: ffun,supertokens
@@ -75,17 +75,17 @@ services:
       retries: 5
 
   backend-build:
-    image: ffun-backend
+    image: ffun-backend-dev
     build:
       context: ./
-      dockerfile: ./docker/backend/Dockerfile
+      dockerfile: ./docker/dev/backend/Dockerfile
     command: /bin/true
 
     profiles:
       - dev-build
 
   backend:
-    image: ffun-backend
+    image: ffun-backend-dev
 
     depends_on:
       postgresql:
@@ -121,7 +121,7 @@ services:
       ffun_network: {}
 
   backend-utils:
-    image: ffun-backend
+    image: ffun-backend-dev
 
     depends_on:
       postgresql:
@@ -149,17 +149,17 @@ services:
       - dev
 
   frontend-build:
-    image: ffun-frontend
+    image: ffun-frontend-dev
     build:
       context: ./
-      dockerfile: ./docker/frontend/Dockerfile
+      dockerfile: ./docker/dev/frontend/Dockerfile
     command: /bin/true
 
     profiles:
       - dev-build
 
   frontend:
-    image: ffun-frontend
+    image: ffun-frontend-dev
 
     depends_on:
       backend:
@@ -191,7 +191,7 @@ services:
       ffun_network: {}
 
   frontend-utils:
-    image: ffun-frontend
+    image: ffun-frontend-dev
 
     volumes:
       - ${PWD}/site/src:/repository/src
