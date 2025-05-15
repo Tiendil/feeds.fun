@@ -77,32 +77,32 @@ services:
     # ports:
     #   - "8000:8000"
 
-  backend-workers:
-    # TODO: change to ffun-backend:latest
-    image: ffun-backend:test
+  # backend-workers:
+  #   # TODO: change to ffun-backend:latest
+  #   image: ffun-backend:test
 
-    depends_on:
-      postgres:
-        condition: service_healthy
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
 
-    command:
-      - /bin/bash
-      - -c
-      - |
-        ffun migrate
-        echo "migrations successed"
-        ffun workers --loader --librarian
+  #   command:
+  #     - /bin/bash
+  #     - -c
+  #     - |
+  #       ffun migrate
+  #       echo "migrations successed"
+  #       ffun workers --loader --librarian
 
-    # TODO: env
-    # TODO: configs
-    # TODO: collections
-    # volumes:
-    #   - ${PWD}/.env:/repository/.env
-    #   - ${PWD}/.configs:/repository/.configs
-    #   - ${PWD}/feeds_collections:/repository/feeds_collections
+  #   # TODO: env
+  #   # TODO: configs
+  #   # TODO: collections
+  #   # volumes:
+  #   #   - ${PWD}/.env:/repository/.env
+  #   #   - ${PWD}/.configs:/repository/.configs
+  #   #   - ${PWD}/feeds_collections:/repository/feeds_collections
 
-    environment:
-      <<: *backend-environment
+  #   environment:
+  #     <<: *backend-environment
 
     # ports:
     #   - "8000:8000"
