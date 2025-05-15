@@ -7,9 +7,9 @@ on:
         description: 'Docker image tag'
         required: true
 
-  # push:
-  #   tags:
-  #     - '*'
+  push:
+    tags:
+      - '*'
 
 jobs:
   push_to_registry:
@@ -45,10 +45,9 @@ jobs:
           context: .
           file: ./docker/prod/backend/Dockerfile
           push: true
-          # tags: ${{ steps.meta.outputs.tags }}
           tags: |
-            ${{ steps.meta.outputs.tags }}
-            tiendil/feeds-fun-backend:${{ github.event.inputs.tag }}
+            type=match,pattern=release-(.*),group=1
+            type=raw,value={{ github.event.inputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Generate artifact attestation
