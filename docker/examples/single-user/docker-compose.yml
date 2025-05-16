@@ -5,20 +5,6 @@ volumes:
   ffun_caddy_config: {}
 
 
-# TODO: mount as .env file?
-x-backend-environment: &backend-environment
-  FFUN_ENVIRONMENT: "prod"
-  FFUN_ORIGINS: "[\"localhost\"]" # TODO: is it correct?
-  # FFUN_USER_SETTINGS_SECRET_KEY: "${TIE_FFUN_USER_SETTINGS_SECRET_KEY}"
-
-  FFUN_POSTGRESQL__HOST: "postgres"
-  FFUN_POSTGRESQL__USER: "ffun"
-  FFUN_POSTGRESQL__PASSWORD: "ffun"
-  FFUN_POSTGRESQL__DATABASE: "ffun"
-
-  # FFUN_LOADER_PROXIES: "${TIE_FFUN_LOADER_PROXIES}"
-
-
 # TODO: add comments
 services:
 
@@ -26,13 +12,7 @@ services:
     image: postgres:15.2
 
     volumes:
-      # - type: tmpfs
-      #   target: /var/lib/postgresql/data
-      #   tmpfs:
-      #     size: 2g
       - ffun_postgres_data:/var/lib/postgresql/data
-      # - ./docker/dev/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
-      # - ./docker/dev/postgresql/healthcheck.sh:/healthcheck.sh
 
     environment:
       POSTGRES_DB: ffun
@@ -65,59 +45,49 @@ services:
     # TODO: env
     # TODO: configs
     # TODO: collections
-    # volumes:
-    #   - ${PWD}/.env:/repository/.env
+    volumes:
+      - ${PWD}/.env:/ffun/.env
     #   - ${PWD}/.configs:/repository/.configs
     #   - ${PWD}/feeds_collections:/repository/feeds_collections
 
     environment:
-      <<: *backend-environment
       FFUN_ENABLE_API: "True"
 
-    # ports:
-    #   - "8000:8000"
+  backend-workers:
+    # TODO: change to ffun-backend:latest
+    image: ffun-backend:test
 
-  # backend-workers:
-  #   # TODO: change to ffun-backend:latest
-  #   image: ffun-backend:test
+    depends_on:
+      postgres:
+        condition: service_healthy
 
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
+    command:
+      - /bin/bash
+      - -c
+      - |
+        ffun migrate
+        echo "migrations successed"
+        ffun workers --loader --librarian
 
-  #   command:
-  #     - /bin/bash
-  #     - -c
-  #     - |
-  #       ffun migrate
-  #       echo "migrations successed"
-  #       ffun workers --loader --librarian
+    # TODO: env
+    # TODO: configs
+    # TODO: collections
+    volumes:
+      - ${PWD}/.env:/ffun/.env
+    #   - ${PWD}/.configs:/repository/.configs
+    #   - ${PWD}/feeds_collections:/repository/feeds_collections
 
-  #   # TODO: env
-  #   # TODO: configs
-  #   # TODO: collections
-  #   # volumes:
-  #   #   - ${PWD}/.env:/repository/.env
-  #   #   - ${PWD}/.configs:/repository/.configs
-  #   #   - ${PWD}/feeds_collections:/repository/feeds_collections
-
-  #   environment:
-  #     <<: *backend-environment
-
-    # ports:
-    #   - "8000:8000"
+    environment: {}
 
   frontend-data:
     # TODO: change to ffun-frontend:latest
     image: ffun-frontend-data:test
 
     volumes:
+      - ${PWD}/.env:/ffun/.env
       - ffun_frontend_data:/ffun-static-data
 
-    # environment:
-
-    # ports:
-    #   - "5173:5173"
+    environment: {}
 
   frontend-caddy:
     image: caddy:2.10.0
