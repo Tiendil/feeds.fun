@@ -14,7 +14,7 @@ Blog: [blog.feeds.fun](https://blog.feeds.fun)
 
 # Screenshots
 
-![News filtering](docs/images/news-filtering-example.png)
+![News filtering](../../../docs/images/news-filtering-example.png)
 
 # Fastest way to try locally
 
