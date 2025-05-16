@@ -1,4 +1,4 @@
-# An example of a single-user setup of Feeds Fun
+# An example of a multi-user setup of Feeds Fun
 
 You can up Feeds Fun in a single-user mode by following these steps:
 
@@ -14,7 +14,7 @@ Enter your email, you should receive an email with a link to log in. Click on th
 
 **The comments in the `docker-compose.yml` and other files contain many details.** Those details are not required to run test instances, but we recommend reading (and changing some of them) before running Feeds Fun as a permanent service.
 
-Check notes in [single-user example](../single-user/README.md) for more details about running a permanent instance of Feeds Fun — we try to avoid duplicating docs.
+Check notes in [single-user example](../single-user/README.md) for more details about running a permanent instance of Feeds Fun — we try to avoid duplicating docs, so we will not repeat notes here.
 
 Below you can find some really important notes about running Feeds Fun as a permanent service.
 
@@ -28,3 +28,11 @@ To turn HTTPS on you should (see comments in the corresponding files):
 
 - Update Caddyfile to use HTTPS.
 - Update ffun.env to use appropriate ports and domain names.
+
+## Supertokens
+
+Feeds Fun uses [SuperTokens](https://supertokens.io/) for authentication. It is a well-known open-source self-hosted authentication solution with a lot of features and relatively easy management.
+
+This example contains a configured SuperTokens instance, but you may want to tune it up for your needs. The official site contains extensive documentation on how to do that.
+
+You also should be able to switch to the official SuperTokens instance (without self-hosting it), but we did not test such setup.
