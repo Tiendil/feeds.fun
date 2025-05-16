@@ -35,7 +35,7 @@ services:
 
   # HTTP API server for Feeds Fun
   backend-api:
-    image: ffun-backend:latest
+    image: tiendil/feeds-fun-backend:latest
 
     depends_on:
       postgres:
@@ -52,15 +52,14 @@ services:
 
     volumes:
       - ${PWD}/ffun.env:/ffun/.env  # general config
-      - ${PWD}/tag_processors.yml:/ffun/tag_processors.yml  # tag processors config
+      - ${PWD}/tag_processors.toml:/ffun/tag_processors.toml  # tag processors config
 
     environment:
       FFUN_ENABLE_API: "True"
 
   # Background workers for download feeds and tag them
   backend-workers:
-    # TODO: change to ffun-backend:latest
-    image: ffun-backend:test
+    image: tiendil/feeds-fun-backend:latest
 
     depends_on:
       postgres:
@@ -81,13 +80,13 @@ services:
 
     volumes:
       - ${PWD}/ffun.env:/ffun/.env  # general config
-      - ${PWD}/tag_processors.yml:/ffun/tag_processors.yml  # tag processors config
+      - ${PWD}/tag_processors.toml:/ffun/tag_processors.toml  # tag processors config
 
     environment: {}
 
   # Service builds frontend UI and copies it to the static data volume to be served by Caddy
   frontend-data:
-    image: ffun-frontend-data:latest
+    image: tiendil/feeds-fun-frontend-data:latest
 
     volumes:
       - ${PWD}/ffun.env:/ffun/.env  # general config
