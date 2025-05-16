@@ -2,18 +2,20 @@
 #
 # This config should work as is, but you may want to change it in order to better suit your self-hosting needs
 # The basic instructions are provided in the README.md file in the same directory as this file
-# Check comments in the file for more details
+# Check comments below for more details
 
 volumes:
-  ffun_postgres_data: {}
-  ffun_frontend_data: {}
+  ffun_postgres_data: {}  # Permanent storage for database
+  ffun_frontend_data: {}  # Permanent storage for frontend files
+
+  # These volumes are required for Caddy to work, you don't need them if you don't use Caddy
   ffun_caddy_data: {}
   ffun_caddy_config: {}
 
 
-# TODO: add comments
 services:
 
+  # PostgreSQL database
   postgres:
     image: postgres:15.2
 
@@ -31,15 +33,15 @@ services:
       timeout: 5s
       retries: 10
 
+  # HTTP API server for Feeds Fun
   backend-api:
-    # TODO: change to ffun-backend:latest
-    image: ffun-backend:test
+    image: ffun-backend:latest
 
-    # TODO: wait somehow till the DB is ready
     depends_on:
       postgres:
         condition: service_healthy
 
+    # We always run DB migrations on startup to ensure the DB schema is up to date with the code
     command:
       - /bin/bash
       - -c
@@ -48,17 +50,14 @@ services:
         echo "migrations successed"
         uvicorn ffun.application.application:app --host 0.0.0.0 --port 8000 --workers 1
 
-    # TODO: env
-    # TODO: configs
-    # TODO: collections
     volumes:
-      - ${PWD}/ffun.env:/ffun/.env
-    #   - ${PWD}/.configs:/repository/.configs
-    #   - ${PWD}/feeds_collections:/repository/feeds_collections
+      - ${PWD}/ffun.env:/ffun/.env  # general config
+      - ${PWD}/tag_processors.yml:/ffun/tag_processors.yml  # tag processors config
 
     environment:
       FFUN_ENABLE_API: "True"
 
+  # Background workers for download feeds and tag them
   backend-workers:
     # TODO: change to ffun-backend:latest
     image: ffun-backend:test
@@ -67,6 +66,11 @@ services:
       postgres:
         condition: service_healthy
 
+    # We always run DB migrations on startup to ensure the DB schema is up to date with the code
+    #
+    # Workers are specified by `--loader` and `--librarian` flags
+    # You can run them in separate containers if you want to tune load on your server
+    # but most likely you will not need to do that in the single-user setup
     command:
       - /bin/bash
       - -c
@@ -75,26 +79,24 @@ services:
         echo "migrations successed"
         ffun workers --loader --librarian
 
-    # TODO: env
-    # TODO: configs
-    # TODO: collections
     volumes:
-      - ${PWD}/ffun.env:/ffun/.env
-    #   - ${PWD}/.configs:/repository/.configs
-    #   - ${PWD}/feeds_collections:/repository/feeds_collections
+      - ${PWD}/ffun.env:/ffun/.env  # general config
+      - ${PWD}/tag_processors.yml:/ffun/tag_processors.yml  # tag processors config
 
     environment: {}
 
+  # Service builds frontend UI and copies it to the static data volume to be served by Caddy
   frontend-data:
-    # TODO: change to ffun-frontend:latest
-    image: ffun-frontend-data:test
+    image: ffun-frontend-data:latest
 
     volumes:
-      - ${PWD}/ffun.env:/ffun/.env
-      - ffun_frontend_data:/ffun-static-data
+      - ${PWD}/ffun.env:/ffun/.env  # general config
+      - ffun_frontend_data:/ffun-static-data  # this volume is shared with Caddy
 
     environment: {}
 
+  # Caddy web server for serving frontend and API, you can use any other web server you like
+  # the Caddy was chosen for its simplicity and ease of use
   frontend-caddy:
     image: caddy:2.10.0
 

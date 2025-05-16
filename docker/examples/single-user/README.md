@@ -12,10 +12,31 @@ Go to `http://localhost/` to access the web interface.
 
 **The comments in the `docker-compose.yml` and other files contain many details.** Those details are not required to run test instances, but we recommend reading (and changing some of them) before running Feeds Fun as a permanent service.
 
+Below you can find some really important notes about running Feeds Fun as a permanent service.
+
+## Tag processor configs
+
+Set API keys in the settings section of the site to turn on the LLM-based tagging.
+
+Tag processor configs can be found in [./tag_processors.yml](./tag_processors.yml) file. Prompts in them are similar to the ones used on the [feeds.fun](https://feeds.fun) site. You may want to play with them to get the best results for your needs.
+
+**Best practices:**
+
+- Set an OpenAI or Gemini API key to get the best experience from using the Feeds Fun.
+
 ## Caddy server
 
 This example uses [Caddy](https://caddyserver.com/) as a reverse proxy. It is a simple and powerful web server with automatic HTTPS support.
 
-In this example, Caddy is configured to serve on `localhost` and only via `HTTP` protocol. If you want to expose your Feeds Fun instance to the internet, you need to change the `Caddyfile` to use `HTTPS` and set up a domain name.
+**Best practices:**
 
-**ALWAYS** use a reverse proxy ([Caddy](https://caddyserver.com/), [Nginx](https://www.nginx.com/), etc.) in front of the Feeds Fun if you are going to expose it to the internet.
+- **ALWAYS** use a reverse proxy ([Caddy](https://caddyserver.com/), [Nginx](https://www.nginx.com/), etc.) in front of the Feeds Fun if you are going to expose it to the internet.
+
+## Feeds Fun versions and migrations
+
+This example uses the `latest` tag of the Feeds Fun images, so you will always get the latest version for your experiments. It is ok for testing, but not for production environments — we do our best to automatically migrate the database between versions, but in some rare cases you may need to do some manual migrations.
+
+**Best practices:**
+
+- Replace `:latest` tag of the Feeds Fun images with a specific version tag (e.g. `:1.19.0`) in the `docker-compose.yml` file.
+- Check [CHANGELOG](https://github.com/Tiendil/feeds.fun/blob/main/CHANGELOG.md) before upgrading to a new version.

@@ -4,6 +4,7 @@
 }
 
 
+# Remove http:// prefix to turn on HTTPS
 http://localhost {
 
     encode gzip
