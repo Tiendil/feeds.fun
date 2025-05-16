@@ -39,15 +39,23 @@ It is free and should be stable: no database resets, minimal downtime, etc.
 
 Just do not forget to set up your OpenAI or Gemini API key to access the full power of tags generation.
 
+# Fastest way to try
+
+Check instructions in the [docker/examples/single-user](docker/examples/single-user) directory.
+
 # Self-hosted version
+
+Instructions for docker-based installation:
+
+- [single-user](docker/examples/single-user) — single-user setup.
+
+Also:
 
 - Backend is accessible as [ffun](https://pypi.org/project/ffun/) package on PyPI.
 - Frontend is accessible as [feeds-fun](https://www.npmjs.com/package/feeds-fun) package on NPM.
 - Use the same versions for front and back.
 
 Alternatively, you can install from tags in this repo.
-
-There are no official docker images yet. Feeds
 
 ## Configuration
 
