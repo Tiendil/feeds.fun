@@ -39,7 +39,7 @@ It is free and should be stable: no database resets, minimal downtime, etc.
 
 Just do not forget to set up your OpenAI or Gemini API key to access the full power of tags generation.
 
-# Fastest way to try
+# Fastest way to try locally
 
 Check instructions in the [docker/examples/single-user](docker/examples/single-user) directory.
 
