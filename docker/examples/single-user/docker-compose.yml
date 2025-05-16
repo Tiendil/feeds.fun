@@ -1,3 +1,9 @@
+# This is an example of simplest single-user setup of Feeds Fun news reader
+#
+# This config should work as is, but you may want to change it in order to better suit your self-hosting needs
+# The basic instructions are provided in the README.md file in the same directory as this file
+# Check comments in the file for more details
+
 volumes:
   ffun_postgres_data: {}
   ffun_frontend_data: {}
