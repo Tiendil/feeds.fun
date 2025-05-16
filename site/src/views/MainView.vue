@@ -179,11 +179,11 @@
       </main-description>
     </main-block>
 
-    <main-header-line v-if="collections.collectionsOrder.length > 0">
+    <main-header-line v-if="settings.hasCollections">
       Curated news collections <br class="md:hidden" />for easy start
     </main-header-line>
 
-    <main-block>
+    <main-block v-if="settings.hasCollections">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <template
           v-for="collectionId in collections.collectionsOrder"

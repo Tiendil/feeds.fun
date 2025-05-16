@@ -184,6 +184,8 @@ services:
       VITE_FFUN_CRM_TERMS: "${FFUN_CRM_TERMS-not-specified}"
       VITE_FFUN_CRM_PRIVACY: "${FFUN_CRM_PRIVACY-not-specified}"
 
+      VITE_FFUN_HAS_COLLECTIONS: "true"
+
     ports:
       - "5173:5173"
 

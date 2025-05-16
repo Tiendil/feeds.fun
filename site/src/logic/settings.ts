@@ -29,6 +29,8 @@ export const utmLifetime = import.meta.env.VITE_FFUN_UTM_LIFETIME || 7; // days
 export const crmTerms = import.meta.env.VITE_FFUN_CRM_TERMS || null;
 export const crmPrivacy = import.meta.env.VITE_FFUN_CRM_PRIVACY || null;
 
+export const hasCollections = import.meta.env.VITE_FFUN_HAS_COLLECTIONS == "true" || false;
+
 console.log("settings.appName", appName);
 console.log("settings.appDomain", appDomain);
 console.log("settings.appPort", appPort);
@@ -54,5 +56,7 @@ console.log("settings.utmLifetime", utmLifetime);
 
 console.log("settings.crmTerms", crmTerms ? "set" : "not set");
 console.log("settings.crmPrivacy", crmPrivacy ? "set" : "not set");
+
+console.log("settings.hasCollections", hasCollections);
 
 export const isSingleUserMode = authMode === AuthMode.SingleUser;

@@ -1,4 +1,5 @@
 import * as c from "@/logic/constants";
+import * as settings from "@/logic/settings";
 
 export type AnyEnum = {
   [key in keyof any]: string | number;
@@ -24,7 +25,7 @@ export const MainPanelModeProperties = new Map<MainPanelMode, MainPanelModePrope
   [MainPanelMode.Feeds, {text: "Feeds", showInMenu: true}],
   [MainPanelMode.Rules, {text: "Rules", showInMenu: true}],
   [MainPanelMode.Discovery, {text: "Discovery", showInMenu: true}],
-  [MainPanelMode.Collections, {text: "Collections", showInMenu: true}],
+  [MainPanelMode.Collections, {text: "Collections", showInMenu: settings.hasCollections}],
   [MainPanelMode.PublicCollection, {text: "Public Collection", showInMenu: false}],
   [MainPanelMode.Settings, {text: "Settings", showInMenu: true}]
 ]);
