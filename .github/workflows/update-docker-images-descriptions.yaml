@@ -19,11 +19,11 @@ jobs:
 
           - repository: tiendil/feeds-fun-backend
             readme: ./docker/prod/backend/README.md
-            short: Official backend images for Feeds Fun — news reader with tags, scoring, and AI
+            short: Official backend image for Feeds Fun — news reader with tags, scoring, and AI
 
           - repository: tiendil/feeds-fun-frontend-data
             reamde: ./docker/prod/frontend/README.md
-            short: Official frontend data images for Feeds Fun — news reader with tags, scoring, and AI
+            short: Official frontend data image for Feeds Fun — news reader with tags, scoring, and AI
 
     steps:
       - uses: actions/checkout@v4
