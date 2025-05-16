@@ -10,8 +10,8 @@
   import type {Ref} from "vue";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useCollectionsStore} from "@/stores/collections";
-import * as tagsFilterState from "@/logic/tagsFilterState";
-import * as settings from "@/logic/settings";
+  import * as tagsFilterState from "@/logic/tagsFilterState";
+  import * as settings from "@/logic/settings";
 
   const properties = defineProps<{
     apiKey: boolean;
