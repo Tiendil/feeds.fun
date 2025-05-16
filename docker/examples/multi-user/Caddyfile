@@ -1,0 +1,25 @@
+
+{
+    admin off
+}
+
+
+# Remove http:// prefix to turn on HTTPS
+http://localhost {
+
+    encode gzip
+
+    route {
+        respond /caddy-alive-marker "Caddy works!"
+
+        reverse_proxy /api/* backend-api:8000
+        reverse_proxy /supertokens/* backend-api:8000
+        reverse_proxy /auth/* backend-api:8000
+
+        root * /ffun-static-data
+        try_files {path} /index.html
+        file_server
+	}
+
+    log
+}
