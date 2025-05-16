@@ -47,7 +47,7 @@ Check instructions in the [docker/examples/single-user](docker/examples/single-u
 
 Instructions for docker-based installation:
 
-- [single-user](docker/examples/single-user) — single-user setup.
+- [single-user setup](docker/examples/single-user)
 
 Also:
 
