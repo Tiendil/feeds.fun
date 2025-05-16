@@ -17,3 +17,14 @@ Enter your email, you should receive an email with a link to log in. Click on th
 Check notes in [single-user example](../single-user/README.md) for more details about running a permanent instance of Feeds Fun — we try to avoid duplicating docs.
 
 Below you can find some really important notes about running Feeds Fun as a permanent service.
+
+## Use HTTPS for permanent instances
+
+This example is configured to use HTTP only to simplify the setup.
+
+You absolutely **MUST** use HTTPS for permanent instances of Feeds Fun, otherwise your data may be compromised, passwords leaked, and so on.
+
+To turn HTTPS on you should (see comments in the corresponding files):
+
+- Update Caddyfile to use HTTPS.
+- Update ffun.env to use appropriate ports and domain names.

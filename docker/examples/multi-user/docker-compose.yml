@@ -39,7 +39,7 @@ services:
       timeout: 5s
       retries: 10
 
-  # TODO: create db
+  # Service for authentication and session management
   supertokens:
     image: registry.supertokens.io/supertokens/supertokens-postgresql:9.0.2
 
