@@ -46,7 +46,7 @@ services:
     # TODO: configs
     # TODO: collections
     volumes:
-      - ${PWD}/.env:/ffun/.env
+      - ${PWD}/ffun.env:/ffun/.env
     #   - ${PWD}/.configs:/repository/.configs
     #   - ${PWD}/feeds_collections:/repository/feeds_collections
 
@@ -73,7 +73,7 @@ services:
     # TODO: configs
     # TODO: collections
     volumes:
-      - ${PWD}/.env:/ffun/.env
+      - ${PWD}/ffun.env:/ffun/.env
     #   - ${PWD}/.configs:/repository/.configs
     #   - ${PWD}/feeds_collections:/repository/feeds_collections
 
@@ -84,7 +84,7 @@ services:
     image: ffun-frontend-data:test
 
     volumes:
-      - ${PWD}/.env:/ffun/.env
+      - ${PWD}/ffun.env:/ffun/.env
       - ffun_frontend_data:/ffun-static-data
 
     environment: {}
