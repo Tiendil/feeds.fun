@@ -22,7 +22,7 @@ jobs:
             short: Official backend image for Feeds Fun — news reader with tags, scoring, and AI
 
           - repository: tiendil/feeds-fun-frontend-data
-            reamde: ./docker/prod/frontend/README.md
+            readme: ./docker/prod/frontend/README.md
             short: Official frontend data image for Feeds Fun — news reader with tags, scoring, and AI
 
     steps:
