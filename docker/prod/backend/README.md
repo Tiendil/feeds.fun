@@ -14,15 +14,15 @@ Blog: [blog.feeds.fun](https://blog.feeds.fun)
 
 # Screenshots
 
-![News filtering](docs/images/news-filtering-example.png)
+![News filtering](../../../docs/images/news-filtering-example.png)
 
 # Fastest way to try locally
 
-Check instructions in the [docker/examples/single-user](docker/examples/single-user) directory.
+Check instructions in the [docker/examples/single-user](../../../docker/examples/single-user) directory.
 
 # Self-hosted version
 
 Instructions for docker-based installation:
 
-- [single-user setup](docker/examples/single-user)
-- [multi-user setup](docker/examples/multi-user)
+- [single-user setup](../../../docker/examples/single-user)
+- [multi-user setup](../../../docker/examples/multi-user)
