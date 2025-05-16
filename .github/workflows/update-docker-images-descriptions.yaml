@@ -1,0 +1,25 @@
+name: update docker images descriptions
+on:
+  workflow_dispatch: {}
+
+  push:
+    tags:
+      - '*'
+
+jobs:
+
+  update-metadata:
+    name: Update Docker Hub Metadata
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update Docker Hub Description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository: ${{ github.repository }}
+          short-description: ${{ github.event.repository.description }}
+          readme-filepath: ./README.md
+          enable-url-completion: true
