@@ -11,6 +11,7 @@
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useCollectionsStore} from "@/stores/collections";
   import * as tagsFilterState from "@/logic/tagsFilterState";
+  import * as settings from "@/logic/settings";
 
   const properties = defineProps<{
     apiKey: boolean;
@@ -38,7 +39,8 @@
       properties.collectionsNotification_ &&
       globalSettings.userSettings &&
       !globalSettings.userSettings.hide_message_about_adding_collections.value &&
-      !tagsStates?.value.hasSelectedTags
+      !tagsStates?.value.hasSelectedTags &&
+      settings.hasCollections
     );
   });
 

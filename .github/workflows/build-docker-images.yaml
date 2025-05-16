@@ -12,6 +12,7 @@ on:
       - '*'
 
 jobs:
+
   push_to_registry:
     name: Build and push Docker image to Docker Hub
     runs-on: ubuntu-latest
@@ -21,6 +22,16 @@ jobs:
       contents: read
       attestations: write
       id-token: write
+
+    strategy:
+      matrix:
+        include:
+
+          - image: tiendil/feeds-fun-backend
+            dockerfile: ./docker/prod/backend/Dockerfile
+
+          - image: tiendil/feeds-fun-frontend-data
+            dockerfile: ./docker/prod/frontend/Dockerfile
 
     steps:
       - name: Check out the repo
@@ -36,16 +47,17 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5.7.0
         with:
-          images: tiendil/feeds-fun-backend
+          images: ${{ matrix.image }}
           tags: |
             type=match,pattern=release-(.*),group=1
+            type=match,pattern=release-.*,value=latest
             type=raw,value=${{ github.event.inputs.tag }}
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@6.16.0
         with:
           context: .
-          file: ./docker/prod/backend/Dockerfile
+          file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -53,6 +65,6 @@ jobs:
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v2
         with:
-          subject-name: index.docker.io/tiendil/feeds-fun-backend
+          subject-name: index.docker.io/${{ matrix.image }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
