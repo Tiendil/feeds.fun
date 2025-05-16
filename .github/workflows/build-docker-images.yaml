@@ -50,6 +50,7 @@ jobs:
           images: ${{ matrix.image }}
           tags: |
             type=match,pattern=release-(.*),group=1
+            type=match,pattern=release-.*,value=latest
             type=raw,value=${{ github.event.inputs.tag }}
       - name: Build and push Docker image
         id: push
