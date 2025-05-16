@@ -4,22 +4,35 @@ on:
 
   push:
     tags:
-      - '*'
+      - 'release-*'
 
 jobs:
 
   update-metadata:
-    name: Update Docker Hub Metadata
+    name: Update Docker Hub metadata
     runs-on: ubuntu-latest
     environment: release
+
+    strategy:
+      matrix:
+        include:
+
+          - repository: tiendil/feeds-fun-backend
+            readme: ./docker/prod/backend/README.md
+            short: Official backend images for Feeds Fun — news reader with tags, scoring, and AI
+
+          - repository: tiendil/feeds-fun-frontend-data
+            reamde: ./docker/prod/frontend/README.md
+            short: Official frontend data images for Feeds Fun — news reader with tags, scoring, and AI
+
     steps:
       - uses: actions/checkout@v4
       - name: Update Docker Hub Description
-        uses: peter-evans/dockerhub-description@v4
+        uses: peter-evans/dockerhub-description@v4.0.2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          repository: ${{ github.repository }}
-          short-description: ${{ github.event.repository.description }}
-          readme-filepath: ./README.md
+          username: tiendil
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ matrix.repository }}
+          short-description: ${{ matrix.short }}
+          readme-filepath: ${{ matrix.readme }}
           enable-url-completion: true
