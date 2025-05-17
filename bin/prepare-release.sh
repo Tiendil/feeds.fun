@@ -22,7 +22,7 @@ echo "Update change log"
 # TODO: https://github.com/Tiendil/feeds.fun/issues/212
 export CHANGY_CHANGELOG_SOURCES_DIR="../changes"
 
-# poetry run changy version create $NEXT_VERSION
+poetry run changy version create $NEXT_VERSION
 
 echo "Generate changelog"
 
