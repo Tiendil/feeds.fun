@@ -67,9 +67,10 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      # - name: Generate artifact attestation
-      #   uses: actions/attest-build-provenance@v2
-      #   with:
-      #     subject-name: index.docker.io/${{ matrix.image }}
-      #     subject-digest: ${{ steps.push.outputs.digest }}
-      #     push-to-registry: true
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: index.docker.io/${{ matrix.image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          # do not pollute the registry with attestation tags (sha256_<digest>)
+          push-to-registry: false
