@@ -1,2 +1,2 @@
 
-No changes.
+- Made '.env' file optional for frontend-data image.
