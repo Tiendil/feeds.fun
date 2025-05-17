@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 set -a
-source ./.env
+[ -f .env ] && source ./.env
 set +a
 
 npm run build-only --prefix ./node_modules/feeds-fun
