@@ -2,6 +2,10 @@ name: upload-release
 on:
   workflow_dispatch:
 
+  push:
+    tags:
+      - 'release-*'
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
