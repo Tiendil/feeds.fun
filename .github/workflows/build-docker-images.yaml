@@ -11,6 +11,10 @@ on:
     tags:
       - 'release-*'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-build-docker-images
+  cancel-in-progress: false
+
 jobs:
 
   push_to_registry:
