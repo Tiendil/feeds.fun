@@ -21,11 +21,11 @@ Blog: [blog.feeds.fun](https://blog.feeds.fun)
 
 # Fastest way to try locally
 
-Check instructions in the [docker/examples/single-user](docker/examples/single-user) directory.
+Check instructions in the [docs/examples/single-user](docs/examples/single-user) directory.
 
 # Self-hosted version
 
 Instructions for docker-based installation:
 
-- [single-user setup](docker/examples/single-user)
-- [multi-user setup](docker/examples/multi-user)
+- [single-user setup](docs/examples/single-user)
+- [multi-user setup](docs/examples/multi-user)

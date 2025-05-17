@@ -4,7 +4,7 @@ You can up Feeds Fun in a single-user mode by following these steps:
 
 ```
 git clone git@github.com:Tiendil/feeds.fun.git
-cd ./feeds.fun/docker/examples/single-user
+cd ./feeds.fun/docs/examples/single-user
 docker compose up -d
 ```
 
