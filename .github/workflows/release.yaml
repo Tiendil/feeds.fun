@@ -12,7 +12,7 @@ on:
         - patch
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-prepare-release
+  group: ${{ github.workflow }}-${{ github.ref }}-release
   cancel-in-progress: false
 
 jobs:
