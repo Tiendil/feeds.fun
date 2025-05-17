@@ -56,6 +56,7 @@ jobs:
             type=match,pattern=release-(.*),group=1
             type=match,pattern=release-.*,value=latest
             type=raw,value=${{ github.event.inputs.tag }}
+
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@6.16.0
@@ -71,4 +72,5 @@ jobs:
         with:
           subject-name: index.docker.io/${{ matrix.image }}
           subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
+          # do not pollute the registry with attestation tags (sha256_<digest>)
+          push-to-registry: false
