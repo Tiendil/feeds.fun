@@ -1,4 +1,3 @@
-import sys
 import contextlib
 import copy
 import datetime
@@ -6,6 +5,7 @@ import enum
 import functools
 import inspect
 import logging
+import sys
 import time
 import uuid
 from collections import abc
@@ -13,7 +13,7 @@ from typing import Any, Callable, ContextManager, Iterable, Iterator, Protocol, 
 
 import pydantic_settings
 import structlog
-from sentry_sdk import capture_message, capture_exception
+from sentry_sdk import capture_exception, capture_message
 from structlog import contextvars as structlog_contextvars
 
 from ffun.core import errors
