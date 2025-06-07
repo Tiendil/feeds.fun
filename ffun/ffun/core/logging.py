@@ -1,3 +1,4 @@
+import sys
 import contextlib
 import copy
 import datetime
@@ -12,7 +13,7 @@ from typing import Any, Callable, ContextManager, Iterable, Iterator, Protocol, 
 
 import pydantic_settings
 import structlog
-from sentry_sdk import capture_message
+from sentry_sdk import capture_message, capture_exception
 from structlog import contextvars as structlog_contextvars
 
 from ffun.core import errors
@@ -135,7 +136,10 @@ def log_errors_to_sentry(_: Any, __: Any, event_dict: dict[str, Any]) -> dict[st
     if event_dict.get("level", "").upper() != "ERROR":
         return event_dict
 
-    capture_message(event_dict["event"])
+    if event_dict.get("exc_info"):
+        capture_exception(sys.exc_info())
+    else:
+        capture_message(event_dict["event"])
 
     return event_dict
 
