@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
 
-  prepare-dev-containers:
+  run-dev-checks:
     timeout-minutes: 20
     runs-on: ubuntu-22.04
 
@@ -33,50 +33,14 @@ jobs:
       - name: Build containers
         run: ./bin/build-local-containers.sh
 
-      - name: Save Docker cache
-        run: docker save --output docker-images.tar $(docker images --quiet)
+      - name: Check code formatting
+        run: ./bin/check-code-formatting.sh
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: docker-cache
-          path: docker-images.tar
-          retention-days: 1
+      - name: Check types
+        run: ./bin/check-code-semantics.sh
 
-  run-dev-checks:
-    needs: prepare-dev-containers
-    timeout-minutes: 20
-    runs-on: ubuntu-22.04
-
-    strategy:
-      matrix:
-        include:
-
-          - name: Check code formatting
-            command: ./bin/check-code-formatting.sh
-
-          - name: Check types
-            command: ./bin/check-code-semantics.sh
-
-          - name: Run tests
-            command: ./bin/run-tests.sh
-
-    steps:
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.branch_ref }}
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: docker-cache
-          path: .
-
-      - name: Load Docker cache
-        run: docker load --input docker-images.tar
-
-      - name: ${{ matrix.name }}
-        run: ${{ matrix.command }}
+      - name: Run tests
+        run: ./bin/run-tests.sh
 
   run-prod-checks:
     timeout-minutes: 20
