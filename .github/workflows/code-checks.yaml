@@ -16,28 +16,41 @@ concurrency:
 
 jobs:
 
-  run-checks:
+  run-dev-checks:
     timeout-minutes: 20
     runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch_ref }}
 
-      - name: pull containers
+      - name: Pull containers
         # postgresql is dependency of backend-utils
         run: docker compose pull postgresql
 
-      - name: build containers
+      - name: Build containers
         run: ./bin/build-local-containers.sh
 
-      - name: check code formatting
+      - name: Check code formatting
         run: ./bin/check-code-formatting.sh
 
-      - name: check types
+      - name: Check types
         run: ./bin/check-code-semantics.sh
 
-      - name: run tests
+      - name: Run tests
         run: ./bin/run-tests.sh
+
+  run-prod-checks:
+    timeout-minutes: 20
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch_ref }}
+
+      - name: check ffun cli is runnable in prod
+        run: ./bin/check-ffun-runnable-in-prod.sh

@@ -2636,13 +2636,13 @@ requests = ">=2.0.0"
 
 [[package]]
 name = "typer"
-version = "0.12.5"
+version = "0.16.0"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "typer-0.12.5-py3-none-any.whl", hash = "sha256:62fe4e471711b147e3365034133904df3e235698399bc4de2b36c8579298d52b"},
-    {file = "typer-0.12.5.tar.gz", hash = "sha256:f592f089bedcc8ec1b974125d64851029c3b1af145f04aca64d69410f0c9b722"},
+    {file = "typer-0.16.0-py3-none-any.whl", hash = "sha256:1f79bed11d4d02d4310e3c1b7ba594183bcedb0ac73b27a9e5f28f6fb5b98855"},
+    {file = "typer-0.16.0.tar.gz", hash = "sha256:af377ffaee1dbe37ae9440cb4e8f11686ea5ce4e9bae01b84ae7c63b87f1dd3b"},
 ]
 
 [package.dependencies]
@@ -3137,4 +3137,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "21d56051bfd4c835728328804dd09c07e2a8e8f81970efced649daebbe4c5d48"
+content-hash = "1fb120c78c1eec1f1bd87348984d707ddfe417609ac72f46a23ca5a142bd87e4"
