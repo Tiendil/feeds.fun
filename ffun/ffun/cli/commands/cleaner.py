@@ -13,9 +13,10 @@ cli_app = typer.Typer()
 
 async def run_clean(chunk: int) -> None:
     async with with_app():
-        await clean_orphaned_entries(chunk=chunk)
+        while await clean_orphaned_entries(chunk=chunk) != 0:
+            pass
 
 
 @cli_app.command()
-def clean(chunk: int = 1000) -> None:
+def clean(chunk: int = 10000) -> None:
     asyncio.run(run_clean(chunk=chunk))
