@@ -68,6 +68,12 @@ class Decimal(Type):
         if value == "":
             return decimal.Decimal(0)
 
+        # Not the best place to apply normalization of such a kind
+        # But for now, it is the simplest way to handle it
+        # TODO: move decimal normalization to the frontend side, when the frontend is ready
+        if isinstance(value, str):
+            value = value.strip().replace(",", ".")
+
         return decimal.Decimal(value)
 
 
