@@ -127,6 +127,15 @@ class EntriesProcessor(InfiniteTask):
                 entries_to_remove.append(entry_id)
                 continue
 
+            if entry_id not in feed_ids:
+                # this may happen when:
+                # - we clean up DB from old data => drop linking, mark entries as orphaned
+                # - but we still have these orphaned entries in the queues
+                # - because the processor was stopped temporary or failed by other means
+                logger.warning("entry_without_feeds_in_queue", processor_id=processor_id, entry_id=entry_id)
+                entries_to_remove.append(entry_id)
+                continue
+
             # TODO: maybe we should create some `in_collection` marker directly for entry
             #       this may simplify a lot of code by moveing checks from multiple places to one
             in_collection = any(collections.has_feed(feed_id) for feed_id in feed_ids[entry_id])

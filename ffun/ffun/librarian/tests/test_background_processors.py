@@ -134,6 +134,7 @@ class TestEntriesProcessors:
         assert_logs(
             logs,
             unexisted_entry_in_queue=3,
+            entry_without_feeds_in_queue=0,
             proccessor_not_allowed_for_collections=0,
             proccessor_not_allowed_for_users=0,
             proccessor_is_allowed_for_entry=2,
@@ -141,6 +142,35 @@ class TestEntriesProcessors:
 
         assert {entry.id for entry in entries_to_process} == {entry.id for entry in entries_list}
         assert set(entries_to_remove) == set(fake_entries_ids)
+
+    @pytest.mark.asyncio
+    async def test_separate_entries__entries_without_feeds_in_queue(
+        self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
+    ) -> None:
+        entries = await l_make.n_entries(loaded_feed, 5)
+        entries_list = list(entries.values())
+        entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
+
+        await l_domain.unlink_feed_tail(loaded_feed.id, offset=3)
+
+        entries_ids = [entry.id for entry in entries_list]
+
+        with capture_logs() as logs:
+            entries_to_process, entries_to_remove = await fake_entries_processor.separate_entries(
+                entries_ids=entries_ids
+            )
+
+        assert_logs(
+            logs,
+            unexisted_entry_in_queue=0,
+            entry_without_feeds_in_queue=2,
+            proccessor_not_allowed_for_collections=0,
+            proccessor_not_allowed_for_users=0,
+            proccessor_is_allowed_for_entry=3,
+        )
+
+        assert {entry.id for entry in entries_to_process} == {entry.id for entry in entries_list[2:]}
+        assert set(entries_to_remove) == {entry.id for entry in entries_list[:2]}
 
     @pytest.mark.asyncio
     async def test_separate_entries__collections_not_allowed(
