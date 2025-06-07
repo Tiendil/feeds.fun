@@ -41,7 +41,7 @@ uvicorn = {extras = ["standard"], version = "0.*"}
 fastapi = "0.111.*"
 pydantic = "2.7.*"
 pydantic-settings = "2.2.*"
-typer = "0.12.*"
+typer = "0.16.*"
 
 # upgrade furher are blocked by supertokens-python
 httpx = "0.26.*"

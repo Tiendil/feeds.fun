@@ -9,7 +9,8 @@ def now() -> datetime.datetime:
     return datetime.datetime.now(tz=datetime.timezone.utc)
 
 
-def discover_submodules(parent_module: str) -> list[types.ModuleType]:
+def discover_submodules(parent_module: str,  # noqa: CCR001
+                        skip_dev_dependencies: bool = True) -> list[types.ModuleType]:
     parent = sys.modules.get(parent_module)
 
     if parent is None:
@@ -24,6 +25,10 @@ def discover_submodules(parent_module: str) -> list[types.ModuleType]:
 
     for module_path in parent_dir.glob("*.py"):
         module_name = module_path.stem
+
+        if skip_dev_dependencies and module_name == 'conftest':
+            continue
+
         candidates.append(f"{parent_module}.{module_name}")
 
     for module_path in parent_dir.glob("*/__init__.py"):
