@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
 
-  run-checks:
+  prepare-dev-containers:
     timeout-minutes: 20
     runs-on: ubuntu-22.04
 
@@ -26,18 +26,67 @@ jobs:
         with:
           ref: ${{ inputs.branch_ref }}
 
-      - name: pull containers
+      - name: Pull containers
         # postgresql is dependency of backend-utils
         run: docker compose pull postgresql
 
-      - name: build containers
+      - name: Build containers
         run: ./bin/build-local-containers.sh
 
-      - name: check code formatting
-        run: ./bin/check-code-formatting.sh
+      - name: Save Docker cache
+        run: docker save $(docker images --format '{{.Repository}}:{{.Tag}}') \
+             | gzip > /tmp/images.tar.gz
 
-      - name: check types
-        run: ./bin/check-code-semantics.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: docker-cache
+          path: /tmp/images.tar.gz
+          retention-days: 1
 
-      - name: run tests
-        run: ./bin/run-tests.sh
+  run-dev-checks:
+    needs: prepare-dev-containers
+    timeout-minutes: 20
+    runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        include:
+
+          - name: Check code formatting
+            command: ./bin/check-code-formatting.sh
+
+          - name: Check types
+            command: ./bin/check-code-semantics.sh
+
+          - name: Run tests
+            command: ./bin/run-tests.sh
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.branch_ref }}
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.prepare.outputs.cache-name }}
+
+      - name: Load Docker cache
+        run: gunzip -c images.tar.gz | docker load
+
+      - name: ${{ matrix.name }}
+        run: ${{ matrix.command }}
+
+  run-prod-checks:
+    timeout-minutes: 20
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.branch_ref }}
+
+      - name: check ffun cli is runnable in prod
+        run: ./bin/check-ffun-runnable-in-prod.sh
