@@ -34,13 +34,12 @@ jobs:
         run: ./bin/build-local-containers.sh
 
       - name: Save Docker cache
-        run: docker save $(docker images --format '{{.Repository}}:{{.Tag}}') \
-             | gzip > /tmp/images.tar.gz
+        run: docker save --output docker-images.tar $(docker images --quiet)
 
       - uses: actions/upload-artifact@v4
         with:
           name: docker-cache
-          path: /tmp/images.tar.gz
+          path: docker-images.tar
           retention-days: 1
 
   run-dev-checks:
@@ -71,10 +70,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: docker-cache
-          path: /tmp
+          path: .
 
       - name: Load Docker cache
-        run: gunzip -c /tmp/images.tar.gz | docker load
+        run: docker load --input docker-images.tar
 
       - name: ${{ matrix.name }}
         run: ${{ matrix.command }}
