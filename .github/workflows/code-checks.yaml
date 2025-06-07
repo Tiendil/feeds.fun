@@ -73,7 +73,7 @@ jobs:
           name: ${{ needs.prepare.outputs.cache-name }}
 
       - name: Load Docker cache
-        run: gunzip -c images.tar.gz | docker load
+        run: gunzip -c /tmp/images.tar.gz | docker load
 
       - name: ${{ matrix.name }}
         run: ${{ matrix.command }}
