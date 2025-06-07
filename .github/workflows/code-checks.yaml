@@ -70,7 +70,8 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: ${{ needs.prepare.outputs.cache-name }}
+          name: docker-cache
+          path: /tmp
 
       - name: Load Docker cache
         run: gunzip -c /tmp/images.tar.gz | docker load
