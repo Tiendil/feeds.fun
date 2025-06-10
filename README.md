@@ -10,6 +10,8 @@ Site: [feeds.fun](https://feeds.fun) with curated collections of feeds that are 
 
 Blog: [blog.feeds.fun](https://blog.feeds.fun)
 
+Roadmap: [long-term plans](https://github.com/users/Tiendil/projects/1/views/1?pane=info)
+
 # Screenshots
 
 ![News filtering](docs/images/news-filtering-example.png)
