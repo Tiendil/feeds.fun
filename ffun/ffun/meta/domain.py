@@ -67,13 +67,13 @@ async def clean_orphaned_entries(chunk: int) -> int:
 # - the feed must be marked as orphaned before that
 # - we wait a timeout before removing orphaned feeds
 # - the user should make their operations right at the time we process orphaned feeds
-# TODO: test
 async def clean_orphaned_feeds(chunk: int) -> int:
     loaded_before = utils.now() - settings.delay_before_removing_orphaned_feeds
 
     orphanes = await f_domain.get_orphaned_feeds(limit=chunk,
                                                  loaded_before=loaded_before)
 
+    # refactor this loop into a bulk operation calls in case of performance issues
     for orphan_id in orphanes:
         logger.info("removing_orphaned_feed", feed_id=orphan_id)
 
