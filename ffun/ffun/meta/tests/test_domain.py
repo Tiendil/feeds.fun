@@ -183,6 +183,8 @@ class TestCleanOrphanedFeeds:
     async def test_all_logic_called(self, mocker: MockerFixture) -> None:
         feeds = await f_make.n_feeds(3)
 
+        feeds.sort(key=lambda feed: feed.id)
+
         for feed in feeds:
             await f_domain.mark_feed_as_orphaned(feed.id)
 

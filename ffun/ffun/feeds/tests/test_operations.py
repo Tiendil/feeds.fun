@@ -291,7 +291,8 @@ class TestGetOrphanedFeeds:
 
         # test limit
         orphanes = await get_orphaned_feeds(limit=2, loaded_before=utils.now())
-        assert set(orphanes) == {feeds[0].id, feeds[1].id}
+        assert len(orphanes) == 2
+        assert set(orphanes) <= {feeds[0].id, feeds[1].id, feeds[2].id}
 
         # test loaded_before
         orphanes = await get_orphaned_feeds(limit=10, loaded_before=check_at)

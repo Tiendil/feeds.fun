@@ -73,6 +73,9 @@ async def clean_orphaned_feeds(chunk: int) -> int:
     orphanes = await f_domain.get_orphaned_feeds(limit=chunk,
                                                  loaded_before=loaded_before)
 
+    # ensure deterministic order of processing
+    orphanes.sort()
+
     # refactor this loop into a bulk operation calls in case of performance issues
     for orphan_id in orphanes:
         logger.info("removing_orphaned_feed", feed_id=orphan_id)
