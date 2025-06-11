@@ -4,7 +4,7 @@ from typing import Any, Iterable
 import psycopg
 from pypika import PostgreSQLQuery
 
-from ffun.core import logging
+from ffun.core import logging, utils
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain import urls as domain_urls
 from ffun.domain.domain import new_source_id
@@ -102,17 +102,20 @@ async def update_feed_info(feed_id: FeedId, title: str, description: str) -> Non
     await execute(sql, {"id": feed_id, "title": title, "description": description})
 
 
-async def mark_feed_as_loaded(feed_id: FeedId) -> None:
+async def mark_feed_as_loaded(feed_id: FeedId, loaded_at: datetime.datetime | None = None) -> None:
+    if loaded_at is None:
+        loaded_at = utils.now()
+
     sql = """
     UPDATE f_feeds
     SET state = %(state)s,
         last_error = NULL,
-        loaded_at = NOW(),
+        loaded_at = %(loaded_at)s,
         updated_at = NOW()
     WHERE id = %(id)s
     """
 
-    await execute(sql, {"id": feed_id, "state": FeedState.loaded})
+    await execute(sql, {"id": feed_id, "state": FeedState.loaded, "loaded_at": loaded_at})
 
 
 async def mark_feed_as_failed(feed_id: FeedId, state: FeedState, error: FeedError) -> None:
@@ -127,24 +130,6 @@ async def mark_feed_as_failed(feed_id: FeedId, state: FeedState, error: FeedErro
     await execute(sql, {"id": feed_id, "state": state, "error": error})
 
 
-# TODO: tests
-async def get_orphaned_feeds(limit: int, loaded_before: datetime.datetime) -> list[Feed]:
-    sql = """
-        SELECT *
-        FROM f_feeds
-        WHERE state = %(state)s AND
-              (load_attempted_at IS NULL OR load_attempted_at <= %(loaded_before)s)
-        ORDER BY load_attempted_at ASC NULLS FIRST
-        LIMIT %(limit)s
-    """
-
-    rows = await execute(sql, {"state": FeedState.orphaned,
-                               "limit": limit,
-                               "loaded_before": loaded_before})
-
-    return [row_to_feed(row) for row in rows]
-
-
 async def mark_feed_as_orphaned(feed_id: FeedId) -> None:
     sql = """
     UPDATE f_feeds
@@ -155,6 +140,23 @@ async def mark_feed_as_orphaned(feed_id: FeedId) -> None:
     """
 
     await execute(sql, {"id": feed_id, "state": FeedState.orphaned})
+
+
+async def get_orphaned_feeds(limit: int, loaded_before: datetime.datetime) -> list[FeedId]:
+    sql = """
+        SELECT *
+        FROM f_feeds
+        WHERE state = %(state)s AND
+              (loaded_at IS NULL OR loaded_at <= %(loaded_before)s)
+        ORDER BY created_at ASC
+        LIMIT %(limit)s
+    """
+
+    rows = await execute(sql, {"state": FeedState.orphaned,
+                               "limit": limit,
+                               "loaded_before": loaded_before})
+
+    return [row["id"] for row in rows]
 
 
 async def get_feeds(ids: Iterable[FeedId]) -> list[Feed]:

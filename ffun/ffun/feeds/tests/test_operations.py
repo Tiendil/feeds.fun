@@ -1,7 +1,9 @@
 import asyncio
 import random
 import uuid
+import datetime
 
+import pytest_asyncio
 import pytest
 
 from ffun.core import utils
@@ -23,6 +25,7 @@ from ffun.feeds.operations import (
     mark_feed_as_failed,
     mark_feed_as_loaded,
     mark_feed_as_orphaned,
+    get_orphaned_feeds,
     save_feed,
     tech_remove_feed,
     update_feed_info,
@@ -188,6 +191,19 @@ class TestMarkFeedAsLoaded:
         assert updated_feed.state == FeedState.loaded
 
     @pytest.mark.asyncio
+    async def test_set_loaded_at(self, saved_feed: Feed) -> None:
+        loaded_at = utils.now() - datetime.timedelta(days=1)
+
+        await mark_feed_as_loaded(feed_id=saved_feed.id, loaded_at=loaded_at)
+
+        updated_feed = await get_feed(saved_feed.id)
+
+        assert updated_feed.loaded_at is not None
+        assert loaded_at == updated_feed.loaded_at
+        assert updated_feed.last_error is None
+        assert updated_feed.state == FeedState.loaded
+
+    @pytest.mark.asyncio
     async def test_reset_error_state(self, saved_feed: Feed) -> None:
         await mark_feed_as_failed(feed_id=saved_feed.id, state=FeedState.damaged, error=random.choice(list(FeedError)))
 
@@ -233,6 +249,53 @@ class TestMarkFeedAsOrphaned:
         updated_feed = await get_feed(saved_feed.id)
 
         assert updated_feed.last_error is None
+
+
+class TestGetOrphanedFeeds:
+
+    @pytest_asyncio.fixture(autouse=True)
+    async def cleanup_orphaned_feeds(self) -> None:
+        orphanes = await get_orphaned_feeds(limit=10000, loaded_before=utils.now())
+
+        for orphane_id in orphanes:
+            await tech_remove_feed(orphane_id)
+
+    @pytest.mark.asyncio
+    async def test_no_orphans(self) -> None:
+        await make.n_feeds(3)
+
+        orphaned_feeds = await get_orphaned_feeds(limit=10, loaded_before=utils.now())
+
+        assert not orphaned_feeds
+
+    @pytest.mark.asyncio
+    async def test_orphans(self) -> None:
+
+        loaded_before = utils.now() - datetime.timedelta(days=2)
+        check_at = loaded_before + datetime.timedelta(days=1)
+
+        feeds = await make.n_feeds(5)
+
+        await mark_feed_as_orphaned(feed_id=feeds[0].id)
+        assert feeds[0].loaded_at is None
+
+        await mark_feed_as_loaded(feed_id=feeds[1].id)
+        await mark_feed_as_orphaned(feed_id=feeds[1].id)
+
+        await mark_feed_as_loaded(feed_id=feeds[2].id, loaded_at=loaded_before)
+        await mark_feed_as_orphaned(feed_id=feeds[2].id)
+
+        # test all found
+        orphanes = await get_orphaned_feeds(limit=10, loaded_before=utils.now())
+        assert set(orphanes) == {feeds[0].id, feeds[1].id, feeds[2].id}
+
+        # test limit
+        orphanes = await get_orphaned_feeds(limit=2, loaded_before=utils.now())
+        assert set(orphanes) == {feeds[0].id, feeds[1].id}
+
+        # test loaded_before
+        orphanes = await get_orphaned_feeds(limit=10, loaded_before=check_at)
+        assert set(orphanes) == {feeds[0].id, feeds[2].id}
 
 
 class TestGetFeeds:
