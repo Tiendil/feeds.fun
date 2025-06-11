@@ -5,6 +5,7 @@ import pytest
 import pytest_asyncio
 from pytest_mock import MockerFixture
 
+from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.domain.entities import UserId
 from ffun.domain.urls import str_to_feed_url, url_to_source_uid, url_to_uid
@@ -159,6 +160,13 @@ class TestCleanOrphanedEntries:
 # test that everything is connected correctly
 # detailed cases are covered in tests of functions called in clean_orphaned_entries
 class TestCleanOrphanedFeeds:
+
+    @pytest_asyncio.fixture(autouse=True)
+    async def cleanup_orphaned_feeds(self) -> None:
+        orphanes = await f_domain.get_orphaned_feeds(limit=10000, loaded_before=utils.now())
+
+        for orphane_id in orphanes:
+            await f_domain.tech_remove_feed(orphane_id)
 
     @pytest.mark.asyncio
     async def test_chunks(self) -> None:
