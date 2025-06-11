@@ -3,16 +3,19 @@ from itertools import chain
 
 import pytest
 import pytest_asyncio
+from pytest_mock import MockerFixture
 
+from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.domain.entities import UserId
 from ffun.domain.urls import str_to_feed_url, url_to_source_uid, url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
+from ffun.feeds.tests import make as f_make
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
-from ffun.meta.domain import add_feeds, clean_orphaned_entries, remove_entries
+from ffun.meta.domain import add_feeds, clean_orphaned_entries, clean_orphaned_feeds, remove_entries
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import ProcessorTag
 from ffun.parsers import entities as p_entities
@@ -128,7 +131,7 @@ class TestAddFeeds:
 
 
 # test that everything is connected correctly
-# detailed cases are covered in tests of functioned called in clean_orphaned_entries
+# detailed cases are covered in tests of functions called in clean_orphaned_entries
 class TestCleanOrphanedEntries:
 
     @pytest_asyncio.fixture(autouse=True)
@@ -152,3 +155,47 @@ class TestCleanOrphanedEntries:
         loaded_entries = await l_domain.get_entries_by_ids([entry.id for entry in entries])
 
         assert loaded_entries == {entry.id: entry for entry in entries[:3]} | {entry.id: None for entry in entries[3:]}
+
+
+# test that everything is connected correctly
+# detailed cases are covered in tests of functions called in clean_orphaned_entries
+class TestCleanOrphanedFeeds:
+
+    @pytest_asyncio.fixture(autouse=True)
+    async def cleanup_orphaned_feeds(self) -> None:
+        orphanes = await f_domain.get_orphaned_feeds(limit=10000, loaded_before=utils.now())
+
+        for orphane_id in orphanes:
+            await f_domain.tech_remove_feed(orphane_id)
+
+    @pytest.mark.asyncio
+    async def test_chunks(self) -> None:
+        feeds = await f_make.n_feeds(10)
+
+        for feed in feeds:
+            await f_domain.mark_feed_as_orphaned(feed.id)
+
+        assert await clean_orphaned_feeds(chunk=3) == 3
+        assert await clean_orphaned_feeds(chunk=4) == 4
+        assert await clean_orphaned_feeds(chunk=5) == 3
+
+    @pytest.mark.asyncio
+    async def test_all_logic_called(self, mocker: MockerFixture) -> None:
+        feeds = await f_make.n_feeds(3)
+
+        feeds.sort(key=lambda feed: feed.id)
+
+        for feed in feeds:
+            await f_domain.mark_feed_as_orphaned(feed.id)
+
+        unlink_feed_tail_mock = mocker.patch("ffun.library.domain.unlink_feed_tail")
+        tech_remove_feed_mock = mocker.patch("ffun.feeds.domain.tech_remove_feed")
+        tech_remove_all_links = mocker.patch("ffun.feeds_links.domain.tech_remove_all_links")
+
+        assert await clean_orphaned_feeds(chunk=100) == 3
+
+        assert unlink_feed_tail_mock.call_args_list == [mocker.call(feed.id, offset=0) for feed in feeds]
+
+        assert tech_remove_feed_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]
+
+        assert tech_remove_all_links.call_args_list == [mocker.call([feed.id for feed in feeds])]
