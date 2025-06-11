@@ -11,6 +11,7 @@ get_link = operations.get_link
 get_linked_feeds = operations.get_linked_feeds
 get_linked_users = operations.get_linked_users
 has_linked_users = operations.has_linked_users
+tech_remove_links = operations.tech_remove_links
 count_feeds_per_user = operations.count_feeds_per_user
 count_subset_feeds_per_user = operations.count_subset_feeds_per_user
 

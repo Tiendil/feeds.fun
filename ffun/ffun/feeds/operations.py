@@ -127,6 +127,24 @@ async def mark_feed_as_failed(feed_id: FeedId, state: FeedState, error: FeedErro
     await execute(sql, {"id": feed_id, "state": state, "error": error})
 
 
+# TODO: tests
+async def get_orphaned_feeds(limit: int, loaded_before: datetime.datetime) -> list[Feed]:
+    sql = """
+        SELECT *
+        FROM f_feeds
+        WHERE state = %(state)s AND
+              (load_attempted_at IS NULL OR load_attempted_at <= %(loaded_before)s)
+        ORDER BY load_attempted_at ASC NULLS FIRST
+        LIMIT %(limit)s
+    """
+
+    rows = await execute(sql, {"state": FeedState.orphaned,
+                               "limit": limit,
+                               "loaded_before": loaded_before})
+
+    return [row_to_feed(row) for row in rows]
+
+
 async def mark_feed_as_orphaned(feed_id: FeedId) -> None:
     sql = """
     UPDATE f_feeds

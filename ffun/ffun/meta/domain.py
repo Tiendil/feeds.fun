@@ -1,6 +1,6 @@
 from typing import Iterable
 
-from ffun.core import logging
+from ffun.core import logging, utils
 from ffun.domain.domain import new_feed_id
 from ffun.domain.entities import EntryId, FeedId, UserId
 from ffun.domain.urls import url_to_source_uid
@@ -11,6 +11,7 @@ from ffun.library import domain as l_domain
 from ffun.markers import domain as m_domain
 from ffun.ontology import domain as o_domain
 from ffun.parsers import entities as p_entities
+from ffun.meta.settings import settings
 
 logger = logging.get_module_logger()
 
@@ -56,5 +57,32 @@ async def clean_orphaned_entries(chunk: int) -> int:
     orphanes = await l_domain.get_orphaned_entries(limit=chunk)
 
     await remove_entries(orphanes)
+
+    return len(orphanes)
+
+
+# There is a very small possibility, that user will link feed
+# while we in the process of removing it as an orphaned feed.
+# This is look like an almost impossible situation (on the current load), because:
+# - the feed must be marked as orphaned before that
+# - we wait a timeout before removing orphaned feeds
+# - the user should make their operations right at the time we process orphaned feeds
+# TODO: test
+async def clean_orphaned_feeds(chunk: int) -> int:
+    loaded_before = utils.now() - settings.delay_before_removing_orphaned_feeds
+
+    orphanes = await f_domain.get_orphaned_feeds(limit=chunk,
+                                                 loaded_before=loaded_before)
+
+    for orphan_id in orphanes:
+        logger.info("removing_orphaned_feed", feed_id=orphan_id)
+
+        # unlink all linked entries
+        await l_domain.unlink_feed_tail(orphan_id, offset=0)
+
+        await f_domain.tech_remove_feed(orphan_id)
+
+    # just a protection in case some user linked feed while we were removing it
+    await fl_domain.tech_remove_links(orphanes)
 
     return len(orphanes)
