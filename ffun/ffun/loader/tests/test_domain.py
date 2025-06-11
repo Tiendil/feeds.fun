@@ -262,7 +262,7 @@ class TestProcessFeed:
             assert_entriy_equal_to_info(entry_info, entry)
 
     @pytest.mark.asyncio
-    async def test_remove_too_long_entries_tail(
+    async def test_remove_too_long_entries_tail__when_feed_is_updated(
         self, internal_user_id: UserId, saved_feed: f_entities.Feed, mocker: MockerFixture
     ) -> None:
         n = 5
@@ -283,6 +283,35 @@ class TestProcessFeed:
         )
 
         mocker.patch("ffun.loader.domain.extract_feed_info", return_value=feed_info)
+        mocker.patch("ffun.library.settings.settings.max_entries_per_feed", m)
+
+        await fl_domain.add_link(internal_user_id, saved_feed.id)
+
+        with capture_logs() as logs:
+            await process_feed(feed=saved_feed)
+
+        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)
+
+        loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
+
+        assert len(loaded_entries) == m
+
+    @pytest.mark.asyncio
+    async def test_remove_too_long_entries_tail__when_feed_is_not_updated(
+        self, internal_user_id: UserId, saved_feed: f_entities.Feed, mocker: MockerFixture
+    ) -> None:
+        n = 5
+        m = 3
+
+        entry_infos = [p_make.fake_entry_info() for _ in range(n)]
+        entry_infos.sort(key=lambda e: e.title)
+
+        assert saved_feed.title
+        assert saved_feed.description
+
+        await store_entries(saved_feed, entry_infos)
+
+        mocker.patch("ffun.loader.domain.extract_feed_info", return_value=None)
         mocker.patch("ffun.library.settings.settings.max_entries_per_feed", m)
 
         await fl_domain.add_link(internal_user_id, saved_feed.id)

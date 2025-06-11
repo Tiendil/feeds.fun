@@ -167,18 +167,18 @@ async def process_feed(feed: Feed) -> None:
 
     feed_info = await extract_feed_info(feed_id=feed.id, feed_url=feed.url)
 
-    if feed_info is None:
-        return
+    if feed_info is not None:
+        await sync_feed_info(feed, feed_info)
+        await store_entries(feed, feed_info.entries)
+        await f_domain.mark_feed_as_loaded(feed.id)
+        logger.info("entries_loaded")
+    else:
+        logger.info("feed_not_loaded")
 
-    await sync_feed_info(feed, feed_info)
-
-    await store_entries(feed, feed_info.entries)
-
+    # We should sync the number of entries in the feed even if we failed to load it
+    # to automatically sync the tail size after any configuration change.
+    # We should not do so for orphaned feeds, because they will be removed.
     await l_domain.unlink_feed_tail(feed.id)
-
-    await f_domain.mark_feed_as_loaded(feed.id)
-
-    logger.info("entries_loaded")
 
 
 async def check_proxies_availability() -> None:
