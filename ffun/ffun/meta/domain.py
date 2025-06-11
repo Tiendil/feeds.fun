@@ -83,6 +83,7 @@ async def clean_orphaned_feeds(chunk: int) -> int:
         await f_domain.tech_remove_feed(orphan_id)
 
     # just a protection in case some user linked feed while we were removing it
-    await fl_domain.tech_remove_links(orphanes)
+    # in that case return DB in the consistent state
+    await fl_domain.tech_remove_all_links(orphanes)
 
     return len(orphanes)

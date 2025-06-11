@@ -17,6 +17,7 @@ from ffun.feeds_links.operations import (
     get_linked_users,
     has_linked_users,
     remove_link,
+    tech_remove_all_links,
     tech_merge_feeds,
 )
 from ffun.users.tests import make as u_make
@@ -170,6 +171,46 @@ class TestRemoveLink:
         links_3 = await get_linked_feeds(user_3_id)
 
         assert len(links_3) == 1
+
+
+class TestTechRemoveAllLinks:
+
+    @pytest.mark.asyncio
+    async def test_nothing_to_remove(self) -> None:
+        async with TableSizeNotChanged("fl_links"):
+            await tech_remove_all_links([])
+
+    @pytest.mark.asyncio
+    async def test_nothing_no_links_to_remove(self, saved_feed_id: FeedId) -> None:
+        async with TableSizeNotChanged("fl_links"):
+            await tech_remove_all_links([saved_feed_id])
+
+    @pytest.mark.asyncio
+    async def test_remove(self, five_internal_user_ids: list[UserId], five_saved_feed_ids: list[FeedId]) -> None:
+        user_1_id, user_2_id, user_3_id = five_internal_user_ids[:3]
+
+        f = five_saved_feed_ids
+
+        await add_link(user_1_id, f[0])
+        await add_link(user_1_id, f[1])
+
+        await add_link(user_2_id, f[1])
+        await add_link(user_2_id, f[2])
+        await add_link(user_2_id, f[3])
+
+        await add_link(user_3_id, f[3])
+
+        async with TableSizeDelta("fl_links", delta=-4):
+            await tech_remove_all_links([f[1], f[3]])
+
+        links_1 = await get_linked_feeds(user_1_id)
+        assert links_1 == [FeedLink(user_id=user_1_id, feed_id=f[0], created_at=links_1[0].created_at)]
+
+        links_2 = await get_linked_feeds(user_2_id)
+        assert links_2 == [FeedLink(user_id=user_2_id, feed_id=f[2], created_at=links_2[0].created_at)]
+
+        links_3 = await get_linked_feeds(user_3_id)
+        assert links_3 == []
 
 
 class TestGetLinkedFeeds:
