@@ -10,12 +10,12 @@ from ffun.core.postgresql import execute
 from ffun.domain.entities import UserId
 from ffun.domain.urls import str_to_feed_url, url_to_source_uid, url_to_uid
 from ffun.feeds import domain as f_domain
-from ffun.feeds.tests import make as f_make
 from ffun.feeds.entities import Feed
+from ffun.feeds.tests import make as f_make
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
-from ffun.meta.domain import add_feeds, clean_orphaned_entries, remove_entries, clean_orphaned_feeds
+from ffun.meta.domain import add_feeds, clean_orphaned_entries, clean_orphaned_feeds, remove_entries
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import ProcessorTag
 from ffun.parsers import entities as p_entities
@@ -194,14 +194,8 @@ class TestCleanOrphanedFeeds:
 
         assert await clean_orphaned_feeds(chunk=100) == 3
 
-        assert unlink_feed_tail_mock.call_args_list == [
-            mocker.call(feed.id, offset=0) for feed in feeds
-        ]
+        assert unlink_feed_tail_mock.call_args_list == [mocker.call(feed.id, offset=0) for feed in feeds]
 
-        assert tech_remove_feed_mock.call_args_list == [
-            mocker.call(feed.id) for feed in feeds
-        ]
+        assert tech_remove_feed_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]
 
-        assert tech_remove_all_links.call_args_list == [
-            mocker.call([feed.id for feed in feeds])
-        ]
+        assert tech_remove_all_links.call_args_list == [mocker.call([feed.id for feed in feeds])]

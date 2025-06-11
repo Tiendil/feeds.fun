@@ -1,10 +1,10 @@
 import asyncio
+import datetime
 import random
 import uuid
-import datetime
 
-import pytest_asyncio
 import pytest
+import pytest_asyncio
 
 from ffun.core import utils
 from ffun.core.tests.helpers import Delta, TableSizeDelta, TableSizeNotChanged
@@ -21,11 +21,11 @@ from ffun.feeds.operations import (
     get_feed_ids_by_uids,
     get_feeds,
     get_next_feeds_to_load,
+    get_orphaned_feeds,
     get_source_ids,
     mark_feed_as_failed,
     mark_feed_as_loaded,
     mark_feed_as_orphaned,
-    get_orphaned_feeds,
     save_feed,
     tech_remove_feed,
     update_feed_info,

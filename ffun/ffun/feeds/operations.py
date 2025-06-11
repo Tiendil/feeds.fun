@@ -152,9 +152,7 @@ async def get_orphaned_feeds(limit: int, loaded_before: datetime.datetime) -> li
         LIMIT %(limit)s
     """
 
-    rows = await execute(sql, {"state": FeedState.orphaned,
-                               "limit": limit,
-                               "loaded_before": loaded_before})
+    rows = await execute(sql, {"state": FeedState.orphaned, "limit": limit, "loaded_before": loaded_before})
 
     return [row["id"] for row in rows]
 

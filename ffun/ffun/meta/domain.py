@@ -9,9 +9,9 @@ from ffun.feeds import entities as f_entities
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.markers import domain as m_domain
+from ffun.meta.settings import settings
 from ffun.ontology import domain as o_domain
 from ffun.parsers import entities as p_entities
-from ffun.meta.settings import settings
 
 logger = logging.get_module_logger()
 
@@ -70,8 +70,7 @@ async def clean_orphaned_entries(chunk: int) -> int:
 async def clean_orphaned_feeds(chunk: int) -> int:
     loaded_before = utils.now() - settings.delay_before_removing_orphaned_feeds
 
-    orphanes = await f_domain.get_orphaned_feeds(limit=chunk,
-                                                 loaded_before=loaded_before)
+    orphanes = await f_domain.get_orphaned_feeds(limit=chunk, loaded_before=loaded_before)
 
     # ensure deterministic order of processing
     orphanes.sort()

@@ -17,8 +17,8 @@ from ffun.feeds_links.operations import (
     get_linked_users,
     has_linked_users,
     remove_link,
-    tech_remove_all_links,
     tech_merge_feeds,
+    tech_remove_all_links,
 )
 from ffun.users.tests import make as u_make
 
