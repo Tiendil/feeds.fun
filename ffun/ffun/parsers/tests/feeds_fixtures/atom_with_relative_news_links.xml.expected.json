@@ -10,7 +10,7 @@
       "external_id": "/2023/07/25/news-1.html",
       "external_url": "https://example.com/2023/07/25/news-1.html",
       "external_tags": [],
-      "published_at": "2023-07-25T17:15:00"
+      "published_at": "2023-07-25T17:15:00Z"
     },
     {
       "title": "Entry title 2",
@@ -18,7 +18,7 @@
       "external_id": "/2023/03/25/news-2.html",
       "external_url": "https://example.com/2023/03/25/news-2.html",
       "external_tags": [],
-      "published_at": "2023-03-25T19:05:00"
+      "published_at": "2023-03-25T19:05:00Z"
     }
   ]
 }

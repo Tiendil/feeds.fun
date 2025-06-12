@@ -1,9 +1,10 @@
 import datetime
+import time
 from typing import Any, Iterable
 
 import feedparser
 
-from ffun.core import logging
+from ffun.core import logging, utils
 from ffun.domain import urls
 from ffun.domain.entities import AbsoluteUrl, FeedUrl
 from ffun.parsers.entities import EntryInfo, FeedInfo
@@ -36,9 +37,14 @@ def _extract_published_at(entry: Any) -> datetime.datetime:
     published_at = entry.get("published_parsed")
 
     if published_at is not None:
-        return datetime.datetime(*published_at[:6])
+        parsed = datetime.datetime.fromtimestamp(time.mktime(published_at))
 
-    return datetime.datetime.now()
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=datetime.timezone.utc)
+
+        return parsed
+
+    return utils.now()
 
 
 # not the best solution, but it works for now
@@ -52,6 +58,21 @@ def _extract_external_url(entry: Any, original_url: FeedUrl) -> AbsoluteUrl | No
     url = entry.get("link")
 
     return urls.adjust_external_url(url, original_url)
+
+
+def parse_entry(raw_entry: Any, original_url: FeedUrl) -> EntryInfo:
+    # TODO: remove all tags from title
+    # TODO: extract tags from <category> tag
+    published_at = _extract_published_at(raw_entry)
+
+    return EntryInfo(
+        title=raw_entry.get("title", ""),
+        body=raw_entry.get("description", ""),
+        external_id=_extract_external_id(raw_entry),
+        external_url=_extract_external_url(raw_entry, original_url),
+        external_tags=_parse_tags(raw_entry.get("tags", ())),
+        published_at=published_at,
+    )
 
 
 def parse_feed(content: str, original_url: FeedUrl) -> FeedInfo | None:
@@ -69,23 +90,15 @@ def parse_feed(content: str, original_url: FeedUrl) -> FeedInfo | None:
     )
 
     for entry in channel.entries:
-        # TODO: remove all tags from title
-        # TODO: extract tags from <category> tag
-
         if _should_skip(entry):
             continue
 
-        published_at = _extract_published_at(entry)
+        try:
+            parsed_entry = parse_entry(entry, original_url)
+        except Exception:
+            logger.exception("error_while_parsing_feed_entry", entry=entry, original_url=original_url)
+            continue
 
-        feed_info.entries.append(
-            EntryInfo(
-                title=entry.get("title", ""),
-                body=entry.get("description", ""),
-                external_id=_extract_external_id(entry),
-                external_url=_extract_external_url(entry, original_url),
-                external_tags=_parse_tags(entry.get("tags", ())),
-                published_at=published_at,
-            )
-        )
+        feed_info.entries.append(parsed_entry)
 
     return feed_info
