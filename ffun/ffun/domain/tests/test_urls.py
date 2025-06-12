@@ -217,6 +217,11 @@ class TestCheckFurlError:
             with urls.check_furl_error():
                 furl("https://example.com:666666")
 
+    def test_invalid_host(self) -> None:
+        with pytest.raises(errors.ExpectedFUrlError):
+            with urls.check_furl_error():
+                furl("https://visit%20borkensite.com%20for%20test%20or%not%21/")
+
     def test_another_error(self) -> None:
         with pytest.raises(ZeroDivisionError):
             with urls.check_furl_error():

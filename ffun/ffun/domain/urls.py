@@ -34,6 +34,9 @@ def check_furl_error() -> Iterator[None]:
         if "Invalid port" in message:
             raise errors.ExpectedFUrlError(message=message) from e
 
+        if "Invalid host" in message:
+            raise errors.ExpectedFUrlError(message=message) from e
+
         raise
 
 
