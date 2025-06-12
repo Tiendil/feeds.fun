@@ -92,6 +92,7 @@ services:
 
     environment:
       FFUN_ENABLE_API: "True"
+      PYTHONOPTIMIZE: "1"
 
   # Background workers for download feeds and tag them
   backend-workers:
@@ -118,7 +119,8 @@ services:
       - ${PWD}/ffun.env:/ffun/.env  # general config
       - ${PWD}/tag_processors.toml:/ffun/tag_processors.toml  # tag processors config
 
-    environment: {}
+    environment:
+      PYTHONOPTIMIZE: "1"
 
   # Service builds frontend UI and copies it to the static data volume to be served by Caddy
   frontend-data:
