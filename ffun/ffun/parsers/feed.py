@@ -1,5 +1,5 @@
-import time
 import datetime
+import time
 from typing import Any, Iterable
 
 import feedparser
@@ -66,13 +66,13 @@ def parse_entry(raw_entry: Any, original_url: FeedUrl) -> EntryInfo:
     published_at = _extract_published_at(raw_entry)
 
     return EntryInfo(
-                title=raw_entry.get("title", ""),
-                body=raw_entry.get("description", ""),
-                external_id=_extract_external_id(raw_entry),
-                external_url=_extract_external_url(raw_entry, original_url),
-                external_tags=_parse_tags(raw_entry.get("tags", ())),
-                published_at=published_at,
-            )
+        title=raw_entry.get("title", ""),
+        body=raw_entry.get("description", ""),
+        external_id=_extract_external_id(raw_entry),
+        external_url=_extract_external_url(raw_entry, original_url),
+        external_tags=_parse_tags(raw_entry.get("tags", ())),
+        published_at=published_at,
+    )
 
 
 def parse_feed(content: str, original_url: FeedUrl) -> FeedInfo | None:

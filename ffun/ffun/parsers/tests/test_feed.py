@@ -1,14 +1,15 @@
 import datetime
-import pytest
+from typing import Any
 
+import pytest
 from pytest_mock import MockerFixture
 
-from ffun.core import utils, json
-from ffun.core.tests.helpers import capture_logs, assert_logs
-from ffun.domain.entities import UnknownUrl
+from ffun.core import json
+from ffun.core.tests.helpers import assert_logs, capture_logs
+from ffun.domain.entities import FeedUrl, UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url
-from ffun.parsers.entities import FeedInfo, EntryInfo
-from ffun.parsers.feed import parse_feed, parse_entry
+from ffun.parsers.entities import EntryInfo, FeedInfo
+from ffun.parsers.feed import parse_entry, parse_feed
 from ffun.parsers.tests.helpers import feeds_fixtures_directory, feeds_fixtures_names
 
 
@@ -27,18 +28,20 @@ class TestParseEntry:
             ],
         }
 
-        original_url = to_feed_url(UnknownUrl("https://example.com/feed/"))
+        original_url = normalize_classic_unknown_url(UnknownUrl("https://example.com/feed/"))
 
-        parsed_entry = parse_entry(raw_entry, original_url)
+        assert original_url is not None
+
+        parsed_entry = parse_entry(raw_entry, to_feed_url(original_url))
 
         expected_entry = EntryInfo(
-                title="Entry title 1",
-                body="Body 1",
-                external_id="/2023/07/25/news-1.html",
-                external_url="https://example.com/2023/07/25/news-1.html",
-                published_at=datetime.datetime(2023, 7, 25, 17, 15, 0, tzinfo=datetime.timezone.utc),
-                external_tags={"tag1", "tag2", "tag3"},
-                )
+            title="Entry title 1",
+            body="Body 1",
+            external_id="/2023/07/25/news-1.html",
+            external_url=normalize_classic_unknown_url(UnknownUrl("https://example.com/2023/07/25/news-1.html")),
+            published_at=datetime.datetime(2023, 7, 25, 17, 15, 0, tzinfo=datetime.timezone.utc),
+            external_tags={"tag1", "tag2", "tag3"},
+        )
 
         assert parsed_entry == expected_entry
 
@@ -80,7 +83,7 @@ class TestParseFeed:
 
         call_number = {"calls": 0}
 
-        def mocked_parse_entry(raw_entry, original_url):
+        def mocked_parse_entry(raw_entry: Any, original_url: FeedUrl) -> EntryInfo:
             call_number["calls"] += 1
 
             if call_number["calls"] == 1:
