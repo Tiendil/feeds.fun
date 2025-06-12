@@ -105,13 +105,20 @@ class TestSplitTextAccordingToTokens:
         assert abs(len(parts[1]) - len(parts[2])) <= llm_config.text_parts_intersection + 1
         assert abs(len(parts[0]) - len(parts[2])) <= 1
 
-    def test_too_many_tokens_for_entry(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
+    def test_trim_if_there_are_too_many_tokens_for_entry(
+        self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration
+    ) -> None:
         model = fake_llm_provider.get_model(llm_config)
 
         text = "a" * (model.max_tokens_per_entry + 1)
 
-        with pytest.raises(errors.TooManyTokensForEntry):
-            split_text_according_to_tokens(llm=fake_llm_provider, llm_config=llm_config, text=text)
+        trimmed_parts = split_text_according_to_tokens(llm=fake_llm_provider, llm_config=llm_config, text=text)
+
+        head = "".join(trimmed_parts)
+
+        assert head != text
+        assert len("".join(trimmed_parts)) <= len(text)
+        assert head == text[: len(head)]
 
 
 class TestSearchForAPIKey:
