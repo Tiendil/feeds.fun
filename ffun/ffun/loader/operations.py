@@ -49,7 +49,7 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         elif "Server disconnected without sending a response" in message:
             log.warning("network_disconection_without_response")
             error_code = FeedError.network_disconection_without_response
-        elif "peer closed connection without sending complete message body (incomplete chunked read)" in message:
+        elif "peer closed connection without sending complete message body" in message:
             log.warning("network_received_unkomplete_body")
             error_code = FeedError.network_received_unkomplete_body
         else:
