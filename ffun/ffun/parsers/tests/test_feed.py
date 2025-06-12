@@ -4,6 +4,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from ffun.core import utils, json
+from ffun.core.tests.helpers import capture_logs, assert_logs
 from ffun.domain.entities import UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url
 from ffun.parsers.entities import FeedInfo, EntryInfo
@@ -89,7 +90,10 @@ class TestParseFeed:
 
         mocker.patch("ffun.parsers.feed.parse_entry", side_effect=mocked_parse_entry)
 
-        feed_info = parse_feed(raw_fixture, to_feed_url(url))
+        with capture_logs() as logs:
+            feed_info = parse_feed(raw_fixture, to_feed_url(url))
+
+        assert_logs(logs, error_while_parsing_feed_entry=1)
 
         # the first entry will be skipped due to the error in parsing
         parsed_expected_fixture = json.parse(expected_fixture)
