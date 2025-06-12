@@ -3,9 +3,12 @@ from typing import Any, Generator
 
 import httpx
 
+from ffun.core import logging
 from ffun.google import errors
 from ffun.google.entities import GenerationConfig, GoogleChatRequest, GoogleChatResponse
 from ffun.google.settings import settings
+
+logger = logging.get_module_logger()
 
 _safety_categories = [
     "HARM_CATEGORY_HATE_SPEECH",
@@ -29,7 +32,7 @@ class Client:
         except Exception as e:
             raise errors.UnknownError(message=str(e)) from e
 
-    def _handle_response_errors(self, response: httpx.Response) -> None:
+    def _handle_response_status_errors(self, response: httpx.Response) -> None:
         if response.status_code == 429:
             raise errors.QuotaError(message=response.content, status_code=response.status_code)
 
@@ -62,9 +65,17 @@ class Client:
             async with httpx.AsyncClient(headers=headers, timeout=timeout) as client:
                 response = await client.post(url, json=http_request)
 
-        self._handle_response_errors(response)
+        self._handle_response_status_errors(response)
 
         response_data = response.json()
+
+        # TODO: added 12.06.2025 to debug the lack of "parts" in the response
+        #       remove if there are no errors till 01.09.2025
+        if "parts" not in response_data["candidates"][0]["content"]:
+            logger.warning(
+                "unexpected_gemini_error_response_dump", response=response_data, status_code=response.status_code
+            )
+            raise errors.UnknownError(message="Unexpected response format from Gemini API")
 
         return GoogleChatResponse(
             content=response_data["candidates"][0]["content"]["parts"][0]["text"],
@@ -82,7 +93,7 @@ class Client:
             async with httpx.AsyncClient(headers=headers, timeout=timeout) as client:
                 response = await client.get(url)
 
-        self._handle_response_errors(response)
+        self._handle_response_status_errors(response)
 
         # TODO: introduce entity class for models
         return response.json()["models"]  # type: ignore

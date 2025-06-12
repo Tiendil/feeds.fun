@@ -6,3 +6,4 @@
 - ff-372 — Better handling of `RemoteProtocolError` in loader for cases of "peer closed connection without sending complete message body"
 - ff-373 — Trim too big entries (for LLM processing) in case `max_tokens_per_entry` limit is reached.
 - ff-369 — HTML text cleaner now correctly processes broken surrogate Unicode characters.
+- ff-370 — Added dump of the Gemini API response for the case when there is no "parts" field in the response.
