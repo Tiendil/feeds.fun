@@ -2,6 +2,7 @@ import asyncio
 import math
 from typing import Sequence
 
+from ffun.core import logging
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
@@ -18,6 +19,8 @@ from ffun.llms_framework.entities import (
 )
 from ffun.llms_framework.keys_rotator import choose_api_key, use_api_key
 from ffun.llms_framework.provider_interface import ProviderInterface
+
+logger = logging.get_module_logger()
 
 
 def split_text(text: str, parts: int, intersection: int) -> list[str]:
@@ -55,7 +58,9 @@ def split_text(text: str, parts: int, intersection: int) -> list[str]:
     return text_parts
 
 
-def split_text_according_to_tokens(llm: ProviderInterface, llm_config: LLMConfiguration, text: str) -> list[str]:
+def split_text_according_to_tokens(  # noqa: CCR001
+    llm: ProviderInterface, llm_config: LLMConfiguration, text: str
+) -> list[str]:
     parts_number = 0
 
     model = llm.get_model(llm_config)
@@ -70,10 +75,25 @@ def split_text_according_to_tokens(llm: ProviderInterface, llm_config: LLMConfig
         if any(tokens + llm_config.max_return_tokens >= model.max_context_size for tokens in parts_tokens):
             continue
 
-        if sum(tokens + llm_config.max_return_tokens for tokens in parts_tokens) > model.max_tokens_per_entry:
-            raise errors.TooManyTokensForEntry()
+        result = []
+        total_tokens = 0
 
-        return parts
+        for part, tokens in zip(parts, parts_tokens):
+            total_tokens += tokens + llm_config.max_return_tokens
+
+            if total_tokens > model.max_tokens_per_entry:
+                # trim the last part if the text exceeds the model limit
+                logger.warning(
+                    "entry_trimmed_for_llm",
+                    model_provider=model.provider,
+                    model_name=model.name,
+                    model_max_tokens_per_entry=model.max_tokens_per_entry,
+                )
+                return result
+
+            result.append(part)
+
+        return result
 
 
 async def search_for_api_key(
