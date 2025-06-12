@@ -1,10 +1,43 @@
+import datetime
 import pytest
 
+from ffun.core import utils
 from ffun.domain.entities import UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url
-from ffun.parsers.entities import FeedInfo
-from ffun.parsers.feed import parse_feed
+from ffun.parsers.entities import FeedInfo, EntryInfo
+from ffun.parsers.feed import parse_feed, parse_entry
 from ffun.parsers.tests.helpers import feeds_fixtures_directory, feeds_fixtures_names
+
+
+class TestParseEntry:
+
+    def test_parse(self) -> None:
+        raw_entry = {
+            "title": "Entry title 1",
+            "link": "/2023/07/25/news-1.html",
+            "published_parsed": (2023, 7, 25, 17, 15, 0, 0, 0, -1),
+            "description": "Body 1",
+            "tags": [
+                {"term": "tag1"},
+                {"term": "tag2"},
+                {"label": "tag3"},
+            ],
+        }
+
+        original_url = to_feed_url(UnknownUrl("https://example.com/feed/"))
+
+        parsed_entry = parse_entry(raw_entry, original_url)
+
+        expected_entry = EntryInfo(
+                title="Entry title 1",
+                body="Body 1",
+                external_id="/2023/07/25/news-1.html",
+                external_url="https://example.com/2023/07/25/news-1.html",
+                published_at=datetime.datetime(2023, 7, 25, 17, 15, 0, tzinfo=datetime.timezone.utc),
+                external_tags={"tag1", "tag2", "tag3"},
+                )
+
+        assert parsed_entry == expected_entry
 
 
 class TestParseFeed:
