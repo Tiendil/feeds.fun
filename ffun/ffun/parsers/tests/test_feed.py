@@ -1,7 +1,9 @@
 import datetime
 import pytest
 
-from ffun.core import utils
+from pytest_mock import MockerFixture
+
+from ffun.core import utils, json
 from ffun.domain.entities import UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url
 from ffun.parsers.entities import FeedInfo, EntryInfo
@@ -59,3 +61,38 @@ class TestParseFeed:
         feed_info = parse_feed(raw_fixture, to_feed_url(url))
 
         assert feed_info == FeedInfo.model_validate_json(expected_fixture)
+
+    @pytest.mark.parametrize("raw_fixture_name", feeds_fixtures_names())
+    def test_skip_entry_on_error(self, raw_fixture_name: str, mocker: MockerFixture) -> None:
+        raw_fixture_path = feeds_fixtures_directory / raw_fixture_name
+        expected_fixture_path = str(raw_fixture_path) + ".expected.json"
+
+        with open(raw_fixture_path, "r", encoding="utf-8") as raw_fixture_file:
+            raw_fixture = raw_fixture_file.read()
+
+        with open(expected_fixture_path, "r", encoding="utf-8") as expected_fixture_file:
+            expected_fixture = expected_fixture_file.read()
+
+        url = normalize_classic_unknown_url(UnknownUrl("https://example.com/feed/"))
+
+        assert url is not None
+
+        call_number = {"calls": 0}
+
+        def mocked_parse_entry(raw_entry, original_url):
+            call_number["calls"] += 1
+
+            if call_number["calls"] == 1:
+                raise ValueError("Test error on entry parsing")
+
+            return parse_entry(raw_entry, original_url)
+
+        mocker.patch("ffun.parsers.feed.parse_entry", side_effect=mocked_parse_entry)
+
+        feed_info = parse_feed(raw_fixture, to_feed_url(url))
+
+        # the first entry will be skipped due to the error in parsing
+        parsed_expected_fixture = json.parse(expected_fixture)
+        parsed_expected_fixture["entries"] = parsed_expected_fixture["entries"][1:]
+
+        assert feed_info == FeedInfo.model_validate(parsed_expected_fixture)
