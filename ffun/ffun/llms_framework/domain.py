@@ -75,7 +75,7 @@ def split_text_according_to_tokens(  # noqa: CCR001
         if any(tokens + llm_config.max_return_tokens >= model.max_context_size for tokens in parts_tokens):
             continue
 
-        result = []
+        result: list[str] = []
         total_tokens = 0
 
         for part, tokens in zip(parts, parts_tokens):
