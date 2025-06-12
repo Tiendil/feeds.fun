@@ -1,5 +1,4 @@
 import pytest
-import pydantic
 
 from ffun.core.entities import BaseEntity
 from ffun.librarian.text_cleaners import clear_html, clear_nothing
