@@ -8,3 +8,4 @@
 - ff-369 — HTML text cleaner now correctly processes broken surrogate Unicode characters.
 - ff-370 — Added dump of the Gemini API response for the case when there is no "parts" field in the response.
 - ff-367 — Metrics for monitoring the position of tag processors in the queue. To detect situations when they are stuck.
+- ff-368 — Metrics for monitoring the number of new loaded entries.
