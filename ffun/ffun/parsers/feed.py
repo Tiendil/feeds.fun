@@ -37,7 +37,11 @@ def _extract_published_at(entry: Any) -> datetime.datetime:
     published_at = entry.get("published_parsed")
 
     if published_at is not None:
-        parsed = datetime.datetime.fromtimestamp(time.mktime(published_at))
+        try:
+            parsed = datetime.datetime.fromtimestamp(time.mktime(published_at))
+        except ValueError:
+            logger.warning("wrong_published_at_value", value=str(published_at))
+            parsed = utils.now()
 
         if parsed.tzinfo is None:
             parsed = parsed.replace(tzinfo=datetime.timezone.utc)
