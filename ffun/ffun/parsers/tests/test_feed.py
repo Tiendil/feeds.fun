@@ -9,7 +9,7 @@ from ffun.core.tests.helpers import assert_logs, capture_logs
 from ffun.domain.entities import FeedUrl, UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url
 from ffun.parsers.entities import EntryInfo, FeedInfo
-from ffun.parsers.feed import parse_entry, parse_feed, _extract_published_at
+from ffun.parsers.feed import _extract_published_at, parse_entry, parse_feed
 from ffun.parsers.tests.helpers import feeds_fixtures_directory, feeds_fixtures_names
 
 
@@ -110,8 +110,8 @@ class TestExtractPublishedAt:
     def test_ok(self) -> None:
         published_parsed = (2023, 7, 25, 17, 15, 0, 0, 0, -1)
         expected_published_at = datetime.datetime(2023, 7, 25, 17, 15, 0, tzinfo=datetime.timezone.utc)
-        assert _extract_published_at({'published_parsed': published_parsed}) == expected_published_at
+        assert _extract_published_at({"published_parsed": published_parsed}) == expected_published_at
 
     def test_value_error(self) -> None:
         published_parsed = (1, 1, 1, 0, 0, 0, 0, 1, 0)
-        assert (utils.now() - _extract_published_at({'published_parsed': published_parsed})).total_seconds() < 1
+        assert (utils.now() - _extract_published_at({"published_parsed": published_parsed})).total_seconds() < 1
