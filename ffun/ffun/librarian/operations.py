@@ -86,6 +86,17 @@ async def save_pointer(execute: ExecuteType, pointer: ProcessorPointer) -> None:
         raise errors.CanNotSaveUnexistingPointer()
 
 
+async def get_all_pointers() -> list[ProcessorPointer]:
+    sql = """
+        SELECT processor_id, pointer_created_at, pointer_entry_id
+        FROM ln_processor_pointers
+    """
+
+    rows = await execute(sql)
+
+    return [row_to_processor_pointer(row) for row in rows]
+
+
 async def push_entries_to_processor_queue(
     execute: ExecuteType, processor_id: int, entry_ids: Iterable[EntryId]
 ) -> None:

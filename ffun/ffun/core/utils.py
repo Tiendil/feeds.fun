@@ -9,6 +9,10 @@ def now() -> datetime.datetime:
     return datetime.datetime.now(tz=datetime.timezone.utc)
 
 
+def zero_timestamp() -> datetime.datetime:
+    return datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
+
+
 def discover_submodules(  # noqa: CCR001
     parent_module: str, skip_dev_dependencies: bool = True
 ) -> list[types.ModuleType]:

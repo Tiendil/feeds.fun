@@ -4,12 +4,14 @@ import uuid
 import typer
 
 from ffun.application.application import with_app
-from ffun.core import logging
+from ffun.core import logging, utils
 from ffun.domain.entities import CollectionId, FeedId, UserId
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
+from ffun.librarian import domain as ln_domain
+from ffun.librarian import backend_processors
 from ffun.ontology import domain as o_domain
 from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
@@ -19,6 +21,9 @@ logger = logging.get_module_logger()
 
 cli_app = typer.Typer()
 
+################
+# System metrics
+################
 
 async def system_slice_tags() -> None:
     tags_total = await o_domain.count_total_tags()
@@ -76,6 +81,39 @@ async def system_slice_collections() -> None:
     logger.business_slice("collections_total", user_id=None, total=collections.count_total_feeds())
 
 
+async def system_slice_processors() -> None:
+    pointers_list = await ln_domain.get_all_pointers()
+    pointers = {pointer.processor_id: pointer for pointer in pointers_list}
+
+    processed_processors = set()
+
+    for processor in backend_processors.processors:
+        processed_processors.add(processor.id)
+
+        pointer = pointers.get(processor.id)
+
+        if pointer is None:
+            logger.business_slice("processor_pointer",
+                                  processor_id=processor.id,
+                                  is_active=True,
+                                  pointer_created_at=utils.zero_timestamp())
+            continue
+
+        logger.business_slice("processor_pointer",
+                              processor_id=processor.id,
+                              is_active=True,
+                              pointer_created_at=pointer.pointer_created_at)
+
+    for pointer in pointers_list:
+        if pointer.processor_id in processed_processors:
+            continue
+
+        logger.business_slice("processor_pointer",
+                              processor_id=pointer.processor_id,
+                              is_active=False,
+                              pointer_created_at=pointer.pointer_created_at)
+
+
 async def run_system() -> None:
 
     async with with_app():
@@ -84,12 +122,17 @@ async def run_system() -> None:
         await system_slice_entries()
         await system_slice_users()
         await system_slice_collections()
+        await system_slice_processors()
 
 
 @cli_app.command()
 def system() -> None:
     asyncio.run(run_system())
 
+
+##############
+# User metrics
+##############
 
 async def users_slice_rules() -> None:
     rules_per_user = await s_domain.count_rules_per_user()
