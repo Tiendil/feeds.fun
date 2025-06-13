@@ -4,7 +4,7 @@ import pytest
 from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
-from ffun.core.tests.helpers import assert_logs
+from ffun.core.tests.helpers import assert_logs, assert_logs_has_business_event
 from ffun.domain.entities import UserId
 from ffun.domain.urls import url_to_uid
 from ffun.feeds import domain as f_domain
@@ -130,7 +130,10 @@ class TestSyncFeedInfo:
 class TestStoreEntries:
     @pytest.mark.asyncio
     async def test_no_entries(self, saved_feed: f_entities.Feed) -> None:
-        await store_entries(saved_feed, [])
+        with capture_logs() as logs:
+            await store_entries(saved_feed, [])
+
+        assert_logs(logs, news_entries_stored=0)
 
         entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=1)
 
@@ -142,7 +145,10 @@ class TestStoreEntries:
 
         entry_infos = [p_make.fake_entry_info() for _ in range(n)]
 
-        await store_entries(saved_feed, entry_infos)
+        with capture_logs() as logs:
+            await store_entries(saved_feed, entry_infos)
+
+        assert_logs_has_business_event(logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=n)
 
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 
@@ -165,7 +171,10 @@ class TestStoreEntries:
         entry_infos = [p_make.fake_entry_info() for _ in range(n)]
         entry_infos.sort(key=lambda e: e.title)
 
-        await store_entries(saved_feed, entry_infos[:m])
+        with capture_logs() as logs:
+            await store_entries(saved_feed, entry_infos[:m])
+
+        assert_logs_has_business_event(logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=m)
 
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 
@@ -177,7 +186,10 @@ class TestStoreEntries:
             assert entry.source_id == saved_feed.source_id
             assert_entriy_equal_to_info(entry_info, entry)
 
-        await store_entries(saved_feed, entry_infos)
+        with capture_logs() as logs:
+            await store_entries(saved_feed, entry_infos)
+
+        assert_logs_has_business_event(logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=n - m)
 
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 

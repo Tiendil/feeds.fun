@@ -155,7 +155,12 @@ async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None
 
     await l_domain.catalog_entries(feed.id, entries=prepared_entries)
 
-    logger.info("entries_stored", entries_number=len(prepared_entries))
+    entries_stored = len(prepared_entries)
+
+    logger.info("entries_stored", entries_number=entries_stored)
+
+    if entries_stored > 0:
+        logger.business_event("news_entries_stored", user_id=None, feed_id=feed.id, entries_number=entries_stored)
 
 
 @logging.function_args_to_log("feed.id", "feed.url")
