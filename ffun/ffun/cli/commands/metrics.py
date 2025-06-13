@@ -11,7 +11,7 @@ from ffun.feeds_collections.collections import collections
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.librarian import domain as ln_domain
-from ffun.librarian import backend_processors
+from ffun.librarian import background_processors
 from ffun.ontology import domain as o_domain
 from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
@@ -87,19 +87,21 @@ async def system_slice_processors() -> None:
 
     processed_processors = set()
 
-    for processor in backend_processors.processors:
+    for processor in background_processors.processors:
         processed_processors.add(processor.id)
 
         pointer = pointers.get(processor.id)
 
         if pointer is None:
             logger.business_slice("processor_pointer",
+                                  user_id=None,
                                   processor_id=processor.id,
                                   is_active=True,
                                   pointer_created_at=utils.zero_timestamp())
             continue
 
         logger.business_slice("processor_pointer",
+                              user_id=None,
                               processor_id=processor.id,
                               is_active=True,
                               pointer_created_at=pointer.pointer_created_at)
@@ -109,6 +111,7 @@ async def system_slice_processors() -> None:
             continue
 
         logger.business_slice("processor_pointer",
+                              user_id=None,
                               processor_id=pointer.processor_id,
                               is_active=False,
                               pointer_created_at=pointer.pointer_created_at)
