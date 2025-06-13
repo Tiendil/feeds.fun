@@ -148,7 +148,9 @@ class TestStoreEntries:
         with capture_logs() as logs:
             await store_entries(saved_feed, entry_infos)
 
-        assert_logs_has_business_event(logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=n)
+        assert_logs_has_business_event(
+            logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=n
+        )
 
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 
@@ -174,7 +176,9 @@ class TestStoreEntries:
         with capture_logs() as logs:
             await store_entries(saved_feed, entry_infos[:m])
 
-        assert_logs_has_business_event(logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=m)
+        assert_logs_has_business_event(
+            logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=m
+        )
 
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 
@@ -189,7 +193,9 @@ class TestStoreEntries:
         with capture_logs() as logs:
             await store_entries(saved_feed, entry_infos)
 
-        assert_logs_has_business_event(logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=n - m)
+        assert_logs_has_business_event(
+            logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=n - m
+        )
 
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 
