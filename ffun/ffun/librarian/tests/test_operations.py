@@ -142,10 +142,7 @@ class TestGetAllPointers:
         pointer_1 = await operations.get_or_create_pointer(fake_processor_id)
         pointer_2 = await operations.get_or_create_pointer(another_fake_processor_id)
 
-        pointer_2 = pointer_2.replace(
-            pointer_entry_id=new_entry_id(),
-            pointer_created_at=utils.now()
-        )
+        pointer_2 = pointer_2.replace(pointer_entry_id=new_entry_id(), pointer_created_at=utils.now())
 
         await operations.save_pointer(execute, pointer_2)
 

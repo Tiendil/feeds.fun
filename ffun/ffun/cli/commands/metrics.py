@@ -9,9 +9,9 @@ from ffun.domain.entities import CollectionId, FeedId, UserId
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_links import domain as fl_domain
-from ffun.library import domain as l_domain
-from ffun.librarian import domain as ln_domain
 from ffun.librarian import background_processors
+from ffun.librarian import domain as ln_domain
+from ffun.library import domain as l_domain
 from ffun.ontology import domain as o_domain
 from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
@@ -24,6 +24,7 @@ cli_app = typer.Typer()
 ################
 # System metrics
 ################
+
 
 async def system_slice_tags() -> None:
     tags_total = await o_domain.count_total_tags()
@@ -93,28 +94,34 @@ async def system_slice_processors() -> None:
         pointer = pointers.get(processor.id)
 
         if pointer is None:
-            logger.business_slice("processor_pointer",
-                                  user_id=None,
-                                  processor_id=processor.id,
-                                  is_active=True,
-                                  pointer_created_at=utils.zero_timestamp())
+            logger.business_slice(
+                "processor_pointer",
+                user_id=None,
+                processor_id=processor.id,
+                is_active=True,
+                pointer_created_at=int(utils.zero_timestamp().timestamp()),
+            )
             continue
 
-        logger.business_slice("processor_pointer",
-                              user_id=None,
-                              processor_id=processor.id,
-                              is_active=True,
-                              pointer_created_at=pointer.pointer_created_at)
+        logger.business_slice(
+            "processor_pointer",
+            user_id=None,
+            processor_id=processor.id,
+            is_active=True,
+            pointer_created_at=int(pointer.pointer_created_at.timestamp()),
+        )
 
     for pointer in pointers_list:
         if pointer.processor_id in processed_processors:
             continue
 
-        logger.business_slice("processor_pointer",
-                              user_id=None,
-                              processor_id=pointer.processor_id,
-                              is_active=False,
-                              pointer_created_at=pointer.pointer_created_at)
+        logger.business_slice(
+            "processor_pointer",
+            user_id=None,
+            processor_id=pointer.processor_id,
+            is_active=False,
+            pointer_created_at=int(pointer.pointer_created_at.timestamp()),
+        )
 
 
 async def run_system() -> None:
@@ -136,6 +143,7 @@ def system() -> None:
 ##############
 # User metrics
 ##############
+
 
 async def users_slice_rules() -> None:
     rules_per_user = await s_domain.count_rules_per_user()
