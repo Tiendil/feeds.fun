@@ -2,6 +2,7 @@ import datetime
 import uuid
 
 import pytest
+import pytest_asyncio
 
 from ffun.core import utils
 from ffun.core.postgresql import execute
@@ -118,6 +119,39 @@ class TestSavePointer:
         loaded_pointer = await operations.get_or_create_pointer(fake_processor_id)
 
         assert new_pointer == loaded_pointer
+
+
+class TestGetAllPointers:
+
+    @pytest_asyncio.fixture(autouse=True)
+    async def cleanup_fake_pointers(self, fake_processor_id: int, another_fake_processor_id: int) -> None:
+        await operations.delete_pointer(fake_processor_id)
+        await operations.delete_pointer(another_fake_processor_id)
+
+    @pytest.mark.asyncio
+    async def test_no_pointers(self, fake_processor_id: int, another_fake_processor_id: int) -> None:
+        pointers = await operations.get_all_pointers()
+
+        ids = {pointer.processor_id for pointer in pointers}
+
+        assert fake_processor_id not in ids
+        assert another_fake_processor_id not in ids
+
+    @pytest.mark.asyncio
+    async def test_has_pointers(self, fake_processor_id: int, another_fake_processor_id: int) -> None:
+        pointer_1 = await operations.get_or_create_pointer(fake_processor_id)
+        pointer_2 = await operations.get_or_create_pointer(another_fake_processor_id)
+
+        pointer_2 = pointer_2.replace(pointer_entry_id=new_entry_id(), pointer_created_at=utils.now())
+
+        await operations.save_pointer(execute, pointer_2)
+
+        pointers = await operations.get_all_pointers()
+
+        ids = {pointer.processor_id: pointer for pointer in pointers}
+
+        assert ids[fake_processor_id] == pointer_1
+        assert ids[another_fake_processor_id] == pointer_2
 
 
 class TestPushEntriesToProcessorQueue:

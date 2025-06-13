@@ -14,6 +14,7 @@ logger = logging.get_module_logger()
 
 
 count_failed_entries = operations.count_failed_entries
+get_all_pointers = operations.get_all_pointers
 
 
 @run_in_transaction
