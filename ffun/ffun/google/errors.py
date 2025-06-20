@@ -19,3 +19,15 @@ class QuotaError(ClientError):
 
 class UnknownError(ClientError):
     pass
+
+
+class ProhibitedContentError(ClientError):
+    pass
+
+
+class MalformedFunctionCallError(ClientError):
+    pass
+
+
+class UnknownFinishReasonError(ClientError):
+    pass
