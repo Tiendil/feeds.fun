@@ -42,6 +42,22 @@ class Client:
         if response.status_code != 200:
             raise errors.UnknownError(message=response.content, status_code=response.status_code)
 
+    # See https://ai.google.dev/api/generate-content#FinishReason
+    def _handle_finish_reason(self, finish_reason: str) -> None:
+        match finish_reason:
+            case "FINISH_REASON_UNSPECIFIED" | "STOP" | "MAX_TOKENS" | "OTHER":
+                pass
+            case "SAFETY" | "RECITATION" | "LANGUAGE" | "BLOCKLIST" | "SPII" | "IMAGE_SAFETY":
+                # we may want to stop processing the response here
+                # let's wait it there will be any issues with just passing it
+                pass
+            case "PROHIBITED_CONTENT":
+                raise errors.ProhibitedContentError()
+            case "MALFORMED_FUNCTION_CALL":
+                raise errors.MalformedFunctionCallError()
+            case reason:
+                raise errors.UnknownFinishReasonError(reason=reason)
+
     async def generate_content(
         self,
         model: str,
@@ -69,16 +85,12 @@ class Client:
 
         response_data = response.json()
 
-        # TODO: added 12.06.2025 to debug the lack of "parts" in the response
-        #       remove if there are no errors till 01.09.2025
-        if "parts" not in response_data["candidates"][0]["content"]:
-            logger.warning(
-                "unexpected_gemini_error_response_dump", response=response_data, status_code=response.status_code
-            )
-            raise errors.UnknownError(message="Unexpected response format from Gemini API")
+        candidate = response_data["candidates"][0]
+
+        self._handle_finish_reason(candidate["finishReason"])
 
         return GoogleChatResponse(
-            content=response_data["candidates"][0]["content"]["parts"][0]["text"],
+            content=candidate["content"]["parts"][0]["text"],
             prompt_tokens=response_data["usageMetadata"]["promptTokenCount"],
             completion_tokens=response_data["usageMetadata"]["candidatesTokenCount"],
             total_tokens=response_data["usageMetadata"]["totalTokenCount"],
