@@ -47,6 +47,20 @@ class TestParseEntry:
 
 
 class TestParseFeed:
+
+    def test_error_in_feedparser(self, mocker: MockerFixture) -> None:
+        url = normalize_classic_unknown_url(UnknownUrl("https://example.com/feed/"))
+
+        assert url is not None
+
+        mocker.patch("feedparser.parse", side_effect=ValueError("Test error in feedparser"))
+
+        with capture_logs() as logs:
+            feed_info = parse_feed("", to_feed_url(url))
+
+        assert feed_info is None
+        assert_logs(logs, error_while_parsing_feed=1)
+
     @pytest.mark.parametrize("raw_fixture_name", feeds_fixtures_names())
     def test_on_row_fixtures(self, raw_fixture_name: str) -> None:
         raw_fixture_path = feeds_fixtures_directory / raw_fixture_name
