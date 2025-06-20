@@ -36,6 +36,7 @@ class FeedError(enum.IntEnum):
     network_read_error = 1018
     network_temporary_failure_in_name_resolution = 1019
     network_wrong_ssl_version = 1020
+    network_great_china_firewall_redirect = 1021
 
     parsing_unknown = 2000
     parsing_base_error = 2001

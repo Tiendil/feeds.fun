@@ -52,6 +52,10 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         elif "peer closed connection without sending complete message body" in message:
             log.warning("network_received_unkomplete_body")
             error_code = FeedError.network_received_unkomplete_body
+        elif "Invalid URL in location header" in message and "fzyujing" in message:
+            # Details: https://chatgpt.com/share/6855377e-4828-800d-a4cb-1ea924cd6286
+            log.warning("network_great_china_firewall_redirect")
+            error_code = FeedError.network_great_china_firewall_redirect
         else:
             log.exception("remote_protocol_error_while_loading_feed")
 
