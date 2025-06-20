@@ -79,8 +79,12 @@ def parse_entry(raw_entry: Any, original_url: FeedUrl) -> EntryInfo:
     )
 
 
-def parse_feed(content: str, original_url: FeedUrl) -> FeedInfo | None:
-    channel = feedparser.parse(content)
+def parse_feed(content: str, original_url: FeedUrl) -> FeedInfo | None:  # noqa: CCR001
+    try:
+        channel = feedparser.parse(content)
+    except Exception:
+        logger.exception("error_while_parsing_feed", original_url=original_url)
+        return None
 
     if getattr(channel, "version", "") == "" and not channel.entries:
         return None
