@@ -69,25 +69,34 @@ async def get_tags_by_ids(tags_ids: list[int]) -> dict[int, str]:
 
 
 async def _save_tags(execute: ExecuteType, entry_id: EntryId, tags_ids: Iterable[int]) -> None:
-    sql_relations = """
-    INSERT INTO o_relations (entry_id, tag_id)
-    VALUES (%(entry_id)s, %(tag_id)s)
-    ON CONFLICT (entry_id, tag_id) DO NOTHING"""
+    if not tags_ids:
+        return
+
+    query = PostgreSQLQuery.into("o_relations").columns("entry_id", "tag_id")
 
     for tag_id in tags_ids:
-        await execute(sql_relations, {"entry_id": entry_id, "tag_id": tag_id})
+        query = query.insert(entry_id, tag_id)
+
+    query = query.on_conflict("entry_id", "tag_id").do_nothing()
+
+    await execute(str(query))
 
 
 async def _register_relations_processors(
     execute: ExecuteType, relations_ids: Iterable[int], processor_id: int
 ) -> None:
-    sql_register_processor = """
-    INSERT INTO o_relations_processors (relation_id, processor_id)
-    VALUES (%(relation_id)s, %(processor_id)s)
-    ON CONFLICT (relation_id, processor_id) DO NOTHING"""
+
+    if not relations_ids:
+        return
+
+    query = PostgreSQLQuery.into("o_relations_processors").columns("relation_id", "processor_id")
 
     for relation_id in relations_ids:
-        await execute(sql_register_processor, {"relation_id": relation_id, "processor_id": processor_id})
+        query = query.insert(relation_id, processor_id)
+
+    query = query.on_conflict("relation_id", "processor_id").do_nothing()
+
+    await execute(str(query))
 
 
 async def _get_relations_for_entry_and_tags(
