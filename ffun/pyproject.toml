@@ -35,28 +35,28 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.13"
 
 uvicorn = {extras = ["standard"], version = "0.*"}
-fastapi = "0.111.*"
+fastapi = "0.115.*"
 pydantic = "2.11.*"
 pydantic-settings = "2.10.*"
 typer = "0.16.*"
 
 # upgrade furher are blocked by supertokens-python
-httpx = "0.26.*"
+httpx = "0.28.*"
 
 brotlicffi = "1.1.*"
-# zstandard = "0.22.*"
+zstandard = "0.23.*"
 
-openai = "1.74.*"
+openai = "1.91.*"
 tiktoken = "0.9.*"
 
 bidict = "0.23.*"
 
 feedparser = "6.0.*"
 
-beautifulsoup4 = "4.12.*"
+beautifulsoup4 = "4.13.*"
 
 async-lru = "2.0.*"
 
@@ -65,7 +65,7 @@ psycopg-pool = "3.2.*"
 yoyo-migrations = "9.0.*"
 PyPika = "0.48.*"
 
-structlog = "24.2.*"
+structlog = "25.4.*"
 
 python-multipart = "0.0.*"
 
@@ -73,18 +73,17 @@ supertokens-python = "0.30.0"
 
 python-slugify = "8.0.*"
 
-sentry-sdk = "2.3.*"
+sentry-sdk = "2.30.*"
 
 tabulate = "0.9.*"
 
-cryptography = "42.0.*"
+cryptography = "45.0.*"
 
-markdown = "3.6.*"
+markdown = "3.8.*"
 
 furl = "2.1.*"
 
-# version locked by supertokens supertokens-python
-# tldextract = "5.1.*"
+tldextract = "5.3.*"
 
 # TODO: move to dev dependencies?
 python-frontmatter = "1.1.*"
@@ -179,11 +178,6 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "frontmatter.*"
-ignore_missing_imports = true
-
-# TODO: remove after upgrading to a new tlsextract
-[[tool.mypy.overrides]]
-module = "tldextract.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
