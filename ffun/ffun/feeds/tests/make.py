@@ -1,8 +1,8 @@
 import uuid
 from typing import Any
 
-from ffun.domain.urls import url_to_source_uid, str_to_absolute_url, str_to_feed_url
 from ffun.domain.entities import FeedId
+from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_source_uid
 from ffun.feeds.entities import Feed, FeedState
 from ffun.feeds.operations import get_feeds, get_source_ids, save_feed
 
