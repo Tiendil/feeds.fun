@@ -1,7 +1,7 @@
 #############
 # Build stage
 #############
-FROM python:3.12 AS builder
+FROM python:3.13 AS builder
 
 WORKDIR /src
 
@@ -15,7 +15,7 @@ RUN poetry build --format wheel
 # Install stage
 ###############
 
-FROM python:3.12 AS runtime
+FROM python:3.13 AS runtime
 
 WORKDIR /ffun
 
