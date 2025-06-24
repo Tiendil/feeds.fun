@@ -227,7 +227,7 @@ async def parse_content(content: str, original_url: FeedUrl) -> p_entities.FeedI
 
 async def check_proxy(proxy: Proxy, url: str, user_agent: str) -> bool:
     try:
-        async with httpx.AsyncClient(proxies=proxy.url, headers={"user-agent": user_agent}) as client:
+        async with httpx.AsyncClient(proxy=proxy.url, headers={"user-agent": user_agent}) as client:
             response = await client.head(url)
     except Exception as e:
         logger.info("proxy_check_error", proxy=proxy.name, url=url, error=str(e))
