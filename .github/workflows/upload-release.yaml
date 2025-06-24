@@ -38,7 +38,7 @@ jobs:
       - name: Prepare Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: '3.13'
           cache: 'poetry'
 
       - name: build python package
