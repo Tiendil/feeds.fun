@@ -57,7 +57,7 @@ class ChatResponseTest(ChatResponse):
 class ProviderTest(ProviderInterface):
     provider = LLMProvider.test
 
-    def prepare_requests(self, config: LLMConfiguration, text: str) -> Sequence[ChatRequestTest]:  # type: ignore
+    def prepare_requests(self, config: LLMConfiguration, text: str) -> Sequence[ChatRequestTest]:
         return [ChatRequestTest(text=text)]
 
     def estimate_tokens(self, config: LLMConfiguration, text: str) -> int:

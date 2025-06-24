@@ -52,7 +52,11 @@ class TestHandleAPIError:
 
         assert response.status_code == 200
 
-        assert json.parse(response.body.decode()) == {
+        body = response.body
+
+        assert isinstance(body, bytes)
+
+        assert json.parse(body.decode()) == {
             "status": "error",
             "code": "some.error.code",
             "message": "some message",
@@ -88,7 +92,12 @@ class TestHandleUnexpectedError:
         ]
 
         assert response.status_code == 500
-        assert json.parse(response.body.decode()) == {
+
+        body = response.body
+
+        assert isinstance(body, bytes)
+
+        assert json.parse(body.decode()) == {
             "status": "error",
             "code": "FakeError",
             "message": "An unexpected error appeared. We are working on fixing it.",

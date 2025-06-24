@@ -90,7 +90,7 @@ class GoogleInterface(ProviderInterface):
 
         return answer
 
-    def prepare_requests(self, config: LLMConfiguration, text: str) -> Sequence[GoogleChatRequest]:  # type: ignore
+    def prepare_requests(self, config: LLMConfiguration, text: str) -> Sequence[GoogleChatRequest]:
         parts = llmsf_domain.split_text_according_to_tokens(llm=self, llm_config=config, text=text)
 
         requests = []

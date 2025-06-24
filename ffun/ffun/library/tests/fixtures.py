@@ -7,12 +7,12 @@ from ffun.library.entities import Entry
 from ffun.library.tests import make as l_make
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture  # type: ignore
 def new_entry(loaded_feed: Feed) -> Entry:
     return l_make.fake_entry(loaded_feed.source_id)
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture  # type: ignore
 def another_new_entry(another_loaded_feed: Feed) -> Entry:
     return l_make.fake_entry(another_loaded_feed.source_id)
 
