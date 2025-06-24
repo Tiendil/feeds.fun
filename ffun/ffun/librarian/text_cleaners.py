@@ -1,6 +1,6 @@
 import re
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 
 def clear_nothing(text: str) -> str:
@@ -14,6 +14,10 @@ def clear_html(text: str) -> str:
         tag.decompose()
 
     for tag in soup():
+
+        if not isinstance(tag, Tag):
+            continue
+
         if tag.name in {"h1", "h2", "h3", "h4", "h5", "h6", "a", "p", "li", "ul", "ol"}:
             continue
 

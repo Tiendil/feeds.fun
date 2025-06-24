@@ -1,7 +1,8 @@
 import uuid
 from typing import Any
 
-from ffun.domain.urls import url_to_source_uid
+from ffun.domain.entities import FeedId
+from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_source_uid
 from ffun.feeds.entities import Feed, FeedState
 from ffun.feeds.operations import get_feeds, get_source_ids, save_feed
 
@@ -21,14 +22,14 @@ def fake_description() -> str:
 async def fake_feed(**kwargs: Any) -> Feed:
     url = fake_url() if "url" not in kwargs else kwargs["url"]
 
-    source_uid = url_to_source_uid(url)
+    source_uid = url_to_source_uid(str_to_absolute_url(url))
 
     source_ids = await get_source_ids([source_uid])
 
     return Feed(
-        id=uuid.uuid4() if "id" not in kwargs else kwargs["id"],
+        id=FeedId(uuid.uuid4() if "id" not in kwargs else kwargs["id"]),
         source_id=source_ids[source_uid],
-        url=url,
+        url=str_to_feed_url(url),
         state=FeedState.not_loaded if "state" not in kwargs else kwargs["state"],
         last_error=kwargs.get("last_error"),
         load_attempted_at=kwargs.get("load_attempted_at"),

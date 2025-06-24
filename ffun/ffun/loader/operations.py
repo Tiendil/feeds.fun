@@ -35,7 +35,7 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         headers = {"user-agent": user_agent, "accept-encoding": "br;q=1.0, gzip;q=0.9, deflate;q=0.8"}
 
         async with semaphore:
-            async with httpx.AsyncClient(proxies=proxy.url, headers=headers) as client:
+            async with httpx.AsyncClient(proxy=proxy.url, headers=headers) as client:
                 response = await client.get(url, follow_redirects=True)
 
     except httpx.RemoteProtocolError as e:
@@ -227,7 +227,7 @@ async def parse_content(content: str, original_url: FeedUrl) -> p_entities.FeedI
 
 async def check_proxy(proxy: Proxy, url: str, user_agent: str) -> bool:
     try:
-        async with httpx.AsyncClient(proxies=proxy.url, headers={"user-agent": user_agent}) as client:
+        async with httpx.AsyncClient(proxy=proxy.url, headers={"user-agent": user_agent}) as client:
             response = await client.head(url)
     except Exception as e:
         logger.info("proxy_check_error", proxy=proxy.name, url=url, error=str(e))

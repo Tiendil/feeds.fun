@@ -35,28 +35,28 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.13"
 
 uvicorn = {extras = ["standard"], version = "0.*"}
-fastapi = "0.111.*"
+fastapi = "0.115.*"
 pydantic = "2.11.*"
 pydantic-settings = "2.10.*"
 typer = "0.16.*"
 
 # upgrade furher are blocked by supertokens-python
-httpx = "0.26.*"
+httpx = "0.28.*"
 
 brotlicffi = "1.1.*"
-# zstandard = "0.22.*"
+zstandard = "0.23.*"
 
-openai = "1.74.*"
+openai = "1.91.*"
 tiktoken = "0.9.*"
 
 bidict = "0.23.*"
 
 feedparser = "6.0.*"
 
-beautifulsoup4 = "4.12.*"
+beautifulsoup4 = "4.13.*"
 
 async-lru = "2.0.*"
 
@@ -65,7 +65,7 @@ psycopg-pool = "3.2.*"
 yoyo-migrations = "9.0.*"
 PyPika = "0.48.*"
 
-structlog = "24.2.*"
+structlog = "25.4.*"
 
 python-multipart = "0.0.*"
 
@@ -73,43 +73,42 @@ supertokens-python = "0.30.0"
 
 python-slugify = "8.0.*"
 
-sentry-sdk = "2.3.*"
+sentry-sdk = "2.30.*"
 
 tabulate = "0.9.*"
 
-cryptography = "42.0.*"
+cryptography = "45.0.*"
 
-markdown = "3.6.*"
+markdown = "3.8.*"
 
 furl = "2.1.*"
 
-# version locked by supertokens supertokens-python
-# tldextract = "5.1.*"
+tldextract = "5.3.*"
 
 # TODO: move to dev dependencies?
 python-frontmatter = "1.1.*"
 toml = "0.10.*"
 orjson = "3.10.*"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 
 changy = "0.*"
 
-pytest = "8.3.*"
-pytest-asyncio = "0.24.*"
+pytest = "8.4.*"
+pytest-asyncio = "1.0.*"
 pytest-mock = "3.14.*"
 
 py-spy = "0.4.*"
 
-respx = "0.21.*"
+respx = "0.22.*"
 
-isort = "5.13.*"
-black = "24.4.*"
+isort = "6.0.*"
+black = "25.1.*"
 
-flake8 = "7.0.*"
+flake8 = "7.3.*"
 flake8-docstrings = "1.7.*"
 flake8-functions = "0.0.*"
-flake8-annotations-complexity = "0.0.*"
+flake8-annotations-complexity = "0.1.*"
 flake8-cognitive-complexity = "0.1.*"
 flake8-pytest = "1.4.*"
 flake8-bandit = "4.1.*"
@@ -119,14 +118,11 @@ flake8-pyproject = "1.2.*"
 flake8-eradicate = "1.5.*"
 autoflake = "2.3.*"
 
-# mypy fails in the latest versions
-mypy = "1.10.*"
+mypy = "1.16.*"
 
 types-toml = "0.10.*"
 types-python-slugify = "8.0.*"
-types-beautifulsoup4 = "4.12.*"
-types-markdown = "3.6.*"
-types-setuptools = "71.1.*"
+types-setuptools = "80.9.*"
 types-tabulate = "0.9.*"
 
 [tool.poetry.scripts]
@@ -181,11 +177,6 @@ ignore_missing_imports = true
 module = "frontmatter.*"
 ignore_missing_imports = true
 
-# TODO: remove after upgrading to a new tlsextract
-[[tool.mypy.overrides]]
-module = "tldextract.*"
-ignore_missing_imports = true
-
 [tool.pytest.ini_options]
 # possibly it is not good option value, because we'll lose detecting of lost coroutines
 # but for now it is required for some session-scoped fixtures
@@ -196,6 +187,7 @@ addopts = """-x -vv --strict-markers -p no:cacheprovider"""
 filterwarnings = [
   "error",
   "ignore::DeprecationWarning:feedparser.encodings:29",
+  "ignore::DeprecationWarning:feedparser.html:152",
   "ignore::pytest.PytestDeprecationWarning:pytest_asyncio.plugin:208",
   "ignore::PendingDeprecationWarning:starlette:12"
 ]

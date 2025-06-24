@@ -132,12 +132,7 @@ class TestLoadContent:
                 {"Content-Encoding": "gzip"},
             ),
             (b"x\x9c+I-.\xd1-J-.\xc8\xcf+N\x05\x00%A\x05]", {"Content-Encoding": "deflate"}),
-            # TODO: add zstd support after upgrading HTTPX to the last version
-            pytest.param(
-                b"(\xb5/\xfd \ri\x00\x00test-response",
-                {"Content-Encoding": "zstd"},
-                marks=[pytest.mark.xfail(reason="zstd is not supported")],
-            ),
+            (b"(\xb5/\xfd \ri\x00\x00test-response", {"Content-Encoding": "zstd"}),
             (b"\x1b\x0c\x00\xf8\xa5[\xca\xe6\xe8\x84+\xa1\xc66", {"Content-Encoding": "br"}),
         ],
         ids=["plain", "gzip", "deflate", "zstd", "br"],

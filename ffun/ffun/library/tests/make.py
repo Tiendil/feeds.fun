@@ -4,6 +4,7 @@ from typing import Any
 from ffun.core import utils
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import EntryId, SourceId
+from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds.entities import Feed
 from ffun.library import domain
 from ffun.library.entities import Entry
@@ -28,7 +29,7 @@ def fake_entry(source_id: SourceId, **kwargs: Any) -> Entry:
         title=fake_title() if "title" not in kwargs else kwargs["title"],
         body=fake_body() if "body" not in kwargs else kwargs["body"],
         external_id=uuid.uuid4().hex if "external_id" not in kwargs else kwargs["external_id"],
-        external_url=fake_url() if "external_url" not in kwargs else kwargs["external_url"],
+        external_url=str_to_absolute_url(fake_url() if "external_url" not in kwargs else kwargs["external_url"]),
         external_tags={uuid.uuid4().hex, uuid.uuid4().hex},
         published_at=utils.now() if "published_at" not in kwargs else kwargs["published_at"],
         cataloged_at=utils.now() if "cataloged_at" not in kwargs else kwargs["cataloged_at"],
