@@ -5,4 +5,4 @@
 
 Changes:
 
-- ff-386 — Upgrade Supertokens to `11.0.4`.
+- ff-386 — Upgraded Supertokens to `11.0.4`.

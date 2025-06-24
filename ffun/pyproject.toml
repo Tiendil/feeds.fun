@@ -39,8 +39,8 @@ python = "^3.12"
 
 uvicorn = {extras = ["standard"], version = "0.*"}
 fastapi = "0.111.*"
-pydantic = "2.7.*"
-pydantic-settings = "2.2.*"
+pydantic = "2.11.*"
+pydantic-settings = "2.10.*"
 typer = "0.16.*"
 
 # upgrade furher are blocked by supertokens-python
@@ -69,7 +69,7 @@ structlog = "24.2.*"
 
 python-multipart = "0.0.*"
 
-supertokens-python = "0.23.1"
+supertokens-python = "0.30.0"
 
 python-slugify = "8.0.*"
 
