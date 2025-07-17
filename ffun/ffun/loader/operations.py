@@ -21,6 +21,8 @@ logger = logging.get_module_logger()
 
 _load_semaphor = asyncio.Semaphore(settings.max_concurrent_http_requests)
 
+_accept_enconding_header = "br;q=1.0, zstd;q=0.9, gzip;q=0.8, deflate;q=0.7"
+
 
 async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R0915
     url: AbsoluteUrl, proxy: Proxy, user_agent: str, semaphore: asyncio.Semaphore = _load_semaphor
@@ -32,7 +34,7 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
     try:
         log.info("loading_feed")
 
-        headers = {"user-agent": user_agent, "accept-encoding": "br;q=1.0, gzip;q=0.9, deflate;q=0.8"}
+        headers = {"user-agent": user_agent, "accept-encoding": _accept_enconding_header}
 
         async with semaphore:
             async with httpx.AsyncClient(proxy=proxy.url, headers=headers) as client:

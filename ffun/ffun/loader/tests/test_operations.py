@@ -16,7 +16,13 @@ from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds.entities import FeedError
 from ffun.loader import errors
 from ffun.loader.entities import ProxyState
-from ffun.loader.operations import check_proxy, get_proxy_states, is_proxy_available, load_content, update_proxy_states
+from ffun.loader.operations import (
+    check_proxy,
+    get_proxy_states,
+    is_proxy_available,
+    load_content,
+    update_proxy_states,
+)
 from ffun.loader.settings import Proxy
 
 
@@ -123,6 +129,7 @@ class TestIsProxyAvailable:
 
 
 class TestLoadContent:
+
     @pytest.mark.parametrize(
         "bytes_content, expected_headers",
         [
@@ -161,7 +168,9 @@ class TestLoadContent:
             url=str_to_absolute_url("http://example.com/test"), proxy=Proxy(name="test", url=None), user_agent="test"
         )
 
-        assert respx_mock.calls[0].request.headers["Accept-Encoding"] == "br;q=1.0, gzip;q=0.9, deflate;q=0.8"
+        assert (
+            respx_mock.calls[0].request.headers["Accept-Encoding"] == "br;q=1.0, zstd;q=0.9, gzip;q=0.8, deflate;q=0.7"
+        )
 
     @pytest.mark.asyncio
     async def test_expected_error(self, respx_mock: MockRouter) -> None:
