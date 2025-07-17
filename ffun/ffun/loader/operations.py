@@ -52,10 +52,12 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         elif "peer closed connection without sending complete message body" in message:
             log.warning("network_received_unkomplete_body")
             error_code = FeedError.network_received_unkomplete_body
-        elif "Invalid URL in location header" in message and "fzyujing" in message:
+        elif "Invalid URL in location header" in message:
+            # Handle some incorrect redirects, for example, caused by the Great China Firewall
+            # in the case of GCF you can see the "fzyujing" in new location, but it does not returned by httpx
+            # => we just check the base message
             # Details: https://chatgpt.com/share/6855377e-4828-800d-a4cb-1ea924cd6286
-            log.warning("network_great_china_firewall_redirect")
-            error_code = FeedError.network_great_china_firewall_redirect
+            error_code = FeedError.network_wrong_redirect
         else:
             log.exception("remote_protocol_error_while_loading_feed")
 
