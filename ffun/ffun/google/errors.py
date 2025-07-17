@@ -31,3 +31,7 @@ class MalformedFunctionCallError(ClientError):
 
 class UnknownFinishReasonError(ClientError):
     pass
+
+
+class PromptBlocked(ClientError):
+    pass
