@@ -228,6 +228,33 @@ class TestCheckFurlError:
                 1 / 0
 
 
+class TestSchemaSupported:
+
+    @pytest.mark.parametrize(
+        "schema, supported",
+        [
+            ("https", True),
+            ("http", True),
+            (None, True),
+            ("newsletter", False)
+        ])
+    def test(self, schema: str | None, supported: bool) -> None:
+        assert urls.schema_supported(schema) == supported, f"Expected {supported} for schema {schema}"
+
+    @pytest.mark.parametrize(
+        "url, schema",
+        [
+            ("https://example.com", "https"),
+            ("http://example.com", "http"),
+            ("example.com", None),
+            ("newsletter:666:noreply@example.com", "newsletter")
+        ])
+    def test_furl_detects_schema(self, url: UnknownUrl, schema: str | None) -> None:
+        f_url = urls.construct_f_url(url)
+        assert f_url is not None
+        assert f_url.scheme == schema, f"Expected {schema}, got {f_url.scheme} for {url}"
+
+
 class TestFixClassicUrlToAbsolute:
 
     def test_no_dot_in_domain(self) -> None:

@@ -55,6 +55,21 @@ def initialize_tld_cache() -> None:
 
 
 # ATTENTION: see note at the top of the file
+def schema_supported(scheme: str) -> bool:
+    if scheme in (None, "http", "https"):
+        return True
+
+    # TODO: when we import OPML files we may encounter non-standard schemas
+    #       such schemas used by other services to mark special cases, like newsletter->rss
+    #       we may want to support them in the future
+    #
+    # Most popular schema is "newsletter" (Inoreader, Feedbin, NewsBlur, Feedly, Readwise Reader, Omnivore, Matter)
+    # but there may be others
+
+    return False
+
+
+# ATTENTION: see note at the top of the file
 def _fix_classic_url_to_absolute(url: str) -> AbsoluteUrl | None:
     domain_part = url.split("/")[0]
 
@@ -83,6 +98,9 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:
 
     if f_url is None:
         return None
+
+    # if not schema_supported(f_url.scheme):
+    #     return None
 
     if f_url.path == "/":
         f_url.path = None
