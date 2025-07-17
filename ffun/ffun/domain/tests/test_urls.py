@@ -231,13 +231,8 @@ class TestCheckFurlError:
 class TestSchemaSupported:
 
     @pytest.mark.parametrize(
-        "schema, supported",
-        [
-            ("https", True),
-            ("http", True),
-            (None, True),
-            ("newsletter", False)
-        ])
+        "schema, supported", [("https", True), ("http", True), (None, True), ("newsletter", False)]
+    )
     def test(self, schema: str | None, supported: bool) -> None:
         assert urls.schema_supported(schema) == supported, f"Expected {supported} for schema {schema}"
 
@@ -247,8 +242,9 @@ class TestSchemaSupported:
             ("https://example.com", "https"),
             ("http://example.com", "http"),
             ("example.com", None),
-            ("newsletter:666:noreply@example.com", "newsletter")
-        ])
+            ("newsletter:666:noreply@example.com", "newsletter"),
+        ],
+    )
     def test_furl_detects_schema(self, url: UnknownUrl, schema: str | None) -> None:
         f_url = urls.construct_f_url(url)
         assert f_url is not None
