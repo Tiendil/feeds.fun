@@ -44,6 +44,8 @@ def extract_feeds(data: str) -> list[FeedInfo]:
 def extract_feeds_records(body: ET.Element) -> Generator[FeedInfo, None, None]:
     for outline in body:
         if outline.attrib.get("type") == "rss":
+            # TODO: here we may want to detect custom url scemes from the source of the OPML file
+            #       for example, "newsletter:", and make something with them
             url = normalize_classic_unknown_url(UnknownUrl(outline.attrib["xmlUrl"]))
 
             if url is None:
