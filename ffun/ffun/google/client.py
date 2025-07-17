@@ -59,7 +59,10 @@ class Client:
                 raise errors.UnknownFinishReasonError(reason=reason)
 
     # See https://ai.google.dev/api/generate-content#PromptFeedback
-    def _handle_prompt_feedback(self, prompt_feedback: dict[str, Any]) -> None:
+    def _handle_prompt_feedback(self, prompt_feedback: dict[str, Any] | None) -> None:
+        if prompt_feedback is None:
+            return
+
         if "blockReason" not in prompt_feedback:
             return
 
@@ -92,10 +95,11 @@ class Client:
 
         response_data = response.json()
 
-        # check prompt feedback before processing candidates
-        # there is cases where no candidates are returned
+        # There is cases where no candidates are returned
+        # => Check prompt feedback before processing candidates
         # See https://ai.google.dev/api/generate-content#generatecontentresponse
-        self._handle_prompt_feedback(response_data["promptFeedback"])
+        # Also, it looks like `promptFeedback` is optional => we use `get` instead of `[]`
+        self._handle_prompt_feedback(response_data.get("promptFeedback"))
 
         candidate = response_data["candidates"][0]
 
