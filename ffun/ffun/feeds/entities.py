@@ -36,7 +36,12 @@ class FeedError(enum.IntEnum):
     network_read_error = 1018
     network_temporary_failure_in_name_resolution = 1019
     network_wrong_ssl_version = 1020
+    # TODO: this error does not used now
+    #       we should return it when HTTPX starts returning new location in the RemoteProtocolError
+    #       after redirect failure
+    #       see details in the loader.operations
     network_great_china_firewall_redirect = 1021
+    network_wrong_redirect = 1022
 
     parsing_unknown = 2000
     parsing_base_error = 2001
