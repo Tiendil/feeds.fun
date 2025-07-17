@@ -99,9 +99,6 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:
     if f_url is None:
         return None
 
-    # if not schema_supported(f_url.scheme):
-    #     return None
-
     if f_url.path == "/":
         f_url.path = None
 
@@ -111,7 +108,11 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:
     if url.startswith("./") or url.startswith("../"):
         return None
 
-    if RE_SCHEMA.match(url):
+    if match := RE_SCHEMA.match(url):
+
+        if not schema_supported(match.group(1)):
+            return None
+
         return AbsoluteUrl(str(f_url))
 
     return _fix_classic_url_to_absolute(url)

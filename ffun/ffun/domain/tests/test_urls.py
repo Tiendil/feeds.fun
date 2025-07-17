@@ -317,6 +317,9 @@ class TestNormalizeClassicUnknownUrl:
         assert urls.normalize_classic_unknown_url(UnknownUrl("example.com///")) == "//example.com"
         assert urls.normalize_classic_unknown_url(UnknownUrl("example.com////")) == "//example.com"
 
+    def test_non_standard_schema(self) -> None:
+        assert urls.normalize_classic_unknown_url(UnknownUrl("newsletter:666:noreply@example.com")) is None
+
 
 class TestIsFullUrl:
 
