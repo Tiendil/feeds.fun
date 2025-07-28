@@ -30,7 +30,6 @@ class PostgreSQL(pydantic.BaseModel):
 class Sentry(pydantic.BaseModel):
     dsn: str = ""
     sample_rate: float = 1.0
-    traces_sample_rate: float = 1.0
 
 
 _development_origins = ("*",)

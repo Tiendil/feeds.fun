@@ -9,6 +9,7 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
+import ffun
 from ffun.core.errors import Error
 
 
@@ -28,19 +29,33 @@ def before_send(event: "Event", hint: dict[str, Any]) -> "Event":
     return improve_fingerprint(event, hint)
 
 
-def initialize(dsn: str, sample_rate: float, traces_sample_rate: float, environment: str) -> None:
+def initialize(dsn: str, sample_rate: float, environment: str) -> None:
     initialize_sentry(
         dsn=dsn,
         sample_rate=sample_rate,
-        traces_sample_rate=traces_sample_rate,
+        # Background worker traces are not useful
+        # because most of the reported ones are related to previous tasks.
+        # It can be fixed by reinitializing Sentry's transaction context
+        # but it is not worth the effort for now.
+        traces_sample_rate=None,
+        # Disable breadcrumbs by the same cause — does not work well with background workers.
+        max_breadcrumbs=0,
+        # Without this config Sentry miss important frames from stacktraces
+        add_full_stack=True,
         attach_stacktrace=True,
         before_send=before_send,
         environment=environment,
-        include_source_context=True,
+        # set the correct project root directory
+        project_root=ffun.__path__[0],
+        # disable ALL automatically enabled integrations, because they periodically cause issues
+        # like false positive errors for correctly handled exceptions in OpenAI integration
+        auto_enabling_integrations=False,
         integrations=[
-            # disable default logging integration to use specialized structlog-sentry processor
-            LoggingIntegration(event_level=None, level=None),
             StarletteIntegration(transaction_style="endpoint"),
             FastApiIntegration(transaction_style="endpoint"),
+        ],
+        disabled_integrations=[
+            # disable default logging integration to use specialized structlog-sentry processor
+            LoggingIntegration(event_level=None, level=None),
         ],
     )

@@ -73,7 +73,7 @@ supertokens-python = "0.30.0"
 
 python-slugify = "8.0.*"
 
-sentry-sdk = "2.30.*"
+sentry-sdk = "2.33.*"
 
 tabulate = "0.9.*"
 
