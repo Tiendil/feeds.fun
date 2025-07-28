@@ -28,11 +28,11 @@ def before_send(event: "Event", hint: dict[str, Any]) -> "Event":
     return improve_fingerprint(event, hint)
 
 
-def initialize(dsn: str, sample_rate: float, traces_sample_rate: float, environment: str) -> None:
+def initialize(dsn: str, sample_rate: float, environment: str) -> None:
     initialize_sentry(
         dsn=dsn,
         sample_rate=sample_rate,
-        traces_sample_rate=traces_sample_rate,
+        traces_sample_rate=None,
         attach_stacktrace=True,
         before_send=before_send,
         environment=environment,
