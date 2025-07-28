@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING, Any
-
 from sentry_sdk import init as initialize_sentry
 
 if TYPE_CHECKING:
@@ -45,7 +44,11 @@ def initialize(dsn: str, sample_rate: float, environment: str) -> None:
         attach_stacktrace=True,
         before_send=before_send,
         environment=environment,
+        # set the correct project root directory
         project_root=ffun.__path__[0],
+        # disable ALL automatically enabled integrations, because they periodically cause issues
+        # like false positive errors for correctly handled exceptions in OpenAI integration
+        auto_enabling_integrations=False,
         integrations=[
             StarletteIntegration(transaction_style="endpoint"),
             FastApiIntegration(transaction_style="endpoint"),
