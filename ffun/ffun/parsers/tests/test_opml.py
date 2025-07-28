@@ -1,5 +1,5 @@
 from ffun.core.tests.helpers import assert_compare_xml
-from ffun.domain.urls import url_to_uid
+from ffun.domain.urls import str_to_feed_url, url_to_uid
 from ffun.feeds.entities import Feed
 from ffun.parsers.entities import FeedInfo
 from ffun.parsers.opml import create_opml, extract_feeds
@@ -45,4 +45,82 @@ class TestExtractFeeds:
             description="",
             entries=[],
             uid=url_to_uid(feeds[1].url),
+        )
+
+    def test_opml_with_no_head(self) -> None:
+        content = """
+<opml version="2.0">
+<body>
+  <outline text="Subscriptions" title="Subscriptions">
+    <outline type="rss" xmlUrl='https://example.com/feed' />
+  </outline>
+</body>
+</opml>
+        """
+
+        infos = extract_feeds(content)
+
+        expected_url = str_to_feed_url("https://example.com/feed")
+
+        assert len(infos) == 1
+        assert infos[0] == FeedInfo(
+            url=expected_url,
+            title="",
+            description="",
+            entries=[],
+            uid=url_to_uid(expected_url),
+        )
+
+    def test_opml_with_no_type_attribute(self) -> None:
+        content = """
+<opml version="2.0">
+<head>
+  <title>My Subscriptions</title>
+</head>
+<body>
+  <outline text="Subscriptions" title="Subscriptions">
+    <outline xmlUrl='https://example.com/feed' />
+  </outline>
+</body>
+</opml>
+        """
+
+        infos = extract_feeds(content)
+
+        expected_url = str_to_feed_url("https://example.com/feed")
+
+        assert len(infos) == 1
+        assert infos[0] == FeedInfo(
+            url=expected_url,
+            title="",
+            description="",
+            entries=[],
+            uid=url_to_uid(expected_url),
+        )
+
+    def test_opml_with_wrong_type_case(self) -> None:
+        content = """
+<opml version="2.0">
+<head>
+  <title>My Subscriptions</title>
+</head>
+<body>
+  <outline text="Subscriptions" title="Subscriptions">
+    <outline type="RsS" xmlUrl='https://example.com/feed' />
+  </outline>
+</body>
+</opml>
+        """
+
+        infos = extract_feeds(content)
+
+        expected_url = str_to_feed_url("https://example.com/feed")
+
+        assert len(infos) == 1
+        assert infos[0] == FeedInfo(
+            url=expected_url,
+            title="",
+            description="",
+            entries=[],
+            uid=url_to_uid(expected_url),
         )
