@@ -1,5 +1,5 @@
 from ffun.core.tests.helpers import assert_compare_xml
-from ffun.domain.urls import url_to_uid
+from ffun.domain.urls import url_to_uid, str_to_feed_url
 from ffun.feeds.entities import Feed
 from ffun.parsers.entities import FeedInfo
 from ffun.parsers.opml import create_opml, extract_feeds
@@ -62,7 +62,7 @@ class TestExtractFeeds:
 
         assert len(infos) == 1
         assert infos[0] == FeedInfo(
-            url="https://example.com/feed",
+            url=str_to_feed_url("https://example.com/feed"),
             title="",
             description="",
             entries=[],
@@ -87,7 +87,7 @@ class TestExtractFeeds:
 
         assert len(infos) == 1
         assert infos[0] == FeedInfo(
-            url="https://example.com/feed",
+            url=str_to_feed_url("https://example.com/feed"),
             title="",
             description="",
             entries=[],
@@ -112,7 +112,7 @@ class TestExtractFeeds:
 
         assert len(infos) == 1
         assert infos[0] == FeedInfo(
-            url="https://example.com/feed",
+            url=str_to_feed_url("https://example.com/feed"),
             title="",
             description="",
             entries=[],

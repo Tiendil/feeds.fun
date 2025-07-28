@@ -13,11 +13,7 @@ def _extract_body(data: str) -> ET.Element:
     if root.tag != "opml":
         raise NotImplementedError(f"Unknown root tag: {root.tag}")
 
-    print(root)
-
     body = root.find("body")
-
-    print(body)
 
     if body is None:
         raise NotImplementedError("OPML file has no body tag")
@@ -61,7 +57,7 @@ def _extract_rss_feed(outline: ET.Element) -> FeedInfo | None:
     )
 
 
-def extract_feeds_records(body: ET.Element) -> Generator[FeedInfo, None, None]:
+def extract_feeds_records(body: ET.Element) -> Generator[FeedInfo, None, None]:  # noqa: CCR001
     for outline in body:
 
         outline_type = outline.attrib.get("type")
