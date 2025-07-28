@@ -9,6 +9,7 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
+import ffun
 from ffun.core.errors import Error
 
 
@@ -37,10 +38,14 @@ def initialize(dsn: str, sample_rate: float, environment: str) -> None:
         # It can be fixed by reinitializing Sentry's transaction context
         # but it is not worth the effort for now.
         traces_sample_rate=None,
+        # Disable breadcrumbs by the same cause — does not work well with background workers.
+        max_breadcrumbs=0,
+        # Without this config Sentry miss important frames from stacktraces
+        add_full_stack=True,
         attach_stacktrace=True,
         before_send=before_send,
         environment=environment,
-        include_source_context=True,
+        project_root=ffun.__path__[0],
         integrations=[
             StarletteIntegration(transaction_style="endpoint"),
             FastApiIntegration(transaction_style="endpoint"),
