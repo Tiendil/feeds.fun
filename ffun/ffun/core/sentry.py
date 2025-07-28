@@ -8,7 +8,6 @@ if TYPE_CHECKING:
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
-from sentry_sdk.integrations.openai_agents import OpenAIAgentsIntegration
 
 from ffun.core.errors import Error
 
@@ -47,12 +46,6 @@ def initialize(dsn: str, sample_rate: float, environment: str) -> None:
             FastApiIntegration(transaction_style="endpoint"),
         ],
         disabled_integrations=[
-            # OpenAI integration:
-            # - Breaks stacktrace lefting only frames from the openai package => no call trace from ffun.
-            # - Reports exceptions that will be correctly processed by ffun.
-            # Details: https://sentry.zendesk.com/hc/en-us/articles/30337744027419-Handled-exceptions-from-OpenAI-are-still-being-captured-and-reported-in-Sentry
-            OpenAIAgentsIntegration(),
-
             # disable default logging integration to use specialized structlog-sentry processor
             LoggingIntegration(event_level=None, level=None),
         ]
