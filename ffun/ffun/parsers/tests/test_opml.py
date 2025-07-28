@@ -48,7 +48,7 @@ class TestExtractFeeds:
         )
 
     def test_opml_with_no_head(self) -> None:
-        content = '''
+        content = """
 <opml version="2.0">
 <body>
   <outline text="Subscriptions" title="Subscriptions">
@@ -56,7 +56,7 @@ class TestExtractFeeds:
   </outline>
 </body>
 </opml>
-        '''
+        """
 
         infos = extract_feeds(content)
 
@@ -70,7 +70,7 @@ class TestExtractFeeds:
         )
 
     def test_opml_with_no_type_attribute(self) -> None:
-        content = '''
+        content = """
 <opml version="2.0">
 <head>
   <title>My Subscriptions</title>
@@ -81,7 +81,7 @@ class TestExtractFeeds:
   </outline>
 </body>
 </opml>
-        '''
+        """
 
         infos = extract_feeds(content)
 
@@ -95,7 +95,7 @@ class TestExtractFeeds:
         )
 
     def test_opml_with_wrong_type_case(self) -> None:
-        content = '''
+        content = """
 <opml version="2.0">
 <head>
   <title>My Subscriptions</title>
@@ -106,7 +106,7 @@ class TestExtractFeeds:
   </outline>
 </body>
 </opml>
-        '''
+        """
 
         infos = extract_feeds(content)
 
