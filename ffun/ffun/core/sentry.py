@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
+from sentry_sdk.integrations.openai_agents import OpenAIAgentsIntegration
 
 from ffun.core.errors import Error
 
@@ -32,15 +33,27 @@ def initialize(dsn: str, sample_rate: float, environment: str) -> None:
     initialize_sentry(
         dsn=dsn,
         sample_rate=sample_rate,
+        # Background worker traces are not useful
+        # because most of the reported ones are related to previous tasks.
+        # It can be fixed by reinitializing Sentry's transaction context
+        # but it is not worth the effort for now.
         traces_sample_rate=None,
         attach_stacktrace=True,
         before_send=before_send,
         environment=environment,
         include_source_context=True,
         integrations=[
-            # disable default logging integration to use specialized structlog-sentry processor
-            LoggingIntegration(event_level=None, level=None),
             StarletteIntegration(transaction_style="endpoint"),
             FastApiIntegration(transaction_style="endpoint"),
         ],
+        disabled_integrations=[
+            # OpenAI integration:
+            # - Breaks stacktrace lefting only frames from the openai package => no call trace from ffun.
+            # - Reports exceptions that will be correctly processed by ffun.
+            # Details: https://sentry.zendesk.com/hc/en-us/articles/30337744027419-Handled-exceptions-from-OpenAI-are-still-being-captured-and-reported-in-Sentry
+            OpenAIAgentsIntegration(),
+
+            # disable default logging integration to use specialized structlog-sentry processor
+            LoggingIntegration(event_level=None, level=None),
+        ]
     )
