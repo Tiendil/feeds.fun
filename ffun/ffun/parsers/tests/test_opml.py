@@ -46,3 +46,75 @@ class TestExtractFeeds:
             entries=[],
             uid=url_to_uid(feeds[1].url),
         )
+
+    def test_opml_with_no_head(self) -> None:
+        content = '''
+<opml version="2.0">
+<body>
+  <outline text="Subscriptions" title="Subscriptions">
+    <outline type="rss" xmlUrl='https://example.com/feed' />
+  </outline>
+</body>
+</opml>
+        '''
+
+        infos = extract_feeds(content)
+
+        assert len(infos) == 1
+        assert infos[0] == FeedInfo(
+            url="https://example.com/feed",
+            title="",
+            description="",
+            entries=[],
+            uid=url_to_uid("https://example.com/feed"),
+        )
+
+    def test_opml_with_no_type_attribute(self) -> None:
+        content = '''
+<opml version="2.0">
+<head>
+  <title>My Subscriptions</title>
+</head>
+<body>
+  <outline text="Subscriptions" title="Subscriptions">
+    <outline xmlUrl='https://example.com/feed' />
+  </outline>
+</body>
+</opml>
+        '''
+
+        infos = extract_feeds(content)
+
+        assert len(infos) == 1
+        assert infos[0] == FeedInfo(
+            url="https://example.com/feed",
+            title="",
+            description="",
+            entries=[],
+            uid=url_to_uid("https://example.com/feed"),
+        )
+
+    def test_opml_with_wrong_type_case(self) -> None:
+        content = '''
+<opml version="2.0">
+<head>
+  <title>My Subscriptions</title>
+</head>
+<body>
+  <outline text="Subscriptions" title="Subscriptions">
+    <outline type="RsS" xmlUrl='https://example.com/feed' />
+  </outline>
+</body>
+</opml>
+        '''
+
+        infos = extract_feeds(content)
+
+        assert len(infos) == 1
+        assert infos[0] == FeedInfo(
+            url="https://example.com/feed",
+            title="",
+            description="",
+            entries=[],
+            uid=url_to_uid("https://example.com/feed"),
+        )

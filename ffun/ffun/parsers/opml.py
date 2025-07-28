@@ -13,13 +13,14 @@ def _extract_body(data: str) -> ET.Element:
     if root.tag != "opml":
         raise NotImplementedError(f"Unknown root tag: {root.tag}")
 
-    head, body = root
+    print(root)
 
-    if head.tag != "head":
-        raise NotImplementedError(f"Unknown root tag: {head.tag}")
+    body = root.find("body")
 
-    if body.tag != "body":
-        raise NotImplementedError(f"Unknown root tag: {body.tag}")
+    print(body)
+
+    if body is None:
+        raise NotImplementedError("OPML file has no body tag")
 
     return body
 
@@ -41,25 +42,41 @@ def extract_feeds(data: str) -> list[FeedInfo]:
     return feeds
 
 
+def _extract_rss_feed(outline: ET.Element) -> FeedInfo | None:
+    # TODO: here we may want to detect custom url scemes from the source of the OPML file
+    #       for example, "newsletter:", and make something with them
+    url = normalize_classic_unknown_url(UnknownUrl(outline.attrib["xmlUrl"]))
+
+    if url is None:
+        return None
+
+    feed_url = to_feed_url(url)
+
+    return FeedInfo(
+        url=feed_url,
+        title=outline.attrib.get("title", ""),
+        description="",
+        entries=[],
+        uid=url_to_uid(feed_url),
+    )
+
+
 def extract_feeds_records(body: ET.Element) -> Generator[FeedInfo, None, None]:
     for outline in body:
-        if outline.attrib.get("type") == "rss":
-            # TODO: here we may want to detect custom url scemes from the source of the OPML file
-            #       for example, "newsletter:", and make something with them
-            url = normalize_classic_unknown_url(UnknownUrl(outline.attrib["xmlUrl"]))
 
-            if url is None:
-                continue
+        outline_type = outline.attrib.get("type")
 
-            feed_url = to_feed_url(url)
+        # small hack to fix OPML files without type attribute
+        if outline_type is None and "xmlUrl" in outline.attrib:
+            outline_type = "rss"
 
-            yield FeedInfo(
-                url=feed_url,
-                title=outline.attrib.get("title", ""),
-                description="",
-                entries=[],
-                uid=url_to_uid(feed_url),
-            )
+        if outline_type is not None:
+            outline_type = outline_type.lower()
+
+        if outline_type == "rss":
+            if feed_info := _extract_rss_feed(outline):
+                yield feed_info
+
             continue
 
         yield from extract_feeds_records(outline)
