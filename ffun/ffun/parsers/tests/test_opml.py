@@ -1,5 +1,5 @@
 from ffun.core.tests.helpers import assert_compare_xml
-from ffun.domain.urls import url_to_uid, str_to_feed_url
+from ffun.domain.urls import str_to_feed_url, url_to_uid
 from ffun.feeds.entities import Feed
 from ffun.parsers.entities import FeedInfo
 from ffun.parsers.opml import create_opml, extract_feeds
@@ -60,13 +60,15 @@ class TestExtractFeeds:
 
         infos = extract_feeds(content)
 
+        expected_url = str_to_feed_url("https://example.com/feed")
+
         assert len(infos) == 1
         assert infos[0] == FeedInfo(
-            url=str_to_feed_url("https://example.com/feed"),
+            url=expected_url,
             title="",
             description="",
             entries=[],
-            uid=url_to_uid("https://example.com/feed"),
+            uid=url_to_uid(expected_url),
         )
 
     def test_opml_with_no_type_attribute(self) -> None:
@@ -85,13 +87,15 @@ class TestExtractFeeds:
 
         infos = extract_feeds(content)
 
+        expected_url = str_to_feed_url("https://example.com/feed")
+
         assert len(infos) == 1
         assert infos[0] == FeedInfo(
-            url=str_to_feed_url("https://example.com/feed"),
+            url=expected_url,
             title="",
             description="",
             entries=[],
-            uid=url_to_uid("https://example.com/feed"),
+            uid=url_to_uid(expected_url),
         )
 
     def test_opml_with_wrong_type_case(self) -> None:
@@ -110,11 +114,13 @@ class TestExtractFeeds:
 
         infos = extract_feeds(content)
 
+        expected_url = str_to_feed_url("https://example.com/feed")
+
         assert len(infos) == 1
         assert infos[0] == FeedInfo(
-            url=str_to_feed_url("https://example.com/feed"),
+            url=expected_url,
             title="",
             description="",
             entries=[],
-            uid=url_to_uid("https://example.com/feed"),
+            uid=url_to_uid(expected_url),
         )
