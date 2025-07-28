@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Any
+
 from sentry_sdk import init as initialize_sentry
 
 if TYPE_CHECKING:
@@ -56,5 +57,5 @@ def initialize(dsn: str, sample_rate: float, environment: str) -> None:
         disabled_integrations=[
             # disable default logging integration to use specialized structlog-sentry processor
             LoggingIntegration(event_level=None, level=None),
-        ]
+        ],
     )
