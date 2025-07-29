@@ -1,4 +1,5 @@
 from importlib import metadata
+from collections import Counter
 from typing import Any, Iterable
 
 import fastapi
@@ -73,18 +74,17 @@ async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entiti
 
 
 async def _external_entries(  # pylint: disable=R0914
-    entries: Iterable[l_entities.Entry], with_body: bool, user_id: UserId | None
+    entries: Iterable[l_entities.Entry],
+    with_body: bool,
+    user_id: UserId | None,
+    min_tags_count: int,
 ) -> tuple[list[entities.Entry], dict[int, str]]:
+
     entries_ids = [entry.id for entry in entries]
 
-    tags_ids = await o_domain.get_tags_ids_for_entries(entries_ids)
-
-    if tags_ids:
-        whole_tags = set.union(*tags_ids.values())
-    else:
-        whole_tags = set()
-
-    tags_mapping = await o_domain.get_tags_by_ids(whole_tags)
+    ########################
+    # load rules and markers
+    ########################
 
     if user_id is not None:
         markers = await m_domain.get_markers(user_id=user_id, entries_ids=entries_ids)
@@ -93,16 +93,33 @@ async def _external_entries(  # pylint: disable=R0914
         markers = {}
         rules = []
 
+    ##############
+    # process tags
+    ##############
+
+    must_have_tags = set()
+    for rule in rules:
+        must_have_tags.update(rule.required_tags)
+        must_have_tags.update(rule.excluded_tags)
+
+    entry_tag_ids, tag_mapping = await o_domain.prepare_tags_for_entries(entry_ids=entries_ids,
+                                                                         must_have_tags=must_have_tags,
+                                                                         min_tags_count=min_tags_count)
+
+    ####################
+    # construct response
+    ####################
+
     external_entries = []
 
     for entry in entries:
-        score, contributions_by_ids = s_domain.get_score_contributions(rules, tags_ids.get(entry.id, set()))
+        score, contributions_by_ids = s_domain.get_score_contributions(rules, entry_tag_ids.get(entry.id, set()))
 
         external_markers = [entities.Marker.from_internal(marker) for marker in markers.get(entry.id, ())]
 
         external_entry = entities.Entry.from_internal(
             entry=entry,
-            tags=tags_ids.get(entry.id, ()),
+            tags=entry_tag_ids.get(entry.id, ()),
             markers=external_markers,
             score=score,
             score_contributions=contributions_by_ids,
@@ -113,7 +130,7 @@ async def _external_entries(  # pylint: disable=R0914
 
     external_entries.sort(key=lambda entry: entry.score, reverse=True)
 
-    return external_entries, tags_mapping
+    return external_entries, tag_mapping
 
 
 @router.post("/api/get-last-entries")
