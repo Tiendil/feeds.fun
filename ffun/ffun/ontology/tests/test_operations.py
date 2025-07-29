@@ -4,7 +4,7 @@ import pytest
 
 from ffun.core.postgresql import execute, transaction
 from ffun.core.tests.helpers import Delta, TableSizeDelta, TableSizeNotChanged
-from ffun.domain.entities import EntryId
+from ffun.domain.entities import EntryId, TagId, TagUid
 from ffun.library.entities import Entry
 from ffun.ontology import errors
 from ffun.ontology.domain import apply_tags_to_entry
@@ -26,7 +26,7 @@ from ffun.ontology.operations import (
 from ffun.ontology.tests.helpers import assert_has_tags
 
 
-async def assert_tags_processors(entry_id: EntryId, tag_processors: dict[int, set[int]]) -> None:
+async def assert_tags_processors(entry_id: EntryId, tag_processors: dict[TagId, set[int]]) -> None:
     relations = await _get_relations_for_entry_and_tags(execute, entry_id, list(tag_processors.keys()))
 
     relations_ids = list(relations.values())
@@ -52,7 +52,7 @@ class TestSaveTags:
 
     @pytest.mark.asyncio
     async def test(
-        self, cataloged_entry: Entry, another_cataloged_entry: Entry, three_tags_ids: tuple[int, int, int]
+        self, cataloged_entry: Entry, another_cataloged_entry: Entry, three_tags_ids: tuple[TagId, TagId, TagId]
     ) -> None:
         async with TableSizeDelta("o_relations", delta=4):
             await _save_tags(execute, cataloged_entry.id, three_tags_ids[:2])
@@ -73,7 +73,7 @@ class TestRegisterRelationsProcessors:
             await _register_relations_processors(execute, [], fake_processor_id)
 
     @pytest.mark.asyncio
-    async def test(self, cataloged_entry: Entry, fake_processor_id: int, three_tags_ids: tuple[int, int, int]) -> None:
+    async def test(self, cataloged_entry: Entry, fake_processor_id: int, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
         await _save_tags(execute, cataloged_entry.id, three_tags_ids[:2])
 
         relations = await _get_relations_for_entry_and_tags(execute, cataloged_entry.id, three_tags_ids[:2])
@@ -90,7 +90,7 @@ class TestRegisterRelationsProcessors:
 
     @pytest.mark.asyncio
     async def test_duplicated(
-        self, cataloged_entry: Entry, fake_processor_id: int, three_tags_ids: tuple[int, int, int]
+        self, cataloged_entry: Entry, fake_processor_id: int, three_tags_ids: tuple[TagId, TagId, TagId]
     ) -> None:
         await _save_tags(execute, cataloged_entry.id, three_tags_ids)
 
@@ -133,7 +133,7 @@ class TestTechCopyRelations:
         another_cataloged_entry: Entry,
         fake_processor_id: int,
         another_fake_processor_id: int,
-        three_tags_ids: tuple[int, int, int],
+        three_tags_ids: tuple[TagId, TagId, TagId],
     ) -> None:
         async with transaction() as trx:
             await apply_tags(
@@ -171,7 +171,7 @@ class TestTechCopyRelations:
         another_cataloged_entry: Entry,
         fake_processor_id: int,
         another_fake_processor_id: int,
-        three_tags_ids: tuple[int, int, int],
+        three_tags_ids: tuple[TagId, TagId, TagId],
     ) -> None:
         async with transaction() as trx:
             await apply_tags(
@@ -221,7 +221,7 @@ class TestRemoveRelationsForEntries:
         another_cataloged_entry: Entry,
         fake_processor_id: int,
         another_fake_processor_id: int,
-        three_tags_ids: tuple[int, int, int],
+        three_tags_ids: tuple[TagId, TagId, TagId],
     ) -> None:
         async with transaction() as trx:
             await apply_tags(
@@ -278,7 +278,7 @@ class TestApplyTagsProperties:
     @pytest.mark.asyncio
     async def test_first_time_save(
         self,
-        three_tags_by_uids: dict[str, int],
+        three_tags_by_uids: dict[TagUid, TagId],
         three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
         fake_processor_id: int,
     ) -> None:
@@ -288,7 +288,8 @@ class TestApplyTagsProperties:
         for tag in three_processor_tags:
             tag.link = f"https://example.com?{tag.raw_uid}"
             properties.extend(
-                tag.build_properties_for(tag_id=three_tags_by_uids[tag.raw_uid], processor_id=fake_processor_id)
+                tag.build_properties_for(tag_id=three_tags_by_uids[tag.raw_uid],  # type: ignore
+                                         processor_id=fake_processor_id)
             )
 
         async with TableSizeDelta("o_tags_properties", delta=3):
@@ -304,7 +305,7 @@ class TestApplyTagsProperties:
     @pytest.mark.asyncio
     async def test_save_duplicated(
         self,
-        three_tags_by_uids: dict[str, int],
+        three_tags_by_uids: dict[TagUid, TagId],
         three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
         fake_processor_id: int,
     ) -> None:
@@ -314,7 +315,8 @@ class TestApplyTagsProperties:
         for tag in three_processor_tags:
             tag.link = f"https://example.com?{tag.raw_uid}"
             properties.extend(
-                tag.build_properties_for(tag_id=three_tags_by_uids[tag.raw_uid], processor_id=fake_processor_id)
+                tag.build_properties_for(tag_id=three_tags_by_uids[tag.raw_uid],  # type: ignore
+                                         processor_id=fake_processor_id)
             )
 
         async with TableSizeDelta("o_tags_properties", delta=3):
@@ -340,7 +342,7 @@ class TestApplyTagsProperties:
     @pytest.mark.asyncio
     async def test_error_on_duplicated_properties(
         self,
-        three_tags_by_uids: dict[str, int],
+        three_tags_by_uids: dict[TagUid, TagId],
         three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
         fake_processor_id: int,
     ) -> None:
@@ -350,7 +352,8 @@ class TestApplyTagsProperties:
         for tag in three_processor_tags:
             tag.link = f"https://example.com?{tag.raw_uid}"
             properties.extend(
-                tag.build_properties_for(tag_id=three_tags_by_uids[tag.raw_uid], processor_id=fake_processor_id)
+                tag.build_properties_for(tag_id=three_tags_by_uids[tag.raw_uid],  # type: ignore
+                                         processor_id=fake_processor_id)
             )
 
         properties.append(properties[0])
@@ -365,7 +368,7 @@ class TestCountTotalTags:
     async def test_no_tags(self) -> None:
         async with Delta(count_total_tags, delta=3):
             for _ in range(3):
-                await get_or_create_id_by_tag(uuid.uuid4().hex)
+                await get_or_create_id_by_tag(uuid.uuid4().hex)  # type: ignore
 
 
 class TestCountTotalTagsPerCategory:
