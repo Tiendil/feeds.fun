@@ -136,7 +136,7 @@ async def tech_copy_relations(execute: ExecuteType, entry_from_id: EntryId, entr
 # TODO: tests
 async def prepare_tags_for_entries(entry_ids: list[EntryId],
                                    must_have_tags: set[TagId],
-                                   min_tags_count: int) -> tuple[dict[EntryId, set[TagId]], dict[TagId, TagUid]]:
+                                   min_tag_count: int) -> tuple[dict[EntryId, set[TagId]], dict[TagId, TagUid]]:
 
     entry_tag_ids = await get_tags_ids_for_entries(entry_ids)
 
@@ -144,7 +144,7 @@ async def prepare_tags_for_entries(entry_ids: list[EntryId],
     for tags in entry_tag_ids.values():
         tags_count.update(tags)
 
-    tags_to_exclude = {tag_id for tag_id, count in tags_count.items() if count < min_tags_count}
+    tags_to_exclude = {tag_id for tag_id, count in tags_count.items() if count < min_tag_count}
     tags_to_exclude -= must_have_tags
 
     whole_tags = set(tags_count.keys()) - tags_to_exclude

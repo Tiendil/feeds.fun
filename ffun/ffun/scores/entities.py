@@ -1,15 +1,15 @@
 import datetime
 
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import RuleId, UserId
+from ffun.domain.entities import RuleId, UserId, TagId
 
 
 class Rule(BaseEntity):
     id: RuleId
     user_id: UserId
 
-    required_tags: set[int]
-    excluded_tags: set[int]
+    required_tags: set[TagId]
+    excluded_tags: set[TagId]
     score: int
 
     created_at: datetime.datetime

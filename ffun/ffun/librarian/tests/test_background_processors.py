@@ -46,7 +46,7 @@ class TestEntriesProcessors:
 
         tags = await o_domain.get_tags_ids_for_entries(list(entries))
 
-        expected_ids = await o_domain.get_ids_by_uids({"fake-constant-tag-1", "fake-constant-tag-2"})
+        expected_ids = await o_domain.get_ids_by_uids({"fake-constant-tag-1", "fake-constant-tag-2"})  # type: ignore
 
         for entry in entries_list[: fake_entries_processor.concurrency]:
             assert tags[entry.id] == set(expected_ids.values())
@@ -74,7 +74,7 @@ class TestEntriesProcessors:
 
         tags = await o_domain.get_tags_ids_for_entries(list(entries))
 
-        expected_ids = await o_domain.get_ids_by_uids({"fake-constant-tag-1", "fake-constant-tag-2"})
+        expected_ids = await o_domain.get_ids_by_uids({"fake-constant-tag-1", "fake-constant-tag-2"})  # type: ignore
 
         for entry in entries_list:
             assert tags[entry.id] == set(expected_ids.values())
@@ -105,7 +105,7 @@ class TestEntriesProcessors:
 
         tags = await o_domain.get_tags_ids_for_entries(list(entries))
 
-        expected_ids = await o_domain.get_ids_by_uids({"fake-constant-tag-1", "fake-constant-tag-2"})
+        expected_ids = await o_domain.get_ids_by_uids({"fake-constant-tag-1", "fake-constant-tag-2"})  # type: ignore
 
         for entry in entries_list:
             assert tags[entry.id] == set(expected_ids.values())

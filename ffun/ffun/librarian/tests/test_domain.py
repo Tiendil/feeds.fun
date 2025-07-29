@@ -207,7 +207,7 @@ class TestProcessEntry:
 
         tags = await o_domain.get_tags_ids_for_entries([cataloged_entry.id])
 
-        expected_ids = await o_domain.get_ids_by_uids({"tag-1", "tag-2"})
+        expected_ids = await o_domain.get_ids_by_uids({"tag-1", "tag-2"})  # type: ignore
 
         assert tags[cataloged_entry.id] == set(expected_ids.values())
 
