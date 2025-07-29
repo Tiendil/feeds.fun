@@ -1,6 +1,7 @@
 import pytest
 import copy
 
+from ffun.domain.entities import EntryId, TagId
 from ffun.domain.domain import new_entry_id
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.library.entities import Entry
@@ -84,17 +85,27 @@ class TestApplyTagsToEntry:
         }
 
 
+def _no_type_inplace_filter_out_entry_tags(
+        entry_tag_ids: dict[EntryId, set[int]],
+        must_have_tags: set[int],
+        min_tag_count: int) -> set[int]:
+    return _inplace_filter_out_entry_tags(  # type: ignore
+        entry_tag_ids=entry_tag_ids,  # type: ignore
+        must_have_tags=must_have_tags,  # type: ignore
+        min_tag_count=min_tag_count)
+
+
 class TestInplaceFilterOutEntryTags:
 
     @pytest.mark.parametrize("min_tag_count", [0, 1, 10])
     @pytest.mark.parametrize("must_have_tags", [set(), {1}, {1, 2, 10}])
     @pytest.mark.asyncio
     async def test_no_entries(self, min_tag_count: int, must_have_tags: set[int]) -> None:
-        entry_tag_ids = {}
+        entry_tag_ids: dict[EntryId, set[int]] = {}
 
-        whole_tags = _inplace_filter_out_entry_tags(entry_tag_ids=entry_tag_ids,
-                                                    must_have_tags=must_have_tags,
-                                                    min_tag_count=min_tag_count)
+        whole_tags = _no_type_inplace_filter_out_entry_tags(entry_tag_ids=entry_tag_ids,
+                                                            must_have_tags=must_have_tags,
+                                                            min_tag_count=min_tag_count)
 
         assert whole_tags == set()
         assert entry_tag_ids == {}
@@ -105,14 +116,14 @@ class TestInplaceFilterOutEntryTags:
     async def test_no_tags(self, min_tag_count: int, must_have_tags: set[int]) -> None:
         entry_ids = [new_entry_id(), new_entry_id()]
 
-        entry_tag_ids = {
+        entry_tag_ids: dict[EntryId, set[int]] = {
             entry_ids[0]: set(),
             entry_ids[1]: set(),
         }
 
-        whole_tags = _inplace_filter_out_entry_tags(entry_tag_ids=entry_tag_ids,
-                                                    must_have_tags=must_have_tags,
-                                                    min_tag_count=min_tag_count)
+        whole_tags = _no_type_inplace_filter_out_entry_tags(entry_tag_ids=entry_tag_ids,
+                                                            must_have_tags=must_have_tags,
+                                                            min_tag_count=min_tag_count)
 
         assert whole_tags == set()
         assert entry_tag_ids == {
@@ -138,9 +149,9 @@ class TestInplaceFilterOutEntryTags:
         filtering_3 = copy.deepcopy(original_entry_tag_ids)
         filtering_10 = copy.deepcopy(original_entry_tag_ids)
 
-        whole_tags = _inplace_filter_out_entry_tags(entry_tag_ids=filtering_no,
-                                                    must_have_tags=must_have_tags,
-                                                    min_tag_count=0)
+        whole_tags = _no_type_inplace_filter_out_entry_tags(entry_tag_ids=filtering_no,
+                                                            must_have_tags=must_have_tags,
+                                                            min_tag_count=0)
         assert whole_tags == {1, 2, 3, 4, 5, 6}
         assert filtering_no == {
             entry_ids[0]: {1, 2, 3, 4},
@@ -150,9 +161,9 @@ class TestInplaceFilterOutEntryTags:
             entry_ids[4]: {5, 6},
         }
 
-        whole_tags = _inplace_filter_out_entry_tags(entry_tag_ids=filtering_1,
-                                                    must_have_tags=must_have_tags,
-                                                    min_tag_count=1)
+        whole_tags = _no_type_inplace_filter_out_entry_tags(entry_tag_ids=filtering_1,
+                                                            must_have_tags=must_have_tags,
+                                                            min_tag_count=1)
         assert whole_tags == {1, 2, 3, 4, 5, 6}
         assert filtering_no == {
             entry_ids[0]: {1, 2, 3, 4},
@@ -162,9 +173,9 @@ class TestInplaceFilterOutEntryTags:
             entry_ids[4]: {5, 6},
         }
 
-        whole_tags = _inplace_filter_out_entry_tags(entry_tag_ids=filtering_2,
-                                                    must_have_tags=must_have_tags,
-                                                    min_tag_count=2)
+        whole_tags = _no_type_inplace_filter_out_entry_tags(entry_tag_ids=filtering_2,
+                                                            must_have_tags=must_have_tags,
+                                                            min_tag_count=2)
         assert whole_tags == {2, 3, 4, 5}
         assert filtering_2 == {
             entry_ids[0]: {2, 3, 4},
@@ -174,9 +185,9 @@ class TestInplaceFilterOutEntryTags:
             entry_ids[4]: {5},
         }
 
-        whole_tags = _inplace_filter_out_entry_tags(entry_tag_ids=filtering_3,
-                                                    must_have_tags=must_have_tags,
-                                                    min_tag_count=3)
+        whole_tags = _no_type_inplace_filter_out_entry_tags(entry_tag_ids=filtering_3,
+                                                            must_have_tags=must_have_tags,
+                                                            min_tag_count=3)
         assert whole_tags == {3, 4}
         assert filtering_3 == {
             entry_ids[0]: {3, 4},
@@ -186,9 +197,9 @@ class TestInplaceFilterOutEntryTags:
             entry_ids[4]: set(),
         }
 
-        whole_tags = _inplace_filter_out_entry_tags(entry_tag_ids=filtering_10,
-                                                    must_have_tags=must_have_tags,
-                                                    min_tag_count=10)
+        whole_tags = _no_type_inplace_filter_out_entry_tags(entry_tag_ids=filtering_10,
+                                                            must_have_tags=must_have_tags,
+                                                            min_tag_count=10)
         assert whole_tags == set()
         assert filtering_10 == {
             entry_ids[0]: set(),
@@ -217,9 +228,9 @@ class TestInplaceFilterOutEntryTags:
         filtering_3 = copy.deepcopy(original_entry_tag_ids)
         filtering_10 = copy.deepcopy(original_entry_tag_ids)
 
-        whole_tags = _inplace_filter_out_entry_tags(entry_tag_ids=filtering_no,
-                                                    must_have_tags=must_have_tags,
-                                                    min_tag_count=0)
+        whole_tags = _no_type_inplace_filter_out_entry_tags(entry_tag_ids=filtering_no,
+                                                            must_have_tags=must_have_tags,
+                                                            min_tag_count=0)
         assert whole_tags == {1, 2, 3, 4, 5, 6}
         assert filtering_no == {
             entry_ids[0]: {1, 2, 3, 4},
@@ -229,9 +240,9 @@ class TestInplaceFilterOutEntryTags:
             entry_ids[4]: {5, 6},
         }
 
-        whole_tags = _inplace_filter_out_entry_tags(entry_tag_ids=filtering_1,
-                                                    must_have_tags=must_have_tags,
-                                                    min_tag_count=1)
+        whole_tags = _no_type_inplace_filter_out_entry_tags(entry_tag_ids=filtering_1,
+                                                            must_have_tags=must_have_tags,
+                                                            min_tag_count=1)
         assert whole_tags == {1, 2, 3, 4, 5, 6}
         assert filtering_no == {
             entry_ids[0]: {1, 2, 3, 4},
@@ -241,9 +252,9 @@ class TestInplaceFilterOutEntryTags:
             entry_ids[4]: {5, 6},
         }
 
-        whole_tags = _inplace_filter_out_entry_tags(entry_tag_ids=filtering_2,
-                                                    must_have_tags=must_have_tags,
-                                                    min_tag_count=2)
+        whole_tags = _no_type_inplace_filter_out_entry_tags(entry_tag_ids=filtering_2,
+                                                            must_have_tags=must_have_tags,
+                                                            min_tag_count=2)
         assert whole_tags == {1, 2, 3, 4, 5}
         assert filtering_2 == {
             entry_ids[0]: {1, 2, 3, 4},
@@ -253,9 +264,9 @@ class TestInplaceFilterOutEntryTags:
             entry_ids[4]: {5},
         }
 
-        whole_tags = _inplace_filter_out_entry_tags(entry_tag_ids=filtering_3,
-                                                    must_have_tags=must_have_tags,
-                                                    min_tag_count=3)
+        whole_tags = _no_type_inplace_filter_out_entry_tags(entry_tag_ids=filtering_3,
+                                                            must_have_tags=must_have_tags,
+                                                            min_tag_count=3)
         assert whole_tags == {1, 3, 4}
         assert filtering_3 == {
             entry_ids[0]: {1, 3, 4},
@@ -265,9 +276,9 @@ class TestInplaceFilterOutEntryTags:
             entry_ids[4]: set(),
         }
 
-        whole_tags = _inplace_filter_out_entry_tags(entry_tag_ids=filtering_10,
-                                                    must_have_tags=must_have_tags,
-                                                    min_tag_count=10)
+        whole_tags = _no_type_inplace_filter_out_entry_tags(entry_tag_ids=filtering_10,
+                                                            must_have_tags=must_have_tags,
+                                                            min_tag_count=10)
         assert whole_tags == {1, 4}
         assert filtering_10 == {
             entry_ids[0]: {1, 4},
