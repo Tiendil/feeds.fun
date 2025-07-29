@@ -18,6 +18,8 @@ from ffun.domain.entities import (
     RuleId,
     UnknownUrl,
     UserId,
+    TagId,
+    TagUid
 )
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
@@ -78,10 +80,10 @@ class Entry(BaseEntity):
     id: EntryId
     title: str
     url: AbsoluteUrl
-    tags: list[int]
+    tags: list[TagId]
     markers: list[Marker] = []
     score: int
-    scoreContributions: dict[int, int]
+    scoreContributions: dict[TagId, int]
     publishedAt: datetime.datetime
     catalogedAt: datetime.datetime
     body: str | None = None
@@ -90,10 +92,10 @@ class Entry(BaseEntity):
     def from_internal(  # noqa: CFQ002
         cls,
         entry: l_entities.Entry,
-        tags: Iterable[int],
+        tags: Iterable[TagId],
         markers: Iterable[Marker],
         score: int,
-        score_contributions: dict[int, int],
+        score_contributions: dict[TagId, int],
         with_body: bool = False,
     ) -> "Entry":
         return cls(
@@ -112,14 +114,14 @@ class Entry(BaseEntity):
 
 class Rule(BaseEntity):
     id: RuleId
-    requiredTags: list[str]
-    excludedTags: list[str]
+    requiredTags: list[TagUid]
+    excludedTags: list[TagUid]
     score: int
     createdAt: datetime.datetime
     updatedAt: datetime.datetime
 
     @classmethod
-    def from_internal(cls, rule: s_entities.Rule, tags_mapping: dict[int, str]) -> "Rule":
+    def from_internal(cls, rule: s_entities.Rule, tags_mapping: dict[TagId, TagUid]) -> "Rule":
         return cls(
             id=rule.id,
             requiredTags=[tags_mapping[tag_id] for tag_id in rule.required_tags],
@@ -319,7 +321,7 @@ class GetLastEntriesRequest(api.APIRequest):
 
 class GetLastEntriesResponse(api.APISuccess):
     entries: list[Entry]
-    tagsMapping: dict[int, str]
+    tagsMapping: dict[TagId, TagUid]
 
 
 class GetLastCollectionEntriesRequest(api.APIRequest):
@@ -336,7 +338,7 @@ class GetLastCollectionEntriesRequest(api.APIRequest):
 
 class GetLastCollectionEntriesResponse(api.APISuccess):
     entries: list[Entry]
-    tagsMapping: dict[int, str]
+    tagsMapping: dict[TagId, TagUid]
 
 
 class GetEntriesByIdsRequest(api.APIRequest):
@@ -345,12 +347,12 @@ class GetEntriesByIdsRequest(api.APIRequest):
 
 class GetEntriesByIdsResponse(api.APISuccess):
     entries: list[Entry]
-    tagsMapping: dict[int, str]
+    tagsMapping: dict[TagId, TagUid]
 
 
 class CreateOrUpdateRuleRequest(api.APIRequest):
-    requiredTags: list[str]
-    excludedTags: list[str]
+    requiredTags: list[TagUid]
+    excludedTags: list[TagUid]
     score: int
 
 
@@ -368,8 +370,8 @@ class DeleteRuleResponse(api.APISuccess):
 
 class UpdateRuleRequest(api.APIRequest):
     id: RuleId
-    requiredTags: list[str]
-    excludedTags: list[str]
+    requiredTags: list[TagUid]
+    excludedTags: list[TagUid]
     score: int
 
 
@@ -468,11 +470,11 @@ class SubscribeToCollectionsResponse(api.APISuccess):
 
 
 class GetTagsInfoRequest(api.APIRequest):
-    uids: set[str]
+    uids: set[TagUid]
 
 
 class GetTagsInfoResponse(api.APISuccess):
-    tags: dict[str, TagInfo]
+    tags: dict[TagUid, TagInfo]
 
 
 class GetUserSettingsRequest(api.APIRequest):

@@ -15,7 +15,7 @@ from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
 from ffun.data_protection import domain as dp_domain
 from ffun.domain.domain import no_user_id
-from ffun.domain.entities import UserId
+from ffun.domain.entities import UserId, TagId, TagUid
 from ffun.domain.urls import url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections.collections import collections
@@ -77,7 +77,7 @@ async def _external_entries(  # pylint: disable=R0914
     with_body: bool,
     user_id: UserId | None,
     min_tag_count: int,
-) -> tuple[list[entities.Entry], dict[int, str]]:
+) -> tuple[list[entities.Entry], dict[TagId, TagUid]]:
 
     entries_ids = [entry.id for entry in entries]
 
@@ -150,7 +150,8 @@ async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: Us
                                                              user_id=user.id,
                                                              min_tag_count=request.minTagCount)
 
-    return entities.GetLastEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
+    return entities.GetLastEntriesResponse(entries=external_entries,
+                                           tagsMapping=tags_mapping)
 
 
 @router.post("/api/get-last-collection-entries")
@@ -174,7 +175,8 @@ async def api_get_last_collection_entries(
                                                              user_id=None,
                                                              min_tag_count=request.minTagCount)
 
-    return entities.GetLastCollectionEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
+    return entities.GetLastCollectionEntriesResponse(entries=external_entries,
+                                                     tagsMapping=tags_mapping)
 
 
 @router.post("/api/get-entries-by-ids")
@@ -200,7 +202,8 @@ async def api_get_entries_by_ids(
                                                              user_id=user_id,
                                                              min_tag_count=0)
 
-    return entities.GetEntriesByIdsResponse(entries=external_entries, tagsMapping=tags_mapping)
+    return entities.GetEntriesByIdsResponse(entries=external_entries,
+                                            tagsMapping=tags_mapping)
 
 
 @router.post("/api/create-or-update-rule")
