@@ -133,9 +133,9 @@ async def tech_copy_relations(execute: ExecuteType, entry_from_id: EntryId, entr
     await operations.tech_copy_relations(execute, entry_from_id, entry_to_id)
 
 
-def _inplace_filter_out_entry_tags(entry_tag_ids: dict[EntryId, set[TagId]],
-                                   must_have_tags: set[TagId],
-                                   min_tag_count: int) -> set[TagId]:
+def _inplace_filter_out_entry_tags(
+    entry_tag_ids: dict[EntryId, set[TagId]], must_have_tags: set[TagId], min_tag_count: int
+) -> set[TagId]:
     """Function modifies `entry_tag_ids` in place and returns a final set of tags that still there."""
     tags_count: Counter[TagId] = Counter()
     for tags in entry_tag_ids.values():
