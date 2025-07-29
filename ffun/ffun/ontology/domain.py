@@ -133,13 +133,10 @@ async def tech_copy_relations(execute: ExecuteType, entry_from_id: EntryId, entr
     await operations.tech_copy_relations(execute, entry_from_id, entry_to_id)
 
 
-# TODO: tests
-async def prepare_tags_for_entries(
-    entry_ids: list[EntryId], must_have_tags: set[TagId], min_tag_count: int
-) -> tuple[dict[EntryId, set[TagId]], dict[TagId, TagUid]]:
-
-    entry_tag_ids = await get_tags_ids_for_entries(entry_ids)
-
+def _inplace_filter_out_entry_tags(entry_tag_ids: dict[EntryId, set[TagId]],
+                                   must_have_tags: set[TagId],
+                                   min_tag_count: int) -> set[TagId]:
+    """Function modifies `entry_tag_ids` in place and returns a final set of tags that still there."""
     tags_count: Counter[TagId] = Counter()
     for tags in entry_tag_ids.values():
         tags_count.update(tags)
@@ -151,6 +148,18 @@ async def prepare_tags_for_entries(
 
     for entry_tags in entry_tag_ids.values():
         entry_tags.intersection_update(whole_tags)
+
+    return whole_tags
+
+
+# TODO: tests
+async def prepare_tags_for_entries(
+    entry_ids: list[EntryId], must_have_tags: set[TagId], min_tag_count: int
+) -> tuple[dict[EntryId, set[TagId]], dict[TagId, TagUid]]:
+
+    entry_tag_ids = await get_tags_ids_for_entries(entry_ids)
+
+    whole_tags = _inplace_filter_out_entry_tags(entry_tag_ids, must_have_tags, min_tag_count)
 
     tag_mapping = await get_tags_by_ids(whole_tags)
 
