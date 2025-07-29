@@ -16,10 +16,10 @@ from ffun.domain.entities import (
     FeedId,
     FeedUrl,
     RuleId,
+    TagId,
+    TagUid,
     UnknownUrl,
     UserId,
-    TagId,
-    TagUid
 )
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities

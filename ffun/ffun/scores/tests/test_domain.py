@@ -16,15 +16,11 @@ def rule(score: int, required_tags: set[int], excluded_tags: set[int]) -> entiti
     )
 
 
-def get_score_rules(
-    rules: list[entities.Rule], tags: set[int]
-    ) -> list[entities.Rule]:
+def get_score_rules(rules: list[entities.Rule], tags: set[int]) -> list[entities.Rule]:
     return domain.get_score_rules(rules, {TagId(t) for t in tags})
 
 
-def get_score_contributions(
-    rules: list[entities.Rule], tags: set[int]
-    ) -> tuple[int, dict[int, int]]:
+def get_score_contributions(rules: list[entities.Rule], tags: set[int]) -> tuple[int, dict[int, int]]:
     score, contributions = domain.get_score_contributions(rules, {TagId(t) for t in tags})
     return score, {int(k): v for k, v in contributions.items()}
 

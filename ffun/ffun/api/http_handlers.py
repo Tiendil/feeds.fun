@@ -15,7 +15,7 @@ from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
 from ffun.data_protection import domain as dp_domain
 from ffun.domain.domain import no_user_id
-from ffun.domain.entities import UserId, TagId, TagUid
+from ffun.domain.entities import TagId, TagUid, UserId
 from ffun.domain.urls import url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections.collections import collections
@@ -101,9 +101,9 @@ async def _external_entries(  # pylint: disable=R0914
         must_have_tags.update(rule.required_tags)
         must_have_tags.update(rule.excluded_tags)
 
-    entry_tag_ids, tag_mapping = await o_domain.prepare_tags_for_entries(entry_ids=entries_ids,
-                                                                         must_have_tags=must_have_tags,
-                                                                         min_tag_count=min_tag_count)
+    entry_tag_ids, tag_mapping = await o_domain.prepare_tags_for_entries(
+        entry_ids=entries_ids, must_have_tags=must_have_tags, min_tag_count=min_tag_count
+    )
 
     ####################
     # construct response
@@ -145,13 +145,11 @@ async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: Us
         fallback_limit=settings.news_outside_period,
     )
 
-    external_entries, tags_mapping = await _external_entries(entries,
-                                                             with_body=False,
-                                                             user_id=user.id,
-                                                             min_tag_count=request.minTagCount)
+    external_entries, tags_mapping = await _external_entries(
+        entries, with_body=False, user_id=user.id, min_tag_count=request.minTagCount
+    )
 
-    return entities.GetLastEntriesResponse(entries=external_entries,
-                                           tagsMapping=tags_mapping)
+    return entities.GetLastEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
 
 
 @router.post("/api/get-last-collection-entries")
@@ -170,13 +168,11 @@ async def api_get_last_collection_entries(
         fallback_limit=settings.news_outside_period,
     )
 
-    external_entries, tags_mapping = await _external_entries(entries,
-                                                             with_body=False,
-                                                             user_id=None,
-                                                             min_tag_count=request.minTagCount)
+    external_entries, tags_mapping = await _external_entries(
+        entries, with_body=False, user_id=None, min_tag_count=request.minTagCount
+    )
 
-    return entities.GetLastCollectionEntriesResponse(entries=external_entries,
-                                                     tagsMapping=tags_mapping)
+    return entities.GetLastCollectionEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
 
 
 @router.post("/api/get-entries-by-ids")
@@ -197,13 +193,11 @@ async def api_get_entries_by_ids(
 
     # We cannot know here the whole distribution of tags on the user side
     # => we set min_tag_count=0
-    external_entries, tags_mapping = await _external_entries(found_entries,
-                                                             with_body=True,
-                                                             user_id=user_id,
-                                                             min_tag_count=0)
+    external_entries, tags_mapping = await _external_entries(
+        found_entries, with_body=True, user_id=user_id, min_tag_count=0
+    )
 
-    return entities.GetEntriesByIdsResponse(entries=external_entries,
-                                            tagsMapping=tags_mapping)
+    return entities.GetEntriesByIdsResponse(entries=external_entries, tagsMapping=tags_mapping)
 
 
 @router.post("/api/create-or-update-rule")

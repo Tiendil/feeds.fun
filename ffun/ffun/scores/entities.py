@@ -1,7 +1,7 @@
 import datetime
 
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import RuleId, UserId, TagId
+from ffun.domain.entities import RuleId, TagId, UserId
 
 
 class Rule(BaseEntity):

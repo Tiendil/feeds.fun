@@ -73,7 +73,9 @@ class TestRegisterRelationsProcessors:
             await _register_relations_processors(execute, [], fake_processor_id)
 
     @pytest.mark.asyncio
-    async def test(self, cataloged_entry: Entry, fake_processor_id: int, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
+    async def test(
+        self, cataloged_entry: Entry, fake_processor_id: int, three_tags_ids: tuple[TagId, TagId, TagId]
+    ) -> None:
         await _save_tags(execute, cataloged_entry.id, three_tags_ids[:2])
 
         relations = await _get_relations_for_entry_and_tags(execute, cataloged_entry.id, three_tags_ids[:2])
@@ -288,8 +290,9 @@ class TestApplyTagsProperties:
         for tag in three_processor_tags:
             tag.link = f"https://example.com?{tag.raw_uid}"
             properties.extend(
-                tag.build_properties_for(tag_id=three_tags_by_uids[tag.raw_uid],  # type: ignore
-                                         processor_id=fake_processor_id)
+                tag.build_properties_for(
+                    tag_id=three_tags_by_uids[tag.raw_uid], processor_id=fake_processor_id  # type: ignore
+                )
             )
 
         async with TableSizeDelta("o_tags_properties", delta=3):
@@ -315,8 +318,9 @@ class TestApplyTagsProperties:
         for tag in three_processor_tags:
             tag.link = f"https://example.com?{tag.raw_uid}"
             properties.extend(
-                tag.build_properties_for(tag_id=three_tags_by_uids[tag.raw_uid],  # type: ignore
-                                         processor_id=fake_processor_id)
+                tag.build_properties_for(
+                    tag_id=three_tags_by_uids[tag.raw_uid], processor_id=fake_processor_id  # type: ignore
+                )
             )
 
         async with TableSizeDelta("o_tags_properties", delta=3):
@@ -352,8 +356,9 @@ class TestApplyTagsProperties:
         for tag in three_processor_tags:
             tag.link = f"https://example.com?{tag.raw_uid}"
             properties.extend(
-                tag.build_properties_for(tag_id=three_tags_by_uids[tag.raw_uid],  # type: ignore
-                                         processor_id=fake_processor_id)
+                tag.build_properties_for(
+                    tag_id=three_tags_by_uids[tag.raw_uid], processor_id=fake_processor_id  # type: ignore
+                )
             )
 
         properties.append(properties[0])
