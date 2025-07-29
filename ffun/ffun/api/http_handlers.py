@@ -1,5 +1,4 @@
 from importlib import metadata
-from collections import Counter
 from typing import Any, Iterable
 
 import fastapi

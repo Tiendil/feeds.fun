@@ -5,6 +5,7 @@ import pydantic
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
+from ffun.domain.entities import TagId
 
 
 class TagPropertyType(int, enum.Enum):
@@ -18,7 +19,7 @@ class TagCategory(str, enum.Enum):
 
 
 class TagProperty(BaseEntity):
-    tag_id: int
+    tag_id: TagId
     type: TagPropertyType
     value: str
     processor_id: int
@@ -32,7 +33,7 @@ class ProcessorTag(pydantic.BaseModel):
     link: str | None = None
     categories: set[TagCategory] = pydantic.Field(default_factory=set)
 
-    def build_properties_for(self, tag_id: int, processor_id: int) -> list[TagProperty]:
+    def build_properties_for(self, tag_id: TagId, processor_id: int) -> list[TagProperty]:
         properties = []
 
         created_at = utils.now()
