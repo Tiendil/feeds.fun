@@ -11,6 +11,7 @@ from ffun.ontology.domain import (
     apply_tags_to_entry,
     get_ids_by_uids,
     get_tags_ids_for_entries,
+    prepare_tags_for_entries
 )
 from ffun.ontology.entities import ProcessorTag
 from ffun.tags import converters
@@ -299,8 +300,25 @@ class TestPrepareTagsForEntries:
 
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
+        entry_tag_ids, tag_mapping = await prepare_tags_for_entries(entry_ids=[],
+                                                                    must_have_tags=set(),
+                                                                    min_tag_count=1)
+        assert entry_tag_ids == {}
+        assert tag_mapping == {}
+
+    @pytest.mark.asyncio
+    async def test_no_tags(self, cataloged_entry: Entry, another_cataloged_entry: Entry) -> None:
+        entry_tag_ids, tag_mapping = await prepare_tags_for_entries(entry_ids=[cataloged_entry.id,
+                                                                               another_cataloged_entry.id],
+                                                                    must_have_tags=set(),
+                                                                    min_tag_count=1)
+        assert entry_tag_ids == {}
+        assert tag_mapping == {}
+
+    @pytest.mark.asyncio
+    async def test_works(self) -> None:
         pass
 
     @pytest.mark.asyncio
-    async def test_no_tags(self) -> None:
+    async def test_filtering_works(self) -> None:
         pass
