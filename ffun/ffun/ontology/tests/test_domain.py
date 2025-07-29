@@ -11,7 +11,7 @@ from ffun.ontology.domain import (
     apply_tags_to_entry,
     get_ids_by_uids,
     get_tags_ids_for_entries,
-    prepare_tags_for_entries
+    prepare_tags_for_entries,
 )
 from ffun.ontology.entities import ProcessorTag
 from ffun.tags import converters
@@ -300,28 +300,28 @@ class TestPrepareTagsForEntries:
 
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
-        entry_tag_ids, tag_mapping = await prepare_tags_for_entries(entry_ids=[],
-                                                                    must_have_tags=set(),
-                                                                    min_tag_count=1)
+        entry_tag_ids, tag_mapping = await prepare_tags_for_entries(
+            entry_ids=[], must_have_tags=set(), min_tag_count=1
+        )
         assert entry_tag_ids == {}
         assert tag_mapping == {}
 
     @pytest.mark.asyncio
     async def test_no_tags(self, cataloged_entry: Entry, another_cataloged_entry: Entry) -> None:
-        entry_tag_ids, tag_mapping = await prepare_tags_for_entries(entry_ids=[cataloged_entry.id,
-                                                                               another_cataloged_entry.id],
-                                                                    must_have_tags=set(),
-                                                                    min_tag_count=1)
+        entry_tag_ids, tag_mapping = await prepare_tags_for_entries(
+            entry_ids=[cataloged_entry.id, another_cataloged_entry.id], must_have_tags=set(), min_tag_count=1
+        )
         assert entry_tag_ids == {}
         assert tag_mapping == {}
 
     @pytest.mark.asyncio
-    async def test_works(self,
-                         cataloged_entry: Entry,
-                         another_cataloged_entry: Entry,
-                         fake_processor_id: int,
-                         five_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag]
-                         ) -> None:
+    async def test_works(
+        self,
+        cataloged_entry: Entry,
+        another_cataloged_entry: Entry,
+        fake_processor_id: int,
+        five_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag],
+    ) -> None:
         tags = five_processor_tags
 
         raw_to_uids = {tag.raw_uid: converters.normalize(tag.raw_uid) for tag in tags}
@@ -332,10 +332,9 @@ class TestPrepareTagsForEntries:
         await apply_tags_to_entry(cataloged_entry.id, fake_processor_id, [tags[0], tags[1], tags[3], tags[4]])
         await apply_tags_to_entry(another_cataloged_entry.id, fake_processor_id, [tags[0], tags[2], tags[4]])
 
-        entry_tag_ids, tag_mapping = await prepare_tags_for_entries(entry_ids=[cataloged_entry.id,
-                                                                               another_cataloged_entry.id],
-                                                                    must_have_tags=set(),
-                                                                    min_tag_count=1)
+        entry_tag_ids, tag_mapping = await prepare_tags_for_entries(
+            entry_ids=[cataloged_entry.id, another_cataloged_entry.id], must_have_tags=set(), min_tag_count=1
+        )
         assert entry_tag_ids == {
             cataloged_entry.id: {tag_ids[0], tag_ids[1], tag_ids[3], tag_ids[4]},
             another_cataloged_entry.id: {tag_ids[0], tag_ids[2], tag_ids[4]},
@@ -343,12 +342,13 @@ class TestPrepareTagsForEntries:
         assert tag_mapping == {tag_id: tag_uid for tag_uid, tag_id in uids_to_ids.items()}
 
     @pytest.mark.asyncio
-    async def test_filtering_works(self,
-                                   cataloged_entry: Entry,
-                                   another_cataloged_entry: Entry,
-                                   fake_processor_id: int,
-                                   five_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag]
-                                   ) -> None:
+    async def test_filtering_works(
+        self,
+        cataloged_entry: Entry,
+        another_cataloged_entry: Entry,
+        fake_processor_id: int,
+        five_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag],
+    ) -> None:
         tags = five_processor_tags
 
         raw_to_uids = {tag.raw_uid: converters.normalize(tag.raw_uid) for tag in tags}
@@ -359,14 +359,15 @@ class TestPrepareTagsForEntries:
         await apply_tags_to_entry(cataloged_entry.id, fake_processor_id, [tags[0], tags[1], tags[3], tags[4]])
         await apply_tags_to_entry(another_cataloged_entry.id, fake_processor_id, [tags[0], tags[2], tags[4]])
 
-        entry_tag_ids, tag_mapping = await prepare_tags_for_entries(entry_ids=[cataloged_entry.id,
-                                                                               another_cataloged_entry.id],
-                                                                    must_have_tags={tag_ids[3]},
-                                                                    min_tag_count=2)
+        entry_tag_ids, tag_mapping = await prepare_tags_for_entries(
+            entry_ids=[cataloged_entry.id, another_cataloged_entry.id], must_have_tags={tag_ids[3]}, min_tag_count=2
+        )
         assert entry_tag_ids == {
             cataloged_entry.id: {tag_ids[0], tag_ids[3], tag_ids[4]},
             another_cataloged_entry.id: {tag_ids[0], tag_ids[4]},
         }
-        assert tag_mapping == {tag_ids[0]: raw_to_uids[tags[0].raw_uid],
-                               tag_ids[3]: raw_to_uids[tags[3].raw_uid],
-                               tag_ids[4]: raw_to_uids[tags[4].raw_uid]}
+        assert tag_mapping == {
+            tag_ids[0]: raw_to_uids[tags[0].raw_uid],
+            tag_ids[3]: raw_to_uids[tags[3].raw_uid],
+            tag_ids[4]: raw_to_uids[tags[4].raw_uid],
+        }
