@@ -134,7 +134,9 @@ async def tech_copy_relations(execute: ExecuteType, entry_from_id: EntryId, entr
 
 
 # TODO: tests
-async def prepare_tags_for_entries(entry_ids: list[EntryId], must_have_tags: set[int], min_tags_count: int) -> ... :
+async def prepare_tags_for_entries(entry_ids: list[EntryId],
+                                   must_have_tags: set[int],
+                                   min_tags_count: int) -> tuple[dict[EntryId, set[int]], dict[int, Tag]]:
 
     entry_tag_ids = await get_tags_ids_for_entries(entry_ids)
 

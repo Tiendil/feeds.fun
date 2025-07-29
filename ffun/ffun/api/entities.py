@@ -308,6 +308,7 @@ class GetFeedsResponse(api.APISuccess):
 
 class GetLastEntriesRequest(api.APIRequest):
     period: datetime.timedelta | None = None
+    minTagCount: int = 0  # TODO: remove default after 1.21 branch is released
 
     @pydantic.field_validator("period")
     def validate_period(cls, v: None | datetime.timedelta) -> None | datetime.timedelta:
@@ -324,6 +325,7 @@ class GetLastEntriesResponse(api.APISuccess):
 class GetLastCollectionEntriesRequest(api.APIRequest):
     collectionSlug: CollectionSlug
     period: datetime.timedelta | None = None
+    minTagCount: int = 0  # TODO: remove default after 1.21 branch is released
 
     @pydantic.field_validator("period")
     def validate_period(cls, v: None | datetime.timedelta) -> None | datetime.timedelta:
