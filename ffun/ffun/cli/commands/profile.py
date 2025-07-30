@@ -38,7 +38,7 @@ async def _profile_get_last_entries() -> GetLastEntriesResponse:
     )
 
     external_entries, tags_mapping = await _external_entries(
-        entries, with_body=False, user_id=user_id, min_tag_count=0
+        entries, with_body=False, user_id=user_id, min_tag_count=0, include_tags=True
     )
 
     logger.info("almost_finishied", entries_number=len(external_entries), tags_number=len(tags_mapping))
