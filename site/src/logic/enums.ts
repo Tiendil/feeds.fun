@@ -120,7 +120,7 @@ export type MinNewsTagCountProperty = {
   readonly count: number;
 };
 
-export const MinNewsTagCountProperies = new Map<MinNewsTagCount, MinNewsTagCountProperty>([
+export const MinNewsTagCountProperties = new Map<MinNewsTagCount, MinNewsTagCountProperty>([
   [MinNewsTagCount.One, {text: "all", count: 1}],
   [MinNewsTagCount.Two, {text: "if in 2+ news", count: 2}],
   [MinNewsTagCount.Three, {text: "if in 3+ news", count: 3}],

@@ -104,16 +104,24 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     const period = periodProperties.seconds;
 
+    const minTagCount = e.MinNewsTagCountProperties.get(globalSettings.minTagCount)?.count;
+
+    if (minTagCount === undefined) {
+      throw new Error(`Unknown min tag count ${globalSettings.minTagCount}`);
+    }
+
     if (mode.value === Mode.News) {
       return await api.getLastEntries({
-        period: period
+        period: period,
+        minTagCount: minTagCount,
       });
     }
 
     if (mode.value === Mode.PublicCollection) {
       return await api.getLastCollectionEntries({
         period: period,
-        collectionSlug: modePublicCollectionSlug.value
+        collectionSlug: modePublicCollectionSlug.value,
+        minTagCount: minTagCount
       });
     }
 

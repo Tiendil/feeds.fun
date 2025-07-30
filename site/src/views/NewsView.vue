@@ -20,7 +20,7 @@
     <template #side-menu-item-3>
       Show tags
       <config-selector
-        :values="e.MinNewsTagCountProperies"
+        :values="e.MinNewsTagCountProperties"
         v-model:property="globalSettings.minTagCount" />
     </template>
 
