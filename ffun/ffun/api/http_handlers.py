@@ -146,7 +146,8 @@ async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: Us
     )
 
     external_entries, tags_mapping = await _external_entries(
-        entries, with_body=False, user_id=user.id, min_tag_count=request.minTagCount)
+        entries, with_body=False, user_id=user.id, min_tag_count=request.minTagCount
+    )
 
     return entities.GetLastEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
 
@@ -168,7 +169,8 @@ async def api_get_last_collection_entries(
     )
 
     external_entries, tags_mapping = await _external_entries(
-        entries, with_body=False, user_id=None, min_tag_count=request.minTagCount)
+        entries, with_body=False, user_id=None, min_tag_count=request.minTagCount
+    )
 
     return entities.GetLastCollectionEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
 
@@ -192,7 +194,8 @@ async def api_get_entries_by_ids(
     # We cannot know here the whole distribution of tags on the user side
     # => we set min_tag_count=0
     external_entries, tags_mapping = await _external_entries(
-        found_entries, with_body=True, user_id=user_id, min_tag_count=0)
+        found_entries, with_body=True, user_id=user_id, min_tag_count=0
+    )
 
     return entities.GetEntriesByIdsResponse(entries=external_entries, tagsMapping=tags_mapping)
 

@@ -215,8 +215,8 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     const loadedEntries = await api.getEntriesByIds({ids: ids});
 
     registerEntries({
-        newEntries: loadedEntries,
-        updateTags: false
+      newEntries: loadedEntries,
+      updateTags: false
     });
 
     requestedEntries.value = {};
