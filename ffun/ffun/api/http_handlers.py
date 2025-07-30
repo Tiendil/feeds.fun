@@ -77,7 +77,6 @@ async def _external_entries(  # pylint: disable=R0914
     with_body: bool,
     user_id: UserId | None,
     min_tag_count: int,
-    include_tags: bool,
 ) -> tuple[list[entities.Entry], dict[TagId, TagUid]]:
 
     entries_ids = [entry.id for entry in entries]
@@ -97,18 +96,14 @@ async def _external_entries(  # pylint: disable=R0914
     # process tags
     ##############
 
-    if include_tags:
-        must_have_tags = set()
-        for rule in rules:
-            must_have_tags.update(rule.required_tags)
-            must_have_tags.update(rule.excluded_tags)
+    must_have_tags = set()
+    for rule in rules:
+        must_have_tags.update(rule.required_tags)
+        must_have_tags.update(rule.excluded_tags)
 
-        entry_tag_ids, tag_mapping = await o_domain.prepare_tags_for_entries(
-            entry_ids=entries_ids, must_have_tags=must_have_tags, min_tag_count=min_tag_count
-        )
-    else:
-        entry_tag_ids = {}
-        tag_mapping = {}
+    entry_tag_ids, tag_mapping = await o_domain.prepare_tags_for_entries(
+        entry_ids=entries_ids, must_have_tags=must_have_tags, min_tag_count=min_tag_count
+    )
 
     ####################
     # construct response
@@ -151,8 +146,7 @@ async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: Us
     )
 
     external_entries, tags_mapping = await _external_entries(
-        entries, with_body=False, user_id=user.id, min_tag_count=request.minTagCount, include_tags=True
-    )
+        entries, with_body=False, user_id=user.id, min_tag_count=request.minTagCount)
 
     return entities.GetLastEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
 
@@ -174,8 +168,7 @@ async def api_get_last_collection_entries(
     )
 
     external_entries, tags_mapping = await _external_entries(
-        entries, with_body=False, user_id=None, min_tag_count=request.minTagCount, include_tags=True
-    )
+        entries, with_body=False, user_id=None, min_tag_count=request.minTagCount)
 
     return entities.GetLastCollectionEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
 
@@ -199,8 +192,7 @@ async def api_get_entries_by_ids(
     # We cannot know here the whole distribution of tags on the user side
     # => we set min_tag_count=0
     external_entries, tags_mapping = await _external_entries(
-        found_entries, with_body=True, user_id=user_id, min_tag_count=0, include_tags=request.includeTags
-    )
+        found_entries, with_body=True, user_id=user_id, min_tag_count=0)
 
     return entities.GetEntriesByIdsResponse(entries=external_entries, tagsMapping=tags_mapping)
 

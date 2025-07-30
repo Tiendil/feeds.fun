@@ -80,23 +80,20 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
   // We bulk update entries to avoid performance degradation
   // on triggering multiple reactivity updates for each entry
-  function registerEntries(newEntries: t.Entry[]) {
+  function registerEntries({newEntries, updateTags}: {newEntries: t.Entry[]; updateTags: boolean}) {
     let delta: {[key: t.EntryId]: t.Entry} = {};
 
     for (const entry of newEntries) {
       if (entry.id in entries.value) {
-        let existedEntry = entries.value[entry.id];
+        let existingEntry = entries.value[entry.id];
 
-        if (entry.body !== null && existedEntry.body === null) {
-          existedEntry.body = entry.body;
+        if (entry.body === null && existingEntry.body !== null) {
+          entry.body = existingEntry.body;
         }
 
-        if (entry.hasTags() && !existedEntry.hasTags()) {
-          existedEntry.tags = entry.tags;
+        if (!updateTags) {
+          entry.tags = _.cloneDeep(existingEntry.tags);
         }
-        // Do not overwrite existing entry
-        // because it will cause update chain in the UI
-        continue;
       }
       delta[entry.id] = entry;
     }
@@ -154,7 +151,10 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     const report = [];
 
-    registerEntries(loadedEntries);
+    registerEntries({
+      newEntries: loadedEntries,
+      updateTags: true
+    });
 
     for (const entry of loadedEntries) {
       report.push(entry.id);
@@ -212,9 +212,12 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     // Because we have no approach to control which tags to exclude because of minTagCount filter
     // This method loads an additional info for a subset of entries
     // => we have no clear tag statistics on the backend
-    const loadedEntries = await api.getEntriesByIds({ids: ids, includeTags: false});
+    const loadedEntries = await api.getEntriesByIds({ids: ids});
 
-    registerEntries(loadedEntries);
+    registerEntries({
+        newEntries: loadedEntries,
+        updateTags: false
+    });
 
     requestedEntries.value = {};
   }
