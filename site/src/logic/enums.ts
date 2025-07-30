@@ -112,7 +112,7 @@ export enum MinNewsTagCount {
   Two = "two",
   Three = "three",
   Four = "four",
-  Five = "five",
+  Five = "five"
 }
 
 export type MinNewsTagCountProperty = {
@@ -127,7 +127,6 @@ export const MinNewsTagCountProperties = new Map<MinNewsTagCount, MinNewsTagCoun
   [MinNewsTagCount.Four, {text: "if in 4+ news", count: 4}],
   [MinNewsTagCount.Five, {text: "if in 5+ news", count: 5}]
 ]);
-
 
 /////////
 // Marker

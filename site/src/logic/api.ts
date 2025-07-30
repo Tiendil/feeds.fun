@@ -71,7 +71,7 @@ export async function getFeeds() {
   return feeds;
 }
 
-export async function getLastEntries({period, minTagCount}: {period: number; minTagCount: number;}) {
+export async function getLastEntries({period, minTagCount}: {period: number; minTagCount: number}) {
   const response = await post({
     url: API_GET_LAST_ENTRIES,
     data: {

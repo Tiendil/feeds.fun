@@ -116,7 +116,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     if (mode.value === Mode.News) {
       return await api.getLastEntries({
         period: period,
-        minTagCount: minTagCount,
+        minTagCount: minTagCount
       });
     }
 
