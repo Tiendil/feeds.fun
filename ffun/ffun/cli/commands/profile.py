@@ -37,7 +37,9 @@ async def _profile_get_last_entries() -> GetLastEntriesResponse:
         feeds_ids=linked_feeds_ids, period=period, limit=max_returned_entries
     )
 
-    external_entries, tags_mapping = await _external_entries(entries, with_body=False, user_id=user_id)
+    external_entries, tags_mapping = await _external_entries(
+        entries, with_body=False, user_id=user_id, min_tag_count=0, include_tags=True
+    )
 
     logger.info("almost_finishied", entries_number=len(external_entries), tags_number=len(tags_mapping))
 

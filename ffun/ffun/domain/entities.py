@@ -8,6 +8,8 @@ CollectionId = NewType("CollectionId", uuid.UUID)
 CollectionSlug = NewType("CollectionSlug", str)
 SourceId = NewType("SourceId", uuid.UUID)
 RuleId = NewType("RuleId", uuid.UUID)
+TagId = NewType("TagId", int)
+TagUid = NewType("TagUid", str)
 
 # URL types for better normalization control in code
 # conversion schemas:

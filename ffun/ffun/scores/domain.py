@@ -1,11 +1,12 @@
 from typing import Iterable
 
+from ffun.domain.entities import TagId
 from ffun.scores import entities, operations
 
 count_rules_per_user = operations.count_rules_per_user
 
 
-def get_score_rules(rules: Iterable[entities.Rule], tags: set[int]) -> list[entities.Rule]:
+def get_score_rules(rules: Iterable[entities.Rule], tags: set[TagId]) -> list[entities.Rule]:
     score_rules = []
 
     for rule in rules:
@@ -18,9 +19,9 @@ def get_score_rules(rules: Iterable[entities.Rule], tags: set[int]) -> list[enti
     return score_rules
 
 
-def get_score_contributions(rules: Iterable[entities.Rule], tags: set[int]) -> tuple[int, dict[int, int]]:
+def get_score_contributions(rules: Iterable[entities.Rule], tags: set[TagId]) -> tuple[int, dict[TagId, int]]:
     score = 0
-    contributions: dict[int, int] = {}
+    contributions: dict[TagId, int] = {}
 
     for rule in get_score_rules(rules, tags):
         score += rule.score

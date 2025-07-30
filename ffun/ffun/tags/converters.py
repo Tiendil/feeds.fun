@@ -2,6 +2,8 @@ import re
 
 from slugify import slugify
 
+from ffun.domain.entities import TagUid
+
 DISALLOWED_CHARS_PATTERN = re.compile(r"[^-a-zA-Z0-9]+")
 
 
@@ -44,7 +46,7 @@ def _decode_special_characters(tag: str) -> str:
     return "".join(result)
 
 
-def normalize(tag: str) -> str:
+def normalize(tag: str) -> TagUid:
     tag = tag.lower()
 
     tag = _encode_special_characters(tag)

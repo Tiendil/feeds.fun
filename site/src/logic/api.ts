@@ -71,10 +71,13 @@ export async function getFeeds() {
   return feeds;
 }
 
-export async function getLastEntries({period}: {period: number}) {
+export async function getLastEntries({period, minTagCount}: {period: number; minTagCount: number}) {
   const response = await post({
     url: API_GET_LAST_ENTRIES,
-    data: {period: period}
+    data: {
+      period: period,
+      minTagCount: minTagCount
+    }
   });
 
   const entries = [];
@@ -89,14 +92,16 @@ export async function getLastEntries({period}: {period: number}) {
 
 export async function getLastCollectionEntries({
   period,
-  collectionSlug
+  collectionSlug,
+  minTagCount
 }: {
   period: number;
   collectionSlug: t.CollectionSlug | null;
+  minTagCount: number;
 }) {
   const response = await post({
     url: API_GET_LAST_COLLECTION_ENTRIES,
-    data: {period: period, collectionSlug: collectionSlug}
+    data: {period: period, collectionSlug: collectionSlug, minTagCount: minTagCount}
   });
 
   const entries = [];
@@ -109,10 +114,10 @@ export async function getLastCollectionEntries({
   return entries;
 }
 
-export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
+export async function getEntriesByIds({ids, includeTags}: {ids: t.EntryId[]; includeTags: boolean}) {
   const response = await post({
     url: API_GET_ENTRIES_BY_IDS,
-    data: {ids: ids}
+    data: {ids: ids, includeTags: includeTags}
   });
 
   const entries = [];

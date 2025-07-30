@@ -124,7 +124,7 @@ export class Entry {
   readonly feedId: FeedId;
   readonly title: string;
   readonly url: URL;
-  readonly tags: string[];
+  tags: string[];
   readonly markers: e.Marker[];
   readonly score: number;
   readonly scoreContributions: {[key: string]: number};
@@ -187,6 +187,10 @@ export class Entry {
 
   hasMarker(marker: e.Marker): boolean {
     return this.markers.includes(marker);
+  }
+
+  hasTags(): boolean {
+    return this.tags.length > 0;
   }
 }
 
