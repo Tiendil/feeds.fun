@@ -85,14 +85,24 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     for (const entry of newEntries) {
       if (entry.id in entries.value) {
-        if (entry.body === null && entries.value[entry.id].body !== null) {
-          entry.body = entries.value[entry.id].body;
+        let existedEntry = entries.value[entry.id];
+
+        if (entry.body !== null && existedEntry.body === null) {
+          existedEntry.body = entry.body;
         }
-        if (!entry.hasTags() && entries.value[entry.id].hasTags()) {
-          entry.tags = entries.value[entry.id].tags;
+
+        if (entry.hasTags() && !existedEntry.hasTags()) {
+          existedEntry.tags = entry.tags;
         }
+        // Do not overwrite existing entry
+        // because it will cause update chain in the UI
+        continue;
       }
       delta[entry.id] = entry;
+    }
+
+    if (_.isEmpty(delta)) {
+      return;
     }
 
     entries.value = {...entries.value, ...delta};
