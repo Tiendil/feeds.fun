@@ -5,6 +5,10 @@ export type AnyEnum = {
   [key in keyof any]: string | number;
 };
 
+///////////////////
+// Main panel modes
+///////////////////
+
 export enum MainPanelMode {
   Entries = "entries",
   Feeds = "feeds",
@@ -29,6 +33,10 @@ export const MainPanelModeProperties = new Map<MainPanelMode, MainPanelModePrope
   [MainPanelMode.PublicCollection, {text: "Public Collection", showInMenu: false}],
   [MainPanelMode.Settings, {text: "Settings", showInMenu: true}]
 ]);
+
+//////////////////////
+// Last entries period
+//////////////////////
 
 export enum LastEntriesPeriod {
   Hour1 = "hour1",
@@ -68,6 +76,10 @@ export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, LastEntrie
   [LastEntriesPeriod.AllTime, {text: "all time", seconds: c.infinity}]
 ]);
 
+////////////////
+// Entries order
+////////////////
+
 export enum EntriesOrder {
   Score = "score",
   ScoreToZero = "score-to-zero",
@@ -91,6 +103,36 @@ export const EntriesOrderProperties = new Map<EntriesOrder, EntriesOrderProperty
   [EntriesOrder.Cataloged, {text: "cataloged", orderField: "catalogedAt", timeField: "catalogedAt", direction: 1}]
 ]);
 
+////////////////
+// Min news tag count
+////////////////
+
+export enum MinNewsTagCount {
+  One = "one",
+  Two = "two",
+  Three = "three",
+  Four = "four",
+  Five = "five",
+}
+
+export type MinNewsTagCountProperty = {
+  readonly text: string;
+  readonly count: number;
+};
+
+export const MinNewsTagCountProperies = new Map<MinNewsTagCount, MinNewsTagCountProperty>([
+  [MinNewsTagCount.One, {text: "all", count: 1}],
+  [MinNewsTagCount.Two, {text: "if in 2+ news", count: 2}],
+  [MinNewsTagCount.Three, {text: "if in 3+ news", count: 3}],
+  [MinNewsTagCount.Four, {text: "if in 4+ news", count: 4}],
+  [MinNewsTagCount.Five, {text: "if in 5+ news", count: 5}]
+]);
+
+
+/////////
+// Marker
+/////////
+
 export enum Marker {
   Read = "read"
 }
@@ -98,6 +140,10 @@ export enum Marker {
 export const reverseMarker: {[key: string]: Marker} = {
   read: Marker.Read
 };
+
+//////////////
+// Feeds order
+//////////////
 
 export enum FeedsOrder {
   Title = "title",
@@ -112,6 +158,10 @@ export const FeedsOrderProperties = new Map<FeedsOrder, {text: string; orderFiel
   [FeedsOrder.Loaded, {text: "loaded", orderField: "loadedAt", orderDirection: "desc"}],
   [FeedsOrder.Linked, {text: "added", orderField: "linkedAt", orderDirection: "desc"}]
 ]);
+
+//////////////
+// Rules order
+//////////////
 
 export enum RulesOrder {
   Tags = "tags",

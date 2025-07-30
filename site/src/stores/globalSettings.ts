@@ -18,6 +18,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   // Entries
   const lastEntriesPeriod = ref(e.LastEntriesPeriod.Day3);
   const entriesOrder = ref(e.EntriesOrder.Score);
+  const minTagCount = ref(e.MinNewsTagCount.Two);
   const showRead = ref(true);
 
   const entriesOrderProperties = computed(() => {
@@ -63,6 +64,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     mainPanelMode,
     lastEntriesPeriod,
     entriesOrder,
+    minTagCount,
     showRead,
     entriesOrderProperties,
     dataVersion,
