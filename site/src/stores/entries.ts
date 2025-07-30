@@ -80,19 +80,26 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
   // We bulk update entries to avoid performance degradation
   // on triggering multiple reactivity updates for each entry
-  function registerEntries(newEntries: t.Entry[]) {
+  function registerEntries({newEntries, updateTags}: {newEntries: t.Entry[]; updateTags: boolean}) {
     let delta: {[key: t.EntryId]: t.Entry} = {};
 
     for (const entry of newEntries) {
       if (entry.id in entries.value) {
-        if (entry.body === null && entries.value[entry.id].body !== null) {
-          entry.body = entries.value[entry.id].body;
+        let existingEntry = entries.value[entry.id];
+
+        if (entry.body === null && existingEntry.body !== null) {
+          entry.body = existingEntry.body;
         }
-        if (!entry.hasTags() && entries.value[entry.id].hasTags()) {
-          entry.tags = entries.value[entry.id].tags;
+
+        if (!updateTags) {
+          entry.tags = _.cloneDeep(existingEntry.tags);
         }
       }
       delta[entry.id] = entry;
+    }
+
+    if (_.isEmpty(delta)) {
+      return;
     }
 
     entries.value = {...entries.value, ...delta};
@@ -144,7 +151,10 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     const report = [];
 
-    registerEntries(loadedEntries);
+    registerEntries({
+      newEntries: loadedEntries,
+      updateTags: true
+    });
 
     for (const entry of loadedEntries) {
       report.push(entry.id);
@@ -202,9 +212,12 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     // Because we have no approach to control which tags to exclude because of minTagCount filter
     // This method loads an additional info for a subset of entries
     // => we have no clear tag statistics on the backend
-    const loadedEntries = await api.getEntriesByIds({ids: ids, includeTags: false});
+    const loadedEntries = await api.getEntriesByIds({ids: ids});
 
-    registerEntries(loadedEntries);
+    registerEntries({
+      newEntries: loadedEntries,
+      updateTags: false
+    });
 
     requestedEntries.value = {};
   }

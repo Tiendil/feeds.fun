@@ -343,7 +343,6 @@ class GetLastCollectionEntriesResponse(api.APISuccess):
 
 class GetEntriesByIdsRequest(api.APIRequest):
     ids: list[EntryId]
-    includeTags: bool = False  # TODO: remove default after 1.21 branch is released
 
 
 class GetEntriesByIdsResponse(api.APISuccess):

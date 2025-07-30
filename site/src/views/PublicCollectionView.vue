@@ -23,6 +23,13 @@
     </template>
 
     <template #side-menu-item-3>
+      Show tags
+      <config-selector
+        :values="e.MinNewsTagCountProperties"
+        v-model:property="globalSettings.minTagCount" />
+    </template>
+
+    <template #side-menu-item-4>
       Show read
 
       <config-flag
