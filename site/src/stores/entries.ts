@@ -88,6 +88,9 @@ export const useEntriesStore = defineStore("entriesStore", () => {
         if (entry.body === null && entries.value[entry.id].body !== null) {
           entry.body = entries.value[entry.id].body;
         }
+        if (!entry.hasTags() && entries.value[entry.id].hasTags()) {
+          entry.tags = entries.value[entry.id].tags;
+        }
       }
       delta[entry.id] = entry;
     }
@@ -195,7 +198,11 @@ export const useEntriesStore = defineStore("entriesStore", () => {
       return;
     }
 
-    const loadedEntries = await api.getEntriesByIds({ids: ids});
+    // We do not request tags for full entries
+    // Because we have no approach to control which tags to exclude because of minTagCount filter
+    // This method loads an additional info for a subset of entries
+    // => we have no clear tag statistics on the backend
+    const loadedEntries = await api.getEntriesByIds({ids: ids, includeTags: false});
 
     registerEntries(loadedEntries);
 

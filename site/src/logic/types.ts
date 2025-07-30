@@ -188,6 +188,10 @@ export class Entry {
   hasMarker(marker: e.Marker): boolean {
     return this.markers.includes(marker);
   }
+
+  hasTags(): boolean {
+    return this.tags.length > 0;
+  }
 }
 
 export function entryFromJSON(

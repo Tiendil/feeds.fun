@@ -114,10 +114,10 @@ export async function getLastCollectionEntries({
   return entries;
 }
 
-export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
+export async function getEntriesByIds({ids, includeTags}: {ids: t.EntryId[]; includeTags: boolean}) {
   const response = await post({
     url: API_GET_ENTRIES_BY_IDS,
-    data: {ids: ids}
+    data: {ids: ids, includeTags: includeTags}
   });
 
   const entries = [];
