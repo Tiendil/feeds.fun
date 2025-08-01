@@ -5,7 +5,9 @@ import pytest
 from ffun.core.postgresql import execute, transaction
 from ffun.core.tests.helpers import Delta, TableSizeDelta, TableSizeNotChanged
 from ffun.domain.entities import EntryId, TagId, TagUid
+from ffun.feeds.entities import Feed
 from ffun.library.entities import Entry
+from ffun.library.tests import make as l_make
 from ffun.ontology import errors
 from ffun.ontology.domain import apply_tags_to_entry
 from ffun.ontology.entities import ProcessorTag, TagCategory, TagPropertyType
@@ -21,12 +23,10 @@ from ffun.ontology.operations import (
     get_or_create_id_by_tag,
     get_tags_properties,
     remove_relations_for_entries,
+    tag_frequency_statistics,
     tech_copy_relations,
-    tag_frequency_statistics
 )
 from ffun.ontology.tests.helpers import assert_has_tags
-from ffun.library.tests import make as l_make
-from ffun.feeds.entities import Feed
 
 
 async def assert_tags_processors(entry_id: EntryId, tag_processors: dict[TagId, set[int]]) -> None:
@@ -434,7 +434,9 @@ class TestGetTagsForEntries:
 class TestTagFrequencyStatistics:
 
     @pytest.mark.asyncio
-    async def test(self, saved_feed: Feed, fake_processor_id: int, five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]) -> None:
+    async def test(
+        self, saved_feed: Feed, fake_processor_id: int, five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]
+    ) -> None:
         buckets = [1, 2, 3, 5, 7]
         tags = five_tags_ids
 
@@ -460,6 +462,6 @@ class TestTagFrequencyStatistics:
 
         assert stats_before[0] == stats_after[0]
         assert stats_before[1] == stats_after[1]
-        assert stats_before[2].replace(number=stats_before[2].count+1) == stats_after[2]
-        assert stats_before[3].replace(number=stats_before[3].count+2) == stats_after[3]
-        assert stats_before[4].replace(number=stats_before[4].count+1) == stats_after[4]
+        assert stats_before[2].replace(number=stats_before[2].count + 1) == stats_after[2]
+        assert stats_before[3].replace(number=stats_before[3].count + 2) == stats_after[3]
+        assert stats_before[4].replace(number=stats_before[4].count + 1) == stats_after[4]
