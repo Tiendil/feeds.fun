@@ -17,7 +17,7 @@ from ffun.application.application import with_app
 from ffun.auth.settings import settings as a_settings
 from ffun.core import logging, utils
 from ffun.domain.domain import new_entry_id, new_feed_id
-from ffun.domain.entities import UnknownUrl, UserId, TagUid
+from ffun.domain.entities import TagUid, UnknownUrl, UserId
 from ffun.domain.urls import adjust_classic_relative_url, str_to_feed_url, url_to_source_uid
 from ffun.feeds.domain import get_feeds, get_source_ids, save_feed
 from ffun.feeds.entities import Feed, FeedState

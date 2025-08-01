@@ -4,7 +4,6 @@ import tabulate
 
 from ffun.core import utils
 from ffun.librarian.background_processors import processors as ln_processors
-from ffun.ontology import domain as o_domain
 from ffun.processors_quality.entities import ProcessorResult, ProcessorResultDiff
 from ffun.processors_quality.knowlege_base import KnowlegeBase, id_to_name
 from ffun.tags import domain as t_domain

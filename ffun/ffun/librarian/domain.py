@@ -6,10 +6,10 @@ from ffun.domain.entities import EntryId
 from ffun.librarian import errors, operations
 from ffun.librarian.entities import ProcessorPointer
 from ffun.librarian.processors.base import Processor
+from ffun.librarian.settings import settings
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
 from ffun.ontology import domain as o_domain
-from ffun.librarian.settings import settings
 from ffun.tags import domain as t_domain
 
 logger = logging.get_module_logger()
@@ -29,9 +29,7 @@ def accumulator(event: str, processor_id: int) -> metrics.Accumulator:
         return _processor_metrics_accumulators[key]
 
     accumulator = metrics.Accumulator(
-        interval=settings.metric_accumulation_interval,
-        event=event,
-        processor_id=processor_id
+        interval=settings.metric_accumulation_interval, event=event, processor_id=processor_id
     )
 
     _processor_metrics_accumulators[key] = accumulator

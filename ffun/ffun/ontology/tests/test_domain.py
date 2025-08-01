@@ -4,7 +4,7 @@ import pytest
 
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.domain import new_entry_id
-from ffun.domain.entities import EntryId, TagUid
+from ffun.domain.entities import EntryId
 from ffun.library.entities import Entry
 from ffun.ontology.domain import (
     _inplace_filter_out_entry_tags,
@@ -14,7 +14,6 @@ from ffun.ontology.domain import (
     prepare_tags_for_entries,
 )
 from ffun.ontology.entities import NormalizedTag
-from ffun.tags import converters
 
 
 class TestApplyTagsToEntry:

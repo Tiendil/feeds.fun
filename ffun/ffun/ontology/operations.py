@@ -269,7 +269,6 @@ async def count_total_tags_per_type() -> dict[TagPropertyType, int]:
 
     result = await execute(sql)
 
-
     for row in result:
         numbers[TagPropertyType(row["type"])] = row["count"]
 

@@ -1,6 +1,6 @@
-
 from typing import Iterable
-from ffun.ontology.entities import RawTag, NormalizedTag
+
+from ffun.ontology.entities import NormalizedTag, RawTag
 from ffun.tags import converters
 
 

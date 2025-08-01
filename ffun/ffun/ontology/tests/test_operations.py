@@ -296,9 +296,7 @@ class TestApplyTagsProperties:
         for tag in three_processor_tags:
             tag.link = f"https://example.com?{tag.uid}"
             properties.extend(
-                tag.build_properties_for(
-                    tag_id=three_tags_by_uids[tag.uid], processor_id=fake_processor_id
-                )
+                tag.build_properties_for(tag_id=three_tags_by_uids[tag.uid], processor_id=fake_processor_id)
             )
 
         async with TableSizeDelta("o_tags_properties", delta=3):
@@ -324,9 +322,7 @@ class TestApplyTagsProperties:
         for tag in three_processor_tags:
             tag.link = f"https://example.com?{tag.uid}"
             properties.extend(
-                tag.build_properties_for(
-                    tag_id=three_tags_by_uids[tag.uid], processor_id=fake_processor_id
-                )
+                tag.build_properties_for(tag_id=three_tags_by_uids[tag.uid], processor_id=fake_processor_id)
             )
 
         async with TableSizeDelta("o_tags_properties", delta=3):
@@ -362,9 +358,7 @@ class TestApplyTagsProperties:
         for tag in three_processor_tags:
             tag.link = f"https://example.com?{tag.uid}"
             properties.extend(
-                tag.build_properties_for(
-                    tag_id=three_tags_by_uids[tag.uid], processor_id=fake_processor_id
-                )
+                tag.build_properties_for(tag_id=three_tags_by_uids[tag.uid], processor_id=fake_processor_id)
             )
 
         properties.append(properties[0])
