@@ -5,7 +5,7 @@ import pydantic
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import TagId
+from ffun.domain.entities import TagId, TagUid
 
 
 class TagPropertyType(int, enum.Enum):
@@ -26,8 +26,16 @@ class TagProperty(BaseEntity):
     created_at: datetime.datetime
 
 
-class ProcessorTag(pydantic.BaseModel):
+class RawTag(pydantic.BaseModel):
     raw_uid: str
+
+    name: str | None = None
+    link: str | None = None
+    categories: set[TagCategory] = pydantic.Field(default_factory=set)
+
+
+class NormalizedTag(pydantic.BaseModel):
+    uid: TagUid
 
     name: str | None = None
     link: str | None = None

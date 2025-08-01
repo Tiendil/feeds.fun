@@ -6,7 +6,7 @@ from bidict import bidict
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
 from ffun.domain.entities import EntryId, TagId, TagUid
 from ffun.ontology import operations
-from ffun.ontology.entities import ProcessorTag, Tag, TagCategory, TagPropertyType
+from ffun.ontology.entities import NormalizedTag, Tag, TagCategory, TagPropertyType
 from ffun.tags import converters
 
 count_total_tags = operations.count_total_tags
@@ -57,30 +57,25 @@ async def get_tags_by_ids(ids: Iterable[TagId]) -> dict[TagId, TagUid]:
     return result
 
 
-# TODO: tests
-async def normalize_tags(tags: Iterable[ProcessorTag]) -> dict[str, TagUid]:
-    return {tag.raw_uid: converters.normalize(tag.raw_uid) for tag in tags}
-
-
 # TODO: in the future we could split this function into two separate functions
 #       1. tags & properties normalization
 #       2. saving tags & properties to the database
-async def apply_tags_to_entry(entry_id: EntryId, processor_id: int, tags: Iterable[ProcessorTag]) -> None:
+async def apply_tags_to_entry(entry_id: EntryId, processor_id: int, tags: Iterable[NormalizedTag]) -> None:
     """Apply tags to entry.
 
     Function expects raw tags from processors => after normalization we could have duplicates.
     => Function skips duplicated tags.
     """
-    raw_to_uids = await normalize_tags(tags)
+    uids = {tag.uid for tag in tags}
 
-    uids_to_ids = await get_ids_by_uids(raw_to_uids.values())
+    uids_to_ids = await get_ids_by_uids(uids)
 
     properties = []
 
     processed_tags = set()
 
     for tag in tags:
-        tag_id = uids_to_ids[raw_to_uids[tag.raw_uid]]
+        tag_id = uids_to_ids[tag.uid]
 
         if tag_id in processed_tags:
             # skip duplicated tags

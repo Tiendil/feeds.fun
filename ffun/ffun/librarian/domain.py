@@ -10,6 +10,7 @@ from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
 from ffun.ontology import domain as o_domain
 from ffun.librarian.settings import settings
+from ffun.tags import domain as t_domain
 
 logger = logging.get_module_logger()
 
@@ -99,25 +100,27 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
     normalized_tags_metric = accumulator("processor_normalized_tags", processor_id)
 
     try:
-        tags = await processor.process(entry)
+        raw_tags = await processor.process(entry)
 
-        raw_tags_metric.measure(len(tags))
+        raw_tags_metric.measure(len(raw_tags))
 
-        tags_for_log = [tag.raw_uid for tag in tags]
+        norm_tags = await t_domain.normalize(raw_tags)
+
+        tags_for_log = [tag.raw_uid for tag in norm_tags]
         tags_for_log.sort()
 
         logger.info("tags_found", tags=tags_for_log)
 
-        normalized_tags_metric.measure(len(tags))
+        normalized_tags_metric.measure(len(norm_tags))
 
-        await o_domain.apply_tags_to_entry(entry.id, processor_id, tags)
+        await o_domain.apply_tags_to_entry(entry.id, processor_id, norm_tags)
 
         logger.info("processor_successed")
     except errors.SkipEntryProcessing as e:
         logger.warning("processor_requested_to_skip_entry", error_info=str(e))
     except errors.TemporaryErrorInProcessor as e:
         # log the error and move the entry to the failed storage
-        # Note: it is a general plug, for some custome cases we may want to add custom processing
+        # Note: it is a general plug, for some custom cases we may want to add custom processing
         # Note: currently, there are no logic to process failed storage, entries will just accumulate there
         logger.info("processor_temporary_error", error_info=str(e))
         await operations.add_entries_to_failed_storage(processor_id, [entry.id])
