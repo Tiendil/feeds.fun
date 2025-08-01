@@ -231,14 +231,14 @@ def capture_logs() -> Generator[list[EventDict], None, None]:
 
 
 def assert_logs_has_business_event(  # noqa: CCR001
-    logs: list[MutableMapping[str, Any]], name: str, user_id: UserId | None, **atributes: Any
+    logs: list[MutableMapping[str, Any]], name: str, user_id: UserId | None, b_kind: str = "event", **atributes: Any
 ) -> None:
 
     if user_id is not None:
         user_id = str(user_id)  # type: ignore
 
     for record in logs:
-        if not (record.get("b_kind") == "event" and record["event"] == name and record.get("b_user_id") == user_id):
+        if not (record.get("b_kind") == b_kind and record["event"] == name and record.get("b_user_id") == user_id):
             continue
 
         assert "b_uid" in record, "b_uid not found in record"
@@ -254,10 +254,22 @@ def assert_logs_has_business_event(  # noqa: CCR001
         pytest.fail(f"Event {name} not found in logs")
 
 
-def assert_logs_has_no_business_event(logs: list[MutableMapping[str, Any]], name: str) -> None:
+def assert_logs_has_no_business_event(logs: list[MutableMapping[str, Any]], name: str, b_kind: str = "event") -> None:
     for record in logs:
-        if record.get("b_kind") == "event" and record["event"] == name:
+        if record.get("b_kind") == b_kind and record["event"] == name:
             pytest.fail(f"Event {name} found in logs")
+
+
+def assert_logs_has_business_slice(*args: Any, **kwargs: Any) -> None:
+    assert "b_kind" not in kwargs, "b_kind should not be passed to assert_logs_has_business_slice"
+    kwargs["b_kind"] = "slice"
+    assert_logs_has_business_event(*args, **kwargs)
+
+
+def assert_logs_has_no_business_slice(*args: Any, **kwargs: Any) -> None:
+    assert "b_kind" not in kwargs, "b_kind should not be passed to assert_logs_has_business_slice"
+    kwargs["b_kind"] = "slice"
+    assert_logs_has_no_business_event(*args, **kwargs)
 
 
 def assert_compare_xml(a: str, b: str) -> None:

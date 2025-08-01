@@ -11,7 +11,7 @@ from ffun.library.entities import Entry
 from ffun.library.tests import make as l_make
 from ffun.ontology import errors
 from ffun.ontology.domain import apply_tags_to_entry
-from ffun.ontology.entities import ProcessorTag, TagCategory, TagPropertyType
+from ffun.ontology.entities import NormalizedTag, TagCategory, TagPropertyType
 from ffun.ontology.operations import (
     _get_relations_for_entry_and_tags,
     _register_relations_processors,
@@ -287,18 +287,16 @@ class TestApplyTagsProperties:
     async def test_first_time_save(
         self,
         three_tags_by_uids: dict[TagUid, TagId],
-        three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
+        three_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag],
         fake_processor_id: int,
     ) -> None:
 
         properties = []
 
         for tag in three_processor_tags:
-            tag.link = f"https://example.com?{tag.raw_uid}"
+            tag.link = f"https://example.com?{tag.uid}"
             properties.extend(
-                tag.build_properties_for(
-                    tag_id=three_tags_by_uids[tag.raw_uid], processor_id=fake_processor_id  # type: ignore
-                )
+                tag.build_properties_for(tag_id=three_tags_by_uids[tag.uid], processor_id=fake_processor_id)
             )
 
         async with TableSizeDelta("o_tags_properties", delta=3):
@@ -315,18 +313,16 @@ class TestApplyTagsProperties:
     async def test_save_duplicated(
         self,
         three_tags_by_uids: dict[TagUid, TagId],
-        three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
+        three_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag],
         fake_processor_id: int,
     ) -> None:
 
         properties = []
 
         for tag in three_processor_tags:
-            tag.link = f"https://example.com?{tag.raw_uid}"
+            tag.link = f"https://example.com?{tag.uid}"
             properties.extend(
-                tag.build_properties_for(
-                    tag_id=three_tags_by_uids[tag.raw_uid], processor_id=fake_processor_id  # type: ignore
-                )
+                tag.build_properties_for(tag_id=three_tags_by_uids[tag.uid], processor_id=fake_processor_id)
             )
 
         async with TableSizeDelta("o_tags_properties", delta=3):
@@ -353,18 +349,16 @@ class TestApplyTagsProperties:
     async def test_error_on_duplicated_properties(
         self,
         three_tags_by_uids: dict[TagUid, TagId],
-        three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
+        three_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag],
         fake_processor_id: int,
     ) -> None:
 
         properties = []
 
         for tag in three_processor_tags:
-            tag.link = f"https://example.com?{tag.raw_uid}"
+            tag.link = f"https://example.com?{tag.uid}"
             properties.extend(
-                tag.build_properties_for(
-                    tag_id=three_tags_by_uids[tag.raw_uid], processor_id=fake_processor_id  # type: ignore
-                )
+                tag.build_properties_for(tag_id=three_tags_by_uids[tag.uid], processor_id=fake_processor_id)
             )
 
         properties.append(properties[0])
@@ -386,14 +380,14 @@ class TestCountTotalTagsPerCategory:
 
     @pytest.mark.asyncio
     async def test(self, cataloged_entry: Entry) -> None:
-        tags = [uuid.uuid4().hex for _ in range(5)]
+        tags = [TagUid(uuid.uuid4().hex) for _ in range(5)]
 
         processor_tags = [
-            ProcessorTag(raw_uid=tags[0]),
-            ProcessorTag(raw_uid=tags[1], categories={TagCategory.network_domain}),
-            ProcessorTag(raw_uid=tags[2], categories={TagCategory.feed_tag}),
-            ProcessorTag(raw_uid=tags[3], categories={TagCategory.network_domain, TagCategory.feed_tag}),
-            ProcessorTag(raw_uid=tags[4], categories={TagCategory.feed_tag}),
+            NormalizedTag(uid=tags[0]),
+            NormalizedTag(uid=tags[1], categories={TagCategory.network_domain}),
+            NormalizedTag(uid=tags[2], categories={TagCategory.feed_tag}),
+            NormalizedTag(uid=tags[3], categories={TagCategory.network_domain, TagCategory.feed_tag}),
+            NormalizedTag(uid=tags[4], categories={TagCategory.feed_tag}),
         ]
 
         numbers_before = await count_total_tags_per_category()
@@ -410,14 +404,14 @@ class TestCountTotalTagsPerType:
 
     @pytest.mark.asyncio
     async def test(self, cataloged_entry: Entry) -> None:
-        tags = [uuid.uuid4().hex for _ in range(5)]
+        tags = [TagUid(uuid.uuid4().hex) for _ in range(5)]
 
         processor_tags = [
-            ProcessorTag(raw_uid=tags[0]),
-            ProcessorTag(raw_uid=tags[1], link="https://example.com"),
-            ProcessorTag(raw_uid=tags[2], link="https://example.com", categories={TagCategory.network_domain}),
-            ProcessorTag(raw_uid=tags[3], link="https://example.com", categories={TagCategory.feed_tag}),
-            ProcessorTag(raw_uid=tags[4], link="https://example.com"),
+            NormalizedTag(uid=tags[0]),
+            NormalizedTag(uid=tags[1], link="https://example.com"),
+            NormalizedTag(uid=tags[2], link="https://example.com", categories={TagCategory.network_domain}),
+            NormalizedTag(uid=tags[3], link="https://example.com", categories={TagCategory.feed_tag}),
+            NormalizedTag(uid=tags[4], link="https://example.com"),
         ]
 
         numbers_before = await count_total_tags_per_type()

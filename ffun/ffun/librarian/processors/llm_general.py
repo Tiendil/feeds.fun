@@ -15,7 +15,7 @@ from ffun.llms_framework.entities import (
     LLMProvider,
 )
 from ffun.llms_framework.providers import llm_providers
-from ffun.ontology.entities import ProcessorTag
+from ffun.ontology.entities import RawTag
 
 logger = logging.get_module_logger()
 
@@ -52,7 +52,7 @@ class Processor(base.Processor):
         self.collections_api_key = collections_api_key
         self.general_api_key = general_api_key
 
-    async def process(self, entry: Entry) -> list[ProcessorTag]:
+    async def process(self, entry: Entry) -> list[RawTag]:
         dirty_text = self.entry_template.format(entry=entry)
 
         cleaned_text = self.text_cleaner(dirty_text)
@@ -80,14 +80,14 @@ class Processor(base.Processor):
 
         return self.extract_tags(responses)
 
-    def extract_tags(self, responses: Sequence[ChatResponse]) -> list[ProcessorTag]:
+    def extract_tags(self, responses: Sequence[ChatResponse]) -> list[RawTag]:
         raw_tags = set()
-        tags: list[ProcessorTag] = []
+        tags: list[RawTag] = []
 
         for response in responses:
             raw_tags.update(self.tag_extractor(response.response_content()))
 
         for raw_tag in raw_tags:
-            tags.append(ProcessorTag(raw_uid=raw_tag))
+            tags.append(RawTag(raw_uid=raw_tag))
 
         return tags

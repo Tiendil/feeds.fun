@@ -13,8 +13,7 @@ from ffun.ontology.domain import (
     get_tags_ids_for_entries,
     prepare_tags_for_entries,
 )
-from ffun.ontology.entities import ProcessorTag
-from ffun.tags import converters
+from ffun.ontology.entities import NormalizedTag
 
 
 class TestApplyTagsToEntry:
@@ -37,13 +36,12 @@ class TestApplyTagsToEntry:
         self,
         cataloged_entry: Entry,
         fake_processor_id: int,
-        three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
+        three_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag],
     ) -> None:
 
         three_processor_tags[1].link = "https://example.com"
 
-        raw_to_uids = {tag.raw_uid: converters.normalize(tag.raw_uid) for tag in three_processor_tags}
-        uids_to_ids = await get_ids_by_uids(raw_to_uids.values())
+        uids_to_ids = await get_ids_by_uids([tag.uid for tag in three_processor_tags])
 
         async with (
             TableSizeDelta("o_tags_properties", delta=1),
@@ -55,41 +53,6 @@ class TestApplyTagsToEntry:
         loaded_tags = await get_tags_ids_for_entries([cataloged_entry.id])
 
         assert loaded_tags == {cataloged_entry.id: set(uids_to_ids.values())}
-
-    @pytest.mark.asyncio
-    async def test_duplicated_tags(
-        self,
-        cataloged_entry: Entry,
-        fake_processor_id: int,
-        three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
-    ) -> None:
-
-        three_processor_tags[0].raw_uid = three_processor_tags[0].raw_uid.lower()
-        three_processor_tags[0].link = "https://example.com?x"
-
-        three_processor_tags[1].link = "https://example.com?y"
-
-        three_processor_tags[2].raw_uid = three_processor_tags[0].raw_uid.upper()
-        three_processor_tags[2].link = "https://example.com?z"
-
-        raw_to_uids = {tag.raw_uid: converters.normalize(tag.raw_uid) for tag in three_processor_tags}
-        uids_to_ids = await get_ids_by_uids(raw_to_uids.values())
-
-        async with (
-            TableSizeDelta("o_tags_properties", delta=2),
-            TableSizeDelta("o_relations", delta=2),
-            TableSizeDelta("o_relations_processors", delta=2),
-        ):
-            await apply_tags_to_entry(cataloged_entry.id, fake_processor_id, three_processor_tags)
-
-        loaded_tags = await get_tags_ids_for_entries([cataloged_entry.id])
-
-        assert loaded_tags == {
-            cataloged_entry.id: {
-                uids_to_ids[raw_to_uids[three_processor_tags[0].raw_uid]],
-                uids_to_ids[raw_to_uids[three_processor_tags[1].raw_uid]],
-            }
-        }
 
 
 def _no_type_inplace_filter_out_entry_tags(
@@ -320,14 +283,13 @@ class TestPrepareTagsForEntries:
         cataloged_entry: Entry,
         another_cataloged_entry: Entry,
         fake_processor_id: int,
-        five_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag],
+        five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
     ) -> None:
         tags = five_processor_tags
 
-        raw_to_uids = {tag.raw_uid: converters.normalize(tag.raw_uid) for tag in tags}
-        uids_to_ids = await get_ids_by_uids(raw_to_uids.values())
+        uids_to_ids = await get_ids_by_uids([tag.uid for tag in tags])
 
-        tag_ids = [uids_to_ids[raw_to_uids[tag.raw_uid]] for tag in tags]
+        tag_ids = [uids_to_ids[tag.uid] for tag in tags]
 
         await apply_tags_to_entry(cataloged_entry.id, fake_processor_id, [tags[0], tags[1], tags[3], tags[4]])
         await apply_tags_to_entry(another_cataloged_entry.id, fake_processor_id, [tags[0], tags[2], tags[4]])
@@ -347,14 +309,13 @@ class TestPrepareTagsForEntries:
         cataloged_entry: Entry,
         another_cataloged_entry: Entry,
         fake_processor_id: int,
-        five_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag],
+        five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
     ) -> None:
         tags = five_processor_tags
 
-        raw_to_uids = {tag.raw_uid: converters.normalize(tag.raw_uid) for tag in tags}
-        uids_to_ids = await get_ids_by_uids(raw_to_uids.values())
+        uids_to_ids = await get_ids_by_uids([tag.uid for tag in tags])
 
-        tag_ids = [uids_to_ids[raw_to_uids[tag.raw_uid]] for tag in tags]
+        tag_ids = [uids_to_ids[tag.uid] for tag in tags]
 
         await apply_tags_to_entry(cataloged_entry.id, fake_processor_id, [tags[0], tags[1], tags[3], tags[4]])
         await apply_tags_to_entry(another_cataloged_entry.id, fake_processor_id, [tags[0], tags[2], tags[4]])
@@ -367,7 +328,7 @@ class TestPrepareTagsForEntries:
             another_cataloged_entry.id: {tag_ids[0], tag_ids[4]},
         }
         assert tag_mapping == {
-            tag_ids[0]: raw_to_uids[tags[0].raw_uid],
-            tag_ids[3]: raw_to_uids[tags[3].raw_uid],
-            tag_ids[4]: raw_to_uids[tags[4].raw_uid],
+            tag_ids[0]: tags[0].uid,
+            tag_ids[3]: tags[3].uid,
+            tag_ids[4]: tags[4].uid,
         }

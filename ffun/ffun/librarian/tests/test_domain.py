@@ -1,12 +1,18 @@
+import contextlib
+from typing import Generator
+
 import pytest
+from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
 from ffun.core import utils
+from ffun.core.metrics import Accumulator
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs
 from ffun.feeds.entities import Feed
 from ffun.librarian import errors, operations
 from ffun.librarian.domain import (
+    accumulator,
     move_failed_entries_to_processor_queue,
     plan_processor_queue,
     process_entry,
@@ -185,10 +191,51 @@ class TestPlanProcessorQueue:
         )
 
 
+@contextlib.contextmanager
+def check_metric_accumulator(
+    processor_id: int, name: str, count_delta: int, sum_delta: int
+) -> Generator[None, None, None]:
+
+    metric = accumulator(name, processor_id)
+
+    old_count = metric.count
+    old_sum = metric.sum
+
+    yield
+
+    assert metric.count == old_count + count_delta
+    assert metric.sum == old_sum + sum_delta
+
+
+@contextlib.contextmanager
+def check_metric_accumulators(
+    mocker: MockerFixture, processor_id: int, raw_count: int, raw_sum: int, norm_count: int, norm_sum: int
+) -> Generator[None, None, None]:
+
+    raw_tags_metric = accumulator("processor_raw_tags", processor_id)
+    normalized_tags_metric = accumulator("processor_normalized_tags", processor_id)
+
+    called_for = []
+
+    def patch_flush(self: Accumulator) -> None:
+        called_for.append(self)
+
+    mocker.patch("ffun.core.metrics.Accumulator.flush_if_time", patch_flush)
+
+    with check_metric_accumulator(processor_id, "processor_raw_tags", raw_count, raw_sum), check_metric_accumulator(
+        processor_id, "processor_normalized_tags", norm_count, norm_sum
+    ):
+        yield
+
+    assert len(called_for) == 2
+    assert raw_tags_metric in called_for
+    assert normalized_tags_metric in called_for
+
+
 class TestProcessEntry:
     @pytest.mark.asyncio
     async def test_success(
-        self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry
+        self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry, mocker: MockerFixture
     ) -> None:
         await operations.clear_processor_queue(fake_processor_id)
 
@@ -196,10 +243,10 @@ class TestProcessEntry:
             execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
         )
 
-        with capture_logs() as logs:
+        with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 1, 3, 1, 2):
             await process_entry(
                 processor_id=fake_processor_id,
-                processor=AlwaysConstantProcessor(name="fake-processor", tags=["tag-1", "tag-2"]),
+                processor=AlwaysConstantProcessor(name="fake-processor", tags=["tag-1", "tag-2", "tag--2"]),
                 entry=cataloged_entry,
             )
 
@@ -220,7 +267,7 @@ class TestProcessEntry:
 
     @pytest.mark.asyncio
     async def test_skip_processing(
-        self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry
+        self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry, mocker: MockerFixture
     ) -> None:
         await operations.clear_processor_queue(fake_processor_id)
 
@@ -228,7 +275,7 @@ class TestProcessEntry:
             execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
         )
 
-        with capture_logs() as logs:
+        with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 0, 0, 0, 0):
             await process_entry(
                 processor_id=fake_processor_id,
                 processor=AlwaysSkipEntryProcessor(name="fake-processor"),
@@ -256,7 +303,7 @@ class TestProcessEntry:
 
     @pytest.mark.asyncio
     async def test_temporary_error_in_processor(
-        self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry
+        self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry, mocker: MockerFixture
     ) -> None:
         await operations.clear_processor_queue(fake_processor_id)
 
@@ -264,7 +311,7 @@ class TestProcessEntry:
             execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
         )
 
-        with capture_logs() as logs:
+        with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 0, 0, 0, 0):
             await process_entry(
                 processor_id=fake_processor_id,
                 processor=AlwaysTemporaryErrorProcessor(name="fake-processor"),
@@ -292,7 +339,7 @@ class TestProcessEntry:
 
     @pytest.mark.asyncio
     async def test_unexpected_error(
-        self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry
+        self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry, mocker: MockerFixture
     ) -> None:
         await operations.clear_processor_queue(fake_processor_id)
 
@@ -300,7 +347,7 @@ class TestProcessEntry:
             execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
         )
 
-        with capture_logs() as logs:
+        with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 0, 0, 0, 0):
             with pytest.raises(errors.UnexpectedErrorInProcessor):
                 await process_entry(
                     processor_id=fake_processor_id,

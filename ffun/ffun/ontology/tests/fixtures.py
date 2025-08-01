@@ -5,7 +5,7 @@ import pytest_asyncio
 
 from ffun.domain.entities import TagId, TagUid
 from ffun.ontology.domain import get_ids_by_uids
-from ffun.ontology.entities import ProcessorTag
+from ffun.ontology.entities import NormalizedTag
 
 
 @pytest_asyncio.fixture
@@ -24,8 +24,8 @@ def three_tags_ids(three_tags_by_uids: dict[TagUid, TagId]) -> tuple[TagId, TagI
 
 
 @pytest.fixture
-def three_processor_tags(three_tags_by_ids: dict[TagId, TagUid]) -> tuple[ProcessorTag, ProcessorTag, ProcessorTag]:
-    return tuple(ProcessorTag(raw_uid=tag) for tag in three_tags_by_ids.values())  # type: ignore
+def three_processor_tags(three_tags_by_ids: dict[TagId, TagUid]) -> tuple[NormalizedTag, NormalizedTag, NormalizedTag]:
+    return tuple(NormalizedTag(uid=tag) for tag in three_tags_by_ids.values())  # type: ignore
 
 
 @pytest_asyncio.fixture
@@ -46,5 +46,5 @@ def five_tags_ids(five_tags_by_uids: dict[TagUid, TagId]) -> tuple[TagId, TagId,
 @pytest.fixture
 def five_processor_tags(
     five_tags_by_ids: dict[TagId, TagUid],
-) -> tuple[ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag, ProcessorTag]:
-    return tuple(ProcessorTag(raw_uid=tag) for tag in five_tags_by_ids.values())  # type: ignore
+) -> tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag]:
+    return tuple(NormalizedTag(uid=tag) for tag in five_tags_by_ids.values())  # type: ignore
