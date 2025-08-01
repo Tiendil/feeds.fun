@@ -50,9 +50,9 @@ class TestNormalize:
                 raw_uid="tag-1",
                 name="Tag One",
                 link="http://example.com/tag1",
-                categories=[TagCategory.network_domain],
+                categories={TagCategory.network_domain},
             ),
-            RawTag(raw_uid="tag-2", name="Tag Two", link="http://example.com/tag2", categories=[TagCategory.feed_tag]),
+            RawTag(raw_uid="tag-2", name="Tag Two", link="http://example.com/tag2", categories={TagCategory.feed_tag}),
         ]
 
         expected = [

@@ -261,11 +261,15 @@ def assert_logs_has_no_business_event(logs: list[MutableMapping[str, Any]], name
 
 
 def assert_logs_has_business_slice(*args: Any, **kwargs: Any) -> None:
-    assert_logs_has_business_event(*args, b_kind="slice", **kwargs)
+    assert "b_kind" not in kwargs, "b_kind should not be passed to assert_logs_has_business_slice"
+    kwargs["b_kind"] = "slice"
+    assert_logs_has_business_event(*args, **kwargs)
 
 
 def assert_logs_has_no_business_slice(*args: Any, **kwargs: Any) -> None:
-    assert_logs_has_no_business_event(*args, b_kind="slice", **kwargs)
+    assert "b_kind" not in kwargs, "b_kind should not be passed to assert_logs_has_business_slice"
+    kwargs["b_kind"] = "slice"
+    assert_logs_has_no_business_event(*args, **kwargs)
 
 
 def assert_compare_xml(a: str, b: str) -> None:

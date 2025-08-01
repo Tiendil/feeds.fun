@@ -1,10 +1,12 @@
 import contextlib
+from typing import Generator
 
 import pytest
 from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
 from ffun.core import utils
+from ffun.core.metrics import Accumulator
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs
 from ffun.feeds.entities import Feed
@@ -190,7 +192,9 @@ class TestPlanProcessorQueue:
 
 
 @contextlib.contextmanager
-def check_metric_accumulator(processor_id: int, name: str, count_delta: int, sum_delta: int):
+def check_metric_accumulator(
+    processor_id: int, name: str, count_delta: int, sum_delta: int
+) -> Generator[None, None, None]:
 
     metric = accumulator(name, processor_id)
 
@@ -206,14 +210,14 @@ def check_metric_accumulator(processor_id: int, name: str, count_delta: int, sum
 @contextlib.contextmanager
 def check_metric_accumulators(
     mocker: MockerFixture, processor_id: int, raw_count: int, raw_sum: int, norm_count: int, norm_sum: int
-):
+) -> Generator[None, None, None]:
 
     raw_tags_metric = accumulator("processor_raw_tags", processor_id)
     normalized_tags_metric = accumulator("processor_normalized_tags", processor_id)
 
     called_for = []
 
-    def patch_flush(self):
+    def patch_flush(self: Accumulator) -> None:
         called_for.append(self)
 
     mocker.patch("ffun.core.metrics.Accumulator.flush_if_time", patch_flush)

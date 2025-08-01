@@ -70,6 +70,8 @@ class TestAccumulator:
         accumulator.measure(5)
         accumulator.measure(10)
 
+        assert accumulator._last_measure_at is not None
+
         accumulator._last_measure_at -= datetime.timedelta(seconds=11)
 
         with capture_logs() as logs:
