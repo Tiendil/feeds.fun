@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import uuid
 
 import typer
@@ -44,6 +45,21 @@ async def system_slice_tags() -> None:
         user_id=None,
         **{tag_category.name: count for tag_category, count in tags_per_category.items()},
     )
+
+
+async def _system_slice_new_tags_count(date: datetime.date) -> None:
+    count = await o_domain.count_new_tags_at(date)
+
+    logger.business_slice("new_tags_count", user_id=None, date=date.isoformat(), count=count)
+
+
+# We count new tags for yesterday to ensure that
+# we'll count all tags created from the last envocation of this function and the midnight.
+async def system_slice_new_tags_count() -> None:
+    today = utils.now().date()
+
+    await _system_slice_new_tags_count(today)
+    await _system_slice_new_tags_count(today - datetime.timedelta(days=1))
 
 
 async def system_slice_tag_frequencies() -> None:
@@ -195,6 +211,7 @@ async def run_system() -> None:
 
     async with with_app():
         await system_slice_tags()
+        await system_slice_new_tags_count()
         await system_slice_tag_frequencies()
         await system_slice_feeds()
         await system_slice_entries()

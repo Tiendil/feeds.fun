@@ -1,3 +1,4 @@
+import datetime
 import uuid
 from typing import Iterable, Sequence
 
@@ -272,6 +273,21 @@ async def count_total_tags_per_type() -> dict[TagPropertyType, int]:
         numbers[TagPropertyType(row["type"])] = row["count"]
 
     return numbers
+
+
+async def count_new_tags_at(date: datetime.date) -> int:
+    sql = """
+    SELECT COUNT(*) AS count
+    FROM o_tags
+    WHERE DATE(created_at) = %(date)s
+    """
+
+    result = await execute(sql, {"date": date})
+
+    if not result:
+        return 0
+
+    return result[0]["count"]  # type: ignore
 
 
 async def tag_frequency_statistics(buckets: list[int]) -> list[TagStatsBucket]:

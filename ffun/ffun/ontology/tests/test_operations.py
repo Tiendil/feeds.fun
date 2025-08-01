@@ -2,6 +2,7 @@ import uuid
 
 import pytest
 
+from ffun.core import utils
 from ffun.core.postgresql import execute, transaction
 from ffun.core.tests.helpers import Delta, TableSizeDelta, TableSizeNotChanged
 from ffun.domain.entities import EntryId, TagId, TagUid
@@ -17,11 +18,13 @@ from ffun.ontology.operations import (
     _save_tags,
     apply_tags,
     apply_tags_properties,
+    count_new_tags_at,
     count_total_tags,
     count_total_tags_per_category,
     count_total_tags_per_type,
     get_or_create_id_by_tag,
     get_tags_properties,
+    register_tag,
     remove_relations_for_entries,
     tag_frequency_statistics,
     tech_copy_relations,
@@ -425,6 +428,20 @@ class TestCountTotalTagsPerType:
 
         assert numbers_after[TagPropertyType.link] == numbers_before.get(TagPropertyType.link, 0) + 4
         assert numbers_after[TagPropertyType.categories] == numbers_before.get(TagPropertyType.categories, 0) + 2
+
+
+class TestCountNewTagsAt:
+
+    @pytest.mark.asyncio
+    async def test(self) -> None:
+        count_before = await count_new_tags_at(utils.now().date())
+
+        for _ in range(3):
+            await register_tag(TagUid(uuid.uuid4().hex))
+
+        count_after = await count_new_tags_at(utils.now().date())
+
+        assert count_after == count_before + 3
 
 
 class TestGetTagsForEntries:
