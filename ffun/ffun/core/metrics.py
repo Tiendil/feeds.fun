@@ -15,7 +15,7 @@ class Accumulator:
         self.interval = interval
         self.event = event
         self.attributes = attributes
-        self._last_measure_at = None
+        self._last_measure_at: datetime.datetime | None = None
         self._count = 0
         self._sum = 0
 
@@ -27,6 +27,9 @@ class Accumulator:
         self._sum += value
 
     def flush_if_time(self) -> None:
+        if self._last_measure_at is None:
+            return
+
         if utils.now() - self._last_measure_at < self.interval:
             return
 

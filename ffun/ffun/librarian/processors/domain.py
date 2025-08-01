@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 from ffun.core import logging
 from ffun.librarian.processors import base
 from ffun.library.entities import Entry
-from ffun.ontology.entities import ProcessorTag, TagCategory
+from ffun.ontology.entities import RawTag, TagCategory
 
 logger = logging.get_module_logger()
 
@@ -31,8 +31,8 @@ def domain_to_parts(domain: str) -> list[str]:
 class Processor(base.Processor):
     __slots__ = ()
 
-    async def process(self, entry: Entry) -> list[ProcessorTag]:
-        tags: list[ProcessorTag] = []
+    async def process(self, entry: Entry) -> list[RawTag]:
+        tags: list[RawTag] = []
 
         if not entry.external_url:
             return tags
@@ -48,7 +48,7 @@ class Processor(base.Processor):
 
         for subdomain in domain_to_parts(domain):
             tags.append(
-                ProcessorTag(
+                RawTag(
                     raw_uid=subdomain,
                     link=parsed_url.scheme + "://" + subdomain,
                     categories={TagCategory.network_domain},
