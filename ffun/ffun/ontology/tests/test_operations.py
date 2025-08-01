@@ -455,13 +455,10 @@ class TestTagFrequencyStatistics:
 
         stats_after = await tag_frequency_statistics(buckets)
 
-        stats_before.sort(key=lambda x: x.lower_bound)
-        stats_after.sort(key=lambda x: x.lower_bound)
-
         assert len(stats_before) == len(buckets) == len(stats_after)
 
         assert stats_before[0] == stats_after[0]
         assert stats_before[1] == stats_after[1]
-        assert stats_before[2].replace(number=stats_before[2].count + 1) == stats_after[2]
-        assert stats_before[3].replace(number=stats_before[3].count + 2) == stats_after[3]
-        assert stats_before[4].replace(number=stats_before[4].count + 1) == stats_after[4]
+        assert stats_before[2].replace(count=stats_before[2].count + 1) == stats_after[2]
+        assert stats_before[3].replace(count=stats_before[3].count + 2) == stats_after[3]
+        assert stats_before[4].replace(count=stats_before[4].count + 1) == stats_after[4]
