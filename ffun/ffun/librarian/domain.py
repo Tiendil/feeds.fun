@@ -1,6 +1,6 @@
 from typing import Iterable
 
-from ffun.core import logging
+from ffun.core import logging, metrics
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain.entities import EntryId
 from ffun.librarian import errors, operations
@@ -9,12 +9,34 @@ from ffun.librarian.processors.base import Processor
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
 from ffun.ontology import domain as o_domain
+from ffun.librarian.settings import settings
 
 logger = logging.get_module_logger()
 
 
 count_failed_entries = operations.count_failed_entries
 get_all_pointers = operations.get_all_pointers
+
+
+_processor_metrics_accumulators = {}
+
+
+def accumulator(event: str, processor_id: int) -> metrics.Accumulator:
+    key = (processor_id, event)
+
+    if key in _processor_metrics_accumulators:
+        return _processor_metrics_accumulators[key]
+
+    accumulator = metrics.Accumulator(
+        interval=settings.metric_accumulation_interval,
+        event=event,
+        attributes={
+            "processor_id": processor_id}
+    )
+
+    _processor_metrics_accumulators[key] = accumulator
+
+    return accumulator
 
 
 @run_in_transaction
@@ -72,19 +94,26 @@ async def plan_processor_queue(processor_id: int, fill_when_below: int, chunk: i
 async def process_entry(processor_id: int, processor: Processor, entry: Entry) -> None:
     logger.info("dicover_tags")
 
+    # TODO: test
+    raw_tags_metric = accumulator("processor_raw_tags", processor_id)
+    normalized_tags_metric = accumulator("processor_normalized_tags", processor_id)
+
     try:
         tags = await processor.process(entry)
+
+        raw_tags_metric.measure(len(tags))
 
         tags_for_log = [tag.raw_uid for tag in tags]
         tags_for_log.sort()
 
         logger.info("tags_found", tags=tags_for_log)
 
+        normalized_tags_metric.measure(len(tags))
+
         await o_domain.apply_tags_to_entry(entry.id, processor_id, tags)
 
         logger.info("processor_successed")
     except errors.SkipEntryProcessing as e:
-        # do nothing in such case, see: https://github.com/Tiendil/feeds.fun/issues/176
         logger.warning("processor_requested_to_skip_entry", error_info=str(e))
     except errors.TemporaryErrorInProcessor as e:
         # log the error and move the entry to the failed storage
@@ -97,6 +126,8 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
         await operations.add_entries_to_failed_storage(processor_id, [entry.id])
         raise errors.UnexpectedErrorInProcessor(processor_id=processor_id, entry_id=entry.id) from e
     finally:
+        raw_tags_metric.flush_if_time()
+        normalized_tags_metric.flush_if_time()
         await operations.remove_entries_from_processor_queue(execute, processor_id, [entry.id])
 
     logger.info("entry_processed")
