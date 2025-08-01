@@ -69,3 +69,9 @@ class Tag(pydantic.BaseModel):
     name: str | None = None
     link: str | None = None
     categories: set[TagCategory] = pydantic.Field(default_factory=set)
+
+
+class TagStatsBucket(BaseEntity):
+    lower_bound: int
+    upper_bound: int | None
+    count: int
