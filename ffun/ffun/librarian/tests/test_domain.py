@@ -247,7 +247,9 @@ class TestProcessEntry:
             execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
         )
 
-        with capture_logs() as logs:
+        with capture_logs() as logs, \
+             check_metric_accumulator(fake_processor_id, "processor_raw_tags", 0, 0), \
+             check_metric_accumulator(fake_processor_id, "processor_normalized_tags", 0, 0):
             await process_entry(
                 processor_id=fake_processor_id,
                 processor=AlwaysSkipEntryProcessor(name="fake-processor"),
@@ -283,7 +285,9 @@ class TestProcessEntry:
             execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
         )
 
-        with capture_logs() as logs:
+        with capture_logs() as logs, \
+             check_metric_accumulator(fake_processor_id, "processor_raw_tags", 0, 0), \
+             check_metric_accumulator(fake_processor_id, "processor_normalized_tags", 0, 0):
             await process_entry(
                 processor_id=fake_processor_id,
                 processor=AlwaysTemporaryErrorProcessor(name="fake-processor"),
@@ -319,7 +323,9 @@ class TestProcessEntry:
             execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
         )
 
-        with capture_logs() as logs:
+        with capture_logs() as logs, \
+             check_metric_accumulator(fake_processor_id, "processor_raw_tags", 0, 0), \
+             check_metric_accumulator(fake_processor_id, "processor_normalized_tags", 0, 0):
             with pytest.raises(errors.UnexpectedErrorInProcessor):
                 await process_entry(
                     processor_id=fake_processor_id,
