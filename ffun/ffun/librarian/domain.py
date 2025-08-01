@@ -19,7 +19,7 @@ count_failed_entries = operations.count_failed_entries
 get_all_pointers = operations.get_all_pointers
 
 
-_processor_metrics_accumulators = {}
+_processor_metrics_accumulators: dict[tuple[int, str], metrics.Accumulator] = {}
 
 
 def accumulator(event: str, processor_id: int) -> metrics.Accumulator:
@@ -31,8 +31,7 @@ def accumulator(event: str, processor_id: int) -> metrics.Accumulator:
     accumulator = metrics.Accumulator(
         interval=settings.metric_accumulation_interval,
         event=event,
-        attributes={
-            "processor_id": processor_id}
+        processor_id=processor_id
     )
 
     _processor_metrics_accumulators[key] = accumulator
@@ -106,7 +105,7 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
 
         norm_tags = await t_domain.normalize(raw_tags)
 
-        tags_for_log = [tag.raw_uid for tag in norm_tags]
+        tags_for_log = [tag.uid for tag in norm_tags]
         tags_for_log.sort()
 
         logger.info("tags_found", tags=tags_for_log)

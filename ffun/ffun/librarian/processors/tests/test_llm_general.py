@@ -7,7 +7,7 @@ from ffun.librarian.text_cleaners import clear_nothing
 from ffun.library.entities import Entry
 from ffun.llms_framework.entities import LLMApiKey, LLMConfiguration, LLMGeneralApiKey, LLMProvider, LLMTokens
 from ffun.llms_framework.provider_interface import ChatResponseTest
-from ffun.ontology.entities import ProcessorTag
+from ffun.ontology.entities import RawTag
 
 
 class TestProcessor:
@@ -51,7 +51,7 @@ class TestProcessor:
 
         tags.sort(key=lambda x: x.raw_uid)
 
-        assert tags == [ProcessorTag(raw_uid="tag-1"), ProcessorTag(raw_uid="tag-2"), ProcessorTag(raw_uid="tag-3")]
+        assert tags == [RawTag(raw_uid="tag-1"), RawTag(raw_uid="tag-2"), RawTag(raw_uid="tag-3")]
 
     @pytest.mark.asyncio
     async def test_process__no_api_key_found(self, llm_processor: Processor, cataloged_entry: Entry) -> None:
@@ -71,7 +71,7 @@ class TestProcessor:
 
         tags.sort(key=lambda x: x.raw_uid)
 
-        assert tags == [ProcessorTag(raw_uid="tag-1"), ProcessorTag(raw_uid="tag-2"), ProcessorTag(raw_uid="tag-3")]
+        assert tags == [RawTag(raw_uid="tag-1"), RawTag(raw_uid="tag-2"), RawTag(raw_uid="tag-3")]
 
     @pytest.mark.asyncio
     async def test_process__temporary_error_processing(

@@ -17,7 +17,7 @@ from ffun.application.application import with_app
 from ffun.auth.settings import settings as a_settings
 from ffun.core import logging, utils
 from ffun.domain.domain import new_entry_id, new_feed_id
-from ffun.domain.entities import UnknownUrl, UserId
+from ffun.domain.entities import UnknownUrl, UserId, TagUid
 from ffun.domain.urls import adjust_classic_relative_url, str_to_feed_url, url_to_source_uid
 from ffun.feeds.domain import get_feeds, get_source_ids, save_feed
 from ffun.feeds.entities import Feed, FeedState
@@ -25,7 +25,7 @@ from ffun.feeds_links.domain import add_link
 from ffun.library.domain import catalog_entries, get_entries_by_ids
 from ffun.library.entities import Entry
 from ffun.ontology.domain import apply_tags_to_entry
-from ffun.ontology.entities import ProcessorTag
+from ffun.ontology.entities import NormalizedTag
 from ffun.users import domain as u_domain
 from ffun.users import entities as u_entities
 
@@ -117,8 +117,8 @@ async def run_fill_db(feeds_number: int, entries_per_feed: int, tags_per_entry: 
                 tags = []
 
                 for j, _ in enumerate(range(tags_per_entry), start=1):
-                    raw_uid = f"some-long-tag-name-{j}-{i % j}"
-                    tags.append(ProcessorTag(raw_uid=raw_uid))
+                    uid = TagUid(f"some-long-tag-name-{j}-{i % j}")
+                    tags.append(NormalizedTag(uid=uid))
 
                 await apply_tags_to_entry(entry.id, 100500, tags)
 

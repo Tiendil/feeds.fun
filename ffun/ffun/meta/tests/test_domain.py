@@ -17,7 +17,7 @@ from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
 from ffun.meta.domain import add_feeds, clean_orphaned_entries, clean_orphaned_feeds, remove_entries
 from ffun.ontology import domain as o_domain
-from ffun.ontology.entities import ProcessorTag
+from ffun.ontology.entities import NormalizedTag
 from ffun.parsers import entities as p_entities
 
 
@@ -33,7 +33,7 @@ class TestRemoveEntries:
         another_loaded_feed: Feed,
         fake_processor_id: int,
         another_fake_processor_id: int,
-        three_processor_tags: tuple[ProcessorTag, ProcessorTag, ProcessorTag],
+        three_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag],
     ) -> None:
         entries = await l_make.n_entries_list(loaded_feed, 3)
         another_entries = await l_make.n_entries_list(another_loaded_feed, 3)

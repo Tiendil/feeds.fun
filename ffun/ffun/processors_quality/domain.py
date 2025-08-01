@@ -7,6 +7,7 @@ from ffun.librarian.background_processors import processors as ln_processors
 from ffun.ontology import domain as o_domain
 from ffun.processors_quality.entities import ProcessorResult, ProcessorResultDiff
 from ffun.processors_quality.knowlege_base import KnowlegeBase, id_to_name
+from ffun.tags import domain as t_domain
 
 processors = {info.processor.name: info.processor for info in ln_processors}
 
@@ -19,9 +20,9 @@ async def run_processor(kb: KnowlegeBase, processor_name: str, entry_id: int) ->
 
     raw_tags = await processor.process(entry)
 
-    raw_tags_to_uids = await o_domain.normalize_tags(raw_tags)
+    norm_tags = await t_domain.normalize(raw_tags)
 
-    tags = set(raw_tags_to_uids.values())
+    tags = {tag.uid for tag in norm_tags}
 
     result = ProcessorResult(
         tags=list(sorted(tags)),
