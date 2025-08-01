@@ -12,6 +12,7 @@ from ffun.tags import converters
 count_total_tags = operations.count_total_tags
 count_total_tags_per_type = operations.count_total_tags_per_type
 count_total_tags_per_category = operations.count_total_tags_per_category
+tag_frequency_statistics = operations.tag_frequency_statistics
 
 
 _tags_cache: bidict[TagUid, TagId] = bidict()

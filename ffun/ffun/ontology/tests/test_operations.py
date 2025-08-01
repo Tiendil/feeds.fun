@@ -460,6 +460,6 @@ class TestTagFrequencyStatistics:
 
         assert stats_before[0] == stats_after[0]
         assert stats_before[1] == stats_after[1]
-        assert stats_before[2].replace(number=stats_before[2].number+1) == stats_after[2]
-        assert stats_before[3].replace(number=stats_before[3].number+2) == stats_after[3]
-        assert stats_before[4].replace(number=stats_before[4].number+1) == stats_after[4]
+        assert stats_before[2].replace(number=stats_before[2].count+1) == stats_after[2]
+        assert stats_before[3].replace(number=stats_before[3].count+2) == stats_after[3]
+        assert stats_before[4].replace(number=stats_before[4].count+1) == stats_after[4]

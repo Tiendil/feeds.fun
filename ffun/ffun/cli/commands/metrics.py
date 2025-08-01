@@ -46,6 +46,23 @@ async def system_slice_tags() -> None:
     )
 
 
+async def system_slice_tag_frequencies() -> None:
+    buckets = [1, 2, 3, 4, 5, 6, 7, 8, 9,
+               10, 20, 30, 40, 50, 60, 70, 80, 90,
+               100, 200, 300, 400, 500, 600, 700, 800, 900,
+               1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000,
+               10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000,
+               100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000]
+
+    stats = await o_domain.tag_frequency_statistics(buckets)
+
+    logger.business_slice(
+        "tag_frequency",
+        user_id=None,
+        **{f"b{i:02d}_{b.lower_bound}_{b.upper_bound}": b.count for i, b in enumerate(stats)}
+    )
+
+
 async def system_slice_feeds() -> None:
     feeds_total = await f_domain.count_total_feeds()
 
@@ -128,6 +145,7 @@ async def run_system() -> None:
 
     async with with_app():
         await system_slice_tags()
+        await system_slice_tag_frequencies()
         await system_slice_feeds()
         await system_slice_entries()
         await system_slice_users()

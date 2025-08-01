@@ -293,7 +293,7 @@ WITH
 SELECT
   b.lower_bound,
   b.upper_bound,
-  COUNT(tc.tag_id) AS tags_number
+  COUNT(tc.tag_id) AS tags_count
 FROM borders AS b
 LEFT JOIN tag_counts AS tc
   ON tc.cnt >= b.lower_bound
@@ -304,11 +304,15 @@ ORDER BY b.lower_bound;
 
     result = await execute(sql, {"buckets": buckets})
 
-    return [
+    stats = [
         TagStatsBucket(
             lower_bound=row["lower_bound"],
             upper_bound=row["upper_bound"],
-            number=row["tags_number"],
+            count=row["tags_count"],
         )
         for row in result
     ]
+
+    stats.sort(key=lambda b: b.lower_bound)
+
+    return stats

@@ -74,4 +74,4 @@ class Tag(pydantic.BaseModel):
 class TagStatsBucket(BaseEntity):
     lower_bound: int
     upper_bound: int | None
-    number: int
+    count: int
