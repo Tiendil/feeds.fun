@@ -92,7 +92,6 @@ async def plan_processor_queue(processor_id: int, fill_when_below: int, chunk: i
 async def process_entry(processor_id: int, processor: Processor, entry: Entry) -> None:
     logger.info("dicover_tags")
 
-    # TODO: test
     raw_tags_metric = accumulator("processor_raw_tags", processor_id)
     normalized_tags_metric = accumulator("processor_normalized_tags", processor_id)
 
