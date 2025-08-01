@@ -231,7 +231,7 @@ def capture_logs() -> Generator[list[EventDict], None, None]:
 
 
 def assert_logs_has_business_event(  # noqa: CCR001
-        logs: list[MutableMapping[str, Any]], name: str, user_id: UserId | None, b_kind: str = "event", **atributes: Any
+    logs: list[MutableMapping[str, Any]], name: str, user_id: UserId | None, b_kind: str = "event", **atributes: Any
 ) -> None:
 
     if user_id is not None:

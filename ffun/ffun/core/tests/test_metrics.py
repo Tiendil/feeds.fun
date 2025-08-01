@@ -1,9 +1,10 @@
-import pytest
 import datetime
+
+import pytest
 
 from ffun.core import utils
 from ffun.core.metrics import Accumulator
-from ffun.core.tests.helpers import capture_logs, assert_logs_has_business_slice, assert_logs_has_no_business_slice
+from ffun.core.tests.helpers import assert_logs_has_business_slice, assert_logs_has_no_business_slice, capture_logs
 
 
 class TestAccumulator:
