@@ -1,6 +1,6 @@
 import pytest
 from structlog.testing import capture_logs
-
+import contextlib
 from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs
@@ -11,6 +11,7 @@ from ffun.librarian.domain import (
     plan_processor_queue,
     process_entry,
     push_entries_and_move_pointer,
+    accumulator
 )
 from ffun.librarian.entities import ProcessorPointer
 from ffun.librarian.processors.base import (
@@ -185,6 +186,22 @@ class TestPlanProcessorQueue:
         )
 
 
+@contextlib.contextmanager
+def check_metric_accumulator(
+    processor_id: int, name: str, count_delta: int, sum_delta: int
+    ):
+
+    metric = accumulator(name, processor_id)
+
+    old_count = metric.count
+    old_sum = metric.sum
+
+    yield
+
+    assert metric.count == old_count + count_delta
+    assert metric.sum == old_sum + sum_delta
+
+
 class TestProcessEntry:
     @pytest.mark.asyncio
     async def test_success(
@@ -196,10 +213,12 @@ class TestProcessEntry:
             execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
         )
 
-        with capture_logs() as logs:
+        with capture_logs() as logs, \
+             check_metric_accumulator(fake_processor_id, "processor_raw_tags", 1, 3), \
+             check_metric_accumulator(fake_processor_id, "processor_normalized_tags", 1, 2):
             await process_entry(
                 processor_id=fake_processor_id,
-                processor=AlwaysConstantProcessor(name="fake-processor", tags=["tag-1", "tag-2"]),
+                processor=AlwaysConstantProcessor(name="fake-processor", tags=["tag-1", "tag-2", "tag--2"]),
                 entry=cataloged_entry,
             )
 

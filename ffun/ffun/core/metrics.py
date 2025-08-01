@@ -16,6 +16,14 @@ class Accumulator:
         self._count = 0
         self._sum = 0
 
+    @property
+    def count(self) -> int:
+        return self._count
+
+    @property
+    def sum(self) -> int:
+        return self._sum
+
     def measure(self, value: int) -> None:
         if self._last_measure_at is None:
             self._last_measure_at = utils.now()
