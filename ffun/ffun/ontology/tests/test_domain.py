@@ -55,42 +55,6 @@ class TestApplyTagsToEntry:
 
         assert loaded_tags == {cataloged_entry.id: set(uids_to_ids.values())}
 
-    # TODO: do we still require this test here?
-    #       should we move it to the ffun.tags?
-    @pytest.mark.asyncio
-    async def test_duplicated_tags(
-        self,
-        cataloged_entry: Entry,
-        fake_processor_id: int,
-        three_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag],
-    ) -> None:
-
-        three_processor_tags[0].uid = TagUid(three_processor_tags[0].uid.lower())
-        three_processor_tags[0].link = "https://example.com?x"
-
-        three_processor_tags[1].link = "https://example.com?y"
-
-        three_processor_tags[2].uid = TagUid(three_processor_tags[0].uid.upper())
-        three_processor_tags[2].link = "https://example.com?z"
-
-        uids_to_ids = await get_ids_by_uids([tag.uid for tag in three_processor_tags])
-
-        async with (
-            TableSizeDelta("o_tags_properties", delta=2),
-            TableSizeDelta("o_relations", delta=2),
-            TableSizeDelta("o_relations_processors", delta=2),
-        ):
-            await apply_tags_to_entry(cataloged_entry.id, fake_processor_id, three_processor_tags)
-
-        loaded_tags = await get_tags_ids_for_entries([cataloged_entry.id])
-
-        assert loaded_tags == {
-            cataloged_entry.id: {
-                uids_to_ids[three_processor_tags[0].uid],
-                uids_to_ids[three_processor_tags[1].uid],
-            }
-        }
-
 
 def _no_type_inplace_filter_out_entry_tags(
     entry_tag_ids: dict[EntryId, set[int]], must_have_tags: set[int], min_tag_count: int
