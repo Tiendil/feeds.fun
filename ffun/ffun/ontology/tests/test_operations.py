@@ -22,8 +22,11 @@ from ffun.ontology.operations import (
     get_tags_properties,
     remove_relations_for_entries,
     tech_copy_relations,
+    tag_frequency_statistics
 )
 from ffun.ontology.tests.helpers import assert_has_tags
+from ffun.library.tests import make as l_make
+from ffun.feeds.entities import Feed
 
 
 async def assert_tags_processors(entry_id: EntryId, tag_processors: dict[TagId, set[int]]) -> None:
@@ -426,3 +429,37 @@ class TestCountTotalTagsPerType:
 
 class TestGetTagsForEntries:
     """Tested in other tests & code."""
+
+
+class TestTagFrequencyStatistics:
+
+    @pytest.mark.asyncio
+    async def test(self, saved_feed: Feed, fake_processor_id: int, five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]) -> None:
+        buckets = [1, 2, 3, 5, 7]
+        tags = five_tags_ids
+
+        stats_before = await tag_frequency_statistics(buckets)
+
+        entries = await l_make.n_entries_list(saved_feed, 8)
+
+        for entry in entries[:3]:
+            await apply_tags(execute, entry.id, fake_processor_id, [tags[0]])
+
+        for entry in entries[:5]:
+            await apply_tags(execute, entry.id, fake_processor_id, [tags[1], tags[2]])
+
+        for entry in entries:
+            await apply_tags(execute, entry.id, fake_processor_id, [tags[3]])
+
+        stats_after = await tag_frequency_statistics(buckets)
+
+        stats_before.sort(key=lambda x: x.lower_bound)
+        stats_after.sort(key=lambda x: x.lower_bound)
+
+        assert len(stats_before) == len(buckets) == len(stats_after)
+
+        assert stats_before[0] == stats_after[0]
+        assert stats_before[1] == stats_after[1]
+        assert stats_before[2].replace(number=stats_before[2].number+1) == stats_after[2]
+        assert stats_before[3].replace(number=stats_before[3].number+2) == stats_after[3]
+        assert stats_before[4].replace(number=stats_before[4].number+1) == stats_after[4]

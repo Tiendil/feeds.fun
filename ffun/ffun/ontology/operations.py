@@ -8,7 +8,7 @@ from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.domain.entities import EntryId, TagId, TagUid
 from ffun.ontology import errors
-from ffun.ontology.entities import TagCategory, TagProperty, TagPropertyType
+from ffun.ontology.entities import TagCategory, TagProperty, TagPropertyType, TagStatsBucket
 
 logger = logging.get_module_logger()
 
@@ -272,3 +272,43 @@ async def count_total_tags_per_type() -> dict[TagPropertyType, int]:
         numbers[TagPropertyType(row["type"])] = row["count"]
 
     return numbers
+
+
+async def tag_frequency_statistics(buckets: list[int]) -> list[TagStatsBucket]:
+    sql = """
+WITH
+  borders AS (
+    SELECT
+      b   AS lower_bound,
+      LEAD(b) OVER (ORDER BY b) AS upper_bound
+    FROM   unnest(%(buckets)s) AS t(b)
+  ),
+  tag_counts AS (
+    SELECT
+      tag_id,
+      COUNT(*) AS cnt
+    FROM   o_relations
+    GROUP  BY tag_id
+  )
+SELECT
+  b.lower_bound,
+  b.upper_bound,
+  COUNT(tc.tag_id) AS tags_number
+FROM borders AS b
+LEFT JOIN tag_counts AS tc
+  ON tc.cnt >= b.lower_bound
+ AND (b.upper_bound IS NULL OR tc.cnt < b.upper_bound)
+GROUP BY b.lower_bound, b.upper_bound
+ORDER BY b.lower_bound;
+"""
+
+    result = await execute(sql, {"buckets": buckets})
+
+    return [
+        TagStatsBucket(
+            lower_bound=row["lower_bound"],
+            upper_bound=row["upper_bound"],
+            number=row["tags_number"],
+        )
+        for row in result
+    ]
