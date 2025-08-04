@@ -19,13 +19,9 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
   // Entries
   // const lastEntriesPeriod = ref(e.LastEntriesPeriod.Day3);
-  const entriesOrder = ref(e.EntriesOrder.Score);
-  const minTagCount = ref(e.MinNewsTagCount.Two);
+  // const entriesOrder = ref(e.EntriesOrder.Score);
+  // const minTagCount = ref(e.MinNewsTagCount.Two);
   const showRead = ref(true);
-
-  const entriesOrderProperties = computed(() => {
-    return e.EntriesOrderProperties.get(entriesOrder.value);
-  });
 
   // Feeds
   const showFeedsDescriptions = ref(true);
@@ -100,11 +96,28 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
   }
 
+  // News filter settings
   const lastEntriesPeriod = backendSettings(
     "view_news_filter_interval",
     (rawValue) => { return _.findKey(e.LastEntriesPeriod, (value) => value === rawValue); },
     e.LastEntriesPeriod.Day3
   );
+
+  const entriesOrder = backendSettings(
+    "view_news_filter_sort_by",
+    (rawValue) => { return _.findKey(e.EntriesOrder, (value) => value === rawValue); },
+    e.EntriesOrder.Score
+  );
+
+  const minTagCount = backendSettings(
+    "view_news_filter_min_tags_count",
+    (rawValue) => { return _.findKey(e.MinNewsTagCount, (value) => value === rawValue); },
+    e.MinNewsTagCount.Two
+  );
+
+  const entriesOrderProperties = computed(() => {
+    return e.EntriesOrderProperties.get(entriesOrder.value);
+  });
 
   return {
     mainPanelMode,
