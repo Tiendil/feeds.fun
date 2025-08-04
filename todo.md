@@ -4,6 +4,8 @@
 - [ ] News view settings
 - [ ] Rules view settings
 - [ ] Feeds view settings
+- [ ] save showSidebar
+- [ ] showSidebarPoint is broken?
 - [ ] Public collections view for authenticated users
 - [ ] Public collections view for anonymous users should work correctly
 - [ ] Somehow we should save default settings for new users to see them in the analytics
