@@ -58,9 +58,18 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     });
   }
 
+  var anonymousSettingsOverrides = ref({});
+
   function backendSettings(kind, validator, defaultValue) {
     return computed({
       get() {
+        if (!globalState.isLoggedIn) {
+          if (kind in anonymousSettingsOverrides.value) {
+            return anonymousSettingsOverrides.value[kind];
+          }
+          return defaultValue;
+        }
+
         if (!userSettings.value) {
           return null;
         }
@@ -76,10 +85,16 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
       },
 
       async set(newValue) {
+
+        if (!globalState.isLoggedIn) {
+          anonymousSettingsOverrides.value[kind] = newValue;
+          return;
+        }
+
         userSettings.value[kind].value = newValue;
         backgroundSetUserSetting(kind, newValue);
 
-        // TODO: does we need it here?
+        // TODO: do we need it here?
         updateDataVersion();
       }
     });
