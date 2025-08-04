@@ -1,11 +1,11 @@
 
-- [ ] switch front filter settings from local store to backend `/api/get-user-settings`
-- [ ] save settings on the back
-- [ ] News view settings
-- [ ] Rules view settings
-- [ ] Feeds view settings
-- [ ] save showSidebar
-- [ ] showSidebarPoint is broken?
+- [x] switch front filter settings from local store to backend `/api/get-user-settings`
+- [x] save settings on the back
+- [x] News view settings
+- [x] Rules view settings
+- [x] Feeds view settings
+- [x] save showSidebar
+- [x] showSidebarPoint is broken?
 - [ ] Public collections view for authenticated users
 - [ ] Public collections view for anonymous users should work correctly
 - [ ] Somehow we should save default settings for new users to see them in the analytics
