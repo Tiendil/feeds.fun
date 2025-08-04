@@ -9,3 +9,4 @@
 - [ ] Somehow we should save default settings for new users to see them in the analytics
 - [ ] Correct universal behaviour for the case when we changed values in the frontend and the back now returns incorrect values
 - [ ] User settings API returns names for settings, do we need them?
+- [ ] Check GUI & news loading behaviour when user settings are not loded — all should be paused
