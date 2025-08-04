@@ -35,6 +35,8 @@ class UserSetting(enum.IntEnum):
 
     view_rules_order = 18
 
+    show_sidebar = 19
+
 
 user_settings.add(
     Value(
@@ -192,5 +194,15 @@ user_settings.add(
         name="Rules order",
         type=types.String(),
         default="",
+    )
+)
+
+
+user_settings.add(
+    Value(
+        key=UserSetting.show_sidebar,
+        name="Show sidebar",
+        type=types.Boolean(),
+        default=True,
     )
 )

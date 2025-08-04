@@ -196,6 +196,8 @@ class UserSettingKind(enum.StrEnum):
 
     view_rules_order = "view_rules_order"
 
+    show_sidebar = "show_sidebar"
+
     @classmethod
     def from_internal(cls, kind: int) -> "UserSettingKind":
         from ffun.application.user_settings import UserSetting

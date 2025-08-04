@@ -14,8 +14,6 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   // General
   const mainPanelMode = ref(e.MainPanelMode.Entries);
   const dataVersion = ref(0);
-  const showSidebar = ref(true);
-  const showSidebarPoint = ref(false);
 
   function updateDataVersion() {
     dataVersion.value++;
@@ -141,6 +139,13 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   ////////////////////////
 
   const rulesOrder = enumBackendSettings("view_rules_order", e.RulesOrderProperties);
+
+  ///////////////////
+  // Sidebar settings
+  ///////////////////
+
+  const showSidebar = boolBackendSettings("show_sidebar", true);
+  const showSidebarPoint = ref(false);
 
   return {
     mainPanelMode,

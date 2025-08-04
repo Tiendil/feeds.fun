@@ -5,7 +5,7 @@
     :title="title"
     @click.prevent="onClick">
     <icon
-      v-if="globalSettings.showSidebar"
+      v-if="showSidebar"
       icon="sidebar-left-collapse"
       size="large" />
     <icon
@@ -40,8 +40,12 @@
     return globalSettings.showSidebar ? "Hide sidebar" : "Show sidebar";
   });
 
+  const showSidebar = computed(() => {
+    return globalSettings.showSidebar || !globalSettings.userSettingsPresent;
+  });
+
   const showPoint = computed(() => {
-    return !globalSettings.showSidebar && globalSettings.showSidebarPoint;
+    return !showSidebar.value && globalSettings.showSidebarPoint;
   });
 
   function onClick() {
