@@ -96,57 +96,51 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     );
   }
 
+  function enumBackendSettings(kind, enumProperties) {
+    const defaultEntry = _.find(
+      [...enumProperties],
+      ([, prop]) => prop.default
+    );
+
+    if (!defaultEntry) {
+      throw new Error(`No default entry found for enum "${kind}"`);
+    }
+
+    let defaultValue = defaultEntry[0];
+
+    return backendSettings(
+      kind,
+      (rawValue) => { return enumProperties.has(rawValue); },
+      defaultValue
+    );
+  }
+
   ///////////////////////
   // News filter settings
   ///////////////////////
 
-  const lastEntriesPeriod = backendSettings(
-    "view_news_filter_interval",
-    (rawValue) => { return _.findKey(e.LastEntriesPeriod, (value) => value === rawValue); },
-    e.LastEntriesPeriod.Day3
-  );
-
-  const entriesOrder = backendSettings(
-    "view_news_filter_sort_by",
-    (rawValue) => { return _.findKey(e.EntriesOrder, (value) => value === rawValue); },
-    e.EntriesOrder.Score
-  );
-
-  const minTagCount = backendSettings(
-    "view_news_filter_min_tags_count",
-    (rawValue) => { return _.findKey(e.MinNewsTagCount, (value) => value === rawValue); },
-    e.MinNewsTagCount.Two
-  );
+  const lastEntriesPeriod = enumBackendSettings("view_news_filter_interval", e.LastEntriesPeriodProperties);
+  const entriesOrder = enumBackendSettings("view_news_filter_sort_by", e.EntriesOrderProperties);
+  const minTagCount = enumBackendSettings("view_news_filter_min_tags_count", e.MinNewsTagCountProperties);
+  const showRead = boolBackendSettings("view_news_filter_show_read", true);
 
   const entriesOrderProperties = computed(() => {
     return e.EntriesOrderProperties.get(entriesOrder.value);
   });
-
-  const showRead = boolBackendSettings("view_news_filter_show_read", true);
 
   ////////////////////////
   // Feeds filter settings
   ////////////////////////
 
   const showFeedsDescriptions = boolBackendSettings("view_feeds_show_feed_descriptions", true);
-
-  const feedsOrder = backendSettings(
-    "view_feeds_feed_order",
-    (rawValue) => { return _.findKey(e.FeedsOrder, (value) => value === rawValue); },
-    e.FeedsOrder.Title
-  );
-
+  const feedsOrder = enumBackendSettings("view_feeds_feed_order", e.FeedsOrderProperties);
   const failedFeedsFirst = boolBackendSettings("view_feeds_failed_feeds_first", false);
 
   ////////////////////////
   // Rules filter settings
   ////////////////////////
 
-  const rulesOrder = backendSettings(
-    "view_rules_order",
-    (rawValue) => { return _.findKey(e.RulesOrder, (value) => value === rawValue); },
-    e.RulesOrder.Tags
-  );
+  const rulesOrder = enumBackendSettings("view_rules_order", e.RulesOrderProperties);
 
   return {
     mainPanelMode,
