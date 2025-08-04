@@ -72,16 +72,12 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     return computed({
       get() {
         if (!userSettings.value) {
-          // TODO: should we return null here?
-          //       currently the "null" value causes warning on ConfigSelector.vue
-          return "";
+          return null;
         }
 
         const setting = userSettings.value[kind];
 
         if (!validator(setting.value)) {
-          // initiate async API call to set default value
-          // TODO: is it ok?
           backgroundSetUserSetting(kind, defaultValue);
           return defaultValue;
         }

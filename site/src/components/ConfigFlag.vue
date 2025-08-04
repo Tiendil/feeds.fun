@@ -2,13 +2,18 @@
   <button
     class="ffun-config-flag"
     @click="emit('update:flag', !flag)">
-    <span v-if="flag">{{ offText }}</span>
+    <span v-if="!flagDefined">&nbsp;</span>
+    <span v-else-if="flag">{{ offText }}</span>
     <span v-else>{{ onText }}</span>
   </button>
 </template>
 
 <script setup lang="ts">
-  defineProps<{flag: boolean; onText: string; offText: string}>();
+import {computed} from "vue";
+
+const properties = defineProps<{flag: boolean|null; onText: string; offText: string}>();
+
+const flagDefined = computed(() => properties.flag !== null && properties.flag !== undefined);
 
   const emit = defineEmits(["update:flag"]);
 </script>

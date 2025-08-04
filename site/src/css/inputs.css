@@ -35,7 +35,7 @@
   }
 
   .ffun-config-flag {
-    @apply ffun-x-input-common px-2 py-0;
+    @apply ffun-x-input-common px-2 py-0 w-8;
   }
 
   .ffun-input {
