@@ -17,12 +17,6 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   const showSidebar = ref(true);
   const showSidebarPoint = ref(false);
 
-  // Entries
-  // const lastEntriesPeriod = ref(e.LastEntriesPeriod.Day3);
-  // const entriesOrder = ref(e.EntriesOrder.Score);
-  // const minTagCount = ref(e.MinNewsTagCount.Two);
-  const showRead = ref(true);
-
   // Feeds
   const showFeedsDescriptions = ref(true);
   const feedsOrder = ref(e.FeedsOrder.Title);
@@ -35,7 +29,22 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     dataVersion.value++;
   }
 
-  // backend side settings
+  // TODO: do we need this data after all refactorings with user settings?
+  const info = computedAsync(async () => {
+    if (!globalState.isLoggedIn) {
+      return null;
+    }
+
+    // force refresh
+    dataVersion.value;
+
+    return await api.getInfo();
+  }, null);
+
+  ///////////////////////////////////////////////////////////
+  // Functionality for interaction with backend side settings
+  ///////////////////////////////////////////////////////////
+
   const userSettings = computedAsync(async () => {
     if (!globalState.isLoggedIn) {
       // TODO: return default settings?
@@ -52,17 +61,6 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   const userSettingsPresent = computed(() => {
     return userSettings.value !== null && userSettings.value !== undefined;
   });
-
-  const info = computedAsync(async () => {
-    if (!globalState.isLoggedIn) {
-      return null;
-    }
-
-    // force refresh
-    dataVersion.value;
-
-    return await api.getInfo();
-  }, null);
 
   function backgroundSetUserSetting(kind, value) {
     api.setUserSetting({kind: kind, value: value}).catch((error) => {
@@ -102,7 +100,10 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
   }
 
+  ///////////////////////
   // News filter settings
+  ///////////////////////
+
   const lastEntriesPeriod = backendSettings(
     "view_news_filter_interval",
     (rawValue) => { return _.findKey(e.LastEntriesPeriod, (value) => value === rawValue); },
@@ -124,6 +125,12 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   const entriesOrderProperties = computed(() => {
     return e.EntriesOrderProperties.get(entriesOrder.value);
   });
+
+  const showRead = backendSettings(
+        "view_news_filter_show_read",
+        (rawValue) => { return typeof rawValue === "boolean"; },
+        true
+  );
 
   return {
     mainPanelMode,
