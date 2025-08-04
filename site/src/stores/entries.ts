@@ -58,6 +58,12 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   // we'll break News view sorting and confuse users
   // => we hardcode specific order properties for PublicCollection mode
   const activeOrderProperties = computed(() => {
+    if (!globalSettings.userSettingsPresent) {
+      // We can not load or process entries until user settings are loaded
+      // => Return most general order
+      return e.EntriesOrderProperties.get(e.EntriesOrder.Published) as unknown as e.EntriesOrderProperty;
+    }
+
     if (mode.value === null) {
       // Return most general order for the case when mode is not set yet
       return e.EntriesOrderProperties.get(e.EntriesOrder.Published) as unknown as e.EntriesOrderProperty;
@@ -139,6 +145,11 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }
 
   const loadedEntriesReport = computedAsync(async () => {
+    if (!globalSettings.userSettingsPresent) {
+      // we can not load or process entries until user settings are loaded
+      return [];
+    }
+
     // force refresh
     globalSettings.dataVersion;
 
@@ -164,6 +175,11 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }, null);
 
   const _sortedEntries = computed(() => {
+    if (!globalSettings.userSettingsPresent) {
+      // we can not load or process entries until user settings are loaded
+      return [];
+    }
+
     if (loadedEntriesReport.value === null) {
       return [];
     }

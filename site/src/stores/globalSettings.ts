@@ -38,6 +38,8 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   // backend side settings
   const userSettings = computedAsync(async () => {
     if (!globalState.isLoggedIn) {
+      // TODO: return default settings?
+      //       but how to form them?
       return null;
     }
 
@@ -46,6 +48,10 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
     return await api.getUserSettings();
   }, null);
+
+  const userSettingsPresent = computed(() => {
+    return userSettings.value !== null && userSettings.value !== undefined;
+  });
 
   const info = computedAsync(async () => {
     if (!globalState.isLoggedIn) {
@@ -130,6 +136,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     updateDataVersion,
     showFeedsDescriptions,
     userSettings,
+    userSettingsPresent,
     info,
     feedsOrder,
     failedFeedsFirst,
