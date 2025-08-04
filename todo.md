@@ -1,0 +1,10 @@
+
+- [ ] switch front filter settings from local store to backend `/api/get-user-settings`
+- [ ] save settings on the back
+- [ ] News view settings
+- [ ] Rules view settings
+- [ ] Feeds view settings
+- [ ] Public collections view for authenticated users
+- [ ] Public collections view for anonymous users should work correctly
+- [ ] Somehow we should save default settings for new users to see them in the analytics
+- [ ] Correct universal behaviour for the case when we changed values in the frontend and the back now returns incorrect values

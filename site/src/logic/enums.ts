@@ -83,7 +83,7 @@ export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, LastEntrie
 export enum EntriesOrder {
   Score = "score",
   ScoreToZero = "score-to-zero",
-  ScoreBackward = "score-to-",
+  ScoreBackward = "score-backward",
   Published = "published",
   Cataloged = "cataloged"
 }
@@ -103,9 +103,9 @@ export const EntriesOrderProperties = new Map<EntriesOrder, EntriesOrderProperty
   [EntriesOrder.Cataloged, {text: "cataloged", orderField: "catalogedAt", timeField: "catalogedAt", direction: 1}]
 ]);
 
-////////////////
+/////////////////////
 // Min news tag count
-////////////////
+/////////////////////
 
 export enum MinNewsTagCount {
   One = "one",

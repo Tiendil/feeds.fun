@@ -24,6 +24,11 @@ class UserSetting(enum.IntEnum):
     hide_message_about_adding_collections = 9
     hide_message_check_your_feed_urls = 10
 
+    view_news_filter_interval = 11
+    view_news_filter_sort_by = 12
+    view_news_filter_min_tags_count = 13
+    view_news_filter_show_read = 14
+
 
 user_settings.add(
     Value(
@@ -101,5 +106,45 @@ user_settings.add(
         name="Hide message about checking your feed URLs",
         type=types.Boolean(),
         default=False,
+    )
+)
+
+
+user_settings.add(
+    Value(
+        key=UserSetting.view_news_filter_interval,
+        name="Time interval for news filter",
+        type=types.String(),
+        default=""
+    )
+)
+
+
+user_settings.add(
+    Value(
+        key=UserSetting.view_news_filter_sort_by,
+        name="Sort type for news filter",
+        type=types.String(),
+        default=""
+    )
+)
+
+
+user_settings.add(
+    Value(
+        key=UserSetting.view_news_filter_min_tags_count,
+        name="Min tags count for news filter",
+        type=types.String(),
+        default=""
+    )
+)
+
+
+user_settings.add(
+    Value(
+        key=UserSetting.view_news_filter_show_read,
+        name="Show read tags for news filter",
+        type=types.Boolean(),
+        default=True,
     )
 )
