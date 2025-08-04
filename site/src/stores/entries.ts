@@ -52,22 +52,22 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     globalSettings.updateDataVersion();
   }
 
+  const readyToLoadNews = computed(() => {
+    return (globalSettings.userSettingsPresent || !globalState.isLoggedIn) && mode.value !== null;
+  });
+
   // Public collections uses fixed sorting order
   // News uses dynamic sorting order and should keep it between switching views
   // So, if we set globalSettings.entriesOrderProperties in PublicCollection view
   // we'll break News view sorting and confuse users
   // => we hardcode specific order properties for PublicCollection mode
   const activeOrderProperties = computed(() => {
-    if (!globalSettings.userSettingsPresent) {
-      // We can not load or process entries until user settings are loaded
+    if (!readyToLoadNews.value) {
+      // We can not load or process entries until everything is ready
       // => Return most general order
       return e.EntriesOrderProperties.get(e.EntriesOrder.Published) as unknown as e.EntriesOrderProperty;
     }
 
-    if (mode.value === null) {
-      // Return most general order for the case when mode is not set yet
-      return e.EntriesOrderProperties.get(e.EntriesOrder.Published) as unknown as e.EntriesOrderProperty;
-    }
 
     if (mode.value == Mode.News) {
       // use saved order mode for News view
@@ -145,18 +145,12 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }
 
   const loadedEntriesReport = computedAsync(async () => {
-    if (!globalSettings.userSettingsPresent) {
-      // we can not load or process entries until user settings are loaded
-      return [];
+    if (!readyToLoadNews.value) {
+      return null;
     }
 
     // force refresh
     globalSettings.dataVersion;
-
-    if (mode.value === null) {
-      // Do nothing until the mode is set
-      return null;
-    }
 
     const loadedEntries = await loadEntriesAccordingToMode();
 
@@ -175,8 +169,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }, null);
 
   const _sortedEntries = computed(() => {
-    if (!globalSettings.userSettingsPresent) {
-      // we can not load or process entries until user settings are loaded
+    if (!readyToLoadNews.value) {
       return [];
     }
 

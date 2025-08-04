@@ -6,6 +6,7 @@
 - [x] Feeds view settings
 - [x] save showSidebar
 - [x] showSidebarPoint is broken?
+- [ ] show/hide read reset news state?
 - [ ] Public collections view for authenticated users
 - [ ] Public collections view for anonymous users should work correctly
 - [ ] Somehow we should save default settings for new users to see them in the analytics
