@@ -17,14 +17,6 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   const showSidebar = ref(true);
   const showSidebarPoint = ref(false);
 
-  // Feeds
-  const showFeedsDescriptions = ref(true);
-  const feedsOrder = ref(e.FeedsOrder.Title);
-  const failedFeedsFirst = ref(false);
-
-  // Rules
-  const rulesOrder = ref(e.RulesOrder.Tags);
-
   function updateDataVersion() {
     dataVersion.value++;
   }
@@ -126,6 +118,38 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
         "view_news_filter_show_read",
         (rawValue) => { return typeof rawValue === "boolean"; },
         true
+  );
+
+  ////////////////////////
+  // Feeds filter settings
+  ////////////////////////
+
+  const showFeedsDescriptions = backendSettings(
+    "view_feeds_show_feed_descriptions",
+    (rawValue) => { return typeof rawValue === "boolean"; },
+    true
+  );
+
+  const feedsOrder = backendSettings(
+    "view_feeds_feed_order",
+    (rawValue) => { return _.findKey(e.FeedsOrder, (value) => value === rawValue); },
+    e.FeedsOrder.Title
+  );
+
+  const failedFeedsFirst = backendSettings(
+    "view_feeds_failed_feeds_first",
+    (rawValue) => { return typeof rawValue === "boolean"; },
+    false
+  );
+
+  ////////////////////////
+  // Rules filter settings
+  ////////////////////////
+
+  const rulesOrder = backendSettings(
+    "view_rules_order",
+    (rawValue) => { return _.findKey(e.RulesOrder, (value) => value === rawValue); },
+    e.RulesOrder.Tags
   );
 
   return {

@@ -29,6 +29,12 @@ class UserSetting(enum.IntEnum):
     view_news_filter_min_tags_count = 13
     view_news_filter_show_read = 14
 
+    view_feeds_show_feed_descriptions = 15
+    view_feeds_feed_order = 16
+    view_feeds_failed_feeds_first = 17
+
+    view_rules_order = 18
+
 
 user_settings.add(
     Value(
@@ -146,5 +152,45 @@ user_settings.add(
         name="Show read tags for news filter",
         type=types.Boolean(),
         default=True,
+    )
+)
+
+
+user_settings.add(
+    Value(
+        key=UserSetting.view_feeds_show_feed_descriptions,
+        name="Show feed descriptions",
+        type=types.Boolean(),
+        default=True,
+    )
+)
+
+
+user_settings.add(
+    Value(
+        key=UserSetting.view_feeds_feed_order,
+        name="Feeds order",
+        type=types.String(),
+        default="",
+    )
+)
+
+
+user_settings.add(
+    Value(
+        key=UserSetting.view_feeds_failed_feeds_first,
+        name="Show failed feeds first",
+        type=types.Boolean(),
+        default=False,
+    )
+)
+
+
+user_settings.add(
+    Value(
+        key=UserSetting.view_rules_order,
+        name="Rules order",
+        type=types.String(),
+        default="",
     )
 )

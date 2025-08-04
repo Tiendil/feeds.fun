@@ -190,6 +190,12 @@ class UserSettingKind(enum.StrEnum):
     view_news_filter_min_tags_count = "view_news_filter_min_tags_count"
     view_news_filter_show_read = "view_news_filter_show_read"
 
+    view_feeds_show_feed_descriptions = "view_feeds_show_feed_descriptions"
+    view_feeds_feed_order = "view_feeds_feed_order"
+    view_feeds_failed_feeds_first = "view_feeds_failed_feeds_first"
+
+    view_rules_order = "view_rules_order"
+
     @classmethod
     def from_internal(cls, kind: int) -> "UserSettingKind":
         from ffun.application.user_settings import UserSetting
