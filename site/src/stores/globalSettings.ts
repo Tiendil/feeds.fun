@@ -1,3 +1,4 @@
+import _ from "lodash";
 import {ref, computed} from "vue";
 import {defineStore} from "pinia";
 import {computedAsync} from "@vueuse/core";
@@ -5,6 +6,7 @@ import {useGlobalState} from "@/stores/globalState";
 
 import * as e from "@/logic/enums";
 import * as api from "@/logic/api";
+
 
 export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   const globalState = useGlobalState();
@@ -16,7 +18,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   const showSidebarPoint = ref(false);
 
   // Entries
-  const lastEntriesPeriod = ref(e.LastEntriesPeriod.Day3);
+  // const lastEntriesPeriod = ref(e.LastEntriesPeriod.Day3);
   const entriesOrder = ref(e.EntriesOrder.Score);
   const minTagCount = ref(e.MinNewsTagCount.Two);
   const showRead = ref(true);
@@ -59,6 +61,45 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
     return await api.getInfo();
   }, null);
+
+  function backendSettings(kind, decoder, encoder) {
+    return computed({
+      get() {
+        if (!userSettings.value) {
+          // TODO: should we return null here?
+          //       currently the "null" value causes warning on ConfigSelector.vue
+          return "";
+        }
+
+        const setting = userSettings.value[kind];
+
+        return decoder(setting.value);
+      },
+
+      async set(newValue) {
+        userSettings.value[kind].value = newValue;
+
+        await api.setUserSetting({kind: kind, value: encoder(newValue)});
+
+        // TODO: does we need it here?
+        updateDataVersion();
+      }
+    });
+
+  }
+
+  const lastEntriesPeriod = backendSettings(
+    "view_news_filter_interval",
+    (rawValue) => {
+      if (_.findKey(e.LastEntriesPeriod, (value) => value === rawValue)) {
+        return rawValue;
+      }
+
+      return e.LastEntriesPeriod.Day3;
+    },
+    (value) => value,
+    e.LastEntriesPeriod.Day3
+  );
 
   return {
     mainPanelMode,
