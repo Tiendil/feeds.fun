@@ -62,7 +62,13 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     return await api.getInfo();
   }, null);
 
-  function backendSettings(kind, decoder, encoder) {
+  function backgroundSetUserSetting(kind, value) {
+    api.setUserSetting({kind: kind, value: value}).catch((error) => {
+      console.error(`Error in API call setUserSetting for kind "${kind}":`, error);
+    });
+  }
+
+  function backendSettings(kind, validator, defaultValue) {
     return computed({
       get() {
         if (!userSettings.value) {
@@ -73,13 +79,19 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
         const setting = userSettings.value[kind];
 
-        return decoder(setting.value);
+        if (!validator(setting.value)) {
+          // initiate async API call to set default value
+          // TODO: is it ok?
+          backgroundSetUserSetting(kind, defaultValue);
+          return defaultValue;
+        }
+
+        return setting.value;
       },
 
       async set(newValue) {
         userSettings.value[kind].value = newValue;
-
-        await api.setUserSetting({kind: kind, value: encoder(newValue)});
+        backgroundSetUserSetting(kind, newValue);
 
         // TODO: does we need it here?
         updateDataVersion();
@@ -90,14 +102,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
   const lastEntriesPeriod = backendSettings(
     "view_news_filter_interval",
-    (rawValue) => {
-      if (_.findKey(e.LastEntriesPeriod, (value) => value === rawValue)) {
-        return rawValue;
-      }
-
-      return e.LastEntriesPeriod.Day3;
-    },
-    (value) => value,
+    (rawValue) => { return _.findKey(e.LastEntriesPeriod, (value) => value === rawValue); },
     e.LastEntriesPeriod.Day3
   );
 

@@ -13,3 +13,4 @@
 - [ ] refactor UserSettings.vue to use functions from globalSettings to update settings
 - [ ] refactor all other components to use globalSettings functions to update settings
 - [ ] close TODOs
+- [ ] check interface behaviour for the new user
