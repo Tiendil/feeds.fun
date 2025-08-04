@@ -16,3 +16,4 @@
 - [ ] check interface behaviour for the new user
 - [ ] periodically load user settings from the backend to be in sync with other devices?
 - [ ] check version of the frontend and force reload if it is outdated?
+- [ ] set_user_settings causes get_user_settings
