@@ -19,7 +19,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     dataVersion.value++;
   }
 
-  // TODO: do we need this data after all refactorings with user settings?
+  // TODO: We may want to remove this API and move user_id to the user settings API
   const info = computedAsync(async () => {
     if (!globalState.isLoggedIn) {
       return null;

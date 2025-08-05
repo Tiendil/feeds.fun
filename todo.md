@@ -15,7 +15,7 @@
 - [x] Check GUI & news loading behaviour when user settings are not loded — all should be paused
 - [x] refactor UserSettings.vue to use functions from globalSettings to update settings
 - [x] refactor all other components to use globalSettings functions to update settings
-- [ ] close TODOs
+- [x] close TODOs
 - [x] check interface behaviour for the new user
 - [ ] periodically load user settings from the backend to be in sync with other devices?
 - [ ] check version of the frontend and force reload if it is outdated?
