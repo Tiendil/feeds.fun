@@ -130,7 +130,7 @@
       class="ffun-info-bad">
       <button
         @click.prevent="removeAccount()"
-        class="ffun-form-button bad short ml-1"
+        class="ffun-form-button bad short pl-0"
         >Remove Account</button
       >
 
