@@ -13,10 +13,10 @@
 - [x] Correct universal behaviour for the case when we changed values in the frontend and the back now returns incorrect values
 - [x] User settings API returns names for settings, do we need them?
 - [x] Check GUI & news loading behaviour when user settings are not loded — all should be paused
-- [ ] refactor UserSettings.vue to use functions from globalSettings to update settings
-- [ ] refactor all other components to use globalSettings functions to update settings
+- [x] refactor UserSettings.vue to use functions from globalSettings to update settings
+- [x] refactor all other components to use globalSettings functions to update settings
 - [ ] close TODOs
-- [ ] check interface behaviour for the new user
+- [x] check interface behaviour for the new user
 - [ ] periodically load user settings from the backend to be in sync with other devices?
 - [ ] check version of the frontend and force reload if it is outdated?
 - [ ] set_user_settings causes get_user_settings
