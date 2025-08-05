@@ -35,7 +35,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   // Functionality for interaction with backend side settings
   ///////////////////////////////////////////////////////////
 
-  const userSettings = computedAsync(async () => {
+  const _userSettings = computedAsync(async () => {
     if (!globalState.isLoggedIn) {
       return null;
     }
@@ -50,10 +50,34 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   }, null);
 
   const userSettingsPresent = computed(() => {
-    return userSettings.value !== null && userSettings.value !== undefined;
+    return _userSettings.value !== null && _userSettings.value !== undefined;
   });
 
-  function backgroundSetUserSetting(kind, value) {
+  function userSettingInfo(kind) {
+    return computed(() => {
+      if (!_userSettings.value || !(kind in _userSettings.value)) {
+        return null;
+      }
+
+      const setting = _userSettings.value[kind];
+
+      let value = setting.value;
+
+      if (kind in settingsOverrides.value) {
+        value = settingsOverrides.value[kind];
+      }
+
+      return {
+        kind: setting.kind,
+        name: setting.name,
+        type: setting.type,
+        value: value,
+      };
+    });
+  }
+
+
+  function _backgroundSetUserSetting(kind, value) {
     api.setUserSetting({kind: kind, value: value}).catch((error) => {
       console.error(`Error in API call setUserSetting for kind "${kind}":`, error);
     });
@@ -66,6 +90,23 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   //   of (re)loading data from the backend.
   var settingsOverrides = ref({});
 
+  function setUserSettings(kind, newValue) {
+    settingsOverrides.value[kind] = newValue;
+
+    if (globalState.isLoggedIn) {
+      _backgroundSetUserSetting(kind, newValue);
+    }
+
+    if (_userSettings.value) {
+      _userSettings.value[kind].value = newValue;
+    }
+
+    // We do not call updateDataVersion() here
+    // Because it causes request of the user settings from the backen
+    // which is not required
+    // All reactive code should be triggered by changes in settingsOverrides
+  }
+
   function backendSettings(kind, validator, defaultValue) {
     return computed({
       get() {
@@ -77,36 +118,22 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
           return defaultValue;
         }
 
-        if (!userSettings.value) {
+        if (!_userSettings.value) {
           return null;
         }
 
-        const setting = userSettings.value[kind];
+        const setting = _userSettings.value[kind];
 
         if (!validator(setting.value)) {
-          backgroundSetUserSetting(kind, defaultValue);
+          _backgroundSetUserSetting(kind, defaultValue);
           return defaultValue;
         }
 
         return setting.value;
       },
 
-      async set(newValue) {
-
-        settingsOverrides.value[kind] = newValue;
-
-        if (globalState.isLoggedIn) {
-          backgroundSetUserSetting(kind, newValue);
-        }
-
-        if (userSettings.value) {
-          userSettings.value[kind].value = newValue;
-        }
-
-        // We do not call updateDataVersion() here
-        // Because it causes request of the user settings from the backen
-        // which is not required
-        // All reactive code should be triggered by changes in settingsOverrides
+      set(newValue) {
+        setUserSettings(kind, newValue);
       }
     });
 
@@ -173,6 +200,20 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   const showSidebar = boolBackendSettings("show_sidebar", true);
   const showSidebarPoint = ref(false);
 
+  ////////////////
+  // User settings
+  ////////////////
+
+  const hide_message_about_setting_up_key = userSettingInfo("hide_message_about_setting_up_key");
+  const hide_message_about_adding_collections = userSettingInfo("hide_message_about_adding_collections");
+  const hide_message_check_your_feed_urls = userSettingInfo("hide_message_check_your_feed_urls");
+
+  const openai_api_key = userSettingInfo("openai_api_key");
+  const gemini_api_key = userSettingInfo("gemini_api_key");
+
+  const max_tokens_cost_in_month = userSettingInfo("max_tokens_cost_in_month");
+  const process_entries_not_older_than = userSettingInfo("process_entries_not_older_than");
+
   return {
     mainPanelMode,
     lastEntriesPeriod,
@@ -183,13 +224,23 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     dataVersion,
     updateDataVersion,
     showFeedsDescriptions,
-    userSettings,
     userSettingsPresent,
     info,
     feedsOrder,
     failedFeedsFirst,
     rulesOrder,
     showSidebar,
-    showSidebarPoint
+    showSidebarPoint,
+    setUserSettings,
+
+    hide_message_about_setting_up_key,
+    hide_message_about_adding_collections,
+    hide_message_check_your_feed_urls,
+
+    openai_api_key,
+    gemini_api_key,
+
+    max_tokens_cost_in_month,
+    process_entries_not_older_than
   };
 });

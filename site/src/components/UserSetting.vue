@@ -68,11 +68,11 @@
       return null;
     }
 
-    if (globalSettings.userSettings === null) {
+    if (!globalSettings.userSettingsPresent) {
       return null;
     }
 
-    return globalSettings.userSettings[properties.kind];
+    return globalSettings[properties.kind];
   });
 
   const verboseValue = computed(() => {
@@ -98,13 +98,13 @@
     return v;
   });
 
-  async function save() {
+  function save() {
     if (value.value === null) {
       return;
     }
 
-    await api.setUserSetting({kind: properties.kind, value: value.value});
-    globalSettings.updateDataVersion();
+    globalSettings.setUserSettings(properties.kind, value.value);
+
     editing.value = false;
   }
 

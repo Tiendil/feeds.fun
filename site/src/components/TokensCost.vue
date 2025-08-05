@@ -29,11 +29,11 @@
   const k = 2;
 
   const percents = computed(() => {
-    if (globalSettings.userSettings == null) {
+    if (!globalSettings.userSettingsPresent) {
       return "—";
     }
 
-    const setting = globalSettings.userSettings["max_tokens_cost_in_month"];
+    const setting = globalSettings.max_tokens_cost_in_month;
 
     if (!setting) {
       return "—";

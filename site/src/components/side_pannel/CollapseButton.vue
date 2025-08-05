@@ -45,7 +45,6 @@
   });
 
 const showPoint = computed(() => {
-  console.log("showPoint", showSidebar.value, globalSettings.showSidebarPoint, !showSidebar.value && globalSettings.showSidebarPoint);
     return !showSidebar.value && globalSettings.showSidebarPoint;
   });
 

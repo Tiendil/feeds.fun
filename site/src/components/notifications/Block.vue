@@ -27,18 +27,18 @@
 
   const showApiKeyMessage = computed(() => {
     return (
-      globalSettings.userSettings &&
-      !globalSettings.userSettings.openai_api_key.value &&
-      !globalSettings.userSettings.gemini_api_key.value &&
-      !globalSettings.userSettings.hide_message_about_setting_up_key.value
+      globalSettings.userSettingsPresent &&
+      !globalSettings.openai_api_key.value &&
+      !globalSettings.gemini_api_key.value &&
+      !globalSettings.hide_message_about_setting_up_key.value
     );
   });
 
   const showCollectionsNotification = computed(() => {
     return (
       properties.collectionsNotification_ &&
-      globalSettings.userSettings &&
-      !globalSettings.userSettings.hide_message_about_adding_collections.value &&
+      globalSettings.userSettingsPresent &&
+      !globalSettings.hide_message_about_adding_collections.value &&
       !tagsStates?.value.hasSelectedTags &&
       settings.hasCollections
     );
@@ -61,8 +61,8 @@
     return (
       properties.collectionsWarning_ &&
       !showCollectionsNotification.value &&
-      globalSettings.userSettings &&
-      !globalSettings.userSettings.hide_message_check_your_feed_urls.value
+      globalSettings.userSettingsPresent &&
+      !globalSettings.hide_message_check_your_feed_urls.value
     );
   });
 </script>
