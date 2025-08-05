@@ -7,12 +7,12 @@
 - [x] save showSidebar
 - [x] showSidebarPoint is broken?
 - [x] show/hide read reset news state?
-- [ ] Public collections view for authenticated users
-- [ ] Public collections view for anonymous users should work correctly
-- [ ] Somehow we should save default settings for new users to see them in the analytics
-- [ ] Correct universal behaviour for the case when we changed values in the frontend and the back now returns incorrect values
-- [ ] User settings API returns names for settings, do we need them?
-- [ ] Check GUI & news loading behaviour when user settings are not loded — all should be paused
+- [x] Public collections view for authenticated users
+- [x] Public collections view for anonymous users should work correctly
+- [x] Somehow we should save default settings for new users to see them in the analytics
+- [x] Correct universal behaviour for the case when we changed values in the frontend and the back now returns incorrect values
+- [x] User settings API returns names for settings, do we need them?
+- [x] Check GUI & news loading behaviour when user settings are not loded — all should be paused
 - [ ] refactor UserSettings.vue to use functions from globalSettings to update settings
 - [ ] refactor all other components to use globalSettings functions to update settings
 - [ ] close TODOs
@@ -21,3 +21,4 @@
 - [ ] check version of the frontend and force reload if it is outdated?
 - [ ] set_user_settings causes get_user_settings
 - [ ] types for the frontend
+- [ ] what to do with spam of settings savings for the new accounts?
