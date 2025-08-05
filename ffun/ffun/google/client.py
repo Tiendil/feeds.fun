@@ -107,7 +107,7 @@ class Client:
 
         # Gemini API sometimes does not return `candidatesTokenCount`
         # we log such cases
-        if 'candidatesTokenCount' not in response_data["usageMetadata"]:
+        if "candidatesTokenCount" not in response_data["usageMetadata"]:
             logger.warning(
                 "gemini_api_missing_candidates_token_count",
                 response=response_data,
