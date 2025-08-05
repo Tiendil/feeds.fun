@@ -86,7 +86,7 @@
 
     <notifications-loaded-old-news
       :entries="entriesStore.loadedEntriesReport || []"
-      :period="e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod)" />
+      :period="e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod as any)" />
 
     <entries-list
       :loading="entriesStore.loading"

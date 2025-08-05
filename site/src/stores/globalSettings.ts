@@ -5,6 +5,7 @@ import {computedAsync} from "@vueuse/core";
 import {useGlobalState} from "@/stores/globalState";
 
 import * as e from "@/logic/enums";
+import * as t from "@/logic/types";
 import * as api from "@/logic/api";
 
 export const useGlobalSettingsStore = defineStore("globalSettings", () => {
@@ -52,7 +53,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     return _userSettings.value !== null && _userSettings.value !== undefined;
   });
 
-  function userSettingInfo(kind) {
+  function userSettingInfo(kind: string) {
     return computed(() => {
       if (!_userSettings.value || !(kind in _userSettings.value)) {
         return null;
@@ -71,11 +72,11 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
         name: setting.name,
         type: setting.type,
         value: value
-      };
+      } as t.UserSetting;
     });
   }
 
-  function _backgroundSetUserSetting(kind, value) {
+  function _backgroundSetUserSetting(kind: string, value: t.UserSettingsValue) {
     api.setUserSetting({kind: kind, value: value}).catch((error) => {
       console.error(`Error in API call setUserSetting for kind "${kind}":`, error);
     });
@@ -86,9 +87,9 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   // - To close fast reactive loop after calling backendSettings.set.
   //   Without this, setting a setting will cause weired and complex chain
   //   of (re)loading data from the backend.
-  var settingsOverrides = ref({});
+  var settingsOverrides = ref<{[key in keyof any]: t.UserSettingsValue}>({});
 
-  function setUserSettings(kind, newValue) {
+  function setUserSettings(kind: string, newValue: t.UserSettingsValue) {
     settingsOverrides.value[kind] = newValue;
 
     if (globalState.isLoggedIn) {
@@ -105,7 +106,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     // All reactive code should be triggered by changes in settingsOverrides
   }
 
-  function backendSettings(kind, validator, defaultValue) {
+  function backendSettings(kind: string, validator: any, defaultValue: t.UserSettingsValue) {
     return computed({
       get() {
         if (kind in settingsOverrides.value) {
@@ -131,22 +132,26 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
       },
 
       set(newValue) {
+        if (newValue === null || newValue === undefined) {
+          console.warn(`Setting "${kind}" is set to null or undefined. This is not allowed.`);
+          return;
+        }
         setUserSettings(kind, newValue);
       }
     });
   }
 
-  function boolBackendSettings(kind, defaultValue) {
+  function boolBackendSettings(kind: string, defaultValue: t.UserSettingsValue) {
     return backendSettings(
       kind,
-      (rawValue) => {
+      (rawValue: t.UserSettingsValue) => {
         return typeof rawValue === "boolean";
       },
       defaultValue
     );
   }
 
-  function enumBackendSettings(kind, enumProperties) {
+  function enumBackendSettings(kind: string, enumProperties: any) {
     const defaultEntry = _.find([...enumProperties], ([, prop]) => prop.default);
 
     if (!defaultEntry) {
@@ -157,7 +162,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
     return backendSettings(
       kind,
-      (rawValue) => {
+      (rawValue: t.UserSettingsValue) => {
         return enumProperties.has(rawValue);
       },
       defaultValue
@@ -174,7 +179,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   const showRead = boolBackendSettings("view_news_filter_show_read", true);
 
   const entriesOrderProperties = computed(() => {
-    return e.EntriesOrderProperties.get(entriesOrder.value);
+    return e.EntriesOrderProperties.get(entriesOrder.value as any);
   });
 
   ////////////////////////

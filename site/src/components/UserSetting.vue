@@ -72,7 +72,7 @@
       return null;
     }
 
-    return globalSettings[properties.kind];
+    return (globalSettings as any)[properties.kind];
   });
 
   const verboseValue = computed(() => {

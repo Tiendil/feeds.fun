@@ -80,7 +80,7 @@
       return [];
     }
 
-    const orderProperties = e.FeedsOrderProperties.get(globalSettings.feedsOrder);
+    const orderProperties = e.FeedsOrderProperties.get(globalSettings.feedsOrder as any);
 
     if (!orderProperties) {
       throw new Error(`Invalid order properties: ${globalSettings.feedsOrder}`);

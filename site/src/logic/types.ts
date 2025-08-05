@@ -358,10 +358,12 @@ export function fakeTag({uid, name, link, categories}: TagInfo): TagInfo {
   return {uid, name, link, categories};
 }
 
+export type UserSettingsValue = string | number | boolean;
+
 export type UserSetting = {
   readonly kind: string;
   readonly type: string;
-  value: string | number | boolean;
+  value: UserSettingsValue;
   readonly name: string;
 };
 
@@ -369,14 +371,12 @@ export function userSettingFromJSON({
   kind,
   type,
   value,
-  name,
-  description
+  name
 }: {
   kind: string;
   type: string;
   value: string | number | boolean;
   name: string;
-  description: string;
 }): UserSetting {
   return {
     kind,

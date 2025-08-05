@@ -111,7 +111,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }
 
   async function loadEntriesAccordingToMode() {
-    const periodProperties = e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod);
+    const periodProperties = e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod as any);
 
     if (periodProperties === undefined) {
       throw new Error(`Unknown period ${globalSettings.lastEntriesPeriod}`);
@@ -119,7 +119,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     const period = periodProperties.seconds;
 
-    const minTagCount = e.MinNewsTagCountProperties.get(globalSettings.minTagCount)?.count;
+    const minTagCount = e.MinNewsTagCountProperties.get(globalSettings.minTagCount as any)?.count;
 
     if (minTagCount === undefined) {
       throw new Error(`Unknown min tag count ${globalSettings.minTagCount}`);

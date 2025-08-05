@@ -92,7 +92,7 @@
 
     sorted = tagsStates.value.filterByTags(sorted, (rule) => rule.tags);
 
-    const orderProperties = e.RulesOrderProperties.get(globalSettings.rulesOrder);
+    const orderProperties = e.RulesOrderProperties.get(globalSettings.rulesOrder as any);
 
     if (!orderProperties) {
       throw new Error(`Invalid order properties: ${globalSettings.rulesOrder}`);

@@ -28,9 +28,9 @@
   const showApiKeyMessage = computed(() => {
     return (
       globalSettings.userSettingsPresent &&
-      !globalSettings.openai_api_key.value &&
-      !globalSettings.gemini_api_key.value &&
-      !globalSettings.hide_message_about_setting_up_key.value
+      !globalSettings.openai_api_key?.value &&
+      !globalSettings.gemini_api_key?.value &&
+      !globalSettings.hide_message_about_setting_up_key?.value
     );
   });
 
@@ -38,7 +38,7 @@
     return (
       properties.collectionsNotification_ &&
       globalSettings.userSettingsPresent &&
-      !globalSettings.hide_message_about_adding_collections.value &&
+      !globalSettings.hide_message_about_adding_collections?.value &&
       !tagsStates?.value.hasSelectedTags &&
       settings.hasCollections
     );
@@ -62,7 +62,7 @@
       properties.collectionsWarning_ &&
       !showCollectionsNotification.value &&
       globalSettings.userSettingsPresent &&
-      !globalSettings.hide_message_check_your_feed_urls.value
+      !globalSettings.hide_message_check_your_feed_urls?.value
     );
   });
 </script>
