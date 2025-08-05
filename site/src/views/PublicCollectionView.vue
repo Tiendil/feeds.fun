@@ -198,7 +198,7 @@
 
   const medianTag1: ComputedRef<string> = computed(() => {
     // do not change tag when the filter changed
-    if (tagsStates.value.hasSelectedTags) {
+    if (tagsStates.value.hasSelectedTags && medianTag1.value) {
       return medianTag1.value;
     }
 
@@ -215,7 +215,7 @@
 
   const medianTag2: ComputedRef<string> = computed(() => {
     // do not change tag when the filter changed
-    if (tagsStates.value.hasSelectedTags) {
+    if (tagsStates.value.hasSelectedTags && medianTag2.value) {
       return medianTag2.value;
     }
 
