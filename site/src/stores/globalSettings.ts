@@ -7,7 +7,6 @@ import {useGlobalState} from "@/stores/globalState";
 import * as e from "@/logic/enums";
 import * as api from "@/logic/api";
 
-
 export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   const globalState = useGlobalState();
 
@@ -71,11 +70,10 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
         kind: setting.kind,
         name: setting.name,
         type: setting.type,
-        value: value,
+        value: value
       };
     });
   }
-
 
   function _backgroundSetUserSetting(kind, value) {
     api.setUserSetting({kind: kind, value: value}).catch((error) => {
@@ -136,22 +134,20 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
         setUserSettings(kind, newValue);
       }
     });
-
   }
 
   function boolBackendSettings(kind, defaultValue) {
     return backendSettings(
       kind,
-      (rawValue) => { return typeof rawValue === "boolean"; },
+      (rawValue) => {
+        return typeof rawValue === "boolean";
+      },
       defaultValue
     );
   }
 
   function enumBackendSettings(kind, enumProperties) {
-    const defaultEntry = _.find(
-      [...enumProperties],
-      ([, prop]) => prop.default
-    );
+    const defaultEntry = _.find([...enumProperties], ([, prop]) => prop.default);
 
     if (!defaultEntry) {
       throw new Error(`No default entry found for enum "${kind}"`);
@@ -161,7 +157,9 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
     return backendSettings(
       kind,
-      (rawValue) => { return enumProperties.has(rawValue); },
+      (rawValue) => {
+        return enumProperties.has(rawValue);
+      },
       defaultValue
     );
   }

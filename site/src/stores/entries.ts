@@ -68,7 +68,6 @@ export const useEntriesStore = defineStore("entriesStore", () => {
       return e.EntriesOrderProperties.get(e.EntriesOrder.Published) as unknown as e.EntriesOrderProperty;
     }
 
-
     if (mode.value == Mode.News) {
       // use saved order mode for News view
       return globalSettings.entriesOrderProperties as unknown as e.EntriesOrderProperty;

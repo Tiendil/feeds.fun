@@ -123,18 +123,13 @@ user_settings.add(
         key=UserSetting.view_news_filter_interval,
         name="Time interval for news filter",
         type=types.String(),
-        default=""
+        default="",
     )
 )
 
 
 user_settings.add(
-    Value(
-        key=UserSetting.view_news_filter_sort_by,
-        name="Sort type for news filter",
-        type=types.String(),
-        default=""
-    )
+    Value(key=UserSetting.view_news_filter_sort_by, name="Sort type for news filter", type=types.String(), default="")
 )
 
 
@@ -143,7 +138,7 @@ user_settings.add(
         key=UserSetting.view_news_filter_min_tags_count,
         name="Min tags count for news filter",
         type=types.String(),
-        default=""
+        default="",
     )
 )
 

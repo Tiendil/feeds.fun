@@ -44,7 +44,7 @@
     return globalSettings.showSidebar || !globalSettings.userSettingsPresent;
   });
 
-const showPoint = computed(() => {
+  const showPoint = computed(() => {
     return !showSidebar.value && globalSettings.showSidebarPoint;
   });
 

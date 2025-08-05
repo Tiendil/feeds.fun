@@ -9,11 +9,11 @@
 </template>
 
 <script setup lang="ts">
-import {computed} from "vue";
+  import {computed} from "vue";
 
-const properties = defineProps<{flag: boolean|null; onText: string; offText: string}>();
+  const properties = defineProps<{flag: boolean | null; onText: string; offText: string}>();
 
-const flagDefined = computed(() => properties.flag !== null && properties.flag !== undefined);
+  const flagDefined = computed(() => properties.flag !== null && properties.flag !== undefined);
 
   const emit = defineEmits(["update:flag"]);
 </script>
