@@ -37,15 +37,16 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
   const userSettings = computedAsync(async () => {
     if (!globalState.isLoggedIn) {
-      // TODO: return default settings?
-      //       but how to form them?
       return null;
     }
 
-    // force refresh
     dataVersion.value;
 
-    return await api.getUserSettings();
+    let settings = await api.getUserSettings();
+
+    settingsOverrides.value = {};
+
+    return settings;
   }, null);
 
   const userSettingsPresent = computed(() => {
@@ -58,15 +59,21 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     });
   }
 
-  var anonymousSettingsOverrides = ref({});
+  // This dict is used for two purposes:
+  // - To store settings that anonymous user changes while using the site.
+  // - To close fast reactive loop after calling backendSettings.set.
+  //   Without this, setting a setting will cause weired and complex chain
+  //   of (re)loading data from the backend.
+  var settingsOverrides = ref({});
 
   function backendSettings(kind, validator, defaultValue) {
     return computed({
       get() {
+        if (kind in settingsOverrides.value) {
+          return settingsOverrides.value[kind];
+        }
+
         if (!globalState.isLoggedIn) {
-          if (kind in anonymousSettingsOverrides.value) {
-            return anonymousSettingsOverrides.value[kind];
-          }
           return defaultValue;
         }
 
@@ -86,16 +93,20 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
       async set(newValue) {
 
-        if (!globalState.isLoggedIn) {
-          anonymousSettingsOverrides.value[kind] = newValue;
-          return;
+        settingsOverrides.value[kind] = newValue;
+
+        if (globalState.isLoggedIn) {
+          backgroundSetUserSetting(kind, newValue);
         }
 
-        userSettings.value[kind].value = newValue;
-        backgroundSetUserSetting(kind, newValue);
+        if (userSettings.value) {
+          userSettings.value[kind].value = newValue;
+        }
 
-        // TODO: do we need it here?
-        updateDataVersion();
+        // We do not call updateDataVersion() here
+        // Because it causes request of the user settings from the backen
+        // which is not required
+        // All reactive code should be triggered by changes in settingsOverrides
       }
     });
 

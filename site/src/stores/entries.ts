@@ -145,12 +145,12 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }
 
   const loadedEntriesReport = computedAsync(async () => {
+    // force refresh
+    globalSettings.dataVersion;
+
     if (!readyToLoadNews.value) {
       return null;
     }
-
-    // force refresh
-    globalSettings.dataVersion;
 
     const loadedEntries = await loadEntriesAccordingToMode();
 
