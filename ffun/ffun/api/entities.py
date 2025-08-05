@@ -185,6 +185,19 @@ class UserSettingKind(enum.StrEnum):
     process_entries_not_older_than = "process_entries_not_older_than"
     max_tokens_cost_in_month = "max_tokens_cost_in_month"
 
+    view_news_filter_interval = "view_news_filter_interval"
+    view_news_filter_sort_by = "view_news_filter_sort_by"
+    view_news_filter_min_tags_count = "view_news_filter_min_tags_count"
+    view_news_filter_show_read = "view_news_filter_show_read"
+
+    view_feeds_show_feed_descriptions = "view_feeds_show_feed_descriptions"
+    view_feeds_feed_order = "view_feeds_feed_order"
+    view_feeds_failed_feeds_first = "view_feeds_failed_feeds_first"
+
+    view_rules_order = "view_rules_order"
+
+    show_sidebar = "show_sidebar"
+
     @classmethod
     def from_internal(cls, kind: int) -> "UserSettingKind":
         from ffun.application.user_settings import UserSetting

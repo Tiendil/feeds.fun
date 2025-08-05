@@ -52,14 +52,19 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     globalSettings.updateDataVersion();
   }
 
+  const readyToLoadNews = computed(() => {
+    return (globalSettings.userSettingsPresent || !globalState.isLoggedIn) && mode.value !== null;
+  });
+
   // Public collections uses fixed sorting order
   // News uses dynamic sorting order and should keep it between switching views
   // So, if we set globalSettings.entriesOrderProperties in PublicCollection view
   // we'll break News view sorting and confuse users
   // => we hardcode specific order properties for PublicCollection mode
   const activeOrderProperties = computed(() => {
-    if (mode.value === null) {
-      // Return most general order for the case when mode is not set yet
+    if (!readyToLoadNews.value) {
+      // We can not load or process entries until everything is ready
+      // => Return most general order
       return e.EntriesOrderProperties.get(e.EntriesOrder.Published) as unknown as e.EntriesOrderProperty;
     }
 
@@ -106,7 +111,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }
 
   async function loadEntriesAccordingToMode() {
-    const periodProperties = e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod);
+    const periodProperties = e.LastEntriesPeriodProperties.get(globalSettings.lastEntriesPeriod as any);
 
     if (periodProperties === undefined) {
       throw new Error(`Unknown period ${globalSettings.lastEntriesPeriod}`);
@@ -114,7 +119,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     const period = periodProperties.seconds;
 
-    const minTagCount = e.MinNewsTagCountProperties.get(globalSettings.minTagCount)?.count;
+    const minTagCount = e.MinNewsTagCountProperties.get(globalSettings.minTagCount as any)?.count;
 
     if (minTagCount === undefined) {
       throw new Error(`Unknown min tag count ${globalSettings.minTagCount}`);
@@ -142,8 +147,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     // force refresh
     globalSettings.dataVersion;
 
-    if (mode.value === null) {
-      // Do nothing until the mode is set
+    if (!readyToLoadNews.value) {
       return null;
     }
 
@@ -164,6 +168,10 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }, null);
 
   const _sortedEntries = computed(() => {
+    if (!readyToLoadNews.value) {
+      return [];
+    }
+
     if (loadedEntriesReport.value === null) {
       return [];
     }

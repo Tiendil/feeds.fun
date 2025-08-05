@@ -1,7 +1,7 @@
 <template>
   <div class="ffun-side-panel-layout">
     <div
-      v-if="globalSettings.showSidebar"
+      v-if="showSidebar"
       class="ffun-side-panel">
       <div class="ffun-page-header pr-0 mr-0 flex min-w-full">
         <div class="ffun-page-header-title grow">
@@ -53,7 +53,7 @@
     <div class="ffun-body-panel">
       <div class="ffun-page-header">
         <div class="ffun-page-header-left-block">
-          <side-panel-collapse-button v-if="!globalSettings.showSidebar" />
+          <side-panel-collapse-button v-if="!showSidebar" />
 
           <page-header-home-button v-if="homeButton" />
 
@@ -161,6 +161,10 @@
   function hasSideMenuItem(index: number) {
     return !!slots[`side-menu-item-${index}`];
   }
+
+  const showSidebar = computed(() => {
+    return globalSettings.showSidebar || !globalSettings.userSettingsPresent;
+  });
 
   watchEffect(() => {
     if (!properties.loginRequired) {

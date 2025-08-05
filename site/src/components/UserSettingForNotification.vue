@@ -27,11 +27,11 @@
       return null;
     }
 
-    if (globalSettings.userSettings === null) {
+    if (!globalSettings.userSettingsPresent) {
       return null;
     }
 
-    return globalSettings.userSettings[properties.kind];
+    return (globalSettings as any)[properties.kind];
   });
 
   const text = computed(() => {
@@ -46,13 +46,12 @@
     return setting.value.name;
   });
 
-  async function save() {
+  function save() {
     if (value.value === null) {
       return;
     }
 
-    await api.setUserSetting({kind: properties.kind, value: value.value});
-    globalSettings.updateDataVersion();
+    globalSettings.setUserSettings(properties.kind, value.value);
   }
 
   async function updateFlag(newValue: any) {

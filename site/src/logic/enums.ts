@@ -57,6 +57,7 @@ export enum LastEntriesPeriod {
 export type LastEntriesPeriodProperty = {
   readonly text: string;
   readonly seconds: number;
+  readonly default?: boolean;
 };
 
 // Map preserves the order of the keys
@@ -66,7 +67,7 @@ export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, LastEntrie
   [LastEntriesPeriod.Hour6, {text: "6 hours", seconds: 6 * c.hour}],
   [LastEntriesPeriod.Hour12, {text: "12 hours", seconds: 12 * c.hour}],
   [LastEntriesPeriod.Day1, {text: "1 day", seconds: c.day}],
-  [LastEntriesPeriod.Day3, {text: "3 days", seconds: 3 * c.day}],
+  [LastEntriesPeriod.Day3, {text: "3 days", seconds: 3 * c.day, default: true}],
   [LastEntriesPeriod.Week, {text: "1 week", seconds: c.week}],
   [LastEntriesPeriod.Week2, {text: "2 weeks", seconds: 2 * c.week}],
   [LastEntriesPeriod.Month1, {text: "1 month", seconds: c.month}],
@@ -83,7 +84,7 @@ export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, LastEntrie
 export enum EntriesOrder {
   Score = "score",
   ScoreToZero = "score-to-zero",
-  ScoreBackward = "score-to-",
+  ScoreBackward = "score-backward",
   Published = "published",
   Cataloged = "cataloged"
 }
@@ -93,19 +94,20 @@ export type EntriesOrderProperty = {
   readonly orderField: string;
   readonly timeField: string;
   readonly direction: number;
+  readonly default?: boolean;
 };
 
 export const EntriesOrderProperties = new Map<EntriesOrder, EntriesOrderProperty>([
-  [EntriesOrder.Score, {text: "score", orderField: "score", timeField: "catalogedAt", direction: 1}],
+  [EntriesOrder.Score, {text: "score", orderField: "score", timeField: "catalogedAt", direction: 1, default: true}],
   [EntriesOrder.ScoreToZero, {text: "score ~ 0", orderField: "scoreToZero", timeField: "catalogedAt", direction: 1}],
   [EntriesOrder.ScoreBackward, {text: "score backward", orderField: "score", timeField: "catalogedAt", direction: -1}],
   [EntriesOrder.Published, {text: "published", orderField: "publishedAt", timeField: "publishedAt", direction: 1}],
   [EntriesOrder.Cataloged, {text: "cataloged", orderField: "catalogedAt", timeField: "catalogedAt", direction: 1}]
 ]);
 
-////////////////
+/////////////////////
 // Min news tag count
-////////////////
+/////////////////////
 
 export enum MinNewsTagCount {
   One = "one",
@@ -118,11 +120,12 @@ export enum MinNewsTagCount {
 export type MinNewsTagCountProperty = {
   readonly text: string;
   readonly count: number;
+  readonly default?: boolean;
 };
 
 export const MinNewsTagCountProperties = new Map<MinNewsTagCount, MinNewsTagCountProperty>([
   [MinNewsTagCount.One, {text: "all", count: 1}],
-  [MinNewsTagCount.Two, {text: "if in 2+ news", count: 2}],
+  [MinNewsTagCount.Two, {text: "if in 2+ news", count: 2, default: true}],
   [MinNewsTagCount.Three, {text: "if in 3+ news", count: 3}],
   [MinNewsTagCount.Four, {text: "if in 4+ news", count: 4}],
   [MinNewsTagCount.Five, {text: "if in 5+ news", count: 5}]
@@ -151,8 +154,15 @@ export enum FeedsOrder {
   Linked = "linked"
 }
 
-export const FeedsOrderProperties = new Map<FeedsOrder, {text: string; orderField: string; orderDirection: string}>([
-  [FeedsOrder.Title, {text: "title", orderField: "title", orderDirection: "asc"}],
+export type FeedsOrderProperty = {
+  readonly text: string;
+  readonly orderField: string;
+  readonly orderDirection: string;
+  readonly default?: boolean;
+};
+
+export const FeedsOrderProperties = new Map<FeedsOrder, FeedsOrderProperty>([
+  [FeedsOrder.Title, {text: "title", orderField: "title", orderDirection: "asc", default: true}],
   [FeedsOrder.Url, {text: "url", orderField: "url", orderDirection: "asc"}],
   [FeedsOrder.Loaded, {text: "loaded", orderField: "loadedAt", orderDirection: "desc"}],
   [FeedsOrder.Linked, {text: "added", orderField: "linkedAt", orderDirection: "desc"}]
@@ -169,8 +179,15 @@ export enum RulesOrder {
   Updated = "updated"
 }
 
-export const RulesOrderProperties = new Map<RulesOrder, {text: string; orderField: string; orderDirection: string}>([
-  [RulesOrder.Tags, {text: "tags", orderField: "tags", orderDirection: "asc"}],
+export type RulesOrderProperty = {
+  readonly text: string;
+  readonly orderField: string;
+  readonly orderDirection: string;
+  readonly default?: boolean;
+};
+
+export const RulesOrderProperties = new Map<RulesOrder, RulesOrderProperty>([
+  [RulesOrder.Tags, {text: "tags", orderField: "tags", orderDirection: "asc", default: true}],
   [RulesOrder.Score, {text: "score", orderField: "score", orderDirection: "desc"}],
   [RulesOrder.Created, {text: "created", orderField: "createdAt", orderDirection: "desc"}],
   [RulesOrder.Updated, {text: "updated", orderField: "updatedAt", orderDirection: "desc"}]

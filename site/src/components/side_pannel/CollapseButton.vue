@@ -1,11 +1,11 @@
 <template>
   <a
     href="#"
-    class="ffun-page-header-link py-2 flex items-center justify-center"
+    class="ffun-page-header-link py-2 flex items-center justify-center relative"
     :title="title"
     @click.prevent="onClick">
     <icon
-      v-if="globalSettings.showSidebar"
+      v-if="showSidebar"
       icon="sidebar-left-collapse"
       size="large" />
     <icon
@@ -15,7 +15,7 @@
 
     <span
       v-if="showPoint"
-      class="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500 border border-white"></span>
+      class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 border border-white"></span>
   </a>
 </template>
 
@@ -40,8 +40,12 @@
     return globalSettings.showSidebar ? "Hide sidebar" : "Show sidebar";
   });
 
+  const showSidebar = computed(() => {
+    return globalSettings.showSidebar || !globalSettings.userSettingsPresent;
+  });
+
   const showPoint = computed(() => {
-    return !globalSettings.showSidebar && globalSettings.showSidebarPoint;
+    return !showSidebar.value && globalSettings.showSidebarPoint;
   });
 
   function onClick() {
