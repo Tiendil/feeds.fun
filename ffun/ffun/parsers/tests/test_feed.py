@@ -118,6 +118,19 @@ class TestParseFeed:
 
         assert feed_info == FeedInfo.model_validate(parsed_expected_fixture)
 
+    def test_parse_broken_html(self) -> None:
+        url = normalize_classic_unknown_url(UnknownUrl("https://example.com/feed/"))
+        assert url is not None
+
+        result = parse_feed("I'm a broken feed content", to_feed_url(url))
+        assert result is None, "Broken HTML should return None"
+
+        # a real example of misplaced content
+        input = """\n// Copyright 2012 Google Inc. All rights reserved.\n \n (function(w,g){w[g]=w[g]||{};\n w[g].e=function(s){return eval(s);};})(window,\'google_tag_manager\');\n \n(function(){\n\nvar data = {\n"resource": {\n  "version":"29",\n  \n  "macros":[{"function":"__u","vtp_component":"HOST","vtp_enableMultiQueryKeys":false,"vtp_enableIgnoreEmptyQueryParam":false},{"function":"__v","vtp_name":"gtm.historyChangeSource","vtp_dataLayerVersion":1},{"function":"__u","vtp_component":"PATH","vtp_enableMultiQueryKeys":false,"vtp_enableIgnoreEmptyQueryParam":false},{"function":"__e"},{"function":"__v","vtp_dataLayerVersion":2,"vtp_setDefaultValue":false,"vtp_name":"originalLocation"},{"function":"__jsm","vtp_javascript":["template","(function(){return document.location.pathname+document.location.search})();"]},{"function":"__jsm","vtp_javascript":["template","(function(){var b=9;return function(a){a.set(\\"dimension\\"+b,a.get(\\"hitType\\"))}})();"]},{"function":"__gas","vtp_cookieDomain":"auto","vtp_doubleClick":fals"""  # noqa: E501
+
+        result = parse_feed(input, to_feed_url(url))
+        assert result is None, "Broken HTML should return None"
+
 
 class TestExtractPublishedAt:
 

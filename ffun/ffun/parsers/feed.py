@@ -1,4 +1,5 @@
 import datetime
+import io
 import time
 from typing import Any, Iterable
 
@@ -81,7 +82,9 @@ def parse_entry(raw_entry: Any, original_url: FeedUrl) -> EntryInfo:
 
 def parse_feed(content: str, original_url: FeedUrl) -> FeedInfo | None:  # noqa: CCR001
     try:
-        channel = feedparser.parse(content)
+        # ATTENTION: feedparser is "too smart" and may try to make an HTTP request if we pass content as a string
+        #            also it does not accept io.StringIO, so we have to use io.BytesIO
+        channel = feedparser.parse(io.BytesIO(content.encode("utf-8")))
     except Exception:
         logger.exception("error_while_parsing_feed", original_url=original_url)
         return None
