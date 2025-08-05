@@ -105,6 +105,14 @@ class Client:
 
         self._handle_finish_reason(candidate["finishReason"])
 
+        # Gemini API sometimes does not return `candidatesTokenCount`
+        # we log such cases
+        if "candidatesTokenCount" not in response_data["usageMetadata"]:
+            logger.warning(
+                "gemini_api_missing_candidates_token_count",
+                response=response_data,
+            )
+
         return GoogleChatResponse(
             content=candidate["content"]["parts"][0]["text"],
             prompt_tokens=response_data["usageMetadata"]["promptTokenCount"],
