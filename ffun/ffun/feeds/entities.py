@@ -42,6 +42,7 @@ class FeedError(enum.IntEnum):
     #       see details in the loader.operations
     network_great_china_firewall_redirect = 1021
     network_wrong_redirect = 1022
+    network_receive_buffer_too_long = 1023
 
     parsing_unknown = 2000
     parsing_base_error = 2001

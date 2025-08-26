@@ -18,18 +18,8 @@ from ffun.parsers import entities as p_entities
 logger = logging.get_module_logger()
 
 
-_user_agent: str = "unknown"
-
-
 decode_content = operations.decode_content
 parse_content = operations.parse_content
-
-
-# TODO: tests
-def initialize(user_agent: str) -> None:
-    global _user_agent
-    logger.info("initialize_loader", user_agent=user_agent)
-    _user_agent = user_agent
 
 
 # TODO: tests
@@ -72,7 +62,7 @@ async def load_content_with_proxies(url: FeedUrl) -> httpx.Response:  # noqa: CC
                 continue
 
             try:
-                return await operations.load_content(AbsoluteUrl(str(url_object)), proxy, _user_agent)
+                return await operations.load_content(AbsoluteUrl(str(url_object)), proxy)
             except Exception as e:
                 logger.info("proxy_error", proxy=proxy.name, error=e)
 
@@ -190,9 +180,7 @@ async def check_proxies_availability() -> None:
     states = {}
 
     for proxy in settings.proxies:
-        is_available = await operations.is_proxy_available(
-            proxy=proxy, anchors=settings.proxy_anchors, user_agent=_user_agent
-        )
+        is_available = await operations.is_proxy_available(proxy=proxy, anchors=settings.proxy_anchors)
 
         states[proxy.name] = ProxyState.available if is_available else ProxyState.suspended
 
