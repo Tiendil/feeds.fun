@@ -28,7 +28,6 @@ def client(proxy: str | None = None, headers: Any = None, timeout: int | None = 
     if proxy is not None:
         attributes["proxy"] = proxy
 
-    # TODO: move header tests here?
     attributes["headers"] = {
         "User-Agent": get_user_agent(),
         "Accept-Encoding": _accept_enconding_header,
