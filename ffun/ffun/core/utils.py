@@ -3,6 +3,7 @@ import importlib
 import pathlib
 import sys
 import types
+from importlib import metadata
 
 
 def now() -> datetime.datetime:
@@ -51,3 +52,17 @@ def discover_submodules(  # noqa: CCR001
         child_modules.append(submodule)
 
     return child_modules
+
+
+_version = None
+
+
+def version() -> str:
+    global _version
+
+    if _version is not None:
+        return _version
+
+    _version = metadata.version("ffun")
+
+    return _version

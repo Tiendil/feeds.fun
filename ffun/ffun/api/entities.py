@@ -536,7 +536,8 @@ class GetInfoRequest(api.APIRequest):
 
 
 class GetInfoResponse(api.APISuccess):
-    userId: UserId
+    userId: UserId | None
+    version: str
 
 
 class TrackEventRequest(api.APIRequest):
