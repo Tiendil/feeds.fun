@@ -10,7 +10,7 @@ from ffun.api import entities
 from ffun.api.settings import settings
 from ffun.auth import domain as a_domain
 from ffun.auth.dependencies import OptionalUser, User
-from ffun.core import logging
+from ffun.core import logging, utils
 from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
 from ffun.data_protection import domain as dp_domain
@@ -468,7 +468,8 @@ async def api_get_resource_history(
 
 @router.post("/api/get-info")
 async def api_get_info(request: entities.GetInfoRequest, user: User) -> entities.GetInfoResponse:
-    return entities.GetInfoResponse(userId=user.id)
+    return entities.GetInfoResponse(userId=user.id,
+                                    version=utils.version())
 
 
 ###############
