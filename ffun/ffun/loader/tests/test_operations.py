@@ -97,17 +97,15 @@ class TestCheckProxy:
     async def test_success(self) -> None:
         proxy = Proxy(name=uuid.uuid4().hex, url=None)
         url = "https://www.google.com"
-        user_agent = "Mozilla/5.0"
 
-        assert await check_proxy(proxy, url, user_agent)
+        assert await check_proxy(proxy, url)
 
     @pytest.mark.asyncio
     async def test_error(self) -> None:
         proxy = Proxy(name=uuid.uuid4().hex, url=None)
         url = "localhost:1"
-        user_agent = "Mozilla/5.0"
 
-        assert not await check_proxy(proxy, url, user_agent)
+        assert not await check_proxy(proxy, url)
 
 
 class TestIsProxyAvailable:
@@ -115,17 +113,15 @@ class TestIsProxyAvailable:
     async def test_success(self) -> None:
         proxy = Proxy(name=uuid.uuid4().hex, url=None)
         anchors = ["https://www.google.com", "https://www.amazon.com"]
-        user_agent = "Mozilla/5.0"
 
-        assert await is_proxy_available(proxy, anchors, user_agent)
+        assert await is_proxy_available(proxy, anchors)
 
     @pytest.mark.asyncio
     async def test_error(self) -> None:
         proxy = Proxy(name=uuid.uuid4().hex, url=None)
         anchors = ["localhost:1", "localhost:2"]
-        user_agent = "Mozilla/5.0"
 
-        assert not await is_proxy_available(proxy, anchors, user_agent)
+        assert not await is_proxy_available(proxy, anchors)
 
 
 class TestLoadContent:
@@ -155,7 +151,7 @@ class TestLoadContent:
         respx_mock.get("/test").mock(return_value=mocked_response)
 
         response = await load_content(
-            url=str_to_absolute_url("http://example.com/test"), proxy=Proxy(name="test", url=None), user_agent="test"
+            url=str_to_absolute_url("http://example.com/test"), proxy=Proxy(name="test", url=None)
         )
 
         assert response.text == expected_content
@@ -165,7 +161,7 @@ class TestLoadContent:
         respx_mock.get("/test").mock()
 
         await load_content(
-            url=str_to_absolute_url("http://example.com/test"), proxy=Proxy(name="test", url=None), user_agent="test"
+            url=str_to_absolute_url("http://example.com/test"), proxy=Proxy(name="test", url=None)
         )
 
         assert (
@@ -181,7 +177,6 @@ class TestLoadContent:
                 await load_content(
                     url=str_to_absolute_url("http://example.com/test"),
                     proxy=Proxy(name="test", url=None),
-                    user_agent="test",
                 )
 
         assert expected_error.value.feed_error_code == FeedError.network_connection_timeout
@@ -198,7 +193,6 @@ class TestLoadContent:
                 await load_content(
                     url=str_to_absolute_url("http://example.com/test"),
                     proxy=Proxy(name="test", url=None),
-                    user_agent="test",
                 )
 
         assert expected_error.value.feed_error_code == FeedError.network_unknown

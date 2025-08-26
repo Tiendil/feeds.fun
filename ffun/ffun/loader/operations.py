@@ -244,8 +244,8 @@ async def check_proxy(proxy: Proxy, url: str) -> bool:
     return response.status_code == 200
 
 
-async def is_proxy_available(proxy: Proxy, anchors: list[str], user_agent: str) -> bool:
-    tasks = [check_proxy(proxy, url, user_agent) for url in anchors]
+async def is_proxy_available(proxy: Proxy, anchors: list[str]) -> bool:
+    tasks = [check_proxy(proxy, url) for url in anchors]
 
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
