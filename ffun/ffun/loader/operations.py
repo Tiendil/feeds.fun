@@ -162,15 +162,18 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         elif "TUN_ERR" in message and "EHOSTUNREACH" in message:
             log.warning("proxy_no_route_to_host")
             error_code = FeedError.proxy_no_route_to_host
+        elif "400" in message:
+            log.warning("proxy_connection_400")
+            error_code = FeedError.proxy_connection_400
         elif "403" in message:
             log.warning("proxy_connection_403")
             error_code = FeedError.proxy_connection_403
-        elif "502" in message:
-            log.warning("proxy_connection_502")
-            error_code = FeedError.proxy_connection_502
         elif "429" in message:
             log.warning("proxy_connection_429")
             error_code = FeedError.proxy_connection_429
+        elif "502" in message:
+            log.warning("proxy_connection_502")
+            error_code = FeedError.proxy_connection_502
         else:
             log.exception("unknown_proxy_error_while_loading_feed")
 
