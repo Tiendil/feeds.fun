@@ -43,10 +43,7 @@ pydantic = "2.11.*"
 pydantic-settings = "2.10.*"
 typer = "0.16.*"
 
-httpx = {extras = ["http2"], version = "0.28.*"}
-
-brotlicffi = "1.1.*"
-zstandard = "0.23.*"
+httpx = {extras = ["http2", "brotli", "zstd"], version = "0.28.*"}
 
 openai = "1.91.*"
 tiktoken = "0.9.*"

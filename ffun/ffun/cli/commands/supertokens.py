@@ -1,9 +1,9 @@
 import asyncio
 
-from ffun.domain import http
 from ffun.auth.settings import settings as auth_settings
 from ffun.cli.application import app
 from ffun.core import logging
+from ffun.domain import http
 
 logger = logging.get_module_logger()
 

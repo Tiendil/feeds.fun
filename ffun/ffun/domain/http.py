@@ -1,6 +1,8 @@
-import httpx
 from typing import Any
-from ffun.core import logging, utils
+
+import httpx
+
+from ffun.core import logging
 
 logger = logging.get_module_logger()
 
@@ -21,17 +23,19 @@ def get_user_agent() -> str:
 
 
 def client(proxy: str | None = None, headers: Any = None, timeout: int | None = None) -> httpx.AsyncClient:
-    attributes = {'http2': True}
+    attributes = {"http2": True}
 
     if proxy is not None:
-        attributes['proxy'] = proxy
+        attributes["proxy"] = proxy
 
     # TODO: move header tests here?
-    attributes['headers'] = {'User-Agent': get_user_agent(),
-                             "Accept-Encoding": _accept_enconding_header,
-                             **(headers or {})}
+    attributes["headers"] = {
+        "User-Agent": get_user_agent(),
+        "Accept-Encoding": _accept_enconding_header,
+        **(headers or {}),
+    }
 
     if timeout is not None:
-        attributes['timeout'] = timeout
+        attributes["timeout"] = timeout
 
     return httpx.AsyncClient(**attributes)

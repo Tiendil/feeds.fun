@@ -3,8 +3,8 @@ from typing import Any, Generator
 
 import httpx
 
-from ffun.domain import http
 from ffun.core import logging
+from ffun.domain import http
 from ffun.google import errors
 from ffun.google.entities import GenerationConfig, GoogleChatRequest, GoogleChatResponse
 from ffun.google.settings import settings
