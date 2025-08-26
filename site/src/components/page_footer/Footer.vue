@@ -6,7 +6,7 @@
         <div class="flex flex-col space-y-2">
           <div class="font-medium"> The project is in demo mode and free of charge </div>
 
-          <div>Version: {{settings.version}}</div>
+          <div>Version: {{ settings.version }}</div>
 
           <div>
             © 2023‑{{ year }} Aliaksei Yaletski (<external-url

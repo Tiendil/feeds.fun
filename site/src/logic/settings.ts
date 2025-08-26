@@ -1,3 +1,4 @@
+declare const __APP_VERSION__: string;
 
 export enum AuthMode {
   SingleUser = "single_user",

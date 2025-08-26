@@ -5,8 +5,8 @@
 </template>
 
 <script setup lang="ts">
-import * as utils from "@/logic/utils";
-  import noFaviconImage from '@/assets/no-favicon.ico';
+  import * as utils from "@/logic/utils";
+  import noFaviconImage from "@/assets/no-favicon.ico";
   import {computed, ref} from "vue";
 
   const properties = defineProps<{url: string}>();

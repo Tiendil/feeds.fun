@@ -470,8 +470,7 @@ async def api_get_resource_history(
 async def api_get_info(request: entities.GetInfoRequest, user: OptionalUser) -> entities.GetInfoResponse:
     user_id = user.id if user is not None else None
 
-    return entities.GetInfoResponse(userId=user_id,
-                                    version=utils.version())
+    return entities.GetInfoResponse(userId=user_id, version=utils.version())
 
 
 ###############

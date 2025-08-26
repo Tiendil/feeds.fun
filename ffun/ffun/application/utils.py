@@ -1,6 +1,5 @@
-
-from ffun.core import utils
 from ffun.application.settings import settings
+from ffun.core import utils
 
 
 def user_agent() -> str:
