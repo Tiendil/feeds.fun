@@ -212,7 +212,7 @@
     <div class="text-center p-5">
       <img
         class="border-2 rounded border-slate-300 mx-auto"
-        src="/news-filtering-example.png"
+        :src="exampleImage"
         alt="News filtering example" />
     </div>
   </wide-layout>
@@ -220,6 +220,7 @@
 
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch, provide} from "vue";
+  import exampleImage from '@/assets/news-filtering-example.png';
   import * as settings from "@/logic/settings";
   import {useRouter, RouterLink, RouterView} from "vue-router";
   import {useCollectionsStore} from "@/stores/collections";

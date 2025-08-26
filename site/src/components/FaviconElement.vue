@@ -5,7 +5,8 @@
 </template>
 
 <script setup lang="ts">
-  import * as utils from "@/logic/utils";
+import * as utils from "@/logic/utils";
+  import noFaviconImage from '@/assets/no-favicon.ico';
   import {computed, ref} from "vue";
 
   const properties = defineProps<{url: string}>();
@@ -18,13 +19,13 @@
 
   const faviconUrl = computed(() => {
     if (noFavicon.value) {
-      return "/no-favicon.ico";
+      return noFaviconImage;
     }
 
     const url = utils.faviconForUrl(properties.url);
 
     if (url == null) {
-      return "/no-favicon.ico";
+      return noFaviconImage;
     }
 
     return url;
