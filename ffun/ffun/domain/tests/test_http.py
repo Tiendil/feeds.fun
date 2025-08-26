@@ -1,7 +1,7 @@
-import pytest
 import httpx
-from respx.router import MockRouter
+import pytest
 from pytest_mock import MockerFixture
+from respx.router import MockRouter
 
 from ffun.domain import http
 

@@ -368,6 +368,4 @@ class TestCheckProxiesAvailability:
         await check_proxies_availability()
 
         for proxy in proxies:
-            is_proxy_available.assert_any_call(
-                proxy=proxy, anchors=settings.proxy_anchors
-            )
+            is_proxy_available.assert_any_call(proxy=proxy, anchors=settings.proxy_anchors)

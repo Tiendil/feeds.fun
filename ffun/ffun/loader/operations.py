@@ -59,6 +59,10 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
             # => we just check the base message
             # Details: https://chatgpt.com/share/6855377e-4828-800d-a4cb-1ea924cd6286
             error_code = FeedError.network_wrong_redirect
+        elif "Receive buffer too long" in message:
+            # HTTPX does not allow configuring the buffer size
+            # We may want to increase it in the future, when HTTPX will allow it
+            error_code = FeedError.network_receive_buffer_too_long
         else:
             log.exception("remote_protocol_error_while_loading_feed")
 

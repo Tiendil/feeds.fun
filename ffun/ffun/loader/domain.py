@@ -180,9 +180,7 @@ async def check_proxies_availability() -> None:
     states = {}
 
     for proxy in settings.proxies:
-        is_available = await operations.is_proxy_available(
-            proxy=proxy, anchors=settings.proxy_anchors
-        )
+        is_available = await operations.is_proxy_available(proxy=proxy, anchors=settings.proxy_anchors)
 
         states[proxy.name] = ProxyState.available if is_available else ProxyState.suspended
 
