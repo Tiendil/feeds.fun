@@ -1,3 +1,4 @@
+
 export enum AuthMode {
   SingleUser = "single_user",
   Supertokens = "supertokens"
@@ -8,6 +9,7 @@ export const appDomain = import.meta.env.VITE_FFUN_APP_DOMAIN || "localhost";
 export const appPort = import.meta.env.VITE_FFUN_APP_PORT || "5173";
 
 export const environment = import.meta.env.VITE_FFUN_ENVIRONMENT || "local";
+export const version = __APP_VERSION__;
 
 export const authMode = import.meta.env.VITE_FFUN_AUTH_MODE || AuthMode.SingleUser;
 export const authSupertokensApiBasePath = import.meta.env.VITE_FFUN_AUTH_SUPERTOKENS_API_BASE_PATH || "/supertokens";
@@ -36,6 +38,7 @@ console.log("settings.appDomain", appDomain);
 console.log("settings.appPort", appPort);
 
 console.log("settings.environment", environment);
+console.log("settings.version", version);
 
 console.log("settings.authMode", authMode);
 console.log("settings.authSupertokensApiBasePath", authSupertokensApiBasePath);
