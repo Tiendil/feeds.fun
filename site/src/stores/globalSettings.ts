@@ -21,13 +21,8 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
 
   // TODO: We may want to remove this API and move user_id to the user settings API
   const info = computedAsync(async () => {
-    if (!globalState.isLoggedIn) {
-      return null;
-    }
-
-    // force refresh
+    globalState.isLoggedIn;
     dataVersion.value;
-
     return await api.getInfo();
   }, null);
 

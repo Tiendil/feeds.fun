@@ -467,8 +467,10 @@ async def api_get_resource_history(
 
 
 @router.post("/api/get-info")
-async def api_get_info(request: entities.GetInfoRequest, user: User) -> entities.GetInfoResponse:
-    return entities.GetInfoResponse(userId=user.id,
+async def api_get_info(request: entities.GetInfoRequest, user: OptionalUser) -> entities.GetInfoResponse:
+    user_id = user.id if user is not None else None
+
+    return entities.GetInfoResponse(userId=user_id,
                                     version=utils.version())
 
 
