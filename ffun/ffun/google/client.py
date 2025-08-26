@@ -3,6 +3,7 @@ from typing import Any, Generator
 
 import httpx
 
+from ffun.domain import http
 from ffun.core import logging
 from ffun.google import errors
 from ffun.google.entities import GenerationConfig, GoogleChatRequest, GoogleChatResponse
@@ -88,7 +89,7 @@ class Client:
         }
 
         with self._handle_network_errors():
-            async with httpx.AsyncClient(headers=headers, timeout=timeout) as client:
+            async with http.client(headers=headers, timeout=timeout) as client:
                 response = await client.post(url, json=http_request)
 
         self._handle_response_status_errors(response)
@@ -126,7 +127,7 @@ class Client:
         url = f"{self.entry_point}/models?key={self._api_key}"
 
         with self._handle_network_errors():
-            async with httpx.AsyncClient(headers=headers, timeout=timeout) as client:
+            async with http.client(headers=headers, timeout=timeout) as client:
                 response = await client.get(url)
 
         self._handle_response_status_errors(response)

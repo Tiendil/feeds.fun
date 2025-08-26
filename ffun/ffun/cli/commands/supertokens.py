@@ -1,7 +1,6 @@
 import asyncio
 
-import httpx
-
+from ffun.domain import http
 from ffun.auth.settings import settings as auth_settings
 from ffun.cli.application import app
 from ffun.core import logging
@@ -12,7 +11,7 @@ logger = logging.get_module_logger()
 async def run_supertokens_create_admin(email: str, password: str) -> None:
     url = f"{auth_settings.supertokens.connection_uri}/recipe/dashboard/user"
 
-    async with httpx.AsyncClient() as client:
+    async with http.client() as client:
         response = await client.post(
             url,
             follow_redirects=True,

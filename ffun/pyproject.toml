@@ -43,8 +43,7 @@ pydantic = "2.11.*"
 pydantic-settings = "2.10.*"
 typer = "0.16.*"
 
-# upgrade furher are blocked by supertokens-python
-httpx = "0.28.*"
+httpx = {extras = ["http2"], version = "0.28.*"}
 
 brotlicffi = "1.1.*"
 zstandard = "0.23.*"
@@ -69,7 +68,7 @@ structlog = "25.4.*"
 
 python-multipart = "0.0.*"
 
-supertokens-python = "0.30.0"
+supertokens-python = "0.30.2"
 
 python-slugify = "8.0.*"
 
