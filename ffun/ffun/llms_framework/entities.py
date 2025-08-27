@@ -62,8 +62,8 @@ class LLMConfiguration(BaseEntity):
     system: Annotated[str, pydantic.StringConstraints(strip_whitespace=True)]
     max_return_tokens: LLMTokens
     text_parts_intersection: int
-    temperature: float
-    top_p: float
+    temperature: float | None = None
+    top_p: float | None = None
     presence_penalty: float
     frequency_penalty: float
 

@@ -86,16 +86,22 @@ class OpenAIInterface(ProviderInterface):
         self, config: LLMConfiguration, api_key: str, request: OpenAIChatRequest
     ) -> OpenAIChatResponse:
         try:
+            attributes = {
+                "model": config.model,
+                "max_completion_tokens": config.max_return_tokens,
+                "presence_penalty": float(config.presence_penalty),
+                "frequency_penalty": float(config.frequency_penalty),
+                "messages": request.messages
+            }
+
+            if config.temperature is not None:
+                attributes["temperature"] = float(config.temperature)
+
+            if config.top_p is not None:
+                attributes["top_p"] = float(config.top_p)
+
             with track_key_status(api_key, self.api_keys_statuses):
-                answer = await _client(api_key=api_key).chat.completions.create(
-                    model=config.model,
-                    temperature=float(config.temperature),
-                    max_completion_tokens=config.max_return_tokens,
-                    top_p=float(config.top_p),
-                    presence_penalty=float(config.presence_penalty),
-                    frequency_penalty=float(config.frequency_penalty),
-                    messages=request.messages,
-                )
+                answer = await _client(api_key=api_key).chat.completions.create(**attributes)
         except openai.APIError as e:
             message = str(e)
             logger.info("openai_api_error", message=message)
