@@ -45,8 +45,8 @@ typer = "0.16.*"
 
 httpx = {extras = ["http2", "brotli", "zstd"], version = "0.28.*"}
 
-openai = "1.91.*"
-tiktoken = "0.9.*"
+openai = "1.102.*"
+tiktoken = "0.11.*"
 
 bidict = "0.23.*"
 
