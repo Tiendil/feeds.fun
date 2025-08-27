@@ -90,7 +90,7 @@ class OpenAIInterface(ProviderInterface):
                 answer = await _client(api_key=api_key).chat.completions.create(
                     model=config.model,
                     temperature=float(config.temperature),
-                    max_tokens=config.max_return_tokens,
+                    max_completion_tokens=config.max_return_tokens,
                     top_p=float(config.top_p),
                     presence_penalty=float(config.presence_penalty),
                     frequency_penalty=float(config.frequency_penalty),
