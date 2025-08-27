@@ -1,7 +1,7 @@
 import datetime
 import decimal
 import enum
-from typing import Annotated, NewType
+from typing import Annotated, NewType, Literal
 
 import pydantic
 
@@ -66,6 +66,8 @@ class LLMConfiguration(BaseEntity):
     top_p: float | None = None
     presence_penalty: float
     frequency_penalty: float
+    verbosity: Literal["low", "medium", "high"] | None = None
+    reasoning_effort: Literal["minimal", "low", "medium", "high"] | None = None
 
 
 class ChatRequest(BaseEntity):

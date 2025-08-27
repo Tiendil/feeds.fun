@@ -100,6 +100,12 @@ class OpenAIInterface(ProviderInterface):
             if config.top_p is not None:
                 attributes["top_p"] = float(config.top_p)
 
+            if config.verbosity is not None:
+                attributes["verbosity"] = config.verbosity
+
+            if config.reasoning_effort is not None:
+                attributes["reasoning_effort"] = config.reasoning_effort
+
             with track_key_status(api_key, self.api_keys_statuses):
                 answer = await _client(api_key=api_key).chat.completions.create(**attributes)
         except openai.APIError as e:
@@ -113,6 +119,11 @@ class OpenAIInterface(ProviderInterface):
         assert answer.usage is not None
 
         content = answer.choices[0].message.content
+
+        # print('---------------')
+        # print(content)
+        # # print(answer)
+        # print('---------------')
 
         return OpenAIChatResponse(
             content=content,
