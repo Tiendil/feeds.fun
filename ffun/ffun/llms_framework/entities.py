@@ -68,6 +68,8 @@ class LLMConfiguration(BaseEntity):
     frequency_penalty: float
     verbosity: Literal["low", "medium", "high"] | None = None
     reasoning_effort: Literal["minimal", "low", "medium", "high"] | None = None
+    lark_description: str | None = None
+    lark_grammar: str | None = None
 
 
 class ChatRequest(BaseEntity):

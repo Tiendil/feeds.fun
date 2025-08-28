@@ -14,3 +14,16 @@ TODO:
 - try increase the number of tags
 - try to reduce the length of tags (number of components)
 - try verify/refine step as the final step
+- validate grammar before using it
+- larc strict-mode
+- keep only ine top_p or temperature
+- configure top_logprobs
+- major version change?
+
+-----------
+
+Changes done:
+
+- migrated to GPT-5-nano
+- migrated to reponse API
+- use lark grammar

@@ -4,7 +4,6 @@ from typing import Generator, Sequence
 
 import openai
 import tiktoken
-from openai.types.chat import ChatCompletionMessageParam
 
 from ffun.core import logging
 from ffun.llms_framework import domain as llmsf_domain
@@ -18,7 +17,8 @@ logger = logging.get_module_logger()
 
 
 class OpenAIChatRequest(ChatRequest):
-    messages: list[ChatCompletionMessageParam]
+    system: str
+    user : str
 
 
 def _client(api_key: str) -> openai.AsyncOpenAI:
@@ -87,11 +87,15 @@ class OpenAIInterface(ProviderInterface):
     ) -> OpenAIChatResponse:
         try:
             attributes = {
+                "store": False,
                 "model": config.model,
-                "max_completion_tokens": config.max_return_tokens,
-                "presence_penalty": float(config.presence_penalty),
-                "frequency_penalty": float(config.frequency_penalty),
-                "messages": request.messages
+                "max_output_tokens": config.max_return_tokens,
+                "instructions": request.system,
+                "input": request.user,
+                # "extra_body": {
+                #     "presence_penalty": float(config.presence_penalty),
+                #     "frequency_penalty": float(config.frequency_penalty)
+                # }
             }
 
             if config.temperature is not None:
@@ -101,34 +105,73 @@ class OpenAIInterface(ProviderInterface):
                 attributes["top_p"] = float(config.top_p)
 
             if config.verbosity is not None:
-                attributes["verbosity"] = config.verbosity
+                if "text" not in attributes:
+                    attributes["text"] = {}
+
+                attributes["text"]["verbosity"] = config.verbosity
 
             if config.reasoning_effort is not None:
-                attributes["reasoning_effort"] = config.reasoning_effort
+                if "reasoning" not in attributes:
+                    attributes["reasoning"] = {}
+
+                attributes["reasoning"]["effort"] = config.reasoning_effort
+
+            if config.lark_grammar is not None:
+                tool_name = "FEEDS_FUN_TAGS_GRAMMAR"  # TODO: move to configs?
+                attributes["tool_choice"] = {"type": "custom", "name": tool_name}
+                attributes["tools"] = [
+                    {
+                        "type": "custom",
+                        "name": tool_name,
+                        "description": config.lark_description or "Register tags into Feeds Fun service.",
+                        "format": {
+                            "type": "grammar",
+                            "syntax": "lark",
+                            "definition": config.lark_grammar
+                        }
+                    },
+                ]
+
+            print(attributes)
 
             with track_key_status(api_key, self.api_keys_statuses):
-                answer = await _client(api_key=api_key).chat.completions.create(**attributes)
+                answer = await _client(api_key=api_key).responses.create(**attributes)
         except openai.APIError as e:
             message = str(e)
             logger.info("openai_api_error", message=message)
             raise llmsf_errors.TemporaryError(message=message) from e
 
+# "Unsupported parameter: 'temperature' is not supported with this model."
+# "Unsupported parameter: 'top_p' is not supported with this model."
+
         logger.info("openai_response")
 
-        assert answer.choices[0].message.content is not None
+        # The Responses API returns output, while the Chat Completions API returns a choices array.
+        # Structured Outputs API shape is different. Instead of response_format, use text.format in Responses.
+        # The Responses SDK has an output_text helper, which the Chat Completions SDK does not have.
+        # assert answer.choices[0].message.content is not None
         assert answer.usage is not None
 
-        content = answer.choices[0].message.content
+        # content = answer.choices[0].message.content
+        # content = answer.output_text
+        content = answer.output[1].input
 
+# 1. Finding a new recipe: @cooking [ok], @recipes [ok], @food [ok], @healthy-eating [ok], @quick-meals [ok], @vegetarian [ok];
+# 2. Learning about historical events: @history [ok], @world-war-2 [ok], @ancient-civilizations [ok], @historical-figures [ok], @medieval-times [ok], @renaissance [ok];
+# ...
+# 13. Exploring travel destinations: @travel [ok], @tourism [ok], @vacation [ok], @popular-destinations [ok], @travel-tips [ok], @cultural-experiences [ok];
+
+
+        print('---------------')
+        print(content)
         # print('---------------')
-        # print(content)
-        # # print(answer)
-        # print('---------------')
+        # print(answer)
+        print('---------------')
 
         return OpenAIChatResponse(
             content=content,
-            prompt_tokens=answer.usage.prompt_tokens,
-            completion_tokens=answer.usage.completion_tokens,
+            prompt_tokens=answer.usage.input_tokens,
+            completion_tokens=answer.usage.output_tokens,
             total_tokens=answer.usage.total_tokens,
         )
 
@@ -140,7 +183,8 @@ class OpenAIInterface(ProviderInterface):
 
         for part in parts:
             request = OpenAIChatRequest(
-                messages=[{"role": "system", "content": config.system}, {"role": "user", "content": part}]
+                system=config.system,
+                user=part,
             )
 
             requests.append(request)
