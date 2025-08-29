@@ -1,7 +1,7 @@
 import datetime
 import decimal
 import enum
-from typing import Annotated, NewType, Literal
+from typing import Annotated, Literal, NewType
 
 import pydantic
 

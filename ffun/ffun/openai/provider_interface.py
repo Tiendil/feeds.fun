@@ -18,7 +18,7 @@ logger = logging.get_module_logger()
 
 class OpenAIChatRequest(ChatRequest):
     system: str
-    user : str
+    user: str
 
 
 def _client(api_key: str) -> openai.AsyncOpenAI:
@@ -125,11 +125,7 @@ class OpenAIInterface(ProviderInterface):
                         "type": "custom",
                         "name": tool_name,
                         "description": config.lark_description or "Register tags into Feeds Fun service.",
-                        "format": {
-                            "type": "grammar",
-                            "syntax": "lark",
-                            "definition": config.lark_grammar
-                        }
+                        "format": {"type": "grammar", "syntax": "lark", "definition": config.lark_grammar},
                     },
                 ]
 
@@ -151,9 +147,9 @@ class OpenAIInterface(ProviderInterface):
 
         content = None
 
-        print('---------------')
+        print("---------------")
         print(answer)
-        print('---------------')
+        print("---------------")
 
         if tool_used:
             for output in answer.output:
