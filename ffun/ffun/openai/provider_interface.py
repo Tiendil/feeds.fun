@@ -145,13 +145,15 @@ class OpenAIInterface(ProviderInterface):
 
         if tool_used:
             for output in answer.output:
-                if output.type == "tool":
+                if output.type == "custom_tool_call":
                     content = output.input
                     break
         else:
             content = answer.output_text
 
-        assert content is not None
+        if content is None:
+            logger.error("openai_no_output", answer=repr(answer))
+            raise llmsf_errors.TemporaryError(message="Could not get output from OpenAI response")
 
         return OpenAIChatResponse(
             content=content,
