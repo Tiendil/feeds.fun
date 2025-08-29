@@ -72,8 +72,8 @@ class GoogleInterface(ProviderInterface):
 
         generation_config = GenerationConfig(
             max_output_tokens=config.max_return_tokens,
-            temperature=float(config.temperature),
-            top_p=float(config.top_p),
+            temperature=float(config.temperature) if config.temperature is not None else 0.0,
+            top_p=float(config.top_p) if config.top_p is not None else 0.0,
             top_k=None,
         )
 

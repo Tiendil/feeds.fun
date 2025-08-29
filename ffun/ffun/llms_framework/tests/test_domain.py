@@ -74,8 +74,6 @@ class TestSplitTextAccordingToTokens:
             text_parts_intersection=100,
             temperature=0,
             top_p=0,
-            presence_penalty=0,
-            frequency_penalty=0,
         )
 
     def test_single_part(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
@@ -132,8 +130,6 @@ class TestSearchForAPIKey:
             text_parts_intersection=100,
             temperature=0,
             top_p=0,
-            presence_penalty=0,
-            frequency_penalty=0,
         )
 
     @pytest.mark.asyncio
@@ -201,8 +197,6 @@ class TestCallLLM:
             text_parts_intersection=100,
             temperature=0,
             top_p=0,
-            presence_penalty=0,
-            frequency_penalty=0,
         )
 
     @pytest.mark.asyncio

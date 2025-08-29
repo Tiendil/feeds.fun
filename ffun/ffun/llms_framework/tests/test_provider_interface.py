@@ -39,8 +39,6 @@ class TestBaseProviderInterfaceClass:
             text_parts_intersection=100,
             temperature=0,
             top_p=0,
-            presence_penalty=0,
-            frequency_penalty=0,
         )
 
         assert fake_llm_provider.get_model(config_1) == ModelInfo(
@@ -88,8 +86,6 @@ class TestBaseProviderInterfaceClass:
             text_parts_intersection=100,
             temperature=0,
             top_p=0,
-            presence_penalty=0,
-            frequency_penalty=0,
         )
 
         with pytest.raises(errors.ModelDoesNotFound):
@@ -99,7 +95,7 @@ class TestBaseProviderInterfaceClass:
 
         assert fake_llm_provider.get_model(config) is not None
 
-    def test_wrong_model(self, fake_llm_provider: ProviderTest, mocker: MockerFixture) -> None:
+    def test_wrong_model(self, fake_llm_provider: ProviderTest) -> None:
         config_1 = LLMConfiguration(
             model="test-model-wrong",
             system="system prompt",
@@ -107,8 +103,6 @@ class TestBaseProviderInterfaceClass:
             text_parts_intersection=100,
             temperature=0,
             top_p=0,
-            presence_penalty=0,
-            frequency_penalty=0,
         )
 
         with pytest.raises(errors.ModelDoesNotFound):

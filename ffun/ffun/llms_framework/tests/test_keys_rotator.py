@@ -61,8 +61,6 @@ _llm_config = LLMConfiguration(
     text_parts_intersection=113,
     temperature=0.3,
     top_p=0.9,
-    presence_penalty=0.5,
-    frequency_penalty=0.75,
 )
 
 

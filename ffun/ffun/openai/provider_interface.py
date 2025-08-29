@@ -1,6 +1,6 @@
 import contextlib
 import functools
-from typing import Generator, Sequence
+from typing import Any, Generator, Sequence
 
 import openai
 import tiktoken
@@ -82,15 +82,15 @@ class OpenAIInterface(ProviderInterface):
 
         return system_tokens + text_tokens
 
-    async def chat_request(  # type: ignore
-        self, config: LLMConfiguration, api_key: str, request: OpenAIChatRequest
+    async def chat_request(  # noqa: CCR001
+        self, config: LLMConfiguration, api_key: str, request: OpenAIChatRequest  # type: ignore
     ) -> OpenAIChatResponse:
         try:
             tool_used = False
 
             # TODO: if would be nice to specify for each model which parameters are supported
             #       but for now it is too much work
-            attributes = {
+            attributes: dict[str, Any] = {
                 "store": False,
                 "model": config.model,
                 "max_output_tokens": config.max_return_tokens,
@@ -138,18 +138,10 @@ class OpenAIInterface(ProviderInterface):
 
         logger.info("openai_response")
 
-        # The Responses API returns output, while the Chat Completions API returns a choices array.
-        # Structured Outputs API shape is different. Instead of response_format, use text.format in Responses.
-        # The Responses SDK has an output_text helper, which the Chat Completions SDK does not have.
-        # assert answer.choices[0].message.content is not None
         assert answer.usage is not None
         assert answer.output is not None
 
         content = None
-
-        print("---------------")
-        print(answer)
-        print("---------------")
 
         if tool_used:
             for output in answer.output:
@@ -158,6 +150,8 @@ class OpenAIInterface(ProviderInterface):
                     break
         else:
             content = answer.output_text
+
+        assert content is not None
 
         return OpenAIChatResponse(
             content=content,
