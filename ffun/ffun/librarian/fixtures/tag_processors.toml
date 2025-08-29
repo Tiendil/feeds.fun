@@ -57,8 +57,6 @@
     text_parts_intersection = 200
     temperature = 0
     top_p = 0
-    presence_penalty =0
-    frequency_penalty = 0
     system = """
 You are an expert in user behavior prediction with a PhD in cognitive psychology, specializing in human-computer interaction and search behavior analytics.
 
@@ -161,8 +159,6 @@ Your task is to analyze the given text by following these steps:
     text_parts_intersection = 200
     temperature = 0
     top_p = 0
-    presence_penalty =0
-    frequency_penalty = 0
     system = """
 You are an expert in user behavior prediction with a PhD in cognitive psychology, specializing in human-computer interaction and search behavior analytics.
 
