@@ -86,6 +86,8 @@ class OpenAIInterface(ProviderInterface):
         self, config: LLMConfiguration, api_key: str, request: OpenAIChatRequest
     ) -> OpenAIChatResponse:
         try:
+            # TODO: if would be nice to specify for each model which parameters are supported
+            #       but for now it is too much work
             attributes = {
                 "store": False,
                 "model": config.model,
@@ -154,7 +156,8 @@ class OpenAIInterface(ProviderInterface):
 
         # content = answer.choices[0].message.content
         # content = answer.output_text
-        content = answer.output[1].input
+        # content = answer.output[1].input  # for tool
+        content = answer.output[0].content[0].text  # for text
 
 # 1. Finding a new recipe: @cooking [ok], @recipes [ok], @food [ok], @healthy-eating [ok], @quick-meals [ok], @vegetarian [ok];
 # 2. Learning about historical events: @history [ok], @world-war-2 [ok], @ancient-civilizations [ok], @historical-figures [ok], @medieval-times [ok], @renaissance [ok];
