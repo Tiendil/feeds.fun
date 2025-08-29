@@ -39,8 +39,6 @@ class TestBaseProviderInterfaceClass:
             text_parts_intersection=100,
             temperature=0,
             top_p=0,
-            presence_penalty=0,
-            frequency_penalty=0,
         )
 
         assert fake_llm_provider.get_model(config_1) == ModelInfo(
@@ -67,29 +65,27 @@ class TestBaseProviderInterfaceClass:
 
         mocker.patch.object(fake_llm_provider, "provider", LLMProvider.openai)
 
-        config_3 = config_1.replace(provider=LLMProvider.openai, model="gpt-4o")
+        config_3 = config_1.replace(provider=LLMProvider.openai, model="gpt-4o-2024-08-06")
 
         assert fake_llm_provider.get_model(config_3) == ModelInfo(
             provider=LLMProvider.openai,
-            name="gpt-4o",
+            name="gpt-4o-2024-08-06",
             max_context_size=LLMTokens(128000),
-            max_return_tokens=LLMTokens(4096),
+            max_return_tokens=LLMTokens(16384),
             max_tokens_per_entry=LLMTokens(300000),
-            input_1m_tokens_cost=USDCost(Decimal("5")),
-            output_1m_tokens_cost=USDCost(Decimal("15")),
+            input_1m_tokens_cost=USDCost(Decimal("2.5")),
+            output_1m_tokens_cost=USDCost(Decimal("10")),
         )
 
     def test_wrong_provider(self, fake_llm_provider: ProviderTest, mocker: MockerFixture) -> None:
 
         config = LLMConfiguration(
-            model="gpt-4o",
+            model="gpt-4o-2024-08-06",
             system="system prompt",
             max_return_tokens=LLMTokens(143),
             text_parts_intersection=100,
             temperature=0,
             top_p=0,
-            presence_penalty=0,
-            frequency_penalty=0,
         )
 
         with pytest.raises(errors.ModelDoesNotFound):
@@ -99,7 +95,7 @@ class TestBaseProviderInterfaceClass:
 
         assert fake_llm_provider.get_model(config) is not None
 
-    def test_wrong_model(self, fake_llm_provider: ProviderTest, mocker: MockerFixture) -> None:
+    def test_wrong_model(self, fake_llm_provider: ProviderTest) -> None:
         config_1 = LLMConfiguration(
             model="test-model-wrong",
             system="system prompt",
@@ -107,8 +103,6 @@ class TestBaseProviderInterfaceClass:
             text_parts_intersection=100,
             temperature=0,
             top_p=0,
-            presence_penalty=0,
-            frequency_penalty=0,
         )
 
         with pytest.raises(errors.ModelDoesNotFound):

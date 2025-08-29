@@ -18,15 +18,6 @@
 
 [[models]]
   provider = "openai"
-  name = "gpt-4o"
-  max_context_size = 128000
-  max_return_tokens = 4096
-  max_tokens_per_entry = 300000
-  input_1m_tokens_cost = '5'
-  output_1m_tokens_cost = '15'
-
-[[models]]
-  provider = "openai"
   name = "gpt-4o-2024-08-06"
   max_context_size = 128000
   max_return_tokens = 16384
@@ -36,30 +27,12 @@
 
 [[models]]
   provider = "openai"
-  name = "gpt-4.1"
-  max_context_size = 1047576
-  max_return_tokens = 32768
-  max_tokens_per_entry = 300000
-  input_1m_tokens_cost = '2'
-  output_1m_tokens_cost = '8'
-
-[[models]]
-  provider = "openai"
   name = "gpt-4.1-2025-04-14"
   max_context_size = 1047576
   max_return_tokens = 32768
   max_tokens_per_entry = 300000
   input_1m_tokens_cost = '2'
   output_1m_tokens_cost = '8'
-
-[[models]]
-  provider = "openai"
-  name = "gpt-4o-mini"
-  max_context_size = 128000
-  max_return_tokens = 16384
-  max_tokens_per_entry = 300000
-  input_1m_tokens_cost = '0.15'
-  output_1m_tokens_cost = '0.6'
 
 [[models]]
   provider="openai"
@@ -72,15 +45,6 @@
 
 [[models]]
   provider = "openai"
-  name = "gpt-4.1-mini"
-  max_context_size = 1047576
-  max_return_tokens = 32768
-  max_tokens_per_entry = 300000
-  input_1m_tokens_cost = '0.4'
-  output_1m_tokens_cost = '1.6'
-
-[[models]]
-  provider = "openai"
   name = "gpt-4.1-mini-2025-04-14"
   max_context_size = 1047576
   max_return_tokens = 32768
@@ -90,7 +54,7 @@
 
 [[models]]
   provider = "openai"
-  name = "gpt-4.1-nano"
+  name = "gpt-4.1-nano-2025-04-14"
   max_context_size = 1047576
   max_return_tokens = 32768
   max_tokens_per_entry = 300000
@@ -99,12 +63,30 @@
 
 [[models]]
   provider = "openai"
-  name = "gpt-4.1-nano-2025-04-14"
-  max_context_size = 1047576
-  max_return_tokens = 32768
+  name = "gpt-5-nano-2025-08-07"
+  max_context_size = 400000
+  max_return_tokens = 128000
   max_tokens_per_entry = 300000
-  input_1m_tokens_cost = '0.1'
+  input_1m_tokens_cost = '0.05'
   output_1m_tokens_cost = '0.4'
+
+[[models]]
+  provider = "openai"
+  name = "gpt-5-mini-2025-08-07"
+  max_context_size = 400000
+  max_return_tokens = 128000
+  max_tokens_per_entry = 300000
+  input_1m_tokens_cost = '0.25'
+  output_1m_tokens_cost = '2.0'
+
+[[models]]
+  provider = "openai"
+  name = "gpt-5-2025-08-07"
+  max_context_size = 400000
+  max_return_tokens = 128000
+  max_tokens_per_entry = 300000
+  input_1m_tokens_cost = '1.25'
+  output_1m_tokens_cost = '10.0'
 
 [[models]]
   provider="google"

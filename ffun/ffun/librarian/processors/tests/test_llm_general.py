@@ -21,8 +21,6 @@ class TestProcessor:
             text_parts_intersection=100,
             temperature=0,
             top_p=0,
-            presence_penalty=0,
-            frequency_penalty=0,
         )
 
     @pytest.fixture

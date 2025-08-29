@@ -1,10 +1,9 @@
 import contextlib
 import functools
-from typing import Generator, Sequence
+from typing import Any, Generator, Sequence
 
 import openai
 import tiktoken
-from openai.types.chat import ChatCompletionMessageParam
 
 from ffun.core import logging
 from ffun.llms_framework import domain as llmsf_domain
@@ -18,7 +17,8 @@ logger = logging.get_module_logger()
 
 
 class OpenAIChatRequest(ChatRequest):
-    messages: list[ChatCompletionMessageParam]
+    system: str
+    user: str
 
 
 def _client(api_key: str) -> openai.AsyncOpenAI:
@@ -43,12 +43,6 @@ class OpenAIChatResponse(ChatResponse):
 
 @functools.cache
 def _get_encoding(model: str) -> tiktoken.Encoding:
-    # TODO: rollback after tiktoken add support for new models
-    #       https://github.com/openai/tiktoken/issues/395
-    #       https://github.com/openai/tiktoken/pull/396
-    if "gpt-4.1" in model:
-        return tiktoken.encoding_for_model("gpt-4o")
-
     return tiktoken.encoding_for_model(model)
 
 
@@ -88,20 +82,55 @@ class OpenAIInterface(ProviderInterface):
 
         return system_tokens + text_tokens
 
-    async def chat_request(  # type: ignore
-        self, config: LLMConfiguration, api_key: str, request: OpenAIChatRequest
+    async def chat_request(  # noqa: CCR001
+        self, config: LLMConfiguration, api_key: str, request: OpenAIChatRequest  # type: ignore
     ) -> OpenAIChatResponse:
         try:
+            tool_used = False
+
+            # TODO: if would be nice to specify for each model which parameters are supported
+            #       but for now it is too much work
+            attributes: dict[str, Any] = {
+                "store": False,
+                "model": config.model,
+                "max_output_tokens": config.max_return_tokens,
+                "instructions": request.system,
+                "input": request.user,
+            }
+
+            if config.temperature is not None:
+                attributes["temperature"] = float(config.temperature)
+
+            if config.top_p is not None:
+                attributes["top_p"] = float(config.top_p)
+
+            if config.verbosity is not None:
+                if "text" not in attributes:
+                    attributes["text"] = {}
+
+                attributes["text"]["verbosity"] = config.verbosity
+
+            if config.reasoning_effort is not None:
+                if "reasoning" not in attributes:
+                    attributes["reasoning"] = {}
+
+                attributes["reasoning"]["effort"] = config.reasoning_effort
+
+            if config.lark_grammar is not None:
+                tool_used = True
+                tool_name = "FEEDS_FUN_TAGS_GRAMMAR"  # TODO: move to configs?
+                attributes["tool_choice"] = {"type": "custom", "name": tool_name}
+                attributes["tools"] = [
+                    {
+                        "type": "custom",
+                        "name": tool_name,
+                        "description": config.lark_description or "Register tags into Feeds Fun service.",
+                        "format": {"type": "grammar", "syntax": "lark", "definition": config.lark_grammar},
+                    },
+                ]
+
             with track_key_status(api_key, self.api_keys_statuses):
-                answer = await _client(api_key=api_key).chat.completions.create(
-                    model=config.model,
-                    temperature=float(config.temperature),
-                    max_tokens=config.max_return_tokens,
-                    top_p=float(config.top_p),
-                    presence_penalty=float(config.presence_penalty),
-                    frequency_penalty=float(config.frequency_penalty),
-                    messages=request.messages,
-                )
+                answer = await _client(api_key=api_key).responses.create(**attributes)
         except openai.APIError as e:
             message = str(e)
             logger.info("openai_api_error", message=message)
@@ -109,15 +138,27 @@ class OpenAIInterface(ProviderInterface):
 
         logger.info("openai_response")
 
-        assert answer.choices[0].message.content is not None
         assert answer.usage is not None
+        assert answer.output is not None
 
-        content = answer.choices[0].message.content
+        content = None
+
+        if tool_used:
+            for output in answer.output:
+                if output.type == "custom_tool_call":
+                    content = output.input
+                    break
+        else:
+            content = answer.output_text
+
+        if content is None:
+            logger.error("openai_no_output", answer=repr(answer))
+            raise llmsf_errors.TemporaryError(message="Could not get output from OpenAI response")
 
         return OpenAIChatResponse(
             content=content,
-            prompt_tokens=answer.usage.prompt_tokens,
-            completion_tokens=answer.usage.completion_tokens,
+            prompt_tokens=answer.usage.input_tokens,
+            completion_tokens=answer.usage.output_tokens,
             total_tokens=answer.usage.total_tokens,
         )
 
@@ -129,7 +170,8 @@ class OpenAIInterface(ProviderInterface):
 
         for part in parts:
             request = OpenAIChatRequest(
-                messages=[{"role": "system", "content": config.system}, {"role": "user", "content": part}]
+                system=config.system,
+                user=part,
             )
 
             requests.append(request)

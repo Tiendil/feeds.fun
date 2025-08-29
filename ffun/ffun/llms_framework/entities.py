@@ -1,7 +1,7 @@
 import datetime
 import decimal
 import enum
-from typing import Annotated, NewType
+from typing import Annotated, Literal, NewType
 
 import pydantic
 
@@ -62,10 +62,12 @@ class LLMConfiguration(BaseEntity):
     system: Annotated[str, pydantic.StringConstraints(strip_whitespace=True)]
     max_return_tokens: LLMTokens
     text_parts_intersection: int
-    temperature: float
-    top_p: float
-    presence_penalty: float
-    frequency_penalty: float
+    temperature: float | None = None
+    top_p: float | None = None
+    verbosity: Literal["low", "medium", "high"] | None = None
+    reasoning_effort: Literal["minimal", "low", "medium", "high"] | None = None
+    lark_description: str | None = None
+    lark_grammar: str | None = None
 
 
 class ChatRequest(BaseEntity):
