@@ -253,8 +253,6 @@ Your task is to analyze the given text by following these steps:
     text_parts_intersection = 200
     verbosity = "low"  # medium, high
     reasoning_effort = "minimal"  # low, medium, high
-    presence_penalty =0
-    frequency_penalty = 0
     lark_description = "Register tags into Feeds Fun service. YOU MUST REASON HEAVILY ABOUT THE OUTPUT AND MAKE SURE IT OBEYS THE GRAMMAR."
     lark_grammar = '''
 LIST_NUMBER: /\d+\./

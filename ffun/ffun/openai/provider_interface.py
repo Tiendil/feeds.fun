@@ -86,6 +86,8 @@ class OpenAIInterface(ProviderInterface):
         self, config: LLMConfiguration, api_key: str, request: OpenAIChatRequest
     ) -> OpenAIChatResponse:
         try:
+            tool_used = False
+
             # TODO: if would be nice to specify for each model which parameters are supported
             #       but for now it is too much work
             attributes = {
@@ -94,10 +96,6 @@ class OpenAIInterface(ProviderInterface):
                 "max_output_tokens": config.max_return_tokens,
                 "instructions": request.system,
                 "input": request.user,
-                # "extra_body": {
-                #     "presence_penalty": float(config.presence_penalty),
-                #     "frequency_penalty": float(config.frequency_penalty)
-                # }
             }
 
             if config.temperature is not None:
@@ -119,6 +117,7 @@ class OpenAIInterface(ProviderInterface):
                 attributes["reasoning"]["effort"] = config.reasoning_effort
 
             if config.lark_grammar is not None:
+                tool_used = True
                 tool_name = "FEEDS_FUN_TAGS_GRAMMAR"  # TODO: move to configs?
                 attributes["tool_choice"] = {"type": "custom", "name": tool_name}
                 attributes["tools"] = [
@@ -134,17 +133,12 @@ class OpenAIInterface(ProviderInterface):
                     },
                 ]
 
-            print(attributes)
-
             with track_key_status(api_key, self.api_keys_statuses):
                 answer = await _client(api_key=api_key).responses.create(**attributes)
         except openai.APIError as e:
             message = str(e)
             logger.info("openai_api_error", message=message)
             raise llmsf_errors.TemporaryError(message=message) from e
-
-# "Unsupported parameter: 'temperature' is not supported with this model."
-# "Unsupported parameter: 'top_p' is not supported with this model."
 
         logger.info("openai_response")
 
@@ -153,23 +147,21 @@ class OpenAIInterface(ProviderInterface):
         # The Responses SDK has an output_text helper, which the Chat Completions SDK does not have.
         # assert answer.choices[0].message.content is not None
         assert answer.usage is not None
+        assert answer.output is not None
 
-        # content = answer.choices[0].message.content
-        # content = answer.output_text
-        # content = answer.output[1].input  # for tool
-        content = answer.output[0].content[0].text  # for text
-
-# 1. Finding a new recipe: @cooking [ok], @recipes [ok], @food [ok], @healthy-eating [ok], @quick-meals [ok], @vegetarian [ok];
-# 2. Learning about historical events: @history [ok], @world-war-2 [ok], @ancient-civilizations [ok], @historical-figures [ok], @medieval-times [ok], @renaissance [ok];
-# ...
-# 13. Exploring travel destinations: @travel [ok], @tourism [ok], @vacation [ok], @popular-destinations [ok], @travel-tips [ok], @cultural-experiences [ok];
-
+        content = None
 
         print('---------------')
-        print(content)
-        # print('---------------')
-        # print(answer)
+        print(answer)
         print('---------------')
+
+        if tool_used:
+            for output in answer.output:
+                if output.type == "tool":
+                    content = output.input
+                    break
+        else:
+            content = answer.output_text
 
         return OpenAIChatResponse(
             content=content,
