@@ -10,6 +10,7 @@ SourceId = NewType("SourceId", uuid.UUID)
 RuleId = NewType("RuleId", uuid.UUID)
 TagId = NewType("TagId", int)
 TagUid = NewType("TagUid", str)
+TagUidPart = NewType("TagUidPart", str)
 
 # URL types for better normalization control in code
 # conversion schemas:

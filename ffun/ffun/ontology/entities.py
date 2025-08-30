@@ -6,16 +6,12 @@ import pydantic
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import TagId, TagUid
+from ffun.tags.entities import TagCategory
 
 
 class TagPropertyType(int, enum.Enum):
     link = 2
     categories = 3
-
-
-class TagCategory(str, enum.Enum):
-    network_domain = "network-domain"
-    feed_tag = "feed-tag"
 
 
 class TagProperty(BaseEntity):
@@ -28,6 +24,8 @@ class TagProperty(BaseEntity):
 
 class RawTag(pydantic.BaseModel):
     raw_uid: str
+
+    preserve: bool
 
     name: str | None = None
     link: str | None = None

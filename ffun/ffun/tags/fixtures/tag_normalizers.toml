@@ -1,0 +1,19 @@
+# This is an example of the configuration file for the tag normalizers.
+#
+# ATTENTION: normalizer ids <= 10000 are reserved for the system.
+#            if you want to add a custom normalizer, use ids > 10000.
+
+[[tag_normalizer]]
+  id = 1
+  enabled = true
+  name = "part_blacklist"
+  type = "part_blacklist"
+  blacklist = ["the", "and", "or", "of", "in", "on", "at", "to", "for", "with", "a", "an", "is", "it", "by", "this", "that", "from", "as", "be", "are"]
+
+
+[[tag_normalizer]]
+  id = 2
+  enabled = true
+  name = "part_replacer"
+  type = "part_replacer"
+  replacements = {}
