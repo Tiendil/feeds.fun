@@ -1,6 +1,5 @@
-
-from ffun.tags.normalizers.base import Normalizer
 from ffun.tags.entities import TagInNormalization
+from ffun.tags.normalizers.base import Normalizer
 
 
 # TODO: tests
@@ -9,6 +8,7 @@ class PartBlacklistNormalizer(Normalizer):
 
     Example: "the-best-startup" with blacklist {"the"} -> "best-startup"
     """
+
     __slots__ = ("blacklist",)
 
     def __init__(self, blacklist: set[str]) -> None:

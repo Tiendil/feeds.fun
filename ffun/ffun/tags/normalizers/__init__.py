@@ -1,16 +1,9 @@
-
-
-from typing import Iterable
-
 from ffun.core import logging
-from ffun.ontology.entities import NormalizedTag, RawTag
-from ffun.domain.entities import TagUid, TagUidPart
-from ffun.tags import converters
-from ffun.tags.settings import settings
-from ffun.tags.entities import TagInNormalization, NormalizerType
+from ffun.tags.entities import NormalizerType
 from ffun.tags.normalizers.base import Normalizer
 from ffun.tags.normalizers.part_blacklist import PartBlacklistNormalizer
 from ffun.tags.normalizers.part_replacer import PartReplacerNormalizer
+from ffun.tags.settings import settings
 
 logger = logging.get_module_logger()
 

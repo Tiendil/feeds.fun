@@ -1,5 +1,4 @@
-
-from ffun.tags.entities import TagInNormalization, NormalizerType
+from ffun.tags.entities import TagInNormalization
 
 
 class Normalizer:

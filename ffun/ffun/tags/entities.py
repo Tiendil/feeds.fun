@@ -1,4 +1,3 @@
-import datetime
 import enum
 from typing import Annotated, Literal
 
@@ -28,10 +27,12 @@ class TagInNormalization(BaseEntity):
 # TODO: check most common rules
 # TODO: remove duplicates like `xxx-xxx` -> `xxx`
 
+
 class NormalizerType(enum.StrEnum):
     fake = "fake"
     part_blacklist = "part_blacklist"
     part_replacer = "part_replacer"
+
 
 # TODO: split by part `rest-api-for-graph-processing` -> `rest-api` & `graph-processing`
 #       `social-media-impact-on-innovation` -> `social-media-impact` & `innovation`

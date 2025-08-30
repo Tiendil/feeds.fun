@@ -1,23 +1,20 @@
 from typing import Iterable
 
+from ffun.domain.entities import TagUid
 from ffun.ontology.entities import NormalizedTag, RawTag
-from ffun.domain.entities import TagUid, TagUidPart
 from ffun.tags import converters, utils
-from ffun.tags.entities import TagInNormalization, NormalizerType
-from ffun.tags.normalizers import Normalizer, normalizers
-
+from ffun.tags.entities import TagInNormalization
+from ffun.tags.normalizers import normalizers
 
 
 def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
     return TagInNormalization(
         uid=tag.raw_uid,
         parts=utils.uid_to_parts(tag.raw_uid),
-
         preserve=tag.preserve,
-
         name=tag.name,
         link=tag.link,
-        categories=set(tag.categories)
+        categories=set(tag.categories),
     )
 
 

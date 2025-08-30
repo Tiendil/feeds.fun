@@ -1,6 +1,6 @@
-from ffun.tags.normalizers.base import Normalizer
 from ffun.tags import utils
 from ffun.tags.entities import TagInNormalization
+from ffun.tags.normalizers.base import Normalizer
 
 
 def prepare_replacement(text: str) -> str:
@@ -8,11 +8,11 @@ def prepare_replacement(text: str) -> str:
         # TODO: custome error
         raise NotImplementedError("Replacement text cannot be empty")
 
-    if text[0] != '-':
-        text = '-' + text
+    if text[0] != "-":
+        text = "-" + text
 
-    if text[-1] != '-':
-        text = text + '-'
+    if text[-1] != "-":
+        text = text + "-"
 
     return text.lower()
 
@@ -28,14 +28,14 @@ class PartBlacklistNormalizer(Normalizer):
     Remember, that processing of new tags will begin from the first normalizer again
     => this normalizer still can be applied multiple times if needed.
     """
+
     __slots__ = ("replacements",)
 
     def __init__(self, replacements: dict[str, str]) -> None:
-        self.replacements = {prepare_replacement(k): prepare_replacement(v)
-                             for k, v in replacements.items()}
+        self.replacements = {prepare_replacement(k): prepare_replacement(v) for k, v in replacements.items()}
 
     async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[TagInNormalization]]:
-        source_uid = f'-{tag.uid}-'
+        source_uid = f"-{tag.uid}-"
 
         new_uids = set()
 
