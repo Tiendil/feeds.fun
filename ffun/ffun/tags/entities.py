@@ -24,9 +24,17 @@ class TagInNormalization(BaseEntity):
 
 
 # TODO: check most common parts
-# TODO: check most common rules
-# TODO: remove duplicates like `xxx-xxx` -> `xxx`, but what with c-plus-plus?
 
+###############################################
+# Normalizers that we do not implement for now.
+#
+# 1. Duplicates removal like `xxx-xxx` -> `xxx`
+#    Because there is a lot of contradictions and corners cases:
+#    - duplicates are parts of naming and idioms: `c-plus-plus`, `yo-yo-dieting`, `day-to-day`
+#    - numbers also duplicate, for example, in versions: `python-3-11-3`
+#    - duplicates may be correctly processed by other normalizers:
+#      `brain-implants-and-brain-decoding` -> `brain-implants` & `brain-decoding`
+###############################################
 
 class NormalizerType(enum.StrEnum):
     fake = "fake"
@@ -36,6 +44,8 @@ class NormalizerType(enum.StrEnum):
 
 # TODO: split by part `rest-api-for-graph-processing` -> `rest-api` & `graph-processing`
 #       `social-media-impact-on-innovation` -> `social-media-impact` & `innovation`
+#       artistic-expression-through-artistic-skills -> `artistic-expression` & `artistic-skills`
+#       MUST be before duplication detection
 # TODO: unite multiple parts `q-a` -> `qa`, `start-up` -> `startup`, `e-mail` -> `email`, etc.
 # TODO: push to left `tail-s` -> `tails`
 
