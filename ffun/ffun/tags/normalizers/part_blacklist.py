@@ -1,9 +1,8 @@
 from ffun.tags.entities import TagInNormalization
-from ffun.tags.normalizers.base import Normalizer
+from ffun.tags.normalizers import base
 
 
-# TODO: tests
-class PartBlacklistNormalizer(Normalizer):
+class Normalizer(base.Normalizer):
     """Remove parts of tag uids that are in the blacklist.
 
     Example: "the-best-startup" with blacklist {"the"} -> "best-startup"
@@ -15,6 +14,9 @@ class PartBlacklistNormalizer(Normalizer):
         self.blacklist = blacklist
 
     async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[TagInNormalization]]:
+        if not tag.parts:
+            return False, []
+
         new_parts = [part for part in tag.parts if part not in self.blacklist]
 
         if len(new_parts) == len(tag.parts):
@@ -25,6 +27,6 @@ class PartBlacklistNormalizer(Normalizer):
 
         new_uid = "-".join(new_parts)
 
-        new_tag = tag.replace(uid=new_uid, parts=new_parts, name=None)
+        new_tag = tag.replace(uid=new_uid, parts=new_parts, preserve=False, name=None)
 
-        return True, [new_tag]
+        return False, [new_tag]

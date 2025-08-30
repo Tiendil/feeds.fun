@@ -1,8 +1,8 @@
 from ffun.core import logging
 from ffun.tags.entities import NormalizerType
 from ffun.tags.normalizers.base import Normalizer
-from ffun.tags.normalizers.part_blacklist import PartBlacklistNormalizer
-from ffun.tags.normalizers.part_replacer import PartReplacerNormalizer
+from ffun.tags.normalizers import part_blacklist
+from ffun.tags.normalizers import part_replacer
 from ffun.tags.settings import settings
 
 logger = logging.get_module_logger()
@@ -35,9 +35,9 @@ for normalizer_config in settings.tag_normalizers:
     normalizer: Normalizer
 
     if normalizer_config.type == NormalizerType.part_blacklist:
-        normalizer = PartBlacklistNormalizer(blacklist=normalizer_config.blacklist)
+        normalizer = part_blacklist.Normalizer(blacklist=normalizer_config.blacklist)
     elif normalizer_config.type == NormalizerType.part_replacer:
-        normalizer = PartReplacerNormalizer(replacements=normalizer_config.replacements)
+        normalizer = part_replacer.Normalizer(replacements=normalizer_config.replacements)
     else:
         raise NotImplementedError(f"Unknown normalizer type: {normalizer_config.type}")
 

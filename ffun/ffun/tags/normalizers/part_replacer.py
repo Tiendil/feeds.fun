@@ -1,7 +1,7 @@
 from ffun.domain.entities import TagUid
 from ffun.tags import utils
 from ffun.tags.entities import TagInNormalization
-from ffun.tags.normalizers.base import Normalizer
+from ffun.tags.normalizers import base
 
 
 def prepare_replacement(text: str) -> str:
@@ -19,7 +19,7 @@ def prepare_replacement(text: str) -> str:
 
 
 # TODO: tests
-class PartReplacerNormalizer(Normalizer):
+class Normalizer(base.Normalizer):
     """Replace parts of tag uids based on a replacements dictionary.
 
     Example: "my-set-up-guide" with replacements {"set-up": "setup"} -> "my-setup-guide"
@@ -49,6 +49,6 @@ class PartReplacerNormalizer(Normalizer):
         if not new_uids:
             return True, []
 
-        new_tags = [tag.replace(uid=uid, parts=utils.uid_to_parts(uid), name=None) for uid in new_uids]
+        new_tags = [tag.replace(uid=uid, parts=utils.uid_to_parts(uid), preserve=False, name=None) for uid in new_uids]
 
         return False, new_tags

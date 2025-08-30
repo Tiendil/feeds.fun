@@ -25,6 +25,8 @@ def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
 # TODO: look at most common parts of tags
 # TODO: look at most common duplicates like `start-up` and `startup`, `login` and `log-in`, etc.
 # TODO: normalizers theoretically can produce malformed tags, we should protect against it
+# TODO: measure impact of each normalizer
+# TODO: check what if tag.name is None
 async def normalize(raw_tags: Iterable[RawTag]) -> list[NormalizedTag]:  # noqa: CCR001
 
     tags_to_process = {tag.uid: tag
