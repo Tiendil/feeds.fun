@@ -11,6 +11,6 @@ class Processor(base.Processor):
 
     async def process(self, entry: Entry) -> list[RawTag]:
         if entry.title.isupper():
-            return [RawTag(raw_uid="upper-case-title")]
+            return [RawTag(raw_uid="upper-case-title", preserve=True)]
 
         return []

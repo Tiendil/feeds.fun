@@ -10,6 +10,6 @@ class Processor(base.Processor):
         tags: list[RawTag] = []
 
         for external_tag in entry.external_tags:
-            tags.append(RawTag(raw_uid=external_tag, categories={TagCategory.feed_tag}))
+            tags.append(RawTag(raw_uid=external_tag, preserve=True, categories={TagCategory.feed_tag}))
 
         return tags

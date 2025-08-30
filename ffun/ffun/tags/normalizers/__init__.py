@@ -32,6 +32,8 @@ for normalizer_config in settings.tag_normalizers:
 
     logger.info("add_tag_normalizer", normalizer_id=normalizer_config.id, normalizer_name=normalizer_config.name)
 
+    normalizer: Normalizer
+
     if normalizer_config.type == NormalizerType.part_blacklist:
         normalizer = PartBlacklistNormalizer(blacklist=normalizer_config.blacklist)
     elif normalizer_config.type == NormalizerType.part_replacer:

@@ -5,6 +5,8 @@ from ffun.ontology.entities import NormalizedTag, RawTag, TagCategory
 from ffun.tags.domain import normalize
 
 
+# TODO: move initial conversion tests into a separate class
+# TODO: test logic without normalizers
 class TestNormalize:
 
     @pytest.mark.asyncio
@@ -21,16 +23,16 @@ class TestNormalize:
     )
     @pytest.mark.asyncio
     async def test_single_tag(self, raw_uid: str, norm_uid: TagUid) -> None:
-        assert await normalize([RawTag(raw_uid=raw_uid)]) == [NormalizedTag(uid=norm_uid)]
+        assert await normalize([RawTag(raw_uid=raw_uid, preserve=False)]) == [NormalizedTag(uid=norm_uid)]
 
     @pytest.mark.asyncio
     async def test_normalize_complex(self) -> None:
         input = [
-            RawTag(raw_uid="tag--1"),
-            RawTag(raw_uid="tag-2"),
-            RawTag(raw_uid="taG-3"),
-            RawTag(raw_uid="tag-4"),
-            RawTag(raw_uid="tag--5"),
+            RawTag(raw_uid="tag--1", preserve=False),
+            RawTag(raw_uid="tag-2", preserve=False),
+            RawTag(raw_uid="taG-3", preserve=False),
+            RawTag(raw_uid="tag-4", preserve=False),
+            RawTag(raw_uid="tag--5", preserve=False),
         ]
 
         expected = [
@@ -48,11 +50,17 @@ class TestNormalize:
         input = [
             RawTag(
                 raw_uid="tag-1",
+                preserve=False,
                 name="Tag One",
                 link="http://example.com/tag1",
                 categories={TagCategory.network_domain},
             ),
-            RawTag(raw_uid="tag-2", name="Tag Two", link="http://example.com/tag2", categories={TagCategory.feed_tag}),
+            RawTag(
+                raw_uid="tag-2",
+                preserve=False,
+                name="Tag Two",
+                link="http://example.com/tag2",
+                categories={TagCategory.feed_tag}),
         ]
 
         expected = [
@@ -75,11 +83,11 @@ class TestNormalize:
     @pytest.mark.asyncio
     async def test_remove_duplicates(self) -> None:
         input = [
-            RawTag(raw_uid="tag-1"),
-            RawTag(raw_uid="tag-1"),
-            RawTag(raw_uid="tag-2"),
-            RawTag(raw_uid="tag-3"),
-            RawTag(raw_uid="tag-2"),
+            RawTag(raw_uid="tag-1", preserve=False),
+            RawTag(raw_uid="tag-1", preserve=False),
+            RawTag(raw_uid="tag-2", preserve=False),
+            RawTag(raw_uid="tag-3", preserve=False),
+            RawTag(raw_uid="tag-2", preserve=False),
         ]
 
         expected = [

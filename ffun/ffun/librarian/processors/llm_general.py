@@ -88,6 +88,6 @@ class Processor(base.Processor):
             raw_tags.update(self.tag_extractor(response.response_content()))
 
         for raw_tag in raw_tags:
-            tags.append(RawTag(raw_uid=raw_tag))
+            tags.append(RawTag(raw_uid=raw_tag, preserve=False))
 
         return tags

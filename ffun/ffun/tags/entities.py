@@ -25,7 +25,7 @@ class TagInNormalization(BaseEntity):
 
 # TODO: check most common parts
 # TODO: check most common rules
-# TODO: remove duplicates like `xxx-xxx` -> `xxx`
+# TODO: remove duplicates like `xxx-xxx` -> `xxx`, but what with c-plus-plus?
 
 
 class NormalizerType(enum.StrEnum):
@@ -64,4 +64,4 @@ TagNormalizer = Annotated[
 
 
 class NormalizersConfig(pydantic.BaseModel):
-    tag_processors: tuple[TagNormalizer, ...]
+    tag_normalizer: tuple[TagNormalizer, ...]

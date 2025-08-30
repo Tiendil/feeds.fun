@@ -1,6 +1,5 @@
 from typing import Iterable
 
-from ffun.domain.entities import TagUid
 from ffun.ontology.entities import NormalizedTag, RawTag
 from ffun.tags import converters, utils
 from ffun.tags.entities import TagInNormalization
@@ -8,9 +7,11 @@ from ffun.tags.normalizers import normalizers
 
 
 def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
+    uid = converters.normalize(tag.raw_uid)
+
     return TagInNormalization(
-        uid=tag.raw_uid,
-        parts=utils.uid_to_parts(tag.raw_uid),
+        uid=uid,
+        parts=utils.uid_to_parts(uid),
         preserve=tag.preserve,
         name=tag.name,
         link=tag.link,
@@ -23,13 +24,16 @@ def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
 # TODO: we should copy preserve tags and process it as non-preserve? or not?
 # TODO: look at most common parts of tags
 # TODO: look at most common duplicates like `start-up` and `startup`, `login` and `log-in`, etc.
+# TODO: normalizers theoretically can produce malformed tags, we should protect against it
 async def normalize(raw_tags: Iterable[RawTag]) -> list[NormalizedTag]:  # noqa: CCR001
-    normalized_uids = {converters.normalize(tag) for tag in raw_tags}
 
-    tags_to_process = {uid: prepare_for_normalization(TagUid(uid)) for uid in normalized_uids}
+    tags_to_process = {tag.uid: tag
+                       for tag in [prepare_for_normalization(raw_tag) for raw_tag in raw_tags]}
 
     processed_tags = set()
     normalized_tags = []
+
+    tag: TagInNormalization | None
 
     while tags_to_process:
         tag = tags_to_process.popitem()[1]

@@ -50,6 +50,7 @@ class Processor(base.Processor):
             tags.append(
                 RawTag(
                     raw_uid=subdomain,
+                    preserve=True,
                     link=parsed_url.scheme + "://" + subdomain,
                     categories={TagCategory.network_domain},
                 )

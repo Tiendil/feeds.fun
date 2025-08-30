@@ -32,6 +32,6 @@ class TestEncodeSpecialCharacters:
         expected_tags = []
 
         if has_tag:
-            expected_tags.append(RawTag(raw_uid=expected_tag))
+            expected_tags.append(RawTag(raw_uid=expected_tag, preserve=True))
 
         assert tags == expected_tags

@@ -6,7 +6,7 @@ import pydantic_settings
 import toml
 
 from ffun.core.settings import BaseSettings
-from ffun.tags.entities import NormalizerConfig, TagNormalizer
+from ffun.tags.entities import NormalizersConfig, TagNormalizer
 
 _root = pathlib.Path(__file__).parent
 
@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     def tag_normalizers(self) -> tuple[TagNormalizer, ...]:
         data = toml.loads(self.tag_normalizers_config.read_text())
 
-        return NormalizerConfig(**data).tag_normalizers
+        return NormalizersConfig(**data).tag_normalizer
 
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_TAGS_")
 
