@@ -23,8 +23,6 @@ class TagInNormalization(BaseEntity):
     categories: set[TagCategory]
 
 
-# TODO: check most common parts
-
 ###############################################
 # Normalizes that we do not implement for now.
 # We may introduce them later when we have specialized tag processors that hover problem cases.
@@ -35,6 +33,10 @@ class TagInNormalization(BaseEntity):
 #    - numbers also duplicate, for example, in versions: `python-3-11-3`
 #    - duplicates may be correctly processed by other normalizes:
 #      `brain-implants-and-brain-decoding` -> `brain-implants` & `brain-decoding`
+# 2. Removing suffixes from numbers like `-s`, `-th`, `-nd`, `-rd`: `1990s` -> `1990`, `4th` -> `4`
+#    For now there is no enough evidence that this is a common problem.
+# 3. Doing something with 's` suffix: `tail-s` -> `tail`, `garry-s-mod` -> `garry-mod`
+#    There are a few different cases here, we should solve them separately, when tags become cleaner.
 ###############################################
 
 class NormalizerType(enum.StrEnum):
@@ -42,12 +44,6 @@ class NormalizerType(enum.StrEnum):
     part_blacklist = "part_blacklist"
     part_replacer = "part_replacer"
     splitter = "splitter"
-
-# TODO: split by part `rest-api-for-graph-processing` -> `rest-api` & `graph-processing`
-#       `social-media-impact-on-innovation` -> `social-media-impact` & `innovation`
-#       artistic-expression-through-artistic-skills -> `artistic-expression` & `artistic-skills`
-#       MUST be before duplication detection
-# TODO: push to left `tail-s` -> `tails`, `garry-s-mod` -> `garrys-mod`, etc.
 
 
 class BaseNormalizer(BaseEntity):

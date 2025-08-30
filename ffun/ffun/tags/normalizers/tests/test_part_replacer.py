@@ -8,7 +8,8 @@ from ffun.ontology.entities import RawTag
 
 
 normalizer = part_replacer.Normalizer(replacements={"start-up": "startup",
-                                                    "set-up": "setup"})
+                                                    "set-up": "setup",
+                                                    "em": "them"})
 
 
 class TestNormalizer:
@@ -24,6 +25,7 @@ class TestNormalizer:
             ('let-set-up-for-start-up', False, ["let-setup-for-start-up", "let-set-up-for-startup"]),
             ('let-start-up-start-up', False, ["let-startup-startup"]),
             ('let-start-up-or-not-start-up', False, ["let-startup-or-not-startup"]),
+            ("let-em-go", False, ["let-them-go"]),
         ],
     )
     @pytest.mark.asyncio
