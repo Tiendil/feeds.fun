@@ -26,13 +26,14 @@ class TagInNormalization(BaseEntity):
 # TODO: check most common parts
 
 ###############################################
-# Normalizers that we do not implement for now.
+# Normalizes that we do not implement for now.
+# We may introduce them later when we have specialized tag processors that hover problem cases.
 #
 # 1. Duplicates removal like `xxx-xxx` -> `xxx`
 #    Because there is a lot of contradictions and corners cases:
-#    - duplicates are parts of naming and idioms: `c-plus-plus`, `yo-yo-dieting`, `day-to-day`
+#    - duplicates are parts of naming and idioms: `c-plus-plus`, `yo-yo-dieting`, `day-to-day`, `end-to-end`
 #    - numbers also duplicate, for example, in versions: `python-3-11-3`
-#    - duplicates may be correctly processed by other normalizers:
+#    - duplicates may be correctly processed by other normalizes:
 #      `brain-implants-and-brain-decoding` -> `brain-implants` & `brain-decoding`
 ###############################################
 
