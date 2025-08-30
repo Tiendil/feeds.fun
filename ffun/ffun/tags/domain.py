@@ -27,6 +27,7 @@ def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
 # TODO: normalizers theoretically can produce malformed tags, we should protect against it
 # TODO: measure impact of each normalizer
 # TODO: check what if tag.name is None
+# TODO: fill configs
 async def normalize(raw_tags: Iterable[RawTag]) -> list[NormalizedTag]:  # noqa: CCR001
 
     tags_to_process = {tag.uid: tag

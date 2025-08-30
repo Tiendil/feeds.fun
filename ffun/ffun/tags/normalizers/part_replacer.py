@@ -18,7 +18,6 @@ def prepare_replacement(text: str) -> str:
     return text.lower()
 
 
-# TODO: tests
 class Normalizer(base.Normalizer):
     """Replace parts of tag uids based on a replacements dictionary.
 
@@ -35,16 +34,24 @@ class Normalizer(base.Normalizer):
     def __init__(self, replacements: dict[str, str]) -> None:
         self.replacements = {prepare_replacement(k): prepare_replacement(v) for k, v in replacements.items()}
 
-    async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[TagInNormalization]]:
+    async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[TagInNormalization]]:  # noqa: CCR001
+        if not tag.uid:
+            return False, []
+
         source_uid = f"-{tag.uid}-"
 
         new_uids = set()
 
         for replace_from, replace_to in self.replacements.items():
-            new_uid = source_uid.replace(replace_from, replace_to)
+            if replace_from not in source_uid:
+                continue
 
-            if new_uid != source_uid:
-                new_uids.add(TagUid(new_uid[1:-1]))
+            processed_uid = source_uid
+
+            while processed_uid != (new_uid := processed_uid.replace(replace_from, replace_to, count=1)):
+                processed_uid = new_uid
+
+            new_uids.add(TagUid(processed_uid[1:-1]))
 
         if not new_uids:
             return True, []
