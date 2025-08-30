@@ -4,20 +4,6 @@ from ffun.tags.entities import TagInNormalization
 from ffun.tags.normalizers import base
 
 
-def prepare_replacement(text: str) -> str:
-    if not text:
-        # TODO: custome error
-        raise NotImplementedError("Replacement text cannot be empty")
-
-    if text[0] != "-":
-        text = "-" + text
-
-    if text[-1] != "-":
-        text = text + "-"
-
-    return text.lower()
-
-
 class Normalizer(base.Normalizer):
     """Replace parts of tag uids based on a replacements dictionary.
 
@@ -32,7 +18,8 @@ class Normalizer(base.Normalizer):
     __slots__ = ("replacements",)
 
     def __init__(self, replacements: dict[str, str]) -> None:
-        self.replacements = {prepare_replacement(k): prepare_replacement(v) for k, v in replacements.items()}
+        self.replacements = {utils.dashes_for_tag_part(k): utils.dashes_for_tag_part(v)
+                             for k, v in replacements.items()}
 
     async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[TagInNormalization]]:  # noqa: CCR001
         if not tag.uid:
@@ -51,7 +38,7 @@ class Normalizer(base.Normalizer):
             while processed_uid != (new_uid := processed_uid.replace(replace_from, replace_to, count=1)):
                 processed_uid = new_uid
 
-            new_uids.add(TagUid(processed_uid[1:-1]))
+            new_uids.add(TagUid(processed_uid.strip("-")))
 
         if not new_uids:
             return True, []

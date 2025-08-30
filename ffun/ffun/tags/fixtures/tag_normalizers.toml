@@ -8,7 +8,7 @@
   enabled = true
   name = "part_blacklist"
   type = "part_blacklist"
-  blacklist = ["the", "and", "or", "of", "in", "on", "at", "to", "for", "with", "a", "an", "is", "it", "by", "this", "that", "from", "as", "be", "are"]
+  blacklist = ["the", "a"]
 
 
 [[tag_normalizer]]
@@ -16,4 +16,11 @@
   enabled = true
   name = "part_replacer"
   type = "part_replacer"
-  replacements = {}
+
+  [tag_normalizer.replacements]
+  q-a = "qa"
+  start-up = "startup"
+  set-up = "setup"
+  e-mail = "email"
+  web-site = "website"
+  x-ray = "xray"

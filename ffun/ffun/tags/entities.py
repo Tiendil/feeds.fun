@@ -41,14 +41,13 @@ class NormalizerType(enum.StrEnum):
     fake = "fake"
     part_blacklist = "part_blacklist"
     part_replacer = "part_replacer"
-
+    splitter = "splitter"
 
 # TODO: split by part `rest-api-for-graph-processing` -> `rest-api` & `graph-processing`
 #       `social-media-impact-on-innovation` -> `social-media-impact` & `innovation`
 #       artistic-expression-through-artistic-skills -> `artistic-expression` & `artistic-skills`
 #       MUST be before duplication detection
-# TODO: unite multiple parts `q-a` -> `qa`, `start-up` -> `startup`, `e-mail` -> `email`, etc.
-# TODO: push to left `tail-s` -> `tails`
+# TODO: push to left `tail-s` -> `tails`, `garry-s-mod` -> `garrys-mod`, etc.
 
 
 class BaseNormalizer(BaseEntity):
@@ -68,8 +67,13 @@ class PartReplacer(BaseNormalizer):
     replacements: dict[str, str] = pydantic.Field(default_factory=dict)
 
 
+class Splitter(BaseNormalizer):
+    type: Literal[NormalizerType.splitter] = NormalizerType.splitter
+    separators: set[str] = pydantic.Field(default_factory=set)
+
+
 TagNormalizer = Annotated[
-    PartBlacklist | PartReplacer,
+    PartBlacklist | PartReplacer | Splitter,
     pydantic.Field(discriminator="type"),
 ]
 

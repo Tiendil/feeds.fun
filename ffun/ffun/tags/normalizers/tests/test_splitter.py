@@ -1,14 +1,13 @@
 
 import pytest
 
-from ffun.tags.normalizers import part_replacer
+from ffun.tags.normalizers import splitter
 from ffun.tags import utils, converters
 from ffun.tags.entities import TagCategory, TagInNormalization
 from ffun.ontology.entities import RawTag
 
 
-normalizer = part_replacer.Normalizer(replacements={"start-up": "startup",
-                                                    "set-up": "setup"})
+normalizer = splitter.Normalizer(separators=['for', 'impact-on'])
 
 
 class TestNormalizer:
@@ -18,12 +17,21 @@ class TestNormalizer:
             ("", False, []),
             ('nohtingtodo', True, []),
             ('nohting-to-do', True, []),
-            ('set-up-for-success', False, ["setup-for-success"]),
-            ('best-start-up-ever', False, ["best-startup-ever"]),
-            ('how-to-start-up', False, ["how-to-startup"]),
-            ('let-set-up-for-start-up', False, ["let-setup-for-start-up", "let-set-up-for-startup"]),
-            ('let-start-up-start-up', False, ["let-startup-startup"]),
-            ('let-start-up-or-not-start-up', False, ["let-startup-or-not-startup"]),
+            ('set-up-for-success', False, ["set-up", "success"]),
+            ('for-x', False, ["x"]),
+            ('x-for-y', False, ["x", "y"]),
+            ('x-for', False, ["x"]),
+            ('social-media-impact-on-innovation', False, ["social-media", "innovation"]),
+            ("impact-on-innovation", False, ["innovation"]),
+            ("rest-api-for-graph-processing-impact-on-innovation",
+             False,
+             ["rest-api", "graph-processing-impact-on-innovation", "rest-api-for-graph-processing", "innovation"]),
+            ("for-impact-on", False, ["impact-on", "for"]),
+            ("for-for-impact-on", False, ["impact-on", "for-for"]),
+            ("x-for-y-for-z", False, ["x", "y", "z"]),
+            ("impact-on-x-impact-on-y-impact-on", False, ["x", "y"]),
+            ("x-impact-on-impact-on-y", False, ["x", "y"]),
+            ("for-for-impact-on-impact-on", False, ["for-for", "impact-on-impact-on"]),
         ],
     )
     @pytest.mark.asyncio
