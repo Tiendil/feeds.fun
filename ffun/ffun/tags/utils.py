@@ -1,18 +1,16 @@
 from ffun.domain.entities import TagUid, TagUidPart
+from ffun.tags import errors
 
 
-# TODO: tests
 def uid_to_parts(uid: TagUid) -> list[TagUidPart]:
     if not uid:
         return []
     return [TagUidPart(part) for part in uid.split("-")]
 
 
-# TODO: tests
 def dashes_for_tag_part(text: str) -> str:
     if not text:
-        # TODO: custome error
-        raise NotImplementedError("Replacement text cannot be empty")
+        raise errors.TagPartIsEmpty()
 
     if text[0] != "-":
         text = "-" + text
