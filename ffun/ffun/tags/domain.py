@@ -20,7 +20,7 @@ def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
 
 
 # TODO: tests
-# TODO: add missed tags
+# TODO: preserve: non, constant, keep
 # TODO: we should copy preserve tags and process it as non-preserve? or not?
 # TODO: look at most common parts of tags
 # TODO: look at most common duplicates like `start-up` and `startup`, `login` and `log-in`, etc.
