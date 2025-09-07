@@ -32,11 +32,11 @@ async def apply_normalizers(normalizers_: list[NormalizerInfo], tag: TagInNormal
     return (True, all_new_tags)
 
 
-# TODO: tests
 # Note: we should keep calls of prepare_for_normalization(...) in a single place, either here or in apply_normalizers
 #       since we control duplicates by comparing normalized uids
 #       we should keep calls to prepare_for_normalization(...) in the normalize(...) function
-async def normalize(raw_tags: Iterable[RawTag]) -> list[NormalizedTag]:  # noqa: CCR001
+async def normalize(raw_tags: Iterable[RawTag],  # noqa: CCR001
+                    normalizers_=tuple(normalizers)) -> list[NormalizedTag]:
 
     tags_to_process = {tag.uid: tag for tag in [prepare_for_normalization(raw_tag) for raw_tag in raw_tags]}
 
@@ -53,7 +53,7 @@ async def normalize(raw_tags: Iterable[RawTag]) -> list[NormalizedTag]:  # noqa:
 
         processed_tags.add(tag.uid)
 
-        tag_valid, new_raw_tags = await apply_normalizers(tag)
+        tag_valid, new_raw_tags = await apply_normalizers(normalizers_, tag)
 
         for new_raw_tag in new_raw_tags:
             new_tag = prepare_for_normalization(new_raw_tag)
