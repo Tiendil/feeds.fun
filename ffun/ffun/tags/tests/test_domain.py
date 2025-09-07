@@ -1,7 +1,7 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from ffun.domain.entities import TagUid
+from ffun.domain.entities import TagUid, TagUidPart
 from ffun.ontology.entities import NormalizedTag, RawTag, TagCategory
 from ffun.tags.domain import apply_normalizers, normalize, prepare_for_normalization
 from ffun.tags.entities import TagInNormalization
@@ -24,7 +24,7 @@ class TestPrepareForNormalization:
 
         assert prepared_tag == TagInNormalization(
             uid=TagUid("example-tag"),
-            parts=["example", "tag"],
+            parts=[TagUidPart("example"), TagUidPart("tag")],
             preserve=preserve,
             link=raw_tag.link,
             categories=raw_tag.categories,
@@ -35,7 +35,7 @@ class TestApplyNormalizers:
 
     @pytest.fixture
     def tag(self) -> TagInNormalization:
-        uid: TagUid = "example-tag"
+        uid: TagUid = TagUid("example-tag")
         return TagInNormalization(
             uid=uid,
             parts=uid_to_parts(uid),
@@ -311,7 +311,9 @@ class TestNormalize:
             tag_9.raw_uid: [tag_9],
         }
 
-        async def mocked_apply_normalizers(_normalizers, tag_):
+        async def mocked_apply_normalizers(
+            _normalizers: list[NormalizerInfo], tag_: TagInNormalization
+        ) -> tuple[bool, list[RawTag]]:
             # we use `preserve` here just for simplicity of the map
             # to not add additional parameters
             if tag_.uid in tag_map:

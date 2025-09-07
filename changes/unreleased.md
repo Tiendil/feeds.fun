@@ -11,3 +11,5 @@ TODO:
 
 - Correct configs for each normalizer.
 - README — add section about normalizers.
+- Task for dashbord of normalizers.
+- test on real data.

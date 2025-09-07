@@ -27,7 +27,7 @@ class FakeNormalizer(Normalizer):
 class NormalizerAlwaysError(Normalizer):
     slots__ = ("exception",)
 
-    def __init__(self, exception: Exception) -> None:
+    def __init__(self, exception: BaseException) -> None:
         self.exception = exception
 
     async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[RawTag]]:
@@ -52,7 +52,7 @@ class NormalizerInfo:
             interval=settings.metric_accumulation_interval, event="tag_normalizer_produced", normalizer_id=id
         )
 
-    async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[TagInNormalization]]:
+    async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[RawTag]]:
         try:
             tag_valid, new_tags = await self._normalizer.normalize(tag)
 

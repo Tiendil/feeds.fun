@@ -1,7 +1,7 @@
 from ffun.core import logging
 from ffun.tags.entities import NormalizerType
 from ffun.tags.normalizers import part_blacklist, part_replacer, splitter
-from ffun.tags.normalizers.base import Normalizer, NormalizerInfo
+from ffun.tags.normalizers.base import FakeNormalizer, Normalizer, NormalizerAlwaysError, NormalizerInfo
 from ffun.tags.settings import settings
 
 logger = logging.get_module_logger()
@@ -39,3 +39,6 @@ for normalizer_config in settings.tag_normalizers:
     )
 
     normalizers.append(info)
+
+
+__all__ = ["Normalizer", "NormalizerInfo", "FakeNormalizer", "NormalizerAlwaysError", "normalizers"]

@@ -56,7 +56,7 @@ class TestNormalizerInfo:
 
     @pytest.fixture
     def tag(self) -> TagInNormalization:
-        uid: TagUid = "example-tag"
+        uid: TagUid = TagUid("example-tag")
         return TagInNormalization(
             uid=uid,
             parts=utils.uid_to_parts(uid),
