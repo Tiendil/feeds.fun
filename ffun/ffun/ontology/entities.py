@@ -22,7 +22,7 @@ class TagProperty(BaseEntity):
     created_at: datetime.datetime
 
 
-class RawTag(pydantic.BaseModel):
+class RawTag(BaseEntity):
     raw_uid: str
 
     preserve: bool

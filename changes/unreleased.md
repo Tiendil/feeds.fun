@@ -10,3 +10,4 @@
 TODO:
 
 - Correct configs for each normalizer.
+- README — add section about normalizers.

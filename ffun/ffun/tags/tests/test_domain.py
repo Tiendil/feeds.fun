@@ -1,7 +1,9 @@
 import pytest
 
+from pytest_mock import MockerFixture
 from ffun.domain.entities import TagUid
 from ffun.ontology.entities import NormalizedTag, RawTag, TagCategory
+from ffun.tags import converters
 from ffun.tags.domain import normalize, apply_normalizers, prepare_for_normalization
 from ffun.tags.entities import TagInNormalization
 from ffun.tags.utils import uid_to_parts
@@ -258,6 +260,77 @@ class TestNormalize:
 
         resulted = await normalize(input, normalizers_=[])
         resulted.sort(key=lambda t: t.uid)
+
+        expected.sort(key=lambda t: t.uid)
+
+        assert resulted == expected
+
+    @pytest.mark.asyncio
+    async def test_tags_chain(self, mocker: MockerFixture) -> None:  # pylint: disable=R0914
+        tag_1 = RawTag(
+            raw_uid="tag-1",
+            preserve=True,
+            link=None,
+            categories=set())
+        tag_2 = RawTag(
+            raw_uid="tag-2",
+            preserve=False,
+            link=None,
+            categories=set())
+        tag_3 = RawTag(
+            raw_uid="tag-3",
+            preserve=True,
+            link=None,
+            categories=set())
+
+        tag_4 = tag_1.replace(raw_uid="tag-4", preserve=False)
+        tag_5 = tag_2.replace(raw_uid="tag-5", preserve=True)
+        tag_6 = tag_3.replace(raw_uid="tag-6", preserve=False)
+
+        tag_7 = tag_1.replace(raw_uid="tag-7", preserve=True)
+        tag_8 = tag_2.replace(raw_uid="tag-8", preserve=True)
+        tag_9 = tag_3.replace(raw_uid="tag-9", preserve=True)
+
+        tag_10 = tag_3.replace(raw_uid="tag-10", preserve=True)
+
+        # Test:
+        # - chains
+        # - preserve
+        # - duplication
+        tag_map = {
+            tag_1.raw_uid: [tag_4, tag_7],
+            tag_2.raw_uid: [tag_5, tag_8, tag_1],
+            tag_3.raw_uid: [tag_6, tag_9],
+            tag_4.raw_uid: [tag_10],
+            tag_5.raw_uid: [tag_2, tag_3, tag_10],
+            tag_6.raw_uid: [tag_6],
+            tag_9.raw_uid: [tag_9],
+        }
+
+        async def mocked_apply_normalizers(_normalizers, tag_):
+            # we use `preserve` here just for simplicity of the map
+            # to not add additional parameters
+            if tag_.uid in tag_map:
+                return tag_.preserve, tag_map[tag_.uid]
+            return tag_.preserve, []
+
+        mocker.patch("ffun.tags.domain.apply_normalizers", side_effect=mocked_apply_normalizers)
+
+        resulted = await normalize([tag_1, tag_2, tag_3])
+        resulted.sort(key=lambda t: t.uid)
+
+        expected = [
+            NormalizedTag(uid=TagUid("tag-1"), link=None, categories=set()),
+            # tag-2 is not preserved
+            NormalizedTag(uid=TagUid("tag-3"), link=None, categories=set()),
+            # tag-4 is not preserved
+            NormalizedTag(uid=TagUid("tag-5"), link=None, categories=set()),
+            # tag-6 & tag-9 are produced simultaneously, but tag-6 is not preserved
+            NormalizedTag(uid=TagUid("tag-7"), link=None, categories=set()),
+            NormalizedTag(uid=TagUid("tag-8"), link=None, categories=set()),
+            NormalizedTag(uid=TagUid("tag-9"), link=None, categories=set()),
+            NormalizedTag(uid=TagUid("tag-10"), link=None, categories=set()),
+        ]
 
         expected.sort(key=lambda t: t.uid)
 
