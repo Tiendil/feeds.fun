@@ -1,20 +1,10 @@
 from ffun.core import logging
 from ffun.tags.entities import NormalizerType
 from ffun.tags.normalizers import part_blacklist, part_replacer, splitter
-from ffun.tags.normalizers.base import Normalizer
+from ffun.tags.normalizers.base import Normalizer, NormalizerInfo
 from ffun.tags.settings import settings
 
 logger = logging.get_module_logger()
-
-
-class NormalizerInfo:
-    __slots__ = ("id", "name", "normalizer", "type")
-
-    def __init__(self, id: int, name: str, type: NormalizerType, normalizer: Normalizer) -> None:
-        self.id = id
-        self.name = name
-        self.type = type
-        self.normalizer = normalizer
 
 
 normalizers: list[NormalizerInfo] = []
@@ -45,7 +35,6 @@ for normalizer_config in settings.tag_normalizers:
     info = NormalizerInfo(
         id=normalizer_config.id,
         name=normalizer_config.name,
-        type=normalizer_config.type,
         normalizer=normalizer,
     )
 

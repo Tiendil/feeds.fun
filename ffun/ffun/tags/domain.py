@@ -23,7 +23,7 @@ async def apply_normalizers(tag: TagInNormalization) -> tuple[bool, list[RawTag]
     all_new_tags = []
 
     for info in normalizers:
-        tag_valid, new_tags = await info.normalizer.normalize(tag)
+        tag_valid, new_tags = await info.normalize(tag)
 
         all_new_tags.extend(new_tags)
 
@@ -34,7 +34,6 @@ async def apply_normalizers(tag: TagInNormalization) -> tuple[bool, list[RawTag]
 
 
 # TODO: tests
-# TODO: measure impact of each normalizer
 async def normalize(raw_tags: Iterable[RawTag]) -> list[NormalizedTag]:  # noqa: CCR001
 
     tags_to_process = {tag.uid: tag for tag in [prepare_for_normalization(raw_tag) for raw_tag in raw_tags]}

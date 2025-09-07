@@ -22,6 +22,7 @@ get_all_pointers = operations.get_all_pointers
 _processor_metrics_accumulators: dict[tuple[int, str], metrics.Accumulator] = {}
 
 
+# TODO: we may move metric accumulators to the processor info
 def accumulator(event: str, processor_id: int) -> metrics.Accumulator:
     key = (processor_id, event)
 

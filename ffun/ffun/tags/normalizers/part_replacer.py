@@ -1,5 +1,5 @@
-from ffun.ontology.entities import RawTag
 from ffun.domain.entities import TagUid
+from ffun.ontology.entities import RawTag
 from ffun.tags import utils
 from ffun.tags.entities import TagInNormalization
 from ffun.tags.normalizers import base
@@ -45,11 +45,14 @@ class Normalizer(base.Normalizer):
         if not new_uids:
             return True, []
 
-        new_tags = [RawTag(
+        new_tags = [
+            RawTag(
                 raw_uid=uid,
                 preserve=False,
                 link=tag.link,
                 categories=set(tag.categories),
-                ) for uid in new_uids]
+            )
+            for uid in new_uids
+        ]
 
         return False, new_tags

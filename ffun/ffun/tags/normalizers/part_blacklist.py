@@ -28,9 +28,11 @@ class Normalizer(base.Normalizer):
 
         new_uid = "-".join(new_parts)
 
-        return False, [RawTag(
-            raw_uid=new_uid,
-            preserve=False,
-            link=tag.link,
-            categories=set(tag.categories),
-        )]
+        return False, [
+            RawTag(
+                raw_uid=new_uid,
+                preserve=False,
+                link=tag.link,
+                categories=set(tag.categories),
+            )
+        ]

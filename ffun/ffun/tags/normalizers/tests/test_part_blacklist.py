@@ -1,4 +1,5 @@
 import pytest
+
 from ffun.domain.entities import TagUid
 from ffun.ontology.entities import RawTag
 from ffun.tags import converters, utils
