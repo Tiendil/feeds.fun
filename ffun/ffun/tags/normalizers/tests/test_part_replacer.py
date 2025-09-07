@@ -33,7 +33,6 @@ class TestNormalizer:
             uid=input_uid,
             parts=utils.uid_to_parts(input_uid),
             preserve=True,
-            name="Test Tag",
             link="http://example.com/tag",
             categories={TagCategory.feed_tag},
         )
@@ -42,7 +41,6 @@ class TestNormalizer:
             RawTag(
                 raw_uid=new_uid,
                 preserve=False,  # must be False for all derived tags
-                name=None,
                 link=input_tag.link,
                 categories=input_tag.categories,
             )

@@ -38,7 +38,7 @@ for normalizer_config in settings.tag_normalizers:
     elif normalizer_config.type == NormalizerType.part_replacer:
         normalizer = part_replacer.Normalizer(replacements=normalizer_config.replacements)
     elif normalizer_config.type == NormalizerType.splitter:
-        normalizer = splitter.Normalizer(separators=normalizer_config.separators)
+        normalizer = splitter.Normalizer(separators=list(normalizer_config.separators))
     else:
         raise NotImplementedError(f"Unknown normalizer type: {normalizer_config.type}")
 

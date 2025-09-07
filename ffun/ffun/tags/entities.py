@@ -18,7 +18,6 @@ class TagInNormalization(BaseEntity):
 
     preserve: bool
 
-    name: str | None
     link: str | None
     categories: set[TagCategory]
 

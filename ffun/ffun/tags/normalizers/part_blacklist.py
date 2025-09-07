@@ -31,7 +31,6 @@ class Normalizer(base.Normalizer):
         return False, [RawTag(
             raw_uid=new_uid,
             preserve=False,
-            name=None,
             link=tag.link,
             categories=set(tag.categories),
         )]

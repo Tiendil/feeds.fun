@@ -13,7 +13,6 @@ def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
         uid=uid,
         parts=utils.uid_to_parts(uid),
         preserve=tag.preserve,
-        name=tag.name,
         link=tag.link,
         categories=set(tag.categories),
     )
@@ -72,7 +71,6 @@ async def normalize(raw_tags: Iterable[RawTag]) -> list[NormalizedTag]:  # noqa:
 
         normalized_tag = NormalizedTag(
             uid=tag.uid,
-            name=tag.name,
             link=tag.link,
             categories=tag.categories,
         )

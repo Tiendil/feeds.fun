@@ -48,7 +48,6 @@ class Normalizer(base.Normalizer):
         new_tags = [RawTag(
                 raw_uid=uid,
                 preserve=False,
-                name=None,
                 link=tag.link,
                 categories=set(tag.categories),
                 ) for uid in new_uids]

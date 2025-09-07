@@ -1,3 +1,5 @@
+# type: ignore
+# TODO: return types
 import pytest
 
 from ffun.domain.entities import TagUid

@@ -27,7 +27,6 @@ class RawTag(pydantic.BaseModel):
 
     preserve: bool
 
-    name: str | None = None
     link: str | None = None
     categories: set[TagCategory] = pydantic.Field(default_factory=set)
 
@@ -35,7 +34,6 @@ class RawTag(pydantic.BaseModel):
 class NormalizedTag(pydantic.BaseModel):
     uid: TagUid
 
-    name: str | None
     link: str | None
     categories: set[TagCategory]
 
