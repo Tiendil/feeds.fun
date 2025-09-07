@@ -3,9 +3,10 @@ from typing import Iterable
 from ffun.ontology.entities import NormalizedTag, RawTag
 from ffun.tags import converters, utils
 from ffun.tags.entities import TagInNormalization
-from ffun.tags.normalizers import normalizers
+from ffun.tags.normalizers import normalizers, NormalizerInfo
 
 
+# TODO: tests
 def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
     uid = converters.normalize(tag.raw_uid)
 
@@ -18,22 +19,24 @@ def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
     )
 
 
-# TODO: tests
-async def apply_normalizers(tag: TagInNormalization) -> tuple[bool, list[RawTag]]:
+async def apply_normalizers(normalizers_: list[NormalizerInfo], tag: TagInNormalization) -> tuple[bool, list[RawTag]]:
     all_new_tags = []
 
-    for info in normalizers:
+    for info in normalizers_:
         tag_valid, new_tags = await info.normalize(tag)
 
         all_new_tags.extend(new_tags)
 
-        if not tag_valid:
-            return (False or tag.preserve, all_new_tags)
+        if not tag_valid and not tag.preserve:
+            return (False, all_new_tags)
 
     return (True, all_new_tags)
 
 
 # TODO: tests
+# Note: we should keep calls of prepare_for_normalization(...) in a single place, either here or in apply_normalizers
+#       since we control duplicates by comparing normalized uids
+#       we should keep calls to prepare_for_normalization(...) in the normalize(...) function
 async def normalize(raw_tags: Iterable[RawTag]) -> list[NormalizedTag]:  # noqa: CCR001
 
     tags_to_process = {tag.uid: tag for tag in [prepare_for_normalization(raw_tag) for raw_tag in raw_tags]}
