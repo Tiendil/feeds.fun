@@ -28,7 +28,7 @@ def check_metric_accumulator(
 
 @contextlib.contextmanager
 def check_metric_accumulators(
-        mocker: MockerFixture, info: NormalizerInfo, measured: int, processed: int, consumed: int, produced: int
+    mocker: MockerFixture, info: NormalizerInfo, measured: int, processed: int, consumed: int, produced: int
 ) -> Generator[None, None, None]:
 
     called_for = []
@@ -38,9 +38,11 @@ def check_metric_accumulators(
 
     mocker.patch("ffun.core.metrics.Accumulator.flush_if_time", patch_flush)
 
-    with (check_metric_accumulator(info.metric_processed, measured, processed),
-          check_metric_accumulator(info.metric_consumed, measured, consumed),
-          check_metric_accumulator(info.metric_produced, measured, produced)):
+    with (
+        check_metric_accumulator(info.metric_processed, measured, processed),
+        check_metric_accumulator(info.metric_consumed, measured, consumed),
+        check_metric_accumulator(info.metric_produced, measured, produced),
+    ):
         yield
 
     assert len(called_for) == 3
@@ -87,11 +89,15 @@ class TestNormalizerInfo:
 
     @pytest.mark.parametrize("tag_valid", [True, False])
     @pytest.mark.asyncio
-    async def test_normalize__ok(self, tag_valid: bool, tag: TagInNormalization, raw_tags: list[RawTag], mocker: MockerFixture) -> None:
+    async def test_normalize__ok(
+        self, tag_valid: bool, tag: TagInNormalization, raw_tags: list[RawTag], mocker: MockerFixture
+    ) -> None:
         normalizer = FakeNormalizer(tag_valid, raw_tags)
         info = NormalizerInfo(id=1, name="fake", normalizer=normalizer)
 
-        with check_metric_accumulators(mocker, info, measured=1, processed=1, consumed=0 if tag_valid else 1, produced=len(raw_tags)):
+        with check_metric_accumulators(
+            mocker, info, measured=1, processed=1, consumed=0 if tag_valid else 1, produced=len(raw_tags)
+        ):
             result_tag_valid, new_tags = await info.normalize(tag)
 
         assert result_tag_valid == tag_valid

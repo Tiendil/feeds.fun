@@ -1,13 +1,12 @@
 import pytest
-
 from pytest_mock import MockerFixture
+
 from ffun.domain.entities import TagUid
 from ffun.ontology.entities import NormalizedTag, RawTag, TagCategory
-from ffun.tags import converters
-from ffun.tags.domain import normalize, apply_normalizers, prepare_for_normalization
+from ffun.tags.domain import apply_normalizers, normalize, prepare_for_normalization
 from ffun.tags.entities import TagInNormalization
-from ffun.tags.utils import uid_to_parts
 from ffun.tags.normalizers import FakeNormalizer, NormalizerAlwaysError, NormalizerInfo
+from ffun.tags.utils import uid_to_parts
 
 
 class TestPrepareForNormalization:
@@ -24,12 +23,12 @@ class TestPrepareForNormalization:
         prepared_tag = prepare_for_normalization(raw_tag)
 
         assert prepared_tag == TagInNormalization(
-                uid=TagUid("example-tag"),
-                parts=["example", "tag"],
-                preserve=preserve,
-                link=raw_tag.link,
-                categories=raw_tag.categories,
-                )
+            uid=TagUid("example-tag"),
+            parts=["example", "tag"],
+            preserve=preserve,
+            link=raw_tag.link,
+            categories=raw_tag.categories,
+        )
 
 
 class TestApplyNormalizers:
@@ -47,12 +46,15 @@ class TestApplyNormalizers:
 
     @pytest.fixture
     def raw_tags(self) -> list[RawTag]:
-        return [RawTag(
-            raw_uid=f"new-tag-{i}",
-            preserve=False,
-            link=None,
-            categories={TagCategory.feed_tag},
-        ) for i in range(1, 4)]
+        return [
+            RawTag(
+                raw_uid=f"new-tag-{i}",
+                preserve=False,
+                link=None,
+                categories={TagCategory.feed_tag},
+            )
+            for i in range(1, 4)
+        ]
 
     @pytest.mark.asyncio
     async def test_no_normalizers(self, tag: TagInNormalization) -> None:
@@ -62,7 +64,9 @@ class TestApplyNormalizers:
 
     @pytest.mark.parametrize("tag_valid", [True, False])
     @pytest.mark.asyncio
-    async def test_single_normalizer__preserve(self, tag_valid: bool, tag: TagInNormalization, raw_tags: list[RawTag]) -> None:
+    async def test_single_normalizer__preserve(
+        self, tag_valid: bool, tag: TagInNormalization, raw_tags: list[RawTag]
+    ) -> None:
         tag = tag.replace(preserve=True)
 
         normalizer = FakeNormalizer(tag_valid, raw_tags)
@@ -74,7 +78,9 @@ class TestApplyNormalizers:
 
     @pytest.mark.parametrize("tag_valid", [True, False])
     @pytest.mark.asyncio
-    async def test_single_normalizer__not_preserve(self, tag_valid: bool, tag: TagInNormalization, raw_tags: list[RawTag]) -> None:
+    async def test_single_normalizer__not_preserve(
+        self, tag_valid: bool, tag: TagInNormalization, raw_tags: list[RawTag]
+    ) -> None:
         tag = tag.replace(preserve=False)
 
         normalizer = FakeNormalizer(tag_valid, raw_tags)
@@ -88,11 +94,15 @@ class TestApplyNormalizers:
     async def test_chain_of_normalizers__preserve(self, tag: TagInNormalization, raw_tags: list[RawTag]) -> None:
         tag = tag.replace(preserve=True)
 
-        normalizers = [FakeNormalizer(True, [raw_tags[0]]),
-                       FakeNormalizer(False, [raw_tags[1]]),
-                       FakeNormalizer(True, [raw_tags[2]])]
-        infos = [NormalizerInfo(id=i, name=f"fake-{i}", normalizer=normalizer)
-                 for i, normalizer in enumerate(normalizers, start=1)]
+        normalizers = [
+            FakeNormalizer(True, [raw_tags[0]]),
+            FakeNormalizer(False, [raw_tags[1]]),
+            FakeNormalizer(True, [raw_tags[2]]),
+        ]
+        infos = [
+            NormalizerInfo(id=i, name=f"fake-{i}", normalizer=normalizer)
+            for i, normalizer in enumerate(normalizers, start=1)
+        ]
 
         result_tag_valid, new_tags = await apply_normalizers(infos, tag)
         assert result_tag_valid
@@ -102,11 +112,15 @@ class TestApplyNormalizers:
     async def test_chain_of_normalizers__not_preserve(self, tag: TagInNormalization, raw_tags: list[RawTag]) -> None:
         tag = tag.replace(preserve=False)
 
-        normalizers = [FakeNormalizer(True, [raw_tags[0]]),
-                       FakeNormalizer(False, [raw_tags[1]]),
-                       FakeNormalizer(True, [raw_tags[2]])]
-        infos = [NormalizerInfo(id=i, name=f"fake-{i}", normalizer=normalizer)
-                 for i, normalizer in enumerate(normalizers, start=1)]
+        normalizers = [
+            FakeNormalizer(True, [raw_tags[0]]),
+            FakeNormalizer(False, [raw_tags[1]]),
+            FakeNormalizer(True, [raw_tags[2]]),
+        ]
+        infos = [
+            NormalizerInfo(id=i, name=f"fake-{i}", normalizer=normalizer)
+            for i, normalizer in enumerate(normalizers, start=1)
+        ]
 
         result_tag_valid, new_tags = await apply_normalizers(infos, tag)
         assert not result_tag_valid
@@ -114,11 +128,15 @@ class TestApplyNormalizers:
 
     @pytest.mark.asyncio
     async def test_chain_of_normalizers__full_pass(self, tag: TagInNormalization, raw_tags: list[RawTag]) -> None:
-        normalizers = [FakeNormalizer(True, [raw_tags[0]]),
-                       FakeNormalizer(True, [raw_tags[1]]),
-                       FakeNormalizer(True, [raw_tags[2]])]
-        infos = [NormalizerInfo(id=i, name=f"fake-{i}", normalizer=normalizer)
-                 for i, normalizer in enumerate(normalizers, start=1)]
+        normalizers = [
+            FakeNormalizer(True, [raw_tags[0]]),
+            FakeNormalizer(True, [raw_tags[1]]),
+            FakeNormalizer(True, [raw_tags[2]]),
+        ]
+        infos = [
+            NormalizerInfo(id=i, name=f"fake-{i}", normalizer=normalizer)
+            for i, normalizer in enumerate(normalizers, start=1)
+        ]
 
         result_tag_valid, new_tags = await apply_normalizers(infos, tag)
         assert result_tag_valid
@@ -153,7 +171,9 @@ class TestNormalize:
     )
     @pytest.mark.asyncio
     async def test_single_tag(self, raw_uid: str, norm_uid: TagUid) -> None:
-        assert await normalize([RawTag(raw_uid=raw_uid, preserve=False)]) == [NormalizedTag(uid=norm_uid, link=None, categories=set())]
+        assert await normalize([RawTag(raw_uid=raw_uid, preserve=False)]) == [
+            NormalizedTag(uid=norm_uid, link=None, categories=set())
+        ]
 
     @pytest.mark.asyncio
     async def test_normalize_complex(self) -> None:
@@ -186,14 +206,12 @@ class TestNormalize:
             RawTag(
                 raw_uid="tag-1",
                 preserve=False,
-                name="Tag One",
                 link="http://example.com/tag1",
                 categories={TagCategory.network_domain},
             ),
             RawTag(
                 raw_uid="tag-2",
                 preserve=False,
-                name="Tag Two",
                 link="http://example.com/tag2",
                 categories={TagCategory.feed_tag},
             ),
@@ -202,13 +220,11 @@ class TestNormalize:
         expected = [
             NormalizedTag(
                 uid=TagUid("tag-1"),
-                name="Tag One",
                 link="http://example.com/tag1",
                 categories={TagCategory.network_domain},
             ),
             NormalizedTag(
                 uid=TagUid("tag-2"),
-                name="Tag Two",
                 link="http://example.com/tag2",
                 categories={TagCategory.feed_tag},
             ),
@@ -267,21 +283,9 @@ class TestNormalize:
 
     @pytest.mark.asyncio
     async def test_tags_chain(self, mocker: MockerFixture) -> None:  # pylint: disable=R0914
-        tag_1 = RawTag(
-            raw_uid="tag-1",
-            preserve=True,
-            link=None,
-            categories=set())
-        tag_2 = RawTag(
-            raw_uid="tag-2",
-            preserve=False,
-            link=None,
-            categories=set())
-        tag_3 = RawTag(
-            raw_uid="tag-3",
-            preserve=True,
-            link=None,
-            categories=set())
+        tag_1 = RawTag(raw_uid="tag-1", preserve=True, link=None, categories=set())
+        tag_2 = RawTag(raw_uid="tag-2", preserve=False, link=None, categories=set())
+        tag_3 = RawTag(raw_uid="tag-3", preserve=True, link=None, categories=set())
 
         tag_4 = tag_1.replace(raw_uid="tag-4", preserve=False)
         tag_5 = tag_2.replace(raw_uid="tag-5", preserve=True)
