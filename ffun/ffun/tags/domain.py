@@ -20,11 +20,21 @@ def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
 
 
 # TODO: tests
-# TODO: preserve: non, constant, keep
-# TODO: we should copy preserve tags and process it as non-preserve? or not?
-# TODO: look at most common parts of tags
-# TODO: look at most common duplicates like `start-up` and `startup`, `login` and `log-in`, etc.
-# TODO: normalizers theoretically can produce malformed tags, we should protect against it
+async def apply_normalizers(tag: TagInNormalization) -> tuple[bool, list[TagInNormalization]]:
+    all_new_tags = []
+
+    for info in normalizers:
+        tag_valid, new_tags = await info.normalizer.normalize(tag)
+
+        all_new_tags.extend(new_tags)
+
+        if not tag_valid:
+            return (False or tag.preserve, all_new_tags)
+
+    return (True, all_new_tags)
+
+
+# TODO: tests
 # TODO: measure impact of each normalizer
 # TODO: check what if tag.name is None
 # TODO: fill configs
@@ -46,20 +56,17 @@ async def normalize(raw_tags: Iterable[RawTag]) -> list[NormalizedTag]:  # noqa:
 
         processed_tags.add(tag.uid)
 
-        for info in normalizers:
-            can_continue, new_tags = await info.normalizer.normalize(tag)
+        tag_valid, new_tags = await apply_normalizers(tag)
 
-            for new_tag in new_tags:
-                if new_tag.uid in processed_tags or new_tag.uid in tags_to_process:
-                    continue
+        for new_tag in new_tags:
+            if new_tag.uid in processed_tags or new_tag.uid in tags_to_process:
+                continue
 
-                tags_to_process[new_tag.uid] = new_tag
+            # Theoretically, normalizers can produce malformed tags.
+            # We protecting against it by running normalization from scratch for each new tag.
+            tags_to_process[new_tag.uid] = new_tag
 
-            if not can_continue and not tag.preserve:
-                tag = None
-                break
-
-        if tag is None:
+        if not tag_valid:
             continue
 
         normalized_tag = NormalizedTag(
