@@ -241,3 +241,24 @@ class TestNormalize:
         expected.sort(key=lambda t: t.uid)
 
         assert resulted == expected
+
+    @pytest.mark.asyncio
+    async def test_no_normalizers(self) -> None:
+        input = [
+            RawTag(raw_uid="tag--1", preserve=False),
+            RawTag(raw_uid="tag-2", preserve=False),
+            RawTag(raw_uid="tag-3--", preserve=False),
+        ]
+
+        expected = [
+            NormalizedTag(uid=TagUid("tag-1"), link=None, categories=set()),
+            NormalizedTag(uid=TagUid("tag-2"), link=None, categories=set()),
+            NormalizedTag(uid=TagUid("tag-3"), link=None, categories=set()),
+        ]
+
+        resulted = await normalize(input, normalizers_=[])
+        resulted.sort(key=lambda t: t.uid)
+
+        expected.sort(key=lambda t: t.uid)
+
+        assert resulted == expected
