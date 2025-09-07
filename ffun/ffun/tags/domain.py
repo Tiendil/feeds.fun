@@ -35,8 +35,6 @@ async def apply_normalizers(tag: TagInNormalization) -> tuple[bool, list[RawTag]
 
 # TODO: tests
 # TODO: measure impact of each normalizer
-# TODO: check what if tag.name is None
-# TODO: fill configs
 async def normalize(raw_tags: Iterable[RawTag]) -> list[NormalizedTag]:  # noqa: CCR001
 
     tags_to_process = {tag.uid: tag for tag in [prepare_for_normalization(raw_tag) for raw_tag in raw_tags]}
