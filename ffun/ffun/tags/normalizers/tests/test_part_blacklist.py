@@ -1,10 +1,11 @@
 import pytest
-
+from ffun.domain.entities import TagUid
+from ffun.ontology.entities import RawTag
 from ffun.tags import converters, utils
 from ffun.tags.entities import TagCategory, TagInNormalization
 from ffun.tags.normalizers import part_blacklist
 
-normalizer = part_blacklist.Normalizer(blacklist=["a", "the"])
+normalizer = part_blacklist.Normalizer(blacklist={"a", "the"})
 
 
 class TestNormalizer:
@@ -36,7 +37,7 @@ class TestNormalizer:
         ],
     )
     @pytest.mark.asyncio
-    async def test(self, input_uid: str, expected_continue: bool, expected_new_uids: list[str]) -> None:
+    async def test(self, input_uid: TagUid, expected_continue: bool, expected_new_uids: list[str]) -> None:
         assert converters.normalize(input_uid) == input_uid
         assert all(converters.normalize(new_uid) == new_uid for new_uid in expected_new_uids)
 
@@ -50,9 +51,8 @@ class TestNormalizer:
         )
 
         expected_new_tags = [
-            TagInNormalization(
-                uid=new_uid,
-                parts=utils.uid_to_parts(new_uid),
+            RawTag(
+                raw_uid=new_uid,
                 preserve=False,  # must be False for all derived tags
                 name=None,
                 link=input_tag.link,

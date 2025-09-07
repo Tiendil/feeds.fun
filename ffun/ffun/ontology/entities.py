@@ -35,9 +35,9 @@ class RawTag(pydantic.BaseModel):
 class NormalizedTag(pydantic.BaseModel):
     uid: TagUid
 
-    name: str | None = None
-    link: str | None = None
-    categories: set[TagCategory] = pydantic.Field(default_factory=set)
+    name: str | None
+    link: str | None
+    categories: set[TagCategory]
 
     def build_properties_for(self, tag_id: TagId, processor_id: int) -> list[TagProperty]:
         properties = []

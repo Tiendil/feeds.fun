@@ -20,7 +20,7 @@ def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
 
 
 # TODO: tests
-async def apply_normalizers(tag: TagInNormalization) -> tuple[bool, list[TagInNormalization]]:
+async def apply_normalizers(tag: TagInNormalization) -> tuple[bool, list[RawTag]]:
     all_new_tags = []
 
     for info in normalizers:
@@ -55,9 +55,11 @@ async def normalize(raw_tags: Iterable[RawTag]) -> list[NormalizedTag]:  # noqa:
 
         processed_tags.add(tag.uid)
 
-        tag_valid, new_tags = await apply_normalizers(tag)
+        tag_valid, new_raw_tags = await apply_normalizers(tag)
 
-        for new_tag in new_tags:
+        for new_raw_tag in new_raw_tags:
+            new_tag = prepare_for_normalization(new_raw_tag)
+
             if new_tag.uid in processed_tags or new_tag.uid in tags_to_process:
                 continue
 

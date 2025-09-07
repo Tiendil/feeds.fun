@@ -1,5 +1,6 @@
 import pytest
-
+from ffun.domain.entities import TagUid
+from ffun.ontology.entities import RawTag
 from ffun.tags import converters, utils
 from ffun.tags.entities import TagCategory, TagInNormalization
 from ffun.tags.normalizers import part_replacer
@@ -24,7 +25,7 @@ class TestNormalizer:
         ],
     )
     @pytest.mark.asyncio
-    async def test(self, input_uid: str, expected_continue: bool, expected_new_uids: list[str]) -> None:
+    async def test(self, input_uid: TagUid, expected_continue: bool, expected_new_uids: list[str]) -> None:
         assert converters.normalize(input_uid) == input_uid
         assert all(converters.normalize(new_uid) == new_uid for new_uid in expected_new_uids)
 
@@ -38,9 +39,8 @@ class TestNormalizer:
         )
 
         expected_new_tags = [
-            TagInNormalization(
-                uid=new_uid,
-                parts=utils.uid_to_parts(new_uid),
+            RawTag(
+                raw_uid=new_uid,
                 preserve=False,  # must be False for all derived tags
                 name=None,
                 link=input_tag.link,
@@ -51,8 +51,8 @@ class TestNormalizer:
 
         can_continue, new_tags = await normalizer.normalize(input_tag)
 
-        new_tags.sort(key=lambda t: t.uid)
-        expected_new_tags.sort(key=lambda t: t.uid)
+        new_tags.sort(key=lambda t: t.raw_uid)
+        expected_new_tags.sort(key=lambda t: t.raw_uid)
 
         assert can_continue == expected_continue
         assert new_tags == expected_new_tags

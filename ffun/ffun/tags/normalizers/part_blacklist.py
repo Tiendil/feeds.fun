@@ -1,3 +1,4 @@
+from ffun.ontology.entities import RawTag
 from ffun.tags.entities import TagInNormalization
 from ffun.tags.normalizers import base
 
@@ -13,7 +14,7 @@ class Normalizer(base.Normalizer):
     def __init__(self, blacklist: set[str]) -> None:
         self.blacklist = blacklist
 
-    async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[TagInNormalization]]:
+    async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[RawTag]]:
         if not tag.parts:
             return False, []
 
@@ -27,6 +28,10 @@ class Normalizer(base.Normalizer):
 
         new_uid = "-".join(new_parts)
 
-        new_tag = tag.replace(uid=new_uid, parts=new_parts, preserve=False, name=None)
-
-        return False, [new_tag]
+        return False, [RawTag(
+            raw_uid=new_uid,
+            preserve=False,
+            name=None,
+            link=tag.link,
+            categories=set(tag.categories),
+        )]

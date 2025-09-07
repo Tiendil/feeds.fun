@@ -1,3 +1,5 @@
+from ffun.ontology.entities import RawTag
+from ffun.domain.entities import TagUid
 from ffun.tags import utils
 from ffun.tags.entities import TagInNormalization
 from ffun.tags.normalizers import base
@@ -7,7 +9,6 @@ class Normalizer(base.Normalizer):
     """Split tag into multiple parts based on a replacements dictionary.
 
     Examples:
-
     - `rest-api-for-graph-processing` by `for` -> `rest-api` & `graph-processing`
     - `social-media-impact-on-innovation` by `impact-on` -> `social-media-impact` & `innovation`
     - `artistic-expression-through-artistic-skills` by `through` -> `artistic-expression` & `artistic-skills`
@@ -23,7 +24,7 @@ class Normalizer(base.Normalizer):
     def __init__(self, separators: list[str]) -> None:
         self.separators = separators
 
-    async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[TagInNormalization]]:  # noqa: CCR001
+    async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[RawTag]]:  # noqa: CCR001
         if not tag.uid:
             return False, []
 
@@ -42,6 +43,12 @@ class Normalizer(base.Normalizer):
         if not new_uids:
             return True, []
 
-        new_tags = [tag.replace(uid=uid, parts=utils.uid_to_parts(uid), preserve=False, name=None) for uid in new_uids]
+        new_tags = [RawTag(
+                raw_uid=uid,
+                preserve=False,
+                name=None,
+                link=tag.link,
+                categories=set(tag.categories),
+                ) for uid in new_uids]
 
         return False, new_tags

@@ -1,3 +1,4 @@
+from ffun.ontology.entities import RawTag
 from ffun.domain.entities import TagUid
 from ffun.tags import utils
 from ffun.tags.entities import TagInNormalization
@@ -22,7 +23,7 @@ class Normalizer(base.Normalizer):
             utils.dashes_for_tag_part(k): utils.dashes_for_tag_part(v) for k, v in replacements.items()
         }
 
-    async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[TagInNormalization]]:  # noqa: CCR001
+    async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[RawTag]]:  # noqa: CCR001
         if not tag.uid:
             return False, []
 
@@ -44,6 +45,12 @@ class Normalizer(base.Normalizer):
         if not new_uids:
             return True, []
 
-        new_tags = [tag.replace(uid=uid, parts=utils.uid_to_parts(uid), preserve=False, name=None) for uid in new_uids]
+        new_tags = [RawTag(
+                raw_uid=uid,
+                preserve=False,
+                name=None,
+                link=tag.link,
+                categories=set(tag.categories),
+                ) for uid in new_uids]
 
         return False, new_tags
