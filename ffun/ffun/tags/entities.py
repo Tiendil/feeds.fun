@@ -39,6 +39,7 @@ class TagInNormalization(BaseEntity):
 #    There are a few different cases here, we should solve them separately, when tags become cleaner.
 ###############################################
 
+
 class NormalizerType(enum.StrEnum):
     fake = "fake"
     part_blacklist = "part_blacklist"

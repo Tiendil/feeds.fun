@@ -18,8 +18,9 @@ class Normalizer(base.Normalizer):
     __slots__ = ("replacements",)
 
     def __init__(self, replacements: dict[str, str]) -> None:
-        self.replacements = {utils.dashes_for_tag_part(k): utils.dashes_for_tag_part(v)
-                             for k, v in replacements.items()}
+        self.replacements = {
+            utils.dashes_for_tag_part(k): utils.dashes_for_tag_part(v) for k, v in replacements.items()
+        }
 
     async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[TagInNormalization]]:  # noqa: CCR001
         if not tag.uid:

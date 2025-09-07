@@ -1,11 +1,9 @@
-
 import pytest
 
 from ffun.domain.entities import TagUid
-from ffun.ontology.entities import NormalizedTag, RawTag, TagCategory
-from ffun.tags.utils import uid_to_parts, dashes_for_tag_part
-from ffun.tags.entities import TagUidPart
 from ffun.tags import errors
+from ffun.tags.entities import TagUidPart
+from ffun.tags.utils import dashes_for_tag_part, uid_to_parts
 
 
 class TestUidToParts:
@@ -14,9 +12,9 @@ class TestUidToParts:
         "input_uid, parts",
         [
             ("", []),
-            ('nohtingtodo', ['nohtingtodo']),
-            ('nohting-to-do', ['nohting', 'to', 'do']),
-            ('set-up-for-success', ["set", "up", "for", "success"]),
+            ("nohtingtodo", ["nohtingtodo"]),
+            ("nohting-to-do", ["nohting", "to", "do"]),
+            ("set-up-for-success", ["set", "up", "for", "success"]),
         ],
     )
     def test(self, input_uid: TagUid, parts: list[str]) -> None:
@@ -28,11 +26,11 @@ class TestDashesForTagPart:
     @pytest.mark.parametrize(
         "in_text, out_text",
         [
-            ('text', '-text-'),
-            ('-text', '-text-'),
-            ('text-', '-text-'),
-            ('-text-', '-text-'),
-            ('some-text', '-some-text-'),
+            ("text", "-text-"),
+            ("-text", "-text-"),
+            ("text-", "-text-"),
+            ("-text-", "-text-"),
+            ("some-text", "-some-text-"),
         ],
     )
     def test(self, in_text: str, out_text: str) -> None:
@@ -40,4 +38,4 @@ class TestDashesForTagPart:
 
     def test_error_on_empty_part(self) -> None:
         with pytest.raises(errors.TagPartIsEmpty):
-            dashes_for_tag_part('')
+            dashes_for_tag_part("")

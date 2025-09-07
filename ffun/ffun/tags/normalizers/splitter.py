@@ -1,4 +1,3 @@
-from ffun.domain.entities import TagUid
 from ffun.tags import utils
 from ffun.tags.entities import TagInNormalization
 from ffun.tags.normalizers import base
@@ -18,6 +17,7 @@ class Normalizer(base.Normalizer):
     Remember, that processing of new tags will begin from the first normalize again
     => this normalize still can be applied multiple times if needed.
     """
+
     __slots__ = ("separators",)
 
     def __init__(self, separators: list[str]) -> None:

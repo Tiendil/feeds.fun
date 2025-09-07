@@ -49,9 +49,11 @@ class TestProcessor:
 
         tags.sort(key=lambda x: x.raw_uid)
 
-        assert tags == [RawTag(raw_uid="tag-1", preserve=False),
-                        RawTag(raw_uid="tag-2", preserve=False),
-                        RawTag(raw_uid="tag-3", preserve=False)]
+        assert tags == [
+            RawTag(raw_uid="tag-1", preserve=False),
+            RawTag(raw_uid="tag-2", preserve=False),
+            RawTag(raw_uid="tag-3", preserve=False),
+        ]
 
     @pytest.mark.asyncio
     async def test_process__no_api_key_found(self, llm_processor: Processor, cataloged_entry: Entry) -> None:
@@ -71,9 +73,11 @@ class TestProcessor:
 
         tags.sort(key=lambda x: x.raw_uid)
 
-        assert tags == [RawTag(raw_uid="tag-1", preserve=False),
-                        RawTag(raw_uid="tag-2", preserve=False),
-                        RawTag(raw_uid="tag-3", preserve=False)]
+        assert tags == [
+            RawTag(raw_uid="tag-1", preserve=False),
+            RawTag(raw_uid="tag-2", preserve=False),
+            RawTag(raw_uid="tag-3", preserve=False),
+        ]
 
     @pytest.mark.asyncio
     async def test_process__temporary_error_processing(

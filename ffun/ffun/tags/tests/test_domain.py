@@ -60,7 +60,8 @@ class TestNormalize:
                 preserve=False,
                 name="Tag Two",
                 link="http://example.com/tag2",
-                categories={TagCategory.feed_tag}),
+                categories={TagCategory.feed_tag},
+            ),
         ]
 
         expected = [

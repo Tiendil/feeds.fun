@@ -1,13 +1,10 @@
-
 import pytest
 
-from ffun.tags.normalizers import part_blacklist
-from ffun.tags import utils, converters
+from ffun.tags import converters, utils
 from ffun.tags.entities import TagCategory, TagInNormalization
-from ffun.ontology.entities import RawTag
+from ffun.tags.normalizers import part_blacklist
 
-
-normalizer = part_blacklist.Normalizer(blacklist=['a', 'the'])
+normalizer = part_blacklist.Normalizer(blacklist=["a", "the"])
 
 
 class TestNormalizer:
@@ -16,26 +13,26 @@ class TestNormalizer:
         [
             ("", False, []),
             ("a-the", False, []),
-            ('no-removal', True, []),
-            ('noremoval-at-all', True, []),
-            ('the-best-startup', False, ["best-startup"]),
-            ('about-the-best', False, ["about-best"]),
-            ('about-best-the', False, ["about-best"]),
-            ('a-or-the', False, ["or"]),
-            ('a-the-best-of-the-best', False, ["best-of-best"]),
-            ('athe-best', True, []),
-            ('thea-best', True, []),
-            ('best-thea', True, []),
-            ('best-athe', True, []),
-            ('know-thea-best', True, []),
-            ('know-athe-best', True, []),
-            ('the-the-the', False, []),
-            ('a-a-a', False, []),
-            ('the-a-the-a', False, []),
-            ('a-the-a-the', False, []),
-            ('the-a-the-a-the', False, []),
-            ('best-the-a-the-a-the', False, ["best"]),
-            ('math-the-a-the-a-physics', False, ["math-physics"]),
+            ("no-removal", True, []),
+            ("noremoval-at-all", True, []),
+            ("the-best-startup", False, ["best-startup"]),
+            ("about-the-best", False, ["about-best"]),
+            ("about-best-the", False, ["about-best"]),
+            ("a-or-the", False, ["or"]),
+            ("a-the-best-of-the-best", False, ["best-of-best"]),
+            ("athe-best", True, []),
+            ("thea-best", True, []),
+            ("best-thea", True, []),
+            ("best-athe", True, []),
+            ("know-thea-best", True, []),
+            ("know-athe-best", True, []),
+            ("the-the-the", False, []),
+            ("a-a-a", False, []),
+            ("the-a-the-a", False, []),
+            ("a-the-a-the", False, []),
+            ("the-a-the-a-the", False, []),
+            ("best-the-a-the-a-the", False, ["best"]),
+            ("math-the-a-the-a-physics", False, ["math-physics"]),
         ],
     )
     @pytest.mark.asyncio
@@ -43,22 +40,24 @@ class TestNormalizer:
         assert converters.normalize(input_uid) == input_uid
         assert all(converters.normalize(new_uid) == new_uid for new_uid in expected_new_uids)
 
-        input_tag = TagInNormalization(uid=input_uid,
-                                       parts=utils.uid_to_parts(input_uid),
-                                       preserve=True,
-                                       name="Test Tag",
-                                       link="http://example.com/tag",
-                                       categories={TagCategory.feed_tag}
-                                       )
+        input_tag = TagInNormalization(
+            uid=input_uid,
+            parts=utils.uid_to_parts(input_uid),
+            preserve=True,
+            name="Test Tag",
+            link="http://example.com/tag",
+            categories={TagCategory.feed_tag},
+        )
 
         expected_new_tags = [
-            TagInNormalization(uid=new_uid,
-                               parts=utils.uid_to_parts(new_uid),
-                               preserve=False,  # must be False for all derived tags
-                               name=None,
-                               link=input_tag.link,
-                               categories=input_tag.categories
-                               )
+            TagInNormalization(
+                uid=new_uid,
+                parts=utils.uid_to_parts(new_uid),
+                preserve=False,  # must be False for all derived tags
+                name=None,
+                link=input_tag.link,
+                categories=input_tag.categories,
+            )
             for new_uid in expected_new_uids
         ]
 

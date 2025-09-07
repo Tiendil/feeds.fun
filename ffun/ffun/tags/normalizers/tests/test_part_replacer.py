@@ -1,15 +1,10 @@
-
 import pytest
 
-from ffun.tags.normalizers import part_replacer
-from ffun.tags import utils, converters
+from ffun.tags import converters, utils
 from ffun.tags.entities import TagCategory, TagInNormalization
-from ffun.ontology.entities import RawTag
+from ffun.tags.normalizers import part_replacer
 
-
-normalizer = part_replacer.Normalizer(replacements={"start-up": "startup",
-                                                    "set-up": "setup",
-                                                    "em": "them"})
+normalizer = part_replacer.Normalizer(replacements={"start-up": "startup", "set-up": "setup", "em": "them"})
 
 
 class TestNormalizer:
@@ -17,14 +12,14 @@ class TestNormalizer:
         "input_uid, expected_continue, expected_new_uids",
         [
             ("", False, []),
-            ('nohtingtodo', True, []),
-            ('nohting-to-do', True, []),
-            ('set-up-for-success', False, ["setup-for-success"]),
-            ('best-start-up-ever', False, ["best-startup-ever"]),
-            ('how-to-start-up', False, ["how-to-startup"]),
-            ('let-set-up-for-start-up', False, ["let-setup-for-start-up", "let-set-up-for-startup"]),
-            ('let-start-up-start-up', False, ["let-startup-startup"]),
-            ('let-start-up-or-not-start-up', False, ["let-startup-or-not-startup"]),
+            ("nohtingtodo", True, []),
+            ("nohting-to-do", True, []),
+            ("set-up-for-success", False, ["setup-for-success"]),
+            ("best-start-up-ever", False, ["best-startup-ever"]),
+            ("how-to-start-up", False, ["how-to-startup"]),
+            ("let-set-up-for-start-up", False, ["let-setup-for-start-up", "let-set-up-for-startup"]),
+            ("let-start-up-start-up", False, ["let-startup-startup"]),
+            ("let-start-up-or-not-start-up", False, ["let-startup-or-not-startup"]),
             ("let-em-go", False, ["let-them-go"]),
         ],
     )
@@ -33,22 +28,24 @@ class TestNormalizer:
         assert converters.normalize(input_uid) == input_uid
         assert all(converters.normalize(new_uid) == new_uid for new_uid in expected_new_uids)
 
-        input_tag = TagInNormalization(uid=input_uid,
-                                       parts=utils.uid_to_parts(input_uid),
-                                       preserve=True,
-                                       name="Test Tag",
-                                       link="http://example.com/tag",
-                                       categories={TagCategory.feed_tag}
-                                       )
+        input_tag = TagInNormalization(
+            uid=input_uid,
+            parts=utils.uid_to_parts(input_uid),
+            preserve=True,
+            name="Test Tag",
+            link="http://example.com/tag",
+            categories={TagCategory.feed_tag},
+        )
 
         expected_new_tags = [
-            TagInNormalization(uid=new_uid,
-                               parts=utils.uid_to_parts(new_uid),
-                               preserve=False,  # must be False for all derived tags
-                               name=None,
-                               link=input_tag.link,
-                               categories=input_tag.categories
-                               )
+            TagInNormalization(
+                uid=new_uid,
+                parts=utils.uid_to_parts(new_uid),
+                preserve=False,  # must be False for all derived tags
+                name=None,
+                link=input_tag.link,
+                categories=input_tag.categories,
+            )
             for new_uid in expected_new_uids
         ]
 
