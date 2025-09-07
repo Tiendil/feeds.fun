@@ -2,10 +2,32 @@ import pytest
 
 from ffun.domain.entities import TagUid
 from ffun.ontology.entities import NormalizedTag, RawTag, TagCategory
-from ffun.tags.domain import normalize, apply_normalizers
+from ffun.tags.domain import normalize, apply_normalizers, prepare_for_normalization
 from ffun.tags.entities import TagInNormalization
 from ffun.tags.utils import uid_to_parts
 from ffun.tags.normalizers import FakeNormalizer, NormalizerAlwaysError, NormalizerInfo
+
+
+class TestPrepareForNormalization:
+
+    @pytest.mark.parametrize("preserve", [True, False])
+    def test(self, preserve: bool) -> None:
+        raw_tag = RawTag(
+            raw_uid="Example----Tag",
+            preserve=preserve,
+            link="http://example.com/tag",
+            categories={TagCategory.feed_tag},
+        )
+
+        prepared_tag = prepare_for_normalization(raw_tag)
+
+        assert prepared_tag == TagInNormalization(
+                uid=TagUid("example-tag"),
+                parts=["example", "tag"],
+                preserve=preserve,
+                link=raw_tag.link,
+                categories=raw_tag.categories,
+                )
 
 
 class TestApplyNormalizers:

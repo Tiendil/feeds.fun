@@ -6,7 +6,6 @@ from ffun.tags.entities import TagInNormalization
 from ffun.tags.normalizers import normalizers, NormalizerInfo
 
 
-# TODO: tests
 def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
     uid = converters.normalize(tag.raw_uid)
 
