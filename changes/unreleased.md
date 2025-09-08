@@ -11,5 +11,4 @@ TODO:
 
 - README — add section about normalizers.
 - test on real data.
-- Establish order: `part_replacer` -> `splitter` -> `parts_blacklist`
 - try add more configs with copilot autocomplete
