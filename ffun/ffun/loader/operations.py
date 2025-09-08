@@ -43,6 +43,19 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
     # Later we may want to:
     # - add some smart handling for some errors
     # - build a dashboard to monitor errors and react on their spikes
+    except httpx.LocalProtocolError as e:
+        message = str(e)
+
+        if "Invalid input ConnectionInputs.RECV_DATA in state ConnectionState.CLOSED" in message:
+            # Normally, httpx.LocalProtocolError is a client error
+            # but in that cases it is more likely that server closed connection too early
+            # and, thus, caused the client error
+            log.warning("network_server_closed_connection_too_early")
+            error_code = FeedError.network_server_closed_connection_too_early
+        else:
+            log.exception("local_protocol_error_while_loading_feed")
+
+        raise errors.LoadError(feed_error_code=error_code) from e
     except httpx.RemoteProtocolError as e:
         message = str(e)
 

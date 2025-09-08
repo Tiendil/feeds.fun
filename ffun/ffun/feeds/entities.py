@@ -44,6 +44,7 @@ class FeedError(enum.IntEnum):
     network_wrong_redirect = 1022
     network_receive_buffer_too_long = 1023
     network_server_disconnected = 1024
+    network_server_closed_connection_too_early = 1025
 
     parsing_unknown = 2000
     parsing_base_error = 2001
