@@ -2,7 +2,7 @@ from typing import Any
 
 from ffun.librarian import errors
 from ffun.library.entities import Entry
-from ffun.ontology.entities import RawTag, NormalizationMode
+from ffun.ontology.entities import NormalizationMode, RawTag
 
 
 class Processor:

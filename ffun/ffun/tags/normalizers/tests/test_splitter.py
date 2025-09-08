@@ -1,7 +1,7 @@
 import pytest
 
 from ffun.domain.entities import TagUid
-from ffun.ontology.entities import RawTag, NormalizationMode
+from ffun.ontology.entities import NormalizationMode, RawTag
 from ffun.tags import converters, utils
 from ffun.tags.entities import TagCategory, TagInNormalization
 from ffun.tags.normalizers import splitter
@@ -32,9 +32,17 @@ class TestNormalizer:
             ("for-impact-on", False, ["impact-on", "for"]),
             ("for-for-impact-on", False, ["for", "for-impact-on", "for-for", "impact-on"]),
             ("x-for-y-for-z", False, ["x", "z", "y-for-z", "x-for-y"]),
-            ("impact-on-x-impact-on-y-impact-on", False, ["x-impact-on-y-impact-on", "impact-on-x", "y-impact-on", "impact-on-x-impact-on-y"]),
+            (
+                "impact-on-x-impact-on-y-impact-on",
+                False,
+                ["x-impact-on-y-impact-on", "impact-on-x", "y-impact-on", "impact-on-x-impact-on-y"],
+            ),
             ("x-impact-on-impact-on-y", False, ["x", "impact-on-y", "x-impact-on", "y"]),
-            ("for-for-impact-on-impact-on", False, ["for", "for-for", "impact-on-impact-on", "impact-on", "for-impact-on-impact-on", "for-for-impact-on"]),
+            (
+                "for-for-impact-on-impact-on",
+                False,
+                ["for", "for-for", "impact-on-impact-on", "impact-on", "for-impact-on-impact-on", "for-for-impact-on"],
+            ),
         ],
     )
     @pytest.mark.asyncio

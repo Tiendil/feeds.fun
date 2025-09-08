@@ -7,7 +7,7 @@ from ffun.librarian.text_cleaners import clear_nothing
 from ffun.library.entities import Entry
 from ffun.llms_framework.entities import LLMApiKey, LLMConfiguration, LLMGeneralApiKey, LLMProvider, LLMTokens
 from ffun.llms_framework.provider_interface import ChatResponseTest
-from ffun.ontology.entities import RawTag, NormalizationMode
+from ffun.ontology.entities import NormalizationMode, RawTag
 
 
 class TestProcessor:

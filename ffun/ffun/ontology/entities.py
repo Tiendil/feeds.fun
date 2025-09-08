@@ -6,7 +6,7 @@ import pydantic
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import TagId, TagUid
-from ffun.tags.entities import TagCategory, NormalizationMode
+from ffun.tags.entities import NormalizationMode, TagCategory
 
 
 class TagPropertyType(enum.IntEnum):

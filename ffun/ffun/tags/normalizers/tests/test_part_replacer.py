@@ -1,7 +1,7 @@
 import pytest
 
 from ffun.domain.entities import TagUid
-from ffun.ontology.entities import RawTag, NormalizationMode
+from ffun.ontology.entities import NormalizationMode, RawTag
 from ffun.tags import converters, utils
 from ffun.tags.entities import TagCategory, TagInNormalization
 from ffun.tags.normalizers import part_replacer
