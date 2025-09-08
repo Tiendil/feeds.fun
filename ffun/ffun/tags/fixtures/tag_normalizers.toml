@@ -1,14 +1,46 @@
 # This is an example of the configuration file for the tag normalizers.
 #
-# ATTENTION: normalizer ids <= 10000 are reserved for the system.
+# ATTENTION: Normalizer ids <= 10000 are reserved for the system.
 #            if you want to add a custom normalizer, use ids > 10000.
+#
+# ATTENTION: Always describe the reason for adding or excluding normalizer parameters.
+#            With time it will be hard to remember the reasoning behind the decisions.
+#
+# Additonal (temporary) rules:
+#
+# - We are ok with breaking proper nouns (books, movies, games, products, etc.).
+#   They are not an often candidates for rules, later we'll have separate tag procesors for them.
+# - We are ok with breaking or loosing some terms (like "order-by") if that allows us to create
+#   a lot of much simpler tags for other cases. Later we'll have separate tag procesors for those terms.
 
 [[tag_normalizer]]
   id = 1
   enabled = true
   name = "part_blacklist"
   type = "part_blacklist"
-  blacklist = ["the", "a"]
+  blacklist = [
+    # we always can drop articles, they are not significant even for proper nouns
+    "the", "a", "an",
+    # those tags often can be dropped without losing meaning: `things-that-make-me-happy` -> `things-make-me-happy`
+    "that", "those", "some", "any", "each", "every",
+    # those tags add unnecessary clarification
+    "several", "various",
+    # just junk
+    "etc",
+  ]
+
+  # Those parts are under questions, because they appear mostly in "chaotic" tags:
+  # - this, these, either, neither
+  #
+  # Those parts are part of important terms, so we keep them for now:
+  # - few (few-shot-learning, ...)
+  # - many (many-to-many, ...)
+  #
+  # Those parts looks like parts of compound phrases, so we keep them for now:
+  # - much (too-much, how-much, ...)
+
+
+ # TODO: too, how-much, too-much
 
 
 [[tag_normalizer]]
@@ -26,3 +58,37 @@
   x-ray = "xray"
   em = "them"
   cuz = "because"
+  to-do = "todo"
+
+[[tag_normalizer]]
+  id = 3
+  enabled = true
+  name = "splitter"
+  type = "splitter"
+  separators = [
+    # Those parts most likely separate different parts of compound phrases:
+    # `animation-in-video-games` -> `animation` & `video-games`
+    "of", "in", "on", "at", "for", "with", "within", "about", "as", "via", "among", "after",
+    "during", "through", "against", "vs",
+
+    # Complex phrases that separates parts of compound phrases:
+    "impact-on",
+
+    # Those parts we may consider to remove, if they'll cause problems:
+    "by", "without",
+
+    # Those parts are part of important terms, so we keep them for now:
+    # - to (many-to-many, free-to-play, speak-to-text, ...),
+    # - from (from-scratch, learning-from-smth, ...), — let's think how to process such constructions later
+    # - like (bird-like-smth, ear-like-planet, ...)
+    # - between (x-between-y-and-z, ...) — let's think how to process such constructions later
+    # - per (miles-per-hour, cost-per-day, ...)
+    #
+    # Those parts are under questions, because they appear mostly in "chaotic" tags:
+    # - into, onto, over, under, before, upon, aka
+    #
+    # Those parts have special meanings:
+    # - v (as roman number v = 5)
+    # - i (as roman number i = 1
+
+  ]
