@@ -2,7 +2,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from ffun.domain.entities import TagUid, TagUidPart
-from ffun.ontology.entities import NormalizedTag, RawTag, TagCategory
+from ffun.ontology.entities import NormalizedTag, RawTag, TagCategory, NormalizationMode
 from ffun.tags.domain import apply_normalizers, normalize, prepare_for_normalization
 from ffun.tags.entities import TagInNormalization
 from ffun.tags.normalizers import FakeNormalizer, NormalizerAlwaysError, NormalizerInfo
@@ -11,11 +11,11 @@ from ffun.tags.utils import uid_to_parts
 
 class TestPrepareForNormalization:
 
-    @pytest.mark.parametrize("preserve", [True, False])
-    def test(self, preserve: bool) -> None:
+    @pytest.mark.parametrize("mode", NormalizationMode)
+    def test(self, mode: NormalizationMode) -> None:
         raw_tag = RawTag(
             raw_uid="Example----Tag",
-            preserve=preserve,
+            normalization=mode,
             link="http://example.com/tag",
             categories={TagCategory.feed_tag},
         )
@@ -25,7 +25,7 @@ class TestPrepareForNormalization:
         assert prepared_tag == TagInNormalization(
             uid=TagUid("example-tag"),
             parts=[TagUidPart("example"), TagUidPart("tag")],
-            preserve=preserve,
+            mode=mode,
             link=raw_tag.link,
             categories=raw_tag.categories,
         )
@@ -39,7 +39,7 @@ class TestApplyNormalizers:
         return TagInNormalization(
             uid=uid,
             parts=uid_to_parts(uid),
-            preserve=True,
+            mode=NormalizationMode.preserve,
             link=None,
             categories={TagCategory.feed_tag},
         )
@@ -49,7 +49,7 @@ class TestApplyNormalizers:
         return [
             RawTag(
                 raw_uid=f"new-tag-{i}",
-                preserve=False,
+                normalization=NormalizationMode.raw,
                 link=None,
                 categories={TagCategory.feed_tag},
             )
@@ -67,7 +67,7 @@ class TestApplyNormalizers:
     async def test_single_normalizer__preserve(
         self, tag_valid: bool, tag: TagInNormalization, raw_tags: list[RawTag]
     ) -> None:
-        tag = tag.replace(preserve=True)
+        tag = tag.replace(mode=NormalizationMode.preserve)
 
         normalizer = FakeNormalizer(tag_valid, raw_tags)
         info = NormalizerInfo(id=1, name="fake", normalizer=normalizer)
@@ -81,7 +81,7 @@ class TestApplyNormalizers:
     async def test_single_normalizer__not_preserve(
         self, tag_valid: bool, tag: TagInNormalization, raw_tags: list[RawTag]
     ) -> None:
-        tag = tag.replace(preserve=False)
+        tag = tag.replace(mode=NormalizationMode.raw)
 
         normalizer = FakeNormalizer(tag_valid, raw_tags)
         info = NormalizerInfo(id=1, name="fake", normalizer=normalizer)
@@ -92,7 +92,7 @@ class TestApplyNormalizers:
 
     @pytest.mark.asyncio
     async def test_chain_of_normalizers__preserve(self, tag: TagInNormalization, raw_tags: list[RawTag]) -> None:
-        tag = tag.replace(preserve=True)
+        tag = tag.replace(mode=NormalizationMode.preserve)
 
         normalizers = [
             FakeNormalizer(True, [raw_tags[0]]),
@@ -110,7 +110,7 @@ class TestApplyNormalizers:
 
     @pytest.mark.asyncio
     async def test_chain_of_normalizers__not_preserve(self, tag: TagInNormalization, raw_tags: list[RawTag]) -> None:
-        tag = tag.replace(preserve=False)
+        tag = tag.replace(mode=NormalizationMode.raw)
 
         normalizers = [
             FakeNormalizer(True, [raw_tags[0]]),
@@ -171,18 +171,18 @@ class TestNormalize:
     )
     @pytest.mark.asyncio
     async def test_single_tag(self, raw_uid: str, norm_uid: TagUid) -> None:
-        assert await normalize([RawTag(raw_uid=raw_uid, preserve=False)]) == [
+        assert await normalize([RawTag(raw_uid=raw_uid, normalization=NormalizationMode.raw)]) == [
             NormalizedTag(uid=norm_uid, link=None, categories=set())
         ]
 
     @pytest.mark.asyncio
     async def test_normalize_complex(self) -> None:
         input = [
-            RawTag(raw_uid="tag--1", preserve=False),
-            RawTag(raw_uid="tag-2", preserve=False),
-            RawTag(raw_uid="taG-3", preserve=False),
-            RawTag(raw_uid="tag-4", preserve=False),
-            RawTag(raw_uid="tag--5", preserve=False),
+            RawTag(raw_uid="tag--1", normalization=NormalizationMode.raw),
+            RawTag(raw_uid="tag-2", normalization=NormalizationMode.raw),
+            RawTag(raw_uid="taG-3", normalization=NormalizationMode.raw),
+            RawTag(raw_uid="tag-4", normalization=NormalizationMode.raw),
+            RawTag(raw_uid="tag--5", normalization=NormalizationMode.raw),
         ]
 
         expected = [
@@ -205,13 +205,13 @@ class TestNormalize:
         input = [
             RawTag(
                 raw_uid="tag-1",
-                preserve=False,
+                normalization=NormalizationMode.raw,
                 link="http://example.com/tag1",
                 categories={TagCategory.network_domain},
             ),
             RawTag(
                 raw_uid="tag-2",
-                preserve=False,
+                normalization=NormalizationMode.raw,
                 link="http://example.com/tag2",
                 categories={TagCategory.feed_tag},
             ),
@@ -240,11 +240,11 @@ class TestNormalize:
     @pytest.mark.asyncio
     async def test_remove_duplicates(self) -> None:
         input = [
-            RawTag(raw_uid="tag-1", preserve=False),
-            RawTag(raw_uid="tag-1", preserve=False),
-            RawTag(raw_uid="tag-2", preserve=False),
-            RawTag(raw_uid="tag-3", preserve=False),
-            RawTag(raw_uid="tag-2", preserve=False),
+            RawTag(raw_uid="tag-1", normalization=NormalizationMode.raw),
+            RawTag(raw_uid="tag-1", normalization=NormalizationMode.raw),
+            RawTag(raw_uid="tag-2", normalization=NormalizationMode.raw),
+            RawTag(raw_uid="tag-3", normalization=NormalizationMode.raw),
+            RawTag(raw_uid="tag-2", normalization=NormalizationMode.raw),
         ]
 
         expected = [
@@ -263,9 +263,9 @@ class TestNormalize:
     @pytest.mark.asyncio
     async def test_no_normalizers(self) -> None:
         input = [
-            RawTag(raw_uid="tag--1", preserve=False),
-            RawTag(raw_uid="tag-2", preserve=False),
-            RawTag(raw_uid="tag-3--", preserve=False),
+            RawTag(raw_uid="tag--1", normalization=NormalizationMode.raw),
+            RawTag(raw_uid="tag-2", normalization=NormalizationMode.raw),
+            RawTag(raw_uid="tag-3--", normalization=NormalizationMode.raw),
         ]
 
         expected = [
@@ -283,19 +283,19 @@ class TestNormalize:
 
     @pytest.mark.asyncio
     async def test_tags_chain(self, mocker: MockerFixture) -> None:  # pylint: disable=R0914
-        tag_1 = RawTag(raw_uid="tag-1", preserve=True, link=None, categories=set())
-        tag_2 = RawTag(raw_uid="tag-2", preserve=False, link=None, categories=set())
-        tag_3 = RawTag(raw_uid="tag-3", preserve=True, link=None, categories=set())
+        tag_1 = RawTag(raw_uid="tag-1", normalization=NormalizationMode.preserve, link=None, categories=set())
+        tag_2 = RawTag(raw_uid="tag-2", normalization=NormalizationMode.raw, link=None, categories=set())
+        tag_3 = RawTag(raw_uid="tag-3", normalization=NormalizationMode.preserve, link=None, categories=set())
 
-        tag_4 = tag_1.replace(raw_uid="tag-4", preserve=False)
-        tag_5 = tag_2.replace(raw_uid="tag-5", preserve=True)
-        tag_6 = tag_3.replace(raw_uid="tag-6", preserve=False)
+        tag_4 = tag_1.replace(raw_uid="tag-4", normalization=NormalizationMode.raw)
+        tag_5 = tag_2.replace(raw_uid="tag-5", normalization=NormalizationMode.preserve)
+        tag_6 = tag_3.replace(raw_uid="tag-6", normalization=NormalizationMode.raw)
 
-        tag_7 = tag_1.replace(raw_uid="tag-7", preserve=True)
-        tag_8 = tag_2.replace(raw_uid="tag-8", preserve=True)
-        tag_9 = tag_3.replace(raw_uid="tag-9", preserve=True)
+        tag_7 = tag_1.replace(raw_uid="tag-7", normalization=NormalizationMode.preserve)
+        tag_8 = tag_2.replace(raw_uid="tag-8", normalization=NormalizationMode.preserve)
+        tag_9 = tag_3.replace(raw_uid="tag-9", normalization=NormalizationMode.preserve)
 
-        tag_10 = tag_3.replace(raw_uid="tag-10", preserve=True)
+        tag_10 = tag_3.replace(raw_uid="tag-10", normalization=NormalizationMode.preserve)
 
         # Test:
         # - chains
@@ -317,8 +317,8 @@ class TestNormalize:
             # we use `preserve` here just for simplicity of the map
             # to not add additional parameters
             if tag_.uid in tag_map:
-                return tag_.preserve, tag_map[tag_.uid]
-            return tag_.preserve, []
+                return (tag_.mode == NormalizationMode.preserve), tag_map[tag_.uid]
+            return (tag_.mode == NormalizationMode.preserve), []
 
         mocker.patch("ffun.tags.domain.apply_normalizers", side_effect=mocked_apply_normalizers)
 

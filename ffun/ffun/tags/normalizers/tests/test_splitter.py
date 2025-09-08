@@ -1,7 +1,7 @@
 import pytest
 
 from ffun.domain.entities import TagUid
-from ffun.ontology.entities import RawTag
+from ffun.ontology.entities import RawTag, NormalizationMode
 from ffun.tags import converters, utils
 from ffun.tags.entities import TagCategory, TagInNormalization
 from ffun.tags.normalizers import splitter
@@ -43,7 +43,7 @@ class TestNormalizer:
         input_tag = TagInNormalization(
             uid=input_uid,
             parts=utils.uid_to_parts(input_uid),
-            preserve=True,
+            mode=NormalizationMode.preserve,
             link="http://example.com/tag",
             categories={TagCategory.feed_tag},
         )
@@ -51,7 +51,7 @@ class TestNormalizer:
         expected_new_tags = [
             RawTag(
                 raw_uid=new_uid,
-                preserve=False,  # must be False for all derived tags
+                normalization=NormalizationMode.raw,  # must be raw for all derived tags
                 link=input_tag.link,
                 categories=input_tag.categories,
             )

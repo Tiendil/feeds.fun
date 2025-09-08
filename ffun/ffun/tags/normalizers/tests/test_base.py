@@ -6,7 +6,7 @@ from pytest_mock import MockerFixture
 
 from ffun.core import metrics
 from ffun.domain.entities import TagUid
-from ffun.ontology.entities import RawTag
+from ffun.ontology.entities import RawTag, NormalizationMode
 from ffun.tags import utils
 from ffun.tags.entities import TagCategory, TagInNormalization
 from ffun.tags.normalizers.base import FakeNormalizer, NormalizerAlwaysError, NormalizerInfo
@@ -60,7 +60,7 @@ class TestNormalizerInfo:
         return TagInNormalization(
             uid=uid,
             parts=utils.uid_to_parts(uid),
-            preserve=True,
+            mode=NormalizationMode.preserve,
             link=None,
             categories={TagCategory.feed_tag},
         )
@@ -69,7 +69,7 @@ class TestNormalizerInfo:
     def raw_tag_1(self) -> RawTag:
         return RawTag(
             raw_uid="new-tag-1",
-            preserve=False,
+            normalization=NormalizationMode.raw,
             link=None,
             categories={TagCategory.feed_tag},
         )
@@ -78,7 +78,7 @@ class TestNormalizerInfo:
     def raw_tag_2(self) -> RawTag:
         return RawTag(
             raw_uid="new-tag-2",
-            preserve=False,
+            normalization=NormalizationMode.raw,
             link=None,
             categories={TagCategory.feed_tag},
         )

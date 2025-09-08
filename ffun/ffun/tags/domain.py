@@ -7,6 +7,9 @@ from ffun.tags.normalizers import NormalizerInfo, normalizers
 
 
 def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
+    # we better normalize uids even for final tags:
+    # - In case all works well, they will remain unchanged
+    # - In case of some issues, we'll stop an error propagation here
     uid = converters.normalize(tag.raw_uid)
 
     return TagInNormalization(
@@ -30,7 +33,7 @@ async def apply_normalizers(normalizers_: list[NormalizerInfo], tag: TagInNormal
 
         all_new_tags.extend(new_tags)
 
-        if not tag_valid and tag.normalization == NormalizationMode.raw:
+        if not tag_valid and tag.mode == NormalizationMode.raw:
             return (False, all_new_tags)
 
     return (True, all_new_tags)
