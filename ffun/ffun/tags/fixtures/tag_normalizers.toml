@@ -24,13 +24,15 @@
     # those tags often can be dropped without losing meaning: `things-that-make-me-happy` -> `things-make-me-happy`
     "that", "those", "some", "any", "each", "every",
     # those tags add unnecessary clarification
-    "several", "various",
+    "several", "various", "today", "now", "latest", "new", "update",
     # just junk
-    "etc",
+    "etc", "yet",
+    # Those parts we may consider to remove, if they'll cause problems:
+    "too",
   ]
 
   # Those parts are under questions, because they appear mostly in "chaotic" tags:
-  # - this, these, either, neither
+  # - this, these, either, neither, so, tomorrow, yesterday
   #
   # Those parts are part of important terms, so we keep them for now:
   # - few (few-shot-learning, ...)
@@ -38,9 +40,6 @@
   #
   # Those parts looks like parts of compound phrases, so we keep them for now:
   # - much (too-much, how-much, ...)
-
-
- # TODO: too, how-much, too-much
 
 
 [[tag_normalizer]]
@@ -53,6 +52,10 @@
   q-a = "qa"
   start-up = "startup"
   set-up = "setup"
+  sign-up = "signup"
+  up-front = "upfront"
+  stand-up = "standup"
+  follow-up = "followup"
   e-mail = "email"
   web-site = "website"
   x-ray = "xray"
@@ -90,5 +93,4 @@
     # Those parts have special meanings:
     # - v (as roman number v = 5)
     # - i (as roman number i = 1
-
   ]
