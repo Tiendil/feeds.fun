@@ -39,6 +39,10 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
             async with http.client(proxy=proxy.url) as client:
                 response = await client.get(url, follow_redirects=True)
 
+    # This long list of exceptions works as a knowledge base for possible errors
+    # Later we may want to:
+    # - add some smart handling for some errors
+    # - build a dashboard to monitor errors and react on their spikes
     except httpx.RemoteProtocolError as e:
         message = str(e)
 
@@ -58,11 +62,16 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
             # in the case of GCF you can see the "fzyujing" in new location, but it does not returned by httpx
             # => we just check the base message
             # Details: https://chatgpt.com/share/6855377e-4828-800d-a4cb-1ea924cd6286
+            log.warning("network_wrong_redirect")
             error_code = FeedError.network_wrong_redirect
         elif "Receive buffer too long" in message:
             # HTTPX does not allow configuring the buffer size
             # We may want to increase it in the future, when HTTPX will allow it
+            log.warning("network_receive_buffer_too_long")
             error_code = FeedError.network_receive_buffer_too_long
+        elif "Server disconnected" in message:
+            log.warning("network_server_disconnected")
+            error_code = FeedError.network_server_disconnected
         else:
             log.exception("remote_protocol_error_while_loading_feed")
 
