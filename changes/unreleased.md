@@ -5,3 +5,4 @@
   - Migrated to the new Responses API.
   - Removed `presence_penalty` and `frequency_penalty` LLM config parameters, since Responses API does not support them.
 - ff-467 — Minimal valuable implementation of tag normalization. For details, see README.md.
+- ff-500 — Silenced the error when a news server disconnects during network communication.
