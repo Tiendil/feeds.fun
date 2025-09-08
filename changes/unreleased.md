@@ -10,4 +10,3 @@
 TODO:
 
 - README — add section about normalizers.
-- test on real data.
