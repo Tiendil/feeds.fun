@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 from ffun.core import logging
 from ffun.librarian.processors import base
 from ffun.library.entities import Entry
-from ffun.ontology.entities import RawTag, TagCategory
+from ffun.ontology.entities import NormalizationMode, RawTag, TagCategory
 
 logger = logging.get_module_logger()
 
@@ -50,6 +50,7 @@ class Processor(base.Processor):
             tags.append(
                 RawTag(
                     raw_uid=subdomain,
+                    normalization=NormalizationMode.final,
                     link=parsed_url.scheme + "://" + subdomain,
                     categories={TagCategory.network_domain},
                 )

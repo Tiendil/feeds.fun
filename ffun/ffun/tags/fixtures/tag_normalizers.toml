@@ -1,0 +1,102 @@
+# This is an example of the configuration file for the tag normalizers.
+#
+# ATTENTION: Normalizer ids <= 10000 are reserved for the system.
+#            if you want to add a custom normalizer, use ids > 10000.
+#
+# ATTENTION: Always describe the reason for adding or excluding normalizer parameters.
+#            With time it will be hard to remember the reasoning behind the decisions.
+#
+# ATTENTION: The order in which the normalizers are defined is important!
+#            It ensures that the normalizers are not conflicting with each other.
+#
+# Additonal (temporary) rules:
+#
+# - We are ok with breaking proper nouns (books, movies, games, products, etc.).
+#   They are not an often candidates for rules, later we'll have separate tag procesors for them.
+# - We are ok with breaking or loosing some terms (like "order-by") if that allows us to create
+#   a lot of much simpler tags for other cases. Later we'll have separate tag procesors for those terms.
+
+[[tag_normalizer]]
+  id = 1
+  enabled = true
+  name = "part_replacer"
+  type = "part_replacer"
+
+  [tag_normalizer.replacements]
+  q-a = "qa"
+  q-n-a = "qna"
+  start-up = "startup"
+  set-up = "setup"
+  sign-up = "signup"
+  up-front = "upfront"
+  stand-up = "standup"
+  follow-up = "followup"
+  e-mail = "email"
+  web-site = "website"
+  x-ray = "xray"
+  em = "them"
+  cuz = "because"
+  to-do = "todo"
+
+[[tag_normalizer]]
+  id = 2
+  enabled = true
+  name = "splitter"
+  type = "splitter"
+  separators = [
+    # Those parts most likely separate different parts of compound phrases:
+    # `animation-in-video-games` -> `animation` & `video-games`
+    "of", "in", "on", "at", "for", "with", "within", "about", "as", "via", "among", "after",
+    "during", "through", "against", "vs", "versus",
+
+    # Complex phrases that separates parts of compound phrases:
+    "impact-on",
+
+    # Those parts we may consider to remove, if they'll cause problems:
+    "by", "without",
+
+    # Those parts are part of important terms, so we keep them for now:
+    # - to (many-to-many, free-to-play, speak-to-text, ...),
+    # - from (from-scratch, learning-from-smth, ...), — let's think how to process such constructions later
+    # - like (bird-like-smth, ear-like-planet, ...)
+    # - between (x-between-y-and-z, ...) — let's think how to process such constructions later
+    # - per (miles-per-hour, cost-per-day, ...)
+    #
+    # Those parts are under questions, because they appear mostly in "chaotic" tags:
+    # - into, onto, over, under, before, upon, aka
+    #
+    # Those parts have special meanings:
+    # - v (as roman number v = 5)
+    # - i (as roman number i = 1
+  ]
+
+
+[[tag_normalizer]]
+  id = 3
+  enabled = true
+  name = "part_blacklist"
+  type = "part_blacklist"
+  # TODO: Currently this normalizer supports only single-word parts.
+  #       If we want to support multiword parts like `how-to`, we should refactor it.
+  blacklist = [
+    # we always can drop articles, they are not significant even for proper nouns
+    "the", "a", "an",
+    # those tags often can be dropped without losing meaning: `things-that-make-me-happy` -> `things-make-me-happy`
+    "that", "those", "some", "any", "each", "every", "all",
+    # those tags add unnecessary clarification
+    "several", "various", "today", "now", "latest", "new", "update", "just",
+    # just junk
+    "etc", "yet",
+    # Those parts we may consider to remove, if they'll cause problems:
+    "too",
+  ]
+
+  # Those parts are under questions, because they appear mostly in "chaotic" tags:
+  # - this, these, either, neither, so, tomorrow, yesterday
+  #
+  # Those parts are part of important terms, so we keep them for now:
+  # - few (few-shot-learning, ...)
+  # - many (many-to-many, ...)
+  #
+  # Those parts looks like parts of compound phrases, so we keep them for now:
+  # - much (too-much, how-much, ...)

@@ -383,11 +383,11 @@ class TestCountTotalTagsPerCategory:
         tags = [TagUid(uuid.uuid4().hex) for _ in range(5)]
 
         processor_tags = [
-            NormalizedTag(uid=tags[0]),
-            NormalizedTag(uid=tags[1], categories={TagCategory.network_domain}),
-            NormalizedTag(uid=tags[2], categories={TagCategory.feed_tag}),
-            NormalizedTag(uid=tags[3], categories={TagCategory.network_domain, TagCategory.feed_tag}),
-            NormalizedTag(uid=tags[4], categories={TagCategory.feed_tag}),
+            NormalizedTag(uid=tags[0], link=None, categories=set()),
+            NormalizedTag(uid=tags[1], link=None, categories={TagCategory.network_domain}),
+            NormalizedTag(uid=tags[2], link=None, categories={TagCategory.feed_tag}),
+            NormalizedTag(uid=tags[3], link=None, categories={TagCategory.network_domain, TagCategory.feed_tag}),
+            NormalizedTag(uid=tags[4], link=None, categories={TagCategory.feed_tag}),
         ]
 
         numbers_before = await count_total_tags_per_category()
@@ -407,11 +407,11 @@ class TestCountTotalTagsPerType:
         tags = [TagUid(uuid.uuid4().hex) for _ in range(5)]
 
         processor_tags = [
-            NormalizedTag(uid=tags[0]),
-            NormalizedTag(uid=tags[1], link="https://example.com"),
+            NormalizedTag(uid=tags[0], link=None, categories=set()),
+            NormalizedTag(uid=tags[1], link="https://example.com", categories=set()),
             NormalizedTag(uid=tags[2], link="https://example.com", categories={TagCategory.network_domain}),
             NormalizedTag(uid=tags[3], link="https://example.com", categories={TagCategory.feed_tag}),
-            NormalizedTag(uid=tags[4], link="https://example.com"),
+            NormalizedTag(uid=tags[4], link="https://example.com", categories=set()),
         ]
 
         numbers_before = await count_total_tags_per_type()

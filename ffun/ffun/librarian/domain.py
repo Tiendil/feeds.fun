@@ -22,6 +22,7 @@ get_all_pointers = operations.get_all_pointers
 _processor_metrics_accumulators: dict[tuple[int, str], metrics.Accumulator] = {}
 
 
+# TODO: we may move metric accumulators to the processor info
 def accumulator(event: str, processor_id: int) -> metrics.Accumulator:
     key = (processor_id, event)
 
@@ -98,14 +99,20 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
     try:
         raw_tags = await processor.process(entry)
 
+        raw_tags_for_log = set(tag.raw_uid for tag in raw_tags)
+
         raw_tags_metric.measure(len(raw_tags))
 
         norm_tags = await t_domain.normalize(raw_tags)
 
-        tags_for_log = [tag.uid for tag in norm_tags]
-        tags_for_log.sort()
+        tags_for_log = {tag.uid for tag in norm_tags}
 
-        logger.info("tags_found", tags=tags_for_log)
+        logger.info(
+            "tags_found",
+            tags=sorted(tags_for_log),
+            lost=raw_tags_for_log - tags_for_log,
+            added=tags_for_log - raw_tags_for_log,  # type: ignore
+        )
 
         normalized_tags_metric.measure(len(norm_tags))
 

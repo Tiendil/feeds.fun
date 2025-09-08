@@ -220,6 +220,10 @@ def check_metric_accumulators(
     def patch_flush(self: Accumulator) -> None:
         called_for.append(self)
 
+    # Disable normalizers to measure calls only of processors' metrics.
+    # Attention: we overwrite value imported into the domain module, not the original one.
+    mocker.patch("ffun.tags.domain.normalizers", [])
+
     mocker.patch("ffun.core.metrics.Accumulator.flush_if_time", patch_flush)
 
     with check_metric_accumulator(processor_id, "processor_raw_tags", raw_count, raw_sum), check_metric_accumulator(

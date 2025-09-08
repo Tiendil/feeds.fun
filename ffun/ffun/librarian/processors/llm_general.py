@@ -15,7 +15,7 @@ from ffun.llms_framework.entities import (
     LLMProvider,
 )
 from ffun.llms_framework.providers import llm_providers
-from ffun.ontology.entities import RawTag
+from ffun.ontology.entities import NormalizationMode, RawTag
 
 logger = logging.get_module_logger()
 
@@ -88,6 +88,11 @@ class Processor(base.Processor):
             raw_tags.update(self.tag_extractor(response.response_content()))
 
         for raw_tag in raw_tags:
-            tags.append(RawTag(raw_uid=raw_tag))
+            tags.append(
+                RawTag(
+                    raw_uid=raw_tag,
+                    normalization=NormalizationMode.raw,
+                )
+            )
 
         return tags

@@ -118,7 +118,7 @@ async def run_fill_db(feeds_number: int, entries_per_feed: int, tags_per_entry: 
 
                 for j, _ in enumerate(range(tags_per_entry), start=1):
                     uid = TagUid(f"some-long-tag-name-{j}-{i % j}")
-                    tags.append(NormalizedTag(uid=uid))
+                    tags.append(NormalizedTag(uid=uid, link=None, categories=set()))
 
                 await apply_tags_to_entry(entry.id, 100500, tags)
 

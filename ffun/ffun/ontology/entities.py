@@ -6,16 +6,12 @@ import pydantic
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import TagId, TagUid
+from ffun.tags.entities import NormalizationMode, TagCategory
 
 
-class TagPropertyType(int, enum.Enum):
+class TagPropertyType(enum.IntEnum):
     link = 2
     categories = 3
-
-
-class TagCategory(str, enum.Enum):
-    network_domain = "network-domain"
-    feed_tag = "feed-tag"
 
 
 class TagProperty(BaseEntity):
@@ -26,10 +22,11 @@ class TagProperty(BaseEntity):
     created_at: datetime.datetime
 
 
-class RawTag(pydantic.BaseModel):
+class RawTag(BaseEntity):
     raw_uid: str
 
-    name: str | None = None
+    normalization: NormalizationMode
+
     link: str | None = None
     categories: set[TagCategory] = pydantic.Field(default_factory=set)
 
@@ -37,9 +34,8 @@ class RawTag(pydantic.BaseModel):
 class NormalizedTag(pydantic.BaseModel):
     uid: TagUid
 
-    name: str | None = None
-    link: str | None = None
-    categories: set[TagCategory] = pydantic.Field(default_factory=set)
+    link: str | None
+    categories: set[TagCategory]
 
     def build_properties_for(self, tag_id: TagId, processor_id: int) -> list[TagProperty]:
         properties = []
