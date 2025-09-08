@@ -1,6 +1,6 @@
 from typing import Iterable
 
-from ffun.ontology.entities import NormalizedTag, RawTag
+from ffun.ontology.entities import NormalizationMode, NormalizedTag, RawTag
 from ffun.tags import converters, utils
 from ffun.tags.entities import TagInNormalization
 from ffun.tags.normalizers import NormalizerInfo, normalizers
@@ -12,13 +12,17 @@ def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
     return TagInNormalization(
         uid=uid,
         parts=utils.uid_to_parts(uid),
-        preserve=tag.preserve,
+        mode=tag.normalization,
         link=tag.link,
         categories=set(tag.categories),
     )
 
 
 async def apply_normalizers(normalizers_: list[NormalizerInfo], tag: TagInNormalization) -> tuple[bool, list[RawTag]]:
+
+    if tag.mode == NormalizationMode.final:
+        return (True, [])
+
     all_new_tags = []
 
     for info in normalizers_:
@@ -26,7 +30,7 @@ async def apply_normalizers(normalizers_: list[NormalizerInfo], tag: TagInNormal
 
         all_new_tags.extend(new_tags)
 
-        if not tag_valid and not tag.preserve:
+        if not tag_valid and tag.normalization == NormalizationMode.raw:
             return (False, all_new_tags)
 
     return (True, all_new_tags)

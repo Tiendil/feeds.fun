@@ -5,6 +5,7 @@ import pydantic
 
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import TagUid, TagUidPart
+from ffun.ontology.entities import NormalizationMode
 
 
 class TagCategory(str, enum.Enum):
@@ -16,7 +17,7 @@ class TagInNormalization(BaseEntity):
     uid: TagUid
     parts: list[TagUidPart]
 
-    preserve: bool
+    mode: NormalizationMode
 
     link: str | None
     categories: set[TagCategory]

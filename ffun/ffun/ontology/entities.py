@@ -9,9 +9,15 @@ from ffun.domain.entities import TagId, TagUid
 from ffun.tags.entities import TagCategory
 
 
-class TagPropertyType(int, enum.Enum):
+class TagPropertyType(enum.IntEnum):
     link = 2
     categories = 3
+
+
+class NormalizationMode(enum.StrEnum):
+    raw = "raw"  # tag should be processed by normalizers and can be removed
+    preserve = "preserve"  # tag should be processed by normalizers but can not be removed
+    final = "final"  # tag should not be processed by normalizers and can not be removed
 
 
 class TagProperty(BaseEntity):
@@ -25,7 +31,7 @@ class TagProperty(BaseEntity):
 class RawTag(BaseEntity):
     raw_uid: str
 
-    preserve: bool
+    normalization: NormalizationMode
 
     link: str | None = None
     categories: set[TagCategory] = pydantic.Field(default_factory=set)
