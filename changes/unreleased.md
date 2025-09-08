@@ -7,3 +7,4 @@
 - ff-467 — Minimal valuable implementation of tag normalization. For details, see README.md.
 - ff-500 — Silenced the error when a news server disconnects during network communication.
 - ff-497 — Silenced the error when a news server disconnects without sending all the data.
+- ff-496 — Better SLL error handling.
