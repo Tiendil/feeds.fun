@@ -107,10 +107,12 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
 
         tags_for_log = {tag.uid for tag in norm_tags}
 
-        logger.info("tags_found",
-                    tags=sorted(tags_for_log),
-                    lost=raw_tags_for_log - tags_for_log,
-                    added=tags_for_log - raw_tags_for_log)
+        logger.info(
+            "tags_found",
+            tags=sorted(tags_for_log),
+            lost=raw_tags_for_log - tags_for_log,
+            added=tags_for_log - raw_tags_for_log,  # type: ignore
+        )
 
         normalized_tags_metric.measure(len(norm_tags))
 
