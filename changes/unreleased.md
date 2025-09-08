@@ -9,3 +9,4 @@
 - ff-497 — Silenced the error when a news server disconnects without sending all the data.
 - ff-496 — Better SLL error handling.
 - ff-495 — Silenced the HTTP/2 error when a news server resets a stream.
+- ff-494 — Silenced the HTTP/2 error when a news server terminates the connection.
