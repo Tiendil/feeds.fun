@@ -2,7 +2,7 @@ tags_must_have = [
   'book-reviews',
   'forecasting',
   'nate-silver',
-  'the-signal-and-the-noise'
+  'signal-and-noise'
 ]
 tags_should_have = [
   'statistics',
