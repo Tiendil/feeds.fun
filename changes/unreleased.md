@@ -11,6 +11,5 @@ TODO:
 
 - README — add section about normalizers.
 - test on real data.
-- white_list: produce `how-to` from `how-to-...`?, `day-to-day` (must produce preserved tags and do not stop processing), `free-to-play`, `before-and-after`, `once-upon-a-time`, `yet-another` + add marker `final` to tags, to skipp all other normalizers (also, for domain processor)
-- Establish order: `white_list` -> `part_replacer` -> `splitter` -> `parts_blacklist`
+- Establish order: `part_replacer` -> `splitter` -> `parts_blacklist`
 - try add more configs with copilot autocomplete
