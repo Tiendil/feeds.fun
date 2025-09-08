@@ -18,6 +18,8 @@
   enabled = true
   name = "part_blacklist"
   type = "part_blacklist"
+  # TODO: Currently this normalizer supports only single-word parts.
+  #       If we want to support multiword parts like `how-to`, we should refactor it.
   blacklist = [
     # we always can drop articles, they are not significant even for proper nouns
     "the", "a", "an",
