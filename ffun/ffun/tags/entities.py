@@ -5,12 +5,17 @@ import pydantic
 
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import TagUid, TagUidPart
-from ffun.ontology.entities import NormalizationMode
 
 
-class TagCategory(str, enum.Enum):
+class TagCategory(enum.StrEnum):
     network_domain = "network-domain"
     feed_tag = "feed-tag"
+
+
+class NormalizationMode(enum.StrEnum):
+    raw = "raw"  # tag should be processed by normalizers and can be removed
+    preserve = "preserve"  # tag should be processed by normalizers but can not be removed
+    final = "final"  # tag should not be processed by normalizers and can not be removed
 
 
 class TagInNormalization(BaseEntity):
