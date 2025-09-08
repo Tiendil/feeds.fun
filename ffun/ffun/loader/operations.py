@@ -91,8 +91,17 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
             # There are quite a lot of such errors (~1000 in a week)
             # But it seems they are random (feeds with errors loaded successfully later)
             # => we should monitor the situation, maybe it will be fixed in the future HTTPX releases
+            # Also, this error may be caused by our protocol-loop logic.
             log.warning("network_server_reset_http2_stream")
             error_code = FeedError.network_server_reset_http2_stream
+        elif "ConnectionTerminated" in message:
+            # This is HTTP/2 specific error
+            # It appeared after HTTPX was updated, and the support of HTTP/2 was turned on
+            # There are quite a lot of such errors (~100 in a week)
+            # Currently, all such errors are with error_code:0 => we may just reconnect later
+            # Also, it seems they are caused by our protocol-loop logic.
+            log.warning("network_server_terminated_connection")
+            error_code = FeedError.network_server_terminated_connection
         else:
             log.exception("remote_protocol_error_while_loading_feed")
 
