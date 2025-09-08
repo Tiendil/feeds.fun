@@ -99,6 +99,11 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
     try:
         raw_tags = await processor.process(entry)
 
+        tags_for_log = [tag.raw_uid for tag in raw_tags]
+        tags_for_log.sort()
+
+        logger.info("raw_tags_found", tags=tags_for_log)
+
         raw_tags_metric.measure(len(raw_tags))
 
         norm_tags = await t_domain.normalize(raw_tags)

@@ -4,7 +4,7 @@ from ffun.tags.normalizers import base
 
 
 class Normalizer(base.Normalizer):
-    """Split tag into multiple parts based on a replacements dictionary.
+    """Split tag into TWO parts based on a replacements dictionary.
 
     Examples:
     - `rest-api-for-graph-processing` by `for` -> `rest-api` & `graph-processing`
@@ -23,20 +23,39 @@ class Normalizer(base.Normalizer):
         self.separators = separators
 
     async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[RawTag]]:  # noqa: CCR001
-        if not tag.uid:
+        base_uid = tag.uid
+        base_len = len(base_uid)
+
+        if not base_uid:
             return False, []
 
         new_uids = set()
 
         for separator in self.separators:
-            if separator not in tag.uid:
+            if separator not in base_uid:
                 continue
 
-            for part in tag.uid.split(separator):
-                part = part.strip("-")
+            separator_len = len(separator)
 
-                if part:
-                    new_uids.add(part)
+            find_start = 0
+
+            while (sep_start := base_uid.find(separator, find_start)) != -1:
+                find_start = sep_start + 1
+
+                ##########################################################
+                # check that we cut tag only by full part, not inside part
+                if sep_start > 0 and base_uid[sep_start - 1] != "-":
+                    continue
+
+                if sep_start + separator_len < base_len and base_uid[sep_start + separator_len] != "-":
+                    continue
+                ##########################################################
+
+                for part in (base_uid[0:sep_start], base_uid[sep_start + len(separator) :]):
+                    part = part.strip("-")
+
+                    if part:
+                        new_uids.add(part)
 
         if not new_uids:
             return True, []
