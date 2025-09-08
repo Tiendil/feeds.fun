@@ -78,7 +78,7 @@ class TestApplyNormalizers:
 
     @pytest.mark.parametrize("tag_valid", [True, False])
     @pytest.mark.asyncio
-    async def test_single_normalizer__not_preserve(
+    async def test_single_normalizer__raw(
         self, tag_valid: bool, tag: TagInNormalization, raw_tags: list[RawTag]
     ) -> None:
         tag = tag.replace(mode=NormalizationMode.raw)
@@ -89,6 +89,20 @@ class TestApplyNormalizers:
         result_tag_valid, new_tags = await apply_normalizers([info], tag)
         assert tag_valid == result_tag_valid
         assert new_tags == raw_tags
+
+    @pytest.mark.parametrize("tag_valid", [True, False])
+    @pytest.mark.asyncio
+    async def test_single_normalizer__final(
+        self, tag_valid: bool, tag: TagInNormalization, raw_tags: list[RawTag]
+    ) -> None:
+        tag = tag.replace(mode=NormalizationMode.final)
+
+        normalizer = FakeNormalizer(tag_valid, raw_tags)
+        info = NormalizerInfo(id=1, name="fake", normalizer=normalizer)
+
+        result_tag_valid, new_tags = await apply_normalizers([info], tag)
+        assert result_tag_valid
+        assert new_tags == []
 
     @pytest.mark.asyncio
     async def test_chain_of_normalizers__preserve(self, tag: TagInNormalization, raw_tags: list[RawTag]) -> None:
