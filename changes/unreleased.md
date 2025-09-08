@@ -11,4 +11,3 @@ TODO:
 
 - README — add section about normalizers.
 - test on real data.
-- try add more configs with copilot autocomplete

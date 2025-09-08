@@ -24,6 +24,7 @@
 
   [tag_normalizer.replacements]
   q-a = "qa"
+  q-n-a = "qna"
   start-up = "startup"
   set-up = "setup"
   sign-up = "signup"
@@ -46,7 +47,7 @@
     # Those parts most likely separate different parts of compound phrases:
     # `animation-in-video-games` -> `animation` & `video-games`
     "of", "in", "on", "at", "for", "with", "within", "about", "as", "via", "among", "after",
-    "during", "through", "against", "vs",
+    "during", "through", "against", "vs", "versus",
 
     # Complex phrases that separates parts of compound phrases:
     "impact-on",
@@ -81,9 +82,9 @@
     # we always can drop articles, they are not significant even for proper nouns
     "the", "a", "an",
     # those tags often can be dropped without losing meaning: `things-that-make-me-happy` -> `things-make-me-happy`
-    "that", "those", "some", "any", "each", "every",
+    "that", "those", "some", "any", "each", "every", "all",
     # those tags add unnecessary clarification
-    "several", "various", "today", "now", "latest", "new", "update",
+    "several", "various", "today", "now", "latest", "new", "update", "just",
     # just junk
     "etc", "yet",
     # Those parts we may consider to remove, if they'll cause problems:
