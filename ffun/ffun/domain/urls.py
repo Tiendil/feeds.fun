@@ -108,6 +108,9 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noq
     if url.startswith("./") or url.startswith("../"):
         return None
 
+    # TODO: Somewhere here we may want to remove standard ports (80, 443).
+    #       In any case, loader ignores them and iterates over protocols starting from https
+
     if match := RE_SCHEMA.match(url):
 
         if not schema_supported(match.group(1)):
