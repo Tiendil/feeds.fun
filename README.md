@@ -108,7 +108,7 @@ Currently implemented processors:
 - `llm_general` — asks ChatGPT/GeminiGPT to detect tags. Currently, it is the most powerful processor. Must-have if you want to use Feed Fun in full power.
 - `upper_case_title` — detects news with uppercase titles and marks them with `upper-case-title` tag.
 
-### LLM Processors
+#### LLM Processors
 
 LLM tag processors are the primary source of tags for Feeds Fun.
 
@@ -120,7 +120,7 @@ You can set the API key for collections in the processor's config.
 
 **DANGER!!!** You can set the "general API key" in the processor's config; in this case, the processor will use it to process **ALL** news. It may be convenient if you self-host the service and fully control who has access to it.
 
-#### Specify API entry points
+##### Specify API entry points
 
 You can set custom URLs as entry points for OpenAi and Gemini API by setting nthe ext environment variables:
 
@@ -130,6 +130,31 @@ FFUN_GOOGLE_GEMINI_API_ENTRY_POINT="<your url>"
 ```
 
 That will allow you to use any compatible API provider.
+
+### Configure Tag Normalizers
+
+Tag processors produce what we call "raw tags". They are relevant to the text, but may lack consistency. It is especially true for LLM-generated tags. It makes it difficult to use them in rules and filters.
+
+Thus, we have a chain of tag normalizers that receive raw tags and produce normalized tags.
+
+For example:
+
+- We remove articles `the`, `a`, `an` from the tags, and tags like `book-review`, `a-book-review`, `the-book-review` will become a single tag `book-review`.
+- We also split tags by various parts like `-vs-`, so `google-vs-microsoft` will become two tags: `google` and `microsoft`.
+
+**Tags normalization is a complex topic, and it is in active development, so we really appreciate your feedback.**
+
+Normalizers are configured via a separate configuration file.
+
+You can find an example of configuration [in the code](./ffun/ffun/tags/fixtures/tag_normalizers.toml).
+
+To pass your own configuration, set `FFUN_TAGS_NORMALIZERS_CONFIG` to the path to your configuration file.
+
+Currently implemented processors:
+
+- `part_blacklist` — removes blacklisted parts from tags: `a-book`, `the-book` ⇒ `book`.
+- `part_replacer` — replaces parts in tags: `e-mail` ⇒ `email`.
+- `splitter` — splits tags by specified parts: `google-vs-microsoft` ⇒ `google`, `microsoft`.
 
 ## Backend
 

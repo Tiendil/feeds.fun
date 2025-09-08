@@ -5,8 +5,3 @@
   - Migrated to the new Responses API.
   - Removed `presence_penalty` and `frequency_penalty` LLM config parameters, since Responses API does not support them.
 - ff-467 — Backbones of tag normalization.
-
-
-TODO:
-
-- README — add section about normalizers.
