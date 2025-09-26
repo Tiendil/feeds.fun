@@ -60,7 +60,7 @@ class Normalizer(base.Normalizer):
         # TODO: do not forget about loading in both dev/prod docker containers
         self._nlp = ensure_model("en_core_web_lg")
 
-    def _get_word_base_form(self, word: str) -> tuple[str]:
+    def _get_word_base_forms(self, word: str) -> tuple[str]:
         for upos in ('NOUN', 'VERB', 'ADJ', 'ADV'):
             lemmas = getLemma(word, upos=upos)
 
@@ -69,17 +69,17 @@ class Normalizer(base.Normalizer):
 
         return (word,)
 
-    def get_word_base_form(self, word: str) -> tuple[str]:
+    def get_word_base_forms(self, word: str) -> tuple[str]:
         if word in self._singular_cache:
             return self._singular_cache[word]
 
-        base_forms = self._get_word_base_form(word)
+        base_forms = self._get_word_base_forms(word)
 
         self._singular_cache[word] = base_forms
 
         return base_forms
 
-    def _get_word_plural_form(self, word: str) -> tuple[str]:
+    def _get_word_plural_forms(self, word: str) -> tuple[str]:
         forms = getInflection(word, tag='NNS')
 
         if forms:
@@ -87,43 +87,46 @@ class Normalizer(base.Normalizer):
 
         return (word,)
 
-    def get_word_plural_form(self, word: str) -> tuple[str]:
+    def get_word_plural_forms(self, word: str) -> tuple[str]:
         if word in self._plural_cache:
             return self._plural_cache[word]
 
-        plural_form = self._get_word_plural_form(word)
+        plural_forms = self._get_word_plural_forms(word)
 
-        self._plural_cache[word] = plural_form
+        self._plural_cache[word] = plural_forms
 
-        return plural_form
+        return plural_forms
 
     def get_main_tail_form(self, word: str) -> str:
-        base_forms = self.get_word_base_form(word)
+        base_forms = self.get_word_base_forms(word)
 
         if len(base_forms) == 1:
             return base_forms[0]
 
         # In case we got smth like axes -> axis, axe, we better keep original word
         # TODO: maybe we can do better, for example, but producing a variant of tag for each base tail
+        print('multiple base forms for tail:', word, '->', base_forms)
+        return word
 
-        return (word,)
-
-    def get_word_forms(self, word: str) -> list[str]:
+    def get_word_forms(self, word: str) -> list[str]:  # noqa: CCR001
         if len(word) <= 2:
             return [word]
 
         if any(c.isdigit() for c in word):
             return [word]
 
-        base_form = self.get_word_base_form(word)
+        base_forms = list(self.get_word_base_forms(word))
 
-        forms = [base_form]
+        print('!base forms for', word, ':', base_forms)
 
-        plural_form = self.get_word_plural_form(base_form)
+        forms = list(base_forms)
 
-        if plural_form != base_form:
-            forms.append(plural_form)
-
+        for base_form in base_forms:
+            for plural_form in self.get_word_plural_forms(base_form):
+                print('!plural form for', base_form, ':', plural_form)
+                if plural_form not in forms:
+                    forms.append(plural_form)
+        print('!returned forms for', word, ':', forms)
         return forms
 
     # TODO: cache
@@ -164,21 +167,49 @@ class Normalizer(base.Normalizer):
     def cosine(self, u: np.ndarray, v: np.ndarray) -> float:
         return float(np.dot(u, v))
 
-    def choose_candidate_step(self,
+    def score_candidate(self, candidate_parts: list[str], tail_vector: np.ndarray) -> float:
+        # TODO: parametrize
+        a = 1.0
+        b = 1.0
+
+        candidate_vector = self.parts_vector(candidate_parts)
+
+        alpha_score = self.cosine(candidate_vector, tail_vector)
+
+        beta_score = 0.0
+
+        if len(candidate_parts) > 1:
+            for part_left, part_right in zip(candidate_parts, candidate_parts[1:]):
+                beta_score += self.cosine(self.unit_vector(part_left), self.unit_vector(part_right))
+
+            beta_score /= (len(candidate_parts) - 1)
+
+        print('candidate:', candidate_parts, 'alpha:', alpha_score, 'beta:', beta_score)
+
+        candidate_score = a * alpha_score + b * beta_score
+
+        return candidate_score
+
+    def choose_candidate_step(self,  # pylint: disable=R0914  # noqa: CCR001
                               tail_parts: list[str],
                               tail_vector: np.ndarray,
                               original_part: str) -> tuple[str, np.ndarray]:
         candidates = self.get_word_forms(original_part)
 
+        print('part candidates for ', original_part, ':', candidates)
+
         best_candidate = candidates[0]
-        best_vector = self.parts_vector([best_candidate] + tail_parts)
-        best_score = self.cosine(best_vector, tail_vector)
+
+        first_candidate_parts = [best_candidate] + tail_parts
+
+        best_vector = self.parts_vector(first_candidate_parts)
+        best_score = self.score_candidate(first_candidate_parts, tail_vector)
 
         for candidate in candidates[1:]:
-            candidate_vector = self.parts_vector([candidate] + tail_parts)
+            candidate_parts = [candidate] + tail_parts
+            candidate_vector = self.parts_vector(candidate_parts)
 
-            # TODO: here we may want to add avg_adjacent_cos (pairwise cosine between adjacent parts)
-            candidate_score = self.cosine(candidate_vector, tail_vector)
+            candidate_score = self.score_candidate(candidate_parts, tail_vector)
 
             if candidate_score > best_score:
                 best_candidate = candidate
@@ -191,6 +222,8 @@ class Normalizer(base.Normalizer):
         if not tag.uid:
             return False, []
 
+        print('input:', tag.parts)
+
         tail_parts = [self.get_main_tail_form(tag.parts[-1])]
         tail_vector = self.parts_vector(tail_parts)
 
@@ -198,6 +231,7 @@ class Normalizer(base.Normalizer):
             best_candidate, tail_vector = self.choose_candidate_step(tail_parts, tail_vector, part)
             tail_parts.insert(0, best_candidate)
 
+        print('output:', tail_parts)
         new_uid = '-'.join(tail_parts)
 
         if new_uid == tag.uid:
