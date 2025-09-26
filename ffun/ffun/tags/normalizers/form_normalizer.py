@@ -24,6 +24,7 @@ def cosine(u: np.ndarray, v: np.ndarray) -> float:
     return float(np.dot(u, v))
 
 
+# TODO: how could we reuse memory between normalizer runs?
 class Solution:
     __slots__ = ('_base_vector',
                  '_nlp',
@@ -114,6 +115,7 @@ class Solution:
 # TODO: tests
 # TODO: test performance
 # TODO: add to configs
+# TODO: add guard for numbers
 class Normalizer(base.Normalizer):
     """Normalizes forms of tag parts.
 
@@ -206,7 +208,7 @@ class Normalizer(base.Normalizer):
         if any(c.isdigit() for c in word):
             return [word]
 
-        base_forms = list(self.get_word_base_forms(word))
+        base_forms = self.get_word_base_forms(word)
 
         # print('!base forms for', word, ':', base_forms)
 
@@ -219,24 +221,6 @@ class Normalizer(base.Normalizer):
                     forms.append(plural_form)
         # print('!returned forms for', word, ':', forms)
         return forms
-
-    def parts_vector(self, parts: list[str]) -> np.ndarray:
-        if not parts:
-            return self._base_vector
-
-        part_vectors = np.vstack([self.unit_vector(t) for t in parts])
-
-        vector = part_vectors.mean(axis=0)
-
-        norm = np.linalg.norm(vector)
-
-        if norm == 0.0:
-            return self._base_vector
-
-        return (vector / norm).astype(np.float32)
-
-    def cosine(self, u: np.ndarray, v: np.ndarray) -> float:
-        return float(np.dot(u, v))
 
     def choose_candidate_step(self,  # pylint: disable=R0914  # noqa: CCR001
                               solution: Solution,
@@ -259,6 +243,7 @@ class Normalizer(base.Normalizer):
         return best_solution
 
     async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[RawTag]]:  # noqa: CCR001
+        # return False, []
         if not tag.uid:
             return False, []
 
@@ -266,10 +251,15 @@ class Normalizer(base.Normalizer):
 
         last_part = self.get_main_tail_form(tag.parts[-1])
 
+        # return False, []
+
         solution = Solution(nlp=self._nlp, base_vector=self._base_vector).grow(last_part)
 
         for part in reversed(tag.parts[:-1]):
             solution = self.choose_candidate_step(solution, part)
+            # return False, []
+
+        # TODO: iterate over all possible last parts to choose the best
 
         new_uid = '-'.join(solution._parts)  # TODO: property?
 
