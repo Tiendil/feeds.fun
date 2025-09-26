@@ -35,51 +35,47 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = "^3.13"
+# top version is restricted by spacy package
+python = ">=3.13,<3.14"
 
 uvicorn = {extras = ["standard"], version = "0.*"}
 fastapi = "0.115.*"
 pydantic = "2.11.*"
 pydantic-settings = "2.10.*"
-typer = "0.16.*"
+python-multipart = "0.0.*"
+supertokens-python = "0.30.2"
 
 httpx = {extras = ["http2", "brotli", "zstd"], version = "0.28.*"}
+cryptography = "45.0.*"
 
 openai = "1.102.*"
 tiktoken = "0.11.*"
 
 bidict = "0.23.*"
 
-feedparser = "6.0.*"
-
-beautifulsoup4 = "4.13.*"
-
-async-lru = "2.0.*"
-
 psycopg = "3.2.*"
 psycopg-pool = "3.2.*"
 yoyo-migrations = "9.0.*"
 PyPika = "0.48.*"
 
+async-lru = "2.0.*"
 structlog = "25.4.*"
-
-python-multipart = "0.0.*"
-
-supertokens-python = "0.30.2"
-
-python-slugify = "8.0.*"
-
 sentry-sdk = "2.33.*"
 
+typer = "0.16.*"
 tabulate = "0.9.*"
 
-cryptography = "45.0.*"
+feedparser = "6.0.*"
+beautifulsoup4 = "4.13.*"
 
+python-slugify = "8.0.*"
+furl = "2.1.*"
+tldextract = "5.3.*"
 markdown = "3.8.*"
 
-furl = "2.1.*"
-
-tldextract = "5.3.*"
+numpy = "2.3.*"
+spacy = "3.8.*"
+lemminflect = "0.2.*"
 
 # TODO: move to dev dependencies?
 python-frontmatter = "1.1.*"
