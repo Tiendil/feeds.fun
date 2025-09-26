@@ -48,7 +48,7 @@ class Normalizer(base.Normalizer):
     - => We do not need to implement prosessing of multiple corner cases .
     """
 
-    __slots__ = ('_singular_cache', '_plural_cache', '_nlp')
+    __slots__ = ('_singular_cache', '_plural_cache', '_nlp', '_base_vector')
 
     def __init__(self) -> None:
         # TODO: we should periodically trim caches
@@ -59,6 +59,8 @@ class Normalizer(base.Normalizer):
         # TODO: when to load model?
         # TODO: do not forget about loading in both dev/prod docker containers
         self._nlp = ensure_model("en_core_web_lg")
+
+        self._base_vector = np.zeros(self._nlp.vocab.vectors_length, dtype=np.float32)
 
     def _get_word_base_forms(self, word: str) -> tuple[str]:
         for upos in ('NOUN', 'VERB', 'ADJ', 'ADV'):
@@ -129,10 +131,6 @@ class Normalizer(base.Normalizer):
         print('!returned forms for', word, ':', forms)
         return forms
 
-    # TODO: cache
-    def base_vector(self) -> np.ndarray:
-        return np.zeros(self._nlp.vocab.vectors_length, dtype=np.float32)
-
     def unit_vector(self, word: str) -> np.ndarray:
         try:
             vector = self._nlp.vocab.get_vector(word)
@@ -140,18 +138,18 @@ class Normalizer(base.Normalizer):
             vector = None
 
         if vector is None or vector.shape[0] == 0:
-            return self.base_vector()
+            return self._base_vector
 
         norm = np.linalg.norm(vector)
 
         if norm == 0.0:
-            return self.base_vector()
+            return self._base_vector
 
         return (vector / norm).astype(np.float32)
 
     def parts_vector(self, parts: list[str]) -> np.ndarray:
         if not parts:
-            return self.base_vector()
+            return self._base_vector
 
         part_vectors = np.vstack([self.unit_vector(t) for t in parts])
 
@@ -160,7 +158,7 @@ class Normalizer(base.Normalizer):
         norm = np.linalg.norm(vector)
 
         if norm == 0.0:
-            return self.base_vector()
+            return self._base_vector
 
         return (vector / norm).astype(np.float32)
 
