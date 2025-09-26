@@ -108,7 +108,7 @@ class TestNormalizer:
     # @pytest.mark.skipif(reason="Performance test disabled by default.")
     @pytest.mark.asyncio
     async def test_performance(self) -> None:
-        n = 1000
+        n = 10000
 
         input_tags = [
             TagInNormalization(

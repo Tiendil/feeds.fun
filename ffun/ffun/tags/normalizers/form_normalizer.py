@@ -20,6 +20,95 @@ def ensure_model(name: str,
         return spacy.load(name, disable=disable)
 
 
+def cosine(u: np.ndarray, v: np.ndarray) -> float:
+    return float(np.dot(u, v))
+
+
+class Solution:
+    __slots__ = ('_base_vector',
+                 '_nlp',
+                 '_vectors',
+                 '_parts',
+                 '_alpha',
+                 '_beta',
+                 '_alpha_score',
+                 '_full_beta_score',
+                 '_beta_score',
+                 '_full_vector',
+                 '_score',
+                 )
+
+    def __init__(self,
+                 nlp: spacy.language.Language,
+                 base_vector: np.ndarray,
+                 alpha: float = 1.0,
+                 beta: float = 1.0
+                 ) -> None:
+        self._nlp = nlp
+        self._base_vector = base_vector
+        self._parts = []
+        self._vectors = {}
+        self._alpha = alpha
+        self._beta = beta
+        self._alpha_score = 0.0
+        self._full_beta_score = 0.0
+        self._beta_score = 0.0
+        self._full_vector = base_vector
+        self._score = 0.0
+
+    def _unit_vector(self, word: str) -> np.ndarray:
+        try:
+            vector = self._nlp.vocab.get_vector(word)
+        except Exception:
+            vector = None
+
+        if vector is None or vector.shape[0] == 0:
+            return self._base_vector
+
+        norm = np.linalg.norm(vector)
+
+        if norm == 0.0:
+            return self._base_vector
+
+        return (vector / norm).astype(np.float32)
+
+    def unit_vector(self, word: str) -> np.ndarray:
+        if word in self._vectors:
+            return self._vectors[word]
+
+        vector = self._unit_vector(word)
+
+        self._vectors[word] = vector
+
+        return vector
+
+    def grow(self, part: str) -> 'Solution':
+        clone = Solution(nlp=self._nlp,
+                         base_vector=self._base_vector,
+                         alpha=self._alpha,
+                         beta=self._beta)
+        clone._parts = [part] + self._parts
+
+        # yes, we keep shared cache of vectors between solutions
+        clone._vectors = self._vectors
+
+        clone._full_vector = clone.unit_vector(part) + self._full_vector
+
+        if len(clone._parts) > 1:
+            clone._alpha_score = cosine(clone._full_vector / len(clone._parts),
+                                        self.unit_vector(clone._parts[-1]))
+
+        if len(clone._parts) > 2:
+            clone._full_beta_score += cosine(clone.unit_vector(clone._parts[0]),
+                                             clone.unit_vector(clone._parts[1]))
+
+            clone._beta_score = clone._full_beta_score / (len(clone._parts) - 1)
+
+        clone._score = clone._alpha * clone._alpha_score + clone._beta * clone._beta_score
+
+        return clone
+
+
 # TODO: comment/mark application of each guard
 # TODO: maybe organize guards in a lists, if it makes sense
 # TODO: tests
@@ -107,7 +196,7 @@ class Normalizer(base.Normalizer):
 
         # In case we got smth like axes -> axis, axe, we better keep original word
         # TODO: maybe we can do better, for example, but producing a variant of tag for each base tail
-        print('multiple base forms for tail:', word, '->', base_forms)
+        # print('multiple base forms for tail:', word, '->', base_forms)
         return word
 
     def get_word_forms(self, word: str) -> list[str]:  # noqa: CCR001
@@ -119,33 +208,17 @@ class Normalizer(base.Normalizer):
 
         base_forms = list(self.get_word_base_forms(word))
 
-        print('!base forms for', word, ':', base_forms)
+        # print('!base forms for', word, ':', base_forms)
 
         forms = list(base_forms)
 
         for base_form in base_forms:
             for plural_form in self.get_word_plural_forms(base_form):
-                print('!plural form for', base_form, ':', plural_form)
+                # print('!plural form for', base_form, ':', plural_form)
                 if plural_form not in forms:
                     forms.append(plural_form)
-        print('!returned forms for', word, ':', forms)
+        # print('!returned forms for', word, ':', forms)
         return forms
-
-    def unit_vector(self, word: str) -> np.ndarray:
-        try:
-            vector = self._nlp.vocab.get_vector(word)
-        except Exception:
-            vector = None
-
-        if vector is None or vector.shape[0] == 0:
-            return self._base_vector
-
-        norm = np.linalg.norm(vector)
-
-        if norm == 0.0:
-            return self._base_vector
-
-        return (vector / norm).astype(np.float32)
 
     def parts_vector(self, parts: list[str]) -> np.ndarray:
         if not parts:
@@ -165,72 +238,40 @@ class Normalizer(base.Normalizer):
     def cosine(self, u: np.ndarray, v: np.ndarray) -> float:
         return float(np.dot(u, v))
 
-    def score_candidate(self, candidate_parts: list[str], tail_vector: np.ndarray) -> float:
-        # TODO: parametrize
-        a = 1.0
-        b = 1.0
-
-        candidate_vector = self.parts_vector(candidate_parts)
-
-        alpha_score = self.cosine(candidate_vector, tail_vector)
-
-        beta_score = 0.0
-
-        if len(candidate_parts) > 1:
-            for part_left, part_right in zip(candidate_parts, candidate_parts[1:]):
-                beta_score += self.cosine(self.unit_vector(part_left), self.unit_vector(part_right))
-
-            beta_score /= (len(candidate_parts) - 1)
-
-        print('candidate:', candidate_parts, 'alpha:', alpha_score, 'beta:', beta_score)
-
-        candidate_score = a * alpha_score + b * beta_score
-
-        return candidate_score
-
     def choose_candidate_step(self,  # pylint: disable=R0914  # noqa: CCR001
-                              tail_parts: list[str],
-                              tail_vector: np.ndarray,
-                              original_part: str) -> tuple[str, np.ndarray]:
+                              solution: Solution,
+                              original_part: str) -> Solution:
         candidates = self.get_word_forms(original_part)
 
-        print('part candidates for ', original_part, ':', candidates)
+        if len(candidates) == 1:
+            return solution.grow(candidates[0])
 
-        best_candidate = candidates[0]
+        # print('part candidates for ', original_part, ':', candidates)
 
-        first_candidate_parts = [best_candidate] + tail_parts
-
-        best_vector = self.parts_vector(first_candidate_parts)
-        best_score = self.score_candidate(first_candidate_parts, tail_vector)
+        best_solution = solution.grow(candidates[0])
 
         for candidate in candidates[1:]:
-            candidate_parts = [candidate] + tail_parts
-            candidate_vector = self.parts_vector(candidate_parts)
+            candidate_solution = solution.grow(candidate)
 
-            candidate_score = self.score_candidate(candidate_parts, tail_vector)
+            if candidate_solution._score > best_solution._score:
+                best_solution = candidate_solution
 
-            if candidate_score > best_score:
-                best_candidate = candidate
-                best_vector = candidate_vector
-                best_score = candidate_score
-
-        return best_candidate, best_vector
+        return best_solution
 
     async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[RawTag]]:  # noqa: CCR001
         if not tag.uid:
             return False, []
 
-        print('input:', tag.parts)
+        # print('input:', tag.parts)
 
-        tail_parts = [self.get_main_tail_form(tag.parts[-1])]
-        tail_vector = self.parts_vector(tail_parts)
+        last_part = self.get_main_tail_form(tag.parts[-1])
+
+        solution = Solution(nlp=self._nlp, base_vector=self._base_vector).grow(last_part)
 
         for part in reversed(tag.parts[:-1]):
-            best_candidate, tail_vector = self.choose_candidate_step(tail_parts, tail_vector, part)
-            tail_parts.insert(0, best_candidate)
+            solution = self.choose_candidate_step(solution, part)
 
-        print('output:', tail_parts)
-        new_uid = '-'.join(tail_parts)
+        new_uid = '-'.join(solution._parts)  # TODO: property?
 
         if new_uid == tag.uid:
             return True, []
