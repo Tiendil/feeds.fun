@@ -1,4 +1,7 @@
+import os
 import pytest
+import time
+import sys
 
 from ffun.domain.entities import TagUid
 from ffun.ontology.entities import NormalizationMode, RawTag
@@ -97,7 +100,55 @@ class TestNormalizer:
         new_tags.sort(key=lambda t: t.raw_uid)
         expected_new_tags.sort(key=lambda t: t.raw_uid)
 
-        print(tag_valid, expected_tag_valid)
-        print(new_tags, expected_new_tags)
+        # print(tag_valid, expected_tag_valid)
+        # print(new_tags, expected_new_tags)
         assert tag_valid == expected_tag_valid
         assert new_tags == expected_new_tags
+
+    # @pytest.mark.skipif(reason="Performance test disabled by default.")
+    @pytest.mark.asyncio
+    async def test_performance(self) -> None:
+        n = 1000
+
+        input_tags = [
+            TagInNormalization(
+                uid=input_uid,
+                parts=utils.uid_to_parts(input_uid),
+                mode=NormalizationMode.preserve,
+                link="http://example.com/tag",
+                categories={TagCategory.feed_tag},
+            )
+            for input_uid in [
+                "book-cover-review", "book-covers-review", "book-cover-reviews", "books-cover-reviews",
+                "sale-tax-holiday", "sales-tax-holiday", "sales-taxes-holidays",
+                "system-integration-test", "systems-integration-tests",
+                "data-pipeline", "data-pipelines", "analytics-platform", "analytics-platforms",
+                "market-trend", "market-trends",
+            ] * n
+        ]
+
+        # warm up
+
+        for input_tag in input_tags:
+            await normalizer.normalize(input_tag)
+
+        # measure
+
+        start = time.perf_counter()
+
+        for input_tag in input_tags:
+            await normalizer.normalize(input_tag)
+
+        elapsed = time.perf_counter() - start
+
+        # report
+
+        total = len(input_tags)
+        rate = total / elapsed if elapsed > 0 else float("inf")
+
+        print("\n=== Performance ===")
+        print(f"items: {total}")
+        print(f"time_sec: {elapsed:.6f}")
+        print(f"throughput_tags_per_sec: {rate:.2f}")
+
+        assert False
