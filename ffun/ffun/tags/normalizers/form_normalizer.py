@@ -20,7 +20,7 @@ def ensure_model(name: str,
         return spacy.load(name, disable=disable)
 
 
-# TODO: we should periodically trim some caches
+# TODO: we should periodically trim word caches
 class Cache:
     __slots__ = ('_singular_cache', '_plural_cache', '_forms_cache', '_spacy_data', '_spacy_normal_cache', '_nlp')
 
@@ -37,7 +37,7 @@ class Cache:
         self._spacy_normal_cache[self._spacy_normal_cache == 0.0] = 1.0
 
     def get_row_index(self, word: str) -> int:
-        # TODO: potential memory leak, since SpaCy inserts each new word into vocab
+        # vocab.strings is a hash table => we may see a memory growth here
         key = self._nlp.vocab.strings[word]
         return self._nlp.vocab.vectors.key2row.get(key, -1)
 
