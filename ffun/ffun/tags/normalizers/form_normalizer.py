@@ -276,6 +276,13 @@ class Normalizer(base.Normalizer):
         for part in reversed(tag.parts[:-1]):
             solution = self.choose_candidate_step(solution, part)
 
+        # At this point we have the best tag for the fixed last part
+        # But in some case we can not normalize the last part properly
+        # For example, multiple words can have single plural form: `axes` <- `axis`, `axe`
+        # so we can not choose the best last part at the first step, and use the original one
+        # But now we can freeze the beginning of the tag and re-run the algorithm changing the last part
+        # So we choose the best last part for the already correct chosen beginning of the tag
+
         # TODO: iterate over all possible last parts to choose the best
 
         new_uid = '-'.join(solution._parts)  # TODO: property?
