@@ -22,11 +22,12 @@ def ensure_model(name: str,
 
 # TODO: we should periodically trim some caches
 class Cache:
-    __slots__ = ('_singular_cache', '_plural_cache', '_spacy_data', '_spacy_normal_cache', '_nlp')
+    __slots__ = ('_singular_cache', '_plural_cache', '_forms_cache', '_spacy_data', '_spacy_normal_cache', '_nlp')
 
     def __init__(self, nlp: spacy.language.Language) -> None:
         self._singular_cache: dict[str, tuple[str]] = {}
         self._plural_cache: dict[str, tuple[str]] = {}
+        self._forms_cache: dict[str, tuple[str]] = {}
 
         self._nlp = nlp
         self._spacy_data = nlp.vocab.vectors.data
@@ -48,6 +49,15 @@ class Cache:
     def get_row_vector(self, index: int) -> np.ndarray:
         return self._spacy_data[index]
 
+    def _fast_word_return(self, word: str) -> bool:
+        if len(word) <= 2:
+            return True
+
+        if any(c.isdigit() for c in word):
+            return True
+
+        return False
+
     def _get_word_base_forms(self, word: str) -> tuple[str]:
         for upos in ('NOUN', 'VERB', 'ADJ', 'ADV'):
             lemmas = getLemma(word, upos=upos)
@@ -60,6 +70,9 @@ class Cache:
     def get_word_base_forms(self, word: str) -> tuple[str]:
         if word in self._singular_cache:
             return self._singular_cache[word]
+
+        if self._fast_word_return(word):
+            return (word,)
 
         base_forms = self._get_word_base_forms(word)
 
@@ -79,12 +92,39 @@ class Cache:
         if word in self._plural_cache:
             return self._plural_cache[word]
 
+        if self._fast_word_return(word):
+            return (word,)
+
         plural_forms = self._get_word_plural_forms(word)
 
         self._plural_cache[word] = plural_forms
 
         return plural_forms
 
+    def _get_word_forms(self, word: str) -> tuple[str]:  # noqa: CCR001
+        base_forms = self.get_word_base_forms(word)
+
+        forms = list(base_forms)
+
+        for base_form in base_forms:
+            for plural_form in self.get_word_plural_forms(base_form):
+                if plural_form not in forms:
+                    forms.append(plural_form)
+
+        return tuple(forms)
+
+    def get_word_forms(self, word: str) -> tuple[str]:
+        if word in self._forms_cache:
+            return self._forms_cache[word]
+
+        if self._fast_word_return(word):
+            return (word,)
+
+        forms = self._get_word_forms(word)
+
+        self._forms_cache[word] = forms
+
+        return forms
 
 
 # TODO: how could we reuse memory between normalizer runs?
@@ -210,39 +250,15 @@ class Normalizer(base.Normalizer):
 
         # In case we got smth like axes -> axis, axe, we better keep original word
         # TODO: maybe we can do better, for example, but producing a variant of tag for each base tail
-        # print('multiple base forms for tail:', word, '->', base_forms)
         return word
-
-    def get_word_forms(self, word: str) -> list[str]:  # noqa: CCR001
-        if len(word) <= 2:
-            return [word]
-
-        if any(c.isdigit() for c in word):
-            return [word]
-
-        base_forms = self._cache.get_word_base_forms(word)
-
-        # print('!base forms for', word, ':', base_forms)
-
-        forms = list(base_forms)
-
-        for base_form in base_forms:
-            for plural_form in self._cache.get_word_plural_forms(base_form):
-                # print('!plural form for', base_form, ':', plural_form)
-                if plural_form not in forms:
-                    forms.append(plural_form)
-        # print('!returned forms for', word, ':', forms)
-        return forms
 
     def choose_candidate_step(self,  # pylint: disable=R0914  # noqa: CCR001
                               solution: Solution,
                               original_part: str) -> Solution:
-        candidates = self.get_word_forms(original_part)
+        candidates = self._cache.get_word_forms(original_part)
 
         if len(candidates) == 1:
             return solution.grow(candidates[0])
-
-        # print('part candidates for ', original_part, ':', candidates)
 
         best_solution = solution.grow(candidates[0])
 
@@ -255,21 +271,15 @@ class Normalizer(base.Normalizer):
         return best_solution
 
     async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[RawTag]]:  # noqa: CCR001
-        # return False, []
         if not tag.uid:
             return False, []
 
-        # print('input:', tag.parts)
-
         last_part = self.get_main_tail_form(tag.parts[-1])
-
-        # return False, []
 
         solution = Solution(cache=self._cache).grow(last_part)
 
         for part in reversed(tag.parts[:-1]):
             solution = self.choose_candidate_step(solution, part)
-            # return False, []
 
         # TODO: iterate over all possible last parts to choose the best
 
