@@ -20,10 +20,6 @@ def ensure_model(name: str,
         return spacy.load(name, disable=disable)
 
 
-def cosine(u: np.ndarray, v: np.ndarray) -> float:
-    return float(np.dot(u, v))
-
-
 # TODO: how could we reuse memory between normalizer runs?
 class Solution:
     __slots__ = ('_base_vector',
@@ -100,11 +96,10 @@ class Solution:
         clone._full_vector = clone.unit_vector(part) + self._full_vector
 
         if len(clone._parts) > 1:
-            clone._alpha_score = cosine(clone._full_vector / len(clone._parts),
-                                        self.unit_vector(clone._parts[-1]))
+            clone._alpha_score = np.dot(clone._full_vector, self.unit_vector(clone._parts[-1])) / len(clone._parts)
 
         if len(clone._parts) > 2:
-            clone._full_beta_score += cosine(clone.unit_vector(clone._parts[0]),
+            clone._full_beta_score += np.dot(clone.unit_vector(clone._parts[0]),
                                              clone.unit_vector(clone._parts[1]))
 
             clone._beta_score = clone._full_beta_score / (len(clone._parts) - 1)
