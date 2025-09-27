@@ -41,9 +41,10 @@ class Cache:
         key = self._nlp.vocab.strings[word]
         return self._nlp.vocab.vectors.key2row.get(key, -1)
 
-    def get_row_norm(self, index: int) -> float:
+    def get_row_norm(self, index: int, default: np.float32 = np.float32(1.0)) -> np.float32:
         if index < 0:
-            return 1.0
+            # the same hack as in __init__
+            return default
         return self._spacy_normal_cache[index]
 
     def get_row_vector(self, index: int) -> np.ndarray:
@@ -155,9 +156,9 @@ class Solution:
         self._beta_score = 0.0
         self._score = 0.0
 
-    def _cos_rows(self, row_a: int, row_b: int) -> float:
+    def _cos_rows(self, row_a: int, row_b: int, default: np.float32 = np.float32(0.0)) -> np.float32:
         if row_a < 0 or row_b < 0:
-            return 0.0
+            return default
 
         vector_a = self._cache.get_row_vector(row_a)
         vector_b = self._cache.get_row_vector(row_b)
@@ -165,7 +166,7 @@ class Solution:
         norm_a = self._cache.get_row_norm(row_a)
         norm_b = self._cache.get_row_norm(row_b)
 
-        return float(vector_a @ vector_b) / (norm_a * norm_b)
+        return (vector_a @ vector_b) / (norm_a * norm_b)
 
     def grow(self, part: str) -> 'Solution':
         clone = Solution(cache=self._cache,
