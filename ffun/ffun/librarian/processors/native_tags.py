@@ -12,7 +12,13 @@ class Processor(base.Processor):
         for external_tag in entry.external_tags:
             tags.append(
                 RawTag(
-                    raw_uid=external_tag, normalization=NormalizationMode.preserve, categories={TagCategory.feed_tag}
+                    raw_uid=external_tag,
+                    # We should not normalize/alter external tags, because they can be used
+                    # as an attack vector on our services:
+                    # - DDOS via tag explosion
+                    # - Prompt injection via tags
+                    normalization=NormalizationMode.final,
+                    categories={TagCategory.feed_tag}
                 )
             )
 
