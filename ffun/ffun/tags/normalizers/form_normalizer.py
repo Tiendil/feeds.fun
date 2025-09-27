@@ -182,7 +182,7 @@ class Solution:
         new_index = clone._cache.get_row_index(part)
 
         if len_ > 1 and new_index >= 0:
-            clone._sum_alpha_score += self._sum_alpha_score + clone._cos_rows(new_index, last_index)
+            clone._sum_alpha_score = self._sum_alpha_score + clone._cos_rows(new_index, last_index)
 
         # We have two approaches to treat unknown words (without vectors):
         # 1. Penalize solution with them (current approach):
@@ -195,7 +195,7 @@ class Solution:
             next_index = clone._cache.get_row_index(clone._parts[1])
 
             if new_index >= 0:
-                clone._sum_beta_score += self._sum_beta_score + clone._cos_rows(new_index, next_index)
+                clone._sum_beta_score = self._sum_beta_score + clone._cos_rows(new_index, next_index)
                 clone._beta_score = clone._sum_beta_score / (len_ - 1)
 
         clone._score = clone._alpha * clone._alpha_score + clone._beta * clone._beta_score
