@@ -146,7 +146,7 @@ class Solution:
                  beta: float = 1.0
                  ) -> None:
         self._cache = cache
-        self._parts = []
+        self._parts = ()
         self._alpha = alpha
         self._beta = beta
         self._sum_alpha_score = 0.0
@@ -171,7 +171,7 @@ class Solution:
         clone = Solution(cache=self._cache,
                          alpha=self._alpha,
                          beta=self._beta)
-        clone._parts = [part] + self._parts
+        clone._parts = (part,) + self._parts
 
         len_ = len(clone._parts)
 
