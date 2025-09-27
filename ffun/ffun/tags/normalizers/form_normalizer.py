@@ -203,12 +203,7 @@ class Solution:
         return clone
 
 
-# TODO: comment/mark application of each guard
-# TODO: maybe organize guards in a lists, if it makes sense
-# TODO: tests
-# TODO: test performance
 # TODO: add to configs
-# TODO: add guard for numbers
 class Normalizer(base.Normalizer):
     """Normalizes forms of tag parts.
 
