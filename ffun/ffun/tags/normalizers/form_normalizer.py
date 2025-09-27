@@ -137,7 +137,6 @@ class Solution:
                  '_alpha_score',
                  '_sum_beta_score',
                  '_beta_score',
-                 '_full_vector',
                  '_score',
                  )
 
