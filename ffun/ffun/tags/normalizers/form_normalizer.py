@@ -89,9 +89,7 @@ class Cache:
 
 # TODO: how could we reuse memory between normalizer runs?
 class Solution:
-    __slots__ = ('_base_vector',
-                 '_cache',
-                 '_nlp',
+    __slots__ = ('_cache',
                  '_parts',
                  '_alpha',
                  '_beta',
@@ -104,15 +102,11 @@ class Solution:
                  )
 
     def __init__(self,
-                 nlp: spacy.language.Language,
                  cache: Cache,
-                 base_vector: np.ndarray,
                  alpha: float = 1.0,
                  beta: float = 1.0
                  ) -> None:
-        self._nlp = nlp
         self._cache = cache
-        self._base_vector = base_vector
         self._parts = []
         self._alpha = alpha
         self._beta = beta
@@ -120,7 +114,6 @@ class Solution:
         self._alpha_score = 0.0
         self._sum_beta_score = 0.0
         self._beta_score = 0.0
-        self._full_vector = base_vector
         self._score = 0.0
 
     def _cos_rows(self, row_a: int, row_b: int) -> float:
@@ -136,9 +129,7 @@ class Solution:
         return float(vector_a @ vector_b) / (norm_a * norm_b)
 
     def grow(self, part: str) -> 'Solution':
-        clone = Solution(nlp=self._nlp,
-                         cache=self._cache,
-                         base_vector=self._base_vector,
+        clone = Solution(cache=self._cache,
                          alpha=self._alpha,
                          beta=self._beta)
         clone._parts = [part] + self._parts
@@ -202,18 +193,14 @@ class Normalizer(base.Normalizer):
     - => We do not need to implement prosessing of multiple corner cases .
     """
 
-    __slots__ = ('_nlp', '_base_vector', '_cache')
+    __slots__ = ('_nlp', '_cache')
 
     def __init__(self) -> None:
         # TODO: parametrize
         # TODO: when to load model?
         # TODO: do not forget about loading in both dev/prod docker containers
         self._nlp = ensure_model("en_core_web_lg")
-
         self._cache = Cache(nlp=self._nlp)
-
-        self._base_vector = np.zeros(self._nlp.vocab.vectors_length, dtype=np.float32)
-        self._base_vector.setflags(write=False)
 
     def get_main_tail_form(self, word: str) -> str:
         base_forms = self._cache.get_word_base_forms(word)
@@ -278,9 +265,7 @@ class Normalizer(base.Normalizer):
 
         # return False, []
 
-        solution = Solution(nlp=self._nlp,
-                            cache=self._cache,
-                            base_vector=self._base_vector).grow(last_part)
+        solution = Solution(cache=self._cache).grow(last_part)
 
         for part in reversed(tag.parts[:-1]):
             solution = self.choose_candidate_step(solution, part)
