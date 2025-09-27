@@ -58,16 +58,13 @@ class Solution:
         self._score = 0.0
 
     def _unit_vector(self, word: str) -> np.ndarray:
-        try:
-            key = self._nlp.vocab.strings[word]
+        key = self._nlp.vocab.strings[word]
 
-            index = self._nlp.vocab.vectors.key2row.get(key, -1)
+        index = self._nlp.vocab.vectors.key2row.get(key, -1)
 
-            if index >= 0:
-                vector = self._nlp.vocab.vectors.data[index].view()
-                vector.setflags(write=False)
-
-        except Exception:
+        if index >= 0:
+            vector = self._nlp.vocab.vectors.data[index]
+        else:
             vector = None
 
         if vector is None or vector.shape[0] == 0:
