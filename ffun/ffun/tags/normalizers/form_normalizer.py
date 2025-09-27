@@ -191,12 +191,11 @@ class Solution:
         # 2. Ignore them (calculate average only for known words).
         clone._alpha_score = clone._sum_alpha_score / len_
 
-        if len_ > 2:
+        if len_ > 2 and new_index >= 0:
             next_index = clone._cache.get_row_index(clone._parts[1])
+            clone._sum_beta_score = self._sum_beta_score + clone._cos_rows(new_index, next_index)
 
-            if new_index >= 0:
-                clone._sum_beta_score = self._sum_beta_score + clone._cos_rows(new_index, next_index)
-                clone._beta_score = clone._sum_beta_score / (len_ - 1)
+        clone._beta_score = clone._sum_beta_score / (len_ - 1)
 
         clone._score = clone._alpha * clone._alpha_score + clone._beta * clone._beta_score
 
