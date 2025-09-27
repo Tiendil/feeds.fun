@@ -59,7 +59,14 @@ class Solution:
 
     def _unit_vector(self, word: str) -> np.ndarray:
         try:
-            vector = self._nlp.vocab.get_vector(word)
+            key = self._nlp.vocab.strings[word]
+
+            index = self._nlp.vocab.vectors.key2row.get(key, -1)
+
+            if index >= 0:
+                vector = self._nlp.vocab.vectors.data[index].view()
+                vector.setflags(write=False)
+
         except Exception:
             vector = None
 
@@ -71,7 +78,7 @@ class Solution:
         if norm == 0.0:
             return self._base_vector
 
-        return (vector / norm).astype(np.float32)
+        return vector / norm
 
     def unit_vector(self, word: str) -> np.ndarray:
         if word in self._vectors:
@@ -152,6 +159,7 @@ class Normalizer(base.Normalizer):
         self._nlp = ensure_model("en_core_web_lg")
 
         self._base_vector = np.zeros(self._nlp.vocab.vectors_length, dtype=np.float32)
+        self._base_vector.setflags(write=False)
 
     def _get_word_base_forms(self, word: str) -> tuple[str]:
         for upos in ('NOUN', 'VERB', 'ADJ', 'ADV'):
