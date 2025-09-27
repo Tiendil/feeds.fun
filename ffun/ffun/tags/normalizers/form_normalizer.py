@@ -233,6 +233,7 @@ class Normalizer(base.Normalizer):
         # TODO: parametrize
         # TODO: when to load model?
         # TODO: do not forget about loading in both dev/prod docker containers
+        # TODO: ensure we load the model in memory only on its first use, not on code initialization
         self._nlp = ensure_model("en_core_web_lg")
         self._cache = Cache(nlp=self._nlp)
 
