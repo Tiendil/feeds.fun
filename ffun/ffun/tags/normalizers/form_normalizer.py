@@ -148,21 +148,14 @@ class Cache:
 class Solution:
     __slots__ = ('_cache',
                  'parts',
-                 '_beta',
-                 '_sum_beta_score',
-                 '_beta_score',
                  'score',
                  )
 
     def __init__(self,
                  cache: Cache,
-                 beta: float = 1.0
                  ) -> None:
         self._cache = cache
         self.parts = ()
-        self._beta = beta
-        self._sum_beta_score = 0.0
-        self._beta_score = 0.0
         self.score = 0.0
 
     def total_characters(self) -> int:
@@ -179,10 +172,6 @@ class Solution:
         norm_b = self._cache.get_row_norm(row_b)
 
         return (vector_a @ vector_b) / (norm_a * norm_b)
-
-    def sync_score(self) -> None:
-        self._beta_score = self._sum_beta_score / (len(self.parts) - 1) if len(self.parts) > 1 else 0.0
-        self.score = self._beta * self._beta_score
 
     ########################################
     # We choose the best solution by comparing their scores.
@@ -203,8 +192,7 @@ class Solution:
     # - Check every possible combination of parts against the original text vector
     ########################################
     def grow(self, part: str) -> 'Solution':
-        clone = Solution(cache=self._cache,
-                         beta=self._beta)
+        clone = Solution(cache=self._cache)
         clone.parts = (part,) + self.parts
 
         len_ = len(clone.parts)
@@ -229,9 +217,7 @@ class Solution:
         if len_ > 1 and new_index >= 0:
             # TODO: what if next_index is unknown?
             next_index = clone._cache.get_row_index(clone.parts[1])
-            clone._sum_beta_score = self._sum_beta_score + clone._cos_rows(new_index, next_index)
-
-        clone.sync_score()
+            clone.score = self.score + clone._cos_rows(new_index, next_index)
 
         return clone
 
