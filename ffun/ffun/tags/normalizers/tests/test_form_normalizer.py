@@ -26,22 +26,23 @@ class TestNormalizer:
             ("books-reviews", False, ["book-review"]),
             ("book-review", True, []),
 
-# base tail multiple meaning -> tax taxis
+            # base tail multiple meaning -> tax taxis
+            ("sales-tax", True, []),
+            ("sale-taxes", False, ["sales-tax"]),
+            ("sales-taxes", False, ["sales-tax"]),
+            ("sale-tax", False, ["sales-tax"]),
 
-            # ("sales-tax", True, []),
-            # ("sale-taxes", False, ["sales-tax"]),
-            # ("sales-taxes", False, ["sales-tax"]),
-            # ("sale-tax", False, ["sales-tax"]),
+            # multiple tail meanings: axe/axis
+            ("gravity-axes", False, ["gravity-axis"]),
+            ("wooden-axes", False, ["wooden-axe"]),
 
-# base tail multiple forms -> design (noun), designs (verb)
-
+            # base tail multiple forms -> design (noun), designs (verb)
             ("system-design", False, ["systems-design"]),
             ("systems-design", True, []),
-            # ("system-designs", False, ["systems-design"]),
-            # ("systems-designs", False, ["systems-design"]),
+            ("system-designs", False, ["systems-design"]),
+            ("systems-designs", False, ["systems-design"]),
 
-# just wrong form
-
+            # just wrong form
             ("systems-engineering", True, []),
             ("system-engineering", False, ["systems-engineering"]),
 
@@ -123,7 +124,8 @@ class TestNormalizer:
                 "sale-tax-holiday", "sales-tax-holiday", "sales-taxes-holidays",
                 "system-integration-test", "systems-integration-tests",
                 "data-pipeline", "data-pipelines", "analytics-platform", "analytics-platforms",
-                "market-trend", "market-trends",
+                "market-trend", "market-trends", "gravity-axes", "wooden-axes", "long-gravity-axes",
+                "long-wooden-axes",
             ] * n
         ]
 
