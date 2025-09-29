@@ -3,7 +3,7 @@ from ffun.ontology.entities import NormalizationMode, RawTag
 from ffun.tags import utils
 from ffun.tags.entities import TagInNormalization
 from ffun.tags.normalizers import base
-from lemminflect import getLemma, getInflection
+from lemminflect import getLemma, getInflection, getAllLemmas, getAllLemmasOOV
 from typing import Literal
 import numpy as np
 import spacy
@@ -65,13 +65,20 @@ class Cache:
         return False
 
     def _get_word_base_forms(self, word: str) -> tuple[str]:
-        for upos in ('NOUN', 'VERB', 'ADJ', 'ADV'):
-            # TODO: maybe replace with getAllLemmas for optimization
-            # TODO: experiment with lemmatize_oov=False
-            lemmas = getLemma(word, upos=upos)
+        # getLemma calls getAllLemmas and then filters results by `upos`
+        # => we use getAllLemmas directly to speed up things
 
-            if lemmas:
-                return tuple(lemmas)
+        lemmas = getAllLemmas(word)
+
+        for upos in ('NOUN', 'VERB', 'ADJ', 'ADV'):
+            if upos in lemmas:
+                return tuple(lemmas[upos])
+
+            # TODO: can we skip this call?
+            lemmas_oov = getAllLemmasOOV(word, upos=upos)
+
+            if upos in lemmas_oov:
+                return tuple(lemmas_oov[upos])
 
         return (word,)
 
