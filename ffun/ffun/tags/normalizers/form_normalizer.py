@@ -165,6 +165,9 @@ class Solution:
         self._beta_score = 0.0
         self.score = 0.0
 
+    def total_characters(self) -> int:
+        return sum(len(part) for part in self.parts)
+
     def _cos_rows(self, row_a: int, row_b: int, default: np.float32 = np.float32(0.0)) -> np.float32:
         if row_a < 0 or row_b < 0:
             return default
@@ -294,7 +297,15 @@ class Normalizer(base.Normalizer):
 
             solutions = new_solutions
 
-        solutions.sort(key=lambda s: s.score, reverse=True)
+        # We prefare
+        # - the solution with higher score
+        # - the solution with less characters if scores are equal
+        # - fixed alphabetical order if both score and length are equal
+        solutions.sort(key=lambda s: (s.score, -s.total_characters(), s.parts), reverse=True)
+
+        print("solutions:")
+        for solution in solutions:
+            print(f"  {solution.parts} score {solution.score}")
 
         best_solution = solutions[0]
 
