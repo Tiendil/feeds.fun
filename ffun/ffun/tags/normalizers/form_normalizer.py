@@ -362,7 +362,9 @@ class Normalizer(base.Normalizer):
 
         solutions.sort(key=lambda s: s.score, reverse=True)
 
-        # print(f"scores: {[s.score for s in solutions]}")
+        print('scores')
+        for solution in solutions:
+            print(f"  {solution.parts} -> {solution.score}")
 
         best_solution = solutions[0]
 
