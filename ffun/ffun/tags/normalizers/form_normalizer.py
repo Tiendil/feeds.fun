@@ -303,9 +303,9 @@ class Normalizer(base.Normalizer):
         # - fixed alphabetical order if both score and length are equal
         solutions.sort(key=lambda s: (s.score, -s.total_characters(), s.parts), reverse=True)
 
-        print("solutions:")
-        for solution in solutions:
-            print(f"  {solution.parts} score {solution.score}")
+        # print("solutions:")
+        # for solution in solutions:
+        #     print(f"  {solution.parts} score {solution.score}")
 
         best_solution = solutions[0]
 
@@ -317,6 +317,7 @@ class Normalizer(base.Normalizer):
         # TODO: mark tags, produced by normalizer, to skip them on the second iteration
         #       but remember, that not every normalizer expect such logic, some want to process
         #       tags in chain
+        # TODO: we may want to cach in domain.py chain of tags, to skip the whole normalizers operations
         new_tag = RawTag(
             raw_uid=new_uid,
             normalization=NormalizationMode.raw,
