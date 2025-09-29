@@ -96,7 +96,7 @@ class Cache:
         return base_forms
 
     def _get_word_plural_forms(self, word: str) -> tuple[str]:
-        # TODO: here we may want to choose proper tag based on which upos produced the base form
+        # Shoud return plural form if it is possible, else []
         forms = getInflection(word, tag='NNS')
 
         if forms:
