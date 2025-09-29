@@ -210,6 +210,13 @@ class Solution:
         len_ = len(clone.parts)
 
         if len_ == 1:
+            # Theoretically, here we can calculate cos between the topmost right part of the tag
+            # and some "standard word" like "tag" to get some score for single-word tags
+            # But, due to:
+            # - how Spacy works (word vectors are not so meaningful, as we want them to be)
+            # - we have "smart" sorting of final solutions
+            # - this change does not change the quality of normalization significantly
+            # => we may skip it for now
             return clone
 
         new_index = clone._cache.get_row_index(part)
