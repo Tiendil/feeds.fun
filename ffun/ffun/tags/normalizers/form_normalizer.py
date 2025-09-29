@@ -128,17 +128,16 @@ class Cache:
         return forms
 
 
-# TODO: how could we reuse memory between normalizer runs?
 class Solution:
     __slots__ = ('_cache',
-                 '_parts',
+                 'parts',
                  '_alpha',
                  '_beta',
                  '_sum_alpha_score',
                  '_alpha_score',
                  '_sum_beta_score',
                  '_beta_score',
-                 '_score',
+                 'score',
                  )
 
     def __init__(self,
@@ -147,14 +146,14 @@ class Solution:
                  beta: float = 1.0
                  ) -> None:
         self._cache = cache
-        self._parts = ()
+        self.parts = ()
         self._alpha = alpha
         self._beta = beta
         self._sum_alpha_score = 0.0
         self._alpha_score = 0.0
         self._sum_beta_score = 0.0
         self._beta_score = 0.0
-        self._score = 0.0
+        self.score = 0.0
 
     def _cos_rows(self, row_a: int, row_b: int, default: np.float32 = np.float32(0.0)) -> np.float32:
         if row_a < 0 or row_b < 0:
@@ -168,21 +167,45 @@ class Solution:
 
         return (vector_a @ vector_b) / (norm_a * norm_b)
 
+    def sync_score(self) -> None:
+        self._alpha_score = self._sum_alpha_score / len(self.parts) if self.parts else 0.0
+        self._beta_score = self._sum_beta_score / (len(self.parts) - 1) if len(self.parts) > 1 else 0.0
+        self.score = self._alpha * self._alpha_score + self._beta * self._beta_score
+
+    ########################################
+    # We choose the best solution by comparing their scores.
+    # The score consists of two parts:
+    #
+    # 1. Alpha score: average cosine distance bestween each part and the last one (it is our anchor)
+    # 2. Beta score: average cosine distance between each two adjacent parts
+    #
+    # The final score is a weighted sum of these two scores.
+    #
+    # We receive the final solution by growing the best one from its last part to the first one.
+    # That allows us to go away from checking cortesian product of all possible combinations of parts.
+    #
+    # This solution is a compromise between performance and quality.
+    #
+    # In the future we may want to improve it by using more advanced approaches:
+    # - Use original text vector as the anchor instead of the last part of the tag
+    # - Check every possible combination of parts against the original text vector
+    ########################################
     def grow(self, part: str) -> 'Solution':
         clone = Solution(cache=self._cache,
                          alpha=self._alpha,
                          beta=self._beta)
-        clone._parts = (part,) + self._parts
+        clone.parts = (part,) + self.parts
 
-        len_ = len(clone._parts)
+        len_ = len(clone.parts)
 
         if len_ == 1:
             return clone
 
-        last_index = clone._cache.get_row_index(clone._parts[-1])
+        # TODO: what if last_index < 0
+        last_index = clone._cache.get_row_index(clone.parts[-1])
         new_index = clone._cache.get_row_index(part)
 
-        if len_ > 1 and new_index >= 0:
+        if new_index >= 0:
             clone._sum_alpha_score = self._sum_alpha_score + clone._cos_rows(new_index, last_index)
 
         # We have two approaches to treat unknown words (without vectors):
@@ -190,15 +213,41 @@ class Solution:
         #    do not increase sum_(alpha/beta)_score, but increase len_
         #    which decreases average alpha_score
         # 2. Ignore them (calculate average only for known words).
-        clone._alpha_score = clone._sum_alpha_score / len_
-
-        if len_ > 2 and new_index >= 0:
-            next_index = clone._cache.get_row_index(clone._parts[1])
+        if len_ > 1 and new_index >= 0:
+            next_index = clone._cache.get_row_index(clone.parts[1])
             clone._sum_beta_score = self._sum_beta_score + clone._cos_rows(new_index, next_index)
 
-        clone._beta_score = clone._sum_beta_score / (len_ - 1)
+        clone.sync_score()
 
-        clone._score = clone._alpha * clone._alpha_score + clone._beta * clone._beta_score
+        return clone
+
+    def replace_tail(self, part: str) -> 'Solution':
+        clone = Solution(cache=self._cache,
+                         alpha=self._alpha,
+                         beta=self._beta)
+
+        clone.parts = self.parts[:-1] + (part,)
+
+        len_ = len(clone.parts)
+
+        if len_ == 1:
+            # TODO: what to do in that case? how to compute tags?
+            return clone
+
+        # TODO: what if on of last_index < 0
+        original_last_index = clone._cache.get_row_index(self.parts[-1])
+        new_last_index = clone._cache.get_row_index(part)
+
+        clone._sum_alpha_score = sum(clone._cos_rows(clone._cache.get_row_index(part), new_last_index)
+                                     for part in clone.parts[:-1])
+
+        if len_ > 1:
+            prev_index = clone._cache.get_row_index(clone.parts[-2])
+            old_beta_score = clone._cos_rows(original_last_index, prev_index)
+            new_beta_score = clone._cos_rows(new_last_index, prev_index)
+            clone._sum_beta_score = self._sum_beta_score - old_beta_score + new_beta_score
+
+        clone.sync_score()
 
         return clone
 
@@ -244,12 +293,12 @@ class Normalizer(base.Normalizer):
             return base_forms[0]
 
         # In case we got smth like axes -> axis, axe, we better keep original word
-        # TODO: maybe we can do better, for example, but producing a variant of tag for each base tail
+        # See the comment .normalize(...) method for details
         return word
 
-    def choose_candidate_step(self,  # pylint: disable=R0914  # noqa: CCR001
-                              solution: Solution,
-                              original_part: str) -> Solution:
+    def grow_candidate(self,  # pylint: disable=R0914  # noqa: CCR001
+                       solution: Solution,
+                       original_part: str) -> Solution:
         candidates = self._cache.get_word_forms(original_part)
 
         if len(candidates) == 1:
@@ -260,7 +309,26 @@ class Normalizer(base.Normalizer):
         for candidate in candidates[1:]:
             candidate_solution = solution.grow(candidate)
 
-            if candidate_solution._score > best_solution._score:
+            if candidate_solution.score > best_solution.score:
+                best_solution = candidate_solution
+
+        return best_solution
+
+    def choose_best_tail(self,
+                         solution: Solution,
+                         last_parts: tuple[str]) -> Solution:
+        if len(last_parts) == 1:
+            return solution
+
+        best_solution = solution
+
+        for last_part in last_parts:
+            if last_part == solution.parts[-1]:
+                continue
+
+            candidate_solution = solution.replace_tail(last_part)
+
+            if candidate_solution.score > best_solution.score:
                 best_solution = candidate_solution
 
         return best_solution
@@ -274,7 +342,7 @@ class Normalizer(base.Normalizer):
         solution = Solution(cache=self._cache).grow(last_part)
 
         for part in reversed(tag.parts[:-1]):
-            solution = self.choose_candidate_step(solution, part)
+            solution = self.grow_candidate(solution, part)
 
         # At this point we have the best tag for the fixed last part
         # But in some case we can not normalize the last part properly
@@ -283,9 +351,12 @@ class Normalizer(base.Normalizer):
         # But now we can freeze the beginning of the tag and re-run the algorithm changing the last part
         # So we choose the best last part for the already correct chosen beginning of the tag
 
-        # TODO: iterate over all possible last parts to choose the best
+        # TODO: optimize to not call if there were only single option
+        last_parts = self._cache.get_word_base_forms(last_part)
 
-        new_uid = '-'.join(solution._parts)  # TODO: property?
+        solution = self.choose_best_tail(solution, last_parts)
+
+        new_uid = '-'.join(solution.parts)
 
         if new_uid == tag.uid:
             return True, []
