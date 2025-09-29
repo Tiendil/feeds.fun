@@ -69,7 +69,6 @@ class Cache:
             # TODO: maybe replace with getAllLemmas for optimization
             # TODO: experiment with lemmatize_oov=False
             lemmas = getLemma(word, upos=upos)
-            # print(f"upos={upos} lemmas={lemmas}")
 
             if lemmas:
                 return tuple(lemmas)
@@ -77,21 +76,13 @@ class Cache:
         return (word,)
 
     def get_word_base_forms(self, word: str) -> tuple[str]:
-        # if word in self._singular_cache:
-        #     return self._singular_cache[word]
+        if word in self._singular_cache:
+            return self._singular_cache[word]
 
         if self._fast_word_return(word):
             return (word,)
 
         base_forms = self._get_word_base_forms(word)
-
-        # for base_form in base_forms:
-        #     plural_forms = self.get_word_plural_forms(base_form)
-        #     if word in plural_forms:
-        #         break
-        #         # print(f"word '{word}' not in plural forms of base form '{base_form}': {plural_forms}")
-        # else:
-        #     return (word,)
 
         self._singular_cache[word] = base_forms
 
@@ -129,9 +120,7 @@ class Cache:
                 if plural_form not in forms:
                     forms.append(plural_form)
 
-        # print(f'CHECK word: {word}, base_forms: {base_forms}, forms: {forms}')
         if word not in forms:
-            # print(f"NOT FOUND: word '{word}' base forms: {base_forms}")
             forms.append(word)
 
         return tuple(forms)
@@ -230,33 +219,6 @@ class Solution:
 
         return clone
 
-    def replace_tail(self, part: str) -> 'Solution':
-        clone = Solution(cache=self._cache,
-                         beta=self._beta)
-
-        clone.parts = self.parts[:-1] + (part,)
-
-        len_ = len(clone.parts)
-
-        if len_ == 1:
-            # TODO: what to do in that case? how to compute tags?
-            return clone
-
-        # TODO: what if on of last_index < 0
-        original_last_index = clone._cache.get_row_index(self.parts[-1])
-        new_last_index = clone._cache.get_row_index(part)
-
-        if len_ > 1:
-            prev_index = clone._cache.get_row_index(clone.parts[-2])
-            old_beta_score = clone._cos_rows(original_last_index, prev_index)
-            new_beta_score = clone._cos_rows(new_last_index, prev_index)
-            clone._sum_beta_score = self._sum_beta_score - old_beta_score + new_beta_score
-
-        clone.sync_score()
-
-        return clone
-
-
 # TODO: add to configs
 class Normalizer(base.Normalizer):
     """Normalizes forms of tag parts.
@@ -291,18 +253,6 @@ class Normalizer(base.Normalizer):
         self._nlp = ensure_model("en_core_web_lg")
         self._cache = Cache(nlp=self._nlp)
 
-    def get_main_tail_form(self, word: str) -> str:
-        base_forms = self._cache.get_word_base_forms(word)
-
-        # print(f"word '{word}' base forms: {base_forms}")
-
-        if len(base_forms) == 1:
-            return base_forms[0]
-
-        # In case we got smth like axes -> axis, axe, we better keep original word
-        # See the comment .normalize(...) method for details
-        return word
-
     def grow_candidate(self,  # pylint: disable=R0914  # noqa: CCR001
                        solution: Solution,
                        original_part: str) -> Solution:
@@ -321,33 +271,11 @@ class Normalizer(base.Normalizer):
 
         return best_solution
 
-    def choose_best_tail(self,
-                         solution: Solution,
-                         last_parts: tuple[str]) -> Solution:
-        if len(last_parts) == 1:
-            return solution
-
-        best_solution = solution
-
-        for last_part in last_parts:
-            if last_part == solution.parts[-1]:
-                continue
-
-            candidate_solution = solution.replace_tail(last_part)
-
-            if candidate_solution.score > best_solution.score:
-                best_solution = candidate_solution
-
-        return best_solution
-
     async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[RawTag]]:  # noqa: CCR001
         if not tag.uid:
             return False, []
 
         canonical_part = tag.parts[-1]
-
-        # print(f"canonical part: {canonical_part}")
-        # print(f"candidates: {self._cache.get_word_forms(canonical_part)}")
 
         solutions = [Solution(cache=self._cache).grow(part)
                      for part in self._cache.get_word_forms(canonical_part)]
@@ -362,35 +290,16 @@ class Normalizer(base.Normalizer):
 
         solutions.sort(key=lambda s: s.score, reverse=True)
 
-        # print('scores')
-        # for solution in solutions:
-        #     print(f"  {solution.parts} -> {solution.score}")
-
         best_solution = solutions[0]
-
-        # At this point we have the best tag for the fixed last part
-        # But in some case we can not normalize the last part properly
-        # For example, multiple words can have single plural form: `axes` <- `axis`, `axe`
-        # so we can not choose the best last part at the first step, and use the original one
-        # But now we can freeze the beginning of the tag and re-run the algorithm changing the last part
-        # So we choose the best last part for the already correct chosen beginning of the tag
-
-        # TODO: optimize to not call if there were only single option
-        # last_parts = self._cache.get_word_forms(canonical_part)
-        # last_parts = self._cache.get_word_forms(last_part)
-        # last_parts = self._cache.get_word_base_forms(last_part)
-
-        # print(f"original part: {tag.parts[-1]}")
-        # print(f"last part: {last_part}")
-        # print(f"last parts: {last_parts}")
-
-        # solution = self.choose_best_tail(solution, last_parts)
 
         new_uid = '-'.join(best_solution.parts)
 
         if new_uid == tag.uid:
             return True, []
 
+        # TODO: mark tags, produced by normalizer, to skip them on the second iteration
+        #       but remember, that not every normalizer expect such logic, some want to process
+        #       tags in chain
         new_tag = RawTag(
             raw_uid=new_uid,
             normalization=NormalizationMode.raw,
