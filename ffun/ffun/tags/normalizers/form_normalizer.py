@@ -13,6 +13,7 @@ from spacy.cli import download
 # TODO: task to generate names for normalized tags according to the statistics of the raw tags?
 # TODO: note that it is normalizer, not verboser
 # TODO: rewrite all notes, remove alpha mention
+# TODO: update tag quality tests
 
 # TODO: not so good solution, refactor
 def ensure_model(name: str,
