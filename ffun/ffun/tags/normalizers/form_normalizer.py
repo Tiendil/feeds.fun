@@ -74,7 +74,6 @@ class Cache:
             if upos in lemmas:
                 return tuple(lemmas[upos])
 
-            # TODO: can we skip this call?
             lemmas_oov = getAllLemmasOOV(word, upos=upos)
 
             if upos in lemmas_oov:
