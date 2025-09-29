@@ -142,7 +142,7 @@ class Solution:
 
     def __init__(self,
                  cache: Cache,
-                 alpha: float = 1.0,
+                 alpha: float = 1,
                  beta: float = 1.0
                  ) -> None:
         self._cache = cache
@@ -205,8 +205,8 @@ class Solution:
         last_index = clone._cache.get_row_index(clone.parts[-1])
         new_index = clone._cache.get_row_index(part)
 
-        if new_index >= 0:
-            clone._sum_alpha_score = self._sum_alpha_score + clone._cos_rows(new_index, last_index)
+        # if new_index >= 0:
+        #     clone._sum_alpha_score = self._sum_alpha_score + clone._cos_rows(new_index, last_index)
 
         # We have two approaches to treat unknown words (without vectors):
         # 1. Penalize solution with them (current approach):
@@ -238,8 +238,8 @@ class Solution:
         original_last_index = clone._cache.get_row_index(self.parts[-1])
         new_last_index = clone._cache.get_row_index(part)
 
-        clone._sum_alpha_score = sum(clone._cos_rows(clone._cache.get_row_index(part), new_last_index)
-                                     for part in clone.parts[:-1])
+        # clone._sum_alpha_score = sum(clone._cos_rows(clone._cache.get_row_index(part), new_last_index)
+        #                              for part in clone.parts[:-1])
 
         if len_ > 1:
             prev_index = clone._cache.get_row_index(clone.parts[-2])
