@@ -66,7 +66,10 @@ class Cache:
 
     def _get_word_base_forms(self, word: str) -> tuple[str]:
         for upos in ('NOUN', 'VERB', 'ADJ', 'ADV'):
+            # TODO: maybe replace with getAllLemmas for optimization
+            # TODO: experiment with lemmatize_oov=False
             lemmas = getLemma(word, upos=upos)
+            # print(f"upos={upos} lemmas={lemmas}")
 
             if lemmas:
                 return tuple(lemmas)
@@ -74,19 +77,28 @@ class Cache:
         return (word,)
 
     def get_word_base_forms(self, word: str) -> tuple[str]:
-        if word in self._singular_cache:
-            return self._singular_cache[word]
+        # if word in self._singular_cache:
+        #     return self._singular_cache[word]
 
         if self._fast_word_return(word):
             return (word,)
 
         base_forms = self._get_word_base_forms(word)
 
+        # for base_form in base_forms:
+        #     plural_forms = self.get_word_plural_forms(base_form)
+        #     if word in plural_forms:
+        #         break
+        #         # print(f"word '{word}' not in plural forms of base form '{base_form}': {plural_forms}")
+        # else:
+        #     return (word,)
+
         self._singular_cache[word] = base_forms
 
         return base_forms
 
     def _get_word_plural_forms(self, word: str) -> tuple[str]:
+        # TODO: here we may want to choose proper tag based on which upos produced the base form
         forms = getInflection(word, tag='NNS')
 
         if forms:
@@ -116,6 +128,11 @@ class Cache:
             for plural_form in self.get_word_plural_forms(base_form):
                 if plural_form not in forms:
                     forms.append(plural_form)
+
+        # print(f'CHECK word: {word}, base_forms: {base_forms}, forms: {forms}')
+        if word not in forms:
+            # print(f"NOT FOUND: word '{word}' base forms: {base_forms}")
+            forms.append(word)
 
         return tuple(forms)
 
@@ -277,6 +294,8 @@ class Normalizer(base.Normalizer):
     def get_main_tail_form(self, word: str) -> str:
         base_forms = self._cache.get_word_base_forms(word)
 
+        # print(f"word '{word}' base forms: {base_forms}")
+
         if len(base_forms) == 1:
             return base_forms[0]
 
@@ -325,12 +344,27 @@ class Normalizer(base.Normalizer):
         if not tag.uid:
             return False, []
 
-        last_part = self.get_main_tail_form(tag.parts[-1])
+        canonical_part = tag.parts[-1]
 
-        solution = Solution(cache=self._cache).grow(last_part)
+        # print(f"canonical part: {canonical_part}")
+        # print(f"candidates: {self._cache.get_word_forms(canonical_part)}")
+
+        solutions = [Solution(cache=self._cache).grow(part)
+                     for part in self._cache.get_word_forms(canonical_part)]
 
         for part in reversed(tag.parts[:-1]):
-            solution = self.grow_candidate(solution, part)
+            new_solutions = []
+
+            for solution in solutions:
+                new_solutions.append(self.grow_candidate(solution, part))
+
+            solutions = new_solutions
+
+        solutions.sort(key=lambda s: s.score, reverse=True)
+
+        # print(f"scores: {[s.score for s in solutions]}")
+
+        best_solution = solutions[0]
 
         # At this point we have the best tag for the fixed last part
         # But in some case we can not normalize the last part properly
@@ -340,11 +374,17 @@ class Normalizer(base.Normalizer):
         # So we choose the best last part for the already correct chosen beginning of the tag
 
         # TODO: optimize to not call if there were only single option
-        last_parts = self._cache.get_word_base_forms(last_part)
+        # last_parts = self._cache.get_word_forms(canonical_part)
+        # last_parts = self._cache.get_word_forms(last_part)
+        # last_parts = self._cache.get_word_base_forms(last_part)
 
-        solution = self.choose_best_tail(solution, last_parts)
+        # print(f"original part: {tag.parts[-1]}")
+        # print(f"last part: {last_part}")
+        # print(f"last parts: {last_parts}")
 
-        new_uid = '-'.join(solution.parts)
+        # solution = self.choose_best_tail(solution, last_parts)
+
+        new_uid = '-'.join(best_solution.parts)
 
         if new_uid == tag.uid:
             return True, []
