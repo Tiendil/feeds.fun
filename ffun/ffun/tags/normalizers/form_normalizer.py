@@ -14,6 +14,7 @@ from spacy.cli import download
 # TODO: note that it is normalizer, not verboser
 # TODO: rewrite all notes, remove alpha mention
 # TODO: update tag quality tests
+# TODO: test on real data
 
 # TODO: not so good solution, refactor
 def ensure_model(name: str,
