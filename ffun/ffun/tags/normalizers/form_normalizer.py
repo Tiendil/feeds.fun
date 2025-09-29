@@ -9,6 +9,9 @@ import numpy as np
 import spacy
 from spacy.cli import download
 
+# TODO: update LLM prompt
+# TODO: task to generate names for normalized tags according to the statistics of the raw tags?
+# TODO: note that it is normalizer, not verboser
 
 # TODO: not so good solution, refactor
 def ensure_model(name: str,
