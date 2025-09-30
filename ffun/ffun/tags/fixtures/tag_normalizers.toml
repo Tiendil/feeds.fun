@@ -16,6 +16,8 @@
 # - We are ok with breaking or loosing some terms (like "order-by") if that allows us to create
 #   a lot of much simpler tags for other cases. Later we'll have separate tag procesors for those terms.
 
+# Replace part(s) of the tag betwee `-` with another part(s).
+# Example: `q-a` -> `qa`, `set-up-guide` -> `setup-guide`
 [[tag_normalizer]]
   id = 1
   enabled = true
@@ -38,6 +40,8 @@
   cuz = "because"
   to-do = "todo"
 
+# Split tags into two or more tags by specified separators.
+# Example: `animation-in-video-games` -> `animation`, `video-games`
 [[tag_normalizer]]
   id = 2
   enabled = true
@@ -70,7 +74,8 @@
     # - i (as roman number i = 1
   ]
 
-
+# Remove listed parts from tags.
+# Example: `things-that-make-me-happy` -> `things-make-me-happy`, "the-signal" -> "signal"
 [[tag_normalizer]]
   id = 3
   enabled = true
@@ -102,6 +107,12 @@
   # - much (too-much, how-much, ...)
 
 
+# Normalize form of each part of the tag.
+# Tries to keep tag readable, but it is not the primary goal.
+# - gravity-axes -> gravity-axis
+# - wooden-axes -> wooden-axe
+# book-reviews | books-review | books-reviews | book-review -> book-review
+# => this normalizer should be the greate help in processing tags produced by LLMs
 [[tag_normalizer]]
   id = 4
   enabled = true
