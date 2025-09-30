@@ -26,16 +26,7 @@ class Cache:
     def get_row_index(self, word: str) -> int:
         # vocab.strings is a hash table => we may see a memory growth here
         key = self._nlp.vocab.strings[word]
-        return self._nlp.vocab.vectors.key2row.get(key, -1)
-
-    def get_row_norm(self, index: int, default: np.float32 = np.float32(1.0)) -> np.float32:
-        if index < 0:
-            # the same hack as in __init__
-            return default
-        return self._spacy_normal_cache[index]
-
-    def get_row_vector(self, index: int) -> np.ndarray:
-        return self._spacy_data[index]
+        return self._nlp.vocab.vectors.key2row.get(key, -1)  # type: ignore
 
     def _fast_word_return(self, word: str) -> bool:
         if len(word) <= 2:
@@ -93,12 +84,13 @@ class Cache:
 
         return self._cached_get_word_forms(word)
 
+    # must be called only with existed rows
     def _raw_cos_rows(self, row_a: int, row_b: int) -> np.float32:
-        vector_a = self.get_row_vector(row_a)
-        vector_b = self.get_row_vector(row_b)
+        vector_a = self._spacy_data[row_a]
+        vector_b = self._spacy_data[row_b]
 
-        norm_a = self.get_row_norm(row_a)
-        norm_b = self.get_row_norm(row_b)
+        norm_a = self._spacy_normal_cache[row_a]
+        norm_b = self._spacy_normal_cache[row_b]
 
         return (vector_a @ vector_b) / (norm_a * norm_b)
 

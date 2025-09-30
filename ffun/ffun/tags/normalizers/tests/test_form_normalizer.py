@@ -1,3 +1,4 @@
+import sys
 import time
 
 import pytest
@@ -257,12 +258,12 @@ class TestNormalizer:
         total = len(input_tags)
         rate = total / elapsed if elapsed > 0 else float("inf")
 
-        print("\n=== Performance ===")
-        print(f"items: {total}")
-        print(f"time_sec: {elapsed:.6f}")
-        print(f"throughput_tags_per_sec: {rate:.2f}")
+        sys.stdout.write("\n=== Performance ===\n")
+        sys.stdout.write(f"items: {total}\n")
+        sys.stdout.write(f"time_sec: {elapsed:.6f}\n")
+        sys.stdout.write(f"throughput_tags_per_sec: {rate:.2f}\n")
 
-        print("Cos cache info:", normalizer.cache()._cached_cos_rows.cache_info())
-        print("Words cache info:", normalizer.cache()._cached_get_word_forms.cache_info())
+        sys.stdout.write("Cos cache info:", normalizer.cache()._cached_cos_rows.cache_info(), "\n")
+        sys.stdout.write("Words cache info:", normalizer.cache()._cached_get_word_forms.cache_info(), "\n")
 
         assert False

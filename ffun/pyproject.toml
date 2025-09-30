@@ -173,6 +173,10 @@ ignore_missing_imports = true
 module = "frontmatter.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "lemminflect.*"
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 # possibly it is not good option value, because we'll lose detecting of lost coroutines
 # but for now it is required for some session-scoped fixtures
