@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from pytest_mock import MockerFixture
 
@@ -170,6 +172,13 @@ class TestApplyNormalizers:
 
 
 class TestNormalize:
+
+    @pytest.fixture(autouse=True)
+    def turn_of_tag_form_normalization(self, mocker: MockerFixture) -> None:
+        def fake_normalize(_self: Any, _tag: TagInNormalization) -> tuple[bool, list[RawTag]]:
+            return True, []
+
+        mocker.patch("ffun.tags.normalizers.form_normalizer.Normalizer.normalize", new=fake_normalize)
 
     @pytest.mark.asyncio
     async def test_no_tags(self) -> None:
