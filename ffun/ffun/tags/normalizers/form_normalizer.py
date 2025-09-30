@@ -9,15 +9,11 @@ from typing import Literal
 import numpy as np
 import spacy
 from spacy.cli import download
+from ffun.core import logging, utils
 
-# TODO: update LLM prompt
-# TODO: task to generate names for normalized tags according to the statistics of the raw tags?
 # TODO: note that it is normalizer, not verboser
 # TODO: rewrite all notes, remove alpha mention
 # TODO: update tag quality tests
-# TODO: test on real data
-# TODO: lru cache cos between lin numbers
-
 
 class Cache:
     __slots__ = ('_spacy_data', '_spacy_normal_cache', '_nlp', '_cached_cos_rows', '_cached_get_word_forms')

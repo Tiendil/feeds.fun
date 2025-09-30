@@ -15,7 +15,7 @@ _root = pathlib.Path(__file__).parent
 class Settings(BaseSettings):
     tag_normalizers_config: pathlib.Path = _root / "fixtures" / "tag_normalizers.toml"
 
-    metric_accumulation_interval: datetime.timedelta = datetime.timedelta(minutes=10)
+    metric_accumulation_interval: datetime.timedelta = datetime.timedelta(minutes=1)
 
     @pydantic.computed_field  # type: ignore
     @functools.cached_property
