@@ -61,6 +61,8 @@ class Splitter(BaseNormalizer):
 class FormNormalizer(BaseNormalizer):
     type: Literal[NormalizerType.form_normalizer] = NormalizerType.form_normalizer
     spacy_model: str
+    cos_cache_size: int
+    forms_cache_size: int
 
 
 TagNormalizer = Annotated[

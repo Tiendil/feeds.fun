@@ -116,3 +116,8 @@
   #   - or check pyproject.toml for how specify it as a dependency
   # - Turn off this normalizer completely.
   spacy_model = "en_core_web_lg"
+
+  # sizes of the caches to speed up the processing
+  # reduce if you have memory issues
+  cos_cache_size = 1000000
+  forms_cache_size = 100000

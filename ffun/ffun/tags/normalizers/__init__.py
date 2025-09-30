@@ -30,7 +30,11 @@ for normalizer_config in settings.tag_normalizers:
     elif normalizer_config.type == NormalizerType.splitter:
         normalizer = splitter.Normalizer(separators=list(normalizer_config.separators))
     elif normalizer_config.type == NormalizerType.form_normalizer:
-        normalizer = form_normalizer.Normalizer()
+        normalizer = form_normalizer.Normalizer(
+            model=normalizer_config.spacy_model,
+            cos_cache_size=normalizer_config.cos_cache_size,
+            forms_cache_size=normalizer_config.forms_cache_size,
+        )
     else:
         raise NotImplementedError(f"Unknown normalizer type: {normalizer_config.type}")
 
