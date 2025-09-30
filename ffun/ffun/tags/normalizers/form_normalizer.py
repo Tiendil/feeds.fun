@@ -1,26 +1,22 @@
 import functools
-from ffun.domain.entities import TagUid
-from ffun.ontology.entities import NormalizationMode, RawTag
-from ffun.tags import utils
-from ffun.tags.entities import TagInNormalization
-from ffun.tags.normalizers import base
-from lemminflect import getLemma, getInflection, getAllLemmas, getAllLemmasOOV
-from typing import Literal
+
 import numpy as np
 import spacy
-from spacy.cli import download
-from ffun.core import logging, utils
+from lemminflect import getAllLemmas, getAllLemmasOOV, getInflection
+
+from ffun.ontology.entities import NormalizationMode, RawTag
+from ffun.tags.entities import TagInNormalization
+from ffun.tags.normalizers import base
 
 # TODO: note that it is normalizer, not verboser
 # TODO: rewrite all notes, remove alpha mention
-# TODO: update tag quality tests
+
 
 class Cache:
-    __slots__ = ('_spacy_data', '_spacy_normal_cache', '_nlp', '_cached_cos_rows', '_cached_get_word_forms')
+    __slots__ = ("_spacy_data", "_spacy_normal_cache", "_nlp", "_cached_cos_rows", "_cached_get_word_forms")
 
     def __init__(self, model: str, cos_cache_size: int, forms_cache_size: int):
-        self._nlp = spacy.load(model,
-                               disable=["parser", "ner", "senter", "textcat", "tagger", "lemmatizer"])
+        self._nlp = spacy.load(model, disable=["parser", "ner", "senter", "textcat", "tagger", "lemmatizer"])
         self._spacy_data = self._nlp.vocab.vectors.data
         self._spacy_normal_cache = np.linalg.norm(self._spacy_data, axis=1)
 
@@ -59,7 +55,7 @@ class Cache:
 
         lemmas = getAllLemmas(word)
 
-        for upos in ('NOUN', 'VERB', 'ADJ', 'ADV'):
+        for upos in ("NOUN", "VERB", "ADJ", "ADV"):
             if upos in lemmas:
                 return tuple(lemmas[upos])
 
@@ -72,7 +68,7 @@ class Cache:
 
     def _get_word_plural_forms(self, word: str) -> tuple[str]:
         # Shoud return plural form if it is possible, else []
-        forms = getInflection(word, tag='NNS')
+        forms = getInflection(word, tag="NNS")
 
         if forms:
             return tuple(forms)
@@ -121,14 +117,16 @@ class Cache:
 
 
 class Solution:
-    __slots__ = ('_cache',
-                 'parts',
-                 'score',
-                 )
+    __slots__ = (
+        "_cache",
+        "parts",
+        "score",
+    )
 
-    def __init__(self,
-                 cache: Cache,
-                 ) -> None:
+    def __init__(
+        self,
+        cache: Cache,
+    ) -> None:
         self._cache = cache
         self.parts = ()
         self.score = 0.0
@@ -154,7 +152,7 @@ class Solution:
     # - Use original text vector as the anchor instead of the last part of the tag
     # - Check every possible combination of parts against the original text vector
     ########################################
-    def grow(self, part: str) -> 'Solution':
+    def grow(self, part: str) -> "Solution":
         clone = Solution(cache=self._cache)
         clone.parts = (part,) + self.parts
 
@@ -209,12 +207,11 @@ class Normalizer(base.Normalizer):
     - => We do not need to implement prosessing of multiple corner cases .
     """
 
-    __slots__ = ('_nlp', '_cache', '_spacy_model', '_cos_cache_size', '_forms_cache_size')
+    __slots__ = ("_nlp", "_cache", "_spacy_model", "_cos_cache_size", "_forms_cache_size")
 
-    def __init__(self,
-                 model: str = "en_core_web_lg",
-                 cos_cache_size: int = 100_000,
-                 forms_cache_size: int = 100_000) -> None:
+    def __init__(
+        self, model: str = "en_core_web_lg", cos_cache_size: int = 100_000, forms_cache_size: int = 100_000
+    ) -> None:
         self._spacy_model = model
         self._cos_cache_size = cos_cache_size
         self._forms_cache_size = forms_cache_size
@@ -223,14 +220,14 @@ class Normalizer(base.Normalizer):
     # Cache loads Spacy model, so we initialize it lazily
     def cache(self) -> Cache:
         if self._cache is None:
-            self._cache = Cache(model=self._spacy_model,
-                                cos_cache_size=self._cos_cache_size,
-                                forms_cache_size=self._forms_cache_size)
+            self._cache = Cache(
+                model=self._spacy_model, cos_cache_size=self._cos_cache_size, forms_cache_size=self._forms_cache_size
+            )
         return self._cache
 
-    def grow_candidate(self,  # pylint: disable=R0914  # noqa: CCR001
-                       solution: Solution,
-                       original_part: str) -> Solution:
+    def grow_candidate(
+        self, solution: Solution, original_part: str  # pylint: disable=R0914  # noqa: CCR001
+    ) -> Solution:
         candidates = self.cache().get_word_forms(original_part)
 
         if len(candidates) == 1:
@@ -252,8 +249,7 @@ class Normalizer(base.Normalizer):
 
         canonical_part = tag.parts[-1]
 
-        solutions = [Solution(cache=self.cache()).grow(part)
-                     for part in self.cache().get_word_forms(canonical_part)]
+        solutions = [Solution(cache=self.cache()).grow(part) for part in self.cache().get_word_forms(canonical_part)]
 
         for part in reversed(tag.parts[:-1]):
             new_solutions = []
@@ -271,7 +267,7 @@ class Normalizer(base.Normalizer):
 
         best_solution = solutions[0]
 
-        new_uid = '-'.join(best_solution.parts)
+        new_uid = "-".join(best_solution.parts)
 
         if new_uid == tag.uid:
             return True, []

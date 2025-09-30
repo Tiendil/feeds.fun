@@ -1,6 +1,6 @@
 from ffun.core import logging
 from ffun.tags.entities import NormalizerType
-from ffun.tags.normalizers import part_blacklist, part_replacer, splitter, form_normalizer
+from ffun.tags.normalizers import form_normalizer, part_blacklist, part_replacer, splitter
 from ffun.tags.normalizers.base import FakeNormalizer, Normalizer, NormalizerAlwaysError, NormalizerInfo
 from ffun.tags.settings import settings
 

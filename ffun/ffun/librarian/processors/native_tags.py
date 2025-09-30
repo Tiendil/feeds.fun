@@ -18,7 +18,7 @@ class Processor(base.Processor):
                     # - DDOS via tag explosion
                     # - Prompt injection via tags
                     normalization=NormalizationMode.final,
-                    categories={TagCategory.feed_tag}
+                    categories={TagCategory.feed_tag},
                 )
             )
 
