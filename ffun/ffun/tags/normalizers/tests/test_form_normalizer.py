@@ -201,8 +201,7 @@ class TestNormalizer:
         assert tag_valid == expected_tag_valid
         assert new_tags == expected_new_tags
 
-    # TODO: uncomment
-    # @pytest.mark.skipif(reason="Performance test disabled by default.")
+    @pytest.mark.skipif(reason="Performance test disabled by default.")
     @pytest.mark.asyncio
     async def test_performance(self) -> None:
         n = 10000
