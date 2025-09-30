@@ -1,3 +1,4 @@
+import functools
 from ffun.domain.entities import TagUid
 from ffun.ontology.entities import NormalizationMode, RawTag
 from ffun.tags import utils
@@ -9,35 +10,27 @@ import numpy as np
 import spacy
 from spacy.cli import download
 
-# TODO: spacy dataset should not be loaded at github actions
 # TODO: update LLM prompt
 # TODO: task to generate names for normalized tags according to the statistics of the raw tags?
 # TODO: note that it is normalizer, not verboser
 # TODO: rewrite all notes, remove alpha mention
 # TODO: update tag quality tests
 # TODO: test on real data
-
-# TODO: not so good solution, refactor
-def ensure_model(name: str,
-                 disable=["parser", "ner", "senter", "textcat", "tagger", "lemmatizer"]) -> spacy.language.Language:
-    try:
-        return spacy.load(name, disable=disable)
-    except OSError:
-        download(name)
-        return spacy.load(name, disable=disable)
+# TODO: lru cache cos between lin numbers
 
 
 # TODO: we should periodically trim word caches
 class Cache:
     __slots__ = ('_singular_cache', '_plural_cache', '_forms_cache', '_spacy_data', '_spacy_normal_cache', '_nlp')
 
-    def __init__(self, nlp: spacy.language.Language) -> None:
+    def __init__(self, model: str):
         self._singular_cache: dict[str, tuple[str]] = {}
         self._plural_cache: dict[str, tuple[str]] = {}
         self._forms_cache: dict[str, tuple[str]] = {}
 
-        self._nlp = nlp
-        self._spacy_data = nlp.vocab.vectors.data
+        self._nlp = spacy.load(model,
+                               disable=["parser", "ner", "senter", "textcat", "tagger", "lemmatizer"])
+        self._spacy_data = self._nlp.vocab.vectors.data
         self._spacy_normal_cache = np.linalg.norm(self._spacy_data, axis=1)
 
         # hack to reduce branching (do not check for zero norm each time)
@@ -146,6 +139,26 @@ class Cache:
 
         return forms
 
+    @functools.lru_cache
+    def _cos_rows(self, row_a: int, row_b: int) -> np.float32:
+        vector_a = self.get_row_vector(row_a)
+        vector_b = self.get_row_vector(row_b)
+
+        norm_a = self.get_row_norm(row_a)
+        norm_b = self.get_row_norm(row_b)
+
+        return (vector_a @ vector_b) / (norm_a * norm_b)
+
+    def cos_rows(self, row_a: int, row_b: int, default: np.float32 = np.float32(0.0)) -> np.float32:
+        if row_a < 0 or row_b < 0:
+            return default
+
+        # optimize caching
+        if row_a > row_b:
+            row_a, row_b = row_b, row_a
+
+        return self._cos_rows(row_a, row_b)
+
 
 class Solution:
     __slots__ = ('_cache',
@@ -162,18 +175,6 @@ class Solution:
 
     def total_characters(self) -> int:
         return sum(len(part) for part in self.parts)
-
-    def _cos_rows(self, row_a: int, row_b: int, default: np.float32 = np.float32(0.0)) -> np.float32:
-        if row_a < 0 or row_b < 0:
-            return default
-
-        vector_a = self._cache.get_row_vector(row_a)
-        vector_b = self._cache.get_row_vector(row_b)
-
-        norm_a = self._cache.get_row_norm(row_a)
-        norm_b = self._cache.get_row_norm(row_b)
-
-        return (vector_a @ vector_b) / (norm_a * norm_b)
 
     ########################################
     # We choose the best solution by comparing their scores.
@@ -219,9 +220,10 @@ class Solution:
         if len_ > 1 and new_index >= 0:
             # TODO: what if next_index is unknown?
             next_index = clone._cache.get_row_index(clone.parts[1])
-            clone.score = self.score + clone._cos_rows(new_index, next_index)
+            clone.score = self.score + clone._cache.cos_rows(new_index, next_index)
 
         return clone
+
 
 # TODO: add to configs
 class Normalizer(base.Normalizer):
@@ -247,20 +249,22 @@ class Normalizer(base.Normalizer):
     - => We do not need to implement prosessing of multiple corner cases .
     """
 
-    __slots__ = ('_nlp', '_cache')
+    __slots__ = ('_nlp', '_cache', '_spacy_model')
 
-    def __init__(self) -> None:
-        # TODO: parametrize
-        # TODO: when to load model?
-        # TODO: do not forget about loading in both dev/prod docker containers
-        # TODO: ensure we load the model in memory only on its first use, not on code initialization
-        self._nlp = ensure_model("en_core_web_lg")
-        self._cache = Cache(nlp=self._nlp)
+    def __init__(self, model: str = "en_core_web_lg") -> None:
+        self._spacy_model = model
+        self._cache: Cache | None = None
+
+    # Cache loads Spacy model, so we initialize it lazily
+    def cache(self) -> Cache:
+        if self._cache is None:
+            self._cache = Cache(model=self._spacy_model)
+        return self._cache
 
     def grow_candidate(self,  # pylint: disable=R0914  # noqa: CCR001
                        solution: Solution,
                        original_part: str) -> Solution:
-        candidates = self._cache.get_word_forms(original_part)
+        candidates = self.cache().get_word_forms(original_part)
 
         if len(candidates) == 1:
             return solution.grow(candidates[0])
@@ -281,8 +285,8 @@ class Normalizer(base.Normalizer):
 
         canonical_part = tag.parts[-1]
 
-        solutions = [Solution(cache=self._cache).grow(part)
-                     for part in self._cache.get_word_forms(canonical_part)]
+        solutions = [Solution(cache=self.cache()).grow(part)
+                     for part in self.cache().get_word_forms(canonical_part)]
 
         for part in reversed(tag.parts[:-1]):
             new_solutions = []
@@ -297,10 +301,6 @@ class Normalizer(base.Normalizer):
         # - the solution with less characters if scores are equal
         # - fixed alphabetical order if both score and length are equal
         solutions.sort(key=lambda s: (s.score, -s.total_characters(), s.parts), reverse=True)
-
-        # print("solutions:")
-        # for solution in solutions:
-        #     print(f"  {solution.parts} score {solution.score}")
 
         best_solution = solutions[0]
 

@@ -100,3 +100,19 @@
   #
   # Those parts looks like parts of compound phrases, so we keep them for now:
   # - much (too-much, how-much, ...)
+
+
+[[tag_normalizer]]
+  id = 4
+  enabled = true
+  name = "form_normalizer"
+  type = "form_normalizer"
+
+  # This model eats up to 1GB of RAM.
+  # If it is too much, consider:
+  # - Switching to a "en_core_web_md", but it will lead to less readable tags
+  #   you also should install it yourself:
+  #   - `python -m spacy download en_core_web_md`
+  #   - or check pyproject.toml for how specify it as a dependency
+  # - Turn off this normalizer completely.
+  spacy_model = "en_core_web_lg"

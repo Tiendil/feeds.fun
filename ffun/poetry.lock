@@ -849,6 +849,20 @@ files = [
 ]
 
 [[package]]
+name = "en_core_web_lg"
+version = "3.8.0"
+description = "English pipeline optimized for CPU. Components: tok2vec, tagger, parser, senter, ner, attribute_ruler, lemmatizer."
+optional = false
+python-versions = "*"
+files = [
+    {file = "en_core_web_lg-3.8.0-py3-none-any.whl", hash = "sha256:293e9547a655b25499198ab15a525b05b9407a75f10255e405e8c3854329ab63"},
+]
+
+[package.source]
+type = "url"
+url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl"
+
+[[package]]
 name = "eradicate"
 version = "2.3.0"
 description = "Removes commented-out code."
@@ -4152,4 +4166,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.13,<3.14"
-content-hash = "4c892ed566444e04bb29196dfb0ab73e40a28591a297c069c5a3ee9e5d32d062"
+content-hash = "e4bc686dba2b0c5b23cf21a9ee928d1e60ec5c15d16d6d80d1fbcf37b2ac38b2"

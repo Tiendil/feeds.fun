@@ -220,8 +220,6 @@ class TestNormalizer:
         new_tags.sort(key=lambda t: t.raw_uid)
         expected_new_tags.sort(key=lambda t: t.raw_uid)
 
-        print(tag_valid, expected_tag_valid)
-        print(new_tags, expected_new_tags)
         assert tag_valid == expected_tag_valid
         assert new_tags == expected_new_tags
 

@@ -60,6 +60,7 @@ class Splitter(BaseNormalizer):
 
 class FormNormalizer(BaseNormalizer):
     type: Literal[NormalizerType.form_normalizer] = NormalizerType.form_normalizer
+    spacy_model: str
 
 
 TagNormalizer = Annotated[
