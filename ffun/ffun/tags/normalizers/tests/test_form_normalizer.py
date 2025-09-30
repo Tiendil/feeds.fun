@@ -209,8 +209,8 @@ class TestNormalizer:
 
         input_tags = [
             TagInNormalization(
-                uid=input_uid,
-                parts=utils.uid_to_parts(input_uid),
+                uid=TagUid(input_uid),
+                parts=utils.uid_to_parts(TagUid(input_uid)),
                 mode=NormalizationMode.preserve,
                 link="http://example.com/tag",
                 categories={TagCategory.feed_tag},
@@ -263,7 +263,7 @@ class TestNormalizer:
         sys.stdout.write(f"time_sec: {elapsed:.6f}\n")
         sys.stdout.write(f"throughput_tags_per_sec: {rate:.2f}\n")
 
-        sys.stdout.write("Cos cache info:", normalizer.cache()._cached_cos_rows.cache_info(), "\n")
-        sys.stdout.write("Words cache info:", normalizer.cache()._cached_get_word_forms.cache_info(), "\n")
+        sys.stdout.write(f"Cos cache info: {normalizer.cache()._cached_cos_rows.cache_info()}\n")
+        sys.stdout.write(f"Words cache info: {normalizer.cache()._cached_get_word_forms.cache_info()}\n")
 
         assert False

@@ -37,7 +37,7 @@ class Cache:
 
         return False
 
-    def _get_word_base_forms(self, word: str) -> tuple[str]:
+    def _get_word_base_forms(self, word: str) -> tuple[str, ...]:
         # getLemma calls getAllLemmas and then filters results by `upos`
         # => we use getAllLemmas directly to speed up things
 
@@ -54,7 +54,7 @@ class Cache:
 
         return (word,)
 
-    def _get_word_plural_forms(self, word: str) -> tuple[str]:
+    def _get_word_plural_forms(self, word: str) -> tuple[str, ...]:
         # Shoud return plural form if it is possible, else []
         forms = getInflection(word, tag="NNS")
 
@@ -63,7 +63,7 @@ class Cache:
 
         return (word,)
 
-    def _raw_get_word_forms(self, word: str) -> tuple[str]:  # noqa: CCR001
+    def _raw_get_word_forms(self, word: str) -> tuple[str, ...]:  # noqa: CCR001
         base_forms = self._get_word_base_forms(word)
 
         forms = list(base_forms)
@@ -78,7 +78,7 @@ class Cache:
 
         return tuple(forms)
 
-    def get_word_forms(self, word: str) -> tuple[str]:
+    def get_word_forms(self, word: str) -> tuple[str, ...]:
         if self._fast_word_return(word):
             return (word,)
 
@@ -92,7 +92,7 @@ class Cache:
         norm_a = self._spacy_normal_cache[row_a]
         norm_b = self._spacy_normal_cache[row_b]
 
-        return (vector_a @ vector_b) / (norm_a * norm_b)
+        return (vector_a @ vector_b) / (norm_a * norm_b)  # type: ignore
 
     def cos_rows(self, row_a: int, row_b: int, default: np.float32 = np.float32(0.0)) -> np.float32:
         if row_a < 0 or row_b < 0:
@@ -117,7 +117,7 @@ class Solution:
         cache: Cache,
     ) -> None:
         self._cache = cache
-        self.parts = ()
+        self.parts: tuple[str, ...] = ()
         self.score = 0.0
 
     def total_characters(self) -> int:
@@ -149,7 +149,7 @@ class Solution:
             next_index = clone._cache.get_row_index(part_to_check)
 
             if next_index >= 0:
-                clone.score = self.score + clone._cache.cos_rows(new_index, next_index)
+                clone.score = self.score + float(clone._cache.cos_rows(new_index, next_index))
                 break
 
         return clone
