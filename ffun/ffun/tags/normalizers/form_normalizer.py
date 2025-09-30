@@ -228,6 +228,10 @@ class Normalizer(base.Normalizer):
 
         return best_solution
 
+    # TODO: We may allow this normalizer to mark tags produced by it
+    #       so, if it receives such tag, it will skip normalization.
+    #       But remember about potential caching on the upper level on domain.py
+    #       it may be more effective and universal on the level of normalizers chain
     async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[RawTag]]:  # noqa: CCR001
         if not tag.uid:
             return False, []
@@ -257,9 +261,6 @@ class Normalizer(base.Normalizer):
         if new_uid == tag.uid:
             return True, []
 
-        # TODO: mark tags, produced by normalizer, to skip them on the second iteration
-        #       but remember, that not every normalizer expect such logic, some want to process
-        #       tags in chain
         new_tag = RawTag(
             raw_uid=new_uid,
             normalization=NormalizationMode.raw,
