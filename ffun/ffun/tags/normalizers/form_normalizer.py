@@ -19,13 +19,10 @@ from spacy.cli import download
 # TODO: lru cache cos between lin numbers
 
 
-# TODO: we should periodically trim word caches
 class Cache:
-    __slots__ = ('_forms_cache', '_spacy_data', '_spacy_normal_cache', '_nlp', '_cached_cos_rows')
+    __slots__ = ('_spacy_data', '_spacy_normal_cache', '_nlp', '_cached_cos_rows', '_cached_get_word_forms')
 
-    def __init__(self, model: str):
-        self._forms_cache: dict[str, tuple[str]] = {}
-
+    def __init__(self, model: str, cos_cache_size: int, forms_cache_size: int):
         self._nlp = spacy.load(model,
                                disable=["parser", "ner", "senter", "textcat", "tagger", "lemmatizer"])
         self._spacy_data = self._nlp.vocab.vectors.data
@@ -34,7 +31,8 @@ class Cache:
         # hack to reduce branching (do not check for zero norm each time)
         self._spacy_normal_cache[self._spacy_normal_cache == 0.0] = 1.0
 
-        self._cached_cos_rows = functools.lru_cache(maxsize=400_000)(self._raw_cos_rows)
+        self._cached_get_word_forms = functools.lru_cache(maxsize=forms_cache_size)(self._raw_get_word_forms)
+        self._cached_cos_rows = functools.lru_cache(maxsize=cos_cache_size)(self._raw_cos_rows)
 
     def get_row_index(self, word: str) -> int:
         # vocab.strings is a hash table => we may see a memory growth here
@@ -85,7 +83,7 @@ class Cache:
 
         return (word,)
 
-    def _get_word_forms(self, word: str) -> tuple[str]:  # noqa: CCR001
+    def _raw_get_word_forms(self, word: str) -> tuple[str]:  # noqa: CCR001
         base_forms = self._get_word_base_forms(word)
 
         forms = list(base_forms)
@@ -101,17 +99,10 @@ class Cache:
         return tuple(forms)
 
     def get_word_forms(self, word: str) -> tuple[str]:
-        if word in self._forms_cache:
-            return self._forms_cache[word]
-
         if self._fast_word_return(word):
             return (word,)
 
-        forms = self._get_word_forms(word)
-
-        self._forms_cache[word] = forms
-
-        return forms
+        return self._cached_get_word_forms(word)
 
     def _raw_cos_rows(self, row_a: int, row_b: int) -> np.float32:
         vector_a = self.get_row_vector(row_a)
@@ -222,16 +213,23 @@ class Normalizer(base.Normalizer):
     - => We do not need to implement prosessing of multiple corner cases .
     """
 
-    __slots__ = ('_nlp', '_cache', '_spacy_model')
+    __slots__ = ('_nlp', '_cache', '_spacy_model', '_cos_cache_size', '_forms_cache_size')
 
-    def __init__(self, model: str = "en_core_web_lg") -> None:
+    def __init__(self,
+                 model: str = "en_core_web_lg",
+                 cos_cache_size: int = 100_000,
+                 forms_cache_size: int = 100_000) -> None:
         self._spacy_model = model
+        self._cos_cache_size = cos_cache_size
+        self._forms_cache_size = forms_cache_size
         self._cache: Cache | None = None
 
     # Cache loads Spacy model, so we initialize it lazily
     def cache(self) -> Cache:
         if self._cache is None:
-            self._cache = Cache(model=self._spacy_model)
+            self._cache = Cache(model=self._spacy_model,
+                                cos_cache_size=self._cos_cache_size,
+                                forms_cache_size=self._forms_cache_size)
         return self._cache
 
     def grow_candidate(self,  # pylint: disable=R0914  # noqa: CCR001
