@@ -33,6 +33,9 @@ classifiers = [
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Server",
         "Topic :: Internet :: WWW/HTTP :: HTTP Servers"]
 
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
 # top version is restricted by spacy package
