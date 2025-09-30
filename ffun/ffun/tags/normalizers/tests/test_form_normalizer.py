@@ -271,4 +271,6 @@ class TestNormalizer:
         print(f"time_sec: {elapsed:.6f}")
         print(f"throughput_tags_per_sec: {rate:.2f}")
 
+        print(normalizer.cache()._cached_cos_rows.cache_info())
+
         assert False

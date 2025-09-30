@@ -21,11 +21,9 @@ from spacy.cli import download
 
 # TODO: we should periodically trim word caches
 class Cache:
-    __slots__ = ('_singular_cache', '_plural_cache', '_forms_cache', '_spacy_data', '_spacy_normal_cache', '_nlp')
+    __slots__ = ('_forms_cache', '_spacy_data', '_spacy_normal_cache', '_nlp', '_cached_cos_rows')
 
     def __init__(self, model: str):
-        self._singular_cache: dict[str, tuple[str]] = {}
-        self._plural_cache: dict[str, tuple[str]] = {}
         self._forms_cache: dict[str, tuple[str]] = {}
 
         self._nlp = spacy.load(model,
@@ -35,6 +33,8 @@ class Cache:
 
         # hack to reduce branching (do not check for zero norm each time)
         self._spacy_normal_cache[self._spacy_normal_cache == 0.0] = 1.0
+
+        self._cached_cos_rows = functools.lru_cache(maxsize=400_000)(self._raw_cos_rows)
 
     def get_row_index(self, word: str) -> int:
         # vocab.strings is a hash table => we may see a memory growth here
@@ -76,19 +76,6 @@ class Cache:
 
         return (word,)
 
-    def get_word_base_forms(self, word: str) -> tuple[str]:
-        if word in self._singular_cache:
-            return self._singular_cache[word]
-
-        if self._fast_word_return(word):
-            return (word,)
-
-        base_forms = self._get_word_base_forms(word)
-
-        self._singular_cache[word] = base_forms
-
-        return base_forms
-
     def _get_word_plural_forms(self, word: str) -> tuple[str]:
         # Shoud return plural form if it is possible, else []
         forms = getInflection(word, tag='NNS')
@@ -98,26 +85,13 @@ class Cache:
 
         return (word,)
 
-    def get_word_plural_forms(self, word: str) -> tuple[str]:
-        if word in self._plural_cache:
-            return self._plural_cache[word]
-
-        if self._fast_word_return(word):
-            return (word,)
-
-        plural_forms = self._get_word_plural_forms(word)
-
-        self._plural_cache[word] = plural_forms
-
-        return plural_forms
-
     def _get_word_forms(self, word: str) -> tuple[str]:  # noqa: CCR001
-        base_forms = self.get_word_base_forms(word)
+        base_forms = self._get_word_base_forms(word)
 
         forms = list(base_forms)
 
         for base_form in base_forms:
-            for plural_form in self.get_word_plural_forms(base_form):
+            for plural_form in self._get_word_plural_forms(base_form):
                 if plural_form not in forms:
                     forms.append(plural_form)
 
@@ -139,8 +113,7 @@ class Cache:
 
         return forms
 
-    @functools.lru_cache
-    def _cos_rows(self, row_a: int, row_b: int) -> np.float32:
+    def _raw_cos_rows(self, row_a: int, row_b: int) -> np.float32:
         vector_a = self.get_row_vector(row_a)
         vector_b = self.get_row_vector(row_b)
 
@@ -157,7 +130,7 @@ class Cache:
         if row_a > row_b:
             row_a, row_b = row_b, row_a
 
-        return self._cos_rows(row_a, row_b)
+        return self._cached_cos_rows(row_a, row_b)
 
 
 class Solution:
