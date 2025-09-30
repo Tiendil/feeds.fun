@@ -21,6 +21,9 @@ def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
     )
 
 
+# TODO: we may want to cache chain of tags, to skip the whole normalizers operations
+#       i.e. remember once that at the end tag @a-b-c produces tags @a-b, @a-c, @b-c and skip the whole
+#       normalizers chain.
 async def apply_normalizers(normalizers_: list[NormalizerInfo], tag: TagInNormalization) -> tuple[bool, list[RawTag]]:
 
     if tag.mode == NormalizationMode.final:

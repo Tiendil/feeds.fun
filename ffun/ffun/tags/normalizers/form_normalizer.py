@@ -113,23 +113,6 @@ class Cache:
         return self._cached_cos_rows(row_a, row_b)
 
 
-########################################
-# We choose the best solution by comparing their scores.
-# The score is the sum of cosine distances between neighboring parts of the tag.
-#
-# We receive the list of final solutions by:
-#
-# - starting from the last part of the tag — one solution per each of its word forms;
-# - for each next part of the tag we choose the best word form by comparing scores of all possible solutions.
-#
-# That allows us to go away from checking cortesian product of all possible combinations of parts.
-#
-# In the future we may want to improve it by using more advanced approaches:
-#
-# - Use original text vector as the anchor to calculate cosine with the whole tag candidate (not with parts)
-# - Collect frequency statistics of raw tags produced by LLMs and use the most frequent ones as target tags
-#   to normalize to
-########################################
 class Solution:
     __slots__ = (
         "_cache",
@@ -185,22 +168,28 @@ class Normalizer(base.Normalizer):
 
     Currently normalizes only time, but can be extended in the future.
 
-    The algorithm:
+    Algorithm:
 
-    - Place the last part of the tag in singular form (if possible).
-    - For each other part of the tag, starting from the right:
-      - Let's imaging we have tag @a-b-tail
-      - Create two tag candidates: `@singular(b)-tail` & `@plural(b)-tail`
-      - Chose the tag, that has the highest similarity with @c, new tag will become tail
-      - Now we normalize tag @a-tail (got to the next loop iteration)
+    - We choose the best solution by comparing their scores.
+    - The score is the sum of cosine distances between neighboring parts of the tag.
+    - We receive the list of final solutions by:
+        - starting from the last part of the tag — one solution per each of its word forms;
+        - for each next part of the tag we choose the best word form by comparing scores of all possible solutions.
 
-    We compute similarity using cosine distance between word vectors.
+    That allows us to go away from checking cortesian product of all possible combinations of parts.
 
-    We singularize the last part of the tag because it singularization produces better results than pluralization:
+    In the future we may want to improve it by using more advanced approaches:
 
-    - We keep consistent proper names like `@charles-darwin`, `@new-york`
-    - We do not make bad word forms like `informations`, `learnings`, etc.
-    - => We do not need to implement prosessing of multiple corner cases .
+    - Use original text vector as the anchor to calculate cosine with the whole tag candidate (not with parts)
+    - Collect frequency statistics of raw tags produced by LLMs and use the most frequent ones as target tags
+      to normalize to
+
+    ATTENTION: this is normalizer, not verboser.
+               I.e. the goal of this thing is not to produce the most readable and understandable tag,
+               but to reduce the number of duplicate tags in the system and, if possible,
+               to produce more-or-less correct readable tags.
+               => In the future we may want to improve it to be more verbose or we may introduce
+               a separate mechanism to provide verbose names for tags (we already have parts of it).
     """
 
     __slots__ = ("_nlp", "_cache", "_spacy_model", "_cos_cache_size", "_forms_cache_size")
@@ -213,7 +202,7 @@ class Normalizer(base.Normalizer):
         self._forms_cache_size = forms_cache_size
         self._cache: Cache | None = None
 
-    # Cache loads Spacy model, so we initialize it lazily
+    # Cache loads huge Spacy model, so we initialize it lazily
     def cache(self) -> Cache:
         if self._cache is None:
             self._cache = Cache(
@@ -271,7 +260,6 @@ class Normalizer(base.Normalizer):
         # TODO: mark tags, produced by normalizer, to skip them on the second iteration
         #       but remember, that not every normalizer expect such logic, some want to process
         #       tags in chain
-        # TODO: we may want to cach in domain.py chain of tags, to skip the whole normalizers operations
         new_tag = RawTag(
             raw_uid=new_uid,
             normalization=NormalizationMode.raw,
