@@ -33,6 +33,7 @@ class NormalizerType(enum.StrEnum):
     part_blacklist = "part_blacklist"
     part_replacer = "part_replacer"
     splitter = "splitter"
+    form_normalizer = "form_normalizer"
 
 
 class BaseNormalizer(BaseEntity):
@@ -57,8 +58,15 @@ class Splitter(BaseNormalizer):
     separators: set[str] = pydantic.Field(default_factory=set)
 
 
+class FormNormalizer(BaseNormalizer):
+    type: Literal[NormalizerType.form_normalizer] = NormalizerType.form_normalizer
+    spacy_model: str
+    cos_cache_size: int
+    forms_cache_size: int
+
+
 TagNormalizer = Annotated[
-    PartBlacklist | PartReplacer | Splitter,
+    PartBlacklist | PartReplacer | Splitter | FormNormalizer,
     pydantic.Field(discriminator="type"),
 ]
 

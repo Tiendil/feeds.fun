@@ -141,15 +141,17 @@ def diff_all(processor: str, knowlege_root: pathlib.Path = _root, show_tag_diffs
 async def run_prepare_news_item(
     processor: str, entry_id: int, knowlege_root: pathlib.Path, requests_number: int, min_tags_count: int
 ) -> None:
-    results = []
 
     async with with_app():
         kb = KnowlegeBase(knowlege_root)
 
+        tasks = []
+
         for i in range(requests_number):
-            logger.info("requesting_tags", step=i, steps_number=requests_number)
-            result = await single_run(processor, entry_id, kb, actual=True)
-            results.append(result)
+            logger.info("starting_request", entry_id=entry_id, request_number=i + 1, total=requests_number)
+            tasks.append(single_run(processor, entry_id, kb, actual=True))
+
+        results = await asyncio.gather(*tasks)
 
         logger.info("requests_completed")
 

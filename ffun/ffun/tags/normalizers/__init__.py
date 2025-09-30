@@ -1,6 +1,6 @@
 from ffun.core import logging
 from ffun.tags.entities import NormalizerType
-from ffun.tags.normalizers import part_blacklist, part_replacer, splitter
+from ffun.tags.normalizers import form_normalizer, part_blacklist, part_replacer, splitter
 from ffun.tags.normalizers.base import FakeNormalizer, Normalizer, NormalizerAlwaysError, NormalizerInfo
 from ffun.tags.settings import settings
 
@@ -29,6 +29,12 @@ for normalizer_config in settings.tag_normalizers:
         normalizer = part_replacer.Normalizer(replacements=normalizer_config.replacements)
     elif normalizer_config.type == NormalizerType.splitter:
         normalizer = splitter.Normalizer(separators=list(normalizer_config.separators))
+    elif normalizer_config.type == NormalizerType.form_normalizer:
+        normalizer = form_normalizer.Normalizer(
+            model=normalizer_config.spacy_model,
+            cos_cache_size=normalizer_config.cos_cache_size,
+            forms_cache_size=normalizer_config.forms_cache_size,
+        )
     else:
         raise NotImplementedError(f"Unknown normalizer type: {normalizer_config.type}")
 
