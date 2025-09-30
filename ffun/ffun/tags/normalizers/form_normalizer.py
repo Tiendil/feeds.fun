@@ -8,9 +8,6 @@ from ffun.ontology.entities import NormalizationMode, RawTag
 from ffun.tags.entities import TagInNormalization
 from ffun.tags.normalizers import base
 
-# TODO: note that it is normalizer, not verboser
-# TODO: rewrite all notes, remove alpha mention
-
 
 class Cache:
     __slots__ = ("_spacy_data", "_spacy_normal_cache", "_nlp", "_cached_cos_rows", "_cached_get_word_forms")
@@ -116,6 +113,23 @@ class Cache:
         return self._cached_cos_rows(row_a, row_b)
 
 
+########################################
+# We choose the best solution by comparing their scores.
+# The score is the sum of cosine distances between neighboring parts of the tag.
+#
+# We receive the list of final solutions by:
+#
+# - starting from the last part of the tag — one solution per each of its word forms;
+# - for each next part of the tag we choose the best word form by comparing scores of all possible solutions.
+#
+# That allows us to go away from checking cortesian product of all possible combinations of parts.
+#
+# In the future we may want to improve it by using more advanced approaches:
+#
+# - Use original text vector as the anchor to calculate cosine with the whole tag candidate (not with parts)
+# - Collect frequency statistics of raw tags produced by LLMs and use the most frequent ones as target tags
+#   to normalize to
+########################################
 class Solution:
     __slots__ = (
         "_cache",
@@ -134,24 +148,6 @@ class Solution:
     def total_characters(self) -> int:
         return sum(len(part) for part in self.parts)
 
-    ########################################
-    # We choose the best solution by comparing their scores.
-    # The score consists of two parts:
-    #
-    # 1. Alpha score: average cosine distance bestween each part and the last one (it is our anchor)
-    # 2. Beta score: average cosine distance between each two adjacent parts
-    #
-    # The final score is a weighted sum of these two scores.
-    #
-    # We receive the final solution by growing the best one from its last part to the first one.
-    # That allows us to go away from checking cortesian product of all possible combinations of parts.
-    #
-    # This solution is a compromise between performance and quality.
-    #
-    # In the future we may want to improve it by using more advanced approaches:
-    # - Use original text vector as the anchor instead of the last part of the tag
-    # - Check every possible combination of parts against the original text vector
-    ########################################
     def grow(self, part: str) -> "Solution":
         clone = Solution(cache=self._cache)
         clone.parts = (part,) + self.parts
@@ -160,21 +156,16 @@ class Solution:
 
         if len_ == 1:
             # Theoretically, here we can calculate cos between the topmost right part of the tag
-            # and some "standard word" like "tag" to get some score for single-word tags
+            # and some "anchort word" like "tag" to get some score for single-word tags
             # But, due to:
-            # - how Spacy works (word vectors are not so meaningful, as we want them to be)
+            # - how SpaCy works (word vectors are not so meaningful, as we want them to be)
             # - we have "smart" sorting of final solutions
-            # - this change does not change the quality of normalization significantly
+            # - this change does not affect the quality of normalization significantly
             # => we may skip it for now
             return clone
 
         new_index = clone._cache.get_row_index(part)
 
-        # We have two approaches to treat unknown words (without vectors):
-        # 1. Penalize solution with them (current approach):
-        #    do not increase sum_(alpha/beta)_score, but increase len_
-        #    which decreases average alpha_score
-        # 2. Ignore them (calculate average only for known words).
         if len_ > 1 and new_index >= 0:
             # TODO: what if next_index is unknown?
             next_index = clone._cache.get_row_index(clone.parts[1])
