@@ -166,15 +166,20 @@ class Solution:
 
         new_index = clone._cache.get_row_index(part)
 
-        if len_ > 1 and new_index >= 0:
-            # TODO: what if next_index is unknown?
-            next_index = clone._cache.get_row_index(clone.parts[1])
-            clone.score = self.score + clone._cache.cos_rows(new_index, next_index)
+        if new_index < 0:
+            return clone
+
+        # compare new part with the nearest part with known vector
+        for part_to_check in clone.parts[1:]:
+            next_index = clone._cache.get_row_index(part_to_check)
+
+            if next_index >= 0:
+                clone.score = self.score + clone._cache.cos_rows(new_index, next_index)
+                break
 
         return clone
 
 
-# TODO: add to configs
 class Normalizer(base.Normalizer):
     """Normalizes forms of tag parts.
 
