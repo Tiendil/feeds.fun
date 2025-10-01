@@ -30,8 +30,8 @@
       <config-flag
         style="min-width: 2.5rem"
         v-model:flag="globalSettings.showRead"
-        on-text="no"
-        off-text="yes" />
+        on-text="yes"
+        off-text="no" />
 
       <button
         class="ffun-form-button py-0 ml-1"

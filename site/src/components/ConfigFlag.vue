@@ -3,8 +3,8 @@
     class="ffun-config-flag"
     @click="emit('update:flag', !flag)">
     <span v-if="!flagDefined">&nbsp;</span>
-    <span v-else-if="flag">{{ offText }}</span>
-    <span v-else>{{ onText }}</span>
+    <span v-else-if="flag">{{ onText }}</span>
+    <span v-else>{{ offText }}</span>
   </button>
 </template>
 
