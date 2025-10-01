@@ -46,7 +46,7 @@ jobs:
         run: poetry build
 
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1.9
+        uses: pypa/gh-action-pypi-publish@release/v1.13
         with:
           packages-dir: ffun/dist/
 

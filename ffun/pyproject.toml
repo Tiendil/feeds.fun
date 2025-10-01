@@ -1,12 +1,9 @@
-[tool.poetry]
+[project]
 name = "ffun"
 version = "1.21.2"
 description = "Backend for the Feeds Fun — web-based news reader"
-repository = "https://github.com/Tiendil/feeds.fun"
-authors = ["Aliaksei Yaletski (Tiendil) <a.eletsky@gmail.com>"]
-license = " BSD-3-Clause"
+license = "BSD-3-Clause"
 readme = "README.md"
-homepage = "https://feeds.fun"
 keywords = ["news", "news-reader", "news-aggregator",
             "rss", "rss-reader", "rss-aggregator",
             "feed", "feed-reader", "feed-aggregator",
@@ -17,10 +14,9 @@ classifiers = [
         "Framework :: FastAPI",
         "Intended Audience :: End Users/Desktop",
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: BSD License",
         "Natural Language :: English",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Communications",
@@ -32,6 +28,20 @@ classifiers = [
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Server",
         "Topic :: Internet :: WWW/HTTP :: HTTP Servers"]
+
+requires-python = ">=3.13"
+
+# TODO: refactor tool.poetry.dependencies section into project.dependencies
+#       see https://python-poetry.org/docs/dependency-specification/
+dynamic = [ "dependencies" ]
+
+[[project.authors]]
+  name = "Aliaksei Yaletski (Tiendil)"
+  email = "a.eletsky@gmail.com"
+
+[project.urls]
+homepage = "https://feeds.fun"
+repository = "https://github.com/Tiendil/feeds.fun"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -79,8 +89,6 @@ markdown = "3.8.*"
 numpy = "2.3.*"
 
 spacy = "3.8.*"
-# word vectors for English language for SpaCy
-en-core-web-lg = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl" }
 
 lemminflect = "0.2.*"
 
@@ -124,8 +132,7 @@ types-python-slugify = "8.0.*"
 types-setuptools = "80.9.*"
 types-tabulate = "0.9.*"
 
-[tool.poetry.scripts]
-
+[project.scripts]
 ffun = "ffun.cli.cli:app"
 
 [tool.isort]

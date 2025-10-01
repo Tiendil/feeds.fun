@@ -18,5 +18,7 @@ COPY ./ffun ./
 
 RUN poetry install --no-interaction --no-ansi
 
+RUN poetry run python -m spacy download en_core_web_lg
+
 USER $USER
 CMD []

@@ -40,7 +40,7 @@ class Processor(base.Processor):
         tag_extractor: TagsExtractor,
         collections_api_key: LLMCollectionApiKey | None,
         general_api_key: LLMGeneralApiKey | None,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         super().__init__(**kwargs)
         self.llm_config = llm_config
