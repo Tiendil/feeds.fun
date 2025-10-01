@@ -21,8 +21,8 @@
       style="min-width: 2.5rem"
       :flag="setting.value"
       @update:flag="updateFlag($event)"
-      on-text="no"
-      off-text="yes" />
+      on-text="yes"
+      off-text="no" />
 
     <template v-else-if="!editing">
       <button
