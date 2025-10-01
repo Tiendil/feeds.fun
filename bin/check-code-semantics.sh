@@ -14,6 +14,10 @@ echo "run mypy"
 
 ./bin/backend-utils.sh poetry run mypy --show-traceback .
 
+echo "check poetry config"
+
+./bin/backend-utils.sh poetry check
+
 echo "run vue-tsc"
 
 ./bin/frontend-utils.sh npm run type-check
