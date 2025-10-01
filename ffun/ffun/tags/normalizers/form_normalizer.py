@@ -5,6 +5,7 @@ import spacy
 from lemminflect import getAllLemmas, getAllLemmasOOV, getInflection
 
 from ffun.ontology.entities import NormalizationMode, RawTag
+from ffun.tags.converters import constant_tag_parts
 from ffun.tags.entities import TagInNormalization
 from ffun.tags.normalizers import base
 
@@ -30,6 +31,9 @@ class Cache:
 
     def _fast_word_return(self, word: str) -> bool:
         if len(word) <= 2:
+            return True
+
+        if word in constant_tag_parts:
             return True
 
         if any(c.isdigit() for c in word):

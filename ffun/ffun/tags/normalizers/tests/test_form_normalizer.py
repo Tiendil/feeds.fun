@@ -168,6 +168,10 @@ class TestNormalizer:
             ("goods-and-services-tax", False, ["good-and-services-tax"]),  # (?) [bad]
             # Multi-sense middles and tails to test cosine disambiguation
             ("paper-leaves-collection", False, ["paper-leaf-collection"]),  # (?)
+            # these tags contain constant tag parts from tag.converters => they should not be changed
+            ("example-dot-com", True, []),
+            ("c-plus-plus-development", True, []),
+            ("c-sharp-tutorial", True, []),
         ],
     )
     @pytest.mark.asyncio
