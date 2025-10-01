@@ -46,7 +46,13 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
     except httpx.LocalProtocolError as e:
         message = str(e)
 
-        if "Invalid input ConnectionInputs.RECV_DATA in state ConnectionState.CLOSED" in message:
+        if any(
+            m in message
+            for m in [
+                "Invalid input ConnectionInputs.RECV_DATA in state ConnectionState.CLOSED",
+                "Invalid input ConnectionInputs.RECV_PING in state ConnectionState.CLOSED",
+            ]
+        ):
             # Normally, httpx.LocalProtocolError is a client error
             # but in that cases it is more likely that server closed connection too early
             # and, thus, caused the client error
