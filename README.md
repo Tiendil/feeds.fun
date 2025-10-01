@@ -161,6 +161,9 @@ Currently implemented processors:
 ```
 pip install ffun
 
+# download SpaCy model (if you want to run librarian worker with default configs)
+python -m spacy download en_core_web_lg
+
 # run DB migrations
 ffun migrate
 

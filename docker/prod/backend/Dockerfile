@@ -23,4 +23,6 @@ COPY --from=builder /src/dist/*.whl /ffun/
 
 RUN pip install --no-cache /ffun/*.whl && rm /ffun/*.whl
 
+RUN python -m spacy download en_core_web_lg
+
 CMD ["ffun"]
