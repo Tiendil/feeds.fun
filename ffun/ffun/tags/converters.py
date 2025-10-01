@@ -16,6 +16,8 @@ _encode_replacements = {
 
 _decode_replacements = {v.strip("-"): k for k, v in _encode_replacements.items()}
 
+constant_tag_parts = list(_encode_replacements.values())
+
 
 def _encode_special_characters(tag: str) -> str:
     for substring, replacement in _encode_replacements.items():
