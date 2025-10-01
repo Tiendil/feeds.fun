@@ -226,8 +226,9 @@ def check_metric_accumulators(
 
     mocker.patch("ffun.core.metrics.Accumulator.flush_if_time", patch_flush)
 
-    with check_metric_accumulator(processor_id, "processor_raw_tags", raw_count, raw_sum), check_metric_accumulator(
-        processor_id, "processor_normalized_tags", norm_count, norm_sum
+    with (
+        check_metric_accumulator(processor_id, "processor_raw_tags", raw_count, raw_sum),
+        check_metric_accumulator(processor_id, "processor_normalized_tags", norm_count, norm_sum),
     ):
         yield
 
