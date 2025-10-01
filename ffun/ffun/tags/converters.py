@@ -7,6 +7,8 @@ from ffun.domain.entities import TagUid
 DISALLOWED_CHARS_PATTERN = re.compile(r"[^-a-zA-Z0-9]+")
 
 
+# TODO: protect technical parts from tag-form-normalization
+# TODO: how to differ -dot- from domain tag processor and from native tag processor?
 _encode_replacements = {
     "#": "-sharp-",  # c# -> c-sharp
     "+": "-plus-",  # c++ -> c-plus-plus
