@@ -11,8 +11,8 @@ from ffun.library import domain as l_domain
 from ffun.markers import domain as m_domain
 from ffun.meta.settings import settings
 from ffun.ontology import domain as o_domain
-from ffun.scores import domain as s_domain
 from ffun.parsers import entities as p_entities
+from ffun.scores import domain as s_domain
 
 logger = logging.get_module_logger()
 

@@ -1,22 +1,9 @@
 import time
-import copy
 
 import pytest
 from pytest_mock import MockerFixture
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
-from ffun.domain.domain import new_entry_id
-from ffun.domain.entities import EntryId, TagId
-from ffun.library.entities import Entry
-from ffun.ontology import operations
-from ffun.ontology.domain import (
-    _inplace_filter_out_entry_tags,
-    apply_tags_to_entry,
-    get_ids_by_uids,
-    get_tags_ids_for_entries,
-    prepare_tags_for_entries,
-    remove_orphaned_tags,
-)
-from ffun.ontology.entities import NormalizedTag
+
+from ffun.domain.entities import TagId
 from ffun.ontology.cache import TagsCache
 
 
@@ -50,7 +37,7 @@ class TestTagsCache:
 
     @pytest.mark.asyncio
     async def test_id_by_uid(self, cache: TagsCache) -> None:
-        uid = 'xxx-aaa'
+        uid = "xxx-aaa"
 
         tag_id = await cache._id_by_uid(uid)
 
@@ -63,9 +50,9 @@ class TestTagsCache:
 
     @pytest.mark.asyncio
     async def test_ids_by_uids(self, cache: TagsCache, mocker: MockerFixture) -> None:
-        uids = ['xxx-aaa', 'yyy-bbb', 'zzz-ccc']
+        uids = ["xxx-aaa", "yyy-bbb", "zzz-ccc"]
 
-        ensure_cache_freshness = mocker.patch.object(TagsCache, '_ensure_cache_freshness')
+        ensure_cache_freshness = mocker.patch.object(TagsCache, "_ensure_cache_freshness")
 
         ids = await cache.ids_by_uids(uids)
 
@@ -79,10 +66,12 @@ class TestTagsCache:
         ensure_cache_freshness.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_uids_by_ids(self, cache: TagsCache, mocker: MockerFixture, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
+    async def test_uids_by_ids(
+        self, cache: TagsCache, mocker: MockerFixture, three_tags_ids: tuple[TagId, TagId, TagId]
+    ) -> None:
         ids = list(three_tags_ids)
 
-        ensure_cache_freshness = mocker.patch.object(TagsCache, '_ensure_cache_freshness')
+        ensure_cache_freshness = mocker.patch.object(TagsCache, "_ensure_cache_freshness")
 
         uids = await cache.uids_by_ids(ids)
 

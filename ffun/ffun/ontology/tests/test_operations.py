@@ -23,16 +23,16 @@ from ffun.ontology.operations import (
     count_total_tags_per_category,
     count_total_tags_per_type,
     get_or_create_id_by_tag,
-    get_tags_properties,
-    register_tag,
-    tag_frequency_statistics,
-    tech_copy_relations,
-    remove_relations,
+    get_orphaned_tags,
     get_relations_for_entries,
     get_relations_for_tags,
-    get_orphaned_tags,
+    get_tags_by_ids,
+    get_tags_properties,
+    register_tag,
+    remove_relations,
     remove_tags,
-    get_tags_by_ids
+    tag_frequency_statistics,
+    tech_copy_relations,
 )
 from ffun.ontology.tests.helpers import assert_has_tags
 
@@ -223,9 +223,9 @@ class TestTechCopyRelations:
 
 class TestRemoveRelations:
     @pytest.mark.asyncio
-    async def test_nothing_to_remove(self,
-                                     cataloged_entry: Entry,  # pylint: disable=W0613
-                                     another_cataloged_entry: Entry) -> None:  # pylint: disable=W0613
+    async def test_nothing_to_remove(
+        self, cataloged_entry: Entry, another_cataloged_entry: Entry  # pylint: disable=W0613
+    ) -> None:  # pylint: disable=W0613
         async with TableSizeNotChanged("o_relations"):
             await remove_relations(execute, [])
 
@@ -490,9 +490,9 @@ class TestGetRelationsForEntries:
         assert relation_ids == []
 
     @pytest.mark.asyncio
-    async def test_no_relations(self,
-                                cataloged_entry: Entry,  # pylint: disable=W0613
-                                another_cataloged_entry: Entry) -> None:  # pylint: disable=W0613
+    async def test_no_relations(
+        self, cataloged_entry: Entry, another_cataloged_entry: Entry  # pylint: disable=W0613
+    ) -> None:  # pylint: disable=W0613
         relation_ids = await get_relations_for_entries(execute, [cataloged_entry.id, another_cataloged_entry.id])
         assert relation_ids == []
 
@@ -526,7 +526,9 @@ class TestGetRelationsForEntries:
         assert set(relation_1_ids) == set(expected_relation_1_ids.values())
 
         relation_2_ids = await get_relations_for_entries(execute, [another_cataloged_entry.id])
-        expected_relation_2_ids = await _get_relations_for_entry_and_tags(execute, another_cataloged_entry.id, three_tags_ids)
+        expected_relation_2_ids = await _get_relations_for_entry_and_tags(
+            execute, another_cataloged_entry.id, three_tags_ids
+        )
         assert len(relation_2_ids) == 3
         assert set(relation_2_ids) == set(expected_relation_2_ids.values())
 
@@ -571,13 +573,19 @@ class TestGetRelationsForTags:
             )
 
         relation_1_ids = await get_relations_for_tags(execute, [three_tags_ids[0]])
-        expected_relation_1_ids = await _get_relations_for_entry_and_tags(execute, cataloged_entry.id, [three_tags_ids[0]])
+        expected_relation_1_ids = await _get_relations_for_entry_and_tags(
+            execute, cataloged_entry.id, [three_tags_ids[0]]
+        )
         assert len(relation_1_ids) == 1
         assert set(relation_1_ids) == set(expected_relation_1_ids.values())
 
         relation_2_ids = await get_relations_for_tags(execute, [three_tags_ids[2]])
-        expected_relation_2_ids_1 = await _get_relations_for_entry_and_tags(execute, cataloged_entry.id, [three_tags_ids[2]])
-        expected_relation_2_ids_2 = await _get_relations_for_entry_and_tags(execute, another_cataloged_entry.id, [three_tags_ids[2]])
+        expected_relation_2_ids_1 = await _get_relations_for_entry_and_tags(
+            execute, cataloged_entry.id, [three_tags_ids[2]]
+        )
+        expected_relation_2_ids_2 = await _get_relations_for_entry_and_tags(
+            execute, another_cataloged_entry.id, [three_tags_ids[2]]
+        )
         assert len(relation_2_ids) == 2
         assert set(relation_2_ids) == set(expected_relation_2_ids_1.values()) | set(expected_relation_2_ids_2.values())
 
@@ -589,12 +597,11 @@ class TestGetRelationsForTags:
 class TestGetOrphanedTags:
 
     @pytest.mark.asyncio
-    async def test_no_some_orphans(self,
-                                   fake_processor_id: int,
-                                   cataloged_entry: Entry,
-                                   three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
+    async def test_no_some_orphans(
+        self, fake_processor_id: int, cataloged_entry: Entry, three_tags_ids: tuple[TagId, TagId, TagId]
+    ) -> None:
         await apply_tags(
-                execute, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tags_ids=[three_tags_ids[1]]
+            execute, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tags_ids=[three_tags_ids[1]]
         )
 
         orphans = await get_orphaned_tags(execute, limit=1000_000, protected_tags=[])
@@ -618,7 +625,9 @@ class TestGetOrphanedTags:
 
     @pytest.mark.asyncio
     async def test_protected(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:  # pylint: disable=W0613
-        orphans = await get_orphaned_tags(execute, limit=1000_000, protected_tags=[three_tags_ids[0], three_tags_ids[2]])
+        orphans = await get_orphaned_tags(
+            execute, limit=1000_000, protected_tags=[three_tags_ids[0], three_tags_ids[2]]
+        )
 
         assert three_tags_ids[0] not in orphans
         assert three_tags_ids[1] in orphans
@@ -633,17 +642,18 @@ class TestRemoveTags:
             await remove_tags(execute, [])
 
     @pytest.mark.asyncio
-    async def test_some_tags(self,
-                             fake_processor_id: int,
-                             five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
-                             five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag]) -> None:
+    async def test_some_tags(
+        self,
+        fake_processor_id: int,
+        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
+        five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
+    ) -> None:
 
         properties = []
 
         for tag_id, tag in zip(five_tags_ids[2:], five_processor_tags[2:]):
             tag.link = f"https://example.com?{tag.uid}"
-            properties.append(tag.build_properties_for(tag_id=tag_id,
-                                                       processor_id=fake_processor_id)[0])
+            properties.append(tag.build_properties_for(tag_id=tag_id, processor_id=fake_processor_id)[0])
 
         await apply_tags_properties(execute, properties)
 

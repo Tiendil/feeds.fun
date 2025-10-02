@@ -7,7 +7,7 @@ from pytest_mock import MockerFixture
 
 from ffun.core import utils
 from ffun.core.postgresql import execute
-from ffun.domain.entities import UserId, TagId
+from ffun.domain.entities import TagId, UserId
 from ffun.domain.urls import str_to_feed_url, url_to_source_uid, url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
@@ -15,7 +15,13 @@ from ffun.feeds.tests import make as f_make
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
-from ffun.meta.domain import add_feeds, clean_orphaned_entries, clean_orphaned_feeds, remove_entries, clean_orphaned_tags
+from ffun.meta.domain import (
+    add_feeds,
+    clean_orphaned_entries,
+    clean_orphaned_feeds,
+    clean_orphaned_tags,
+    remove_entries,
+)
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import NormalizedTag
 from ffun.parsers import entities as p_entities
@@ -211,7 +217,9 @@ class TestCleanOrphanedTags:
             pass
 
     @pytest.mark.asyncio
-    async def test_chunks(self, five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]) -> None:  # pylint: disable=W0613
+    async def test_chunks(
+        self, five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]
+    ) -> None:  # pylint: disable=W0613
         assert await clean_orphaned_tags(chunk=2) == 2
         assert await clean_orphaned_feeds(chunk=1) == 1
         assert await clean_orphaned_feeds(chunk=5) == 2
@@ -220,7 +228,9 @@ class TestCleanOrphanedTags:
     async def test_all_logic_called(self, mocker: MockerFixture) -> None:
         protected_tags = [1, 3, 5]
 
-        get_all_tags_in_rules_mock = mocker.patch("ffun.scores.domain.get_all_tags_in_rules", return_value=protected_tags)
+        get_all_tags_in_rules_mock = mocker.patch(
+            "ffun.scores.domain.get_all_tags_in_rules", return_value=protected_tags
+        )
         remove_orphaned_tags_mock = mocker.patch("ffun.ontology.domain.remove_orphaned_tags", return_value=7)
 
         assert await clean_orphaned_tags(chunk=100) == 7

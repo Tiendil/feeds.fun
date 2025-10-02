@@ -3,7 +3,7 @@ from typing import Iterable
 
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
 from ffun.domain.entities import EntryId, TagId, TagUid
-from ffun.ontology import operations, cache
+from ffun.ontology import cache, operations
 from ffun.ontology.entities import NormalizedTag, Tag, TagCategory, TagPropertyType
 from ffun.tags import converters
 

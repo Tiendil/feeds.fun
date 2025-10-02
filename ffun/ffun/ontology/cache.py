@@ -1,13 +1,11 @@
-
 import time
 from typing import Iterable
+
 from bidict import bidict
 
-from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
-from ffun.domain.entities import EntryId, TagId, TagUid
+from ffun.domain.entities import TagId, TagUid
 from ffun.ontology import operations
 from ffun.ontology.settings import settings
-from ffun.ontology.entities import NormalizedTag, Tag, TagCategory, TagPropertyType
 
 
 # We cache tags in local process memory to speed up processing of user requests
