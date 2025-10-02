@@ -2,3 +2,4 @@
 - ff-518 — Silenced expected LocalProtocolError in feeds loader, due to the server closing the connection without following the protocol.
 - ff-515 — Fixed displaying text on checkboxes in the GUI (some of them displayed inverted text).
 - Tag normalizer now does not try to normalize technical tag parts `-dot-`, `-plus-`, `-sharp-`.
+- ff-463 — Extended CLI `ffun cleaner` functionality to remove tags that are not assigned to any entry.
