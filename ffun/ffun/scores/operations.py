@@ -181,7 +181,6 @@ async def count_rules_per_user() -> dict[UserId, int]:
     return {row["user_id"]: row["count"] for row in result}
 
 
-# TODO: tests
 async def get_all_tags_in_rules() -> set[TagId]:
     sql = """
 SELECT tag

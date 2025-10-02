@@ -364,3 +364,22 @@ class TestCountRulesPerUser:
 
         assert numbers_after[internal_user_id] == numbers_before.get(internal_user_id, 0) + 2
         assert numbers_after[another_internal_user_id] == numbers_before.get(another_internal_user_id, 0) + 1
+
+
+class TestGetAllTagsInRules:
+
+    @pytest.mark.asyncio
+    async def test(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
+        await operations.create_or_update_rule(
+            internal_user_id, required_tags=[TagId(1), TagId(2)], excluded_tags=[TagId(3)], score=3
+        )
+        await operations.create_or_update_rule(
+            internal_user_id, required_tags=[TagId(2), TagId(4)], excluded_tags=[], score=5
+        )
+        await operations.create_or_update_rule(
+            another_internal_user_id, required_tags=[TagId(1), TagId(5)], excluded_tags=[TagId(6)], score=7
+        )
+
+        tags = await operations.get_all_tags_in_rules()
+
+        assert {TagId(1), TagId(2), TagId(3), TagId(4), TagId(5), TagId(6)} <= tags
