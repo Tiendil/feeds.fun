@@ -122,7 +122,8 @@ async def get_tags_info(tags_ids: Iterable[TagId]) -> dict[TagId, Tag]:  # noqa:
 
 @run_in_transaction
 async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> None:
-    await operations.remove_relations_for_entries(execute, entries_ids)
+    relation_ids = await operations.get_relations_for_entries(execute, entries_ids)
+    await operations.remove_relations(execute, relation_ids)
 
 
 @run_in_transaction
@@ -161,3 +162,22 @@ async def prepare_tags_for_entries(
     tag_mapping = await get_tags_by_ids(whole_tags)
 
     return entry_tag_ids, tag_mapping
+
+
+# TODO: tests
+@run_in_transaction
+async def remove_orphaned_tags(execute: ExecuteType, chunk: int, protected_tags: list[TagId]) -> int:
+    orphaned_tags = await operations.get_orphaned_tags(execute, limit=chunk, protected_tags=protected_tags)
+
+    await operations.remove_tags(execute, orphaned_tags)
+
+    await operations.remove_tags_properties(execute, orphaned_tags)
+
+    relation_ids = await operations.get_relations_for_tags(execute, orphaned_tags)
+
+    await operations.remove_relations(execute, relation_ids)
+
+    # TODO: theoretically we should clear the _tags_cache here
+    #       but how to clear it in every process?
+
+    return len(orphaned_tags)

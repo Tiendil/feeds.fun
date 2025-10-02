@@ -6,7 +6,7 @@ from bidict import bidict
 from pypika import PostgreSQLQuery
 
 from ffun.core import logging
-from ffun.core.postgresql import ExecuteType, execute
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain.entities import EntryId, TagId, TagUid
 from ffun.ontology import errors
 from ffun.ontology.entities import TagCategory, TagProperty, TagPropertyType, TagStatsBucket
@@ -218,20 +218,33 @@ async def get_tags_properties(tags_ids: Iterable[TagId]) -> list[TagProperty]:
     ]
 
 
-async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> None:
-    sql = "SELECT id FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"
-
-    result = await execute(sql, {"entries_ids": entries_ids})
-
-    relations_ids = [row["id"] for row in result]
-
+# TODO: tests
+async def remove_relations(execute: ExecuteType, relations_ids: list[int]) -> None:
     sql = "DELETE FROM o_relations_processors WHERE relation_id = ANY(%(relations_ids)s)"
 
     await execute(sql, {"relations_ids": relations_ids})
 
-    sql = "DELETE FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"
+    sql = "DELETE FROM o_relations WHERE id = ANY(%(ids)s)"
 
-    await execute(sql, {"entries_ids": entries_ids})
+    await execute(sql, {"ids": relations_ids})
+
+
+# TODO: tests
+async def get_relations_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> list[int]:
+    sql = "SELECT id FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"
+
+    result = await execute(sql, {"entries_ids": entries_ids})
+
+    return [row["id"] for row in result]
+
+
+# TODO: test
+async def get_relations_for_tags(execute: ExecuteType, tags_ids: list[TagId]) -> list[int]:
+    sql = "SELECT id FROM o_relations WHERE tag_id = ANY(%(tags_ids)s)"
+
+    result = await execute(sql, {"tags_ids": tags_ids})
+
+    return [row["id"] for row in result]
 
 
 async def count_total_tags() -> int:
@@ -332,3 +345,43 @@ ORDER BY b.lower_bound;
     stats.sort(key=lambda b: b.lower_bound)
 
     return stats
+
+
+# TODO: tests
+# TODO: add index by tags for o_relations
+async def get_orphaned_tags(execute: ExecuteType, limit: int, protected_tags: set[TagId]) -> list[TagId]:
+    # PostgreSQL planner should recognize the "anti-join" pattern and provide a proper plan
+    # if not, we should think about more complex query
+    sql = """
+SELECT t.id
+FROM o_tags AS t
+LEFT JOIN o_relations AS r
+  ON r.tag_id = t.id
+WHERE r.id IS NULL
+      AND t.id != ALL(%(protected_tags)s)
+LIMIT %(limit)s
+    """
+
+    result = await execute(sql, {"protected_tags": list(protected_tags), "limit": limit})
+
+    return [row["id"] for row in result]
+
+
+# TODO: tests
+async def remove_tags(execute: ExecuteType, tags_ids: list[TagId]) -> None:
+    if not tags_ids:
+        return 0
+
+    sql = "DELETE FROM o_tags WHERE id = ANY(%(tags_ids)s)"
+
+    await execute(sql, {"tags_ids": list(tags_ids)})
+
+
+# TODO: tests
+async def remove_tags_properties(execute: ExecuteType, tags_ids: list[TagId]) -> None:
+    if not tags_ids:
+        return 0
+
+    sql = "DELETE FROM o_tags_properties WHERE tag_id = ANY(%(tags_ids)s)"
+
+    await execute(sql, {"tags_ids": list(tags_ids)})

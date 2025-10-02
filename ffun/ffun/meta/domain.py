@@ -11,9 +11,12 @@ from ffun.library import domain as l_domain
 from ffun.markers import domain as m_domain
 from ffun.meta.settings import settings
 from ffun.ontology import domain as o_domain
+from ffun.scores import domain as s_domain
 from ffun.parsers import entities as p_entities
 
 logger = logging.get_module_logger()
+
+# TODO: add metrics with the number of removed entities
 
 
 # Note: fully unlinked entry can be linked again before removing from l_entries
@@ -89,3 +92,13 @@ async def clean_orphaned_feeds(chunk: int) -> int:
     await fl_domain.tech_remove_all_links(orphanes)
 
     return len(orphanes)
+
+
+# There is a minor probability that we'll remove a tag while a new rule is being created.
+# We should track such cases and add detection of broken rules in the rules functianality.
+# Also, since we remove orphaned tags and GUI mostly allows to create rules for linked tags,
+# we should be fine.
+async def clean_orphaned_tags(chunk: int) -> int:
+    protected_tags = await s_domain.get_all_tags_in_rules()
+
+    return await o_domain.remove_orphaned_tags(limit=chunk, protected_tags=protected_tags)

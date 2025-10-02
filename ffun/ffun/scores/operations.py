@@ -5,14 +5,14 @@ import psycopg
 from ffun.core import logging
 from ffun.core.postgresql import execute
 from ffun.domain.domain import new_rule_id
-from ffun.domain.entities import RuleId, UserId
+from ffun.domain.entities import RuleId, UserId, TagId
 from ffun.scores import errors
 from ffun.scores.entities import Rule
 
 logger = logging.get_module_logger()
 
 
-def _normalize_tags(tags: Iterable[int]) -> list[int]:
+def _normalize_tags(tags: Iterable[TagId]) -> list[int]:
     return list(sorted(tags))
 
 
@@ -33,7 +33,7 @@ def row_to_rule(row: dict[str, Any]) -> Rule:
 
 
 async def create_or_update_rule(
-    user_id: UserId, required_tags: Iterable[int], excluded_tags: Iterable[int], score: int
+    user_id: UserId, required_tags: Iterable[TagId], excluded_tags: Iterable[TagId], score: int
 ) -> Rule:
     required_tags = set(required_tags)
     excluded_tags = set(excluded_tags)
@@ -111,7 +111,7 @@ async def delete_rule(user_id: UserId, rule_id: RuleId) -> None:
 
 
 async def update_rule(
-    user_id: UserId, rule_id: RuleId, required_tags: Iterable[int], excluded_tags: Iterable[int], score: int
+    user_id: UserId, rule_id: RuleId, required_tags: Iterable[TagId], excluded_tags: Iterable[TagId], score: int
 ) -> Rule:
     required_tags = set(required_tags)
     excluded_tags = set(excluded_tags)
@@ -179,3 +179,19 @@ async def count_rules_per_user() -> dict[UserId, int]:
     result = await execute("SELECT user_id, COUNT(*) FROM s_rules GROUP BY user_id")
 
     return {row["user_id"]: row["count"] for row in result}
+
+
+# TODO: tests
+async def get_all_tags_in_rules() -> set[TagId]:
+    sql = """
+SELECT tag
+FROM (
+  SELECT unnest(required_tags)  AS tag FROM s_rules
+  UNION
+  SELECT unnest(excluded_tags) AS tag FROM s_rules
+) AS tags
+    """
+
+    rows = await execute(sql)
+
+    return {row["tag"] for row in rows}
