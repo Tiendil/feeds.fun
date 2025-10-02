@@ -218,7 +218,6 @@ async def get_tags_properties(tags_ids: Iterable[TagId]) -> list[TagProperty]:
     ]
 
 
-# TODO: tests
 async def remove_relations(execute: ExecuteType, relations_ids: list[int]) -> None:
     sql = "DELETE FROM o_relations_processors WHERE relation_id = ANY(%(relations_ids)s)"
 

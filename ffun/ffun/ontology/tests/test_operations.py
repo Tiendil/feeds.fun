@@ -25,9 +25,14 @@ from ffun.ontology.operations import (
     get_or_create_id_by_tag,
     get_tags_properties,
     register_tag,
-    remove_relations_for_entries,
     tag_frequency_statistics,
     tech_copy_relations,
+    remove_relations,
+    get_relations_for_entries,
+    get_relations_for_tags,
+    get_orphaned_tags,
+    remove_tags,
+    remove_tags_properties
 )
 from ffun.ontology.tests.helpers import assert_has_tags
 
@@ -216,11 +221,13 @@ class TestTechCopyRelations:
         )
 
 
-class TestRemoveRelationsForEntries:
+class TestRemoveRelations:
     @pytest.mark.asyncio
-    async def test_nothing_to_remove(self, cataloged_entry: Entry, another_cataloged_entry: Entry) -> None:
+    async def test_nothing_to_remove(self,
+                                     cataloged_entry: Entry,  # pylint: disable=W0613
+                                     another_cataloged_entry: Entry) -> None:  # pylint: disable=W0613
         async with TableSizeNotChanged("o_relations"):
-            await remove_relations_for_entries(execute, [cataloged_entry.id, another_cataloged_entry.id])
+            await remove_relations(execute, [])
 
     @pytest.mark.asyncio
     async def test_success(
@@ -260,7 +267,8 @@ class TestRemoveRelationsForEntries:
             TableSizeNotChanged("o_tags"),
         ):
             async with transaction() as trx:
-                await remove_relations_for_entries(trx, [cataloged_entry.id])
+                relation_ids = await get_relations_for_entries(trx, [cataloged_entry.id])
+                await remove_relations(trx, relation_ids)
 
         await assert_has_tags({cataloged_entry.id: set(), another_cataloged_entry.id: set(three_tags_ids)})
 
