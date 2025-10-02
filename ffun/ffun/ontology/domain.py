@@ -1,11 +1,9 @@
 from collections import Counter
 from typing import Iterable
 
-from bidict import bidict
-
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
 from ffun.domain.entities import EntryId, TagId, TagUid
-from ffun.ontology import operations
+from ffun.ontology import operations, cache
 from ffun.ontology.entities import NormalizedTag, Tag, TagCategory, TagPropertyType
 from ffun.tags import converters
 
@@ -16,45 +14,15 @@ count_new_tags_at = operations.count_new_tags_at
 tag_frequency_statistics = operations.tag_frequency_statistics
 
 
-_tags_cache: bidict[TagUid, TagId] = bidict()
-
-
-async def get_id_by_uid(tag: TagUid) -> TagId:
-    if tag in _tags_cache:
-        return _tags_cache[tag]
-
-    tag_id = await operations.get_or_create_id_by_tag(tag)
-
-    _tags_cache[tag] = tag_id
-
-    return tag_id
+_tags_cache = cache.TagsCache()
 
 
 async def get_ids_by_uids(tags: Iterable[TagUid]) -> dict[TagUid, TagId]:
-    return {tag: await get_id_by_uid(tag) for tag in tags}
+    return await _tags_cache.ids_by_uids(tags)
 
 
 async def get_tags_by_ids(ids: Iterable[TagId]) -> dict[TagId, TagUid]:
-    result = {}
-
-    tags_to_request = []
-
-    for tag_id in ids:
-        if tag_id in _tags_cache.inverse:
-            result[tag_id] = _tags_cache.inverse[tag_id]
-        else:
-            tags_to_request.append(tag_id)
-
-    if not tags_to_request:
-        return result
-
-    missed_tags = await operations.get_tags_by_ids(tags_to_request)
-
-    _tags_cache.inverse.update(missed_tags)
-
-    result.update(missed_tags)
-
-    return result
+    return await _tags_cache.uids_by_ids(ids)
 
 
 # TODO: in the future we could split this function into two separate functions
