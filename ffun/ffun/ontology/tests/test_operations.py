@@ -584,3 +584,42 @@ class TestGetRelationsForTags:
         relation_3_ids = await get_relations_for_tags(execute, [three_tags_ids[0], three_tags_ids[2]])
         assert len(relation_3_ids) == 3
         assert set(relation_3_ids) == set(relation_1_ids) | set(relation_2_ids)
+
+
+class TestGetOrphanedTags:
+
+    @pytest.mark.asyncio
+    async def test_no_some_orphans(self,
+                                   fake_processor_id: int,
+                                   cataloged_entry: Entry,
+                                   three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
+        await apply_tags(
+                execute, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tags_ids=[three_tags_ids[1]]
+        )
+
+        orphans = await get_orphaned_tags(execute, limit=1000_000, protected_tags=[])
+
+        assert three_tags_ids[0] in orphans
+        assert three_tags_ids[1] not in orphans
+        assert three_tags_ids[2] in orphans
+
+    @pytest.mark.asyncio
+    async def test_limit(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:  # pylint: disable=W0613
+        all_orphans = await get_orphaned_tags(execute, limit=1000_000, protected_tags=[])
+
+        assert len(all_orphans) > 2
+
+        orphans = await get_orphaned_tags(execute, limit=2, protected_tags=[])
+
+        assert len(orphans) == 2
+
+        assert orphans[0] in all_orphans
+        assert orphans[1] in all_orphans
+
+    @pytest.mark.asyncio
+    async def test_protected(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:  # pylint: disable=W0613
+        orphans = await get_orphaned_tags(execute, limit=1000_000, protected_tags=[three_tags_ids[0], three_tags_ids[2]])
+
+        assert three_tags_ids[0] not in orphans
+        assert three_tags_ids[1] in orphans
+        assert three_tags_ids[2] not in orphans
