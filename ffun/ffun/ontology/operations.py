@@ -345,7 +345,7 @@ ORDER BY b.lower_bound;
 
 
 # TODO: add index by tags for o_relations
-async def get_orphaned_tags(execute: ExecuteType, limit: int, protected_tags: set[TagId]) -> list[TagId]:
+async def get_orphaned_tags(execute: ExecuteType, limit: int, protected_tags: list[TagId]) -> list[TagId]:
     # PostgreSQL planner should recognize the "anti-join" pattern and provide a proper plan
     # if not, we should think about more complex query
     sql = """
@@ -358,7 +358,7 @@ WHERE r.id IS NULL
 LIMIT %(limit)s
     """
 
-    result = await execute(sql, {"protected_tags": list(protected_tags), "limit": limit})
+    result = await execute(sql, {"protected_tags": protected_tags, "limit": limit})
 
     return [row["id"] for row in result]
 

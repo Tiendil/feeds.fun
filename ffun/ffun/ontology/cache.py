@@ -16,7 +16,7 @@ from ffun.ontology.settings import settings
 class TagsCache:
     __slots__ = ("_cache", "_last_reset_time", "_reset_interval")
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._cache: bidict[TagUid, TagId] = bidict()
         self._last_reset_time = time.monotonic()
         self._reset_interval = settings.tags_cache_reset_interval.total_seconds()

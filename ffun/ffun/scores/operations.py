@@ -12,7 +12,7 @@ from ffun.scores.entities import Rule
 logger = logging.get_module_logger()
 
 
-def _normalize_tags(tags: Iterable[TagId]) -> list[int]:
+def _normalize_tags(tags: Iterable[TagId]) -> list[TagId]:
     return list(sorted(tags))
 
 

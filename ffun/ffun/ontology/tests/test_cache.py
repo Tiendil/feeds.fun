@@ -3,14 +3,14 @@ import time
 import pytest
 from pytest_mock import MockerFixture
 
-from ffun.domain.entities import TagId
+from ffun.domain.entities import TagId, TagUid
 from ffun.ontology.cache import TagsCache
 
 
 class TestTagsCache:
 
     @pytest.fixture()
-    def cache(self):
+    def cache(self) -> TagsCache:
         return TagsCache()
 
     def test_initialize(self, cache: TagsCache) -> None:
@@ -37,7 +37,7 @@ class TestTagsCache:
 
     @pytest.mark.asyncio
     async def test_id_by_uid(self, cache: TagsCache) -> None:
-        uid = "xxx-aaa"
+        uid = TagUid("xxx-aaa")
 
         tag_id = await cache._id_by_uid(uid)
 
@@ -50,7 +50,7 @@ class TestTagsCache:
 
     @pytest.mark.asyncio
     async def test_ids_by_uids(self, cache: TagsCache, mocker: MockerFixture) -> None:
-        uids = ["xxx-aaa", "yyy-bbb", "zzz-ccc"]
+        uids = [TagUid("xxx-aaa"), TagUid("yyy-bbb"), TagUid("zzz-ccc")]
 
         ensure_cache_freshness = mocker.patch.object(TagsCache, "_ensure_cache_freshness")
 
