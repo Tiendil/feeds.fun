@@ -29,7 +29,7 @@ class TestTagsCache:
 
         assert len(cache._cache) == 3
 
-        cache._last_reset_time = 0
+        cache._last_reset_time = time.monotonic() - cache._reset_interval - 1.0
 
         cache._ensure_cache_freshness()
 
