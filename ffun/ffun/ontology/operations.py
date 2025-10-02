@@ -236,7 +236,6 @@ async def get_relations_for_entries(execute: ExecuteType, entries_ids: list[Entr
     return [row["id"] for row in result]
 
 
-# TODO: test
 async def get_relations_for_tags(execute: ExecuteType, tags_ids: list[TagId]) -> list[int]:
     sql = "SELECT id FROM o_relations WHERE tag_id = ANY(%(tags_ids)s)"
 

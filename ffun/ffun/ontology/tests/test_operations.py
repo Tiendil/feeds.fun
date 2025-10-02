@@ -520,14 +520,6 @@ class TestGetRelationsForEntries:
                 trx, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tags_ids=three_tags_ids
             )
 
-        async with transaction() as trx:
-            await apply_tags(
-                trx,
-                entry_id=another_cataloged_entry.id,
-                processor_id=another_fake_processor_id,
-                tags_ids=three_tags_ids,
-            )
-
         relation_1_ids = await get_relations_for_entries(execute, [cataloged_entry.id])
         expected_relation_1_ids = await _get_relations_for_entry_and_tags(execute, cataloged_entry.id, three_tags_ids)
         assert len(relation_1_ids) == 2
@@ -540,4 +532,55 @@ class TestGetRelationsForEntries:
 
         relation_3_ids = await get_relations_for_entries(execute, [cataloged_entry.id, another_cataloged_entry.id])
         assert len(relation_3_ids) == 5
+        assert set(relation_3_ids) == set(relation_1_ids) | set(relation_2_ids)
+
+
+class TestGetRelationsForTags:
+    @pytest.mark.asyncio
+    async def test_no_tags(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:  # pylint: disable=W0613
+        relation_ids = await get_relations_for_tags(execute, [])
+        assert relation_ids == []
+
+    @pytest.mark.asyncio
+    async def test_no_relations(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:  # pylint: disable=W0613
+        relation_ids = await get_relations_for_tags(execute, list(three_tags_ids))
+        assert relation_ids == []
+
+    @pytest.mark.asyncio
+    async def test_some(
+        self,
+        cataloged_entry: Entry,
+        another_cataloged_entry: Entry,
+        fake_processor_id: int,
+        another_fake_processor_id: int,
+        three_tags_ids: tuple[TagId, TagId, TagId],
+    ) -> None:
+        async with transaction() as trx:
+            await apply_tags(
+                trx, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tags_ids=[three_tags_ids[0]]
+            )
+
+        async with transaction() as trx:
+            await apply_tags(
+                trx, entry_id=cataloged_entry.id, processor_id=another_fake_processor_id, tags_ids=[three_tags_ids[2]]
+            )
+
+        async with transaction() as trx:
+            await apply_tags(
+                trx, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tags_ids=three_tags_ids[1:]
+            )
+
+        relation_1_ids = await get_relations_for_tags(execute, [three_tags_ids[0]])
+        expected_relation_1_ids = await _get_relations_for_entry_and_tags(execute, cataloged_entry.id, [three_tags_ids[0]])
+        assert len(relation_1_ids) == 1
+        assert set(relation_1_ids) == set(expected_relation_1_ids.values())
+
+        relation_2_ids = await get_relations_for_tags(execute, [three_tags_ids[2]])
+        expected_relation_2_ids_1 = await _get_relations_for_entry_and_tags(execute, cataloged_entry.id, [three_tags_ids[2]])
+        expected_relation_2_ids_2 = await _get_relations_for_entry_and_tags(execute, another_cataloged_entry.id, [three_tags_ids[2]])
+        assert len(relation_2_ids) == 2
+        assert set(relation_2_ids) == set(expected_relation_2_ids_1.values()) | set(expected_relation_2_ids_2.values())
+
+        relation_3_ids = await get_relations_for_tags(execute, [three_tags_ids[0], three_tags_ids[2]])
+        assert len(relation_3_ids) == 3
         assert set(relation_3_ids) == set(relation_1_ids) | set(relation_2_ids)
