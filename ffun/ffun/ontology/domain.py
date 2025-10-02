@@ -144,7 +144,4 @@ async def remove_orphaned_tags(execute: ExecuteType, chunk: int, protected_tags:
     # Since the probability of such situation is very low, we can add code to handle such situations
     # later if needed
 
-    # TODO: theoretically we should clear the _tags_cache here
-    #       but how to clear it in every process?
-
     return len(orphaned_tags)

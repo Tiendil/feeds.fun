@@ -16,6 +16,7 @@ from ffun.ontology.entities import NormalizedTag, Tag, TagCategory, TagPropertyT
 # reset cache once in a while.
 # We may want to implement more sophisticated approach in the future.
 class TagsCache:
+    __slots__ = ("_cache", "_last_reset_time", "_reset_interval")
 
     def __init__(self):
         self._cache: bidict[TagUid, TagId] = bidict()
@@ -31,7 +32,7 @@ class TagsCache:
         self._cache.clear()
         self._last_reset_time = current_time
 
-    async def _get_id_by_uid(self, tag: TagUid) -> TagId:
+    async def _id_by_uid(self, tag: TagUid) -> TagId:
         if tag in self._cache:
             return self._cache[tag]
 
@@ -44,7 +45,7 @@ class TagsCache:
     async def ids_by_uids(self, tags: Iterable[TagUid]) -> dict[TagUid, TagId]:
         self._ensure_cache_freshness()
 
-        return {tag: await self._get_id_by_uid(tag) for tag in tags}
+        return {tag: await self._id_by_uid(tag) for tag in tags}
 
     async def uids_by_ids(self, ids: Iterable[TagId]) -> dict[TagId, TagUid]:
         self._ensure_cache_freshness()
