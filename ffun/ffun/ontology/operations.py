@@ -6,7 +6,7 @@ from bidict import bidict
 from pypika import PostgreSQLQuery
 
 from ffun.core import logging
-from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.core.postgresql import ExecuteType, execute
 from ffun.domain.entities import EntryId, TagId, TagUid
 from ffun.ontology import errors
 from ffun.ontology.entities import TagCategory, TagProperty, TagPropertyType, TagStatsBucket
@@ -228,7 +228,6 @@ async def remove_relations(execute: ExecuteType, relations_ids: list[int]) -> No
     await execute(sql, {"ids": relations_ids})
 
 
-# TODO: tests
 async def get_relations_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> list[int]:
     sql = "SELECT id FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"
 
