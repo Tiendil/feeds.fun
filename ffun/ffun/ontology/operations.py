@@ -218,20 +218,30 @@ async def get_tags_properties(tags_ids: Iterable[TagId]) -> list[TagProperty]:
     ]
 
 
-async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> None:
-    sql = "SELECT id FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"
-
-    result = await execute(sql, {"entries_ids": entries_ids})
-
-    relations_ids = [row["id"] for row in result]
-
+async def remove_relations(execute: ExecuteType, relations_ids: list[int]) -> None:
     sql = "DELETE FROM o_relations_processors WHERE relation_id = ANY(%(relations_ids)s)"
 
     await execute(sql, {"relations_ids": relations_ids})
 
-    sql = "DELETE FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"
+    sql = "DELETE FROM o_relations WHERE id = ANY(%(ids)s)"
 
-    await execute(sql, {"entries_ids": entries_ids})
+    await execute(sql, {"ids": relations_ids})
+
+
+async def get_relations_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> list[int]:
+    sql = "SELECT id FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"
+
+    result = await execute(sql, {"entries_ids": entries_ids})
+
+    return [row["id"] for row in result]
+
+
+async def get_relations_for_tags(execute: ExecuteType, tags_ids: list[TagId]) -> list[int]:
+    sql = "SELECT id FROM o_relations WHERE tag_id = ANY(%(tags_ids)s)"
+
+    result = await execute(sql, {"tags_ids": tags_ids})
+
+    return [row["id"] for row in result]
 
 
 async def count_total_tags() -> int:
@@ -332,3 +342,34 @@ ORDER BY b.lower_bound;
     stats.sort(key=lambda b: b.lower_bound)
 
     return stats
+
+
+async def get_orphaned_tags(execute: ExecuteType, limit: int, protected_tags: list[TagId]) -> list[TagId]:
+    # PostgreSQL planner should recognize the "anti-join" pattern and provide a proper plan
+    # if not, we should think about more complex query
+    sql = """
+SELECT t.id
+FROM o_tags AS t
+LEFT JOIN o_relations AS r
+  ON r.tag_id = t.id
+WHERE r.id IS NULL
+      AND t.id != ALL(%(protected_tags)s)
+LIMIT %(limit)s
+    """
+
+    result = await execute(sql, {"protected_tags": protected_tags, "limit": limit})
+
+    return [row["id"] for row in result]
+
+
+async def remove_tags(execute: ExecuteType, tags_ids: list[TagId]) -> None:
+    if not tags_ids:
+        return
+
+    sql = "DELETE FROM o_tags_properties WHERE tag_id = ANY(%(tags_ids)s)"
+
+    await execute(sql, {"tags_ids": list(tags_ids)})
+
+    sql = "DELETE FROM o_tags WHERE id = ANY(%(tags_ids)s)"
+
+    await execute(sql, {"tags_ids": list(tags_ids)})

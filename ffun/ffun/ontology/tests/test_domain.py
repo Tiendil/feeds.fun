@@ -4,14 +4,16 @@ import pytest
 
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.domain import new_entry_id
-from ffun.domain.entities import EntryId
+from ffun.domain.entities import EntryId, TagId
 from ffun.library.entities import Entry
+from ffun.ontology import operations
 from ffun.ontology.domain import (
     _inplace_filter_out_entry_tags,
     apply_tags_to_entry,
     get_ids_by_uids,
     get_tags_ids_for_entries,
     prepare_tags_for_entries,
+    remove_orphaned_tags,
 )
 from ffun.ontology.entities import NormalizedTag
 
@@ -332,3 +334,23 @@ class TestPrepareTagsForEntries:
             tag_ids[3]: tags[3].uid,
             tag_ids[4]: tags[4].uid,
         }
+
+
+class TestRemoveOrphanedTags:
+
+    @pytest.mark.asyncio
+    async def test_chunk(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:  # pylint: disable=W0613
+        async with TableSizeDelta("o_tags", delta=-2):
+            removed = await remove_orphaned_tags(chunk=2, protected_tags=[])
+
+        assert removed == 2
+
+    @pytest.mark.asyncio
+    async def test_protected(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:  # pylint: disable=W0613
+        removed = await remove_orphaned_tags(chunk=1000_000, protected_tags=[three_tags_ids[0], three_tags_ids[2]])
+
+        assert removed > 0
+
+        tags = await operations.get_tags_by_ids(list(three_tags_ids))
+
+        assert set(tags.keys()) == {three_tags_ids[0], three_tags_ids[2]}

@@ -38,3 +38,4 @@ create_or_update_rule = operations.create_or_update_rule
 delete_rule = operations.delete_rule
 get_rules = operations.get_rules
 update_rule = operations.update_rule
+get_all_tags_in_rules = operations.get_all_tags_in_rules

@@ -23,9 +23,14 @@ from ffun.ontology.operations import (
     count_total_tags_per_category,
     count_total_tags_per_type,
     get_or_create_id_by_tag,
+    get_orphaned_tags,
+    get_relations_for_entries,
+    get_relations_for_tags,
+    get_tags_by_ids,
     get_tags_properties,
     register_tag,
-    remove_relations_for_entries,
+    remove_relations,
+    remove_tags,
     tag_frequency_statistics,
     tech_copy_relations,
 )
@@ -216,11 +221,13 @@ class TestTechCopyRelations:
         )
 
 
-class TestRemoveRelationsForEntries:
+class TestRemoveRelations:
     @pytest.mark.asyncio
-    async def test_nothing_to_remove(self, cataloged_entry: Entry, another_cataloged_entry: Entry) -> None:
+    async def test_nothing_to_remove(
+        self, cataloged_entry: Entry, another_cataloged_entry: Entry  # pylint: disable=W0613
+    ) -> None:  # pylint: disable=W0613
         async with TableSizeNotChanged("o_relations"):
-            await remove_relations_for_entries(execute, [cataloged_entry.id, another_cataloged_entry.id])
+            await remove_relations(execute, [])
 
     @pytest.mark.asyncio
     async def test_success(
@@ -260,7 +267,8 @@ class TestRemoveRelationsForEntries:
             TableSizeNotChanged("o_tags"),
         ):
             async with transaction() as trx:
-                await remove_relations_for_entries(trx, [cataloged_entry.id])
+                relation_ids = await get_relations_for_entries(trx, [cataloged_entry.id])
+                await remove_relations(trx, relation_ids)
 
         await assert_has_tags({cataloged_entry.id: set(), another_cataloged_entry.id: set(three_tags_ids)})
 
@@ -473,3 +481,189 @@ class TestTagFrequencyStatistics:
         assert stats_before[2].replace(count=stats_before[2].count + 1) == stats_after[2]
         assert stats_before[3].replace(count=stats_before[3].count + 2) == stats_after[3]
         assert stats_before[4].replace(count=stats_before[4].count + 1) == stats_after[4]
+
+
+class TestGetRelationsForEntries:
+    @pytest.mark.asyncio
+    async def test_no_entries(self, cataloged_entry: Entry) -> None:  # pylint: disable=W0613
+        relation_ids = await get_relations_for_entries(execute, [])
+        assert relation_ids == []
+
+    @pytest.mark.asyncio
+    async def test_no_relations(
+        self, cataloged_entry: Entry, another_cataloged_entry: Entry  # pylint: disable=W0613
+    ) -> None:  # pylint: disable=W0613
+        relation_ids = await get_relations_for_entries(execute, [cataloged_entry.id, another_cataloged_entry.id])
+        assert relation_ids == []
+
+    @pytest.mark.asyncio
+    async def test_some(
+        self,
+        cataloged_entry: Entry,
+        another_cataloged_entry: Entry,
+        fake_processor_id: int,
+        another_fake_processor_id: int,
+        three_tags_ids: tuple[TagId, TagId, TagId],
+    ) -> None:
+        async with transaction() as trx:
+            await apply_tags(
+                trx, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tags_ids=[three_tags_ids[0]]
+            )
+
+        async with transaction() as trx:
+            await apply_tags(
+                trx, entry_id=cataloged_entry.id, processor_id=another_fake_processor_id, tags_ids=[three_tags_ids[2]]
+            )
+
+        async with transaction() as trx:
+            await apply_tags(
+                trx, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tags_ids=three_tags_ids
+            )
+
+        relation_1_ids = await get_relations_for_entries(execute, [cataloged_entry.id])
+        expected_relation_1_ids = await _get_relations_for_entry_and_tags(execute, cataloged_entry.id, three_tags_ids)
+        assert len(relation_1_ids) == 2
+        assert set(relation_1_ids) == set(expected_relation_1_ids.values())
+
+        relation_2_ids = await get_relations_for_entries(execute, [another_cataloged_entry.id])
+        expected_relation_2_ids = await _get_relations_for_entry_and_tags(
+            execute, another_cataloged_entry.id, three_tags_ids
+        )
+        assert len(relation_2_ids) == 3
+        assert set(relation_2_ids) == set(expected_relation_2_ids.values())
+
+        relation_3_ids = await get_relations_for_entries(execute, [cataloged_entry.id, another_cataloged_entry.id])
+        assert len(relation_3_ids) == 5
+        assert set(relation_3_ids) == set(relation_1_ids) | set(relation_2_ids)
+
+
+class TestGetRelationsForTags:
+    @pytest.mark.asyncio
+    async def test_no_tags(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:  # pylint: disable=W0613
+        relation_ids = await get_relations_for_tags(execute, [])
+        assert relation_ids == []
+
+    @pytest.mark.asyncio
+    async def test_no_relations(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:  # pylint: disable=W0613
+        relation_ids = await get_relations_for_tags(execute, list(three_tags_ids))
+        assert relation_ids == []
+
+    @pytest.mark.asyncio
+    async def test_some(
+        self,
+        cataloged_entry: Entry,
+        another_cataloged_entry: Entry,
+        fake_processor_id: int,
+        another_fake_processor_id: int,
+        three_tags_ids: tuple[TagId, TagId, TagId],
+    ) -> None:
+        async with transaction() as trx:
+            await apply_tags(
+                trx, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tags_ids=[three_tags_ids[0]]
+            )
+
+        async with transaction() as trx:
+            await apply_tags(
+                trx, entry_id=cataloged_entry.id, processor_id=another_fake_processor_id, tags_ids=[three_tags_ids[2]]
+            )
+
+        async with transaction() as trx:
+            await apply_tags(
+                trx, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tags_ids=three_tags_ids[1:]
+            )
+
+        relation_1_ids = await get_relations_for_tags(execute, [three_tags_ids[0]])
+        expected_relation_1_ids = await _get_relations_for_entry_and_tags(
+            execute, cataloged_entry.id, [three_tags_ids[0]]
+        )
+        assert len(relation_1_ids) == 1
+        assert set(relation_1_ids) == set(expected_relation_1_ids.values())
+
+        relation_2_ids = await get_relations_for_tags(execute, [three_tags_ids[2]])
+        expected_relation_2_ids_1 = await _get_relations_for_entry_and_tags(
+            execute, cataloged_entry.id, [three_tags_ids[2]]
+        )
+        expected_relation_2_ids_2 = await _get_relations_for_entry_and_tags(
+            execute, another_cataloged_entry.id, [three_tags_ids[2]]
+        )
+        assert len(relation_2_ids) == 2
+        assert set(relation_2_ids) == set(expected_relation_2_ids_1.values()) | set(expected_relation_2_ids_2.values())
+
+        relation_3_ids = await get_relations_for_tags(execute, [three_tags_ids[0], three_tags_ids[2]])
+        assert len(relation_3_ids) == 3
+        assert set(relation_3_ids) == set(relation_1_ids) | set(relation_2_ids)
+
+
+class TestGetOrphanedTags:
+
+    @pytest.mark.asyncio
+    async def test_no_some_orphans(
+        self, fake_processor_id: int, cataloged_entry: Entry, three_tags_ids: tuple[TagId, TagId, TagId]
+    ) -> None:
+        await apply_tags(
+            execute, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tags_ids=[three_tags_ids[1]]
+        )
+
+        orphans = await get_orphaned_tags(execute, limit=1000_000, protected_tags=[])
+
+        assert three_tags_ids[0] in orphans
+        assert three_tags_ids[1] not in orphans
+        assert three_tags_ids[2] in orphans
+
+    @pytest.mark.asyncio
+    async def test_limit(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:  # pylint: disable=W0613
+        all_orphans = await get_orphaned_tags(execute, limit=1000_000, protected_tags=[])
+
+        assert len(all_orphans) > 2
+
+        orphans = await get_orphaned_tags(execute, limit=2, protected_tags=[])
+
+        assert len(orphans) == 2
+
+        assert orphans[0] in all_orphans
+        assert orphans[1] in all_orphans
+
+    @pytest.mark.asyncio
+    async def test_protected(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:  # pylint: disable=W0613
+        orphans = await get_orphaned_tags(
+            execute, limit=1000_000, protected_tags=[three_tags_ids[0], three_tags_ids[2]]
+        )
+
+        assert three_tags_ids[0] not in orphans
+        assert three_tags_ids[1] in orphans
+        assert three_tags_ids[2] not in orphans
+
+
+class TestRemoveTags:
+
+    @pytest.mark.asyncio
+    async def test_no_tags(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:  # pylint: disable=W0613
+        async with TableSizeNotChanged("o_tags"):
+            await remove_tags(execute, [])
+
+    @pytest.mark.asyncio
+    async def test_some_tags(
+        self,
+        fake_processor_id: int,
+        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
+        five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
+    ) -> None:
+
+        properties = []
+
+        for tag_id, tag in zip(five_tags_ids[2:], five_processor_tags[2:]):
+            tag.link = f"https://example.com?{tag.uid}"
+            properties.append(tag.build_properties_for(tag_id=tag_id, processor_id=fake_processor_id)[0])
+
+        await apply_tags_properties(execute, properties)
+
+        async with TableSizeDelta("o_tags", delta=-3):
+            async with TableSizeDelta("o_tags_properties", delta=-2):
+                await remove_tags(execute, [five_tags_ids[0], five_tags_ids[2], five_tags_ids[4]])
+
+        tags = await get_tags_by_ids(list(five_tags_ids))
+
+        assert set(tags.keys()) == {five_tags_ids[1], five_tags_ids[3]}
+
+        saved_properties = await get_tags_properties(list(five_tags_ids))
+        assert {property.tag_id for property in saved_properties} == {five_tags_ids[3]}

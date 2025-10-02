@@ -8,14 +8,14 @@ from ffun.core.tests.helpers import (
     capture_logs,
 )
 from ffun.domain.domain import new_rule_id
-from ffun.domain.entities import UserId
+from ffun.domain.entities import TagId, UserId
 from ffun.scores import domain, errors, operations
 
 
 class TestCreateOrUpdateRule:
     @pytest.mark.asyncio
     async def test_create_new_rule(
-        self, internal_user_id: UserId, five_tags_ids: tuple[int, int, int, int, int]
+        self, internal_user_id: UserId, five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]
     ) -> None:
         required_tags = five_tags_ids[:3]
         excluded_tags = five_tags_ids[3:]
@@ -48,7 +48,7 @@ class TestCreateOrUpdateRule:
 
     @pytest.mark.asyncio
     async def test_tags_order_does_not_affect_creation(
-        self, internal_user_id: UserId, five_tags_ids: tuple[int, int, int, int, int]
+        self, internal_user_id: UserId, five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]
     ) -> None:
         required_tags = list(five_tags_ids[:3])
         excluded_tags = list(five_tags_ids[3:])
@@ -74,7 +74,7 @@ class TestCreateOrUpdateRule:
 
     @pytest.mark.asyncio
     async def test_update_scores_of_existed_rule(
-        self, internal_user_id: UserId, five_tags_ids: tuple[int, int, int, int, int]
+        self, internal_user_id: UserId, five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]
     ) -> None:
         required_tags = list(five_tags_ids[:3])
         excluded_tags = list(five_tags_ids[3:])
@@ -111,7 +111,10 @@ class TestCreateOrUpdateRule:
 
     @pytest.mark.asyncio
     async def test_multiple_entities(
-        self, internal_user_id: UserId, another_internal_user_id: UserId, five_tags_ids: tuple[int, int, int, int, int]
+        self,
+        internal_user_id: UserId,
+        another_internal_user_id: UserId,
+        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
     ) -> None:
         await operations.create_or_update_rule(
             internal_user_id, required_tags=five_tags_ids[:2], excluded_tags=five_tags_ids[-2:], score=3
@@ -153,7 +156,7 @@ class TestCreateOrUpdateRule:
 
     @pytest.mark.asyncio
     async def test_tags_intersection(
-        self, internal_user_id: UserId, five_tags_ids: tuple[int, int, int, int, int]
+        self, internal_user_id: UserId, five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]
     ) -> None:
         required_tags = five_tags_ids[:3]
         excluded_tags = five_tags_ids[2:]
@@ -177,7 +180,7 @@ class TestCreateOrUpdateRule:
 class TestDeleteRule:
     @pytest.mark.asyncio
     async def test_delete_rule(
-        self, internal_user_id: UserId, another_internal_user_id: UserId, three_tags_ids: tuple[int, int, int]
+        self, internal_user_id: UserId, another_internal_user_id: UserId, three_tags_ids: tuple[TagId, TagId, TagId]
     ) -> None:
         rule_to_delete = await operations.create_or_update_rule(
             internal_user_id, required_tags=three_tags_ids, excluded_tags=[], score=13
@@ -213,7 +216,7 @@ class TestDeleteRule:
 
     @pytest.mark.asyncio
     async def test_delete_for_wrong_user(
-        self, internal_user_id: UserId, another_internal_user_id: UserId, three_tags_ids: tuple[int, int, int]
+        self, internal_user_id: UserId, another_internal_user_id: UserId, three_tags_ids: tuple[TagId, TagId, TagId]
     ) -> None:
         rule_to_delete = await operations.create_or_update_rule(
             internal_user_id, required_tags=three_tags_ids, excluded_tags=[], score=13
@@ -225,7 +228,9 @@ class TestDeleteRule:
 
 class TestUpdateRule:
     @pytest.mark.asyncio
-    async def test_update_rule(self, internal_user_id: UserId, five_tags_ids: tuple[int, int, int, int, int]) -> None:
+    async def test_update_rule(
+        self, internal_user_id: UserId, five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]
+    ) -> None:
         required_tags = list(five_tags_ids[:3])
         excluded_tags = list(five_tags_ids[3:])
 
@@ -265,7 +270,7 @@ class TestUpdateRule:
 
     @pytest.mark.asyncio
     async def test_update_not_existed_rule(
-        self, internal_user_id: UserId, three_tags_ids: tuple[int, int, int]
+        self, internal_user_id: UserId, three_tags_ids: tuple[TagId, TagId, TagId]
     ) -> None:
         with capture_logs() as logs:
             async with TableSizeNotChanged("s_rules"):
@@ -282,7 +287,7 @@ class TestUpdateRule:
 
     @pytest.mark.asyncio
     async def test_wrong_user(
-        self, internal_user_id: UserId, another_internal_user_id: UserId, three_tags_ids: tuple[int, int, int]
+        self, internal_user_id: UserId, another_internal_user_id: UserId, three_tags_ids: tuple[TagId, TagId, TagId]
     ) -> None:
         rule_to_update = await operations.create_or_update_rule(
             internal_user_id, required_tags=three_tags_ids[:2], excluded_tags=[], score=13
@@ -304,7 +309,7 @@ class TestUpdateRule:
 
     @pytest.mark.asyncio
     async def test_tags_intersection(
-        self, internal_user_id: UserId, five_tags_ids: tuple[int, int, int, int, int]
+        self, internal_user_id: UserId, five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]
     ) -> None:
         rule_to_update = await operations.create_or_update_rule(
             internal_user_id, required_tags=five_tags_ids[:3], excluded_tags=[], score=13
@@ -345,13 +350,36 @@ class TestCountRulesPerUser:
 
         numbers_before = await operations.count_rules_per_user()
 
-        await operations.create_or_update_rule(internal_user_id, required_tags=[1, 2], excluded_tags=[], score=3)
-        await operations.create_or_update_rule(internal_user_id, required_tags=[], excluded_tags=[2, 3], score=5)
         await operations.create_or_update_rule(
-            another_internal_user_id, required_tags=[1, 2], excluded_tags=[3, 4], score=7
+            internal_user_id, required_tags=[TagId(1), TagId(2)], excluded_tags=[], score=3
+        )
+        await operations.create_or_update_rule(
+            internal_user_id, required_tags=[], excluded_tags=[TagId(2), TagId(3)], score=5
+        )
+        await operations.create_or_update_rule(
+            another_internal_user_id, required_tags=[TagId(1), TagId(2)], excluded_tags=[TagId(3), TagId(4)], score=7
         )
 
         numbers_after = await operations.count_rules_per_user()
 
         assert numbers_after[internal_user_id] == numbers_before.get(internal_user_id, 0) + 2
         assert numbers_after[another_internal_user_id] == numbers_before.get(another_internal_user_id, 0) + 1
+
+
+class TestGetAllTagsInRules:
+
+    @pytest.mark.asyncio
+    async def test(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
+        await operations.create_or_update_rule(
+            internal_user_id, required_tags=[TagId(1), TagId(2)], excluded_tags=[TagId(3)], score=3
+        )
+        await operations.create_or_update_rule(
+            internal_user_id, required_tags=[TagId(2), TagId(4)], excluded_tags=[], score=5
+        )
+        await operations.create_or_update_rule(
+            another_internal_user_id, required_tags=[TagId(1), TagId(5)], excluded_tags=[TagId(6)], score=7
+        )
+
+        tags = await operations.get_all_tags_in_rules()
+
+        assert {TagId(1), TagId(2), TagId(3), TagId(4), TagId(5), TagId(6)} <= tags
