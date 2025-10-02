@@ -171,8 +171,6 @@ async def remove_orphaned_tags(execute: ExecuteType, chunk: int, protected_tags:
 
     await operations.remove_tags(execute, orphaned_tags)
 
-    await operations.remove_tags_properties(execute, orphaned_tags)
-
     relation_ids = await operations.get_relations_for_tags(execute, orphaned_tags)
 
     await operations.remove_relations(execute, relation_ids)

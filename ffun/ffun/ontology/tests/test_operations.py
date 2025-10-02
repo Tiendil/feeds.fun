@@ -32,7 +32,7 @@ from ffun.ontology.operations import (
     get_relations_for_tags,
     get_orphaned_tags,
     remove_tags,
-    remove_tags_properties
+    get_tags_by_ids
 )
 from ffun.ontology.tests.helpers import assert_has_tags
 
@@ -623,3 +623,37 @@ class TestGetOrphanedTags:
         assert three_tags_ids[0] not in orphans
         assert three_tags_ids[1] in orphans
         assert three_tags_ids[2] not in orphans
+
+
+class TestRemoveTags:
+
+    @pytest.mark.asyncio
+    async def test_no_tags(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:  # pylint: disable=W0613
+        async with TableSizeNotChanged("o_tags"):
+            await remove_tags(execute, [])
+
+    @pytest.mark.asyncio
+    async def test_some_tags(self,
+                             fake_processor_id: int,
+                             five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
+                             five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag]) -> None:
+
+        properties = []
+
+        for tag_id, tag in zip(five_tags_ids[2:], five_processor_tags[2:]):
+            tag.link = f"https://example.com?{tag.uid}"
+            properties.append(tag.build_properties_for(tag_id=tag_id,
+                                                       processor_id=fake_processor_id)[0])
+
+        await apply_tags_properties(execute, properties)
+
+        async with TableSizeDelta("o_tags", delta=-3):
+            async with TableSizeDelta("o_tags_properties", delta=-2):
+                await remove_tags(execute, [five_tags_ids[0], five_tags_ids[2], five_tags_ids[4]])
+
+        tags = await get_tags_by_ids(list(five_tags_ids))
+
+        assert set(tags.keys()) == {five_tags_ids[1], five_tags_ids[3]}
+
+        saved_properties = await get_tags_properties(list(five_tags_ids))
+        assert {property.tag_id for property in saved_properties} == {five_tags_ids[3]}

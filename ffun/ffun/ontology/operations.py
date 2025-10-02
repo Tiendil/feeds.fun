@@ -363,21 +363,14 @@ LIMIT %(limit)s
     return [row["id"] for row in result]
 
 
-# TODO: tests
 async def remove_tags(execute: ExecuteType, tags_ids: list[TagId]) -> None:
     if not tags_ids:
-        return 0
+        return
 
-    sql = "DELETE FROM o_tags WHERE id = ANY(%(tags_ids)s)"
+    sql = "DELETE FROM o_tags_properties WHERE tag_id = ANY(%(tags_ids)s)"
 
     await execute(sql, {"tags_ids": list(tags_ids)})
 
-
-# TODO: tests
-async def remove_tags_properties(execute: ExecuteType, tags_ids: list[TagId]) -> None:
-    if not tags_ids:
-        return 0
-
-    sql = "DELETE FROM o_tags_properties WHERE tag_id = ANY(%(tags_ids)s)"
+    sql = "DELETE FROM o_tags WHERE id = ANY(%(tags_ids)s)"
 
     await execute(sql, {"tags_ids": list(tags_ids)})
