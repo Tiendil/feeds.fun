@@ -164,16 +164,17 @@ async def prepare_tags_for_entries(
     return entry_tag_ids, tag_mapping
 
 
-# TODO: tests
 @run_in_transaction
 async def remove_orphaned_tags(execute: ExecuteType, chunk: int, protected_tags: list[TagId]) -> int:
     orphaned_tags = await operations.get_orphaned_tags(execute, limit=chunk, protected_tags=protected_tags)
 
     await operations.remove_tags(execute, orphaned_tags)
 
-    relation_ids = await operations.get_relations_for_tags(execute, orphaned_tags)
-
-    await operations.remove_relations(execute, relation_ids)
+    # Since we run the code in a transaction, we do nothing with relations here
+    # In case some relations will be added during the transaction, we encounter a foreign key violation
+    # => the transaction will be rolled back
+    # Since the probability of such situation is very low, we can add code to handle such situations
+    # later if needed
 
     # TODO: theoretically we should clear the _tags_cache here
     #       but how to clear it in every process?
