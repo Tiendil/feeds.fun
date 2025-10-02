@@ -95,10 +95,10 @@ async def clean_orphaned_feeds(chunk: int) -> int:
 
 
 # There is a minor probability that we'll remove a tag while a new rule is being created.
-# We should track such cases and add detection of broken rules in the rules functianality.
+# We should track such cases and add detection of broken rules in the rules functionality.
 # Also, since we remove orphaned tags and GUI mostly allows to create rules for linked tags,
 # we should be fine.
 async def clean_orphaned_tags(chunk: int) -> int:
     protected_tags = await s_domain.get_all_tags_in_rules()
 
-    return await o_domain.remove_orphaned_tags(chunk=chunk, protected_tags=protected_tags)  # type: ignore
+    return await o_domain.remove_orphaned_tags(chunk=chunk, protected_tags=list(protected_tags))  # type: ignore

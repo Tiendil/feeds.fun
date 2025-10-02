@@ -344,7 +344,6 @@ ORDER BY b.lower_bound;
     return stats
 
 
-# TODO: add index by tags for o_relations
 async def get_orphaned_tags(execute: ExecuteType, limit: int, protected_tags: list[TagId]) -> list[TagId]:
     # PostgreSQL planner should recognize the "anti-join" pattern and provide a proper plan
     # if not, we should think about more complex query
