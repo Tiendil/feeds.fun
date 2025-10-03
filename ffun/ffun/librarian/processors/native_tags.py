@@ -1,6 +1,6 @@
 from ffun.librarian.processors import base
 from ffun.library.entities import Entry
-from ffun.ontology.entities import NormalizationMode, RawTag
+from ffun.ontology.entities import RawTag
 from ffun.tags.entities import TagCategory
 
 
@@ -14,11 +14,6 @@ class Processor(base.Processor):
             tags.append(
                 RawTag(
                     raw_uid=external_tag,
-                    # We should not normalize/alter external tags, because they can be used
-                    # as an attack vector on our services:
-                    # - DDOS via tag explosion
-                    # - Prompt injection via tags
-                    normalization=NormalizationMode.final,
                     categories={TagCategory.feed_tag},
                 )
             )

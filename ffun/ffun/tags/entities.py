@@ -28,7 +28,9 @@ class TagCategory(enum.StrEnum):
     free_form = "free-form"
 
     # Tags with this category created for testing purposes, most-likely by automated tests
-    test = "test"
+    test_final = "test-final"
+    test_raw = "test-raw"
+    test_preserve = "test-preserve"
 
 
 TagCategories = Annotated[
@@ -48,10 +50,51 @@ class TagInNormalization(BaseEntity):
     uid: TagUid
     parts: list[TagUidPart]
 
-    mode: NormalizationMode
-
     link: str | None
     categories: TagCategories
+
+    # Here is going some complicated unclear logic:
+    # - normalizers work with TagInNormalization
+    # - TagInNormalization should define how it should be processed by normalizers
+    # - There are two options: define explicitly or implicitly (derive from categories)
+    # - It may look like a good idea to define it explicitly, so we could have a normalizer
+    #   that could say "I produce this new tag which should be processed as raw/preserve/final"
+    # - But this approach leads to uncertainty when we doing re-normalization of tags in the database
+    #   because we don't store the final normalization mode in the database
+    #   (and it may be wrong in case of re-normalization)
+    #   So, on re-normalization we use tag categories to derive the mode (again)
+    #   We also use RawTag, not TagInNormalization as a result of running a normalizer.
+    # - Thats why it seems more consistent to try building logic of normalizators around categories only
+    #   To be consistent in the whole system
+    # => We expect, that normalizer, if it requires, will be able to set new categories for the tags it produces
+    #    For example, there may be a normalizer that detects network domains in free-form tags
+    @property
+    def mode(self) -> NormalizationMode:  # noqa: CCR001
+        # The order of checks is important here
+
+        if TagCategory.network_domain in self.categories:
+            return NormalizationMode.final
+
+        if TagCategory.special in self.categories:
+            return NormalizationMode.final
+
+        if TagCategory.feed_tag in self.categories:
+            # TODO: check how this affects tag re-normalization
+            return NormalizationMode.preserve
+
+        if TagCategory.free_form in self.categories:
+            return NormalizationMode.raw
+
+        if TagCategory.test_final in self.categories:
+            return NormalizationMode.final
+
+        if TagCategory.test_preserve in self.categories:
+            return NormalizationMode.preserve
+
+        if TagCategory.test_raw in self.categories:
+            return NormalizationMode.raw
+
+        raise NotImplementedError(f"Tag with unknown categories: {self.categories}")
 
 
 class NormalizerType(enum.StrEnum):

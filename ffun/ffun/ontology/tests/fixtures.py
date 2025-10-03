@@ -29,7 +29,7 @@ def three_processor_tags(three_tags_by_ids: dict[TagId, TagUid]) -> tuple[Normal
     return tuple(
         NormalizedTag(uid=tag,
                       link=None,
-                      categories={TagCategory.test}) for tag in three_tags_by_ids.values()  # type: ignore
+                      categories={TagCategory.test_raw}) for tag in three_tags_by_ids.values()  # type: ignore
     )
 
 
@@ -55,5 +55,5 @@ def five_processor_tags(
     return tuple(
         NormalizedTag(uid=tag,
                       link=None,
-                      categories={TagCategory.test}) for tag in five_tags_by_ids.values()  # type: ignore
+                      categories={TagCategory.test_raw}) for tag in five_tags_by_ids.values()  # type: ignore
     )

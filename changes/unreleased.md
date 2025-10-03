@@ -4,7 +4,7 @@ No changes.
 TODO:
 
 - [x] require categories for each tag processor
-- [ ] rewrite normalization to use categories to decide what to do
+- [x] rewrite normalization to use categories to decide what to do
 - [ ] restore missed categories with migration with help of o_tags_relations
 - [ ] Algorism of renomalization:
       - [ ] for each tag+processor properties

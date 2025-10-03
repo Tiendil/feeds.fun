@@ -1,9 +1,9 @@
 import pytest
 
 from ffun.domain.entities import TagUid
-from ffun.ontology.entities import NormalizationMode, RawTag
+from ffun.ontology.entities import RawTag
 from ffun.tags import converters, utils
-from ffun.tags.entities import TagCategory, TagInNormalization
+from ffun.tags.entities import TagCategory, TagInNormalization, NormalizationMode
 from ffun.tags.normalizers import part_replacer
 
 normalizer = part_replacer.Normalizer(replacements={"start-up": "startup", "set-up": "setup", "em": "them"})
@@ -33,15 +33,13 @@ class TestNormalizer:
         input_tag = TagInNormalization(
             uid=input_uid,
             parts=utils.uid_to_parts(input_uid),
-            mode=NormalizationMode.preserve,
             link="http://example.com/tag",
-            categories={TagCategory.feed_tag},
+            categories={TagCategory.test_raw},
         )
 
         expected_new_tags = [
             RawTag(
                 raw_uid=new_uid,
-                normalization=NormalizationMode.raw,  # must be raw for all derived tags
                 link=input_tag.link,
                 categories=input_tag.categories,
             )

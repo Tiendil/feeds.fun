@@ -1,5 +1,5 @@
 from ffun.domain.entities import TagUid
-from ffun.ontology.entities import NormalizationMode, RawTag
+from ffun.ontology.entities import RawTag
 from ffun.tags import utils
 from ffun.tags.entities import TagInNormalization
 from ffun.tags.normalizers import base
@@ -48,7 +48,6 @@ class Normalizer(base.Normalizer):
         new_tags = [
             RawTag(
                 raw_uid=uid,
-                normalization=NormalizationMode.raw,
                 link=tag.link,
                 categories=set(tag.categories),
             )
