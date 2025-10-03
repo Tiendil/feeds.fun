@@ -102,3 +102,13 @@ async def clean_orphaned_tags(chunk: int) -> int:
     protected_tags = await s_domain.get_all_tags_in_rules()
 
     return await o_domain.remove_orphaned_tags(chunk=chunk, protected_tags=list(protected_tags))  # type: ignore
+
+
+# We expect, that when this function is called, all logic (workers, api) is already working on the new configs
+# => there will be no case when a new tag is created in the not normalized form
+#    (besides native feeds tags, but we'll handle them separately)
+# => we can load tags from rules once and use their cached list
+async def normalize_tags() -> None:
+    # TODO: handle native feed tags (skip them?)
+
+    tags_in_rules = await s_domain.get_all_tags_in_rules()
