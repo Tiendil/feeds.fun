@@ -46,7 +46,7 @@ class TestApplyTagsToEntry:
         uids_to_ids = await get_ids_by_uids([tag.uid for tag in three_processor_tags])
 
         async with (
-            TableSizeDelta("o_tags_properties", delta=1),
+            TableSizeDelta("o_tags_properties", delta=3 + 1),
             TableSizeDelta("o_relations", delta=3),
             TableSizeDelta("o_relations_processors", delta=3),
         ):

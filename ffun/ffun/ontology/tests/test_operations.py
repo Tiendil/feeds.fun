@@ -307,7 +307,7 @@ class TestApplyTagsProperties:
                 tag.build_properties_for(tag_id=three_tags_by_uids[tag.uid], processor_id=fake_processor_id)
             )
 
-        async with TableSizeDelta("o_tags_properties", delta=3):
+        async with TableSizeDelta("o_tags_properties", delta=3 + 3):
             await apply_tags_properties(execute, properties)
 
         loaded_tags_properties = await get_tags_properties(three_tags_by_uids.values())
@@ -330,7 +330,8 @@ class TestApplyTagsProperties:
         for tag in three_processor_tags:
             tag.link = f"https://example.com?{tag.uid}"
             properties.extend(
-                tag.build_properties_for(tag_id=three_tags_by_uids[tag.uid], processor_id=fake_processor_id)
+                [p for p in tag.build_properties_for(tag_id=three_tags_by_uids[tag.uid], processor_id=fake_processor_id)
+                 if p.type == TagPropertyType.link]
             )
 
         async with TableSizeDelta("o_tags_properties", delta=3):
@@ -391,7 +392,7 @@ class TestCountTotalTagsPerCategory:
         tags = [TagUid(uuid.uuid4().hex) for _ in range(5)]
 
         processor_tags = [
-            NormalizedTag(uid=tags[0], link=None, categories=set()),
+            NormalizedTag(uid=tags[0], link=None, categories={TagCategory.test}),
             NormalizedTag(uid=tags[1], link=None, categories={TagCategory.network_domain}),
             NormalizedTag(uid=tags[2], link=None, categories={TagCategory.feed_tag}),
             NormalizedTag(uid=tags[3], link=None, categories={TagCategory.network_domain, TagCategory.feed_tag}),
@@ -415,11 +416,11 @@ class TestCountTotalTagsPerType:
         tags = [TagUid(uuid.uuid4().hex) for _ in range(5)]
 
         processor_tags = [
-            NormalizedTag(uid=tags[0], link=None, categories=set()),
-            NormalizedTag(uid=tags[1], link="https://example.com", categories=set()),
+            NormalizedTag(uid=tags[0], link=None, categories={TagCategory.test}),
+            NormalizedTag(uid=tags[1], link="https://example.com", categories={TagCategory.test}),
             NormalizedTag(uid=tags[2], link="https://example.com", categories={TagCategory.network_domain}),
             NormalizedTag(uid=tags[3], link="https://example.com", categories={TagCategory.feed_tag}),
-            NormalizedTag(uid=tags[4], link="https://example.com", categories=set()),
+            NormalizedTag(uid=tags[4], link="https://example.com", categories={TagCategory.test}),
         ]
 
         numbers_before = await count_total_tags_per_type()
@@ -429,7 +430,7 @@ class TestCountTotalTagsPerType:
         numbers_after = await count_total_tags_per_type()
 
         assert numbers_after[TagPropertyType.link] == numbers_before.get(TagPropertyType.link, 0) + 4
-        assert numbers_after[TagPropertyType.categories] == numbers_before.get(TagPropertyType.categories, 0) + 2
+        assert numbers_after[TagPropertyType.categories] == numbers_before.get(TagPropertyType.categories, 0) + 5
 
 
 class TestCountNewTagsAt:

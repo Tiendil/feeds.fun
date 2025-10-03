@@ -3,6 +3,7 @@ from typing import Any
 from ffun.librarian import errors
 from ffun.library.entities import Entry
 from ffun.ontology.entities import NormalizationMode, RawTag
+from ffun.tags.entities import TagCategory
 
 
 class Processor:
@@ -32,7 +33,10 @@ class AlwaysConstantProcessor(Processor):
         self._tags = tags
 
     async def process(self, entry: Entry) -> list[RawTag]:
-        return [RawTag(raw_uid=tag, normalization=NormalizationMode.final) for tag in self._tags]
+        return [RawTag(raw_uid=tag,
+                       normalization=NormalizationMode.final,
+                       categories={TagCategory.test}
+                       ) for tag in self._tags]
 
 
 class AlwaysSkipEntryProcessor(Processor):
