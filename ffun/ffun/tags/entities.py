@@ -7,6 +7,10 @@ from ffun.core.entities import BaseEntity
 from ffun.domain.entities import TagUid, TagUidPart
 
 
+# TODO: we may want to remove tags categoris, because:
+#       - they have little use now
+#       - not every tag process sets them
+#       - they lead to an additional tag property stored in the database
 class TagCategory(enum.StrEnum):
     network_domain = "network-domain"
     feed_tag = "feed-tag"
