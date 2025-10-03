@@ -2,7 +2,7 @@ from typing import Iterable
 
 from ffun.ontology.entities import NormalizedTag, RawTag
 from ffun.tags import converters, utils
-from ffun.tags.entities import TagInNormalization, NormalizationMode
+from ffun.tags.entities import NormalizationMode, TagInNormalization
 from ffun.tags.normalizers import NormalizerInfo, normalizers
 
 

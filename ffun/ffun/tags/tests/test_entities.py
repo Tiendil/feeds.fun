@@ -1,14 +1,8 @@
-from typing import Any
-
 import pytest
-from pytest_mock import MockerFixture
 
 from ffun.domain.entities import TagUid, TagUidPart
-from ffun.ontology.entities import NormalizedTag, RawTag, TagCategory
-from ffun.tags.domain import apply_normalizers, normalize, prepare_for_normalization
-from ffun.tags.entities import TagInNormalization, TagCategory, NormalizationMode
-from ffun.tags.normalizers import FakeNormalizer, NormalizerAlwaysError, NormalizerInfo
-from ffun.tags.utils import uid_to_parts
+from ffun.ontology.entities import TagCategory
+from ffun.tags.entities import NormalizationMode, TagCategory, TagInNormalization
 
 
 class TestTagInNormalization:
@@ -19,7 +13,7 @@ class TestTagInNormalization:
             uid=TagUid("example-tag"),
             parts=[TagUidPart("example"), TagUidPart("tag")],
             link=None,
-            categories={category}
+            categories={category},
         )
 
         assert tag.mode in NormalizationMode

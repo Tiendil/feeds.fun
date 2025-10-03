@@ -8,7 +8,7 @@ from ffun.core import metrics
 from ffun.domain.entities import TagUid
 from ffun.ontology.entities import RawTag
 from ffun.tags import utils
-from ffun.tags.entities import TagCategory, TagInNormalization, NormalizationMode
+from ffun.tags.entities import TagCategory, TagInNormalization
 from ffun.tags.normalizers.base import FakeNormalizer, NormalizerAlwaysError, NormalizerInfo
 
 

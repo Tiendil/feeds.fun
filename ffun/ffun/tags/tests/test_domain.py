@@ -6,7 +6,7 @@ from pytest_mock import MockerFixture
 from ffun.domain.entities import TagUid, TagUidPart
 from ffun.ontology.entities import NormalizedTag, RawTag, TagCategory
 from ffun.tags.domain import apply_normalizers, normalize, prepare_for_normalization
-from ffun.tags.entities import TagInNormalization, TagCategory, NormalizationMode
+from ffun.tags.entities import NormalizationMode, TagCategory, TagInNormalization
 from ffun.tags.normalizers import FakeNormalizer, NormalizerAlwaysError, NormalizerInfo
 from ffun.tags.utils import uid_to_parts
 
@@ -189,8 +189,7 @@ class TestNormalize:
     )
     @pytest.mark.asyncio
     async def test_single_tag(self, raw_uid: str, norm_uid: TagUid) -> None:
-        assert await normalize([RawTag(raw_uid=raw_uid,
-                                       categories={TagCategory.test_raw})]) == [
+        assert await normalize([RawTag(raw_uid=raw_uid, categories={TagCategory.test_raw})]) == [
             NormalizedTag(uid=norm_uid, link=None, categories={TagCategory.test_raw})
         ]
 

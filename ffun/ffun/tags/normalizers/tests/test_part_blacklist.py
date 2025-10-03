@@ -3,7 +3,7 @@ import pytest
 from ffun.domain.entities import TagUid
 from ffun.ontology.entities import RawTag
 from ffun.tags import converters, utils
-from ffun.tags.entities import TagCategory, TagInNormalization, NormalizationMode
+from ffun.tags.entities import TagCategory, TagInNormalization
 from ffun.tags.normalizers import part_blacklist
 
 normalizer = part_blacklist.Normalizer(blacklist={"a", "the"})

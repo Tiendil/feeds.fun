@@ -27,9 +27,8 @@ def three_tags_ids(three_tags_by_uids: dict[TagUid, TagId]) -> tuple[TagId, TagI
 @pytest.fixture
 def three_processor_tags(three_tags_by_ids: dict[TagId, TagUid]) -> tuple[NormalizedTag, NormalizedTag, NormalizedTag]:
     return tuple(
-        NormalizedTag(uid=tag,
-                      link=None,
-                      categories={TagCategory.test_raw}) for tag in three_tags_by_ids.values()  # type: ignore
+        NormalizedTag(uid=tag, link=None, categories={TagCategory.test_raw})
+        for tag in three_tags_by_ids.values()  # type: ignore
     )
 
 
@@ -53,7 +52,6 @@ def five_processor_tags(
     five_tags_by_ids: dict[TagId, TagUid],
 ) -> tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag]:
     return tuple(
-        NormalizedTag(uid=tag,
-                      link=None,
-                      categories={TagCategory.test_raw}) for tag in five_tags_by_ids.values()  # type: ignore
+        NormalizedTag(uid=tag, link=None, categories={TagCategory.test_raw})
+        for tag in five_tags_by_ids.values()  # type: ignore
     )

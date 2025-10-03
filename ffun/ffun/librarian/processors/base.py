@@ -33,9 +33,7 @@ class AlwaysConstantProcessor(Processor):
         self._tags = tags
 
     async def process(self, entry: Entry) -> list[RawTag]:
-        return [RawTag(raw_uid=tag,
-                       categories={TagCategory.test_final}
-                       ) for tag in self._tags]
+        return [RawTag(raw_uid=tag, categories={TagCategory.test_final}) for tag in self._tags]
 
 
 class AlwaysSkipEntryProcessor(Processor):

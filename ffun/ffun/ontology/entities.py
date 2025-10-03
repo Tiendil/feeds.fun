@@ -1,13 +1,12 @@
 import datetime
 import enum
-from typing import Annotated
 
 import pydantic
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import TagId, TagUid
-from ffun.tags.entities import TagCategory, TagCategories
+from ffun.tags.entities import TagCategories
 
 
 class TagPropertyType(enum.IntEnum):

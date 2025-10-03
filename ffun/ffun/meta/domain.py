@@ -111,4 +111,4 @@ async def clean_orphaned_tags(chunk: int) -> int:
 async def normalize_tags() -> None:
     # TODO: handle native feed tags (skip them?)
 
-    tags_in_rules = await s_domain.get_all_tags_in_rules()
+    await s_domain.get_all_tags_in_rules()

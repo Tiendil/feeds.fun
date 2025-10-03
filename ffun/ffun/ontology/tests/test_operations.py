@@ -330,8 +330,13 @@ class TestApplyTagsProperties:
         for tag in three_processor_tags:
             tag.link = f"https://example.com?{tag.uid}"
             properties.extend(
-                [p for p in tag.build_properties_for(tag_id=three_tags_by_uids[tag.uid], processor_id=fake_processor_id)
-                 if p.type == TagPropertyType.link]
+                [
+                    p
+                    for p in tag.build_properties_for(
+                        tag_id=three_tags_by_uids[tag.uid], processor_id=fake_processor_id
+                    )
+                    if p.type == TagPropertyType.link
+                ]
             )
 
         async with TableSizeDelta("o_tags_properties", delta=3):
