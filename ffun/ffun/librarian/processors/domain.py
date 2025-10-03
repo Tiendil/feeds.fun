@@ -3,7 +3,8 @@ from urllib.parse import urlparse
 from ffun.core import logging
 from ffun.librarian.processors import base
 from ffun.library.entities import Entry
-from ffun.ontology.entities import NormalizationMode, RawTag, TagCategory
+from ffun.ontology.entities import NormalizationMode, RawTag
+from ffun.tags.entities import TagCategory
 
 logger = logging.get_module_logger()
 

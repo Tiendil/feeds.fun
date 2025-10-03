@@ -3,6 +3,7 @@ import pytest
 from ffun.librarian.processors import upper_case_title
 from ffun.library.entities import Entry
 from ffun.ontology.entities import NormalizationMode, RawTag
+from ffun.tags.entities import TagCategory
 
 processor = upper_case_title.Processor(name="upper_case_title")
 
@@ -32,6 +33,6 @@ class TestEncodeSpecialCharacters:
         expected_tags = []
 
         if has_tag:
-            expected_tags.append(RawTag(raw_uid=expected_tag, normalization=NormalizationMode.final))
+            expected_tags.append(RawTag(raw_uid=expected_tag, normalization=NormalizationMode.final, categories={TagCategory.special}))
 
         assert tags == expected_tags

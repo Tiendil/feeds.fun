@@ -1,6 +1,7 @@
 from ffun.librarian.processors import base
 from ffun.library.entities import Entry
-from ffun.ontology.entities import NormalizationMode, RawTag, TagCategory
+from ffun.ontology.entities import NormalizationMode, RawTag
+from ffun.tags.entities import TagCategory
 
 
 class Processor(base.Processor):
