@@ -13,6 +13,7 @@ count_total_tags_per_type = operations.count_total_tags_per_type
 count_total_tags_per_category = operations.count_total_tags_per_category
 count_new_tags_at = operations.count_new_tags_at
 tag_frequency_statistics = operations.tag_frequency_statistics
+get_tags_properties = operations.get_tags_properties
 
 
 _tags_cache = cache.TagsCache()

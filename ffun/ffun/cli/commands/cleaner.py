@@ -44,15 +44,15 @@ def clean(chunk: int = 10000) -> None:
     asyncio.run(run_clean(chunk=chunk))
 
 
-async def run_renormalize(chunk: int) -> None:
+async def run_renormalize(from_tag_id: int, to_tag_id: int) -> None:
     async with with_app():
-        logger.info("renormalization_started", chunk=chunk)
+        logger.info("renormalization_started", from_tag_id=from_tag_id, to_tag_id=to_tag_id)
 
-        await renormalize_tags()
+        await renormalize_tags(tag_ids=list(range(from_tag_id, to_tag_id + 1)))
 
         logger.info("renormalization_finished")
 
 
 @cli_app.command()
-def renormalize(chunk: int = 10000) -> None:
-    asyncio.run(run_renormalize(chunk=chunk))
+def renormalize(from_tag_id: int, to_tag_id: int) -> None:
+    asyncio.run(run_renormalize(from_tag_id, to_tag_id))

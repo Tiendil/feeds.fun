@@ -108,18 +108,16 @@ async def clean_orphaned_tags(chunk: int) -> int:
 
 
 # TODO: tests
+# TODO: add logs to track progress
 # We expect, that when this function is called, all logic (workers, api) is already working on the new configs
 # => there will be no case when a new tag is created in the not normalized form
 #    (besides native feeds tags, but we'll handle them separately)
 # => we can load tags from rules once and use their cached list
-async def renormalize_tags() -> None:
+async def renormalize_tags(tag_ids: list[int]) -> None:
     # TODO: we may want a functionality to get all properties by types
     tags_in_rules = await s_domain.get_all_tags_in_rules()
 
-    all_tag_ids = await o_domain.get_all_tags_ids()
-    all_tag_ids.sort()
-
-    all_tag_propertries = await o_domain.get_tags_properties(all_tag_ids)
+    all_tag_propertries = await o_domain.get_tags_properties(tag_ids)
     all_tag_propertries = [property
                            for property in all_tag_propertries
                            if property.type == o_entities.TagPropertyType.categories]
@@ -127,14 +125,15 @@ async def renormalize_tags() -> None:
 
     old_tags_cache = o_cache.TagsCache()
 
-    old_tag_uids = await old_tags_cache.uids_by_ids(all_tag_ids)
-
     for property in all_tag_propertries:
-        await _renormalize_tag(old_tag_id=property.tag_id,
-                               old_tag_uid=old_tag_uids[property.tag_id],
+        old_tag_id = property.tag_id
+        old_uids = await old_tags_cache.uids_by_ids([old_tag_id])
+
+        await _renormalize_tag(old_tag_id=old_tag_id,
+                               old_tag_uid=old_uids[old_tag_id],
                                processor_id=property.processor_id,
                                categories=set(property.value.split(",")),
-                               tag_in_rules=property.tag_id in tags_in_rules
+                               tag_in_rules=old_tag_id in tags_in_rules
                                )
 
 
