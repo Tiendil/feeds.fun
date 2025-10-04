@@ -4,7 +4,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from ffun.domain.entities import TagUid, TagUidPart
-from ffun.ontology.entities import NormalizedTag, RawTag, TagCategory
+from ffun.ontology.entities import NormalizedTag, RawTag
 from ffun.tags.domain import apply_normalizers, normalize, prepare_for_normalization
 from ffun.tags.entities import NormalizationMode, TagCategory, TagInNormalization
 from ffun.tags.normalizers import FakeNormalizer, NormalizerAlwaysError, NormalizerInfo

@@ -9,7 +9,8 @@ from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.domain.entities import EntryId, TagId, TagUid
 from ffun.ontology import errors
-from ffun.ontology.entities import TagCategory, TagProperty, TagPropertyType, TagStatsBucket
+from ffun.ontology.entities import TagProperty, TagPropertyType, TagStatsBucket
+from ffun.tags.entities import TagCategory
 
 logger = logging.get_module_logger()
 

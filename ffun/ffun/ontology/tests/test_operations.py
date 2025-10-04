@@ -11,7 +11,7 @@ from ffun.library.entities import Entry
 from ffun.library.tests import make as l_make
 from ffun.ontology import errors
 from ffun.ontology.domain import apply_tags_to_entry
-from ffun.ontology.entities import NormalizedTag, TagCategory, TagPropertyType
+from ffun.ontology.entities import NormalizedTag, TagPropertyType
 from ffun.ontology.operations import (
     _get_relations_for_entry_and_tags,
     _register_relations_processors,
@@ -34,6 +34,7 @@ from ffun.ontology.operations import (
     tag_frequency_statistics,
     tech_copy_relations,
 )
+from ffun.tags.entities import TagCategory
 from ffun.ontology.tests.helpers import assert_has_tags
 
 

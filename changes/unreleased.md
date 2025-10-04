@@ -1,5 +1,11 @@
 
-No changes.
+**Operations required AFTER UPDATE**:
+
+1. Run migrations `ffun migrate`
+
+Changes:
+
+- ff-517 — ???
 
 TODO:
 

@@ -1,7 +1,6 @@
 import pytest
 
 from ffun.domain.entities import TagUid, TagUidPart
-from ffun.ontology.entities import TagCategory
 from ffun.tags.entities import NormalizationMode, TagCategory, TagInNormalization
 
 
