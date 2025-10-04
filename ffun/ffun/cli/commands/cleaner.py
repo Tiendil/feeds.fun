@@ -4,7 +4,7 @@ import typer
 
 from ffun.application.application import with_app
 from ffun.core import logging
-from ffun.meta.domain import clean_orphaned_entries, clean_orphaned_feeds, clean_orphaned_tags
+from ffun.meta.domain import clean_orphaned_entries, clean_orphaned_feeds, clean_orphaned_tags, renormalize_tags
 
 logger = logging.get_module_logger()
 
@@ -42,3 +42,17 @@ async def run_clean(chunk: int) -> None:
 @cli_app.command()
 def clean(chunk: int = 10000) -> None:
     asyncio.run(run_clean(chunk=chunk))
+
+
+async def run_renormalize(chunk: int) -> None:
+    async with with_app():
+        logger.info("renormalization_started", chunk=chunk)
+
+        await renormalize_tags()
+
+        logger.info("renormalization_finished")
+
+
+@cli_app.command()
+def renormalize(chunk: int = 10000) -> None:
+    asyncio.run(run_renormalize(chunk=chunk))
