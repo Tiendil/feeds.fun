@@ -170,7 +170,7 @@ async def _renormalize_tag(old_tag_id: TagId,
         await o_domain.copy_relations(processor_id, old_tag_id, new_tag_id)
 
         if tag_in_rules:
-            await s_domain.clone_rules_with_replaced_tag(old_tag_id, new_tag_id)
+            await s_domain.clone_rules_with_replacements({old_tag_id: new_tag_id})
 
     if original_tag_exists:
         return
