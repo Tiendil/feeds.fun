@@ -2,7 +2,7 @@ from typing import Iterable
 
 from ffun.core import logging, utils
 from ffun.domain.domain import new_feed_id
-from ffun.domain.entities import EntryId, FeedId, UserId
+from ffun.domain.entities import EntryId, FeedId, UserId, TagId, TagUid
 from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
@@ -107,6 +107,7 @@ async def clean_orphaned_tags(chunk: int) -> int:
     return await o_domain.remove_orphaned_tags(chunk=chunk, protected_tags=list(protected_tags))  # type: ignore
 
 
+# TODO: tests
 # We expect, that when this function is called, all logic (workers, api) is already working on the new configs
 # => there will be no case when a new tag is created in the not normalized form
 #    (besides native feeds tags, but we'll handle them separately)
@@ -125,44 +126,59 @@ async def renormalize_tags() -> None:
     all_tag_propertries.sort(key=lambda p: p.tag_id)
 
     old_tags_cache = o_cache.TagsCache()
-    new_tags_cache = o_cache.TagsCache()
 
     old_tag_uids = await old_tags_cache.uids_by_ids(all_tag_ids)
 
     for property in all_tag_propertries:
-        old_tag_id = property.tag_id
-        raw_tag = o_entities.RawTag(
-            raw_uid=old_tag_uids[old_tag_id],
-            link=None,  # TODO: check that it will not affect tags with links
-            categories=set(property.value.split(","))
-        )
+        await _renormalize_tag(old_tag_id=property.tag_id,
+                               old_tag_uid=old_tag_uids[property.tag_id],
+                               processor_id=property.processor_id,
+                               categories=set(property.value.split(",")),
+                               tag_in_rules=property.tag_id in tags_in_rules
+                               )
 
-        normalized_tags = await t_domain.normalize([raw_tag])
 
-        new_tag_ids = await new_tags_cache.ids_by_uids([tag.uid for tag in normalized_tags])
+# TODO: tests
+async def _renormalize_tag(old_tag_id: TagId,
+                           old_tag_uid: TagUid,
+                           processor_id: int,
+                           categories: set[str],
+                           tag_in_rules: bool
+                           ) -> None:
+    raw_tag = o_entities.RawTag(
+        raw_uid=old_tag_uid,
+        link=None,  # TODO: check that it will not affect tags with links
+        categories=categories
+    )
 
-        original_tag_found = False
+    normalized_tags = await t_domain.normalize([raw_tag])
 
-        for normalized_tag in normalized_tags:
-            if normalized_tag.uid == raw_tag.raw_uid:
-                original_tag_found = True
-                continue
+    new_tags_cache = o_cache.TagsCache()
 
-            # The case with already existed case whould be handled by copy_relations
+    new_tag_ids = await new_tags_cache.ids_by_uids([tag.uid for tag in normalized_tags])
 
-            new_tag_id = new_tag_ids[normalized_tag.uid]
+    original_tag_exists = False
 
-            await o_domain.copy_relations(property.processor_id, old_tag_id, new_tag_id)
-
-            if old_tag_id in tags_in_rules:
-                await s_domain.clone_rules_with_replaced_tag(old_tag_id, new_tag_id)
-
-        if original_tag_found:
+    for normalized_tag in normalized_tags:
+        if normalized_tag.uid == raw_tag.raw_uid:
+            original_tag_exists = True
             continue
 
-        # original tag was no longer required => remove everything related to it
-        # we can skip deleting the tag itself, it will be done later by cleaner
-        await o_domain.remove_relations_for_tags([old_tag_id])
+        # The case with already existed case whould be handled by copy_relations
 
-        if old_tag_id in tags_in_rules:
-            await s_domain.remove_rules_with_tags([old_tag_id])
+        new_tag_id = new_tag_ids[normalized_tag.uid]
+
+        await o_domain.copy_relations(processor_id, old_tag_id, new_tag_id)
+
+        if tag_in_rules:
+            await s_domain.clone_rules_with_replaced_tag(old_tag_id, new_tag_id)
+
+    if original_tag_exists:
+        return
+
+    # original tag was no longer required => remove everything related to it
+    # we can skip deleting the tag itself, it will be done later by cleaner
+    await o_domain.remove_relations_for_tags([old_tag_id])
+
+    if tag_in_rules:
+        await s_domain.remove_rules_with_tags([old_tag_id])
