@@ -2,7 +2,10 @@ from typing import Any, Iterable
 
 import psycopg
 
-from pypika import PostgreSQLQuery, Table
+from pypika.enums import Comparator
+from pypika.functions import Cast
+from pypika import PostgreSQLQuery, Table, Array
+from pypika.terms import BasicCriterion
 from ffun.core import logging
 from ffun.core.postgresql import execute, ExecuteType
 from ffun.domain.domain import new_rule_id
@@ -188,7 +191,10 @@ FROM (
     return {row["tag"] for row in rows}
 
 
-# TODO: tests
+class PostgreSQLArrayOperators(Comparator):
+    OVERLAPS = "&&"
+
+
 async def get_rules_for(execute: ExecuteType,
                         user_ids: list[UserId] | None = None,
                         tag_ids: list[TagId] | None = None) -> list[Rule]:
@@ -205,7 +211,12 @@ async def get_rules_for(execute: ExecuteType,
         query = query.where(s_rules.user_id.isin(list(user_ids)))
 
     if tag_ids:
-        query = query.where((s_rules.required_tags.overlaps(list(tag_ids))) | (s_rules.excluded_tags.overlaps(list(tag_ids))))
+        # any of the tags is in required or excluded
+        tags = Cast(Array(*tag_ids), 'bigint[]')
+        query = query.where(
+            BasicCriterion(PostgreSQLArrayOperators.OVERLAPS, s_rules.required_tags, tags) |
+            BasicCriterion(PostgreSQLArrayOperators.OVERLAPS, s_rules.excluded_tags, tags)
+        )
 
     result = await execute(str(query))
 

@@ -479,7 +479,7 @@ class TestGetRelationsFor:
             await get_relations_for(execute)
 
     @pytest.mark.asyncio
-    async def test_no_results(self, cataloged_entry: Entry) -> None:  # pylint: disable=W0613
+    async def test_no_results_guarantied(self, cataloged_entry: Entry) -> None:  # pylint: disable=W0613
         assert await get_relations_for(execute, entry_ids=[], tag_ids=[], processor_ids=[]) == []
         assert await get_relations_for(execute, entry_ids=[]) == []
         assert await get_relations_for(execute, tag_ids=[]) == []

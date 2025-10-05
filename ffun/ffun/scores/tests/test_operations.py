@@ -377,9 +377,95 @@ class TestGetAllTagsInRules:
         assert {TagId(1), TagId(2), TagId(3), TagId(4), TagId(5), TagId(6)} <= tags
 
 
-# most of the logic of this function is validated in other tests
 class TestGetRulesFor:
+
     @pytest.mark.asyncio
-    async def test_no_rules(self, internal_user_id: UserId) -> None:
+    async def test_no_filters(self) -> None:  # pylint: disable=W0613
+        with pytest.raises(errors.AtLeastOneFilterMustBeDefined):
+            await operations.get_rules_for(execute)
+
+    @pytest.mark.asyncio
+    async def test_no_results_guarantied(self) -> None:  # pylint: disable=W0613
+        assert await operations.get_rules_for(execute, user_ids=[], tag_ids=[]) == []
+        assert await operations.get_rules_for(execute, user_ids=[]) == []
+        assert await operations.get_rules_for(execute, tag_ids=[]) == []
+
+    @pytest.mark.asyncio
+    async def test_no_rules_for_user(self, internal_user_id: UserId) -> None:
         rules = await operations.get_rules_for(execute, user_ids=[internal_user_id])
         assert rules == []
+
+    @pytest.mark.asyncio
+    async def test_no_rules_for_tag(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
+        rules = await operations.get_rules_for(execute, tag_ids=list(three_tags_ids))
+        assert rules == []
+
+    @pytest.mark.asyncio
+    async def test_some_rules_for_user(
+        self,
+        internal_user_id: UserId,
+        another_internal_user_id: UserId,
+        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]
+    ) -> None:
+        tag_1, tag_2, tag_3, tag_4, tag_5 = five_tags_ids
+
+        rule_1_1 = await operations.create_or_update_rule(
+            internal_user_id, required_tags=[tag_1, tag_2], excluded_tags=[tag_3], score=3
+        )
+        rule_1_2 = await operations.create_or_update_rule(
+            internal_user_id, required_tags=[tag_4], excluded_tags=[tag_5], score=5
+        )
+
+        rule_2_1 = await operations.create_or_update_rule(
+            another_internal_user_id, required_tags=[tag_1, tag_3], excluded_tags=[tag_4], score=7
+        )
+
+        rules = await operations.get_rules_for(execute, user_ids=[internal_user_id])
+        assert {r.id for r in rules} == {rule_1_1.id, rule_1_2.id}
+
+        rules = await operations.get_rules_for(execute, user_ids=[another_internal_user_id])
+        assert {r.id for r in rules} == {rule_2_1.id}
+
+        rules = await operations.get_rules_for(execute, user_ids=[internal_user_id, another_internal_user_id])
+        rules.sort(key=lambda r: (r.user_id, r.score))
+        assert {r.id for r in rules} == {rule_1_1.id, rule_1_2.id, rule_2_1.id}
+
+    @pytest.mark.asyncio
+    async def test_some_rules_for_tags(
+        self,
+        internal_user_id: UserId,
+        another_internal_user_id: UserId,
+        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]
+    ) -> None:
+        tag_1, tag_2, tag_3, tag_4, tag_5 = five_tags_ids
+
+        rule_1_1 = await operations.create_or_update_rule(
+            internal_user_id, required_tags=[tag_1, tag_2], excluded_tags=[tag_3], score=3
+        )
+        rule_1_2 = await operations.create_or_update_rule(
+            internal_user_id, required_tags=[tag_4], excluded_tags=[tag_5], score=5
+        )
+
+        rule_2_1 = await operations.create_or_update_rule(
+            another_internal_user_id, required_tags=[tag_1, tag_3], excluded_tags=[tag_4], score=7
+        )
+
+        rules = await operations.get_rules_for(execute, tag_ids=[tag_1])
+        rules.sort(key=lambda r: (r.user_id, r.score))
+        assert {r.id for r in rules} == {rule_1_1.id, rule_2_1.id}
+
+        rules = await operations.get_rules_for(execute, tag_ids=[tag_2])
+        assert {r.id for r in rules} == {rule_1_1.id}
+
+        rules = await operations.get_rules_for(execute, tag_ids=[tag_3])
+        assert {r.id for r in rules} == {rule_1_1.id, rule_2_1.id}
+
+        rules = await operations.get_rules_for(execute, tag_ids=[tag_4])
+        assert {r.id for r in rules} == {rule_1_2.id, rule_2_1.id}
+
+        rules = await operations.get_rules_for(execute, tag_ids=[tag_5])
+        assert {r.id for r in rules} == {rule_1_2.id}
+
+        rules = await operations.get_rules_for(execute, tag_ids=[tag_1, tag_4])
+        rules.sort(key=lambda r: (r.user_id, r.score))
+        assert {r.id for r in rules} == {rule_1_1.id, rule_1_2.id, rule_2_1.id}
