@@ -96,11 +96,6 @@ async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[E
     await operations.remove_relations(execute, relation_ids)
 
 
-@run_in_transaction
-async def tech_copy_relations(execute: ExecuteType, entry_from_id: EntryId, entry_to_id: EntryId) -> None:
-    await operations.tech_copy_relations(execute, entry_from_id, entry_to_id)
-
-
 def _inplace_filter_out_entry_tags(
     entry_tag_ids: dict[EntryId, set[TagId]], must_have_tags: set[TagId], min_tag_count: int
 ) -> set[TagId]:

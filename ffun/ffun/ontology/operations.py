@@ -118,30 +118,6 @@ async def apply_tags(execute: ExecuteType, entry_id: EntryId, processor_id: int,
     await _register_relations_processors(execute, list(relations.values()), processor_id)
 
 
-async def tech_copy_relations(execute: ExecuteType, entry_from_id: EntryId, entry_to_id: EntryId) -> None:
-    """Copy relations with processors info."""
-    # get processors for each tag in entry_from
-    sql = """
-    SELECT rp.processor_id, r.tag_id
-    FROM o_relations_processors rp
-    JOIN o_relations r ON rp.relation_id = r.id
-    WHERE r.entry_id = %(entry_id)s
-    """
-
-    result = await execute(sql, {"entry_id": entry_from_id})
-
-    tags_by_processors: dict[int, list[TagId]] = {}
-
-    for row in result:
-        if row["processor_id"] not in tags_by_processors:
-            tags_by_processors[row["processor_id"]] = []
-
-        tags_by_processors[row["processor_id"]].append(row["tag_id"])
-
-    for processor_id, tags_ids in tags_by_processors.items():
-        await apply_tags(execute, entry_to_id, processor_id, tags_ids)
-
-
 async def apply_tags_properties(execute: ExecuteType, properties: Sequence[TagProperty]) -> None:
 
     if not properties:
@@ -374,3 +350,10 @@ async def remove_tags(execute: ExecuteType, tags_ids: list[TagId]) -> None:
     sql = "DELETE FROM o_tags WHERE id = ANY(%(tags_ids)s)"
 
     await execute(sql, {"tags_ids": list(tags_ids)})
+
+
+# # TODO: tests
+# async def copy_relations(execute: ExecuteType, processor_id: int, old_tag_id: TagId, new_tag_id: TagId) -> None:
+#     sql = """
+
+#     """
