@@ -174,6 +174,24 @@ async def get_rules(user_id: UserId) -> list[Rule]:
     return [row_to_rule(row) for row in rows]
 
 
+# TODO: tests
+async def get_rules_by_ids(rule_ids: Iterable[RuleId]) -> list[Rule]:
+    rule_ids = set(rule_ids)
+
+    if not rule_ids:
+        return []
+
+    sql = """
+    SELECT *
+    FROM s_rules
+    WHERE id = ANY(%(rule_ids)s)
+    """
+
+    rows = await execute(sql, {"rule_ids": list(rule_ids)})
+
+    return [row_to_rule(row) for row in rows]
+
+
 async def count_rules_per_user() -> dict[UserId, int]:
     # Not optimal implementation, but should work for a very long time
     result = await execute("SELECT user_id, COUNT(*) FROM s_rules GROUP BY user_id")
@@ -194,3 +212,21 @@ FROM (
     rows = await execute(sql)
 
     return {row["tag"] for row in rows}
+
+
+# TODO: tests
+async def get_rules_with_tags(tags: Iterable[TagId]) -> list[RuleId]:
+    tags = set(tags)
+
+    if not tags:
+        return []
+
+    sql = """
+    SELECT id
+    FROM s_rules
+    WHERE (required_tags && %(tags)s) OR (excluded_tags && %(tags)s)
+    """
+
+    rows = await execute(sql, {"tags": list(tags)})
+
+    return [row["id"] for row in rows]
