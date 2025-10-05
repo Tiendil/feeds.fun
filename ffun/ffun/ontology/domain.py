@@ -152,3 +152,10 @@ async def copy_relations(execute: ExecuteType, processor_id: int, old_tag_id: Ta
     new_relation_ids = await operations.copy_relations_to_new_tag(execute, relation_ids, new_tag_id)
 
     await operations.register_relations_processors(execute, new_relation_ids, processor_id)
+
+
+# TODO: tests
+async def remove_relations_for_tags(tag_ids: Iterable[TagId]) -> None:
+    relation_ids = await operations.get_relations_for(execute, tag_ids=tag_ids)
+
+    await operations.remove_relations(execute, relation_ids)
