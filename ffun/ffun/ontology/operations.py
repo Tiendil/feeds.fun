@@ -331,7 +331,6 @@ async def remove_tags(execute: ExecuteType, tags_ids: list[TagId]) -> None:
     await execute(sql, {"tags_ids": list(tags_ids)})
 
 
-# TODO: tests
 async def get_relations_for(execute: ExecuteType,
                             entry_ids: Iterable[EntryId] | None = None,
                             tag_ids: Iterable[TagId] | None = None ,
@@ -355,8 +354,6 @@ async def get_relations_for(execute: ExecuteType,
     if processor_ids:
         query = query.left_join(o_relations_processors).on(o_relations.id == o_relations_processors.relation_id)
         query = query.where(o_relations_processors.processor_id.isin(list(processor_ids)))
-
-    print(str(query))
 
     result = await execute(str(query))
 

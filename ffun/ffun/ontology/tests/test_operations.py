@@ -472,8 +472,6 @@ class TestRemoveTags:
         assert {property.tag_id for property in saved_properties} == {five_tags_ids[3]}
 
 
-# TODO: add tests for processors
-# TODO: add tests for complex requests
 class TestGetRelationsFor:
     @pytest.mark.asyncio
     async def test_no_filters(self, cataloged_entry: Entry) -> None:  # pylint: disable=W0613
@@ -582,4 +580,55 @@ class TestGetRelationsFor:
 
         relation_3_ids = await get_relations_for(execute, tag_ids=[three_tags_ids[0], three_tags_ids[2]])
         assert len(relation_3_ids) == 3
+        assert set(relation_3_ids) == set(relation_1_ids) | set(relation_2_ids)
+
+    @pytest.mark.asyncio
+    async def test_some_processors(
+        self,
+        cataloged_entry: Entry,
+        another_cataloged_entry: Entry,
+        fake_processor_id: int,
+        another_fake_processor_id: int,
+        three_tags_ids: tuple[TagId, TagId, TagId],
+    ) -> None:
+        async with transaction() as trx:
+            await apply_tags(
+                trx, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tag_ids=[three_tags_ids[0]]
+            )
+
+        async with transaction() as trx:
+            await apply_tags(
+                trx, entry_id=cataloged_entry.id, processor_id=another_fake_processor_id, tag_ids=[three_tags_ids[2]]
+            )
+
+        async with transaction() as trx:
+            await apply_tags(
+                trx, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tag_ids=three_tags_ids[1:]
+            )
+
+        relation_1_ids = await get_relations_for(execute,
+                                                 entry_ids=[cataloged_entry.id, another_cataloged_entry.id],
+                                                 processor_ids=[fake_processor_id])
+        expected_relation_1_ids_1 = await get_relations_for(
+            execute, entry_ids=[cataloged_entry.id], tag_ids=[three_tags_ids[0]]
+        )
+        expected_relation_1_ids_2 = await get_relations_for(
+            execute, entry_ids=[another_cataloged_entry.id], tag_ids=[three_tags_ids[1], three_tags_ids[2]]
+        )
+        assert len(relation_1_ids) == 3
+        assert set(relation_1_ids) == set(expected_relation_1_ids_1) | set(expected_relation_1_ids_2)
+
+        relation_2_ids = await get_relations_for(execute,
+                                                 entry_ids=[cataloged_entry.id, another_cataloged_entry.id],
+                                                 processor_ids=[another_fake_processor_id])
+        expected_relation_2_ids = await get_relations_for(
+            execute, entry_ids=[cataloged_entry.id], tag_ids=[three_tags_ids[2]]
+        )
+        assert len(relation_2_ids) == 1
+        assert set(relation_2_ids) == set(expected_relation_2_ids)
+
+        relation_3_ids = await get_relations_for(execute,
+                                                 entry_ids=[cataloged_entry.id, another_cataloged_entry.id],
+                                                 processor_ids=[fake_processor_id, another_fake_processor_id])
+        assert len(relation_3_ids) == 4
         assert set(relation_3_ids) == set(relation_1_ids) | set(relation_2_ids)
