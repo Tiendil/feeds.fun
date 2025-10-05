@@ -88,7 +88,7 @@ async def _save_tags(execute: ExecuteType, entry_id: EntryId, tags_ids: Iterable
     await execute(str(query))
 
 
-async def _register_relations_processors(
+async def register_relations_processors(
     execute: ExecuteType, relations_ids: Iterable[int], processor_id: int
 ) -> None:
 
@@ -110,7 +110,7 @@ async def apply_tags(execute: ExecuteType, entry_id: EntryId, processor_id: int,
 
     relation_ids = await get_relations_for(execute, entry_ids=[entry_id], tag_ids=tag_ids)
 
-    await _register_relations_processors(execute, relation_ids, processor_id)
+    await register_relations_processors(execute, relation_ids, processor_id)
 
 
 async def apply_tags_properties(execute: ExecuteType, properties: Sequence[TagProperty]) -> None:
@@ -358,3 +358,19 @@ async def get_relations_for(execute: ExecuteType,
     result = await execute(str(query))
 
     return [row["id"] for row in result]
+
+
+# TODO: tests
+async def copy_relations_to_new_tag(execute: ExecuteType, relation_ids: list[int], new_tag_id: TagId) -> None:
+    if not relation_ids:
+        return
+
+    sql = """
+    INSERT INTO o_relations (entry_id, tag_id)
+    SELECT entry_id, %(new_tag_id)s
+    FROM o_relations
+    WHERE id = ANY(%(relation_ids)s)
+    ON CONFLICT (entry_id, tag_id) DO NOTHING
+    """
+
+    await execute(sql, {"new_tag_id": new_tag_id, "relation_ids": relation_ids})
