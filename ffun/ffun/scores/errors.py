@@ -11,3 +11,7 @@ class NoRuleFound(Error):
 
 class TagsIntersection(Error):
     pass
+
+
+class AtLeastOneFilterMustBeDefined(Error):
+    pass

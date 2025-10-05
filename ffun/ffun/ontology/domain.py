@@ -155,7 +155,8 @@ async def copy_relations(execute: ExecuteType, processor_id: int, old_tag_id: Ta
 
 
 # TODO: tests
-async def remove_relations_for_tags(tag_ids: Iterable[TagId]) -> None:
+@run_in_transaction
+async def remove_relations_for_tags(execute: ExecuteType, tag_ids: Iterable[TagId]) -> None:
     relation_ids = await operations.get_relations_for(execute, tag_ids=tag_ids)
 
     await operations.remove_relations(execute, relation_ids)

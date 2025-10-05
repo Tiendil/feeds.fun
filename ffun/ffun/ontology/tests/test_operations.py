@@ -13,7 +13,7 @@ from ffun.ontology import errors
 from ffun.ontology.domain import apply_tags_to_entry
 from ffun.ontology.entities import NormalizedTag, TagPropertyType
 from ffun.ontology.operations import (
-    _register_relations_processors,
+    register_relations_processors,
     _save_tags,
     apply_tags,
     apply_tags_properties,
@@ -79,7 +79,7 @@ class TestRegisterRelationsProcessors:
     @pytest.mark.asyncio
     async def test_no_relations(self, fake_processor_id: int) -> None:
         async with TableSizeNotChanged("o_relations_processors"):
-            await _register_relations_processors(execute, [], fake_processor_id)
+            await register_relations_processors(execute, [], fake_processor_id)
 
     @pytest.mark.asyncio
     async def test(
@@ -90,7 +90,7 @@ class TestRegisterRelationsProcessors:
         relations_ids = await get_relations_for(execute, entry_ids=[cataloged_entry.id], tag_ids=three_tags_ids[:2])
 
         async with TableSizeDelta("o_relations_processors", delta=2):
-            await _register_relations_processors(
+            await register_relations_processors(
                 execute, relations_ids=relations_ids, processor_id=fake_processor_id
             )
 
@@ -108,10 +108,10 @@ class TestRegisterRelationsProcessors:
         relation_ids = await get_relations_for(execute, entry_ids=[cataloged_entry.id], tag_ids=three_tags_ids)
 
         async with TableSizeDelta("o_relations_processors", delta=3):
-            await _register_relations_processors(
+            await register_relations_processors(
                 execute, relations_ids=relation_ids[:2], processor_id=fake_processor_id
             )
-            await _register_relations_processors(
+            await register_relations_processors(
                 execute, relations_ids=relation_ids[1:], processor_id=fake_processor_id
             )
 

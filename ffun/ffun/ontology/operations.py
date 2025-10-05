@@ -332,9 +332,9 @@ async def remove_tags(execute: ExecuteType, tags_ids: list[TagId]) -> None:
 
 
 async def get_relations_for(execute: ExecuteType,
-                            entry_ids: Iterable[EntryId] | None = None,
-                            tag_ids: Iterable[TagId] | None = None ,
-                            processor_ids: Iterable[int] | None = None,
+                            entry_ids: list[EntryId] | None = None,
+                            tag_ids: list[TagId] | None = None ,
+                            processor_ids: list[int] | None = None,
                             ) -> list[int]:
 
     if entry_ids is None and tag_ids is None and processor_ids is None:

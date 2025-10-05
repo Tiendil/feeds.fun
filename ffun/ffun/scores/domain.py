@@ -1,6 +1,7 @@
 from typing import Iterable
 
-from ffun.domain.entities import TagId
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
+from ffun.domain.entities import TagId, UserId, RuleId
 from ffun.scores import entities, operations
 
 count_rules_per_user = operations.count_rules_per_user
@@ -35,17 +36,22 @@ def get_score_contributions(rules: Iterable[entities.Rule], tags: set[TagId]) ->
 
 
 create_or_update_rule = operations.create_or_update_rule
-delete_rule = operations.delete_rule
-get_rules = operations.get_rules
 update_rule = operations.update_rule
 get_all_tags_in_rules = operations.get_all_tags_in_rules
 
 
-# TODO: tests
-async def clone_rules_for_replacements(replacements: dict[TagId, TagId]) -> None:
-    rule_ids = await operations.get_rules_with_tags(set(replacements.keys()))
+async def get_rules_for_user(user_id: UserId) -> list[entities.Rule]:
+    return await operations.get_rules_for(execute, user_ids=[user_id])
 
-    rules = await operations.get_rules_by_ids(rule_ids)
+
+async def delete_rules(user_id: UserId, rule_id: RuleId) -> None:
+    await operations.delete_rule(execute, user_id, rule_id)
+
+
+# TODO: tests
+@run_in_transaction
+async def clone_rules_for_replacements(execute: ExecuteType, replacements: dict[TagId, TagId]) -> None:
+    rules = await operations.get_rules_for(execute, tag_ids=list(replacements.keys()))
 
     new_rules = [rule.replace_tags(replacements) for rule in rules]
 
@@ -58,8 +64,9 @@ async def clone_rules_for_replacements(replacements: dict[TagId, TagId]) -> None
 
 
 # TODO: tests
-async def remove_rules_with_tags(tag_ids: Iterable[TagId]) -> None:
-    rule_ids = await operations.get_rules_with_tags(tag_ids)
+@run_in_transaction
+async def remove_rules_with_tags(execute: ExecuteType, tag_ids: Iterable[TagId]) -> None:
+    rule_ids = await operations.get_rules_for(execute, tag_ids=tag_ids)
 
     for rule_id in rule_ids:
-        await operations.delete_rule(rule_id)
+        await operations.delete_rule(execute, rule_id)

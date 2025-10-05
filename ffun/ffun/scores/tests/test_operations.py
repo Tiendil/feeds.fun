@@ -1,5 +1,6 @@
 import pytest
 
+from ffun.core.postgresql import execute, ExecuteType
 from ffun.core.tests.helpers import (
     TableSizeDelta,
     TableSizeNotChanged,
@@ -26,7 +27,7 @@ class TestCreateOrUpdateRule:
                     internal_user_id, score=13, required_tags=required_tags, excluded_tags=excluded_tags
                 )
 
-        rules = await domain.get_rules(internal_user_id)
+        rules = await operations.get_rules_for(execute, user_ids=[internal_user_id])
 
         assert rules == [created_rule]
 
@@ -68,7 +69,7 @@ class TestCreateOrUpdateRule:
         assert created_rule_1.required_tags == created_rule_2.required_tags
         assert created_rule_1.excluded_tags == created_rule_2.excluded_tags
 
-        rules = await domain.get_rules(internal_user_id)
+        rules = await operations.get_rules_for(execute, user_ids=[internal_user_id])
 
         assert rules == [created_rule_2]
 
@@ -89,7 +90,7 @@ class TestCreateOrUpdateRule:
                     internal_user_id, score=17, required_tags=required_tags, excluded_tags=excluded_tags
                 )
 
-        rules = await domain.get_rules(internal_user_id)
+        rules = await operations.get_rules_for(execute, user_ids=[internal_user_id])
 
         assert rules == [updated_rule]
 
@@ -129,7 +130,7 @@ class TestCreateOrUpdateRule:
             internal_user_id, required_tags=five_tags_ids[:2], excluded_tags=five_tags_ids[-2:], score=11
         )
 
-        rules = await domain.get_rules(internal_user_id)
+        rules = await operations.get_rules_for(execute, user_ids=[internal_user_id])
 
         assert len(rules) == 1
 
@@ -138,7 +139,7 @@ class TestCreateOrUpdateRule:
         assert rules[0].excluded_tags == set(five_tags_ids[-2:])
         assert rules[0].score == 11
 
-        rules = await domain.get_rules(another_internal_user_id)
+        rules = await operations.get_rules_for(execute, user_ids=[another_internal_user_id])
 
         rules.sort(key=lambda r: r.score)
 
@@ -170,7 +171,7 @@ class TestCreateOrUpdateRule:
                         internal_user_id, required_tags=required_tags, excluded_tags=excluded_tags, score=13
                     )
 
-        rules = await domain.get_rules(internal_user_id)
+        rules = await operations.get_rules_for(execute, user_ids=[internal_user_id])
 
         assert rules == []
 
@@ -194,15 +195,15 @@ class TestDeleteRule:
 
         with capture_logs() as logs:
             async with TableSizeDelta("s_rules", delta=-1):
-                await operations.delete_rule(internal_user_id, rule_to_delete.id)
+                await operations.delete_rule(execute, internal_user_id, rule_to_delete.id)
 
         assert_logs_has_business_event(logs, "rule_deleted", user_id=internal_user_id, rule_id=str(rule_to_delete.id))
 
-        rules = await domain.get_rules(internal_user_id)
+        rules = await operations.get_rules_for(execute, user_ids=[internal_user_id])
 
         assert rules == [rule_2]
 
-        rules = await domain.get_rules(another_internal_user_id)
+        rules = await operations.get_rules_for(execute, user_ids=[another_internal_user_id])
 
         assert rules == [rule_3]
 
@@ -210,7 +211,7 @@ class TestDeleteRule:
     async def test_delete_not_existed_rule(self, internal_user_id: UserId) -> None:
         with capture_logs() as logs:
             async with TableSizeNotChanged("s_rules"):
-                await operations.delete_rule(internal_user_id, new_rule_id())
+                await operations.delete_rule(execute, internal_user_id, new_rule_id())
 
         assert_logs_has_no_business_event(logs, "rule_deleted")
 
@@ -223,7 +224,7 @@ class TestDeleteRule:
         )
 
         async with TableSizeNotChanged("s_rules"):
-            await operations.delete_rule(another_internal_user_id, rule_to_delete.id)
+            await operations.delete_rule(execute, another_internal_user_id, rule_to_delete.id)
 
 
 class TestUpdateRule:
@@ -254,7 +255,7 @@ class TestUpdateRule:
         assert updated_rule.excluded_tags == set(five_tags_ids[4:])
         assert updated_rule.score == 17
 
-        rules = await domain.get_rules(internal_user_id)
+        rules = await operations.get_rules_for(execute, user_ids=[internal_user_id])
 
         assert rules == [updated_rule]
 
@@ -303,7 +304,7 @@ class TestUpdateRule:
                     score=17,
                 )
 
-        rules = await domain.get_rules(internal_user_id)
+        rules = await operations.get_rules_for(execute, user_ids=[internal_user_id])
 
         assert rules == [rule_to_update]
 
@@ -327,20 +328,11 @@ class TestUpdateRule:
                     score=17,
                 )
 
-        rules = await domain.get_rules(internal_user_id)
+        rules = await operations.get_rules_for(execute, user_ids=[internal_user_id])
 
         assert rules == [rule_to_update]
 
         assert_logs_has_no_business_event(logs, "rule_updated")
-
-
-# most of the logic of this function is validated in other tests
-class TestGetRules:
-    @pytest.mark.asyncio
-    async def test_no_rules(self, internal_user_id: UserId) -> None:
-        rules = await domain.get_rules(internal_user_id)
-
-        assert rules == []
 
 
 class TestCountRulesPerUser:
@@ -383,3 +375,11 @@ class TestGetAllTagsInRules:
         tags = await operations.get_all_tags_in_rules()
 
         assert {TagId(1), TagId(2), TagId(3), TagId(4), TagId(5), TagId(6)} <= tags
+
+
+# most of the logic of this function is validated in other tests
+class TestGetRulesFor:
+    @pytest.mark.asyncio
+    async def test_no_rules(self, internal_user_id: UserId) -> None:
+        rules = await operations.get_rules_for(execute, user_ids=[internal_user_id])
+        assert rules == []
