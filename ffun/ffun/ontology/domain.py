@@ -92,7 +92,7 @@ async def get_tags_info(tags_ids: Iterable[TagId]) -> dict[TagId, Tag]:  # noqa:
 
 @run_in_transaction
 async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> None:
-    relation_ids = await operations.get_relations_for_entries(execute, entries_ids)
+    relation_ids = await operations.get_relations_for(execute, entry_ids=entries_ids)
     await operations.remove_relations(execute, relation_ids)
 
 

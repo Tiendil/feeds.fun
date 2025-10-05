@@ -7,3 +7,7 @@ class Error(errors.Error):
 
 class DuplicatedTagPropeties(Error):
     pass
+
+
+class AtLeastOneFilterMustBeDefined(Error):
+    pass
