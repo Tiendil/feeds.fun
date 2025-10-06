@@ -161,6 +161,7 @@ async def _renormalize_tag(
     keep_old_tag, new_tags = await _normalize_tag_uid(
         old_tag_uid=old_tag_uid,
         categories=categories,
+        processor_id=processor_id,
     )
 
     logger.info("renormalizing_candidates_found", old_tag_id=old_tag_id, keep_old_tag=keep_old_tag, new_tags=new_tags)
@@ -172,7 +173,9 @@ async def _renormalize_tag(
         await remove_tags([old_tag_id])
 
 
-async def _normalize_tag_uid(old_tag_uid: TagUid, categories: TagCategories) -> tuple[bool, list[TagId]]:
+async def _normalize_tag_uid(old_tag_uid: TagUid,
+                             categories: TagCategories,
+                             processor_id: int) -> tuple[bool, list[TagId]]:
     if not categories:
         return False, []
 
@@ -185,6 +188,14 @@ async def _normalize_tag_uid(old_tag_uid: TagUid, categories: TagCategories) -> 
     new_tags_cache = o_cache.TagsCache()
 
     new_tag_ids = await new_tags_cache.ids_by_uids([tag.uid for tag in normalized_tags])
+
+    # we update new properties for all tags, even for the old one
+    # because it at this place logic should not know which properties and how can be changed
+    # => it is easier to just update everything
+    new_properties = []
+    for tag in normalized_tags:
+        new_properties.extend(tag.build_properties_for(tag_id=new_tag_ids[tag.uid], processor_id=processor_id))
+    await o_domain.apply_tags_properties(new_properties)
 
     original_tag_exists = False
 

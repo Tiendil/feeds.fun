@@ -296,26 +296,26 @@ class TestApplyRenormalizedTags:
 class TestNormalizeTagUid:
 
     @pytest.mark.asyncio
-    async def test_no_categories(self) -> None:
-        assert await _normalize_tag_uid(old_tag_uid=TagUid("some-test-tag"), categories=set()) == (False, [])
+    async def test_no_categories(self, fake_processor_id: int) -> None:
+        assert await _normalize_tag_uid(old_tag_uid=TagUid("some-test-tag"), categories=set(), processor_id=fake_processor_id) == (False, [])
 
     @pytest.mark.asyncio
-    async def test_no_norm_forms(self, mocker: MockerFixture) -> None:
+    async def test_no_norm_forms(self, mocker: MockerFixture, fake_processor_id: int) -> None:
         normalize = mocker.patch("ffun.tags.domain.normalize", return_value=[])
 
         categories = {TagCategory.test_raw, TagCategory.test_final}
 
         old_tag_uid = TagUid("some-test-tag")
 
-        assert await _normalize_tag_uid(old_tag_uid=old_tag_uid, categories=categories) == (False, [])
+        assert await _normalize_tag_uid(old_tag_uid=old_tag_uid, categories=categories, processor_id=fake_processor_id) == (False, [])
 
         assert normalize.call_args_list == [
             mocker.call([RawTag(raw_uid=old_tag_uid, link=None, categories=categories)])
         ]
 
     @pytest.mark.asyncio
-    async def test_normalized__no_original_form(self, mocker: MockerFixture) -> None:
-        norm_tag_1 = NormalizedTag(uid=TagUid("norm-tag-1"), link=None, categories={TagCategory.test_final})
+    async def test_normalized__no_original_form(self, mocker: MockerFixture, fake_processor_id: int) -> None:
+        norm_tag_1 = NormalizedTag(uid=TagUid("norm-tag-1"), link=None, categories={TagCategory.test_final, TagCategory.test_preserve})
         norm_tag_2 = NormalizedTag(uid=TagUid("norm-tag-2"), link=None, categories={TagCategory.test_raw})
 
         old_tag_uid = TagUid("some-test-tag")
@@ -328,7 +328,7 @@ class TestNormalizeTagUid:
 
         categories = {TagCategory.test_raw, TagCategory.test_final}
 
-        (keep_old_tag, new_tags) = await _normalize_tag_uid(old_tag_uid=old_tag_uid, categories=categories)
+        (keep_old_tag, new_tags) = await _normalize_tag_uid(old_tag_uid=old_tag_uid, categories=categories, processor_id=fake_processor_id)
 
         assert not keep_old_tag
         assert set(new_tags) == {uids_to_ids[norm_tag_1.uid], uids_to_ids[norm_tag_2.uid]}
@@ -337,10 +337,23 @@ class TestNormalizeTagUid:
             mocker.call([RawTag(raw_uid=old_tag_uid, link=None, categories=categories)])
         ]
 
+        properties = await o_domain.get_tags_properties([uids_to_ids[norm_tag_1.uid], uids_to_ids[norm_tag_2.uid]])
+        properties = [property for property in properties if property.processor_id == fake_processor_id]
+        assert len(properties) == 2
+        assert all(property.type == TagPropertyType.categories for property in properties)
+
+        tag_1_property = [property for property in properties if property.tag_id == uids_to_ids[norm_tag_1.uid]
+        ][0]
+        tag_2_property = [property for property in properties if property.tag_id == uids_to_ids[norm_tag_2.uid]
+        ][0]
+
+        assert tag_1_property.value == ",".join(sorted(category.value for category in norm_tag_1.categories))
+        assert tag_2_property.value == ",".join(sorted(category.value for category in norm_tag_2.categories))
+
     @pytest.mark.asyncio
-    async def test_normalized__keep_original_form(self, mocker: MockerFixture) -> None:
+    async def test_normalized__keep_original_form(self, mocker: MockerFixture, fake_processor_id: int) -> None:
         norm_tag_1 = NormalizedTag(uid=TagUid("norm-tag-1"), link=None, categories={TagCategory.test_final})
-        norm_tag_2 = NormalizedTag(uid=TagUid("norm-tag-2"), link=None, categories={TagCategory.test_raw})
+        norm_tag_2 = NormalizedTag(uid=TagUid("norm-tag-2"), link=None, categories={TagCategory.test_raw, TagCategory.test_preserve})
         norm_tag_3 = NormalizedTag(uid=TagUid("norm-tag-3"), link=None, categories={TagCategory.test_raw})
 
         uids_to_ids = await o_domain.get_ids_by_uids(
@@ -351,7 +364,7 @@ class TestNormalizeTagUid:
 
         categories = {TagCategory.test_raw, TagCategory.test_final}
 
-        (keep_old_tag, new_tags) = await _normalize_tag_uid(old_tag_uid=norm_tag_2.uid, categories=categories)
+        (keep_old_tag, new_tags) = await _normalize_tag_uid(old_tag_uid=norm_tag_2.uid, categories=categories, processor_id=fake_processor_id)
 
         assert keep_old_tag
         assert set(new_tags) == {uids_to_ids[norm_tag_1.uid], uids_to_ids[norm_tag_3.uid]}
@@ -359,6 +372,22 @@ class TestNormalizeTagUid:
         assert normalize.call_args_list == [
             mocker.call([RawTag(raw_uid=norm_tag_2.uid, link=None, categories=categories)])
         ]
+
+        properties = await o_domain.get_tags_properties(list(uids_to_ids.values()))
+        properties = [property for property in properties if property.processor_id == fake_processor_id]
+        assert len(properties) == 3
+        assert all(property.type == TagPropertyType.categories for property in properties)
+
+        tag_1_property = [property for property in properties if property.tag_id == uids_to_ids[norm_tag_1.uid]
+        ][0]
+        tag_2_property = [property for property in properties if property.tag_id == uids_to_ids[norm_tag_2.uid]
+        ][0]
+        tag_3_property = [property for property in properties if property.tag_id == uids_to_ids[norm_tag_3.uid]
+                          ][0]
+
+        assert tag_1_property.value == ",".join(sorted(category.value for category in norm_tag_1.categories))
+        assert tag_2_property.value == ",".join(sorted(category.value for category in norm_tag_2.categories))
+        assert tag_3_property.value == ",".join(sorted(category.value for category in norm_tag_3.categories))
 
 
 # test that everything is connected correctly
@@ -389,7 +418,7 @@ class TestRenormalizeTag:
         )
 
         assert normalize_tag_uid.call_args_list == [
-            mocker.call(old_tag_uid=three_processor_tags[0].uid, categories=categories)
+            mocker.call(old_tag_uid=three_processor_tags[0].uid, categories=categories, processor_id=fake_processor_id)
         ]
         assert apply_renormalized_tags.call_args_list == [
             mocker.call(processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[1]),
@@ -422,7 +451,7 @@ class TestRenormalizeTag:
         )
 
         assert normalize_tag_uid.call_args_list == [
-            mocker.call(old_tag_uid=three_processor_tags[0].uid, categories=categories)
+            mocker.call(old_tag_uid=three_processor_tags[0].uid, categories=categories, processor_id=fake_processor_id)
         ]
         assert apply_renormalized_tags.call_args_list == [
             mocker.call(processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[1]),
