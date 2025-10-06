@@ -5,18 +5,4 @@
 
 Changes:
 
-- ff-517 — ???
-
-TODO:
-
-- [x] require categories for each tag processor
-- [x] rewrite normalization to use categories to decide what to do
-- [x] restore missed categories with migration with help of o_tags_relations
-- [ ] Algorism of renomalization:
-      - [ ] for each tag+processor properties
-      - [ ] normalize tag according to categories in properties
-      - [ ] if tag changed, migrate relations for specified processor
-      - [ ] if original tag in rules, clone rules and replace original tag with normalized tag (do not create duplicates)
-      - [ ] if we create new tag version for each processor and the original tag in rules, remove rule with original tag
-- [x] Check tag processors on the real data
-- [ ] Check tag re-normalization on the real data
+- ff-517 — Implemented command `ffun cleaner renormalize` — it goes through all tags in the database and tries to (re)normalize them according to the current configs. It updates the rules and tags of entries accordingly.
