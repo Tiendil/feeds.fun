@@ -16,7 +16,7 @@ from ffun.ontology import entities as o_entities
 from ffun.parsers import entities as p_entities
 from ffun.scores import domain as s_domain
 from ffun.tags import domain as t_domain
-from ffun.tags.entities import TagCategories
+from ffun.tags.entities import TagCategories, TagCategory
 
 logger = logging.get_module_logger()
 
@@ -112,7 +112,7 @@ async def clean_orphaned_tags(chunk: int) -> int:
 # => there will be no case when a new tag is created in the not normalized form
 #    (besides native feeds tags, but we'll handle them separately)
 # => we can load tags from rules once and use their cached list
-async def renormalize_tags(tag_ids: list[int]) -> None:
+async def renormalize_tags(tag_ids: list[TagId]) -> None:
     logger.info("renormalization_started", tag_ids_number=len(tag_ids))
 
     all_tag_propertries = await o_domain.get_tags_properties(tag_ids)
@@ -140,13 +140,13 @@ async def renormalize_tags(tag_ids: list[int]) -> None:
             old_tag_id=old_tag_id,
             old_tag_uid=old_tag_uid,
             processor_id=property.processor_id,
-            categories=set(property.value.split(",")),
+            categories={TagCategory(name) for name in property.value.split(",")},
         )
 
     logger.info("renormalization_finished")
 
 
-async def _renormalize_tag(processor_id: int, old_tag_id: TagId, old_tag_uid: TagUid, categories: set[str]) -> None:
+async def _renormalize_tag(processor_id: int, old_tag_id: TagId, old_tag_uid: TagUid, categories: set[TagCategory]) -> None:
 
     logger.info(
         "renormalizing_tag",

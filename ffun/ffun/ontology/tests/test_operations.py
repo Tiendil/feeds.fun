@@ -87,7 +87,7 @@ class TestRegisterRelationsProcessors:
     ) -> None:
         await _save_tags(execute, cataloged_entry.id, three_tags_ids[:2])
 
-        relations_ids = await get_relations_for(execute, entry_ids=[cataloged_entry.id], tag_ids=three_tags_ids[:2])
+        relations_ids = await get_relations_for(execute, entry_ids=[cataloged_entry.id], tag_ids=list(three_tags_ids[:2]))
 
         async with TableSizeDelta("o_relations_processors", delta=2):
             await register_relations_processors(execute, relations_ids=relations_ids, processor_id=fake_processor_id)
@@ -103,7 +103,7 @@ class TestRegisterRelationsProcessors:
     ) -> None:
         await _save_tags(execute, cataloged_entry.id, three_tags_ids)
 
-        relation_ids = await get_relations_for(execute, entry_ids=[cataloged_entry.id], tag_ids=three_tags_ids)
+        relation_ids = await get_relations_for(execute, entry_ids=[cataloged_entry.id], tag_ids=list(three_tags_ids))
 
         async with TableSizeDelta("o_relations_processors", delta=3):
             await register_relations_processors(
@@ -146,17 +146,17 @@ class TestRemoveRelations:
     ) -> None:
         async with transaction() as trx:
             await apply_tags(
-                trx, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tag_ids=three_tags_ids[:2]
+                trx, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tag_ids=list(three_tags_ids[:2])
             )
 
         async with transaction() as trx:
             await apply_tags(
-                trx, entry_id=cataloged_entry.id, processor_id=another_fake_processor_id, tag_ids=three_tags_ids[1:]
+                trx, entry_id=cataloged_entry.id, processor_id=another_fake_processor_id, tag_ids=list(three_tags_ids[1:])
             )
 
         async with transaction() as trx:
             await apply_tags(
-                trx, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tag_ids=three_tags_ids
+                trx, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tag_ids=list(three_tags_ids)
             )
 
         async with transaction() as trx:
@@ -164,7 +164,7 @@ class TestRemoveRelations:
                 trx,
                 entry_id=another_cataloged_entry.id,
                 processor_id=another_fake_processor_id,
-                tag_ids=three_tags_ids,
+                tag_ids=list(three_tags_ids),
             )
 
         async with (
@@ -518,19 +518,19 @@ class TestGetRelationsFor:
 
         async with transaction() as trx:
             await apply_tags(
-                trx, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tag_ids=three_tags_ids
+                trx, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tag_ids=list(three_tags_ids)
             )
 
         relation_1_ids = await get_relations_for(execute, entry_ids=[cataloged_entry.id])
         expected_relation_1_ids = await get_relations_for(
-            execute, entry_ids=[cataloged_entry.id], tag_ids=three_tags_ids
+            execute, entry_ids=[cataloged_entry.id], tag_ids=list(three_tags_ids)
         )
         assert len(relation_1_ids) == 2
         assert set(relation_1_ids) == set(expected_relation_1_ids)
 
         relation_2_ids = await get_relations_for(execute, entry_ids=[another_cataloged_entry.id])
         expected_relation_2_ids = await get_relations_for(
-            execute, entry_ids=[another_cataloged_entry.id], tag_ids=three_tags_ids
+            execute, entry_ids=[another_cataloged_entry.id], tag_ids=list(three_tags_ids)
         )
         assert len(relation_2_ids) == 3
         assert set(relation_2_ids) == set(expected_relation_2_ids)
@@ -560,7 +560,7 @@ class TestGetRelationsFor:
 
         async with transaction() as trx:
             await apply_tags(
-                trx, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tag_ids=three_tags_ids[1:]
+                trx, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tag_ids=list(three_tags_ids[1:])
             )
 
         relation_1_ids = await get_relations_for(execute, tag_ids=[three_tags_ids[0]])
@@ -602,7 +602,7 @@ class TestGetRelationsFor:
         )
 
         await apply_tags(
-            execute, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tag_ids=three_tags_ids[1:]
+            execute, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tag_ids=list(three_tags_ids[1:])
         )
 
         relation_1_ids = await get_relations_for(

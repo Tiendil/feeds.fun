@@ -103,7 +103,7 @@ async def register_relations_processors(execute: ExecuteType, relations_ids: Ite
     await execute(str(query))
 
 
-async def apply_tags(execute: ExecuteType, entry_id: EntryId, processor_id: int, tag_ids: Iterable[TagId]) -> None:
+async def apply_tags(execute: ExecuteType, entry_id: EntryId, processor_id: int, tag_ids: list[TagId]) -> None:
     await _save_tags(execute, entry_id, tag_ids)
 
     relation_ids = await get_relations_for(execute, entry_ids=[entry_id], tag_ids=tag_ids)

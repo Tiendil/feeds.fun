@@ -44,7 +44,7 @@ async def get_rules_for_user(user_id: UserId) -> list[entities.Rule]:
     return await operations.get_rules_for(execute, user_ids=[user_id])
 
 
-async def delete_rules(user_id: UserId, rule_id: RuleId) -> None:
+async def delete_rule(user_id: UserId, rule_id: RuleId) -> None:
     await operations.delete_rule(execute, user_id, rule_id)
 
 
@@ -64,7 +64,7 @@ async def clone_rules_for_replacements(execute: ExecuteType, replacements: dict[
 
 
 @run_in_transaction
-async def remove_rules_with_tags(execute: ExecuteType, tag_ids: Iterable[TagId]) -> None:
+async def remove_rules_with_tags(execute: ExecuteType, tag_ids: list[TagId]) -> None:
     if not tag_ids:
         return
 

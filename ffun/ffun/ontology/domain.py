@@ -60,7 +60,7 @@ async def apply_tags_to_entry(entry_id: EntryId, processor_id: int, tags: Iterab
         properties.extend(tag.build_properties_for(tag_id, processor_id=processor_id))
 
     async with transaction() as execute:
-        await operations.apply_tags(execute, entry_id, processor_id, uids_to_ids.values())
+        await operations.apply_tags(execute, entry_id, processor_id, list(uids_to_ids.values()))
         await operations.apply_tags_properties(execute, properties)
 
 
@@ -74,7 +74,8 @@ async def get_tags_info(tags_ids: Iterable[TagId]) -> dict[TagId, Tag]:  # noqa:
 
     tags_by_ids = await get_tags_by_ids(tags_ids)
 
-    info = {tag_id: Tag(id=tag_id, name=converters.verbose(tags_by_ids[tag_id])) for tag_id in tags_ids}
+    info = {tag_id: Tag(id=tag_id, name=converters.verbose(tags_by_ids[tag_id]))  # type: ignore
+            for tag_id in tags_ids}
 
     # TODO: implement more complex merging
     for property in properties:
@@ -159,7 +160,7 @@ async def copy_relations(execute: ExecuteType, processor_id: int, old_tag_id: Ta
 
 
 @run_in_transaction
-async def remove_relations_for_tags(execute: ExecuteType, tag_ids: Iterable[TagId]) -> None:
+async def remove_relations_for_tags(execute: ExecuteType, tag_ids: list[TagId]) -> None:
     relation_ids = await operations.get_relations_for(execute, tag_ids=tag_ids)
 
     await operations.remove_relations(execute, relation_ids)

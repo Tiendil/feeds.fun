@@ -2,12 +2,11 @@ from typing import Any, Iterable
 
 import psycopg
 from pypika import Array, PostgreSQLQuery, Table
-from pypika.enums import Comparator
 from pypika.functions import Cast
 from pypika.terms import BasicCriterion
 
 from ffun.core import logging
-from ffun.core.postgresql import ExecuteType, execute
+from ffun.core.postgresql import ExecuteType, execute, PostgreSQLArrayOperators
 from ffun.domain.domain import new_rule_id
 from ffun.domain.entities import RuleId, TagId, UserId
 from ffun.scores import errors
@@ -189,10 +188,6 @@ FROM (
     rows = await execute(sql)
 
     return {row["tag"] for row in rows}
-
-
-class PostgreSQLArrayOperators(Comparator):
-    OVERLAPS = "&&"
 
 
 async def get_rules_for(

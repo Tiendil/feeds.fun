@@ -4,6 +4,7 @@ import typer
 
 from ffun.application.application import with_app
 from ffun.core import logging
+from ffun.domain.entities import TagId
 from ffun.meta.domain import clean_orphaned_entries, clean_orphaned_feeds, clean_orphaned_tags, renormalize_tags
 
 logger = logging.get_module_logger()
@@ -48,7 +49,7 @@ async def run_renormalize(from_tag_id: int, to_tag_id: int) -> None:
     async with with_app():
         logger.info("renormalization_started", from_tag_id=from_tag_id, to_tag_id=to_tag_id)
 
-        await renormalize_tags(tag_ids=list(range(from_tag_id, to_tag_id + 1)))
+        await renormalize_tags(tag_ids=[TagId(tag_id) for tag_id in range(from_tag_id, to_tag_id + 1)])
 
         logger.info("renormalization_finished")
 

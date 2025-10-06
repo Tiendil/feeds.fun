@@ -7,7 +7,7 @@ from pytest_mock import MockerFixture
 
 from ffun.core import utils
 from ffun.core.postgresql import execute
-from ffun.domain.entities import TagId, UserId
+from ffun.domain.entities import TagId, UserId, TagUid
 from ffun.domain.urls import str_to_feed_url, url_to_source_uid, url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
@@ -293,7 +293,7 @@ class TestNormalizeTagUid:
 
     @pytest.mark.asyncio
     async def test_no_categories(self) -> None:
-        assert await _normalize_tag_uid(old_tag_uid="some-test-tag", categories=set()) == (False, [])
+        assert await _normalize_tag_uid(old_tag_uid=TagUid("some-test-tag"), categories=set()) == (False, [])
 
     @pytest.mark.asyncio
     async def test_no_norm_forms(self, mocker: MockerFixture) -> None:
@@ -301,18 +301,20 @@ class TestNormalizeTagUid:
 
         categories = {TagCategory.test_raw, TagCategory.test_final}
 
-        assert await _normalize_tag_uid(old_tag_uid="some-test-tag", categories=categories) == (False, [])
+        old_tag_uid = TagUid("some-test-tag")
+
+        assert await _normalize_tag_uid(old_tag_uid=old_tag_uid, categories=categories) == (False, [])
 
         assert normalize.call_args_list == [
-            mocker.call([RawTag(raw_uid="some-test-tag", link=None, categories=categories)])
+            mocker.call([RawTag(raw_uid=old_tag_uid, link=None, categories=categories)])
         ]
 
     @pytest.mark.asyncio
     async def test_normalized__no_original_form(self, mocker: MockerFixture) -> None:
-        norm_tag_1 = NormalizedTag(uid="norm-tag-1", link=None, categories={TagCategory.test_final})
-        norm_tag_2 = NormalizedTag(uid="norm-tag-2", link=None, categories={TagCategory.test_raw})
+        norm_tag_1 = NormalizedTag(uid=TagUid("norm-tag-1"), link=None, categories={TagCategory.test_final})
+        norm_tag_2 = NormalizedTag(uid=TagUid("norm-tag-2"), link=None, categories={TagCategory.test_raw})
 
-        old_tag_uid = "some-test-tag"
+        old_tag_uid = TagUid("some-test-tag")
 
         uids_to_ids = await o_domain.get_ids_by_uids(
             [old_tag_uid, norm_tag_1.uid, norm_tag_2.uid]  # make sure tags exist in the database
@@ -333,9 +335,9 @@ class TestNormalizeTagUid:
 
     @pytest.mark.asyncio
     async def test_normalized__keep_original_form(self, mocker: MockerFixture) -> None:
-        norm_tag_1 = NormalizedTag(uid="norm-tag-1", link=None, categories={TagCategory.test_final})
-        norm_tag_2 = NormalizedTag(uid="norm-tag-2", link=None, categories={TagCategory.test_raw})
-        norm_tag_3 = NormalizedTag(uid="norm-tag-3", link=None, categories={TagCategory.test_raw})
+        norm_tag_1 = NormalizedTag(uid=TagUid("norm-tag-1"), link=None, categories={TagCategory.test_final})
+        norm_tag_2 = NormalizedTag(uid=TagUid("norm-tag-2"), link=None, categories={TagCategory.test_raw})
+        norm_tag_3 = NormalizedTag(uid=TagUid("norm-tag-3"), link=None, categories={TagCategory.test_raw})
 
         uids_to_ids = await o_domain.get_ids_by_uids(
             [norm_tag_1.uid, norm_tag_2.uid, norm_tag_3.uid]  # make sure tags exist in the database
