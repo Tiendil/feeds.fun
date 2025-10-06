@@ -5,7 +5,8 @@ import typer
 from ffun.application.application import with_app
 from ffun.core import logging
 from ffun.domain.entities import TagId
-from ffun.meta.domain import clean_orphaned_entries, clean_orphaned_feeds, clean_orphaned_tags, renormalize_tags as meta_renormalize_tags
+from ffun.meta.domain import clean_orphaned_entries, clean_orphaned_feeds, clean_orphaned_tags
+from ffun.meta.domain import renormalize_tags as meta_renormalize_tags
 
 logger = logging.get_module_logger()
 
