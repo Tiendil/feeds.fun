@@ -28,8 +28,9 @@ from ffun.meta.domain import (
     renormalize_tags
 )
 from ffun.ontology import domain as o_domain
-from ffun.ontology.entities import NormalizedTag
+from ffun.ontology.entities import NormalizedTag, RawTag
 from ffun.parsers import entities as p_entities
+from ffun.tags.entities import TagCategory
 
 
 class TestRemoveEntries:
@@ -284,3 +285,74 @@ class TestApplyRenormalizedTags:
                                                              old_tag_id=three_tags_ids[0],
                                                              new_tag_id=three_tags_ids[1])]
         assert clone_rules_for_replacements.call_args_list == [mocker.call({three_tags_ids[0]: three_tags_ids[1]})]
+
+
+class TestNormalizeTagUid:
+
+    @pytest.mark.asyncio
+    async def test_no_categories(self) -> None:
+        assert await _normalize_tag_uid(old_tag_uid="some-test-tag", categories=set()) == (False, [])
+
+    @pytest.mark.asyncio
+    async def test_no_norm_forms(self, mocker: MockerFixture) -> None:
+        normalize = mocker.patch("ffun.tags.domain.normalize", return_value=[])
+
+        categories = {TagCategory.test_raw, TagCategory.test_final}
+
+        assert await _normalize_tag_uid(old_tag_uid="some-test-tag",
+                                        categories=categories) == (False, [])
+
+        assert normalize.call_args_list == [mocker.call([RawTag(raw_uid="some-test-tag",
+                                                                link=None,
+                                                                categories=categories)])]
+
+    @pytest.mark.asyncio
+    async def test_normalized__no_original_form(self, mocker: MockerFixture) -> None:
+        norm_tag_1 = NormalizedTag(uid="norm-tag-1", link=None, categories={TagCategory.test_final})
+        norm_tag_2 = NormalizedTag(uid="norm-tag-2", link=None, categories={TagCategory.test_raw})
+
+        old_tag_uid = "some-test-tag"
+
+        uids_to_ids = await o_domain.get_ids_by_uids([old_tag_uid,  # make sure tags exist in the database
+                                                      norm_tag_1.uid,
+                                                      norm_tag_2.uid])
+
+        normalize = mocker.patch("ffun.tags.domain.normalize",
+                                 return_value=[norm_tag_1, norm_tag_2])
+
+        categories = {TagCategory.test_raw, TagCategory.test_final}
+
+        (keep_old_tag, new_tags) = await _normalize_tag_uid(old_tag_uid=old_tag_uid,
+                                                            categories=categories)
+
+        assert not keep_old_tag
+        assert set(new_tags) == {uids_to_ids[norm_tag_1.uid], uids_to_ids[norm_tag_2.uid]}
+
+        assert normalize.call_args_list == [mocker.call([RawTag(raw_uid=old_tag_uid,
+                                                                link=None,
+                                                                categories=categories)])]
+
+    @pytest.mark.asyncio
+    async def test_normalized__keep_original_form(self, mocker: MockerFixture) -> None:
+        norm_tag_1 = NormalizedTag(uid="norm-tag-1", link=None, categories={TagCategory.test_final})
+        norm_tag_2 = NormalizedTag(uid="norm-tag-2", link=None, categories={TagCategory.test_raw})
+        norm_tag_3 = NormalizedTag(uid="norm-tag-3", link=None, categories={TagCategory.test_raw})
+
+        uids_to_ids = await o_domain.get_ids_by_uids([norm_tag_1.uid,  # make sure tags exist in the database
+                                                      norm_tag_2.uid,
+                                                      norm_tag_3.uid])
+
+        normalize = mocker.patch("ffun.tags.domain.normalize",
+                                 return_value=[norm_tag_1, norm_tag_2, norm_tag_3])
+
+        categories = {TagCategory.test_raw, TagCategory.test_final}
+
+        (keep_old_tag, new_tags) = await _normalize_tag_uid(old_tag_uid=norm_tag_2.uid,
+                                                            categories=categories)
+
+        assert keep_old_tag
+        assert set(new_tags) == {uids_to_ids[norm_tag_1.uid], uids_to_ids[norm_tag_3.uid]}
+
+        assert normalize.call_args_list == [mocker.call([RawTag(raw_uid=norm_tag_2.uid,
+                                                                link=None,
+                                                                categories=categories)])]

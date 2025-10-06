@@ -16,6 +16,7 @@ from ffun.ontology import entities as o_entities
 from ffun.parsers import entities as p_entities
 from ffun.scores import domain as s_domain
 from ffun.tags import domain as t_domain
+from ffun.tags.entities import TagCategories
 
 logger = logging.get_module_logger()
 
@@ -154,10 +155,12 @@ async def _renormalize_tag(
         await remove_tags([old_tag_id])
 
 
-# TODO: tests
 async def _normalize_tag_uid(
-    old_tag_uid: TagUid, categories: set[str]
+    old_tag_uid: TagUid, categories: TagCategories
 ) -> tuple[bool, list[TagId]]:
+    if not categories:
+        return False, []
+
     raw_tag = o_entities.RawTag(
         raw_uid=old_tag_uid, link=None, categories=categories  # TODO: check that it will not affect tags with links
     )
@@ -188,7 +191,7 @@ async def _apply_renormalized_tags(processor_id: int, old_tag_id: TagId, new_tag
 
 
 async def remove_tags(tag_ids: list[TagId]) -> None:
-    # we clean only tag connections here,
+    # we clean only tag relations here,
     # tags itself will be removed later by cleaner
     await o_domain.remove_relations_for_tags(tag_ids)
     await s_domain.remove_rules_with_tags(tag_ids)
