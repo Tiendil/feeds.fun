@@ -360,16 +360,20 @@ async def get_relations_for(
 
 
 # TODO: tests
-async def copy_relations_to_new_tag(execute: ExecuteType, relation_ids: list[int], new_tag_id: TagId) -> None:
+async def copy_relations_to_new_tag(execute: ExecuteType, relation_ids: list[int], new_tag_id: TagId) -> list[int]:
     if not relation_ids:
         return
 
+    # We use DO UPDATE since we need to return all new relations ids
     sql = """
     INSERT INTO o_relations (entry_id, tag_id)
     SELECT entry_id, %(new_tag_id)s
     FROM o_relations
     WHERE id = ANY(%(relation_ids)s)
-    ON CONFLICT (entry_id, tag_id) DO NOTHING
+    ON CONFLICT (entry_id, tag_id) DO UPDATE SET tag_id = EXCLUDED.tag_id
+    RETURNING id
     """
 
-    await execute(sql, {"new_tag_id": new_tag_id, "relation_ids": relation_ids})
+    results = await execute(sql, {"new_tag_id": new_tag_id, "relation_ids": relation_ids})
+
+    return [row["id"] for row in results]

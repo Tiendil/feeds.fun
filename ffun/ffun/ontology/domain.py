@@ -144,9 +144,9 @@ async def remove_orphaned_tags(execute: ExecuteType, chunk: int, protected_tags:
     return len(orphaned_tags)
 
 
-# TODO: tests
 @run_in_transaction
 async def copy_relations(execute: ExecuteType, processor_id: int, old_tag_id: TagId, new_tag_id: TagId) -> None:
+
     relation_ids = await operations.get_relations_for(execute, tag_ids=[old_tag_id], processor_ids=[processor_id])
 
     new_relation_ids = await operations.copy_relations_to_new_tag(execute, relation_ids, new_tag_id)
