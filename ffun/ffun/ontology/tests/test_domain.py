@@ -387,7 +387,7 @@ class TestCopyRelations:
             )
 
     @pytest.mark.asyncio
-    async def test_copy(
+    async def test_copy(  # noqa: CFQ002
         self,
         cataloged_entry: Entry,
         another_cataloged_entry: Entry,
@@ -473,7 +473,7 @@ class TestRemoveRelationsForTags:
                 await remove_relations_for_tags(tag_ids=[])
 
     @pytest.mark.asyncio
-    async def test_remove(
+    async def test_remove(  # noqa: CFQ002
         self,
         cataloged_entry: Entry,
         another_cataloged_entry: Entry,

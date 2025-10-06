@@ -131,10 +131,8 @@ class TestCloneRulesForeReplacements:
     ) -> None:
         tag_1, tag_2, tag_3, tag_4, tag_5 = five_tags_ids
 
-        rule_1_1 = await domain.create_or_update_rule(
-            internal_user_id, required_tags={tag_1}, excluded_tags=set(), score=1
-        )
-        rule_1_2 = await domain.create_or_update_rule(
+        await domain.create_or_update_rule(internal_user_id, required_tags={tag_1}, excluded_tags=set(), score=1)
+        await domain.create_or_update_rule(
             internal_user_id,
             required_tags={tag_2},
             excluded_tags={
@@ -143,13 +141,13 @@ class TestCloneRulesForeReplacements:
             },
             score=2,
         )
-        rule_2_1 = await domain.create_or_update_rule(
+        await domain.create_or_update_rule(
             another_internal_user_id, required_tags=set(), excluded_tags={tag_2}, score=3
         )
-        rule_2_2 = await domain.create_or_update_rule(
+        await domain.create_or_update_rule(
             another_internal_user_id, required_tags={tag_2}, excluded_tags={tag_5}, score=4
         )
-        rule_2_3 = await domain.create_or_update_rule(
+        await domain.create_or_update_rule(
             another_internal_user_id, required_tags={tag_3}, excluded_tags={tag_2}, score=5
         )
 
@@ -204,7 +202,7 @@ class TestRemoveRulesWithTags:
             await domain.remove_rules_with_tags({three_tags_ids[2]})
 
     @pytest.mark.asyncio
-    async def test_remove_rules(
+    async def test_remove_rules(  # pylint: disable=too-many-locals
         self,
         internal_user_id: UserId,
         another_internal_user_id: UserId,
@@ -213,7 +211,7 @@ class TestRemoveRulesWithTags:
 
         tag_1, tag_2, tag_3, tag_4, tag_5 = five_tags_ids
 
-        rule_1_1 = await domain.create_or_update_rule(
+        rule_1_1 = await domain.create_or_update_rule(  # pylint: disable=W0612 # noqa: F841
             internal_user_id, required_tags={tag_1}, excluded_tags=set(), score=1
         )
         rule_1_2 = await domain.create_or_update_rule(
@@ -228,7 +226,7 @@ class TestRemoveRulesWithTags:
         rule_2_1 = await domain.create_or_update_rule(
             another_internal_user_id, required_tags=set(), excluded_tags={tag_2}, score=3
         )
-        rule_2_2 = await domain.create_or_update_rule(
+        rule_2_2 = await domain.create_or_update_rule(  # pylint: disable=W0612 # noqa: F841
             another_internal_user_id, required_tags={tag_2}, excluded_tags={tag_5}, score=4
         )
         rule_2_3 = await domain.create_or_update_rule(
