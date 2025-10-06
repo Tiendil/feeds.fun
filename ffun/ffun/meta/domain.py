@@ -177,7 +177,7 @@ async def _normalize_tag_uid(old_tag_uid: TagUid, categories: TagCategories) -> 
         return False, []
 
     raw_tag = o_entities.RawTag(
-        raw_uid=old_tag_uid, link=None, categories=categories  # TODO: check that it will not affect tags with links
+        raw_uid=old_tag_uid, link=None, categories=categories
     )
 
     normalized_tags = await t_domain.normalize([raw_tag])
