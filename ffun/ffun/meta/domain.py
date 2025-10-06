@@ -134,14 +134,36 @@ async def renormalize_tags(tag_ids: list[int]) -> None:
             old_tag_uid=old_uids[old_tag_id],
             processor_id=property.processor_id,
             categories=set(property.value.split(",")),
-            tag_in_rules=old_tag_id in tags_in_rules,
+            tag_in_rules=old_tag_id in tags_in_rules
         )
 
 
 # TODO: tests
 async def _renormalize_tag(
-    old_tag_id: TagId, old_tag_uid: TagUid, processor_id: int, categories: set[str], tag_in_rules: bool
-) -> None:
+        processor_id: int,
+        old_tag_id: TagId,
+        old_tag_uid: TagUid,
+        categories: set[str],
+        tag_in_rules: bool) -> None:
+    keep_old_tag, new_tags = await _normalize_tag_uid(
+        old_tag_uid=old_tag_uid,
+        categories=categories,
+    )
+
+    for new_tag_id in new_tags:
+        await _copy_renormalized_tags(processor_id=processor_id,
+                                      old_tag_id=old_tag_id,
+                                      new_tag_id=new_tag_id,
+                                      tag_in_rules=tag_in_rules)
+
+    if not keep_old_tag:
+        await _remove_tag(old_tag_id=old_tag_id, tag_in_rules=tag_in_rules)
+
+
+# TODO: tests
+async def _normalize_tag_uid(
+    old_tag_uid: TagUid, categories: set[str]
+) -> tuple[bool, list[TagId]]:
     raw_tag = o_entities.RawTag(
         raw_uid=old_tag_uid, link=None, categories=categories  # TODO: check that it will not affect tags with links
     )
@@ -154,24 +176,28 @@ async def _renormalize_tag(
 
     original_tag_exists = False
 
+    tags_to_copy = []
+
     for normalized_tag in normalized_tags:
         if normalized_tag.uid == raw_tag.raw_uid:
             original_tag_exists = True
             continue
 
-        # The case with already existed case whould be handled by copy_relations
+        tags_to_copy.append(new_tag_ids[normalized_tag.uid])
 
-        new_tag_id = new_tag_ids[normalized_tag.uid]
+    return original_tag_exists, tags_to_copy
 
-        await o_domain.copy_relations(processor_id, old_tag_id, new_tag_id)
 
-        if tag_in_rules:
-            await s_domain.clone_rules_for_replacements({old_tag_id: new_tag_id})
+# TODO: tests
+async def _copy_renormalized_tags(processor_id: int, old_tag_id: TagId, new_tag_id: TagId, tag_in_rules: bool) -> None:
+    await o_domain.copy_relations(processor_id, old_tag_id, new_tag_id)
 
-    if original_tag_exists:
-        return
+    if tag_in_rules:
+        await s_domain.clone_rules_for_replacements({old_tag_id: new_tag_id})
 
-    # original tag was no longer required => remove everything related to it
+
+# TODO: tests
+async def _remove_tag(old_tag_id: TagId, tag_in_rules: bool) -> None:
     # we can skip deleting the tag itself, it will be done later by cleaner
     await o_domain.remove_relations_for_tags([old_tag_id])
 
