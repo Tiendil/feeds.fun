@@ -3,13 +3,7 @@ import pytest
 from ffun.core.tests.helpers import (
     TableSizeDelta,
     TableSizeNotChanged,
-    assert_logs_has_business_event,
-    assert_logs_has_no_business_event,
-    capture_logs,
 )
-
-from ffun.core import utils
-from ffun.domain.domain import new_rule_id, new_user_id
 from ffun.domain.entities import TagId, UserId
 from ffun.scores import domain, entities
 from ffun.scores.tests.helpers import rule
@@ -106,27 +100,58 @@ class TestCloneRulesForeReplacements:
 
     @pytest.mark.asyncio
     async def test_no_replacements(self, internal_user_id: UserId, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
-        await domain.create_or_update_rule(internal_user_id, required_tags={three_tags_ids[0]}, excluded_tags=set(), score=2)
-        await domain.create_or_update_rule(internal_user_id, required_tags=set(), excluded_tags={three_tags_ids[1]}, score=2)
+        await domain.create_or_update_rule(
+            internal_user_id, required_tags={three_tags_ids[0]}, excluded_tags=set(), score=2
+        )
+        await domain.create_or_update_rule(
+            internal_user_id, required_tags=set(), excluded_tags={three_tags_ids[1]}, score=2
+        )
         async with TableSizeNotChanged("s_rules"):
             await domain.clone_rules_for_replacements({})
 
     @pytest.mark.asyncio
-    async def test_no_rules_for_tags(self, internal_user_id: UserId, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
-        await domain.create_or_update_rule(internal_user_id, required_tags={three_tags_ids[1]}, excluded_tags=set(), score=2)
-        await domain.create_or_update_rule(internal_user_id, required_tags=set(), excluded_tags={three_tags_ids[2]}, score=2)
+    async def test_no_rules_for_tags(
+        self, internal_user_id: UserId, three_tags_ids: tuple[TagId, TagId, TagId]
+    ) -> None:
+        await domain.create_or_update_rule(
+            internal_user_id, required_tags={three_tags_ids[1]}, excluded_tags=set(), score=2
+        )
+        await domain.create_or_update_rule(
+            internal_user_id, required_tags=set(), excluded_tags={three_tags_ids[2]}, score=2
+        )
         async with TableSizeNotChanged("s_rules"):
             await domain.clone_rules_for_replacements({three_tags_ids[0]: three_tags_ids[1]})
 
     @pytest.mark.asyncio
-    async def test_clone_rules(self, internal_user_id: UserId, another_internal_user_id: UserId, five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]) -> None:
+    async def test_clone_rules(
+        self,
+        internal_user_id: UserId,
+        another_internal_user_id: UserId,
+        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
+    ) -> None:
         tag_1, tag_2, tag_3, tag_4, tag_5 = five_tags_ids
 
-        rule_1_1 = await domain.create_or_update_rule(internal_user_id, required_tags={tag_1}, excluded_tags=set(), score=1)
-        rule_1_2 = await domain.create_or_update_rule(internal_user_id, required_tags={tag_2}, excluded_tags={tag_4, tag_1, }, score=2)
-        rule_2_1 = await domain.create_or_update_rule(another_internal_user_id, required_tags=set(), excluded_tags={tag_2}, score=3)
-        rule_2_2 = await domain.create_or_update_rule(another_internal_user_id, required_tags={tag_2}, excluded_tags={tag_5}, score=4)
-        rule_2_3 = await domain.create_or_update_rule(another_internal_user_id, required_tags={tag_3}, excluded_tags={tag_2}, score=5)
+        rule_1_1 = await domain.create_or_update_rule(
+            internal_user_id, required_tags={tag_1}, excluded_tags=set(), score=1
+        )
+        rule_1_2 = await domain.create_or_update_rule(
+            internal_user_id,
+            required_tags={tag_2},
+            excluded_tags={
+                tag_4,
+                tag_1,
+            },
+            score=2,
+        )
+        rule_2_1 = await domain.create_or_update_rule(
+            another_internal_user_id, required_tags=set(), excluded_tags={tag_2}, score=3
+        )
+        rule_2_2 = await domain.create_or_update_rule(
+            another_internal_user_id, required_tags={tag_2}, excluded_tags={tag_5}, score=4
+        )
+        rule_2_3 = await domain.create_or_update_rule(
+            another_internal_user_id, required_tags={tag_3}, excluded_tags={tag_2}, score=5
+        )
 
         async with TableSizeDelta("s_rules", delta=3):
             await domain.clone_rules_for_replacements({tag_1: tag_3, tag_5: tag_3})
@@ -151,31 +176,64 @@ class TestCloneRulesForeReplacements:
 class TestRemoveRulesWithTags:
 
     @pytest.mark.asyncio
-    async def test_no_tags(self, internal_user_id: UserId, another_internal_user_id: UserId, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
-        await domain.create_or_update_rule(internal_user_id, required_tags={three_tags_ids[0]}, excluded_tags=set(), score=2)
-        await domain.create_or_update_rule(another_internal_user_id, required_tags=set(), excluded_tags={three_tags_ids[1]}, score=2)
+    async def test_no_tags(
+        self, internal_user_id: UserId, another_internal_user_id: UserId, three_tags_ids: tuple[TagId, TagId, TagId]
+    ) -> None:
+        await domain.create_or_update_rule(
+            internal_user_id, required_tags={three_tags_ids[0]}, excluded_tags=set(), score=2
+        )
+        await domain.create_or_update_rule(
+            another_internal_user_id, required_tags=set(), excluded_tags={three_tags_ids[1]}, score=2
+        )
 
         async with TableSizeNotChanged("s_rules"):
             await domain.remove_rules_with_tags({})
 
     @pytest.mark.asyncio
-    async def test_no_rules_for_tags(self, internal_user_id: UserId, another_internal_user_id: UserId, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
-        await domain.create_or_update_rule(internal_user_id, required_tags={three_tags_ids[0]}, excluded_tags=set(), score=2)
-        await domain.create_or_update_rule(another_internal_user_id, required_tags=set(), excluded_tags={three_tags_ids[1]}, score=2)
+    async def test_no_rules_for_tags(
+        self, internal_user_id: UserId, another_internal_user_id: UserId, three_tags_ids: tuple[TagId, TagId, TagId]
+    ) -> None:
+        await domain.create_or_update_rule(
+            internal_user_id, required_tags={three_tags_ids[0]}, excluded_tags=set(), score=2
+        )
+        await domain.create_or_update_rule(
+            another_internal_user_id, required_tags=set(), excluded_tags={three_tags_ids[1]}, score=2
+        )
 
         async with TableSizeNotChanged("s_rules"):
             await domain.remove_rules_with_tags({three_tags_ids[2]})
 
     @pytest.mark.asyncio
-    async def test_remove_rules(self, internal_user_id: UserId, another_internal_user_id: UserId, five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]) -> None:
+    async def test_remove_rules(
+        self,
+        internal_user_id: UserId,
+        another_internal_user_id: UserId,
+        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
+    ) -> None:
 
         tag_1, tag_2, tag_3, tag_4, tag_5 = five_tags_ids
 
-        rule_1_1 = await domain.create_or_update_rule(internal_user_id, required_tags={tag_1}, excluded_tags=set(), score=1)
-        rule_1_2 = await domain.create_or_update_rule(internal_user_id, required_tags={tag_2}, excluded_tags={tag_4, tag_3, }, score=2)
-        rule_2_1 = await domain.create_or_update_rule(another_internal_user_id, required_tags=set(), excluded_tags={tag_2}, score=3)
-        rule_2_2 = await domain.create_or_update_rule(another_internal_user_id, required_tags={tag_2}, excluded_tags={tag_5}, score=4)
-        rule_2_3 = await domain.create_or_update_rule(another_internal_user_id, required_tags={tag_3}, excluded_tags={tag_2}, score=5)
+        rule_1_1 = await domain.create_or_update_rule(
+            internal_user_id, required_tags={tag_1}, excluded_tags=set(), score=1
+        )
+        rule_1_2 = await domain.create_or_update_rule(
+            internal_user_id,
+            required_tags={tag_2},
+            excluded_tags={
+                tag_4,
+                tag_3,
+            },
+            score=2,
+        )
+        rule_2_1 = await domain.create_or_update_rule(
+            another_internal_user_id, required_tags=set(), excluded_tags={tag_2}, score=3
+        )
+        rule_2_2 = await domain.create_or_update_rule(
+            another_internal_user_id, required_tags={tag_2}, excluded_tags={tag_5}, score=4
+        )
+        rule_2_3 = await domain.create_or_update_rule(
+            another_internal_user_id, required_tags={tag_3}, excluded_tags={tag_2}, score=5
+        )
 
         async with TableSizeDelta("s_rules", delta=-2):
             await domain.remove_rules_with_tags({tag_1, tag_5})

@@ -2,7 +2,7 @@ from typing import Iterable
 
 from ffun.core import logging, utils
 from ffun.domain.domain import new_feed_id
-from ffun.domain.entities import EntryId, FeedId, UserId, TagId, TagUid
+from ffun.domain.entities import EntryId, FeedId, TagId, TagUid, UserId
 from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
@@ -10,9 +10,9 @@ from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.markers import domain as m_domain
 from ffun.meta.settings import settings
+from ffun.ontology import cache as o_cache
 from ffun.ontology import domain as o_domain
 from ffun.ontology import entities as o_entities
-from ffun.ontology import cache as o_cache
 from ffun.parsers import entities as p_entities
 from ffun.scores import domain as s_domain
 from ffun.tags import domain as t_domain
@@ -118,9 +118,9 @@ async def renormalize_tags(tag_ids: list[int]) -> None:
     tags_in_rules = await s_domain.get_all_tags_in_rules()
 
     all_tag_propertries = await o_domain.get_tags_properties(tag_ids)
-    all_tag_propertries = [property
-                           for property in all_tag_propertries
-                           if property.type == o_entities.TagPropertyType.categories]
+    all_tag_propertries = [
+        property for property in all_tag_propertries if property.type == o_entities.TagPropertyType.categories
+    ]
     all_tag_propertries.sort(key=lambda p: p.tag_id)
 
     old_tags_cache = o_cache.TagsCache()
@@ -129,25 +129,21 @@ async def renormalize_tags(tag_ids: list[int]) -> None:
         old_tag_id = property.tag_id
         old_uids = await old_tags_cache.uids_by_ids([old_tag_id])
 
-        await _renormalize_tag(old_tag_id=old_tag_id,
-                               old_tag_uid=old_uids[old_tag_id],
-                               processor_id=property.processor_id,
-                               categories=set(property.value.split(",")),
-                               tag_in_rules=old_tag_id in tags_in_rules
-                               )
+        await _renormalize_tag(
+            old_tag_id=old_tag_id,
+            old_tag_uid=old_uids[old_tag_id],
+            processor_id=property.processor_id,
+            categories=set(property.value.split(",")),
+            tag_in_rules=old_tag_id in tags_in_rules,
+        )
 
 
 # TODO: tests
-async def _renormalize_tag(old_tag_id: TagId,
-                           old_tag_uid: TagUid,
-                           processor_id: int,
-                           categories: set[str],
-                           tag_in_rules: bool
-                           ) -> None:
+async def _renormalize_tag(
+    old_tag_id: TagId, old_tag_uid: TagUid, processor_id: int, categories: set[str], tag_in_rules: bool
+) -> None:
     raw_tag = o_entities.RawTag(
-        raw_uid=old_tag_uid,
-        link=None,  # TODO: check that it will not affect tags with links
-        categories=categories
+        raw_uid=old_tag_uid, link=None, categories=categories  # TODO: check that it will not affect tags with links
     )
 
     normalized_tags = await t_domain.normalize([raw_tag])

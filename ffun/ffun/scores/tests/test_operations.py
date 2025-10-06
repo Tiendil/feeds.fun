@@ -1,6 +1,6 @@
 import pytest
 
-from ffun.core.postgresql import execute, ExecuteType
+from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import (
     TableSizeDelta,
     TableSizeNotChanged,
@@ -10,7 +10,7 @@ from ffun.core.tests.helpers import (
 )
 from ffun.domain.domain import new_rule_id
 from ffun.domain.entities import TagId, UserId
-from ffun.scores import domain, errors, operations
+from ffun.scores import errors, operations
 
 
 class TestCreateOrUpdateRule:
@@ -405,7 +405,7 @@ class TestGetRulesFor:
         self,
         internal_user_id: UserId,
         another_internal_user_id: UserId,
-        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]
+        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
     ) -> None:
         tag_1, tag_2, tag_3, tag_4, tag_5 = five_tags_ids
 
@@ -435,7 +435,7 @@ class TestGetRulesFor:
         self,
         internal_user_id: UserId,
         another_internal_user_id: UserId,
-        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]
+        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
     ) -> None:
         tag_1, tag_2, tag_3, tag_4, tag_5 = five_tags_ids
 

@@ -88,9 +88,7 @@ async def _save_tags(execute: ExecuteType, entry_id: EntryId, tags_ids: Iterable
     await execute(str(query))
 
 
-async def register_relations_processors(
-    execute: ExecuteType, relations_ids: Iterable[int], processor_id: int
-) -> None:
+async def register_relations_processors(execute: ExecuteType, relations_ids: Iterable[int], processor_id: int) -> None:
 
     if not relations_ids:
         return
@@ -331,11 +329,12 @@ async def remove_tags(execute: ExecuteType, tags_ids: list[TagId]) -> None:
     await execute(sql, {"tags_ids": list(tags_ids)})
 
 
-async def get_relations_for(execute: ExecuteType,
-                            entry_ids: list[EntryId] | None = None,
-                            tag_ids: list[TagId] | None = None ,
-                            processor_ids: list[int] | None = None,
-                            ) -> list[int]:
+async def get_relations_for(
+    execute: ExecuteType,
+    entry_ids: list[EntryId] | None = None,
+    tag_ids: list[TagId] | None = None,
+    processor_ids: list[int] | None = None,
+) -> list[int]:
 
     if entry_ids is None and tag_ids is None and processor_ids is None:
         raise errors.AtLeastOneFilterMustBeDefined()

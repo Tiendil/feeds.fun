@@ -1,7 +1,7 @@
 from typing import Iterable
 
-from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
-from ffun.domain.entities import TagId, UserId, RuleId
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.domain.entities import RuleId, TagId, UserId
 from ffun.scores import entities, operations
 
 count_rules_per_user = operations.count_rules_per_user
@@ -59,10 +59,8 @@ async def clone_rules_for_replacements(execute: ExecuteType, replacements: dict[
         new_required_tags, new_excluded_tags = rule.replace_tags(replacements)
 
         await operations.create_or_update_rule(
-            user_id=rule.user_id,
-            required_tags=new_required_tags,
-            excluded_tags=new_excluded_tags,
-            score=rule.score)
+            user_id=rule.user_id, required_tags=new_required_tags, excluded_tags=new_excluded_tags, score=rule.score
+        )
 
 
 @run_in_transaction

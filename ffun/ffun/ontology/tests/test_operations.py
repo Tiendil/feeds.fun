@@ -13,7 +13,6 @@ from ffun.ontology import errors
 from ffun.ontology.domain import apply_tags_to_entry
 from ffun.ontology.entities import NormalizedTag, TagPropertyType
 from ffun.ontology.operations import (
-    register_relations_processors,
     _save_tags,
     apply_tags,
     apply_tags_properties,
@@ -23,16 +22,17 @@ from ffun.ontology.operations import (
     count_total_tags_per_type,
     get_or_create_id_by_tag,
     get_orphaned_tags,
+    get_relations_for,
     get_tags_by_ids,
     get_tags_properties,
+    register_relations_processors,
     register_tag,
     remove_relations,
     remove_tags,
     tag_frequency_statistics,
-    get_relations_for
 )
-from ffun.tags.entities import TagCategory
 from ffun.ontology.tests.helpers import assert_has_tags
+from ffun.tags.entities import TagCategory
 
 
 async def assert_tags_processors(entry_id: EntryId, tag_processors: dict[TagId, set[int]]) -> None:
@@ -40,10 +40,9 @@ async def assert_tags_processors(entry_id: EntryId, tag_processors: dict[TagId, 
 
     for tag_id, processor_ids in tag_processors.items():
         for processor_id in processor_ids:
-            relation_ids = await get_relations_for(execute,
-                                                   entry_ids=[entry_id],
-                                                   tag_ids=[tag_id],
-                                                   processor_ids=[processor_id])
+            relation_ids = await get_relations_for(
+                execute, entry_ids=[entry_id], tag_ids=[tag_id], processor_ids=[processor_id]
+            )
             assert len(relation_ids) == 1
 
             expected_relations.update(relation_ids)
@@ -90,9 +89,7 @@ class TestRegisterRelationsProcessors:
         relations_ids = await get_relations_for(execute, entry_ids=[cataloged_entry.id], tag_ids=three_tags_ids[:2])
 
         async with TableSizeDelta("o_relations_processors", delta=2):
-            await register_relations_processors(
-                execute, relations_ids=relations_ids, processor_id=fake_processor_id
-            )
+            await register_relations_processors(execute, relations_ids=relations_ids, processor_id=fake_processor_id)
 
         await assert_tags_processors(
             entry_id=cataloged_entry.id,
@@ -493,7 +490,9 @@ class TestGetRelationsFor:
         assert relation_ids == []
 
     @pytest.mark.asyncio
-    async def test_no_relations_for_tags(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:  # pylint: disable=W0613
+    async def test_no_relations_for_tags(
+        self, three_tags_ids: tuple[TagId, TagId, TagId]
+    ) -> None:  # pylint: disable=W0613
         relation_ids = await get_relations_for(execute, tag_ids=list(three_tags_ids))
         assert relation_ids == []
 
@@ -522,7 +521,9 @@ class TestGetRelationsFor:
             )
 
         relation_1_ids = await get_relations_for(execute, entry_ids=[cataloged_entry.id])
-        expected_relation_1_ids = await get_relations_for(execute, entry_ids=[cataloged_entry.id], tag_ids=three_tags_ids)
+        expected_relation_1_ids = await get_relations_for(
+            execute, entry_ids=[cataloged_entry.id], tag_ids=three_tags_ids
+        )
         assert len(relation_1_ids) == 2
         assert set(relation_1_ids) == set(expected_relation_1_ids)
 
@@ -606,9 +607,9 @@ class TestGetRelationsFor:
                 trx, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tag_ids=three_tags_ids[1:]
             )
 
-        relation_1_ids = await get_relations_for(execute,
-                                                 entry_ids=[cataloged_entry.id, another_cataloged_entry.id],
-                                                 processor_ids=[fake_processor_id])
+        relation_1_ids = await get_relations_for(
+            execute, entry_ids=[cataloged_entry.id, another_cataloged_entry.id], processor_ids=[fake_processor_id]
+        )
         expected_relation_1_ids_1 = await get_relations_for(
             execute, entry_ids=[cataloged_entry.id], tag_ids=[three_tags_ids[0]]
         )
@@ -618,17 +619,21 @@ class TestGetRelationsFor:
         assert len(relation_1_ids) == 3
         assert set(relation_1_ids) == set(expected_relation_1_ids_1) | set(expected_relation_1_ids_2)
 
-        relation_2_ids = await get_relations_for(execute,
-                                                 entry_ids=[cataloged_entry.id, another_cataloged_entry.id],
-                                                 processor_ids=[another_fake_processor_id])
+        relation_2_ids = await get_relations_for(
+            execute,
+            entry_ids=[cataloged_entry.id, another_cataloged_entry.id],
+            processor_ids=[another_fake_processor_id],
+        )
         expected_relation_2_ids = await get_relations_for(
             execute, entry_ids=[cataloged_entry.id], tag_ids=[three_tags_ids[2]]
         )
         assert len(relation_2_ids) == 1
         assert set(relation_2_ids) == set(expected_relation_2_ids)
 
-        relation_3_ids = await get_relations_for(execute,
-                                                 entry_ids=[cataloged_entry.id, another_cataloged_entry.id],
-                                                 processor_ids=[fake_processor_id, another_fake_processor_id])
+        relation_3_ids = await get_relations_for(
+            execute,
+            entry_ids=[cataloged_entry.id, another_cataloged_entry.id],
+            processor_ids=[fake_processor_id, another_fake_processor_id],
+        )
         assert len(relation_3_ids) == 4
         assert set(relation_3_ids) == set(relation_1_ids) | set(relation_2_ids)

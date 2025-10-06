@@ -1,13 +1,13 @@
 from typing import Any, Iterable
 
 import psycopg
-
+from pypika import Array, PostgreSQLQuery, Table
 from pypika.enums import Comparator
 from pypika.functions import Cast
-from pypika import PostgreSQLQuery, Table, Array
 from pypika.terms import BasicCriterion
+
 from ffun.core import logging
-from ffun.core.postgresql import execute, ExecuteType
+from ffun.core.postgresql import ExecuteType, execute
 from ffun.domain.domain import new_rule_id
 from ffun.domain.entities import RuleId, TagId, UserId
 from ffun.scores import errors
@@ -195,9 +195,9 @@ class PostgreSQLArrayOperators(Comparator):
     OVERLAPS = "&&"
 
 
-async def get_rules_for(execute: ExecuteType,
-                        user_ids: list[UserId] | None = None,
-                        tag_ids: list[TagId] | None = None) -> list[Rule]:
+async def get_rules_for(
+    execute: ExecuteType, user_ids: list[UserId] | None = None, tag_ids: list[TagId] | None = None
+) -> list[Rule]:
 
     if user_ids is None and tag_ids is None:
         raise errors.AtLeastOneFilterMustBeDefined()
@@ -212,10 +212,10 @@ async def get_rules_for(execute: ExecuteType,
 
     if tag_ids:
         # any of the tags is in required or excluded
-        tags = Cast(Array(*tag_ids), 'bigint[]')
+        tags = Cast(Array(*tag_ids), "bigint[]")
         query = query.where(
-            BasicCriterion(PostgreSQLArrayOperators.OVERLAPS, s_rules.required_tags, tags) |
-            BasicCriterion(PostgreSQLArrayOperators.OVERLAPS, s_rules.excluded_tags, tags)
+            BasicCriterion(PostgreSQLArrayOperators.OVERLAPS, s_rules.required_tags, tags)
+            | BasicCriterion(PostgreSQLArrayOperators.OVERLAPS, s_rules.excluded_tags, tags)
         )
 
     result = await execute(str(query))
