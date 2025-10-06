@@ -79,7 +79,6 @@ class TagInNormalization(BaseEntity):
             return NormalizationMode.final
 
         if TagCategory.feed_tag in self.categories:
-            # TODO: check how this affects tag re-normalization
             return NormalizationMode.preserve
 
         if TagCategory.free_form in self.categories:
