@@ -182,9 +182,8 @@ async def _normalize_tag_uid(
     return original_tag_exists, tags_to_copy
 
 
-# TODO: tests
 async def _apply_renormalized_tags(processor_id: int, old_tag_id: TagId, new_tag_id: TagId) -> None:
-    await o_domain.copy_relations(processor_id, old_tag_id, new_tag_id)
+    await o_domain.copy_relations(processor_id=processor_id, old_tag_id=old_tag_id, new_tag_id=new_tag_id)
     await s_domain.clone_rules_for_replacements({old_tag_id: new_tag_id})
 
 

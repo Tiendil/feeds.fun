@@ -260,3 +260,27 @@ class TestRemoveTags:
 
         assert remove_relations_for_tags.call_args_list == [mocker.call(list(three_tags_ids))]
         assert remove_rules_with_tags.call_args_list == [mocker.call(list(three_tags_ids))]
+
+
+# test that everything is connected correctly
+class TestApplyRenormalizedTags:
+
+    @pytest.mark.asyncio
+    async def test_no_changes(self, fake_processor_id: int, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
+        await _apply_renormalized_tags(processor_id=fake_processor_id,
+                                       old_tag_id=three_tags_ids[0],
+                                       new_tag_id=three_tags_ids[1])
+
+    @pytest.mark.asyncio
+    async def test(self, mocker: MockerFixture, fake_processor_id: int, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
+        copy_relations = mocker.patch("ffun.ontology.domain.copy_relations")
+        clone_rules_for_replacements = mocker.patch("ffun.scores.domain.clone_rules_for_replacements")
+
+        await _apply_renormalized_tags(processor_id=fake_processor_id,
+                                       old_tag_id=three_tags_ids[0],
+                                       new_tag_id=three_tags_ids[1])
+
+        assert copy_relations.call_args_list == [mocker.call(processor_id=fake_processor_id,
+                                                             old_tag_id=three_tags_ids[0],
+                                                             new_tag_id=three_tags_ids[1])]
+        assert clone_rules_for_replacements.call_args_list == [mocker.call({three_tags_ids[0]: three_tags_ids[1]})]
