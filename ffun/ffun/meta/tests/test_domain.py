@@ -451,28 +451,28 @@ class TestRenormalizeTags:
             TagProperty(
                 tag_id=tag_ids[0],
                 type=TagPropertyType.categories,
-                value=TagCategory.test_raw.name,
+                value=TagCategory.test_raw.value,
                 processor_id=fake_processor_id,
                 created_at=utils.now(),
             ),
             TagProperty(
                 tag_id=tag_ids[1],
                 type=TagPropertyType.categories,
-                value=",".join([TagCategory.test_raw.name, TagCategory.test_final.name]),
+                value=",".join([TagCategory.test_raw.value, TagCategory.test_final.value]),
                 processor_id=fake_processor_id,
                 created_at=utils.now(),
             ),
             TagProperty(
                 tag_id=tag_ids[1],
                 type=TagPropertyType.categories,
-                value=TagCategory.special.name,
+                value=TagCategory.special.value,
                 processor_id=another_fake_processor_id,
                 created_at=utils.now(),
             ),
             TagProperty(
                 tag_id=tag_ids[2],
                 type=TagPropertyType.categories,
-                value=TagCategory.test_final.name,
+                value=TagCategory.test_final.value,
                 processor_id=another_fake_processor_id,
                 created_at=utils.now(),
             ),
@@ -493,7 +493,7 @@ class TestRenormalizeTags:
             TagProperty(
                 tag_id=tag_ids[4],
                 type=TagPropertyType.categories,
-                value=TagCategory.test_raw.name,
+                value=TagCategory.test_raw.value,
                 processor_id=another_fake_processor_id,
                 created_at=utils.now(),
             ),
@@ -517,13 +517,13 @@ class TestRenormalizeTags:
         call_list.sort()
 
         assert call_list == [
-            (tag_ids[0], tag_uids[0], fake_processor_id, frozenset({TagCategory.test_raw.name})),
+            (tag_ids[0], tag_uids[0], fake_processor_id, frozenset({TagCategory.test_raw.value})),
             (
                 tag_ids[1],
                 tag_uids[1],
                 fake_processor_id,
-                frozenset({TagCategory.test_raw.name, TagCategory.test_final.name}),
+                frozenset({TagCategory.test_raw.value, TagCategory.test_final.value}),
             ),
-            (tag_ids[1], tag_uids[1], another_fake_processor_id, frozenset({TagCategory.special.name})),
-            (tag_ids[2], tag_uids[2], another_fake_processor_id, frozenset({TagCategory.test_final.name})),
+            (tag_ids[1], tag_uids[1], another_fake_processor_id, frozenset({TagCategory.special.value})),
+            (tag_ids[2], tag_uids[2], another_fake_processor_id, frozenset({TagCategory.test_final.value})),
         ]
