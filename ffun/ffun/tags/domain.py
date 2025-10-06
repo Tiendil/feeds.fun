@@ -28,12 +28,6 @@ async def apply_normalizers(normalizers_: list[NormalizerInfo], tag: TagInNormal
     if tag.mode == NormalizationMode.final:
         return (True, [])
 
-    # if tag.uid == "professionals-networking-xxx":
-    #     return (True, [RawTag(raw_uid="professionals-networking-xxx", link=tag.link, categories=tag.categories),
-    #                    RawTag(raw_uid="professionals-networking-yyy", link=tag.link, categories=tag.categories),
-    #                    RawTag(raw_uid="content-creation", link=tag.link, categories=tag.categories),
-    #                    RawTag(raw_uid="remote-works", link=tag.link, categories=tag.categories)])
-
     all_new_tags = []
 
     for info in normalizers_:
