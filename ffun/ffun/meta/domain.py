@@ -108,7 +108,6 @@ async def clean_orphaned_tags(chunk: int) -> int:
     return await o_domain.remove_orphaned_tags(chunk=chunk, protected_tags=list(protected_tags))  # type: ignore
 
 
-# TODO: tests
 # TODO: add logs to track progress
 # We expect, that when this function is called, all logic (workers, api) is already working on the new configs
 # => there will be no case when a new tag is created in the not normalized form

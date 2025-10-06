@@ -28,7 +28,7 @@ from ffun.meta.domain import (
     renormalize_tags
 )
 from ffun.ontology import domain as o_domain
-from ffun.ontology.entities import NormalizedTag, RawTag
+from ffun.ontology.entities import NormalizedTag, RawTag, TagProperty, TagPropertyType
 from ffun.parsers import entities as p_entities
 from ffun.tags.entities import TagCategory
 
@@ -418,3 +418,77 @@ class TestRenormalizeTag:
                                                                       old_tag_id=three_tags_ids[0],
                                                                       new_tag_id=three_tags_ids[2])]
         assert remove_tags.call_args_list == [mocker.call([three_tags_ids[0]])]
+
+
+# test that everything is connected correctly
+class TestRenormalizeTags:
+
+    @pytest.mark.asyncio
+    async def test_no_tags(self) -> None:
+        await renormalize_tags(tag_ids=[])
+
+    @pytest.mark.asyncio
+    async def test(self,
+                   mocker: MockerFixture,
+                   five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
+                   five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
+                   fake_processor_id: int,
+                   another_fake_processor_id: int) -> None:
+
+        tag_ids = five_tags_ids
+        tag_uids = [tag.uid for tag in five_processor_tags]
+
+        properties = [TagProperty(tag_id=tag_ids[0],
+                                  type=TagPropertyType.categories,
+                                  value=TagCategory.test_raw.name,
+                                  processor_id=fake_processor_id,
+                                  created_at=utils.now()),
+                      TagProperty(tag_id=tag_ids[1],
+                                  type=TagPropertyType.categories,
+                                  value=",".join([TagCategory.test_raw.name, TagCategory.test_final.name]),
+                                  processor_id=fake_processor_id,
+                                  created_at=utils.now()),
+                      TagProperty(tag_id=tag_ids[1],
+                                  type=TagPropertyType.categories,
+                                  value=TagCategory.special.name,
+                                  processor_id=another_fake_processor_id,
+                                  created_at=utils.now()),
+                      TagProperty(tag_id=tag_ids[2],
+                                  type=TagPropertyType.categories,
+                                  value=TagCategory.test_final.name,
+                                  processor_id=another_fake_processor_id,
+                                  created_at=utils.now()),
+                      TagProperty(tag_id=tag_ids[2],
+                                  type=TagPropertyType.link,
+                                  value="some-link",  # should be skipped
+                                  processor_id=fake_processor_id,
+                                  created_at=utils.now()),
+                      TagProperty(tag_id=tag_ids[3],
+                                  type=TagPropertyType.link,
+                                  value="some-link",  # should be skipped
+                                  processor_id=another_fake_processor_id,
+                                  created_at=utils.now()),
+                      TagProperty(tag_id=tag_ids[4],
+                                  type=TagPropertyType.categories,
+                                  value=TagCategory.test_raw.name,
+                                  processor_id=another_fake_processor_id,
+                                  created_at=utils.now()),
+                      ]
+
+        await o_domain.apply_tags_properties(properties)
+
+        renormalize_tag = mocker.patch("ffun.meta.domain._renormalize_tag")
+
+        await renormalize_tags([tag_ids[0], tag_ids[1], tag_ids[2], tag_ids[3]])
+
+        call_list = [(call.kwargs['old_tag_id'],
+                      call.kwargs['old_tag_uid'],
+                      call.kwargs['processor_id'],
+                      frozenset(call.kwargs['categories']))
+                     for call in renormalize_tag.call_args_list]
+        call_list.sort()
+
+        assert call_list == [(tag_ids[0], tag_uids[0], fake_processor_id, frozenset({TagCategory.test_raw.name})),
+                             (tag_ids[1], tag_uids[1], fake_processor_id, frozenset({TagCategory.test_raw.name, TagCategory.test_final.name})),
+                             (tag_ids[1], tag_uids[1], another_fake_processor_id, frozenset({TagCategory.special.name})),
+                             (tag_ids[2], tag_uids[2], another_fake_processor_id, frozenset({TagCategory.test_final.name}))]

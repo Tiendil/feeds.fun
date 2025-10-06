@@ -4,7 +4,7 @@ from typing import Iterable
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
 from ffun.domain.entities import EntryId, TagId, TagUid
 from ffun.ontology import cache, operations
-from ffun.ontology.entities import NormalizedTag, Tag, TagPropertyType
+from ffun.ontology.entities import NormalizedTag, Tag, TagPropertyType, TagProperty
 from ffun.tags import converters
 from ffun.tags.entities import TagCategory
 
@@ -25,6 +25,10 @@ async def get_ids_by_uids(tags: Iterable[TagUid]) -> dict[TagUid, TagId]:
 
 async def get_tags_by_ids(ids: Iterable[TagId]) -> dict[TagId, TagUid]:
     return await _tags_cache.uids_by_ids(ids)
+
+
+async def apply_tags_properties(properties: list[TagProperty]) -> None:
+    await operations.apply_tags_properties(execute, properties)
 
 
 # TODO: in the future we could split this function into two separate functions
