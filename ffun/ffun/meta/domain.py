@@ -108,30 +108,40 @@ async def clean_orphaned_tags(chunk: int) -> int:
     return await o_domain.remove_orphaned_tags(chunk=chunk, protected_tags=list(protected_tags))  # type: ignore
 
 
-# TODO: add logs to track progress
 # We expect, that when this function is called, all logic (workers, api) is already working on the new configs
 # => there will be no case when a new tag is created in the not normalized form
 #    (besides native feeds tags, but we'll handle them separately)
 # => we can load tags from rules once and use their cached list
 async def renormalize_tags(tag_ids: list[int]) -> None:
+    logger.info("renormalization_started", tag_ids_number=len(tag_ids))
+
     all_tag_propertries = await o_domain.get_tags_properties(tag_ids)
     all_tag_propertries = [
         property for property in all_tag_propertries if property.type == o_entities.TagPropertyType.categories
     ]
     all_tag_propertries.sort(key=lambda p: p.tag_id)
 
+    total_properties = len(all_tag_propertries)
+
+    logger.info("renormalization_properties_found", properties_number=total_properties)
+
     old_tags_cache = o_cache.TagsCache()
 
-    for property in all_tag_propertries:
+    for i, property in enumerate(all_tag_propertries):
         old_tag_id = property.tag_id
         old_uids = await old_tags_cache.uids_by_ids([old_tag_id])
+        old_tag_uid = old_uids[old_tag_id]
+
+        logger.info("try_to_renormalize_tag", step=i, steps_total=total_properties, tag_id=old_tag_id, tag_uid=old_tag_uid)
 
         await _renormalize_tag(
             old_tag_id=old_tag_id,
-            old_tag_uid=old_uids[old_tag_id],
+            old_tag_uid=old_tag_uid,
             processor_id=property.processor_id,
             categories=set(property.value.split(",")),
         )
+
+    logger.info("renormalization_finished")
 
 
 async def _renormalize_tag(
@@ -139,10 +149,15 @@ async def _renormalize_tag(
         old_tag_id: TagId,
         old_tag_uid: TagUid,
         categories: set[str]) -> None:
+
+    logger.info("renormalizing_tag", processor_id=processor_id, old_tag_id=old_tag_id, old_tag_uid=old_tag_uid, categories=categories)
+
     keep_old_tag, new_tags = await _normalize_tag_uid(
         old_tag_uid=old_tag_uid,
         categories=categories,
     )
+
+    logger.info("renormalizing_candidates_found", old_tag_id=old_tag_id, keep_old_tag=keep_old_tag, new_tags=new_tags)
 
     for new_tag_id in new_tags:
         await _apply_renormalized_tags(processor_id=processor_id,
