@@ -55,13 +55,13 @@ async def clone_rules_for_replacements(execute: ExecuteType, replacements: dict[
 
     rules = await operations.get_rules_for(execute, tag_ids=list(replacements.keys()))
 
-    new_rules = [rule.replace_tags(replacements) for rule in rules]
+    for rule in rules:
+        new_required_tags, new_excluded_tags = rule.replace_tags(replacements)
 
-    for rule in new_rules:
         await operations.create_or_update_rule(
             user_id=rule.user_id,
-            required_tags=rule.required_tags,
-            excluded_tags=rule.excluded_tags,
+            required_tags=new_required_tags,
+            excluded_tags=new_excluded_tags,
             score=rule.score)
 
 
