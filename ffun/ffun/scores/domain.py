@@ -48,9 +48,11 @@ async def delete_rules(user_id: UserId, rule_id: RuleId) -> None:
     await operations.delete_rule(execute, user_id, rule_id)
 
 
-# TODO: tests
 @run_in_transaction
 async def clone_rules_for_replacements(execute: ExecuteType, replacements: dict[TagId, TagId]) -> None:
+    if not replacements:
+        return
+
     rules = await operations.get_rules_for(execute, tag_ids=list(replacements.keys()))
 
     new_rules = [rule.replace_tags(replacements) for rule in rules]
@@ -66,6 +68,9 @@ async def clone_rules_for_replacements(execute: ExecuteType, replacements: dict[
 # TODO: tests
 @run_in_transaction
 async def remove_rules_with_tags(execute: ExecuteType, tag_ids: Iterable[TagId]) -> None:
+    if not tag_ids:
+        return
+
     rule_ids = await operations.get_rules_for(execute, tag_ids=tag_ids)
 
     for rule_id in rule_ids:

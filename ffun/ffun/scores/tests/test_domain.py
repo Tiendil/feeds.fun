@@ -1,6 +1,16 @@
+import pytest
+
+from ffun.core.tests.helpers import (
+    TableSizeDelta,
+    TableSizeNotChanged,
+    assert_logs_has_business_event,
+    assert_logs_has_no_business_event,
+    capture_logs,
+)
+
 from ffun.core import utils
 from ffun.domain.domain import new_rule_id, new_user_id
-from ffun.domain.entities import TagId
+from ffun.domain.entities import TagId, UserId
 from ffun.scores import domain, entities
 
 
@@ -101,3 +111,49 @@ class TestGetScore:
         assert get_score_contributions(rules, {2, 3}) == (0, {})
         assert get_score_contributions(rules, {2}) == (5, {2: 5})
         assert get_score_contributions(rules, {1, 3, 4}) == (3, {1: 3, 3: 3})
+
+
+class TestCloneRulesForeReplacements:
+
+    @pytest.mark.asyncio
+    async def test_no_replacements(self, internal_user_id: UserId, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
+        await domain.create_or_update_rule(internal_user_id, required_tags={three_tags_ids[0]}, excluded_tags=set(), score=2)
+        await domain.create_or_update_rule(internal_user_id, required_tags=set(), excluded_tags={three_tags_ids[1]}, score=2)
+        async with TableSizeNotChanged("s_rules"):
+            await domain.clone_rules_for_replacements({})
+
+    @pytest.mark.asyncio
+    async def test_no_rules_for_tags(self, internal_user_id: UserId, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
+        await domain.create_or_update_rule(internal_user_id, required_tags={three_tags_ids[1]}, excluded_tags=set(), score=2)
+        await domain.create_or_update_rule(internal_user_id, required_tags=set(), excluded_tags={three_tags_ids[2]}, score=2)
+        async with TableSizeNotChanged("s_rules"):
+            await domain.clone_rules_for_replacements({three_tags_ids[0]: three_tags_ids[1]})
+
+    @pytest.mark.asyncio
+    async def test_clone_rules(self, internal_user_id: UserId, another_internal_user_id: UserId, five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]) -> None:
+        tag_1, tag_2, tag_3, tag_4, tag_5 = five_tags_ids
+
+        rule_1_1 = await domain.create_or_update_rule(internal_user_id, required_tags={tag_1}, excluded_tags=set(), score=1)
+        rule_1_2 = await domain.create_or_update_rule(internal_user_id, required_tags={tag_2}, excluded_tags={tag_4, tag_1, }, score=2)
+        rule_2_1 = await domain.create_or_update_rule(another_internal_user_id, required_tags=set(), excluded_tags={tag_2}, score=3)
+        rule_2_2 = await domain.create_or_update_rule(another_internal_user_id, required_tags={tag_2}, excluded_tags={tag_5}, score=4)
+        rule_2_3 = await domain.create_or_update_rule(another_internal_user_id, required_tags={tag_3}, excluded_tags={tag_2}, score=5)
+
+        async with TableSizeDelta("s_rules", delta=3):
+            await domain.clone_rules_for_replacements({tag_1: tag_3, tag_5: tag_3})
+
+        rules_1 = await domain.get_rules_for_user(internal_user_id)
+        rules_1.sort(key=lambda r: (r.score, sorted(r.required_tags), sorted(r.excluded_tags)))
+
+        rules_1[0].soft_compare(internal_user_id, {tag_1}, set(), 1)
+        rules_1[1].soft_compare(internal_user_id, {tag_3}, set(), 1)
+        rules_1[2].soft_compare(internal_user_id, {tag_2}, {tag_4, tag_1}, 2)
+        rules_1[3].soft_compare(internal_user_id, {tag_2}, {tag_4, tag_3}, 2)
+
+        rules_2 = await domain.get_rules_for_user(another_internal_user_id)
+        rules_2.sort(key=lambda r: (r.score, sorted(r.required_tags), sorted(r.excluded_tags)))
+
+        rules_2[0].soft_compare(another_internal_user_id, set(), {tag_2}, 3)
+        rules_2[1].soft_compare(another_internal_user_id, {tag_2}, {tag_5}, 4)
+        rules_2[2].soft_compare(another_internal_user_id, {tag_2}, {tag_3}, 4)
+        rules_2[3].soft_compare(another_internal_user_id, {tag_3}, {tag_2}, 5)
