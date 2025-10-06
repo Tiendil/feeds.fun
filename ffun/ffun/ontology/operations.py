@@ -359,10 +359,9 @@ async def get_relations_for(
     return [row["id"] for row in result]
 
 
-# TODO: tests
 async def copy_relations_to_new_tag(execute: ExecuteType, relation_ids: list[int], new_tag_id: TagId) -> list[int]:
     if not relation_ids:
-        return
+        return []
 
     # We use DO UPDATE since we need to return all new relations ids
     sql = """

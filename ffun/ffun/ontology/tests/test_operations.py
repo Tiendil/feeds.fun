@@ -30,8 +30,9 @@ from ffun.ontology.operations import (
     remove_relations,
     remove_tags,
     tag_frequency_statistics,
+    copy_relations_to_new_tag
 )
-from ffun.ontology.tests.helpers import assert_has_tags
+from ffun.ontology.tests.helpers import assert_has_tags, get_relation_signatures
 from ffun.tags.entities import TagCategory
 
 
@@ -592,20 +593,17 @@ class TestGetRelationsFor:
         another_fake_processor_id: int,
         three_tags_ids: tuple[TagId, TagId, TagId],
     ) -> None:
-        async with transaction() as trx:
-            await apply_tags(
-                trx, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tag_ids=[three_tags_ids[0]]
+        await apply_tags(
+                execute, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tag_ids=[three_tags_ids[0]]
             )
 
-        async with transaction() as trx:
-            await apply_tags(
-                trx, entry_id=cataloged_entry.id, processor_id=another_fake_processor_id, tag_ids=[three_tags_ids[2]]
-            )
+        await apply_tags(
+            execute, entry_id=cataloged_entry.id, processor_id=another_fake_processor_id, tag_ids=[three_tags_ids[2]]
+        )
 
-        async with transaction() as trx:
-            await apply_tags(
-                trx, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tag_ids=three_tags_ids[1:]
-            )
+        await apply_tags(
+            execute, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tag_ids=three_tags_ids[1:]
+        )
 
         relation_1_ids = await get_relations_for(
             execute, entry_ids=[cataloged_entry.id, another_cataloged_entry.id], processor_ids=[fake_processor_id]
@@ -637,3 +635,87 @@ class TestGetRelationsFor:
         )
         assert len(relation_3_ids) == 4
         assert set(relation_3_ids) == set(relation_1_ids) | set(relation_2_ids)
+
+
+class TestCopyRelationsToNewTag:
+
+    @pytest.mark.asyncio
+    async def test_no_relations(self, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
+        async with TableSizeNotChanged("o_relations"):
+            new_relation_ids = await copy_relations_to_new_tag(execute, [], three_tags_ids[0])
+            assert new_relation_ids == []
+
+    @pytest.mark.asyncio
+    async def test_create_new(self,
+                              cataloged_entry: Entry,
+                              another_cataloged_entry: Entry,
+                              fake_processor_id: int,
+                              another_fake_processor_id: int,
+                              five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]) -> None:
+        tags = five_tags_ids
+
+        await apply_tags(
+                execute, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tag_ids=[tags[0]]
+            )
+
+        await apply_tags(
+            execute, entry_id=cataloged_entry.id, processor_id=another_fake_processor_id, tag_ids=[tags[2]]
+        )
+
+        await apply_tags(
+            execute, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tag_ids=[tags[1], tags[2], tags[3]]
+        )
+
+        assert await get_relations_for(execute, tag_ids=[tags[4]]) == []
+
+        relation_ids = await get_relations_for(execute, tag_ids=[tags[2]])
+
+        async with TableSizeDelta("o_relations", delta=2):
+            new_relation_ids = await copy_relations_to_new_tag(execute, relation_ids, tags[4])
+
+        assert len(new_relation_ids) == 2
+
+        signatures = await get_relation_signatures(new_relation_ids)
+
+        # this method do not copy processors
+        assert set(signatures) == {
+            (cataloged_entry.id, tags[4], None),
+            (another_cataloged_entry.id, tags[4], None),
+        }
+
+    @pytest.mark.asyncio
+    async def test_partial_rewrite(self,
+                                   cataloged_entry: Entry,
+                                   another_cataloged_entry: Entry,
+                                   fake_processor_id: int,
+                                   another_fake_processor_id: int,
+                                   five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]) -> None:
+        tags = five_tags_ids
+
+        await apply_tags(
+                execute, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tag_ids=[tags[0]]
+            )
+
+        await apply_tags(
+            execute, entry_id=cataloged_entry.id, processor_id=another_fake_processor_id, tag_ids=[tags[2]]
+        )
+
+        await apply_tags(
+            execute, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tag_ids=[tags[1], tags[3]]
+        )
+
+        relation_ids = await get_relations_for(execute, tag_ids=[tags[0], tags[3]])
+
+        # relation between cataloged_entry and tags[2] already exists => delta=1
+        async with TableSizeDelta("o_relations", delta=1):
+            new_relation_ids = await copy_relations_to_new_tag(execute, relation_ids, tags[2])
+
+        assert len(new_relation_ids) == 2
+
+        signatures = await get_relation_signatures(new_relation_ids)
+
+        # this method do not copy processors
+        assert set(signatures) == {
+            (cataloged_entry.id, tags[2], another_fake_processor_id),
+            (another_cataloged_entry.id, tags[2], None),
+        }
