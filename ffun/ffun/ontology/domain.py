@@ -74,8 +74,9 @@ async def get_tags_info(tags_ids: Iterable[TagId]) -> dict[TagId, Tag]:  # noqa:
 
     tags_by_ids = await get_tags_by_ids(tags_ids)
 
-    info = {tag_id: Tag(id=tag_id, name=converters.verbose(tags_by_ids[tag_id]))  # type: ignore
-            for tag_id in tags_ids}
+    info = {
+        tag_id: Tag(id=tag_id, name=converters.verbose(tags_by_ids[tag_id])) for tag_id in tags_ids  # type: ignore
+    }
 
     # TODO: implement more complex merging
     for property in properties:

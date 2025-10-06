@@ -7,7 +7,7 @@ from ffun.scores.tests.helpers import rule
 
 
 def replace_tags(r: Rule, mapping: dict[int, int]) -> tuple[set[int], set[int]]:
-    return r.replace_tags({k:v for k, v in mapping.items()})  # type: ignore
+    return r.replace_tags({k: v for k, v in mapping.items()})  # type: ignore
 
 
 class TestRule:

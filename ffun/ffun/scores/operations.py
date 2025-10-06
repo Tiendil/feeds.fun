@@ -6,7 +6,7 @@ from pypika.functions import Cast
 from pypika.terms import BasicCriterion
 
 from ffun.core import logging
-from ffun.core.postgresql import ExecuteType, execute, PostgreSQLArrayOperators
+from ffun.core.postgresql import ExecuteType, PostgreSQLArrayOperators, execute
 from ffun.domain.domain import new_rule_id
 from ffun.domain.entities import RuleId, TagId, UserId
 from ffun.scores import errors

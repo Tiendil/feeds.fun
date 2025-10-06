@@ -7,7 +7,7 @@ from pytest_mock import MockerFixture
 
 from ffun.core import utils
 from ffun.core.postgresql import execute
-from ffun.domain.entities import TagId, UserId, TagUid
+from ffun.domain.entities import TagId, TagUid, UserId
 from ffun.domain.urls import str_to_feed_url, url_to_source_uid, url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed

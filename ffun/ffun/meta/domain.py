@@ -146,7 +146,9 @@ async def renormalize_tags(tag_ids: list[TagId]) -> None:
     logger.info("renormalization_finished")
 
 
-async def _renormalize_tag(processor_id: int, old_tag_id: TagId, old_tag_uid: TagUid, categories: set[TagCategory]) -> None:
+async def _renormalize_tag(
+    processor_id: int, old_tag_id: TagId, old_tag_uid: TagUid, categories: set[TagCategory]
+) -> None:
 
     logger.info(
         "renormalizing_tag",

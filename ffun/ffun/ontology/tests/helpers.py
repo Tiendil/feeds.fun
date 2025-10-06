@@ -23,7 +23,7 @@ async def unexisting_tag_id() -> int:
     return result[0]["mx"] + 1  # type: ignore
 
 
-async def get_relation_signatures(relation_ids: list[int]) -> list[tuple[EntryId, TagId, int|None]]:
+async def get_relation_signatures(relation_ids: list[int]) -> list[tuple[EntryId, TagId, int | None]]:
     sql = """
     SELECT r.entry_id, r.tag_id, rp.processor_id
     FROM o_relations AS r
