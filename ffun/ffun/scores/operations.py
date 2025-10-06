@@ -1,15 +1,21 @@
 from typing import Any, Iterable
 
 import psycopg
+from pypika import Array, PostgreSQLQuery, Table
+from pypika.functions import Cast
+from pypika.terms import BasicCriterion
 
 from ffun.core import logging
-from ffun.core.postgresql import execute
+from ffun.core.postgresql import ExecuteType, PostgreSQLArrayOperators, execute
 from ffun.domain.domain import new_rule_id
 from ffun.domain.entities import RuleId, TagId, UserId
 from ffun.scores import errors
 from ffun.scores.entities import Rule
 
 logger = logging.get_module_logger()
+
+
+s_rules = Table("s_rules")
 
 
 def _normalize_tags(tags: Iterable[TagId]) -> list[TagId]:
@@ -97,7 +103,7 @@ async def create_or_update_rule(
     return row_to_rule(result[0])
 
 
-async def delete_rule(user_id: UserId, rule_id: RuleId) -> None:
+async def delete_rule(execute: ExecuteType, user_id: UserId, rule_id: RuleId) -> None:
     sql = """
         DELETE FROM s_rules
         WHERE user_id = %(user_id)s AND id = %(rule_id)s
@@ -162,18 +168,6 @@ async def update_rule(
     return row_to_rule(result[0])
 
 
-async def get_rules(user_id: UserId) -> list[Rule]:
-    sql = """
-    SELECT *
-    FROM s_rules
-    WHERE user_id = %(user_id)s
-    """
-
-    rows = await execute(sql, {"user_id": user_id})
-
-    return [row_to_rule(row) for row in rows]
-
-
 async def count_rules_per_user() -> dict[UserId, int]:
     # Not optimal implementation, but should work for a very long time
     result = await execute("SELECT user_id, COUNT(*) FROM s_rules GROUP BY user_id")
@@ -194,3 +188,31 @@ FROM (
     rows = await execute(sql)
 
     return {row["tag"] for row in rows}
+
+
+async def get_rules_for(
+    execute: ExecuteType, user_ids: list[UserId] | None = None, tag_ids: list[TagId] | None = None
+) -> list[Rule]:
+
+    if user_ids is None and tag_ids is None:
+        raise errors.AtLeastOneFilterMustBeDefined()
+
+    if user_ids == [] or tag_ids == []:
+        return []
+
+    query = PostgreSQLQuery.from_(s_rules).select(s_rules.star)
+
+    if user_ids:
+        query = query.where(s_rules.user_id.isin(list(user_ids)))
+
+    if tag_ids:
+        # any of the tags is in required or excluded
+        tags = Cast(Array(*tag_ids), "bigint[]")
+        query = query.where(
+            BasicCriterion(PostgreSQLArrayOperators.OVERLAPS, s_rules.required_tags, tags)
+            | BasicCriterion(PostgreSQLArrayOperators.OVERLAPS, s_rules.excluded_tags, tags)
+        )
+
+    result = await execute(str(query))
+
+    return [row_to_rule(row) for row in result]

@@ -6,6 +6,7 @@ import pytest_asyncio
 from ffun.domain.entities import TagId, TagUid
 from ffun.ontology.domain import get_ids_by_uids
 from ffun.ontology.entities import NormalizedTag
+from ffun.tags.entities import TagCategory
 
 
 @pytest_asyncio.fixture
@@ -26,7 +27,8 @@ def three_tags_ids(three_tags_by_uids: dict[TagUid, TagId]) -> tuple[TagId, TagI
 @pytest.fixture
 def three_processor_tags(three_tags_by_ids: dict[TagId, TagUid]) -> tuple[NormalizedTag, NormalizedTag, NormalizedTag]:
     return tuple(
-        NormalizedTag(uid=tag, link=None, categories=set()) for tag in three_tags_by_ids.values()  # type: ignore
+        NormalizedTag(uid=tag, link=None, categories={TagCategory.test_raw})
+        for tag in three_tags_by_ids.values()  # type: ignore
     )
 
 
@@ -50,5 +52,6 @@ def five_processor_tags(
     five_tags_by_ids: dict[TagId, TagUid],
 ) -> tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag]:
     return tuple(
-        NormalizedTag(uid=tag, link=None, categories=set()) for tag in five_tags_by_ids.values()  # type: ignore
+        NormalizedTag(uid=tag, link=None, categories={TagCategory.test_raw})
+        for tag in five_tags_by_ids.values()  # type: ignore
     )

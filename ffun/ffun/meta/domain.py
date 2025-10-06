@@ -2,7 +2,7 @@ from typing import Iterable
 
 from ffun.core import logging, utils
 from ffun.domain.domain import new_feed_id
-from ffun.domain.entities import EntryId, FeedId, UserId
+from ffun.domain.entities import EntryId, FeedId, TagId, TagUid, UserId
 from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
@@ -10,9 +10,13 @@ from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.markers import domain as m_domain
 from ffun.meta.settings import settings
+from ffun.ontology import cache as o_cache
 from ffun.ontology import domain as o_domain
+from ffun.ontology import entities as o_entities
 from ffun.parsers import entities as p_entities
 from ffun.scores import domain as s_domain
+from ffun.tags import domain as t_domain
+from ffun.tags.entities import TagCategories, TagCategory
 
 logger = logging.get_module_logger()
 
@@ -102,3 +106,117 @@ async def clean_orphaned_tags(chunk: int) -> int:
     protected_tags = await s_domain.get_all_tags_in_rules()
 
     return await o_domain.remove_orphaned_tags(chunk=chunk, protected_tags=list(protected_tags))  # type: ignore
+
+
+# We expect, that when this function is called, all logic (workers, api) is already working on the new configs
+# => there will be no case when a new tag is created in the not normalized form
+#    (besides native feeds tags, but we'll handle them separately)
+# => we can load tags from rules once and use their cached list
+async def renormalize_tags(tag_ids: list[TagId]) -> None:
+    logger.info("renormalization_started", tag_ids_number=len(tag_ids))
+
+    all_tag_propertries = await o_domain.get_tags_properties(tag_ids)
+    all_tag_propertries = [
+        property for property in all_tag_propertries if property.type == o_entities.TagPropertyType.categories
+    ]
+    all_tag_propertries.sort(key=lambda p: p.tag_id)
+
+    total_properties = len(all_tag_propertries)
+
+    logger.info("renormalization_properties_found", properties_number=total_properties)
+
+    old_tags_cache = o_cache.TagsCache()
+
+    for i, property in enumerate(all_tag_propertries):
+        old_tag_id = property.tag_id
+        old_uids = await old_tags_cache.uids_by_ids([old_tag_id])
+        old_tag_uid = old_uids[old_tag_id]
+
+        logger.info(
+            "try_to_renormalize_tag", step=i, steps_total=total_properties, tag_id=old_tag_id, tag_uid=old_tag_uid
+        )
+
+        await _renormalize_tag(
+            old_tag_id=old_tag_id,
+            old_tag_uid=old_tag_uid,
+            processor_id=property.processor_id,
+            categories={TagCategory(name) for name in property.value.split(",")},
+        )
+
+    logger.info("renormalization_finished")
+
+
+async def _renormalize_tag(
+    processor_id: int, old_tag_id: TagId, old_tag_uid: TagUid, categories: set[TagCategory]
+) -> None:
+
+    logger.info(
+        "renormalizing_tag",
+        processor_id=processor_id,
+        old_tag_id=old_tag_id,
+        old_tag_uid=old_tag_uid,
+        categories=categories,
+    )
+
+    keep_old_tag, new_tags = await _normalize_tag_uid(
+        old_tag_uid=old_tag_uid,
+        categories=categories,
+        processor_id=processor_id,
+    )
+
+    logger.info("renormalizing_candidates_found", old_tag_id=old_tag_id, keep_old_tag=keep_old_tag, new_tags=new_tags)
+
+    for new_tag_id in new_tags:
+        await _apply_renormalized_tags(processor_id=processor_id, old_tag_id=old_tag_id, new_tag_id=new_tag_id)
+
+    if not keep_old_tag:
+        await remove_tags([old_tag_id])
+
+
+async def _normalize_tag_uid(
+    old_tag_uid: TagUid, categories: TagCategories, processor_id: int
+) -> tuple[bool, list[TagId]]:
+    if not categories:
+        return False, []
+
+    raw_tag = o_entities.RawTag(raw_uid=old_tag_uid, link=None, categories=categories)
+
+    normalized_tags = await t_domain.normalize([raw_tag])
+
+    new_tags_cache = o_cache.TagsCache()
+
+    new_tag_ids = await new_tags_cache.ids_by_uids([tag.uid for tag in normalized_tags])
+
+    # we update new properties for all tags, even for the old one
+    # because it at this place logic should not know which properties and how can be changed
+    # => it is easier to just update everything
+    new_properties = []
+    for tag in normalized_tags:
+        new_properties.extend(tag.build_properties_for(tag_id=new_tag_ids[tag.uid], processor_id=processor_id))
+    await o_domain.apply_tags_properties(new_properties)
+
+    original_tag_exists = False
+
+    tags_to_copy = []
+
+    for normalized_tag in normalized_tags:
+        if normalized_tag.uid == raw_tag.raw_uid:
+            original_tag_exists = True
+            continue
+
+        tags_to_copy.append(new_tag_ids[normalized_tag.uid])
+
+    return original_tag_exists, tags_to_copy
+
+
+async def _apply_renormalized_tags(processor_id: int, old_tag_id: TagId, new_tag_id: TagId) -> None:
+    await o_domain.copy_tag_properties(processor_id=processor_id, old_tag_id=old_tag_id, new_tag_id=new_tag_id)
+    await o_domain.copy_relations(processor_id=processor_id, old_tag_id=old_tag_id, new_tag_id=new_tag_id)
+    await s_domain.clone_rules_for_replacements({old_tag_id: new_tag_id})
+
+
+async def remove_tags(tag_ids: list[TagId]) -> None:
+    # we clean only tag relations here,
+    # tags itself will be removed later by cleaner
+    await o_domain.remove_relations_for_tags(tag_ids)
+    await s_domain.remove_rules_with_tags(tag_ids)

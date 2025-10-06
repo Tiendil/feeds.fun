@@ -7,7 +7,8 @@ from ffun.librarian.text_cleaners import clear_nothing
 from ffun.library.entities import Entry
 from ffun.llms_framework.entities import LLMApiKey, LLMConfiguration, LLMGeneralApiKey, LLMProvider, LLMTokens
 from ffun.llms_framework.provider_interface import ChatResponseTest
-from ffun.ontology.entities import NormalizationMode, RawTag
+from ffun.ontology.entities import RawTag
+from ffun.tags.entities import TagCategory
 
 
 class TestProcessor:
@@ -50,9 +51,9 @@ class TestProcessor:
         tags.sort(key=lambda x: x.raw_uid)
 
         assert tags == [
-            RawTag(raw_uid="tag-1", normalization=NormalizationMode.raw),
-            RawTag(raw_uid="tag-2", normalization=NormalizationMode.raw),
-            RawTag(raw_uid="tag-3", normalization=NormalizationMode.raw),
+            RawTag(raw_uid="tag-1", categories={TagCategory.free_form}),
+            RawTag(raw_uid="tag-2", categories={TagCategory.free_form}),
+            RawTag(raw_uid="tag-3", categories={TagCategory.free_form}),
         ]
 
     @pytest.mark.asyncio
@@ -74,9 +75,9 @@ class TestProcessor:
         tags.sort(key=lambda x: x.raw_uid)
 
         assert tags == [
-            RawTag(raw_uid="tag-1", normalization=NormalizationMode.raw),
-            RawTag(raw_uid="tag-2", normalization=NormalizationMode.raw),
-            RawTag(raw_uid="tag-3", normalization=NormalizationMode.raw),
+            RawTag(raw_uid="tag-1", categories={TagCategory.free_form}),
+            RawTag(raw_uid="tag-2", categories={TagCategory.free_form}),
+            RawTag(raw_uid="tag-3", categories={TagCategory.free_form}),
         ]
 
     @pytest.mark.asyncio

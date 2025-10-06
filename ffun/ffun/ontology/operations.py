@@ -3,15 +3,22 @@ import uuid
 from typing import Iterable, Sequence
 
 from bidict import bidict
-from pypika import PostgreSQLQuery
+from pypika import PostgreSQLQuery, Table
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.domain.entities import EntryId, TagId, TagUid
 from ffun.ontology import errors
-from ffun.ontology.entities import TagCategory, TagProperty, TagPropertyType, TagStatsBucket
+from ffun.ontology.entities import TagProperty, TagPropertyType, TagStatsBucket
+from ffun.tags.entities import TagCategory
 
 logger = logging.get_module_logger()
+
+
+o_tags = Table("o_tags")
+o_relations = Table("o_relations")
+o_tags_properties = Table("o_tags_properties")
+o_relations_processors = Table("o_relations_processors")
 
 
 async def get_tags_mappig() -> bidict[TagUid, TagId]:
@@ -71,7 +78,7 @@ async def _save_tags(execute: ExecuteType, entry_id: EntryId, tags_ids: Iterable
     if not tags_ids:
         return
 
-    query = PostgreSQLQuery.into("o_relations").columns("entry_id", "tag_id")
+    query = PostgreSQLQuery.into(o_relations).columns("entry_id", "tag_id")
 
     for tag_id in tags_ids:
         query = query.insert(entry_id, tag_id)
@@ -81,14 +88,12 @@ async def _save_tags(execute: ExecuteType, entry_id: EntryId, tags_ids: Iterable
     await execute(str(query))
 
 
-async def _register_relations_processors(
-    execute: ExecuteType, relations_ids: Iterable[int], processor_id: int
-) -> None:
+async def register_relations_processors(execute: ExecuteType, relations_ids: Iterable[int], processor_id: int) -> None:
 
     if not relations_ids:
         return
 
-    query = PostgreSQLQuery.into("o_relations_processors").columns("relation_id", "processor_id")
+    query = PostgreSQLQuery.into(o_relations_processors).columns("relation_id", "processor_id")
 
     for relation_id in relations_ids:
         query = query.insert(relation_id, processor_id)
@@ -98,47 +103,12 @@ async def _register_relations_processors(
     await execute(str(query))
 
 
-async def _get_relations_for_entry_and_tags(
-    execute: ExecuteType, entry_id: EntryId, tags_ids: Iterable[TagId]
-) -> dict[TagId, int]:
-    result = await execute(
-        "SELECT id, tag_id FROM o_relations WHERE entry_id = %(entry_id)s AND tag_id = ANY(%(tags_ids)s)",
-        {"entry_id": entry_id, "tags_ids": list(tags_ids)},
-    )
+async def apply_tags(execute: ExecuteType, entry_id: EntryId, processor_id: int, tag_ids: list[TagId]) -> None:
+    await _save_tags(execute, entry_id, tag_ids)
 
-    return {row["tag_id"]: row["id"] for row in result}
+    relation_ids = await get_relations_for(execute, entry_ids=[entry_id], tag_ids=tag_ids)
 
-
-async def apply_tags(execute: ExecuteType, entry_id: EntryId, processor_id: int, tags_ids: Iterable[TagId]) -> None:
-    await _save_tags(execute, entry_id, tags_ids)
-
-    relations = await _get_relations_for_entry_and_tags(execute, entry_id, tags_ids)
-
-    await _register_relations_processors(execute, list(relations.values()), processor_id)
-
-
-async def tech_copy_relations(execute: ExecuteType, entry_from_id: EntryId, entry_to_id: EntryId) -> None:
-    """Copy relations with processors info."""
-    # get processors for each tag in entry_from
-    sql = """
-    SELECT rp.processor_id, r.tag_id
-    FROM o_relations_processors rp
-    JOIN o_relations r ON rp.relation_id = r.id
-    WHERE r.entry_id = %(entry_id)s
-    """
-
-    result = await execute(sql, {"entry_id": entry_from_id})
-
-    tags_by_processors: dict[int, list[TagId]] = {}
-
-    for row in result:
-        if row["processor_id"] not in tags_by_processors:
-            tags_by_processors[row["processor_id"]] = []
-
-        tags_by_processors[row["processor_id"]].append(row["tag_id"])
-
-    for processor_id, tags_ids in tags_by_processors.items():
-        await apply_tags(execute, entry_to_id, processor_id, tags_ids)
+    await register_relations_processors(execute, relation_ids, processor_id)
 
 
 async def apply_tags_properties(execute: ExecuteType, properties: Sequence[TagProperty]) -> None:
@@ -152,7 +122,7 @@ async def apply_tags_properties(execute: ExecuteType, properties: Sequence[TagPr
     if len(tags_ids) != len(properties):
         raise errors.DuplicatedTagPropeties()
 
-    query = PostgreSQLQuery.into("o_tags_properties").columns("tag_id", "type", "value", "processor_id", "created_at")
+    query = PostgreSQLQuery.into(o_tags_properties).columns("tag_id", "type", "value", "processor_id", "created_at")
 
     # sort properties to avoid deadlocks
     properties = sorted(properties, key=lambda p: (p.tag_id, p.type, p.processor_id))
@@ -226,22 +196,6 @@ async def remove_relations(execute: ExecuteType, relations_ids: list[int]) -> No
     sql = "DELETE FROM o_relations WHERE id = ANY(%(ids)s)"
 
     await execute(sql, {"ids": relations_ids})
-
-
-async def get_relations_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> list[int]:
-    sql = "SELECT id FROM o_relations WHERE entry_id = ANY(%(entries_ids)s)"
-
-    result = await execute(sql, {"entries_ids": entries_ids})
-
-    return [row["id"] for row in result]
-
-
-async def get_relations_for_tags(execute: ExecuteType, tags_ids: list[TagId]) -> list[int]:
-    sql = "SELECT id FROM o_relations WHERE tag_id = ANY(%(tags_ids)s)"
-
-    result = await execute(sql, {"tags_ids": tags_ids})
-
-    return [row["id"] for row in result]
 
 
 async def count_total_tags() -> int:
@@ -373,3 +327,64 @@ async def remove_tags(execute: ExecuteType, tags_ids: list[TagId]) -> None:
     sql = "DELETE FROM o_tags WHERE id = ANY(%(tags_ids)s)"
 
     await execute(sql, {"tags_ids": list(tags_ids)})
+
+
+async def get_relations_for(
+    execute: ExecuteType,
+    entry_ids: list[EntryId] | None = None,
+    tag_ids: list[TagId] | None = None,
+    processor_ids: list[int] | None = None,
+) -> list[int]:
+
+    if entry_ids is None and tag_ids is None and processor_ids is None:
+        raise errors.AtLeastOneFilterMustBeDefined()
+
+    if entry_ids == [] or tag_ids == [] or processor_ids == []:
+        return []
+
+    query = PostgreSQLQuery.from_(o_relations).select("id")
+
+    if entry_ids:
+        query = query.where(o_relations.entry_id.isin(list(entry_ids)))
+
+    if tag_ids:
+        query = query.where(o_relations.tag_id.isin(list(tag_ids)))
+
+    if processor_ids:
+        query = query.left_join(o_relations_processors).on(o_relations.id == o_relations_processors.relation_id)
+        query = query.where(o_relations_processors.processor_id.isin(list(processor_ids)))
+
+    result = await execute(str(query))
+
+    return [row["id"] for row in result]
+
+
+async def copy_relations_to_new_tag(execute: ExecuteType, relation_ids: list[int], new_tag_id: TagId) -> list[int]:
+    if not relation_ids:
+        return []
+
+    # We use DO UPDATE since we need to return all new relations ids
+    sql = """
+    INSERT INTO o_relations (entry_id, tag_id)
+    SELECT entry_id, %(new_tag_id)s
+    FROM o_relations
+    WHERE id = ANY(%(relation_ids)s)
+    ON CONFLICT (entry_id, tag_id) DO UPDATE SET tag_id = EXCLUDED.tag_id
+    RETURNING id
+    """
+
+    results = await execute(sql, {"new_tag_id": new_tag_id, "relation_ids": relation_ids})
+
+    return [row["id"] for row in results]
+
+
+async def copy_tag_properties(execute: ExecuteType, processor_id: int, old_tag_id: TagId, new_tag_id: TagId) -> None:
+    sql = """
+    INSERT INTO o_tags_properties (tag_id, type, value, processor_id, created_at)
+    SELECT %(new_tag_id)s, type, value, processor_id, created_at
+    FROM o_tags_properties
+    WHERE tag_id = %(old_tag_id)s AND processor_id = %(processor_id)s
+    ON CONFLICT (tag_id, type, processor_id) DO NOTHING
+    """
+
+    await execute(sql, {"new_tag_id": new_tag_id, "old_tag_id": old_tag_id, "processor_id": processor_id})

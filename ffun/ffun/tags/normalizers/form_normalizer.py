@@ -4,7 +4,7 @@ import numpy as np
 import spacy
 from lemminflect import getAllLemmas, getAllLemmasOOV, getInflection
 
-from ffun.ontology.entities import NormalizationMode, RawTag
+from ffun.ontology.entities import RawTag
 from ffun.tags.converters import constant_tag_parts
 from ffun.tags.entities import TagInNormalization
 from ffun.tags.normalizers import base
@@ -259,7 +259,6 @@ class Normalizer(base.Normalizer):
 
         new_tag = RawTag(
             raw_uid=new_uid,
-            normalization=NormalizationMode.raw,
             link=tag.link,
             categories=set(tag.categories),
         )

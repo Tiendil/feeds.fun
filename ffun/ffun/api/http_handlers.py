@@ -87,7 +87,7 @@ async def _external_entries(  # pylint: disable=R0914
 
     if user_id is not None:
         markers = await m_domain.get_markers(user_id=user_id, entries_ids=entries_ids)
-        rules = await s_domain.get_rules(user_id)
+        rules = await s_domain.get_rules_for_user(user_id)
     else:
         markers = {}
         rules = []
@@ -256,7 +256,7 @@ async def _prepare_rules(rules: Iterable[s_entities.Rule]) -> list[entities.Rule
 
 @router.post("/api/get-rules")
 async def api_get_rules(request: entities.GetRulesRequest, user: User) -> entities.GetRulesResponse:
-    rules = await s_domain.get_rules(user_id=user.id)
+    rules = await s_domain.get_rules_for_user(user_id=user.id)
 
     external_rules = await _prepare_rules(rules)
 
@@ -269,7 +269,7 @@ async def api_get_score_details(
 ) -> entities.GetScoreDetailsResponse:
     entry_id = request.entryId
 
-    rules = await s_domain.get_rules(user.id)
+    rules = await s_domain.get_rules_for_user(user.id)
 
     tags_ids = await o_domain.get_tags_ids_for_entries([entry_id])
 

@@ -4,14 +4,16 @@ from typing import Iterable
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
 from ffun.domain.entities import EntryId, TagId, TagUid
 from ffun.ontology import cache, operations
-from ffun.ontology.entities import NormalizedTag, Tag, TagCategory, TagPropertyType
+from ffun.ontology.entities import NormalizedTag, Tag, TagProperty, TagPropertyType
 from ffun.tags import converters
+from ffun.tags.entities import TagCategory
 
 count_total_tags = operations.count_total_tags
 count_total_tags_per_type = operations.count_total_tags_per_type
 count_total_tags_per_category = operations.count_total_tags_per_category
 count_new_tags_at = operations.count_new_tags_at
 tag_frequency_statistics = operations.tag_frequency_statistics
+get_tags_properties = operations.get_tags_properties
 
 
 _tags_cache = cache.TagsCache()
@@ -23,6 +25,14 @@ async def get_ids_by_uids(tags: Iterable[TagUid]) -> dict[TagUid, TagId]:
 
 async def get_tags_by_ids(ids: Iterable[TagId]) -> dict[TagId, TagUid]:
     return await _tags_cache.uids_by_ids(ids)
+
+
+async def apply_tags_properties(properties: list[TagProperty]) -> None:
+    await operations.apply_tags_properties(execute, properties)
+
+
+async def copy_tag_properties(processor_id: int, old_tag_id: TagId, new_tag_id: TagId) -> None:
+    await operations.copy_tag_properties(execute, processor_id, old_tag_id, new_tag_id)
 
 
 # TODO: in the future we could split this function into two separate functions
@@ -54,7 +64,7 @@ async def apply_tags_to_entry(entry_id: EntryId, processor_id: int, tags: Iterab
         properties.extend(tag.build_properties_for(tag_id, processor_id=processor_id))
 
     async with transaction() as execute:
-        await operations.apply_tags(execute, entry_id, processor_id, uids_to_ids.values())
+        await operations.apply_tags(execute, entry_id, processor_id, list(uids_to_ids.values()))
         await operations.apply_tags_properties(execute, properties)
 
 
@@ -68,7 +78,9 @@ async def get_tags_info(tags_ids: Iterable[TagId]) -> dict[TagId, Tag]:  # noqa:
 
     tags_by_ids = await get_tags_by_ids(tags_ids)
 
-    info = {tag_id: Tag(id=tag_id, name=converters.verbose(tags_by_ids[tag_id])) for tag_id in tags_ids}
+    info = {
+        tag_id: Tag(id=tag_id, name=converters.verbose(tags_by_ids[tag_id])) for tag_id in tags_ids  # type: ignore
+    }
 
     # TODO: implement more complex merging
     for property in properties:
@@ -90,13 +102,8 @@ async def get_tags_info(tags_ids: Iterable[TagId]) -> dict[TagId, Tag]:  # noqa:
 
 @run_in_transaction
 async def remove_relations_for_entries(execute: ExecuteType, entries_ids: list[EntryId]) -> None:
-    relation_ids = await operations.get_relations_for_entries(execute, entries_ids)
+    relation_ids = await operations.get_relations_for(execute, entry_ids=entries_ids)
     await operations.remove_relations(execute, relation_ids)
-
-
-@run_in_transaction
-async def tech_copy_relations(execute: ExecuteType, entry_from_id: EntryId, entry_to_id: EntryId) -> None:
-    await operations.tech_copy_relations(execute, entry_from_id, entry_to_id)
 
 
 def _inplace_filter_out_entry_tags(
@@ -145,3 +152,20 @@ async def remove_orphaned_tags(execute: ExecuteType, chunk: int, protected_tags:
     # later if needed
 
     return len(orphaned_tags)
+
+
+@run_in_transaction
+async def copy_relations(execute: ExecuteType, processor_id: int, old_tag_id: TagId, new_tag_id: TagId) -> None:
+
+    relation_ids = await operations.get_relations_for(execute, tag_ids=[old_tag_id], processor_ids=[processor_id])
+
+    new_relation_ids = await operations.copy_relations_to_new_tag(execute, relation_ids, new_tag_id)
+
+    await operations.register_relations_processors(execute, new_relation_ids, processor_id)
+
+
+@run_in_transaction
+async def remove_relations_for_tags(execute: ExecuteType, tag_ids: list[TagId]) -> None:
+    relation_ids = await operations.get_relations_for(execute, tag_ids=tag_ids)
+
+    await operations.remove_relations(execute, relation_ids)

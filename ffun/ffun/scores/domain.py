@@ -1,6 +1,7 @@
 from typing import Iterable
 
-from ffun.domain.entities import TagId
+from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
+from ffun.domain.entities import RuleId, TagId, UserId
 from ffun.scores import entities, operations
 
 count_rules_per_user = operations.count_rules_per_user
@@ -35,7 +36,39 @@ def get_score_contributions(rules: Iterable[entities.Rule], tags: set[TagId]) ->
 
 
 create_or_update_rule = operations.create_or_update_rule
-delete_rule = operations.delete_rule
-get_rules = operations.get_rules
 update_rule = operations.update_rule
 get_all_tags_in_rules = operations.get_all_tags_in_rules
+
+
+async def get_rules_for_user(user_id: UserId) -> list[entities.Rule]:
+    return await operations.get_rules_for(execute, user_ids=[user_id])
+
+
+async def delete_rule(user_id: UserId, rule_id: RuleId) -> None:
+    await operations.delete_rule(execute, user_id, rule_id)
+
+
+@run_in_transaction
+async def clone_rules_for_replacements(execute: ExecuteType, replacements: dict[TagId, TagId]) -> None:
+    if not replacements:
+        return
+
+    rules = await operations.get_rules_for(execute, tag_ids=list(replacements.keys()))
+
+    for rule in rules:
+        new_required_tags, new_excluded_tags = rule.replace_tags(replacements)
+
+        await operations.create_or_update_rule(
+            user_id=rule.user_id, required_tags=new_required_tags, excluded_tags=new_excluded_tags, score=rule.score
+        )
+
+
+@run_in_transaction
+async def remove_rules_with_tags(execute: ExecuteType, tag_ids: list[TagId]) -> None:
+    if not tag_ids:
+        return
+
+    rules = await operations.get_rules_for(execute, tag_ids=tag_ids)
+
+    for rule in rules:
+        await operations.delete_rule(execute, rule.user_id, rule.id)

@@ -11,3 +11,15 @@ class NoRuleFound(Error):
 
 class TagsIntersection(Error):
     pass
+
+
+class AtLeastOneFilterMustBeDefined(Error):
+    pass
+
+
+class CircularTagReplacement(Error):
+    pass
+
+
+class RuleTagsIntersection(Error):
+    pass

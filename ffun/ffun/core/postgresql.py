@@ -7,10 +7,16 @@ import psycopg
 import psycopg_pool
 from psycopg.pq import ExecStatus
 from psycopg.rows import dict_row
+from pypika.enums import Comparator
 
 from ffun.core import logging
 
 logger = logging.get_module_logger()
+
+
+class PostgreSQLArrayOperators(Comparator):  # type: ignore
+    OVERLAPS = "&&"
+
 
 MAX_INTEGER = 2147483647
 

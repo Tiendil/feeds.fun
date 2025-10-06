@@ -15,7 +15,8 @@ from ffun.llms_framework.entities import (
     LLMProvider,
 )
 from ffun.llms_framework.providers import llm_providers
-from ffun.ontology.entities import NormalizationMode, RawTag
+from ffun.ontology.entities import RawTag
+from ffun.tags.entities import TagCategory
 
 logger = logging.get_module_logger()
 
@@ -91,7 +92,7 @@ class Processor(base.Processor):
             tags.append(
                 RawTag(
                     raw_uid=raw_tag,
-                    normalization=NormalizationMode.raw,
+                    categories={TagCategory.free_form},
                 )
             )
 

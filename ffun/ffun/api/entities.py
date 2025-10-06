@@ -33,6 +33,7 @@ from ffun.ontology import entities as o_entities
 from ffun.parsers import entities as p_entities
 from ffun.resources import entities as r_entities
 from ffun.scores import entities as s_entities
+from ffun.tags import entities as t_entities
 from ffun.user_settings import types as us_types
 from ffun.user_settings.values import user_settings
 
@@ -166,7 +167,7 @@ class TagInfo(BaseEntity):
     uid: str
     name: str
     link: str | None
-    categories: set[o_entities.TagCategory]
+    categories: set[t_entities.TagCategory]
 
     @classmethod
     def from_internal(cls, tag: o_entities.Tag, uid: str) -> "TagInfo":
