@@ -438,3 +438,58 @@ class TestCopyRelations:
         assert set(signatures) == expected_signatures | {
             (cataloged_entry.id, tag_ids[1], another_fake_processor_id),
         }
+
+
+class TestRemoveRelationsForTags:
+
+    @pytest.mark.asyncio
+    async def test_no_tags(self,
+                           cataloged_entry: Entry,
+                           another_cataloged_entry: Entry,
+                           fake_processor_id: int,
+                           another_fake_processor_id: int,
+                           five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
+                           ) -> None:
+        tags = five_processor_tags
+
+        await apply_tags_to_entry(cataloged_entry.id, fake_processor_id, [tags[0], tags[1], tags[2]])
+        await apply_tags_to_entry(cataloged_entry.id, another_fake_processor_id, [tags[0], tags[2], tags[4]])
+
+        await apply_tags_to_entry(another_cataloged_entry.id, fake_processor_id, [tags[2], tags[3], tags[4]])
+        await apply_tags_to_entry(another_cataloged_entry.id, another_fake_processor_id, [tags[0], tags[4]])
+
+        async with TableSizeNotChanged("o_relations"):
+            async with TableSizeNotChanged("o_relations_processors"):
+                await remove_relations_for_tags(tag_ids=[])
+
+    @pytest.mark.asyncio
+    async def test_remove(self,
+                          cataloged_entry: Entry,
+                          another_cataloged_entry: Entry,
+                          fake_processor_id: int,
+                          another_fake_processor_id: int,
+                          five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
+                          five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
+                           ) -> None:
+        tags = five_processor_tags
+        tag_ids = five_tags_ids
+
+        await apply_tags_to_entry(cataloged_entry.id, fake_processor_id, [tags[0], tags[1], tags[2]])
+        await apply_tags_to_entry(cataloged_entry.id, another_fake_processor_id, [tags[0], tags[2], tags[4]])
+
+        await apply_tags_to_entry(another_cataloged_entry.id, fake_processor_id, [tags[2], tags[3], tags[4]])
+        await apply_tags_to_entry(another_cataloged_entry.id, another_fake_processor_id, [tags[3], tags[4]])
+
+        relations_to_remove = await operations.get_relations_for(
+            execute, tag_ids=[tag_ids[1], tag_ids[3]]
+        )
+
+        assert len(relations_to_remove) == 2
+
+        # we remove 2 relations but 3 processors bindings
+        async with TableSizeDelta("o_relations", delta=-2):
+            async with TableSizeDelta("o_relations_processors", delta=-3):
+                await remove_relations_for_tags(tag_ids=[tag_ids[1], tag_ids[3]])
+
+        signatures = await helpers.get_relation_signatures(relations_to_remove)
+        assert signatures == []
