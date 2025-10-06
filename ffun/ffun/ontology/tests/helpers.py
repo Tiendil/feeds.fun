@@ -17,10 +17,10 @@ async def unexisting_tag_id() -> int:
         "SELECT MAX(id) AS mx FROM o_tags",
     )
 
-    if not result or result[0]['mx'] is None:
+    if not result or result[0]["mx"] is None:
         return 1
 
-    return result[0]['mx'] + 1
+    return result[0]["mx"] + 1
 
 
 async def get_relation_signatures(relation_ids: list[int]) -> list[tuple[EntryId, TagId, int]]:
@@ -32,6 +32,6 @@ async def get_relation_signatures(relation_ids: list[int]) -> list[tuple[EntryId
     ORDER BY r.entry_id, r.tag_id, rp.processor_id
     """
 
-    result = await execute(sql, {'ids': relation_ids})
+    result = await execute(sql, {"ids": relation_ids})
 
-    return [(row['entry_id'], row['tag_id'], row['processor_id']) for row in result]
+    return [(row["entry_id"], row["tag_id"], row["processor_id"]) for row in result]

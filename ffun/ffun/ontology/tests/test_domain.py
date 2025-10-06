@@ -11,12 +11,12 @@ from ffun.ontology import operations
 from ffun.ontology.domain import (
     _inplace_filter_out_entry_tags,
     apply_tags_to_entry,
+    copy_relations,
     get_ids_by_uids,
     get_tags_ids_for_entries,
     prepare_tags_for_entries,
     remove_orphaned_tags,
-    copy_relations,
-    remove_relations_for_tags
+    remove_relations_for_tags,
 )
 from ffun.ontology.entities import NormalizedTag
 from ffun.ontology.tests import helpers
@@ -363,13 +363,14 @@ class TestRemoveOrphanedTags:
 class TestCopyRelations:
 
     @pytest.mark.asyncio
-    async def test_nothing_to_copy(self,
-                                   cataloged_entry: Entry,
-                                   another_cataloged_entry: Entry,
-                                   fake_processor_id: int,
-                                   another_fake_processor_id: int,
-                                   five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
-                                   ) -> None:
+    async def test_nothing_to_copy(
+        self,
+        cataloged_entry: Entry,
+        another_cataloged_entry: Entry,
+        fake_processor_id: int,
+        another_fake_processor_id: int,
+        five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
+    ) -> None:
         tags = five_processor_tags
 
         await apply_tags_to_entry(cataloged_entry.id, fake_processor_id, [tags[0], tags[1], tags[2]])
@@ -381,17 +382,20 @@ class TestCopyRelations:
         unexisting_tag_id = await helpers.unexisting_tag_id()
 
         async with TableSizeNotChanged("o_relations"):
-            await copy_relations(processor_id=fake_processor_id, old_tag_id=unexisting_tag_id, new_tag_id=unexisting_tag_id + 1)
+            await copy_relations(
+                processor_id=fake_processor_id, old_tag_id=unexisting_tag_id, new_tag_id=unexisting_tag_id + 1
+            )
 
     @pytest.mark.asyncio
-    async def test_copy(self,
-                        cataloged_entry: Entry,
-                        another_cataloged_entry: Entry,
-                        fake_processor_id: int,
-                        another_fake_processor_id: int,
-                        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
-                        five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
-                        ) -> None:
+    async def test_copy(
+        self,
+        cataloged_entry: Entry,
+        another_cataloged_entry: Entry,
+        fake_processor_id: int,
+        another_fake_processor_id: int,
+        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
+        five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
+    ) -> None:
         tags = five_processor_tags
         tag_ids = five_tags_ids
 
@@ -405,7 +409,9 @@ class TestCopyRelations:
             async with TableSizeDelta("o_relations_processors", delta=2):
                 await copy_relations(processor_id=fake_processor_id, old_tag_id=tag_ids[2], new_tag_id=tag_ids[1])
 
-        relation_ids = await operations.get_relations_for(execute, entry_ids=[cataloged_entry.id, another_cataloged_entry.id])
+        relation_ids = await operations.get_relations_for(
+            execute, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
+        )
         signatures = await helpers.get_relation_signatures(relation_ids)
 
         expected_signatures = {
@@ -415,7 +421,6 @@ class TestCopyRelations:
             (cataloged_entry.id, tag_ids[2], fake_processor_id),
             (cataloged_entry.id, tag_ids[2], another_fake_processor_id),
             (cataloged_entry.id, tag_ids[4], another_fake_processor_id),
-
             (another_cataloged_entry.id, tag_ids[0], another_fake_processor_id),
             (another_cataloged_entry.id, tag_ids[1], fake_processor_id),
             (another_cataloged_entry.id, tag_ids[2], fake_processor_id),
@@ -430,9 +435,13 @@ class TestCopyRelations:
         # but will bind new processor to existing relations
         async with TableSizeNotChanged("o_relations"):
             async with TableSizeDelta("o_relations_processors", delta=1):
-                await copy_relations(processor_id=another_fake_processor_id, old_tag_id=tag_ids[2], new_tag_id=tag_ids[1])
+                await copy_relations(
+                    processor_id=another_fake_processor_id, old_tag_id=tag_ids[2], new_tag_id=tag_ids[1]
+                )
 
-        relation_ids = await operations.get_relations_for(execute, entry_ids=[cataloged_entry.id, another_cataloged_entry.id])
+        relation_ids = await operations.get_relations_for(
+            execute, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
+        )
         signatures = await helpers.get_relation_signatures(relation_ids)
 
         assert set(signatures) == expected_signatures | {
@@ -443,13 +452,14 @@ class TestCopyRelations:
 class TestRemoveRelationsForTags:
 
     @pytest.mark.asyncio
-    async def test_no_tags(self,
-                           cataloged_entry: Entry,
-                           another_cataloged_entry: Entry,
-                           fake_processor_id: int,
-                           another_fake_processor_id: int,
-                           five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
-                           ) -> None:
+    async def test_no_tags(
+        self,
+        cataloged_entry: Entry,
+        another_cataloged_entry: Entry,
+        fake_processor_id: int,
+        another_fake_processor_id: int,
+        five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
+    ) -> None:
         tags = five_processor_tags
 
         await apply_tags_to_entry(cataloged_entry.id, fake_processor_id, [tags[0], tags[1], tags[2]])
@@ -463,14 +473,15 @@ class TestRemoveRelationsForTags:
                 await remove_relations_for_tags(tag_ids=[])
 
     @pytest.mark.asyncio
-    async def test_remove(self,
-                          cataloged_entry: Entry,
-                          another_cataloged_entry: Entry,
-                          fake_processor_id: int,
-                          another_fake_processor_id: int,
-                          five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
-                          five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
-                           ) -> None:
+    async def test_remove(
+        self,
+        cataloged_entry: Entry,
+        another_cataloged_entry: Entry,
+        fake_processor_id: int,
+        another_fake_processor_id: int,
+        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
+        five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
+    ) -> None:
         tags = five_processor_tags
         tag_ids = five_tags_ids
 
@@ -480,9 +491,7 @@ class TestRemoveRelationsForTags:
         await apply_tags_to_entry(another_cataloged_entry.id, fake_processor_id, [tags[2], tags[3], tags[4]])
         await apply_tags_to_entry(another_cataloged_entry.id, another_fake_processor_id, [tags[3], tags[4]])
 
-        relations_to_remove = await operations.get_relations_for(
-            execute, tag_ids=[tag_ids[1], tag_ids[3]]
-        )
+        relations_to_remove = await operations.get_relations_for(execute, tag_ids=[tag_ids[1], tag_ids[3]])
 
         assert len(relations_to_remove) == 2
 

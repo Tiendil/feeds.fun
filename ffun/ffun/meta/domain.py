@@ -132,7 +132,9 @@ async def renormalize_tags(tag_ids: list[int]) -> None:
         old_uids = await old_tags_cache.uids_by_ids([old_tag_id])
         old_tag_uid = old_uids[old_tag_id]
 
-        logger.info("try_to_renormalize_tag", step=i, steps_total=total_properties, tag_id=old_tag_id, tag_uid=old_tag_uid)
+        logger.info(
+            "try_to_renormalize_tag", step=i, steps_total=total_properties, tag_id=old_tag_id, tag_uid=old_tag_uid
+        )
 
         await _renormalize_tag(
             old_tag_id=old_tag_id,
@@ -144,13 +146,15 @@ async def renormalize_tags(tag_ids: list[int]) -> None:
     logger.info("renormalization_finished")
 
 
-async def _renormalize_tag(
-        processor_id: int,
-        old_tag_id: TagId,
-        old_tag_uid: TagUid,
-        categories: set[str]) -> None:
+async def _renormalize_tag(processor_id: int, old_tag_id: TagId, old_tag_uid: TagUid, categories: set[str]) -> None:
 
-    logger.info("renormalizing_tag", processor_id=processor_id, old_tag_id=old_tag_id, old_tag_uid=old_tag_uid, categories=categories)
+    logger.info(
+        "renormalizing_tag",
+        processor_id=processor_id,
+        old_tag_id=old_tag_id,
+        old_tag_uid=old_tag_uid,
+        categories=categories,
+    )
 
     keep_old_tag, new_tags = await _normalize_tag_uid(
         old_tag_uid=old_tag_uid,
@@ -160,17 +164,13 @@ async def _renormalize_tag(
     logger.info("renormalizing_candidates_found", old_tag_id=old_tag_id, keep_old_tag=keep_old_tag, new_tags=new_tags)
 
     for new_tag_id in new_tags:
-        await _apply_renormalized_tags(processor_id=processor_id,
-                                       old_tag_id=old_tag_id,
-                                       new_tag_id=new_tag_id)
+        await _apply_renormalized_tags(processor_id=processor_id, old_tag_id=old_tag_id, new_tag_id=new_tag_id)
 
     if not keep_old_tag:
         await remove_tags([old_tag_id])
 
 
-async def _normalize_tag_uid(
-    old_tag_uid: TagUid, categories: TagCategories
-) -> tuple[bool, list[TagId]]:
+async def _normalize_tag_uid(old_tag_uid: TagUid, categories: TagCategories) -> tuple[bool, list[TagId]]:
     if not categories:
         return False, []
 

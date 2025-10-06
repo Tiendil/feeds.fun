@@ -16,6 +16,7 @@ from ffun.ontology.operations import (
     _save_tags,
     apply_tags,
     apply_tags_properties,
+    copy_relations_to_new_tag,
     count_new_tags_at,
     count_total_tags,
     count_total_tags_per_category,
@@ -30,7 +31,6 @@ from ffun.ontology.operations import (
     remove_relations,
     remove_tags,
     tag_frequency_statistics,
-    copy_relations_to_new_tag
 )
 from ffun.ontology.tests.helpers import assert_has_tags, get_relation_signatures
 from ffun.tags.entities import TagCategory
@@ -594,8 +594,8 @@ class TestGetRelationsFor:
         three_tags_ids: tuple[TagId, TagId, TagId],
     ) -> None:
         await apply_tags(
-                execute, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tag_ids=[three_tags_ids[0]]
-            )
+            execute, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tag_ids=[three_tags_ids[0]]
+        )
 
         await apply_tags(
             execute, entry_id=cataloged_entry.id, processor_id=another_fake_processor_id, tag_ids=[three_tags_ids[2]]
@@ -646,24 +646,27 @@ class TestCopyRelationsToNewTag:
             assert new_relation_ids == []
 
     @pytest.mark.asyncio
-    async def test_create_new(self,
-                              cataloged_entry: Entry,
-                              another_cataloged_entry: Entry,
-                              fake_processor_id: int,
-                              another_fake_processor_id: int,
-                              five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]) -> None:
+    async def test_create_new(
+        self,
+        cataloged_entry: Entry,
+        another_cataloged_entry: Entry,
+        fake_processor_id: int,
+        another_fake_processor_id: int,
+        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
+    ) -> None:
         tags = five_tags_ids
 
-        await apply_tags(
-                execute, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tag_ids=[tags[0]]
-            )
+        await apply_tags(execute, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tag_ids=[tags[0]])
 
         await apply_tags(
             execute, entry_id=cataloged_entry.id, processor_id=another_fake_processor_id, tag_ids=[tags[2]]
         )
 
         await apply_tags(
-            execute, entry_id=another_cataloged_entry.id, processor_id=fake_processor_id, tag_ids=[tags[1], tags[2], tags[3]]
+            execute,
+            entry_id=another_cataloged_entry.id,
+            processor_id=fake_processor_id,
+            tag_ids=[tags[1], tags[2], tags[3]],
         )
 
         assert await get_relations_for(execute, tag_ids=[tags[4]]) == []
@@ -684,17 +687,17 @@ class TestCopyRelationsToNewTag:
         }
 
     @pytest.mark.asyncio
-    async def test_partial_rewrite(self,
-                                   cataloged_entry: Entry,
-                                   another_cataloged_entry: Entry,
-                                   fake_processor_id: int,
-                                   another_fake_processor_id: int,
-                                   five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId]) -> None:
+    async def test_partial_rewrite(
+        self,
+        cataloged_entry: Entry,
+        another_cataloged_entry: Entry,
+        fake_processor_id: int,
+        another_fake_processor_id: int,
+        five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
+    ) -> None:
         tags = five_tags_ids
 
-        await apply_tags(
-                execute, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tag_ids=[tags[0]]
-            )
+        await apply_tags(execute, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tag_ids=[tags[0]])
 
         await apply_tags(
             execute, entry_id=cataloged_entry.id, processor_id=another_fake_processor_id, tag_ids=[tags[2]]

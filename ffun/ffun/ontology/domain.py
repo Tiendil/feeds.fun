@@ -4,7 +4,7 @@ from typing import Iterable
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
 from ffun.domain.entities import EntryId, TagId, TagUid
 from ffun.ontology import cache, operations
-from ffun.ontology.entities import NormalizedTag, Tag, TagPropertyType, TagProperty
+from ffun.ontology.entities import NormalizedTag, Tag, TagProperty, TagPropertyType
 from ffun.tags import converters
 from ffun.tags.entities import TagCategory
 
