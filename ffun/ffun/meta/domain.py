@@ -114,9 +114,6 @@ async def clean_orphaned_tags(chunk: int) -> int:
 #    (besides native feeds tags, but we'll handle them separately)
 # => we can load tags from rules once and use their cached list
 async def renormalize_tags(tag_ids: list[int]) -> None:
-    # TODO: we may want a functionality to get all properties by types
-    tags_in_rules = await s_domain.get_all_tags_in_rules()
-
     all_tag_propertries = await o_domain.get_tags_properties(tag_ids)
     all_tag_propertries = [
         property for property in all_tag_propertries if property.type == o_entities.TagPropertyType.categories
@@ -134,7 +131,6 @@ async def renormalize_tags(tag_ids: list[int]) -> None:
             old_tag_uid=old_uids[old_tag_id],
             processor_id=property.processor_id,
             categories=set(property.value.split(",")),
-            tag_in_rules=old_tag_id in tags_in_rules
         )
 
 
@@ -143,21 +139,19 @@ async def _renormalize_tag(
         processor_id: int,
         old_tag_id: TagId,
         old_tag_uid: TagUid,
-        categories: set[str],
-        tag_in_rules: bool) -> None:
+        categories: set[str]) -> None:
     keep_old_tag, new_tags = await _normalize_tag_uid(
         old_tag_uid=old_tag_uid,
         categories=categories,
     )
 
     for new_tag_id in new_tags:
-        await _copy_renormalized_tags(processor_id=processor_id,
-                                      old_tag_id=old_tag_id,
-                                      new_tag_id=new_tag_id,
-                                      tag_in_rules=tag_in_rules)
+        await _apply_renormalized_tags(processor_id=processor_id,
+                                       old_tag_id=old_tag_id,
+                                       new_tag_id=new_tag_id)
 
     if not keep_old_tag:
-        await _remove_tag(old_tag_id=old_tag_id, tag_in_rules=tag_in_rules)
+        await remove_tags([old_tag_id])
 
 
 # TODO: tests
@@ -189,17 +183,13 @@ async def _normalize_tag_uid(
 
 
 # TODO: tests
-async def _copy_renormalized_tags(processor_id: int, old_tag_id: TagId, new_tag_id: TagId, tag_in_rules: bool) -> None:
+async def _apply_renormalized_tags(processor_id: int, old_tag_id: TagId, new_tag_id: TagId) -> None:
     await o_domain.copy_relations(processor_id, old_tag_id, new_tag_id)
-
-    if tag_in_rules:
-        await s_domain.clone_rules_for_replacements({old_tag_id: new_tag_id})
+    await s_domain.clone_rules_for_replacements({old_tag_id: new_tag_id})
 
 
-# TODO: tests
-async def _remove_tag(old_tag_id: TagId, tag_in_rules: bool) -> None:
-    # we can skip deleting the tag itself, it will be done later by cleaner
-    await o_domain.remove_relations_for_tags([old_tag_id])
-
-    if tag_in_rules:
-        await s_domain.remove_rules_with_tags([old_tag_id])
+async def remove_tags(tag_ids: list[TagId]) -> None:
+    # we clean only tag connections here,
+    # tags itself will be removed later by cleaner
+    await o_domain.remove_relations_for_tags(tag_ids)
+    await s_domain.remove_rules_with_tags(tag_ids)

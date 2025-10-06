@@ -21,6 +21,11 @@ from ffun.meta.domain import (
     clean_orphaned_feeds,
     clean_orphaned_tags,
     remove_entries,
+    remove_tags,
+    _apply_renormalized_tags,
+    _normalize_tag_uid,
+    _renormalize_tag,
+    renormalize_tags
 )
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import NormalizedTag
@@ -237,3 +242,21 @@ class TestCleanOrphanedTags:
 
         assert get_all_tags_in_rules_mock.call_args_list == [mocker.call()]
         assert remove_orphaned_tags_mock.call_args_list == [mocker.call(chunk=100, protected_tags=protected_tags)]
+
+
+# test that everything is connected correctly
+class TestRemoveTags:
+
+    @pytest.mark.asyncio
+    async def test_no_tags(self) -> None:
+        await remove_tags([])
+
+    @pytest.mark.asyncio
+    async def test(self, mocker: MockerFixture, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
+        remove_relations_for_tags = mocker.patch("ffun.ontology.domain.remove_relations_for_tags")
+        remove_rules_with_tags = mocker.patch("ffun.scores.domain.remove_rules_with_tags")
+
+        await remove_tags(list(three_tags_ids))
+
+        assert remove_relations_for_tags.call_args_list == [mocker.call(list(three_tags_ids))]
+        assert remove_rules_with_tags.call_args_list == [mocker.call(list(three_tags_ids))]
