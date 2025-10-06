@@ -376,3 +376,15 @@ async def copy_relations_to_new_tag(execute: ExecuteType, relation_ids: list[int
     results = await execute(sql, {"new_tag_id": new_tag_id, "relation_ids": relation_ids})
 
     return [row["id"] for row in results]
+
+
+async def copy_tag_properties(execute: ExecuteType, processor_id: int, old_tag_id: TagId, new_tag_id: TagId) -> None:
+    sql = """
+    INSERT INTO o_tags_properties (tag_id, type, value, processor_id, created_at)
+    SELECT %(new_tag_id)s, type, value, processor_id, created_at
+    FROM o_tags_properties
+    WHERE tag_id = %(old_tag_id)s AND processor_id = %(processor_id)s
+    ON CONFLICT (tag_id, type, processor_id) DO NOTHING
+    """
+
+    await execute(sql, {"new_tag_id": new_tag_id, "old_tag_id": old_tag_id, "processor_id": processor_id})

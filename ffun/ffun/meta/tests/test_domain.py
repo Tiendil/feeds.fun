@@ -276,6 +276,7 @@ class TestApplyRenormalizedTags:
     async def test(
         self, mocker: MockerFixture, fake_processor_id: int, three_tags_ids: tuple[TagId, TagId, TagId]
     ) -> None:
+        copy_tag_properties = mocker.patch("ffun.ontology.domain.copy_tag_properties")
         copy_relations = mocker.patch("ffun.ontology.domain.copy_relations")
         clone_rules_for_replacements = mocker.patch("ffun.scores.domain.clone_rules_for_replacements")
 
@@ -283,6 +284,9 @@ class TestApplyRenormalizedTags:
             processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[1]
         )
 
+        assert copy_tag_properties.call_args_list == [
+            mocker.call(processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[1])
+        ]
         assert copy_relations.call_args_list == [
             mocker.call(processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[1])
         ]

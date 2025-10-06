@@ -31,6 +31,10 @@ async def apply_tags_properties(properties: list[TagProperty]) -> None:
     await operations.apply_tags_properties(execute, properties)
 
 
+async def copy_tag_properties(processor_id: int, old_tag_id: TagId, new_tag_id: TagId) -> None:
+    await operations.copy_tag_properties(execute, processor_id, old_tag_id, new_tag_id)
+
+
 # TODO: in the future we could split this function into two separate functions
 #       1. tags & properties normalization
 #       2. saving tags & properties to the database

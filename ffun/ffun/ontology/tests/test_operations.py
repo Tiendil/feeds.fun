@@ -11,7 +11,7 @@ from ffun.library.entities import Entry
 from ffun.library.tests import make as l_make
 from ffun.ontology import errors
 from ffun.ontology.domain import apply_tags_to_entry
-from ffun.ontology.entities import NormalizedTag, TagPropertyType
+from ffun.ontology.entities import NormalizedTag, TagPropertyType, TagProperty
 from ffun.ontology.operations import (
     _save_tags,
     apply_tags,
@@ -31,6 +31,7 @@ from ffun.ontology.operations import (
     remove_relations,
     remove_tags,
     tag_frequency_statistics,
+    copy_tag_properties
 )
 from ffun.ontology.tests.helpers import assert_has_tags, get_relation_signatures
 from ffun.tags.entities import TagCategory
@@ -733,3 +734,90 @@ class TestCopyRelationsToNewTag:
             (cataloged_entry.id, tags[2], another_fake_processor_id),
             (another_cataloged_entry.id, tags[2], None),
         }
+
+
+class TestCopyTagProperties:
+
+    @pytest.mark.asyncio
+    async def test(self,
+                   fake_processor_id: int,
+                   another_fake_processor_id: int,
+                   three_tags_ids: tuple[TagId, TagId, TagId],
+                   ) -> None:
+        tag_ids = three_tags_ids
+
+        properties = [
+            TagProperty(tag_id=tag_ids[0], type=TagPropertyType.categories, value=TagCategory.test_raw.name,
+                        processor_id=fake_processor_id, created_at=utils.now()),
+            TagProperty(tag_id=tag_ids[0], type=TagPropertyType.link, value="https://example.com",
+                        processor_id=fake_processor_id, created_at=utils.now()),
+            TagProperty(tag_id=tag_ids[0], type=TagPropertyType.categories, value=TagCategory.test_final.name,
+                        processor_id=another_fake_processor_id, created_at=utils.now()),
+            TagProperty(tag_id=tag_ids[1], type=TagPropertyType.categories, value=TagCategory.test_preserve.name,
+                        processor_id=fake_processor_id, created_at=utils.now()),
+            TagProperty(tag_id=tag_ids[1], type=TagPropertyType.link, value="https://example.org",
+                        processor_id=another_fake_processor_id, created_at=utils.now()),
+            TagProperty(tag_id=tag_ids[2], type=TagPropertyType.categories, value=TagCategory.test_raw.name,
+                        processor_id=another_fake_processor_id, created_at=utils.now()),
+            ]
+
+        await apply_tags_properties(execute, properties)
+
+        async with TableSizeDelta("o_tags_properties", delta=2):
+            await copy_tag_properties(execute,
+                                      processor_id=fake_processor_id,
+                                      old_tag_id=tag_ids[0],
+                                      new_tag_id=tag_ids[2])
+
+        saved_properties = await get_tags_properties([tag_ids[2]])
+
+        saved_properties_1 = [property for property in saved_properties if property.processor_id == fake_processor_id]
+        saved_properties_2 = [property for property in saved_properties if property.processor_id == another_fake_processor_id]
+
+        saved_properties_1.sort(key=lambda x: (x.type, x.value))
+
+        assert len(saved_properties_1) == 2
+        assert len(saved_properties_2) == 1
+
+        assert saved_properties_1[0] == properties[1].replace(tag_id=tag_ids[2])
+        assert saved_properties_1[1] == properties[0].replace(tag_id=tag_ids[2])
+
+        assert saved_properties_2[0] == properties[-1].replace(tag_id=tag_ids[2])
+
+    @pytest.mark.asyncio
+    async def test_rewrite(self,
+                           fake_processor_id: int,
+                           another_fake_processor_id: int,
+                           three_tags_ids: tuple[TagId, TagId, TagId],
+                           ) -> None:
+        tag_ids = three_tags_ids
+
+        properties = [
+            TagProperty(tag_id=tag_ids[0], type=TagPropertyType.categories, value=TagCategory.test_raw.name,
+                        processor_id=fake_processor_id, created_at=utils.now()),
+            TagProperty(tag_id=tag_ids[0], type=TagPropertyType.link, value="https://example.com",
+                        processor_id=fake_processor_id, created_at=utils.now()),
+            TagProperty(tag_id=tag_ids[0], type=TagPropertyType.categories, value=TagCategory.test_final.name,
+                        processor_id=another_fake_processor_id, created_at=utils.now()),
+            TagProperty(tag_id=tag_ids[1], type=TagPropertyType.categories, value=TagCategory.test_preserve.name,
+                        processor_id=fake_processor_id, created_at=utils.now()),
+            TagProperty(tag_id=tag_ids[1], type=TagPropertyType.link, value="https://example.org",
+                        processor_id=another_fake_processor_id, created_at=utils.now()),
+            TagProperty(tag_id=tag_ids[2], type=TagPropertyType.link, value="https://example.com",
+                        processor_id=fake_processor_id, created_at=utils.now()),
+            ]
+
+        await apply_tags_properties(execute, properties)
+
+        async with TableSizeDelta("o_tags_properties", delta=1):
+            await copy_tag_properties(execute,
+                                      processor_id=fake_processor_id,
+                                      old_tag_id=tag_ids[0],
+                                      new_tag_id=tag_ids[2])
+
+        saved_properties = await get_tags_properties([tag_ids[2]])
+        saved_properties = [property for property in saved_properties if property.type == TagPropertyType.categories]
+
+        assert len(saved_properties) == 1
+
+        assert saved_properties[0] == properties[0].replace(tag_id=tag_ids[2])
