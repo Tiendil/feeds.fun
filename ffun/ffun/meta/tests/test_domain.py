@@ -356,3 +356,65 @@ class TestNormalizeTagUid:
         assert normalize.call_args_list == [mocker.call([RawTag(raw_uid=norm_tag_2.uid,
                                                                 link=None,
                                                                 categories=categories)])]
+
+
+# test that everything is connected correctly
+class TestRenormalizeTag:
+
+    @pytest.mark.asyncio
+    async def test_no_removing(self,
+                               fake_processor_id: int,
+                               three_tags_ids: tuple[TagId, TagId, TagId],
+                               three_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag],
+                               mocker: MockerFixture) -> None:
+
+        normalize_tag_uid = mocker.patch("ffun.meta.domain._normalize_tag_uid",
+                                         return_value=(True, [three_tags_ids[1], three_tags_ids[2]]))
+        apply_renormalized_tags = mocker.patch("ffun.meta.domain._apply_renormalized_tags")
+        remove_tags = mocker.patch("ffun.meta.domain.remove_tags")
+
+        categories = {TagCategory.test_raw, TagCategory.test_final}
+
+        await _renormalize_tag(processor_id=fake_processor_id,
+                               old_tag_id=three_tags_ids[0],
+                               old_tag_uid=three_processor_tags[0].uid,
+                               categories=categories)
+
+        assert normalize_tag_uid.call_args_list == [mocker.call(old_tag_uid=three_processor_tags[0].uid,
+                                                                categories=categories)]
+        assert apply_renormalized_tags.call_args_list == [mocker.call(processor_id=fake_processor_id,
+                                                                      old_tag_id=three_tags_ids[0],
+                                                                      new_tag_id=three_tags_ids[1]),
+                                                          mocker.call(processor_id=fake_processor_id,
+                                                                      old_tag_id=three_tags_ids[0],
+                                                                      new_tag_id=three_tags_ids[2])]
+        assert remove_tags.call_args_list == []
+
+    @pytest.mark.asyncio
+    async def test_removing(self,
+                            fake_processor_id: int,
+                            three_tags_ids: tuple[TagId, TagId, TagId],
+                            three_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag],
+                            mocker: MockerFixture) -> None:
+
+        normalize_tag_uid = mocker.patch("ffun.meta.domain._normalize_tag_uid",
+                                         return_value=(False, [three_tags_ids[1], three_tags_ids[2]]))
+        apply_renormalized_tags = mocker.patch("ffun.meta.domain._apply_renormalized_tags")
+        remove_tags = mocker.patch("ffun.meta.domain.remove_tags")
+
+        categories = {TagCategory.test_raw, TagCategory.test_final}
+
+        await _renormalize_tag(processor_id=fake_processor_id,
+                               old_tag_id=three_tags_ids[0],
+                               old_tag_uid=three_processor_tags[0].uid,
+                               categories=categories)
+
+        assert normalize_tag_uid.call_args_list == [mocker.call(old_tag_uid=three_processor_tags[0].uid,
+                                                                categories=categories)]
+        assert apply_renormalized_tags.call_args_list == [mocker.call(processor_id=fake_processor_id,
+                                                                      old_tag_id=three_tags_ids[0],
+                                                                      new_tag_id=three_tags_ids[1]),
+                                                          mocker.call(processor_id=fake_processor_id,
+                                                                      old_tag_id=three_tags_ids[0],
+                                                                      new_tag_id=three_tags_ids[2])]
+        assert remove_tags.call_args_list == [mocker.call([three_tags_ids[0]])]

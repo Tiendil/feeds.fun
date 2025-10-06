@@ -135,7 +135,6 @@ async def renormalize_tags(tag_ids: list[int]) -> None:
         )
 
 
-# TODO: tests
 async def _renormalize_tag(
         processor_id: int,
         old_tag_id: TagId,
