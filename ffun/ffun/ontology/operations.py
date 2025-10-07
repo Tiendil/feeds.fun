@@ -2,6 +2,7 @@ import datetime
 import uuid
 from typing import Iterable, Sequence
 
+import psycopg
 from bidict import bidict
 from pypika import PostgreSQLQuery, Table
 
@@ -316,9 +317,9 @@ LIMIT %(limit)s
     return [row["id"] for row in result]
 
 
-async def remove_tags(execute: ExecuteType, tags_ids: list[TagId]) -> None:
+async def remove_tags(execute: ExecuteType, tags_ids: list[TagId]) -> bool:
     if not tags_ids:
-        return
+        return True
 
     sql = "DELETE FROM o_tags_properties WHERE tag_id = ANY(%(tags_ids)s)"
 
@@ -326,7 +327,13 @@ async def remove_tags(execute: ExecuteType, tags_ids: list[TagId]) -> None:
 
     sql = "DELETE FROM o_tags WHERE id = ANY(%(tags_ids)s)"
 
-    await execute(sql, {"tags_ids": list(tags_ids)})
+    try:
+        await execute(sql, {"tags_ids": list(tags_ids)})
+    except psycopg.errors.ForeignKeyViolation:
+        logger.warning("unique_violation_while_deleting_tags")
+        return False
+
+    return True
 
 
 async def get_relations_for(

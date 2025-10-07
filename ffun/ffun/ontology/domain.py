@@ -143,15 +143,17 @@ async def prepare_tags_for_entries(
 async def remove_orphaned_tags(execute: ExecuteType, chunk: int, protected_tags: list[TagId]) -> int:
     orphaned_tags = await operations.get_orphaned_tags(execute, limit=chunk, protected_tags=protected_tags)
 
-    await operations.remove_tags(execute, orphaned_tags)
+    success = await operations.remove_tags(execute, orphaned_tags)
 
     # Since we run the code in a transaction, we do nothing with relations here
     # In case some relations will be added during the transaction, we encounter a foreign key violation
     # => the transaction will be rolled back
-    # Since the probability of such situation is very low, we can add code to handle such situations
-    # later if needed
+    # We could silence such failures, because cleaning orphaned tags is a periodic task
 
-    return len(orphaned_tags)
+    if success:
+        return len(orphaned_tags)
+
+    return 0
 
 
 @run_in_transaction

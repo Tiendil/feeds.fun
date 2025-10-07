@@ -466,7 +466,7 @@ class TestRemoveTags:
 
         async with TableSizeDelta("o_tags", delta=-3):
             async with TableSizeDelta("o_tags_properties", delta=-2):
-                await remove_tags(execute, [five_tags_ids[0], five_tags_ids[2], five_tags_ids[4]])
+                assert await remove_tags(execute, [five_tags_ids[0], five_tags_ids[2], five_tags_ids[4]])
 
         tags = await get_tags_by_ids(list(five_tags_ids))
 
@@ -474,6 +474,20 @@ class TestRemoveTags:
 
         saved_properties = await get_tags_properties(list(five_tags_ids))
         assert {property.tag_id for property in saved_properties} == {five_tags_ids[3]}
+
+    @pytest.mark.asyncio
+    async def test_foreign_key_violation(
+        self,
+        fake_processor_id: int,
+        cataloged_entry: Entry,
+        three_tags_ids: tuple[TagId, TagId, TagId],
+    ) -> None:
+
+        await apply_tags(execute, cataloged_entry.id, fake_processor_id, [three_tags_ids[0]])
+
+        async with TableSizeNotChanged("o_tags"):
+            async with TableSizeNotChanged("o_tags_properties"):
+                assert not await remove_tags(execute, list(three_tags_ids))
 
 
 class TestGetRelationsFor:

@@ -2,6 +2,7 @@ import copy
 
 import pytest
 
+from pytest_mock import MockerFixture
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.domain import new_entry_id
@@ -358,6 +359,23 @@ class TestRemoveOrphanedTags:
         tags = await operations.get_tags_by_ids(list(three_tags_ids))
 
         assert set(tags.keys()) == {three_tags_ids[0], three_tags_ids[2]}
+
+    @pytest.mark.asyncio
+    async def test_foreign_key_violation(
+        self,
+        fake_processor_id: int,
+        cataloged_entry: Entry,
+        three_tags_ids: tuple[TagId, TagId, TagId],
+        mocker: MockerFixture,
+    ) -> None:
+
+        await operations.apply_tags(execute, cataloged_entry.id, fake_processor_id, [three_tags_ids[0]])
+
+        mocker.patch("ffun.ontology.operations.get_orphaned_tags", return_value=list(three_tags_ids))
+
+        async with TableSizeNotChanged("o_tags"):
+            async with TableSizeNotChanged("o_tags_properties"):
+                assert await remove_orphaned_tags(chunk=1000_000, protected_tags=[]) == 0
 
 
 class TestCopyRelations:
