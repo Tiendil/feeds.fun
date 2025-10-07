@@ -1,8 +1,8 @@
 import copy
 
 import pytest
-
 from pytest_mock import MockerFixture
+
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.domain import new_entry_id
