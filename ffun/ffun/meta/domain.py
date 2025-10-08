@@ -130,6 +130,11 @@ async def renormalize_tags(tag_ids: list[TagId]) -> None:
     for i, property in enumerate(all_tag_propertries):
         old_tag_id = property.tag_id
         old_uids = await old_tags_cache.uids_by_ids([old_tag_id])
+
+        if old_tag_id not in old_uids:
+            # Tag could be removed between loading properties and loading uids
+            continue
+
         old_tag_uid = old_uids[old_tag_id]
 
         logger.info(
