@@ -96,7 +96,6 @@
   }
 
   function beforeEmailSend() {
-    window.alert("Please check your email for the magic link");
     requested.value = true;
     counting.value = true;
   }
