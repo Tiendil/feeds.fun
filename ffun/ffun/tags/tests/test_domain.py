@@ -39,7 +39,7 @@ class TestApplyNormalizers:
             uid=uid,
             parts=uid_to_parts(uid),
             link=None,
-            categories={TagCategory.feed_tag},
+            categories={TagCategory.test_preserve},
         )
 
     @pytest.fixture
