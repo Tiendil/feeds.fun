@@ -78,8 +78,13 @@ class TagInNormalization(BaseEntity):
         if TagCategory.special in self.categories:
             return NormalizationMode.final
 
+        # We do not normalize native feed tags, because:
+        # - We have no control over the logic that assigns them
+        # - Sometimes they are (semi-)technical (special terms, domain names, codes)
+        # - Sometimes they are very specific, like r-sideproject (for subreddits)
+        #   and we don't want to create a duplicated tag like r-sideprojects that actually has no meaning
         if TagCategory.feed_tag in self.categories:
-            return NormalizationMode.preserve
+            return NormalizationMode.final
 
         if TagCategory.free_form in self.categories:
             return NormalizationMode.raw
