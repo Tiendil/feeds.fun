@@ -1,4 +1,4 @@
-name: upload-release
+name: upload-release-python
 on:
   workflow_dispatch:
 
@@ -31,24 +31,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           registry-url: 'https://registry.npmjs.org'
-
-      - name: Install poetry
-        run: pip install poetry
-
-      - name: Prepare Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.13'
-          cache: 'poetry'
-
-      - name: build python package
-        working-directory: ffun
-        run: poetry build
-
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1.13
-        with:
-          packages-dir: ffun/dist/
 
       - name: Publish package distributions to NPM
         working-directory: site
