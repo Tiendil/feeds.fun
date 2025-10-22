@@ -30,11 +30,11 @@ jobs:
       - name: Prepare Node
         uses: actions/setup-node@v6
         with:
-          # node-version: '20'
+          node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
-      # - name: Update npm
-      #   run: npm install -g npm@latest
+      - name: Update npm
+        run: npm install -g npm@latest
 
       - name: Publish package distributions to NPM
         working-directory: site
