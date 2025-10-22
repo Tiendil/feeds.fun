@@ -47,6 +47,7 @@ class FeedError(enum.IntEnum):
     network_server_closed_connection_too_early = 1025
     network_server_reset_http2_stream = 1026
     network_server_terminated_connection = 1027
+    network_write_error = 1028
 
     parsing_unknown = 2000
     parsing_base_error = 2001
