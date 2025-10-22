@@ -27,6 +27,10 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
+      # Note: I don't fully understand why we should explicitly setup node-version 20 here
+      #       and force upgrading npm, but without this the publish step fails.
+      #       Mybe it will be fixed in the future.
+
       - name: Prepare Node
         uses: actions/setup-node@v6
         with:
