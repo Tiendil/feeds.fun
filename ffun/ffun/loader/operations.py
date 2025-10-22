@@ -49,6 +49,7 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         if any(
             m in message
             for m in [
+                # It is strange that the same error is raised as LocalProtocolError and ProtocolError
                 "Invalid input ConnectionInputs.RECV_DATA in state ConnectionState.CLOSED",
                 "Invalid input ConnectionInputs.RECV_PING in state ConnectionState.CLOSED",
             ]
@@ -110,6 +111,23 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
             error_code = FeedError.network_server_terminated_connection
         else:
             log.exception("remote_protocol_error_while_loading_feed")
+
+        raise errors.LoadError(feed_error_code=error_code) from e
+
+    except httpx.ProtocolError as e:
+        message = str(e)
+
+        if any(
+            m in message
+            for m in [
+                # It is strange that the same error is raised as LocalProtocolError and ProtocolError
+                "Invalid input ConnectionInputs.RECV_DATA in state ConnectionState.CLOSED",
+            ]
+        ):
+            log.warning("network_server_closed_connection_too_early")
+            error_code = FeedError.network_server_closed_connection_too_early
+        else:
+            log.exception("protocol_error_while_loading_feed")
 
         raise errors.LoadError(feed_error_code=error_code) from e
 
