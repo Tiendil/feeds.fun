@@ -1,4 +1,4 @@
-name: upload-release-python
+name: upload-release-npm
 on:
   workflow_dispatch:
 
