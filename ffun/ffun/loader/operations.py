@@ -124,6 +124,17 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
 
         raise errors.LoadError(feed_error_code=error_code) from e
 
+    except httpx.WriteError as e:
+        message = str(e)
+
+        if message == "":
+            error_code = FeedError.network_write_error
+            log.warning("network_write_error")
+        else:
+            log.exception("unknown_write_error_while_loading_feed")
+
+        raise errors.LoadError(feed_error_code=error_code) from e
+
     except httpx.ConnectError as e:
         message = str(e)
 
