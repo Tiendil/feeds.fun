@@ -221,6 +221,9 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         elif "TUN_ERR" in message and "EHOSTUNREACH" in message:
             log.warning("proxy_no_route_to_host")
             error_code = FeedError.proxy_no_route_to_host
+        elif "TUN_ERR" in message and "DNS resolution failed" in message:
+            log.warning("proxy_dns_resolution_failed")
+            error_code = FeedError.proxy_dns_resolution_failed
         elif "400" in message:
             log.warning("proxy_connection_400")
             error_code = FeedError.proxy_connection_400
