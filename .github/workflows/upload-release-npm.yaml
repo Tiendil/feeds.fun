@@ -32,6 +32,9 @@ jobs:
         with:
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Update npm
+        run: npm install -g npm@latest
+
       - name: Publish package distributions to NPM
         working-directory: site
         run: npm publish
