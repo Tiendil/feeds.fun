@@ -1,0 +1,30 @@
+{
+  "id": "dev",
+  "realm": "dev",
+  "enabled": true,
+
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "alice@example.test",
+      "credentials": [
+        { "type": "password", "value": "alicepwd", "temporary": false }
+      ]
+    },
+    {
+      "username": "bob",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "bob@example.test",
+      "credentials": [
+        { "type": "password", "value": "bobpwd", "temporary": false }
+      ]
+    }
+  ]
+}
