@@ -14,7 +14,7 @@
       "emailVerified": true,
       "email": "alice@example.test",
       "credentials": [
-        { "type": "password", "value": "alicepwd", "temporary": false }
+        { "type": "password", "value": "alice", "temporary": false }
       ]
     },
     {
@@ -23,7 +23,7 @@
       "emailVerified": true,
       "email": "bob@example.test",
       "credentials": [
-        { "type": "password", "value": "bobpwd", "temporary": false }
+        { "type": "password", "value": "bob", "temporary": false }
       ]
     }
   ]
