@@ -12,3 +12,14 @@
 - [ ] frontend logic for sessions
 - [ ] magic link login
 - [ ] social login
+
+Things to think about:
+
+- logout initiated from the IdP side
+- PKCE
+- update GDPR-related docs
+- create an epic/tasks with auth tech debt
+- `spa` module for SPA API, instead of `api` module for universal API
+- OIDC Discovery: load endpoints/algorithms from /.well-known/openid-configuration at runtime. Store just issuer, client_id, client auth method, and redirect/logout URIs.
+- Increment primary version of project, because of breaking changes in auth?
+- KeyCloak magic link auth/registration
