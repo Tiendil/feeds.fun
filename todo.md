@@ -26,3 +26,4 @@ Things to think about:
 - Add KeyCloak default users into README.md & multi-user instructions?
 - Replace multi-user setup instructions with reference to the default dev environment?
 - Implement example MCP server
+- FastAPI docs generation
