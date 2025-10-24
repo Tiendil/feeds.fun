@@ -23,3 +23,6 @@ Things to think about:
 - OIDC Discovery: load endpoints/algorithms from /.well-known/openid-configuration at runtime. Store just issuer, client_id, client auth method, and redirect/logout URIs.
 - Increment primary version of project, because of breaking changes in auth?
 - KeyCloak magic link auth/registration
+- Add KeyCloak default users into README.md & multi-user instructions?
+- Replace multi-user setup instructions with reference to the default dev environment?
+- Implement example MCP server
