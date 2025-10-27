@@ -5,34 +5,47 @@ import type * as e from "@/logic/enums";
 import * as settings from "@/logic/settings";
 import * as cookieConsent from "@/plugins/CookieConsent";
 
-const ENTRY_POINT = "/api";
+const ENTRY_POINT_PUBLIC = "/api/spa/public";
+const ENTRY_POINT_PRIVATE = "/api/spa/private";
 
-const API_GET_FEEDS = `${ENTRY_POINT}/get-feeds`;
-const API_GET_LAST_ENTRIES = `${ENTRY_POINT}/get-last-entries`;
-const API_GET_LAST_COLLECTION_ENTRIES = `${ENTRY_POINT}/get-last-collection-entries`;
-const API_GET_ENTRIES_BY_IDS = `${ENTRY_POINT}/get-entries-by-ids`;
-const API_CREATE_OR_UPDATE_RULE = `${ENTRY_POINT}/create-or-update-rule`;
+/////////////
+// Public API
+/////////////
 
-const API_DELETE_RULE = `${ENTRY_POINT}/delete-rule`;
-const API_UPDATE_RULE = `${ENTRY_POINT}/update-rule`;
-const API_GET_RULES = `${ENTRY_POINT}/get-rules`;
-const API_GET_SCORE_DETAILS = `${ENTRY_POINT}/get-score-details`;
-const API_SET_MARKER = `${ENTRY_POINT}/set-marker`;
-const API_REMOVE_MARKER = `${ENTRY_POINT}/remove-marker`;
-const API_DISCOVER_FEEDS = `${ENTRY_POINT}/discover-feeds`;
-const API_ADD_FEED = `${ENTRY_POINT}/add-feed`;
-const API_ADD_OPML = `${ENTRY_POINT}/add-opml`;
-const API_UNSUBSCRIBE = `${ENTRY_POINT}/unsubscribe`;
-const API_GET_COLLECTIONS = `${ENTRY_POINT}/get-collections`;
-const API_GET_COLLECTION_FEEDS = `${ENTRY_POINT}/get-collection-feeds`;
-const API_SUBSCRIBE_TO_COLLECTIONS = `${ENTRY_POINT}/subscribe-to-collections`;
-const API_GET_TAGS_INFO = `${ENTRY_POINT}/get-tags-info`;
-const API_GET_USER_SETTINGS = `${ENTRY_POINT}/get-user-settings`;
-const API_SET_USER_SETTING = `${ENTRY_POINT}/set-user-setting`;
-const API_GET_RESOURCE_HISTORY = `${ENTRY_POINT}/get-resource-history`;
-const API_GET_INFO = `${ENTRY_POINT}/get-info`;
-const API_TRACK_EVENT = `${ENTRY_POINT}/track-event`;
-const API_REMOVE_USER = `${ENTRY_POINT}/remove-user`;
+const API_GET_LAST_COLLECTION_ENTRIES = `${ENTRY_POINT_PUBLIC}/get-last-collection-entries`;
+const API_GET_ENTRIES_BY_IDS = `${ENTRY_POINT_PUBLIC}/get-entries-by-ids`;
+const API_GET_COLLECTIONS = `${ENTRY_POINT_PUBLIC}/get-collections`;
+const API_GET_COLLECTION_FEEDS = `${ENTRY_POINT_PUBLIC}/get-collection-feeds`;
+const API_GET_TAGS_INFO = `${ENTRY_POINT_PUBLIC}/get-tags-info`;
+const API_GET_INFO = `${ENTRY_POINT_PUBLIC}/get-info`;
+const API_TRACK_EVENT = `${ENTRY_POINT_PUBLIC}/track-event`;
+
+//////////////
+// Private API
+//////////////
+
+const API_GET_FEEDS = `${ENTRY_POINT_PRIVATE}/get-feeds`;
+const API_GET_LAST_ENTRIES = `${ENTRY_POINT_PRIVATE}/get-last-entries`;
+const API_CREATE_OR_UPDATE_RULE = `${ENTRY_POINT_PRIVATE}/create-or-update-rule`;
+const API_DELETE_RULE = `${ENTRY_POINT_PRIVATE}/delete-rule`;
+const API_UPDATE_RULE = `${ENTRY_POINT_PRIVATE}/update-rule`;
+const API_GET_RULES = `${ENTRY_POINT_PRIVATE}/get-rules`;
+const API_GET_SCORE_DETAILS = `${ENTRY_POINT_PRIVATE}/get-score-details`;
+const API_SET_MARKER = `${ENTRY_POINT_PRIVATE}/set-marker`;
+const API_REMOVE_MARKER = `${ENTRY_POINT_PRIVATE}/remove-marker`;
+const API_DISCOVER_FEEDS = `${ENTRY_POINT_PRIVATE}/discover-feeds`;
+const API_ADD_FEED = `${ENTRY_POINT_PRIVATE}/add-feed`;
+const API_ADD_OPML = `${ENTRY_POINT_PRIVATE}/add-opml`;
+const API_UNSUBSCRIBE = `${ENTRY_POINT_PRIVATE}/unsubscribe`;
+const API_SUBSCRIBE_TO_COLLECTIONS = `${ENTRY_POINT_PRIVATE}/subscribe-to-collections`;
+const API_GET_USER_SETTINGS = `${ENTRY_POINT_PRIVATE}/get-user-settings`;
+const API_SET_USER_SETTING = `${ENTRY_POINT_PRIVATE}/set-user-setting`;
+const API_GET_RESOURCE_HISTORY = `${ENTRY_POINT_PRIVATE}/get-resource-history`;
+const API_REMOVE_USER = `${ENTRY_POINT_PRIVATE}/remove-user`;
+
+///////////////
+// Common logic
+///////////////
 
 let _onSessionLost: () => void = () => {};
 
@@ -57,6 +70,10 @@ async function post({url, data}: {url: string; data: any}) {
     throw error;
   }
 }
+
+////////////
+// API calls
+////////////
 
 export async function getFeeds() {
   const response = await post({url: API_GET_FEEDS, data: {}});
