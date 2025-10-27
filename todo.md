@@ -5,6 +5,8 @@
   - [x] two users with passwords
   - [x] healthcheck for docker
   - [x] dependency for backend from the keycloak container
+- [ ] check public redirect URL — there a lot of data in it
+- [ ] Support api calls that require no auth? (public collections, info, etc.)
 - [ ] AuthMode.oidc
 - [ ] backend logic for oidc
 - [ ] frontend logic for auth redirects
@@ -33,3 +35,4 @@ Things to think about:
 - try to keep html/css for keycloak theming in this repo
 - Backup KeyCloak DB
 - note: keycloack only allows configuring from files at first startup, later we should use the admin API to manage realms/users
+- self-servicing pages
