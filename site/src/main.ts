@@ -165,7 +165,6 @@ if (!settings.isSingleUserMode) {
 
 app.mount("#app");
 
-import * as api from "@/logic/api";
 import * as settings from "@/logic/settings";
 
 /////////////////////
@@ -201,13 +200,3 @@ if (settings.authMode === settings.AuthMode.Supertokens) {
 } else {
   throw `Unknown auth mode: ${settings.authMode}`;
 }
-
-async function onSessionLost() {
-  if (supertokens !== null) {
-    await supertokens.logout();
-  }
-
-  router.push({name: "main", params: {}});
-}
-
-api.init({onSessionLost: onSessionLost});
