@@ -1,37 +1,34 @@
 
+x-openid-common-properties: &openid-common-properties
+  session:
+    secret: "84b45ebe-abcf-406e-a4e9-6e9916229c07"
+  use_pkce: true
+  client_id: apisix-client
+  client_secret: a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq
+  discovery: http://keycloak:8080/realms/dev/.well-known/openid-configuration
+  introspection_endpoint: http://keycloak:8080/realms/dev/protocol/openid-connect/token/introspect
+  scope: "openid"
+
+upstreams:
+  - name: backend
+    id: 1
+    nodes:
+      "backend:8000": 1
+    type: roundrobin
+
 routes:
   - uri: /api/*
-    upstream:
-      nodes:
-        "backend:8000": 1
-      type: roundrobin
+    upstream_id: 1
     plugins:
       openid-connect:
-        session:
-          secret: "84b45ebe-abcf-406e-a4e9-6e9916229c07"
-        use_pkce: true
-        client_id: apisix-client
-        client_secret: a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq
-        discovery: http://keycloak:8080/realms/dev/.well-known/openid-configuration
-        introspection_endpoint: http://keycloak:8080/realms/dev/protocol/openid-connect/token/introspect
-        redirect_uri: http://localhost:8000/oauth/callback # ???
-        scope: "openid"
+        <<: *openid-common-properties
+        redirect_uri: /api/callback
 
   - uri: /test/*
-    upstream:
-      nodes:
-        "backend:8000": 1
-      type: roundrobin
+    upstream_id: 1
     plugins:
       openid-connect:
-        session:
-          secret: "84b45ebe-abcf-406e-a4e9-6e9916229c07"
-        use_pkce: true
-        client_id: apisix-client
-        client_secret: a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq
-        discovery: http://keycloak:8080/realms/dev/.well-known/openid-configuration
-        introspection_endpoint: http://keycloak:8080/realms/dev/protocol/openid-connect/token/introspect
-        redirect_uri: http://localhost:8000/test/callback # ???
-        scope: "openid"
+        <<: *openid-common-properties
+        redirect_uri: /test/callback
 
 #END
