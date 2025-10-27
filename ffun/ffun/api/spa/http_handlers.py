@@ -572,10 +572,12 @@ Welcome to the documentation for the Feeds Fun Single Page Application (SPA) API
 
 **This API is solely intended for use by the Feeds Fun SPA frontend.**
 
-Please note that the project is currently in its early stages of development, and as such, the API may undergo \
-significant changes. We appreciate your understanding and patience during this phase.
+Please note that the project is currently in its early stages of development, and as such, \
+the API may undergo significant changes. We appreciate your understanding and patience during this phase.
 
-At present, our **documentation does not include information regarding authentication**. If you are interested in using this API, the best way to get started to give our SPA to handle authentication for you.
+At present, our **documentation does not include information regarding authentication**. \
+If you are interested in using this API, the best way to get started \
+is to give our SPA handle authentication for you.
 
 For additional resources, please visit the following links:
 

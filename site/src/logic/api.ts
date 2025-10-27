@@ -16,7 +16,7 @@ let _refreshingAuth: Promise<void> | null = null;
 
 // We try to refresh auth on 401 responses for private API.
 // For the public API we do nothing, because it most likely means infrastructure issue.
-api_private.interceptors.response.use(
+apiPrivate.interceptors.response.use(
   (r) => r,
   async (error) => {
     const {config, response} = error;
@@ -40,7 +40,7 @@ api_private.interceptors.response.use(
     (config as any).ffunRequestRetried = true;
 
     if (!_refreshingAuth) {
-      _refreshingAuth = api_private
+      _refreshingAuth = apiPrivate
         .post("/refresh-auth")
         .then(() => {})
         .finally(() => {
@@ -53,6 +53,16 @@ api_private.interceptors.response.use(
     return apiPrivate(config); // retry the original request generically
   }
 );
+
+async function postPublic({url, data}: {url: string; data: any}) {
+  const response = await apiPublic.post(url, data);
+  return response.data;
+}
+
+async function postPrivate({url, data}: {url: string; data: any}) {
+  const response = await apiPrivate.post(url, data);
+  return response.data;
+}
 
 /////////////
 // Public API
@@ -67,7 +77,7 @@ export async function getLastCollectionEntries({
   collectionSlug: t.CollectionSlug | null;
   minTagCount: number;
 }) {
-  const response = await apiPublic.post({
+  const response = await postPublic({
     url: "/get-last-collection-entries",
     data: {period: period, collectionSlug: collectionSlug, minTagCount: minTagCount}
   });
@@ -75,7 +85,7 @@ export async function getLastCollectionEntries({
   const entries = [];
 
   for (let rawEntry of response.entries) {
-    const entry = t.entryFromJSON(rawEntry, response.tagsMapping);
+    const entry = t.entryFromJSON(rawEntry, response.data.tagsMapping);
     entries.push(entry);
   }
 
@@ -83,7 +93,7 @@ export async function getLastCollectionEntries({
 }
 
 export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
-  const response = await apiPublic.post({
+  const response = await postPublic({
     url: "/get-entries-by-ids",
     data: {ids: ids}
   });
@@ -99,7 +109,7 @@ export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
 }
 
 export async function getCollections() {
-  const response = await apiPublic.post({url: "/get-collections", data: {}});
+  const response = await postPublic({url: "/get-collections", data: {}});
 
   const collections = [];
 
@@ -112,7 +122,7 @@ export async function getCollections() {
 }
 
 export async function getCollectionFeeds({collectionId}: {collectionId: t.CollectionId}) {
-  const response = await apiPublic.post({
+  const response = await postPublic({
     url: "/get-collection-feeds",
     data: {collectionId: collectionId}
   });
@@ -128,7 +138,7 @@ export async function getCollectionFeeds({collectionId}: {collectionId: t.Collec
 }
 
 export async function getTagsInfo({uids}: {uids: string[]}) {
-  const response = await apiPublic.post({url: "/get-tags-info", data: {uids: uids}});
+  const response = await postPublic({url: "/get-tags-info", data: {uids: uids}});
 
   const tags: {[key: string]: t.TagInfo} = {};
 
@@ -142,7 +152,7 @@ export async function getTagsInfo({uids}: {uids: string[]}) {
 }
 
 export async function getInfo() {
-  const response = await apiPublic.post({url: "/get-info", data: {}});
+  const response = await postPublic({url: "/get-info", data: {}});
 
   return response;
 }
@@ -156,7 +166,7 @@ export async function trackEvent(data: {[key: string]: string | number | null}) 
     return;
   }
 
-  await apiPublic.post({url: "/track-event", data: {event: data}});
+  await postPublic({url: "/track-event", data: {event: data}});
 }
 
 //////////////
@@ -164,7 +174,7 @@ export async function trackEvent(data: {[key: string]: string | number | null}) 
 //////////////
 
 export async function getFeeds() {
-  const response = await apiPrivate.post({url: "/get-feeds", data: {}});
+  const response = await postPrivate({url: "/get-feeds", data: {}});
 
   const feeds = [];
 
@@ -177,7 +187,7 @@ export async function getFeeds() {
 }
 
 export async function getLastEntries({period, minTagCount}: {period: number; minTagCount: number}) {
-  const response = await apiPrivate.post({
+  const response = await postPrivate({
     url: "/get-last-entries",
     data: {
       period: period,
@@ -204,7 +214,7 @@ export async function createOrUpdateRule({
   excludedTags: string[];
   score: number;
 }) {
-  const response = await apiPrivate.post({
+  const response = await postPrivate({
     url: "/create-or-update-rule",
     data: {
       requiredTags: requiredTags,
@@ -216,7 +226,7 @@ export async function createOrUpdateRule({
 }
 
 export async function deleteRule({id}: {id: t.RuleId}) {
-  const response = await apiPrivate.post({url: "/delete-rule", data: {id: id}});
+  const response = await postPrivate({url: "/delete-rule", data: {id: id}});
   return response;
 }
 
@@ -231,7 +241,7 @@ export async function updateRule({
   excludedTags: string[];
   score: number;
 }) {
-  const response = await apiPrivate.post({
+  const response = await postPrivate({
     url: "/update-rule",
     data: {id: id, score: score, requiredTags: requiredTags, excludedTags: excludedTags}
   });
@@ -239,7 +249,7 @@ export async function updateRule({
 }
 
 export async function getRules() {
-  const response = await apiPrivate.post({url: "/get-rules", data: {}});
+  const response = await postPrivate({url: "/get-rules", data: {}});
 
   const rules = [];
 
@@ -252,7 +262,7 @@ export async function getRules() {
 }
 
 export async function getScoreDetails({entryId}: {entryId: t.EntryId}) {
-  const response = await apiPrivate.post({
+  const response = await postPrivate({
     url: "/get-score-details",
     data: {entryId: entryId}
   });
@@ -268,21 +278,21 @@ export async function getScoreDetails({entryId}: {entryId: t.EntryId}) {
 }
 
 export async function setMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
-  await apiPrivate.post({
+  await postPrivate({
     url: "/set-marker",
     data: {entryId: entryId, marker: marker}
   });
 }
 
 export async function removeMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
-  await apiPrivate.post({
+  await postPrivate({
     url: "/remove-marker",
     data: {entryId: entryId, marker: marker}
   });
 }
 
 export async function discoverFeeds({url}: {url: string}) {
-  const response = await apiPrivate.post({url: "/discover-feeds", data: {url: url}});
+  const response = await postPrivate({url: "/discover-feeds", data: {url: url}});
 
   const feeds = [];
   const messages = [];
@@ -301,28 +311,28 @@ export async function discoverFeeds({url}: {url: string}) {
 }
 
 export async function addFeed({url}: {url: string}) {
-  const response = await apiPrivate.post({url: "/add-feed", data: {url: url}});
+  const response = await postPrivate({url: "/add-feed", data: {url: url}});
 
   return t.feedFromJSON(response.feed);
 }
 
 export async function addOPML({content}: {content: string}) {
-  await apiPrivate.post({url: "/add-opml", data: {content: content}});
+  await postPrivate({url: "/add-opml", data: {content: content}});
 }
 
 export async function unsubscribe({feedId}: {feedId: t.FeedId}) {
-  await apiPrivate.post({url: "/unsubscribe", data: {feedId: feedId}});
+  await postPrivate({url: "/unsubscribe", data: {feedId: feedId}});
 }
 
 export async function subscribeToCollections({collectionsIds}: {collectionsIds: t.CollectionId[]}) {
-  await apiPrivate.post({
+  await postPrivate({
     url: "/subscribe-to-collections",
     data: {collections: collectionsIds}
   });
 }
 
 export async function getUserSettings() {
-  const response = await apiPrivate.post({url: "/get-user-settings", data: {}});
+  const response = await postPrivate({url: "/get-user-settings", data: {}});
 
   const settings: {[key: string]: t.UserSetting} = {};
 
@@ -335,11 +345,11 @@ export async function getUserSettings() {
 }
 
 export async function setUserSetting({kind, value}: {kind: string; value: string | number | boolean}) {
-  await apiPrivate.post({url: "/set-user-setting", data: {kind: kind, value: value}});
+  await postPrivate({url: "/set-user-setting", data: {kind: kind, value: value}});
 }
 
 export async function getResourceHistory({kind}: {kind: string}) {
-  const response = await apiPrivate.post({
+  const response = await postPrivate({
     url: "/get-resource-history",
     data: {kind: kind}
   });
@@ -354,12 +364,6 @@ export async function getResourceHistory({kind}: {kind: string}) {
   return history;
 }
 
-export async function getInfo() {
-  const response = await apiPrivate.post({url: "/get-info", data: {}});
-
-  return response;
-}
-
 export async function removeUser() {
-  await apiPrivate.post({url: "/remove-user", data: {}});
+  await postPrivate({url: "/remove-user", data: {}});
 }

@@ -5,7 +5,7 @@ from typing import Any, Iterable
 
 import pydantic
 
-from ffun.api import front_events
+from ffun.api.spa import front_events
 from ffun.core import api
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import (

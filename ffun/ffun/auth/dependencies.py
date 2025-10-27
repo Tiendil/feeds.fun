@@ -46,7 +46,9 @@ async def _oidc_user(request: fastapi.Request) -> u_entities.User:
         # TODO: better error handling
         raise NotImplementedError("OIDC identity provider ID handling not implemented")
 
-    return await u_domain.get_or_create_user(getattr(u_entities.Service, identity_provider_id), external_user_id)
+    service_id = getattr(u_entities.Service, identity_provider_id)  # type: ignore
+
+    return await u_domain.get_or_create_user(service_id, external_user_id)
 
 
 async def _oidc_optional_user(request: fastapi.Request) -> u_entities.User | None:

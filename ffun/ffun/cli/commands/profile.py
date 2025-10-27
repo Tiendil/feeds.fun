@@ -3,8 +3,8 @@ import datetime
 
 import typer
 
-from ffun.api.entities import GetLastEntriesResponse
-from ffun.api.http_handlers import _external_entries
+from ffun.api.spa.entities import GetLastEntriesResponse
+from ffun.api.spa.http_handlers import _external_entries
 from ffun.application.application import with_app
 from ffun.cli.commands import cleaner  # noqa: F401
 from ffun.cli.commands import metrics  # noqa: F401
