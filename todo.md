@@ -36,3 +36,4 @@ Things to think about:
 - Backup KeyCloak DB
 - note: keycloack only allows configuring from files at first startup, later we should use the admin API to manage realms/users
 - self-servicing pages
+- unify apisix.yaml by moving common configs into templates
