@@ -28,3 +28,4 @@ Things to think about:
 - Implement example MCP server
 - FastAPI docs generation
 - In oidc mode we should save not "mode" in the users mapping, but an actual idp id.
+- Remove API docs & api links from the menu?
