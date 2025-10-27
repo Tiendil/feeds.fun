@@ -6,8 +6,8 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 
-from ffun.api import entities
-from ffun.api.settings import settings
+from ffun.api.spa import entities
+from ffun.api.spa.settings import settings
 from ffun.auth import domain as a_domain
 from ffun.auth.dependencies import OptionalUser, User
 from ffun.core import logging, utils
@@ -36,40 +36,12 @@ from ffun.user_settings import domain as us_domain
 
 router = fastapi.APIRouter()
 
+api_public = fastapi.APIRouter(prefix="/api/spa/public", tags=["public"])
+api_public_test = fastapi.APIRouter(prefix="/api/spa/public/test", tags=["test"])
+api_public_docs = fastapi.APIRouter(prefix="/api/spa/public/docs", tags=["docs"])
+api_private = fastapi.APIRouter(prefix="/api/spa/private", tags=["private"])
+
 logger = logging.get_module_logger()
-
-
-@router.post("/api/test/internal-error")
-async def api_internal_error() -> None:
-    raise Exception("test_error")
-
-
-@router.post("/api/test/expected-error")
-async def api_expected_error() -> None:
-    raise APIError(code="expected_test_error", message="Expected test error")
-
-
-@router.post("/api/test/ok")
-async def api_ok() -> None:
-    return None
-
-
-@router.post("/api/get-feeds")
-async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entities.GetFeedsResponse:
-    linked_feeds = await fl_domain.get_linked_feeds(user.id)
-
-    feeds_to_links = {link.feed_id: link for link in linked_feeds}
-
-    feeds = await f_domain.get_feeds(ids=list(feeds_to_links.keys()))
-
-    external_feeds = []
-
-    for feed in feeds:
-        collection_ids = collections.collections_for_feed(feed.id)
-        external_feed = entities.Feed.from_internal(feed, link=feeds_to_links[feed.id], collection_ids=collection_ids)
-        external_feeds.append(external_feed)
-
-    return entities.GetFeedsResponse(feeds=external_feeds)
 
 
 async def _external_entries(  # pylint: disable=R0914
@@ -132,27 +104,30 @@ async def _external_entries(  # pylint: disable=R0914
     return external_entries, tag_mapping
 
 
-@router.post("/api/get-last-entries")
-async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: User) -> entities.GetLastEntriesResponse:
-    linked_feeds = await fl_domain.get_linked_feeds(user.id)
+##################
+# Public test APIs
+##################
 
-    linked_feeds_ids = [link.feed_id for link in linked_feeds]
-
-    entries = await l_domain.get_entries_by_filter_with_fallback(
-        feeds_ids=linked_feeds_ids,
-        period=request.period,
-        limit=settings.max_returned_entries,
-        fallback_limit=settings.news_outside_period,
-    )
-
-    external_entries, tags_mapping = await _external_entries(
-        entries, with_body=False, user_id=user.id, min_tag_count=request.minTagCount
-    )
-
-    return entities.GetLastEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
+@api_public_test.post("/internal-error")
+async def api_internal_error() -> None:
+    raise Exception("test_error")
 
 
-@router.post("/api/get-last-collection-entries")
+@api_public_test.post("/expected-error")
+async def api_expected_error() -> None:
+    raise APIError(code="expected_test_error", message="Expected test error")
+
+
+@api_public_test.post("/ok")
+async def api_ok() -> None:
+    return None
+
+
+#############
+# Public APIs
+#############
+
+@api_public.post("/get-last-collection-entries")
 async def api_get_last_collection_entries(
     request: entities.GetLastCollectionEntriesRequest,
 ) -> entities.GetLastCollectionEntriesResponse:
@@ -175,7 +150,7 @@ async def api_get_last_collection_entries(
     return entities.GetLastCollectionEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
 
 
-@router.post("/api/get-entries-by-ids")
+@api_public.post("/get-entries-by-ids")
 async def api_get_entries_by_ids(
     request: entities.GetEntriesByIdsRequest, user: OptionalUser
 ) -> entities.GetEntriesByIdsResponse:
@@ -200,7 +175,106 @@ async def api_get_entries_by_ids(
     return entities.GetEntriesByIdsResponse(entries=external_entries, tagsMapping=tags_mapping)
 
 
-@router.post("/api/create-or-update-rule")
+@api_public.post("/get-collections")
+async def api_get_feeds_collections(
+    request: entities.GetFeedsCollectionsRequest,
+) -> entities.GetFeedsCollectionsResponse:
+
+    internal_collections = collections.collections()
+
+    collections_to_return = [entities.Collection.from_internal(collection) for collection in internal_collections]
+
+    return entities.GetFeedsCollectionsResponse(collections=collections_to_return)
+
+
+@api_public.post("/get-collection-feeds")
+async def api_get_collection_feeds(
+    request: entities.GetCollectionFeedsRequest
+) -> entities.GetCollectionFeedsResponse:
+
+    collection = collections.collection(request.collectionId)
+
+    feeds = [entities.CollectionFeedInfo.from_internal(feed_info) for feed_info in collection.feeds]
+
+    return entities.GetCollectionFeedsResponse(feeds=feeds)
+
+
+@api_public.post("/get-tags-info")
+async def api_get_tags_info(request: entities.GetTagsInfoRequest) -> entities.GetTagsInfoResponse:
+    tags_ids = await o_domain.get_ids_by_uids(request.uids)
+
+    info = await o_domain.get_tags_info(tags_ids.values())
+
+    tags_info = {}
+
+    for uid in request.uids:
+        tags_info[uid] = entities.TagInfo.from_internal(info[tags_ids[uid]], uid)
+
+    return entities.GetTagsInfoResponse(tags=tags_info)
+
+
+@api_public.post("/get-info")
+async def api_get_info(request: entities.GetInfoRequest, user: OptionalUser) -> entities.GetInfoResponse:
+    user_id = user.id if user is not None else None
+
+    return entities.GetInfoResponse(userId=user_id, version=utils.version())
+
+
+@api_public.post("/track-event")
+async def api_track_event(request: entities.TrackEventRequest, user: OptionalUser) -> entities.TrackEventResponse:
+    attributes = request.event.model_dump()
+    event = attributes.pop("name")
+
+    user_id = user.id if user is not None else no_user_id()
+
+    logger.business_event(event, user_id=user_id, **attributes)
+
+    return entities.TrackEventResponse()
+
+
+##############
+# Private APIs
+##############
+
+@api_private.post("/get-feeds")
+async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entities.GetFeedsResponse:
+    linked_feeds = await fl_domain.get_linked_feeds(user.id)
+
+    feeds_to_links = {link.feed_id: link for link in linked_feeds}
+
+    feeds = await f_domain.get_feeds(ids=list(feeds_to_links.keys()))
+
+    external_feeds = []
+
+    for feed in feeds:
+        collection_ids = collections.collections_for_feed(feed.id)
+        external_feed = entities.Feed.from_internal(feed, link=feeds_to_links[feed.id], collection_ids=collection_ids)
+        external_feeds.append(external_feed)
+
+    return entities.GetFeedsResponse(feeds=external_feeds)
+
+
+@api_private.post("/get-last-entries")
+async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: User) -> entities.GetLastEntriesResponse:
+    linked_feeds = await fl_domain.get_linked_feeds(user.id)
+
+    linked_feeds_ids = [link.feed_id for link in linked_feeds]
+
+    entries = await l_domain.get_entries_by_filter_with_fallback(
+        feeds_ids=linked_feeds_ids,
+        period=request.period,
+        limit=settings.max_returned_entries,
+        fallback_limit=settings.news_outside_period,
+    )
+
+    external_entries, tags_mapping = await _external_entries(
+        entries, with_body=False, user_id=user.id, min_tag_count=request.minTagCount
+    )
+
+    return entities.GetLastEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
+
+
+@api_private.post("/create-or-update-rule")
 async def api_create_or_update_rule(
     request: entities.CreateOrUpdateRuleRequest, user: User
 ) -> entities.CreateOrUpdateRuleResponse:
@@ -217,14 +291,14 @@ async def api_create_or_update_rule(
     return entities.CreateOrUpdateRuleResponse()
 
 
-@router.post("/api/delete-rule")
+@api_private.post("/delete-rule")
 async def api_delete_rule(request: entities.DeleteRuleRequest, user: User) -> entities.DeleteRuleResponse:
     await s_domain.delete_rule(user_id=user.id, rule_id=request.id)
 
     return entities.DeleteRuleResponse()
 
 
-@router.post("/api/update-rule")
+@api_private.post("/update-rule")
 async def api_update_rule(request: entities.UpdateRuleRequest, user: User) -> entities.UpdateRuleResponse:
     required_tags_ids = await o_domain.get_ids_by_uids(request.requiredTags)
     excluded_tags_ids = await o_domain.get_ids_by_uids(request.excludedTags)
@@ -254,7 +328,7 @@ async def _prepare_rules(rules: Iterable[s_entities.Rule]) -> list[entities.Rule
     return external_rules
 
 
-@router.post("/api/get-rules")
+@api_private.post("/get-rules")
 async def api_get_rules(request: entities.GetRulesRequest, user: User) -> entities.GetRulesResponse:
     rules = await s_domain.get_rules_for_user(user_id=user.id)
 
@@ -263,7 +337,7 @@ async def api_get_rules(request: entities.GetRulesRequest, user: User) -> entiti
     return entities.GetRulesResponse(rules=external_rules)
 
 
-@router.post("/api/get-score-details")
+@api_private.post("/get-score-details")
 async def api_get_score_details(
     request: entities.GetScoreDetailsRequest, user: User
 ) -> entities.GetScoreDetailsResponse:
@@ -280,21 +354,21 @@ async def api_get_score_details(
     return entities.GetScoreDetailsResponse(rules=external_rules)
 
 
-@router.post("/api/set-marker")
+@api_private.post("/set-marker")
 async def api_set_marker(request: entities.SetMarkerRequest, user: User) -> entities.SetMarkerResponse:
     await m_domain.set_marker(user_id=user.id, entry_id=request.entryId, marker=request.marker.to_internal())
 
     return entities.SetMarkerResponse()
 
 
-@router.post("/api/remove-marker")
+@api_private.post("/remove-marker")
 async def api_remove_marker(request: entities.RemoveMarkerRequest, user: User) -> entities.RemoveMarkerResponse:
     await m_domain.remove_marker(user_id=user.id, entry_id=request.entryId, marker=request.marker.to_internal())
 
     return entities.RemoveMarkerResponse()
 
 
-@router.post("/api/discover-feeds")
+@api_private.post("/discover-feeds")
 async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User) -> entities.DiscoverFeedsResponse:
     result = await fd_domain.discover(url=request.url, depth=1)
 
@@ -337,7 +411,7 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
     return entities.DiscoverFeedsResponse(feeds=external_feeds, messages=messages)
 
 
-@router.post("/api/add-feed")
+@api_private.post("/add-feed")
 async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities.AddFeedResponse:
     discover_result = await fd_domain.discover(url=request.url, depth=0)
 
@@ -359,7 +433,7 @@ async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities
     return entities.AddFeedResponse(feed=entities.Feed.from_internal(feed, link=link, collection_ids=collection_ids))
 
 
-@router.post("/api/add-opml")
+@api_private.post("/add-opml")
 async def api_add_opml(request: entities.AddOpmlRequest, user: User) -> entities.AddOpmlResponse:
     feed_infos = p_domain.parse_opml(request.content)
 
@@ -370,7 +444,7 @@ async def api_add_opml(request: entities.AddOpmlRequest, user: User) -> entities
     return entities.AddOpmlResponse()
 
 
-@router.get("/api/get-opml")
+@api_private.get("/get-opml")
 async def api_get_opml(user: User) -> PlainTextResponse:
     linked_feeds = await fl_domain.get_linked_feeds(user.id)
 
@@ -385,38 +459,14 @@ async def api_get_opml(user: User) -> PlainTextResponse:
     return PlainTextResponse(content=content, media_type="application/xml", headers=headers)
 
 
-@router.post("/api/unsubscribe")
+@api_private.post("/unsubscribe")
 async def api_unsubscribe(request: entities.UnsubscribeRequest, user: User) -> entities.UnsubscribeResponse:
     await fl_domain.remove_link(user_id=user.id, feed_id=request.feedId)
 
     return entities.UnsubscribeResponse()
 
 
-@router.post("/api/get-collections")
-async def api_get_feeds_collections(
-    request: entities.GetFeedsCollectionsRequest,
-) -> entities.GetFeedsCollectionsResponse:
-
-    internal_collections = collections.collections()
-
-    collections_to_return = [entities.Collection.from_internal(collection) for collection in internal_collections]
-
-    return entities.GetFeedsCollectionsResponse(collections=collections_to_return)
-
-
-@router.post("/api/get-collection-feeds")
-async def api_get_collection_feeds(
-    request: entities.GetCollectionFeedsRequest, user: User
-) -> entities.GetCollectionFeedsResponse:
-
-    collection = collections.collection(request.collectionId)
-
-    feeds = [entities.CollectionFeedInfo.from_internal(feed_info) for feed_info in collection.feeds]
-
-    return entities.GetCollectionFeedsResponse(feeds=feeds)
-
-
-@router.post("/api/subscribe-to-collections")
+@api_private.post("/subscribe-to-collections")
 async def api_subscribe_to_collections(
     request: entities.SubscribeToCollectionsRequest, user: User
 ) -> entities.SubscribeToCollectionsResponse:
@@ -441,21 +491,7 @@ async def api_subscribe_to_collections(
     return entities.SubscribeToCollectionsResponse()
 
 
-@router.post("/api/get-tags-info")
-async def api_get_tags_info(request: entities.GetTagsInfoRequest) -> entities.GetTagsInfoResponse:
-    tags_ids = await o_domain.get_ids_by_uids(request.uids)
-
-    info = await o_domain.get_tags_info(tags_ids.values())
-
-    tags_info = {}
-
-    for uid in request.uids:
-        tags_info[uid] = entities.TagInfo.from_internal(info[tags_ids[uid]], uid)
-
-    return entities.GetTagsInfoResponse(tags=tags_info)
-
-
-@router.post("/api/get-resource-history")
+@api_private.post("/get-resource-history")
 async def api_get_resource_history(
     request: entities.GetResourceHistoryRequest, user: User
 ) -> entities.GetResourceHistoryResponse:
@@ -466,19 +502,7 @@ async def api_get_resource_history(
     )
 
 
-@router.post("/api/get-info")
-async def api_get_info(request: entities.GetInfoRequest, user: OptionalUser) -> entities.GetInfoResponse:
-    user_id = user.id if user is not None else None
-
-    return entities.GetInfoResponse(userId=user_id, version=utils.version())
-
-
-###############
-# user settings
-###############
-
-
-@router.post("/api/get-user-settings")
+@api_private.post("/get-user-settings")
 async def api_get_user_settings(
     request: entities.GetUserSettingsRequest, user: User
 ) -> entities.GetUserSettingsResponse:
@@ -497,26 +521,14 @@ async def api_get_user_settings(
     return entities.GetUserSettingsResponse(settings=result_values)
 
 
-@router.post("/api/set-user-setting")
+@api_private.post("/set-user-setting")
 async def api_set_user_setting(request: entities.SetUserSettingRequest, user: User) -> entities.SetUserSettingResponse:
     await us_domain.save_setting(user_id=user.id, kind=request.kind.to_internal(), value=request.value)
 
     return entities.SetUserSettingResponse()
 
 
-@router.post("/api/track-event")
-async def api_track_event(request: entities.TrackEventRequest, user: OptionalUser) -> entities.TrackEventResponse:
-    attributes = request.event.model_dump()
-    event = attributes.pop("name")
-
-    user_id = user.id if user is not None else no_user_id()
-
-    logger.business_event(event, user_id=user_id, **attributes)
-
-    return entities.TrackEventResponse()
-
-
-@router.post("/api/remove-user")
+@api_private.post("/remove-user")
 async def api_remove_user(
     request: fastapi.Request, _request: entities.RemoveUserRequest, user: User, response: fastapi.Response
 ) -> entities.RemoveUserResponse:
@@ -543,35 +555,36 @@ swagger_ui_api_parameters: dict[str, Any] = {
 }
 
 
-swagger_title = "Feeds Fun API"
+swagger_title = "Feeds Fun SPA API"
 
 
 swagger_description = """
 Greetings!
 
-Welcome to the documentation for the Feeds Fun API.
+Welcome to the documentation for the Feeds Fun Single Page Application (SPA) API.
+
+**This API is solely intended for use by the Feeds Fun SPA frontend.**
 
 Please note that the project is currently in its early stages of development, and as such, the API may undergo \
 significant changes. We appreciate your understanding and patience during this phase.
 
-At present, our **documentation does not include information regarding authentication**. If you wish to utilize API \
-from [feeds.fun](https://feeds.fun), we recommend referring to the [supertokens](https://supertokens.com/) \
-documentation for guidance on this matter. We'll improve this aspect of the documentation in the future.
+At present, our **documentation does not include information regarding authentication**. If you are interested in using this API, the best way to get started to give our SPA to handle authentication for you.
 
 For additional resources, please visit the following links:
 
 - [Feeds Fun Website](https://feeds.fun)
+- [Feeds Fun Blog](https://blog.feeds.fun)
 - [GitHub Repository](https://github.com/Tiendil/feeds.fun)
 
-Thank you for your interest in the Feeds Fun API. We look forward to your contributions and feedback.
+Thank you for your interest in the Feeds Fun. We look forward to your contributions and feedback.
 
 """
 
 
-@router.get("/api/openapi.json", include_in_schema=False)
+@api_public_docs.get("/openapi.json", include_in_schema=False)
 async def openapi(request: fastapi.Request) -> JSONResponse:
     content = get_openapi(
-        title="Feeds Fun API",
+        title="Feeds Fun SPA API",
         version=metadata.version("ffun"),
         description=swagger_description,
         routes=request.app.routes,
@@ -580,9 +593,9 @@ async def openapi(request: fastapi.Request) -> JSONResponse:
     return JSONResponse(content=content)
 
 
-@router.get("/api/docs", include_in_schema=False)
+@api_public_docs.get("/docs", include_in_schema=False)
 async def docs(request: fastapi.Request) -> HTMLResponse:
-    openapi_url = request.scope.get("root_path", "") + "/api/openapi.json"
+    openapi_url = request.scope.get("root_path", "") + "/api/spa/public/docs/openapi.json"
 
     return get_swagger_ui_html(
         openapi_url=openapi_url, title=swagger_title, swagger_ui_parameters=swagger_ui_api_parameters

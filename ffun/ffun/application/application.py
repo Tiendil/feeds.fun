@@ -6,7 +6,7 @@ import fastapi
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 
-from ffun.api import http_handlers as api_http_handlers
+from ffun.api.spa import http_handlers as spa_http_handlers
 from ffun.application import errors
 from ffun.application import utils as app_utils
 from ffun.application.settings import settings
@@ -62,15 +62,19 @@ async def use_postgresql() -> AsyncGenerator[None, None]:
 
 
 @contextlib.asynccontextmanager
-async def use_api(app: fastapi.FastAPI) -> AsyncGenerator[None, None]:
-    logger.info("api_enabled")
-    app.include_router(api_http_handlers.router)
+async def use_api_spa(app: fastapi.FastAPI) -> AsyncGenerator[None, None]:
+    logger.info("api_spa_enabled")
 
-    logger.info("api_initialized")
+    app.include_router(spa_http_handlers.api_public)
+    app.include_router(spa_http_handlers.api_public_test)
+    app.include_router(spa_http_handlers.api_public_docs)
+    app.include_router(spa_http_handlers.api_private)
+
+    logger.info("api_spa_initialized")
 
     yield
 
-    logger.info("api_deinitialized")
+    logger.info("api_spa_deinitialized")
 
 
 @contextlib.asynccontextmanager
@@ -125,8 +129,8 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
                     )
                 )
 
-            if settings.enable_api:
-                await stack.enter_async_context(use_api(app))
+            if settings.enable_api_spa:
+                await stack.enter_async_context(use_api_spa(app))
 
             await app.router.startup()
 
