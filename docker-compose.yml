@@ -86,6 +86,23 @@ services:
       retries: 10
       start_period: 60s
 
+  apisix:
+    image: apache/apisix:3.14.1-ubuntu
+
+    volumes:
+      - ./docker/dev/apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
+      - ./docker/dev/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+
+    environment:
+      APISIX_STAND_ALONE: "true"
+
+    ports:
+      - "8000:8000"
+
+    networks:
+      ffun_network: {}
+
+
   # TODO: uncomment after keycloak integration is done
   # supertokens:
   #   image: registry.supertokens.io/supertokens/supertokens-postgresql:11.0.4
@@ -159,9 +176,6 @@ services:
       FFUN_SENTRY__DSN: "${FFUN_SENTRY__DSN:-not-specified}"
       # set to /repository/feeds_collections/collections in case you want to use the default collection
       FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS: "${FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS-}"
-
-    ports:
-      - "8000:8000"
 
     networks:
       ffun_network: {}
