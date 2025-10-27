@@ -9,35 +9,48 @@ import * as cookieConsent from "@/plugins/CookieConsent";
 // API handlers
 ///////////////
 
-const apiPublic = axios.create({ baseURL: "/api/spa/public", withCredentials: true });
-const apiPrivate = axios.create({ baseURL: "/api/spa/private", withCredentials: true });
+const apiPublic = axios.create({baseURL: "/api/spa/public", withCredentials: true});
+const apiPrivate = axios.create({baseURL: "/api/spa/private", withCredentials: true});
 
 let _refreshingAuth: Promise<void> | null = null;
 
 // We try to refresh auth on 401 responses for private API.
 // For the public API we do nothing, because it most likely means infrastructure issue.
 api_private.interceptors.response.use(
-  r => r,
+  (r) => r,
   async (error) => {
-    const { config, response } = error;
+    const {config, response} = error;
 
-    if (!response) { throw error; }
+    if (!response) {
+      throw error;
+    }
 
-    if (response.status !== 401) { throw error; }
+    if (response.status !== 401) {
+      throw error;
+    }
 
-    if (config?.ffunRequestRetried) { throw error; }
+    if (config?.ffunRequestRetried) {
+      throw error;
+    }
 
-    if (config?.ffunSkipAuthRetry) { throw error; }
+    if (config?.ffunSkipAuthRetry) {
+      throw error;
+    }
 
     (config as any).ffunRequestRetried = true;
 
     if (!_refreshingAuth) {
-      _refreshingAuth = api_private.post("/refresh-auth").then(() => {}).finally(() => { _refreshingAuth = null; });
+      _refreshingAuth = api_private
+        .post("/refresh-auth")
+        .then(() => {})
+        .finally(() => {
+          _refreshingAuth = null;
+        });
     }
 
-    await _refreshingAuth;       // all 401s await the same refresh
+    await _refreshingAuth; // all 401s await the same refresh
 
-    return apiPrivate(config);  // retry the original request generically
+    return apiPrivate(config); // retry the original request generically
   }
 );
 

@@ -108,6 +108,7 @@ async def _external_entries(  # pylint: disable=R0914
 # Public test APIs
 ##################
 
+
 @api_public_test.post("/internal-error")
 async def api_internal_error() -> None:
     raise Exception("test_error")
@@ -126,6 +127,7 @@ async def api_ok() -> None:
 #############
 # Public APIs
 #############
+
 
 @api_public.post("/get-last-collection-entries")
 async def api_get_last_collection_entries(
@@ -188,9 +190,7 @@ async def api_get_feeds_collections(
 
 
 @api_public.post("/get-collection-feeds")
-async def api_get_collection_feeds(
-    request: entities.GetCollectionFeedsRequest
-) -> entities.GetCollectionFeedsResponse:
+async def api_get_collection_feeds(request: entities.GetCollectionFeedsRequest) -> entities.GetCollectionFeedsResponse:
 
     collection = collections.collection(request.collectionId)
 
@@ -235,6 +235,7 @@ async def api_track_event(request: entities.TrackEventRequest, user: OptionalUse
 ##############
 # Private APIs
 ##############
+
 
 # dummy endpoint to trigger auth refresh on the client side
 @api_private.post("/refresh-auth")
