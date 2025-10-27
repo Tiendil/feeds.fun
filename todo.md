@@ -27,3 +27,4 @@ Things to think about:
 - Replace multi-user setup instructions with reference to the default dev environment?
 - Implement example MCP server
 - FastAPI docs generation
+- In oidc mode we should save not "mode" in the users mapping, but an actual idp id.
