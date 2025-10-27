@@ -30,3 +30,6 @@ Things to think about:
 - In oidc mode we should save not "mode" in the users mapping, but an actual idp id.
 - Remove API docs & api links from the menu?
 - single-user & oidc & supertokens modes works via single docker-compose (in dev)
+- try to keep html/css for keycloak theming in this repo
+- Backup KeyCloak DB
+- note: keycloack only allows configuring from files at first startup, later we should use the admin API to manage realms/users
