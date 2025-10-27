@@ -38,3 +38,4 @@ Things to think about:
 - self-servicing pages
 - unify apisix.yaml by moving common configs into templates
 - use cookies
+- auth/registration — both should work
