@@ -2,7 +2,8 @@ declare const __APP_VERSION__: string;
 
 export enum AuthMode {
   SingleUser = "single_user",
-  Supertokens = "supertokens"
+  Supertokens = "supertokens",
+  OIDC = "oidc"
 }
 
 export const appName = import.meta.env.VITE_FFUN_APP_NAME || "Feeds Fun";

@@ -29,4 +29,4 @@ Things to think about:
 - FastAPI docs generation
 - In oidc mode we should save not "mode" in the users mapping, but an actual idp id.
 - Remove API docs & api links from the menu?
-- single-user & multi-user modes works via single docker-compose (in dev)
+- single-user & oidc & supertokens modes works via single docker-compose (in dev)

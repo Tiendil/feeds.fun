@@ -12,6 +12,7 @@ from ffun.users import entities as u_entities
 #            It is the fastest and easiest way to do it, and it should not cause performance issues, at least for now.
 #            In the future, we may want to improve user experience by removing this check and
 #            implementing faster custom logout
+# TODO: implement something like that for OIDC
 
 
 async def _supertokens_user(
@@ -33,12 +34,37 @@ async def _single_user() -> u_entities.User:
     return await u_domain.get_or_create_user(u_entities.Service.single, settings.single_user.external_id)
 
 
+async def _oidc_user(request: fastapi.Request) -> u_entities.User:
+    external_user_id = request.headers.get(settings.oidc.header_user_id)
+    identity_provider_id = request.headers.get(settings.oidc.header_identity_provider_id)
+
+    if external_user_id is None:
+        # TODO: better error handling
+        raise NotImplementedError("OIDC user ID header not found")
+
+    if identity_provider_id is not None:
+        # TODO: better error handling
+        raise NotImplementedError("OIDC identity provider ID handling not implemented")
+
+    return await u_domain.get_or_create_user(getattr(u_entities.Service, identity_provider_id), external_user_id)
+
+
+async def _oidc_optional_user(request: fastapi.Request) -> u_entities.User | None:
+    if settings.oidc.header_user_id not in request.headers:
+        return None
+
+    return await _oidc_user(request)
+
+
 if settings.mode == AuthMode.single_user:
     user = fastapi.Depends(_single_user)
     optional_user = fastapi.Depends(_single_user)
 elif settings.mode == AuthMode.supertokens:
     user = fastapi.Depends(_supertokens_user)
     optional_user = fastapi.Depends(_supertokens_optional_user)
+elif settings.mode == AuthMode.oidc:
+    user = fastapi.Depends(_oidc_user)
+    optional_user = fastapi.Depends(_oidc_optional_user)
 else:
     raise NotImplementedError(f"AuthMode {settings.mode} not implemented")
 

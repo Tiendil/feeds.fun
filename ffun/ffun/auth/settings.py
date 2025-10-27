@@ -9,6 +9,7 @@ from ffun.core.settings import BaseSettings
 class AuthMode(str, enum.Enum):
     single_user = "single_user"
     supertokens = "supertokens"
+    oidc = "oidc"
 
 
 class SingleUser(pydantic.BaseModel):
@@ -24,10 +25,16 @@ class Supertokens(pydantic.BaseModel):
     website_base_path: str = "/auth"
 
 
+class OIDC(pydantic.BaseModel):
+    header_user_id: str = "X-FFun-User-Id"
+    header_identity_provider_id: str = "X-FFun-Identity-Provider-Id"
+
+
 class Settings(BaseSettings):
     mode: AuthMode = AuthMode.single_user
     single_user: SingleUser = SingleUser()
     supertokens: Supertokens = Supertokens()
+    oidc: OIDC = OIDC()
 
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_AUTH_")
 

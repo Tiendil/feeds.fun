@@ -197,6 +197,7 @@ if (settings.authMode === settings.AuthMode.Supertokens) {
     resendAfter: settings.authSupertokensResendAfter
   });
 } else if (settings.authMode === settings.AuthMode.SingleUser) {
+} else if (settings.authMode === settings.AuthMode.OIDC) {
 } else {
   throw `Unknown auth mode: ${settings.authMode}`;
 }
