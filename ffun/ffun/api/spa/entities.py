@@ -555,3 +555,11 @@ class RemoveUserRequest(api.APIRequest):
 
 class RemoveUserResponse(api.APISuccess):
     pass
+
+
+class RefreshAuthRequest(api.APIRequest):
+    pass
+
+
+class RefreshAuthResponse(api.APISuccess):
+    pass

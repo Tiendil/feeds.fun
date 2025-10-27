@@ -236,6 +236,12 @@ async def api_track_event(request: entities.TrackEventRequest, user: OptionalUse
 # Private APIs
 ##############
 
+# dummy endpoint to trigger auth refresh on the client side
+@api_private.post("/refresh-auth")
+async def api_refresh_auth(request: entities.RefreshAuthRequest, user: User) -> entities.RefreshAuthResponse:
+    return entities.RefreshAuthResponse()
+
+
 @api_private.post("/get-feeds")
 async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entities.GetFeedsResponse:
     linked_feeds = await fl_domain.get_linked_feeds(user.id)
