@@ -12,7 +12,17 @@ import * as cookieConsent from "@/plugins/CookieConsent";
 const apiPublic = axios.create({baseURL: "/spa/api/public", withCredentials: true});
 const apiPrivate = axios.create({baseURL: "/spa/api/private", withCredentials: true});
 
+function redirectToLogin() {
+  const returnTo = window.location.pathname + window.location.search;
+  window.location.assign(`/spa/login=${encodeURIComponent(returnTo)}`);
+}
+
 let _refreshingAuth: Promise<void> | null = null;
+
+enum Ffun401Behaviour {
+  RedirectToLogin = "redirectToLogin"
+  DoNotRetry = "doNotRetry"
+}
 
 // We try to refresh auth on 401 responses for private API.
 // For the public API we do nothing, because it most likely means infrastructure issue.
@@ -33,7 +43,12 @@ apiPrivate.interceptors.response.use(
       throw error;
     }
 
-    if (config?.ffunSkipAuthRetry) {
+    if (config?.ffun401Behaviour === Ffun401Behaviour.RedirectToLogin) {
+        redirectToLogin();
+        return; // never reached
+    }
+
+    if (config?.ffun401Behaviour === Ffun401Behaviour.DoNotRetry) {
       throw error;
     }
 
@@ -41,7 +56,7 @@ apiPrivate.interceptors.response.use(
 
     if (!_refreshingAuth) {
       _refreshingAuth = apiPrivate
-        .post("/refresh-auth")
+        .post("/refresh-auth", undefined, {ffun401Behaviour: Ffun401Behaviour.RedirectToLogin})
         .then(() => {})
         .finally(() => {
           _refreshingAuth = null;

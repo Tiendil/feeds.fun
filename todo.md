@@ -39,3 +39,5 @@ Things to think about:
 - unify apisix.yaml by moving common configs into templates
 - use cookies
 - auth/registration — both should work
+- manually check behaviour of 401 on post
+- remove technical headers in apixis before sending request to backend

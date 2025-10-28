@@ -17,18 +17,33 @@ upstreams:
     type: roundrobin
 
 routes:
-  - uri: /api/*
-    upstream_id: 1
-    plugins:
-      openid-connect:
-        <<: *openid-common-properties
-        redirect_uri: /api/callback
 
-  - uri: /test/*
+  - uri: /spa/docs
+    upstream_id: 1
+
+  - uri: /spa/test
+    upstream_id: 1
+
+  - uri: /spa/login
     upstream_id: 1
     plugins:
       openid-connect:
         <<: *openid-common-properties
-        redirect_uri: /test/callback
+        unauth_action: auth
+        redirect_uri: /spa/login/redirect
+
+  - uri: /spa/api/public/*
+    upstream_id: 1
+    plugins:
+      openid-connect:
+        <<: *openid-common-properties
+        unauth_action: pass
+
+  - uri: /spa/api/private/*
+    upstream_id: 1
+    plugins:
+      openid-connect:
+        <<: *openid-common-properties
+        unauth_action: deny
 
 #END
