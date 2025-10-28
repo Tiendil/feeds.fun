@@ -4,7 +4,7 @@ from typing import Any, Iterable
 import fastapi
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 
 from ffun.api.spa import entities
 from ffun.api.spa.settings import settings
@@ -36,10 +36,11 @@ from ffun.user_settings import domain as us_domain
 
 router = fastapi.APIRouter()
 
-api_public = fastapi.APIRouter(prefix="/api/spa/public", tags=["public"])
-api_public_test = fastapi.APIRouter(prefix="/api/spa/public/test", tags=["test"])
-api_public_docs = fastapi.APIRouter(prefix="/api/spa/public/docs", tags=["docs"])
-api_private = fastapi.APIRouter(prefix="/api/spa/private", tags=["private"])
+api_login = fastapi.APIRouter(prefix="/spa/login", tags=["login"])
+api_docs = fastapi.APIRouter(prefix="/spa/docs", tags=["docs"])
+api_test = fastapi.APIRouter(prefix="/spa/test", tags=["test"])
+api_public = fastapi.APIRouter(prefix="/spa/api/public", tags=["public"])
+api_private = fastapi.APIRouter(prefix="/spa/api/private", tags=["private"])
 
 logger = logging.get_module_logger()
 
@@ -104,22 +105,30 @@ async def _external_entries(  # pylint: disable=R0914
     return external_entries, tag_mapping
 
 
+#####################
+# OIDC login redirect
+#####################
+
+@api_login.get("/")
+async def api_login_redirect(return_to: str, user: User) -> RedirectResponse:
+    return RedirectResponse(url=return_to)
+
+
 ##################
 # Public test APIs
 ##################
 
-
-@api_public_test.post("/internal-error")
+@api_test.post("/internal-error")
 async def api_internal_error() -> None:
     raise Exception("test_error")
 
 
-@api_public_test.post("/expected-error")
+@api_test.post("/expected-error")
 async def api_expected_error() -> None:
     raise APIError(code="expected_test_error", message="Expected test error")
 
 
-@api_public_test.post("/ok")
+@api_test.post("/ok")
 async def api_ok() -> None:
     return None
 
@@ -235,7 +244,6 @@ async def api_track_event(request: entities.TrackEventRequest, user: OptionalUse
 ##############
 # Private APIs
 ##############
-
 
 # dummy endpoint to trigger auth refresh on the client side
 @api_private.post("/refresh-auth")
@@ -590,7 +598,7 @@ Thank you for your interest in the Feeds Fun. We look forward to your contributi
 """
 
 
-@api_public_docs.get("/openapi.json", include_in_schema=False)
+@api_docs.get("/openapi.json", include_in_schema=False)
 async def openapi(request: fastapi.Request) -> JSONResponse:
     content = get_openapi(
         title="Feeds Fun SPA API",
@@ -602,9 +610,9 @@ async def openapi(request: fastapi.Request) -> JSONResponse:
     return JSONResponse(content=content)
 
 
-@api_public_docs.get("/docs", include_in_schema=False)
+@api_docs.get("/docs", include_in_schema=False)
 async def docs(request: fastapi.Request) -> HTMLResponse:
-    openapi_url = request.scope.get("root_path", "") + "/api/spa/public/docs/openapi.json"
+    openapi_url = request.scope.get("root_path", "") + "/api/docs/openapi.json"
 
     return get_swagger_ui_html(
         openapi_url=openapi_url, title=swagger_title, swagger_ui_parameters=swagger_ui_api_parameters

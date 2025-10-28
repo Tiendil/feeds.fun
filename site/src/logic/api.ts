@@ -9,8 +9,8 @@ import * as cookieConsent from "@/plugins/CookieConsent";
 // API handlers
 ///////////////
 
-const apiPublic = axios.create({baseURL: "/api/spa/public", withCredentials: true});
-const apiPrivate = axios.create({baseURL: "/api/spa/private", withCredentials: true});
+const apiPublic = axios.create({baseURL: "/spa/api/public", withCredentials: true});
+const apiPrivate = axios.create({baseURL: "/spa/api/private", withCredentials: true});
 
 let _refreshingAuth: Promise<void> | null = null;
 
