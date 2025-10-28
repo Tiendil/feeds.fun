@@ -41,3 +41,6 @@ Things to think about:
 - auth/registration — both should work
 - manually check behaviour of 401 on post
 - remove technical headers in apixis before sending request to backend
+- fix main page layout
+- registration page, switching between login/registration
+- fix single-user / multi-user examples

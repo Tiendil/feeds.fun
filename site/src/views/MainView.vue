@@ -20,9 +20,13 @@
     </main-header-line>
 
     <main-block>
-      <div class="max-w-xl md:mx-auto ffun-info-good text-center mx-2">
-        <supertokens-login />
-      </div>
+      <!-- <div class="max-w-xl md:mx-auto ffun-info-good text-center mx-2"> -->
+        <a
+          class="ffun-form-button"
+          href="#"
+          @click="api.redirectToLogin()"
+        >Log in to get started</a>
+      <!-- </div> -->
     </main-block>
 
     <main-header-line> Smarter way to read news </main-header-line>
@@ -221,7 +225,8 @@
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch, provide} from "vue";
   import exampleImage from "@/assets/news-filtering-example.png";
-  import * as settings from "@/logic/settings";
+import * as settings from "@/logic/settings";
+import * as api from "@/logic/api";
   import {useRouter, RouterLink, RouterView} from "vue-router";
   import {useCollectionsStore} from "@/stores/collections";
   import * as t from "@/logic/types";

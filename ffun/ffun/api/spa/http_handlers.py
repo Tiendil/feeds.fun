@@ -110,7 +110,7 @@ async def _external_entries(  # pylint: disable=R0914
 #####################
 
 @api_login.get("/")
-async def api_login(return_to: str, user: User) -> RedirectResponse:
+async def api_login_target(return_to: str, user: User) -> RedirectResponse:
     """Dummy endpoint to trigger OIDC login flow or redirect to return_to URL if already logged in."""
     return RedirectResponse(url=return_to)
 

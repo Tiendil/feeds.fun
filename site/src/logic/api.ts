@@ -20,7 +20,7 @@ function redirectToLogin() {
 let _refreshingAuth: Promise<void> | null = null;
 
 enum Ffun401Behaviour {
-  RedirectToLogin = "redirectToLogin"
+  RedirectToLogin = "redirectToLogin",
   DoNotRetry = "doNotRetry"
 }
 

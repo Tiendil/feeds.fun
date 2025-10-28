@@ -20,11 +20,11 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://backend:8000/',
+        target: 'http://gateway:8000/',
         changeOrigin: true,
       },
       '/supertokens': {
-        target: 'http://backend:8000/',
+        target: 'http://gateway:8000/',
         changeOrigin: true,
       }
     }
