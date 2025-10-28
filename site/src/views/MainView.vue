@@ -163,7 +163,7 @@
 
             <main-news-title
               class="opacity-75"
-              title="Sci-fi novel about UFO in New Yourk"
+              title="Sci-fi novel about UFO in New York"
               :score="13" />
 
             <div class="opacity-65 block justify-self-center">
