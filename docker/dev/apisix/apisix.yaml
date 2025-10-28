@@ -5,8 +5,10 @@ x-openid-common-properties: &openid-common-properties
   use_pkce: true
   client_id: apisix-client
   client_secret: a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq
-  discovery: http://keycloak:8080/realms/dev/.well-known/openid-configuration
-  introspection_endpoint: http://keycloak:8080/realms/dev/protocol/openid-connect/token/introspect
+  discovery: http://feeds.fun.local/realms/dev/.well-known/openid-configuration
+  # introspection_endpoint: http://keycloak:8080/realms/dev/protocol/openid-connect/token/introspect
+  # token_endpoint: http://keycloak:8080/realms/dev/protocol/openid-connect/token
+  # userinfo_endpoint: http://keycloak:8080/realms/dev/protocol/openid-connect/userinfo
   scope: "openid"
 
 upstreams:
@@ -24,7 +26,9 @@ routes:
   - uri: /spa/test
     upstream_id: 1
 
-  - uri: /spa/login
+  - uris:
+      - /spa/login
+      - /spa/login/*
     upstream_id: 1
     plugins:
       openid-connect:

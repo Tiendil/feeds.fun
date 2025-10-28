@@ -37,7 +37,7 @@ _development_origins = ("*",)
 
 class Settings(BaseSettings):
     app_name: str = "Feeds Fun"
-    app_domain: str = "localhost"
+    app_domain: str = "feeds.fun.local"  # TODO: remove?
     app_port: int = 5173
 
     environment: str = "local"

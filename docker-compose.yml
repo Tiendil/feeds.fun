@@ -99,6 +99,11 @@ services:
     ports:
       - "8000:8000"
 
+    extra_hosts:
+      # resolve feeds.fun.local to host machine IP
+      # required for keycloak access
+      - "feeds.fun.local:host-gateway"
+
     networks:
       ffun_network: {}
 
@@ -225,7 +230,7 @@ services:
       backend:
         condition: service_started
 
-    command: "npm run dev -- --host 0.0.0.0"
+    command: "npm run dev -- --host 0.0.0.0 --port 80"
 
     volumes:
       - ${PWD}/site/src:/repository/src
@@ -247,7 +252,7 @@ services:
       VITE_FFUN_HAS_COLLECTIONS: "true"
 
     ports:
-      - "5173:5173"
+      - "80:80"
 
     networks:
       ffun_network: {}

@@ -253,6 +253,18 @@ All logic is split between tag processors. Each processor implements a single ap
 
 # Development
 
+## Preparations
+
+To use less hacks in dev configuration and be more consistent with production setup, we use custome domain `feeds.fun.local` for local development.
+
+Add the following line to your `/etc/hosts` file:
+
+```
+127.0.0.1 feeds.fun.local
+```
+
+Then, you can access the site at http://feeds.fun.local/
+
 ## Run
 
 ```

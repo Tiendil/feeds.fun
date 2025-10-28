@@ -12,9 +12,9 @@ import * as cookieConsent from "@/plugins/CookieConsent";
 const apiPublic = axios.create({baseURL: "/spa/api/public", withCredentials: true});
 const apiPrivate = axios.create({baseURL: "/spa/api/private", withCredentials: true});
 
-function redirectToLogin() {
+export function redirectToLogin() {
   const returnTo = window.location.pathname + window.location.search;
-  window.location.assign(`/spa/login=${encodeURIComponent(returnTo)}`);
+  window.location.assign(`/spa/login?return_to=${encodeURIComponent(returnTo)}`);
 }
 
 let _refreshingAuth: Promise<void> | null = null;

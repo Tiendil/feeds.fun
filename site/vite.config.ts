@@ -21,11 +21,15 @@ export default defineConfig({
     proxy: {
       '/spa': {
         target: 'http://gateway:8000/',
-        changeOrigin: true,
+        changeOrigin: false,
       },
-      '/supertokens': {
-        target: 'http://gateway:8000/',
-        changeOrigin: true,
+      '/realms': {
+        target: 'http://keycloak:8080/',
+        changeOrigin: false,
+      },
+      '/resources': {
+        target: 'http://keycloak:8080/',
+        changeOrigin: false,
       }
     }
   }

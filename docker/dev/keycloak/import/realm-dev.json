@@ -4,7 +4,7 @@
   "enabled": true,
 
   "attributes": {
-    "frontendUrl": "http://localhost:8080"
+    "frontendUrl": "http://feeds.fun.local"
   },
 
   "registrationAllowed": true,
@@ -48,19 +48,19 @@
       "clientId": "apisix-client",
       "name": "apisix-client",
       "description": "",
-      "rootUrl": "http://localhost",
-      "adminUrl": "http://localhost",
-      "baseUrl": "http://localhost",
+      "rootUrl": "http://feeds.fun.local",
+      "adminUrl": "http://feeds.fun.local",
+      "baseUrl": "http://feeds.fun.local",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "secret": "a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq",
       "redirectUris": [
-        "*"
+        "http://feeds.fun.local/*"
       ],
       "webOrigins": [
-        "*"
+        "http://feeds.fun.local"
       ],
       "notBefore": 0,
       "bearerOnly": false,
