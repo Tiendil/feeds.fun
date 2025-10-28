@@ -65,10 +65,7 @@ async def use_postgresql() -> AsyncGenerator[None, None]:
 async def use_api_spa(app: fastapi.FastAPI) -> AsyncGenerator[None, None]:
     logger.info("api_spa_enabled")
 
-    app.include_router(spa_http_handlers.api_public)
-    app.include_router(spa_http_handlers.api_public_test)
-    app.include_router(spa_http_handlers.api_public_docs)
-    app.include_router(spa_http_handlers.api_private)
+    spa_http_handlers.add_routes_to_app(app)
 
     logger.info("api_spa_initialized")
 

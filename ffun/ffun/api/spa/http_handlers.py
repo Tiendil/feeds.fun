@@ -34,6 +34,8 @@ from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 from ffun.user_settings import domain as us_domain
 
+logger = logging.get_module_logger()
+
 router = fastapi.APIRouter()
 
 api_login = fastapi.APIRouter(prefix="/spa/login", tags=["login"])
@@ -42,7 +44,13 @@ api_test = fastapi.APIRouter(prefix="/spa/test", tags=["test"])
 api_public = fastapi.APIRouter(prefix="/spa/api/public", tags=["public"])
 api_private = fastapi.APIRouter(prefix="/spa/api/private", tags=["private"])
 
-logger = logging.get_module_logger()
+
+def add_routes_to_app(app: fastapi.FastAPI) -> None:
+    app.include_router(api_login)
+    app.include_router(api_docs)
+    app.include_router(api_test)
+    app.include_router(api_public)
+    app.include_router(api_private)
 
 
 async def _external_entries(  # pylint: disable=R0914
@@ -617,7 +625,7 @@ async def openapi(request: fastapi.Request) -> JSONResponse:
     return JSONResponse(content=content)
 
 
-@api_docs.get("/docs", include_in_schema=False)
+@api_docs.get("", include_in_schema=False)
 async def docs(request: fastapi.Request) -> HTMLResponse:
     openapi_url = request.scope.get("root_path", "") + "/api/docs/openapi.json"
 

@@ -44,3 +44,4 @@ Things to think about:
 - fix main page layout
 - registration page, switching between login/registration
 - fix single-user / multi-user examples
+- Caddy should be configured to proxy /spa/login and, generally, all /spa urls?

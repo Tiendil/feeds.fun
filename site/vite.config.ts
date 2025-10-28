@@ -19,7 +19,7 @@ export default defineConfig({
 
   server: {
     proxy: {
-      '/api': {
+      '/spa': {
         target: 'http://gateway:8000/',
         changeOrigin: true,
       },
