@@ -45,3 +45,4 @@ Things to think about:
 - registration page, switching between login/registration
 - fix single-user / multi-user examples
 - Caddy should be configured to proxy /spa/login and, generally, all /spa urls?
+- better urls for keycloak pages & resources

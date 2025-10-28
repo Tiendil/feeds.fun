@@ -6,10 +6,33 @@ x-openid-common-properties: &openid-common-properties
   client_id: apisix-client
   client_secret: a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq
   discovery: http://feeds.fun.local/realms/dev/.well-known/openid-configuration
-  # introspection_endpoint: http://keycloak:8080/realms/dev/protocol/openid-connect/token/introspect
-  # token_endpoint: http://keycloak:8080/realms/dev/protocol/openid-connect/token
-  # userinfo_endpoint: http://keycloak:8080/realms/dev/protocol/openid-connect/userinfo
   scope: "openid"
+  # set user info header to extract user id later,
+  # after that the header will be removed
+  set_userinfo_header: true
+
+x-serverless-pre-function: &serverless-pre-function
+  phase: rewrite
+  functions:
+    - |
+      return function(conf, ctx)
+        local cjson = require "cjson.safe"
+
+        local raw = ngx.req.get_headers()["x-userinfo"]
+
+        if raw then
+          local u = cjson.decode(raw)
+
+          if u and u.sub then
+            ngx.req.set_header("X-FFun-User-Id", u.sub)
+          end
+
+          ngx.req.clear_header("X-Userinfo")
+        end
+
+        -- your small, static identifier for this gateway/config
+        ngx.req.set_header("X-FFun-Identity-Provider-Id", "keycloak")
+      end
 
 upstreams:
   - name: backend
@@ -31,6 +54,9 @@ routes:
       - /spa/login/*
     upstream_id: 1
     plugins:
+      serverless-pre-function:
+        <<: *serverless-pre-function
+
       openid-connect:
         <<: *openid-common-properties
         unauth_action: auth
@@ -39,6 +65,9 @@ routes:
   - uri: /spa/api/public/*
     upstream_id: 1
     plugins:
+      serverless-pre-function:
+        <<: *serverless-pre-function
+
       openid-connect:
         <<: *openid-common-properties
         unauth_action: pass
@@ -46,6 +75,9 @@ routes:
   - uri: /spa/api/private/*
     upstream_id: 1
     plugins:
+      serverless-pre-function:
+        <<: *serverless-pre-function
+
       openid-connect:
         <<: *openid-common-properties
         unauth_action: deny
