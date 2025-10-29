@@ -37,7 +37,7 @@ Things to think about:
 - note: keycloack only allows configuring from files at first startup, later we should use the admin API to manage realms/users
 - self-servicing pages
 - unify apisix.yaml by moving common configs into templates
-- use cookies
+- cookies propertis
 - auth/registration — both should work
 - manually check behaviour of 401 on post
 - remove technical headers in apixis before sending request to backend
