@@ -10,13 +10,14 @@
 
     <main-block>
       <h1 class="m-0 text-5xl">Feeds Fun</h1>
-      <p class="mt-2 text-2xl">Transparent Personalized News</p>
+      <p class="mt-2 text-2xl">Transparent & Personalized News</p>
     </main-block>
 
     <main-header-line>
       <!-- TODO: uncomment this claim after we have some statistics on long-term users -->
       <!-- Save over <strong class="text-green-700">80%</strong> of news-browsing time by focusing on what truly matters to you -->
       Save news-browsing time by focusing on what truly matters
+      <!-- Save news time, skip the noise -->
     </main-header-line>
 
     <main-block>
@@ -225,13 +226,15 @@
 <script lang="ts" setup>
   import {computed, ref, onUnmounted, watch, provide} from "vue";
   import exampleImage from "@/assets/news-filtering-example.png";
-import * as settings from "@/logic/settings";
-import * as api from "@/logic/api";
+  import * as settings from "@/logic/settings";
+  import * as api from "@/logic/api";
   import {useRouter, RouterLink, RouterView} from "vue-router";
-  import {useCollectionsStore} from "@/stores/collections";
+import {useCollectionsStore} from "@/stores/collections";
+  import {useGlobalState} from "@/stores/globalState";
   import * as t from "@/logic/types";
 
-  const router = useRouter();
+const router = useRouter();
+  const globalState = useGlobalState();
   const collections = useCollectionsStore();
 
   provide("eventsViewName", "main");

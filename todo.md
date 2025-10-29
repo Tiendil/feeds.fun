@@ -75,3 +75,5 @@ Things to think about:
 - document test scenarious for auth
 - `apisix-client` name is visible in the url, we should rename it to `feeds-fun-spa` or something else
 - configure & simplify registration form
+- configure registration/login links for frontend?
+- check mobile interfaces (main page, login, registration)
