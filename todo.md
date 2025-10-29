@@ -54,3 +54,4 @@ Things to think about:
 - remove supertokens from readmer
 - grep for supertokens an clear them from everywhere
 - ffun.auth.domain todos
+- check cors protection

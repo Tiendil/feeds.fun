@@ -10,9 +10,12 @@ x-openid-common-properties: &openid-common-properties
   # set user info header to extract user id later,
   # after that the header will be removed
   set_userinfo_header: true
+  set_access_token_header: false
+  set_id_token_header: false
+  set_refresh_token_header: false
 
-x-serverless-pre-function: &serverless-pre-function
-  phase: rewrite
+x-serverless-post-function: &serverless-post-function
+  phase: access
   functions:
     - |
       return function(conf, ctx)
@@ -21,7 +24,8 @@ x-serverless-pre-function: &serverless-pre-function
         local raw = ngx.req.get_headers()["x-userinfo"]
 
         if raw then
-          local u = cjson.decode(raw)
+          local raw_json = ngx.decode_base64(raw)
+          local u = cjson.decode(raw_json)
 
           if u and u.sub then
             ngx.req.set_header("X-FFun-User-Id", u.sub)
@@ -54,8 +58,8 @@ routes:
       - /spa/login/*
     upstream_id: 1
     plugins:
-      serverless-pre-function:
-        <<: *serverless-pre-function
+      serverless-post-function:
+        <<: *serverless-post-function
 
       openid-connect:
         <<: *openid-common-properties
@@ -65,8 +69,8 @@ routes:
   - uri: /spa/api/public/*
     upstream_id: 1
     plugins:
-      serverless-pre-function:
-        <<: *serverless-pre-function
+      serverless-post-function:
+        <<: *serverless-post-function
 
       openid-connect:
         <<: *openid-common-properties
@@ -75,8 +79,8 @@ routes:
   - uri: /spa/api/private/*
     upstream_id: 1
     plugins:
-      serverless-pre-function:
-        <<: *serverless-pre-function
+      serverless-post-function:
+        <<: *serverless-post-function
 
       openid-connect:
         <<: *openid-common-properties
