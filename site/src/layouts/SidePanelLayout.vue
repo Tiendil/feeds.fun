@@ -120,13 +120,11 @@
   import {useRouter} from "vue-router";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useGlobalState} from "@/stores/globalState";
-  import {useSupertokens} from "@/stores/supertokens";
   import * as events from "@/logic/events";
   import * as e from "@/logic/enums";
   import * as settings from "@/logic/settings";
 
   const globalSettings = useGlobalSettingsStore();
-  const supertokens = useSupertokens();
   const globalState = useGlobalState();
 
   const router = useRouter();
@@ -147,7 +145,8 @@
       return;
     }
 
-    await supertokens.logout();
+    // TODO: move login to globalState?
+    // TODO: add actual logout
 
     if (properties.loginRequired) {
       router.push({name: "main", params: {}});
