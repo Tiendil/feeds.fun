@@ -14,6 +14,20 @@
 - [ ] frontend logic for sessions
 - [ ] magic link login
 - [ ] social login
+- [ ] logout logic
+
+Login state on the frontend:
+
+- [ ] method to get actual login state from back
+- [ ] reaction on 401 responses from the API (change state to logged out)
+- [ ] sync login state between multiple tabs
+- [ ] do we need to recheck login state on some events?
+  - periodically (by timer)
+  - on route change
+  - on focus `window.addEventListener('focus', ...)`
+  - on network reconnect `window.addEventListener('online', ...)`
+  - on tab visibility change (tab becomes visible) `document.addEventListener('visibilitychange', ...)`
+
 
 Things to think about:
 
@@ -55,3 +69,4 @@ Things to think about:
 - grep for supertokens an clear them from everywhere
 - ffun.auth.domain todos
 - check cors protection
+- csrfToken protection

@@ -10,6 +10,7 @@ from ffun.api.spa import entities
 from ffun.api.spa.settings import settings
 from ffun.auth import domain as a_domain
 from ffun.auth.dependencies import OptionalUser, User
+from ffun.auth.settings import AuthMode, settings as auth_settings
 from ffun.core import logging, utils
 from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
@@ -241,7 +242,9 @@ async def api_get_tags_info(request: entities.GetTagsInfoRequest) -> entities.Ge
 async def api_get_info(request: entities.GetInfoRequest, user: OptionalUser) -> entities.GetInfoResponse:
     user_id = user.id if user is not None else None
 
-    return entities.GetInfoResponse(userId=user_id, version=utils.version())
+    return entities.GetInfoResponse(userId=user_id,
+                                    version=utils.version(),
+                                    singleUserMode=(auth_settings.mode == AuthMode.single_user))
 
 
 @api_public.post("/track-event")
