@@ -1,5 +1,9 @@
 
 x-openid-common-properties: &openid-common-properties
+  # ATTENTION: our cookies live long and we store credentials in them.
+  #            on changes in IdP configuration, those credentials can become invalid
+  #            for a huge number of users, which may cause strange errors and redirects.
+  #            => in case of such change,s ensure that APISIX will not see / skip old cookies
   session:
     secret: "84b45ebe-abcf-406e-a4e9-6e9916229c07"
   use_pkce: true
@@ -8,7 +12,7 @@ x-openid-common-properties: &openid-common-properties
   discovery: http://feeds.fun.local/realms/dev/.well-known/openid-configuration
   scope: "openid"
   logout_path: /spa/logout
-  post_logout_redirect_uri: /
+  post_logout_redirect_uri: http://feeds.fun.local
   # set user info header to extract user id later,
   # after that the header will be removed
   set_userinfo_header: true

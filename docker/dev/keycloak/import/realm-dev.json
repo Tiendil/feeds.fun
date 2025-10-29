@@ -78,7 +78,7 @@
         "client.secret.creation.time": "1761570939",
         "backchannel.logout.session.required": "true",
         "standard.token.exchange.enabled": "false",
-        "post.logout.redirect.uris": "localhost",
+        "post.logout.redirect.uris": "+",
         "oauth2.device.authorization.grant.enabled": "false",
         "pkce.code.challenge.method": "S256",
         "backchannel.logout.revoke.offline.tokens": "false",

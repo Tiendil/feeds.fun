@@ -71,3 +71,5 @@ Things to think about:
 - check cors protection
 - csrfToken protection
 - readme — add note that help wanted for OIDC support, in case of any trouble create an issue.
+- it looks like main page can reload twice in some cases
+- document test scenarious for auth
