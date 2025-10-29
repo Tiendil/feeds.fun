@@ -7,6 +7,8 @@ x-openid-common-properties: &openid-common-properties
   client_secret: a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq
   discovery: http://feeds.fun.local/realms/dev/.well-known/openid-configuration
   scope: "openid"
+  logout_path: /spa/logout
+  post_logout_redirect_uri: /
   # set user info header to extract user id later,
   # after that the header will be removed
   set_userinfo_header: true
@@ -53,9 +55,11 @@ routes:
   - uri: /spa/test
     upstream_id: 1
 
+  # TODO: replace with /spa/auth/*
   - uris:
       - /spa/login
       - /spa/login/*
+      - /spa/logout
     upstream_id: 1
     plugins:
       serverless-post-function:

@@ -36,14 +36,14 @@ export const useGlobalState = defineStore("globalState", () => {
   });
 
   function logout() {
-    // TODO: implement
+    if (isSingleUserMode.value) {
+      // In single user mode the user is always "logged in"
+      return;
+    }
 
-    // if (isSingleUserMode.value) {
-    //   return;
-    // }
-    // await Session.signOut();
-    // refreshAuthState();
-    // router.push({name: "Home"});
+    api.logout();
+
+    // TODO: we may want to notify other tabs about logout event
   }
 
   return {

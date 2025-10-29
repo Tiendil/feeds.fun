@@ -87,7 +87,7 @@
             v-if="globalState.isLoggedIn && !globalState.isSingleUserMode"
             href="#"
             class="ffun-page-header-link"
-            @click.prevent="logout()"
+            @click.prevent="globalState.logout()"
             >logout</a
           >
 
@@ -138,20 +138,6 @@
       homeButton: false
     }
   );
-
-  async function logout() {
-    if (globalState.isSingleUserMode) {
-      alert("You can't logout in single user mode");
-      return;
-    }
-
-    // TODO: move login to globalState?
-    // TODO: add actual logout
-
-    if (properties.loginRequired) {
-      router.push({name: "main", params: {}});
-    }
-  }
 
   const hasSideFooter = computed(() => {
     return !!slots["side-footer"];

@@ -70,3 +70,4 @@ Things to think about:
 - ffun.auth.domain todos
 - check cors protection
 - csrfToken protection
+- readme — add note that help wanted for OIDC support, in case of any trouble create an issue.

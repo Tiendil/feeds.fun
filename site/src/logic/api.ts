@@ -21,6 +21,10 @@ export function redirectToLogin() {
   window.location.assign(`/spa/login?return_to=${encodeURIComponent(returnTo)}`);
 }
 
+export function logout() {
+  window.location.assign("/spa/logout");
+}
+
 let _refreshingAuth: Promise<void> | null = null;
 
 enum Ffun401Behaviour {
