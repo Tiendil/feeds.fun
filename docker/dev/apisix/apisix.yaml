@@ -31,7 +31,7 @@ x-serverless-pre-function: &serverless-pre-function
         end
 
         -- your small, static identifier for this gateway/config
-        ngx.req.set_header("X-FFun-Identity-Provider-Id", "keycloak")
+        ngx.req.set_header("X-FFun-Identity-Provider-Id", "primary_oidc")
       end
 
 upstreams:

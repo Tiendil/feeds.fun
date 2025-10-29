@@ -1,8 +1,6 @@
 from typing import Annotated
 
 import fastapi
-from supertokens_python.recipe.session import SessionContainer
-from supertokens_python.recipe.session.framework.fastapi import verify_session
 
 from ffun.auth.settings import AuthMode, settings
 from ffun.users import domain as u_domain
@@ -15,23 +13,9 @@ from ffun.users import entities as u_entities
 # TODO: implement something like that for OIDC
 
 
-async def _supertokens_user(
-    session: SessionContainer = fastapi.Depends(verify_session(check_database=True)),
-) -> u_entities.User:
-    return await u_domain.get_or_create_user(u_entities.Service.supertokens, session.user_id)
-
-
-async def _supertokens_optional_user(
-    session: SessionContainer = fastapi.Depends(verify_session(check_database=True, session_required=False)),
-) -> u_entities.User | None:
-    if session is None:
-        return None
-
-    return await u_domain.get_or_create_user(u_entities.Service.supertokens, session.user_id)
-
-
 async def _single_user() -> u_entities.User:
-    return await u_domain.get_or_create_user(u_entities.Service.single, settings.single_user.external_id)
+    return await u_domain.get_or_create_user(settings.auth_service_map['single_user'],
+                                             settings.single_user.external_id)
 
 
 async def _oidc_user(request: fastapi.Request) -> u_entities.User:
@@ -42,11 +26,15 @@ async def _oidc_user(request: fastapi.Request) -> u_entities.User:
         # TODO: better error handling
         raise NotImplementedError("OIDC user ID header not found")
 
-    if identity_provider_id is not None:
+    if identity_provider_id is None:
         # TODO: better error handling
         raise NotImplementedError("OIDC identity provider ID handling not implemented")
 
-    service_id = getattr(u_entities.Service, identity_provider_id)  # type: ignore
+    if identity_provider_id not in settings.auth_service_map:
+        # TODO: better error handling
+        raise NotImplementedError("OIDC identity provider ID not recognized")
+
+    service_id = settings.auth_service_map[identity_provider_id]
 
     return await u_domain.get_or_create_user(service_id, external_user_id)
 
@@ -61,9 +49,6 @@ async def _oidc_optional_user(request: fastapi.Request) -> u_entities.User | Non
 if settings.mode == AuthMode.single_user:
     user = fastapi.Depends(_single_user)
     optional_user = fastapi.Depends(_single_user)
-elif settings.mode == AuthMode.supertokens:
-    user = fastapi.Depends(_supertokens_user)
-    optional_user = fastapi.Depends(_supertokens_optional_user)
 elif settings.mode == AuthMode.oidc:
     user = fastapi.Depends(_oidc_user)
     optional_user = fastapi.Depends(_oidc_optional_user)

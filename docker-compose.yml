@@ -25,7 +25,7 @@ services:
       - ./docker/dev/postgresql/healthcheck.sh:/healthcheck.sh
 
     environment:
-      POSTGRES_MULTIPLE_DATABASES: ffun,supertokens,keycloak
+      POSTGRES_MULTIPLE_DATABASES: ffun,keycloak
       # set to root because of the bug in pg_isready (?) it
       # it looks like it expect the DB name be the same as the POSTGRES_USER
       POSTGRES_DB: root
@@ -107,38 +107,6 @@ services:
     networks:
       ffun_network: {}
 
-
-  # TODO: uncomment after keycloak integration is done
-  # supertokens:
-  #   image: registry.supertokens.io/supertokens/supertokens-postgresql:11.0.4
-
-  #   depends_on:
-  #     postgresql:
-  #       condition: service_healthy
-
-  #   environment:
-  #     POSTGRESQL_DATABASE_NAME: "supertokens"
-  #     POSTGRESQL_USER: "supertokens"
-  #     POSTGRESQL_PASSWORD: "supertokens"
-  #     POSTGRESQL_HOST: "postgresql"
-  #     POSTGRESQL_PORT: "5432"
-  #     API_KEYS: "${FFUN_AUTH_SUPER_TOKENS_API_KEY:-nn4PGU5rJ3tEe9if4zEJ}"
-
-  #   ports:
-  #     - "3567:3567"
-
-  #   networks:
-  #     ffun_network: {}
-
-  #   healthcheck:
-  #     test: >
-  #       bash -c 'exec 3<>/dev/tcp/127.0.0.1/3567 &&
-  #                echo -e "GET /hello HTTP/1.1\r\nhost: 127.0.0.1:3567\r\nConnection: close\r\n\r\n" >&3 &&
-  #                cat <&3 | grep "Hello"'
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-
   backend-build:
     image: ffun-backend-dev
     build:
@@ -157,9 +125,6 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
-      # TODO: uncomment
-      # supertokens:
-      #   condition: service_healthy
 
     command:
       - /bin/bash

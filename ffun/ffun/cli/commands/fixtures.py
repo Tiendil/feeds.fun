@@ -27,7 +27,7 @@ from ffun.library.entities import Entry
 from ffun.ontology.domain import apply_tags_to_entry
 from ffun.ontology.entities import NormalizedTag
 from ffun.users import domain as u_domain
-from ffun.users import entities as u_entities
+from ffun.auth.settings import single_user_service_id
 
 logger = logging.get_module_logger()
 
@@ -103,7 +103,7 @@ async def run_fill_db(feeds_number: int, entries_per_feed: int, tags_per_entry: 
     async with with_app():
         external_user_id = a_settings.single_user.external_id
 
-        internal_user_id = await u_domain.get_or_create_user_id(u_entities.Service.single, external_user_id)
+        internal_user_id = await u_domain.get_or_create_user_id(single_user_service_id, external_user_id)
 
         for _ in range(feeds_number):
             feed = await fake_feed()
@@ -132,7 +132,7 @@ async def run_supertokens_user_to_dev(intenal_user_id: UserId) -> None:
     async with with_app():
         external_user_id = a_settings.single_user.external_id
 
-        to_user_id = await u_domain.get_or_create_user_id(u_entities.Service.single, external_user_id)
+        to_user_id = await u_domain.get_or_create_user_id(single_user_service_id, external_user_id)
 
         await u_domain.tech_move_user(from_user_id=intenal_user_id, to_user_id=to_user_id)
 

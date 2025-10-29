@@ -56,6 +56,7 @@ apiPrivate.interceptors.response.use(
 
     if (!_refreshingAuth) {
       _refreshingAuth = apiPrivate
+        // @ts-ignore
         .post("/refresh-auth", undefined, {ffun401Behaviour: Ffun401Behaviour.RedirectToLogin})
         .then(() => {})
         .finally(() => {

@@ -56,7 +56,6 @@ fastapi = "0.115.*"
 pydantic = "2.11.*"
 pydantic-settings = "2.10.*"
 python-multipart = "0.0.*"
-supertokens-python = "0.30.2"
 
 httpx = {extras = ["http2", "brotli", "zstd"], version = "0.28.*"}
 cryptography = "45.0.*"
@@ -161,11 +160,6 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "feedparser.*"
 ignore_missing_imports = true
-
-# remove after updating to a new version
-[[tool.mypy.overrides]]
-module = "supertokens_python.*"
-ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "furl.*"

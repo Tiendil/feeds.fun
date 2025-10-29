@@ -46,3 +46,11 @@ Things to think about:
 - fix single-user / multi-user examples
 - Caddy should be configured to proxy /spa/login and, generally, all /spa urls?
 - better urls for keycloak pages & resources
+- do we need AuthMode on backend?
+- do we need AuthMode on frontend?
+- do we need application.settings.app_domain?
+- do we need application.settings.api_port?
+- do we need application.settings.app_port?
+- remove supertokens from readmer
+- grep for supertokens an clear them from everywhere
+- ffun.auth.domain todos

@@ -10,9 +10,6 @@ from ffun.api.spa import http_handlers as spa_http_handlers
 from ffun.application import errors
 from ffun.application import utils as app_utils
 from ffun.application.settings import settings
-from ffun.auth import supertokens as st
-from ffun.auth.settings import AuthMode
-from ffun.auth.settings import settings as auth_settings
 from ffun.core import logging, middlewares, postgresql, sentry
 from ffun.domain.http import set_user_agent
 from ffun.domain.urls import initialize_tld_cache
@@ -116,16 +113,6 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
             if settings.enable_sentry:
                 await stack.enter_async_context(use_sentry())
 
-            if auth_settings.mode == AuthMode.supertokens:
-                api_domain = smart_url(settings.app_domain, settings.api_port)
-                website_domain = smart_url(settings.app_domain, settings.app_port)
-
-                await stack.enter_async_context(
-                    st.use_supertokens(
-                        app_name=settings.app_name, api_domain=api_domain, website_domain=website_domain
-                    )
-                )
-
             if settings.enable_api_spa:
                 await stack.enter_async_context(use_api_spa(app))
 
@@ -150,9 +137,6 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
     )
 
     middlewares.initialize_error_processors(app)
-
-    if auth_settings.mode == AuthMode.supertokens:
-        st.add_middlewares(app)
 
     app.middleware("http")(middlewares.final_errors_middleware)
 
