@@ -21,7 +21,7 @@
   });
 
   watchEffect(async () => {
-    if (utmStorage.value && globalState.isLoggedIn && Object.keys(utmStorage.value).length > 0) {
+    if (utmStorage.value && globalState.loginConfirmed && Object.keys(utmStorage.value).length > 0) {
       await events.trackUtm(utmStorage.value);
       utmStorage.value = null;
     }

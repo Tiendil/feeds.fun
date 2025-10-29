@@ -31,8 +31,20 @@ export const useGlobalState = defineStore("globalState", () => {
     return info.value ? info.value.singleUserMode : false;
   });
 
-  const isLoggedIn = computed(() => {
-    return userId.value !== null;
+  const loginState = computed(() => {
+    if (!info.value) {
+      return e.LoginState.Unknown;
+    }
+
+    return info.value.userId ? e.LoginState.LoggedIn : e.LoginState.LoggedOut;
+  });
+
+  const loginConfirmed = computed(() => {
+    return loginState.value === e.LoginState.LoggedIn;
+  });
+
+  const logoutConfirmed = computed(() => {
+    return loginState.value === e.LoginState.LoggedOut;
   });
 
   function logout() {
@@ -49,7 +61,9 @@ export const useGlobalState = defineStore("globalState", () => {
   return {
     userId,
     isSingleUserMode,
-    isLoggedIn,
+    loginState,
+    loginConfirmed,
+    logoutConfirmed,
     refreshAuthState,
     logout
   };

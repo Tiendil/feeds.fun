@@ -24,7 +24,7 @@
         <a
           class="ffun-form-button"
           href="#"
-          @click="api.redirectToLogin()"
+          @click="api.redirectToLogin('/news')"
         >Log in to get started</a>
       <!-- </div> -->
     </main-block>

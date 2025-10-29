@@ -24,7 +24,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   ///////////////////////////////////////////////////////////
 
   const _userSettings = computedAsync(async () => {
-    if (!globalState.isLoggedIn) {
+    if (!globalState.loginConfirmed) {
       return null;
     }
 
@@ -80,7 +80,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   function setUserSettings(kind: string, newValue: t.UserSettingsValue) {
     settingsOverrides.value[kind] = newValue;
 
-    if (globalState.isLoggedIn) {
+    if (globalState.loginConfirmed) {
       _backgroundSetUserSetting(kind, newValue);
     }
 
@@ -101,7 +101,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
           return settingsOverrides.value[kind];
         }
 
-        if (!globalState.isLoggedIn) {
+        if (!globalState.loginConfirmed) {
           return defaultValue;
         }
 

@@ -57,7 +57,7 @@
 
           <page-header-home-button v-if="homeButton" />
 
-          <template v-if="globalState.isLoggedIn">
+          <template v-if="globalState.loginConfirmed">
             <template
               v-for="[mode, props] of e.MainPanelModeProperties"
               :key="mode">
@@ -79,12 +79,12 @@
             </template>
           </template>
 
-          <page-header-external-links :show-api="globalState.isLoggedIn" />
+          <page-header-external-links :show-api="globalState.loginConfirmed" />
         </div>
 
         <div class="ffun-page-header-right-block">
           <a
-            v-if="globalState.isLoggedIn && !globalState.isSingleUserMode"
+            v-if="globalState.loginConfirmed && !globalState.isSingleUserMode"
             href="#"
             class="ffun-page-header-link"
             @click.prevent="globalState.logout()"
@@ -156,11 +156,8 @@
       return;
     }
 
-    if (globalState.isLoggedIn === null) {
-      return;
-    }
-
-    if (!globalState.isLoggedIn) {
+    if (globalState.logoutConfirmed) {
+      // Redirect to the main page in case we lost the session
       router.push({name: "main", params: {}});
     }
   });

@@ -16,8 +16,10 @@ const apiPrivate = axios.create({baseURL: "/spa/api/private", withCredentials: t
 // - redirect to login page
 // - redirect to home page & show notification
 // Currently the easiest way to handle it is to always redirect to login page.
-export function redirectToLogin() {
-  const returnTo = window.location.pathname + window.location.search;
+export function redirectToLogin(returnTo?: string) {
+  if (!returnTo) {
+    returnTo = window.location.pathname + window.location.search;
+  }
   window.location.assign(`/spa/login?return_to=${encodeURIComponent(returnTo)}`);
 }
 

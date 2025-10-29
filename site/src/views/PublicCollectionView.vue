@@ -67,7 +67,7 @@
     <!-- because the user previously selected tags that have no common news with the tags in the block -->
     <!-- That effect is possible only if the user has already interacted with the ags filter => should not be a problem -->
     <collections-public-intro
-      v-if="collection && !globalState.isLoggedIn"
+      v-if="collection && !globalState.loginConfirmed"
       :collectionId="collection.id"
       :tag1Uid="medianTag1"
       :tag1Count="tagsCount[medianTag1] || 0"
@@ -75,7 +75,7 @@
       :tag2Count="tagsCount[medianTag2] || 0" />
 
     <div
-      v-if="collection && globalState.isLoggedIn"
+      v-if="collection && globalState.loginConfirmed"
       class="ffun-info-good">
       <p
         >Welcome to curated <strong>{{ collection.name }}</strong> news collection!</p
