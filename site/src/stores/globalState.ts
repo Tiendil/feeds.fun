@@ -1,8 +1,11 @@
 import {ref, watch, computed} from "vue";
 import {useRouter} from "vue-router";
 import {defineStore} from "pinia";
-import * as settings from "@/logic/settings";
+import {computedAsync} from "@vueuse/core";
 
+import {Timer} from "@/logic/timer";
+import * as settings from "@/logic/settings";
+import * as api from "@/logic/api";
 import * as e from "@/logic/enums";
 
 export const useGlobalState = defineStore("globalState", () => {
@@ -22,11 +25,11 @@ export const useGlobalState = defineStore("globalState", () => {
 
   const userId = computed(() => {
     return info.value ? info.value.userId : null;
-  };
+  });
 
   const isSingleUserMode = computed(() => {
-    return settings.isSingleUserMode;
-  };
+    return info.value ? info.value.singleUserMode : false;
+  });
 
   const isLoggedIn = computed(() => {
     return userId.value !== null;

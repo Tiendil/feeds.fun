@@ -74,7 +74,7 @@
           </a>
 
           <a
-            v-if="!settings.isSingleUserMode"
+            v-if="!globalState.isSingleUserMode"
             href="#"
             class="ffun-normal-link"
             @click.prevent="cookieConsent.showCookieConsent()">
@@ -94,12 +94,15 @@
   import * as settings from "@/logic/settings";
   import * as asserts from "@/logic/asserts";
   import * as cookieConsent from "@/plugins/CookieConsent";
+  import {useGlobalState} from "@/stores/globalState";
 
   const router = useRouter();
 
   const eventsView = inject<events.EventsViewName>("eventsViewName");
 
   asserts.defined(eventsView);
+
+  const globalState = useGlobalState();
 
   const year = computed(() => {
     const date = new Date();

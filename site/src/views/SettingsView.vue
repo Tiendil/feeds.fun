@@ -126,7 +126,7 @@
     </div>
 
     <div
-      v-if="!settings.isSingleUserMode"
+      v-if="!globalState.isSingleUserMode"
       class="ffun-info-bad">
       <button
         @click.prevent="removeAccount()"
@@ -153,8 +153,10 @@
   import * as e from "@/logic/enums";
   import * as settings from "@/logic/settings";
   import {useRouter} from "vue-router";
-  import {useGlobalSettingsStore} from "@/stores/globalSettings";
+import {useGlobalSettingsStore} from "@/stores/globalSettings";
+import {useGlobalState} from "@/stores/globalState";
 
+const globalState = useGlobalState();
   const globalSettings = useGlobalSettingsStore();
 
   provide("eventsViewName", "settings");
@@ -165,12 +167,8 @@
     return await api.getResourceHistory({kind: "tokens_cost"});
   }, null);
 
-  const userId = computed(() => {
-    if (globalSettings.info == null) {
-      return "—";
-    }
-
-    return globalSettings.info.userId;
+const userId = computed(() => {
+  return globalState.userId == null ? "—" : globalState.userId;
   });
 
   const messagesSettings = [

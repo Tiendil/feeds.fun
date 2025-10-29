@@ -84,7 +84,7 @@
 
         <div class="ffun-page-header-right-block">
           <a
-            v-if="globalState.isLoggedIn && !settings.isSingleUserMode"
+            v-if="globalState.isLoggedIn && !globalState.isSingleUserMode"
             href="#"
             class="ffun-page-header-link"
             @click.prevent="logout()"
@@ -92,7 +92,7 @@
           >
 
           <span
-            v-if="settings.isSingleUserMode"
+            v-if="globalState.isSingleUserMode"
             href="#"
             class="ffun-page-header-link-disabled"
             >single-user mode</span
@@ -140,7 +140,7 @@
   );
 
   async function logout() {
-    if (settings.authMode === settings.AuthMode.SingleUser) {
+    if (globalState.isSingleUserMode) {
       alert("You can't logout in single user mode");
       return;
     }
