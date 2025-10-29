@@ -20,11 +20,11 @@ export function redirectToLogin(returnTo?: string) {
   if (!returnTo) {
     returnTo = window.location.pathname + window.location.search;
   }
-  window.location.assign(`/spa/login?return_to=${encodeURIComponent(returnTo)}`);
+  window.location.assign(`/spa/auth/login?return_to=${encodeURIComponent(returnTo)}`);
 }
 
 export function logout() {
-  window.location.assign("/spa/logout");
+  window.location.assign("/spa/auth/logout");
 }
 
 let _refreshingAuth: Promise<void> | null = null;

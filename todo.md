@@ -71,5 +71,7 @@ Things to think about:
 - check cors protection
 - csrfToken protection
 - readme — add note that help wanted for OIDC support, in case of any trouble create an issue.
-- it looks like main page can reload twice in some cases
+- chain of redirects with visible blinking when we try to access a protected page by direct url (not from the main page)
 - document test scenarious for auth
+- `apisix-client` name is visible in the url, we should rename it to `feeds-fun-spa` or something else
+- configure & simplify registration form

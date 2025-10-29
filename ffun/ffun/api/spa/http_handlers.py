@@ -39,7 +39,7 @@ logger = logging.get_module_logger()
 
 router = fastapi.APIRouter()
 
-api_login = fastapi.APIRouter(prefix="/spa/login", tags=["login"])
+api_auth = fastapi.APIRouter(prefix="/spa/auth", tags=["auth"])
 api_docs = fastapi.APIRouter(prefix="/spa/docs", tags=["docs"])
 api_test = fastapi.APIRouter(prefix="/spa/test", tags=["test"])
 api_public = fastapi.APIRouter(prefix="/spa/api/public", tags=["public"])
@@ -47,7 +47,7 @@ api_private = fastapi.APIRouter(prefix="/spa/api/private", tags=["private"])
 
 
 def add_routes_to_app(app: fastapi.FastAPI) -> None:
-    app.include_router(api_login)
+    app.include_router(api_auth)
     app.include_router(api_docs)
     app.include_router(api_test)
     app.include_router(api_public)
@@ -118,13 +118,13 @@ async def _external_entries(  # pylint: disable=R0914
 # OIDC login redirect
 #####################
 
-@api_login.get("/")
+@api_auth.get("/login")
 async def api_login_target(return_to: str, user: User) -> RedirectResponse:
     """Dummy endpoint to trigger OIDC login flow or redirect to return_to URL if already logged in."""
     return RedirectResponse(url=return_to)
 
 
-@api_login.get("/redirect")
+@api_auth.get("/redirect")
 async def api_login_redirect(return_to: str, user: User) -> RedirectResponse:
     """Redirect endpoint for OIDC login flow."""
     return RedirectResponse(url=return_to)
