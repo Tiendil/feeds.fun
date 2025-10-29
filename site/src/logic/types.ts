@@ -531,3 +531,28 @@ export class ApiMessage {
 export function apiMessageFromJSON({type, code, message}: {type: string; code: string; message: string}): ApiMessage {
   return new ApiMessage({type, code, message});
 }
+
+
+export class stateInfo {
+  readonly userId: string;
+  readonly version: string;
+  readonly singleUserMode: boolean;
+
+  constructor({userId, version, singleUserMode}: {userId: string; version: string; singleUserMode: boolean}) {
+    this.userId = userId;
+    this.version = version;
+    this.singleUserMode = singleUserMode;
+  }
+}
+
+export function stateInfoFromJSON({
+  userId,
+  version,
+  singleUserMode
+}: {
+  userId: string;
+  version: string;
+  singleUserMode: boolean;
+}): stateInfo {
+  return new stateInfo({userId, version, singleUserMode});
+}

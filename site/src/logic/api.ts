@@ -12,6 +12,10 @@ import * as cookieConsent from "@/plugins/CookieConsent";
 const apiPublic = axios.create({baseURL: "/spa/api/public", withCredentials: true});
 const apiPrivate = axios.create({baseURL: "/spa/api/private", withCredentials: true});
 
+// It is an open question what should we do in case of session expiration:
+// - redirect to login page
+// - redirect to home page & show notification
+// Currently the easiest way to handle it is to always redirect to login page.
 export function redirectToLogin() {
   const returnTo = window.location.pathname + window.location.search;
   window.location.assign(`/spa/login?return_to=${encodeURIComponent(returnTo)}`);
@@ -170,7 +174,7 @@ export async function getTagsInfo({uids}: {uids: string[]}) {
 export async function getInfo() {
   const response = await postPublic({url: "/get-info", data: {}});
 
-  return response;
+  return t.stateInfoFromJSON(response);
 }
 
 export async function trackEvent(data: {[key: string]: string | number | null}) {

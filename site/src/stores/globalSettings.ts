@@ -19,13 +19,6 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     dataVersion.value++;
   }
 
-  // TODO: We may want to remove this API and move user_id to the user settings API
-  const info = computedAsync(async () => {
-    globalState.isLoggedIn;
-    dataVersion.value;
-    return await api.getInfo();
-  }, null);
-
   ///////////////////////////////////////////////////////////
   // Functionality for interaction with backend side settings
   ///////////////////////////////////////////////////////////
@@ -223,7 +216,6 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     updateDataVersion,
     showFeedsDescriptions,
     userSettingsPresent,
-    info,
     feedsOrder,
     failedFeedsFirst,
     rulesOrder,
