@@ -53,10 +53,10 @@ upstreams:
 
 routes:
 
-  - uri: /spa/docs
+  - uri: /spa/docs/*
     upstream_id: 1
 
-  - uri: /spa/test
+  - uri: /spa/test/*
     upstream_id: 1
 
   # special url to send users straight to registration

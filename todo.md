@@ -1,11 +1,5 @@
 
 
-- [x] dev container for KeyCloak
-  - [x] realm
-  - [x] two users with passwords
-  - [x] healthcheck for docker
-  - [x] dependency for backend from the keycloak container
-- [ ] check public redirect URL — there a lot of data in it
 - [ ] Support api calls that require no auth? (public collections, info, etc.)
 - [ ] AuthMode.oidc
 - [ ] backend logic for oidc

@@ -634,9 +634,9 @@ async def openapi(request: fastapi.Request) -> JSONResponse:
     return JSONResponse(content=content)
 
 
-@api_docs.get("", include_in_schema=False)
+@api_docs.get("/", include_in_schema=False)
 async def docs(request: fastapi.Request) -> HTMLResponse:
-    openapi_url = request.scope.get("root_path", "") + "/api/docs/openapi.json"
+    openapi_url = request.scope.get("root_path", "") + "/spa/docs/openapi.json"
 
     return get_swagger_ui_html(
         openapi_url=openapi_url, title=swagger_title, swagger_ui_parameters=swagger_ui_api_parameters
