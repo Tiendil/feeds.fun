@@ -11,23 +11,38 @@
     <main-block>
       <h1 class="m-0 text-5xl">Feeds Fun</h1>
       <p class="mt-2 text-2xl">Transparent & Personalized News</p>
-    </main-block>
 
-    <main-header-line>
-      <!-- TODO: uncomment this claim after we have some statistics on long-term users -->
-      <!-- Save over <strong class="text-green-700">80%</strong> of news-browsing time by focusing on what truly matters to you -->
-      Save news-browsing time by focusing on what truly matters
-      <!-- Save news time, skip the noise -->
-    </main-header-line>
+      <div class="h-10">
+        <!-- <div class="h-36"> -->
 
-    <main-block>
-      <!-- <div class="max-w-xl md:mx-auto ffun-info-good text-center mx-2"> -->
-        <a
-          class="ffun-form-button"
-          href="#"
-          @click="api.redirectToLogin('/news')"
-        >Log in to get started</a>
-      <!-- </div> -->
+        <div v-if="globalState.loginState === e.LoginState.Unknown">
+          Receiving your login status…
+        </div>
+
+        <div v-else-if="globalState.loginState === e.LoginState.LoggedIn">
+          <a
+            class="ffun-main-auth-button"
+            @click.prevent="goToWorkspace()"
+            >Go To Feeds ⇒</a
+                            >
+        </div>
+
+        <div class="grid grid-flow-col auto-cols-fr gap-3 w-max mx-auto">
+          <a
+            class="ffun-main-auth-button ffun-login"
+            href="#"
+            @click.prevent="api.redirectToLogin('/news')"
+            >Sign in</a>
+
+          <a
+            class="ffun-main-auth-button ffun-register"
+            href="#"
+            @click.prevent="api.redirectToLogin('/news')"
+            >Join now</a>
+        </div>
+
+      </div>
+
     </main-block>
 
     <main-header-line> Smarter way to read news </main-header-line>
@@ -227,7 +242,8 @@
   import {computed, ref, onUnmounted, watch, provide} from "vue";
   import exampleImage from "@/assets/news-filtering-example.png";
   import * as settings from "@/logic/settings";
-  import * as api from "@/logic/api";
+import * as api from "@/logic/api";
+import * as e from "@/logic/enums";
   import {useRouter, RouterLink, RouterView} from "vue-router";
 import {useCollectionsStore} from "@/stores/collections";
   import {useGlobalState} from "@/stores/globalState";
@@ -242,4 +258,9 @@ const router = useRouter();
   function publicCollectionHref(collectionSlug: t.CollectionSlug) {
     return router.resolve({name: "public-collection", params: {collectionSlug: collectionSlug}}).href;
   }
+
+function goToWorkspace() {
+    router.push({name: e.MainPanelMode.Entries, params: {}});
+  }
+
 </script>

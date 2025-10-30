@@ -77,3 +77,4 @@ Things to think about:
 - configure & simplify registration form
 - configure registration/login links for frontend?
 - check mobile interfaces (main page, login, registration)
+- click on login and then back in browser, globalState.loginState is damaged (wrong)

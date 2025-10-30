@@ -8,6 +8,24 @@
     @apply transition-colors duration-150;
   }
 
+  .ffun-main-auth-button {
+      @apply ffun-x-input-common border-0;
+      @apply text-xl;
+      @apply px-3 py-2;
+      @apply rounded-lg shadow-sm border focus:ring-0;
+      @apply rounded-lg focus:ring-0;
+
+      &.ffun-login {
+          @apply rounded-lg shadow-sm border focus:ring-0;
+          @apply hover:border-slate-400;
+      }
+
+      &.ffun-register {
+          @apply bg-emerald-600 text-white;
+          @apply hover:border-emerald-700;
+      }
+  }
+
   .ffun-form-button {
     @apply ffun-x-input-common font-semibold text-white;
     @apply px-4 py-2;
