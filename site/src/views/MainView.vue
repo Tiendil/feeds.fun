@@ -13,10 +13,8 @@
       <p class="mt-2 text-2xl">Transparent & Personalized News</p>
 
       <div class="h-10">
-        <!-- <div class="h-36"> -->
-
         <div v-if="globalState.loginState === e.LoginState.Unknown">
-          Receiving your login status…
+          <!-- Display nothing to prevent GUI blinking -->
         </div>
 
         <div v-else-if="globalState.loginState === e.LoginState.LoggedIn">
