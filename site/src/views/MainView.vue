@@ -12,32 +12,29 @@
       <h1 class="m-0 text-5xl">Feeds Fun</h1>
       <p class="mt-2 text-2xl">Transparent & Personalized News</p>
 
-      <div class="h-10">
-        <div v-if="globalState.loginState === e.LoginState.Unknown">
-          <!-- Display nothing to prevent GUI blinking -->
-        </div>
+      <div class="h-12 grid grid-flow-col auto-cols-fr gap-3 w-max mx-auto">
 
-        <div v-else-if="globalState.loginState === e.LoginState.LoggedIn">
-          <a
-            class="ffun-main-auth-button"
-            @click.prevent="goToWorkspace()"
-            >Go To Feeds ⇒</a
-                            >
-        </div>
+        <a
+          v-if="globalState.loginConfirmed"
+          class="ffun-main-auth-button ffun-go-to-feeds"
+          href="#"
+          @click.prevent="goToWorkspace()">
+          Read your feed
+        </a>
 
-        <div class="grid grid-flow-col auto-cols-fr gap-3 w-max mx-auto">
-          <a
-            class="ffun-main-auth-button ffun-login"
-            href="#"
-            @click.prevent="api.redirectToLogin('/news')"
-            >Sign in</a>
+        <a
+          v-if="globalState.logoutConfirmed"
+          class="ffun-main-auth-button ffun-login"
+          href="#"
+          @click.prevent="api.redirectToLogin('/news')"
+          >Sign in</a>
 
-          <a
-            class="ffun-main-auth-button ffun-register"
-            href="#"
-            @click.prevent="api.redirectToLogin('/news')"
-            >Join now</a>
-        </div>
+        <a
+          v-if="globalState.logoutConfirmed"
+          class="ffun-main-auth-button ffun-register"
+          href="#"
+          @click.prevent="api.redirectToLogin('/news')"
+          >Join now</a>
 
       </div>
 
