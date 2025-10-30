@@ -1,19 +1,11 @@
 
 
-- [ ] Support api calls that require no auth? (public collections, info, etc.)
-- [ ] AuthMode.oidc
 - [ ] backend logic for oidc
-- [ ] frontend logic for auth redirects
-- [ ] backend logic for sessions
-- [ ] frontend logic for sessions
 - [ ] magic link login
 - [ ] social login
-- [ ] logout logic
 
 Login state on the frontend:
 
-- [ ] method to get actual login state from back
-- [ ] reaction on 401 responses from the API (change state to logged out)
 - [ ] sync login state between multiple tabs
 - [ ] do we need to recheck login state on some events?
   - periodically (by timer)
