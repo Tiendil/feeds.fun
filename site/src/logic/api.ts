@@ -23,6 +23,13 @@ export function redirectToLogin(returnTo?: string) {
   window.location.assign(`/spa/auth/login?return_to=${encodeURIComponent(returnTo)}`);
 }
 
+export function redirectToJoin(returnTo?: string) {
+  if (!returnTo) {
+    returnTo = window.location.pathname + window.location.search;
+  }
+  window.location.assign(`/spa/auth/join?return_to=${encodeURIComponent(returnTo)}`);
+}
+
 export function logout() {
   window.location.assign("/spa/auth/logout");
 }

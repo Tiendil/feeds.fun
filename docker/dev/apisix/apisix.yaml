@@ -59,7 +59,21 @@ routes:
   - uri: /spa/test
     upstream_id: 1
 
-  # TODO: replace with /spa/auth/*
+  # special url to send users straight to registration
+  - uri: /spa/auth/join
+    upstream_id: 1
+    plugins:
+      serverless-post-function:
+        <<: *serverless-post-function
+
+      openid-connect:
+        <<: *openid-common-properties
+        unauth_action: auth
+        # this redirect path will be processed by `/spa/auth/*` route
+        redirect_uri: /spa/auth/redirect
+        authorization_params:
+          prompt: create
+
   - uri: /spa/auth/*
     upstream_id: 1
     plugins:

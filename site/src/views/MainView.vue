@@ -33,7 +33,7 @@
           v-if="globalState.logoutConfirmed"
           class="ffun-main-auth-button ffun-register"
           href="#"
-          @click.prevent="api.redirectToLogin('/news')"
+          @click.prevent="api.redirectToJoin('/news')"
           >Join now</a>
 
       </div>
