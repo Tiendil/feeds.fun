@@ -1,6 +1,8 @@
 
 
 - [ ] chain of redirects with visible blinking when we try to access a protected page by direct url (not from the main page)
+- [ ] click on login and then back in browser, globalState.loginState is damaged (wrong)
+- [ ] duplicated logout (from the second tab) leads to error id_token_hint
 - [ ] registration form
 - [ ] login form
 - [ ] magic link login
@@ -19,6 +21,7 @@
       - remove supertokens mentions
       - remove old environment variables
       - add note that help wanted for OIDC support, in case of any trouble create an issue.
+      - describe required links for OIDC setup (redirect URIs, logout URIs) or make the configurable
 - [ ] Implement example MCP server
 - [ ] Check single-user works
 - [ ] Prod: Backup KeyCloak DB
@@ -30,11 +33,5 @@
 - [ ] CORS protection
 - [ ] csrfToken protection
 - [ ] document test scenarious for auth
-
-Things to think about:
-
-- configure registration/login links for frontend?
-- check mobile interfaces (main page, login, registration)
-- click on login and then back in browser, globalState.loginState is damaged (wrong)
-- keycloak, duplicated logout (from the second tab) leads to error id_token_hint
-- behaviour on cookie expiration
+- [ ] Check mobile interfaces (main page, login, registration)
+- [ ] Check behaviour on cookie expiration
