@@ -1,10 +1,13 @@
 
 
+- [ ] chain of redirects with visible blinking when we try to access a protected page by direct url (not from the main page)
 - [ ] registration form
 - [ ] login form
 - [ ] magic link login
 - [ ] social login
 - [ ] styles for registration/login pages
+      - try to keep html/css for keycloak theming in this repo
+        build them as vue pages, compile to static html/css and copy to keycloak theme folder during setup
 - [ ] check if any other pages need styles
 - [ ] update GDPR-related docs
 - [ ] create an epic/tasks with auth tech debt
@@ -12,40 +15,24 @@
 - [ ] update multi user example
       - Maybe replace multi-user setup instructions with reference to the default dev environment?
 - [ ] update README.md
+      - reread from start to finish
+      - remove supertokens mentions
+      - remove old environment variables
+      - add note that help wanted for OIDC support, in case of any trouble create an issue.
 - [ ] Implement example MCP server
+- [ ] Check single-user works
+- [ ] Prod: Backup KeyCloak DB
+- [ ] Apisix: cookies propertis
+- [ ] Apisix remove technical headers before sending request to backend
+- [ ] manually check behaviour of 401 on post
+- [ ] check switching between login/registration pages
+- [ ] remove all mentions of supertokens from the codebase
+- [ ] CORS protection
+- [ ] csrfToken protection
+- [ ] document test scenarious for auth
 
 Things to think about:
 
-- single-user & oidc & supertokens modes works via single docker-compose (in dev)
-- try to keep html/css for keycloak theming in this repo
-- Backup KeyCloak DB
-- note: keycloack only allows configuring from files at first startup, later we should use the admin API to manage realms/users
-- self-servicing pages
-- unify apisix.yaml by moving common configs into templates
-- cookies propertis
-- auth/registration — both should work
-- manually check behaviour of 401 on post
-- remove technical headers in apixis before sending request to backend
-- fix main page layout
-- registration page, switching between login/registration
-- fix single-user / multi-user examples
-- Caddy should be configured to proxy /spa/login and, generally, all /spa urls?
-- better urls for keycloak pages & resources
-- do we need AuthMode on backend?
-- do we need AuthMode on frontend?
-- do we need application.settings.app_domain?
-- do we need application.settings.api_port?
-- do we need application.settings.app_port?
-- remove supertokens from readmer
-- grep for supertokens an clear them from everywhere
-- ffun.auth.domain todos
-- check cors protection
-- csrfToken protection
-- readme — add note that help wanted for OIDC support, in case of any trouble create an issue.
-- chain of redirects with visible blinking when we try to access a protected page by direct url (not from the main page)
-- document test scenarious for auth
-- `apisix-client` name is visible in the url, we should rename it to `feeds-fun-spa` or something else
-- configure & simplify registration form
 - configure registration/login links for frontend?
 - check mobile interfaces (main page, login, registration)
 - click on login and then back in browser, globalState.loginState is damaged (wrong)
