@@ -37,12 +37,9 @@ _development_origins = ("*",)
 
 class Settings(BaseSettings):
     app_name: str = "Feeds Fun"
-    app_domain: str = "feeds.fun.local"  # TODO: remove?
-    app_port: int = 5173
+    app_domain: str = "feeds.fun.local"
 
     environment: str = "local"
-
-    api_port: int = 5174
 
     enable_api_spa: bool = False
     enable_sentry: bool = False
