@@ -1,6 +1,5 @@
 
 
-- [ ] backend logic for oidc
 - [ ] magic link login
 - [ ] social login
 
