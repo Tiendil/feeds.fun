@@ -6,7 +6,7 @@ from ffun.auth.domain import (
     logout_user_from_all_sessions_in_service,
     remove_user_from_external_service,
 )
-from ffun.auth.settings import single_user_service_id, primary_oidc_service_id
+from ffun.auth.settings import primary_oidc_service_id, single_user_service_id
 from ffun.domain.entities import UserId
 
 

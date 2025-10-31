@@ -9,7 +9,6 @@ import * as api from "@/logic/api";
 import * as e from "@/logic/enums";
 
 export const useGlobalState = defineStore("globalState", () => {
-
   const infoRefreshMarker = ref(0);
 
   function refreshAuthState() {

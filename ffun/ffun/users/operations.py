@@ -3,7 +3,7 @@ import psycopg
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
 from ffun.domain.domain import new_user_id
-from ffun.domain.entities import UserId, IdPId
+from ffun.domain.entities import IdPId, UserId
 from ffun.users import errors
 
 logger = logging.get_module_logger()

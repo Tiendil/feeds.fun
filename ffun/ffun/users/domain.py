@@ -1,4 +1,4 @@
-from ffun.domain.entities import UserId, IdPId
+from ffun.domain.entities import IdPId, UserId
 from ffun.users import errors, operations
 from ffun.users.entities import User
 

@@ -1,7 +1,6 @@
-
-from ffun.domain import http
-from ffun.core import errors
 from ffun.auth.idps.plugin import Plugin as PluginBase
+from ffun.core import errors
+from ffun.domain import http
 
 
 class Error(errors.Error):
@@ -17,9 +16,11 @@ class CanNotCallAdminAPI(Error):
 
 
 class Plugin(PluginBase):
-    __slots__ = ('entrypoint', 'service_realm', 'admin_realm', 'client_id', 'client_secret', '_access_token')
+    __slots__ = ("entrypoint", "service_realm", "admin_realm", "client_id", "client_secret", "_access_token")
 
-    def __init__(self, *, entrypoint: str, service_realm: str, admin_realm: str, client_id: str, client_secret: str) -> None:
+    def __init__(
+        self, *, entrypoint: str, service_realm: str, admin_realm: str, client_id: str, client_secret: str
+    ) -> None:
         self.entrypoint = entrypoint
         self.service_realm = service_realm
         self.admin_realm = admin_realm

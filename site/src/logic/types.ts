@@ -532,7 +532,6 @@ export function apiMessageFromJSON({type, code, message}: {type: string; code: s
   return new ApiMessage({type, code, message});
 }
 
-
 export class stateInfo {
   readonly userId: string;
   readonly version: string;

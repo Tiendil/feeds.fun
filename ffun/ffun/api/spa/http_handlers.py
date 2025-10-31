@@ -118,6 +118,7 @@ async def _external_entries(  # pylint: disable=R0914
 # OIDC login redirect
 #####################
 
+
 @api_auth.get("/login")
 async def api_auth_login(return_to: str, user: User) -> RedirectResponse:
     """Dummy endpoint to trigger OIDC login flow and redirect to return_to URL if logged in."""
@@ -139,6 +140,7 @@ async def api_auth_redirect(return_to: str, user: User) -> RedirectResponse:
 ##################
 # Public test APIs
 ##################
+
 
 @api_test.post("/internal-error")
 async def api_internal_error() -> None:
@@ -248,9 +250,9 @@ async def api_get_tags_info(request: entities.GetTagsInfoRequest) -> entities.Ge
 async def api_get_info(request: entities.GetInfoRequest, user: OptionalUser) -> entities.GetInfoResponse:
     user_id = user.id if user is not None else None
 
-    return entities.GetInfoResponse(userId=user_id,
-                                    version=utils.version(),
-                                    singleUserMode=auth_settings.is_single_user_mode)
+    return entities.GetInfoResponse(
+        userId=user_id, version=utils.version(), singleUserMode=auth_settings.is_single_user_mode
+    )
 
 
 @api_public.post("/track-event")
@@ -268,6 +270,7 @@ async def api_track_event(request: entities.TrackEventRequest, user: OptionalUse
 ##############
 # Private APIs
 ##############
+
 
 # dummy endpoint to trigger auth refresh on the client side
 @api_private.post("/refresh-auth")

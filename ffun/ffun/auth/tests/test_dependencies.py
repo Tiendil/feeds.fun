@@ -1,12 +1,11 @@
-
 from unittest import mock
-import pytest
 
+import pytest
 from starlette.datastructures import Headers
 
-from ffun.auth.dependencies import _idp_user, _idp_optional_user
-from ffun.auth.settings import primary_oidc_service_id, single_user_service_id, settings, primary_oidc_service, single_user_service
 from ffun.auth import errors
+from ffun.auth.dependencies import _idp_optional_user, _idp_user
+from ffun.auth.settings import primary_oidc_service, primary_oidc_service_id, settings
 from ffun.users import domain as u_domain
 
 
@@ -26,10 +25,9 @@ class _TestIdPUser:
     async def test_no_identity_provider_in_settings(self, external_user_id: str) -> None:
         request = mock.MagicMock()
 
-        request.headers = Headers({
-            settings.header_user_id: external_user_id,
-            settings.header_identity_provider_id: "unknown-provider"
-        })
+        request.headers = Headers(
+            {settings.header_user_id: external_user_id, settings.header_identity_provider_id: "unknown-provider"}
+        )
 
         with pytest.raises(errors.IdPNoIdentityProviderInSettings):
             await self.user_accessor(request)
@@ -38,10 +36,9 @@ class _TestIdPUser:
     async def test_user_processed(self, external_user_id: str) -> None:
         request = mock.MagicMock()
 
-        request.headers = Headers({
-            settings.header_user_id: external_user_id,
-            settings.header_identity_provider_id: primary_oidc_service
-        })
+        request.headers = Headers(
+            {settings.header_user_id: external_user_id, settings.header_identity_provider_id: primary_oidc_service}
+        )
 
         user = await self.user_accessor(request)
 
@@ -49,10 +46,7 @@ class _TestIdPUser:
 
         assert external_ids == {primary_oidc_service_id: external_user_id}
 
-        loaded_user = await u_domain.get_or_create_user(
-            primary_oidc_service_id,
-            external_user_id
-        )
+        loaded_user = await u_domain.get_or_create_user(primary_oidc_service_id, external_user_id)
 
         assert user == loaded_user
 

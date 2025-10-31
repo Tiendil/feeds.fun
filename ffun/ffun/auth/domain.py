@@ -1,8 +1,7 @@
-
+from ffun.auth.settings import settings as auth_settings
 from ffun.domain.entities import IdPId
 from ffun.users import domain as u_domain
 from ffun.users import entities as u_entities
-from ffun.auth.settings import settings as auth_settings
 
 
 async def remove_user_from_external_service(service: IdPId, external_user_id: str) -> None:

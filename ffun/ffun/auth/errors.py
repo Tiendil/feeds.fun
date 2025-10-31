@@ -1,5 +1,3 @@
-import uuid
-
 from ffun.core import errors
 
 

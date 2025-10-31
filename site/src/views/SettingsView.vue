@@ -153,10 +153,10 @@
   import * as e from "@/logic/enums";
   import * as settings from "@/logic/settings";
   import {useRouter} from "vue-router";
-import {useGlobalSettingsStore} from "@/stores/globalSettings";
-import {useGlobalState} from "@/stores/globalState";
+  import {useGlobalSettingsStore} from "@/stores/globalSettings";
+  import {useGlobalState} from "@/stores/globalState";
 
-const globalState = useGlobalState();
+  const globalState = useGlobalState();
   const globalSettings = useGlobalSettingsStore();
 
   provide("eventsViewName", "settings");
@@ -167,8 +167,8 @@ const globalState = useGlobalState();
     return await api.getResourceHistory({kind: "tokens_cost"});
   }, null);
 
-const userId = computed(() => {
-  return globalState.userId == null ? "—" : globalState.userId;
+  const userId = computed(() => {
+    return globalState.userId == null ? "—" : globalState.userId;
   });
 
   const messagesSettings = [

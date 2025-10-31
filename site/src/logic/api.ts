@@ -61,8 +61,8 @@ apiPrivate.interceptors.response.use(
     }
 
     if (config?.ffun401Behaviour === Ffun401Behaviour.RedirectToLogin) {
-        redirectToLogin();
-        return; // never reached
+      redirectToLogin();
+      return; // never reached
     }
 
     if (config?.ffun401Behaviour === Ffun401Behaviour.DoNotRetry) {

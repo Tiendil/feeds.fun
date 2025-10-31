@@ -1,4 +1,3 @@
-
 from ffun.auth.idps.plugin import Plugin as PluginBase
 
 

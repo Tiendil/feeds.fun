@@ -1,9 +1,9 @@
 import datetime
 import importlib
+import operator
 import pathlib
 import sys
 import types
-import operator
 from importlib import metadata
 
 
@@ -76,8 +76,8 @@ def import_from_string(path: str) -> object:
       - 'package.module:attr'             -> attribute/class/function
       - 'package.module:obj.subattr'      -> nested attribute
     """
-    if ':' in path:
-        mod_path, attr_path = path.split(':', 1)
+    if ":" in path:
+        mod_path, attr_path = path.split(":", 1)
         module = importlib.import_module(mod_path)
         return operator.attrgetter(attr_path)(module)
 

@@ -1,4 +1,3 @@
-
 import pydantic
 
 from ffun.domain.entities import UserId

@@ -1,14 +1,12 @@
-import enum
 from typing import Any
 
 import pydantic
 import pydantic_settings
 
-from ffun.core import utils
-from ffun.domain.entities import IdPId
-from ffun.core.settings import BaseSettings
 from ffun.auth.idps.plugin import Plugin
-
+from ffun.core import utils
+from ffun.core.settings import BaseSettings
+from ffun.domain.entities import IdPId
 
 #################################
 # default values for services
@@ -88,19 +86,20 @@ class Settings(BaseSettings):
                 internal_id=primary_oidc_service_id,
                 plugin="ffun.auth.idps.keycloak:construct",
                 extras={
-                    'entrypoint': 'http://keycloak:8080/',
-                    'admin_realm': "master",
-                    'service_realm': "dev",
-                    'client_id': "TODO",
-                    'client_secret': "TODO"
-                }
+                    "entrypoint": "http://keycloak:8080/",
+                    "admin_realm": "master",
+                    "service_realm": "dev",
+                    "client_id": "TODO",
+                    "client_secret": "TODO",
+                },
             ),
             IdP(
                 external_id=single_user_service,
                 internal_id=single_user_service_id,
                 plugin="ffun.auth.idps.no_idp:construct",
             ),
-        ])
+        ]
+    )
 
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_AUTH_")
 

@@ -15,6 +15,7 @@ import typer
 
 from ffun.application.application import with_app
 from ffun.auth.settings import settings as a_settings
+from ffun.auth.settings import single_user_service_id
 from ffun.core import logging, utils
 from ffun.domain.domain import new_entry_id, new_feed_id
 from ffun.domain.entities import TagUid, UnknownUrl, UserId
@@ -27,7 +28,6 @@ from ffun.library.entities import Entry
 from ffun.ontology.domain import apply_tags_to_entry
 from ffun.ontology.entities import NormalizedTag
 from ffun.users import domain as u_domain
-from ffun.auth.settings import single_user_service_id
 
 logger = logging.get_module_logger()
 

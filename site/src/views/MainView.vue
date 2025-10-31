@@ -13,7 +13,6 @@
       <p class="mt-2 text-2xl">Transparent & Personalized News</p>
 
       <div class="h-12 grid grid-flow-col auto-cols-fr gap-3 w-max mx-auto">
-
         <a
           v-if="globalState.loginConfirmed"
           class="ffun-main-auth-button ffun-go-to-feeds"
@@ -27,17 +26,17 @@
           class="ffun-main-auth-button ffun-login"
           href="#"
           @click.prevent="api.redirectToLogin('/news')"
-          >Sign in</a>
+          >Sign in</a
+        >
 
         <a
           v-if="globalState.logoutConfirmed"
           class="ffun-main-auth-button ffun-register"
           href="#"
           @click.prevent="api.redirectToJoin('/news')"
-          >Join now</a>
-
+          >Join now</a
+        >
       </div>
-
     </main-block>
 
     <main-header-line> Smarter way to read news </main-header-line>
@@ -237,14 +236,14 @@
   import {computed, ref, onUnmounted, watch, provide} from "vue";
   import exampleImage from "@/assets/news-filtering-example.png";
   import * as settings from "@/logic/settings";
-import * as api from "@/logic/api";
-import * as e from "@/logic/enums";
+  import * as api from "@/logic/api";
+  import * as e from "@/logic/enums";
   import {useRouter, RouterLink, RouterView} from "vue-router";
-import {useCollectionsStore} from "@/stores/collections";
+  import {useCollectionsStore} from "@/stores/collections";
   import {useGlobalState} from "@/stores/globalState";
   import * as t from "@/logic/types";
 
-const router = useRouter();
+  const router = useRouter();
   const globalState = useGlobalState();
   const collections = useCollectionsStore();
 
@@ -254,8 +253,7 @@ const router = useRouter();
     return router.resolve({name: "public-collection", params: {collectionSlug: collectionSlug}}).href;
   }
 
-function goToWorkspace() {
+  function goToWorkspace() {
     router.push({name: e.MainPanelMode.Entries, params: {}});
   }
-
 </script>

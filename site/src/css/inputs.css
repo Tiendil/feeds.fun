@@ -9,24 +9,24 @@
   }
 
   .ffun-main-auth-button {
-      @apply ffun-x-input-common border-0;
-      @apply text-xl;
-      @apply px-3 py-2;
-      @apply rounded-lg shadow-sm border focus:ring-0;
+    @apply ffun-x-input-common border-0;
+    @apply text-xl;
+    @apply px-3 py-2;
+    @apply rounded-lg shadow-sm border focus:ring-0;
 
-      &.ffun-login {
-          @apply hover:border-slate-400;
-      }
+    &.ffun-login {
+      @apply hover:border-slate-400;
+    }
 
-      &.ffun-register {
-          @apply bg-emerald-600 text-white;
-          @apply hover:border-emerald-700;
-      }
+    &.ffun-register {
+      @apply bg-emerald-600 text-white;
+      @apply hover:border-emerald-700;
+    }
 
-      &.ffun-go-to-feeds {
-          @apply text-blue-700;
-          @apply border-blue-300 hover:border-blue-400;
-      };
+    &.ffun-go-to-feeds {
+      @apply text-blue-700;
+      @apply border-blue-300 hover:border-blue-400;
+    }
   }
 
   .ffun-form-button {

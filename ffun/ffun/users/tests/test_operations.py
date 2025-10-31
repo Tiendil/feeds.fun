@@ -2,6 +2,7 @@ import uuid
 
 import pytest
 
+from ffun.auth.settings import primary_oidc_service_id, single_user_service_id
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import (
     Delta,
@@ -14,7 +15,6 @@ from ffun.core.tests.helpers import (
 from ffun.core.utils import now
 from ffun.domain.domain import new_user_id
 from ffun.domain.entities import UserId
-from ffun.auth.settings import primary_oidc_service_id, single_user_service_id
 from ffun.users import errors
 from ffun.users.operations import (
     add_mapping,
