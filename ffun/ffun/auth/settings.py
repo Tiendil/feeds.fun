@@ -86,11 +86,10 @@ class Settings(BaseSettings):
                 internal_id=primary_oidc_service_id,
                 plugin="ffun.auth.idps.keycloak:construct",  # type: ignore
                 extras={
-                    "entrypoint": "http://keycloak:8080/",
-                    "admin_realm": "master",
+                    "entrypoint": "http://keycloak:8080",
                     "service_realm": "dev",
-                    "client_id": "TODO",
-                    "client_secret": "TODO",
+                    "client_id": "backend-client",
+                    "client_secret": "b6f2e5a6-d536-405b-b8ab-04df432ed091",
                 },
             ),
             IdP(

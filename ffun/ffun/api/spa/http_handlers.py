@@ -574,10 +574,9 @@ async def api_set_user_setting(request: entities.SetUserSettingRequest, user: Us
 async def api_remove_user(
     request: fastapi.Request, _request: entities.RemoveUserRequest, user: User, response: fastapi.Response
 ) -> entities.RemoveUserResponse:
+    await a_domain.logout_user_from_all_sessions(user_id=user.id)
 
     await dp_domain.remove_user(user_id=user.id)
-
-    await a_domain.logout_user_from_all_sessions(user_id=user.id)
 
     # remove all cookies to force client to detect that user is logged out
     # also it ensures that consent cookies dialog is shown again

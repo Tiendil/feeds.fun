@@ -7,7 +7,7 @@ x-openid-common-properties: &openid-common-properties
   session:
     secret: "84b45ebe-abcf-406e-a4e9-6e9916229c07"
   use_pkce: true
-  client_id: apisix-client
+  client_id: gateway-client
   client_secret: a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq
   discovery: http://feeds.fun.local/realms/dev/.well-known/openid-configuration
   scope: "openid"

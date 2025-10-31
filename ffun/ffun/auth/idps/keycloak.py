@@ -16,14 +16,13 @@ class CanNotCallAdminAPI(Error):
 
 
 class Plugin(PluginBase):
-    __slots__ = ("entrypoint", "service_realm", "admin_realm", "client_id", "client_secret", "_access_token")
+    __slots__ = ("entrypoint", "service_realm", "client_id", "client_secret", "_access_token")
 
     def __init__(
-        self, *, entrypoint: str, service_realm: str, admin_realm: str, client_id: str, client_secret: str
+        self, *, entrypoint: str, service_realm: str, client_id: str, client_secret: str
     ) -> None:
         self.entrypoint = entrypoint
         self.service_realm = service_realm
-        self.admin_realm = admin_realm
         self.client_id = client_id
         self.client_secret = client_secret
 
@@ -34,21 +33,23 @@ class Plugin(PluginBase):
         if self._access_token is not None and not force:
             return self._access_token
 
-        url = f"{self.entrypoint}/realms/{self.admin_realm}/protocol/openid-connect/token"
+        url = f"{self.entrypoint}/realms/{self.service_realm}/protocol/openid-connect/token"
 
-        headers = {
+        data = {
             "grant_type": "client_credentials",
             "client_id": self.client_id,
             "client_secret": self.client_secret,
         }
 
-        async with http.client(headers=headers) as client:
-            response = await client.post(url)
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+
+        async with http.client() as client:
+            response = await client.post(url, data=data, headers=headers)
 
             if response.status_code != 200:
                 raise CanNotGetAccessToken()
 
-            data = await response.json()
+            data = response.json()
 
             self._access_token = data["access_token"]
 
@@ -84,7 +85,6 @@ def construct(**kwargs: str) -> Plugin:
     return Plugin(
         entrypoint=kwargs["entrypoint"],
         service_realm=kwargs["service_realm"],
-        admin_realm=kwargs["admin_realm"],
         client_id=kwargs["client_id"],
         client_secret=kwargs["client_secret"],
     )

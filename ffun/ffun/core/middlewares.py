@@ -14,6 +14,10 @@ logger = logging.get_module_logger()
 async def _handle_api_error(request: fastapi.Request, error: errors.APIError) -> JSONResponse:
     # TODO: improve error processing
 
+    import traceback
+
+    traceback.print_stack()
+
     api_error = api.APIError(code=error.code, message=error.message)  # type: ignore
 
     logger.info("api_error", code=error.code, message=error.message)  # type: ignore
@@ -41,7 +45,7 @@ async def _handle_unexpected_error(request: fastapi.Request, error: BaseExceptio
 
 # TODO: move somewhere?
 def initialize_error_processors(app: fastapi.FastAPI) -> fastapi.FastAPI:
-    app.exception_handler(errors.Error)(_handle_api_error)
+    app.exception_handler(errors.APIError)(_handle_api_error)
     return app
 
 
