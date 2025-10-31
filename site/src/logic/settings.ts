@@ -10,6 +10,7 @@ export const version = __APP_VERSION__;
 export const authRefreshInterval = import.meta.env.VITE_FFUN_AUTH_REFRESH_INTERVAL || 10 * 60 * 1000;
 
 export const blog = import.meta.env.VITE_FFUN_BLOG || "https://blog.feeds.fun";
+export const roadmap = import.meta.env.VITE_FFUN_ROADMAP || "https://github.com/users/Tiendil/projects/1";
 export const githubRepo = import.meta.env.VITE_FFUN_GITHUB_REPO || "https://github.com/Tiendil/feeds.fun";
 export const discordInvite = import.meta.env.VITE_FFUN_DISCORD_INVITE || "https://discord.gg/C5RVusHQXy";
 export const redditSubreddit = import.meta.env.VITE_FFUN_REDDIT_SUBREDDIT || "https://www.reddit.com/r/feedsfun/";
@@ -37,6 +38,7 @@ console.log("settings.version", version);
 console.log("settings.authRefreshInterval", authRefreshInterval);
 
 console.log("settings.blog", blog);
+console.log("settings.roadmap", roadmap);
 console.log("settings.githubRepo", githubRepo);
 console.log("settings.discordInvite", discordInvite);
 console.log("settings.redditSubreddit", redditSubreddit);

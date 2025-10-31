@@ -26,12 +26,12 @@
   import * as asserts from "@/logic/asserts";
 
   const links = {
-    api: {
+    roadmap: {
       enabled: true,
-      url: "/api/docs",
-      text: "API",
+      url: settings.roadmap,
+      text: "Roadmap",
       icon: null,
-      eventType: "api"
+      eventType: "roadmap"
     },
     blog: {
       enabled: settings.blog !== null,

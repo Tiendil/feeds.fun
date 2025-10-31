@@ -1,25 +1,21 @@
 
 
+- [ ] registration form
+- [ ] login form
 - [ ] magic link login
 - [ ] social login
-
+- [ ] styles for registration/login pages
+- [ ] check if any other pages need styles
+- [ ] update GDPR-related docs
+- [ ] create an epic/tasks with auth tech debt
+- [ ] update single user example
+- [ ] update multi user example
+      - Maybe replace multi-user setup instructions with reference to the default dev environment?
+- [ ] update README.md
+- [ ] Implement example MCP server
 
 Things to think about:
 
-- logout initiated from the IdP side
-- PKCE
-- update GDPR-related docs
-- create an epic/tasks with auth tech debt
-- `spa` module for SPA API, instead of `api` module for universal API
-- OIDC Discovery: load endpoints/algorithms from /.well-known/openid-configuration at runtime. Store just issuer, client_id, client auth method, and redirect/logout URIs.
-- Increment primary version of project, because of breaking changes in auth?
-- KeyCloak magic link auth/registration
-- Add KeyCloak default users into README.md & multi-user instructions?
-- Replace multi-user setup instructions with reference to the default dev environment?
-- Implement example MCP server
-- FastAPI docs generation
-- In oidc mode we should save not "mode" in the users mapping, but an actual idp id.
-- Remove API docs & api links from the menu?
 - single-user & oidc & supertokens modes works via single docker-compose (in dev)
 - try to keep html/css for keycloak theming in this repo
 - Backup KeyCloak DB
@@ -54,3 +50,4 @@ Things to think about:
 - check mobile interfaces (main page, login, registration)
 - click on login and then back in browser, globalState.loginState is damaged (wrong)
 - keycloak, duplicated logout (from the second tab) leads to error id_token_hint
+- behaviour on cookie expiration

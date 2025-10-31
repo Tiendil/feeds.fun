@@ -79,7 +79,7 @@
             </template>
           </template>
 
-          <page-header-external-links :show-api="globalState.loginConfirmed" />
+          <page-header-external-links/>
         </div>
 
         <div class="ffun-page-header-right-block">
