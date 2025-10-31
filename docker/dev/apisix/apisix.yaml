@@ -12,7 +12,7 @@ x-openid-common-properties: &openid-common-properties
   discovery: http://feeds.fun.local/realms/dev/.well-known/openid-configuration
   scope: "openid"
   logout_path: /spa/auth/logout
-  post_logout_redirect_uri: http://feeds.fun.local
+  post_logout_redirect_uri: http://feeds.fun.local?logged-out
   # set user info header to extract user id later,
   # after that the header will be removed
   set_userinfo_header: true

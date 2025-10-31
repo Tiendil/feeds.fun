@@ -30,7 +30,7 @@ export function redirectToJoin(returnTo?: string) {
   window.location.assign(`/spa/auth/join?return_to=${encodeURIComponent(returnTo)}`);
 }
 
-export function logout() {
+export function logoutRedirect() {
   window.location.assign("/spa/auth/logout");
 }
 

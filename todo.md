@@ -5,7 +5,6 @@
 
 Login state on the frontend:
 
-- [ ] sync login state between multiple tabs
 - [ ] do we need to recheck login state on some events?
   - periodically (by timer)
   - on route change
@@ -63,3 +62,4 @@ Things to think about:
 - configure registration/login links for frontend?
 - check mobile interfaces (main page, login, registration)
 - click on login and then back in browser, globalState.loginState is damaged (wrong)
+- keycloak, duplicated logout (from the second tab) leads to error id_token_hint

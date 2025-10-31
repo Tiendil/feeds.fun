@@ -1,14 +1,48 @@
 import {ref, watch, computed} from "vue";
-import {useRouter} from "vue-router";
+import {useRouter, useRoute} from "vue-router";
 import {defineStore} from "pinia";
-import {computedAsync} from "@vueuse/core";
+import {computedAsync, useBroadcastChannel} from "@vueuse/core";
 
 import {Timer} from "@/logic/timer";
 import * as settings from "@/logic/settings";
 import * as api from "@/logic/api";
 import * as e from "@/logic/enums";
 
+const GLOBAL_BROADCAST_CHANNEL_ID = "ffun-global-event-channel";
+const GLOBAL_BROADCAST_EVENT_LOGOUT_COMPLETED = "logoutCompleted";
+
+const LOGGED_OUT_QUERY_MARKER = "logged-out";
+
 export const useGlobalState = defineStore("globalState", () => {
+  const router = useRouter();
+  const route = useRoute();
+
+  ////////////////////////////////
+  // sync login state between tabs
+  ////////////////////////////////
+  const globalChannel = useBroadcastChannel<any>({ name: GLOBAL_BROADCAST_CHANNEL_ID });
+
+  watch(globalChannel.data, (event) => {
+    if (event.type === GLOBAL_BROADCAST_EVENT_LOGOUT_COMPLETED) {
+      refreshAuthState();
+    }
+  });
+
+  // check if the marker is in the URL (means that user has just redirected after logout)
+  watch(route, (r) => {
+    if (!(LOGGED_OUT_QUERY_MARKER in r.query)) {
+      return;
+    }
+
+    globalChannel.post({ type: GLOBAL_BROADCAST_EVENT_LOGOUT_COMPLETED });
+
+    // remove the marker from the URL
+    const query = { ...r.query };
+    delete query[LOGGED_OUT_QUERY_MARKER];
+    router.replace({ query });
+  });
+  ////////////////////////////////
+
   const infoRefreshMarker = ref(0);
 
   function refreshAuthState() {
@@ -52,7 +86,7 @@ export const useGlobalState = defineStore("globalState", () => {
       return;
     }
 
-    api.logout();
+    api.logoutRedirect();
 
     // TODO: we may want to notify other tabs about logout event
   }
@@ -64,6 +98,6 @@ export const useGlobalState = defineStore("globalState", () => {
     loginConfirmed,
     logoutConfirmed,
     refreshAuthState,
-    logout
+    logout,
   };
 });
