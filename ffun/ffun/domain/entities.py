@@ -11,7 +11,7 @@ RuleId = NewType("RuleId", uuid.UUID)
 TagId = NewType("TagId", int)
 TagUid = NewType("TagUid", str)
 TagUidPart = NewType("TagUidPart", str)
-AuthServiceId = NewType("AuthServiceId", int)
+IdPId = NewType("IdPId", int)  # Identity provider ID
 
 # URL types for better normalization control in code
 # conversion schemas:

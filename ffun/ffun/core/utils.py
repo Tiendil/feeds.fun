@@ -3,6 +3,7 @@ import importlib
 import pathlib
 import sys
 import types
+import operator
 from importlib import metadata
 
 
@@ -66,3 +67,18 @@ def version() -> str:
     _version = metadata.version("ffun")
 
     return _version
+
+
+def import_from_string(path: str) -> object:
+    """
+    Supports:
+      - 'package.module'                  -> module object
+      - 'package.module:attr'             -> attribute/class/function
+      - 'package.module:obj.subattr'      -> nested attribute
+    """
+    if ':' in path:
+        mod_path, attr_path = path.split(':', 1)
+        module = importlib.import_module(mod_path)
+        return operator.attrgetter(attr_path)(module)
+
+    return importlib.import_module(path)

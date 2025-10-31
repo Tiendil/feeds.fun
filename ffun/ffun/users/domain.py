@@ -1,4 +1,4 @@
-from ffun.domain.entities import UserId, AuthServiceId
+from ffun.domain.entities import UserId, IdPId
 from ffun.users import errors, operations
 from ffun.users.entities import User
 
@@ -10,14 +10,14 @@ get_user_external_ids = operations.get_user_external_ids
 unlink_user = operations.unlink_user
 
 
-async def get_or_create_user_id(service: AuthServiceId, external_id: str) -> UserId:
+async def get_or_create_user_id(service: IdPId, external_id: str) -> UserId:
     try:
         return await get_mapping(service, external_id)
     except errors.NoUserMappingFound:
         return await add_mapping(service, external_id)
 
 
-async def get_or_create_user(service: AuthServiceId, external_id: str) -> User:
+async def get_or_create_user(service: IdPId, external_id: str) -> User:
     user_id = await get_or_create_user_id(service, external_id)
 
     return User(id=user_id)

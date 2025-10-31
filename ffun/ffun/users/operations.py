@@ -3,7 +3,7 @@ import psycopg
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
 from ffun.domain.domain import new_user_id
-from ffun.domain.entities import UserId, AuthServiceId
+from ffun.domain.entities import UserId, IdPId
 from ffun.users import errors
 
 logger = logging.get_module_logger()
@@ -19,7 +19,7 @@ async def store_user(execute: ExecuteType, internal_id: UserId) -> None:
     await execute(sql, {"internal_id": internal_id})
 
 
-async def add_mapping(service: AuthServiceId, external_id: str) -> UserId:
+async def add_mapping(service: IdPId, external_id: str) -> UserId:
     sql = """
         INSERT INTO u_mapping (service_id, external_id, internal_id)
         VALUES (%(service_id)s, %(external_id)s, %(internal_id)s)
@@ -42,7 +42,7 @@ async def add_mapping(service: AuthServiceId, external_id: str) -> UserId:
     return internal_id
 
 
-async def get_mapping(service: AuthServiceId, external_id: str) -> UserId:
+async def get_mapping(service: IdPId, external_id: str) -> UserId:
     sql = """
         SELECT internal_id
         FROM u_mapping
@@ -58,7 +58,7 @@ async def get_mapping(service: AuthServiceId, external_id: str) -> UserId:
     return result[0]["internal_id"]  # type: ignore
 
 
-async def get_user_external_ids(internal_id: UserId) -> dict[AuthServiceId, str]:
+async def get_user_external_ids(internal_id: UserId) -> dict[IdPId, str]:
     sql = """
     SELECT service_id, external_id
     FROM u_mapping
@@ -70,7 +70,7 @@ async def get_user_external_ids(internal_id: UserId) -> dict[AuthServiceId, str]
     return {row["service_id"]: row["external_id"] for row in result}
 
 
-async def unlink_user(service: AuthServiceId, internal_id: UserId) -> None:
+async def unlink_user(service: IdPId, internal_id: UserId) -> None:
     sql = """
     DELETE FROM u_mapping
     WHERE service_id = %(service_id)s

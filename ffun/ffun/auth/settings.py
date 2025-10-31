@@ -1,9 +1,11 @@
 import enum
+from typing import Any
 
 import pydantic
 import pydantic_settings
 
-from ffun.domain.entities import AuthServiceId
+from ffun.core import utils
+from ffun.domain.entities import IdPId
 from ffun.core.settings import BaseSettings
 
 
@@ -14,38 +16,95 @@ from ffun.core.settings import BaseSettings
 primary_oidc_service = "primary_oidc"
 single_user_service = "single_user"
 
-primary_oidc_service_id = AuthServiceId(1)
-single_user_service_id = AuthServiceId(2)
+primary_oidc_service_id = IdPId(1)
+single_user_service_id = IdPId(2)
 #################################
 
 
-class AuthMode(str, enum.Enum):
-    single_user = "single_user"
-    oidc = "oidc"
+class IdP(BaseSettings):
+    # id that service receives from the infrastructure
+    external_id: str
 
+    # id that we store in the database and use internally
+    internal_id: IdPId
 
-class SingleUser(pydantic.BaseModel):
-    external_id: str = "user-for-development"
+    # IdP plugin used to support extended functionality
+    # like removing users, logging user out from all sessions, etc.
+    plugin: object
 
+    # additional configs for the identity provider plugin, passed as is to the plugin constructor
+    extras: dict[str, str] = pydantic.Field(default_factory=dict)
 
-class OIDC(pydantic.BaseModel):
-    header_user_id: str = "X-FFun-User-Id"
-    header_identity_provider_id: str = "X-FFun-Identity-Provider-Id"
+    # @pydantic.field_validator('plugin', mode='before')
+    @pydantic.model_validator(mode="before")
+    @classmethod
+    def build_plugin(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+
+        v = data.get("plugin")
+
+        if not isinstance(v, str):
+            raise ValueError("plugin must be defined as a string module.path:callable_constructor")
+
+        extras = data.get("extras", {}) or {}
+
+        try:
+            constructor = utils.import_from_string(v)
+        except Exception as e:
+            raise ValueError(f"Cannot import '{v}': {e}") from e
+
+        try:
+            data["plugin"] = constructor(**extras)
+        except Exception as e:
+            raise ValueError(f"Cannot construct plugin from '{v}': {e}") from e
+
+        return data
 
 
 class Settings(BaseSettings):
-    mode: AuthMode = AuthMode.single_user
-    single_user: SingleUser = SingleUser()
-    oidc: OIDC = OIDC()
+    # force_* settings may be used for:
+    #
+    # - turning on single user mode
+    # - debugging
+    # - testing
+    #
+    # Because of security implications, they are forced to be None by default.
+    # For testing, these settings should be overridden in fixtures nearest to tests.
+    # i.e., most of the code should be tested without these settings set.
+    force_external_user_id: str | None = None
+    # Most likely, you may want to set this up to the value of the single_user service_id
+    force_external_identity_provider_id: str | None = None
 
-    auth_service_map: dict[str, AuthServiceId] = pydantic.Field(
-        default_factory=lambda: {
-            primary_oidc_service: primary_oidc_service_id,
-            single_user_service: single_user_service_id,
-        }
-    )
+    header_user_id: str = "X-FFun-User-Id"
+    header_identity_provider_id: str = "X-FFun-Identity-Provider-Id"
+
+    idps: list[IdP] = pydantic.Field(
+        default_factory=lambda: [
+            IdP(
+                external_id=primary_oidc_service,
+                internal_id=primary_oidc_service_id,
+                plugin="ffun.auth.idps.keycloak:construct",
+            ),
+            IdP(
+                external_id=single_user_service,
+                internal_id=single_user_service_id,
+                plugin="ffun.auth.idps.no_idp:construct",
+            ),
+        ])
 
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_AUTH_")
+
+    @property
+    def is_single_user_mode(self) -> bool:
+        return self.force_external_user_id is not None
+
+    def get_idp_by_external_id(self, external_id: str) -> IdP | None:
+        for idp in self.idps:
+            if idp.external_id == external_id:
+                return idp
+
+        return None
 
 
 settings = Settings()

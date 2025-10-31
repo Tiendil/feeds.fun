@@ -4,40 +4,22 @@ import pytest
 
 from starlette.datastructures import Headers
 
-from ffun.auth.dependencies import _single_user, _oidc_user, _oidc_optional_user
+from ffun.auth.dependencies import _idp_user, _idp_optional_user
 from ffun.auth.settings import primary_oidc_service_id, single_user_service_id, settings, primary_oidc_service, single_user_service
 from ffun.auth import errors
 from ffun.users import domain as u_domain
 
 
-class TestSingleUser:
-
-    @pytest.mark.asyncio
-    async def test_single_user(self) -> None:
-        user = await _single_user()
-
-        external_ids = await u_domain.get_user_external_ids(user.id)
-
-        assert external_ids == {single_user_service_id: settings.single_user.external_id}
-
-        loaded_user = await u_domain.get_or_create_user(
-            single_user_service_id,
-            settings.single_user.external_id
-        )
-
-        assert user == loaded_user
-
-
-class _TestOIDCUser:
+class _TestIdPUser:
     user_accessor = NotImplemented
 
     @pytest.mark.asyncio
     async def test_no_identity_provider_id_header(self, external_user_id: str) -> None:
         request = mock.MagicMock()
 
-        request.headers = Headers({settings.oidc.header_user_id: external_user_id})
+        request.headers = Headers({settings.header_user_id: external_user_id})
 
-        with pytest.raises(errors.OIDCNoIdentityProviderIdHeader):
+        with pytest.raises(errors.IdPNoIdentityProviderIdHeader):
             await self.user_accessor(request)
 
     @pytest.mark.asyncio
@@ -45,11 +27,11 @@ class _TestOIDCUser:
         request = mock.MagicMock()
 
         request.headers = Headers({
-            settings.oidc.header_user_id: external_user_id,
-            settings.oidc.header_identity_provider_id: "unknown-provider"
+            settings.header_user_id: external_user_id,
+            settings.header_identity_provider_id: "unknown-provider"
         })
 
-        with pytest.raises(errors.OIDCNoIdentityProviderInSettings):
+        with pytest.raises(errors.IdPNoIdentityProviderInSettings):
             await self.user_accessor(request)
 
     @pytest.mark.asyncio
@@ -57,8 +39,8 @@ class _TestOIDCUser:
         request = mock.MagicMock()
 
         request.headers = Headers({
-            settings.oidc.header_user_id: external_user_id,
-            settings.oidc.header_identity_provider_id: primary_oidc_service
+            settings.header_user_id: external_user_id,
+            settings.header_identity_provider_id: primary_oidc_service
         })
 
         user = await self.user_accessor(request)
@@ -75,8 +57,8 @@ class _TestOIDCUser:
         assert user == loaded_user
 
 
-class TestOIDCUser(_TestOIDCUser):
-    user_accessor = staticmethod(_oidc_user)
+class TestIdPUser(_TestIdPUser):
+    user_accessor = staticmethod(_idp_user)
 
     @pytest.mark.asyncio
     async def test_no_user_id_header(self) -> None:
@@ -84,12 +66,12 @@ class TestOIDCUser(_TestOIDCUser):
 
         request.headers = Headers({})
 
-        with pytest.raises(errors.OIDCNoUserIdHerader):
+        with pytest.raises(errors.IdPNoUserIdHerader):
             await self.user_accessor(request)
 
 
-class TestOIDCOptionalUser(_TestOIDCUser):
-    user_accessor = staticmethod(_oidc_optional_user)
+class TestIdPOptionalUser(_TestIdPUser):
+    user_accessor = staticmethod(_idp_optional_user)
 
     @pytest.mark.asyncio
     async def test_no_user_id_header(self) -> None:

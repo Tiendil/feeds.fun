@@ -7,13 +7,13 @@ class Error(errors.Error):
     pass
 
 
-class OIDCNoUserIdHerader(Error):
+class IdPNoUserIdHerader(Error):
     pass
 
 
-class OIDCNoIdentityProviderIdHeader(Error):
+class IdPNoIdentityProviderIdHeader(Error):
     pass
 
 
-class OIDCNoIdentityProviderInSettings(Error):
+class IdPNoIdentityProviderInSettings(Error):
     pass
