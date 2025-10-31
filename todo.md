@@ -3,15 +3,6 @@
 - [ ] magic link login
 - [ ] social login
 
-Login state on the frontend:
-
-- [ ] do we need to recheck login state on some events?
-  - periodically (by timer)
-  - on route change
-  - on focus `window.addEventListener('focus', ...)`
-  - on network reconnect `window.addEventListener('online', ...)`
-  - on tab visibility change (tab becomes visible) `document.addEventListener('visibilitychange', ...)`
-
 
 Things to think about:
 

@@ -17,6 +17,12 @@ export const useGlobalState = defineStore("globalState", () => {
   const router = useRouter();
   const route = useRoute();
 
+  const infoRefreshMarker = ref(0);
+
+  function refreshAuthState() {
+    infoRefreshMarker.value++;
+  }
+
   ////////////////////////////////
   // sync login state between tabs
   ////////////////////////////////
@@ -43,13 +49,19 @@ export const useGlobalState = defineStore("globalState", () => {
   });
   ////////////////////////////////
 
-  const infoRefreshMarker = ref(0);
-
-  function refreshAuthState() {
-    infoRefreshMarker.value++;
-  }
-
+  // Periodic check auth state by timer
   const authStateRefresher = new Timer(refreshAuthState, settings.authRefreshInterval);
+
+  // Check auth state on the particular events
+  window.addEventListener("focus", refreshAuthState);
+  window.addEventListener("online", refreshAuthState);
+  window.addEventListener("visibilitychange", refreshAuthState);
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) {
+      // BFCache restore (the user goes Back/Forward and the browser instantly revives a frozen snapshot).
+      refreshAuthState();
+    }
+  });
 
   const info = computedAsync(async () => {
     infoRefreshMarker.value;
