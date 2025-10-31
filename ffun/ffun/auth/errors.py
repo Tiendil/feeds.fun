@@ -15,3 +15,7 @@ class IdPNoIdentityProviderIdHeader(Error):
 
 class IdPNoIdentityProviderInSettings(Error):
     pass
+
+
+class NoIdPFound(Error):
+    pass

@@ -14,11 +14,10 @@ import uuid
 import typer
 
 from ffun.application.application import with_app
-from ffun.auth.settings import settings as a_settings
 from ffun.auth.settings import single_user_service_id
 from ffun.core import logging, utils
 from ffun.domain.domain import new_entry_id, new_feed_id
-from ffun.domain.entities import TagUid, UnknownUrl, UserId
+from ffun.domain.entities import TagUid, UnknownUrl
 from ffun.domain.urls import adjust_classic_relative_url, str_to_feed_url, url_to_source_uid
 from ffun.feeds.domain import get_feeds, get_source_ids, save_feed
 from ffun.feeds.entities import Feed, FeedState
@@ -99,10 +98,11 @@ async def fake_entry(feed: Feed) -> Entry:
     return returned_entry
 
 
-async def run_fill_db(feeds_number: int, entries_per_feed: int, tags_per_entry: int) -> None:
+async def run_fill_db(feeds_number: int,
+                      entries_per_feed: int,
+                      tags_per_entry: int,
+                      external_user_id: str) -> None:
     async with with_app():
-        external_user_id = a_settings.single_user.external_id
-
         internal_user_id = await u_domain.get_or_create_user_id(single_user_service_id, external_user_id)
 
         for _ in range(feeds_number):
@@ -124,19 +124,8 @@ async def run_fill_db(feeds_number: int, entries_per_feed: int, tags_per_entry: 
 
 
 @cli_app.command()
-def fill_db(feeds_number: int = 10, entries_per_feed: int = 100, tags_per_entry: int = 25) -> None:
-    asyncio.run(run_fill_db(feeds_number, entries_per_feed, tags_per_entry))
-
-
-async def run_supertokens_user_to_dev(intenal_user_id: UserId) -> None:
-    async with with_app():
-        external_user_id = a_settings.single_user.external_id
-
-        to_user_id = await u_domain.get_or_create_user_id(single_user_service_id, external_user_id)
-
-        await u_domain.tech_move_user(from_user_id=intenal_user_id, to_user_id=to_user_id)
-
-
-@cli_app.command()
-def supertokens_user_to_dev(intenal_user_id: str) -> None:
-    asyncio.run(run_supertokens_user_to_dev(UserId(uuid.UUID(intenal_user_id))))
+def fill_db(feeds_number: int = 10,
+            entries_per_feed: int = 100,
+            tags_per_entry: int = 25,
+            external_user_id: str = "dev-user") -> None:
+    asyncio.run(run_fill_db(feeds_number, entries_per_feed, tags_per_entry, external_user_id))

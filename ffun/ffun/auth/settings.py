@@ -54,7 +54,7 @@ class IdP(BaseSettings):
             raise ValueError(f"Cannot import '{v}': {e}") from e
 
         try:
-            data["plugin"] = constructor(**extras)
+            data["plugin"] = constructor(**extras)  # type: ignore
         except Exception as e:
             raise ValueError(f"Cannot construct plugin from '{v}': {e}") from e
 
@@ -84,7 +84,7 @@ class Settings(BaseSettings):
             IdP(
                 external_id=primary_oidc_service,
                 internal_id=primary_oidc_service_id,
-                plugin="ffun.auth.idps.keycloak:construct",
+                plugin="ffun.auth.idps.keycloak:construct",  # type: ignore
                 extras={
                     "entrypoint": "http://keycloak:8080/",
                     "admin_realm": "master",
@@ -96,7 +96,7 @@ class Settings(BaseSettings):
             IdP(
                 external_id=single_user_service,
                 internal_id=single_user_service_id,
-                plugin="ffun.auth.idps.no_idp:construct",
+                plugin="ffun.auth.idps.no_idp:construct",  # type: ignore
             ),
         ]
     )

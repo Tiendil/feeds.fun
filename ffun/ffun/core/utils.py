@@ -70,7 +70,8 @@ def version() -> str:
 
 
 def import_from_string(path: str) -> object:
-    """
+    """Import a module or an attribute from a module, given its string path.
+
     Supports:
       - 'package.module'                  -> module object
       - 'package.module:attr'             -> attribute/class/function

@@ -7,10 +7,16 @@ from ffun.auth.domain import (
     remove_user_from_external_service,
 )
 from ffun.auth.settings import primary_oidc_service_id, single_user_service_id
-from ffun.domain.entities import UserId
+from ffun.auth import errors
+from ffun.domain.entities import UserId, IdPId
 
 
 class TestRemoveUserFromExternalService:
+
+    @pytest.mark.asyncio
+    async def test_no_idp_found(self, external_user_id: str) -> None:
+        with pytest.raises(errors.NoIdPFound):
+            await remove_user_from_external_service(IdPId(666), external_user_id)
 
     @pytest.mark.asyncio
     async def test_remove_user(self, external_user_id: str, mocker: MockerFixture) -> None:
@@ -22,6 +28,11 @@ class TestRemoveUserFromExternalService:
 
 
 class TestLogoutUserFromAllSessionsInService:
+
+    @pytest.mark.asyncio
+    async def test_no_idp_found(self, external_user_id: str) -> None:
+        with pytest.raises(errors.NoIdPFound):
+            await logout_user_from_all_sessions_in_service(IdPId(666), external_user_id)
 
     @pytest.mark.asyncio
     async def test_logout_user(self, external_user_id: str, mocker: MockerFixture) -> None:
