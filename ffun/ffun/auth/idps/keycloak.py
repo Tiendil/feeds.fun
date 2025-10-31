@@ -1,7 +1,7 @@
 
 from ffun.domain import http
 from ffun.core import errors
-from ffun.auth.idps.plugin import Plugin
+from ffun.auth.idps.plugin import Plugin as PluginBase
 
 
 class Error(errors.Error):
@@ -16,7 +16,7 @@ class CanNotCallAdminAPI(Error):
     pass
 
 
-class Keycloak(Plugin):
+class Plugin(PluginBase):
     __slots__ = ('entrypoint', 'service_realm', 'admin_realm', 'client_id', 'client_secret', '_access_token')
 
     def __init__(self, *, entrypoint: str, service_realm: str, admin_realm: str, client_id: str, client_secret: str) -> None:
@@ -68,10 +68,10 @@ class Keycloak(Plugin):
         url = f"{self.entrypoint}/admin/realms/{self.service_realm}/users/{external_user_id}"
         await self._call_admin("DELETE", url)
 
-    async def logout_user_from_all_sessions(self, external_user_id: str) -> None:
+    async def revoke_all_user_sessions(self, external_user_id: str) -> None:
         url = f"{self.entrypoint}/admin/realms/{self.service_realm}/users/{external_user_id}/logout"
         await self._call_admin("POST", url)
 
 
-def construct(**kwargs: object) -> Keycloak:
-    return Keycloak(**kwargs)
+def construct(**kwargs: object) -> Plugin:
+    return Plugin(**kwargs)

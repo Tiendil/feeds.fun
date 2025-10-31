@@ -6,11 +6,12 @@ from ffun.auth.settings import settings as auth_settings
 
 
 async def remove_user_from_external_service(service: IdPId, external_user_id: str) -> None:
+    print(auth_settings.get_idp_by_internal_id(service).plugin)
     await auth_settings.get_idp_by_internal_id(service).plugin.remove_user(external_user_id)
 
 
 async def logout_user_from_all_sessions_in_service(service: IdPId, external_user_id: str) -> None:
-    await auth_settings.get_idp_by_internal_id(service).plugin.logout_user_from_all_sessions(external_user_id)
+    await auth_settings.get_idp_by_internal_id(service).plugin.revoke_all_user_sessions(external_user_id)
 
 
 async def logout_user_from_all_sessions(user_id: u_entities.UserId) -> None:
