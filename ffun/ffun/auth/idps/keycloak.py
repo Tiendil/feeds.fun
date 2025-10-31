@@ -69,8 +69,10 @@ class Plugin(PluginBase):
                 await self.get_access_token(force=True)
                 return await self._call_admin(method, path, retry_on_token_loss=False)
 
-            if response.status_code != 200:
-                raise CanNotCallAdminAPI()
+            if response.status_code in (200, 204):
+                return
+
+            raise CanNotCallAdminAPI()
 
     async def remove_user(self, external_user_id: str) -> None:
         url = f"{self.entrypoint}/admin/realms/{self.service_realm}/users/{external_user_id}"

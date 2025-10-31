@@ -40,6 +40,27 @@
       "credentials": [
         { "type": "password", "value": "bob", "temporary": false }
       ]
+    },
+    {
+      "id": "6741529d-2674-4558-bfe5-e0e36b9902fa",
+      "username": "service-account-backend-client",
+      "emailVerified": false,
+      "enabled": true,
+      "createdTimestamp": 1761927266709,
+      "totp": false,
+      "serviceAccountClientId": "backend-client",
+      "disableableCredentialTypes": [],
+      "requiredActions": [],
+      "realmRoles": [
+        "default-roles-dev"
+      ],
+      "clientRoles": {
+        "realm-management": [
+          "manage-users"
+        ]
+      },
+      "notBefore": 0,
+      "groups": []
     }
   ],
 
