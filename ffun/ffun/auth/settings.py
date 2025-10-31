@@ -7,8 +7,13 @@ from ffun.domain.entities import AuthServiceId
 from ffun.core.settings import BaseSettings
 
 
-# default values for service ids
+#################################
+# default values for services
 # used to simplify unit tests
+#################################
+primary_oidc_service = "primary_oidc"
+single_user_service = "single_user"
+
 primary_oidc_service_id = AuthServiceId(1)
 single_user_service_id = AuthServiceId(2)
 
@@ -34,8 +39,8 @@ class Settings(BaseSettings):
 
     auth_service_map: dict[str, AuthServiceId] = pydantic.Field(
         default_factory=lambda: {
-            "primary_oidc": primary_oidc_service_id,
-            "single_user": single_user_service_id,
+            primary_oidc_service: primary_oidc_service_id,
+            single_user_service: single_user_service_id,
         }
     )
 
