@@ -186,6 +186,7 @@
   function removeAccount() {
     if (confirm("Are you sure you want to remove your account? THIS OPERATION IS NOT REVERSIBLE!")) {
       api.removeUser();
+      globalState.logout();
     }
   }
 
