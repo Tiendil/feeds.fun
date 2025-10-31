@@ -2,16 +2,15 @@
 from ffun.domain.entities import IdPId
 from ffun.users import domain as u_domain
 from ffun.users import entities as u_entities
+from ffun.auth.settings import settings as auth_settings
 
 
 async def remove_user_from_external_service(service: IdPId, external_user_id: str) -> None:
-    # TODO: implement user removal from external services
-    raise NotImplementedError("This functionality is not implemented yet.")
+    await auth_settings.get_idp_by_internal_id(service).plugin.remove_user(external_user_id)
 
 
 async def logout_user_from_all_sessions_in_service(service: IdPId, external_user_id: str) -> None:
-    # TODO: implement user logout from all sessions in external services
-    raise NotImplementedError("This functionality is not implemented yet.")
+    await auth_settings.get_idp_by_internal_id(service).plugin.logout_user_from_all_sessions(external_user_id)
 
 
 async def logout_user_from_all_sessions(user_id: u_entities.UserId) -> None:

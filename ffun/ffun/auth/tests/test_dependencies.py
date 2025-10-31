@@ -66,7 +66,7 @@ class TestIdPUser(_TestIdPUser):
 
         request.headers = Headers({})
 
-        with pytest.raises(errors.IdPNoUserIdHerader):
+        with pytest.raises(errors.IdPNoUserIdHeader):
             await self.user_accessor(request)
 
 

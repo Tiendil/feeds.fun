@@ -20,7 +20,7 @@ async def _idp_user(request: fastapi.Request) -> u_entities.User:
         external_user_id = request.headers.get(settings.header_user_id)
 
     if external_user_id is None:
-        raise errors.IdPNoUserIdHerader()
+        raise errors.IdPNoUserIdHeader()
 
     # determine identity_provider_id
 
@@ -45,7 +45,7 @@ async def _idp_user(request: fastapi.Request) -> u_entities.User:
 async def _idp_optional_user(request: fastapi.Request) -> u_entities.User | None:
     try:
         return await _idp_user(request)
-    except errors.IdPNoUserIdHerader:
+    except errors.IdPNoUserIdHeader:
         return None
 
 

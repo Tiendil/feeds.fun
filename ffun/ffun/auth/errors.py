@@ -7,7 +7,7 @@ class Error(errors.Error):
     pass
 
 
-class IdPNoUserIdHerader(Error):
+class IdPNoUserIdHeader(Error):
     pass
 
 

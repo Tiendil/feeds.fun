@@ -7,6 +7,7 @@ import pydantic_settings
 from ffun.core import utils
 from ffun.domain.entities import IdPId
 from ffun.core.settings import BaseSettings
+from ffun.auth.idps.plugin import Plugin
 
 
 #################################
@@ -30,7 +31,7 @@ class IdP(BaseSettings):
 
     # IdP plugin used to support extended functionality
     # like removing users, logging user out from all sessions, etc.
-    plugin: object
+    plugin: Plugin
 
     # additional configs for the identity provider plugin, passed as is to the plugin constructor
     extras: dict[str, str] = pydantic.Field(default_factory=dict)
@@ -81,10 +82,18 @@ class Settings(BaseSettings):
 
     idps: list[IdP] = pydantic.Field(
         default_factory=lambda: [
+            # keycloak config for the dev environment
             IdP(
                 external_id=primary_oidc_service,
                 internal_id=primary_oidc_service_id,
                 plugin="ffun.auth.idps.keycloak:construct",
+                extras={
+                    'entrypoint': 'http://keycloak:8080/',
+                    'admin_realm': "master",
+                    'service_realm': "dev",
+                    'client_id': "TODO",
+                    'client_secret': "TODO"
+                }
             ),
             IdP(
                 external_id=single_user_service,
@@ -102,6 +111,13 @@ class Settings(BaseSettings):
     def get_idp_by_external_id(self, external_id: str) -> IdP | None:
         for idp in self.idps:
             if idp.external_id == external_id:
+                return idp
+
+        return None
+
+    def get_idp_by_internal_id(self, internal_id: IdPId) -> IdP | None:
+        for idp in self.idps:
+            if idp.internal_id == internal_id:
                 return idp
 
         return None
