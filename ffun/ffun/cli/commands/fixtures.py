@@ -98,10 +98,7 @@ async def fake_entry(feed: Feed) -> Entry:
     return returned_entry
 
 
-async def run_fill_db(feeds_number: int,
-                      entries_per_feed: int,
-                      tags_per_entry: int,
-                      external_user_id: str) -> None:
+async def run_fill_db(feeds_number: int, entries_per_feed: int, tags_per_entry: int, external_user_id: str) -> None:
     async with with_app():
         internal_user_id = await u_domain.get_or_create_user_id(single_user_service_id, external_user_id)
 
@@ -124,8 +121,7 @@ async def run_fill_db(feeds_number: int,
 
 
 @cli_app.command()
-def fill_db(feeds_number: int = 10,
-            entries_per_feed: int = 100,
-            tags_per_entry: int = 25,
-            external_user_id: str = "dev-user") -> None:
+def fill_db(
+    feeds_number: int = 10, entries_per_feed: int = 100, tags_per_entry: int = 25, external_user_id: str = "dev-user"
+) -> None:
     asyncio.run(run_fill_db(feeds_number, entries_per_feed, tags_per_entry, external_user_id))

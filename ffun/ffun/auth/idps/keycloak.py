@@ -81,8 +81,10 @@ class Plugin(PluginBase):
 
 
 def construct(**kwargs: str) -> Plugin:
-    return Plugin(entrypoint=kwargs["entrypoint"],
-                  service_realm=kwargs["service_realm"],
-                  admin_realm=kwargs["admin_realm"],
-                  client_id=kwargs["client_id"],
-                  client_secret=kwargs["client_secret"])
+    return Plugin(
+        entrypoint=kwargs["entrypoint"],
+        service_realm=kwargs["service_realm"],
+        admin_realm=kwargs["admin_realm"],
+        client_id=kwargs["client_id"],
+        client_secret=kwargs["client_secret"],
+    )

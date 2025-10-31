@@ -1,5 +1,5 @@
-from ffun.auth.settings import settings as auth_settings
 from ffun.auth import errors
+from ffun.auth.settings import settings as auth_settings
 from ffun.domain.entities import IdPId
 from ffun.users import domain as u_domain
 from ffun.users import entities as u_entities
