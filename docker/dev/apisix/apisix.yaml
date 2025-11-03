@@ -69,10 +69,37 @@ routes:
       openid-connect:
         <<: *openid-common-properties
         unauth_action: auth
-        # this redirect path will be processed by `/spa/auth/*` route
         redirect_uri: /spa/auth/redirect
         authorization_params:
           prompt: create
+
+  # this path is too specific to hide it under /spa/auth/*
+  - uri: /spa/auth/redirect
+    upstream_id: 1
+    plugins:
+      serverless-post-function:
+        <<: *serverless-post-function
+
+      openid-connect:
+        <<: *openid-common-properties
+        unauth_action: auth
+        redirect_uri: /spa/auth/redirect
+
+      # in some cases /spa/auth/redirect may return 500 errors
+      # Examples:
+      # - accessing with invalid session cookie
+      # - login, follow chain of redirects, push "back" button in browser
+      #   (apixis see old auth creds in cookie, fails to validate them, returns 500)
+      # So we hide such errors behind redirect to home page
+      # should work for the most cases
+      response-rewrite:
+        vars:
+          - ["status", "==", 500]
+          - ["request_method", "==", "GET"]
+        status_code: 302
+        headers:
+          Location: "/"
+        body: ""
 
   - uri: /spa/auth/*
     upstream_id: 1
