@@ -2,7 +2,7 @@
   <wide-layout>
     <div class="ffun-page-header">
       <div class="ffun-page-header-center-block">
-        <page-header-external-links :show-api="false" />
+        <page-header-external-links />
       </div>
     </div>
 

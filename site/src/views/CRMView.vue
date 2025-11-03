@@ -3,7 +3,7 @@
     <div class="ffun-page-header">
       <div class="ffun-page-header-center-block">
         <page-header-home-button />
-        <page-header-external-links :show-api="false" />
+        <page-header-external-links />
       </div>
     </div>
 
