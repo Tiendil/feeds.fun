@@ -36,3 +36,4 @@
 - [ ] document test scenarious for auth
 - [ ] Check mobile interfaces (main page, login, registration)
 - [ ] Check behaviour on cookie expiration
+- [ ] livetime of refresh token & session cookie
