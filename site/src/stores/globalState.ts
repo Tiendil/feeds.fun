@@ -84,6 +84,10 @@ export const useGlobalState = defineStore("globalState", () => {
     return info.value.userId ? e.LoginState.LoggedIn : e.LoginState.LoggedOut;
   });
 
+  const loginUnknown = computed(() => {
+    return loginState.value === e.LoginState.Unknown;
+  });
+
   const loginConfirmed = computed(() => {
     return loginState.value === e.LoginState.LoggedIn;
   });
@@ -107,6 +111,7 @@ export const useGlobalState = defineStore("globalState", () => {
     userId,
     isSingleUserMode,
     loginState,
+    loginUnknown,
     loginConfirmed,
     logoutConfirmed,
     refreshAuthState,

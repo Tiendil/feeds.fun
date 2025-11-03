@@ -1,5 +1,5 @@
 <template>
-  <div class="ffun-side-panel-layout">
+  <div v-if="showGUI" class="ffun-side-panel-layout">
     <div
       v-if="showSidebar"
       class="ffun-side-panel">
@@ -112,7 +112,7 @@
     </div>
   </div>
 
-  <page-footer />
+  <page-footer v-if="showGUI" />
 </template>
 
 <script lang="ts" setup>
@@ -122,6 +122,7 @@
   import {useGlobalState} from "@/stores/globalState";
   import * as events from "@/logic/events";
   import * as e from "@/logic/enums";
+  import * as api from "@/logic/api";
   import * as settings from "@/logic/settings";
 
   const globalSettings = useGlobalSettingsStore();
@@ -151,14 +152,20 @@
     return globalSettings.showSidebar || !globalSettings.userSettingsPresent;
   });
 
+  const showGUI = computed(() => {
+    return globalState.loginConfirmed || !properties.loginRequired;
+  });
+
   watchEffect(() => {
     if (!properties.loginRequired) {
       return;
     }
 
     if (globalState.logoutConfirmed) {
-      // Redirect to the main page in case we lost the session
-      router.push({name: "main", params: {}});
+      // Redirect to login page in case the user is not logged in.
+      // We redirect to login instead of the main page to be consisten
+      // with default API behavior on redirection in case of getting 401 status.
+      api.redirectToLogin();
     }
   });
 </script>
