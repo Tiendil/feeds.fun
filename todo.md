@@ -3,7 +3,6 @@
 - [x] chain of redirects with visible blinking when we try to access a protected page by direct url (not from the main page)
 - [x] back button after successfull login leads to 500
 - [x] click on login and then back in browser, globalState.loginState is damaged (wrong)
-- [ ] duplicated logout (from the second tab) leads to error id_token_hint
 - [ ] registration form
 - [ ] login form
 - [ ] magic link login
