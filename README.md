@@ -1,3 +1,5 @@
+**We are in the process of refactoring the authentication system. Some info related to it (about auth, users, etc.) may be outdated. We'll fix it till the next release.**
+
 # Feeds Fun
 
 News reader with tags & AI. Self-hosted, if it is your way.

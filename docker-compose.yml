@@ -1,7 +1,6 @@
 volumes:
   ffun_postgresql_data: {}
 
-
 networks:
   ffun_network:
     driver: bridge
@@ -9,6 +8,41 @@ networks:
       config:
         - subnet: 172.22.0.0/16
 
+x-backend-api-environment: &backend-api-environment
+  FFUN_ENABLE_API_SPA: "${FFUN_ENABLE_API_SPA:-True}"
+  FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
+  FFUN_SENTRY__DSN: "${FFUN_SENTRY__DSN:-not-specified}"
+  # set to /repository/feeds_collections/collections in case you want to use the default collection
+  FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS: "${FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS-}"
+
+x-backend-api: &backend-api
+  image: ffun-backend-dev
+
+  depends_on:
+    postgresql:
+      condition: service_healthy
+
+  command:
+    - /bin/bash
+    - -c
+    - |
+      poetry run ffun migrate
+      echo "migrations successed"
+      poetry run uvicorn ffun.application.application:app --host 0.0.0.0 --port 8000 --workers 1 --reload
+
+  volumes:
+    - ${PWD}/ffun:/repository
+    - ${PWD}/.env:/repository/.env
+    - ${PWD}/.configs:/repository/.configs
+    - ${PWD}/feeds_collections:/repository/feeds_collections
+
+  environment:
+    <<: *backend-api-environment
+
+  networks:
+    ffun_network:
+        aliases:
+          - backend
 
 services:
 
@@ -93,6 +127,9 @@ services:
 
     profiles: ["multi-user"]
 
+    depends_on:
+      - backend-multi-user
+
     volumes:
       - ./docker/dev/apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
       - ./docker/dev/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
@@ -119,7 +156,7 @@ services:
     profiles: ["single-user"]
 
     depends_on:
-      - backend
+      - backend-single-user
 
     command: tcp-listen:8000,fork,reuseaddr tcp-connect:backend:8000
 
@@ -138,36 +175,18 @@ services:
     profiles:
       - dev-build
 
-  backend:
-    image: ffun-backend-dev
+  backend-multi-user:
+    <<: *backend-api
+    profiles: ["multi-user"]
 
-    depends_on:
-      postgresql:
-        condition: service_healthy
-
-    command:
-      - /bin/bash
-      - -c
-      - |
-        poetry run ffun migrate
-        echo "migrations successed"
-        poetry run uvicorn ffun.application.application:app --host 0.0.0.0 --port 8000 --workers 1 --reload
-
-    volumes:
-      - ${PWD}/ffun:/repository
-      - ${PWD}/.env:/repository/.env
-      - ${PWD}/.configs:/repository/.configs
-      - ${PWD}/feeds_collections:/repository/feeds_collections
+  backend-single-user:
+    <<: *backend-api
+    profiles: ["single-user"]
 
     environment:
-      FFUN_ENABLE_API_SPA: "${FFUN_ENABLE_API_SPA:-True}"
-      FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
-      FFUN_SENTRY__DSN: "${FFUN_SENTRY__DSN:-not-specified}"
-      # set to /repository/feeds_collections/collections in case you want to use the default collection
-      FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS: "${FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS-}"
-
-    networks:
-      ffun_network: {}
+      <<: *backend-api-environment
+      FFUN_AUTH_FORCE_EXTERNAL_USER_ID: "dev-user"
+      FFUN_AUTH_FORCE_EXTERNAL_IDENTITY_PROVIDER_ID: "single_user"
 
   backend-utils:
     image: ffun-backend-dev
@@ -209,10 +228,6 @@ services:
 
   frontend:
     image: ffun-frontend-dev
-
-    depends_on:
-      backend:
-        condition: service_started
 
     command: "npm run dev -- --host 0.0.0.0 --port 80"
 

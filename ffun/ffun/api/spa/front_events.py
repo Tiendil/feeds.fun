@@ -23,7 +23,7 @@ class NewsBodyOpened(BaseEntity):
 class SocialLinkClicked(BaseEntity):
     name: Literal["social_link_clicked"]
     view: EventsViewName
-    link_type: Literal["api", "blog", "reddit", "discord", "github"]
+    link_type: Literal["api", "blog", "reddit", "discord", "github", "roadmap"]
 
 
 class TagFilterStateChanged(BaseEntity):
