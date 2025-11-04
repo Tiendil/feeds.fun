@@ -1,3 +1,5 @@
+**We are in the process of refactoring the authentication system. Some info related to it (about auth, users, etc.) may be outdated. We'll fix it till the next release.**
+
 # Feeds Fun
 
 News reader with tags & AI. Self-hosted, if it is your way.
@@ -187,13 +189,11 @@ FFUN_POSTGRESQL__DATABASE=...
 FFUN_ENVIRONMENT="prod"
 
 # Required for API server.
-FFUN_ENABLE_API="True"
+FFUN_ENABLE_API_SPA="True"
 
 # Set if you want multi-user setup.
 FFUN_ENABLE_SUPERTOKENS="True"
-FFUN_API_PORT="443"
 FFUN_APP_DOMAIN=...
-FFUN_APP_PORT="443"
 FFUN_AUTH_MODE: "supertokens"
 FFUN_AUTH_SUPERTOKENS__COOKIE_SECURE="True"
 FFUN_AUTH_SUPERTOKENS__API_KEY=...
@@ -253,6 +253,18 @@ All logic is split between tag processors. Each processor implements a single ap
 
 # Development
 
+## Preparations
+
+To use less hacks in dev configuration and be more consistent with production setup, we use custome domain `feeds.fun.local` for local development.
+
+Add the following line to your `/etc/hosts` file:
+
+```
+127.0.0.1 feeds.fun.local
+```
+
+Then, you can access the site at http://feeds.fun.local/
+
 ## Run
 
 ```
@@ -270,10 +282,14 @@ Build some docker images
 Start the API server and frontend:
 
 ```
-docker compose up -d
+# single-user mode
+docker compose --profile single-user up -d
+
+# multi-user mode
+# docker compose --profile multi-user up -d
 ```
 
-The site will be accessible at http://localhost:5173/
+The site will be accessible at http://feeds.fun.local/
 
 Start workers:
 

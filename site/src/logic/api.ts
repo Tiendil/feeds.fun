@@ -5,61 +5,209 @@ import type * as e from "@/logic/enums";
 import * as settings from "@/logic/settings";
 import * as cookieConsent from "@/plugins/CookieConsent";
 
-const ENTRY_POINT = "/api";
+///////////////
+// API handlers
+///////////////
 
-const API_GET_FEEDS = `${ENTRY_POINT}/get-feeds`;
-const API_GET_LAST_ENTRIES = `${ENTRY_POINT}/get-last-entries`;
-const API_GET_LAST_COLLECTION_ENTRIES = `${ENTRY_POINT}/get-last-collection-entries`;
-const API_GET_ENTRIES_BY_IDS = `${ENTRY_POINT}/get-entries-by-ids`;
-const API_CREATE_OR_UPDATE_RULE = `${ENTRY_POINT}/create-or-update-rule`;
+const apiPublic = axios.create({baseURL: "/spa/api/public", withCredentials: true});
+const apiPrivate = axios.create({baseURL: "/spa/api/private", withCredentials: true});
 
-const API_DELETE_RULE = `${ENTRY_POINT}/delete-rule`;
-const API_UPDATE_RULE = `${ENTRY_POINT}/update-rule`;
-const API_GET_RULES = `${ENTRY_POINT}/get-rules`;
-const API_GET_SCORE_DETAILS = `${ENTRY_POINT}/get-score-details`;
-const API_SET_MARKER = `${ENTRY_POINT}/set-marker`;
-const API_REMOVE_MARKER = `${ENTRY_POINT}/remove-marker`;
-const API_DISCOVER_FEEDS = `${ENTRY_POINT}/discover-feeds`;
-const API_ADD_FEED = `${ENTRY_POINT}/add-feed`;
-const API_ADD_OPML = `${ENTRY_POINT}/add-opml`;
-const API_UNSUBSCRIBE = `${ENTRY_POINT}/unsubscribe`;
-const API_GET_COLLECTIONS = `${ENTRY_POINT}/get-collections`;
-const API_GET_COLLECTION_FEEDS = `${ENTRY_POINT}/get-collection-feeds`;
-const API_SUBSCRIBE_TO_COLLECTIONS = `${ENTRY_POINT}/subscribe-to-collections`;
-const API_GET_TAGS_INFO = `${ENTRY_POINT}/get-tags-info`;
-const API_GET_USER_SETTINGS = `${ENTRY_POINT}/get-user-settings`;
-const API_SET_USER_SETTING = `${ENTRY_POINT}/set-user-setting`;
-const API_GET_RESOURCE_HISTORY = `${ENTRY_POINT}/get-resource-history`;
-const API_GET_INFO = `${ENTRY_POINT}/get-info`;
-const API_TRACK_EVENT = `${ENTRY_POINT}/track-event`;
-const API_REMOVE_USER = `${ENTRY_POINT}/remove-user`;
-
-let _onSessionLost: () => void = () => {};
-
-export function init({onSessionLost}: {onSessionLost: () => void}) {
-  _onSessionLost = onSessionLost;
+// It is an open question what should we do in case of session expiration:
+// - redirect to login page
+// - redirect to home page & show notification
+// Currently the easiest way to handle it is to always redirect to login page.
+export function redirectToLogin(returnTo?: string) {
+  if (!returnTo) {
+    returnTo = window.location.pathname + window.location.search;
+  }
+  window.location.assign(`/spa/auth/login?return_to=${encodeURIComponent(returnTo)}`);
 }
 
-async function post({url, data}: {url: string; data: any}) {
-  try {
-    const response = await axios.post(url, data);
-    return response.data;
-  } catch (error) {
-    console.log(error);
+export function redirectToJoin(returnTo?: string) {
+  if (!returnTo) {
+    returnTo = window.location.pathname + window.location.search;
+  }
+  window.location.assign(`/spa/auth/join?return_to=${encodeURIComponent(returnTo)}`);
+}
 
-    if (error instanceof Error && "response" in error) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response && axiosError.response.status === 401) {
-        await _onSessionLost();
-      }
+export function logoutRedirect() {
+  window.location.assign("/spa/auth/logout");
+}
+
+let _refreshingAuth: Promise<void> | null = null;
+
+enum Ffun401Behaviour {
+  RedirectToLogin = "redirectToLogin",
+  DoNotRetry = "doNotRetry"
+}
+
+// We try to refresh auth on 401 responses for private API.
+// For the public API we do nothing, because it most likely means infrastructure issue.
+apiPrivate.interceptors.response.use(
+  (r) => r,
+  async (error) => {
+    const {config, response} = error;
+
+    if (!response) {
+      throw error;
     }
 
-    throw error;
+    if (response.status !== 401) {
+      throw error;
+    }
+
+    if (config?.ffunRequestRetried) {
+      throw error;
+    }
+
+    if (config?.ffun401Behaviour === Ffun401Behaviour.RedirectToLogin) {
+      redirectToLogin();
+      return; // never reached
+    }
+
+    if (config?.ffun401Behaviour === Ffun401Behaviour.DoNotRetry) {
+      throw error;
+    }
+
+    (config as any).ffunRequestRetried = true;
+
+    if (!_refreshingAuth) {
+      _refreshingAuth = apiPrivate
+        // @ts-ignore
+        .post("/refresh-auth", undefined, {ffun401Behaviour: Ffun401Behaviour.RedirectToLogin})
+        .then(() => {})
+        .finally(() => {
+          _refreshingAuth = null;
+        });
+    }
+
+    await _refreshingAuth; // all 401s await the same refresh
+
+    return apiPrivate(config); // retry the original request generically
   }
+);
+
+async function postPublic({url, data}: {url: string; data: any}) {
+  const response = await apiPublic.post(url, data);
+  return response.data;
 }
 
+async function postPrivate({url, data}: {url: string; data: any}) {
+  const response = await apiPrivate.post(url, data);
+  return response.data;
+}
+
+/////////////
+// Public API
+/////////////
+
+export async function getLastCollectionEntries({
+  period,
+  collectionSlug,
+  minTagCount
+}: {
+  period: number;
+  collectionSlug: t.CollectionSlug | null;
+  minTagCount: number;
+}) {
+  const response = await postPublic({
+    url: "/get-last-collection-entries",
+    data: {period: period, collectionSlug: collectionSlug, minTagCount: minTagCount}
+  });
+
+  const entries = [];
+
+  for (let rawEntry of response.entries) {
+    const entry = t.entryFromJSON(rawEntry, response.data.tagsMapping);
+    entries.push(entry);
+  }
+
+  return entries;
+}
+
+export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
+  const response = await postPublic({
+    url: "/get-entries-by-ids",
+    data: {ids: ids}
+  });
+
+  const entries = [];
+
+  for (let rawEntry of response.entries) {
+    const entry = t.entryFromJSON(rawEntry, response.tagsMapping);
+    entries.push(entry);
+  }
+
+  return entries;
+}
+
+export async function getCollections() {
+  const response = await postPublic({url: "/get-collections", data: {}});
+
+  const collections = [];
+
+  for (let rawCollection of response.collections) {
+    const collection = t.collectionFromJSON(rawCollection);
+    collections.push(collection);
+  }
+
+  return collections;
+}
+
+export async function getCollectionFeeds({collectionId}: {collectionId: t.CollectionId}) {
+  const response = await postPublic({
+    url: "/get-collection-feeds",
+    data: {collectionId: collectionId}
+  });
+
+  const feeds = [];
+
+  for (let rawFeed of response.feeds) {
+    const feed = t.collectionFeedInfoFromJSON(rawFeed);
+    feeds.push(feed);
+  }
+
+  return feeds;
+}
+
+export async function getTagsInfo({uids}: {uids: string[]}) {
+  const response = await postPublic({url: "/get-tags-info", data: {uids: uids}});
+
+  const tags: {[key: string]: t.TagInfo} = {};
+
+  for (let uid in response.tags) {
+    const rawTag = response.tags[uid];
+    const tag = t.tagInfoFromJSON(rawTag);
+    tags[uid] = tag;
+  }
+
+  return tags;
+}
+
+export async function getInfo() {
+  const response = await postPublic({url: "/get-info", data: {}});
+
+  return t.stateInfoFromJSON(response);
+}
+
+export async function trackEvent(data: {[key: string]: string | number | null}) {
+  if (!settings.trackEvents) {
+    return;
+  }
+
+  if (!cookieConsent.isAnalyticsAllowed()) {
+    return;
+  }
+
+  await postPublic({url: "/track-event", data: {event: data}});
+}
+
+//////////////
+// Private API
+//////////////
+
 export async function getFeeds() {
-  const response = await post({url: API_GET_FEEDS, data: {}});
+  const response = await postPrivate({url: "/get-feeds", data: {}});
 
   const feeds = [];
 
@@ -72,52 +220,12 @@ export async function getFeeds() {
 }
 
 export async function getLastEntries({period, minTagCount}: {period: number; minTagCount: number}) {
-  const response = await post({
-    url: API_GET_LAST_ENTRIES,
+  const response = await postPrivate({
+    url: "/get-last-entries",
     data: {
       period: period,
       minTagCount: minTagCount
     }
-  });
-
-  const entries = [];
-
-  for (let rawEntry of response.entries) {
-    const entry = t.entryFromJSON(rawEntry, response.tagsMapping);
-    entries.push(entry);
-  }
-
-  return entries;
-}
-
-export async function getLastCollectionEntries({
-  period,
-  collectionSlug,
-  minTagCount
-}: {
-  period: number;
-  collectionSlug: t.CollectionSlug | null;
-  minTagCount: number;
-}) {
-  const response = await post({
-    url: API_GET_LAST_COLLECTION_ENTRIES,
-    data: {period: period, collectionSlug: collectionSlug, minTagCount: minTagCount}
-  });
-
-  const entries = [];
-
-  for (let rawEntry of response.entries) {
-    const entry = t.entryFromJSON(rawEntry, response.tagsMapping);
-    entries.push(entry);
-  }
-
-  return entries;
-}
-
-export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
-  const response = await post({
-    url: API_GET_ENTRIES_BY_IDS,
-    data: {ids: ids}
   });
 
   const entries = [];
@@ -139,8 +247,8 @@ export async function createOrUpdateRule({
   excludedTags: string[];
   score: number;
 }) {
-  const response = await post({
-    url: API_CREATE_OR_UPDATE_RULE,
+  const response = await postPrivate({
+    url: "/create-or-update-rule",
     data: {
       requiredTags: requiredTags,
       excludedTags: excludedTags,
@@ -151,7 +259,7 @@ export async function createOrUpdateRule({
 }
 
 export async function deleteRule({id}: {id: t.RuleId}) {
-  const response = await post({url: API_DELETE_RULE, data: {id: id}});
+  const response = await postPrivate({url: "/delete-rule", data: {id: id}});
   return response;
 }
 
@@ -166,15 +274,15 @@ export async function updateRule({
   excludedTags: string[];
   score: number;
 }) {
-  const response = await post({
-    url: API_UPDATE_RULE,
+  const response = await postPrivate({
+    url: "/update-rule",
     data: {id: id, score: score, requiredTags: requiredTags, excludedTags: excludedTags}
   });
   return response;
 }
 
 export async function getRules() {
-  const response = await post({url: API_GET_RULES, data: {}});
+  const response = await postPrivate({url: "/get-rules", data: {}});
 
   const rules = [];
 
@@ -187,8 +295,8 @@ export async function getRules() {
 }
 
 export async function getScoreDetails({entryId}: {entryId: t.EntryId}) {
-  const response = await post({
-    url: API_GET_SCORE_DETAILS,
+  const response = await postPrivate({
+    url: "/get-score-details",
     data: {entryId: entryId}
   });
 
@@ -203,21 +311,21 @@ export async function getScoreDetails({entryId}: {entryId: t.EntryId}) {
 }
 
 export async function setMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
-  await post({
-    url: API_SET_MARKER,
+  await postPrivate({
+    url: "/set-marker",
     data: {entryId: entryId, marker: marker}
   });
 }
 
 export async function removeMarker({entryId, marker}: {entryId: t.EntryId; marker: e.Marker}) {
-  await post({
-    url: API_REMOVE_MARKER,
+  await postPrivate({
+    url: "/remove-marker",
     data: {entryId: entryId, marker: marker}
   });
 }
 
 export async function discoverFeeds({url}: {url: string}) {
-  const response = await post({url: API_DISCOVER_FEEDS, data: {url: url}});
+  const response = await postPrivate({url: "/discover-feeds", data: {url: url}});
 
   const feeds = [];
   const messages = [];
@@ -236,71 +344,28 @@ export async function discoverFeeds({url}: {url: string}) {
 }
 
 export async function addFeed({url}: {url: string}) {
-  const response = await post({url: API_ADD_FEED, data: {url: url}});
+  const response = await postPrivate({url: "/add-feed", data: {url: url}});
 
   return t.feedFromJSON(response.feed);
 }
 
 export async function addOPML({content}: {content: string}) {
-  await post({url: API_ADD_OPML, data: {content: content}});
+  await postPrivate({url: "/add-opml", data: {content: content}});
 }
 
 export async function unsubscribe({feedId}: {feedId: t.FeedId}) {
-  await post({url: API_UNSUBSCRIBE, data: {feedId: feedId}});
-}
-
-export async function getCollections() {
-  const response = await post({url: API_GET_COLLECTIONS, data: {}});
-
-  const collections = [];
-
-  for (let rawCollection of response.collections) {
-    const collection = t.collectionFromJSON(rawCollection);
-    collections.push(collection);
-  }
-
-  return collections;
-}
-
-export async function getCollectionFeeds({collectionId}: {collectionId: t.CollectionId}) {
-  const response = await post({
-    url: API_GET_COLLECTION_FEEDS,
-    data: {collectionId: collectionId}
-  });
-
-  const feeds = [];
-
-  for (let rawFeed of response.feeds) {
-    const feed = t.collectionFeedInfoFromJSON(rawFeed);
-    feeds.push(feed);
-  }
-
-  return feeds;
+  await postPrivate({url: "/unsubscribe", data: {feedId: feedId}});
 }
 
 export async function subscribeToCollections({collectionsIds}: {collectionsIds: t.CollectionId[]}) {
-  await post({
-    url: API_SUBSCRIBE_TO_COLLECTIONS,
+  await postPrivate({
+    url: "/subscribe-to-collections",
     data: {collections: collectionsIds}
   });
 }
 
-export async function getTagsInfo({uids}: {uids: string[]}) {
-  const response = await post({url: API_GET_TAGS_INFO, data: {uids: uids}});
-
-  const tags: {[key: string]: t.TagInfo} = {};
-
-  for (let uid in response.tags) {
-    const rawTag = response.tags[uid];
-    const tag = t.tagInfoFromJSON(rawTag);
-    tags[uid] = tag;
-  }
-
-  return tags;
-}
-
 export async function getUserSettings() {
-  const response = await post({url: API_GET_USER_SETTINGS, data: {}});
+  const response = await postPrivate({url: "/get-user-settings", data: {}});
 
   const settings: {[key: string]: t.UserSetting} = {};
 
@@ -313,12 +378,12 @@ export async function getUserSettings() {
 }
 
 export async function setUserSetting({kind, value}: {kind: string; value: string | number | boolean}) {
-  await post({url: API_SET_USER_SETTING, data: {kind: kind, value: value}});
+  await postPrivate({url: "/set-user-setting", data: {kind: kind, value: value}});
 }
 
 export async function getResourceHistory({kind}: {kind: string}) {
-  const response = await post({
-    url: API_GET_RESOURCE_HISTORY,
+  const response = await postPrivate({
+    url: "/get-resource-history",
     data: {kind: kind}
   });
 
@@ -332,24 +397,6 @@ export async function getResourceHistory({kind}: {kind: string}) {
   return history;
 }
 
-export async function getInfo() {
-  const response = await post({url: API_GET_INFO, data: {}});
-
-  return response;
-}
-
-export async function trackEvent(data: {[key: string]: string | number | null}) {
-  if (!settings.trackEvents) {
-    return;
-  }
-
-  if (!cookieConsent.isAnalyticsAllowed()) {
-    return;
-  }
-
-  await post({url: API_TRACK_EVENT, data: {event: data}});
-}
-
 export async function removeUser() {
-  await post({url: API_REMOVE_USER, data: {}});
+  await postPrivate({url: "/remove-user", data: {}});
 }

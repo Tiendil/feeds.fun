@@ -19,7 +19,6 @@ import DiscoveryForm from "./components/DiscoveryForm.vue";
 import FeedInfo from "./components/FeedInfo.vue";
 import OpmlUpload from "./components/OPMLUpload.vue";
 import FeedForList from "./components/FeedForList.vue";
-import SupertokensLogin from "./components/SupertokensLogin.vue";
 import SimplePagination from "./components/SimplePagination.vue";
 import UserSetting from "./components/UserSetting.vue";
 import TokensCost from "./components/TokensCost.vue";
@@ -78,8 +77,6 @@ import SidePanelCollapseButton from "./components/side_pannel/CollapseButton.vue
 import WideLayout from "./layouts/WideLayout.vue";
 import SidePanelLayout from "./layouts/SidePanelLayout.vue";
 
-import {useSupertokens} from "@/stores/supertokens";
-
 import VueCountdown from "@chenfengyuan/vue-countdown";
 
 const app = createApp(App);
@@ -95,7 +92,6 @@ app.component("DiscoveryForm", DiscoveryForm);
 app.component("FeedInfo", FeedInfo);
 app.component("OpmlUpload", OpmlUpload);
 app.component("FeedForList", FeedForList);
-app.component("SupertokensLogin", SupertokensLogin);
 app.component("SimplePagination", SimplePagination);
 app.component("UserSetting", UserSetting);
 app.component("TokensCost", TokensCost);
@@ -158,55 +154,6 @@ app.component("vue-countdown", VueCountdown);
 
 app.use(createPinia());
 app.use(router);
-
-if (!settings.isSingleUserMode) {
-  app.use(CookieConsent.plugin, CookieConsent.defaultConfig);
-}
+app.use(CookieConsent.plugin, CookieConsent.defaultConfig);
 
 app.mount("#app");
-
-import * as api from "@/logic/api";
-import * as settings from "@/logic/settings";
-
-/////////////////////
-// supertokens
-/////////////////////
-
-// must be copy of smart_url from backend
-function smartUrl(domain: string, port: number) {
-  if (port == 80) {
-    return `http://${domain}`;
-  }
-
-  if (port == 443) {
-    return `https://${domain}`;
-  }
-
-  return `http://${domain}:${port}`;
-}
-
-let supertokens: ReturnType<typeof useSupertokens> | null = null;
-
-if (settings.authMode === settings.AuthMode.Supertokens) {
-  supertokens = useSupertokens();
-
-  supertokens.init({
-    apiDomain: smartUrl(settings.appDomain, settings.appPort),
-    apiBasePath: settings.authSupertokensApiBasePath,
-    appName: settings.appName,
-    resendAfter: settings.authSupertokensResendAfter
-  });
-} else if (settings.authMode === settings.AuthMode.SingleUser) {
-} else {
-  throw `Unknown auth mode: ${settings.authMode}`;
-}
-
-async function onSessionLost() {
-  if (supertokens !== null) {
-    await supertokens.logout();
-  }
-
-  router.push({name: "main", params: {}});
-}
-
-api.init({onSessionLost: onSessionLost});

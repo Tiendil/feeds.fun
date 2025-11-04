@@ -5,6 +5,16 @@ export type AnyEnum = {
   [key in keyof any]: string | number;
 };
 
+//////////////
+// Login state
+//////////////
+
+export enum LoginState {
+  Unknown = "unknown",
+  LoggedOut = "logged-out",
+  LoggedIn = "logged-in"
+}
+
 ///////////////////
 // Main panel modes
 ///////////////////

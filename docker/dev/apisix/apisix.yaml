@@ -1,0 +1,135 @@
+
+x-openid-common-properties: &openid-common-properties
+  # ATTENTION: our cookies live long and we store credentials in them.
+  #            on changes in IdP configuration, those credentials can become invalid
+  #            for a huge number of users, which may cause strange errors and redirects.
+  #            => in case of such change,s ensure that APISIX will not see / skip old cookies
+  session:
+    secret: "84b45ebe-abcf-406e-a4e9-6e9916229c07"
+  use_pkce: true
+  client_id: gateway-client
+  client_secret: a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq
+  discovery: http://feeds.fun.local/realms/dev/.well-known/openid-configuration
+  scope: "openid"
+  logout_path: /spa/auth/logout
+  post_logout_redirect_uri: http://feeds.fun.local?logged-out
+  # set user info header to extract user id later,
+  # after that the header will be removed
+  set_userinfo_header: true
+  set_access_token_header: false
+  set_id_token_header: false
+  set_refresh_token_header: false
+
+x-serverless-post-function: &serverless-post-function
+  phase: access
+  functions:
+    - |
+      return function(conf, ctx)
+        local cjson = require "cjson.safe"
+
+        local raw = ngx.req.get_headers()["x-userinfo"]
+
+        if raw then
+          local raw_json = ngx.decode_base64(raw)
+          local u = cjson.decode(raw_json)
+
+          if u and u.sub then
+            ngx.req.set_header("X-FFun-User-Id", u.sub)
+          end
+
+          ngx.req.clear_header("X-Userinfo")
+        end
+
+        -- your small, static identifier for this gateway/config
+        ngx.req.set_header("X-FFun-Identity-Provider-Id", "primary_oidc")
+      end
+
+upstreams:
+  - name: backend
+    id: 1
+    nodes:
+      "backend:8000": 1
+    type: roundrobin
+
+routes:
+
+  - uri: /spa/docs/*
+    upstream_id: 1
+
+  - uri: /spa/test/*
+    upstream_id: 1
+
+  # special url to send users straight to registration
+  - uri: /spa/auth/join
+    upstream_id: 1
+    plugins:
+      serverless-post-function:
+        <<: *serverless-post-function
+
+      openid-connect:
+        <<: *openid-common-properties
+        unauth_action: auth
+        redirect_uri: /spa/auth/redirect
+        authorization_params:
+          prompt: create
+
+  # this path is too specific to hide it under /spa/auth/*
+  - uri: /spa/auth/redirect
+    upstream_id: 1
+    plugins:
+      serverless-post-function:
+        <<: *serverless-post-function
+
+      openid-connect:
+        <<: *openid-common-properties
+        unauth_action: auth
+        redirect_uri: /spa/auth/redirect
+
+      # in some cases /spa/auth/redirect may return 500 errors
+      # Examples:
+      # - accessing with invalid session cookie
+      # - login, follow chain of redirects, push "back" button in browser
+      #   (apixis see old auth creds in cookie, fails to validate them, returns 500)
+      # So we hide such errors behind redirect to home page
+      # should work for the most cases
+      response-rewrite:
+        vars:
+          - ["status", "==", 500]
+          - ["request_method", "==", "GET"]
+        status_code: 302
+        headers:
+          Location: "/"
+        body: ""
+
+  - uri: /spa/auth/*
+    upstream_id: 1
+    plugins:
+      serverless-post-function:
+        <<: *serverless-post-function
+
+      openid-connect:
+        <<: *openid-common-properties
+        unauth_action: auth
+        redirect_uri: /spa/auth/redirect
+
+  - uri: /spa/api/public/*
+    upstream_id: 1
+    plugins:
+      serverless-post-function:
+        <<: *serverless-post-function
+
+      openid-connect:
+        <<: *openid-common-properties
+        unauth_action: pass
+
+  - uri: /spa/api/private/*
+    upstream_id: 1
+    plugins:
+      serverless-post-function:
+        <<: *serverless-post-function
+
+      openid-connect:
+        <<: *openid-common-properties
+        unauth_action: deny
+
+#END

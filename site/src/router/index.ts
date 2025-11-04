@@ -1,6 +1,5 @@
 import {createRouter, createWebHistory} from "vue-router";
 import MainView from "../views/MainView.vue";
-import AuthView from "../views/AuthView.vue";
 import FeedsView from "../views/FeedsView.vue";
 import NewsView from "../views/NewsView.vue";
 import RulesView from "../views/RulesView.vue";
@@ -22,11 +21,6 @@ const router = createRouter({
       path: "/",
       name: "main",
       component: MainView
-    },
-    {
-      path: "/auth",
-      name: "auth",
-      component: AuthView
     },
     {
       path: "/feeds",

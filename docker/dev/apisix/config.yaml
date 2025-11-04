@@ -1,0 +1,9 @@
+
+apisix:
+  node_listen: 8000
+  enable_ipv6: false
+
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml

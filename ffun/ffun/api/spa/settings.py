@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     news_outside_period: int = 100
 
-    model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_API_")
+    model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_API_SPA_")
 
 
 settings = Settings()

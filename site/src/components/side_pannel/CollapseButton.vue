@@ -24,7 +24,6 @@
   import {useRouter, RouterLink, RouterView} from "vue-router";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useGlobalState} from "@/stores/globalState";
-  import {useSupertokens} from "@/stores/supertokens";
   import * as asserts from "@/logic/asserts";
   import * as events from "@/logic/events";
   import * as e from "@/logic/enums";

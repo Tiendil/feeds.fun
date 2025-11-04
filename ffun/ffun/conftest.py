@@ -32,7 +32,7 @@ async def prepare_db(
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def app(prepare_db: None) -> AsyncGenerator[fastapi.FastAPI, None]:
-    with mock.patch("ffun.application.settings.settings.enable_api", True):
+    with mock.patch("ffun.application.settings.settings.enable_api_spa", True):
         async with application.with_app() as app:
             yield app
 

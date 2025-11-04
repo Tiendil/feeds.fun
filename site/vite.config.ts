@@ -19,13 +19,17 @@ export default defineConfig({
 
   server: {
     proxy: {
-      '/api': {
-        target: 'http://backend:8000/',
-        changeOrigin: true,
+      '/spa': {
+        target: 'http://gateway:8000/',
+        changeOrigin: false,
       },
-      '/supertokens': {
-        target: 'http://backend:8000/',
-        changeOrigin: true,
+      '/realms': {
+        target: 'http://keycloak:8080/',
+        changeOrigin: false,
+      },
+      '/resources': {
+        target: 'http://keycloak:8080/',
+        changeOrigin: false,
       }
     }
   }

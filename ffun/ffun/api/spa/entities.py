@@ -5,7 +5,7 @@ from typing import Any, Iterable
 
 import pydantic
 
-from ffun.api import front_events
+from ffun.api.spa import front_events
 from ffun.core import api
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import (
@@ -539,6 +539,7 @@ class GetInfoRequest(api.APIRequest):
 class GetInfoResponse(api.APISuccess):
     userId: UserId | None
     version: str
+    singleUserMode: bool
 
 
 class TrackEventRequest(api.APIRequest):
@@ -554,4 +555,12 @@ class RemoveUserRequest(api.APIRequest):
 
 
 class RemoveUserResponse(api.APISuccess):
+    pass
+
+
+class RefreshAuthRequest(api.APIRequest):
+    pass
+
+
+class RefreshAuthResponse(api.APISuccess):
     pass

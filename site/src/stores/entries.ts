@@ -53,7 +53,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   }
 
   const readyToLoadNews = computed(() => {
-    return (globalSettings.userSettingsPresent || !globalState.isLoggedIn) && mode.value !== null;
+    return (globalSettings.userSettingsPresent || !globalState.loginConfirmed) && mode.value !== null;
   });
 
   // Public collections uses fixed sorting order
@@ -248,7 +248,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     // This method may be called from public access pages, like public collections
     // In such case user may be not logged in and we should not send API requests
-    if (globalState.isLoggedIn) {
+    if (globalState.loginConfirmed) {
       await api.setMarker({entryId: entryId, marker: marker});
     }
   }
@@ -267,7 +267,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
 
     // This method may be called from public access pages, like public collections
     // In such case user may be not logged in and we should not send API requests
-    if (globalState.isLoggedIn) {
+    if (globalState.loginConfirmed) {
       await api.removeMarker({entryId: entryId, marker: marker});
     }
   }

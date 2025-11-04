@@ -1,5 +1,7 @@
 <template>
-  <div class="ffun-side-panel-layout">
+  <div
+    v-if="showGUI"
+    class="ffun-side-panel-layout">
     <div
       v-if="showSidebar"
       class="ffun-side-panel">
@@ -57,7 +59,7 @@
 
           <page-header-home-button v-if="homeButton" />
 
-          <template v-if="globalState.isLoggedIn">
+          <template v-if="globalState.loginConfirmed">
             <template
               v-for="[mode, props] of e.MainPanelModeProperties"
               :key="mode">
@@ -79,20 +81,20 @@
             </template>
           </template>
 
-          <page-header-external-links :show-api="globalState.isLoggedIn" />
+          <page-header-external-links />
         </div>
 
         <div class="ffun-page-header-right-block">
           <a
-            v-if="globalState.isLoggedIn && !settings.isSingleUserMode"
+            v-if="globalState.loginConfirmed && !globalState.isSingleUserMode"
             href="#"
             class="ffun-page-header-link"
-            @click.prevent="logout()"
+            @click.prevent="globalState.logout()"
             >logout</a
           >
 
           <span
-            v-if="settings.isSingleUserMode"
+            v-if="globalState.isSingleUserMode"
             href="#"
             class="ffun-page-header-link-disabled"
             >single-user mode</span
@@ -112,7 +114,7 @@
     </div>
   </div>
 
-  <page-footer />
+  <page-footer v-if="showGUI" />
 </template>
 
 <script lang="ts" setup>
@@ -120,13 +122,12 @@
   import {useRouter} from "vue-router";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useGlobalState} from "@/stores/globalState";
-  import {useSupertokens} from "@/stores/supertokens";
   import * as events from "@/logic/events";
   import * as e from "@/logic/enums";
+  import * as api from "@/logic/api";
   import * as settings from "@/logic/settings";
 
   const globalSettings = useGlobalSettingsStore();
-  const supertokens = useSupertokens();
   const globalState = useGlobalState();
 
   const router = useRouter();
@@ -141,19 +142,6 @@
     }
   );
 
-  async function logout() {
-    if (settings.authMode === settings.AuthMode.SingleUser) {
-      alert("You can't logout in single user mode");
-      return;
-    }
-
-    await supertokens.logout();
-
-    if (properties.loginRequired) {
-      router.push({name: "main", params: {}});
-    }
-  }
-
   const hasSideFooter = computed(() => {
     return !!slots["side-footer"];
   });
@@ -166,17 +154,20 @@
     return globalSettings.showSidebar || !globalSettings.userSettingsPresent;
   });
 
+  const showGUI = computed(() => {
+    return globalState.loginConfirmed || !properties.loginRequired;
+  });
+
   watchEffect(() => {
     if (!properties.loginRequired) {
       return;
     }
 
-    if (globalState.isLoggedIn === null) {
-      return;
-    }
-
-    if (!globalState.isLoggedIn) {
-      router.push({name: "main", params: {}});
+    if (globalState.logoutConfirmed) {
+      // Redirect to login page in case the user is not logged in.
+      // We redirect to login instead of the main page to be consisten
+      // with default API behavior on redirection in case of getting 401 status.
+      api.redirectToLogin();
     }
   });
 </script>

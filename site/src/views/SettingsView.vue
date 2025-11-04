@@ -126,7 +126,7 @@
     </div>
 
     <div
-      v-if="!settings.isSingleUserMode"
+      v-if="!globalState.isSingleUserMode"
       class="ffun-info-bad">
       <button
         @click.prevent="removeAccount()"
@@ -154,7 +154,9 @@
   import * as settings from "@/logic/settings";
   import {useRouter} from "vue-router";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
+  import {useGlobalState} from "@/stores/globalState";
 
+  const globalState = useGlobalState();
   const globalSettings = useGlobalSettingsStore();
 
   provide("eventsViewName", "settings");
@@ -166,11 +168,7 @@
   }, null);
 
   const userId = computed(() => {
-    if (globalSettings.info == null) {
-      return "—";
-    }
-
-    return globalSettings.info.userId;
+    return globalState.userId == null ? "—" : globalState.userId;
   });
 
   const messagesSettings = [
@@ -188,6 +186,7 @@
   function removeAccount() {
     if (confirm("Are you sure you want to remove your account? THIS OPERATION IS NOT REVERSIBLE!")) {
       api.removeUser();
+      globalState.logout();
     }
   }
 

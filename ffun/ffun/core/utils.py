@@ -1,5 +1,6 @@
 import datetime
 import importlib
+import operator
 import pathlib
 import sys
 import types
@@ -66,3 +67,19 @@ def version() -> str:
     _version = metadata.version("ffun")
 
     return _version
+
+
+def import_from_string(path: str) -> object:
+    """Import a module or an attribute from a module, given its string path.
+
+    Supports:
+      - 'package.module'                  -> module object
+      - 'package.module:attr'             -> attribute/class/function
+      - 'package.module:obj.subattr'      -> nested attribute
+    """
+    if ":" in path:
+        mod_path, attr_path = path.split(":", 1)
+        module = importlib.import_module(mod_path)
+        return operator.attrgetter(attr_path)(module)
+
+    return importlib.import_module(path)

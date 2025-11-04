@@ -1,7 +1,6 @@
 volumes:
   ffun_postgresql_data: {}
 
-
 networks:
   ffun_network:
     driver: bridge
@@ -9,6 +8,41 @@ networks:
       config:
         - subnet: 172.22.0.0/16
 
+x-backend-api-environment: &backend-api-environment
+  FFUN_ENABLE_API_SPA: "${FFUN_ENABLE_API_SPA:-True}"
+  FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
+  FFUN_SENTRY__DSN: "${FFUN_SENTRY__DSN:-not-specified}"
+  # set to /repository/feeds_collections/collections in case you want to use the default collection
+  FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS: "${FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS-}"
+
+x-backend-api: &backend-api
+  image: ffun-backend-dev
+
+  depends_on:
+    postgresql:
+      condition: service_healthy
+
+  command:
+    - /bin/bash
+    - -c
+    - |
+      poetry run ffun migrate
+      echo "migrations successed"
+      poetry run uvicorn ffun.application.application:app --host 0.0.0.0 --port 8000 --workers 1 --reload
+
+  volumes:
+    - ${PWD}/ffun:/repository
+    - ${PWD}/.env:/repository/.env
+    - ${PWD}/.configs:/repository/.configs
+    - ${PWD}/feeds_collections:/repository/feeds_collections
+
+  environment:
+    <<: *backend-api-environment
+
+  networks:
+    ffun_network:
+        aliases:
+          - backend
 
 services:
 
@@ -25,7 +59,7 @@ services:
       - ./docker/dev/postgresql/healthcheck.sh:/healthcheck.sh
 
     environment:
-      POSTGRES_MULTIPLE_DATABASES: ffun,supertokens
+      POSTGRES_MULTIPLE_DATABASES: ffun,keycloak
       # set to root because of the bug in pg_isready (?) it
       # it looks like it expect the DB name be the same as the POSTGRES_USER
       POSTGRES_DB: root
@@ -44,35 +78,92 @@ services:
       timeout: 5s
       retries: 10
 
-  supertokens:
-    image: registry.supertokens.io/supertokens/supertokens-postgresql:11.0.4
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4.2
+
+    profiles: ["multi-user"]
 
     depends_on:
       postgresql:
         condition: service_healthy
 
+    volumes:
+      - ./docker/dev/keycloak/import:/opt/keycloak/data/import:ro
+
     environment:
-      POSTGRESQL_DATABASE_NAME: "supertokens"
-      POSTGRESQL_USER: "supertokens"
-      POSTGRESQL_PASSWORD: "supertokens"
-      POSTGRESQL_HOST: "postgresql"
-      POSTGRESQL_PORT: "5432"
-      API_KEYS: "${FFUN_AUTH_SUPER_TOKENS_API_KEY:-nn4PGU5rJ3tEe9if4zEJ}"
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgresql
+      KC_DB_URL_PORT: "5432"
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+
+      KC_HEALTH_ENABLED: "true"
+      KC_MANAGEMENT_ENABLED: "true"
+
+    command: start-dev --import-realm
 
     ports:
-      - "3567:3567"
+      - "8080:8080"
 
     networks:
       ffun_network: {}
 
     healthcheck:
       test: >
-        bash -c 'exec 3<>/dev/tcp/127.0.0.1/3567 &&
-                 echo -e "GET /hello HTTP/1.1\r\nhost: 127.0.0.1:3567\r\nConnection: close\r\n\r\n" >&3 &&
-                 cat <&3 | grep "Hello"'
-      interval: 10s
+        bash -c "exec 3<>/dev/tcp/127.0.0.1/9000 &&
+        printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+        head -1 <&3 | grep -q '200'"
+      interval: 1s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 60s
+
+  gateway-multi-user:
+    image: apache/apisix:3.14.1-ubuntu
+
+    profiles: ["multi-user"]
+
+    depends_on:
+      - backend-multi-user
+
+    volumes:
+      - ./docker/dev/apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
+      - ./docker/dev/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+
+    environment:
+      APISIX_STAND_ALONE: "true"
+
+    ports:
+      - "8000:8000"
+
+    extra_hosts:
+      # resolve feeds.fun.local to host machine IP
+      # required for keycloak access
+      - "feeds.fun.local:host-gateway"
+
+    networks:
+      ffun_network:
+        aliases:
+          - gateway
+
+  gateway-single-user:
+    image: alpine/socat
+
+    profiles: ["single-user"]
+
+    depends_on:
+      - backend-single-user
+
+    command: tcp-listen:8000,fork,reuseaddr tcp-connect:backend:8000
+
+    networks:
+      ffun_network:
+        aliases:
+          - gateway
 
   backend-build:
     image: ffun-backend-dev
@@ -84,41 +175,18 @@ services:
     profiles:
       - dev-build
 
-  backend:
-    image: ffun-backend-dev
+  backend-multi-user:
+    <<: *backend-api
+    profiles: ["multi-user"]
 
-    depends_on:
-      postgresql:
-        condition: service_healthy
-      supertokens:
-        condition: service_healthy
-
-    command:
-      - /bin/bash
-      - -c
-      - |
-        poetry run ffun migrate
-        echo "migrations successed"
-        poetry run uvicorn ffun.application.application:app --host 0.0.0.0 --port 8000 --workers 1 --reload
-
-    volumes:
-      - ${PWD}/ffun:/repository
-      - ${PWD}/.env:/repository/.env
-      - ${PWD}/.configs:/repository/.configs
-      - ${PWD}/feeds_collections:/repository/feeds_collections
+  backend-single-user:
+    <<: *backend-api
+    profiles: ["single-user"]
 
     environment:
-      FFUN_ENABLE_API: "${FFUN_ENABLE_API:-True}"
-      FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
-      FFUN_SENTRY__DSN: "${FFUN_SENTRY__DSN:-not-specified}"
-      # set to /repository/feeds_collections/collections in case you want to use the default collection
-      FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS: "${FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS-}"
-
-    ports:
-      - "8000:8000"
-
-    networks:
-      ffun_network: {}
+      <<: *backend-api-environment
+      FFUN_AUTH_FORCE_EXTERNAL_USER_ID: "dev-user"
+      FFUN_AUTH_FORCE_EXTERNAL_IDENTITY_PROVIDER_ID: "single_user"
 
   backend-utils:
     image: ffun-backend-dev
@@ -161,11 +229,7 @@ services:
   frontend:
     image: ffun-frontend-dev
 
-    depends_on:
-      backend:
-        condition: service_started
-
-    command: "npm run dev -- --host 0.0.0.0"
+    command: "npm run dev -- --host 0.0.0.0 --port 80"
 
     volumes:
       - ${PWD}/site/src:/repository/src
@@ -187,7 +251,7 @@ services:
       VITE_FFUN_HAS_COLLECTIONS: "true"
 
     ports:
-      - "5173:5173"
+      - "80:80"
 
     networks:
       ffun_network: {}

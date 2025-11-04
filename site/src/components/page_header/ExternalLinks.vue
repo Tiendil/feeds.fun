@@ -1,12 +1,11 @@
 <template>
   <social-link
-    v-if="showApi"
-    kind="api"
+    kind="blog"
     mode="text"
     class="ffun-page-header-link" />
 
   <social-link
-    kind="blog"
+    kind="roadmap"
     mode="text"
     class="ffun-page-header-link" />
 
@@ -33,7 +32,7 @@
   import * as settings from "@/logic/settings";
   import * as asserts from "@/logic/asserts";
 
-  const properties = defineProps<{showApi: boolean}>();
+  const properties = defineProps<{}>();
 
   const eventsView = inject<events.EventsViewName>("eventsViewName");
 

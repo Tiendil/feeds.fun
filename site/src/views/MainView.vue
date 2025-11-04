@@ -2,7 +2,7 @@
   <wide-layout>
     <div class="ffun-page-header">
       <div class="ffun-page-header-center-block">
-        <page-header-external-links :show-api="false" />
+        <page-header-external-links />
       </div>
     </div>
 
@@ -10,18 +10,32 @@
 
     <main-block>
       <h1 class="m-0 text-5xl">Feeds Fun</h1>
-      <p class="mt-2 text-2xl">Transparent Personalized News</p>
-    </main-block>
+      <p class="mt-2 text-2xl">Transparent & Personalized News</p>
 
-    <main-header-line>
-      <!-- TODO: uncomment this claim after we have some statistics on long-term users -->
-      <!-- Save over <strong class="text-green-700">80%</strong> of news-browsing time by focusing on what truly matters to you -->
-      Save news-browsing time by focusing on what truly matters
-    </main-header-line>
+      <div class="h-12 grid grid-flow-col auto-cols-fr gap-3 w-max mx-auto">
+        <a
+          v-if="globalState.loginConfirmed"
+          class="ffun-main-auth-button ffun-go-to-feeds"
+          href="#"
+          @click.prevent="goToWorkspace()">
+          Read your feed
+        </a>
 
-    <main-block>
-      <div class="max-w-xl md:mx-auto ffun-info-good text-center mx-2">
-        <supertokens-login />
+        <a
+          v-if="globalState.logoutConfirmed"
+          class="ffun-main-auth-button ffun-login"
+          href="#"
+          @click.prevent="api.redirectToLogin('/news')"
+          >Sign in</a
+        >
+
+        <a
+          v-if="globalState.logoutConfirmed"
+          class="ffun-main-auth-button ffun-register"
+          href="#"
+          @click.prevent="api.redirectToJoin('/news')"
+          >Join now</a
+        >
       </div>
     </main-block>
 
@@ -163,7 +177,7 @@
 
             <main-news-title
               class="opacity-75"
-              title="Sci-fi novel about UFO in New Yourk"
+              title="Sci-fi novel about UFO in New York"
               :score="13" />
 
             <div class="opacity-65 block justify-self-center">
@@ -222,16 +236,24 @@
   import {computed, ref, onUnmounted, watch, provide} from "vue";
   import exampleImage from "@/assets/news-filtering-example.png";
   import * as settings from "@/logic/settings";
+  import * as api from "@/logic/api";
+  import * as e from "@/logic/enums";
   import {useRouter, RouterLink, RouterView} from "vue-router";
   import {useCollectionsStore} from "@/stores/collections";
+  import {useGlobalState} from "@/stores/globalState";
   import * as t from "@/logic/types";
 
   const router = useRouter();
+  const globalState = useGlobalState();
   const collections = useCollectionsStore();
 
   provide("eventsViewName", "main");
 
   function publicCollectionHref(collectionSlug: t.CollectionSlug) {
     return router.resolve({name: "public-collection", params: {collectionSlug: collectionSlug}}).href;
+  }
+
+  function goToWorkspace() {
+    router.push({name: e.MainPanelMode.Entries, params: {}});
   }
 </script>

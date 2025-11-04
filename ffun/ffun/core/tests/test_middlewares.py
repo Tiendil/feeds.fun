@@ -161,37 +161,41 @@ class TestExistedRouteUrls:
     @pytest.mark.asyncio
     async def test(self, app: fastapi.FastAPI) -> None:
         assert _existed_route_urls(app) == {
-            "/api/get-rules",
-            "/api/get-collections",
-            "/api/add-opml",
-            "/api/get-opml",
-            "/api/delete-rule",
-            "/api/add-feed",
-            "/api/unsubscribe",
-            "/api/docs",
-            "/api/get-entries-by-ids",
-            "/api/get-last-entries",
-            "/api/get-last-collection-entries",
-            "/api/subscribe-to-collections",
-            "/api/test/ok",
-            "/api/set-user-setting",
-            "/api/test/internal-error",
-            "/api/test/expected-error",
-            "/api/get-collection-feeds",
-            "/api/set-marker",
-            "/api/get-score-details",
-            "/api/discover-feeds",
-            "/api/get-user-settings",
-            "/api/get-resource-history",
-            "/api/create-or-update-rule",
-            "/api/get-feeds",
-            "/api/get-info",
-            "/api/get-tags-info",
-            "/api/update-rule",
-            "/api/openapi.json",
-            "/api/remove-marker",
-            "/api/track-event",
-            "/api/remove-user",
+            "/spa/auth/login",
+            "/spa/auth/join",
+            "/spa/auth/redirect",
+            "/spa/test/internal-error",
+            "/spa/test/expected-error",
+            "/spa/test/ok",
+            "/spa/api/public/get-last-collection-entries",
+            "/spa/api/public/get-entries-by-ids",
+            "/spa/api/public/get-collections",
+            "/spa/api/public/get-collection-feeds",
+            "/spa/api/public/get-tags-info",
+            "/spa/api/public/get-info",
+            "/spa/api/public/track-event",
+            "/spa/api/private/refresh-auth",
+            "/spa/api/private/get-feeds",
+            "/spa/api/private/get-last-entries",
+            "/spa/api/private/create-or-update-rule",
+            "/spa/api/private/delete-rule",
+            "/spa/api/private/update-rule",
+            "/spa/api/private/get-rules",
+            "/spa/api/private/get-score-details",
+            "/spa/api/private/set-marker",
+            "/spa/api/private/remove-marker",
+            "/spa/api/private/discover-feeds",
+            "/spa/api/private/add-feed",
+            "/spa/api/private/add-opml",
+            "/spa/api/private/get-opml",
+            "/spa/api/private/unsubscribe",
+            "/spa/api/private/subscribe-to-collections",
+            "/spa/api/private/get-resource-history",
+            "/spa/api/private/get-user-settings",
+            "/spa/api/private/set-user-setting",
+            "/spa/api/private/remove-user",
+            "/spa/docs/openapi.json",
+            "/spa/docs",
         }
 
 
@@ -200,7 +204,7 @@ class TestRequestMeasureMiddleware:
     @pytest.mark.asyncio
     async def test(self, client: AsyncClient) -> None:
         with capture_logs() as logs:
-            await client.post("/api/test/ok")
+            await client.post("/spa/test/ok")
 
         logs = [record for record in logs if record["event"] == "request_time"]
 
@@ -211,7 +215,7 @@ class TestRequestMeasureMiddleware:
                 "m_value": logs[0]["m_value"],
                 "event": "request_time",
                 "request_uid": logs[0]["request_uid"],
-                "m_labels": {"http_path": "/api/test/ok", "result": "success", "status_code": 200, "error_code": None},
+                "m_labels": {"http_path": "/spa/test/ok", "result": "success", "status_code": 200, "error_code": None},
                 "log_level": "info",
             }
         ]
@@ -219,7 +223,7 @@ class TestRequestMeasureMiddleware:
     @pytest.mark.asyncio
     async def test_other_status_code(self, client: AsyncClient) -> None:
         with capture_logs() as logs:
-            await client.get("/api/test/ok")
+            await client.get("/spa/test/ok")
 
         logs = [record for record in logs if record["event"] == "request_time"]
 
@@ -230,7 +234,7 @@ class TestRequestMeasureMiddleware:
                 "m_value": logs[0]["m_value"],
                 "event": "request_time",
                 "request_uid": logs[0]["request_uid"],
-                "m_labels": {"http_path": "/api/test/ok", "result": "success", "status_code": 405, "error_code": None},
+                "m_labels": {"http_path": "/spa/test/ok", "result": "success", "status_code": 405, "error_code": None},
                 "log_level": "info",
             }
         ]
@@ -257,7 +261,7 @@ class TestRequestMeasureMiddleware:
     @pytest.mark.asyncio
     async def test_internal_error(self, client: AsyncClient) -> None:
         with capture_logs() as logs:
-            await client.post("/api/test/internal-error")
+            await client.post("/spa/test/internal-error")
 
         logs = [record for record in logs if record["event"] == "request_time"]
 
@@ -268,7 +272,7 @@ class TestRequestMeasureMiddleware:
             "event": "request_time",
             "request_uid": logs[0]["request_uid"],
             "m_labels": {
-                "http_path": "/api/test/internal-error",
+                "http_path": "/spa/test/internal-error",
                 "result": "internal_error",
                 "status_code": 500,
                 "error_code": "Exception",
@@ -279,7 +283,7 @@ class TestRequestMeasureMiddleware:
     @pytest.mark.asyncio
     async def test_expected_error(self, client: AsyncClient) -> None:
         with capture_logs() as logs:
-            await client.post("/api/test/expected-error")
+            await client.post("/spa/test/expected-error")
 
         logs = [record for record in logs if record["event"] == "request_time"]
 
@@ -290,7 +294,7 @@ class TestRequestMeasureMiddleware:
             "event": "request_time",
             "request_uid": logs[0]["request_uid"],
             "m_labels": {
-                "http_path": "/api/test/expected-error",
+                "http_path": "/spa/test/expected-error",
                 "result": "api_error",
                 "status_code": 200,
                 "error_code": "expected_test_error",
