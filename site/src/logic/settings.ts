@@ -1,9 +1,5 @@
 declare const __APP_VERSION__: string;
 
-export const appName = import.meta.env.VITE_FFUN_APP_NAME || "Feeds Fun";
-export const appDomain = import.meta.env.VITE_FFUN_APP_DOMAIN || "localhost";
-export const appPort = import.meta.env.VITE_FFUN_APP_PORT || "5173";
-
 export const environment = import.meta.env.VITE_FFUN_ENVIRONMENT || "local";
 export const version = __APP_VERSION__;
 
@@ -27,10 +23,6 @@ export const crmTerms = import.meta.env.VITE_FFUN_CRM_TERMS || null;
 export const crmPrivacy = import.meta.env.VITE_FFUN_CRM_PRIVACY || null;
 
 export const hasCollections = import.meta.env.VITE_FFUN_HAS_COLLECTIONS == "true" || false;
-
-console.log("settings.appName", appName);
-console.log("settings.appDomain", appDomain);
-console.log("settings.appPort", appPort);
 
 console.log("settings.environment", environment);
 console.log("settings.version", version);
