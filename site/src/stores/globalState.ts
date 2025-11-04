@@ -26,7 +26,7 @@ export const useGlobalState = defineStore("globalState", () => {
   ////////////////////////////////
   // sync login state between tabs
   ////////////////////////////////
-  const globalChannel = useBroadcastChannel<any>({name: GLOBAL_BROADCAST_CHANNEL_ID});
+  const globalChannel = useBroadcastChannel<any, any>({name: GLOBAL_BROADCAST_CHANNEL_ID});
 
   watch(globalChannel.data, (event) => {
     if (event.type === GLOBAL_BROADCAST_EVENT_LOGOUT_COMPLETED) {
