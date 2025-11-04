@@ -9,9 +9,6 @@ No changes.
 
 TODO:
 
-- update README and another docs:
-  - `FFUN_ENABLE_API` -> `FFUN_ENABLE_API_SPA`
-  - `FFUN_API_*` -> `FFUN_API_SPA_*`
-- Add a passage aboyut changes in `FFUN_AUTH_*` configs
+- Add a passage about changes in `FFUN_AUTH_*` configs
   - new way of configuration
   - migrating to the new way
