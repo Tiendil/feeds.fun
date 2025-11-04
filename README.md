@@ -284,10 +284,14 @@ Build some docker images
 Start the API server and frontend:
 
 ```
-docker compose up -d
+# single-user mode
+docker compose --profile single-user up -d
+
+# multi-user mode
+# docker compose --profile multi-user up -d
 ```
 
-The site will be accessible at http://localhost:5173/
+The site will be accessible at http://feeds.fun.local/
 
 Start workers:
 
