@@ -30,6 +30,9 @@
       "email": "alice@example.test",
       "credentials": [
         { "type": "password", "value": "alice", "temporary": false }
+      ],
+      "realmRoles": [
+        "default-roles-dev"
       ]
     },
     {
@@ -39,6 +42,9 @@
       "email": "bob@example.test",
       "credentials": [
         { "type": "password", "value": "bob", "temporary": false }
+      ],
+      "realmRoles": [
+        "default-roles-dev"
       ]
     },
     {
