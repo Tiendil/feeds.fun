@@ -1,5 +1,7 @@
 <template>
-  <div v-if="showGUI" class="ffun-side-panel-layout">
+  <div
+    v-if="showGUI"
+    class="ffun-side-panel-layout">
     <div
       v-if="showSidebar"
       class="ffun-side-panel">
@@ -79,7 +81,7 @@
             </template>
           </template>
 
-          <page-header-external-links/>
+          <page-header-external-links />
         </div>
 
         <div class="ffun-page-header-right-block">

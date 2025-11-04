@@ -26,7 +26,7 @@ export const useGlobalState = defineStore("globalState", () => {
   ////////////////////////////////
   // sync login state between tabs
   ////////////////////////////////
-  const globalChannel = useBroadcastChannel<any>({ name: GLOBAL_BROADCAST_CHANNEL_ID });
+  const globalChannel = useBroadcastChannel<any>({name: GLOBAL_BROADCAST_CHANNEL_ID});
 
   watch(globalChannel.data, (event) => {
     if (event.type === GLOBAL_BROADCAST_EVENT_LOGOUT_COMPLETED) {
@@ -40,12 +40,12 @@ export const useGlobalState = defineStore("globalState", () => {
       return;
     }
 
-    globalChannel.post({ type: GLOBAL_BROADCAST_EVENT_LOGOUT_COMPLETED });
+    globalChannel.post({type: GLOBAL_BROADCAST_EVENT_LOGOUT_COMPLETED});
 
     // remove the marker from the URL
-    const query = { ...r.query };
+    const query = {...r.query};
     delete query[LOGGED_OUT_QUERY_MARKER];
-    router.replace({ query });
+    router.replace({query});
   });
   ////////////////////////////////
 
@@ -115,6 +115,6 @@ export const useGlobalState = defineStore("globalState", () => {
     loginConfirmed,
     logoutConfirmed,
     refreshAuthState,
-    logout,
+    logout
   };
 });

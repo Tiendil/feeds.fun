@@ -18,9 +18,7 @@ class CanNotCallAdminAPI(Error):
 class Plugin(PluginBase):
     __slots__ = ("entrypoint", "service_realm", "client_id", "client_secret", "_access_token")
 
-    def __init__(
-        self, *, entrypoint: str, service_realm: str, client_id: str, client_secret: str
-    ) -> None:
+    def __init__(self, *, entrypoint: str, service_realm: str, client_id: str, client_secret: str) -> None:
         self.entrypoint = entrypoint
         self.service_realm = service_realm
         self.client_id = client_id
