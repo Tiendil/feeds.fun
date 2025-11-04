@@ -47,6 +47,8 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.4.2
 
+    profiles: ["multi-user"]
+
     depends_on:
       postgresql:
         condition: service_healthy
@@ -86,8 +88,10 @@ services:
       retries: 10
       start_period: 60s
 
-  gateway:
+  gateway-multi-user:
     image: apache/apisix:3.14.1-ubuntu
+
+    profiles: ["multi-user"]
 
     volumes:
       - ./docker/dev/apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
@@ -105,7 +109,24 @@ services:
       - "feeds.fun.local:host-gateway"
 
     networks:
-      ffun_network: {}
+      ffun_network:
+        aliases:
+          - gateway
+
+  gateway-single-user:
+    image: alpine/socat
+
+    profiles: ["single-user"]
+
+    depends_on:
+      - backend
+
+    command: tcp-listen:8000,fork,reuseaddr tcp-connect:backend:8000
+
+    networks:
+      ffun_network:
+        aliases:
+          - gateway
 
   backend-build:
     image: ffun-backend-dev
@@ -122,8 +143,6 @@ services:
 
     depends_on:
       postgresql:
-        condition: service_healthy
-      keycloak:
         condition: service_healthy
 
     command:

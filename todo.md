@@ -7,3 +7,4 @@
 - [x] manually check behaviour of 401 on post
 - [x] remove all mentions of supertokens from the codebase
 - [ ] self-service account management
+- [ ] update README with new docker compose profiles
