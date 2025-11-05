@@ -123,7 +123,7 @@ services:
       start_period: 60s
 
   gateway-multi-user:
-    image: apache/apisix:3.14.1-ubuntu
+    image: pomerium/pomerium:latest
 
     profiles: ["multi-user"]
 
@@ -131,11 +131,10 @@ services:
       - backend-multi-user
 
     volumes:
-      - ./docker/dev/apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
-      - ./docker/dev/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+      - ./docker/dev/pomerium/config.yaml:/pomerium/config.yaml:ro
 
     environment:
-      APISIX_STAND_ALONE: "true"
+      POMERIUM_DEBUG: "true"
 
     ports:
       - "8000:8000"
