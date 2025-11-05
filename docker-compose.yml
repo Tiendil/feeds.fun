@@ -59,7 +59,7 @@ services:
       - ./docker/dev/postgresql/healthcheck.sh:/healthcheck.sh
 
     environment:
-      POSTGRES_MULTIPLE_DATABASES: ffun,keycloak
+      POSTGRES_MULTIPLE_DATABASES: ffun,hydra,kratos
       # set to root because of the bug in pg_isready (?) it
       # it looks like it expect the DB name be the same as the POSTGRES_USER
       POSTGRES_DB: root
@@ -78,8 +78,8 @@ services:
       timeout: 5s
       retries: 10
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:26.4.2
+  hydra-migrate:
+    image: oryd/hydra:v2.2.0
 
     profiles: ["multi-user"]
 
@@ -87,63 +87,120 @@ services:
       postgresql:
         condition: service_healthy
 
-    volumes:
-      - ./docker/dev/keycloak/import:/opt/keycloak/data/import:ro
+    command:
+      - migrate
+      - sql
+      - --yes
 
     environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-
-      KC_DB: postgres
-      KC_DB_URL_HOST: postgresql
-      KC_DB_URL_PORT: "5432"
-      KC_DB_URL_DATABASE: keycloak
-      KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: keycloak
-
-      KC_HEALTH_ENABLED: "true"
-      KC_MANAGEMENT_ENABLED: "true"
-
-    command: start-dev --import-realm
-
-    ports:
-      - "8080:8080"
+      DSN: postgres://hydra:hydra@postgresql:5432/hydra?sslmode=disable
+      LOG_LEVEL: debug
+      SECRETS_SYSTEM: 4dff116d-3c59-4f11-9f88-72c3f6fb8a21
 
     networks:
       ffun_network: {}
 
-    healthcheck:
-      test: >
-        bash -c "exec 3<>/dev/tcp/127.0.0.1/9000 &&
-        printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
-        head -1 <&3 | grep -q '200'"
-      interval: 1s
-      timeout: 5s
-      retries: 10
-      start_period: 60s
+  hydra:
+    image: oryd/hydra:v2.2.0
+
+    profiles: ["multi-user"]
+
+    depends_on:
+      hydra-migrate:
+        condition: service_completed_successfully
+
+    command:
+      - serve
+      - all
+      - --dangerous-force-http
+
+    environment:
+      DSN: postgres://hydra:hydra@postgresql:5432/hydra?sslmode=disable
+      LOG_LEVEL: debug
+      SECRETS_SYSTEM: 4dff116d-3c59-4f11-9f88-72c3f6fb8a21
+      URLS_SELF_ISSUER: http://hydra:4444/
+      URLS_SELF_PUBLIC: http://hydra:4444/
+      URLS_LOGIN: http://frontend:80/spa/auth/login
+      URLS_CONSENT: http://backend:8000/spa/auth/consent
+
+    ports:
+      - "4444:4444"
+      - "4445:4445"
+
+    networks:
+      ffun_network:
+        aliases:
+          - hydra
+
+  kratos-migrate:
+    image: oryd/kratos:v1.1.0
+
+    profiles: ["multi-user"]
+
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+    command:
+      - migrate
+      - sql
+      - --yes
+
+    environment:
+      DSN: postgres://kratos:kratos@postgresql:5432/kratos?sslmode=disable
+
+    volumes:
+      - ./docker/dev/ory/kratos:/etc/config/kratos:ro
+
+    networks:
+      ffun_network: {}
+
+  kratos:
+    image: oryd/kratos:v1.1.0
+
+    profiles: ["multi-user"]
+
+    depends_on:
+      kratos-migrate:
+        condition: service_completed_successfully
+
+    command:
+      - serve
+      - --config
+      - /etc/config/kratos/kratos.yml
+      - --watch-courier
+
+    environment:
+      DSN: postgres://kratos:kratos@postgresql:5432/kratos?sslmode=disable
+
+    volumes:
+      - ./docker/dev/ory/kratos:/etc/config/kratos:ro
+
+    networks:
+      ffun_network:
+        aliases:
+          - kratos
 
   gateway-multi-user:
-    image: apache/apisix:3.14.1-ubuntu
+    image: oryd/oathkeeper:v0.40.7
 
     profiles: ["multi-user"]
 
     depends_on:
       - backend-multi-user
+      - kratos
+
+    command:
+      - serve
+      - --config
+      - /etc/config/oathkeeper/config.yaml
 
     volumes:
-      - ./docker/dev/apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
-      - ./docker/dev/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
-
-    environment:
-      APISIX_STAND_ALONE: "true"
+      - ./docker/dev/ory/oathkeeper/config.yaml:/etc/config/oathkeeper/config.yaml:ro
+      - ./docker/dev/ory/oathkeeper/rules.yaml:/etc/oathkeeper/rules.yaml:ro
 
     ports:
-      - "8000:8000"
-
-    extra_hosts:
-      # resolve feeds.fun.local to host machine IP
-      # required for keycloak access
-      - "feeds.fun.local:host-gateway"
+      - "8000:4456"
 
     networks:
       ffun_network:

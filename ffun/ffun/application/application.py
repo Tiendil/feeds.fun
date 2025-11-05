@@ -6,6 +6,7 @@ import fastapi
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 
+from ffun.api.consent import http_handlers as consent_http_handlers
 from ffun.api.spa import http_handlers as spa_http_handlers
 from ffun.application import errors
 from ffun.application import utils as app_utils
@@ -63,6 +64,7 @@ async def use_api_spa(app: fastapi.FastAPI) -> AsyncGenerator[None, None]:
     logger.info("api_spa_enabled")
 
     spa_http_handlers.add_routes_to_app(app)
+    consent_http_handlers.add_routes_to_app(app)
 
     logger.info("api_spa_initialized")
 

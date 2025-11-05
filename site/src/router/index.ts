@@ -8,6 +8,9 @@ import CollectionsView from "../views/CollectionsView.vue";
 import SettingsView from "../views/SettingsView.vue";
 import PublicCollectionView from "../views/PublicCollectionView.vue";
 import CRMView from "../views/CRMView.vue";
+import AuthLoginView from "../views/AuthLoginView.vue";
+import AuthJoinView from "../views/AuthJoinView.vue";
+import AuthLogoutView from "../views/AuthLogoutView.vue";
 import * as e from "@/logic/enums";
 import * as settings from "@/logic/settings";
 
@@ -68,6 +71,21 @@ const router = createRouter({
       name: "privacy",
       component: CRMView,
       props: {content: settings.crmPrivacy, kind: "privacy"}
+    },
+    {
+      path: "/spa/auth/login",
+      name: "auth-login",
+      component: AuthLoginView
+    },
+    {
+      path: "/spa/auth/join",
+      name: "auth-join",
+      component: AuthJoinView
+    },
+    {
+      path: "/spa/auth/logout",
+      name: "auth-logout",
+      component: AuthLogoutView
     },
     {
       path: "/:pathMatch(.*)*",

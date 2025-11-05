@@ -1,0 +1,61 @@
+log:
+  level: debug
+
+serve:
+  proxy:
+    host: 0.0.0.0
+    port: 4456
+    cors:
+      enabled: true
+      allowed_origins:
+        - http://frontend:80
+        - http://localhost
+        - http://127.0.0.1
+      allowed_methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      allowed_headers:
+        - "*"
+      exposed_headers:
+        - "*"
+      allow_credentials: true
+  api:
+    host: 0.0.0.0
+    port: 4457
+
+access_rules:
+  repositories:
+    - file:///etc/oathkeeper/rules.yaml
+
+errors:
+  fallback:
+    - json
+  handlers:
+    json:
+      enabled: true
+
+mutators:
+  header:
+    enabled: true
+  noop:
+    enabled: true
+
+authenticators:
+  anonymous:
+    enabled: true
+  cookie_session:
+    enabled: true
+    config:
+      check_session_url: http://kratos:4433/sessions/whoami
+      preserve_path: true
+      subject_from_session: identity.id
+  noop:
+    enabled: true
+
+authorizers:
+  allow:
+    enabled: true

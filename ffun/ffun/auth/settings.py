@@ -80,16 +80,14 @@ class Settings(BaseSettings):
 
     idps: list[IdP] = pydantic.Field(
         default_factory=lambda: [
-            # keycloak config for the dev environment
+            # ory config for the dev environment
             IdP(
                 external_id=primary_oidc_service,
                 internal_id=primary_oidc_service_id,
-                plugin="ffun.auth.idps.keycloak:construct",  # type: ignore
+                plugin="ffun.auth.idps.ory:construct",  # type: ignore
                 extras={
-                    "entrypoint": "http://keycloak:8080",
-                    "service_realm": "dev",
-                    "client_id": "backend-client",
-                    "client_secret": "b6f2e5a6-d536-405b-b8ab-04df432ed091",
+                    "kratos_admin": "http://kratos:4434",
+                    "hydra_admin": "http://hydra:4445",
                 },
             ),
             IdP(

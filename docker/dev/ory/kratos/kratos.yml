@@ -1,0 +1,82 @@
+version: v0.13.0
+
+log:
+  level: debug
+
+secrets:
+  default:
+    - 3dba8a44-1b01-4c35-b1d9-9c7e3c51389b
+
+hashers:
+  argon2:
+    parallelism: 2
+    memory: 131072
+    iterations: 2
+
+identity:
+  default_schema_id: default
+  schemas:
+    - id: default
+      url: file:///etc/config/kratos/identity.schema.json
+
+selfservice:
+  default_browser_return_url: http://frontend:80/
+  allowed_return_urls:
+    - http://frontend:80
+    - http://frontend:80/
+    - http://frontend:80/news
+    - http://frontend:80/feeds
+    - http://frontend:80/spa/auth/login
+    - http://frontend:80/spa/auth/join
+  flows:
+    login:
+      ui_url: http://frontend:80/spa/auth/login
+    registration:
+      ui_url: http://frontend:80/spa/auth/join
+    verification:
+      enabled: false
+    recovery:
+      enabled: false
+    logout:
+      after:
+        default_browser_return_url: http://frontend:80/?logged-out
+  methods:
+    password:
+      enabled: true
+    link:
+      enabled: false
+
+courier:
+  smtp:
+    connection_uri: smtps://example.com/?skip_ssl_verify=true
+
+serve:
+  public:
+    host: 0.0.0.0
+    port: 4433
+    cors:
+      enabled: true
+      allowed_origins:
+        - http://frontend:80
+        - http://localhost
+      allowed_methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      allowed_headers:
+        - "*"
+      exposed_headers:
+        - "*"
+      allow_credentials: true
+  admin:
+    host: 0.0.0.0
+    port: 4434
+
+session:
+  whoami:
+    required_aal: aal1
+
+dsn: postgres://kratos:kratos@postgresql:5432/kratos?sslmode=disable

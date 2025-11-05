@@ -19,16 +19,28 @@ export default defineConfig({
 
   server: {
     proxy: {
-      '/spa': {
+      '/spa/api': {
         target: 'http://gateway:8000/',
         changeOrigin: false,
       },
-      '/realms': {
-        target: 'http://keycloak:8080/',
+      '/spa/docs': {
+        target: 'http://gateway:8000/',
         changeOrigin: false,
       },
-      '/resources': {
-        target: 'http://keycloak:8080/',
+      '/spa/test': {
+        target: 'http://gateway:8000/',
+        changeOrigin: false,
+      },
+      '/spa/auth/redirect': {
+        target: 'http://gateway:8000/',
+        changeOrigin: false,
+      },
+      '/self-service': {
+        target: 'http://kratos:4433/',
+        changeOrigin: false,
+      },
+      '/oauth2': {
+        target: 'http://hydra:4444/',
         changeOrigin: false,
       }
     }
