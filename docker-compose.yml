@@ -79,7 +79,7 @@ services:
       retries: 10
 
   hydra:
-    image: oryd/hydra:v2.2.0
+    image: oryd/hydra:v2.3.0
 
     profiles: ["multi-user"]
 
@@ -93,12 +93,12 @@ services:
     command:
       - -c
       - |
-        hydra migrate sql --yes
+        hydra migrate sql up -e --yes
         echo "hydra migrations succeeded"
-        hydra serve all --dangerous-force-http
+        hydra serve all --dev
 
     environment:
-      DSN: postgres://hydra:hydra@postgresql:5432/hydra?sslmode=disable
+      DSN: postgres://hydra:hydra@postgresql:5432/hydra
       LOG_LEVEL: debug
       SECRETS_SYSTEM: 4dff116d-3c59-4f11-9f88-72c3f6fb8a21
       URLS_SELF_ISSUER: http://hydra:4444/
@@ -111,12 +111,10 @@ services:
       - "4445:4445"
 
     networks:
-      ffun_network:
-        aliases:
-          - hydra
+      ffun_network: {}
 
   kratos:
-    image: oryd/kratos:v1.1.0
+    image: oryd/kratos:v1.3.1
 
     profiles: ["multi-user"]
 
@@ -130,7 +128,7 @@ services:
     command:
       - -c
       - |
-        kratos migrate sql --yes
+        kratos migrate sql up -e --yes
         echo "kratos migrations succeeded"
         kratos serve --config /etc/config/kratos/kratos.yml --watch-courier
 
@@ -146,7 +144,7 @@ services:
           - kratos
 
   gateway-multi-user:
-    image: oryd/oathkeeper:v0.40.7
+    image: oryd/oathkeeper:v0.40.9
 
     profiles: ["multi-user"]
 

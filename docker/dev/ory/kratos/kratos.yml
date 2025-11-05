@@ -10,7 +10,7 @@ secrets:
 hashers:
   argon2:
     parallelism: 2
-    memory: 131072
+    memory: "64MB"
     iterations: 2
 
 identity:
