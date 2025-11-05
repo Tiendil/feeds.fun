@@ -2,7 +2,6 @@ from importlib import metadata
 from typing import Iterable
 
 import fastapi
-from fastapi import status
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
