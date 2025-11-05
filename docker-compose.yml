@@ -78,7 +78,7 @@ services:
       timeout: 5s
       retries: 10
 
-  hydra-migrate:
+  hydra:
     image: oryd/hydra:v2.2.0
 
     profiles: ["multi-user"]
@@ -87,32 +87,15 @@ services:
       postgresql:
         condition: service_healthy
 
-    command:
-      - migrate
-      - sql
-      - --yes
-
-    environment:
-      DSN: postgres://hydra:hydra@postgresql:5432/hydra?sslmode=disable
-      LOG_LEVEL: debug
-      SECRETS_SYSTEM: 4dff116d-3c59-4f11-9f88-72c3f6fb8a21
-
-    networks:
-      ffun_network: {}
-
-  hydra:
-    image: oryd/hydra:v2.2.0
-
-    profiles: ["multi-user"]
-
-    depends_on:
-      hydra-migrate:
-        condition: service_completed_successfully
+    entrypoint:
+      - /bin/sh
 
     command:
-      - serve
-      - all
-      - --dangerous-force-http
+      - -c
+      - |
+        hydra migrate sql --yes
+        echo "hydra migrations succeeded"
+        hydra serve all --dangerous-force-http
 
     environment:
       DSN: postgres://hydra:hydra@postgresql:5432/hydra?sslmode=disable
@@ -132,7 +115,7 @@ services:
         aliases:
           - hydra
 
-  kratos-migrate:
+  kratos:
     image: oryd/kratos:v1.1.0
 
     profiles: ["multi-user"]
@@ -141,34 +124,15 @@ services:
       postgresql:
         condition: service_healthy
 
-    command:
-      - migrate
-      - sql
-      - --yes
-
-    environment:
-      DSN: postgres://kratos:kratos@postgresql:5432/kratos?sslmode=disable
-
-    volumes:
-      - ./docker/dev/ory/kratos:/etc/config/kratos:ro
-
-    networks:
-      ffun_network: {}
-
-  kratos:
-    image: oryd/kratos:v1.1.0
-
-    profiles: ["multi-user"]
-
-    depends_on:
-      kratos-migrate:
-        condition: service_completed_successfully
+    entrypoint:
+      - /bin/sh
 
     command:
-      - serve
-      - --config
-      - /etc/config/kratos/kratos.yml
-      - --watch-courier
+      - -c
+      - |
+        kratos migrate sql --yes
+        echo "kratos migrations succeeded"
+        kratos serve --config /etc/config/kratos/kratos.yml --watch-courier
 
     environment:
       DSN: postgres://kratos:kratos@postgresql:5432/kratos?sslmode=disable
