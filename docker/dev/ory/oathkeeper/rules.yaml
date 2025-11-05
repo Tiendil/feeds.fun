@@ -1,17 +1,17 @@
 - id: spa-public
   match:
-    url: http://<[^:]+(:\d+)?>/spa/api/public/<**>
+    url: http://<[^:]+(:\d+)?>/spa/api/public/<.*>
     methods:
       - GET
       - POST
       - OPTIONS
   authenticators:
-    - handler: cookie_session
-      config:
-        check_session_url: http://kratos:4433/sessions/whoami
-        preserve_path: true
-        subject_from_session: identity.id
     - handler: anonymous
+    # - handler: cookie_session
+    #   config:
+    #     check_session_url: http://kratos:4433/sessions/whoami
+    #     preserve_path: true
+    #     subject_from_session: identity.id
   authorizer:
     handler: allow
   mutators:
@@ -25,11 +25,10 @@
 
 - id: spa-private
   match:
-    url: http://<[^:]+(:\d+)?>/spa/api/private/<**>
+    url: http://<[^:]+(:\d+)?>/spa/api/private/<.*>
     methods:
       - GET
       - POST
-      - OPTIONS
   authenticators:
     - handler: cookie_session
       config:
@@ -49,10 +48,9 @@
 
 - id: spa-docs
   match:
-    url: http://<[^:]+(:\d+)?>/spa/docs/<**>
+    url: http://<[^:]+(:\d+)?>/spa/docs/<.*>
     methods:
       - GET
-      - OPTIONS
   authenticators:
     - handler: anonymous
   authorizer:
@@ -64,11 +62,10 @@
 
 - id: spa-test
   match:
-    url: http://<[^:]+(:\d+)?>/spa/test/<**>
+    url: http://<[^:]+(:\d+)?>/spa/test/<.*>
     methods:
       - GET
       - POST
-      - OPTIONS
   authenticators:
     - handler: anonymous
   authorizer:

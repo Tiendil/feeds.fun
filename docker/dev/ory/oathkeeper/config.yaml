@@ -4,7 +4,7 @@ log:
 serve:
   proxy:
     host: 0.0.0.0
-    port: 4456
+    port: 8000
     cors:
       enabled: true
       allowed_origins:
@@ -17,7 +17,6 @@ serve:
         - PUT
         - PATCH
         - DELETE
-        - OPTIONS
       allowed_headers:
         - "*"
       exposed_headers:
@@ -41,6 +40,8 @@ errors:
 mutators:
   header:
     enabled: true
+    config:
+      headers: {}
   noop:
     enabled: true
 
@@ -52,7 +53,6 @@ authenticators:
     config:
       check_session_url: http://kratos:4433/sessions/whoami
       preserve_path: true
-      subject_from_session: identity.id
   noop:
     enabled: true
 

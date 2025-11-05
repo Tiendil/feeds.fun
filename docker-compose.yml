@@ -161,9 +161,6 @@ services:
       - ./docker/dev/ory/oathkeeper/config.yaml:/etc/config/oathkeeper/config.yaml:ro
       - ./docker/dev/ory/oathkeeper/rules.yaml:/etc/oathkeeper/rules.yaml:ro
 
-    ports:
-      - "8000:4456"
-
     networks:
       ffun_network:
         aliases:
