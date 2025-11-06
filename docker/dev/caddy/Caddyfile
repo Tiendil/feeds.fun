@@ -3,7 +3,6 @@ feeds.fun.local {
   tls internal
 
   @spa path /spa/*
-
   handle @spa {
     reverse_proxy gateway:8000 {
       header_up Host {host}
