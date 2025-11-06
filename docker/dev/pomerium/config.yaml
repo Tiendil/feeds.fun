@@ -18,7 +18,6 @@ certificate_authority_file: /caddy-data/caddy/pki/authorities/local/root.crt
 
 insecure_server: true
 
-# TODO: ???
 services: all
 
 authenticate_service_url: https://auth.feeds.fun.local
