@@ -4,7 +4,7 @@ shared_secret: "6tYQ+AXnuvT00og6E/GfdCdoL1P5X7znYcLyy2DcabU="
 cookie_domain: feeds.fun.local
 cookie_name: pomerium  # TODO: change
 cookie_http_only: true
-cookie_same_site: lax         # default is fine; set explicitly for clarity
+cookie_same_site: lax # TODO: consider strict
 cookie_secret: "8xGbtqx2+idYvNTV4DPyA+ByFUiW1e8dgCymiaMBIB8="
 
 address: ":8000"
@@ -16,12 +16,7 @@ log_level: debug
 # For local development, to trust our self-signed certificates
 certificate_authority_file: /caddy-data/caddy/pki/authorities/local/root.crt
 
-# certificates:
-#   - cert: /pomerium/certs/feeds.fun.local.pem
-#     key:  /pomerium/certs/feeds.fun.local-key.pem
-
 insecure_server: true
-# insecure_http_allow_http: true
 
 # TODO: ???
 services: all
@@ -59,10 +54,7 @@ routes:
 
   - name: SPA Auth Join
     prefix: /spa/auth/join
-    # force_authentication: true
     allow_any_authenticated_user: true
-    # pass_identity_headers: true
-    # idp_prompt: create
     <<: *route-common
 
   - name: SPA logout
@@ -76,13 +68,11 @@ routes:
 
   - name: SPA Auth Redirect
     prefix: /spa/auth/redirect
-    # force_authentication: true
     allow_any_authenticated_user: true
     <<: *route-common
 
   - name: SPA Auth Paths
     prefix: /spa/auth/
-    # force_authentication: true
     allow_any_authenticated_user: true
     <<: *route-common
 
