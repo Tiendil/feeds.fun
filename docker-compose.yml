@@ -1,5 +1,6 @@
 volumes:
   ffun_postgresql_data: {}
+  ffun_caddy_data: {}
 
 networks:
   ffun_network:
@@ -78,7 +79,7 @@ services:
       timeout: 5s
       retries: 10
 
-  keycloak:
+  idp:
     image: quay.io/keycloak/keycloak:26.4.2
 
     profiles: ["multi-user"]
@@ -143,7 +144,7 @@ services:
     extra_hosts:
       # resolve feeds.fun.local to host machine IP
       # required for keycloak access
-      - "feeds.fun.local:host-gateway"
+      - "idp.feeds.fun.local:host-gateway"
 
     networks:
       ffun_network:
@@ -229,7 +230,7 @@ services:
   frontend:
     image: ffun-frontend-dev
 
-    command: "npm run dev -- --host 0.0.0.0 --port 80"
+    command: "npm run dev -- --host 0.0.0.0 --port 8000"
 
     volumes:
       - ${PWD}/site/src:/repository/src
@@ -250,9 +251,6 @@ services:
 
       VITE_FFUN_HAS_COLLECTIONS: "true"
 
-    ports:
-      - "80:80"
-
     networks:
       ffun_network: {}
 
@@ -261,6 +259,25 @@ services:
 
     volumes:
       - ${PWD}/site/src:/repository/src
+
+    networks:
+      ffun_network: {}
+
+  # We use Caddy in dev environment for the next reasons:
+  # - OIDC protocol assumes communication over HTTPS
+  #   and not all proxies and related tools support communication over HTTP
+  #   that complicates development, testing and experimentation.
+  # - SPA's Vite backend recently got too complex proxy behavior because of OIDC
+  edge-proxy:
+    image: caddy:2.10-alpine
+
+    volumes:
+      - ./docker/dev/caddy:/etc/caddy:ro
+      - ffun_caddy_data:/data
+
+    ports:
+      - "80:80"
+      - "443:443"
 
     networks:
       ffun_network: {}

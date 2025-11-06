@@ -1,0 +1,34 @@
+
+feeds.fun.local {
+  tls internal
+
+  @spa path /spa/*
+  handle @spa {
+    reverse_proxy gateway:8000 {
+      header_up Host {host}
+      header_up X-Forwarded-Host {host}
+      header_up X-Forwarded-Proto {scheme}
+      header_up X-Forwarded-For {remote}
+    }
+  }
+
+  handle {
+    reverse_proxy frontend:8000 {
+      header_up Host {host}
+      header_up X-Forwarded-Host {host}
+      header_up X-Forwarded-Proto {scheme}
+      header_up X-Forwarded-For {remote}
+    }
+  }
+}
+
+idp.feeds.fun.local {
+  tls internal
+
+  reverse_proxy idp:8080 {
+    header_up Host {host}
+    header_up X-Forwarded-Host {host}
+    header_up X-Forwarded-Proto {scheme}
+    header_up X-Forwarded-For {remote}
+  }
+}
