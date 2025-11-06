@@ -255,15 +255,20 @@ All logic is split between tag processors. Each processor implements a single ap
 
 ## Preparations
 
-To use less hacks in dev configuration and be more consistent with production setup, we use custome domain `feeds.fun.local` for local development.
+To use less hacks in dev configuration and be more consistent with production setup, we use custome domains `feeds.fun.local` & `idp.feeds.fun.local` for local development.
 
 Add the following line to your `/etc/hosts` file:
 
 ```
 127.0.0.1 feeds.fun.local
+# The idp subdomain is used for authentication server
+# => it is required only in multi-user mode
+127.0.0.1 idp.feeds.fun.local
 ```
 
 Then, you can access the site at http://feeds.fun.local/
+
+**We use self-signed TLS certificates for local development.** You need to accept them in your browser.
 
 ## Run
 

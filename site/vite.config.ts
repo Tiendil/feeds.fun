@@ -16,21 +16,4 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
-
-  server: {
-    proxy: {
-      '/spa': {
-        target: 'http://gateway:8000/',
-        changeOrigin: false,
-      },
-      '/realms': {
-        target: 'http://keycloak:8080/',
-        changeOrigin: false,
-      },
-      '/resources': {
-        target: 'http://keycloak:8080/',
-        changeOrigin: false,
-      }
-    }
-  }
 })
