@@ -10,7 +10,7 @@ feeds.fun.local {
   }
 
   handle {
-    reverse_proxy frontend:8000 {
+    reverse_proxy gateway:8000 {
       header_up Host {host}
     }
   }

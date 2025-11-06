@@ -41,10 +41,12 @@ jwt_claims_headers:
 x-route-common: &route-common
   from: https://feeds.fun.local
   to: http://backend:8000
+  pass_identity_headers: true
   set_request_headers:
     X-FFun-Identity-Provider-Id: primary_oidc
 
 routes:
+
   - name: SPA Docs
     prefix: /spa/docs/
     allow_public_unauthenticated_access: true
@@ -84,3 +86,12 @@ routes:
     prefix: /spa/api/private/
     allow_any_authenticated_user: true
     <<: *route-common
+
+  # spa static files stays behind the pomerium
+  # because pomerium redirects to it after user sign-in
+  # and pomerium needs some query parameters to complete the flow
+  - name: SPA Index
+    from: https://feeds.fun.local
+    prefix: /
+    allow_public_unauthenticated_access: true
+    to: http://frontend:8000
