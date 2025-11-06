@@ -72,7 +72,6 @@ routes:
       openid-connect:
         <<: *openid-common-properties
         unauth_action: auth
-        # redirect_uri: /spa/auth/redirect
         authorization_params:
           prompt: create
 
@@ -86,7 +85,6 @@ routes:
       openid-connect:
         <<: *openid-common-properties
         unauth_action: auth
-        # redirect_uri: /spa/auth/redirect
 
       # in some cases /spa/auth/redirect may return 500 errors
       # Examples:
@@ -113,7 +111,6 @@ routes:
       openid-connect:
         <<: *openid-common-properties
         unauth_action: auth
-        # redirect_uri: /spa/auth/redirect
 
   - uri: /spa/api/public/*
     upstream_id: 1
