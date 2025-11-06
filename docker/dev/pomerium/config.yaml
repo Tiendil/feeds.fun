@@ -65,6 +65,15 @@ routes:
     # idp_prompt: create
     <<: *route-common
 
+  - name: SPA logout
+    from: https://feeds.fun.local
+    path: /spa/auth/logout
+    allow_public_unauthenticated_access: true
+    <<: *route-common
+    redirect:
+      path_redirect: /.pomerium/sign_out?pomerium_redirect_uri=https%3A%2F%2Ffeeds.fun.local%3Flogged-out
+      response_code: 302
+
   - name: SPA Auth Redirect
     prefix: /spa/auth/redirect
     # force_authentication: true
