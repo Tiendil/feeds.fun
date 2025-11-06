@@ -141,11 +141,6 @@ services:
     ports:
       - "8000:8000"
 
-    extra_hosts:
-      # resolve feeds.fun.local to host machine IP
-      # required for keycloak access
-      - "idp.feeds.fun.local:host-gateway"
-
     networks:
       ffun_network:
         aliases:
@@ -280,4 +275,7 @@ services:
       - "443:443"
 
     networks:
-      ffun_network: {}
+      ffun_network:
+        aliases:
+          - feeds.fun.local
+          - idp.feeds.fun.local
