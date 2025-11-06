@@ -84,7 +84,8 @@
       "clientAuthenticatorType": "client-secret",
       "secret": "a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq",
       "redirectUris": [
-        "https://feeds.fun.local/*"
+        "https://feeds.fun.local/*",
+        "https://auth.feeds.fun.local/*"
       ],
       "webOrigins": [
         "https://idp.feeds.fun.local"
@@ -107,7 +108,6 @@
         "standard.token.exchange.enabled": "false",
         "post.logout.redirect.uris": "+",
         "oauth2.device.authorization.grant.enabled": "false",
-        "pkce.code.challenge.method": "S256",
         "backchannel.logout.revoke.offline.tokens": "false",
         "dpop.bound.access.tokens": "false"
       },

@@ -124,7 +124,8 @@ services:
       start_period: 60s
 
   gateway-multi-user:
-    image: apache/apisix:3.14.1-ubuntu
+    image: pomerium/pomerium:v0.31
+    # image: apache/apisix:3.14.1-ubuntu
 
     profiles: ["multi-user"]
 
@@ -132,14 +133,14 @@ services:
       - backend-multi-user
 
     volumes:
-      - ./docker/dev/apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
-      - ./docker/dev/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+      - ./docker/dev/pomerium/config.yaml:/pomerium/config.yaml:ro
+      - ffun_caddy_data:/caddy-data:ro
+      # - ./docker/dev/apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
+      # - ./docker/dev/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
 
     environment:
-      APISIX_STAND_ALONE: "true"
-
-    ports:
-      - "8000:8000"
+      #   APISIX_STAND_ALONE: "true"
+      POMERIUM_DEBUG: "true"
 
     networks:
       ffun_network:
@@ -279,3 +280,4 @@ services:
         aliases:
           - feeds.fun.local
           - idp.feeds.fun.local
+          - auth.feeds.fun.local

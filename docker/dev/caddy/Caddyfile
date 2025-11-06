@@ -23,3 +23,11 @@ idp.feeds.fun.local {
     header_up Host {host}
   }
 }
+
+auth.feeds.fun.local {
+  tls internal
+
+  reverse_proxy gateway:8000 {
+	header_up Host {host}
+  }
+}

@@ -1,0 +1,86 @@
+# Pomerium configuration for local development gateway
+shared_secret: "6tYQ+AXnuvT00og6E/GfdCdoL1P5X7znYcLyy2DcabU="
+
+cookie_domain: feeds.fun.local
+cookie_name: pomerium  # TODO: change
+cookie_http_only: true
+cookie_same_site: lax         # default is fine; set explicitly for clarity
+cookie_secret: "8xGbtqx2+idYvNTV4DPyA+ByFUiW1e8dgCymiaMBIB8="
+
+address: ":8000"
+grpc_address: ":7443"
+metrics_address: ":9090"
+
+log_level: debug
+
+# For local development, to trust our self-signed certificates
+certificate_authority_file: /caddy-data/caddy/pki/authorities/local/root.crt
+
+# certificates:
+#   - cert: /pomerium/certs/feeds.fun.local.pem
+#     key:  /pomerium/certs/feeds.fun.local-key.pem
+
+insecure_server: true
+# insecure_http_allow_http: true
+
+# TODO: ???
+services: all
+
+authenticate_service_url: https://auth.feeds.fun.local
+
+idp_provider: oidc
+idp_provider_url: https://idp.feeds.fun.local/realms/dev
+idp_client_id: gateway-client
+idp_client_secret: a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq
+idp_scopes:
+  - openid
+
+jwt_claims_headers:
+  X-FFun-User-Id: sub
+
+x-route-common: &route-common
+  from: https://feeds.fun.local
+  to: http://backend:8000
+  set_request_headers:
+    X-FFun-Identity-Provider-Id: primary_oidc
+
+routes:
+  - name: SPA Docs
+    prefix: /spa/docs/
+    allow_public_unauthenticated_access: true
+    <<: *route-common
+
+  - name: SPA Test
+    prefix: /spa/test/
+    allow_public_unauthenticated_access: true
+    <<: *route-common
+
+  - name: SPA Auth Join
+    prefix: /spa/auth/join
+    # force_authentication: true
+    allow_any_authenticated_user: true
+    # pass_identity_headers: true
+    # idp_prompt: create
+    <<: *route-common
+
+  - name: SPA Auth Redirect
+    prefix: /spa/auth/redirect
+    # force_authentication: true
+    allow_any_authenticated_user: true
+    <<: *route-common
+
+  - name: SPA Auth Paths
+    prefix: /spa/auth/
+    # force_authentication: true
+    allow_any_authenticated_user: true
+    <<: *route-common
+
+  - name: SPA API Public
+    prefix: /spa/api/public/
+    allow_public_unauthenticated_access: true
+    <<: *route-common
+
+  - name: SPA API Private
+    prefix: /spa/api/private/
+    allow_any_authenticated_user: true
+    <<: *route-common
