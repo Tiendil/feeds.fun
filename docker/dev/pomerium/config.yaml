@@ -66,11 +66,6 @@ routes:
       path_redirect: /.pomerium/sign_out?pomerium_redirect_uri=https%3A%2F%2Ffeeds.fun.local%3Flogged-out
       response_code: 302
 
-  - name: SPA Auth Redirect
-    prefix: /spa/auth/redirect
-    allow_any_authenticated_user: true
-    <<: *route-common
-
   - name: SPA Auth Paths
     prefix: /spa/auth/
     allow_any_authenticated_user: true
