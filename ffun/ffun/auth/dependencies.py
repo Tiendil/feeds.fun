@@ -14,9 +14,6 @@ async def _idp_user(request: fastapi.Request) -> u_entities.User:
 
     # determine external_user_id
 
-    import pprint
-    pprint.pprint(dict(request.headers))
-
     if settings.force_external_user_id is not None:
         external_user_id = settings.force_external_user_id
     else:
@@ -33,7 +30,8 @@ async def _idp_user(request: fastapi.Request) -> u_entities.User:
     else:
         identity_provider_id = request.headers.get(settings.header_identity_provider_id)
 
-    if identity_provider_id is None:
+    # identity_provider_id must has a value, None or empty string is not allowed
+    if not identity_provider_id:
         raise errors.IdPNoIdentityProviderIdHeader()
 
     # determine internal IdP service id
