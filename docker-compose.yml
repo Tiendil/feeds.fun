@@ -150,7 +150,8 @@ services:
   # Pomerium for testing aduptability of OIDC setup
   # How to turn on:
   # - frontend (spa) should be placed behind Pomerium gateway (Caddyfile)
-  # - add auth.feeds.fun.local domain pointing to he Pomerium gateway (/etc/hosts, Caddyfile)
+  # - add auth.feeds.fun.local domain pointing to he Pomerium gateway (/etc/hosts, Caddyfile, Keycloak client)
+  # - remove "pkce.code.challenge.method" from the Keycloak gateway-client settings
   # Known problems:
   # - Can not smartly redirect user to login/registration page.
   # - Makes +1 redirect on the root of the SPA with custom URL query (that's why we need to place SPA behind Pomerium)
@@ -298,4 +299,4 @@ services:
         aliases:
           - feeds.fun.local
           - idp.feeds.fun.local
-          - auth.feeds.fun.local
+          - auth.feeds.fun.local  # is required by Pomerium

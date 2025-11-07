@@ -108,6 +108,7 @@
         "standard.token.exchange.enabled": "false",
         "post.logout.redirect.uris": "+",
         "oauth2.device.authorization.grant.enabled": "false",
+        "pkce.code.challenge.method": "S256",
         "backchannel.logout.revoke.offline.tokens": "false",
         "dpop.bound.access.tokens": "false"
       },

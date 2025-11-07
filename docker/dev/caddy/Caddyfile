@@ -10,6 +10,7 @@ feeds.fun.local {
   }
 
   handle {
+		#
     reverse_proxy frontend:8000 {
       header_up Host {host}
     }
@@ -21,5 +22,14 @@ idp.feeds.fun.local {
 
   reverse_proxy idp:8080 {
     header_up Host {host}
+  }
+}
+
+# Is required by Pomerium
+auth.feeds.fun.local {
+  tls internal
+
+  reverse_proxy gateway:8000 {
+	header_up Host {host}
   }
 }
