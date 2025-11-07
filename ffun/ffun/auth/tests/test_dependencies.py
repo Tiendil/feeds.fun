@@ -22,6 +22,17 @@ class _TestIdPUser:
             await self.user_accessor(request)  # type: ignore
 
     @pytest.mark.asyncio
+    async def test_empty_identity_provider_id_header(self, external_user_id: str) -> None:
+        request = mock.MagicMock()
+
+        request.headers = Headers(
+            {settings.header_user_id: external_user_id, settings.header_identity_provider_id: ""}
+        )
+
+        with pytest.raises(errors.IdPNoIdentityProviderIdHeader):
+            await self.user_accessor(request)  # type: ignore
+
+    @pytest.mark.asyncio
     async def test_no_identity_provider_in_settings(self, external_user_id: str) -> None:
         request = mock.MagicMock()
 
@@ -63,6 +74,15 @@ class TestIdPUser(_TestIdPUser):
         with pytest.raises(errors.IdPNoUserIdHeader):
             await self.user_accessor(request)
 
+    @pytest.mark.asyncio
+    async def test_empty_user_id_header(self) -> None:
+        request = mock.MagicMock()
+
+        request.headers = Headers({settings.header_user_id: ""})
+
+        with pytest.raises(errors.IdPNoUserIdHeader):
+            await self.user_accessor(request)
+
 
 class TestIdPOptionalUser(_TestIdPUser):
     user_accessor = staticmethod(_idp_optional_user)  # type: ignore
@@ -72,6 +92,16 @@ class TestIdPOptionalUser(_TestIdPUser):
         request = mock.MagicMock()
 
         request.headers = Headers({})
+
+        user = await self.user_accessor(request)
+
+        assert user is None
+
+    @pytest.mark.asyncio
+    async def test_emtpy_user_id_header(self) -> None:
+        request = mock.MagicMock()
+
+        request.headers = Headers({settings.header_user_id: ""})
 
         user = await self.user_accessor(request)
 

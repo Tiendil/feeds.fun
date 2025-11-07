@@ -84,7 +84,8 @@
       "clientAuthenticatorType": "client-secret",
       "secret": "a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq",
       "redirectUris": [
-        "https://feeds.fun.local/*"
+        "https://feeds.fun.local/*",
+        "https://auth.feeds.fun.local/*"
       ],
       "webOrigins": [
         "https://idp.feeds.fun.local"
