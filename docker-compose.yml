@@ -90,6 +90,7 @@ services:
 
     volumes:
       - ./docker/dev/keycloak/import:/opt/keycloak/data/import:ro
+      - ./docker/dev/keycloak/tailcloakify-theme.jar:/opt/keycloak/providers/tailcloakify-theme.jar
 
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin

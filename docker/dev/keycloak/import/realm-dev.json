@@ -3,6 +3,8 @@
   "realm": "dev",
   "enabled": true,
 
+  "loginTheme": "Tailcloakify",
+
   "attributes": {
     "frontendUrl": "https://idp.feeds.fun.local"
   },

@@ -8,6 +8,7 @@ No changes.
   - Removed `FFUN_APP_PORT`, `FFUN_API_PORT`.
 - ff-577 — Introduced Caddy as a reverse proxy for the dev environment to have a more idiomatic OIDC setup.
 - ff-574 — Added configs for Pomerium auth proxy in dev environment.
+- ff-569 — Styles for keycloak themes.
 
 TODO:
 
