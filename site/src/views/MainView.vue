@@ -237,18 +237,18 @@
   import exampleImage from "@/assets/news-filtering-example.png";
   import * as settings from "@/logic/settings";
   import * as api from "@/logic/api";
-import * as e from "@/logic/enums";
+  import * as e from "@/logic/enums";
   import * as events from "@/logic/events";
-import {useRouter, RouterLink, RouterView} from "vue-router";
+  import {useRouter, RouterLink, RouterView} from "vue-router";
   import {useCollectionsStore} from "@/stores/collections";
   import {useGlobalState} from "@/stores/globalState";
   import * as t from "@/logic/types";
 
   const router = useRouter();
   const globalState = useGlobalState();
-const collections = useCollectionsStore();
+  const collections = useCollectionsStore();
 
-const eventsView = "main";
+  const eventsView = "main";
 
   provide("eventsViewName", eventsView);
 
@@ -256,18 +256,18 @@ const eventsView = "main";
     return router.resolve({name: "public-collection", params: {collectionSlug: collectionSlug}}).href;
   }
 
-function goToFeeds() {
-  events.authButtonClicked({button_type: "go_to_feeds", view: eventsView});
+  function goToFeeds() {
+    events.authButtonClicked({button_type: "go_to_feeds", view: eventsView});
     router.push({name: e.MainPanelMode.Entries, params: {}});
-}
+  }
 
-function goToLogin() {
-  events.authButtonClicked({button_type: "login", view: eventsView});
-  api.redirectToLogin('/news');
-}
+  function goToLogin() {
+    events.authButtonClicked({button_type: "login", view: eventsView});
+    api.redirectToLogin("/news");
+  }
 
-function goToJoin() {
-  events.authButtonClicked({button_type: "join", view: eventsView});
-  api.redirectToJoin('/news');
-}
+  function goToJoin() {
+    events.authButtonClicked({button_type: "join", view: eventsView});
+    api.redirectToJoin("/news");
+  }
 </script>

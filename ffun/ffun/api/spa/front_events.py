@@ -56,6 +56,12 @@ class UserUtm(BaseEntity):
 
 
 Event = Annotated[
-    NewsLinkOpened | NewsBodyOpened | SocialLinkClicked | AuthButtonClicked | TagFilterStateChanged | SidebarStateChanged | UserUtm,
+    NewsLinkOpened
+    | NewsBodyOpened
+    | SocialLinkClicked
+    | AuthButtonClicked
+    | TagFilterStateChanged
+    | SidebarStateChanged
+    | UserUtm,
     pydantic.Field(discriminator="name"),
 ]
