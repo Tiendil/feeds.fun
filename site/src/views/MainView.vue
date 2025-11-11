@@ -257,17 +257,17 @@
   }
 
   function goToFeeds() {
-    events.authButtonClicked({button_type: "go_to_feeds", view: eventsView});
+    events.authButtonClicked({buttonType: "go_to_feeds", view: eventsView});
     router.push({name: e.MainPanelMode.Entries, params: {}});
   }
 
   function goToLogin() {
-    events.authButtonClicked({button_type: "login", view: eventsView});
+    events.authButtonClicked({buttonType: "login", view: eventsView});
     api.redirectToLogin("/news");
   }
 
   function goToJoin() {
-    events.authButtonClicked({button_type: "join", view: eventsView});
+    events.authButtonClicked({buttonType: "join", view: eventsView});
     api.redirectToJoin("/news");
   }
 </script>

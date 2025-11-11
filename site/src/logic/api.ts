@@ -212,7 +212,7 @@ export function trackEvent(data: {[key: string]: string | number | null}) {
     keepalive: true,
     mode: "no-cors",
     headers: {"Content-Type": "text/plain;charset=UTF-8"},
-    payload
+    body: payload
   }).catch(() => {});
 }
 
