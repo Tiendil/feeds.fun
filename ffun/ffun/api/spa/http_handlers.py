@@ -255,8 +255,14 @@ async def api_get_info(request: entities.GetInfoRequest, user: OptionalUser) -> 
     )
 
 
+# Frontend may send events with text/plain content-type
+# To ensure delivery and avoid preflight CORS requests for simple events tracking
+# For example, when user is redirected to another domain and the current page is unloaded
+# => we expect request body to be raw JSON string and we parse it manually
 @api_public.post("/track-event")
-async def api_track_event(request: entities.TrackEventRequest, user: OptionalUser) -> entities.TrackEventResponse:
+async def api_track_event(user: OptionalUser, body: str = fastapi.Body(...)) -> entities.TrackEventResponse:
+    request = entities.TrackEventRequest.model_validate_json(body)
+
     attributes = request.event.model_dump()
     event = attributes.pop("name")
 

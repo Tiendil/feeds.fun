@@ -205,7 +205,7 @@ export function trackEvent(data: {[key: string]: string | number | null}) {
   let payload = JSON.stringify({event: data});
 
   if ("sendBeacon" in navigator) {
-    return navigator.sendBeacon(url, new Blob([payload], {type: "application/json"}));
+    return navigator.sendBeacon(url, payload);
   }
 
   // Fallback: fire-and-forget; avoid preflight by using text/plain + no-cors
