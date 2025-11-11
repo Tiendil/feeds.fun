@@ -5,7 +5,9 @@ import pydantic
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import EntryId
 
-EventsViewName = Literal["main", "news", "rules", "public_collections", "settings", "collections", "discovery", "feeds"]
+EventsViewName = Literal[
+    "main", "news", "rules", "public_collections", "settings", "collections", "discovery", "feeds"
+]
 
 
 class NewsLinkOpened(BaseEntity):
