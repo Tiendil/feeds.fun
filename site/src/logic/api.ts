@@ -9,7 +9,9 @@ import * as cookieConsent from "@/plugins/CookieConsent";
 // API handlers
 ///////////////
 
-const apiPublic = axios.create({baseURL: "/spa/api/public", withCredentials: true});
+const publicEntryPoint = "/spa/api/public";
+
+const apiPublic = axios.create({baseURL: publicEntryPoint, withCredentials: true});
 const apiPrivate = axios.create({baseURL: "/spa/api/private", withCredentials: true});
 
 // It is an open question what should we do in case of session expiration:
@@ -199,7 +201,7 @@ export function trackEvent(data: {[key: string]: string | number | null}) {
     return;
   }
 
-  let url = "/track-event";
+  let url = publicEntryPoint + "/track-event";
   let payload = JSON.stringify({event: data});
 
   if ("sendBeacon" in navigator) {
