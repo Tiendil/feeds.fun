@@ -77,22 +77,22 @@
     return result;
   });
 
-  async function onClick() {
+  function onClick() {
     asserts.defined(tagsStates);
     asserts.defined(eventsView);
 
     let changeInfo = tagsStates.value.onTagClicked({tag: properties.uid});
 
-    await events.tagStateChanged({tag: properties.uid, view: eventsView, source: "tags_filter", ...changeInfo});
+    events.tagStateChanged({tag: properties.uid, view: eventsView, source: "tags_filter", ...changeInfo});
   }
 
-  async function onRevers() {
+  function onRevers() {
     asserts.defined(tagsStates);
     asserts.defined(eventsView);
 
     let changeInfo = tagsStates.value.onTagReversed({tag: properties.uid});
 
-    await events.tagStateChanged({tag: properties.uid, view: eventsView, source: "tags_filter", ...changeInfo});
+    events.tagStateChanged({tag: properties.uid, view: eventsView, source: "tags_filter", ...changeInfo});
   }
 
   const switchTooltip = computed(() => {

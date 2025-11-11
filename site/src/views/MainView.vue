@@ -17,7 +17,7 @@
           v-if="globalState.loginConfirmed"
           class="ffun-main-auth-button ffun-go-to-feeds"
           href="#"
-          @click.prevent="goToWorkspace()">
+          @click.prevent="goToFeeds()">
           Read your feed
         </a>
 
@@ -25,7 +25,7 @@
           v-if="globalState.logoutConfirmed"
           class="ffun-main-auth-button ffun-login"
           href="#"
-          @click.prevent="api.redirectToLogin('/news')"
+          @click.prevent="goToLogin()"
           >Sign in</a
         >
 
@@ -33,7 +33,7 @@
           v-if="globalState.logoutConfirmed"
           class="ffun-main-auth-button ffun-register"
           href="#"
-          @click.prevent="api.redirectToJoin('/news')"
+          @click.prevent="goToJoin()"
           >Join now</a
         >
       </div>
@@ -238,6 +238,7 @@
   import * as settings from "@/logic/settings";
   import * as api from "@/logic/api";
   import * as e from "@/logic/enums";
+  import * as events from "@/logic/events";
   import {useRouter, RouterLink, RouterView} from "vue-router";
   import {useCollectionsStore} from "@/stores/collections";
   import {useGlobalState} from "@/stores/globalState";
@@ -247,13 +248,26 @@
   const globalState = useGlobalState();
   const collections = useCollectionsStore();
 
-  provide("eventsViewName", "main");
+  const eventsView = "main";
+
+  provide("eventsViewName", eventsView);
 
   function publicCollectionHref(collectionSlug: t.CollectionSlug) {
     return router.resolve({name: "public-collection", params: {collectionSlug: collectionSlug}}).href;
   }
 
-  function goToWorkspace() {
+  function goToFeeds() {
+    events.authButtonClicked({buttonType: "go_to_feeds", view: eventsView});
     router.push({name: e.MainPanelMode.Entries, params: {}});
+  }
+
+  function goToLogin() {
+    events.authButtonClicked({buttonType: "login", view: eventsView});
+    api.redirectToLogin("/news");
+  }
+
+  function goToJoin() {
+    events.authButtonClicked({buttonType: "join", view: eventsView});
+    api.redirectToJoin("/news");
   }
 </script>

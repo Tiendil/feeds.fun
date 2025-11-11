@@ -5,7 +5,9 @@ import pydantic
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import EntryId
 
-EventsViewName = Literal["news", "rules", "public_collections", "settings", "collections", "discovery", "feeds"]
+EventsViewName = Literal[
+    "main", "news", "rules", "public_collections", "settings", "collections", "discovery", "feeds"
+]
 
 
 class NewsLinkOpened(BaseEntity):
@@ -24,6 +26,12 @@ class SocialLinkClicked(BaseEntity):
     name: Literal["social_link_clicked"]
     view: EventsViewName
     link_type: Literal["api", "blog", "reddit", "discord", "github", "roadmap"]
+
+
+class AuthButtonClicked(BaseEntity):
+    name: Literal["auth_button_clicked"]
+    view: EventsViewName
+    button_type: Literal["login", "join", "go_to_feeds"]
 
 
 class TagFilterStateChanged(BaseEntity):
@@ -50,6 +58,12 @@ class UserUtm(BaseEntity):
 
 
 Event = Annotated[
-    NewsLinkOpened | NewsBodyOpened | SocialLinkClicked | TagFilterStateChanged | SidebarStateChanged | UserUtm,
+    NewsLinkOpened
+    | NewsBodyOpened
+    | SocialLinkClicked
+    | AuthButtonClicked
+    | TagFilterStateChanged
+    | SidebarStateChanged
+    | UserUtm,
     pydantic.Field(discriminator="name"),
 ]

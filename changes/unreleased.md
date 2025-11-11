@@ -9,6 +9,7 @@ No changes.
 - ff-577 — Introduced Caddy as a reverse proxy for the dev environment to have a more idiomatic OIDC setup.
 - ff-574 — Added configs for Pomerium auth proxy in dev environment.
 - ff-569 — Styles for keycloak themes.
+- ff-576 — Track clicks on authentication-related buttons.
 
 TODO:
 

@@ -284,7 +284,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
       });
     }
 
-    await events.newsBodyOpened({entryId: entryId, view: view});
+    events.newsBodyOpened({entryId: entryId, view: view});
   }
 
   function hideEntry({entryId}: {entryId: t.EntryId}) {

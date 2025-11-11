@@ -9,7 +9,9 @@ import * as cookieConsent from "@/plugins/CookieConsent";
 // API handlers
 ///////////////
 
-const apiPublic = axios.create({baseURL: "/spa/api/public", withCredentials: true});
+const publicEntryPoint = "/spa/api/public";
+
+const apiPublic = axios.create({baseURL: publicEntryPoint, withCredentials: true});
 const apiPrivate = axios.create({baseURL: "/spa/api/private", withCredentials: true});
 
 // It is an open question what should we do in case of session expiration:
@@ -190,7 +192,7 @@ export async function getInfo() {
   return t.stateInfoFromJSON(response);
 }
 
-export async function trackEvent(data: {[key: string]: string | number | null}) {
+export function trackEvent(data: {[key: string]: string | number | null}) {
   if (!settings.trackEvents) {
     return;
   }
@@ -199,7 +201,21 @@ export async function trackEvent(data: {[key: string]: string | number | null}) 
     return;
   }
 
-  await postPublic({url: "/track-event", data: {event: data}});
+  let url = publicEntryPoint + "/track-event";
+  let payload = JSON.stringify({event: data});
+
+  if ("sendBeacon" in navigator) {
+    return navigator.sendBeacon(url, payload);
+  }
+
+  // Fallback: fire-and-forget; avoid preflight by using text/plain + no-cors
+  fetch(url, {
+    method: "POST",
+    keepalive: true,
+    mode: "no-cors",
+    headers: {"Content-Type": "text/plain;charset=UTF-8"},
+    body: payload
+  }).catch(() => {});
 }
 
 //////////////

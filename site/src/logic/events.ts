@@ -18,31 +18,39 @@ export type TagChangeSource = "tags_filter" | "entry_record" | "rule_record";
 export type SidebarVisibilityChangeEvent = "hide" | "show";
 export type SidebarVisibilityChangeSource = "top_sidebar_button";
 
-export async function newsLinkOpened({entryId, view}: {entryId: t.EntryId; view: EventsViewName}) {
-  await api.trackEvent({
+export function newsLinkOpened({entryId, view}: {entryId: t.EntryId; view: EventsViewName}) {
+  api.trackEvent({
     name: "news_link_opened",
     view: view,
     entry_id: entryId
   });
 }
 
-export async function newsBodyOpened({entryId, view}: {entryId: t.EntryId; view: EventsViewName}) {
-  await api.trackEvent({
+export function newsBodyOpened({entryId, view}: {entryId: t.EntryId; view: EventsViewName}) {
+  api.trackEvent({
     name: "news_body_opened",
     view: view,
     entry_id: entryId
   });
 }
 
-export async function socialLinkClicked({linkType, view}: {linkType: string; view: EventsViewName}) {
-  await api.trackEvent({
+export function socialLinkClicked({linkType, view}: {linkType: string; view: EventsViewName}) {
+  api.trackEvent({
     name: "social_link_clicked",
     view: view,
     link_type: linkType
   });
 }
 
-export async function sidebarStateChanged({
+export function authButtonClicked({buttonType, view}: {buttonType: string; view: EventsViewName}) {
+  api.trackEvent({
+    name: "auth_button_clicked",
+    view: view,
+    button_type: buttonType
+  });
+}
+
+export function sidebarStateChanged({
   subEvent,
   view,
   source
@@ -51,7 +59,7 @@ export async function sidebarStateChanged({
   view: EventsViewName;
   source: SidebarVisibilityChangeSource;
 }) {
-  await api.trackEvent({
+  api.trackEvent({
     name: "sidebar_state_changed",
     view: view,
     sub_event: subEvent,
@@ -59,7 +67,7 @@ export async function sidebarStateChanged({
   });
 }
 
-export async function tagStateChanged({
+export function tagStateChanged({
   tag,
   fromState,
   toState,
@@ -74,7 +82,7 @@ export async function tagStateChanged({
 }) {
   // const eventsView = inject<events.EventViewName>("eventsViewName");
 
-  await api.trackEvent({
+  api.trackEvent({
     name: "tag_filter_state_changed",
     tag: tag,
     from_state: fromState,
@@ -84,7 +92,7 @@ export async function tagStateChanged({
   });
 }
 
-export async function trackUtm({
+export function trackUtm({
   utm_source,
   utm_medium,
   utm_campaign
@@ -93,7 +101,7 @@ export async function trackUtm({
   utm_medium: string;
   utm_campaign: string;
 }) {
-  await api.trackEvent({
+  api.trackEvent({
     name: "user_utm",
     utm_source: utm_source,
     utm_medium: utm_medium,

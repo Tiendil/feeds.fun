@@ -140,9 +140,9 @@
     return utils.purifyBody({raw: entry.value.body, default_: "No description"});
   });
 
-  async function newsLinkOpenedEvent() {
+  function newsLinkOpenedEvent() {
     asserts.defined(eventsView);
-    await events.newsLinkOpened({entryId: entry.value.id, view: eventsView});
+    events.newsLinkOpened({entryId: entry.value.id, view: eventsView});
   }
 
   async function onTitleClick(event: MouseEvent) {
@@ -172,7 +172,7 @@
         }
       }
     } else {
-      await newsLinkOpenedEvent();
+      newsLinkOpenedEvent();
     }
   }
 
