@@ -22,7 +22,7 @@
 
   watchEffect(async () => {
     if (utmStorage.value && globalState.loginConfirmed && Object.keys(utmStorage.value).length > 0) {
-      await events.trackUtm(utmStorage.value);
+      events.trackUtm(utmStorage.value);
       utmStorage.value = null;
     }
   });

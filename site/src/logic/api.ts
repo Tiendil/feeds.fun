@@ -190,7 +190,7 @@ export async function getInfo() {
   return t.stateInfoFromJSON(response);
 }
 
-export async function trackEvent(data: {[key: string]: string | number | null}) {
+export function trackEvent(data: {[key: string]: string | number | null}) {
   if (!settings.trackEvents) {
     return;
   }
@@ -199,7 +199,21 @@ export async function trackEvent(data: {[key: string]: string | number | null}) 
     return;
   }
 
-  await postPublic({url: "/track-event", data: {event: data}});
+  let url = "/track-event";
+  let payload = JSON.stringify({event: data});
+
+  if ("sendBeacon" in navigator) {
+    return navigator.sendBeacon(url, new Blob([payload], { type: "application/json" }));
+  }
+
+  // Fallback: fire-and-forget; avoid preflight by using text/plain + no-cors
+  fetch(url, {
+    method: "POST",
+    keepalive: true,
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    payload
+  }).catch(() => {});
 }
 
 //////////////
