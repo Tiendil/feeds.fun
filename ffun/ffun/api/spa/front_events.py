@@ -32,12 +32,6 @@ class AuthButtonClicked(BaseEntity):
     button_type: Literal["login", "join", "go_to_feeds"]
 
 
-class PageSessionChanged(BaseEntity):
-    name: Literal["page_session_changed"]
-    view: EventsViewName
-    event: Literal["started", "ended"]
-
-
 class TagFilterStateChanged(BaseEntity):
     name: Literal["tag_filter_state_changed"]
     view: EventsViewName
@@ -62,6 +56,6 @@ class UserUtm(BaseEntity):
 
 
 Event = Annotated[
-    NewsLinkOpened | NewsBodyOpened | SocialLinkClicked | AuthButtonClicked | PageSessionChanged | TagFilterStateChanged | SidebarStateChanged | UserUtm,
+    NewsLinkOpened | NewsBodyOpened | SocialLinkClicked | AuthButtonClicked | TagFilterStateChanged | SidebarStateChanged | UserUtm,
     pydantic.Field(discriminator="name"),
 ]
