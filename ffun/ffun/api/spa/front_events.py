@@ -29,7 +29,7 @@ class SocialLinkClicked(BaseEntity):
 class AuthButtonClicked(BaseEntity):
     name: Literal["auth_button_clicked"]
     view: EventsViewName
-    button_type: Literal["login", "join"]
+    button_type: Literal["login", "join", "go_to_feeds"]
 
 
 class PageSessionChanged(BaseEntity):

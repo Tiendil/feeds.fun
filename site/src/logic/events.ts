@@ -42,6 +42,14 @@ export function socialLinkClicked({linkType, view}: {linkType: string; view: Eve
   });
 }
 
+export function authButtonClicked({buttonType, view}: {buttonType: string; view: EventsViewName}) {
+  api.trackEvent({
+    name: "auth_button_clicked",
+    view: view,
+    button_type: buttonType
+  });
+}
+
 export function sidebarStateChanged({
   subEvent,
   view,
