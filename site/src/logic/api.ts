@@ -127,7 +127,7 @@ export async function getLastCollectionEntries({
   const entries = [];
 
   for (let rawEntry of response.entries) {
-    const entry = t.entryFromJSON(rawEntry, response.data.tagsMapping);
+    const entry = t.entryFromJSON(rawEntry, response.tagsMapping);
     entries.push(entry);
   }
 
