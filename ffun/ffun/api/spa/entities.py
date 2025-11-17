@@ -537,7 +537,6 @@ class GetInfoRequest(api.APIRequest):
 
 
 class GetInfoResponse(api.APISuccess):
-    userId: UserId | None
     version: str
     singleUserMode: bool
 
@@ -564,3 +563,11 @@ class RefreshAuthRequest(api.APIRequest):
 
 class RefreshAuthResponse(api.APISuccess):
     pass
+
+
+class GetUserRequest(api.APIRequest):
+    pass
+
+
+class GetUserResponse(api.APISuccess):
+    userId: UserId

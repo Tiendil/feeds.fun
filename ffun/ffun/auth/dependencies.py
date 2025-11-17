@@ -44,17 +44,11 @@ async def _idp_user(request: fastapi.Request) -> u_entities.User:
     return await u_domain.get_or_create_user(idp.internal_id, external_user_id)
 
 
-async def _idp_optional_user(request: fastapi.Request) -> u_entities.User | None:
-    try:
-        return await _idp_user(request)
-    except errors.IdPNoUserIdHeader:
-        return None
-
+# NOTE: we do not need "optional user" dependency
+#       because auth proxies have trouble with handling optional authentication for the endpoints.
+#       => we duplicate some API endpoints to have both authenticated and unauthenticated versions.
+#          SPA routes requests to the appropriate endpoint.
 
 user = fastapi.Depends(_idp_user)
-optional_user = fastapi.Depends(_idp_optional_user)
-
 
 User = Annotated[u_entities.User, user]
-
-OptionalUser = Annotated[u_entities.User | None, optional_user]

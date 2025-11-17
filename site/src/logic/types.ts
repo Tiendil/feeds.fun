@@ -545,13 +545,28 @@ export class stateInfo {
 }
 
 export function stateInfoFromJSON({
-  userId,
   version,
   singleUserMode
 }: {
-  userId: string;
   version: string;
   singleUserMode: boolean;
 }): stateInfo {
-  return new stateInfo({userId, version, singleUserMode});
+  return new stateInfo({version, singleUserMode});
+}
+
+
+export class userInfo {
+  readonly userId: string;
+
+  constructor({userId}: {userId: string}) {
+    this.userId = userId;
+  }
+}
+
+export function stateInfoFromJSON({
+  userId,
+}: {
+  userId: string;
+}): stateInfo {
+  return new stateInfo({userId});
 }

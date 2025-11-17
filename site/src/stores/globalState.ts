@@ -69,7 +69,9 @@ export const useGlobalState = defineStore("globalState", () => {
   }, null);
 
   const userId = computed(() => {
-    return info.value ? info.value.userId : null;
+    infoRefreshMarker.value;
+    let userData = await api.getUser();
+    return userData ? userData.userId : null;
   });
 
   const isSingleUserMode = computed(() => {
