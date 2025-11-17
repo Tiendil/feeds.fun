@@ -19,6 +19,7 @@ nginx_config:
     set $session_cookie_samesite   Strict;
 
     # lifetime
+    set $session_cookie_persistent on;
     set $session_cookie_idletime 604800;  # 7 days idling timeout
     set $session_cookie_renew 604800;  # 7 days renewal time
     set $session_cookie_lifetime 31536000; # 1 year cookie lifetime

@@ -12,8 +12,11 @@ x-openid-common-properties: &openid-common-properties
   #        => inactive users will have to re-login after refresh token expires
   session:
     secret: "84b45ebe-abcf-406e-a4e9-6e9916229c07"
-    # Cookies is configured in config.yaml via nginx_config.http_server_configuration_snippet
-    # cookie:
+    # Most of session cookies configs are in config.yaml
+    # This settigs defines them event if it is not specified
+    # => we keep keep the same values here for clarity
+    cookie:
+      lifetime: 31536000  # 1 year
 
   # The whole session_contents is required (for different functionality)
   # => keep it commented out (everything is turned on by default)
