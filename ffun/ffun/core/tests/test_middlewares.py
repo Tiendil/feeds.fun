@@ -194,6 +194,9 @@ class TestExistedRouteUrls:
             "/spa/api/private/get-user-settings",
             "/spa/api/private/set-user-setting",
             "/spa/api/private/remove-user",
+            "/spa/api/private/track-event",
+            "/spa/api/private/get-user",
+            "/spa/api/private/get-entries-by-ids",
             "/spa/docs/openapi.json",
             "/spa/docs",
         }
