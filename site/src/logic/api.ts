@@ -81,7 +81,7 @@ apiPrivate.interceptors.response.use(
     (config as any).ffunRequestRetried = true;
 
     if (!_refreshingAuth) {
-      _refreshingAuth = apiPrivate
+      _refreshingAuth = await apiPrivate
         // @ts-ignore
         .post("/refresh-auth", undefined, {ffun401Behaviour: Ffun401Behaviour.RedirectToLogin})
         .then(() => {})
@@ -92,7 +92,7 @@ apiPrivate.interceptors.response.use(
 
     await _refreshingAuth; // all 401s await the same refresh
 
-    return apiPrivate(config); // retry the original request generically
+    return await apiPrivate(config); // retry the original request generically
   }
 );
 
