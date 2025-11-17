@@ -16,15 +16,15 @@ x-openid-common-properties: &openid-common-properties
       # domain setting is undocumented, but it should work: https://github.com/apache/apisix/pull/12051
       domain: feeds.fun.local
       lifetime: 31536000  # 1 year
-    session_contents:
-      access_token: true  # we need access token to recheck access rights periodically
-      id_token: false
-      enc_id_token: false
-      user: false
+
+  # The whole session_contents is required (for different functionality)
+  # => keep it commented out (everything is turned on by default)
+  # session_contents:
 
   renew_access_token_on_expiry: true
   access_token_expires_leeway: 2
   revoke_tokens_on_logout: true
+
   # Must not be set accoring to the current docs
   # it may cause troubles in case APISIX will set the default time value here
   # refresh_session_interval:
