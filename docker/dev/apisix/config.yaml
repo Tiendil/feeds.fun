@@ -9,6 +9,7 @@ deployment:
     config_provider: yaml
 
 nginx_config:
+  # https://github.com/bungle/lua-resty-session/tree/v3.10
   http_server_configuration_snippet: |
     # Session cookie configuration for lua-resty-session v3.x
     set $session_name              ffun_session;
@@ -17,21 +18,7 @@ nginx_config:
     set $session_cookie_secure     on;
     set $session_cookie_samesite   Strict;
 
-    ##########################################
-    # Lifetime / "remember me" approximation
-    ##########################################
-
-    # remember = true  → persistent cookie across browser restarts
-    set $session_cookie_persistent on;                # used in official examples
-
-    # This pair roughly mimics:
-    #   rolling_timeout = 3600
-    #   absolute_timeout = 86400
-    #
-    # cookie_lifetime is the hard upper bound for persistent cookies,
-    # cookie_renew says "mint a new cookie this often".
-    set $session_cookie_lifetime   86400;             # 1 day persistent lifetime
-    set $session_cookie_renew      3600;              # refresh every 1h
-
-    # idling_timeout, remember_rolling_timeout, remember_absolute_timeout
-    # have NO direct $session_* NGINX vars in this lua-resty-session v3.x line.
+    # lifetime
+    set $session_cookie_idletime 604800;  # 7 days idling timeout
+    set $session_cookie_renew 604800;  # 7 days renewal time
+    set $session_cookie_lifetime 31536000; # 1 year cookie lifetime
