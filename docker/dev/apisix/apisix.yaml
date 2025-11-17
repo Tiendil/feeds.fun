@@ -27,7 +27,8 @@ x-openid-common-properties: &openid-common-properties
   revoke_tokens_on_logout: true
 
   # Must not be set accoring to the current docs
-  # it may cause troubles in case APISIX will set the default time value here
+  # We should monitor condfig updates:
+  # this attribute may cause troubles in case APISIX will set the default time value here
   # refresh_session_interval:
 
   #####################################
