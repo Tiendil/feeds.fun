@@ -53,9 +53,8 @@ export const useGlobalState = defineStore("globalState", () => {
   const authStateRefresher = new Timer(refreshAuthState, settings.authRefreshInterval);
 
   // Check auth state on the particular events
-  window.addEventListener("focus", refreshAuthState);
+  // do not check "focus" and "visibilitychange" — they are too noisy
   window.addEventListener("online", refreshAuthState);
-  window.addEventListener("visibilitychange", refreshAuthState);
   window.addEventListener("pageshow", (event) => {
     if (event.persisted) {
       // BFCache restore (the user goes Back/Forward and the browser instantly revives a frozen snapshot).
