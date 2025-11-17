@@ -544,16 +544,9 @@ export class stateInfo {
   }
 }
 
-export function stateInfoFromJSON({
-  version,
-  singleUserMode
-}: {
-  version: string;
-  singleUserMode: boolean;
-}): stateInfo {
+export function stateInfoFromJSON({version, singleUserMode}: {version: string; singleUserMode: boolean}): stateInfo {
   return new stateInfo({version, singleUserMode});
 }
-
 
 export class userInfo {
   readonly userId: string;
@@ -563,10 +556,6 @@ export class userInfo {
   }
 }
 
-export function userInfoFromJSON({
-  userId
-}: {
-  userId: string;
-}): stateInfo {
+export function userInfoFromJSON({userId}: {userId: string}): stateInfo {
   return new stateInfo({userId});
 }

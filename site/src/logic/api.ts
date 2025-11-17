@@ -214,7 +214,11 @@ export async function getInfo() {
 }
 
 export async function getUser() {
-  const response = await postPrivate({url: "/get-user", data: {}, config: {ffun401Behaviour: Ffun401Behaviour.ReturnNull}});
+  const response = await postPrivate({
+    url: "/get-user",
+    data: {},
+    config: {ffun401Behaviour: Ffun401Behaviour.ReturnNull}
+  });
 
   if (!response) {
     return null;
@@ -238,8 +242,7 @@ export function trackEvent(data: {[key: string]: string | number | null}) {
 
   if (globalState.loginConfirmed) {
     url = privateEntryPoint + "/track-event";
-  }
-  else {
+  } else {
     url = publicEntryPoint + "/track-event";
   }
 

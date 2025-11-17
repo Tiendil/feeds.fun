@@ -128,7 +128,9 @@ async def process_api_track(body: str, user_id: UserId | None) -> entities.Track
     return entities.TrackEventResponse()
 
 
-async def process_api_get_entries(request: entities.GetEntriesByIdsRequest, user_id: UserId) -> entities.GetEntriesByIdsResponse:
+async def process_api_get_entries(
+    request: entities.GetEntriesByIdsRequest, user_id: UserId
+) -> entities.GetEntriesByIdsResponse:
     if len(request.ids) > settings.max_entries_details_requests:
         # TODO: better error processing
         raise fastapi.HTTPException(status_code=400, detail="Too many ids")
@@ -262,9 +264,7 @@ async def api_get_tags_info(request: entities.GetTagsInfoRequest) -> entities.Ge
 
 @api_public.post("/get-info")
 async def api_get_info(request: entities.GetInfoRequest) -> entities.GetInfoResponse:
-    return entities.GetInfoResponse(
-        version=utils.version(), singleUserMode=auth_settings.is_single_user_mode
-    )
+    return entities.GetInfoResponse(version=utils.version(), singleUserMode=auth_settings.is_single_user_mode)
 
 
 @api_public.post("/track-event")
@@ -286,9 +286,7 @@ async def api_refresh_auth(request: entities.RefreshAuthRequest, user: User) -> 
 
 @api_private.post("/get-user")
 async def api_get_user(request: entities.GetUserRequest, user: User) -> entities.GetUserResponse:
-    return entities.GetUserResponse(
-        userId=user.id
-    )
+    return entities.GetUserResponse(userId=user.id)
 
 
 @api_private.post("/get-feeds")
@@ -610,6 +608,7 @@ async def api_get_entries_by_ids_private(
     request: entities.GetEntriesByIdsRequest, user: User
 ) -> entities.GetEntriesByIdsResponse:
     return await process_api_get_entries(request, user_id=user.id)
+
 
 #######################
 # Swagger documentation
