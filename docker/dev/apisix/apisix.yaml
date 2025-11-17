@@ -1,11 +1,37 @@
 
 x-openid-common-properties: &openid-common-properties
+  #######################
+  # Session configuration
+  #######################
   # ATTENTION: our cookies live long and we store credentials in them.
   #            on changes in IdP configuration, those credentials can become invalid
   #            for a huge number of users, which may cause strange errors and redirects.
   #            => in case of such change,s ensure that APISIX will not see / skip old cookies
+  # LOGIC: we set long cookie lifetime & shorter refresh token lifetime in IdP
+  #        => active users will refresh their tokens often and will have long sessions without re-login
+  #        => inactive users will have to re-login after refresh token expires
   session:
     secret: "84b45ebe-abcf-406e-a4e9-6e9916229c07"
+    cookie:
+      # domain setting is undocumented, but it should work: https://github.com/apache/apisix/pull/12051
+      domain: feeds.fun.local
+      lifetime: 31536000  # 1 year
+    session_contents:
+      access_token: true  # we need access token to recheck access rights periodically
+      id_token: false
+      enc_id_token: false
+      user: false
+
+  renew_access_token_on_expiry: true
+  access_token_expires_leeway: 2
+  revoke_tokens_on_logout: true
+  # Must not be set accoring to the current docs
+  # it may cause troubles in case APISIX will set the default time value here
+  # refresh_session_interval:
+
+  #####################################
+  # OpenID Connect client configuration
+  #####################################
   use_pkce: true
   client_id: gateway-client
   client_secret: a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq
@@ -16,6 +42,10 @@ x-openid-common-properties: &openid-common-properties
   # we MUST specify HTTPS protocol here
   # because APISIX tries to use HTTP by default
   redirect_uri: https://feeds.fun.local/spa/auth/redirect
+
+  ############################################################
+  # Configure headers that will be passed to upstream services
+  ############################################################
   # set user info header to extract user id later,
   # after that the header will be removed
   set_userinfo_header: true
