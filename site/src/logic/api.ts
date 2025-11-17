@@ -75,7 +75,7 @@ apiPrivate.interceptors.response.use(
     }
 
     if (config?.ffun401Behaviour === Ffun401Behaviour.ReturnNull) {
-      return null;
+      return {data: null};
     }
 
     (config as any).ffunRequestRetried = true;
@@ -142,7 +142,7 @@ export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
   if (globalState.loginConfirmed) {
     response = await postPrivate({
       url: "/get-entries-by-ids",
-      data: {ids: ids}
+      data: {ids: ids},
       config: {ffun401Behaviour: Ffun401Behaviour.ReturnNull}
     });
   }
@@ -214,13 +214,13 @@ export async function getInfo() {
 }
 
 export async function getUser() {
-  const response = await postPublic({url: "/get-user", data: {}, config: {ffun401Behaviour: Ffun401Behaviour.ReturnNull}});
+  const response = await postPrivate({url: "/get-user", data: {}, config: {ffun401Behaviour: Ffun401Behaviour.ReturnNull}});
 
   if (!response) {
     return null;
   }
 
-  return t.stateInfoFromJSON(response);
+  return t.userInfoFromJSON(response);
 }
 
 export function trackEvent(data: {[key: string]: string | number | null}) {

@@ -563,8 +563,8 @@ export class userInfo {
   }
 }
 
-export function stateInfoFromJSON({
-  userId,
+export function userInfoFromJSON({
+  userId
 }: {
   userId: string;
 }): stateInfo {

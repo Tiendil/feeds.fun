@@ -68,22 +68,22 @@ export const useGlobalState = defineStore("globalState", () => {
     return await api.getInfo();
   }, null);
 
-  const userId = computed(() => {
+  const userId = computedAsync(async () => {
     infoRefreshMarker.value;
     let userData = await api.getUser();
     return userData ? userData.userId : null;
-  });
+  }, "unknown");
 
   const isSingleUserMode = computed(() => {
     return info.value ? info.value.singleUserMode : false;
   });
 
   const loginState = computed(() => {
-    if (!info.value) {
+    if (userId.value === "unknown") {
       return e.LoginState.Unknown;
     }
 
-    return info.value.userId ? e.LoginState.LoggedIn : e.LoginState.LoggedOut;
+    return userId.value ? e.LoginState.LoggedIn : e.LoginState.LoggedOut;
   });
 
   const loginUnknown = computed(() => {
