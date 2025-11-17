@@ -7,3 +7,19 @@ deployment:
   role: data_plane
   role_data_plane:
     config_provider: yaml
+
+nginx_config:
+  # https://github.com/bungle/lua-resty-session/tree/v3.10
+  http_server_configuration_snippet: |
+    # Session cookie configuration for lua-resty-session v3.x
+    set $session_name              ffun_session;
+    set $session_cookie_domain     feeds.fun.local;
+    set $session_cookie_httponly   on;
+    set $session_cookie_secure     on;
+    set $session_cookie_samesite   Strict;
+
+    # lifetime
+    set $session_cookie_persistent on;
+    set $session_cookie_idletime 604800;  # 7 days idling timeout
+    set $session_cookie_renew 3600;        # 1 hour renew threshold
+    set $session_cookie_lifetime 31536000; # 1 year cookie lifetime
