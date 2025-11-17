@@ -51,7 +51,7 @@
       <tags-filter
         :tags="tagsCount"
         :show-create-rule="false"
-        :show-registration-invitation="true" />
+        :show-registration-invitation="showRegistrationInvitation" />
     </template>
 
     <template #main-header>
@@ -126,6 +126,10 @@
 
   const collectionSlug = computed(() => route.params.collectionSlug as t.CollectionSlug);
 
+  const showRegistrationInvitation = computed(() => {
+    return globalState.logoutConfirmed;
+  });
+
   const collection = computed(() => {
     if (!collectionSlug.value) {
       return null;
@@ -183,6 +187,7 @@
     let report = entriesStore.visibleEntries.slice();
 
     report = tagsStates.value.filterByTags(report, (entryId) => entriesStore.entries[entryId].tags);
+
     return report;
   });
 

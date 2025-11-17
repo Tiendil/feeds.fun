@@ -533,25 +533,27 @@ export function apiMessageFromJSON({type, code, message}: {type: string; code: s
 }
 
 export class stateInfo {
-  readonly userId: string;
   readonly version: string;
   readonly singleUserMode: boolean;
 
-  constructor({userId, version, singleUserMode}: {userId: string; version: string; singleUserMode: boolean}) {
-    this.userId = userId;
+  constructor({version, singleUserMode}: {version: string; singleUserMode: boolean}) {
     this.version = version;
     this.singleUserMode = singleUserMode;
   }
 }
 
-export function stateInfoFromJSON({
-  userId,
-  version,
-  singleUserMode
-}: {
-  userId: string;
-  version: string;
-  singleUserMode: boolean;
-}): stateInfo {
-  return new stateInfo({userId, version, singleUserMode});
+export function stateInfoFromJSON({version, singleUserMode}: {version: string; singleUserMode: boolean}): stateInfo {
+  return new stateInfo({version, singleUserMode});
+}
+
+export class userInfo {
+  readonly userId: string;
+
+  constructor({userId}: {userId: string}) {
+    this.userId = userId;
+  }
+}
+
+export function userInfoFromJSON({userId}: {userId: string}): userInfo {
+  return new userInfo({userId});
 }

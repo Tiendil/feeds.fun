@@ -4,15 +4,17 @@ import * as t from "@/logic/types";
 import type * as e from "@/logic/enums";
 import * as settings from "@/logic/settings";
 import * as cookieConsent from "@/plugins/CookieConsent";
+import {useGlobalState} from "@/stores/globalState";
 
 ///////////////
 // API handlers
 ///////////////
 
 const publicEntryPoint = "/spa/api/public";
+const privateEntryPoint = "/spa/api/private";
 
 const apiPublic = axios.create({baseURL: publicEntryPoint, withCredentials: true});
-const apiPrivate = axios.create({baseURL: "/spa/api/private", withCredentials: true});
+const apiPrivate = axios.create({baseURL: privateEntryPoint, withCredentials: true});
 
 // It is an open question what should we do in case of session expiration:
 // - redirect to login page
@@ -40,7 +42,8 @@ let _refreshingAuth: Promise<void> | null = null;
 
 enum Ffun401Behaviour {
   RedirectToLogin = "redirectToLogin",
-  DoNotRetry = "doNotRetry"
+  DoNotRetry = "doNotRetry",
+  ReturnNull = "returnNull"
 }
 
 // We try to refresh auth on 401 responses for private API.
@@ -71,6 +74,10 @@ apiPrivate.interceptors.response.use(
       throw error;
     }
 
+    if (config?.ffun401Behaviour === Ffun401Behaviour.ReturnNull) {
+      return {data: null};
+    }
+
     (config as any).ffunRequestRetried = true;
 
     if (!_refreshingAuth) {
@@ -85,7 +92,7 @@ apiPrivate.interceptors.response.use(
 
     await _refreshingAuth; // all 401s await the same refresh
 
-    return apiPrivate(config); // retry the original request generically
+    return await apiPrivate(config); // retry the original request generically
   }
 );
 
@@ -94,8 +101,8 @@ async function postPublic({url, data}: {url: string; data: any}) {
   return response.data;
 }
 
-async function postPrivate({url, data}: {url: string; data: any}) {
-  const response = await apiPrivate.post(url, data);
+async function postPrivate({url, data, config}: {url: string; data: any; config?: any}) {
+  const response = await apiPrivate.post(url, data, config);
   return response.data;
 }
 
@@ -120,7 +127,7 @@ export async function getLastCollectionEntries({
   const entries = [];
 
   for (let rawEntry of response.entries) {
-    const entry = t.entryFromJSON(rawEntry, response.data.tagsMapping);
+    const entry = t.entryFromJSON(rawEntry, response.tagsMapping);
     entries.push(entry);
   }
 
@@ -128,10 +135,24 @@ export async function getLastCollectionEntries({
 }
 
 export async function getEntriesByIds({ids}: {ids: t.EntryId[]}) {
-  const response = await postPublic({
-    url: "/get-entries-by-ids",
-    data: {ids: ids}
-  });
+  const globalState = useGlobalState();
+
+  let response = null;
+
+  if (globalState.loginConfirmed) {
+    response = await postPrivate({
+      url: "/get-entries-by-ids",
+      data: {ids: ids},
+      config: {ffun401Behaviour: Ffun401Behaviour.ReturnNull}
+    });
+  }
+
+  if (!response) {
+    response = await postPublic({
+      url: "/get-entries-by-ids",
+      data: {ids: ids}
+    });
+  }
 
   const entries = [];
 
@@ -192,6 +213,20 @@ export async function getInfo() {
   return t.stateInfoFromJSON(response);
 }
 
+export async function getUser() {
+  const response = await postPrivate({
+    url: "/get-user",
+    data: {},
+    config: {ffun401Behaviour: Ffun401Behaviour.ReturnNull}
+  });
+
+  if (!response) {
+    return null;
+  }
+
+  return t.userInfoFromJSON(response);
+}
+
 export function trackEvent(data: {[key: string]: string | number | null}) {
   if (!settings.trackEvents) {
     return;
@@ -201,7 +236,16 @@ export function trackEvent(data: {[key: string]: string | number | null}) {
     return;
   }
 
-  let url = publicEntryPoint + "/track-event";
+  const globalState = useGlobalState();
+
+  let url: string;
+
+  if (globalState.loginConfirmed) {
+    url = privateEntryPoint + "/track-event";
+  } else {
+    url = publicEntryPoint + "/track-event";
+  }
+
   let payload = JSON.stringify({event: data});
 
   if ("sendBeacon" in navigator) {

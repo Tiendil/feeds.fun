@@ -4,7 +4,7 @@ import pytest
 from starlette.datastructures import Headers
 
 from ffun.auth import errors
-from ffun.auth.dependencies import _idp_optional_user, _idp_user
+from ffun.auth.dependencies import _idp_user
 from ffun.auth.settings import primary_oidc_service, primary_oidc_service_id, settings
 from ffun.users import domain as u_domain
 
@@ -82,27 +82,3 @@ class TestIdPUser(_TestIdPUser):
 
         with pytest.raises(errors.IdPNoUserIdHeader):
             await self.user_accessor(request)
-
-
-class TestIdPOptionalUser(_TestIdPUser):
-    user_accessor = staticmethod(_idp_optional_user)  # type: ignore
-
-    @pytest.mark.asyncio
-    async def test_no_user_id_header(self) -> None:
-        request = mock.MagicMock()
-
-        request.headers = Headers({})
-
-        user = await self.user_accessor(request)
-
-        assert user is None
-
-    @pytest.mark.asyncio
-    async def test_emtpy_user_id_header(self) -> None:
-        request = mock.MagicMock()
-
-        request.headers = Headers({settings.header_user_id: ""})
-
-        user = await self.user_accessor(request)
-
-        assert user is None

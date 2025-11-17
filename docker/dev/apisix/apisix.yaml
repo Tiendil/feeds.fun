@@ -79,7 +79,7 @@ x-serverless-post-function: &serverless-post-function
           ngx.req.clear_header("X-Userinfo")
         end
 
-        -- your small, static identifier for this gateway/config
+        -- static identifier for this identity provider
         ngx.req.set_header("X-FFun-Identity-Provider-Id", "primary_oidc")
       end
 
@@ -96,6 +96,9 @@ routes:
     upstream_id: 1
 
   - uri: /spa/test/*
+    upstream_id: 1
+
+  - uri: /spa/api/public/*
     upstream_id: 1
 
   # special url to send users straight to registration
@@ -147,16 +150,6 @@ routes:
       openid-connect:
         <<: *openid-common-properties
         unauth_action: auth
-
-  - uri: /spa/api/public/*
-    upstream_id: 1
-    plugins:
-      serverless-post-function:
-        <<: *serverless-post-function
-
-      openid-connect:
-        <<: *openid-common-properties
-        unauth_action: pass
 
   - uri: /spa/api/private/*
     upstream_id: 1

@@ -25,6 +25,10 @@
   import * as settings from "@/logic/settings";
   import * as asserts from "@/logic/asserts";
 
+  import {useGlobalState} from "@/stores/globalState";
+
+  const globalState = useGlobalState();
+
   const links = {
     roadmap: {
       enabled: true,

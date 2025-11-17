@@ -9,13 +9,12 @@ from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Red
 from ffun.api.spa import entities
 from ffun.api.spa.settings import settings
 from ffun.auth import domain as a_domain
-from ffun.auth.dependencies import OptionalUser, User
+from ffun.auth.dependencies import User
 from ffun.auth.settings import settings as auth_settings
 from ffun.core import logging, utils
 from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
 from ffun.data_protection import domain as dp_domain
-from ffun.domain.domain import no_user_id
 from ffun.domain.entities import TagId, TagUid, UserId
 from ffun.domain.urls import url_to_uid
 from ffun.feeds import domain as f_domain
@@ -114,6 +113,41 @@ async def _external_entries(  # pylint: disable=R0914
     return external_entries, tag_mapping
 
 
+# Frontend may send events with text/plain content-type
+# To ensure delivery and avoid preflight CORS requests for simple events tracking
+# For example, when user is redirected to another domain and the current page is unloaded
+# => we expect request body to be raw JSON string and we parse it manually
+async def process_api_track(body: str, user_id: UserId | None) -> entities.TrackEventResponse:
+    request = entities.TrackEventRequest.model_validate_json(body)
+
+    attributes = request.event.model_dump()
+    event = attributes.pop("name")
+
+    logger.business_event(event, user_id=user_id, **attributes)
+
+    return entities.TrackEventResponse()
+
+
+async def process_api_get_entries(
+    request: entities.GetEntriesByIdsRequest, user_id: UserId | None
+) -> entities.GetEntriesByIdsResponse:
+    if len(request.ids) > settings.max_entries_details_requests:
+        # TODO: better error processing
+        raise fastapi.HTTPException(status_code=400, detail="Too many ids")
+
+    entries = await l_domain.get_entries_by_ids(request.ids)
+
+    found_entries = [entry for entry in entries.values() if entry is not None]
+
+    # We cannot know here the whole distribution of tags on the user side
+    # => we set min_tag_count=0
+    external_entries, tags_mapping = await _external_entries(
+        found_entries, with_body=True, user_id=user_id, min_tag_count=0
+    )
+
+    return entities.GetEntriesByIdsResponse(entries=external_entries, tagsMapping=tags_mapping)
+
+
 #####################
 # OIDC login redirect
 #####################
@@ -186,28 +220,10 @@ async def api_get_last_collection_entries(
 
 
 @api_public.post("/get-entries-by-ids")
-async def api_get_entries_by_ids(
-    request: entities.GetEntriesByIdsRequest, user: OptionalUser
+async def api_get_entries_by_ids_public(
+    request: entities.GetEntriesByIdsRequest,
 ) -> entities.GetEntriesByIdsResponse:
-    # TODO: check if belongs to user, but do not forget about public collections
-
-    user_id = user.id if user is not None else None
-
-    if len(request.ids) > settings.max_entries_details_requests:
-        # TODO: better error processing
-        raise fastapi.HTTPException(status_code=400, detail="Too many ids")
-
-    entries = await l_domain.get_entries_by_ids(request.ids)
-
-    found_entries = [entry for entry in entries.values() if entry is not None]
-
-    # We cannot know here the whole distribution of tags on the user side
-    # => we set min_tag_count=0
-    external_entries, tags_mapping = await _external_entries(
-        found_entries, with_body=True, user_id=user_id, min_tag_count=0
-    )
-
-    return entities.GetEntriesByIdsResponse(entries=external_entries, tagsMapping=tags_mapping)
+    return await process_api_get_entries(request, user_id=None)
 
 
 @api_public.post("/get-collections")
@@ -247,30 +263,14 @@ async def api_get_tags_info(request: entities.GetTagsInfoRequest) -> entities.Ge
 
 
 @api_public.post("/get-info")
-async def api_get_info(request: entities.GetInfoRequest, user: OptionalUser) -> entities.GetInfoResponse:
-    user_id = user.id if user is not None else None
-
-    return entities.GetInfoResponse(
-        userId=user_id, version=utils.version(), singleUserMode=auth_settings.is_single_user_mode
-    )
+async def api_get_info(request: entities.GetInfoRequest) -> entities.GetInfoResponse:
+    return entities.GetInfoResponse(version=utils.version(), singleUserMode=auth_settings.is_single_user_mode)
 
 
-# Frontend may send events with text/plain content-type
-# To ensure delivery and avoid preflight CORS requests for simple events tracking
-# For example, when user is redirected to another domain and the current page is unloaded
-# => we expect request body to be raw JSON string and we parse it manually
 @api_public.post("/track-event")
-async def api_track_event(user: OptionalUser, body: str = fastapi.Body(...)) -> entities.TrackEventResponse:
-    request = entities.TrackEventRequest.model_validate_json(body)
-
-    attributes = request.event.model_dump()
-    event = attributes.pop("name")
-
-    user_id = user.id if user is not None else no_user_id()
-
-    logger.business_event(event, user_id=user_id, **attributes)
-
-    return entities.TrackEventResponse()
+async def api_track_event_public(body: str = fastapi.Body(...)) -> entities.TrackEventResponse:
+    # see comment on process_api_track
+    return await process_api_track(body, user_id=None)
 
 
 ##############
@@ -282,6 +282,11 @@ async def api_track_event(user: OptionalUser, body: str = fastapi.Body(...)) -> 
 @api_private.post("/refresh-auth")
 async def api_refresh_auth(request: entities.RefreshAuthRequest, user: User) -> entities.RefreshAuthResponse:
     return entities.RefreshAuthResponse()
+
+
+@api_private.post("/get-user")
+async def api_get_user(request: entities.GetUserRequest, user: User) -> entities.GetUserResponse:
+    return entities.GetUserResponse(userId=user.id)
 
 
 @api_private.post("/get-feeds")
@@ -590,6 +595,19 @@ async def api_remove_user(
         response.delete_cookie(cookie)
 
     return entities.RemoveUserResponse()
+
+
+@api_private.post("/track-event")
+async def api_track_event_private(user: User, body: str = fastapi.Body(...)) -> entities.TrackEventResponse:
+    # see comment on process_api_track
+    return await process_api_track(body, user_id=user.id)
+
+
+@api_private.post("/get-entries-by-ids")
+async def api_get_entries_by_ids_private(
+    request: entities.GetEntriesByIdsRequest, user: User
+) -> entities.GetEntriesByIdsResponse:
+    return await process_api_get_entries(request, user_id=user.id)
 
 
 #######################
