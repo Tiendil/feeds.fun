@@ -10,6 +10,7 @@ No changes.
 - ff-574 — Added configs for Pomerium auth proxy in dev environment.
 - ff-569 — Styles for keycloak themes.
 - ff-576 — Track clicks on authentication-related buttons.
+- ff-565 — Correct properites for session cookies (SPA <-> Gateway).
 
 TODO:
 
