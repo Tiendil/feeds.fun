@@ -4,7 +4,7 @@ import * as t from "@/logic/types";
 import type * as e from "@/logic/enums";
 import * as settings from "@/logic/settings";
 import * as cookieConsent from "@/plugins/CookieConsent";
-import {useGlobalState} from "@/stores/globalState";
+import {useGlobalState} from "@/stores/globalState";o
 
 ///////////////
 // API handlers
@@ -223,7 +223,7 @@ export async function getUser() {
   return t.userInfoFromJSON(response);
 }
 
-export function trackEvent(data: {[key: string]: string | number | null}) {
+export function trackEvent(authenticated: bool, data: {[key: string]: string | number | null}) {
   if (!settings.trackEvents) {
     return;
   }
@@ -232,11 +232,9 @@ export function trackEvent(data: {[key: string]: string | number | null}) {
     return;
   }
 
-  const globalState = useGlobalState();
-
   let url: string;
 
-  if (globalState.loginConfirmed) {
+  if (authenticated) {
     url = privateEntryPoint + "/track-event";
   }
   else {

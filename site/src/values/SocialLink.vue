@@ -3,7 +3,7 @@
     v-if="link.enabled"
     :href="link.url"
     target="_blank"
-    @click="events.socialLinkClicked({linkType: link.eventType, view: eventsView})">
+    @click="events.socialLinkClicked({authenticated: globalState.loginConfirmed, linkType: link.eventType, view: eventsView})">
     <span v-if="mode === 'text'">
       {{ link.text }}
 
@@ -23,7 +23,11 @@
 
   import * as events from "@/logic/events";
   import * as settings from "@/logic/settings";
-  import * as asserts from "@/logic/asserts";
+import * as asserts from "@/logic/asserts";
+
+import {useGlobalState} from "@/stores/globalState";
+
+const globalState = useGlobalState();
 
   const links = {
     roadmap: {
