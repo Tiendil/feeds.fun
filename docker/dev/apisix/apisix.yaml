@@ -45,6 +45,10 @@ x-openid-common-properties: &openid-common-properties
   # because APISIX tries to use HTTP by default
   redirect_uri: https://feeds.fun.local/spa/auth/redirect
 
+  # Turn on on prod
+  # We can not easily add Caddy root CA to APISIX because of user id mismatch
+  # ssl_verify: true
+
   ############################################################
   # Configure headers that will be passed to upstream services
   ############################################################
