@@ -129,7 +129,7 @@ async def process_api_track(body: str, user_id: UserId | None) -> entities.Track
 
 
 async def process_api_get_entries(
-    request: entities.GetEntriesByIdsRequest, user_id: UserId
+    request: entities.GetEntriesByIdsRequest, user_id: UserId | None
 ) -> entities.GetEntriesByIdsResponse:
     if len(request.ids) > settings.max_entries_details_requests:
         # TODO: better error processing

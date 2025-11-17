@@ -3,9 +3,7 @@
     v-if="link.enabled"
     :href="link.url"
     target="_blank"
-    @click="
-      events.socialLinkClicked({authenticated: globalState.loginConfirmed, linkType: link.eventType, view: eventsView})
-    ">
+    @click="events.socialLinkClicked({linkType: link.eventType, view: eventsView})">
     <span v-if="mode === 'text'">
       {{ link.text }}
 
