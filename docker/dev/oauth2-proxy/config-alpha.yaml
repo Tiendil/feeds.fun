@@ -1,17 +1,3 @@
-# alpha-config.yaml
-#
-# Use with:
-#   oauth2-proxy \
-#     --alpha-config=/etc/oauth2-proxy/alpha-config.yaml \
-#     --cookie-secret=<base64-32> \
-#     --cookie-name=ffun_session \
-#     --cookie-domain=feeds.fun.local \
-#     --cookie-secure=true \
-#     --cookie-httponly=true \
-#     --cookie-samesite=strict \
-#     --cookie-expire=8760h0m0s   # ≈ 1 year, matches 31536000s \
-#     --cookie-refresh=0          # or tune as you like \
-#     --http-address=0.0.0.0:4180
 
 server:
   BindAddress: "0.0.0.0:8000"
@@ -32,7 +18,6 @@ providers:
       emailClaim: "email" # TODO: try to remove
       audienceClaims:
         - "aud"
-      # extraAudiences: []
 
     loginURLParameters:
       - name: prompt
@@ -43,7 +28,6 @@ providers:
 
     backendLogoutURL: https://idp.feeds.fun.local/realms/dev/protocol/openid-connect/logout?id_token_hint={id_token}
 
-    # useSystemTrustStore: true
     caFiles:
       - /caddy-data/caddy/pki/authorities/local/root.crt
 
