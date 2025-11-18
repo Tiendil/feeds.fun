@@ -43,11 +43,7 @@ providers:
 
     code_challenge_method: "S256"
 
-    # Equivalent to:
-    #   revoke_tokens_on_logout: true
-    #   logout_path: /spa/auth/logout
-    #   post_logout_redirect_uri: https://feeds.fun.local?logged-out
-    #
+    # TODO: do we need that?
     # Here oauth2-proxy will call Keycloak's end-session endpoint on logout.
     # You wire /spa/auth/logout in your front proxy to `/oauth2/sign_out`.
     backendLogoutURL: >
