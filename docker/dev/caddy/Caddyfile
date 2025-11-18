@@ -24,7 +24,7 @@ feeds.fun.local {
     }
 
     handle /spa/auth/login {
-      rewrite * /oauth2/start?
+      rewrite * /oauth2/start?rd={query.return_to}
 
       reverse_proxy gateway:8000 {
         header_up X-Real-IP {remote_host}
@@ -34,7 +34,7 @@ feeds.fun.local {
     }
 
     handle /spa/auth/join {
-      rewrite * /oauth2/start?prompt=create
+      rewrite * /oauth2/start?prompt=create&rd={query.return_to}
 
       reverse_proxy gateway:8000 {
         header_up X-Real-IP {remote_host}
