@@ -67,10 +67,6 @@ feeds.fun.local {
 
   handle /spa/auth/* {
     route {
-      # TODO: move globally?
-      # do not allow client-provided Set-Cookie
-      request_header -Set-Cookie
-
       forward_auth gateway:8000 {
         import gateway_auth_common
 
@@ -89,10 +85,6 @@ feeds.fun.local {
 
   handle /spa/api/private/* {
     route {
-      # TODO: move globally?
-      # do not allow client-provided Set-Cookie
-      request_header -Set-Cookie
-
       forward_auth gateway:8000 {
         import gateway_auth_common
       }
