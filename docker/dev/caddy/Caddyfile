@@ -23,6 +23,14 @@ feeds.fun.local {
       }
     }
 
+    handle /spa/auth/login {
+      redir * /oauth2/start?prompt=login
+    }
+
+    handle /spa/auth/join {
+      redir * /oauth2/start?prompt=create
+    }
+
     handle /spa/auth/* {
       forward_auth gateway:8000 {
         uri /oauth2/auth

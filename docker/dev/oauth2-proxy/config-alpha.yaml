@@ -41,6 +41,13 @@ providers:
         - "aud"
       # extraAudiences: []
 
+    loginURLParameters:
+      - name: prompt
+        default: ["login"]
+        allow:
+          - value: login
+          - value: create
+
     code_challenge_method: "S256"
 
     # TODO: do we need that?
