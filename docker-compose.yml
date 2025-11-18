@@ -189,14 +189,13 @@ services:
     #   POMERIUM_DEBUG: "true"
 
   gateway-single-user:
-    image: alpine/socat
+    image: inanimate/echo-server
 
     profiles: ["single-user"]
 
-    depends_on:
-      - backend-single-user
-
-    command: tcp-listen:8000,fork,reuseaddr tcp-connect:backend:8000
+    environment:
+      PORT: "8000"
+      ADD_HEADERS: '{"X-FFun-User-Id":"dev-user","X-FFun-Identity-Provider-Id":"single_user"}'
 
     networks:
       ffun_network:
@@ -221,6 +220,7 @@ services:
     <<: *backend-api
     profiles: ["single-user"]
 
+    # TODO: move on the caddy side?
     environment:
       <<: *backend-api-environment
       FFUN_AUTH_FORCE_EXTERNAL_USER_ID: "dev-user"
