@@ -13,6 +13,16 @@ feeds.fun.local {
       }
     }
 
+    handle /spa/auth/logout {
+      rewrite * /oauth2/sign_out?rd=/%3Flogged-out
+
+      reverse_proxy gateway:8000 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Uri {uri}
+        header_up Host {host}
+      }
+    }
+
     handle /spa/auth/* {
       forward_auth gateway:8000 {
         uri /oauth2/auth
