@@ -1,101 +1,100 @@
+##########
+# snippets
+##########
+
+# TODO: rename gateway, since it is not a gateway anymore
+(gateway_proxy) {
+  reverse_proxy gateway:8000 {
+    header_up X-Real-IP {remote_host}
+    header_up X-Forwarded-Uri {uri}
+    header_up Host {host}
+  }
+}
+
+(backend_proxy) {
+  reverse_proxy backend:8000 {
+    header_up Host {host}
+  }
+}
+
+(frontend_proxy) {
+  reverse_proxy frontend:8000 {
+    header_up Host {host}
+  }
+}
+
+(idp_proxy) {
+  reverse_proxy idp:8080 {
+    header_up Host {host}
+  }
+}
+
+(gateway_auth_common) {
+  uri /oauth2/auth
+  header_up X-Real-IP {remote_host}
+  copy_headers X-FFun-User-Id X-FFun-Identity-Provider-Id
+}
+
+#######
+# sites
+#######
 
 feeds.fun.local {
   tls internal
 
-  route {
+  handle /oauth2/* {
+    import gateway_proxy
+  }
 
-    handle /oauth2/* {
-      # TODO: rename gateway, since it is not a gateway anymore
-      reverse_proxy gateway:8000 {
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-Uri {uri}
-        header_up Host {host}
+  handle /spa/auth/logout {
+    rewrite * /oauth2/sign_out?rd=/%3Flogged-out
+    import gateway_proxy
+  }
+
+  handle /spa/auth/login {
+    rewrite * /oauth2/start?rd={query.return_to}
+    import gateway_proxy
+  }
+
+  handle /spa/auth/join {
+    rewrite * /oauth2/start?prompt=create&rd={query.return_to}
+    import gateway_proxy
+  }
+
+  handle /spa/auth/* {
+    forward_auth gateway:8000 {
+      import gateway_auth_common
+
+      @unauth status 401
+      handle_response @unauth {
+        redir * /oauth2/sign_in?rd={scheme}://{host}{uri}
       }
     }
 
-    handle /spa/auth/logout {
-      rewrite * /oauth2/sign_out?rd=/%3Flogged-out
+    import backend_proxy
+  }
 
-      reverse_proxy gateway:8000 {
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-Uri {uri}
-        header_up Host {host}
-      }
+  handle /spa/api/private/* {
+    forward_auth gateway:8000 {
+      import gateway_auth_common
     }
 
-    handle /spa/auth/login {
-      rewrite * /oauth2/start?rd={query.return_to}
+    import backend_proxy
+  }
 
-      reverse_proxy gateway:8000 {
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-Uri {uri}
-        header_up Host {host}
-      }
-    }
+  handle /spa/* {
+    import backend_proxy
+  }
 
-    handle /spa/auth/join {
-      rewrite * /oauth2/start?prompt=create&rd={query.return_to}
-
-      reverse_proxy gateway:8000 {
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-Uri {uri}
-        header_up Host {host}
-      }
-    }
-
-    handle /spa/auth/* {
-      forward_auth gateway:8000 {
-        uri /oauth2/auth
-
-        header_up X-Real-IP {remote_host}
-
-        copy_headers X-FFun-User-Id X-FFun-Identity-Provider-Id
-
-        @unauth status 401
-        handle_response @unauth {
-          redir * /oauth2/sign_in?rd={scheme}://{host}{uri}
-        }
-      }
-
-      reverse_proxy backend:8000 {
-        header_up Host {host}
-      }
-    }
-
-    handle /spa/api/private/* {
-      forward_auth gateway:8000 {
-        uri /oauth2/auth
-
-        header_up X-Real-IP {remote_host}
-
-        copy_headers X-FFun-User-Id X-FFun-Identity-Provider-Id
-      }
-
-      reverse_proxy backend:8000 {
-        header_up Host {host}
-      }
-    }
-
-    handle /spa/* {
-      reverse_proxy backend:8000 {
-        header_up Host {host}
-      }
-    }
-
-    handle {
-      reverse_proxy frontend:8000 {
-        header_up Host {host}
-      }
-    }
+  handle {
+    import frontend_proxy
   }
 }
 
 idp.feeds.fun.local {
   tls internal
 
-  reverse_proxy idp:8080 {
-    header_up Host {host}
-  }
+  import idp_proxy
 }
 
 # Is required by Pomerium (see configs)
@@ -103,7 +102,5 @@ idp.feeds.fun.local {
 auth.feeds.fun.local {
   tls internal
 
-  reverse_proxy gateway:8000 {
-	header_up Host {host}
-  }
+  import gateway_proxy
 }
