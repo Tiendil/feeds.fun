@@ -115,72 +115,92 @@ services:
       ffun_network: {}
 
     healthcheck:
+        # bash -c "exec 3<>/dev/tcp/127.0.0.1/9000 &&
+        # printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+        # head -1 <&3 | grep -q '200'"
+
       test: >
         bash -c "exec 3<>/dev/tcp/127.0.0.1/9000 &&
-        printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
-        head -1 <&3 | grep -q '200'"
+        printf 'HEAD /health/ready HTTP/1.1\r\nHost: localhost:9000\r\nConnection: close\r\n\r\n' >&3 &&
+        grep -q 'HTTP/1.1 200 OK' <&3"
       interval: 1s
       timeout: 5s
       retries: 10
       start_period: 60s
 
-  gateway-multi-user:
+  auth-proxy-multi-user:
     profiles: ["multi-user"]
 
     depends_on:
-      - backend-multi-user
+      backend-multi-user:
+        condition: service_started
+      idp:
+        condition: service_healthy
 
     networks:
       ffun_network:
         aliases:
-          - gateway
+          - auth-proxy
 
-    #######################################################
-    # APISIX is now recomened proxy for OIDC authentication
-    #######################################################
-    image: apache/apisix:3.14.1-ubuntu
+    #############################################################
+    # OAuth2 Proxy is now recomened proxy for OIDC authentication
+    #############################################################
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.13.0-alpine
 
     volumes:
-      - ./docker/dev/apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
-      - ./docker/dev/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+      - ./docker/dev/oauth2-proxy/config.cfg:/etc/oauth2-proxy/config.cfg:ro
+      - ./docker/dev/oauth2-proxy/config-alpha.yaml:/etc/oauth2-proxy/config-alpha.yaml:ro
+      - ./docker/dev/oauth2-proxy/templates:/etc/oauth2-proxy/templates:ro
+      - ffun_caddy_data:/caddy-data:ro
 
-    environment:
-      APISIX_STAND_ALONE: "true"
+    command: --config /etc/oauth2-proxy/config.cfg --alpha-config /etc/oauth2-proxy/config-alpha.yaml
 
-  ####################################################
-  # Pomerium for testing aduptability of OIDC setup
-  # How to turn on:
-  # - frontend (spa) should be placed behind Pomerium gateway (Caddyfile)
-  # - add auth.feeds.fun.local domain pointing to he Pomerium gateway (/etc/hosts, Caddyfile, Keycloak client)
-  # - remove "pkce.code.challenge.method" from the Keycloak gateway-client settings
-  # Known problems:
-  # - Can not smartly redirect user to login/registration page.
-  # - Makes +1 redirect on the root of the SPA with custom URL query (that's why we need to place SPA behind Pomerium)
-  # - Uses hardcoded technical URLs, lile /.pomerium/*
-  ####################################################
-  #   image: pomerium/pomerium:v0.31
+    ########
+    # APISIX
+    ########
+    # image: apache/apisix:3.14.1-ubuntu
 
-  #   volumes:
-  #     - ./docker/dev/pomerium/config.yaml:/pomerium/config.yaml:ro
-  #     - ffun_caddy_data:/caddy-data:ro
+    # volumes:
+    #   - ./docker/dev/apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
+    #   - ./docker/dev/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
 
-  #   environment:
-  #     POMERIUM_DEBUG: "true"
+    # environment:
+    #   APISIX_STAND_ALONE: "true"
 
-  gateway-single-user:
-    image: alpine/socat
+
+    ####################################################
+    # Pomerium for testing aduptability of OIDC setup
+    # How to turn on:
+    # - frontend (spa) should be placed behind Pomerium auth-proxy (Caddyfile)
+    # - add auth.feeds.fun.local domain pointing to he Pomerium auth-proxy (/etc/hosts, Caddyfile, Keycloak client)
+    # - remove "pkce.code.challenge.method" from the Keycloak auth-proxy-client settings
+    # Known problems:
+    # - Can not smartly redirect user to login/registration page.
+    # - Makes +1 redirect on the root of the SPA with custom URL query (that's why we need to place SPA behind Pomerium)
+    # - Uses hardcoded technical URLs, lile /.pomerium/*
+    ####################################################
+    # image: pomerium/pomerium:v0.31
+
+    # volumes:
+    #   - ./docker/dev/pomerium/config.yaml:/pomerium/config.yaml:ro
+    #   - ffun_caddy_data:/caddy-data:ro
+
+    # environment:
+    #   POMERIUM_DEBUG: "true"
+
+  auth-proxy-single-user:
+    image: inanimate/echo-server
 
     profiles: ["single-user"]
 
-    depends_on:
-      - backend-single-user
-
-    command: tcp-listen:8000,fork,reuseaddr tcp-connect:backend:8000
+    environment:
+      PORT: "8000"
+      ADD_HEADERS: '{"X-FFun-User-Id":"dev-user","X-FFun-Identity-Provider-Id":"single_user"}'
 
     networks:
       ffun_network:
         aliases:
-          - gateway
+          - auth-proxy
 
   backend-build:
     image: ffun-backend-dev

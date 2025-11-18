@@ -1,0 +1,46 @@
+
+server:
+  BindAddress: "0.0.0.0:8000"
+  SecureBindAddress: "-"
+
+providers:
+  - id: primary_oidc
+    provider: keycloak-oidc
+
+    clientID: auth-proxy-client
+    clientSecret: a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq
+    # TODO: try to remove email scope
+    scope: "openid email"
+
+    oidcConfig:
+      issuerURL: "https://idp.feeds.fun.local/realms/dev"
+      userIDClaim: "sub"
+      emailClaim: "email" # TODO: try to remove
+      audienceClaims:
+        - "aud"
+      insecureSkipNonce: true # required to session cookie refresh work
+
+    loginURLParameters:
+      - name: prompt
+        allow:
+          - value: create
+
+    code_challenge_method: "S256"
+
+    backendLogoutURL: https://idp.feeds.fun.local/realms/dev/protocol/openid-connect/logout?id_token_hint={id_token}
+
+    caFiles:
+      - /caddy-data/caddy/pki/authorities/local/root.crt
+
+injectResponseHeaders:
+
+  - name: "X-FFun-User-Id"
+    preserveRequestValue: false
+    values:
+      - claim: "user"
+
+  - name: "X-FFun-Identity-Provider-Id"
+    preserveRequestValue: false
+    values:
+      # base64("primary_oidc")
+      - value: "cHJpbWFyeV9vaWRjCg=="

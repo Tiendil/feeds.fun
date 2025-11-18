@@ -74,8 +74,8 @@
 
   "clients": [
     {
-      "clientId": "gateway-client",
-      "name": "gateway-client",
+      "clientId": "auth-proxy-client",
+      "name": "auth-proxy-client",
       "description": "",
       "rootUrl": "https://idp.feeds.fun.local",
       "adminUrl": "https://idp.feeds.fun.local",

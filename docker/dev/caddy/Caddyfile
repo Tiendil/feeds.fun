@@ -1,27 +1,114 @@
+##########
+# snippets
+##########
+
+# TODO: rename auth-proxy to smth more specific
+(auth_proxy) {
+  reverse_proxy auth-proxy:8000 {
+    header_up X-Real-IP {remote_host}
+    header_up X-Forwarded-Uri {uri}
+    header_up Host {host}
+  }
+}
+
+(backend_proxy) {
+  reverse_proxy backend:8000 {
+    header_up Host {host}
+  }
+}
+
+(frontend_proxy) {
+  reverse_proxy frontend:8000 {
+    header_up Host {host}
+  }
+}
+
+(idp_proxy) {
+  reverse_proxy idp:8080 {
+    header_up Host {host}
+  }
+}
+
+(auth_proxy_common) {
+  uri /oauth2/auth
+  header_up X-Real-IP {remote_host}
+  copy_headers {
+    X-FFun-User-Id
+    X-FFun-Identity-Provider-Id
+    Set-Cookie
+  }
+}
+
+#######
+# sites
+#######
 
 feeds.fun.local {
   tls internal
 
-  @spa path /spa/*
-  handle @spa {
-    reverse_proxy gateway:8000 {
-      header_up Host {host}
+  handle /oauth2/* {
+    import auth_proxy
+  }
+
+  handle /spa/auth/logout {
+    rewrite * /oauth2/sign_out?rd=/%3Flogged-out
+    import auth_proxy
+  }
+
+  handle /spa/auth/login {
+    rewrite * /oauth2/start?rd={query.return_to}
+    import auth_proxy
+  }
+
+  handle /spa/auth/join {
+    rewrite * /oauth2/start?prompt=create&rd={query.return_to}
+    import auth_proxy
+  }
+
+  handle /spa/auth/* {
+    route {
+      forward_auth auth-proxy:8000 {
+        import auth_proxy_common
+
+        @unauth status 401
+        handle_response @unauth {
+          redir * /oauth2/sign_in?rd={scheme}://{host}{uri}
+        }
+      }
+
+      @authCookie header Set-Cookie *
+      header @authCookie +Set-Cookie {header.Set-Cookie}
+
+      import backend_proxy
     }
   }
 
-  handle {
-    reverse_proxy frontend:8000 {
-      header_up Host {host}
+  handle /spa/api/private/* {
+    route {
+      forward_auth auth-proxy:8000 {
+        import auth_proxy_common
+      }
+
+      @authCookie header Set-Cookie *
+      header @authCookie +Set-Cookie {header.Set-Cookie}
+
+      import backend_proxy
     }
+  }
+
+  handle /spa/* {
+    import backend_proxy
+  }
+
+  handle {
+    import frontend_proxy
   }
 }
 
 idp.feeds.fun.local {
   tls internal
 
-  reverse_proxy idp:8080 {
-    header_up Host {host}
-  }
+  import idp_proxy
 }
 
 # Is required by Pomerium (see configs)
@@ -29,7 +116,5 @@ idp.feeds.fun.local {
 auth.feeds.fun.local {
   tls internal
 
-  reverse_proxy gateway:8000 {
-	header_up Host {host}
-  }
+  import auth_proxy
 }
