@@ -2,9 +2,9 @@
 # snippets
 ##########
 
-# TODO: rename gateway to smth more specific
-(gateway_proxy) {
-  reverse_proxy gateway:8000 {
+# TODO: rename auth-proxy to smth more specific
+(auth_proxy) {
+  reverse_proxy auth-proxy:8000 {
     header_up X-Real-IP {remote_host}
     header_up X-Forwarded-Uri {uri}
     header_up Host {host}
@@ -29,7 +29,7 @@
   }
 }
 
-(gateway_auth_common) {
+(auth_proxy_common) {
   uri /oauth2/auth
   header_up X-Real-IP {remote_host}
   copy_headers {
@@ -47,28 +47,28 @@ feeds.fun.local {
   tls internal
 
   handle /oauth2/* {
-    import gateway_proxy
+    import auth_proxy
   }
 
   handle /spa/auth/logout {
     rewrite * /oauth2/sign_out?rd=/%3Flogged-out
-    import gateway_proxy
+    import auth_proxy
   }
 
   handle /spa/auth/login {
     rewrite * /oauth2/start?rd={query.return_to}
-    import gateway_proxy
+    import auth_proxy
   }
 
   handle /spa/auth/join {
     rewrite * /oauth2/start?prompt=create&rd={query.return_to}
-    import gateway_proxy
+    import auth_proxy
   }
 
   handle /spa/auth/* {
     route {
-      forward_auth gateway:8000 {
-        import gateway_auth_common
+      forward_auth auth-proxy:8000 {
+        import auth_proxy_common
 
         @unauth status 401
         handle_response @unauth {
@@ -85,8 +85,8 @@ feeds.fun.local {
 
   handle /spa/api/private/* {
     route {
-      forward_auth gateway:8000 {
-        import gateway_auth_common
+      forward_auth auth-proxy:8000 {
+        import auth_proxy_common
       }
 
       @authCookie header Set-Cookie *
@@ -116,5 +116,5 @@ idp.feeds.fun.local {
 auth.feeds.fun.local {
   tls internal
 
-  import gateway_proxy
+  import auth_proxy
 }

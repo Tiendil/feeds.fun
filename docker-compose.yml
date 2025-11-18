@@ -128,7 +128,7 @@ services:
       retries: 10
       start_period: 60s
 
-  gateway-multi-user:
+  auth-proxy-multi-user:
     profiles: ["multi-user"]
 
     depends_on:
@@ -140,7 +140,7 @@ services:
     networks:
       ffun_network:
         aliases:
-          - gateway
+          - auth-proxy
 
     #############################################################
     # OAuth2 Proxy is now recomened proxy for OIDC authentication
@@ -171,9 +171,9 @@ services:
     ####################################################
     # Pomerium for testing aduptability of OIDC setup
     # How to turn on:
-    # - frontend (spa) should be placed behind Pomerium gateway (Caddyfile)
-    # - add auth.feeds.fun.local domain pointing to he Pomerium gateway (/etc/hosts, Caddyfile, Keycloak client)
-    # - remove "pkce.code.challenge.method" from the Keycloak gateway-client settings
+    # - frontend (spa) should be placed behind Pomerium auth-proxy (Caddyfile)
+    # - add auth.feeds.fun.local domain pointing to he Pomerium auth-proxy (/etc/hosts, Caddyfile, Keycloak client)
+    # - remove "pkce.code.challenge.method" from the Keycloak auth-proxy-client settings
     # Known problems:
     # - Can not smartly redirect user to login/registration page.
     # - Makes +1 redirect on the root of the SPA with custom URL query (that's why we need to place SPA behind Pomerium)
@@ -188,7 +188,7 @@ services:
     # environment:
     #   POMERIUM_DEBUG: "true"
 
-  gateway-single-user:
+  auth-proxy-single-user:
     image: inanimate/echo-server
 
     profiles: ["single-user"]
@@ -200,7 +200,7 @@ services:
     networks:
       ffun_network:
         aliases:
-          - gateway
+          - auth-proxy
 
   backend-build:
     image: ffun-backend-dev

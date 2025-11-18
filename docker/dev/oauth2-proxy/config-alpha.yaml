@@ -7,7 +7,7 @@ providers:
   - id: primary_oidc
     provider: keycloak-oidc
 
-    clientID: gateway-client
+    clientID: auth-proxy-client
     clientSecret: a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq
     # TODO: try to remove email scope
     scope: "openid email"
