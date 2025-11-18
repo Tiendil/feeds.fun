@@ -17,13 +17,6 @@ server:
   BindAddress: "0.0.0.0:8000"
   SecureBindAddress: "-"
 
-# TODO: remove?
-# upstreamConfig:
-#   upstreams:
-#     - id: backend
-#       path: "^/spa/"
-#       uri: "http://backend:8000"
-
 providers:
   - id: primary_oidc
     provider: keycloak-oidc
@@ -43,20 +36,12 @@ providers:
 
     loginURLParameters:
       - name: prompt
-        default: ["login"]
         allow:
-          - value: login
           - value: create
 
     code_challenge_method: "S256"
 
-    # TODO: do we need that?
-    # Here oauth2-proxy will call Keycloak's end-session endpoint on logout.
-    # You wire /spa/auth/logout in your front proxy to `/oauth2/sign_out`.
-    backendLogoutURL: >
-      https://idp.feeds.fun.local/realms/dev/protocol/openid-connect/logout
-      ?id_token_hint={id_token}
-      &post_logout_redirect_uri=https%3A%2F%2Ffeeds.fun.local%3Flogged-out
+    backendLogoutURL: https://idp.feeds.fun.local/realms/dev/protocol/openid-connect/logout?id_token_hint={id_token}
 
     # useSystemTrustStore: true
     caFiles:
