@@ -220,7 +220,6 @@ services:
     <<: *backend-api
     profiles: ["single-user"]
 
-    # TODO: move on the caddy side?
     environment:
       <<: *backend-api-environment
       FFUN_AUTH_FORCE_EXTERNAL_USER_ID: "dev-user"
