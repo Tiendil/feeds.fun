@@ -46,7 +46,7 @@ x-openid-common-properties: &openid-common-properties
   redirect_uri: https://feeds.fun.local/spa/auth/redirect
 
   # Turn on on prod
-  # We can not easily add Caddy root CA to APISIX because of user id mismatch
+  # In dev env, we can not easily add Caddy root CA to APISIX because of user id mismatch
   # ssl_verify: true
 
   ############################################################
