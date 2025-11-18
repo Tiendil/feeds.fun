@@ -1,0 +1,73 @@
+# alpha-config.yaml
+#
+# Use with:
+#   oauth2-proxy \
+#     --alpha-config=/etc/oauth2-proxy/alpha-config.yaml \
+#     --cookie-secret=<base64-32> \
+#     --cookie-name=ffun_session \
+#     --cookie-domain=feeds.fun.local \
+#     --cookie-secure=true \
+#     --cookie-httponly=true \
+#     --cookie-samesite=strict \
+#     --cookie-expire=8760h0m0s   # ≈ 1 year, matches 31536000s \
+#     --cookie-refresh=0          # or tune as you like \
+#     --http-address=0.0.0.0:4180
+
+server:
+  BindAddress: "0.0.0.0:8000"
+  SecureBindAddress: "-"
+
+# TODO: remove?
+# upstreamConfig:
+#   upstreams:
+#     - id: backend
+#       path: "^/spa/"
+#       uri: "http://backend:8000"
+
+providers:
+  - id: primary_oidc
+    provider: keycloak-oidc
+
+    clientID: gateway-client
+    clientSecret: a5tAGfAvr1A2nACmPRSlxMTJyJ6yoEuq
+    # TODO: try to remove email scope
+    scope: "openid email"
+
+    oidcConfig:
+      issuerURL: "https://idp.feeds.fun.local/realms/dev"
+      userIDClaim: "sub"
+      emailClaim: "email" # TODO: try to remove
+      audienceClaims:
+        - "aud"
+      # extraAudiences: []
+
+    code_challenge_method: "S256"
+
+    # Equivalent to:
+    #   revoke_tokens_on_logout: true
+    #   logout_path: /spa/auth/logout
+    #   post_logout_redirect_uri: https://feeds.fun.local?logged-out
+    #
+    # Here oauth2-proxy will call Keycloak's end-session endpoint on logout.
+    # You wire /spa/auth/logout in your front proxy to `/oauth2/sign_out`.
+    backendLogoutURL: >
+      https://idp.feeds.fun.local/realms/dev/protocol/openid-connect/logout
+      ?id_token_hint={id_token}
+      &post_logout_redirect_uri=https%3A%2F%2Ffeeds.fun.local%3Flogged-out
+
+    # useSystemTrustStore: true
+    caFiles:
+      - /caddy-data/caddy/pki/authorities/local/root.crt
+
+injectResponseHeaders:
+
+  - name: "X-FFun-User-Id"
+    preserveRequestValue: false
+    values:
+      - claim: "user"
+
+  - name: "X-FFun-Identity-Provider-Id"
+    preserveRequestValue: false
+    values:
+      # base64("primary_oidc")
+      - value: "cHJpbWFyeV9vaWRjCg=="
