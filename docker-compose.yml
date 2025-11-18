@@ -162,6 +162,7 @@ services:
     volumes:
       - ./docker/dev/oauth2-proxy/config.cfg:/etc/oauth2-proxy/config.cfg:ro
       - ./docker/dev/oauth2-proxy/config-alpha.yaml:/etc/oauth2-proxy/config-alpha.yaml:ro
+      - ./docker/dev/oauth2-proxy/templates:/etc/oauth2-proxy/templates:ro
       - ffun_caddy_data:/caddy-data:ro
 
     command: --config /etc/oauth2-proxy/config.cfg --alpha-config /etc/oauth2-proxy/config-alpha.yaml
