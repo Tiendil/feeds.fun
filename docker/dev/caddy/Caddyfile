@@ -2,7 +2,6 @@
 # snippets
 ##########
 
-# TODO: rename gateway, since it is not a gateway anymore
 (gateway_proxy) {
   reverse_proxy gateway:8000 {
     header_up X-Real-IP {remote_host}

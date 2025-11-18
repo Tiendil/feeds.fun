@@ -142,21 +142,9 @@ services:
         aliases:
           - gateway
 
-    #######################################################
-    # APISIX is now recomened proxy for OIDC authentication
-    #######################################################
-    # image: apache/apisix:3.14.1-ubuntu
-
-    # volumes:
-    #   - ./docker/dev/apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
-    #   - ./docker/dev/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
-
-    # environment:
-    #   APISIX_STAND_ALONE: "true"
-
-    ####################
-    # OAuth2 Proxy setup
-    ####################
+    #############################################################
+    # OAuth2 Proxy is now recomened proxy for OIDC authentication
+    #############################################################
     image: quay.io/oauth2-proxy/oauth2-proxy:v7.13.0-alpine
 
     volumes:
@@ -166,6 +154,19 @@ services:
       - ffun_caddy_data:/caddy-data:ro
 
     command: --config /etc/oauth2-proxy/config.cfg --alpha-config /etc/oauth2-proxy/config-alpha.yaml
+
+    ########
+    # APISIX
+    ########
+    # image: apache/apisix:3.14.1-ubuntu
+
+    # volumes:
+    #   - ./docker/dev/apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
+    #   - ./docker/dev/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+
+    # environment:
+    #   APISIX_STAND_ALONE: "true"
+
 
     ####################################################
     # Pomerium for testing aduptability of OIDC setup
