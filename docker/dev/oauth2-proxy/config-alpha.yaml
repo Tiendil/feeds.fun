@@ -18,6 +18,7 @@ providers:
       emailClaim: "email" # TODO: try to remove
       audienceClaims:
         - "aud"
+      insecureSkipNonce: true # required to session cookie refresh work
 
     loginURLParameters:
       - name: prompt

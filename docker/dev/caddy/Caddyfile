@@ -32,7 +32,11 @@
 (gateway_auth_common) {
   uri /oauth2/auth
   header_up X-Real-IP {remote_host}
-  copy_headers X-FFun-User-Id X-FFun-Identity-Provider-Id
+  copy_headers {
+    X-FFun-User-Id
+    X-FFun-Identity-Provider-Id
+    Set-Cookie
+  }
 }
 
 #######
@@ -62,24 +66,42 @@ feeds.fun.local {
   }
 
   handle /spa/auth/* {
-    forward_auth gateway:8000 {
-      import gateway_auth_common
+    route {
+      # TODO: move globally?
+      # do not allow client-provided Set-Cookie
+      request_header -Set-Cookie
 
-      @unauth status 401
-      handle_response @unauth {
-        redir * /oauth2/sign_in?rd={scheme}://{host}{uri}
+      forward_auth gateway:8000 {
+        import gateway_auth_common
+
+        @unauth status 401
+        handle_response @unauth {
+          redir * /oauth2/sign_in?rd={scheme}://{host}{uri}
+        }
       }
-    }
 
-    import backend_proxy
+      @authCookie header Set-Cookie *
+      header @authCookie +Set-Cookie {header.Set-Cookie}
+
+      import backend_proxy
+    }
   }
 
   handle /spa/api/private/* {
-    forward_auth gateway:8000 {
-      import gateway_auth_common
-    }
+    route {
+      # TODO: move globally?
+      # do not allow client-provided Set-Cookie
+      request_header -Set-Cookie
 
-    import backend_proxy
+      forward_auth gateway:8000 {
+        import gateway_auth_common
+      }
+
+      @authCookie header Set-Cookie *
+      header @authCookie +Set-Cookie {header.Set-Cookie}
+
+      import backend_proxy
+    }
   }
 
   handle /spa/* {
