@@ -12,8 +12,8 @@ No changes.
 - ff-576 — Track clicks on authentication-related buttons.
 - ff-565 — Correct properties for session cookies (SPA <-> Gateway).
 - ff-579 — Removed api methods with optional authentication. Not all auth proxies work well with optional auth.
-- ff-584 — Authentication refactored to OAuth2Proxy.
 - ff-581 — Added protection from the `X-*` headers injection into Caddy dev config.
+- ff-571 — Closed access to `/realms/dev/account*` endpoints in Caddy dev config.
 
 TODO:
 

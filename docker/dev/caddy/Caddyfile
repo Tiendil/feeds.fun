@@ -111,6 +111,11 @@ feeds.fun.local {
 idp.feeds.fun.local {
   tls internal
 
+  # Simple and effective way to disable Keycloak account console
+  handle_path /realms/dev/account* {
+    respond "Not found" 404
+  }
+
   import idp_proxy
 }
 
