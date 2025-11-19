@@ -46,6 +46,9 @@
 feeds.fun.local {
   tls internal
 
+  # Remove all X-* headers to prevent header injection attacks
+  request_header -X-*
+
   handle /oauth2/* {
     import auth_proxy
   }
