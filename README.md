@@ -84,8 +84,13 @@ Format of environment variables:
 For example:
 
 ```
-FFUN_AUTH_MODE="supertokens"
+# general application setting
+FFUN_ENABLE_SENTRY="True"
 
+# component (auth) setting
+FFUN_AUTH_HEADER_USER_ID="X-FFun-User-Id"
+
+# component (librarian) subsetting (openai_general_processor.enabled)
 FFUN_LIBRARIAN_OPENAI_GENERAL_PROCESSOR__ENABLED="True"
 ```
 
@@ -191,17 +196,18 @@ FFUN_ENVIRONMENT="prod"
 # Required for API server.
 FFUN_ENABLE_API_SPA="True"
 
-# Set if you want multi-user setup.
-FFUN_ENABLE_SUPERTOKENS="True"
-FFUN_APP_DOMAIN=...
-FFUN_AUTH_MODE: "supertokens"
-FFUN_AUTH_SUPERTOKENS__COOKIE_SECURE="True"
-FFUN_AUTH_SUPERTOKENS__API_KEY=...
-FFUN_AUTH_SUPERTOKENS__CONNECTION_URI=...
+# If you want Feeds Fun in a multi-user mode, you need a more complex setup, check examples mentioned above.
+
+# Set fixed identity provider & user id for single-user setup.
+# Remove these settings for multi-user setup.
+FFUN_AUTH_FORCE_EXTERNAL_USER_ID="dev-user"
+FFUN_AUTH_FORCE_EXTERNAL_IDENTITY_PROVIDER_ID="single_user"
+
+FFUN_APP_DOMAIN="your.domain.com"
 
 # Has default value for development environment.
 # I strongly recommend to redefine it because of potential security issues.
-FFUN_USER_SETTINGS_SECRET_KEY=...
+FFUN_USER_SETTINGS_SECRET_KEY="your-super-secret-key"
 ```
 
 If you want to periodically clean your database from old entries, add the call `ffun cleaner clean` to your cron tasks. **It is recommended.**
@@ -210,27 +216,21 @@ More details see in the architecture section.
 
 ## Frontend
 
-If you find this approach too strange, just use tags `frontend-<version>`.
+If you find this approach too weird, just checkout the tag `release-<version>` and build the frontend from the sources in the `./site` directory.
 
 ```
 npm init -y
 npm install feeds-fun
 npm install --prefix ./node_modules/feeds-fun
 
-# Set environment variables before next step!!!
+# You may want to setup environment variables here (before the build step).
+# Check them in the ./site/src/logic/settings.ts file.
+# Hovewer, there are no required variables for the minimal setup.
 
 # Build static content.
 npm run build-only --prefix ./node_modules/feeds-fun
 
 cp -r ./node_modules/feeds-fun/dist ./wherever-you-place-static-content
-```
-
-The minimal configuration for the frontend:
-
-```
-VITE_FFUN_AUTH_MODE="supertokens" # or "single_user"
-VITE_FFUN_APP_DOMAIN=...
-VITE_FFUN_APP_PORT=...
 ```
 
 # Architecture
@@ -255,14 +255,15 @@ All logic is split between tag processors. Each processor implements a single ap
 
 ## Preparations
 
-To use less hacks in dev configuration and be more consistent with production setup, we use custome domains `feeds.fun.local` & `idp.feeds.fun.local` for local development.
+To use less hacks in dev configuration and be more consistent with production setup, we use custom domains `feeds.fun.local` & `idp.feeds.fun.local` for local development.
+
+- `feeds.fun.local` — Feeds Fun service;
+- `idp.feeds.fun.local` — identity provider, such as Keycloak, for multi-user mode.
 
 Add the following line to your `/etc/hosts` file:
 
 ```
 127.0.0.1 feeds.fun.local
-# The idp subdomain is used for authentication server
-# => it is required only in multi-user mode
 127.0.0.1 idp.feeds.fun.local
 ```
 

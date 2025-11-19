@@ -1,6 +1,5 @@
 declare const __APP_VERSION__: string;
 
-export const environment = import.meta.env.VITE_FFUN_ENVIRONMENT || "local";
 export const version = __APP_VERSION__;
 
 export const authRefreshInterval = import.meta.env.VITE_FFUN_AUTH_REFRESH_INTERVAL || 10 * 60 * 1000;
@@ -24,7 +23,6 @@ export const crmPrivacy = import.meta.env.VITE_FFUN_CRM_PRIVACY || null;
 
 export const hasCollections = import.meta.env.VITE_FFUN_HAS_COLLECTIONS == "true" || false;
 
-console.log("settings.environment", environment);
 console.log("settings.version", version);
 
 console.log("settings.authRefreshInterval", authRefreshInterval);
