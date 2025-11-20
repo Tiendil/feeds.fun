@@ -2,7 +2,6 @@
 # snippets
 ##########
 
-# TODO: rename auth-proxy to smth more specific
 (auth_proxy) {
   reverse_proxy auth-proxy:8000 {
     header_up X-Real-IP {remote_host}
