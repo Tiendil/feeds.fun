@@ -1,4 +1,9 @@
 <!doctype html>
+<!-- This page has multiple purposes: -->
+<!-- 1. Redirect the user to home page after an unexpected error -->
+<!-- 2. Provide smoother behaviour in case the user presses "back" button. -->
+<!-- 3. Provide "smart" behaviour in case the user opens magic login link in a different system/browser -->
+<!--    which leads to CSRF error in OAuth2-Proxy, but besides it everything works fine. -->
 <html>
   <head>
     <meta charset="utf-8" />
