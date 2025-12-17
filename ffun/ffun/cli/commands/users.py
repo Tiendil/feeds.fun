@@ -16,7 +16,8 @@ cli_app = typer.Typer()
 
 async def run_import_users(csv_path: pathlib.Path,
                            idp_id: str,
-                           verify_internal_users_exists: bool
+                           verify_internal_users_exists: bool,
+                           number: int | None = None
                            ) -> None:  # noqa: CCR001
     idp = a_settings.get_idp_by_external_id(idp_id)
 
@@ -36,6 +37,11 @@ async def run_import_users(csv_path: pathlib.Path,
 
     logger.info("csv_read", rows=len(data))
 
+    if number is not None:
+        data = data[:number]
+
+    logger.info("starting_import", total_users=len(data))
+
     async with with_app():
         for user_id, email, created_at in data:
             logger.info("importing_user", user_id=user_id)
@@ -49,16 +55,18 @@ async def run_import_users(csv_path: pathlib.Path,
 
 
 @cli_app.command()
-def import_users_to_idp(idp_id: str, csv_path: pathlib.Path, verify_internal_users_exists: bool = True) -> None:
+def import_users_to_idp(idp_id: str, csv_path: pathlib.Path, verify_internal_users_exists: bool = True, number: int | None = None) -> None:
     """Import users from a CSV file to the identity provider.
 
     Args:
         csv_path (path.Path): Path to the CSV file containing user data.
         idp_id (str): The identity provider ID to which users will be imported.
         verify_internal_users_exists (bool): Whether to verify that internal users exist before importing.
+        number (int): Optional number of users to import. If None, all users in the CSV will be imported.
 
     Format of the CSV file: 3 columns - user_id(str), email(str), time_joined(millisec since epoch)
     """
     asyncio.run(run_import_users(csv_path=csv_path,
                                  idp_id=idp_id,
-                                 verify_internal_users_exists=verify_internal_users_exists))
+                                 verify_internal_users_exists=verify_internal_users_exists,
+                                 number=number))

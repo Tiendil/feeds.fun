@@ -72,7 +72,7 @@ class Plugin(PluginBase):
                 await self.get_access_token(force=True)
                 return await self._call_admin(method, path, retry_on_token_loss=False)
 
-            if response.status_code in (200, 204):
+            if response.status_code in (200, 201, 204):
                 return
 
             raise CanNotCallAdminAPI()
