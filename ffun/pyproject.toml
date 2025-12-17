@@ -1,6 +1,6 @@
 [project]
 name = "ffun"
-version = "1.21.6"
+version = "1.22.0"
 description = "Backend for the Feeds Fun — web-based news reader"
 license = "BSD-3-Clause"
 readme = "README.md"
