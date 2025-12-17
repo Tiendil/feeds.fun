@@ -1,3 +1,6 @@
+import datetime
+from typing import Any
+
 from ffun.auth.idps.plugin import Plugin as PluginBase
 from ffun.core import errors
 from ffun.domain import http
@@ -55,19 +58,25 @@ class Plugin(PluginBase):
 
             return self._access_token
 
-    async def _call_admin(self, method: str, path: str, retry_on_token_loss: bool) -> None:
+    async def _call_admin(
+        self, method: str, path: str, retry_on_token_loss: bool, data: dict[str, Any] | None = None
+    ) -> None:
         access_token = await self.get_access_token(force=False)
 
         headers = {"Authorization": f"Bearer {access_token}"}
 
         async with http.client(headers=headers) as client:
-            response = await client.request(method, path)
+
+            if method in ("POST", "PUT", "PATCH"):
+                response = await client.request(method, path, json=data)
+            else:
+                response = await client.request(method, path)
 
             if response.status_code in (401, 403) and retry_on_token_loss:
                 await self.get_access_token(force=True)
                 return await self._call_admin(method, path, retry_on_token_loss=False)
 
-            if response.status_code in (200, 204):
+            if response.status_code in (200, 201, 204):
                 return
 
             raise CanNotCallAdminAPI()
@@ -79,6 +88,25 @@ class Plugin(PluginBase):
     async def revoke_all_user_sessions(self, external_user_id: str) -> None:
         url = f"{self.entrypoint}/admin/realms/{self.service_realm}/users/{external_user_id}/logout"
         await self._call_admin("POST", url, retry_on_token_loss=True)
+
+    async def import_user(self, external_user_id: str, email: str, created_at: datetime.datetime) -> None:
+        url = f"{self.entrypoint}/admin/realms/{self.service_realm}/partialImport"
+
+        user = {
+            "id": external_user_id,
+            "username": email,
+            "email": email,
+            "emailVerified": True,
+            "enabled": True,
+            "createdTimestamp": int(created_at.timestamp() * 1000),
+        }
+
+        data = {
+            "ifResourceExists": "FAIL",  # TODO: we may want to move this to method parameters
+            "users": [user],
+        }
+
+        await self._call_admin("POST", url, retry_on_token_loss=True, data=data)
 
 
 def construct(**kwargs: str) -> Plugin:
