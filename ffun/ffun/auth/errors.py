@@ -19,3 +19,7 @@ class IdPNoIdentityProviderInSettings(Error):
 
 class NoIdPFound(Error):
     pass
+
+
+class InternalUserDoesNotExistForImportedUser(Error):
+    pass

@@ -10,6 +10,15 @@ get_user_external_ids = operations.get_user_external_ids
 unlink_user = operations.unlink_user
 
 
+# TODO: tests
+async def check_user_exists(service: IdPId, external_id: str) -> bool:
+    try:
+        await get_mapping(service, external_id)
+        return True
+    except errors.NoUserMappingFound:
+        return False
+
+
 async def get_or_create_user_id(service: IdPId, external_id: str) -> UserId:
     try:
         return await get_mapping(service, external_id)
