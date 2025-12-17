@@ -39,7 +39,7 @@ async def import_user_to_external_service(service: IdPId, external_user_id: str,
         raise errors.NoIdPFound()
 
     if verify_internal_user_exists:
-        if not await u_domain.check_user_exists(service, external_user_id):
+        if not await u_domain.check_external_user_exists(service, external_user_id):
             raise errors.InternalUserDoesNotExistForImportedUser()
 
     await idp.plugin.import_user(external_user_id, email, created_at)
