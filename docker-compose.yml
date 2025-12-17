@@ -35,6 +35,7 @@ x-backend-api: &backend-api
     - ${PWD}/ffun:/repository
     - ${PWD}/.env:/repository/.env
     - ${PWD}/.configs:/repository/.configs
+    - ${PWD}/.shared:/repository/.shared
     - ${PWD}/feeds_collections:/repository/feeds_collections
 
   environment:
@@ -236,6 +237,7 @@ services:
       - ${PWD}/ffun:/repository
       - ${PWD}/.env:/repository/.env
       - ${PWD}/.configs:/repository/.configs
+      - ${PWD}/.shared:/repository/.shared
       - ${PWD}/tags_quality_base:/repository/tags_quality_base
       - ${PWD}/feeds_collections:/repository/feeds_collections
       - ${PWD}/changes:/repository/changes

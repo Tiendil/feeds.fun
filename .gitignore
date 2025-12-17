@@ -135,3 +135,6 @@ ffun/CHANGELOG.md
 .configs
 
 profile.svg
+
+# ignore directory with tmp files shared with docker containers
+.shared

@@ -1,18 +1,20 @@
 import csv
 import asyncio
-import path
+import pathlib
 import datetime
+import typer
 
 from ffun.application.application import with_app
-from ffun.cli.application import app
 from ffun.core import logging
 from ffun.auth import domain as a_domain
 from ffun.auth.settings import settings as a_settings
 
 logger = logging.get_module_logger()
 
+cli_app = typer.Typer()
 
-async def run_import_users(csv_path: path.Path,
+
+async def run_import_users(csv_path: pathlib.Path,
                            idp_id: str,
                            verify_internal_users_exists: bool
                            ) -> None:  # noqa: CCR001
@@ -46,8 +48,8 @@ async def run_import_users(csv_path: path.Path,
     logger.info("import_users_finished", total_users=len(data))
 
 
-@app.command()
-def import_users_to_idp(csv_path: path.Path, idp_id: str, verify_internal_users_exists: bool = True) -> None:
+@cli_app.command()
+def import_users_to_idp(idp_id: str, csv_path: pathlib.Path, verify_internal_users_exists: bool = True) -> None:
     """Import users from a CSV file to the identity provider.
 
     Args:
