@@ -1,7 +1,7 @@
 
 **Operations required BEFORE UPDATE**:
 
-1. We dropped support for Supertokens-based authentication (in multi-user mode) because Supertokens does not support the OIDC protocol well, lacks some features, and hides others behind paywalls. Instead f, Supertokens Feeds Fun now supports OIDC-compliant identity providers (IdP), e.g. Keycloak, Auth0, Okta, etc. If you used Supertokens-based authentication, you need to:
+1. We dropped support for Supertokens-based authentication (in multi-user mode) because Supertokens does not support the OIDC protocol well, lacks some features, and hides others behind paywalls. Instead of Supertokens, Feeds Fun now supports OIDC-compliant identity providers (IdP), e.g. Keycloak, Auth0, Okta, etc. If you used Supertokens-based authentication, you need to:
   - migrate your users to a new IdP that supports OIDC protocol;
   - update your Feeds Fun configuration accordingly (see examples: https://github.com/Tiendil/feeds.fun/tree/main/docs/examples) — they will be actualized shortly after the release.
 
@@ -23,3 +23,4 @@ Dev environment changes:
 - ff-569 — Styles for Keycloak themes.
 - ff-581 — Added protection from the `X-*` headers injection into Caddy dev config.
 - ff-571 — Closed access to `/realms/dev/account*` endpoints in Caddy dev config.
+- ff-612 — Fixed logout behaviour, now logout is requested not only from the OAuth2-proxy, but also from Keycloak.
