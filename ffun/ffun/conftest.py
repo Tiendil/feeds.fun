@@ -6,6 +6,7 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
 from ffun.application import application
+from ffun.auth.tests.fixtures import *  # noqa
 from ffun.core import migrations
 from ffun.feeds.tests.fixtures import *  # noqa
 from ffun.feeds_collections.tests.fixtures import *  # noqa
@@ -15,7 +16,6 @@ from ffun.library.tests.fixtures import *  # noqa
 from ffun.llms_framework.tests.fixtures import *  # noqa
 from ffun.ontology.tests.fixtures import *  # noqa
 from ffun.parsers.tests.fixtures import *  # noqa
-from ffun.auth.tests.fixtures import *  # noqa
 from ffun.users.tests.fixtures import *  # noqa
 
 

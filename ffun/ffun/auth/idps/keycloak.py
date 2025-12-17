@@ -1,4 +1,5 @@
 import datetime
+
 from ffun.auth.idps.plugin import Plugin as PluginBase
 from ffun.core import errors
 from ffun.domain import http

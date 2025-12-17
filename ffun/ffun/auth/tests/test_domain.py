@@ -1,16 +1,15 @@
 import pytest
-import uuid
 from pytest_mock import MockerFixture
 
-from ffun.core import utils
 from ffun.auth import errors
 from ffun.auth.domain import (
+    import_user_to_external_service,
     logout_user_from_all_sessions,
     logout_user_from_all_sessions_in_service,
     remove_user_from_external_service,
-    import_user_to_external_service
 )
 from ffun.auth.settings import primary_oidc_service_id, single_user_service_id
+from ffun.core import utils
 from ffun.domain.entities import IdPId, UserId
 from ffun.users import domain as u_domain
 
@@ -69,20 +68,24 @@ class TestImportUserToExternalService:
     @pytest.mark.asyncio
     async def test_no_idp_found(self, external_user_id: str, external_user_email: str) -> None:
         with pytest.raises(errors.NoIdPFound):
-            await import_user_to_external_service(service=IdPId(666),
-                                                  external_user_id=external_user_id,
-                                                  email=external_user_email,
-                                                  created_at=utils.now(),
-                                                  verify_internal_user_exists=False)
+            await import_user_to_external_service(
+                service=IdPId(666),
+                external_user_id=external_user_id,
+                email=external_user_email,
+                created_at=utils.now(),
+                verify_internal_user_exists=False,
+            )
 
     @pytest.mark.asyncio
     async def test_verify_internal_user_exists(self, external_user_id: str, external_user_email: str) -> None:
         with pytest.raises(errors.InternalUserDoesNotExistForImportedUser):
-            await import_user_to_external_service(service=primary_oidc_service_id,
-                                                  external_user_id=external_user_id,
-                                                  email=external_user_email,
-                                                  created_at=utils.now(),
-                                                  verify_internal_user_exists=True)
+            await import_user_to_external_service(
+                service=primary_oidc_service_id,
+                external_user_id=external_user_id,
+                email=external_user_email,
+                created_at=utils.now(),
+                verify_internal_user_exists=True,
+            )
 
     @pytest.mark.asyncio
     async def test_success(self, external_user_id: str, external_user_email: str, mocker: MockerFixture) -> None:
@@ -92,10 +95,12 @@ class TestImportUserToExternalService:
 
         now = utils.now()
 
-        await import_user_to_external_service(service=single_user_service_id,
-                                              external_user_id=external_user_id,
-                                              email=external_user_email,
-                                              created_at=now,
-                                              verify_internal_user_exists=True)
+        await import_user_to_external_service(
+            service=single_user_service_id,
+            external_user_id=external_user_id,
+            email=external_user_email,
+            created_at=now,
+            verify_internal_user_exists=True,
+        )
 
         import_user.assert_called_once_with(external_user_id, external_user_email, now)

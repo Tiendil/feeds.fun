@@ -1,4 +1,5 @@
 import datetime
+
 from ffun.auth import errors
 from ffun.auth.settings import settings as auth_settings
 from ffun.domain.entities import IdPId
@@ -31,7 +32,9 @@ async def logout_user_from_all_sessions(user_id: u_entities.UserId) -> None:
         await logout_user_from_all_sessions_in_service(service, external_id)
 
 
-async def import_user_to_external_service(service: IdPId, external_user_id: str, email: str, created_at: datetime.datetime, verify_internal_user_exists: bool) -> None:
+async def import_user_to_external_service(
+    service: IdPId, external_user_id: str, email: str, created_at: datetime.datetime, verify_internal_user_exists: bool
+) -> None:
 
     idp = auth_settings.get_idp_by_internal_id(service)
 

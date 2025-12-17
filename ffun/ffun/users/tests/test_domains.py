@@ -1,24 +1,9 @@
-import uuid
-
 import pytest
 
-from ffun.auth.settings import primary_oidc_service_id, single_user_service_id
-from ffun.core.postgresql import execute
-from ffun.core.tests.helpers import (
-    Delta,
-    TableSizeDelta,
-    TableSizeNotChanged,
-    assert_logs_has_business_event,
-    assert_logs_has_no_business_event,
-    capture_logs,
-)
-from ffun.core.utils import now
-from ffun.domain.domain import new_user_id
-from ffun.domain.entities import UserId
-from ffun.users import errors
-from ffun.users.domain import check_external_user_exists, get_or_create_user_id, get_or_create_user
 from ffun.auth.settings import primary_oidc_service_id
+from ffun.domain.entities import UserId
 from ffun.users import operations
+from ffun.users.domain import check_external_user_exists, get_or_create_user, get_or_create_user_id
 
 
 class TestCheckExternalUserExists:

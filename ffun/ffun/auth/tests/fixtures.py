@@ -1,11 +1,6 @@
 import uuid
 
 import pytest
-import pytest_asyncio
-
-from ffun.auth.settings import primary_oidc_service_id
-from ffun.domain.entities import UserId
-from ffun.users.domain import get_or_create_user_id
 
 
 @pytest.fixture
