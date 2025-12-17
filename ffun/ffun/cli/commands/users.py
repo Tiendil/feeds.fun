@@ -42,7 +42,7 @@ async def run_import_users(csv_path: pathlib.Path,
             await a_domain.import_user_to_external_service(service=idp.internal_id,
                                                            external_user_id=user_id,
                                                            email=email,
-                                                           created_at=int(created_at),
+                                                           created_at=created_at,
                                                            verify_internal_user_exists=verify_internal_users_exists)
 
     logger.info("import_users_finished", total_users=len(data))
