@@ -86,15 +86,20 @@ class Plugin(PluginBase):
         await self._call_admin("POST", url, retry_on_token_loss=True)
 
     async def import_user(self, external_user_id: str, email: str, created_at: datetime.datetime) -> None:
-        url = f"{self.entrypoint}/admin/realms/{self.service_realm}/users"
+        url = f"{self.entrypoint}/admin/realms/{self.service_realm}/partialImport"
 
-        data = {
+        user = {
             "id": external_user_id,
             "username": email,
             "email": email,
             "emailVerified": True,
             "enabled": True,
             "createdTimestamp": int(created_at.timestamp() * 1000),
+        }
+
+        data = {
+            "ifResourceExists": "FAIL",  # TODO: we may want to move this to method parameters
+            "users": [user],
         }
 
         await self._call_admin("POST", url, retry_on_token_loss=True, data=data)

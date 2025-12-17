@@ -31,16 +31,15 @@ async def logout_user_from_all_sessions(user_id: u_entities.UserId) -> None:
         await logout_user_from_all_sessions_in_service(service, external_id)
 
 
-# TODO: tests
 async def import_user_to_external_service(service: IdPId, external_user_id: str, email: str, created_at: datetime.datetime, verify_internal_user_exists: bool) -> None:
-
-    if verify_internal_user_exists:
-        if not await u_domain.check_user_exists(service, external_user_id):
-            raise errors.InternalUserDoesNotExistForImportedUser()
 
     idp = auth_settings.get_idp_by_internal_id(service)
 
     if idp is None:
         raise errors.NoIdPFound()
+
+    if verify_internal_user_exists:
+        if not await u_domain.check_user_exists(service, external_user_id):
+            raise errors.InternalUserDoesNotExistForImportedUser()
 
     await idp.plugin.import_user(external_user_id, email, created_at)
