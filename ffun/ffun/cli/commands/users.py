@@ -20,6 +20,10 @@ async def run_import_users(
 ) -> None:  # noqa: CCR001
     idp = a_settings.get_idp_by_external_id(idp_id)
 
+    if idp is None:
+        logger.error("idp_not_found", idp_id=idp_id)
+        return
+
     data = []
 
     logger.info("import_users")

@@ -1,4 +1,5 @@
 import datetime
+from typing import Any
 
 from ffun.auth.idps.plugin import Plugin as PluginBase
 from ffun.core import errors
@@ -57,7 +58,9 @@ class Plugin(PluginBase):
 
             return self._access_token
 
-    async def _call_admin(self, method: str, path: str, retry_on_token_loss: bool, data: dict | None = None) -> None:
+    async def _call_admin(
+        self, method: str, path: str, retry_on_token_loss: bool, data: dict[str, Any] | None = None
+    ) -> None:
         access_token = await self.get_access_token(force=False)
 
         headers = {"Authorization": f"Bearer {access_token}"}
