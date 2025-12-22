@@ -16,13 +16,7 @@
 }
 
 (backend_proxy) {
-  reverse_proxy backend:8000 {
-    header_up Host {host}
-  }
-}
-
-(frontend_proxy) {
-  reverse_proxy frontend:8000 {
+  reverse_proxy backend-api:8000 {
     header_up Host {host}
   }
 }
@@ -113,7 +107,12 @@ feeds.fun.local {
   }
 
   handle {
-    import frontend_proxy
+    root * /ffun-static-data
+    try_files {path} /index.html
+    header Cache-Control "no-store, no-cache, must-revalidate"
+    header Pragma "no-cache"
+    header Expires "0"
+    file_server
   }
 }
 

@@ -4,6 +4,9 @@
 # The basic instructions are provided in the README.md file in the same directory as this file
 # Check comments below for more details
 
+networks:
+  ffun_network: {}
+
 volumes:
   ffun_postgres_data: {}  # Permanent storage for database
   ffun_frontend_data: {}  # Permanent storage for frontend files
@@ -20,10 +23,17 @@ services:
     image: postgres:15.2
 
     volumes:
+      # Uncomment this (and comment the line with ffun_postgres_data) to keep all data in RAM
+      # Much faster for experiments, but all data will be lost on container stop/restart
+      # - type: tmpfs
+      #   target: /var/lib/postgresql/data
+      #   tmpfs:
+      #     size: 2g
       - ffun_postgres_data:/var/lib/postgresql/data
       # Mount scripts to support multiple databases creation
       # Depending on your approach to hosting you may not need this
-      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./postgres/healthcheck.sh:/healthcheck.sh
 
     environment:
       POSTGRES_MULTIPLE_DATABASES: ffun,keycloak
@@ -34,16 +44,19 @@ services:
       POSTGRES_PASSWORD: root
 
     healthcheck:
-      test: "pg_isready -U ffun -d ffun"
+      test: "/healthcheck.sh"
       interval: 1s
       timeout: 5s
       retries: 10
+
+    networks:
+      ffun_network: {}
 
   idp:
     image: quay.io/keycloak/keycloak:26.4.2
 
     depends_on:
-      postgresql:
+      postgres:
         condition: service_healthy
 
     volumes:
@@ -54,7 +67,7 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
 
       KC_DB: postgres
-      KC_DB_URL_HOST: postgresql
+      KC_DB_URL_HOST: postgres
       KC_DB_URL_PORT: "5432"
       KC_DB_URL_DATABASE: keycloak
       KC_DB_USERNAME: keycloak
@@ -88,7 +101,7 @@ services:
     image: quay.io/oauth2-proxy/oauth2-proxy:v7.13.0-alpine
 
     depends_on:
-      backend-multi-user:
+      backend-api:
         condition: service_started
       idp:
         condition: service_healthy
@@ -129,6 +142,9 @@ services:
       FFUN_ENABLE_API_SPA: "True"
       PYTHONOPTIMIZE: "1"
 
+    networks:
+      ffun_network: {}
+
   # Background workers for download feeds and tag them
   backend-workers:
     image: tiendil/feeds-fun-backend:latest
@@ -157,6 +173,9 @@ services:
     environment:
       PYTHONOPTIMIZE: "1"
 
+    networks:
+      ffun_network: {}
+
   # Service builds frontend UI and copies it to the static data volume to be served by Caddy
   frontend-data:
     image: tiendil/feeds-fun-frontend-data:latest
@@ -170,7 +189,7 @@ services:
   # Caddy web server for serving frontend and API, you can use any other web server you like
   # the Caddy was chosen for its simplicity and ease of use
   frontend-caddy:
-    image: caddy:2.10.0
+    image: caddy:2.10-alpine
 
     volumes:
       - ffun_caddy_data:/data
@@ -181,3 +200,11 @@ services:
     ports:
       - "80:80"
       - "443:443"
+
+    networks:
+      ffun_network:
+        # Sometime we need to access our services from the internal network by their hostnames
+        # For example, that is required to simplify OAuth2-proxy + Keycloak setup
+        aliases:
+          - feeds.fun.local
+          - idp.feeds.fun.local
