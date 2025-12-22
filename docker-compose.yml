@@ -81,7 +81,7 @@ services:
       retries: 10
 
   idp:
-    image: quay.io/keycloak/keycloak:26.4.2
+    image: tiendil/keycloak-simple:latest
 
     profiles: ["multi-user"]
 
@@ -91,7 +91,6 @@ services:
 
     volumes:
       - ./docker/dev/keycloak/import:/opt/keycloak/data/import:ro
-      - ./docker/dev/keycloak/tailcloakify-theme.jar:/opt/keycloak/providers/tailcloakify-theme.jar
 
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
@@ -106,11 +105,12 @@ services:
 
       KC_HTTP_ENABLED: "true"
       KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_STRICT: "false"
 
       KC_HEALTH_ENABLED: "true"
       KC_MANAGEMENT_ENABLED: "true"
 
-    command: start-dev --import-realm
+    command: start --optimized --import-realm
 
     networks:
       ffun_network: {}
