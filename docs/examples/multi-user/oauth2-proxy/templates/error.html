@@ -1,0 +1,47 @@
+<!doctype html>
+<!-- This page has multiple purposes: -->
+<!-- 1. Redirect the user to home page after an unexpected error -->
+<!-- 2. Provide smoother behaviour in case the user presses "back" button. -->
+<!-- 3. Provide "smart" behaviour in case the user opens magic login link in a different system/browser -->
+<!--    which leads to CSRF error in OAuth2-Proxy, but besides it everything works fine. -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting…</title>
+
+    <meta http-equiv="refresh" content="0;url=/" />
+
+    <script>
+      (function () {
+        try {
+          var url = new URL(window.location.href);
+
+          // TODO: we may want to uncomment this for a more comlex behavior
+          //       But remember about going back in history after login
+          //       The primary purpose of that page (currently) is to handle that case
+
+          // If oauth2-proxy kept rd, prefer that (best-guess)
+          // var rd = url.searchParams.get("rd");
+
+          // if (rd) {
+          //   // replace() so the broken page doesn't stay in history
+          //   window.location.replace(rd);
+          //   return;
+          // }
+
+          // try to go one step back in history.
+          // if (window.history.length > 1) {
+          //   window.history.go(-1);
+          //   return;
+          // }
+
+          window.location.replace("/");
+        } catch (e) {
+          window.location.replace("/");
+        }
+      })();
+    </script>
+  </head>
+  <body>
+  </body>
+</html>

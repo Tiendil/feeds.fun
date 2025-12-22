@@ -116,10 +116,6 @@ services:
       ffun_network: {}
 
     healthcheck:
-        # bash -c "exec 3<>/dev/tcp/127.0.0.1/9000 &&
-        # printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
-        # head -1 <&3 | grep -q '200'"
-
       test: >
         bash -c "exec 3<>/dev/tcp/127.0.0.1/9000 &&
         printf 'HEAD /health/ready HTTP/1.1\r\nHost: localhost:9000\r\nConnection: close\r\n\r\n' >&3 &&
@@ -274,7 +270,6 @@ services:
       - ${PWD}/site/src:/repository/src
 
     environment:
-      VITE_FFUN_AUTH_MODE: "${FFUN_AUTH_MODE-single_user}"
       VITE_FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
       VITE_FFUN_SENTRY_DSN: "${FFUN_SENTRY__DSN:-not-specified}"
 

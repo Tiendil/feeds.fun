@@ -12,7 +12,7 @@ http://localhost {
     route {
         respond /caddy-alive-marker "Caddy works!"
 
-        reverse_proxy /api/* backend-api:8000
+        reverse_proxy /spa/api/* backend-api:8000
 
         root * /ffun-static-data
         try_files {path} /index.html

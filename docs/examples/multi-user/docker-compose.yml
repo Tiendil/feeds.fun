@@ -4,6 +4,9 @@
 # The basic instructions are provided in the README.md file in the same directory as this file
 # Check comments below for more details
 
+networks:
+  ffun_network: {}
+
 volumes:
   ffun_postgres_data: {}  # Permanent storage for database
   ffun_frontend_data: {}  # Permanent storage for frontend files
@@ -20,13 +23,20 @@ services:
     image: postgres:15.2
 
     volumes:
+      # Uncomment this (and comment the line with ffun_postgres_data) to keep all data in RAM
+      # Much faster for experiments, but all data will be lost on container stop/restart
+      # - type: tmpfs
+      #   target: /var/lib/postgresql/data
+      #   tmpfs:
+      #     size: 2g
       - ffun_postgres_data:/var/lib/postgresql/data
       # Mount scripts to support multiple databases creation
       # Depending on your approach to hosting you may not need this
-      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./postgres/healthcheck.sh:/healthcheck.sh
 
     environment:
-      POSTGRES_MULTIPLE_DATABASES: ffun,supertokens
+      POSTGRES_MULTIPLE_DATABASES: ffun,keycloak
       # set to root because of the bug in pg_isready (?) it
       # it looks like it expect the DB name be the same as the POSTGRES_USER
       POSTGRES_DB: root
@@ -34,38 +44,78 @@ services:
       POSTGRES_PASSWORD: root
 
     healthcheck:
-      test: "pg_isready -U ffun -d ffun"
+      test: "/healthcheck.sh"
       interval: 1s
       timeout: 5s
       retries: 10
 
-  # Service for authentication and session management
-  supertokens:
-    image: registry.supertokens.io/supertokens/supertokens-postgresql:11.0.4
+    networks:
+      ffun_network: {}
+
+  idp:
+    image: quay.io/keycloak/keycloak:26.4.2
 
     depends_on:
       postgres:
         condition: service_healthy
 
-    environment:
-      POSTGRESQL_DATABASE_NAME: "supertokens"
-      POSTGRESQL_USER: "supertokens"
-      POSTGRESQL_PASSWORD: "supertokens"
-      POSTGRESQL_HOST: "postgres"
-      POSTGRESQL_PORT: "5432"
+    volumes:
+      - ./keycloak/import:/opt/keycloak/data/import:ro
 
-      # This is your most secret key for communication between the Feeds Fun backend and the Supertokens backend
-      # Check details in ffun.env
-      API_KEYS: "my-super-secret-supertokens-api-key"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_PORT: "5432"
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_STRICT: "false"
+
+      KC_HEALTH_ENABLED: "true"
+      KC_MANAGEMENT_ENABLED: "true"
+
+    # We use --import-real to import the EXAMPLE realm configuration on first startup
+    # In the production setup you MUST configure Keycloak by yourself: properly and securely!
+    command: start --import-realm
+
+    networks:
+      ffun_network: {}
 
     healthcheck:
       test: >
-        bash -c 'exec 3<>/dev/tcp/127.0.0.1/3567 &&
-                 echo -e "GET /hello HTTP/1.1\r\nhost: 127.0.0.1:3567\r\nConnection: close\r\n\r\n" >&3 &&
-                 cat <&3 | grep "Hello"'
-      interval: 10s
+        bash -c "exec 3<>/dev/tcp/127.0.0.1/9000 &&
+        printf 'HEAD /health/ready HTTP/1.1\r\nHost: localhost:9000\r\nConnection: close\r\n\r\n' >&3 &&
+        grep -q 'HTTP/1.1 200 OK' <&3"
+      interval: 1s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 60s
+
+  auth-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.13.0-alpine
+
+    depends_on:
+      backend-api:
+        condition: service_started
+      idp:
+        condition: service_healthy
+
+    volumes:
+      - ./oauth2-proxy/config.cfg:/etc/oauth2-proxy/config.cfg:ro
+      - ./oauth2-proxy/config-alpha.yaml:/etc/oauth2-proxy/config-alpha.yaml:ro
+      - ./oauth2-proxy/templates:/etc/oauth2-proxy/templates:ro
+      - ffun_caddy_data:/caddy-data:ro
+
+    command: --config /etc/oauth2-proxy/config.cfg --alpha-config /etc/oauth2-proxy/config-alpha.yaml
+
+    networks:
+      ffun_network: {}
 
   # HTTP API server for Feeds Fun
   backend-api:
@@ -73,8 +123,6 @@ services:
 
     depends_on:
       postgres:
-        condition: service_healthy
-      supertokens:
         condition: service_healthy
 
     # We always run DB migrations on startup to ensure the DB schema is up to date with the code
@@ -91,8 +139,11 @@ services:
       - ${PWD}/tag_processors.toml:/ffun/tag_processors.toml  # tag processors config
 
     environment:
-      FFUN_ENABLE_API: "True"
+      FFUN_ENABLE_API_SPA: "True"
       PYTHONOPTIMIZE: "1"
+
+    networks:
+      ffun_network: {}
 
   # Background workers for download feeds and tag them
   backend-workers:
@@ -122,6 +173,9 @@ services:
     environment:
       PYTHONOPTIMIZE: "1"
 
+    networks:
+      ffun_network: {}
+
   # Service builds frontend UI and copies it to the static data volume to be served by Caddy
   frontend-data:
     image: tiendil/feeds-fun-frontend-data:latest
@@ -135,7 +189,7 @@ services:
   # Caddy web server for serving frontend and API, you can use any other web server you like
   # the Caddy was chosen for its simplicity and ease of use
   frontend-caddy:
-    image: caddy:2.10.0
+    image: caddy:2.10-alpine
 
     volumes:
       - ffun_caddy_data:/data
@@ -146,3 +200,11 @@ services:
     ports:
       - "80:80"
       - "443:443"
+
+    networks:
+      ffun_network:
+        # Sometime we need to access our services from the internal network by their hostnames
+        # For example, that is required to simplify OAuth2-proxy + Keycloak setup
+        aliases:
+          - feeds.fun.local
+          - idp.feeds.fun.local
