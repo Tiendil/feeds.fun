@@ -274,7 +274,6 @@ services:
       - ${PWD}/site/src:/repository/src
 
     environment:
-      VITE_FFUN_AUTH_MODE: "${FFUN_AUTH_MODE-single_user}"
       VITE_FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
       VITE_FFUN_SENTRY_DSN: "${FFUN_SENTRY__DSN:-not-specified}"
 

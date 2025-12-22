@@ -55,7 +55,9 @@ services:
       - ${PWD}/tag_processors.toml:/ffun/tag_processors.toml  # tag processors config
 
     environment:
-      FFUN_ENABLE_API: "True"
+      FFUN_ENABLE_API_SPA: "True"
+      FFUN_AUTH_FORCE_EXTERNAL_USER_ID: "dev-user"
+      FFUN_AUTH_FORCE_EXTERNAL_IDENTITY_PROVIDER_ID: "single_user"
       PYTHONOPTIMIZE: "1"
 
   # Background workers for download feeds and tag them
