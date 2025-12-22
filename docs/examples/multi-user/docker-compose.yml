@@ -26,7 +26,7 @@ services:
       - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
 
     environment:
-      POSTGRES_MULTIPLE_DATABASES: ffun,supertokens
+      POSTGRES_MULTIPLE_DATABASES: ffun,keycloak
       # set to root because of the bug in pg_isready (?) it
       # it looks like it expect the DB name be the same as the POSTGRES_USER
       POSTGRES_DB: root
