@@ -3,23 +3,127 @@
     admin off
 }
 
+##########
+# snippets
+##########
 
-# Remove http:// prefix to turn on HTTPS
-http://localhost {
+(auth_proxy) {
+  reverse_proxy auth-proxy:8000 {
+    header_up X-Real-IP {remote_host}
+    header_up X-Forwarded-Uri {uri}
+    header_up Host {host}
+  }
+}
 
-    encode gzip
+(backend_proxy) {
+  reverse_proxy backend:8000 {
+    header_up Host {host}
+  }
+}
 
+(frontend_proxy) {
+  reverse_proxy frontend:8000 {
+    header_up Host {host}
+  }
+}
+
+(idp_proxy) {
+  reverse_proxy idp:8080 {
+    header_up Host {host}
+  }
+}
+
+(auth_proxy_common) {
+  uri /oauth2/auth
+  header_up X-Real-IP {remote_host}
+  copy_headers {
+    X-FFun-User-Id
+    X-FFun-Identity-Provider-Id
+    Set-Cookie
+  }
+}
+
+#######
+# sites
+#######
+
+feeds.fun.local {
+  tls internal
+
+  # Remove all X-* headers to prevent header injection attacks
+  request_header -X-*
+
+  handle /oauth2/* {
+    import auth_proxy
+  }
+
+  handle /spa/auth/logout {
+    # Tell oauth2-proxy to redirect to Keycloak logout endpoint after signing out and then back to us
+    rewrite * /oauth2/sign_out?rd=https%3A%2F%2Fidp.feeds.fun.local%2Frealms%2Fdev%2Fprotocol%2Fopenid-connect%2Flogout%3Fclient_id%3Dauth-proxy-client%26post_logout_redirect_uri%3Dhttps%253A%252F%252Ffeeds.fun.local%252F%253Flogged-out
+    import auth_proxy
+  }
+
+  handle /spa/auth/login {
+    rewrite * /oauth2/start?rd={query.return_to}
+    import auth_proxy
+  }
+
+  handle /spa/auth/join {
+    # for now we use the same login flow for registration
+    # (in the prod the login form is configured to handle both cases)
+    rewrite * /oauth2/start?rd={query.return_to}
+    import auth_proxy
+  }
+
+  handle /spa/auth/* {
     route {
-        respond /caddy-alive-marker "Caddy works!"
+      forward_auth auth-proxy:8000 {
+        import auth_proxy_common
 
-        reverse_proxy /api/* backend-api:8000
-        reverse_proxy /supertokens/* backend-api:8000
-        reverse_proxy /auth/* backend-api:8000
+        @unauth status 401
+        handle_response @unauth {
+          redir * /oauth2/sign_in?rd={scheme}://{host}{uri}
+        }
+      }
 
-        root * /ffun-static-data
-        try_files {path} /index.html
-        file_server
-	}
+      @authCookie header Set-Cookie *
+      header @authCookie +Set-Cookie {header.Set-Cookie}
 
-    log
+      import backend_proxy
+    }
+  }
+
+  handle /spa/api/private/* {
+    # We protect access to /private/* API endpoints by asking oauth2-proxy to authenticate the user
+    route {
+      forward_auth auth-proxy:8000 {
+        import auth_proxy_common
+      }
+
+      @authCookie header Set-Cookie *
+      header @authCookie +Set-Cookie {header.Set-Cookie}
+
+      import backend_proxy
+    }
+  }
+
+  # all other /spa/* API are public
+  handle /spa/* {
+    import backend_proxy
+  }
+
+  handle {
+    import frontend_proxy
+  }
+}
+
+idp.feeds.fun.local {
+  tls internal
+
+  # Disable Keycloak account console
+  handle_path /realms/dev/account* {
+    respond "Not found" 404
+  }
+
+  import idp_proxy
 }
