@@ -1,6 +1,28 @@
 # An example of a multi-user setup of Feeds Fun
 
-You can up Feeds Fun in a multi-user mode by following these steps:
+You can up Feeds Fun in a multi-user mode by following these steps.
+
+## Setup
+
+### Setting the hosts
+
+To use less hacks in dev configuration and be more consistent with production setup, we use custom domains `feeds.fun.local` & `idp.feeds.fun.local` for local development.
+
+- `feeds.fun.local` — Feeds Fun service;
+- `idp.feeds.fun.local` — identity provider, such as Keycloak, for multi-user mode (see below).
+
+Add the following line to your `/etc/hosts` file:
+
+```
+127.0.0.1 feeds.fun.local
+127.0.0.1 idp.feeds.fun.local
+```
+
+Then, you can access the site at http://feeds.fun.local/
+
+**We use self-signed TLS certificates for local development.** You need to accept them in your browser.
+
+### Running the services
 
 ```
 git clone git@github.com:Tiendil/feeds.fun.git
@@ -8,16 +30,23 @@ cd ./feeds.fun/docs/examples/multi-user
 docker compose up -d
 ```
 
-Go to `http://localhost/` to access the web interface.
+Go to `http://feeds.fun.local/` to access the web interface.
 
 User: `alice`
 Password: `alice`
+
+Go to `http://idp.feeds.fun.local/` to access the identity provider (Keycloak in this example).
+
+User: `admin`
+Password: `admin`
+
+## Important notes
 
 **The comments in the `docker-compose.yml` and other files contain important details.** Those details are not required to run test instances, but we recommend reading (and changing configs accordingly) before running Feeds Fun as a permanent service.
 
 Check notes in [single-user example](../single-user/README.md) for more details about running a permanent instance of Feeds Fun — we try to avoid duplicating docs, so we will not repeat notes here.
 
-Below you can find some really important notes about running Feeds Fun as a permanent service.
+Below you can find some really important information about running Feeds Fun as a permanent service.
 
 ## Use HTTPS for permanent instances
 
