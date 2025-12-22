@@ -39,33 +39,70 @@ services:
       timeout: 5s
       retries: 10
 
-  # Service for authentication and session management
-  supertokens:
-    image: registry.supertokens.io/supertokens/supertokens-postgresql:11.0.4
+  idp:
+    image: quay.io/keycloak/keycloak:26.4.2
 
     depends_on:
-      postgres:
+      postgresql:
         condition: service_healthy
 
-    environment:
-      POSTGRESQL_DATABASE_NAME: "supertokens"
-      POSTGRESQL_USER: "supertokens"
-      POSTGRESQL_PASSWORD: "supertokens"
-      POSTGRESQL_HOST: "postgres"
-      POSTGRESQL_PORT: "5432"
+    volumes:
+      - ./keycloak/import:/opt/keycloak/data/import:ro
 
-      # This is your most secret key for communication between the Feeds Fun backend and the Supertokens backend
-      # Check details in ffun.env
-      API_KEYS: "my-super-secret-supertokens-api-key"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgresql
+      KC_DB_URL_PORT: "5432"
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_STRICT: "false"
+
+      KC_HEALTH_ENABLED: "true"
+      KC_MANAGEMENT_ENABLED: "true"
+
+    # We use --import-real to import the EXAMPLE realm configuration on first startup
+    # In the production setup you MUST configure Keycloak by yourself: properly and securely!
+    command: start --import-realm
+
+    networks:
+      ffun_network: {}
 
     healthcheck:
       test: >
-        bash -c 'exec 3<>/dev/tcp/127.0.0.1/3567 &&
-                 echo -e "GET /hello HTTP/1.1\r\nhost: 127.0.0.1:3567\r\nConnection: close\r\n\r\n" >&3 &&
-                 cat <&3 | grep "Hello"'
-      interval: 10s
+        bash -c "exec 3<>/dev/tcp/127.0.0.1/9000 &&
+        printf 'HEAD /health/ready HTTP/1.1\r\nHost: localhost:9000\r\nConnection: close\r\n\r\n' >&3 &&
+        grep -q 'HTTP/1.1 200 OK' <&3"
+      interval: 1s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 60s
+
+  auth-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.13.0-alpine
+
+    depends_on:
+      backend-multi-user:
+        condition: service_started
+      idp:
+        condition: service_healthy
+
+    volumes:
+      - ./oauth2-proxy/config.cfg:/etc/oauth2-proxy/config.cfg:ro
+      - ./oauth2-proxy/config-alpha.yaml:/etc/oauth2-proxy/config-alpha.yaml:ro
+      - ./oauth2-proxy/templates:/etc/oauth2-proxy/templates:ro
+      - ffun_caddy_data:/caddy-data:ro
+
+    command: --config /etc/oauth2-proxy/config.cfg --alpha-config /etc/oauth2-proxy/config-alpha.yaml
+
+    networks:
+      ffun_network: {}
 
   # HTTP API server for Feeds Fun
   backend-api:
@@ -73,8 +110,6 @@ services:
 
     depends_on:
       postgres:
-        condition: service_healthy
-      supertokens:
         condition: service_healthy
 
     # We always run DB migrations on startup to ensure the DB schema is up to date with the code
@@ -91,7 +126,7 @@ services:
       - ${PWD}/tag_processors.toml:/ffun/tag_processors.toml  # tag processors config
 
     environment:
-      FFUN_ENABLE_API: "True"
+      FFUN_ENABLE_API_SPA: "True"
       PYTHONOPTIMIZE: "1"
 
   # Background workers for download feeds and tag them
