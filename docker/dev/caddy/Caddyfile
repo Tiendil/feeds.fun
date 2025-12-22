@@ -64,7 +64,11 @@ feeds.fun.local {
   }
 
   handle /spa/auth/join {
-    rewrite * /oauth2/start?prompt=create&rd={query.return_to}
+    # for now we use the same login flow for registration
+    # (in the prod the login form is configured to handle both cases)
+    # uncomment if you want to see the registration form
+    # rewrite * /oauth2/start?prompt=create&rd={query.return_to}
+    rewrite * /oauth2/start?rd={query.return_to}
     import auth_proxy
   }
 
