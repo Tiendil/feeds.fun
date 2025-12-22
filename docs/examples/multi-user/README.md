@@ -1,6 +1,6 @@
 # An example of a multi-user setup of Feeds Fun
 
-You can up Feeds Fun in a single-user mode by following these steps:
+You can up Feeds Fun in a multi-user mode by following these steps:
 
 ```
 git clone git@github.com:Tiendil/feeds.fun.git
@@ -10,9 +10,10 @@ docker compose up -d
 
 Go to `http://localhost/` to access the web interface.
 
-Enter your email, you should receive an email with a link to log in. Click on the link and you will be redirected to the Feeds Fun web interface.
+User: `alice`
+Password: `alice`
 
-**The comments in the `docker-compose.yml` and other files contain many details.** Those details are not required to run test instances, but we recommend reading (and changing some of them) before running Feeds Fun as a permanent service.
+**The comments in the `docker-compose.yml` and other files contain important details.** Those details are not required to run test instances, but we recommend reading (and changing configs accordingly) before running Feeds Fun as a permanent service.
 
 Check notes in [single-user example](../single-user/README.md) for more details about running a permanent instance of Feeds Fun — we try to avoid duplicating docs, so we will not repeat notes here.
 
@@ -20,19 +21,39 @@ Below you can find some really important notes about running Feeds Fun as a perm
 
 ## Use HTTPS for permanent instances
 
-This example is configured to use HTTP only to simplify the setup.
-
 You absolutely **MUST** use HTTPS for permanent instances of Feeds Fun, otherwise your data may be compromised, passwords leaked, and so on.
 
-To turn HTTPS on you should (see comments in the corresponding files):
+## Users managers
 
-- Update Caddyfile to use HTTPS.
-- Update ffun.env to use appropriate ports and domain names.
+Feeds Fun does not manage users by itself. Instead, it relies on third-party services/proxies that should provide two headers for the privatwe api endpoints of Feeds Fun.
 
-## Supertokens
+- `X-FFun-Identity-Provider-Id` — the unique id of the identity provider which has used to authenticate the user.
+- `X-FFun-User-Id` — the unique string id of the user in the identity provider.
 
-Feeds Fun uses [SuperTokens](https://supertokens.io/) for authentication. It is a well-known open-source self-hosted authentication solution with a lot of features and relatively easy management.
+Header names are configurable.
 
-This example contains a configured SuperTokens instance, but you may want to tune it up for your needs. The official site contains extensive documentation on how to do that.
+Feeds Fun backend identifies users by the combination of the identiy provider id and the user id in that provider.
 
-You also should be able to switch to the official SuperTokens instance (without self-hosting it), but we did not test such setup.
+Feeds Fun fronted sends users to the predefined URLs — you may route users to your identity/authentication service from there.
+
+You should be able to use whatever you want to provide those headers (and we would like to hear about your experience with different solutions). However, we recommend using [OIDC](https://de.wikipedia.org/wiki/OpenID_Connect)-based solutions, because they are widely used, supported and the current de-facto standard for user authentication and authorization.
+
+## OIDC
+
+To hand authentication via OIDC, Feeds Fun needs third-party service that will handle user management, authentication, and authorization. Such services are called Identity Providers (IdP), OIDC providers, Authentication brokers, and so on — terms differ because each service, besides core functionality, provides additional features which may differ a lot.
+
+There are multiple open source and commercial OIDC providers available, they may differ in features and in the architecture of deployment, but most of them should work fine with Feeds Fun — it only requires basic OIDC functionality.
+
+We use [Keycloak](https://www.keycloak.org/) in this example, because it is a most popular and stable open source Identity provider. Other options include [ORY](https://www.ory.sh/), [Zitadel](https://zitadel.com/), [Authentik](https://goauthentik.io/), etc. Also, there are commercial services like [Auth0](https://auth0.com/).
+
+## Keycloak + OAuth2-Proxy + Caddy
+
+Our recomended setup includes:
+
+- [Keycloak](https://www.keycloak.org/) as the Identity Provider.
+- [OAuth2-Proxy](https://oauth2-proxy.github.io/oauth2-proxy/) as the authentication broker that sits between Feeds Fun and Keycloak.
+- [Caddy](https://caddyserver.com/) as the reverse proxy in front of everything.
+
+When the browser requests Feeds Fun, Caddy asks OAuth2-Proxy to authenticate the user. OAuth2-Proxy either finds an existing session or redirects the user to Keycloak for authentication. After successful authentication, Keycloak redirects the user back to OAuth2-Proxy, which creates a session and sets the required headers before forwarding the request to Feeds Fun.
+
+Check comments in the config files from this example for more details about the setup and configuration.
