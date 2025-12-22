@@ -27,28 +27,28 @@ You absolutely **MUST** use HTTPS for permanent instances of Feeds Fun, otherwis
 
 Feeds Fun does not manage users by itself. Instead, it relies on third-party services/proxies that should provide two headers for the privatwe api endpoints of Feeds Fun.
 
-- `X-FFun-Identity-Provider-Id` — the unique id of the identity provider which has used to authenticate the user.
+- `X-FFun-Identity-Provider-Id` — the unique id of the identity provider that was used to authenticate the user.
 - `X-FFun-User-Id` — the unique string id of the user in the identity provider.
 
 Header names are configurable.
 
-Feeds Fun backend identifies users by the combination of the identiy provider id and the user id in that provider.
+Feeds Fun backend identifies users by the combination of the identity provider id and the user id in that provider.
 
 Feeds Fun fronted sends users to the predefined URLs — you may route users to your identity/authentication service from there.
 
-You should be able to use whatever you want to provide those headers (and we would like to hear about your experience with different solutions). However, we recommend using [OIDC](https://de.wikipedia.org/wiki/OpenID_Connect)-based solutions, because they are widely used, supported and the current de-facto standard for user authentication and authorization.
+You should be able to use whatever you want to provide those headers (and we would like to hear about your experience with different solutions). However, we recommend using [OIDC](https://de.wikipedia.org/wiki/OpenID_Connect)-based solutions, because they are widely used, supported, and the current de facto standard for user authentication and authorization.
 
 ## OIDC
 
-To hand authentication via OIDC, Feeds Fun needs third-party service that will handle user management, authentication, and authorization. Such services are called Identity Providers (IdP), OIDC providers, Authentication brokers, and so on — terms differ because each service, besides core functionality, provides additional features which may differ a lot.
+To hand authentication via OIDC, Feeds Fun needs a third-party service that will handle user management, authentication, and authorization. Such services are called Identity Providers (IdP), OIDC providers, Authentication brokers, and so on — terms differ because each service, besides core functionality, provides additional features which may differ a lot.
 
-There are multiple open source and commercial OIDC providers available, they may differ in features and in the architecture of deployment, but most of them should work fine with Feeds Fun — it only requires basic OIDC functionality.
+There are multiple open source and commercial OIDC providers available; they may differ in features and in the architecture of deployment, but most of them should work fine with Feeds Fun — it only requires basic OIDC functionality.
 
-We use [Keycloak](https://www.keycloak.org/) in this example, because it is a most popular and stable open source Identity provider. Other options include [ORY](https://www.ory.sh/), [Zitadel](https://zitadel.com/), [Authentik](https://goauthentik.io/), etc. Also, there are commercial services like [Auth0](https://auth0.com/).
+We use [Keycloak](https://www.keycloak.org/) in this example, because it is the most popular and stable open source Identity provider. Other options include [ORY](https://www.ory.sh/), [Zitadel](https://zitadel.com/), [Authentik](https://goauthentik.io/), etc. Also, there are commercial services like [Auth0](https://auth0.com/).
 
 ## Keycloak + OAuth2-Proxy + Caddy
 
-Our recomended setup includes:
+Our recommended setup includes:
 
 - [Keycloak](https://www.keycloak.org/) as the Identity Provider.
 - [OAuth2-Proxy](https://oauth2-proxy.github.io/oauth2-proxy/) as the authentication broker that sits between Feeds Fun and Keycloak.
