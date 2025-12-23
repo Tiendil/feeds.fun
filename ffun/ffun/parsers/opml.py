@@ -4,8 +4,8 @@ from typing import Generator
 from ffun.domain.entities import UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url, url_to_uid
 from ffun.feeds.entities import Feed
-from ffun.parsers.entities import FeedInfo
 from ffun.parsers import errors
+from ffun.parsers.entities import FeedInfo
 
 
 def _extract_body(data: str) -> ET.Element:

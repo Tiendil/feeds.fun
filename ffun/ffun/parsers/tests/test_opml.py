@@ -1,10 +1,11 @@
 import pytest
+
 from ffun.core.tests.helpers import assert_compare_xml
 from ffun.domain.urls import str_to_feed_url, url_to_uid
 from ffun.feeds.entities import Feed
-from ffun.parsers.entities import FeedInfo
-from ffun.parsers.opml import create_opml, extract_feeds, _extract_body
 from ffun.parsers import errors
+from ffun.parsers.entities import FeedInfo
+from ffun.parsers.opml import _extract_body, create_opml, extract_feeds
 
 
 class TestCreateOpml:
@@ -140,7 +141,7 @@ class TestExtractBody:
 <root>
     <items>
         <item>
-            This line contains an invalid token & here at a far column position to trigger the exact error location
+            This line contains an invalid token & here
         </item>
     </items>
 </root>
@@ -153,8 +154,16 @@ class TestExtractBody:
         content = """<?xml version="1.0" encoding="UTF-8"?>
         <body>
         <outline text="General News" title="General News">
-            <outline type="rss" text="BBC News - World" title="BBC News" xmlUrl="http://feeds.bbci.co.uk/news/rss.xml" htmlUrl="https://www.bbc.com/news"/>
-            <outline type="rss" text="The New York Times - Home" title="NYT" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml" htmlUrl="https://www.nytimes.com"/>
+            <outline type="rss"
+                     text="BBC News - World"
+                     title="BBC News"
+                     xmlUrl="http://feeds.bbci.co.uk/news/rss.xml"
+                     htmlUrl="https://www.bbc.com/news"/>
+            <outline type="rss"
+                     text="The New York Times - Home"
+                     title="NYT"
+                     xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
+                     htmlUrl="https://www.nytimes.com"/>
         </outline>
         </body>
         """.strip()
@@ -182,8 +191,16 @@ class TestExtractBody:
         </head>
         <body>
             <outline text="General News" title="General News">
-                <outline type="rss" text="BBC News - World" title="BBC News" xmlUrl="http://feeds.bbci.co.uk/news/rss.xml" htmlUrl="https://www.bbc.com/news"/>
-                <outline type="rss" text="The New York Times - Home" title="NYT" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml" htmlUrl="https://www.nytimes.com"/>
+                <outline type="rss"
+                         text="BBC News - World"
+                         title="BBC News"
+                         xmlUrl="http://feeds.bbci.co.uk/news/rss.xml"
+                         htmlUrl="https://www.bbc.com/news"/>
+                <outline type="rss"
+                         text="The New York Times - Home"
+                         title="NYT"
+                         xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
+                         htmlUrl="https://www.nytimes.com"/>
             </outline>
         </body>
         </opml>

@@ -493,8 +493,9 @@ async def api_add_opml(request: entities.AddOpmlRequest, user: User) -> entities
     try:
         feed_infos = p_domain.parse_opml(request.content)
     except p_errors.MalformedOPML:
-        raise APIError(code="malformed_opml",
-                       message="The provided OPML file is malformed. Please check the file and try again.")
+        raise APIError(
+            code="malformed_opml", message="The provided OPML file is malformed. Please check the file and try again."
+        )
 
     await meta_domain.add_feeds(feed_infos, user.id)
 
