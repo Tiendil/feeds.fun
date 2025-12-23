@@ -269,7 +269,7 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
 
     # It looks like httpx does not catch all h2.ProtocolError exceptions
     # most likely it is specific to HTTP/2 implementation in httpx
-    except h2.ProtocolError as e:
+    except h2.exceptions.ProtocolError as e:
         message = str(e)
 
         if any(
