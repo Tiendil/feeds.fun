@@ -101,7 +101,7 @@
       loading.value = false;
       loaded.value = false;
       error.value = true;
-      error.message = "Error occurred! Maybe you chose a wrong file?";
+      errorMessage.value = "Error occurred! Maybe you chose a wrong file?";
     }
   }
 </script>
