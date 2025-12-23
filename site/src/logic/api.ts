@@ -5,7 +5,7 @@ import type * as e from "@/logic/enums";
 import * as settings from "@/logic/settings";
 import * as cookieConsent from "@/plugins/CookieConsent";
 import {useGlobalState} from "@/stores/globalState";
-import { ok, err, Result } from "neverthrow";
+import {ok, err, Result} from "neverthrow";
 
 ///////////////
 // API handlers
@@ -104,7 +104,6 @@ async function postPublic({url, data}: {url: string; data: any}) {
   return response.data;
 }
 
-
 // TODO: deprecated, use postPrivateResult instead
 async function postPrivate({url, data, config}: {url: string; data: any; config?: any}) {
   const response = await apiPrivate.post(url, data, config);
@@ -115,7 +114,7 @@ async function postPrivateResult({url, data, config}: {url: string; data: any; c
   const response = await apiPrivate.post(url, data, config);
 
   if (response.data.status === "error") {
-    return err(new t.ApiError(response.data.code, response.data.message) );
+    return err(new t.ApiError(response.data.code, response.data.message));
   }
 
   return ok(response.data.data);

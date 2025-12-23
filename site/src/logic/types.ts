@@ -558,7 +558,6 @@ export function userInfoFromJSON({userId}: {userId: string}): userInfo {
   return new userInfo({userId});
 }
 
-
 export class ApiError {
   readonly code: string;
   readonly message: string;
@@ -567,5 +566,4 @@ export class ApiError {
     this.code = code;
     this.message = message;
   }
-
 }

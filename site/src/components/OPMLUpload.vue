@@ -30,11 +30,9 @@
 
     <p
       v-if="error"
-      class="ffun-info-bad mt-4"
-      >
+      class="ffun-info-bad mt-4">
       {{ errorMessage }}
-    </p
-      >
+    </p>
   </div>
 </template>
 
