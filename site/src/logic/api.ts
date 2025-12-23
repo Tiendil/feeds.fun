@@ -14,6 +14,8 @@ import { ok, err, Result } from "neverthrow";
 const publicEntryPoint = "/spa/api/public";
 const privateEntryPoint = "/spa/api/private";
 
+export const downloadOPMLUrl = `${privateEntryPoint}/get-opml`;
+
 const apiPublic = axios.create({baseURL: publicEntryPoint, withCredentials: true});
 const apiPrivate = axios.create({baseURL: privateEntryPoint, withCredentials: true});
 

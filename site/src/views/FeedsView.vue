@@ -28,7 +28,7 @@
     <template #side-menu-item-4>
       <a
         class="ffun-form-button p-1 my-1 block w-full text-center"
-        href="/api/get-opml"
+        :href="api.downloadOPMLUrl"
         target="_blank"
         title="Download OPML file with all your feeds"
         >Download OPML</a
