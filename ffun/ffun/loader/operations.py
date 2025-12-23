@@ -2,8 +2,8 @@ import asyncio
 import ssl
 
 import anyio
-import httpx
 import h2
+import httpx
 from pypika import PostgreSQLQuery
 from pypika import functions as pypika_fn
 
