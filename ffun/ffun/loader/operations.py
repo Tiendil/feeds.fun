@@ -2,6 +2,7 @@ import asyncio
 import ssl
 
 import anyio
+import h2
 import httpx
 from pypika import PostgreSQLQuery
 from pypika import functions as pypika_fn
@@ -49,7 +50,8 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         if any(
             m in message
             for m in [
-                # It is strange that the same error is raised as LocalProtocolError and ProtocolError
+                # It is strange that the same error is raised
+                # as LocalProtocolError and ProtocolError and h2.ProtocolError
                 "Invalid input ConnectionInputs.RECV_DATA in state ConnectionState.CLOSED",
                 "Invalid input ConnectionInputs.RECV_PING in state ConnectionState.CLOSED",
             ]
@@ -120,7 +122,8 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         if any(
             m in message
             for m in [
-                # It is strange that the same error is raised as LocalProtocolError and ProtocolError
+                # It is strange that the same error is raised
+                # as LocalProtocolError and ProtocolError and h2.ProtocolError
                 "Invalid input ConnectionInputs.RECV_DATA in state ConnectionState.CLOSED",
             ]
         ):
@@ -262,6 +265,26 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
     except httpx.DecodingError as e:
         log.warning("network_decoding_error")
         error_code = FeedError.network_decoding_error
+        raise errors.LoadError(feed_error_code=error_code) from e
+
+    # It looks like httpx does not catch all h2.ProtocolError exceptions
+    # most likely it is specific to HTTP/2 implementation in httpx
+    except h2.exceptions.ProtocolError as e:
+        message = str(e)
+
+        if any(
+            m in message
+            for m in [
+                # It is strange that the same error is raised
+                # as LocalProtocolError and ProtocolError and h2.ProtocolError
+                "Invalid input ConnectionInputs.RECV_DATA in state ConnectionState.CLOSED",
+            ]
+        ):
+            log.warning("network_server_closed_connection_too_early")
+            error_code = FeedError.network_server_closed_connection_too_early
+        else:
+            log.exception("protocol_error_while_loading_feed")
+
         raise errors.LoadError(feed_error_code=error_code) from e
 
     except Exception as e:
