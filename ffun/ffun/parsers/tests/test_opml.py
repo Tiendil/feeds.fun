@@ -1,8 +1,10 @@
+import pytest
 from ffun.core.tests.helpers import assert_compare_xml
 from ffun.domain.urls import str_to_feed_url, url_to_uid
 from ffun.feeds.entities import Feed
 from ffun.parsers.entities import FeedInfo
-from ffun.parsers.opml import create_opml, extract_feeds
+from ffun.parsers.opml import create_opml, extract_feeds, _extract_body
+from ffun.parsers import errors
 
 
 class TestCreateOpml:
@@ -124,3 +126,69 @@ class TestExtractFeeds:
             entries=[],
             uid=url_to_uid(expected_url),
         )
+
+
+class TestExtractBody:
+
+    def test_no_content(self) -> None:
+        with pytest.raises(errors.OPMLParsingError):
+            _extract_body("")
+
+    def test_not_well_formed(self) -> None:
+        content = """
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <items>
+        <item>
+            This line contains an invalid token & here at a far column position to trigger the exact error location
+        </item>
+    </items>
+</root>
+        """.strip()
+
+        with pytest.raises(errors.OPMLParsingError):
+            _extract_body(content)
+
+    def test_no_opml_root(self) -> None:
+        content = """<?xml version="1.0" encoding="UTF-8"?>
+        <body>
+        <outline text="General News" title="General News">
+            <outline type="rss" text="BBC News - World" title="BBC News" xmlUrl="http://feeds.bbci.co.uk/news/rss.xml" htmlUrl="https://www.bbc.com/news"/>
+            <outline type="rss" text="The New York Times - Home" title="NYT" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml" htmlUrl="https://www.nytimes.com"/>
+        </outline>
+        </body>
+        """.strip()
+
+        with pytest.raises(errors.OPMLNoRoot):
+            _extract_body(content)
+
+    def test_no_body(self) -> None:
+        content = """<?xml version="1.0" encoding="UTF-8"?>
+        <opml version="2.0">
+        <head>
+            <title>My Subscriptions</title>
+        </head>
+        </opml>
+        """.strip()
+
+        with pytest.raises(errors.OPMLNoBody):
+            _extract_body(content)
+
+    def test_success(self) -> None:
+        content = """<?xml version="1.0" encoding="UTF-8"?>
+        <opml version="2.0">
+        <head>
+            <title>My Subscriptions</title>
+        </head>
+        <body>
+            <outline text="General News" title="General News">
+                <outline type="rss" text="BBC News - World" title="BBC News" xmlUrl="http://feeds.bbci.co.uk/news/rss.xml" htmlUrl="https://www.bbc.com/news"/>
+                <outline type="rss" text="The New York Times - Home" title="NYT" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml" htmlUrl="https://www.nytimes.com"/>
+            </outline>
+        </body>
+        </opml>
+        """.strip()
+
+        body = _extract_body(content)
+
+        assert body.tag == "body"

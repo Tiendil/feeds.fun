@@ -5,18 +5,22 @@ from ffun.domain.entities import UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url, url_to_uid
 from ffun.feeds.entities import Feed
 from ffun.parsers.entities import FeedInfo
+from ffun.parsers import errors
 
 
 def _extract_body(data: str) -> ET.Element:
-    root = ET.fromstring(data)  # noqa
+    try:
+        root = ET.fromstring(data)  # noqa
+    except ET.ParseError as e:
+        raise errors.OPMLParsingError() from e
 
     if root.tag != "opml":
-        raise NotImplementedError(f"Unknown root tag: {root.tag}")
+        raise errors.OPMLNoRoot()
 
     body = root.find("body")
 
     if body is None:
-        raise NotImplementedError("OPML file has no body tag")
+        raise errors.OPMLNoBody()
 
     return body
 
