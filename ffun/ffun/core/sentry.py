@@ -50,6 +50,10 @@ def initialize(dsn: str, sample_rate: float, environment: str) -> None:
         # disable ALL automatically enabled integrations, because they periodically cause issues
         # like false positive errors for correctly handled exceptions in OpenAI integration
         auto_enabling_integrations=False,
+        # We should try to capture as much request body as possible for debugging purposes
+        # Some inputs, like OPML files, can be pretty large and cause bugs by the content
+        # in the depth of the body.
+        max_request_body_size="always",
         integrations=[
             StarletteIntegration(transaction_style="endpoint"),
             FastApiIntegration(transaction_style="endpoint"),
