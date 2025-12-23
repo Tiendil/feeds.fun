@@ -30,9 +30,9 @@
 
     <p
       v-if="error"
-      class="ffun-info-bad mt-4"
-      >Error occurred! Maybe you chose a wrong file?</p
-    >
+      class="ffun-info-bad mt-4">
+      {{ errorMessage }}
+    </p>
   </div>
 </template>
 
@@ -52,6 +52,7 @@
   const loading = ref(false);
   const loaded = ref(false);
   const error = ref(false);
+  const errorMessage = ref("");
 
   function uploadFile(event: Event) {
     opmlFile.value = (event.target as HTMLInputElement).files?.[0] ?? null;
@@ -77,20 +78,30 @@
     });
 
     try {
-      await api.addOPML({content: content});
+      let result = await api.addOPML({content: content});
 
-      // loading an OPML file is pretty rare and significantly changes the list of feeds
-      // => we can force data to be reloaded
-      globalSettings.updateDataVersion();
+      result.match(
+        // loading an OPML file is pretty rare and significantly changes the list of feeds
+        // => we can force data to be reloaded
+        (data) => {
+          globalSettings.updateDataVersion();
+          error.value = false;
+          loaded.value = true;
+        },
+        (err) => {
+          error.value = true;
+          errorMessage.value = err.message;
+          loaded.value = false;
+        }
+      );
 
       loading.value = false;
-      loaded.value = true;
-      error.value = false;
     } catch (e) {
       console.error(e);
       loading.value = false;
       loaded.value = false;
       error.value = true;
+      errorMessage.value = "Error occurred! Maybe you chose a wrong file?";
     }
   }
 </script>

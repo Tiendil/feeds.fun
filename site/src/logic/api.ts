@@ -5,6 +5,7 @@ import type * as e from "@/logic/enums";
 import * as settings from "@/logic/settings";
 import * as cookieConsent from "@/plugins/CookieConsent";
 import {useGlobalState} from "@/stores/globalState";
+import {ok, err, Result} from "neverthrow";
 
 ///////////////
 // API handlers
@@ -12,6 +13,8 @@ import {useGlobalState} from "@/stores/globalState";
 
 const publicEntryPoint = "/spa/api/public";
 const privateEntryPoint = "/spa/api/private";
+
+export const downloadOPMLUrl = `${privateEntryPoint}/get-opml`;
 
 const apiPublic = axios.create({baseURL: publicEntryPoint, withCredentials: true});
 const apiPrivate = axios.create({baseURL: privateEntryPoint, withCredentials: true});
@@ -101,9 +104,20 @@ async function postPublic({url, data}: {url: string; data: any}) {
   return response.data;
 }
 
+// TODO: deprecated, use postPrivateResult instead
 async function postPrivate({url, data, config}: {url: string; data: any; config?: any}) {
   const response = await apiPrivate.post(url, data, config);
   return response.data;
+}
+
+async function postPrivateResult({url, data, config}: {url: string; data: any; config?: any}) {
+  const response = await apiPrivate.post(url, data, config);
+
+  if (response.data.status === "error") {
+    return err(new t.ApiError(response.data.code, response.data.message));
+  }
+
+  return ok(response.data.data);
 }
 
 /////////////
@@ -410,7 +424,7 @@ export async function addFeed({url}: {url: string}) {
 }
 
 export async function addOPML({content}: {content: string}) {
-  await postPrivate({url: "/add-opml", data: {content: content}});
+  return await postPrivateResult({url: "/add-opml", data: {content: content}});
 }
 
 export async function unsubscribe({feedId}: {feedId: t.FeedId}) {

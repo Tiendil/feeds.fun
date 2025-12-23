@@ -557,3 +557,13 @@ export class userInfo {
 export function userInfoFromJSON({userId}: {userId: string}): userInfo {
   return new userInfo({userId});
 }
+
+export class ApiError {
+  readonly code: string;
+  readonly message: string;
+
+  constructor(code: string, message: string) {
+    this.code = code;
+    this.message = message;
+  }
+}
