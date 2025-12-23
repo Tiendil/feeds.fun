@@ -151,7 +151,8 @@ class TestExtractBody:
             _extract_body(content)
 
     def test_no_opml_root(self) -> None:
-        content = """<?xml version="1.0" encoding="UTF-8"?>
+        content = """
+        <?xml version="1.0" encoding="UTF-8"?>
         <body>
         <outline text="General News" title="General News">
             <outline type="rss"
@@ -172,7 +173,8 @@ class TestExtractBody:
             _extract_body(content)
 
     def test_no_body(self) -> None:
-        content = """<?xml version="1.0" encoding="UTF-8"?>
+        content = """
+        <?xml version="1.0" encoding="UTF-8"?>
         <opml version="2.0">
         <head>
             <title>My Subscriptions</title>
@@ -184,7 +186,8 @@ class TestExtractBody:
             _extract_body(content)
 
     def test_success(self) -> None:
-        content = """<?xml version="1.0" encoding="UTF-8"?>
+        content = """
+        <?xml version="1.0" encoding="UTF-8"?>
         <opml version="2.0">
         <head>
             <title>My Subscriptions</title>
