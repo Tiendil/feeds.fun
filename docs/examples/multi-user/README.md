@@ -88,7 +88,7 @@ We use [Keycloak](https://www.keycloak.org/) in this example because it is the m
 Our recommended setup includes:
 
 - [Keycloak](https://www.keycloak.org/) as the Identity Provider.
-- [OAuth2-Proxy](https://oauth2-proxy.github.io/oauth2-proxy/) as the authentication broker that sits between Feeds Fun and Keycloak.
+- [OAuth2-Proxy](https://oauth2-proxy.github.io/oauth2-proxy/) as the authentication proxy that sits between Feeds Fun and Keycloak.
 - [Caddy](https://caddyserver.com/) as the reverse proxy in front of everything.
 
 When the browser requests Feeds Fun, Caddy asks OAuth2-Proxy to authenticate the user. OAuth2-Proxy either finds an existing session or redirects the user to Keycloak for authentication. After successful authentication, Keycloak redirects the user back to OAuth2-Proxy, which creates a session, sets the required headers, and returns control to Caddy, which forwards the request to Feeds Fun.
