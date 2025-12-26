@@ -1,6 +1,6 @@
 # An example of a single-user setup of Feeds Fun
 
-You can up Feeds Fun in a single-user mode by following these steps:
+You can run Feeds Fun in a single-user mode by following these steps:
 
 ```
 git clone git@github.com:Tiendil/feeds.fun.git
