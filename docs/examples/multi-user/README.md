@@ -34,15 +34,15 @@ Go to `http://feeds.fun.local/` to access the web interface.
 
 Application user:
 
-User: `alice`
-Password: `alice`
+- User: `alice`
+- Password: `alice`
 
 Go to `http://idp.feeds.fun.local/` to access the Identity Provider (Keycloak in this example).
 
 Keycloak admin:
 
-User: `admin`
-Password: `admin`
+- User: `admin`
+- Password: `admin`
 
 ## Important notes
 
