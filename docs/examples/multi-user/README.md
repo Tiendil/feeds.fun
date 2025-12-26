@@ -4,7 +4,7 @@ You can up Feeds Fun in a multi-user mode by following these steps.
 
 ## Setup
 
-### Setting the hosts
+### Local hostname configuration
 
 To use less hacks in dev configuration and be more consistent with production setup, we use custom domains `feeds.fun.local` & `idp.feeds.fun.local` for local development.
 
@@ -42,17 +42,17 @@ Password: `admin`
 
 ## Important notes
 
-**The comments in the `docker-compose.yml` and other files contain important details.** Those details are not required to run test instances, but we recommend reading (and changing configs accordingly) before running Feeds Fun as a permanent service.
+**The comments in the `docker-compose.yml` and other files contain important details.** Those details are not required to run example instances, but we recommend reading (and changing configs accordingly) before running Feeds Fun as a permanent service.
 
 Check notes in [single-user example](../single-user/README.md) for more details about running a permanent instance of Feeds Fun — we try to avoid duplicating docs, so we will not repeat notes here.
 
-Below you can find some really important information about running Feeds Fun as a permanent service.
+Below you can find some really important information about running Feeds Fun as a permanent service in a multi-user mode.
 
 ## Use HTTPS for permanent instances
 
 You absolutely **MUST** use HTTPS for permanent instances of Feeds Fun, otherwise your data may be compromised, passwords leaked, and so on.
 
-## Users managers
+## Managing users
 
 Feeds Fun does not manage users by itself. Instead, it relies on third-party services/proxies that should provide two headers for the privatwe api endpoints of Feeds Fun.
 
@@ -61,7 +61,11 @@ Feeds Fun does not manage users by itself. Instead, it relies on third-party ser
 
 Header names are configurable.
 
+You may want to check [ffun.auth.settings](../../../ffun/ffun/auth/settings.py) for how to configure the list of allowed identity providers and other auth-related settings.
+
 Feeds Fun backend identifies users by the combination of the identity provider id and the user id in that provider.
+
+That means **YOU MUST NEVER EXPOSE FEEDS FUN TO THE INTERNET WITHOUT A PROXY THAT SETS THOSE HEADERS PROPERLY.** Otherwise, anyone may set those headers by themselves and impersonate any user.
 
 Feeds Fun fronted sends users to the predefined URLs — you may route users to your identity/authentication service from there.
 
@@ -83,6 +87,6 @@ Our recommended setup includes:
 - [OAuth2-Proxy](https://oauth2-proxy.github.io/oauth2-proxy/) as the authentication broker that sits between Feeds Fun and Keycloak.
 - [Caddy](https://caddyserver.com/) as the reverse proxy in front of everything.
 
-When the browser requests Feeds Fun, Caddy asks OAuth2-Proxy to authenticate the user. OAuth2-Proxy either finds an existing session or redirects the user to Keycloak for authentication. After successful authentication, Keycloak redirects the user back to OAuth2-Proxy, which creates a session and sets the required headers before forwarding the request to Feeds Fun.
+When the browser requests Feeds Fun, Caddy asks OAuth2-Proxy to authenticate the user. OAuth2-Proxy either finds an existing session or redirects the user to Keycloak for authentication. After successful authentication, Keycloak redirects the user back to OAuth2-Proxy, which creates a session, sets the required headers and returns control to Caddy, which forwards the request to Feeds Fun.
 
 Check comments in the config files from this example for more details about the setup and configuration.

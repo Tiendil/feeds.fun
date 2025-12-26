@@ -10,9 +10,9 @@ docker compose up -d
 
 Go to `http://localhost/` to access the web interface.
 
-**The comments in the `docker-compose.yml` and other files contain important details.** Those details are not required to run test instances, but we recommend reading (and changing configs accordingly) before running Feeds Fun as a permanent service.
+**The comments in the `docker-compose.yml` and other files contain important details.** Those details are not required to run example instances, but we recommend reading (and changing configs accordingly) before running Feeds Fun as a permanent service.
 
-Below you can find some really important notes about running Feeds Fun as a permanent service.
+Below you can find some really important notes about running Feeds Fun as a permanent service in a single-user mode.
 
 ## Tag processor configs
 
