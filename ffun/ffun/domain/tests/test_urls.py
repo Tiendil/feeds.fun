@@ -513,3 +513,18 @@ class TestToFeedUrl:
     )
     def test(self, url: AbsoluteUrl, feed_url: FeedUrl) -> None:
         assert urls.to_feed_url(url) == feed_url
+
+
+class TestUrlToHost:
+
+    @pytest.mark.parametrize(
+        "url, host",
+        [
+            ("https://example.com/feed", "example.com"),
+            ("http://subdomain.example.com/path/a/b?c=d", "subdomain.example.com"),
+            ("//another.domain.com:666/path/a/b?c=d", "another.domain.com"),
+            ("ftp://example.co.uk/resource", "example.co.uk"),
+        ],
+    )
+    def test_has_host(self, url: AbsoluteUrl, host: str) -> None:
+        assert urls.url_to_host(url) == host
