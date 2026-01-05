@@ -1,9 +1,10 @@
+from typing import Any
+
 import httpx
 import pytest
-from typing import Any
+from pytest_mock import MockerFixture
 from respx.router import MockRouter
 
-from pytest_mock import MockerFixture
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import str_to_feed_url, url_to_host
 from ffun.feeds_discoverer.domain import (
@@ -400,7 +401,7 @@ class TestDiscoverCheckCandidateLinks:
         new_context, result = await _discover_check_candidate_links(context)
 
         assert len(checked_links) == 2
-        assert set(checked_links) == {'http://localhost/feed1', 'http://localhost/feed2'}
+        assert set(checked_links) == {"http://localhost/feed1", "http://localhost/feed2"}
 
         assert new_context == context.replace(candidate_urls=set())
         assert result is None
@@ -428,7 +429,7 @@ class TestDiscoverCheckCandidateLinks:
         new_context, result = await _discover_check_candidate_links(context)
 
         assert len(checked_links) == 2
-        assert set(checked_links) == {'http://localhost/feed1', 'http://localhost/feed2'}
+        assert set(checked_links) == {"http://localhost/feed1", "http://localhost/feed2"}
 
         assert new_context == context.replace(candidate_urls=set())
         assert result is None
