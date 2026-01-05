@@ -22,6 +22,14 @@ from ffun.parsers import entities as p_entities
 logger = logging.get_module_logger()
 
 
+# Possible improvements:
+#
+# 1. Check sitemaps (e.g., /sitemap.xml) for feed links.
+# 2. Check common feed URL patterns (e.g., /feed, /rss, /feed.xml, /feeds/rss.xml, .rss, etc.)
+#    However, this may lead to making too many requests, which is not ideal.
+#    Implement that only if there are a lot of site without discoverable feeds.
+
+
 async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None]:
     """Normalize the raw URL and convert it to a canonical feed URL."""
     logger.info("discovering_adjusting_url", raw_url=context.raw_url)
