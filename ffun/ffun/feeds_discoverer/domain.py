@@ -324,10 +324,10 @@ async def discover(url: UnknownUrl | AbsoluteUrl, depth: int, discoverers: list[
     for discoverer in discoverers:
         context, result = await discoverer(context)
 
-        print("----")
-        print(discoverer.__name__)
-        print(context.replace(content=None, soup=None))
-        print(result)
+        # print("----")
+        # print(discoverer.__name__)
+        # print(context.replace(content=None, soup=None))
+        # print(result)
 
         if result is not None:
             logger.info("discovering_finished", feeds_found=len(result.feeds))

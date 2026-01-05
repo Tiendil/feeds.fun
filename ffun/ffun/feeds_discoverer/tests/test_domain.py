@@ -1,7 +1,9 @@
 import httpx
 import pytest
+from typing import Any
 from respx.router import MockRouter
 
+from pytest_mock import MockerFixture
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import str_to_feed_url, url_to_host
 from ffun.feeds_discoverer.domain import (
@@ -362,8 +364,8 @@ class TestDiscoverCheckCandidateLinks:
 
     @pytest.mark.asyncio
     async def test_works__no_feeds_found(self, respx_mock: MockRouter) -> None:
-        respx_mock.get("/feed1").mock(side_effect=httpx.ConnectTimeout("some message"))
-        respx_mock.get("/feed2").mock(side_effect=httpx.ConnectTimeout("some message"))
+        feed_1_mock = respx_mock.get("/feed1").mock(side_effect=httpx.ConnectTimeout("some message"))
+        feed_2_mock = respx_mock.get("/feed2").mock(side_effect=httpx.ConnectTimeout("some message"))
 
         context = build_context(
             "http://localhost/test",
@@ -375,6 +377,65 @@ class TestDiscoverCheckCandidateLinks:
         )
 
         new_context, result = await _discover_check_candidate_links(context)
+
+        assert feed_1_mock.called
+        assert feed_2_mock.called
+
+        assert new_context == context.replace(candidate_urls=set())
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_works__duplicated_feeds_detected(self, mocker: MockerFixture) -> None:
+        checked_links = []
+
+        async def fake_discover(url: Any, *argv: Any, **kwargs: Any) -> Result:
+            checked_links.append(url)
+            return Result(feeds=[], status=Status.no_feeds_found)
+
+        mocker.patch("ffun.feeds_discoverer.domain.discover", fake_discover)
+
+        context = build_context(
+            "http://localhost/test",
+            candidate_urls={
+                AbsoluteUrl("http://localhost/feed1"),
+                AbsoluteUrl("http://localhost/feed2"),
+                AbsoluteUrl("http://localhost/feed1"),
+            },
+            discoverers=_discoverers,
+        )
+
+        new_context, result = await _discover_check_candidate_links(context)
+
+        assert len(checked_links) == 2
+        assert set(checked_links) == {'http://localhost/feed1', 'http://localhost/feed2'}
+
+        assert new_context == context.replace(candidate_urls=set())
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_works__wrong_domain_detected(self, mocker: MockerFixture) -> None:
+        checked_links = []
+
+        async def fake_discover(url: Any, *argv: Any, **kwargs: Any) -> Result:
+            checked_links.append(url)
+            return Result(feeds=[], status=Status.no_feeds_found)
+
+        mocker.patch("ffun.feeds_discoverer.domain.discover", fake_discover)
+
+        context = build_context(
+            "http://localhost/test",
+            candidate_urls={
+                AbsoluteUrl("http://localhost/feed1"),
+                AbsoluteUrl("http://localhost/feed2"),
+                AbsoluteUrl("http://example.com/feed3"),
+            },
+            discoverers=_discoverers,
+        )
+
+        new_context, result = await _discover_check_candidate_links(context)
+
+        assert len(checked_links) == 2
+        assert set(checked_links) == {'http://localhost/feed1', 'http://localhost/feed2'}
 
         assert new_context == context.replace(candidate_urls=set())
         assert result is None
@@ -383,8 +444,8 @@ class TestDiscoverCheckCandidateLinks:
     async def test_works__feeds_found(
         self, respx_mock: MockRouter, raw_feed_content: str, another_raw_feed_content: str
     ) -> None:
-        respx_mock.get("/feed1").mock(return_value=httpx.Response(200, content=raw_feed_content))
-        respx_mock.get("/feed2").mock(return_value=httpx.Response(200, content=another_raw_feed_content))
+        feed_1_mock = respx_mock.get("/feed1").mock(return_value=httpx.Response(200, content=raw_feed_content))
+        feed_2_mock = respx_mock.get("/feed2").mock(return_value=httpx.Response(200, content=another_raw_feed_content))
 
         context = build_context(
             "http://localhost/test",
@@ -396,6 +457,9 @@ class TestDiscoverCheckCandidateLinks:
         )
 
         new_context, result = await _discover_check_candidate_links(context)
+
+        assert feed_1_mock.called
+        assert feed_2_mock.called
 
         assert new_context == context.replace(candidate_urls=set())
 
