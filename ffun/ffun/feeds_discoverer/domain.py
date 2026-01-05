@@ -13,6 +13,7 @@ from ffun.domain.urls import (
     normalize_classic_unknown_url,
     to_feed_url,
     url_has_extension,
+    url_to_host,
 )
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain
@@ -46,7 +47,9 @@ async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None
 
     logger.info("discovering_normalized_url", raw_url=context.raw_url, adjusted_url=url)
 
-    return context.replace(url=url), None
+    host = url_to_host(url)
+
+    return context.replace(url=url, host=host), None
 
 
 async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
@@ -199,6 +202,8 @@ async def _discover_check_candidate_links(context: Context) -> tuple[Context, Re
 
     filtered_links = filter_out_duplicated_urls(context.candidate_urls)
 
+    filtered_links = [link for link in filtered_links if context.host == url_to_host(link)]
+
     tasks = []
 
     for link in filtered_links:
@@ -318,6 +323,11 @@ async def discover(url: UnknownUrl | AbsoluteUrl, depth: int, discoverers: list[
 
     for discoverer in discoverers:
         context, result = await discoverer(context)
+
+        print("----")
+        print(discoverer.__name__)
+        print(context.replace(content=None, soup=None))
+        print(result)
 
         if result is not None:
             logger.info("discovering_finished", feeds_found=len(result.feeds))

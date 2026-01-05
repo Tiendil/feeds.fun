@@ -24,6 +24,7 @@ class Status(enum.StrEnum):
 class Context(BaseEntity):
     raw_url: UnknownUrl
     url: FeedUrl | None = None
+    host: str | None = None
     content: str | None = None
     soup: Any | None = None
     depth: int = 1

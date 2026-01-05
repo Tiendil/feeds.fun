@@ -3,7 +3,7 @@ import pytest
 from respx.router import MockRouter
 
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
-from ffun.domain.urls import str_to_feed_url
+from ffun.domain.urls import str_to_feed_url, url_to_host
 from ffun.feeds_discoverer.domain import (
     _discover_adjust_url,
     _discover_check_candidate_links,
@@ -19,6 +19,22 @@ from ffun.feeds_discoverer.domain import (
     discover,
 )
 from ffun.feeds_discoverer.entities import Context, Result, Status
+
+# class TestExperiment:
+
+#     @pytest.mark.asyncio
+#     async def test(self) -> None:
+#         base_url = 'https://marcan.st/2025/02/resigning-as-asahi-linux-project-lead/'
+
+#         result = await discover(UnknownUrl(base_url), depth=1)
+
+#         print(result)
+
+#         assert False
+
+
+def build_context(url: str, **kwargs) -> Context:
+    return Context(raw_url=UnknownUrl(url), url=str_to_feed_url(url), host=url_to_host(url), **kwargs)
 
 
 class TestDiscoverAdjustUrl:
@@ -38,7 +54,7 @@ class TestDiscoverAdjustUrl:
 
         new_context, result = await _discover_adjust_url(context)
 
-        assert new_context == context.replace(url=AbsoluteUrl("https://example.com"))
+        assert new_context == context.replace(url=AbsoluteUrl("https://example.com"), host="example.com")
         assert result is None
 
 
@@ -48,7 +64,7 @@ class TestDiscoverLoadUrl:
     async def test_error(self, respx_mock: MockRouter) -> None:
         respx_mock.get("/test").mock(side_effect=httpx.ConnectTimeout("some message"))
 
-        context = Context(raw_url=UnknownUrl("http://localhost/test"), url=str_to_feed_url("http://localhost/test"))
+        context = build_context("http://localhost/test")
 
         new_context, result = await _discover_load_url(context)
 
@@ -63,7 +79,7 @@ class TestDiscoverLoadUrl:
 
         respx_mock.get("/test").mock(return_value=mocked_response)
 
-        context = Context(raw_url=UnknownUrl("http://localhost/test"), url=str_to_feed_url("http://localhost/test"))
+        context = build_context("http://localhost/test")
 
         new_context, result = await _discover_load_url(context)
 
@@ -75,11 +91,7 @@ class TestDiscoverExtractFeedInfo:
 
     @pytest.mark.asyncio
     async def test_not_a_feed(self) -> None:
-        context = Context(
-            raw_url=UnknownUrl("http://localhost/test"),
-            url=str_to_feed_url("http://localhost/test"),
-            content="some text content",
-        )
+        context = build_context("http://localhost/test", content="some text content")
 
         new_context, result = await _discover_extract_feed_info(context)
 
@@ -89,11 +101,7 @@ class TestDiscoverExtractFeedInfo:
     @pytest.mark.asyncio
     async def test_a_feed(self, raw_feed_content: str) -> None:
 
-        context = Context(
-            raw_url=UnknownUrl("http://localhost/test"),
-            url=str_to_feed_url("http://localhost/test"),
-            content=raw_feed_content,
-        )
+        context = build_context("http://localhost/test", content=raw_feed_content)
 
         new_context, result = await _discover_extract_feed_info(context)
 
@@ -111,7 +119,7 @@ class TestDiscoverCreateSoup:
     @pytest.mark.xfail(reason="need to find a case when BeautifulSoup raises an exception")
     @pytest.mark.asyncio
     async def test_not_html(self) -> None:
-        context = Context(raw_url=UnknownUrl("http://localhost/test"), content="some text content")
+        context = build_context("http://localhost/test", content="some text content")
 
         new_context, result = await _discover_create_soup(context)
 
@@ -120,7 +128,7 @@ class TestDiscoverCreateSoup:
 
     @pytest.mark.asyncio
     async def test_html(self, raw_feed_content: str) -> None:
-        context = Context(raw_url=UnknownUrl("http://localhost/test"), content="<html></html>")
+        context = build_context("http://localhost/test", content="<html></html>")
 
         new_context, result = await _discover_create_soup(context)
 
@@ -132,9 +140,8 @@ class TestDiscoverExtractFeedsFromLinks:
 
     @pytest.mark.asyncio
     async def test_no_links(self) -> None:
-        intro_context = Context(
-            raw_url=UnknownUrl("http://localhost/test"),
-            url=str_to_feed_url("http://localhost/test"),
+        intro_context = build_context(
+            "http://localhost/test",
             content="<html></html>",
         )
 
@@ -173,9 +180,8 @@ class TestDiscoverExtractFeedsFromLinks:
         </html>
         """
 
-        intro_context = Context(
-            raw_url=UnknownUrl("http://localhost/test/xxx"),
-            url=str_to_feed_url("http://localhost/test/xxx"),
+        intro_context = build_context(
+            "http://localhost/test/xxx",
             content=html,
         )
 
@@ -199,9 +205,8 @@ class TestDiscoverExtractFeedsFromAnchors:
 
     @pytest.mark.asyncio
     async def test_no_anchorts(self) -> None:
-        intro_context = Context(
-            raw_url=UnknownUrl("http://localhost/test"),
-            url=str_to_feed_url("http://localhost/test"),
+        intro_context = build_context(
+            "http://localhost/test",
             content="<html></html>",
         )
 
@@ -238,9 +243,8 @@ class TestDiscoverExtractFeedsFromAnchors:
         </html>
         """
 
-        intro_context = Context(
-            raw_url=UnknownUrl("http://localhost/test/xxx"),
-            url=str_to_feed_url("http://localhost/test/xxx"),
+        intro_context = context = build_context(
+            "http://localhost/test/xxx",
             content=html,
         )
 
@@ -272,9 +276,8 @@ class TestDiscoverCheckParentUrls:
 
     @pytest.mark.asyncio
     async def test_parents(self) -> None:
-        context = Context(
-            raw_url=UnknownUrl("http://example.com"),
-            url=str_to_feed_url("http://example.com"),
+        context = context = build_context(
+            "http://example.com",
             discoverers=_discoverers,
         )
 
@@ -290,9 +293,8 @@ class TestDiscoverCheckParentUrls:
         respx_mock.get("/test").mock(side_effect=httpx.ConnectTimeout("some message"))
         respx_mock.get("/").mock(side_effect=httpx.ConnectTimeout("some message"))
 
-        context = Context(
-            raw_url=UnknownUrl("http://localhost/test/feed"),
-            url=str_to_feed_url("http://localhost/test/feed"),
+        context = build_context(
+            "http://localhost/test/feed",
             discoverers=_discoverers,
         )
 
@@ -326,9 +328,8 @@ class TestDiscoverCheckParentUrls:
         respx_mock.get("/feed3").mock(return_value=httpx.Response(200, content=raw_feed_content))
         respx_mock.get("/feed4").mock(return_value=httpx.Response(200, content="wrong_content"))
 
-        context = Context(
-            raw_url=UnknownUrl("http://localhost/test/abc"),
-            url=str_to_feed_url("http://localhost/test/abc"),
+        context = build_context(
+            "http://localhost/test/abc",
             discoverers=_discoverers,
         )
 
@@ -364,8 +365,8 @@ class TestDiscoverCheckCandidateLinks:
         respx_mock.get("/feed1").mock(side_effect=httpx.ConnectTimeout("some message"))
         respx_mock.get("/feed2").mock(side_effect=httpx.ConnectTimeout("some message"))
 
-        context = Context(
-            raw_url=UnknownUrl("http://localhost/test"),
+        context = build_context(
+            "http://localhost/test",
             candidate_urls={
                 AbsoluteUrl("http://localhost/feed1"),
                 AbsoluteUrl("http://localhost/feed2"),
@@ -385,8 +386,8 @@ class TestDiscoverCheckCandidateLinks:
         respx_mock.get("/feed1").mock(return_value=httpx.Response(200, content=raw_feed_content))
         respx_mock.get("/feed2").mock(return_value=httpx.Response(200, content=another_raw_feed_content))
 
-        context = Context(
-            raw_url=UnknownUrl("http://localhost/test"),
+        context = build_context(
+            "http://localhost/test",
             candidate_urls={
                 AbsoluteUrl("http://localhost/feed1"),
                 AbsoluteUrl("http://localhost/feed2"),
@@ -411,7 +412,7 @@ class TestDiscoverStopRecursion:
 
     @pytest.mark.asyncio
     async def test_depth_zero(self) -> None:
-        context = Context(raw_url=UnknownUrl("http://localhost/test"), depth=0, discoverers=_discoverers)
+        context = build_context("http://localhost/test", depth=0, discoverers=_discoverers)
 
         new_context, result = await _discover_stop_recursion(context)
 
@@ -421,7 +422,7 @@ class TestDiscoverStopRecursion:
 
     @pytest.mark.asyncio
     async def test_depth_not_zero(self) -> None:
-        context = Context(raw_url=UnknownUrl("http://localhost/test"), depth=1, discoverers=_discoverers)
+        context = build_context("http://localhost/test", depth=1, discoverers=_discoverers)
 
         new_context, result = await _discover_stop_recursion(context)
 
@@ -433,9 +434,7 @@ class TestDiscoverExtractFeedsForReddit:
 
     @pytest.mark.asyncio
     async def test_not_reddit(self) -> None:
-        context = Context(
-            raw_url=UnknownUrl("http://example.com/test"), url=str_to_feed_url("http://example.com/test")
-        )
+        context = build_context("http://example.com/test")
 
         new_context, result = await _discover_extract_feeds_for_reddit(context)
 
@@ -444,9 +443,8 @@ class TestDiscoverExtractFeedsForReddit:
 
     @pytest.mark.asyncio
     async def test_old_reditt(self) -> None:
-        context = Context(
-            raw_url=UnknownUrl("https://old.reddit.com/r/feedsfun/"),
-            url=str_to_feed_url("https://old.reddit.com/r/feedsfun/"),
+        context = build_context(
+            "https://old.reddit.com/r/feedsfun/",
         )
 
         new_context, result = await _discover_extract_feeds_for_reddit(context)
@@ -470,7 +468,7 @@ class TestDiscoverExtractFeedsForReddit:
     )
     @pytest.mark.asyncio
     async def test_new_reddit(self, url: str, expected_url: FeedUrl) -> None:
-        context = Context(raw_url=UnknownUrl(url), url=str_to_feed_url(url))
+        context = context = build_context(url)
 
         new_context, result = await _discover_extract_feeds_for_reddit(context)
 
@@ -479,10 +477,7 @@ class TestDiscoverExtractFeedsForReddit:
 
     @pytest.mark.asyncio
     async def test_already_reddit_rss_url(self) -> None:
-        context = Context(
-            raw_url=UnknownUrl("https://www.reddit.com/r/feedsfun/.rss"),
-            url=str_to_feed_url("https://www.reddit.com/r/feedsfun/.rss"),
-        )
+        context = context = build_context("https://www.reddit.com/r/feedsfun/.rss")
 
         new_context, result = await _discover_extract_feeds_for_reddit(context)
 
