@@ -413,7 +413,7 @@ class TestDiscoverCheckCandidateLinks:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_works__wrong_domain_detected(self, mocker: MockerFixture) -> None:
+    async def test_works__host_change_detected(self, mocker: MockerFixture) -> None:
         checked_links = []
 
         async def fake_discover(url: Any, *argv: Any, **kwargs: Any) -> Result:
