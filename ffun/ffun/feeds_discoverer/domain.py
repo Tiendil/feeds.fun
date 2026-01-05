@@ -23,7 +23,7 @@ logger = logging.get_module_logger()
 
 
 async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None]:
-
+    """Normalize the raw URL and convert it to a canonical feed URL."""
     logger.info("discovering_adjusting_url", raw_url=context.raw_url)
 
     absolute_url = normalize_classic_unknown_url(context.raw_url)
@@ -42,6 +42,7 @@ async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None
 
 
 async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
+    """Fetch the URL content via the loader."""
     assert context.url is not None
 
     logger.info("discovering_loading_content", url=context.url)
@@ -62,6 +63,7 @@ async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
 
 
 async def _discover_extract_feed_info(context: Context) -> tuple[Context, Result | None]:
+    """Try to parse the loaded content directly as a feed."""
     assert context.url is not None
     assert context.content is not None
 
@@ -82,6 +84,7 @@ async def _discover_extract_feed_info(context: Context) -> tuple[Context, Result
 
 
 async def _discover_create_soup(context: Context) -> tuple[Context, Result | None]:
+    """Parse loaded HTML into a BeautifulSoup document for link extraction."""
     assert context.content is not None
 
     logger.info("discovering_creating_soup")
@@ -98,6 +101,10 @@ async def _discover_create_soup(context: Context) -> tuple[Context, Result | Non
 
 
 async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context, Result | None]:
+    """Collect candidate feed URLs from <link> tags in the HTML head.
+
+    Skips common non-feed rel values, adjusts relative URLs to absolute ones.
+    """
     assert context.url is not None
     assert context.soup is not None
 
@@ -119,6 +126,10 @@ async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context,
 
 
 async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Context, Result | None]:
+    """Collect candidate feed URLs from <a> tags in the HTML body.
+
+    Filters by allowed file extensions, normalizes relative links.
+    """
     assert context.url is not None
 
     logger.info("discovering_extracting_feeds_from_anchors", url=context.url)
@@ -144,6 +155,11 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
 
 
 async def _discover_check_parent_urls(context: Context) -> tuple[Context, Result | None]:
+    """Check the parent URL for feeds when the current page yields none.
+
+    Recurses one level up in the URL hierarchy with depth=1 to look for HTML
+    pages that link to feeds.
+    """
     assert context.url is not None
 
     logger.info("discovering_checking_parent_urls", url=context.url)
@@ -166,6 +182,11 @@ async def _discover_check_parent_urls(context: Context) -> tuple[Context, Result
 
 
 async def _discover_check_candidate_links(context: Context) -> tuple[Context, Result | None]:  # noqa: CCR001
+    """Recursively check candidate URLs and aggregate any feeds found.
+
+    De-duplicates candidates, discovers each with reduced depth in parallel,
+    then merges and sorts results into a single feeds list.
+    """
 
     logger.info("discovering_checking_links", candidate_links=context.candidate_urls)
 
@@ -195,7 +216,7 @@ async def _discover_check_candidate_links(context: Context) -> tuple[Context, Re
 
 
 async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | None]:
-
+    """Stop discovery when recursion depth is exhausted."""
     logger.info("discovering_check_recursion", depth=context.depth)
 
     if context.depth == 0:
@@ -211,7 +232,11 @@ _RE_REDDIT_PATH_PREFIX = re.compile(r"^/r/[^/]+/?")
 
 
 async def _discover_extract_feeds_for_reddit(context: Context) -> tuple[Context, Result | None]:
-    """New Reddit site has no links to RSS feeds => we construct them."""
+    """Construct RSS URLs for new Reddit pages that do not expose feed links.
+
+    Detects reddit.com subreddit paths, synthesizes the `.rss` URL, and adds it
+    as a candidate unless it matches the current URL.
+    """
     assert context.url is not None
 
     logger.info("discovering_reddit_extracting_feeds", url=context.url)
