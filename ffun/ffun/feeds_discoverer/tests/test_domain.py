@@ -278,10 +278,10 @@ class TestDiscoverCheckParentUrls:
 
     @pytest.mark.asyncio
     async def test_nothing_found(self, respx_mock: MockRouter) -> None:
-        respx_mock.get("/test/feed").mock(side_effect=httpx.ConnectTimeout("some message"))
-        respx_mock.get("/test/").mock(side_effect=httpx.ConnectTimeout("some message"))
-        respx_mock.get("/test").mock(side_effect=httpx.ConnectTimeout("some message"))
-        respx_mock.get("/").mock(side_effect=httpx.ConnectTimeout("some message"))
+        mock_1 = respx_mock.get("/test/feed").mock(side_effect=httpx.ConnectTimeout("some message"))
+        mock_2 = respx_mock.get("/test/").mock(side_effect=httpx.ConnectTimeout("some message"))
+        mock_3 = respx_mock.get("/test").mock(side_effect=httpx.ConnectTimeout("some message"))
+        mock_4 = respx_mock.get("/").mock(side_effect=httpx.ConnectTimeout("some message"))
 
         context = build_context(
             "http://localhost/test/feed",
@@ -289,6 +289,11 @@ class TestDiscoverCheckParentUrls:
         )
 
         new_context, result = await _discover_check_parent_urls(context)
+
+        assert not mock_1.called
+        assert mock_2.called
+        assert mock_3.called
+        assert mock_4.called
 
         assert new_context == context.replace()
         assert result is None
