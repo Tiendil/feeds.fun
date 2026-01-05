@@ -195,7 +195,6 @@ async def _discover_check_candidate_links(context: Context) -> tuple[Context, Re
     De-duplicates candidates, discovers each with reduced depth in parallel,
     then merges and sorts results into a single feeds list.
     """
-
     logger.info("discovering_checking_links", candidate_links=context.candidate_urls)
 
     filtered_links = filter_out_duplicated_urls(context.candidate_urls)
