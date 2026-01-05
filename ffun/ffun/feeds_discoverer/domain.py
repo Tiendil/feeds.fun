@@ -4,7 +4,7 @@ import re
 from bs4 import BeautifulSoup
 
 from ffun.core import logging
-from ffun.domain.entities import AbsoluteUrl, UnknownUrl
+from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import (
     adjust_classic_url,
     construct_f_url,
@@ -13,6 +13,7 @@ from ffun.domain.urls import (
     normalize_classic_unknown_url,
     to_feed_url,
     url_has_extension,
+    url_to_host,
 )
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain
@@ -28,6 +29,7 @@ logger = logging.get_module_logger()
 # 2. Check common feed URL patterns (e.g., /feed, /rss, /feed.xml, /feeds/rss.xml, .rss, etc.)
 #    However, this may lead to making too many requests, which is not ideal.
 #    Implement that only if there are a lot of site without discoverable feeds.
+# 3. There no protection from checking the same link multiple times, we should add some.
 
 
 async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None]:
@@ -46,7 +48,9 @@ async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None
 
     logger.info("discovering_normalized_url", raw_url=context.raw_url, adjusted_url=url)
 
-    return context.replace(url=url), None
+    host = url_to_host(url)
+
+    return context.replace(url=url, host=host), None
 
 
 async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
@@ -172,18 +176,25 @@ async def _discover_check_parent_urls(context: Context) -> tuple[Context, Result
 
     logger.info("discovering_checking_parent_urls", url=context.url)
 
-    parent_url = get_parent_url(context.url)
+    parent_url: AbsoluteUrl | FeedUrl | None = get_parent_url(context.url)
 
-    if parent_url is None:
-        logger.info("discovering_no_parent")
-        return context, None
+    # TODO: currently, the logic should be protected from the exponential explosion
+    #       because of the recursion (each parent URL can be processed by `_discover_check_parent_urls`
+    #       leading to root URLs being processed multiple times.
+    #       However, it would be better to add explicit protection against checking the same URL multiple times.
+    #       See comments at the top of the file.
+    while True:
+        if parent_url is None:
+            break
 
-    # always check parents on depth of 1 (a.k.a., we expect html with links to feeds)
-    result = await discover(url=parent_url, depth=1, discoverers=context.discoverers)
+        # always check parents on depth of 1 (a.k.a., we expect html with links to feeds)
+        result = await discover(url=UnknownUrl(parent_url), depth=1, discoverers=context.discoverers)
 
-    if result.feeds:
-        logger.info("discovering_parent_extracted", parent_url=parent_url)
-        return context, result
+        if result.feeds:
+            logger.info("discovering_parent_extracted", parent_url=parent_url)
+            return context, result
+
+        parent_url = get_parent_url(parent_url)
 
     logger.info("discovering_no_parent_extracted")
     return context, None
@@ -198,6 +209,8 @@ async def _discover_check_candidate_links(context: Context) -> tuple[Context, Re
     logger.info("discovering_checking_links", candidate_links=context.candidate_urls)
 
     filtered_links = filter_out_duplicated_urls(context.candidate_urls)
+
+    filtered_links = [link for link in filtered_links if context.host == url_to_host(link)]
 
     tasks = []
 

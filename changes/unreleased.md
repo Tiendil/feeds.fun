@@ -5,3 +5,4 @@
 - ff-558 — Silenced expected `h2.exceptions.ProtocolError` in feeds loader.
 - ff-559 — Better error handling for OPML uploads: catch exceptions, display user-friendly messages.
 - ff-166 — Made tag filter case-insensitive.
+- ff-224 — Fixed feed discovery when the feed URL can be found only in one of the parent URLs.
