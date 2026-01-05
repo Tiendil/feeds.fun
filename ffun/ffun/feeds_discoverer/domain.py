@@ -178,6 +178,11 @@ async def _discover_check_parent_urls(context: Context) -> tuple[Context, Result
 
     parent_url: AbsoluteUrl = context.url
 
+    # TODO: currently, the logic should be protected from the exponential explosion
+    #       because of the recursion (each parent URL can be processed by `_discover_check_parent_urls`
+    #       leading to root URLs being processed multiple times.
+    #       However, it would be better to add explicit protection against checking the same URL multiple times.
+    #       See comments at the top of the file.
     while parent_url := get_parent_url(parent_url):
         # always check parents on depth of 1 (a.k.a., we expect html with links to feeds)
         result = await discover(url=parent_url, depth=1, discoverers=context.discoverers)
