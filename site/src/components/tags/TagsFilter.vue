@@ -169,10 +169,10 @@
       const tagInfo = tagsStore.tags[tag];
 
       if (tagInfo === undefined || tagInfo.name === null) {
-        return tag.includes(tagNameFilter.value);
+        return tag.includes(textFilter);
       }
 
-      return tagInfo.name.includes(tagNameFilter.value);
+      return tagInfo.name.includes(textFilter);
     });
 
     return values;
