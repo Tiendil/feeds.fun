@@ -4,7 +4,7 @@ import re
 from bs4 import BeautifulSoup
 
 from ffun.core import logging
-from ffun.domain.entities import AbsoluteUrl, UnknownUrl
+from ffun.domain.entities import AbsoluteUrl, UnknownUrl, FeedUrl
 from ffun.domain.urls import (
     adjust_classic_url,
     construct_f_url,
@@ -176,20 +176,25 @@ async def _discover_check_parent_urls(context: Context) -> tuple[Context, Result
 
     logger.info("discovering_checking_parent_urls", url=context.url)
 
-    parent_url: AbsoluteUrl = context.url
+    parent_url: AbsoluteUrl | FeedUrl | None = get_parent_url(context.url)
 
     # TODO: currently, the logic should be protected from the exponential explosion
     #       because of the recursion (each parent URL can be processed by `_discover_check_parent_urls`
     #       leading to root URLs being processed multiple times.
     #       However, it would be better to add explicit protection against checking the same URL multiple times.
     #       See comments at the top of the file.
-    while parent_url := get_parent_url(parent_url):
+    while True:
+        if parent_url is None:
+            break
+
         # always check parents on depth of 1 (a.k.a., we expect html with links to feeds)
-        result = await discover(url=parent_url, depth=1, discoverers=context.discoverers)
+        result = await discover(url=UnknownUrl(parent_url), depth=1, discoverers=context.discoverers)
 
         if result.feeds:
             logger.info("discovering_parent_extracted", parent_url=parent_url)
             return context, result
+
+        parent_url = get_parent_url(parent_url)
 
     logger.info("discovering_no_parent_extracted")
     return context, None

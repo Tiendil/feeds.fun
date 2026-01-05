@@ -24,8 +24,9 @@ from ffun.feeds_discoverer.domain import (
 from ffun.feeds_discoverer.entities import Context, Result, Status
 
 
-def build_context(url: str, **kwargs) -> Context:
-    return Context(raw_url=UnknownUrl(url), url=str_to_feed_url(url), host=url_to_host(url), **kwargs)
+def build_context(url: str, **kwargs: Any) -> Context:
+    prepered_url = str_to_feed_url(url)
+    return Context(raw_url=UnknownUrl(url), url=prepered_url, host=url_to_host(prepered_url), **kwargs)
 
 
 class TestDiscoverAdjustUrl:

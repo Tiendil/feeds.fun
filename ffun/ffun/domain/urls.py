@@ -294,13 +294,17 @@ def url_to_source_uid(url: AbsoluteUrl | FeedUrl) -> SourceUid:
     return SourceUid(domain)
 
 
-def url_to_host(url: AbsoluteUrl) -> str:
+def url_to_host(url: AbsoluteUrl | FeedUrl) -> str:
     f_url = furl(url)
 
     if f_url.host in (None, ""):
-        raise NotImplementedError("AbsoluteUrl must always have a host")
+        raise NotImplementedError("AbsoluteUrl & FeedUrl must always have a host")
 
-    return f_url.host
+    host = f_url.host
+
+    assert isinstance(host, str)
+
+    return host
 
 
 def url_has_extension(url: AbsoluteUrl, expected_extensions: list[str]) -> bool:
