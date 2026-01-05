@@ -22,18 +22,6 @@ from ffun.feeds_discoverer.domain import (
 )
 from ffun.feeds_discoverer.entities import Context, Result, Status
 
-# class TestExperiment:
-
-#     @pytest.mark.asyncio
-#     async def test(self) -> None:
-#         base_url = 'https://marcan.st/2025/02/resigning-as-asahi-linux-project-lead/'
-
-#         result = await discover(UnknownUrl(base_url), depth=1)
-
-#         print(result)
-
-#         assert False
-
 
 def build_context(url: str, **kwargs) -> Context:
     return Context(raw_url=UnknownUrl(url), url=str_to_feed_url(url), host=url_to_host(url), **kwargs)

@@ -176,18 +176,15 @@ async def _discover_check_parent_urls(context: Context) -> tuple[Context, Result
 
     logger.info("discovering_checking_parent_urls", url=context.url)
 
-    parent_url = get_parent_url(context.url)
+    parent_url: AbsoluteUrl = context.url
 
-    if parent_url is None:
-        logger.info("discovering_no_parent")
-        return context, None
+    while parent_url := get_parent_url(parent_url):
+        # always check parents on depth of 1 (a.k.a., we expect html with links to feeds)
+        result = await discover(url=parent_url, depth=1, discoverers=context.discoverers)
 
-    # always check parents on depth of 1 (a.k.a., we expect html with links to feeds)
-    result = await discover(url=parent_url, depth=1, discoverers=context.discoverers)
-
-    if result.feeds:
-        logger.info("discovering_parent_extracted", parent_url=parent_url)
-        return context, result
+        if result.feeds:
+            logger.info("discovering_parent_extracted", parent_url=parent_url)
+            return context, result
 
     logger.info("discovering_no_parent_extracted")
     return context, None
@@ -324,11 +321,6 @@ async def discover(url: UnknownUrl | AbsoluteUrl, depth: int, discoverers: list[
 
     for discoverer in discoverers:
         context, result = await discoverer(context)
-
-        # print("----")
-        # print(discoverer.__name__)
-        # print(context.replace(content=None, soup=None))
-        # print(result)
 
         if result is not None:
             logger.info("discovering_finished", feeds_found=len(result.feeds))
