@@ -29,6 +29,7 @@ logger = logging.get_module_logger()
 # 2. Check common feed URL patterns (e.g., /feed, /rss, /feed.xml, /feeds/rss.xml, .rss, etc.)
 #    However, this may lead to making too many requests, which is not ideal.
 #    Implement that only if there are a lot of site without discoverable feeds.
+# 3. There no protection from checking the same link multiple times, we should add some.
 
 
 async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None]:
