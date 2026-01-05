@@ -4,7 +4,7 @@ import re
 from bs4 import BeautifulSoup
 
 from ffun.core import logging
-from ffun.domain.entities import AbsoluteUrl, UnknownUrl, FeedUrl
+from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import (
     adjust_classic_url,
     construct_f_url,
