@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import (
-    adjust_classic_url,
+    adjust_external_url,
     construct_f_url,
     filter_out_duplicated_urls,
     get_parent_url,
@@ -112,7 +112,7 @@ async def _discover_create_soup(context: Context) -> tuple[Context, Result | Non
     return context.replace(soup=soup), None
 
 
-async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context, Result | None]:
+async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context, Result | None]:  # noqa: CCR001
     """Collect candidate feed URLs from <link> tags in the HTML head.
 
     Skips common non-feed rel values, adjusts relative URLs to absolute ones.
@@ -130,14 +130,20 @@ async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context,
                 rel in link["rel"] for rel in ["author", "help", "icon", "license", "pingback", "search", "stylesheet"]
             ):
                 continue
-            links_to_check.add(adjust_classic_url(link["href"], context.url))
+
+            adjusted_url = adjust_external_url(link["href"], context.url)
+
+            if adjusted_url is None:
+                continue
+
+            links_to_check.add(adjusted_url)
 
     logger.info("discovering_links_extracted", links_to_check=links_to_check)
 
     return context.replace(candidate_urls=context.candidate_urls | links_to_check), None
 
 
-async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Context, Result | None]:
+async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Context, Result | None]:  # noqa: CCR001
     """Collect candidate feed URLs from <a> tags in the HTML body.
 
     Filters by allowed file extensions, normalizes relative links.
@@ -159,7 +165,12 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
             if not url_has_extension(url, allowed_extensions):
                 continue
 
-            anchors_to_check.add(adjust_classic_url(url, context.url))
+            adjusted_url = adjust_external_url(url, context.url)
+
+            if adjusted_url is None:
+                continue
+
+            anchors_to_check.add(adjusted_url)
 
     logger.info("discovering_anchors_extracted", anchors_to_check=anchors_to_check)
 

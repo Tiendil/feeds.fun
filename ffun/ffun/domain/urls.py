@@ -112,7 +112,6 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noq
     #       In any case, loader ignores them and iterates over protocols starting from https
 
     if match := RE_SCHEMA.match(url):
-
         if not schema_supported(match.group(1)):
             return None
 
@@ -175,6 +174,23 @@ def adjust_classic_relative_url(url: UnknownUrl, original_url: AbsoluteUrl | Fee
     if f_url is None:
         return None
 
+    joined_url = construct_f_url(url)
+
+    if joined_url is None:
+        return None
+
+    # TODO: we may want to move this check out of this function
+    # TODO: we may want to make url: RelativeUrl type
+    if (
+        joined_url.scheme is not None
+        or joined_url.host is not None
+        or joined_url.port is not None
+        or joined_url.username is not None
+        or joined_url.password is not None
+    ):
+        # the passed "relative" url is not so relative
+        return None
+
     f_url.remove(query_params=True, fragment=True)
 
     try:
@@ -187,7 +203,7 @@ def adjust_classic_relative_url(url: UnknownUrl, original_url: AbsoluteUrl | Fee
 
 
 # ATTENTION: see note at the top of the file
-def adjust_classic_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
+def _adjust_classic_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
     if is_full_url(url):
         return adjust_classic_full_url(url, original_url)
 
@@ -207,7 +223,7 @@ def adjust_external_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl) ->
     if is_magnetic_url(url):
         return adjust_magnetic_url(url)
 
-    return adjust_classic_url(url, original_url)
+    return _adjust_classic_url(url, original_url)
 
 
 # ATTENTION: see note at the top of the file
