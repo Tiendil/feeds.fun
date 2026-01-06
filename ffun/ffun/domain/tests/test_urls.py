@@ -58,15 +58,18 @@ class TestAdjustClassicUrl:
                 "https://example.com/path/a/b?c=d#fragment",
             ),
             ("//example.com/feed/", "/path/a/b?c=d#z=q", "//example.com/path/a/b?c=d#z=q"),
+
+            ("//example.com/feed/", "mailto:me@example.com", None),
+            ("https://example.com/feed/", "javascript:alert('Hello!')", None),
         ],
     )
     def test_base_transformations(
-        self, original_url: AbsoluteUrl, raw_url: UnknownUrl, adjusted_url: AbsoluteUrl
+        self, original_url: AbsoluteUrl, raw_url: UnknownUrl, adjusted_url: AbsoluteUrl | None
     ) -> None:
         assert urls.is_absolute_url(original_url)
-        assert urls.is_absolute_url(adjusted_url)
+        assert adjusted_url is None or urls.is_absolute_url(adjusted_url)
 
-        assert urls.adjust_classic_url(raw_url, original_url) == adjusted_url
+        assert urls._adjust_classic_url(raw_url, original_url) == adjusted_url
 
 
 class TestIsMagneticUrl:
@@ -108,6 +111,9 @@ class TestAdjustExternalUrl:
             ("xxx.com", "https://xxx.com"),  # noqa
             ("x" * 100 + ".html", "https://example.com/" + "x" * 100 + ".html"),  # noqa
             ("x.html", "https://example.com/x.html"),  # noqa
+            ("mailto:", None),
+            ("mailto:me@example.com", None),
+            ("javascript:alert('Hello!')", None),
             # TODO: what if ip addreses?
         ],
     )
@@ -420,6 +426,18 @@ class TestAdjustClassicRelativeUrl:
                 UnknownUrl("../a/b"), urls.str_to_absolute_url("https://example.com/feed/part?x=y#z")
             )
             == "https://example.com/a/b"
+        )
+
+    @pytest.mark.parametrize("wrong_url",
+                             ["mailto:",
+                              "mailto:me@example.com",
+                              "javascript:alert('Hello!')"])
+    def test_not_so_relative(self, wrong_url: UnknownUrl) -> None:
+        assert (
+            urls.adjust_classic_relative_url(
+                wrong_url, urls.str_to_absolute_url("https://example.com/feed/part?x=y#z")
+            )
+            is None
         )
 
 

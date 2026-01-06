@@ -231,6 +231,10 @@ class TestDiscoverExtractFeedsFromAnchors:
            <a href="http://localhost/feed.12.aspx"></a>
            <a href="http://localhost/feed.13.json"></a>
            <a href="http://localhost/feed.14.cgi"></a>
+           <a href="http://localhost/feed.15.html"></a>
+           <a href="mailto:"></a>
+           <a href="mailto:me@example.com"></a>
+           <a href="javascript:void(0)"></a>
          </body>
         </html>
         """
