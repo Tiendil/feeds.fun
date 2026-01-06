@@ -58,7 +58,6 @@ class TestAdjustClassicUrl:
                 "https://example.com/path/a/b?c=d#fragment",
             ),
             ("//example.com/feed/", "/path/a/b?c=d#z=q", "//example.com/path/a/b?c=d#z=q"),
-
             ("//example.com/feed/", "mailto:me@example.com", None),
             ("https://example.com/feed/", "javascript:alert('Hello!')", None),
         ],
@@ -428,10 +427,7 @@ class TestAdjustClassicRelativeUrl:
             == "https://example.com/a/b"
         )
 
-    @pytest.mark.parametrize("wrong_url",
-                             ["mailto:",
-                              "mailto:me@example.com",
-                              "javascript:alert('Hello!')"])
+    @pytest.mark.parametrize("wrong_url", ["mailto:", "mailto:me@example.com", "javascript:alert('Hello!')"])
     def test_not_so_relative(self, wrong_url: UnknownUrl) -> None:
         assert (
             urls.adjust_classic_relative_url(

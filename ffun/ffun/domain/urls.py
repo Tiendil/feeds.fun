@@ -181,11 +181,13 @@ def adjust_classic_relative_url(url: UnknownUrl, original_url: AbsoluteUrl | Fee
 
     # TODO: we may want to move this check out of this function
     # TODO: we may want to make url: RelativeUrl type
-    if (joined_url.scheme is not None or
-        joined_url.host is not None or
-        joined_url.port is not None or
-        joined_url.username is not None or
-        joined_url.password is not None):
+    if (
+        joined_url.scheme is not None
+        or joined_url.host is not None
+        or joined_url.port is not None
+        or joined_url.username is not None
+        or joined_url.password is not None
+    ):
         # the passed "relative" url is not so relative
         return None
 

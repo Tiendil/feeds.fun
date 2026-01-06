@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import (
+    adjust_external_url,
     construct_f_url,
     filter_out_duplicated_urls,
     get_parent_url,
@@ -13,7 +14,6 @@ from ffun.domain.urls import (
     to_feed_url,
     url_has_extension,
     url_to_host,
-    adjust_external_url
 )
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain
