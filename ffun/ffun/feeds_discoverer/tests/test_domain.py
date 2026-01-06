@@ -164,6 +164,10 @@ class TestDiscoverExtractFeedsFromLinks:
             <link rel="random-rel" href="http://localhost/feed9">
             <link rel="random-rel" href="/feed10">
             <link rel="random-rel" href="feed11">
+
+            <link href="mailto:">
+            <link href="mailto:me@example.com">
+            <link href="javascript:void(0)">
          </head>
          <body>
            <link href="http://localhost/feed12">
