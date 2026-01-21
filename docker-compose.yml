@@ -248,6 +248,10 @@ services:
     networks:
       ffun_network: {}
 
+    extra_hosts:
+      # required to test with local LLM services like LMStudio
+      - "host.docker.internal:host-gateway"
+
     profiles:
       - dev
 
