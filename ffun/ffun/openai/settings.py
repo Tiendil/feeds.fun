@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     api_entry_point: str | None = None
     api_timeout: float = 60.0
 
+    fallback_model_encoding: str = "cl100k_base"
+
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_OPENAI_")
 
 

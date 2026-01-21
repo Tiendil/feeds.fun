@@ -43,7 +43,18 @@ class OpenAIChatResponse(ChatResponse):
 
 @functools.cache
 def _get_encoding(model: str) -> tiktoken.Encoding:
-    return tiktoken.encoding_for_model(model)
+    """Get tiktoken encoding for a given model.
+
+    If you use custom model that is not recognized by tiktoken,
+    use the tiktoken_ext plugin mechanism to register your Encoding objects with tiktoken,
+    as described in https://github.com/openai/tiktoken.
+
+    If tiktoken cannot find encoding for the model, we'll use a default encoding `FFUN_OPENAI_FALLBACK_MODEL_ENCODING`.
+    """
+    try:
+        return tiktoken.encoding_for_model(model)
+    except KeyError:
+        return tiktoken.get_encoding(settings.fallback_model_encoding)
 
 
 @contextlib.contextmanager
