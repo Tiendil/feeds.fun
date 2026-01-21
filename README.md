@@ -125,16 +125,40 @@ You can set the API key for collections in the processor's config.
 
 **DANGER!!!** You can set the "general API key" in the processor's config; in this case, the processor will use it to process **ALL** news. It may be convenient if you self-host the service and fully control who has access to it.
 
-##### Specify API entry points
+### Use third-party LLM models
 
-You can set custom URLs as entry points for OpenAi and Gemini API by setting nthe ext environment variables:
+You can use any LLM model via a provider that has an OpenAI-compatible API or a Gemini-compatible API.
+
+You just need to:
+
+1. Set an API entry point.
+2. Add the used model to the models configuration file.
+3. Optionally, configure the token estimation calculator for the model.
+
+#### Set API entry point
+
+You can set custom URLs as entry points for OpenAI and Gemini API by setting the following environment variables:
 
 ```
 FFUN_OPENAI_API_ENTRY_POINT="<your url>"
 FFUN_GOOGLE_GEMINI_API_ENTRY_POINT="<your url>"
 ```
 
-That will allow you to use any compatible API provider.
+Example: `FFUN_OPENAI_API_ENTRY_POINT="http://host.docker.internal:1234/v1"`
+
+#### Add used model to the models configuration file
+
+You can find an example of the models configuration file [in the code](./ffun/ffun/llms_framework/fixtures/models.toml).
+
+To pass your own configuration, set `FFUN_LLMS_FRAMEWORK_MODELS_CONFIG` to the path to your configuration file.
+
+#### Configure the token estimation
+
+Most likely, you don't need that. However, if you need to have really precise token usage estimation (they are used to split long texts into chunks for LLM processing), you can do so. However, we have fallback logic that should work for any model, even without explicit configuration.
+
+For an OpenAI-compatible API, you should use the `tiktoken_ext` plugin mechanism to register your `Encoding` objects with tiktoken. See [tiktoken README](https://github.com/openai/tiktoken) for details.
+
+We do not support custom token estimation for Gemini-compatible models at the moment.
 
 ### Configure Tag Normalizers
 
