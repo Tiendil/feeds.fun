@@ -149,9 +149,6 @@ class OpenAIInterface(ProviderInterface):
 
         logger.info("openai_response")
 
-        assert answer.usage is not None
-        assert answer.output is not None
-
         content = None
 
         if tool_used:
@@ -162,15 +159,35 @@ class OpenAIInterface(ProviderInterface):
         else:
             content = answer.output_text
 
+        if answer.usage is not None:
+            usage = answer.usage
+        else:
+            # This branch is for openai-compatible servers that do not return usage info.
+            # We may consider removing it in the future, if we'll find a good
+            # third-party server that is fully compatible with openai and can be used
+            # with various models
+            logger.warn("openai_no_usage")
+
+            input_tokens = self.estimate_tokens(config, request.system + request.user)
+            output_tokens = self.estimate_tokens(config, content or "")
+
+            usage = openai.types.Usage(
+                prompt_tokens=input_tokens,
+                completion_tokens=output_tokens,
+                total_tokens=input_tokens + output_tokens,
+            )
+
+        assert answer.output is not None
+
         if content is None:
             logger.error("openai_no_output", answer=repr(answer))
             raise llmsf_errors.TemporaryError(message="Could not get output from OpenAI response")
 
         return OpenAIChatResponse(
             content=content,
-            prompt_tokens=answer.usage.input_tokens,
-            completion_tokens=answer.usage.output_tokens,
-            total_tokens=answer.usage.total_tokens,
+            prompt_tokens=usage.input_tokens,
+            completion_tokens=usage.output_tokens,
+            total_tokens=usage.total_tokens,
         )
 
     def prepare_requests(self, config: LLMConfiguration, text: str) -> Sequence[OpenAIChatRequest]:
