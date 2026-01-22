@@ -58,3 +58,9 @@ What do you need exactly:
 3. Do not forget to load the model into the memory via LMStudio interface.
 
 ![LMStudio server config](./lmstudio_server_config.png)
+
+## If you don't want to process old news
+
+1. Set `allowed_for_users=false` in the `tag_processors.toml`.
+2. Wait a bit till the `llm_general` processor skips all old news.
+3. Set `allowed_for_users=true` back.
