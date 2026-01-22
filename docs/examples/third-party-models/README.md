@@ -7,6 +7,9 @@ You can run this example instance locally using Docker Compose:
 ```
 git clone git@github.com:Tiendil/feeds.fun.git
 cd ./feeds.fun/docs/examples/third-party-models
+
+# Configure and run LMStudio before starting Feeds Fun, see instructions below
+
 docker compose up -d
 ```
 
@@ -42,7 +45,7 @@ We set `model = "mistralai/ministral-3-3b"` for the `llm_general` tag processor.
 
 We add [models.toml](./models.toml) file with the configuration of `mistralai/ministral-3-3b`.
 
-And the `FFUN_LLMS_FRAMEWORK_MODELS_DESCRIPTIONS="/ffun/tag_processors.toml"` environment variable to point Feeds Fun to the custom models config file.
+And the `FFUN_LLMS_FRAMEWORK_MODELS_DESCRIPTIONS="/ffun/models.toml"` environment variable to point Feeds Fun to the custom models config file.
 
 ### LLMStudio
 
@@ -50,7 +53,8 @@ To run this example you need to download, run and configure [LMStudio](https://l
 
 What do you need exactly:
 
-1. Download the `mistralai/ministral-3-3b` model.
+1. Download the `mistralai/ministral-3-3b` model. You can do this via LMStudio.
 2. Configure and run LMStudio server on your host machine, binding it to port `1234`. See the screenshot below.
+3. Do not forget to load the model into the memory via LMStudio interface.
 
 ![LMStudio server config](./lmstudio_server_config.png)

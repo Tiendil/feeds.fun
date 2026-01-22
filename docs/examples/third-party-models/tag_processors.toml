@@ -19,7 +19,7 @@
 [[tag_processors]]
   id = 3
   enabled = true
-  workers = 5
+  workers = 1
   name = "openai_llm_general"
   type = "llm_general"
 
@@ -31,15 +31,14 @@
   llm_provider = "openai"
 
   #############################################################
-  # Generally, you do not need this configs in single-user mode
+  # Configure this tag processor to run for every news
   #############################################################
-  collections_api_key = ""
-  general_api_key = ""
-  general_api_key_warning = ""
-  allowed_for_collections = false
-  #############################################################
-
+  collections_api_key = "this-key-is-not-important-for-llm-setup"
+  general_api_key = "this-key-is-not-important-for-llm-setup"
+  general_api_key_warning = "I understand that setting this key may be DANGEROUS and COSTLY."
+  allowed_for_collections = true
   allowed_for_users = true
+  #############################################################
 
   [tag_processors.llm_config]
     model = "mistralai/ministral-3-3b"
