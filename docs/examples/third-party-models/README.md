@@ -4,7 +4,7 @@ This example is based on [single-user setup example](docs/examples/single-user) 
 
 You can run this example instance locally using Docker Compose:
 
-```
+```bash
 git clone git@github.com:Tiendil/feeds.fun.git
 cd ./feeds.fun/docs/examples/third-party-models
 
@@ -24,8 +24,8 @@ Below you can find some really important notes about running Feeds Fun as a perm
 To use third-party LLM model you need to configure two things:
 
 1. Set an OpenAI API entry point to the url of the third-party model provider. We'll use [LMStudio](https://lmstudio.ai/), but any should work.
-2. Specify your model id in the `tag_processors.toml`
-2. Create a custom `models.toml` config with the parameters of used model.
+2. Specify your model ID in the `tag_processors.toml`
+3. Create a custom `models.toml` config with the parameters of the used model.
 
 ### OpenAI API entry point
 
@@ -35,7 +35,7 @@ We set the following environment variable:
 FFUN_OPENAI_API_ENTRY_POINT="http://host.docker.internal:1234/v1"
 ```
 
-This particular configuration tells Feeds Fun to access service you have running locally on your host machine
+This particular configuration tells Feeds Fun to access the service you have running locally on your host machine
 
 ### Configuring tag processor
 
@@ -47,20 +47,30 @@ We add [models.toml](./models.toml) file with the configuration of `mistralai/mi
 
 And the `FFUN_LLMS_FRAMEWORK_MODELS_DESCRIPTIONS="/ffun/models.toml"` environment variable to point Feeds Fun to the custom models config file.
 
-### LLMStudio
+### LMStudio
 
-To run this example you need to download, run and configure [LMStudio](https://lmstudio.ai/). Follow the instructions on their site.
+To run this example, you need to download, run, and configure [LMStudio](https://lmstudio.ai/). Follow the instructions on their site.
 
-What do you need exactly:
+What exactly do you need:
 
 1. Download the `mistralai/ministral-3-3b` model. You can do this via LMStudio.
-2. Configure and run LMStudio server on your host machine, binding it to port `1234`. See the screenshot below.
-3. Do not forget to load the model into the memory via LMStudio interface.
+2. Configure and run LMStudio server on your host machine, binding it to the port `1234`. See the screenshot below.
+3. Do not forget to load the model into memory via LMStudio interface.
 
 ![LMStudio server config](./lmstudio_server_config.png)
 
 ## If you don't want to process old news
 
+There are two options.
+
+### Temporarily disable LLM tag processor for user feeds
+
 1. Set `allowed_for_users=false` in the `tag_processors.toml`.
-2. Wait a bit till the `llm_general` processor skips all old news.
+2. Wait a bit untill the `llm_general` processor skips all old news.
 3. Set `allowed_for_users=true` back.
+
+### Emulate setting an OpenAI API key by the user
+
+1. Set `general_api_key` to an empty string in the `tag_processors.toml`.
+2. Add a random string as an OpenAI API key in your user settings on the site.
+3. You'll be able to configure the age of processed news (see `Process entries not older than N days` setting in the GUI).
