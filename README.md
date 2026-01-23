@@ -51,6 +51,7 @@ Instructions for docker-based installation:
 
 - [single-user setup](docs/examples/single-user)
 - [multi-user setup](docs/examples/multi-user)
+- [how to use third-party LLM models](docs/examples/third-party-models)
 
 Also:
 
@@ -126,6 +127,8 @@ You can set the API key for collections in the processor's config.
 **DANGER!!!** You can set the "general API key" in the processor's config; in this case, the processor will use it to process **ALL** news. It may be convenient if you self-host the service and fully control who has access to it.
 
 ### Use third-party LLM models
+
+Check our example on [how to use third-party LLM models](docs/examples/third-party-models).
 
 You can use any LLM model via a provider that has an OpenAI-compatible API or a Gemini-compatible API.
 

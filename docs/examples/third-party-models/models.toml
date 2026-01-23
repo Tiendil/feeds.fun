@@ -1,0 +1,9 @@
+
+[[models]]
+name = "mistralai/ministral-3-3b"
+provider = "openai"
+max_context_size = 32000
+max_return_tokens = 8192
+max_tokens_per_entry = 16000
+input_1m_tokens_cost = 0.001
+output_1m_tokens_cost = 0.001
