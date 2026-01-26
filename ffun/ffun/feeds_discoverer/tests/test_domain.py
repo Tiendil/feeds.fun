@@ -8,6 +8,7 @@ from respx.router import MockRouter
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import str_to_feed_url, url_to_host
 from ffun.feeds_discoverer.domain import (
+    _VISITED_URLS,
     _discover_adjust_url,
     _discover_check_candidate_links,
     _discover_check_parent_urls,
@@ -20,6 +21,7 @@ from ffun.feeds_discoverer.domain import (
     _discover_stop_recursion,
     _discoverers,
     discover,
+    visited_cache,
 )
 from ffun.feeds_discoverer.entities import Context, Result, Status
 
@@ -58,7 +60,12 @@ class TestDiscoverLoadUrl:
 
         context = build_context("http://localhost/test")
 
-        new_context, result = await _discover_load_url(context)
+        with visited_cache():
+            new_context, result = await _discover_load_url(context)
+
+            cache = _VISITED_URLS.get()
+            assert cache is not None
+            assert "http://localhost/test" in cache
 
         assert new_context == context
         assert result == Result(feeds=[], status=Status.cannot_access_url)
@@ -73,10 +80,34 @@ class TestDiscoverLoadUrl:
 
         context = build_context("http://localhost/test")
 
-        new_context, result = await _discover_load_url(context)
+        with visited_cache():
+            new_context, result = await _discover_load_url(context)
+
+            cache = _VISITED_URLS.get()
+            assert cache is not None
+            assert "http://localhost/test" in cache
 
         assert new_context == context.replace(content=expected_content)
         assert result is None
+
+    @pytest.mark.asyncio
+    async def test_prevent_second_attempt(self, respx_mock: MockRouter) -> None:
+        mock = respx_mock.get("/test").mock(return_value=httpx.Response(200, content="unused"))
+
+        with visited_cache():
+            cache = _VISITED_URLS.get()
+
+            assert cache is not None
+
+            cache.add(FeedUrl("http://localhost/test"))
+
+            context = build_context("http://localhost/test")
+
+            new_context, result = await _discover_load_url(context)
+
+        assert not mock.called
+        assert new_context == context
+        assert result == Result(feeds=[], status=Status.no_feeds_found)
 
 
 class TestDiscoverExtractFeedInfo:
@@ -168,6 +199,9 @@ class TestDiscoverExtractFeedsFromLinks:
             <link href="mailto:">
             <link href="mailto:me@example.com">
             <link href="javascript:void(0)">
+
+            <link href="http://localhost/feed14.xml">
+            <link href="http://localhost/feed15.wotff2">
          </head>
          <body>
            <link href="http://localhost/feed12">
@@ -191,6 +225,7 @@ class TestDiscoverExtractFeedsFromLinks:
             AbsoluteUrl("http://localhost/feed10"),
             AbsoluteUrl("http://localhost/test/feed11"),
             AbsoluteUrl("http://localhost/feed12"),
+            AbsoluteUrl("http://localhost/feed14.xml"),
         }
 
         assert new_context == context.replace(candidate_urls=expected_links)
@@ -253,19 +288,10 @@ class TestDiscoverExtractFeedsFromAnchors:
         new_context, result = await _discover_extract_feeds_from_anchors(context)
 
         expected_links = {
-            AbsoluteUrl("http://localhost/feed2"),
-            AbsoluteUrl("http://localhost/test/feed3"),
-            AbsoluteUrl("http://localhost/feed4"),
             AbsoluteUrl("http://localhost/feed.5.xml"),
             AbsoluteUrl("http://localhost/feed.6.rss"),
             AbsoluteUrl("http://localhost/feed.7.atom"),
-            AbsoluteUrl("http://localhost/feed.8.rdf"),
             AbsoluteUrl("http://localhost/feed.9.feed"),
-            AbsoluteUrl("http://localhost/feed.10.php"),
-            AbsoluteUrl("http://localhost/feed.11.asp"),
-            AbsoluteUrl("http://localhost/feed.12.aspx"),
-            AbsoluteUrl("http://localhost/feed.13.json"),
-            AbsoluteUrl("http://localhost/feed.14.cgi"),
         }
 
         assert new_context == context.replace(candidate_urls=expected_links)
@@ -317,8 +343,8 @@ class TestDiscoverCheckParentUrls:
             <link href="http://localhost/feed4">
          </head>
          <body>
-            <a href="http://localhost/feed2"></a>
-            <a href="http://localhost/feed3"></a>
+            <a href="http://localhost/feed2.rss"></a>
+            <a href="http://localhost/feed3.atom"></a>
          </body>
         </html>
         """
@@ -329,8 +355,8 @@ class TestDiscoverCheckParentUrls:
         respx_mock.get("/").mock(return_value=httpx.Response(200, content="wrong_content"))
 
         respx_mock.get("/feed1").mock(return_value=httpx.Response(200, content="wrrong content"))
-        respx_mock.get("/feed2").mock(return_value=httpx.Response(200, content=another_raw_feed_content))
-        respx_mock.get("/feed3").mock(return_value=httpx.Response(200, content=raw_feed_content))
+        respx_mock.get("/feed2.rss").mock(return_value=httpx.Response(200, content=another_raw_feed_content))
+        respx_mock.get("/feed3.atom").mock(return_value=httpx.Response(200, content=raw_feed_content))
         respx_mock.get("/feed4").mock(return_value=httpx.Response(200, content="wrong_content"))
 
         context = build_context(
@@ -347,8 +373,8 @@ class TestDiscoverCheckParentUrls:
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 2
         assert {feed.url for feed in result.feeds} == {
-            FeedUrl("http://localhost/feed2"),
-            FeedUrl("http://localhost/feed3"),
+            FeedUrl("http://localhost/feed2.rss"),
+            FeedUrl("http://localhost/feed3.atom"),
         }
 
 
@@ -617,16 +643,16 @@ class TestDiscover:
             <link href="http://localhost/feed4">
          </head>
          <body>
-            <a href="http://localhost/feed2"></a>
-            <a href="http://localhost/feed3"></a>
+            <a href="http://localhost/feed2.rss"></a>
+            <a href="http://localhost/feed3.atom"></a>
          </body>
         </html>
         """
 
         respx_mock.get("/test").mock(return_value=httpx.Response(200, content=test_html))
         respx_mock.get("/feed1").mock(return_value=httpx.Response(200, content="wrrong content"))
-        respx_mock.get("/feed2").mock(return_value=httpx.Response(200, content=another_raw_feed_content))
-        respx_mock.get("/feed3").mock(return_value=httpx.Response(200, content=raw_feed_content))
+        respx_mock.get("/feed2.rss").mock(return_value=httpx.Response(200, content=another_raw_feed_content))
+        respx_mock.get("/feed3.atom").mock(return_value=httpx.Response(200, content=raw_feed_content))
         respx_mock.get("/feed4").mock(return_value=httpx.Response(200, content="wrong_content"))
         respx_mock.get("/").mock(return_value=httpx.Response(200, content="wrong_content"))
 
@@ -636,8 +662,8 @@ class TestDiscover:
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 2
         assert {feed.url for feed in result.feeds} == {
-            FeedUrl("http://localhost/feed2"),
-            FeedUrl("http://localhost/feed3"),
+            FeedUrl("http://localhost/feed2.rss"),
+            FeedUrl("http://localhost/feed3.atom"),
         }
 
     @pytest.mark.asyncio
@@ -659,8 +685,8 @@ class TestDiscover:
             <link href="http://localhost/feed4">
          </head>
          <body>
-            <a href="http://localhost/feed2"></a>
-            <a href="http://localhost/feed3"></a>
+            <a href="http://localhost/feed2.rss"></a>
+            <a href="http://localhost/feed3.atom"></a>
          </body>
         </html>
         """
@@ -671,8 +697,8 @@ class TestDiscover:
         respx_mock.get("/").mock(return_value=httpx.Response(200, content="wrong_content"))
 
         respx_mock.get("/feed1").mock(return_value=httpx.Response(200, content="wrrong content"))
-        respx_mock.get("/feed2").mock(return_value=httpx.Response(200, content=another_raw_feed_content))
-        respx_mock.get("/feed3").mock(return_value=httpx.Response(200, content=raw_feed_content))
+        respx_mock.get("/feed2.rss").mock(return_value=httpx.Response(200, content=another_raw_feed_content))
+        respx_mock.get("/feed3.atom").mock(return_value=httpx.Response(200, content=raw_feed_content))
         respx_mock.get("/feed4").mock(return_value=httpx.Response(200, content="wrong_content"))
 
         result = await discover(UnknownUrl("http://localhost/test/abc"), depth=1)
@@ -681,6 +707,6 @@ class TestDiscover:
         assert result.status == Status.feeds_found
         assert len(result.feeds) == 2
         assert {feed.url for feed in result.feeds} == {
-            FeedUrl("http://localhost/feed2"),
-            FeedUrl("http://localhost/feed3"),
+            FeedUrl("http://localhost/feed2.rss"),
+            FeedUrl("http://localhost/feed3.atom"),
         }

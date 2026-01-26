@@ -1,5 +1,8 @@
 import asyncio
+import contextlib
+import contextvars
 import re
+from typing import Iterator
 
 from bs4 import BeautifulSoup
 
@@ -22,6 +25,10 @@ from ffun.parsers import entities as p_entities
 
 logger = logging.get_module_logger()
 
+_VISITED_URLS: contextvars.ContextVar[set[FeedUrl] | None] = contextvars.ContextVar(
+    "feeds_discoverer_visited_urls",
+    default=None,
+)
 
 # Possible improvements:
 #
@@ -30,6 +37,12 @@ logger = logging.get_module_logger()
 #    However, this may lead to making too many requests, which is not ideal.
 #    Implement that only if there are a lot of site without discoverable feeds.
 # 3. There no protection from checking the same link multiple times, we should add some.
+
+
+ALLOWED_EXTENSIONS_FOR_LINKS = [".xml", ".rss", ".atom", ".rdf", ".feed", ".php", ".asp", ".aspx", ".json", ".cgi", ""]
+
+# We can not test EVERY anchor link that can lead to a feed, so we limit ourselves to these extensions
+ALLOWED_EXTENSIONS_FOR_ANCHORS = [".xml", ".rss", ".atom", ".feed"]
 
 
 async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None]:
@@ -58,6 +71,16 @@ async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
     assert context.url is not None
 
     logger.info("discovering_loading_content", url=context.url)
+
+    visited_urls = _VISITED_URLS.get()
+
+    assert visited_urls is not None
+
+    if context.url in visited_urls:
+        logger.info("discovering_url_already_attempted", url=context.url)
+        return context, Result(feeds=[], status=Status.no_feeds_found)
+
+    visited_urls.add(context.url)
 
     try:
         response = await lo_domain.load_content_with_proxies(context.url)
@@ -125,18 +148,25 @@ async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context,
     links_to_check = set()
 
     for link in context.soup("link"):
-        if link.has_attr("href"):
-            if link.has_attr("rel") and any(
-                rel in link["rel"] for rel in ["author", "help", "icon", "license", "pingback", "search", "stylesheet"]
-            ):
-                continue
+        if not link.has_attr("href"):
+            continue
 
-            adjusted_url = adjust_external_url(link["href"], context.url)
+        url = link["href"]
 
-            if adjusted_url is None:
-                continue
+        if not url_has_extension(url, ALLOWED_EXTENSIONS_FOR_LINKS):
+            continue
 
-            links_to_check.add(adjusted_url)
+        if link.has_attr("rel") and any(
+            rel in link["rel"] for rel in ["author", "help", "icon", "license", "pingback", "search", "stylesheet"]
+        ):
+            continue
+
+        adjusted_url = adjust_external_url(url, context.url)
+
+        if adjusted_url is None:
+            continue
+
+        links_to_check.add(adjusted_url)
 
     logger.info("discovering_links_extracted", links_to_check=links_to_check)
 
@@ -152,8 +182,6 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
 
     logger.info("discovering_extracting_feeds_from_anchors", url=context.url)
 
-    allowed_extensions = [".xml", ".rss", ".atom", ".rdf", ".feed", ".php", ".asp", ".aspx", ".json", ".cgi", ""]
-
     assert context.soup is not None
 
     anchors_to_check = set()
@@ -162,7 +190,7 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
         if anchor.has_attr("href"):
             url = anchor["href"]
 
-            if not url_has_extension(url, allowed_extensions):
+            if not url_has_extension(url, ALLOWED_EXTENSIONS_FOR_ANCHORS):
                 continue
 
             adjusted_url = adjust_external_url(url, context.url)
@@ -334,19 +362,38 @@ _discoverers = [
 ]
 
 
-async def discover(url: UnknownUrl | AbsoluteUrl, depth: int, discoverers: list[Discoverer] = _discoverers) -> Result:
+@contextlib.contextmanager
+def visited_cache() -> Iterator[None]:
+
+    reset_token: contextvars.Token[set[FeedUrl] | None] | None = None
+
+    if _VISITED_URLS.get() is None:
+        reset_token = _VISITED_URLS.set(set())
+
+    try:
+        yield
+    finally:
+        if reset_token is not None:
+            _VISITED_URLS.reset(reset_token)
+
+
+async def discover(
+    url: UnknownUrl | AbsoluteUrl,
+    depth: int,
+    discoverers: list[Discoverer] = _discoverers,
+) -> Result:
 
     logger.info("discovering_start", url=url, depth=depth)
 
     context = Context(raw_url=UnknownUrl(url), depth=depth, discoverers=discoverers)
 
-    for discoverer in discoverers:
-        context, result = await discoverer(context)
+    with visited_cache():
+        for discoverer in discoverers:
+            context, result = await discoverer(context)
 
-        if result is not None:
-            logger.info("discovering_finished", feeds_found=len(result.feeds))
-            return result
+            if result is not None:
+                logger.info("discovering_finished", feeds_found=len(result.feeds))
+                return result
 
     logger.info("discovering_finished", feeds_found=0)
-
     return Result(feeds=[], status=Status.no_feeds_found)
