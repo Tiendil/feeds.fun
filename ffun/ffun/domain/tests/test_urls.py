@@ -463,6 +463,11 @@ class TestUrlHasExtension:
         )
         assert not urls.url_has_extension(urls.str_to_absolute_url("https://example.com/feed/second"), [])
 
+    def test_empty_extensions(self) -> None:
+        assert not urls.url_has_extension(urls.str_to_absolute_url("https://example.com/feed.xml"), [""])
+        assert urls.url_has_extension(urls.str_to_absolute_url("https://example.com/feed/second"), [""])
+        assert urls.url_has_extension(urls.str_to_absolute_url("https://example.com/feed/second/"), [""])
+
 
 class TestFilterOutDuplicatedUrls:
 
