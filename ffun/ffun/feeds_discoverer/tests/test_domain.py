@@ -8,6 +8,7 @@ from respx.router import MockRouter
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import str_to_feed_url, url_to_host
 from ffun.feeds_discoverer.domain import (
+    _VISITED_URLS,
     _discover_adjust_url,
     _discover_check_candidate_links,
     _discover_check_parent_urls,
@@ -20,6 +21,7 @@ from ffun.feeds_discoverer.domain import (
     _discover_stop_recursion,
     _discoverers,
     discover,
+    visited_cache
 )
 from ffun.feeds_discoverer.entities import Context, Result, Status
 
@@ -58,7 +60,8 @@ class TestDiscoverLoadUrl:
 
         context = build_context("http://localhost/test")
 
-        new_context, result = await _discover_load_url(context)
+        with visited_cache():
+            new_context, result = await _discover_load_url(context)
 
         assert new_context == context
         assert result == Result(feeds=[], status=Status.cannot_access_url)
@@ -73,10 +76,28 @@ class TestDiscoverLoadUrl:
 
         context = build_context("http://localhost/test")
 
-        new_context, result = await _discover_load_url(context)
+        with visited_cache():
+            new_context, result = await _discover_load_url(context)
 
         assert new_context == context.replace(content=expected_content)
         assert result is None
+
+    @pytest.mark.asyncio
+    async def test_already_attempted(self, respx_mock: MockRouter) -> None:
+        mock = respx_mock.get("/test").mock(return_value=httpx.Response(200, content="unused"))
+
+        token = _VISITED_URLS.set({FeedUrl("http://localhost/test")})
+        try:
+            context = build_context("http://localhost/test")
+
+            with visited_cache():
+                new_context, result = await _discover_load_url(context)
+        finally:
+            _VISITED_URLS.reset(token)
+
+        assert not mock.called
+        assert new_context == context
+        assert result == Result(feeds=[], status=Status.no_feeds_found)
 
 
 class TestDiscoverExtractFeedInfo:

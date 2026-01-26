@@ -1,5 +1,9 @@
 import asyncio
+import functools
+import contextvars
 import re
+from typing import Awaitable, Callable
+import contextlib
 
 from bs4 import BeautifulSoup
 
@@ -22,6 +26,10 @@ from ffun.parsers import entities as p_entities
 
 logger = logging.get_module_logger()
 
+_VISITED_URLS: contextvars.ContextVar[set[FeedUrl] | None] = contextvars.ContextVar(
+    "feeds_discoverer_visited_urls",
+    default=None,
+)
 
 # Possible improvements:
 #
@@ -61,6 +69,16 @@ async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
     assert context.url is not None
 
     logger.info("discovering_loading_content", url=context.url)
+
+    visited_urls = _VISITED_URLS.get()
+
+    assert visited_urls is not None
+
+    if context.url in visited_urls:
+        logger.info("discovering_url_already_attempted", url=context.url)
+        return context, Result(feeds=[], status=Status.no_feeds_found)
+
+    visited_urls.add(context.url)
 
     try:
         response = await lo_domain.load_content_with_proxies(context.url)
@@ -342,19 +360,38 @@ _discoverers = [
 ]
 
 
-async def discover(url: UnknownUrl | AbsoluteUrl, depth: int, discoverers: list[Discoverer] = _discoverers) -> Result:
+@contextlib.contextmanager
+def visited_cache() -> contextlib.AbstractContextManager[None]:
+
+    reset_token: contextvars.Token[set[FeedUrl] | None] | None = None
+
+    if _VISITED_URLS.get() is None:
+        reset_token = _VISITED_URLS.set(set())
+
+    try:
+        yield
+    finally:
+        if reset_token is not None:
+            _VISITED_URLS.reset(reset_token)
+
+
+async def discover(
+    url: UnknownUrl | AbsoluteUrl,
+    depth: int,
+    discoverers: list[Discoverer] = _discoverers,
+) -> Result:
 
     logger.info("discovering_start", url=url, depth=depth)
 
     context = Context(raw_url=UnknownUrl(url), depth=depth, discoverers=discoverers)
 
-    for discoverer in discoverers:
-        context, result = await discoverer(context)
+    with visited_cache():
+        for discoverer in discoverers:
+            context, result = await discoverer(context)
 
-        if result is not None:
-            logger.info("discovering_finished", feeds_found=len(result.feeds))
-            return result
+            if result is not None:
+                logger.info("discovering_finished", feeds_found=len(result.feeds))
+                return result
 
     logger.info("discovering_finished", feeds_found=0)
-
     return Result(feeds=[], status=Status.no_feeds_found)
