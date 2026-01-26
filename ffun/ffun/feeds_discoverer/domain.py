@@ -32,6 +32,9 @@ logger = logging.get_module_logger()
 # 3. There no protection from checking the same link multiple times, we should add some.
 
 
+ALLOWED_EXTENSIONS = [".xml", ".rss", ".atom", ".rdf", ".feed", ".php", ".asp", ".aspx", ".json", ".cgi", ""]
+
+
 async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None]:
     """Normalize the raw URL and convert it to a canonical feed URL."""
     logger.info("discovering_adjusting_url", raw_url=context.raw_url)
@@ -125,18 +128,25 @@ async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context,
     links_to_check = set()
 
     for link in context.soup("link"):
-        if link.has_attr("href"):
-            if link.has_attr("rel") and any(
-                rel in link["rel"] for rel in ["author", "help", "icon", "license", "pingback", "search", "stylesheet"]
-            ):
-                continue
+        if not link.has_attr("href"):
+            continue
 
-            adjusted_url = adjust_external_url(link["href"], context.url)
+        url = link["href"]
 
-            if adjusted_url is None:
-                continue
+        if not url_has_extension(url, ALLOWED_EXTENSIONS):
+            continue
 
-            links_to_check.add(adjusted_url)
+        if link.has_attr("rel") and any(
+            rel in link["rel"] for rel in ["author", "help", "icon", "license", "pingback", "search", "stylesheet"]
+        ):
+            continue
+
+        adjusted_url = adjust_external_url(url, context.url)
+
+        if adjusted_url is None:
+            continue
+
+        links_to_check.add(adjusted_url)
 
     logger.info("discovering_links_extracted", links_to_check=links_to_check)
 
@@ -152,8 +162,6 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
 
     logger.info("discovering_extracting_feeds_from_anchors", url=context.url)
 
-    allowed_extensions = [".xml", ".rss", ".atom", ".rdf", ".feed", ".php", ".asp", ".aspx", ".json", ".cgi", ""]
-
     assert context.soup is not None
 
     anchors_to_check = set()
@@ -162,7 +170,7 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
         if anchor.has_attr("href"):
             url = anchor["href"]
 
-            if not url_has_extension(url, allowed_extensions):
+            if not url_has_extension(url, ALLOWED_EXTENSIONS):
                 continue
 
             adjusted_url = adjust_external_url(url, context.url)

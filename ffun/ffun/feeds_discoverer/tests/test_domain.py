@@ -168,6 +168,9 @@ class TestDiscoverExtractFeedsFromLinks:
             <link href="mailto:">
             <link href="mailto:me@example.com">
             <link href="javascript:void(0)">
+
+            <link href="http://localhost/feed14.xml">
+            <link href="http://localhost/feed15.wotff2">
          </head>
          <body>
            <link href="http://localhost/feed12">
@@ -191,6 +194,7 @@ class TestDiscoverExtractFeedsFromLinks:
             AbsoluteUrl("http://localhost/feed10"),
             AbsoluteUrl("http://localhost/test/feed11"),
             AbsoluteUrl("http://localhost/feed12"),
+            AbsoluteUrl("http://localhost/feed14.xml"),
         }
 
         assert new_context == context.replace(candidate_urls=expected_links)
