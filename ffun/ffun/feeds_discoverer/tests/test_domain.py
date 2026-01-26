@@ -63,6 +63,8 @@ class TestDiscoverLoadUrl:
         with visited_cache():
             new_context, result = await _discover_load_url(context)
 
+            assert "http://localhost/test" in _VISITED_URLS.get()
+
         assert new_context == context
         assert result == Result(feeds=[], status=Status.cannot_access_url)
 
@@ -79,21 +81,21 @@ class TestDiscoverLoadUrl:
         with visited_cache():
             new_context, result = await _discover_load_url(context)
 
+            assert "http://localhost/test" in _VISITED_URLS.get()
+
         assert new_context == context.replace(content=expected_content)
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_already_attempted(self, respx_mock: MockRouter) -> None:
+    async def test_prevent_second_attempt(self, respx_mock: MockRouter) -> None:
         mock = respx_mock.get("/test").mock(return_value=httpx.Response(200, content="unused"))
 
-        token = _VISITED_URLS.set({FeedUrl("http://localhost/test")})
-        try:
+        with visited_cache():
+            _VISITED_URLS.get().add(FeedUrl("http://localhost/test"))
+
             context = build_context("http://localhost/test")
 
-            with visited_cache():
-                new_context, result = await _discover_load_url(context)
-        finally:
-            _VISITED_URLS.reset(token)
+            new_context, result = await _discover_load_url(context)
 
         assert not mock.called
         assert new_context == context
