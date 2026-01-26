@@ -1,9 +1,7 @@
 import asyncio
-import functools
+import contextlib
 import contextvars
 import re
-from typing import Awaitable, Callable
-import contextlib
 
 from bs4 import BeautifulSoup
 

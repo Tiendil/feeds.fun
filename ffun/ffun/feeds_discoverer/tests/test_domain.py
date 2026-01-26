@@ -21,7 +21,7 @@ from ffun.feeds_discoverer.domain import (
     _discover_stop_recursion,
     _discoverers,
     discover,
-    visited_cache
+    visited_cache,
 )
 from ffun.feeds_discoverer.entities import Context, Result, Status
 
