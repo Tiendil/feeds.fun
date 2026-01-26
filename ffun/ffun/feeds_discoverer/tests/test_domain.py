@@ -63,7 +63,9 @@ class TestDiscoverLoadUrl:
         with visited_cache():
             new_context, result = await _discover_load_url(context)
 
-            assert "http://localhost/test" in _VISITED_URLS.get()
+            cache = _VISITED_URLS.get()
+            assert cache is not None
+            assert "http://localhost/test" in cache
 
         assert new_context == context
         assert result == Result(feeds=[], status=Status.cannot_access_url)
@@ -81,7 +83,9 @@ class TestDiscoverLoadUrl:
         with visited_cache():
             new_context, result = await _discover_load_url(context)
 
-            assert "http://localhost/test" in _VISITED_URLS.get()
+            cache = _VISITED_URLS.get()
+            assert cache is not None
+            assert "http://localhost/test" in cache
 
         assert new_context == context.replace(content=expected_content)
         assert result is None
@@ -91,7 +95,11 @@ class TestDiscoverLoadUrl:
         mock = respx_mock.get("/test").mock(return_value=httpx.Response(200, content="unused"))
 
         with visited_cache():
-            _VISITED_URLS.get().add(FeedUrl("http://localhost/test"))
+            cache = _VISITED_URLS.get()
+
+            assert cache is not None
+
+            cache.add(FeedUrl("http://localhost/test"))
 
             context = build_context("http://localhost/test")
 
@@ -280,19 +288,10 @@ class TestDiscoverExtractFeedsFromAnchors:
         new_context, result = await _discover_extract_feeds_from_anchors(context)
 
         expected_links = {
-            # AbsoluteUrl("http://localhost/feed2"),
-            # AbsoluteUrl("http://localhost/test/feed3"),
-            # AbsoluteUrl("http://localhost/feed4"),
             AbsoluteUrl("http://localhost/feed.5.xml"),
             AbsoluteUrl("http://localhost/feed.6.rss"),
             AbsoluteUrl("http://localhost/feed.7.atom"),
-            # AbsoluteUrl("http://localhost/feed.8.rdf"),
             AbsoluteUrl("http://localhost/feed.9.feed"),
-            # AbsoluteUrl("http://localhost/feed.10.php"),
-            # AbsoluteUrl("http://localhost/feed.11.asp"),
-            # AbsoluteUrl("http://localhost/feed.12.aspx"),
-            # AbsoluteUrl("http://localhost/feed.13.json"),
-            # AbsoluteUrl("http://localhost/feed.14.cgi"),
         }
 
         assert new_context == context.replace(candidate_urls=expected_links)
