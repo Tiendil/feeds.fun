@@ -2,6 +2,7 @@ import asyncio
 import contextlib
 import contextvars
 import re
+from typing import Iterator
 
 from bs4 import BeautifulSoup
 
@@ -359,7 +360,7 @@ _discoverers = [
 
 
 @contextlib.contextmanager
-def visited_cache() -> contextlib.AbstractContextManager[None]:
+def visited_cache() -> Iterator[None]:
 
     reset_token: contextvars.Token[set[FeedUrl] | None] | None = None
 
