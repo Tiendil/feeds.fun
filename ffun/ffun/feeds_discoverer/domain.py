@@ -39,7 +39,10 @@ _VISITED_URLS: contextvars.ContextVar[set[FeedUrl] | None] = contextvars.Context
 # 3. There no protection from checking the same link multiple times, we should add some.
 
 
-ALLOWED_EXTENSIONS = [".xml", ".rss", ".atom", ".rdf", ".feed", ".php", ".asp", ".aspx", ".json", ".cgi", ""]
+ALLOWED_EXTENSIONS_FOR_LINKS = [".xml", ".rss", ".atom", ".rdf", ".feed", ".php", ".asp", ".aspx", ".json", ".cgi", ""]
+
+# We can not test EVERY anchor link that can lead to a feed, so we limit ourselves to these extensions
+ALLOWED_EXTENSIONS_FOR_ANCHORS = [".xml", ".rss", ".atom", ".feed"]
 
 
 async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None]:
@@ -150,7 +153,7 @@ async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context,
 
         url = link["href"]
 
-        if not url_has_extension(url, ALLOWED_EXTENSIONS):
+        if not url_has_extension(url, ALLOWED_EXTENSIONS_FOR_LINKS):
             continue
 
         if link.has_attr("rel") and any(
@@ -187,7 +190,7 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
         if anchor.has_attr("href"):
             url = anchor["href"]
 
-            if not url_has_extension(url, ALLOWED_EXTENSIONS):
+            if not url_has_extension(url, ALLOWED_EXTENSIONS_FOR_ANCHORS):
                 continue
 
             adjusted_url = adjust_external_url(url, context.url)
