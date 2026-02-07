@@ -1,4 +1,3 @@
-DB migration required: **no**
 
 ### Changes
 
