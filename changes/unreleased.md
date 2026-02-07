@@ -13,3 +13,6 @@ DB migration required: **no**
   - Added dedicated backend/frontend spellcheck run and fix steps to `project:work:polish`.
   - Installed `codespell` for backend and frontend utility containers.
   - Scoped spellcheck commands to project code paths and fixed spelling issues in backend/frontend source comments.
+- ff-665 Added standalone code spelling check script and CI integration.
+  - Added `bin/check-code-spelling.sh` to run backend and frontend `codespell` checks.
+  - Updated `.github/workflows/code-checks.yaml` to execute `./bin/check-code-spelling.sh` in dev checks.

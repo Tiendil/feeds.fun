@@ -39,6 +39,9 @@ jobs:
       - name: Check types
         run: ./bin/dev-check-semantics.sh
 
+      - name: Check code spelling
+        run: ./bin/check-code-spelling.sh
+
       - name: Run tests
         run: ./bin/tests.sh
 
