@@ -1,5 +1,5 @@
 """
-replace tokens traking with costs tracking
+replace tokens tracking with costs tracking
 """
 
 import datetime

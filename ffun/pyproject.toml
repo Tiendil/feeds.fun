@@ -227,4 +227,4 @@ remove_unused_variables = true
 recursive = true
 
 [tool.codespell]
-skip = "*/fixtures/*,*/migrations/*,*~"
+skip = "*/fixtures/*,*~"
