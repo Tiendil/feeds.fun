@@ -85,14 +85,14 @@
         return 1;
       }
 
-      const aCount = properties.tagsCount[a];
-      const bCount = properties.tagsCount[b];
+      const leftTagCount = properties.tagsCount[a];
+      const rightTagCount = properties.tagsCount[b];
 
-      if (aCount > bCount) {
+      if (leftTagCount > rightTagCount) {
         return -1;
       }
 
-      if (aCount < bCount) {
+      if (leftTagCount < rightTagCount) {
         return 1;
       }
 

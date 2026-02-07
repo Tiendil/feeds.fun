@@ -97,14 +97,14 @@
     const counts = properties.tags;
 
     function tagComparator(a: string, b: string) {
-      const aCount = counts[a];
-      const bCount = counts[b];
+      const leftTagCount = counts[a];
+      const rightTagCount = counts[b];
 
-      if (aCount > bCount) {
+      if (leftTagCount > rightTagCount) {
         return -1;
       }
 
-      if (aCount < bCount) {
+      if (leftTagCount < rightTagCount) {
         return 1;
       }
 
