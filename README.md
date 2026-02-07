@@ -307,7 +307,7 @@ cd ./feeds.fun
 Build some docker images
 
 ```
-./bin/build-local-containers.sh
+./bin/build-dev-containers.sh
 ```
 
 Start the API server and frontend:

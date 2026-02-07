@@ -31,16 +31,16 @@ jobs:
         run: docker compose pull postgresql
 
       - name: Build containers
-        run: ./bin/build-local-containers.sh
+        run: ./bin/build-dev-containers.sh
 
       - name: Check code formatting
-        run: ./bin/check-code-formatting.sh
+        run: ./bin/dev-check-formatting.sh
 
       - name: Check types
-        run: ./bin/check-code-semantics.sh
+        run: ./bin/dev-check-semantics.sh
 
       - name: Run tests
-        run: ./bin/run-tests.sh
+        run: ./bin/tests.sh
 
   run-prod-checks:
     timeout-minutes: 20
@@ -53,4 +53,4 @@ jobs:
           ref: ${{ inputs.branch_ref }}
 
       - name: check ffun cli is runnable in prod
-        run: ./bin/check-ffun-runnable-in-prod.sh
+        run: ./bin/dev-check-runtime.sh
