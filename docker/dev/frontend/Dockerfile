@@ -1,7 +1,7 @@
 FROM node:lts
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends codespell \
+    && apt-get install -y --no-install-recommends codespell python3-tomli \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /repository

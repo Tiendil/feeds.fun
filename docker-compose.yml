@@ -296,6 +296,7 @@ services:
 
     volumes:
       - ${PWD}/site/src:/repository/src
+      - ${PWD}/site/codespell.toml:/repository/codespell.toml
 
     networks:
       ffun_network: {}

@@ -311,7 +311,7 @@ goto_on_failure = "fix_backend_spellcheck"
 
 set -e
 
-./bin/backend-utils.sh poetry run codespell ./ffun --skip='*/tests/*,*/fixtures/*,*/migrations/*,*~'
+./bin/backend-utils.sh poetry run codespell --toml pyproject.toml ./ffun
 ```
 
 ## Fix backend spellcheck
@@ -343,7 +343,7 @@ goto_on_failure = "fix_frontend_spellcheck"
 
 set -e
 
-./bin/frontend-utils.sh codespell ./src --ignore-words-list='alltime,ontext,acount'
+./bin/frontend-utils.sh codespell --toml /repository/codespell.toml ./src
 ```
 
 ## Fix frontend spellcheck

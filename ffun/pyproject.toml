@@ -225,3 +225,6 @@ in_place = true
 remove_all_unused_imports = true
 remove_unused_variables = true
 recursive = true
+
+[tool.codespell]
+skip = "*/tests/*,*/fixtures/*,*/migrations/*,*~"
