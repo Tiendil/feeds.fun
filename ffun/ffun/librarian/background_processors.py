@@ -112,7 +112,7 @@ class EntriesProcessor(InfiniteTask):
 
         # TODO: we could add caching here, because multiple processors can request the same entries
         #       and currently we run multiple processors in the same process
-        #       but remember that for API worker such cachin may be useless or even harmful
+        #       but remember that for API worker such caching may be useless or even harmful
         entries = await l_domain.get_entries_by_ids(entries_ids)
 
         entries_to_process: list[Entry] = []

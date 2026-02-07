@@ -69,7 +69,7 @@ class TestNormalizer:
             ("company-headquarters", True, []),  # headquarters invariant
             ("means-test", False, ["mean-test"]),  # means invariant (sing=plural) (?)
             # (?) this is an interesting example, both
-            # public-work and work-department prefere singular "work"
+            # public-work and work-department prefer singular "work"
             # but together they require plural "works" in "public-works-department"
             # because it is a fixed term
             # Making such transition is not the goal of this normalizer

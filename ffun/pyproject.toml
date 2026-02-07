@@ -125,6 +125,7 @@ flake8-eradicate = "1.5.*"
 autoflake = "2.3.*"
 
 mypy = "1.16.*"
+codespell = "2.4.*"
 
 types-toml = "0.10.*"
 types-python-slugify = "8.0.*"
@@ -224,3 +225,6 @@ in_place = true
 remove_all_unused_imports = true
 remove_unused_variables = true
 recursive = true
+
+[tool.codespell]
+skip = "*/fixtures/*,*~"

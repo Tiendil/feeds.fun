@@ -59,7 +59,7 @@ class Cache:
         return (word,)
 
     def _get_word_plural_forms(self, word: str) -> tuple[str, ...]:
-        # Shoud return plural form if it is possible, else []
+        # Should return plural form if it is possible, else []
         forms = getInflection(word, tag="NNS")
 
         if forms:

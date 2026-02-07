@@ -43,7 +43,7 @@ def extract_feeds(data: str) -> list[FeedInfo]:
 
 
 def _extract_rss_feed(outline: ET.Element) -> FeedInfo | None:
-    # TODO: here we may want to detect custom url scemes from the source of the OPML file
+    # TODO: here we may want to detect custom URL schemes from the source of the OPML file
     #       for example, "newsletter:", and make something with them
     url = normalize_classic_unknown_url(UnknownUrl(outline.attrib["xmlUrl"]))
 

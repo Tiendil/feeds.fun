@@ -13,7 +13,7 @@ constraint = "l_entries_external_id_key"
 index = "l_entries_feed_id_external_id_key"
 unnecessary_index = "idx_l_entries_feed_id"
 
-# we must controll unique constraint on entries by pair feed + id because
+# we must control unique constraint on entries by pair feed + id because
 # 1. we can not guarantee that there will be no duplicates of feeds
 #    (can not guarantee perfect normalization of urls, etc)
 # 2. someone can damage database by infecting with wrong entries from faked feed

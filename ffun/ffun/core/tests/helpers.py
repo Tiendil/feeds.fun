@@ -231,7 +231,7 @@ def capture_logs() -> Generator[list[EventDict], None, None]:
 
 
 def assert_logs_has_business_event(  # noqa: CCR001
-    logs: list[MutableMapping[str, Any]], name: str, user_id: UserId | None, b_kind: str = "event", **atributes: Any
+    logs: list[MutableMapping[str, Any]], name: str, user_id: UserId | None, b_kind: str = "event", **attributes: Any
 ) -> None:
 
     if user_id is not None:
@@ -243,7 +243,7 @@ def assert_logs_has_business_event(  # noqa: CCR001
 
         assert "b_uid" in record, "b_uid not found in record"
 
-        for key, value in atributes.items():
+        for key, value in attributes.items():
             assert key in record["b_attributes"], f"Key {key} not found in record"
             assert (
                 record["b_attributes"][key] == value

@@ -278,6 +278,8 @@ All logic is split between tag processors. Each processor implements a single ap
 
 # Development
 
+Feeds Fun is developed with the help of [Donna](https://github.com/Tiendil/donna) — a tool that makes coding agents predictable and reliable. You may want to install it if you plan to contribute to the project, since some important specifications and workflows (such as auto-fixing lint errors and running tests) are implemented with the help of Donna.
+
 ## Preparations
 
 To use less hacks in dev configuration and be more consistent with production setup, we use custom domains `feeds.fun.local` & `idp.feeds.fun.local` for local development.
@@ -307,7 +309,7 @@ cd ./feeds.fun
 Build some docker images
 
 ```
-./bin/build-local-containers.sh
+./bin/build-dev-containers.sh
 ```
 
 Start the API server and frontend:

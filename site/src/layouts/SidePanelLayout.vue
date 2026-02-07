@@ -165,7 +165,7 @@
 
     if (globalState.logoutConfirmed) {
       // Redirect to login page in case the user is not logged in.
-      // We redirect to login instead of the main page to be consisten
+      // We redirect to login instead of the main page to be consistent
       // with default API behavior on redirection in case of getting 401 status.
       api.redirectToLogin();
     }

@@ -73,7 +73,7 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   // This dict is used for two purposes:
   // - To store settings that anonymous user changes while using the site.
   // - To close fast reactive loop after calling backendSettings.set.
-  //   Without this, setting a setting will cause weired and complex chain
+  //   Without this, setting a setting will cause weird and complex chain
   //   of (re)loading data from the backend.
   var settingsOverrides = ref<{[key in keyof any]: t.UserSettingsValue}>({});
 
