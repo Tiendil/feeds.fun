@@ -16,3 +16,5 @@ DB migration required: **no**
 - ff-665 Added standalone code spelling check script and CI integration.
   - Added `bin/check-code-spelling.sh` to run backend and frontend `codespell` checks.
   - Updated `.github/workflows/code-checks.yaml` to execute `./bin/check-code-spelling.sh` in dev checks.
+- ff-665 Removed deprecated formatting helper script.
+  - Removed `bin/format-code.sh`.
