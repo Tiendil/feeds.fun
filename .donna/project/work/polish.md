@@ -2,17 +2,49 @@
 
 ```toml donna
 kind = "donna.lib.workflow"
-start_operation_id = "run_backend_format_autoflake"
+start_operation_id = "run_backend_tests"
 ```
 
 Polish the repository by formatting code, running semantic validations, and running runtime checks in the required order.
+
+## Run backend tests
+
+```toml donna
+id = "run_backend_tests"
+kind = "donna.lib.run_script"
+fsm_mode = "start"
+save_stdout_to = "backend_tests_output"
+goto_on_success = "run_backend_format_autoflake"
+goto_on_failure = "fix_broken_test"
+```
+
+```bash donna script
+#!/usr/bin/env bash
+
+set -e
+
+./bin/backend-utils.sh poetry run pytest --maxfail=1 ffun
+```
+
+## Fix broken test
+
+```toml donna
+id = "fix_broken_test"
+kind = "donna.lib.request_action"
+```
+
+```
+{{ donna.lib.task_variable("backend_tests_output") }}
+```
+
+1. Fix the broken backend test reported above.
+2. `{{ donna.lib.goto("run_backend_tests") }}`
 
 ## Run backend formatting: autoflake
 
 ```toml donna
 id = "run_backend_format_autoflake"
 kind = "donna.lib.run_script"
-fsm_mode = "start"
 save_stdout_to = "backend_format_autoflake_output"
 goto_on_success = "run_backend_format_isort"
 goto_on_failure = "fix_backend_format_autoflake"

@@ -2,19 +2,7 @@ DB migration required: **no**
 
 ### Changes
 
-- ff-665 Renamed development scripts in `bin` and updated references.
-  - Renamed five scripts to their new `dev-*` or `tests.sh` names.
-  - Updated script references in `.github/workflows/code-checks.yaml` and `README.md`.
-- ff-665 Added Donna polish workflow for backend/frontend checks and runtime validation.
-  - Added `project:work:polish` artifact with ordered run/fix stages.
-  - Used direct utility commands via `./bin/backend-utils.sh` and `./bin/frontend-utils.sh` instead of aggregated `./bin/*.sh` scripts.
-  - Implemented stages for backend formatting, frontend formatting, backend semantics, frontend semantics, and runtime checks.
-- ff-665 Added backend and frontend spellcheck to Donna polish workflow using `codespell`.
-  - Added dedicated backend/frontend spellcheck run and fix steps to `project:work:polish`.
-  - Installed `codespell` for backend and frontend utility containers.
-  - Scoped spellcheck commands to project code paths and fixed spelling issues in backend/frontend source comments.
-- ff-665 Added standalone code spelling check script and CI integration.
-  - Added `bin/check-code-spelling.sh` to run backend and frontend `codespell` checks.
-  - Updated `.github/workflows/code-checks.yaml` to execute `./bin/check-code-spelling.sh` in dev checks.
-- ff-665 Removed deprecated formatting helper script.
-  - Removed `bin/format-code.sh`.
+- ff-665 Adding [donna](https://github.com/Tiendil/donna) tool and some workflows for it.
+  - Added Donna `project:work:polish` workflow for backend/frontend checks & fixes.
+  - Added Donna `project:work:log_Changes` workflow to update CHANGELOG.md automatically.
+  - Added backend and frontend spellchecking using `codespell`.
