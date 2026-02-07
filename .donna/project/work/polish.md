@@ -37,8 +37,9 @@ kind = "donna.lib.request_action"
 {{ donna.lib.task_variable("backend_tests_output") }}
 ```
 
-1. Fix the broken backend test reported above.
-2. `{{ donna.lib.goto("run_backend_tests") }}`
+1. If the test in broken because of `FFUN_LIBRARIAN_TAG_PROCESSORS_CONFIG` or `FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS`, teel the developer about the proble and `{{ donna.lib.goto("finish") }}`.
+2. Fix the broken backend test reported above.
+3. `{{ donna.lib.goto("run_backend_tests") }}`
 
 ## Run backend formatting: autoflake
 
