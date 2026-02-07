@@ -27,7 +27,7 @@ class X:
 class TestMeasuringBoundLoggerMixin:
     """Test mixin methods after they applied to the logger class.
 
-    Because it is more convinient, rather than testing the mixin itself.
+    Because it is more convenient, rather than testing the mixin itself.
     """
 
     def test_measure__no_labels(self) -> None:
@@ -128,7 +128,7 @@ class TestMeasuringBoundLoggerMixin:
 class TestBusinessBoundLoggerMixin:
     """Test mixin methods after they applied to the logger class.
 
-    Because it is more convinient, rather than testing the mixin itself.
+    Because it is more convenient, rather than testing the mixin itself.
     """
 
     def test_business_event(self) -> None:

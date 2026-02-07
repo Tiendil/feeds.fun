@@ -113,7 +113,7 @@ class TestAdjustExternalUrl:
             ("mailto:", None),
             ("mailto:me@example.com", None),
             ("javascript:alert('Hello!')", None),
-            # TODO: what if ip addreses?
+            # TODO: what if IP addresses?
         ],
     )
     def test(self, url: UnknownUrl, adjusted_url: AbsoluteUrl) -> None:
@@ -156,9 +156,9 @@ class TestUrlToUid:
             # query with quotes
             ("//example.com/?a=%22b%22", 'example.com?a="b"'),
             ("//example.com/?a=%27b%27", "example.com?a='b'"),
-            # complext query with duplicates and sorting
+            # complex query with duplicates and sorting
             ("//example.com/?c=d&a=g&e=f&a=b", "example.com?a=b&a=g&c=d&e=f"),
-            # duble slashes
+            # double slashes
             ("//example.com//path//to//resource", "example.com/path/to/resource"),
             # unicode normalization
             ("//example.com/%D0%BF%D1%80%D0%B8%D0%B2%D0%B5%D1%82", "example.com/привет"),
