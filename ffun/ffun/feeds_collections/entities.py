@@ -12,7 +12,7 @@ class FeedInfo(BaseEntity):
 
     # Some feeds define title and description in their data
     # But, currently, it looks more convenient to define them here
-    # So, we can describe feeds in a consistent way resistent to problems on the feed side
+    # So, we can describe feeds in a consistent way resistant to problems on the feed side
     title: str
     description: str
 

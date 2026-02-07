@@ -30,9 +30,9 @@ async def remove_marker(user_id: UserId, marker: Marker, entry_id: EntryId) -> N
         RETURNING id
     """
 
-    resuts = await execute(sql, {"user_id": user_id, "marker": marker, "entry_id": entry_id})
+    results = await execute(sql, {"user_id": user_id, "marker": marker, "entry_id": entry_id})
 
-    if resuts:
+    if results:
         logger.business_event("marker_removed", user_id=user_id, marker=marker, entry_id=entry_id)
 
 

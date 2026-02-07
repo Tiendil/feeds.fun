@@ -270,7 +270,7 @@ kind = "donna.lib.request_action"
 id = "run_frontend_semantics"
 kind = "donna.lib.run_script"
 save_stdout_to = "frontend_semantics_output"
-goto_on_success = "run_runtime_checks_help"
+goto_on_success = "run_backend_spellcheck"
 goto_on_failure = "fix_frontend_semantics"
 ```
 
@@ -294,6 +294,70 @@ kind = "donna.lib.request_action"
 ```
 
 1. Fix frontend semantic issues reported above.
+2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
+
+## Run backend spellcheck
+
+```toml donna
+id = "run_backend_spellcheck"
+kind = "donna.lib.run_script"
+save_stdout_to = "backend_spellcheck_output"
+goto_on_success = "run_frontend_spellcheck"
+goto_on_failure = "fix_backend_spellcheck"
+```
+
+```bash donna script
+#!/usr/bin/env bash
+
+set -e
+
+./bin/backend-utils.sh poetry run codespell ./ffun --skip='*/tests/*,*/fixtures/*,*/migrations/*,*~'
+```
+
+## Fix backend spellcheck
+
+```toml donna
+id = "fix_backend_spellcheck"
+kind = "donna.lib.request_action"
+```
+
+```
+{{ donna.lib.task_variable("backend_spellcheck_output") }}
+```
+
+1. Fix backend spellcheck issues reported above.
+2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
+
+## Run frontend spellcheck
+
+```toml donna
+id = "run_frontend_spellcheck"
+kind = "donna.lib.run_script"
+save_stdout_to = "frontend_spellcheck_output"
+goto_on_success = "run_runtime_checks_help"
+goto_on_failure = "fix_frontend_spellcheck"
+```
+
+```bash donna script
+#!/usr/bin/env bash
+
+set -e
+
+./bin/frontend-utils.sh codespell ./src --ignore-words-list='alltime,ontext,acount'
+```
+
+## Fix frontend spellcheck
+
+```toml donna
+id = "fix_frontend_spellcheck"
+kind = "donna.lib.request_action"
+```
+
+```
+{{ donna.lib.task_variable("frontend_spellcheck_output") }}
+```
+
+1. Fix frontend spellcheck issues reported above.
 2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
 
 ## Run runtime checks: help

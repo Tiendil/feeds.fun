@@ -25,7 +25,7 @@ def clear_html(text: str) -> str:
 
     simplified_html = str(soup)
 
-    # remove borken surrogate unicode characters
+    # remove broken surrogate Unicode characters
     unicoded_html = simplified_html.encode("utf-16", "surrogatepass").decode("utf-16", "ignore")
 
     cleaned_text = re.sub(r"\s+", " ", unicoded_html)

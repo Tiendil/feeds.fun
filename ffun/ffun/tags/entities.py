@@ -64,7 +64,7 @@ class TagInNormalization(BaseEntity):
     #   (and it may be wrong in case of re-normalization)
     #   So, on re-normalization we use tag categories to derive the mode (again)
     #   We also use RawTag, not TagInNormalization as a result of running a normalizer.
-    # - Thats why it seems more consistent to try building logic of normalizators around categories only
+    # - That's why it seems more consistent to try building logic of normalizators around categories only
     #   To be consistent in the whole system
     # => We expect, that normalizer, if it requires, will be able to set new categories for the tags it produces
     #    For example, there may be a normalizer that detects network domains in free-form tags
