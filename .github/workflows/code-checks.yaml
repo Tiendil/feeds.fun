@@ -42,8 +42,11 @@ jobs:
       - name: Check code spelling
         run: ./bin/check-code-spelling.sh
 
-      - name: Run tests
-        run: ./bin/tests.sh
+      - name: Run backend tests
+        run: ./bin/backend-tests.sh
+
+      - name: Run frontend tests
+        run: ./bin/frontend-tests.sh
 
   run-prod-checks:
     timeout-minutes: 20
