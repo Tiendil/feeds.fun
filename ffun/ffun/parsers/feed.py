@@ -65,6 +65,49 @@ def _extract_external_url(entry: Any, original_url: FeedUrl) -> AbsoluteUrl | No
     return urls.adjust_external_url(url, original_url)
 
 
+def _extract_content(entry: Any) -> str | None:
+    contents = entry.get("content")
+
+    if contents is None:
+        return None
+
+    result = contents[0].get("value")
+
+    assert isinstance(result, str)
+
+    for content in contents[1:]:
+        value = content.get("value")
+
+        assert isinstance(value, str)
+
+        if len(value) > len(result):
+            result = value
+
+    return result
+
+
+def _extract_body(entry: Any) -> str:
+    description = entry.get("description")
+    content = _extract_content(entry)
+
+    if description is None and content is None:
+        return ""
+
+    if description is None:
+        assert content is not None
+        return content
+
+    assert isinstance(description, str)
+
+    if content is None:
+        return description
+
+    if len(content) >= len(description):
+        return content
+
+    return description
+
+
 def parse_entry(raw_entry: Any, original_url: FeedUrl) -> EntryInfo:
     # TODO: remove all tags from title
     # TODO: extract tags from <category> tag
@@ -72,7 +115,7 @@ def parse_entry(raw_entry: Any, original_url: FeedUrl) -> EntryInfo:
 
     return EntryInfo(
         title=raw_entry.get("title", ""),
-        body=raw_entry.get("description", ""),
+        body=_extract_body(raw_entry),
         external_id=_extract_external_id(raw_entry),
         external_url=_extract_external_url(raw_entry, original_url),
         external_tags=_parse_tags(raw_entry.get("tags", ())),
