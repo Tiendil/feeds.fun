@@ -9,7 +9,7 @@ from ffun.core.tests.helpers import assert_logs, capture_logs
 from ffun.domain.entities import FeedUrl, UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url
 from ffun.parsers.entities import EntryInfo, FeedInfo
-from ffun.parsers.feed import _extract_published_at, parse_entry, parse_feed
+from ffun.parsers.feed import _extract_body, _extract_content, _extract_published_at, parse_entry, parse_feed
 from ffun.parsers.tests.helpers import feeds_fixtures_directory, feeds_fixtures_names
 
 
@@ -142,3 +142,62 @@ class TestExtractPublishedAt:
     def test_value_error(self) -> None:
         published_parsed = (1, 1, 1, 0, 0, 0, 0, 1, 0)
         assert (utils.now() - _extract_published_at({"published_parsed": published_parsed})).total_seconds() < 1
+
+
+class TestExtractContent:
+
+    def test_returns_none_when_content_is_missing(self) -> None:
+        entry: dict[str, Any] = {}
+        assert _extract_content(entry) is None
+
+    def test_returns_first_value_when_single_content_item(self) -> None:
+        entry: dict[str, Any] = {"content": [{"value": "single"}]}
+        assert _extract_content(entry) == "single"
+
+    def test_returns_longest_value_from_multiple_content_items(self) -> None:
+        entry: dict[str, Any] = {
+            "content": [
+                {"value": "short"},
+                {"value": "the-longest-value"},
+                {"value": "mid"},
+            ]
+        }
+        assert _extract_content(entry) == "the-longest-value"
+
+    def test_keeps_first_value_when_next_value_has_equal_length(self) -> None:
+        entry: dict[str, Any] = {
+            "content": [
+                {"value": "same"},
+                {"value": "size"},
+            ]
+        }
+        assert _extract_content(entry) == "same"
+
+
+class TestExtractBody:
+
+    def test_returns_empty_string_when_description_and_content_are_missing(self) -> None:
+        entry: dict[str, Any] = {}
+        assert _extract_body(entry) == ""
+
+    def test_returns_content_when_description_is_missing(self) -> None:
+        entry: dict[str, Any] = {"content": [{"value": "content-body"}]}
+        assert _extract_body(entry) == "content-body"
+
+    def test_returns_description_when_content_is_missing(self) -> None:
+        entry: dict[str, Any] = {"description": "description-body"}
+        assert _extract_body(entry) == "description-body"
+
+    def test_returns_content_when_it_is_longer_or_equal_than_description(self) -> None:
+        entry: dict[str, Any] = {
+            "description": "short",
+            "content": [{"value": "content-is-longer"}],
+        }
+        assert _extract_body(entry) == "content-is-longer"
+
+    def test_returns_description_when_it_is_longer_than_content(self) -> None:
+        entry: dict[str, Any] = {
+            "description": "description-is-longer",
+            "content": [{"value": "short"}],
+        }
+        assert _extract_body(entry) == "description-is-longer"

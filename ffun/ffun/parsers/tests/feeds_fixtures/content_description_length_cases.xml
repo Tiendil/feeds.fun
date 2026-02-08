@@ -1,0 +1,39 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Length cases feed</title>
+  <id>http://example.com/</id>
+  <link href="http://example.com/"/>
+  <link href="http://example.com/feed.xml" rel="self"/>
+  <updated>2025-01-10T10:00:00+00:00</updated>
+  <author>
+    <name>Feeds Fun</name>
+  </author>
+  <entry>
+    <title>E1 content longer</title>
+    <link rel="alternate" href="/entries/e1.html"/>
+    <id>/entries/e1.html</id>
+    <published>2025-01-10T10:00:00+00:00</published>
+    <updated>2025-01-10T10:00:00+00:00</updated>
+    <summary type="html">&lt;p&gt;short&lt;/p&gt;</summary>
+    <content type="html">&lt;p&gt;this is the longer content body&lt;/p&gt;</content>
+  </entry>
+  <entry>
+    <title>E2 equal length</title>
+    <link rel="alternate" href="/entries/e2.html"/>
+    <id>/entries/e2.html</id>
+    <published>2025-01-10T11:00:00+00:00</published>
+    <updated>2025-01-10T11:00:00+00:00</updated>
+    <summary type="html">&lt;p&gt;AAAA&lt;/p&gt;</summary>
+    <content type="html">&lt;p&gt;BBBB&lt;/p&gt;</content>
+  </entry>
+  <entry>
+    <title>E3 description longer</title>
+    <link rel="alternate" href="/entries/e3.html"/>
+    <id>/entries/e3.html</id>
+    <published>2025-01-10T12:00:00+00:00</published>
+    <updated>2025-01-10T12:00:00+00:00</updated>
+    <summary type="html">&lt;p&gt;this summary is clearly longer than content&lt;/p&gt;</summary>
+    <content type="html">&lt;p&gt;tiny&lt;/p&gt;</content>
+  </entry>
+</feed>

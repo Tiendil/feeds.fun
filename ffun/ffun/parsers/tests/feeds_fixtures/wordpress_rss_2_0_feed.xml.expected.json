@@ -6,31 +6,31 @@
   "entries": [
     {
       "title": "Новость 1",
-      "body": "<p>Описание новости 1 [&#8230;]</p>",
+      "body": "<figure class=\"wp-block-image size-full\"><a href=\"https://example.com/wp-content/uploads/2023/09/news-1.png\" rel=\"lightbox[2244]\"><img alt=\"\" class=\"wp-image-2247\" height=\"723\" src=\"https://example.com/wp-content/uploads/2023/09/news-1.png\" width=\"1019\" /></a><figcaption class=\"wp-element-caption\">Описание картинки.</figcaption></figure>\n\n\n\n<p>Какой-то контент.</p>",
       "external_id": "https://example.com/news-1/",
       "external_url": "https://example.com/news-1/",
       "external_tags": [
         "Python",
-        "Блог",
-        "Разработка",
         "Feeds Fun",
-        "Open source",
         "Нейронные Сети",
-        "Практика"
+        "Open source",
+        "Практика",
+        "Разработка",
+        "Блог"
       ],
       "published_at": "2023-09-24T08:35:23Z"
     },
     {
       "title": "Новость 2",
-      "body": "<p>Описание новости 2</p>",
+      "body": "<figure class=\"wp-block-image size-full is-resized\"><a href=\"https://example.com/wp-content/uploads/2023/08/news-2-cover.jpg\" rel=\"lightbox[2232]\"><img alt=\"\" class=\"wp-image-2236\" height=\"655\" src=\"https://example.com/wp-content/uploads/2023/08/news-2-cover.jpg\" style=\"width: 655px; height: 655px;\" width=\"655\" /></a><figcaption class=\"wp-element-caption\"><em>DALL-E:&nbsp;«An indie game developer is crying over a marketing budget. Cubism.»</em></figcaption></figure>\n\n\n\n<p>Какой-то контент 2.</p>",
       "external_id": "https://example.com/news-2/",
       "external_url": "https://example.com/news-2/",
       "external_tags": [
-        "Бизнес",
         "Дизайн игр",
+        "Геймдев",
+        "Бизнес",
         "Монетизация",
-        "Блог",
-        "Геймдев"
+        "Блог"
       ],
       "published_at": "2023-08-30T19:56:11Z"
     }
