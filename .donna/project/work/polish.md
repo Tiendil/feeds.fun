@@ -14,7 +14,7 @@ id = "run_backend_tests"
 kind = "donna.lib.run_script"
 fsm_mode = "start"
 save_stdout_to = "backend_tests_output"
-goto_on_success = "run_backend_format_autoflake"
+goto_on_success = "run_frontend_tests"
 goto_on_failure = "fix_broken_test"
 ```
 
@@ -40,6 +40,38 @@ kind = "donna.lib.request_action"
 1. If the test in broken because of `FFUN_LIBRARIAN_TAG_PROCESSORS_CONFIG` or `FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS`, teel the developer about the proble and `{{ donna.lib.goto("finish") }}`.
 2. Fix the broken backend test reported above.
 3. `{{ donna.lib.goto("run_backend_tests") }}`
+
+## Run frontend tests
+
+```toml donna
+id = "run_frontend_tests"
+kind = "donna.lib.run_script"
+save_stdout_to = "frontend_tests_output"
+goto_on_success = "run_backend_format_autoflake"
+goto_on_failure = "fix_frontend_tests"
+```
+
+```bash donna script
+#!/usr/bin/env bash
+
+set -e
+
+./bin/frontend-utils.sh npm run test:unit -- --run
+```
+
+## Fix frontend tests
+
+```toml donna
+id = "fix_frontend_tests"
+kind = "donna.lib.request_action"
+```
+
+```
+{{ donna.lib.task_variable("frontend_tests_output") }}
+```
+
+1. Fix frontend test issues reported above.
+2. `{{ donna.lib.goto("run_backend_tests") }}`
 
 ## Run backend formatting: autoflake
 
