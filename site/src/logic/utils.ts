@@ -2,6 +2,25 @@ import _ from "lodash";
 import type * as t from "@/logic/types";
 import DOMPurify from "dompurify";
 
+const REQUIRED_LINK_ATTRIBUTES = {
+  target: "_blank",
+  rel: "noopener noreferrer nofollow",
+  referrerpolicy: "strict-origin-when-cross-origin"
+} as const;
+
+function hardenLinksSecurityAttributes(html: string) {
+  const parsed = new DOMParser().parseFromString(html, "text/html");
+  const links = parsed.body.querySelectorAll("[href]");
+
+  for (const link of links) {
+    link.setAttribute("target", REQUIRED_LINK_ATTRIBUTES.target);
+    link.setAttribute("rel", REQUIRED_LINK_ATTRIBUTES.rel);
+    link.setAttribute("referrerpolicy", REQUIRED_LINK_ATTRIBUTES.referrerpolicy);
+  }
+
+  return parsed.body.innerHTML;
+}
+
 export function timeSince(date: Date) {
   const now = new Date();
 
@@ -80,6 +99,8 @@ export function purifyTitle({raw, default_}: {raw: string | null; default_: stri
     return default_;
   }
 
+  title = hardenLinksSecurityAttributes(title);
+
   return title;
 }
 
@@ -93,6 +114,8 @@ export function purifyBody({raw, default_}: {raw: string | null; default_: strin
   if (body.length === 0) {
     return default_;
   }
+
+  body = hardenLinksSecurityAttributes(body);
 
   return body;
 }
