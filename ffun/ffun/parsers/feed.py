@@ -1,7 +1,7 @@
 import datetime
 import io
 import time
-from typing import Any, Iterable, cast
+from typing import Any, Iterable
 
 import feedparser
 
