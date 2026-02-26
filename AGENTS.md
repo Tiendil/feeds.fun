@@ -20,7 +20,6 @@ You MUST use it to:
 - Refactor particular code patterns or structures across the codebase.
 - Introduce new small behaviors or features into existing code.
 
-
 You MUST NOT use it for:
 
 - Implementing huge features or behaviors that require adding massive blocks of code (like adding new class, module, writing a huge function, etc.).
