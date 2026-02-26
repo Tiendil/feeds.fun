@@ -31,10 +31,14 @@ If you need to do complex "test & lint & fix" activities, you MUST use the `donn
 You ABSOLUTELY MUST NOT perform the following operations without explicit instructions to do so:
 
 - Changing `docker-compose.yml` or any Docker-related configuration.
+- Changing Docker runtime parameters (like allocated resources, volumes, etc.).
+- Changing running Docker services related to other projects or unrelated to development environment.
 - Installing any new dependencies, both for frontend and backend.
 - Updating lock files.
 - Installing any new tools, utilities, or software on the host machine or in the development containers.
 - Changing project structure, such as moving files around, creating new directories, etc.
+
+If you want to change something in the above list, you MUST ask for explicit instructions and permission to do so.
 
 ## Top priority tools
 
