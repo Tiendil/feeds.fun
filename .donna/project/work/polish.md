@@ -56,7 +56,7 @@ goto_on_failure = "fix_frontend_tests"
 
 set -e
 
-./bin/frontend-utils.sh npm run test:unit -- --run
+./bin/frontend-utils.sh npm run test:unit -- --run --bail=1
 ```
 
 ## Fix frontend tests
