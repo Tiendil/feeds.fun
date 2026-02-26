@@ -10,7 +10,8 @@ from ffun.core.logging import (
     IdentityConstructor,
     bound_log_args,
     bound_measure_labels,
-    function_args_to_log,
+    sync_args_to_log,
+    async_args_to_log,
     get_module_logger,
 )
 from ffun.core.tests.helpers import assert_log_context_vars, assert_logs_has_business_event, capture_logs
@@ -242,7 +243,7 @@ class TestFunctionArgsToLog:
 
     def test_sync(self) -> None:
 
-        @function_args_to_log("y", "x.my_arg")
+        @sync_args_to_log("y", "x.my_arg")
         def func(y: int, x: X, z: int) -> None:
             logger.info("my_event")
             assert_log_context_vars(y=1, x_my_arg="abc")
@@ -263,7 +264,7 @@ class TestFunctionArgsToLog:
     @pytest.mark.asyncio
     async def test_async(self) -> None:
 
-        @function_args_to_log("y", "x.my_arg")
+        @async_args_to_log("y", "x.my_arg")
         async def func(y: int, x: X, z: int) -> None:
             await asyncio.sleep(0)
             logger.info("my_event")

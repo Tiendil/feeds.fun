@@ -9,7 +9,7 @@ import sys
 import time
 import uuid
 from collections import abc
-from typing import Callable, ContextManager, Iterable, Iterator, Protocol, TypeVar, overload, ParamSpec, TypeAlias
+from typing import Callable, ContextManager, Iterable, Iterator, Protocol, TypeVar, overload, ParamSpec, TypeAlias, cast
 from collections.abc import Awaitable, Callable
 
 import pydantic_settings
@@ -327,10 +327,11 @@ class ArgumentConstructor(Constructor):
         return getattr(kwargs[self.key], self.attribute, None)  # type: ignore
 
 
-FUNC = TypeVar("FUNC", bound=Callable[..., object])
+P = ParamSpec("P")
+R = TypeVar("R")
 
 
-def function_args_to_log(*args: str) -> Callable[[FUNC], FUNC]:
+def sync_args_to_log(*args: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
     constructors: list[Constructor] = []
 
     for arg in args:
@@ -339,23 +340,39 @@ def function_args_to_log(*args: str) -> Callable[[FUNC], FUNC]:
         else:
             constructors.append(ArgumentConstructor(arg))
 
-    def decorator(func: FUNC) -> FUNC:
-        @functools.wraps(func)  # type: ignore
-        def wrapped(**kwargs: object) -> object:
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
+        @functools.wraps(func)
+        def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
+            assert not args
+
             with structlog_contextvars.bound_contextvars(**{c.name: c(kwargs) for c in constructors}):
-                return func(**kwargs)
+                return func(*args, **kwargs)
 
-        @functools.wraps(func)  # type: ignore
-        async def async_wrapped(**kwargs: object) -> object:
+        return wrapped
+
+    return decorator
+
+
+def async_args_to_log(*args: str) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
+    constructors: list[Constructor] = []
+
+    for arg in args:
+        if "." not in arg:
+            constructors.append(IdentityConstructor(arg))
+        else:
+            constructors.append(ArgumentConstructor(arg))
+
+    def decorator(func: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
+        @functools.wraps(func)
+        async def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
+            assert not args
+
             with structlog_contextvars.bound_contextvars(**{c.name: c(kwargs) for c in constructors}):
-                return await func(**kwargs)  # type: ignore
+                return await func(*args, **kwargs)
 
-        if inspect.iscoroutinefunction(func):  # type: ignore
-            return async_wrapped  # type: ignore
+        return cast(Callable[P, Awaitable[R]], wrapped)
 
-        return wrapped  # type: ignore
-
-    return decorator  # type: ignore
+    return decorator
 
 
 @contextlib.contextmanager

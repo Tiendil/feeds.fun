@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any
+from typing import Coroutine
 
 from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
@@ -93,8 +93,8 @@ for processor_config in settings.tag_processors:
 class EntriesProcessor(InfiniteTask):
     __slots__ = ("_processor_info",)
 
-    def __init__(self, processor_info: ProcessorInfo, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, processor_info: ProcessorInfo, **kwargs: object) -> None:
+        super().__init__(**kwargs)  # type: ignore
         self._processor_info = processor_info
 
     @property

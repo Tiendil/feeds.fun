@@ -1,4 +1,4 @@
-from typing import Any, TypeVar
+from typing import TypeVar
 
 import pydantic
 
@@ -15,5 +15,5 @@ class BaseEntity(pydantic.BaseModel):
         from_attributes=False,
     )
 
-    def replace(self: BASE_ENTITY, **kwargs: Any) -> BASE_ENTITY:
-        return self.model_copy(update=kwargs, deep=True)  # type: ignore
+    def replace(self: BASE_ENTITY, **kwargs: object) -> BASE_ENTITY:
+        return self.model_copy(update=kwargs, deep=True)

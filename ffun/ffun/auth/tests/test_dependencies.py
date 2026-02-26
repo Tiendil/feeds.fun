@@ -19,7 +19,7 @@ class _TestIdPUser:
         request.headers = Headers({settings.header_user_id: external_user_id})
 
         with pytest.raises(errors.IdPNoIdentityProviderIdHeader):
-            await self.user_accessor(request)  # type: ignore
+            await self.user_accessor(request)
 
     @pytest.mark.asyncio
     async def test_empty_identity_provider_id_header(self, external_user_id: str) -> None:
@@ -30,7 +30,7 @@ class _TestIdPUser:
         )
 
         with pytest.raises(errors.IdPNoIdentityProviderIdHeader):
-            await self.user_accessor(request)  # type: ignore
+            await self.user_accessor(request)
 
     @pytest.mark.asyncio
     async def test_no_identity_provider_in_settings(self, external_user_id: str) -> None:
@@ -41,7 +41,7 @@ class _TestIdPUser:
         )
 
         with pytest.raises(errors.IdPNoIdentityProviderInSettings):
-            await self.user_accessor(request)  # type: ignore
+            await self.user_accessor(request)
 
     @pytest.mark.asyncio
     async def test_user_processed(self, external_user_id: str) -> None:
@@ -51,7 +51,7 @@ class _TestIdPUser:
             {settings.header_user_id: external_user_id, settings.header_identity_provider_id: primary_oidc_service}
         )
 
-        user = await self.user_accessor(request)  # type: ignore
+        user = await self.user_accessor(request)
 
         external_ids = await u_domain.get_user_external_ids(user.id)
 

@@ -84,6 +84,8 @@ class TestGetNextFeedToLoad:
 
         found_feed = feeds[saved_feed_id]
 
+        assert found_feed.load_attempted_at is not None
+
         assert now < found_feed.load_attempted_at
 
         loaded_feed = await get_feed(saved_feed_id)
@@ -111,6 +113,8 @@ class TestGetNextFeedToLoad:
         feeds = {feed.id: feed for feed in found_feeds}
 
         found_feed = feeds[saved_feed_id]
+
+        assert found_feed.load_attempted_at is not None
 
         assert now < found_feed.load_attempted_at
 

@@ -131,6 +131,7 @@ types-toml = "0.10.*"
 types-python-slugify = "8.0.*"
 types-setuptools = "80.9.*"
 types-tabulate = "0.9.*"
+types-beautifulsoup4 = "4.12.*"
 
 [project.scripts]
 ffun = "ffun.cli.cli:app"
@@ -188,6 +189,16 @@ module = [
   "ffun.*.tests.*",
   "ffun.*.migrations.*",
   "ffun.cli.commands.*",
+  #######################
+  # operation modules require too many type conversions from PostgreSQL types to Python types.
+  # TODO: do smth with it
+  "ffun.*.operations",
+  "ffun.core.postgresql",
+  #######################
+  # numpy magic
+  # TODO: do smth with it
+  "ffun.tags.normalizers.form_normalizer",
+  #######################
 ]
 disallow_any_expr = false
 

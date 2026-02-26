@@ -49,6 +49,6 @@ async def _idp_user(request: fastapi.Request) -> u_entities.User:
 #       => we duplicate some API endpoints to have both authenticated and unauthenticated versions.
 #          SPA routes requests to the appropriate endpoint.
 
-user = fastapi.Depends(_idp_user)
+user = fastapi.params.Depends(_idp_user)
 
 User = Annotated[u_entities.User, user]

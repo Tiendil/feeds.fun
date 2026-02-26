@@ -1,5 +1,4 @@
 import httpx
-from furl import furl
 
 from ffun.core import logging, utils
 from ffun.domain.domain import new_entry_id
@@ -14,6 +13,7 @@ from ffun.loader import errors, operations
 from ffun.loader.entities import ProxyState
 from ffun.loader.settings import settings
 from ffun.parsers import entities as p_entities
+from ffun.domain.urls import construct_f_url
 
 logger = logging.get_module_logger()
 
@@ -24,7 +24,9 @@ parse_content = operations.parse_content
 
 # TODO: tests
 async def load_content_with_proxies(url: FeedUrl) -> httpx.Response:  # noqa: CCR001
-    url_object = furl(url)
+    url_object = construct_f_url(url)
+
+    assert url_object is not None
 
     first_exception = None
 
@@ -138,7 +140,7 @@ async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None
 
     prepared_entries = [
         l_entities.Entry(
-            id=new_entry_id(), source_id=feed.source_id, cataloged_at=utils.now(), **entry_info.model_dump()
+            id=new_entry_id(), source_id=feed.source_id, cataloged_at=utils.now(), **entry_info.model_dump()  # type: ignore
         )
         for entry_info in entries_to_store
     ]
@@ -153,7 +155,7 @@ async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None
         logger.business_event("news_entries_stored", user_id=None, feed_id=feed.id, entries_number=entries_stored)
 
 
-@logging.function_args_to_log("feed.id", "feed.url")
+@logging.async_args_to_log("feed.id", "feed.url")
 async def process_feed(feed: Feed) -> None:
     logger.info("loading_feed")
 

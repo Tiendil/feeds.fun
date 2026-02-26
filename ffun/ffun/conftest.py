@@ -19,7 +19,7 @@ from ffun.parsers.tests.fixtures import *  # noqa
 from ffun.users.tests.fixtures import *  # noqa
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(scope="session", autouse=True)  # type: ignore
 async def prepare_db(
     # app: AsyncGenerator[fastapi.FastAPI, None],
 ) -> AsyncGenerator[None, None]:
@@ -31,14 +31,14 @@ async def prepare_db(
     await migrations.rollback_all()
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(scope="session", autouse=True)  # type: ignore
 async def app(prepare_db: None) -> AsyncGenerator[fastapi.FastAPI, None]:
     with mock.patch("ffun.application.settings.settings.enable_api_spa", True):
         async with application.with_app() as app:
             yield app
 
 
-@pytest_asyncio.fixture()
+@pytest_asyncio.fixture()  # type: ignore
 async def client(app: fastapi.FastAPI) -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client

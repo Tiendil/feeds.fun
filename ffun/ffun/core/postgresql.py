@@ -1,7 +1,7 @@
 import asyncio
 import contextlib
 import functools
-from typing import AsyncGenerator, Callable, Protocol, TypeVar, ParamSpec, Concatenate, Awaitable, cast
+from typing import AsyncGenerator, Callable, Protocol, TypeVar, ParamSpec, Concatenate, Awaitable, cast, Any
 
 import psycopg
 import psycopg_pool
@@ -22,11 +22,11 @@ MAX_INTEGER = 2147483647
 
 POOL: psycopg_pool.AsyncConnectionPool | None = None
 
-
-DB_VALUE = str | int | float | bool | None
-
-DB_RESULT = list[dict[str, DB_VALUE]]
-SQL_ARGUMENTS = dict[str, DB_VALUE] | tuple[list[DB_VALUE]]
+# TODO: we use Any here (and exclude this module from `Any` mypy checks)
+#       because *.operations modules require too many type conversions, and it's not worth to do it for now
+#       we should change approach in the future
+DB_RESULT = list[dict[str, Any]]
+SQL_ARGUMENTS = dict[str, Any] | tuple[list[Any]]
 
 
 class ExecuteType(Protocol):
@@ -91,11 +91,11 @@ async def prepare_pool(  # noqa: CFQ002
         max_size=max_size,
         max_lifetime=max_lifetime,
         timeout=timeout,
-        connection_class=PGPAsyncConnection,  # type: ignore
+        connection_class=PGPAsyncConnection,
         num_workers=num_workers,
         name=name,
         open=False,
-        kwargs={"autocommit": True},  # type: ignore
+        kwargs={"autocommit": True},
     )
 
     await POOL.open(wait=False)

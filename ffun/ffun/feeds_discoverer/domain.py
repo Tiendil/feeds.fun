@@ -2,9 +2,9 @@ import asyncio
 import contextlib
 import contextvars
 import re
-from typing import Iterator
+from typing import Iterator, cast
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag, ResultSet
 
 from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
@@ -147,23 +147,28 @@ async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context,
 
     links_to_check = set()
 
-    for link in context.soup("link"):
+    links = cast(ResultSet[Tag], context.soup.find_all("link"))
+
+    for link in links:
+
         if not link.has_attr("href"):
             continue
 
-        url = link["href"]
+        raw_url = link["href"]
 
-        if not url_has_extension(url, ALLOWED_EXTENSIONS_FOR_LINKS):
+        assert isinstance(raw_url, str)
+
+        adjusted_url = adjust_external_url(UnknownUrl(raw_url), context.url)
+
+        if adjusted_url is None:
+            continue
+
+        if not url_has_extension(adjusted_url, ALLOWED_EXTENSIONS_FOR_LINKS):
             continue
 
         if link.has_attr("rel") and any(
             rel in link["rel"] for rel in ["author", "help", "icon", "license", "pingback", "search", "stylesheet"]
         ):
-            continue
-
-        adjusted_url = adjust_external_url(url, context.url)
-
-        if adjusted_url is None:
             continue
 
         links_to_check.add(adjusted_url)
@@ -186,19 +191,25 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
 
     anchors_to_check = set()
 
-    for anchor in list(context.soup("a")):
-        if anchor.has_attr("href"):
-            url = anchor["href"]
+    anchors = cast(ResultSet[Tag], context.soup.find_all("a"))
 
-            if not url_has_extension(url, ALLOWED_EXTENSIONS_FOR_ANCHORS):
-                continue
+    for anchor in anchors:
+        if not anchor.has_attr("href"):
+            continue
 
-            adjusted_url = adjust_external_url(url, context.url)
+        raw_url = anchor["href"]
 
-            if adjusted_url is None:
-                continue
+        assert isinstance(raw_url, str)
 
-            anchors_to_check.add(adjusted_url)
+        adjusted_url = adjust_external_url(UnknownUrl(raw_url), context.url)
+
+        if adjusted_url is None:
+            continue
+
+        if not url_has_extension(adjusted_url, ALLOWED_EXTENSIONS_FOR_ANCHORS):
+            continue
+
+        anchors_to_check.add(adjusted_url)
 
     logger.info("discovering_anchors_extracted", anchors_to_check=anchors_to_check)
 
@@ -269,7 +280,8 @@ async def _discover_check_candidate_links(context: Context) -> tuple[Context, Re
         logger.info("discovering_checking_links_no_feeds_found")
         return context.replace(candidate_urls=set()), None
 
-    logger.info("discovering_checking_links_feeds_found", result_links=[feed_info.url for feed_info in feeds])
+    logger.info("discovering_checking_links_feeds_found",
+                result_links=[feed_info.url for feed_info in feeds])  # type: ignore
 
     return context.replace(candidate_urls=set()), Result(feeds=feeds, status=Status.feeds_found)
 
@@ -325,8 +337,8 @@ async def _discover_extract_feeds_for_reddit(context: Context) -> tuple[Context,
     if not base_path.endswith("/"):
         base_path += "/"
 
-    f_url.path = f"{base_path}.rss"
-    f_url.query = None
+    f_url.path = f"{base_path}.rss"  # type: ignore
+    f_url.query = ""  # type: ignore
 
     # this check is required to stop recursion on _discover_check_candidate_links
     if str(f_url) == context.url:
@@ -341,7 +353,7 @@ async def _discover_extract_feeds_for_reddit(context: Context) -> tuple[Context,
 # Note: we do not add internal feed discoverer here (like db check: url -> uid -> feed_id), because
 #       - we do not expect significant performance improvement
 #       - internal feed data (news list) may be slightly outdated (not containing the latest news)
-_discoverers = [
+_discoverers = [  # type: ignore
     _discover_adjust_url,
     # This Reddit urls hack MUST go before loading url
     # because Reddit blocks access to the non-rss urls for bots

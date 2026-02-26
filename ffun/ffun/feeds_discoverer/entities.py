@@ -1,5 +1,7 @@
 import enum
-from typing import Any, Protocol, Union
+from typing import Protocol, Union, runtime_checkable
+
+from bs4 import BeautifulSoup
 
 import pydantic
 
@@ -8,6 +10,7 @@ from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.parsers import entities as p_entities
 
 
+@runtime_checkable
 class Discoverer(Protocol):
     async def __call__(self, context: "Context") -> tuple["Context", Union[None, "Result"]]:
         pass
@@ -26,10 +29,10 @@ class Context(BaseEntity):
     url: FeedUrl | None = None
     host: str | None = None
     content: str | None = None
-    soup: Any | None = None
+    soup: BeautifulSoup | None = None
     depth: int = 1
     candidate_urls: set[AbsoluteUrl] = pydantic.Field(default_factory=set)
-    discoverers: list[Any] = pydantic.Field(default_factory=list)
+    discoverers: list[Discoverer] = pydantic.Field(default_factory=list)
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 

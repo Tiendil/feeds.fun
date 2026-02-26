@@ -185,7 +185,7 @@ class TestRemoveRulesWithTags:
         )
 
         async with TableSizeNotChanged("s_rules"):
-            await domain.remove_rules_with_tags({})
+            await domain.remove_rules_with_tags([])
 
     @pytest.mark.asyncio
     async def test_no_rules_for_tags(
@@ -199,7 +199,7 @@ class TestRemoveRulesWithTags:
         )
 
         async with TableSizeNotChanged("s_rules"):
-            await domain.remove_rules_with_tags({three_tags_ids[2]})
+            await domain.remove_rules_with_tags([three_tags_ids[2]])
 
     @pytest.mark.asyncio
     async def test_remove_rules(  # pylint: disable=too-many-locals
@@ -234,7 +234,7 @@ class TestRemoveRulesWithTags:
         )
 
         async with TableSizeDelta("s_rules", delta=-2):
-            await domain.remove_rules_with_tags({tag_1, tag_5})
+            await domain.remove_rules_with_tags([tag_1, tag_5])
 
         rules_1 = await domain.get_rules_for_user(internal_user_id)
         assert {r.id for r in rules_1} == {rule_1_2.id}
