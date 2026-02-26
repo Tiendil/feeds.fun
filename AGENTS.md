@@ -26,6 +26,16 @@ Command you are allowed to use:
 
 If you need to do complex "test & lint & fix" activities, you MUST use the `donna-do` skill to run the code polish workflow.
 
+## Resticted changes / operations
+
+You ABSOLUTELY MUST NOT perform the following operations without explicit instructions to do so:
+
+- Changing `docker-compose.yml` or any Docker-related configuration.
+- Installing any new dependencies, both for frontend and backend.
+- Updating lock files.
+- Installing any new tools, utilities, or software on the host machine or in the development containers.
+- Changing project structure, such as moving files around, creating new directories, etc.
+
 ## Top priority tools
 
 These tools MUST have the highest priority when an agent is deciding which tool to use for a given task:
