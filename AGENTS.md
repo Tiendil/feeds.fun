@@ -4,6 +4,12 @@ This document provides instructions and guidelines for the AI agents working on 
 
 Every agent MUST follow the rules and guidelines outlined in this document when performing their work.
 
+## Initialization
+
+You MUST run the next commands on the start of your work session:
+
+- `donna -p llm -r <project-root> artifacts view '*:intro'` — to get an introduction to the project and its context.
+
 ## Environment
 
 All development-related operations MUST be performed in Docker containers, see `./docker-compose.yml` for details.

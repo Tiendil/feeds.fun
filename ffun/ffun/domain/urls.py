@@ -2,7 +2,7 @@ import contextlib
 import re
 import unicodedata
 from typing import Iterable, Iterator
-from urllib.parse import quote_plus, unquote
+from urllib.parse import quote_plus, unquote, urlsplit
 
 import tldextract
 from furl import furl
@@ -156,8 +156,11 @@ def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl
     fixed_url = normalize_classic_unknown_url(url)
     assert fixed_url is not None
 
-    f_original_url = furl(original_url)
-    f_url = furl(fixed_url)
+    f_original_url = construct_f_url(original_url)
+    f_url = construct_f_url(fixed_url)
+
+    if f_original_url is None or f_url is None:
+        return None
 
     # own schema has priority over origin schema
     # we expect that owner of site (who specify urls) know what they are doing
@@ -252,7 +255,9 @@ def url_to_uid(url: AbsoluteUrl | FeedUrl) -> UrlUid:
 
     normalized_url = unicodedata.normalize("NFC", normalized_url)
 
-    url_object = furl(normalized_url)
+    url_object = construct_f_url(normalized_url)
+
+    assert url_object is not None, "url_to_uid should be called only with linted urls, but got unparseable url"
 
     url_object.scheme = None
     url_object.port = None
@@ -292,9 +297,13 @@ def url_to_source_uid(url: AbsoluteUrl | FeedUrl) -> SourceUid:
 
     normalized_url = unicodedata.normalize("NFC", url).lower().strip()
 
-    url_object = furl(normalized_url)
+    url_object = construct_f_url(normalized_url)
+
+    assert url_object is not None, "url_to_source_uid should be called only with linted urls, but got unparseable url"
 
     domain = url_object.host
+
+    assert domain is not None
 
     # TODO: move rules to settings
 
@@ -311,9 +320,9 @@ def url_to_source_uid(url: AbsoluteUrl | FeedUrl) -> SourceUid:
 
 
 def url_to_host(url: AbsoluteUrl | FeedUrl) -> str:
-    f_url = furl(url)
+    f_url = construct_f_url(url)
 
-    if f_url.host in (None, ""):
+    if f_url is None or f_url.host in (None, ""):
         raise NotImplementedError("AbsoluteUrl & FeedUrl must always have a host")
 
     host = f_url.host
@@ -324,7 +333,9 @@ def url_to_host(url: AbsoluteUrl | FeedUrl) -> str:
 
 
 def url_has_extension(url: AbsoluteUrl, expected_extensions: list[str]) -> bool:
-    f_url = furl(url)
+    f_url = construct_f_url(url)
+
+    assert f_url is not None, "AbsoluteUrl & FeedUrl must always be parsable by furl"
 
     if not f_url.path.segments:
         return "" in expected_extensions
@@ -357,7 +368,9 @@ def filter_out_duplicated_urls(urls: Iterable[AbsoluteUrl]) -> list[AbsoluteUrl]
 
 
 def get_parent_url(url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
-    f_url = furl(url)
+    f_url = construct_f_url(url)
+
+    assert f_url is not None, "AbsoluteUrl & FeedUrl must always be parsable by furl"
 
     if not f_url.path.segments or f_url.path == "/":
         return None
@@ -373,7 +386,9 @@ def get_parent_url(url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
 
 
 def to_feed_url(url: AbsoluteUrl) -> FeedUrl:
-    f_url = furl(url)
+    f_url = construct_f_url(url)
+
+    assert f_url is not None, "AbsoluteUrl must always be parsable by furl"
 
     f_url.fragment = None
 
