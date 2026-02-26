@@ -4,6 +4,28 @@ This document provides instructions and guidelines for the AI agents working on 
 
 Every agent MUST follow the rules and guidelines outlined in this document when performing their work.
 
+## Environment
+
+All development-related operations MUST be performed in Docker containers, see `./docker-compose.yml` for details.
+
+You MUST not perform any development-related operations directly on the host machine.
+
+Most important commands have script shortcuts in `./bin` directory.
+
+Command you are allowed to use:
+
+- `./bin/backend-tests.sh` — run ALL backend tests via pytest.
+- `./bin/backend-utils.sh` — run utils in the backend environment, for example `/bin/backend-utils.sh poetry run pytest ffun/parsers/tests/test_feed.py`
+- `./bin/build-dev-containers.sh` — build base Docker images for development. Call this command after making changes to Docker configs or dependencies.
+- `./bin/check-code-spelling.sh` — check code spelling with `codespell` tool. Both for frontend and backend code.
+- `./bin/dev-check-formatting.sh` — check code formatting. Both for frontend and backend code.
+- `./bin/dev-check-runtime.sh` — check if code starts without errors — very basic smoke tests.
+- `./bin/dev-check-semantics.sh` — check code semantics (types, linting, etc.). Both for frontend and backend code.
+- `./bin/frontend-tests.sh` — run ALL frontend tests.
+- `./bin/frontend-utils.sh` — run utils in the frontend environment.
+
+If you need to do complex "test & lint & fix" activities, you MUST use the `donna-do` skill to run the code polish workflow.
+
 ## Top priority tools
 
 These tools MUST have the highest priority when an agent is deciding which tool to use for a given task:
@@ -22,4 +44,4 @@ You MUST use it to:
 
 You MUST NOT use it for:
 
-- Implementing huge features or behaviors that require adding massive blocks of code (like adding new class, module, writing a huge function, etc.).
+- Implementing huge features or behaviors that require adding massive blocks of code (like adding a new class, module, writing a huge function, etc.).
