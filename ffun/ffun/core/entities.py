@@ -16,4 +16,4 @@ class BaseEntity(pydantic.BaseModel):
     )
 
     def replace(self: BASE_ENTITY, **kwargs: Any) -> BASE_ENTITY:
-        return self.model_copy(update=kwargs, deep=True)
+        return self.model_copy(update=kwargs, deep=True)  # type: ignore

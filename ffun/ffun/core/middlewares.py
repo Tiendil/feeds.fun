@@ -1,6 +1,6 @@
 import functools
 import uuid
-from typing import Any
+from typing import Callable, Awaitable
 
 import fastapi
 import sentry_sdk
@@ -24,7 +24,7 @@ async def _handle_api_error(request: fastapi.Request, error: errors.APIError) ->
 
     request.state.api_error_code = error.code  # type: ignore
 
-    return JSONResponse(status_code=200, content=api_error.model_dump())
+    return JSONResponse(status_code=200, content=api_error.model_dump())  # type: ignore
 
 
 async def _handle_unexpected_error(request: fastapi.Request, error: BaseException) -> JSONResponse:
@@ -40,7 +40,7 @@ async def _handle_unexpected_error(request: fastapi.Request, error: BaseExceptio
 
     logger.exception(error.__class__.__name__, sentry_skip=True)
 
-    return JSONResponse(status_code=500, content=api_error.model_dump())
+    return JSONResponse(status_code=500, content=api_error.model_dump())  # type: ignore
 
 
 # TODO: move somewhere?
@@ -49,18 +49,21 @@ def initialize_error_processors(app: fastapi.FastAPI) -> fastapi.FastAPI:
     return app
 
 
-async def final_errors_middleware(request: fastapi.Request, call_next: Any) -> fastapi.Response:
+CALL_NEXT = Callable[[fastapi.Request], Awaitable[fastapi.Response]]
+
+
+async def final_errors_middleware(request: fastapi.Request, call_next: CALL_NEXT) -> fastapi.Response:
     try:
-        return await call_next(request)  # type: ignore
+        return await call_next(request)
     except errors.APIError as e:
         return await _handle_api_error(request, e)
     except BaseException as e:
         return await _handle_unexpected_error(request, e)
 
 
-async def request_id_middleware(request: fastapi.Request, call_next: Any) -> fastapi.Response:
+async def request_id_middleware(request: fastapi.Request, call_next: CALL_NEXT) -> fastapi.Response:
     with logging.bound_log_args(request_uid=uuid.uuid4().hex):
-        return await call_next(request)  # type: ignore
+        return await call_next(request)
 
 
 def _normalize_path(url: str) -> str | None:
@@ -72,7 +75,7 @@ def _normalize_path(url: str) -> str | None:
     return url
 
 
-@functools.cache
+@functools.cache  # type: ignore
 def _existed_route_urls(app: fastapi.FastAPI) -> set[str]:
     # cache should be all right here because app is singleton
 
@@ -92,7 +95,7 @@ def _existed_route_urls(app: fastapi.FastAPI) -> set[str]:
     return urls
 
 
-async def request_measure_middleware(request: fastapi.Request, call_next: Any) -> fastapi.Response:
+async def request_measure_middleware(request: fastapi.Request, call_next: CALL_NEXT) -> fastapi.Response:
     app = request.scope.get("app")
 
     assert app is not None
@@ -112,13 +115,11 @@ async def request_measure_middleware(request: fastapi.Request, call_next: Any) -
         extra_labels["status_code"] = response.status_code
 
         if hasattr(request.state, "api_error_code"):
-            extra_labels["error_code"] = request.state.api_error_code
+            extra_labels["error_code"] = request.state.api_error_code  # type: ignore
             extra_labels["result"] = "api_error"
 
         if hasattr(request.state, "internal_error_code"):
-            extra_labels["error_code"] = request.state.internal_error_code
+            extra_labels["error_code"] = request.state.internal_error_code  # type: ignore
             extra_labels["result"] = "internal_error"
-
-        assert isinstance(response, fastapi.Response)
 
         return response

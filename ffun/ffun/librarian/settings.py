@@ -20,9 +20,9 @@ class Settings(BaseSettings):
     @pydantic.computed_field  # type: ignore
     @functools.cached_property
     def tag_processors(self) -> tuple[TagProcessor, ...]:
-        data = toml.loads(self.tag_processors_config.read_text())
+        data: dict[str, object] = toml.loads(self.tag_processors_config.read_text())
 
-        return ProcessorsConfig(**data).tag_processors
+        return ProcessorsConfig(**data).tag_processors  # type: ignore
 
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_LIBRARIAN_")
 

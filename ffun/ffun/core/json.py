@@ -1,17 +1,16 @@
 import json
-from typing import Any
 
 from ffun.core import logging
 
 logger = logging.get_module_logger()
 
 
-def format(data: Any) -> str:
+def format(data: object) -> str:
     return json.dumps(data, ensure_ascii=False, check_circular=False, allow_nan=False, indent=None)
 
 
-def parse(data: str) -> Any:
-    return json.loads(data)
+def parse(data: str) -> object:
+    return json.loads(data)  # type: ignore
 
 
 def finish_json(text: str, empty_value: str = '""') -> str:  # pylint: disable=too-many-branches # noqa: C901, CCR001
@@ -81,7 +80,7 @@ def finish_json(text: str, empty_value: str = '""') -> str:  # pylint: disable=t
     return text
 
 
-def loads_with_fix(text: str) -> dict[str, Any]:
+def loads_with_fix(text: str) -> dict[str, object]:
     try:
         return json.loads(finish_json(text))  # type: ignore
     except json.JSONDecodeError:
@@ -89,7 +88,7 @@ def loads_with_fix(text: str) -> dict[str, Any]:
 
 
 # TODO: remove if it will not be used anywhere
-def extract_tags_from_random_json(data: Any) -> set[str]:
+def extract_tags_from_random_json(data: object) -> set[str]:
     if not data:
         # no tags if [], {}, ''
         return set()

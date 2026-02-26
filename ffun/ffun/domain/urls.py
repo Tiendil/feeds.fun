@@ -1,8 +1,10 @@
 import contextlib
 import re
 import unicodedata
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, Protocol, cast, MutableMapping
 from urllib.parse import quote_plus, unquote
+
+from orderedmultidict import omdict
 
 import tldextract
 from furl import furl
@@ -19,6 +21,54 @@ logger = logging.get_module_logger()
 #            - that the logic of dependent functions is not broken
 #            - that the UIDs generation is not changed (check on backup)
 #            - in case UIDs generation is changed, you MUST update all affected entities
+
+
+###############
+# furl Protocol
+###############
+
+
+class FUrlPath(Protocol):
+    segments: list[str]
+
+    def __str__(self) -> str:
+        ...
+
+    def __eq__(self, other: object) -> bool:
+        ...
+
+
+class FUrlQuery(Protocol):
+    # params: omdict[str, str]
+    params: MutableMapping[str, str]
+
+    def __str__(self) -> str:
+        ...
+
+
+class FUrl(Protocol):
+    scheme: str | None
+    host: str | None
+    port: int | None
+    username: str | None
+    password: str | None
+
+    fragment: str | None
+
+    path: FUrlPath
+
+    query: FUrlQuery
+
+    def remove(self, *args: object, **kwargs: object) -> 'FUrl':
+        ...
+
+    def join(self, url: str) -> 'FUrl':
+        ...
+
+    def __str__(self) -> str:
+        ...
+
+###############
 
 
 RE_SCHEMA = re.compile(r"^(\w+):")
@@ -40,10 +90,10 @@ def check_furl_error() -> Iterator[None]:
         raise
 
 
-def construct_f_url(url: UnknownUrl | AbsoluteUrl | str) -> furl | None:
+def construct_f_url(url: UnknownUrl | AbsoluteUrl | str) -> FUrl | None:
     try:
         with check_furl_error():
-            return furl(url)
+            return furl(url)  # type: ignore
     except errors.ExpectedFUrlError:
         return None
 
@@ -100,7 +150,7 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noq
         return None
 
     if f_url.path == "/":
-        f_url.path = None
+        f_url.path = ""  # type: ignore
 
     if url.startswith("//"):
         return AbsoluteUrl(str(f_url))
@@ -263,7 +313,9 @@ def url_to_uid(url: AbsoluteUrl | FeedUrl) -> UrlUid:
     url_object.port = None
     url_object.fragment = None
 
-    url_object.query.params = omdict(sorted(url_object.query.params.allitems()))
+    raw_params = cast(list[tuple[str, str]], url_object.query.params.allitems())  # type: ignore
+
+    url_object.query.params = omdict(sorted(raw_params))
 
     # Attention: we must not remove username:password from the url
     #            because it will create a vector for hacking by accessing private news of other users
@@ -276,7 +328,7 @@ def url_to_uid(url: AbsoluteUrl | FeedUrl) -> UrlUid:
     if path and path[-1] == "/":
         path = path[:-1]
 
-    url_object.path = path
+    url_object.path = path  # type: ignore
 
     # unquote again because furl will quote all parts of the url
     resulted_url = unquote(str(url_object))

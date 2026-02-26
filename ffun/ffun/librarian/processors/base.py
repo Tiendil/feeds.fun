@@ -28,8 +28,8 @@ class Processor:
 class AlwaysConstantProcessor(Processor):
     __slots__ = ("_tags",)
 
-    def __init__(self, tags: list[str], **kwargs: Any):
-        super().__init__(**kwargs)
+    def __init__(self, tags: list[str], **kwargs: object):
+        super().__init__(**kwargs)  # type: ignore
         self._tags = tags
 
     async def process(self, entry: Entry) -> list[RawTag]:

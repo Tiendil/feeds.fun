@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Mapping
 
 import httpx
 
@@ -22,8 +22,8 @@ def get_user_agent() -> str:
     return _user_agent
 
 
-def client(proxy: str | None = None, headers: Any = None, timeout: float | None = None) -> httpx.AsyncClient:
-    attributes: dict[str, Any] = {"http2": True}
+def client(proxy: str | None = None, headers: Mapping[str, object] | None = None, timeout: float | None = None) -> httpx.AsyncClient:
+    attributes: dict[str, object] = {"http2": True}
 
     if proxy is not None:
         attributes["proxy"] = proxy
@@ -37,4 +37,4 @@ def client(proxy: str | None = None, headers: Any = None, timeout: float | None 
     if timeout is not None:
         attributes["timeout"] = timeout
 
-    return httpx.AsyncClient(**attributes)
+    return httpx.AsyncClient(**attributes)  # type: ignore

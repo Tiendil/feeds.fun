@@ -1,5 +1,5 @@
 import datetime
-from typing import Any
+from typing import cast, Mapping
 
 from ffun.auth.idps.plugin import Plugin as PluginBase
 from ffun.core import errors
@@ -27,7 +27,7 @@ class Plugin(PluginBase):
         self.client_id = client_id
         self.client_secret = client_secret
 
-        self._access_token = None
+        self._access_token: str|None = None
 
     # TODO: add protection from concurrent calls
     async def get_access_token(self, force: bool) -> str:
@@ -50,16 +50,16 @@ class Plugin(PluginBase):
             if response.status_code != 200:
                 raise CanNotGetAccessToken()
 
-            data = response.json()
+            response_data: dict[str, object] = response.json()
 
-            self._access_token = data["access_token"]
+            self._access_token = cast(str, response_data["access_token"])
 
             assert self._access_token is not None
 
             return self._access_token
 
     async def _call_admin(
-        self, method: str, path: str, retry_on_token_loss: bool, data: dict[str, Any] | None = None
+        self, method: str, path: str, retry_on_token_loss: bool, data: Mapping[str, object] | None = None
     ) -> None:
         access_token = await self.get_access_token(force=False)
 

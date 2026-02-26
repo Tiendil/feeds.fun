@@ -1,7 +1,7 @@
 import asyncio
 import contextlib
 import functools
-from typing import Any, AsyncGenerator, Callable, Protocol
+from typing import AsyncGenerator, Callable, Protocol, TypeVar, ParamSpec, Concatenate, Awaitable, cast
 
 import psycopg
 import psycopg_pool
@@ -23,8 +23,10 @@ MAX_INTEGER = 2147483647
 POOL: psycopg_pool.AsyncConnectionPool | None = None
 
 
-DB_RESULT = list[dict[str, Any]]
-SQL_ARGUMENTS = dict[str, Any] | tuple[list[Any]]
+DB_VALUE = str | int | float | bool | None
+
+DB_RESULT = list[dict[str, DB_VALUE]]
+SQL_ARGUMENTS = dict[str, DB_VALUE] | tuple[list[DB_VALUE]]
 
 
 class ExecuteType(Protocol):
@@ -89,11 +91,11 @@ async def prepare_pool(  # noqa: CFQ002
         max_size=max_size,
         max_lifetime=max_lifetime,
         timeout=timeout,
-        connection_class=PGPAsyncConnection,
+        connection_class=PGPAsyncConnection,  # type: ignore
         num_workers=num_workers,
         name=name,
         open=False,
-        kwargs={"autocommit": True},
+        kwargs={"autocommit": True},  # type: ignore
     )
 
     await POOL.open(wait=False)
@@ -124,8 +126,7 @@ async def transaction(autocommit: bool = False) -> AsyncGenerator[ExecuteType, N
             await connection.set_autocommit(autocommit)
 
         async with connection.cursor() as cursor:
-            assert isinstance(cursor, PGAsyncCursor)
-            yield cursor.execute_and_extract
+            yield cursor.execute_and_extract  # type: ignore
 
 
 async def execute(command: str, arguments: SQL_ARGUMENTS | None = None) -> DB_RESULT:
@@ -133,10 +134,14 @@ async def execute(command: str, arguments: SQL_ARGUMENTS | None = None) -> DB_RE
         return await execute(command, arguments)
 
 
-def run_in_transaction(func: Callable[..., Any]) -> Callable[..., Any]:
+P = ParamSpec('P')
+T = TypeVar('T')
+
+
+def run_in_transaction(func: Callable[Concatenate[ExecuteType, P], Awaitable[T]]) -> Callable[P, Awaitable[T]]:
     @functools.wraps(func)
-    async def wrapper(*argv: Any, **kwargs: Any) -> Any:
+    async def wrapper(*argv: P.args, **kwargs: P.kwargs) -> T:
         async with transaction() as execute:
             return await func(execute, *argv, **kwargs)
 
-    return wrapper
+    return cast(Callable[P, Awaitable[T]], wrapper)

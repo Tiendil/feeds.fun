@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from sentry_sdk import init as initialize_sentry
 
@@ -13,7 +13,7 @@ import ffun
 from ffun.core.errors import Error
 
 
-def improve_fingerprint(event: "Event", hint: dict[str, Any]) -> "Event":
+def improve_fingerprint(event: "Event", hint: dict[str, object]) -> "Event":
     if "exc_info" not in hint:
         return event
 
@@ -25,7 +25,7 @@ def improve_fingerprint(event: "Event", hint: dict[str, Any]) -> "Event":
     return event
 
 
-def before_send(event: "Event", hint: dict[str, Any]) -> "Event":
+def before_send(event: "Event", hint: dict[str, object]) -> "Event":
     return improve_fingerprint(event, hint)
 
 

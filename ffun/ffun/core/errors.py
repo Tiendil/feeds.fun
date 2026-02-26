@@ -2,7 +2,7 @@ from typing import Any
 
 
 class Error(Exception):
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: str | int | None) -> None:
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -11,7 +11,7 @@ class Error(Exception):
             self.fingerprint = None
 
     def __str__(self) -> str:
-        attributes = ", ".join(f"{key}={value}" for key, value in self.__dict__.items())
+        attributes = ", ".join(f"{key}={value}" for key, value in self.__dict__.items())  # type: ignore
 
         return f"{self.__class__.__name__}: {attributes}"
 

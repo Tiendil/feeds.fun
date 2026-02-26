@@ -20,9 +20,9 @@ class Settings(BaseSettings):
     @pydantic.computed_field  # type: ignore
     @functools.cached_property
     def tag_normalizers(self) -> tuple[TagNormalizer, ...]:
-        data = toml.loads(self.tag_normalizers_config.read_text())
+        data = toml.loads(self.tag_normalizers_config.read_text())  # type: ignore
 
-        return NormalizersConfig(**data).tag_normalizer
+        return NormalizersConfig(**data).tag_normalizer  # type: ignore
 
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_TAGS_")
 

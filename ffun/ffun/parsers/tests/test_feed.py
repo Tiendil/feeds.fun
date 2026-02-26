@@ -114,7 +114,7 @@ class TestParseFeed:
 
         # the first entry will be skipped due to the error in parsing
         parsed_expected_fixture = json.parse(expected_fixture)
-        parsed_expected_fixture["entries"] = parsed_expected_fixture["entries"][1:]
+        parsed_expected_fixture["entries"] = parsed_expected_fixture["entries"][1:]  # type: ignore
 
         assert feed_info == FeedInfo.model_validate(parsed_expected_fixture)
 

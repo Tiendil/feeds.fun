@@ -80,6 +80,6 @@ def import_from_string(path: str) -> object:
     if ":" in path:
         mod_path, attr_path = path.split(":", 1)
         module = importlib.import_module(mod_path)
-        return operator.attrgetter(attr_path)(module)
+        return operator.attrgetter(attr_path)(module)  # type: ignore
 
     return importlib.import_module(path)

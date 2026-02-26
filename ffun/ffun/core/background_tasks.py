@@ -1,5 +1,4 @@
 import asyncio
-from typing import Any
 
 from ffun.core import logging
 
@@ -14,8 +13,8 @@ class InfiniteTask:
         self._stop_requested: bool = False
         self._run_requested = asyncio.Event()
         self._delay_between_runs = delay_between_runs
-        self._runner_task: asyncio.Task[Any] | None = None
-        self._scheduler: asyncio.Task[Any] | None = None
+        self._runner_task: asyncio.Task[object] | None = None
+        self._scheduler: asyncio.Task[object] | None = None
 
     @property
     def name(self) -> str:
