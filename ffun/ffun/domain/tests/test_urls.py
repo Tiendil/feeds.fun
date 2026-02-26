@@ -170,10 +170,6 @@ class TestUrlToUid:
             ("http://example.com", "example.com"),
             ("https://example.com", "example.com"),
             ("ftp://example.com", "example.com"),
-            (
-                "at://did:plc:ts6eguzvhogcyx4nd3wj6igv/app.bsky.actor.profile/self",
-                "did:plc:ts6eguzvhogcyx4nd3wj6igv/app.bsky.actor.profile/self",
-            ),
             ("//example.com", "example.com"),
             # remove ports
             ("//example.com:666", "example.com"),
@@ -189,6 +185,10 @@ class TestUrlToUid:
     )
     def test(self, url: AbsoluteUrl, uid: UrlUid) -> None:
         assert urls.url_to_uid(url) == uid
+
+    def test_unsupported_representation(self) -> None:
+        with pytest.raises(AssertionError, match="linted urls"):
+            urls.url_to_uid(AbsoluteUrl("at://did:plc:fakeperson000000000000000/app.bsky.actor.profile/self"))
 
 
 class TestUrlToSourceUid:
@@ -208,7 +208,6 @@ class TestUrlToSourceUid:
             ("http://api.reddit.com", "reddit.com"),
             ("https://api.reddit.com", "reddit.com"),
             ("ftp://api.reddit.com", "reddit.com"),
-            ("at://did:plc:ts6eguzvhogcyx4nd3wj6igv/app.bsky.actor.profile/self", "did:plc:ts6eguzvhogcyx4nd3wj6igv"),
             ("//programming.reddit.com", "reddit.com"),
             ("//anotherreddit.com", "anotherreddit.com"),
             ("//xxx.anotherreddit.com", "xxx.anotherreddit.com"),
@@ -218,6 +217,10 @@ class TestUrlToSourceUid:
     )
     def test(self, url: AbsoluteUrl, source_uid: SourceUid) -> None:
         assert urls.url_to_source_uid(url) == source_uid
+
+    def test_unsupported_representation(self) -> None:
+        with pytest.raises(AssertionError, match="linted urls"):
+            urls.url_to_source_uid(AbsoluteUrl("at://did:plc:fakeperson000000000000000/app.bsky.actor.profile/self"))
 
 
 class TestCheckFurlError:
@@ -506,10 +509,10 @@ class TestGetParentUrl:
         assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com")) is None
         assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/")) is None
         assert urls.get_parent_url(urls.str_to_absolute_url("https://subdomain.example.com")) is None
-        assert (
-            urls.get_parent_url(AbsoluteUrl("at://did:plc:ts6eguzvhogcyx4nd3wj6igv/app.bsky.actor.profile/self"))
-            is None
-        )
+
+    def test_unsupported_representation(self) -> None:
+        with pytest.raises(AssertionError, match="must always be parsable"):
+            urls.get_parent_url(AbsoluteUrl("at://did:plc:fakeperson000000000000000/app.bsky.actor.profile/self"))
 
     def test_has_parent(self) -> None:
         assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed")) == "https://example.com"
@@ -559,4 +562,4 @@ class TestUrlToHost:
 
     def test_unsupported_representation(self) -> None:
         with pytest.raises(NotImplementedError):
-            urls.url_to_host(AbsoluteUrl("at://did:plc:ts6eguzvhogcyx4nd3wj6igv/app.bsky.actor.profile/self"))
+            urls.url_to_host(AbsoluteUrl("at://did:plc:fakeperson000000000000000/app.bsky.actor.profile/self"))

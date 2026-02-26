@@ -2,7 +2,7 @@ import contextlib
 import re
 import unicodedata
 from typing import Iterable, Iterator
-from urllib.parse import quote_plus, unquote, urlsplit
+from urllib.parse import quote_plus, unquote
 
 import tldextract
 from furl import furl
@@ -257,7 +257,7 @@ def url_to_uid(url: AbsoluteUrl | FeedUrl) -> UrlUid:
 
     url_object = construct_f_url(normalized_url)
 
-    assert url_object is not None, "url_to_uid should be called only with linted urls, but got unparseable url"
+    assert url_object is not None, "url_to_uid should be called only with linted urls, but got unparsable url"
 
     url_object.scheme = None
     url_object.port = None
@@ -299,7 +299,7 @@ def url_to_source_uid(url: AbsoluteUrl | FeedUrl) -> SourceUid:
 
     url_object = construct_f_url(normalized_url)
 
-    assert url_object is not None, "url_to_source_uid should be called only with linted urls, but got unparseable url"
+    assert url_object is not None, "url_to_source_uid should be called only with linted urls, but got unparsable url"
 
     domain = url_object.host
 
