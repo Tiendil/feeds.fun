@@ -4,7 +4,7 @@ import contextvars
 import re
 from typing import Iterator, cast
 
-from bs4 import BeautifulSoup, Tag, ResultSet
+from bs4 import BeautifulSoup, ResultSet, Tag
 
 from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
@@ -280,8 +280,8 @@ async def _discover_check_candidate_links(context: Context) -> tuple[Context, Re
         logger.info("discovering_checking_links_no_feeds_found")
         return context.replace(candidate_urls=set()), None
 
-    logger.info("discovering_checking_links_feeds_found",
-                result_links=[feed_info.url for feed_info in feeds])  # type: ignore
+    result_links = [str(feed_info.url) for feed_info in feeds]
+    logger.info("discovering_checking_links_feeds_found", result_links=result_links)
 
     return context.replace(candidate_urls=set()), Result(feeds=feeds, status=Status.feeds_found)
 

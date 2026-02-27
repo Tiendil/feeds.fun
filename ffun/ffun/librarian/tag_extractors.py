@@ -1,6 +1,5 @@
 import re
 
-
 RE_DOG_TAG: re.Pattern[str] = re.compile(r"@([\w\d-]+)")
 
 

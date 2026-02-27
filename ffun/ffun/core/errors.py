@@ -1,6 +1,3 @@
-from typing import Any
-
-
 class Error(Exception):
     def __init__(self, **kwargs: str | int | None) -> None:
         for key, value in kwargs.items():

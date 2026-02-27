@@ -1,10 +1,8 @@
 import contextlib
 import re
 import unicodedata
-from typing import Iterable, Iterator, Protocol, cast, MutableMapping
+from typing import Iterable, Iterator, MutableMapping, Protocol, cast
 from urllib.parse import quote_plus, unquote
-
-from orderedmultidict import omdict
 
 import tldextract
 from furl import furl
@@ -32,18 +30,17 @@ class FUrlPath(Protocol):
     segments: list[str]
 
     def __str__(self) -> str:
-        ...
+        pass
 
     def __eq__(self, other: object) -> bool:
-        ...
+        pass
 
 
 class FUrlQuery(Protocol):
-    # params: omdict[str, str]
     params: MutableMapping[str, str]
 
     def __str__(self) -> str:
-        ...
+        pass
 
 
 class FUrl(Protocol):
@@ -59,14 +56,15 @@ class FUrl(Protocol):
 
     query: FUrlQuery
 
-    def remove(self, *args: object, **kwargs: object) -> 'FUrl':
-        ...
+    def remove(self, *args: object, **kwargs: object) -> "FUrl":
+        pass
 
-    def join(self, url: str) -> 'FUrl':
-        ...
+    def join(self, url: str) -> "FUrl":
+        pass
 
     def __str__(self) -> str:
-        ...
+        pass
+
 
 ###############
 

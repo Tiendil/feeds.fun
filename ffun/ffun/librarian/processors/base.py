@@ -1,5 +1,3 @@
-from typing import Any
-
 from ffun.librarian import errors
 from ffun.library.entities import Entry
 from ffun.ontology.entities import RawTag

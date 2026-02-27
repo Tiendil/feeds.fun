@@ -1,5 +1,5 @@
 import contextlib
-from typing import Generator, cast
+from typing import Generator
 
 import httpx
 
@@ -35,13 +35,13 @@ class Client:
 
     def _handle_response_status_errors(self, response: httpx.Response) -> None:
         if response.status_code == 429:
-            raise errors.QuotaError(message=response.content.decode('utf-8'), status_code=response.status_code)
+            raise errors.QuotaError(message=response.content.decode("utf-8"), status_code=response.status_code)
 
         if response.status_code in (401, 403):
-            raise errors.AuthError(message=response.content.decode('utf-8'), status_code=response.status_code)
+            raise errors.AuthError(message=response.content.decode("utf-8"), status_code=response.status_code)
 
         if response.status_code != 200:
-            raise errors.UnknownError(message=response.content.decode('utf-8'), status_code=response.status_code)
+            raise errors.UnknownError(message=response.content.decode("utf-8"), status_code=response.status_code)
 
     # See https://ai.google.dev/api/generate-content#FinishReason
     def _handle_finish_reason(self, finish_reason: str) -> None:

@@ -1,5 +1,4 @@
 import asyncio
-from typing import Coroutine
 
 from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask

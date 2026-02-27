@@ -1,4 +1,3 @@
-
 import pydantic
 
 from ffun.core.entities import BaseEntity
@@ -9,11 +8,11 @@ class ChatMessage(BaseEntity):
     role: str | None = None
     text: str
 
-    def to_api(self) -> dict[str, list[dict[str, str]]]:
-        data = {"parts": [{"text": self.text}]}
+    def to_api(self) -> dict[str, object]:
+        data: dict[str, object] = {"parts": [{"text": self.text}]}
 
         if self.role is not None:
-            data["role"] = self.role  # type: ignore
+            data["role"] = self.role
 
         return data
 

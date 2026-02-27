@@ -1,5 +1,5 @@
 import datetime
-from typing import cast, Mapping
+from typing import Mapping, cast
 
 from ffun.auth.idps.plugin import Plugin as PluginBase
 from ffun.core import errors
@@ -27,7 +27,7 @@ class Plugin(PluginBase):
         self.client_id = client_id
         self.client_secret = client_secret
 
-        self._access_token: str|None = None
+        self._access_token: str | None = None
 
     # TODO: add protection from concurrent calls
     async def get_access_token(self, force: bool) -> str:

@@ -1,5 +1,3 @@
-from typing import cast
-
 import pydantic
 import pydantic_settings
 

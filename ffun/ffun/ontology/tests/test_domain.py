@@ -401,7 +401,9 @@ class TestCopyRelations:
 
         async with TableSizeNotChanged("o_relations"):
             await copy_relations(
-                processor_id=fake_processor_id, old_tag_id=TagId(unexisting_tag_id), new_tag_id=TagId(unexisting_tag_id + 1)
+                processor_id=fake_processor_id,
+                old_tag_id=TagId(unexisting_tag_id),
+                new_tag_id=TagId(unexisting_tag_id + 1),
             )
 
     @pytest.mark.asyncio

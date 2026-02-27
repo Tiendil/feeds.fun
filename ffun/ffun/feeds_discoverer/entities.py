@@ -1,9 +1,8 @@
 import enum
 from typing import Protocol, Union, runtime_checkable
 
-from bs4 import BeautifulSoup
-
 import pydantic
+from bs4 import BeautifulSoup
 
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl

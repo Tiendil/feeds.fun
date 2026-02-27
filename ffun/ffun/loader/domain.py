@@ -3,6 +3,7 @@ import httpx
 from ffun.core import logging, utils
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import AbsoluteUrl, FeedUrl
+from ffun.domain.urls import construct_f_url
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedId, FeedState
 from ffun.feeds_collections.collections import collections
@@ -13,7 +14,6 @@ from ffun.loader import errors, operations
 from ffun.loader.entities import ProxyState
 from ffun.loader.settings import settings
 from ffun.parsers import entities as p_entities
-from ffun.domain.urls import construct_f_url
 
 logger = logging.get_module_logger()
 
@@ -140,7 +140,10 @@ async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None
 
     prepared_entries = [
         l_entities.Entry(
-            id=new_entry_id(), source_id=feed.source_id, cataloged_at=utils.now(), **entry_info.model_dump()  # type: ignore
+            id=new_entry_id(),
+            source_id=feed.source_id,
+            cataloged_at=utils.now(),
+            **entry_info.model_dump(),  # type: ignore
         )
         for entry_info in entries_to_store
     ]

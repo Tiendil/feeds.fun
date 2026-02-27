@@ -1,6 +1,6 @@
 import functools
 import uuid
-from typing import Callable, Awaitable
+from typing import Awaitable, Callable
 
 import fastapi
 import sentry_sdk

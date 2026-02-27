@@ -8,10 +8,10 @@ import toml
 
 from ffun.core import utils
 from ffun.domain.entities import EntryId, SourceId
+from ffun.domain.urls import str_to_absolute_url
 from ffun.library.entities import Entry
 from ffun.processors_quality import errors
 from ffun.processors_quality.entities import Attribution, ExpectedTags, ProcessorResult
-from ffun.domain.urls import str_to_absolute_url
 
 
 class FrontmatterTOMLHandler(frontmatter.TOMLHandler):  # type: ignore
@@ -96,8 +96,10 @@ class KnowlegeBase:
 
         data: dict[str, object] = toml.loads(tags_path.read_text())
 
-        return ExpectedTags(must_have=set(cast(list[str], data["tags_must_have"])),
-                            should_have=set(cast(list[str], data["tags_should_have"])))
+        return ExpectedTags(
+            must_have=set(cast(list[str], data["tags_must_have"])),
+            should_have=set(cast(list[str], data["tags_should_have"])),
+        )
 
     def get_actual_results(self, processor: str, id_: int) -> ProcessorResult:
         tags_path = self._dir_tags_actual / processor / f"{id_to_name(id_)}.toml"

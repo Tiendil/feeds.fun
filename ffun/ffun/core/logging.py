@@ -9,8 +9,8 @@ import sys
 import time
 import uuid
 from collections import abc
-from typing import Callable, ContextManager, Iterable, Iterator, Protocol, TypeVar, overload, ParamSpec, TypeAlias, cast
 from collections.abc import Awaitable, Callable
+from typing import ContextManager, Iterable, Iterator, ParamSpec, Protocol, TypeVar, cast
 
 import pydantic_settings
 import structlog
@@ -353,7 +353,7 @@ def sync_args_to_log(*args: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
     return decorator
 
 
-def async_args_to_log(*args: str) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
+def async_args_to_log(*args: str) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:  # noqa: TAE002
     constructors: list[Constructor] = []
 
     for arg in args:

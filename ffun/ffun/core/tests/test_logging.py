@@ -8,11 +8,11 @@ from ffun.core import errors
 from ffun.core.logging import (
     ArgumentConstructor,
     IdentityConstructor,
+    async_args_to_log,
     bound_log_args,
     bound_measure_labels,
-    sync_args_to_log,
-    async_args_to_log,
     get_module_logger,
+    sync_args_to_log,
 )
 from ffun.core.tests.helpers import assert_log_context_vars, assert_logs_has_business_event, capture_logs
 from ffun.domain.domain import new_user_id

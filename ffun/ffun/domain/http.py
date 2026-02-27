@@ -22,7 +22,9 @@ def get_user_agent() -> str:
     return _user_agent
 
 
-def client(proxy: str | None = None, headers: Mapping[str, object] | None = None, timeout: float | None = None) -> httpx.AsyncClient:
+def client(
+    proxy: str | None = None, headers: Mapping[str, object] | None = None, timeout: float | None = None
+) -> httpx.AsyncClient:
     attributes: dict[str, object] = {"http2": True}
 
     if proxy is not None:

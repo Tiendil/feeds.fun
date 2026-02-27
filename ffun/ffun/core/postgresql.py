@@ -1,7 +1,7 @@
 import asyncio
 import contextlib
 import functools
-from typing import AsyncGenerator, Callable, Protocol, TypeVar, ParamSpec, Concatenate, Awaitable, cast, Any
+from typing import Any, AsyncGenerator, Awaitable, Callable, Concatenate, ParamSpec, Protocol, TypeVar, cast
 
 import psycopg
 import psycopg_pool
@@ -134,8 +134,8 @@ async def execute(command: str, arguments: SQL_ARGUMENTS | None = None) -> DB_RE
         return await execute(command, arguments)
 
 
-P = ParamSpec('P')
-T = TypeVar('T')
+P = ParamSpec("P")
+T = TypeVar("T")
 
 
 def run_in_transaction(func: Callable[Concatenate[ExecuteType, P], Awaitable[T]]) -> Callable[P, Awaitable[T]]:
