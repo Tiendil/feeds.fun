@@ -19,6 +19,6 @@ async def run(loader: bool, librarian: bool) -> None:
                 await asyncio.sleep(0.1)
 
 
-@app.command()
+@app.command()  # type: ignore
 def workers(loader: bool = False, librarian: bool = False) -> None:
     asyncio.run(run(loader=loader, librarian=librarian))

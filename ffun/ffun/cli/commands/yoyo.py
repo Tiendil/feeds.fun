@@ -8,6 +8,6 @@ async def run() -> None:
     await migrations.apply_all()
 
 
-@app.command()
+@app.command()  # type: ignore
 def migrate() -> None:
     asyncio.run(run())

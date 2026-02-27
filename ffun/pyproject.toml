@@ -158,7 +158,7 @@ warn_untyped_fields = true
 
 [[tool.mypy.overrides]]
 module = "yoyo.*"
-ignore_missing_imports = true
+follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 module = "feedparser.*"
@@ -188,7 +188,6 @@ ignore_missing_imports = true
 module = [
   "ffun.*.tests.*",
   "ffun.*.migrations.*",
-  "ffun.cli.commands.*",
   #######################
   # operation modules require too many type conversions from PostgreSQL types to Python types.
   # TODO: do smth with it

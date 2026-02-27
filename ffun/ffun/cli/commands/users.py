@@ -15,6 +15,11 @@ logger = logging.get_module_logger()
 cli_app = typer.Typer()
 
 
+def _as_str(value: object) -> str:
+    assert isinstance(value, str)
+    return value
+
+
 async def run_import_users(
     csv_path: pathlib.Path, idp_id: str, verify_internal_users_exists: bool, number: int | None = None
 ) -> None:  # noqa: CCR001
@@ -24,18 +29,20 @@ async def run_import_users(
         logger.error("idp_not_found", idp_id=idp_id)
         return
 
-    data = []
+    data: list[tuple[str, str, datetime.datetime]] = []
 
     logger.info("import_users")
 
     logger.info("reading_csv", path=str(csv_path))
 
     with csv_path.open("r", encoding="utf-8") as csv_file:
-        reader = csv.DictReader(csv_file)
-        for row in reader:
-            user_id = row["user_id"]
-            email = row["email"]
-            created_at = datetime.datetime.fromtimestamp(int(row["time_joined"]) / 1000)
+        reader: csv.DictReader[str] = csv.DictReader(csv_file)
+        for row in reader:  # type: ignore
+            row_values: dict[str, object] = row
+            user_id = _as_str(row_values["user_id"])
+            email = _as_str(row_values["email"])
+            time_joined = _as_str(row_values["time_joined"])
+            created_at = datetime.datetime.fromtimestamp(int(time_joined) / 1000)
             data.append((user_id, email, created_at))
 
     logger.info("csv_read", rows=len(data))
@@ -59,7 +66,7 @@ async def run_import_users(
     logger.info("import_users_finished", total_users=len(data))
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def import_users_to_idp(
     idp_id: str, csv_path: pathlib.Path, verify_internal_users_exists: bool = True, number: int | None = None
 ) -> None:

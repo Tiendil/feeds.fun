@@ -41,7 +41,7 @@ async def run_clean(chunk: int) -> None:
         logger.info("cleaning_finished")
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def clean(chunk: int = 10000) -> None:
     asyncio.run(run_clean(chunk=chunk))
 
@@ -55,6 +55,6 @@ async def run_renormalize_tags(from_tag_id: int, to_tag_id: int) -> None:
         logger.info("renormalization_finished")
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def renormalize_tags(from_tag_id: int, to_tag_id: int) -> None:
     asyncio.run(run_renormalize_tags(from_tag_id, to_tag_id))

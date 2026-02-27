@@ -55,6 +55,6 @@ async def run_profile() -> None:
         logger.info("experiment_finished")
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def profile() -> None:
     asyncio.run(run_profile())

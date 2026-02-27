@@ -39,7 +39,7 @@ async def run_one(
         display_diffs(diffs, show_tag_diffs=show_tag_diffs)
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def test_one(
     processor: str, entry: int, knowlege_root: pathlib.Path = _root, actual: bool = False, show_tag_diffs: bool = False
 ) -> None:
@@ -64,7 +64,7 @@ async def run_all(processor_name: str, knowlege_root: pathlib.Path, actual: bool
         display_diffs(diffs, show_tag_diffs=show_tag_diffs)
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def test_all(
     processor: str, knowlege_root: pathlib.Path = _root, actual: bool = False, show_tag_diffs: bool = False
 ) -> None:
@@ -77,7 +77,7 @@ async def run_validate_expected_tags(knowlege_root: pathlib.Path = _root) -> Non
         kb.validate_expected_tags()
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def validate_expected_tags(knowlege_root: pathlib.Path = _root) -> None:
     asyncio.run(run_validate_expected_tags(knowlege_root=knowlege_root))
 
@@ -88,7 +88,7 @@ async def run_copy_last_to_actual(processor: str, entry: int, knowlege_root: pat
         kb.copy_last_to_actual(processor, entry)
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def copy_last_to_actual(processor: str, entry: int, knowlege_root: pathlib.Path = _root) -> None:
     asyncio.run(run_copy_last_to_actual(processor, entry, knowlege_root=knowlege_root))
 
@@ -103,7 +103,7 @@ async def run_copy_last_to_actual_all(processor: str, knowlege_root: pathlib.Pat
             kb.copy_last_to_actual(processor, entry_id)
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def copy_last_to_actual_all(processor: str, knowlege_root: pathlib.Path = _root) -> None:
     asyncio.run(run_copy_last_to_actual_all(processor, knowlege_root=knowlege_root))
 
@@ -119,7 +119,7 @@ async def run_diff_entry(
         display_diffs(diffs, show_tag_diffs=show_tag_diffs)
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def diff_entry(processor: str, entry: int, knowlege_root: pathlib.Path = _root, show_tag_diffs: bool = False) -> None:
     asyncio.run(run_diff_entry(processor, entry, knowlege_root=knowlege_root, show_tag_diffs=show_tag_diffs))
 
@@ -133,7 +133,7 @@ async def run_deff_all(processor_name: str, knowlege_root: pathlib.Path = _root,
         display_diffs(diffs, show_tag_diffs)
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def diff_all(processor: str, knowlege_root: pathlib.Path = _root, show_tag_diffs: bool = False) -> None:
     asyncio.run(run_deff_all(processor, knowlege_root=knowlege_root, show_tag_diffs=show_tag_diffs))
 
@@ -166,7 +166,7 @@ async def run_prepare_news_item(
         kb.save_expected_data(processor, entry_id, tags_must_have=tags_must_have, tags_should_have=tags_should_have)
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def prepere_news_item(
     processor: str, entry: int, knowlege_root: pathlib.Path = _root, requests_number: int = 10, min_tags_count: int = 5
 ) -> None:

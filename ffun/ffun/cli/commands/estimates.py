@@ -74,11 +74,11 @@ async def run_entries_per_day_for_collection(collection_id: uuid.UUID) -> None:
         )
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def entries_per_day_for_feed(feed_url: str) -> None:
     asyncio.run(run_entries_per_day_for_feed(feed_url))
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def entries_per_day_for_collection(collection_id: uuid.UUID) -> None:
     asyncio.run(run_entries_per_day_for_collection(collection_id))

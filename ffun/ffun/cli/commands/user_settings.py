@@ -16,6 +16,6 @@ async def run_remove_deprecated_settings() -> None:
         await us_domain.remove_deprecated_settings()
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def remove_deprecated_settings() -> None:
     asyncio.run(run_remove_deprecated_settings())
