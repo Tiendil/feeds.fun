@@ -1,0 +1,14 @@
+# VCS and local workflow metadata are not needed in image build contexts.
+.git
+.donna
+
+# Frontend local artifacts should never be copied into /repository during build.
+site/node_modules
+site/dist
+site/.vite
+
+# Python local caches/venvs are host-only and can bloat build contexts.
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.venv/

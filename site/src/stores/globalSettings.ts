@@ -139,19 +139,22 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     );
   }
 
-  function enumBackendSettings(kind: string, enumProperties: any) {
-    const defaultEntry = _.find([...enumProperties], ([, prop]) => prop.default);
+  function enumBackendSettings<TValue extends t.UserSettingsValue, TProperty extends {default?: boolean}>(
+    kind: string,
+    enumProperties: Map<TValue, TProperty>
+  ) {
+    const defaultEntry = _.find([...enumProperties], ([, prop]: [TValue, TProperty]) => prop.default === true);
 
     if (!defaultEntry) {
       throw new Error(`No default entry found for enum "${kind}"`);
     }
 
-    let defaultValue = defaultEntry[0];
+    let defaultValue: TValue = defaultEntry[0];
 
     return backendSettings(
       kind,
       (rawValue: t.UserSettingsValue) => {
-        return enumProperties.has(rawValue);
+        return enumProperties.has(rawValue as TValue);
       },
       defaultValue
     );
