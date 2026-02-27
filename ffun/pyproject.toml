@@ -162,27 +162,27 @@ follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 module = "feedparser.*"
-ignore_missing_imports = true
+follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 module = "furl.*"
-ignore_missing_imports = true
+follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 module = "orderedmultidict.*"
-ignore_missing_imports = true
+follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 module = "pypika.*"
-ignore_missing_imports = true
+follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 module = "frontmatter.*"
-ignore_missing_imports = true
+follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 module = "lemminflect.*"
-ignore_missing_imports = true
+follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 module = [

@@ -14,7 +14,7 @@ from ffun.core import logging
 logger = logging.get_module_logger()
 
 
-class PostgreSQLArrayOperators(Comparator):  # type: ignore
+class PostgreSQLArrayOperators(Comparator):
     OVERLAPS = "&&"
 
 

@@ -14,7 +14,7 @@ from ffun.processors_quality import errors
 from ffun.processors_quality.entities import Attribution, ExpectedTags, ProcessorResult
 
 
-class FrontmatterTOMLHandler(frontmatter.TOMLHandler):  # type: ignore
+class FrontmatterTOMLHandler(frontmatter.TOMLHandler):
     FM_BOUNDARY = re.compile(r"^\-{3,}\s*$", re.MULTILINE)
     START_DELIMITER = END_DELIMITER = "---"
 
@@ -61,7 +61,7 @@ class KnowlegeBase:
 
     def _load_data_and_body(self, path: pathlib.Path) -> tuple[dict[str, object], str]:
         file_body = path.read_text()
-        return frontmatter.parse(file_body, handler=FrontmatterTOMLHandler())  # type: ignore
+        return frontmatter.parse(file_body, handler=FrontmatterTOMLHandler())
 
     def get_news_entry(self, id_: int) -> Entry:
         entry_path = self._dir_news / f"{id_to_name(id_)}.toml"

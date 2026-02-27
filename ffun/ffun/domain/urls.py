@@ -313,7 +313,7 @@ def url_to_uid(url: AbsoluteUrl | FeedUrl) -> UrlUid:
 
     raw_params = cast(list[tuple[str, str]], url_object.query.params.allitems())  # type: ignore
 
-    url_object.query.params = omdict(sorted(raw_params))
+    url_object.query.params = omdict(sorted(raw_params))  # type: ignore
 
     # Attention: we must not remove username:password from the url
     #            because it will create a vector for hacking by accessing private news of other users
