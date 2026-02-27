@@ -3,7 +3,7 @@ import copy
 import datetime
 from collections import Counter
 from types import TracebackType
-from typing import Any, Callable, Generator, MutableMapping, Optional, Type
+from typing import Callable, Generator, MutableMapping, Optional, Type
 from xml.dom import minidom  # noqa: S408
 
 import pytest
@@ -15,7 +15,7 @@ from structlog.types import EventDict
 from ffun.core.postgresql import execute
 from ffun.domain.entities import UserId
 
-PRODUCER = Callable[[], Any]
+PRODUCER = Callable[[], object]
 
 
 class Comparator:
@@ -26,7 +26,7 @@ class Comparator:
         producer: PRODUCER,
         message: Optional[str] = None,
         template: str = "{message}: original={old_value}, new={new_value}.",
-    ):
+    ) -> None:
         if message is not None:
             self.message = message
 
@@ -35,7 +35,7 @@ class Comparator:
         else:
             self.producer = producer  # type: ignore
 
-        self.old_value: Any = None
+        self.old_value: object = None
         self.template = template
 
     def __enter__(self) -> "Comparator":
@@ -72,43 +72,43 @@ class Comparator:
         if self.validate(self.old_value, new_value):
             self.fail(self.old_value, new_value)
 
-    def fail(self, old_value: Any, new_value: Any) -> None:
+    def fail(self, old_value: object, new_value: object) -> None:
         pytest.fail(self.template.format(message=self.message, old_value=old_value, new_value=new_value))
 
-    def validate(self, old_value: Any, new_value: Any) -> bool:
+    def validate(self, old_value: object, new_value: object) -> bool:
         raise NotImplementedError()
 
 
 class NotChanged(Comparator):
     message = "Value changed"
 
-    def validate(self, old_value: Any, new_value: Any) -> bool:
+    def validate(self, old_value: object, new_value: object) -> bool:
         return bool(old_value != new_value)
 
 
 class Changed(Comparator):
     message = "Value has not changed"
 
-    def validate(self, old_value: Any, new_value: Any) -> bool:
+    def validate(self, old_value: object, new_value: object) -> bool:
         return bool(old_value == new_value)
 
 
 class Increased(Comparator):
     message = "Value has not increased"
 
-    def validate(self, old_value: Any, new_value: Any) -> bool:
+    def validate(self, old_value: object, new_value: object) -> bool:
         return bool(old_value < new_value)
 
 
 class Decreased(Comparator):
     message = "Value has not decreased"
 
-    def validate(self, old_value: Any, new_value: Any) -> bool:
+    def validate(self, old_value: object, new_value: object) -> bool:
         return bool(old_value < new_value)
 
 
 class Delta(Comparator):
-    def __init__(self, producer: PRODUCER, delta: Any, **kwargs: Any):
+    def __init__(self, producer: PRODUCER, delta: object, **kwargs: object) -> None:
         if "message" not in kwargs:
             kwargs["message"] = f"Value has not changed to delta {delta}"
 
@@ -116,7 +116,7 @@ class Delta(Comparator):
 
         self.delta = delta
 
-    def validate(self, old_value: Any, new_value: Any) -> bool:
+    def validate(self, old_value: object, new_value: object) -> bool:
         return bool(new_value - old_value != self.delta)
 
 
@@ -129,7 +129,7 @@ class TableSizeMixin:
 
 
 class TableSizeDelta(Delta, TableSizeMixin):
-    def __init__(self, table: str, **kwargs: Any) -> None:
+    def __init__(self, table: str, **kwargs: object) -> None:
         if "producer" not in kwargs:
             kwargs["producer"] = self._producer
 
@@ -139,7 +139,7 @@ class TableSizeDelta(Delta, TableSizeMixin):
 
 
 class TableSizeNotChanged(NotChanged, TableSizeMixin):
-    def __init__(self, table: str, **kwargs: Any) -> None:
+    def __init__(self, table: str, **kwargs: object) -> None:
         if "producer" not in kwargs:
             kwargs["producer"] = self._producer
 
@@ -149,7 +149,7 @@ class TableSizeNotChanged(NotChanged, TableSizeMixin):
 
 
 class TableSizeDecreased(Decreased, TableSizeMixin):
-    def __init__(self, table: str, **kwargs: Any) -> None:
+    def __init__(self, table: str, **kwargs: object) -> None:
         if "producer" not in kwargs:
             kwargs["producer"] = self._producer
 
@@ -159,7 +159,7 @@ class TableSizeDecreased(Decreased, TableSizeMixin):
 
 
 class TableSizeIncreased(Increased, TableSizeMixin):
-    def __init__(self, table: str, **kwargs: Any) -> None:
+    def __init__(self, table: str, **kwargs: object) -> None:
         if "producer" not in kwargs:
             kwargs["producer"] = self._producer
 
@@ -174,7 +174,7 @@ def assert_times_is_near(
     assert abs(a - b) < delta
 
 
-def assert_logs(logs: list[MutableMapping[str, Any]], **kwargs: int) -> None:
+def assert_logs(logs: list[MutableMapping[str, object]], **kwargs: int) -> None:
     found_enents = Counter(log["event"] for log in logs)
 
     for key, expected_count in kwargs.items():
@@ -184,20 +184,20 @@ def assert_logs(logs: list[MutableMapping[str, Any]], **kwargs: int) -> None:
             )
 
 
-def assert_log_context_vars(**expected: Any) -> None:
+def assert_log_context_vars(**expected: object) -> None:
     bound_vars = structlog_contextvars.get_contextvars()
 
     for key, value in expected.items():
         assert bound_vars.get(key) == value, f"Key {key} = {bound_vars} not equal to expected {value}"
 
 
-def assert_logs_levels(logs: list[MutableMapping[str, Any]], **kwargs: str) -> None:
+def assert_logs_levels(logs: list[MutableMapping[str, object]], **kwargs: str) -> None:
     for record in logs:
         if record["event"] in kwargs:
             assert record["log_level"] == kwargs[record["event"]], f"Log level is not equal to expected for {record}"
 
 
-def assert_logs_have_no_errors(logs: list[MutableMapping[str, Any]]) -> None:
+def assert_logs_have_no_errors(logs: list[MutableMapping[str, object]]) -> None:
     for record in logs:
         if record["log_level"].lower() == "error":
             pytest.fail(f"Error found in logs: {record}")
@@ -231,7 +231,7 @@ def capture_logs() -> Generator[list[EventDict], None, None]:
 
 
 def assert_logs_has_business_event(  # noqa: CCR001
-    logs: list[MutableMapping[str, Any]], name: str, user_id: UserId | None, b_kind: str = "event", **attributes: Any
+    logs: list[MutableMapping[str, object]], name: str, user_id: UserId | None, b_kind: str = "event", **attributes: object
 ) -> None:
 
     if user_id is not None:
@@ -254,19 +254,19 @@ def assert_logs_has_business_event(  # noqa: CCR001
         pytest.fail(f"Event {name} not found in logs")
 
 
-def assert_logs_has_no_business_event(logs: list[MutableMapping[str, Any]], name: str, b_kind: str = "event") -> None:
+def assert_logs_has_no_business_event(logs: list[MutableMapping[str, object]], name: str, b_kind: str = "event") -> None:
     for record in logs:
         if record.get("b_kind") == b_kind and record["event"] == name:
             pytest.fail(f"Event {name} found in logs")
 
 
-def assert_logs_has_business_slice(*args: Any, **kwargs: Any) -> None:
+def assert_logs_has_business_slice(*args: object, **kwargs: object) -> None:
     assert "b_kind" not in kwargs, "b_kind should not be passed to assert_logs_has_business_slice"
     kwargs["b_kind"] = "slice"
     assert_logs_has_business_event(*args, **kwargs)
 
 
-def assert_logs_has_no_business_slice(*args: Any, **kwargs: Any) -> None:
+def assert_logs_has_no_business_slice(*args: object, **kwargs: object) -> None:
     assert "b_kind" not in kwargs, "b_kind should not be passed to assert_logs_has_business_slice"
     kwargs["b_kind"] = "slice"
     assert_logs_has_no_business_event(*args, **kwargs)

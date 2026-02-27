@@ -1,7 +1,6 @@
 import copy
 import enum
 import uuid
-from typing import Any
 
 import pytest
 
@@ -59,7 +58,7 @@ class TestSave:
 
 class TestFullSettings:
     def test(self) -> None:
-        values: dict[int, Any] = {Setting.kind_integer: "666", Setting.kind_boolean: "false"}
+        values: dict[int, object] = {Setting.kind_integer: "666", Setting.kind_boolean: "false"}
 
         settings = domain._full_settings(values, kinds=list(Setting), register=register)
 
@@ -71,7 +70,7 @@ class TestFullSettings:
         }
 
     def test_skip_unknown(self) -> None:
-        values: dict[int, Any] = {Setting.kind_integer: "666", _kind_1: "123"}
+        values: dict[int, object] = {Setting.kind_integer: "666", _kind_1: "123"}
 
         settings = domain._full_settings(values, kinds=list(Setting) + [_kind_1], register=register)
 

@@ -1,4 +1,3 @@
-from typing import Any
 
 import httpx
 import pytest
@@ -26,7 +25,7 @@ from ffun.feeds_discoverer.domain import (
 from ffun.feeds_discoverer.entities import Context, Result, Status
 
 
-def build_context(url: str, **kwargs: Any) -> Context:
+def build_context(url: str, **kwargs: object) -> Context:
     prepered_url = str_to_feed_url(url)
     return Context(raw_url=UnknownUrl(url), url=prepered_url, host=url_to_host(prepered_url), **kwargs)
 
@@ -417,7 +416,7 @@ class TestDiscoverCheckCandidateLinks:
     async def test_works__duplicated_feeds_detected(self, mocker: MockerFixture) -> None:
         checked_links = []
 
-        async def fake_discover(url: Any, *argv: Any, **kwargs: Any) -> Result:
+        async def fake_discover(url: object, *argv: object, **kwargs: object) -> Result:
             checked_links.append(url)
             return Result(feeds=[], status=Status.no_feeds_found)
 
@@ -445,7 +444,7 @@ class TestDiscoverCheckCandidateLinks:
     async def test_works__host_change_detected(self, mocker: MockerFixture) -> None:
         checked_links = []
 
-        async def fake_discover(url: Any, *argv: Any, **kwargs: Any) -> Result:
+        async def fake_discover(url: object, *argv: object, **kwargs: object) -> Result:
             checked_links.append(url)
             return Result(feeds=[], status=Status.no_feeds_found)
 

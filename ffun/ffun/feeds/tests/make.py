@@ -1,9 +1,9 @@
+import datetime
 import uuid
-from typing import Any
 
 from ffun.domain.entities import FeedId
 from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_source_uid
-from ffun.feeds.entities import Feed, FeedState
+from ffun.feeds.entities import Feed, FeedError, FeedState
 from ffun.feeds.operations import get_feeds, get_source_ids, save_feed
 
 
@@ -19,23 +19,33 @@ def fake_description() -> str:
     return f"Feed Description: {uuid.uuid4().hex}"
 
 
-async def fake_feed(**kwargs: Any) -> Feed:
-    url = fake_url() if "url" not in kwargs else kwargs["url"]
+async def fake_feed(
+    *,
+    id: uuid.UUID | None = None,
+    url: str | None = None,
+    state: FeedState = FeedState.not_loaded,
+    last_error: FeedError | None = None,
+    load_attempted_at: datetime.datetime | None = None,
+    loaded_at: datetime.datetime | None = None,
+    title: str | None = None,
+    description: str | None = None,
+) -> Feed:
+    feed_url = fake_url() if url is None else url
 
-    source_uid = url_to_source_uid(str_to_absolute_url(url))
+    source_uid = url_to_source_uid(str_to_absolute_url(feed_url))
 
     source_ids = await get_source_ids([source_uid])
 
     return Feed(
-        id=FeedId(uuid.uuid4() if "id" not in kwargs else kwargs["id"]),
+        id=FeedId(uuid.uuid4() if id is None else id),
         source_id=source_ids[source_uid],
-        url=str_to_feed_url(url),
-        state=FeedState.not_loaded if "state" not in kwargs else kwargs["state"],
-        last_error=kwargs.get("last_error"),
-        load_attempted_at=kwargs.get("load_attempted_at"),
-        loaded_at=kwargs.get("loaded_at"),
-        title=fake_title() if "title" not in kwargs else kwargs["title"],
-        description=fake_description() if "description" not in kwargs else kwargs["description"],
+        url=str_to_feed_url(feed_url),
+        state=state,
+        last_error=last_error,
+        load_attempted_at=load_attempted_at,
+        loaded_at=loaded_at,
+        title=fake_title() if title is None else title,
+        description=fake_description() if description is None else description,
     )
 
 

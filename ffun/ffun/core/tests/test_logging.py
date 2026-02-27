@@ -1,6 +1,5 @@
 import asyncio
 import uuid
-from typing import Any
 
 import pytest
 
@@ -192,7 +191,7 @@ class TestBusinessBoundLoggerMixin:
             ),
         ],
     )
-    def test_normalize_value(self, in_attrs: dict[str, Any], expected: dict[str, Any]) -> None:
+    def test_normalize_value(self, in_attrs: dict[str, object], expected: dict[str, object]) -> None:
         assert logger._normalize_value(in_attrs) == expected
 
 

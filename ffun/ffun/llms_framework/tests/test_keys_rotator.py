@@ -1,7 +1,6 @@
 import datetime
 import uuid
 from decimal import Decimal
-from typing import Any
 
 import pytest
 from pytest_mock import MockerFixture
@@ -313,8 +312,8 @@ class TestGetCandidates:
         filter_2_users = five_internal_user_ids
         filter_3_users = five_internal_user_ids[1:]
 
-        def create_filter(filter_users: list[UserId]) -> Any:
-            async def _filter(infos: list[UserKeyInfo], **kwargs: Any) -> list[UserKeyInfo]:
+        def create_filter(filter_users: list[UserId]) -> object:
+            async def _filter(infos: list[UserKeyInfo], **kwargs: object) -> list[UserKeyInfo]:
                 return [info for info in infos if info.user_id in filter_users]
 
             return _filter
@@ -342,13 +341,13 @@ class TestGetCandidates:
 
         filter_1_users = [five_internal_user_ids[0], five_internal_user_ids[2], five_internal_user_ids[4]]
 
-        def create_filter(filter_users: list[UserId]) -> Any:
-            async def _filter(infos: list[UserKeyInfo], **kwargs: Any) -> list[UserKeyInfo]:
+        def create_filter(filter_users: list[UserId]) -> object:
+            async def _filter(infos: list[UserKeyInfo], **kwargs: object) -> list[UserKeyInfo]:
                 return [info for info in infos if info.user_id in filter_users]
 
             return _filter
 
-        async def _filter_3(infos: list[UserKeyInfo], **kwargs: Any) -> list[UserKeyInfo]:
+        async def _filter_3(infos: list[UserKeyInfo], **kwargs: object) -> list[UserKeyInfo]:
             raise Exception("Should not be called")
 
         infos = await _get_candidates(
@@ -595,7 +594,7 @@ class TestKeySelectors:
 
 class TestChooseApiKey:
 
-    def create_selector(self, api_key: LLMApiKey | None) -> Any:
+    def create_selector(self, api_key: LLMApiKey | None) -> object:
         async def success_selector(llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage:
             assert api_key is not None
 

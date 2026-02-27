@@ -1,5 +1,4 @@
 import datetime
-from typing import Any
 
 import pytest
 from pytest_mock import MockerFixture
@@ -97,7 +96,7 @@ class TestParseFeed:
 
         call_number = {"calls": 0}
 
-        def mocked_parse_entry(raw_entry: Any, original_url: FeedUrl) -> EntryInfo:
+        def mocked_parse_entry(raw_entry: object, original_url: FeedUrl) -> EntryInfo:
             call_number["calls"] += 1
 
             if call_number["calls"] == 1:
@@ -147,15 +146,15 @@ class TestExtractPublishedAt:
 class TestExtractContent:
 
     def test_returns_none_when_content_is_missing(self) -> None:
-        entry: dict[str, Any] = {}
+        entry: dict[str, object] = {}
         assert _extract_content(entry) is None
 
     def test_returns_first_value_when_single_content_item(self) -> None:
-        entry: dict[str, Any] = {"content": [{"value": "single"}]}
+        entry: dict[str, object] = {"content": [{"value": "single"}]}
         assert _extract_content(entry) == "single"
 
     def test_returns_longest_value_from_multiple_content_items(self) -> None:
-        entry: dict[str, Any] = {
+        entry: dict[str, object] = {
             "content": [
                 {"value": "short"},
                 {"value": "the-longest-value"},
@@ -165,7 +164,7 @@ class TestExtractContent:
         assert _extract_content(entry) == "the-longest-value"
 
     def test_keeps_first_value_when_next_value_has_equal_length(self) -> None:
-        entry: dict[str, Any] = {
+        entry: dict[str, object] = {
             "content": [
                 {"value": "same"},
                 {"value": "size"},
@@ -177,26 +176,26 @@ class TestExtractContent:
 class TestExtractBody:
 
     def test_returns_empty_string_when_description_and_content_are_missing(self) -> None:
-        entry: dict[str, Any] = {}
+        entry: dict[str, object] = {}
         assert _extract_body(entry) == ""
 
     def test_returns_content_when_description_is_missing(self) -> None:
-        entry: dict[str, Any] = {"content": [{"value": "content-body"}]}
+        entry: dict[str, object] = {"content": [{"value": "content-body"}]}
         assert _extract_body(entry) == "content-body"
 
     def test_returns_description_when_content_is_missing(self) -> None:
-        entry: dict[str, Any] = {"description": "description-body"}
+        entry: dict[str, object] = {"description": "description-body"}
         assert _extract_body(entry) == "description-body"
 
     def test_returns_content_when_it_is_longer_or_equal_than_description(self) -> None:
-        entry: dict[str, Any] = {
+        entry: dict[str, object] = {
             "description": "short",
             "content": [{"value": "content-is-longer"}],
         }
         assert _extract_body(entry) == "content-is-longer"
 
     def test_returns_description_when_it_is_longer_than_content(self) -> None:
-        entry: dict[str, Any] = {
+        entry: dict[str, object] = {
             "description": "description-is-longer",
             "content": [{"value": "short"}],
         }
