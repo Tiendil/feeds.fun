@@ -15,7 +15,7 @@ from ffun.user_settings import domain as us_domain
 
 
 # TODO: replace LLMProvider.openai with LLMProvider.test
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture  # type: ignore
 async def five_user_key_infos(
     fake_llm_provider: ProviderTest, five_internal_user_ids: list[UserId]
 ) -> list[UserKeyInfo]:
@@ -55,16 +55,16 @@ async def five_user_key_infos(
     return await _get_user_key_infos(LLMProvider.test, five_internal_user_ids, interval_started_at)
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def fake_llm_api_key() -> LLMApiKey:
     return LLMApiKey(uuid.uuid4().hex)
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def api_key_statuses() -> Statuses:
     return Statuses()
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def fake_llm_provider() -> ProviderTest:
     return ProviderTest()

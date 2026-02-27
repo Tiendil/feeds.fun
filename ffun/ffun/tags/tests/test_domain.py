@@ -1,4 +1,3 @@
-
 import pytest
 from pytest_mock import MockerFixture
 
@@ -31,7 +30,7 @@ class TestPrepareForNormalization:
 
 class TestApplyNormalizers:
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def tag(self) -> TagInNormalization:
         uid: TagUid = TagUid("example-tag")
         return TagInNormalization(
@@ -41,7 +40,7 @@ class TestApplyNormalizers:
             categories={TagCategory.test_preserve},
         )
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def raw_tags(self) -> list[RawTag]:
         return [
             RawTag(

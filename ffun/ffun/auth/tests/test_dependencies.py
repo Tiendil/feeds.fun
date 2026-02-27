@@ -19,7 +19,7 @@ class _TestIdPUser:
         request.headers = Headers({settings.header_user_id: external_user_id})
 
         with pytest.raises(errors.IdPNoIdentityProviderIdHeader):
-            await self.user_accessor(request)
+            await self.user_accessor(request)  # type: ignore
 
     @pytest.mark.asyncio
     async def test_empty_identity_provider_id_header(self, external_user_id: str) -> None:
@@ -30,7 +30,7 @@ class _TestIdPUser:
         )
 
         with pytest.raises(errors.IdPNoIdentityProviderIdHeader):
-            await self.user_accessor(request)
+            await self.user_accessor(request)  # type: ignore
 
     @pytest.mark.asyncio
     async def test_no_identity_provider_in_settings(self, external_user_id: str) -> None:
@@ -41,7 +41,7 @@ class _TestIdPUser:
         )
 
         with pytest.raises(errors.IdPNoIdentityProviderInSettings):
-            await self.user_accessor(request)
+            await self.user_accessor(request)  # type: ignore
 
     @pytest.mark.asyncio
     async def test_user_processed(self, external_user_id: str) -> None:
@@ -51,15 +51,15 @@ class _TestIdPUser:
             {settings.header_user_id: external_user_id, settings.header_identity_provider_id: primary_oidc_service}
         )
 
-        user = await self.user_accessor(request)
+        user = await self.user_accessor(request)  # type: ignore
 
-        external_ids = await u_domain.get_user_external_ids(user.id)
+        external_ids = await u_domain.get_user_external_ids(user.id)  # type: ignore
 
         assert external_ids == {primary_oidc_service_id: external_user_id}
 
         loaded_user = await u_domain.get_or_create_user(primary_oidc_service_id, external_user_id)
 
-        assert user == loaded_user
+        assert user == loaded_user  # type: ignore
 
 
 class TestIdPUser(_TestIdPUser):
@@ -72,7 +72,7 @@ class TestIdPUser(_TestIdPUser):
         request.headers = Headers({})
 
         with pytest.raises(errors.IdPNoUserIdHeader):
-            await self.user_accessor(request)
+            await self.user_accessor(request)  # type: ignore
 
     @pytest.mark.asyncio
     async def test_empty_user_id_header(self) -> None:
@@ -81,4 +81,4 @@ class TestIdPUser(_TestIdPUser):
         request.headers = Headers({settings.header_user_id: ""})
 
         with pytest.raises(errors.IdPNoUserIdHeader):
-            await self.user_accessor(request)
+            await self.user_accessor(request)  # type: ignore

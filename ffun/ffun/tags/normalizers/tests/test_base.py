@@ -54,7 +54,7 @@ def check_metric_accumulators(
 
 class TestNormalizerInfo:
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def tag(self) -> TagInNormalization:
         uid: TagUid = TagUid("example-tag")
         return TagInNormalization(
@@ -64,7 +64,7 @@ class TestNormalizerInfo:
             categories={TagCategory.test_preserve},
         )
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def raw_tag_1(self) -> RawTag:
         return RawTag(
             raw_uid="new-tag-1",
@@ -72,7 +72,7 @@ class TestNormalizerInfo:
             categories={TagCategory.test_raw},
         )
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def raw_tag_2(self) -> RawTag:
         return RawTag(
             raw_uid="new-tag-2",
@@ -80,7 +80,7 @@ class TestNormalizerInfo:
             categories={TagCategory.test_raw},
         )
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def raw_tags(self, raw_tag_1: RawTag, raw_tag_2: RawTag) -> list[RawTag]:
         return [raw_tag_1, raw_tag_2]
 

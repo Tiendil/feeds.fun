@@ -21,10 +21,10 @@ class TestEntriesProcessors:
         await operations.clear_processor_queue(fake_entries_processor.id)
         await make.end_processor_pointer(fake_entries_processor.id)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await fake_entries_processor.single_run()
 
-        assert_logs(logs, no_entries_to_process=1)
+        assert_logs(logs, no_entries_to_process=1)  # type: ignore
 
     @pytest.mark.asyncio
     async def test_entries_more_than_concurrency(
@@ -39,10 +39,10 @@ class TestEntriesProcessors:
 
         assert fake_entries_processor.concurrency <= len(entries)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await fake_entries_processor.single_run()
 
-        assert_logs(logs, no_entries_to_process=0)
+        assert_logs(logs, no_entries_to_process=0)  # type: ignore
 
         tags = await o_domain.get_tags_ids_for_entries(list(entries))
 
@@ -67,10 +67,10 @@ class TestEntriesProcessors:
 
         assert fake_entries_processor.concurrency > len(entries)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await fake_entries_processor.single_run()
 
-        assert_logs(logs, no_entries_to_process=0)
+        assert_logs(logs, no_entries_to_process=0)  # type: ignore
 
         tags = await o_domain.get_tags_ids_for_entries(list(entries))
 
@@ -98,10 +98,10 @@ class TestEntriesProcessors:
 
         assert fake_entries_processor.concurrency >= len(entries) + len(fake_entries_ids)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await fake_entries_processor.single_run()
 
-        assert_logs(logs, no_entries_to_process=0, unexisted_entry_in_queue=3)
+        assert_logs(logs, no_entries_to_process=0, unexisted_entry_in_queue=3)  # type: ignore
 
         tags = await o_domain.get_tags_ids_for_entries(list(entries))
 
@@ -126,13 +126,13 @@ class TestEntriesProcessors:
 
         entries_ids = [entry.id for entry in entries_list] + fake_entries_ids
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             entries_to_process, entries_to_remove = await fake_entries_processor.separate_entries(
                 entries_ids=entries_ids
             )
 
         assert_logs(
-            logs,
+            logs,  # type: ignore
             unexisted_entry_in_queue=3,
             entry_without_feeds_in_queue=0,
             proccessor_not_allowed_for_collections=0,
@@ -155,13 +155,13 @@ class TestEntriesProcessors:
 
         entries_ids = [entry.id for entry in entries_list]
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             entries_to_process, entries_to_remove = await fake_entries_processor.separate_entries(
                 entries_ids=entries_ids
             )
 
         assert_logs(
-            logs,
+            logs,  # type: ignore
             unexisted_entry_in_queue=0,
             entry_without_feeds_in_queue=2,
             proccessor_not_allowed_for_collections=0,
@@ -192,13 +192,13 @@ class TestEntriesProcessors:
 
         fake_entries_processor._processor_info.allowed_for_collections = False
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             entries_to_process, entries_to_remove = await fake_entries_processor.separate_entries(
                 entries_ids=entries_ids
             )
 
         assert_logs(
-            logs,
+            logs,  # type: ignore
             unexisted_entry_in_queue=0,
             proccessor_not_allowed_for_collections=2,
             proccessor_not_allowed_for_users=0,
@@ -230,13 +230,13 @@ class TestEntriesProcessors:
 
         fake_entries_processor._processor_info.allowed_for_collections = False
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             entries_to_process, entries_to_remove = await fake_entries_processor.separate_entries(
                 entries_ids=entries_ids
             )
 
         assert_logs(
-            logs,
+            logs,  # type: ignore
             unexisted_entry_in_queue=0,
             proccessor_not_allowed_for_collections=4,
             proccessor_not_allowed_for_users=0,
@@ -267,13 +267,13 @@ class TestEntriesProcessors:
         fake_entries_processor._processor_info.allowed_for_collections = True
         fake_entries_processor._processor_info.allowed_for_users = True
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             entries_to_process, entries_to_remove = await fake_entries_processor.separate_entries(
                 entries_ids=entries_ids
             )
 
         assert_logs(
-            logs,
+            logs,  # type: ignore
             unexisted_entry_in_queue=0,
             proccessor_not_allowed_for_collections=0,
             proccessor_not_allowed_for_users=0,
@@ -302,13 +302,13 @@ class TestEntriesProcessors:
 
         fake_entries_processor._processor_info.allowed_for_users = False
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             entries_to_process, entries_to_remove = await fake_entries_processor.separate_entries(
                 entries_ids=entries_ids
             )
 
         assert_logs(
-            logs,
+            logs,  # type: ignore
             unexisted_entry_in_queue=0,
             proccessor_not_allowed_for_collections=0,
             proccessor_not_allowed_for_users=3,

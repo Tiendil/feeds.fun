@@ -52,8 +52,8 @@ class Comparator:
 
         new_value = self.producer()  # type: ignore
 
-        if self.validate(self.old_value, new_value):
-            self.fail(self.old_value, new_value)
+        if self.validate(self.old_value, new_value):  # type: ignore
+            self.fail(self.old_value, new_value)  # type: ignore
 
     async def __aenter__(self) -> "Comparator":
         self.old_value = await self.producer()  # type: ignore
@@ -69,8 +69,8 @@ class Comparator:
 
         new_value = await self.producer()  # type: ignore
 
-        if self.validate(self.old_value, new_value):
-            self.fail(self.old_value, new_value)
+        if self.validate(self.old_value, new_value):  # type: ignore
+            self.fail(self.old_value, new_value)  # type: ignore
 
     def fail(self, old_value: object, new_value: object) -> None:
         pytest.fail(self.template.format(message=self.message, old_value=old_value, new_value=new_value))
@@ -97,14 +97,14 @@ class Increased(Comparator):
     message = "Value has not increased"
 
     def validate(self, old_value: object, new_value: object) -> bool:
-        return bool(old_value < new_value)
+        return bool(old_value < new_value)  # type: ignore
 
 
 class Decreased(Comparator):
     message = "Value has not decreased"
 
     def validate(self, old_value: object, new_value: object) -> bool:
-        return bool(old_value < new_value)
+        return bool(old_value < new_value)  # type: ignore
 
 
 class Delta(Comparator):
@@ -112,12 +112,12 @@ class Delta(Comparator):
         if "message" not in kwargs:
             kwargs["message"] = f"Value has not changed to delta {delta}"
 
-        super().__init__(producer, **kwargs)
+        super().__init__(producer, **kwargs)  # type: ignore
 
         self.delta = delta
 
     def validate(self, old_value: object, new_value: object) -> bool:
-        return bool(new_value - old_value != self.delta)
+        return bool(new_value - old_value != self.delta)  # type: ignore
 
 
 class TableSizeMixin:
@@ -133,7 +133,7 @@ class TableSizeDelta(Delta, TableSizeMixin):
         if "producer" not in kwargs:
             kwargs["producer"] = self._producer
 
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # type: ignore
 
         self.table = table
 
@@ -143,7 +143,7 @@ class TableSizeNotChanged(NotChanged, TableSizeMixin):
         if "producer" not in kwargs:
             kwargs["producer"] = self._producer
 
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # type: ignore
 
         self.table = table
 
@@ -153,7 +153,7 @@ class TableSizeDecreased(Decreased, TableSizeMixin):
         if "producer" not in kwargs:
             kwargs["producer"] = self._producer
 
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # type: ignore
 
         self.table = table
 
@@ -163,7 +163,7 @@ class TableSizeIncreased(Increased, TableSizeMixin):
         if "producer" not in kwargs:
             kwargs["producer"] = self._producer
 
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # type: ignore
 
         self.table = table
 
@@ -185,21 +185,23 @@ def assert_logs(logs: list[MutableMapping[str, object]], **kwargs: int) -> None:
 
 
 def assert_log_context_vars(**expected: object) -> None:
-    bound_vars = structlog_contextvars.get_contextvars()
+    bound_vars = structlog_contextvars.get_contextvars()  # type: ignore
 
     for key, value in expected.items():
-        assert bound_vars.get(key) == value, f"Key {key} = {bound_vars} not equal to expected {value}"
+        assert bound_vars.get(key) == value, f"Key {key} = {bound_vars} not equal to expected {value}"  # type: ignore
 
 
 def assert_logs_levels(logs: list[MutableMapping[str, object]], **kwargs: str) -> None:
     for record in logs:
         if record["event"] in kwargs:
-            assert record["log_level"] == kwargs[record["event"]], f"Log level is not equal to expected for {record}"
+            assert record["log_level"] == kwargs[record["event"]], (  # type: ignore
+                f"Log level is not equal to expected for {record}"
+            )
 
 
 def assert_logs_have_no_errors(logs: list[MutableMapping[str, object]]) -> None:
     for record in logs:
-        if record["log_level"].lower() == "error":
+        if record["log_level"].lower() == "error":  # type: ignore
             pytest.fail(f"Error found in logs: {record}")
 
 
@@ -214,24 +216,28 @@ def capture_logs() -> Generator[list[EventDict], None, None]:
     """
     cap = LogCapture()
 
-    processors = structlog_config.get_config()["processors"]
-    old_processors = processors.copy()
+    processors = structlog_config.get_config()["processors"]  # type: ignore
+    old_processors = processors.copy()  # type: ignore
     try:
         # clear processors list and use LogCapture for testing
-        processors.clear()
-        processors.append(structlog_contextvars.merge_contextvars)
-        processors.append(cap)
-        structlog_config.configure(processors=processors)
+        processors.clear()  # type: ignore
+        processors.append(structlog_contextvars.merge_contextvars)  # type: ignore
+        processors.append(cap)  # type: ignore
+        structlog_config.configure(processors=processors)  # type: ignore
         yield cap.entries
     finally:
         # remove LogCapture and restore original processors
-        processors.clear()
-        processors.extend(old_processors)
-        structlog_config.configure(processors=processors)
+        processors.clear()  # type: ignore
+        processors.extend(old_processors)  # type: ignore
+        structlog_config.configure(processors=processors)  # type: ignore
 
 
 def assert_logs_has_business_event(  # noqa: CCR001
-    logs: list[MutableMapping[str, object]], name: str, user_id: UserId | None, b_kind: str = "event", **attributes: object
+    logs: list[MutableMapping[str, object]],
+    name: str,
+    user_id: UserId | None,
+    b_kind: str = "event",
+    **attributes: object,
 ) -> None:
 
     if user_id is not None:
@@ -244,17 +250,19 @@ def assert_logs_has_business_event(  # noqa: CCR001
         assert "b_uid" in record, "b_uid not found in record"
 
         for key, value in attributes.items():
-            assert key in record["b_attributes"], f"Key {key} not found in record"
+            assert key in record["b_attributes"], f"Key {key} not found in record"  # type: ignore
             assert (
-                record["b_attributes"][key] == value
-            ), f"Key {key} = {record["b_attributes"][key]!r} not equal to expected {value!r}"
+                record["b_attributes"][key] == value  # type: ignore
+            ), f"Key {key} = {record["b_attributes"][key]!r} not equal to expected {value!r}"  # type: ignore
 
         break
     else:
         pytest.fail(f"Event {name} not found in logs")
 
 
-def assert_logs_has_no_business_event(logs: list[MutableMapping[str, object]], name: str, b_kind: str = "event") -> None:
+def assert_logs_has_no_business_event(
+    logs: list[MutableMapping[str, object]], name: str, b_kind: str = "event"
+) -> None:
     for record in logs:
         if record.get("b_kind") == b_kind and record["event"] == name:
             pytest.fail(f"Event {name} found in logs")
@@ -263,13 +271,13 @@ def assert_logs_has_no_business_event(logs: list[MutableMapping[str, object]], n
 def assert_logs_has_business_slice(*args: object, **kwargs: object) -> None:
     assert "b_kind" not in kwargs, "b_kind should not be passed to assert_logs_has_business_slice"
     kwargs["b_kind"] = "slice"
-    assert_logs_has_business_event(*args, **kwargs)
+    assert_logs_has_business_event(*args, **kwargs)  # type: ignore
 
 
 def assert_logs_has_no_business_slice(*args: object, **kwargs: object) -> None:
     assert "b_kind" not in kwargs, "b_kind should not be passed to assert_logs_has_business_slice"
     kwargs["b_kind"] = "slice"
-    assert_logs_has_no_business_event(*args, **kwargs)
+    assert_logs_has_no_business_event(*args, **kwargs)  # type: ignore
 
 
 def assert_compare_xml(a: str, b: str) -> None:

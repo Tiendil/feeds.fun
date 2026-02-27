@@ -146,7 +146,7 @@ class TestAddFeeds:
 # detailed cases are covered in tests of functions called in clean_orphaned_entries
 class TestCleanOrphanedEntries:
 
-    @pytest_asyncio.fixture(autouse=True)
+    @pytest_asyncio.fixture(autouse=True)  # type: ignore
     async def cleanup_orphaned_entries(self) -> None:
         await execute("DELETE FROM l_orphaned_entries")
 
@@ -173,7 +173,7 @@ class TestCleanOrphanedEntries:
 # detailed cases are covered in tests of functions called in clean_orphaned_entries
 class TestCleanOrphanedFeeds:
 
-    @pytest_asyncio.fixture(autouse=True)
+    @pytest_asyncio.fixture(autouse=True)  # type: ignore
     async def cleanup_orphaned_feeds(self) -> None:
         orphanes = await f_domain.get_orphaned_feeds(limit=10000, loaded_before=utils.now())
 
@@ -206,18 +206,20 @@ class TestCleanOrphanedFeeds:
 
         assert await clean_orphaned_feeds(chunk=100) == 3
 
-        assert unlink_feed_tail_mock.call_args_list == [mocker.call(feed.id, offset=0) for feed in feeds]
+        assert unlink_feed_tail_mock.call_args_list == [
+            mocker.call(feed.id, offset=0) for feed in feeds  # type: ignore
+        ]
 
-        assert tech_remove_feed_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]
+        assert tech_remove_feed_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]  # type: ignore
 
-        assert tech_remove_all_links.call_args_list == [mocker.call([feed.id for feed in feeds])]
+        assert tech_remove_all_links.call_args_list == [mocker.call([feed.id for feed in feeds])]  # type: ignore
 
 
 # test that everything is connected correctly
 # detailed cases are covered in tests of functions called in clean_orphaned_tags
 class TestCleanOrphanedTags:
 
-    @pytest_asyncio.fixture(autouse=True)
+    @pytest_asyncio.fixture(autouse=True)  # type: ignore
     async def cleanup_orphaned_tags(self) -> None:
         while await clean_orphaned_tags(chunk=10000):
             pass
@@ -241,8 +243,10 @@ class TestCleanOrphanedTags:
 
         assert await clean_orphaned_tags(chunk=100) == 7
 
-        assert get_all_tags_in_rules_mock.call_args_list == [mocker.call()]
-        assert remove_orphaned_tags_mock.call_args_list == [mocker.call(chunk=100, protected_tags=protected_tags)]
+        assert get_all_tags_in_rules_mock.call_args_list == [mocker.call()]  # type: ignore
+        assert remove_orphaned_tags_mock.call_args_list == [
+            mocker.call(chunk=100, protected_tags=protected_tags)  # type: ignore
+        ]
 
 
 # test that everything is connected correctly
@@ -259,8 +263,8 @@ class TestRemoveTags:
 
         await remove_tags(list(three_tags_ids))
 
-        assert remove_relations_for_tags.call_args_list == [mocker.call(list(three_tags_ids))]
-        assert remove_rules_with_tags.call_args_list == [mocker.call(list(three_tags_ids))]
+        assert remove_relations_for_tags.call_args_list == [mocker.call(list(three_tags_ids))]  # type: ignore
+        assert remove_rules_with_tags.call_args_list == [mocker.call(list(three_tags_ids))]  # type: ignore
 
 
 # test that everything is connected correctly
@@ -285,12 +289,22 @@ class TestApplyRenormalizedTags:
         )
 
         assert copy_tag_properties.call_args_list == [
-            mocker.call(processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[1])
+            mocker.call(  # type: ignore
+                processor_id=fake_processor_id,
+                old_tag_id=three_tags_ids[0],
+                new_tag_id=three_tags_ids[1],
+            )
         ]
         assert copy_relations.call_args_list == [
-            mocker.call(processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[1])
+            mocker.call(  # type: ignore
+                processor_id=fake_processor_id,
+                old_tag_id=three_tags_ids[0],
+                new_tag_id=three_tags_ids[1],
+            )
         ]
-        assert clone_rules_for_replacements.call_args_list == [mocker.call({three_tags_ids[0]: three_tags_ids[1]})]
+        assert clone_rules_for_replacements.call_args_list == [
+            mocker.call({three_tags_ids[0]: three_tags_ids[1]})  # type: ignore
+        ]
 
 
 class TestNormalizeTagUid:
@@ -303,7 +317,7 @@ class TestNormalizeTagUid:
 
     @pytest.mark.asyncio
     async def test_no_norm_forms(self, mocker: MockerFixture, fake_processor_id: int) -> None:
-        normalize = mocker.patch("ffun.tags.domain.normalize", return_value=[])
+        normalize = mocker.patch("ffun.tags.domain.normalize", return_value=[])  # type: ignore
 
         categories = {TagCategory.test_raw, TagCategory.test_final}
 
@@ -313,8 +327,8 @@ class TestNormalizeTagUid:
             old_tag_uid=old_tag_uid, categories=categories, processor_id=fake_processor_id
         ) == (False, [])
 
-        assert normalize.call_args_list == [
-            mocker.call([RawTag(raw_uid=old_tag_uid, link=None, categories=categories)])
+        assert normalize.call_args_list == [  # type: ignore
+            mocker.call([RawTag(raw_uid=old_tag_uid, link=None, categories=categories)])  # type: ignore
         ]
 
     @pytest.mark.asyncio
@@ -330,7 +344,7 @@ class TestNormalizeTagUid:
             [old_tag_uid, norm_tag_1.uid, norm_tag_2.uid]  # make sure tags exist in the database
         )
 
-        normalize = mocker.patch("ffun.tags.domain.normalize", return_value=[norm_tag_1, norm_tag_2])
+        normalize = mocker.patch("ffun.tags.domain.normalize", return_value=[norm_tag_1, norm_tag_2])  # type: ignore
 
         categories = {TagCategory.test_raw, TagCategory.test_final}
 
@@ -341,8 +355,8 @@ class TestNormalizeTagUid:
         assert not keep_old_tag
         assert set(new_tags) == {uids_to_ids[norm_tag_1.uid], uids_to_ids[norm_tag_2.uid]}
 
-        assert normalize.call_args_list == [
-            mocker.call([RawTag(raw_uid=old_tag_uid, link=None, categories=categories)])
+        assert normalize.call_args_list == [  # type: ignore
+            mocker.call([RawTag(raw_uid=old_tag_uid, link=None, categories=categories)])  # type: ignore
         ]
 
         properties = await o_domain.get_tags_properties([uids_to_ids[norm_tag_1.uid], uids_to_ids[norm_tag_2.uid]])
@@ -368,7 +382,9 @@ class TestNormalizeTagUid:
             [norm_tag_1.uid, norm_tag_2.uid, norm_tag_3.uid]  # make sure tags exist in the database
         )
 
-        normalize = mocker.patch("ffun.tags.domain.normalize", return_value=[norm_tag_1, norm_tag_2, norm_tag_3])
+        normalize = mocker.patch(
+            "ffun.tags.domain.normalize", return_value=[norm_tag_1, norm_tag_2, norm_tag_3]  # type: ignore
+        )
 
         categories = {TagCategory.test_raw, TagCategory.test_final}
 
@@ -379,8 +395,8 @@ class TestNormalizeTagUid:
         assert keep_old_tag
         assert set(new_tags) == {uids_to_ids[norm_tag_1.uid], uids_to_ids[norm_tag_3.uid]}
 
-        assert normalize.call_args_list == [
-            mocker.call([RawTag(raw_uid=norm_tag_2.uid, link=None, categories=categories)])
+        assert normalize.call_args_list == [  # type: ignore
+            mocker.call([RawTag(raw_uid=norm_tag_2.uid, link=None, categories=categories)])  # type: ignore
         ]
 
         properties = await o_domain.get_tags_properties(list(uids_to_ids.values()))
@@ -425,11 +441,17 @@ class TestRenormalizeTag:
         )
 
         assert normalize_tag_uid.call_args_list == [
-            mocker.call(old_tag_uid=three_processor_tags[0].uid, categories=categories, processor_id=fake_processor_id)
+            mocker.call(  # type: ignore
+                old_tag_uid=three_processor_tags[0].uid, categories=categories, processor_id=fake_processor_id
+            )
         ]
         assert apply_renormalized_tags.call_args_list == [
-            mocker.call(processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[1]),
-            mocker.call(processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[2]),
+            mocker.call(  # type: ignore
+                processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[1]
+            ),
+            mocker.call(  # type: ignore
+                processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[2]
+            ),
         ]
         assert remove_tags.call_args_list == []
 
@@ -458,13 +480,19 @@ class TestRenormalizeTag:
         )
 
         assert normalize_tag_uid.call_args_list == [
-            mocker.call(old_tag_uid=three_processor_tags[0].uid, categories=categories, processor_id=fake_processor_id)
+            mocker.call(  # type: ignore
+                old_tag_uid=three_processor_tags[0].uid, categories=categories, processor_id=fake_processor_id
+            )
         ]
         assert apply_renormalized_tags.call_args_list == [
-            mocker.call(processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[1]),
-            mocker.call(processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[2]),
+            mocker.call(  # type: ignore
+                processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[1]
+            ),
+            mocker.call(  # type: ignore
+                processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[2]
+            ),
         ]
-        assert remove_tags.call_args_list == [mocker.call([three_tags_ids[0]])]
+        assert remove_tags.call_args_list == [mocker.call([three_tags_ids[0]])]  # type: ignore
 
 
 # test that everything is connected correctly
@@ -545,18 +573,18 @@ class TestRenormalizeTags:
 
         await renormalize_tags([tag_ids[0], tag_ids[1], tag_ids[2], tag_ids[3]])
 
-        call_list = [
-            (
-                call.kwargs["old_tag_id"],
-                call.kwargs["old_tag_uid"],
-                call.kwargs["processor_id"],
-                frozenset(call.kwargs["categories"]),
+        call_list = [  # type: ignore
+            (  # type: ignore
+                call.kwargs["old_tag_id"],  # type: ignore
+                call.kwargs["old_tag_uid"],  # type: ignore
+                call.kwargs["processor_id"],  # type: ignore
+                frozenset(call.kwargs["categories"]),  # type: ignore
             )
             for call in renormalize_tag.call_args_list
         ]
-        call_list.sort()
+        call_list.sort()  # type: ignore
 
-        assert call_list == [
+        assert call_list == [  # type: ignore
             (tag_ids[0], tag_uids[0], fake_processor_id, frozenset({TagCategory.test_raw.value})),
             (
                 tag_ids[1],

@@ -257,7 +257,7 @@ class TestMarkFeedAsOrphaned:
 
 class TestGetOrphanedFeeds:
 
-    @pytest_asyncio.fixture(autouse=True)
+    @pytest_asyncio.fixture(autouse=True)  # type: ignore
     async def cleanup_orphaned_feeds(self) -> None:
         orphanes = await get_orphaned_feeds(limit=10000, loaded_before=utils.now())
 

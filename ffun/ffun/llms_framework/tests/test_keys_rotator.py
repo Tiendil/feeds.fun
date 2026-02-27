@@ -267,11 +267,11 @@ class TestGetUserKeyInfos:
 
 @pytest.mark.asyncio
 async def test_default_filters() -> None:
-    assert _filters == (
-        _filter_out_users_without_keys,
-        _filter_out_users_for_whome_entry_is_too_old,
-        _filter_out_users_with_wrong_keys,
-        _filter_out_users_with_overused_keys,
+    assert _filters == (  # type: ignore
+        _filter_out_users_without_keys,  # type: ignore
+        _filter_out_users_for_whome_entry_is_too_old,  # type: ignore
+        _filter_out_users_with_wrong_keys,  # type: ignore
+        _filter_out_users_with_overused_keys,  # type: ignore
     )
 
 
@@ -429,7 +429,7 @@ class TestFindBestUserWithKey:
         assert info.cost_used == USDCost(five_user_key_infos[0].cost_used + used_cost)
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def select_key_context(saved_feed_id: FeedId) -> SelectKeyContext:
     return SelectKeyContext(
         llm_config=_llm_config,
@@ -623,7 +623,7 @@ class TestChooseApiKey:
     async def test_key_not_found(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
         selectors = [self.create_selector(None), self.create_selector(None), self.create_selector(None)]
 
-        key_usage = await choose_api_key(fake_llm_provider, select_key_context, selectors=selectors)
+        key_usage = await choose_api_key(fake_llm_provider, select_key_context, selectors=selectors)  # type: ignore
 
         assert key_usage is None
 
@@ -639,7 +639,7 @@ class TestChooseApiKey:
             self.create_selector(None),
         ]
 
-        usage = await choose_api_key(fake_llm_provider, select_key_context, selectors=selectors)
+        usage = await choose_api_key(fake_llm_provider, select_key_context, selectors=selectors)  # type: ignore
 
         assert usage is not None
 
@@ -680,12 +680,12 @@ class TestUseApiKey:
             interval_started_at=interval_started_at,
         )
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             async with use_api_key(key_usage):
                 key_usage.used_cost = used_cost
 
         assert_logs_has_business_event(
-            logs,
+            logs,  # type: ignore
             "llm_api_key_used",
             user_id=internal_user_id,
             llm_provider=LLMProvider.test,
@@ -736,7 +736,7 @@ class TestUseApiKey:
             interval_started_at=interval_started_at,
         )
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             with pytest.raises(errors.UsedTokensHasNotSpecified):
                 async with use_api_key(key_usage):
                     assert key_usage.used_cost is None
@@ -745,7 +745,7 @@ class TestUseApiKey:
                     )
 
         assert_logs_has_business_event(
-            logs,
+            logs,  # type: ignore
             "llm_api_key_used",
             user_id=internal_user_id,
             llm_provider=LLMProvider.test,
@@ -800,13 +800,13 @@ class TestUseApiKey:
             interval_started_at=interval_started_at,
         )
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             with pytest.raises(FakeError):
                 async with use_api_key(key_usage):
                     raise FakeError()
 
         assert_logs_has_business_event(
-            logs,
+            logs,  # type: ignore
             "llm_api_key_used",
             user_id=internal_user_id,
             llm_provider=LLMProvider.test,
@@ -846,12 +846,12 @@ class TestUseApiKey:
             interval_started_at=interval_started_at,
         )
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             async with use_api_key(key_usage):
                 key_usage.used_cost = used_cost
 
         assert_logs_has_business_event(
-            logs,
+            logs,  # type: ignore
             "llm_api_key_used",
             user_id=None,
             llm_provider=LLMProvider.test,

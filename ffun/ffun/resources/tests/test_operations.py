@@ -17,7 +17,7 @@ from ffun.resources.operations import (
 )
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def interval_started_at() -> datetime.datetime:
     return month_interval_start()
 

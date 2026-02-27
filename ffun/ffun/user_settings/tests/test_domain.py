@@ -60,7 +60,7 @@ class TestFullSettings:
     def test(self) -> None:
         values: dict[int, object] = {Setting.kind_integer: "666", Setting.kind_boolean: "false"}
 
-        settings = domain._full_settings(values, kinds=list(Setting), register=register)
+        settings = domain._full_settings(values, kinds=list(Setting), register=register)  # type: ignore
 
         assert settings == {
             Setting.kind_integer: 666,
@@ -72,7 +72,7 @@ class TestFullSettings:
     def test_skip_unknown(self) -> None:
         values: dict[int, object] = {Setting.kind_integer: "666", _kind_1: "123"}
 
-        settings = domain._full_settings(values, kinds=list(Setting) + [_kind_1], register=register)
+        settings = domain._full_settings(values, kinds=list(Setting) + [_kind_1], register=register)  # type: ignore
 
         assert settings == {
             Setting.kind_integer: 666,

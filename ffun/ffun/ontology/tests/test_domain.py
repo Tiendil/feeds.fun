@@ -371,7 +371,7 @@ class TestRemoveOrphanedTags:
 
         await operations.apply_tags(execute, cataloged_entry.id, fake_processor_id, [three_tags_ids[0]])
 
-        mocker.patch("ffun.ontology.operations.get_orphaned_tags", return_value=list(three_tags_ids))
+        mocker.patch("ffun.ontology.operations.get_orphaned_tags", return_value=list(three_tags_ids))  # type: ignore
 
         async with TableSizeNotChanged("o_tags"):
             async with TableSizeNotChanged("o_tags_properties"):

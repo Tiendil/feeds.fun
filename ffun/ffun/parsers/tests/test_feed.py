@@ -54,11 +54,11 @@ class TestParseFeed:
 
         mocker.patch("feedparser.parse", side_effect=ValueError("Test error in feedparser"))
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             feed_info = parse_feed("", to_feed_url(url))
 
         assert feed_info is None
-        assert_logs(logs, error_while_parsing_feed=1)
+        assert_logs(logs, error_while_parsing_feed=1)  # type: ignore
 
     @pytest.mark.parametrize("raw_fixture_name", feeds_fixtures_names())
     def test_on_row_fixtures(self, raw_fixture_name: str) -> None:
@@ -102,14 +102,14 @@ class TestParseFeed:
             if call_number["calls"] == 1:
                 raise ValueError("Test error on entry parsing")
 
-            return parse_entry(raw_entry, original_url)
+            return parse_entry(raw_entry, original_url)  # type: ignore
 
         mocker.patch("ffun.parsers.feed.parse_entry", side_effect=mocked_parse_entry)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             feed_info = parse_feed(raw_fixture, to_feed_url(url))
 
-        assert_logs(logs, error_while_parsing_feed_entry=1)
+        assert_logs(logs, error_while_parsing_feed_entry=1)  # type: ignore
 
         # the first entry will be skipped due to the error in parsing
         parsed_expected_fixture = json.parse(expected_fixture)

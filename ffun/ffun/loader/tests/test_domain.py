@@ -130,10 +130,10 @@ class TestSyncFeedInfo:
 class TestStoreEntries:
     @pytest.mark.asyncio
     async def test_no_entries(self, saved_feed: f_entities.Feed) -> None:
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await store_entries(saved_feed, [])
 
-        assert_logs(logs, news_entries_stored=0)
+        assert_logs(logs, news_entries_stored=0)  # type: ignore
 
         entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=1)
 
@@ -145,11 +145,11 @@ class TestStoreEntries:
 
         entry_infos = [p_make.fake_entry_info() for _ in range(n)]
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await store_entries(saved_feed, entry_infos)
 
         assert_logs_has_business_event(
-            logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=n
+            logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=n  # type: ignore
         )
 
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
@@ -173,11 +173,11 @@ class TestStoreEntries:
         entry_infos = [p_make.fake_entry_info() for _ in range(n)]
         entry_infos.sort(key=lambda e: e.title)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await store_entries(saved_feed, entry_infos[:m])
 
         assert_logs_has_business_event(
-            logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=m
+            logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=m  # type: ignore
         )
 
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
@@ -190,11 +190,11 @@ class TestStoreEntries:
             assert entry.source_id == saved_feed.source_id
             assert_entriy_equal_to_info(entry_info, entry)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await store_entries(saved_feed, entry_infos)
 
         assert_logs_has_business_event(
-            logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=n - m
+            logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=n - m  # type: ignore
         )
 
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
@@ -261,10 +261,10 @@ class TestProcessFeed:
 
         await fl_domain.add_link(internal_user_id, saved_feed.id)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await process_feed(feed=saved_feed)
 
-        assert_logs(logs, feed_has_no_entries_tail=1, feed_entries_tail_removed=0)
+        assert_logs(logs, feed_has_no_entries_tail=1, feed_entries_tail_removed=0)  # type: ignore
 
         extract_feed_info.assert_called_once_with(feed_id=saved_feed.id, feed_url=saved_feed.url)
 
@@ -305,10 +305,10 @@ class TestProcessFeed:
 
         await fl_domain.add_link(internal_user_id, saved_feed.id)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await process_feed(feed=saved_feed)
 
-        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)
+        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
 
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 
@@ -334,10 +334,10 @@ class TestProcessFeed:
 
         await fl_domain.add_link(internal_user_id, saved_feed.id)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await process_feed(feed=saved_feed)
 
-        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)
+        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
 
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 

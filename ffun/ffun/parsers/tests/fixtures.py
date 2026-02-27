@@ -3,7 +3,7 @@ import pytest
 from ffun.parsers.tests.helpers import feeds_fixtures_directory, feeds_fixtures_names
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def raw_feed_content() -> str:
     fixture_filename = feeds_fixtures_names()[0]
 
@@ -11,7 +11,7 @@ def raw_feed_content() -> str:
         return f.read()
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def another_raw_feed_content() -> str:
     fixture_filename = feeds_fixtures_names()[1]
 

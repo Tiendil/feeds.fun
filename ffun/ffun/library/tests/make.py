@@ -25,7 +25,7 @@ def fake_body() -> str:
 def fake_entry(
     source_id: SourceId,
     *,
-    id: uuid.UUID | None = None,
+    id: EntryId | uuid.UUID | None = None,
     title: str | None = None,
     body: str | None = None,
     external_id: str | None = None,
@@ -35,9 +35,10 @@ def fake_entry(
     cataloged_at: datetime.datetime | None = None,
 ) -> Entry:
     resolved_external_url = fake_url() if external_url is None else external_url
+    resolved_entry_id = new_entry_id() if id is None else EntryId(id)
 
     return Entry(
-        id=new_entry_id() if id is None else id,
+        id=resolved_entry_id,
         source_id=source_id,
         title=fake_title() if title is None else title,
         body=fake_body() if body is None else body,

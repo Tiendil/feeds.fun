@@ -13,7 +13,7 @@ from ffun.tags.entities import TagCategory
 
 class TestProcessor:
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def llm_config(self) -> LLMConfiguration:
         return LLMConfiguration(
             model="test-model-1",
@@ -24,7 +24,7 @@ class TestProcessor:
             top_p=0,
         )
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def llm_processor(self, llm_config: LLMConfiguration) -> Processor:
         return Processor(
             name="test-llm-processor",

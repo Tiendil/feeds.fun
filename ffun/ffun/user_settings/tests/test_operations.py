@@ -21,20 +21,26 @@ class TestSave:
 
     @pytest.mark.asyncio
     async def test_save_business_event(self, internal_user_id: UserId) -> None:
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await operations.save_setting(internal_user_id, _kind_1, "xxx")
 
-        assert_logs_has_business_event(logs, "setting_updated", user_id=internal_user_id, kind=_kind_1, first_set=True)
+        assert_logs_has_business_event(
+            logs,  # type: ignore
+            "setting_updated",
+            user_id=internal_user_id,
+            kind=_kind_1,
+            first_set=True,
+        )
 
     @pytest.mark.asyncio
     async def test_update_on_existed_setting(self, internal_user_id: UserId) -> None:
         await operations.save_setting(internal_user_id, _kind_1, "xxx")
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await operations.save_setting(internal_user_id, _kind_1, "yyy")
 
         assert_logs_has_business_event(
-            logs, "setting_updated", user_id=internal_user_id, kind=_kind_1, first_set=False
+            logs, "setting_updated", user_id=internal_user_id, kind=_kind_1, first_set=False  # type: ignore
         )
 
     @pytest.mark.asyncio

@@ -17,13 +17,13 @@ def another_new_entry(another_loaded_feed: Feed) -> Entry:
     return l_make.fake_entry(another_loaded_feed.source_id)
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture  # type: ignore
 async def cataloged_entry(loaded_feed_id: FeedId, new_entry: Entry) -> Entry:
     await catalog_entries(loaded_feed_id, [new_entry])
     return await get_entry(new_entry.id)
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture  # type: ignore
 async def another_cataloged_entry(another_loaded_feed_id: FeedId, another_new_entry: Entry) -> Entry:
     await catalog_entries(another_loaded_feed_id, [another_new_entry])
     return await get_entry(another_new_entry.id)

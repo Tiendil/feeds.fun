@@ -5,17 +5,17 @@ from ffun.librarian.entities import ProcessorType
 from ffun.librarian.processors.base import AlwaysConstantProcessor
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def fake_processor_id() -> int:
     return 11042
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def another_fake_processor_id() -> int:
     return 11043
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def fake_processor_info(fake_processor_id: int) -> ProcessorInfo:
     return ProcessorInfo(
         id=fake_processor_id,
@@ -29,6 +29,6 @@ def fake_processor_info(fake_processor_id: int) -> ProcessorInfo:
     )
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def fake_entries_processor(fake_processor_info: ProcessorInfo) -> EntriesProcessor:
     return EntriesProcessor(processor_info=fake_processor_info, name="fake_entries_processor", delay_between_runs=0.1)

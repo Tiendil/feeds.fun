@@ -8,22 +8,22 @@ from ffun.domain.entities import UserId
 from ffun.users.domain import get_or_create_user_id
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture  # type: ignore
 async def internal_user_id(external_user_id: str) -> UserId:
     return await get_or_create_user_id(primary_oidc_service_id, external_user_id)
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture  # type: ignore
 async def another_internal_user_id(another_external_user_id: str) -> UserId:
     return await get_or_create_user_id(primary_oidc_service_id, another_external_user_id)
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def five_external_user_ids() -> list[str]:
     return [f"external-user-{uuid.uuid4().hex}" for _ in range(5)]
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture  # type: ignore
 async def five_internal_user_ids(five_external_user_ids: list[str]) -> list[UserId]:
     return [
         await get_or_create_user_id(primary_oidc_service_id, external_user_id)
