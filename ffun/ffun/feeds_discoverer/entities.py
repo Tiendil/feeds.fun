@@ -1,4 +1,5 @@
 import enum
+from collections.abc import Awaitable
 from typing import Protocol, Union, runtime_checkable
 
 import pydantic
@@ -8,10 +9,12 @@ from ffun.core.entities import BaseEntity
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.parsers import entities as p_entities
 
+DiscoverResult = tuple["Context", Union[None, "Result"]]
+
 
 @runtime_checkable
 class Discoverer(Protocol):
-    async def __call__(self, context: "Context") -> tuple["Context", Union[None, "Result"]]:
+    def __call__(self, context: "Context") -> Awaitable[DiscoverResult]:
         pass
 
 

@@ -1,3 +1,5 @@
+from typing import TypedDict, Unpack
+
 import httpx
 import pytest
 from pytest_mock import MockerFixture
@@ -21,12 +23,19 @@ from ffun.feeds_discoverer.domain import (
     discover,
     visited_cache,
 )
-from ffun.feeds_discoverer.entities import Context, Result, Status
+from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 
 
-def build_context(url: str, **kwargs: object) -> Context:
+class _ContextParams(TypedDict, total=False):
+    content: str | None
+    depth: int
+    candidate_urls: set[AbsoluteUrl]
+    discoverers: list[Discoverer]
+
+
+def build_context(url: str, **kwargs: Unpack[_ContextParams]) -> Context:
     prepered_url = str_to_feed_url(url)
-    return Context(raw_url=UnknownUrl(url), url=prepered_url, host=url_to_host(prepered_url), **kwargs)  # type: ignore
+    return Context(raw_url=UnknownUrl(url), url=prepered_url, host=url_to_host(prepered_url), **kwargs)
 
 
 class TestDiscoverAdjustUrl:
@@ -302,7 +311,7 @@ class TestDiscoverCheckParentUrls:
     async def test_parents(self) -> None:
         context = context = build_context(
             "http://example.com",
-            discoverers=_discoverers,  # type: ignore
+            discoverers=_discoverers,
         )
 
         new_context, result = await _discover_check_parent_urls(context)
@@ -319,7 +328,7 @@ class TestDiscoverCheckParentUrls:
 
         context = build_context(
             "http://localhost/test/feed",
-            discoverers=_discoverers,  # type: ignore
+            discoverers=_discoverers,
         )
 
         new_context, result = await _discover_check_parent_urls(context)
@@ -359,7 +368,7 @@ class TestDiscoverCheckParentUrls:
 
         context = build_context(
             "http://localhost/test/abc",
-            discoverers=_discoverers,  # type: ignore
+            discoverers=_discoverers,
         )
 
         new_context, result = await _discover_check_parent_urls(context)
@@ -383,7 +392,7 @@ class TestDiscoverCheckCandidateLinks:
         context = Context(
             raw_url=UnknownUrl("http://localhost/test/xxx"),
             candidate_urls=set(),
-            discoverers=_discoverers,  # type: ignore
+            discoverers=_discoverers,
         )
 
         new_context, result = await _discover_check_candidate_links(context)
@@ -402,7 +411,7 @@ class TestDiscoverCheckCandidateLinks:
                 AbsoluteUrl("http://localhost/feed1"),
                 AbsoluteUrl("http://localhost/feed2"),
             },
-            discoverers=_discoverers,  # type: ignore
+            discoverers=_discoverers,
         )
 
         new_context, result = await _discover_check_candidate_links(context)
@@ -430,7 +439,7 @@ class TestDiscoverCheckCandidateLinks:
                 AbsoluteUrl("http://localhost/feed2"),
                 AbsoluteUrl("http://localhost/feed1"),
             },
-            discoverers=_discoverers,  # type: ignore
+            discoverers=_discoverers,
         )
 
         new_context, result = await _discover_check_candidate_links(context)
@@ -458,7 +467,7 @@ class TestDiscoverCheckCandidateLinks:
                 AbsoluteUrl("http://localhost/feed2"),
                 AbsoluteUrl("http://example.com/feed3"),
             },
-            discoverers=_discoverers,  # type: ignore
+            discoverers=_discoverers,
         )
 
         new_context, result = await _discover_check_candidate_links(context)
@@ -482,7 +491,7 @@ class TestDiscoverCheckCandidateLinks:
                 AbsoluteUrl("http://localhost/feed1"),
                 AbsoluteUrl("http://localhost/feed2"),
             },
-            discoverers=_discoverers,  # type: ignore
+            discoverers=_discoverers,
         )
 
         new_context, result = await _discover_check_candidate_links(context)
@@ -505,7 +514,7 @@ class TestDiscoverStopRecursion:
 
     @pytest.mark.asyncio
     async def test_depth_zero(self) -> None:
-        context = build_context("http://localhost/test", depth=0, discoverers=_discoverers)  # type: ignore
+        context = build_context("http://localhost/test", depth=0, discoverers=_discoverers)
 
         new_context, result = await _discover_stop_recursion(context)
 
@@ -515,7 +524,7 @@ class TestDiscoverStopRecursion:
 
     @pytest.mark.asyncio
     async def test_depth_not_zero(self) -> None:
-        context = build_context("http://localhost/test", depth=1, discoverers=_discoverers)  # type: ignore
+        context = build_context("http://localhost/test", depth=1, discoverers=_discoverers)
 
         new_context, result = await _discover_stop_recursion(context)
 

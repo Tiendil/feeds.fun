@@ -353,7 +353,7 @@ async def _discover_extract_feeds_for_reddit(context: Context) -> tuple[Context,
 # Note: we do not add internal feed discoverer here (like db check: url -> uid -> feed_id), because
 #       - we do not expect significant performance improvement
 #       - internal feed data (news list) may be slightly outdated (not containing the latest news)
-_discoverers = [  # type: ignore
+_discoverers: list[Discoverer] = [
     _discover_adjust_url,
     # This Reddit urls hack MUST go before loading url
     # because Reddit blocks access to the non-rss urls for bots
