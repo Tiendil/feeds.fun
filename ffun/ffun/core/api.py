@@ -39,6 +39,6 @@ class APIError(BaseEntity):
     status: APIStatuses = APIStatuses.error
     code: str
     message: str = "Unknown error"
-    data: dict[str, Any] | None = None
+    data: dict[str, object] | None = None
 
     model_config = pydantic.ConfigDict(title="API Error")

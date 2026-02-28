@@ -132,6 +132,7 @@ types-python-slugify = "8.0.*"
 types-setuptools = "80.9.*"
 types-tabulate = "0.9.*"
 types-beautifulsoup4 = "4.12.*"
+types-orjson = "3.6.*"
 
 [project.scripts]
 ffun = "ffun.cli.cli:app"

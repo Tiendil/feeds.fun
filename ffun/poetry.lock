@@ -3664,6 +3664,18 @@ files = [
 types-webencodings = "*"
 
 [[package]]
+name = "types-orjson"
+version = "3.6.2"
+description = "Typing stubs for orjson"
+optional = false
+python-versions = "*"
+groups = ["dev"]
+files = [
+    {file = "types-orjson-3.6.2.tar.gz", hash = "sha256:cf9afcc79a86325c7aff251790338109ed6f6b1bab09d2d4262dd18c85a3c638"},
+    {file = "types_orjson-3.6.2-py3-none-any.whl", hash = "sha256:22ee9a79236b6b0bfb35a0684eded62ad930a88a56797fa3c449b026cf7dbfe4"},
+]
+
+[[package]]
 name = "types-python-slugify"
 version = "8.0.2.20240310"
 description = "Typing stubs for python-slugify"
@@ -4307,4 +4319,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "f7fd96853b40b49af5c37134d7343b4296ebec515b4f7d673bcde928014e6644"
+content-hash = "f960aef3400ab790e868b78000295342b38d8eb8d43ef2035f4048152103de6c"

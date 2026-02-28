@@ -209,7 +209,9 @@ class UserSettingKind(enum.StrEnum):
     def to_internal(self) -> int:
         from ffun.application.user_settings import UserSetting
 
-        return getattr(UserSetting, self.name)  # type: ignore
+        value: object = getattr(UserSetting, self.name)
+        assert isinstance(value, int)
+        return value
 
 
 class UserSetting(BaseEntity):
@@ -249,7 +251,9 @@ class ResourceKind(enum.StrEnum):
     def to_internal(self) -> int:
         from ffun.application.resources import Resource
 
-        return getattr(Resource, self.name)  # type: ignore
+        value: object = getattr(Resource, self.name)
+        assert isinstance(value, int)
+        return value
 
 
 class ResourceHistoryRecord(pydantic.BaseModel):
