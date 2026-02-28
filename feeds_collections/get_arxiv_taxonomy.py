@@ -99,7 +99,11 @@ def normalize(raw_categories: list[dict[str, str]]) -> list[dict[str, str]]:
 
     for raw_category in raw_categories:
 
-        cat_id, cat_name = CAT_ID_AND_NAME_REGEX.match(raw_category["name"]).groups()  # type: ignore
+        match = CAT_ID_AND_NAME_REGEX.match(raw_category["name"])
+        if match is None:
+            raise ValueError(f"Unexpected category format: {raw_category['name']}")
+
+        cat_id, cat_name = match.groups()
 
         cat_name = cat_name.strip()
 
