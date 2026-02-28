@@ -94,7 +94,7 @@ def parse(content: str) -> list[dict[str, str]]:  # noqa
 CAT_ID_AND_NAME_REGEX = re.compile(r"(.*) \((.*)\)")
 
 
-def normalize(raw_categories: list[dict[str, str]]) -> list[dict[str, str]]:
+def normalize(raw_categories: list[dict[str, str]]) -> list[dict[str, str]]:  # noqa: CCR001
     categories = []
 
     for raw_category in raw_categories:
