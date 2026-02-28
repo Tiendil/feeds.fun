@@ -22,7 +22,7 @@ def fake_body() -> str:
     return f"Entry Body: {uuid.uuid4().hex}"
 
 
-def fake_entry(
+def fake_entry(  # noqa: CFQ002, CCR001
     source_id: SourceId,
     *,
     id: EntryId | uuid.UUID | None = None,
