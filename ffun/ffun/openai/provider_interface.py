@@ -1,6 +1,6 @@
 import contextlib
 import functools
-from typing import Any, Generator, Sequence
+from typing import Generator, Sequence
 
 import openai
 import tiktoken
@@ -41,7 +41,7 @@ class OpenAIChatResponse(ChatResponse):
         return self.completion_tokens
 
 
-@functools.cache
+@functools.cache  # type: ignore
 def _get_encoding(model: str) -> tiktoken.Encoding:
     """Get tiktoken encoding for a given model.
 
@@ -101,7 +101,7 @@ class OpenAIInterface(ProviderInterface):
 
             # TODO: if would be nice to specify for each model which parameters are supported
             #       but for now it is too much work
-            attributes: dict[str, Any] = {
+            attributes: dict[str, object] = {
                 "store": False,
                 "model": config.model,
                 "max_output_tokens": config.max_return_tokens,
@@ -119,11 +119,13 @@ class OpenAIInterface(ProviderInterface):
                 if "text" not in attributes:
                     attributes["text"] = {}
 
-                attributes["text"]["verbosity"] = config.verbosity
+                attributes["text"]["verbosity"] = config.verbosity  # type: ignore
 
             if config.reasoning_effort is not None:
                 if "reasoning" not in attributes:
                     attributes["reasoning"] = {}
+
+                assert isinstance(attributes["reasoning"], dict)
 
                 attributes["reasoning"]["effort"] = config.reasoning_effort
 
@@ -141,7 +143,7 @@ class OpenAIInterface(ProviderInterface):
                 ]
 
             with track_key_status(api_key, self.api_keys_statuses):
-                answer = await _client(api_key=api_key).responses.create(**attributes)
+                answer = await _client(api_key=api_key).responses.create(**attributes)  # type: ignore
         except openai.APIError as e:
             message = str(e)
             logger.info("openai_api_error", message=message)
@@ -149,28 +151,25 @@ class OpenAIInterface(ProviderInterface):
 
         logger.info("openai_response")
 
-        assert answer.usage is not None
-        assert answer.output is not None
-
         content = None
 
         if tool_used:
-            for output in answer.output:
-                if output.type == "custom_tool_call":
-                    content = output.input
+            for output in answer.output:  # type: ignore
+                if output.type == "custom_tool_call":  # type: ignore
+                    content = output.input  # type: ignore
                     break
         else:
-            content = answer.output_text
+            content = answer.output_text  # type: ignore
 
-        if content is None:
-            logger.error("openai_no_output", answer=repr(answer))
+        if content is None:  # type: ignore
+            logger.error("openai_no_output", answer=repr(answer))  # type: ignore
             raise llmsf_errors.TemporaryError(message="Could not get output from OpenAI response")
 
         return OpenAIChatResponse(
-            content=content,
-            prompt_tokens=answer.usage.input_tokens,
-            completion_tokens=answer.usage.output_tokens,
-            total_tokens=answer.usage.total_tokens,
+            content=content,  # type: ignore
+            prompt_tokens=answer.usage.input_tokens,  # type: ignore
+            completion_tokens=answer.usage.output_tokens,  # type: ignore
+            total_tokens=answer.usage.total_tokens,  # type: ignore
         )
 
     def prepare_requests(self, config: LLMConfiguration, text: str) -> Sequence[OpenAIChatRequest]:

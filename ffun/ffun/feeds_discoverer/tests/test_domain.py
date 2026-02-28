@@ -1,4 +1,4 @@
-from typing import Any
+from typing import TypedDict, Unpack
 
 import httpx
 import pytest
@@ -23,10 +23,17 @@ from ffun.feeds_discoverer.domain import (
     discover,
     visited_cache,
 )
-from ffun.feeds_discoverer.entities import Context, Result, Status
+from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 
 
-def build_context(url: str, **kwargs: Any) -> Context:
+class _ContextParams(TypedDict, total=False):
+    content: str | None
+    depth: int
+    candidate_urls: set[AbsoluteUrl]
+    discoverers: list[Discoverer]
+
+
+def build_context(url: str, **kwargs: Unpack[_ContextParams]) -> Context:
     prepered_url = str_to_feed_url(url)
     return Context(raw_url=UnknownUrl(url), url=prepered_url, host=url_to_host(prepered_url), **kwargs)
 
@@ -383,7 +390,9 @@ class TestDiscoverCheckCandidateLinks:
     @pytest.mark.asyncio
     async def test_no_links(self) -> None:
         context = Context(
-            raw_url=UnknownUrl("http://localhost/test/xxx"), candidate_urls=set(), discoverers=_discoverers
+            raw_url=UnknownUrl("http://localhost/test/xxx"),
+            candidate_urls=set(),
+            discoverers=_discoverers,
         )
 
         new_context, result = await _discover_check_candidate_links(context)
@@ -417,7 +426,7 @@ class TestDiscoverCheckCandidateLinks:
     async def test_works__duplicated_feeds_detected(self, mocker: MockerFixture) -> None:
         checked_links = []
 
-        async def fake_discover(url: Any, *argv: Any, **kwargs: Any) -> Result:
+        async def fake_discover(url: object, *argv: object, **kwargs: object) -> Result:
             checked_links.append(url)
             return Result(feeds=[], status=Status.no_feeds_found)
 
@@ -445,7 +454,7 @@ class TestDiscoverCheckCandidateLinks:
     async def test_works__host_change_detected(self, mocker: MockerFixture) -> None:
         checked_links = []
 
-        async def fake_discover(url: Any, *argv: Any, **kwargs: Any) -> Result:
+        async def fake_discover(url: object, *argv: object, **kwargs: object) -> Result:
             checked_links.append(url)
             return Result(feeds=[], status=Status.no_feeds_found)
 
@@ -579,7 +588,7 @@ class TestDiscoverExtractFeedsForReddit:
 
 
 def test_discoverers_list_not_changed() -> None:
-    assert _discoverers == [
+    assert _discoverers == [  # type: ignore
         _discover_adjust_url,
         _discover_extract_feeds_for_reddit,
         _discover_check_candidate_links,

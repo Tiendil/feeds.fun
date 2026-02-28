@@ -120,7 +120,7 @@ async def run_fill_db(feeds_number: int, entries_per_feed: int, tags_per_entry: 
                 await apply_tags_to_entry(entry.id, 100500, tags)
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def fill_db(
     feeds_number: int = 10, entries_per_feed: int = 100, tags_per_entry: int = 25, external_user_id: str = "dev-user"
 ) -> None:

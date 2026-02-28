@@ -1,7 +1,8 @@
 import re
 
-RE_DOG_TAG = re.compile(r"@([\w\d-]+)")
+RE_DOG_TAG: re.Pattern[str] = re.compile(r"@([\w\d-]+)")
 
 
 def dog_tags_extractor(text: str) -> set[str]:
-    return set(tag.lower() for tag in RE_DOG_TAG.findall(text))
+    results: list[str] = RE_DOG_TAG.findall(text)
+    return {tag.lower() for tag in results}

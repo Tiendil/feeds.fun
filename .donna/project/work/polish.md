@@ -56,7 +56,7 @@ goto_on_failure = "fix_frontend_tests"
 
 set -e
 
-./bin/frontend-utils.sh npm run test:unit -- --run
+./bin/frontend-utils.sh npm run test:unit -- --run --bail=1
 ```
 
 ## Fix frontend tests
@@ -265,6 +265,14 @@ kind = "donna.lib.request_action"
 1. Fix backend flake8 issues reported above.
 2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
 
+Instructions on fixing special cases:
+
+- `E800 Found commented out code` — remove the commented out code.
+- `CCR001 Cognitive complexity is too high` — ignore by adding `# noqa: CCR001` at the end of the line.
+- `CCR002 Function "x" has N arguments that exceeds max allowed M` — ignore by adding `# noqa: CCR002` at the end of the line.
+- `F821 undefined name` when there are missing imports — add the necessary import statements at the top of the file.
+- `F821 undefined name` in all other cases — ask the developer to fix it manually.
+
 ## Run backend semantic checks: mypy
 
 ```toml donna
@@ -296,6 +304,24 @@ kind = "donna.lib.request_action"
 
 1. Fix backend mypy issues reported above.
 2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
+
+Issues you are allowed to fix:
+
+- No type annotation in the code — add type annotations based on the code context.
+- Mismatched type annotations that are trivial to fix — fix them.
+- Type conversion issues when there are explicit type conversions functions implied in the code — fix them.
+- Type conversion issues when the data is received from external sources (like database) and the type is known to be correct.
+
+Instructions on fixing special cases:
+
+- "variable can be None" when None is not allowed — add `assert variable is not None` if that explicitly makes sense from the code flow.
+
+Changes you are not allowed to make:
+
+- Introducing new types.
+- Introducing new protocols.
+- Adding `type: ignore[import-untyped]`. If you need to use it, ask the developer to install the missing types first or to fix the issue manually.
+- Adding or removing attributes to classes. If you need to do it, ask the developer to fix the problem manually.
 
 ## Run backend semantic checks: poetry check
 

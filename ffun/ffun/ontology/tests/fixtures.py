@@ -9,22 +9,22 @@ from ffun.ontology.entities import NormalizedTag
 from ffun.tags.entities import TagCategory
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture  # type: ignore
 async def three_tags_by_uids() -> dict[TagUid, TagId]:
     return await get_ids_by_uids([uuid.uuid4().hex for _ in range(3)])  # type: ignore
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def three_tags_by_ids(three_tags_by_uids: dict[TagUid, TagId]) -> dict[TagId, TagUid]:
     return {v: k for k, v in three_tags_by_uids.items()}
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def three_tags_ids(three_tags_by_uids: dict[TagUid, TagId]) -> tuple[TagId, TagId, TagId]:
     return tuple(three_tags_by_uids.values())  # type: ignore
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def three_processor_tags(three_tags_by_ids: dict[TagId, TagUid]) -> tuple[NormalizedTag, NormalizedTag, NormalizedTag]:
     return tuple(
         NormalizedTag(uid=tag, link=None, categories={TagCategory.test_raw})
@@ -32,22 +32,22 @@ def three_processor_tags(three_tags_by_ids: dict[TagId, TagUid]) -> tuple[Normal
     )
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture  # type: ignore
 async def five_tags_by_uids() -> dict[TagUid, TagId]:
     return await get_ids_by_uids([uuid.uuid4().hex for _ in range(5)])  # type: ignore
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def five_tags_by_ids(five_tags_by_uids: dict[TagUid, TagId]) -> dict[TagId, TagUid]:
     return {v: k for k, v in five_tags_by_uids.items()}
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def five_tags_ids(five_tags_by_uids: dict[TagUid, TagId]) -> tuple[TagId, TagId, TagId, TagId, TagId]:
     return tuple(five_tags_by_uids.values())  # type: ignore
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def five_processor_tags(
     five_tags_by_ids: dict[TagId, TagUid],
 ) -> tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag]:

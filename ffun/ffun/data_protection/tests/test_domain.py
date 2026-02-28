@@ -15,10 +15,10 @@ class TestRemoveUser:
     async def test_no_user(self) -> None:
         user_id = new_user_id()
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await remove_user(user_id)
 
-        assert_logs_has_no_business_event(logs, "user_removed")
+        assert_logs_has_no_business_event(logs, "user_removed")  # type: ignore
 
     @pytest.mark.asyncio
     async def test_has_user_single_service(self, internal_user_id: UserId, mocker: MockerFixture) -> None:
@@ -27,11 +27,11 @@ class TestRemoveUser:
 
         assert await get_user_external_ids(internal_user_id)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await remove_user(internal_user_id)
 
         assert remove_user_from_external_service.call_count == 1
 
         assert not await get_user_external_ids(internal_user_id)
 
-        assert_logs_has_business_event(logs, "user_removed", user_id=internal_user_id)
+        assert_logs_has_business_event(logs, "user_removed", user_id=internal_user_id)  # type: ignore

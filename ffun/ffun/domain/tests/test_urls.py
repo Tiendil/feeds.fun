@@ -186,6 +186,10 @@ class TestUrlToUid:
     def test(self, url: AbsoluteUrl, uid: UrlUid) -> None:
         assert urls.url_to_uid(url) == uid
 
+    def test_unsupported_representation(self) -> None:
+        with pytest.raises(AssertionError, match="linted urls"):
+            urls.url_to_uid(AbsoluteUrl("at://did:plc:fakeperson000000000000000/app.bsky.actor.profile/self"))
+
 
 class TestUrlToSourceUid:
 
@@ -213,6 +217,10 @@ class TestUrlToSourceUid:
     )
     def test(self, url: AbsoluteUrl, source_uid: SourceUid) -> None:
         assert urls.url_to_source_uid(url) == source_uid
+
+    def test_unsupported_representation(self) -> None:
+        with pytest.raises(AssertionError, match="linted urls"):
+            urls.url_to_source_uid(AbsoluteUrl("at://did:plc:fakeperson000000000000000/app.bsky.actor.profile/self"))
 
 
 class TestCheckFurlError:
@@ -502,6 +510,10 @@ class TestGetParentUrl:
         assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/")) is None
         assert urls.get_parent_url(urls.str_to_absolute_url("https://subdomain.example.com")) is None
 
+    def test_unsupported_representation(self) -> None:
+        with pytest.raises(AssertionError, match="must always be parsable"):
+            urls.get_parent_url(AbsoluteUrl("at://did:plc:fakeperson000000000000000/app.bsky.actor.profile/self"))
+
     def test_has_parent(self) -> None:
         assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed")) == "https://example.com"
         assert urls.get_parent_url(urls.str_to_absolute_url("https://example.com/feed/")) == "https://example.com/feed"
@@ -547,3 +559,7 @@ class TestUrlToHost:
     )
     def test_has_host(self, url: AbsoluteUrl, host: str) -> None:
         assert urls.url_to_host(url) == host
+
+    def test_unsupported_representation(self) -> None:
+        with pytest.raises(NotImplementedError):
+            urls.url_to_host(AbsoluteUrl("at://did:plc:fakeperson000000000000000/app.bsky.actor.profile/self"))

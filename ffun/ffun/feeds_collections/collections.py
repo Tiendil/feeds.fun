@@ -52,9 +52,10 @@ class Collections:
         collections = []
 
         for path in collection_configs.glob("*.toml"):
-            data = toml.loads(path.read_text())
+            raw_body: str = path.read_text()
+            data: dict[str, object] = toml.loads(raw_body)
 
-            collection = Collection(**data)
+            collection = Collection(**data)  # type: ignore
 
             collections.append(collection)
 

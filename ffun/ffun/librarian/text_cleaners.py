@@ -1,4 +1,5 @@
 import re
+from typing import cast
 
 from bs4 import BeautifulSoup, Tag
 
@@ -10,10 +11,14 @@ def clear_nothing(text: str) -> str:
 def clear_html(text: str) -> str:
     soup = BeautifulSoup(text, "html.parser")
 
-    for tag in soup(["script", "style", "meta", "iframe", "img"]):
-        tag.decompose()
+    decomposed_tags = cast(list[Tag], soup.find_all(["script", "style", "meta", "iframe", "img"]))
 
-    for tag in soup():
+    for decomposed_tag in decomposed_tags:
+        decomposed_tag.decompose()
+
+    tags = cast(list[object], soup.find_all())
+
+    for tag in tags:
 
         if not isinstance(tag, Tag):
             continue

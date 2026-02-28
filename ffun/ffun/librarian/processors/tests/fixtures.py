@@ -14,7 +14,7 @@ def do_not_use_real_collection_api_keys_in_tests() -> None:
 
         tags_processor = processor.processor
 
-        assert isinstance(tags_processor, LLMGeneralProcessor)
+        assert isinstance(tags_processor, LLMGeneralProcessor)  # type: ignore
 
         assert tags_processor.collections_api_key is None, "You should disable the real API keys processors' settings"
 
@@ -28,6 +28,6 @@ def do_not_use_real_general_api_keys_in_tests() -> None:
 
         tags_processor = processor.processor
 
-        assert isinstance(tags_processor, LLMGeneralProcessor)
+        assert isinstance(tags_processor, LLMGeneralProcessor)  # type: ignore
 
         assert tags_processor.general_api_key is None, "You should disable the real API keys processors' settings"

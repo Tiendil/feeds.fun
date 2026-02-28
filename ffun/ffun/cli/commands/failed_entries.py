@@ -23,7 +23,7 @@ async def run_failed_entries_count() -> None:
     sys.stdout.write(tabulate(table, headers=["processor id", "processor name", "failed entries"], tablefmt="grid"))
 
 
-@app.command()
+@app.command()  # type: ignore
 def failed_entries_count() -> None:
     asyncio.run(run_failed_entries_count())
 
@@ -37,6 +37,6 @@ async def run_failed_enties_move_to_queue(processor_id: int, limit: int) -> None
         await count_failed_entries()
 
 
-@app.command()
+@app.command()  # type: ignore
 def failed_entries_move_to_queue(processor_id: int, limit: int) -> None:
     asyncio.run(run_failed_enties_move_to_queue(processor_id, limit))

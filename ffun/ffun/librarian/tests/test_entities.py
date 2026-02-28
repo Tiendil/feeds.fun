@@ -9,7 +9,7 @@ from ffun.llms_framework.entities import LLMApiKey, LLMConfiguration, LLMGeneral
 
 class TestLLMGeneralProcessor:
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def llm_config(self) -> LLMConfiguration:
         return LLMConfiguration(
             model="test-model",
@@ -38,7 +38,9 @@ class TestLLMGeneralProcessor:
                 general_api_key=None,
             )
 
-        assert exc_info.value.errors()[0]["type"] == "collections_or_general_key_required_for_collections"
+        assert (
+            exc_info.value.errors()[0]["type"] == "collections_or_general_key_required_for_collections"  # type: ignore
+        )
 
     @pytest.mark.parametrize("key_warning", [None, "wrong warning"])
     def test_general_api_key_warning_check__failed(
@@ -62,4 +64,4 @@ class TestLLMGeneralProcessor:
                 general_api_key_warning=key_warning,
             )
 
-        assert exc_info.value.errors()[0]["type"] == "you_must_confirm_general_api_key_usage"
+        assert exc_info.value.errors()[0]["type"] == "you_must_confirm_general_api_key_usage"  # type: ignore

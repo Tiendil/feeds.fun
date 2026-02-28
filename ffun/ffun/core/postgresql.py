@@ -1,7 +1,7 @@
 import asyncio
 import contextlib
 import functools
-from typing import Any, AsyncGenerator, Callable, Protocol
+from typing import Any, AsyncGenerator, Awaitable, Callable, Concatenate, ParamSpec, Protocol, TypeVar, cast
 
 import psycopg
 import psycopg_pool
@@ -14,7 +14,7 @@ from ffun.core import logging
 logger = logging.get_module_logger()
 
 
-class PostgreSQLArrayOperators(Comparator):  # type: ignore
+class PostgreSQLArrayOperators(Comparator):
     OVERLAPS = "&&"
 
 
@@ -22,7 +22,9 @@ MAX_INTEGER = 2147483647
 
 POOL: psycopg_pool.AsyncConnectionPool | None = None
 
-
+# TODO: we use Any here (and exclude this module from `Any` mypy checks)
+#       because *.operations modules require too many type conversions, and it's not worth to do it for now
+#       we should change approach in the future
 DB_RESULT = list[dict[str, Any]]
 SQL_ARGUMENTS = dict[str, Any] | tuple[list[Any]]
 
@@ -124,8 +126,7 @@ async def transaction(autocommit: bool = False) -> AsyncGenerator[ExecuteType, N
             await connection.set_autocommit(autocommit)
 
         async with connection.cursor() as cursor:
-            assert isinstance(cursor, PGAsyncCursor)
-            yield cursor.execute_and_extract
+            yield cursor.execute_and_extract  # type: ignore
 
 
 async def execute(command: str, arguments: SQL_ARGUMENTS | None = None) -> DB_RESULT:
@@ -133,10 +134,14 @@ async def execute(command: str, arguments: SQL_ARGUMENTS | None = None) -> DB_RE
         return await execute(command, arguments)
 
 
-def run_in_transaction(func: Callable[..., Any]) -> Callable[..., Any]:
+P = ParamSpec("P")
+T = TypeVar("T")
+
+
+def run_in_transaction(func: Callable[Concatenate[ExecuteType, P], Awaitable[T]]) -> Callable[P, Awaitable[T]]:
     @functools.wraps(func)
-    async def wrapper(*argv: Any, **kwargs: Any) -> Any:
+    async def wrapper(*argv: P.args, **kwargs: P.kwargs) -> T:
         async with transaction() as execute:
             return await func(execute, *argv, **kwargs)
 
-    return wrapper
+    return cast(Callable[P, Awaitable[T]], wrapper)

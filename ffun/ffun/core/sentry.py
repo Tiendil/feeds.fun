@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from sentry_sdk import init as initialize_sentry
 
@@ -13,20 +13,20 @@ import ffun
 from ffun.core.errors import Error
 
 
-def improve_fingerprint(event: "Event", hint: dict[str, Any]) -> "Event":
+def improve_fingerprint(event: "Event", hint: dict[str, object]) -> "Event":
     if "exc_info" not in hint:
-        return event
+        return event  # type: ignore
 
-    _, e, _ = hint["exc_info"]
+    _, e, _ = hint["exc_info"]  # type: ignore
 
-    if isinstance(e, Error) and e.fingerprint is not None:
+    if isinstance(e, Error) and e.fingerprint is not None:  # type: ignore
         event["fingerprint"] = ["{{ default }}", e.fingerprint]
 
-    return event
+    return event  # type: ignore
 
 
-def before_send(event: "Event", hint: dict[str, Any]) -> "Event":
-    return improve_fingerprint(event, hint)
+def before_send(event: "Event", hint: dict[str, object]) -> "Event":
+    return improve_fingerprint(event, hint)  # type: ignore
 
 
 def initialize(dsn: str, sample_rate: float, environment: str) -> None:
@@ -43,7 +43,7 @@ def initialize(dsn: str, sample_rate: float, environment: str) -> None:
         # Without this config Sentry miss important frames from stacktraces
         add_full_stack=True,
         attach_stacktrace=True,
-        before_send=before_send,
+        before_send=before_send,  # type: ignore
         environment=environment,
         # set the correct project root directory
         project_root=ffun.__path__[0],

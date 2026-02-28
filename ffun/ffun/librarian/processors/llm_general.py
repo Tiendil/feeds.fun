@@ -43,7 +43,7 @@ class Processor(base.Processor):
         general_api_key: LLMGeneralApiKey | None,
         **kwargs: Any,
     ):
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # type: ignore
         self.llm_config = llm_config
         self.llm_provider = llm_providers.get(llm_provider).provider
         self.entry_template = entry_template

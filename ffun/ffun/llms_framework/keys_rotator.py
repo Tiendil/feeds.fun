@@ -170,11 +170,11 @@ async def _get_user_key_infos(  # pylint: disable=R0914
     return infos
 
 
-_filters = (
-    _filter_out_users_without_keys,
-    _filter_out_users_for_whome_entry_is_too_old,
-    _filter_out_users_with_wrong_keys,
-    _filter_out_users_with_overused_keys,
+_filters = (  # type: ignore
+    _filter_out_users_without_keys,  # type: ignore
+    _filter_out_users_for_whome_entry_is_too_old,  # type: ignore
+    _filter_out_users_with_wrong_keys,  # type: ignore
+    _filter_out_users_with_overused_keys,  # type: ignore
 )
 
 
@@ -191,12 +191,12 @@ async def _get_candidates(  # noqa
 
     infos = await _get_user_key_infos(llm.provider, user_ids, interval_started_at)
 
-    for _filter in filters:
+    for _filter in filters:  # type: ignore
 
         if not infos:
             return []
 
-        infos = await _filter(
+        infos = await _filter(  # type: ignore
             llm=llm, llm_config=llm_config, infos=infos, entry_age=entry_age, reserved_cost=reserved_cost
         )
 
@@ -274,7 +274,7 @@ async def _choose_collections_key(llm: ProviderInterface, context: SelectKeyCont
 async def _choose_user_key(llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage | None:
 
     if any(collections.has_feed(feed_id) for feed_id in context.feed_ids):
-        raise errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys(feed_ids=context.feed_ids)
+        raise errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys(feed_ids=str(context.feed_ids))
 
     info = await _find_best_user_with_key(
         llm=llm,

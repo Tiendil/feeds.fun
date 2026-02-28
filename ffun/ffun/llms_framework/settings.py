@@ -30,9 +30,9 @@ class Settings(BaseSettings):
     @pydantic.computed_field  # type: ignore
     @functools.cached_property
     def models(self) -> list[ModelInfo]:
-        data = toml.loads(self.models_descriptions.read_text())
+        data: dict[str, object] = toml.loads(self.models_descriptions.read_text())
 
-        return ModelInfos(**data).models
+        return ModelInfos(**data).models  # type: ignore
 
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_LLMS_FRAMEWORK_")
 

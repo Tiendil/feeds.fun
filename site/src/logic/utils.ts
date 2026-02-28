@@ -137,7 +137,7 @@ export function chooseTagByUsage({
     exclude = [];
   }
 
-  const tags = _.toPairs(tagsCount).sort((a, b) => {
+  const tags = _.toPairs(tagsCount).sort((a: [string, number], b: [string, number]) => {
     if (a[1] === b[1]) {
       return a[0].localeCompare(b[0]);
     }

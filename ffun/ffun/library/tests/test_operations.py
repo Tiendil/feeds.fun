@@ -259,11 +259,11 @@ class TestGetEntriesByIds:
 
 
 class TestGetEntriesByFilter:
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def time_border(self) -> datetime.datetime:
         return utils.now() - datetime.timedelta(days=1)
 
-    @pytest_asyncio.fixture
+    @pytest_asyncio.fixture  # type: ignore
     async def prepared_entries(
         self, loaded_feed: Feed, another_loaded_feed: Feed, time_border: datetime.datetime
     ) -> tuple[list[Entry], list[Entry]]:
@@ -370,7 +370,7 @@ class TestGetEntriesAfterPointer:
 
         await execute(
             "UPDATE l_entries SET created_at = %(created_at)s WHERE id = ANY(%(ids)s)",
-            {"created_at": base_time, "ids": [entry.id for entry in entries_list[1:5]]},
+            {"created_at": base_time, "ids": [entry.id for entry in entries_list[1:5]]},  # type: ignore
         )
 
         entries = await get_entries_by_ids(ids=[entry.id for entry in entries_list])  # type: ignore
@@ -447,12 +447,12 @@ class TestUnlinkFeedTail:
     async def test_zero_head(self, loaded_feed: Feed) -> None:
         await make.n_entries(loaded_feed, n=5)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
                     await unlink_feed_tail(loaded_feed.id, offset=0)
 
-        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)
+        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
 
         feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
 
@@ -462,12 +462,12 @@ class TestUnlinkFeedTail:
     async def test_not_excceed_limit(self, loaded_feed: Feed) -> None:
         entries = await make.n_entries_list(loaded_feed, n=5)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             async with TableSizeNotChanged("l_feeds_to_entries"):
                 async with TableSizeNotChanged("l_entries"):
                     await unlink_feed_tail(loaded_feed.id, offset=10)
 
-        assert_logs(logs, feed_has_no_entries_tail=1, feed_entries_tail_removed=0)
+        assert_logs(logs, feed_has_no_entries_tail=1, feed_entries_tail_removed=0)  # type: ignore
 
         feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
 
@@ -477,12 +477,12 @@ class TestUnlinkFeedTail:
     async def test_limit(self, loaded_feed: Feed) -> None:
         entries = await make.n_entries_list(loaded_feed, n=15)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
                     await unlink_feed_tail(loaded_feed.id, offset=10)
 
-        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)
+        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
 
         feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
 
@@ -528,7 +528,7 @@ class TestRemoveEntriesByIds:
 
 class TestGetOrphanedEntries:
 
-    @pytest_asyncio.fixture(autouse=True)
+    @pytest_asyncio.fixture(autouse=True)  # type: ignore
     async def cleanup_orphaned_entries(self) -> None:
         await execute("DELETE FROM l_orphaned_entries")
 

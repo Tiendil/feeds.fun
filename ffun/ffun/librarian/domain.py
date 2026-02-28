@@ -89,7 +89,7 @@ async def plan_processor_queue(processor_id: int, fill_when_below: int, chunk: i
     await push_entries_and_move_pointer(next_pointer, [entry[0] for entry in next_entries])
 
 
-@logging.function_args_to_log("processor.name", "entry.id")
+@logging.async_args_to_log("processor.name", "entry.id")
 async def process_entry(processor_id: int, processor: Processor, entry: Entry) -> None:
     logger.info("dicover_tags")
 
@@ -109,7 +109,7 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
 
         logger.info(
             "tags_found",
-            tags=sorted(tags_for_log),
+            tags=sorted(tags_for_log),  # type: ignore
             lost=raw_tags_for_log - tags_for_log,
             added=tags_for_log - raw_tags_for_log,  # type: ignore
         )
@@ -130,7 +130,7 @@ async def process_entry(processor_id: int, processor: Processor, entry: Entry) -
     except Exception as e:
         logger.exception("processor_failed")
         await operations.add_entries_to_failed_storage(processor_id, [entry.id])
-        raise errors.UnexpectedErrorInProcessor(processor_id=processor_id, entry_id=entry.id) from e
+        raise errors.UnexpectedErrorInProcessor(processor_id=processor_id, entry_id=str(entry.id)) from e
     finally:
         raw_tags_metric.flush_if_time()
         normalized_tags_metric.flush_if_time()

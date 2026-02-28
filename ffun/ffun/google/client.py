@@ -1,5 +1,5 @@
 import contextlib
-from typing import Any, Generator
+from typing import Generator
 
 import httpx
 
@@ -35,13 +35,13 @@ class Client:
 
     def _handle_response_status_errors(self, response: httpx.Response) -> None:
         if response.status_code == 429:
-            raise errors.QuotaError(message=response.content, status_code=response.status_code)
+            raise errors.QuotaError(message=response.content.decode("utf-8"), status_code=response.status_code)
 
         if response.status_code in (401, 403):
-            raise errors.AuthError(message=response.content, status_code=response.status_code)
+            raise errors.AuthError(message=response.content.decode("utf-8"), status_code=response.status_code)
 
         if response.status_code != 200:
-            raise errors.UnknownError(message=response.content, status_code=response.status_code)
+            raise errors.UnknownError(message=response.content.decode("utf-8"), status_code=response.status_code)
 
     # See https://ai.google.dev/api/generate-content#FinishReason
     def _handle_finish_reason(self, finish_reason: str) -> None:
@@ -60,14 +60,14 @@ class Client:
                 raise errors.UnknownFinishReasonError(reason=reason)
 
     # See https://ai.google.dev/api/generate-content#PromptFeedback
-    def _handle_prompt_feedback(self, prompt_feedback: dict[str, Any] | None) -> None:
+    def _handle_prompt_feedback(self, prompt_feedback: dict[str, object] | None) -> None:
         if prompt_feedback is None:
             return
 
         if "blockReason" not in prompt_feedback:
             return
 
-        raise errors.PromptBlocked(reason=prompt_feedback["blockReason"])
+        raise errors.PromptBlocked(reason=str(prompt_feedback["blockReason"]))
 
     async def generate_content(
         self,
@@ -94,34 +94,34 @@ class Client:
 
         self._handle_response_status_errors(response)
 
-        response_data = response.json()
+        response_data: dict[str, object] = response.json()
 
         # There is cases where no candidates are returned
         # => Check prompt feedback before processing candidates
         # See https://ai.google.dev/api/generate-content#generatecontentresponse
         # Also, it looks like `promptFeedback` is optional => we use `get` instead of `[]`
-        self._handle_prompt_feedback(response_data.get("promptFeedback"))
+        self._handle_prompt_feedback(response_data.get("promptFeedback"))  # type: ignore
 
-        candidate = response_data["candidates"][0]
+        candidate = response_data["candidates"][0]  # type: ignore
 
-        self._handle_finish_reason(candidate["finishReason"])
+        self._handle_finish_reason(candidate["finishReason"])  # type: ignore
 
         # Gemini API sometimes does not return `candidatesTokenCount`
         # we log such cases
-        if "candidatesTokenCount" not in response_data["usageMetadata"]:
+        if "candidatesTokenCount" not in response_data["usageMetadata"]:  # type: ignore
             logger.warning(
                 "gemini_api_missing_candidates_token_count",
                 response=response_data,
             )
 
         return GoogleChatResponse(
-            content=candidate["content"]["parts"][0]["text"],
-            prompt_tokens=response_data["usageMetadata"]["promptTokenCount"],
-            completion_tokens=response_data["usageMetadata"]["candidatesTokenCount"],
-            total_tokens=response_data["usageMetadata"]["totalTokenCount"],
+            content=candidate["content"]["parts"][0]["text"],  # type: ignore
+            prompt_tokens=response_data["usageMetadata"]["promptTokenCount"],  # type: ignore
+            completion_tokens=response_data["usageMetadata"]["candidatesTokenCount"],  # type: ignore
+            total_tokens=response_data["usageMetadata"]["totalTokenCount"],  # type: ignore
         )
 
-    async def list_models(self, timeout: float = settings.gemini_api_timeout) -> list[dict[str, Any]]:
+    async def list_models(self, timeout: float = settings.gemini_api_timeout) -> list[dict[str, object]]:
         headers = {"Content-Type": "application/json"}
 
         url = f"{self.entry_point}/models?key={self._api_key}"

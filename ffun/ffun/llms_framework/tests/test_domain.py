@@ -65,7 +65,7 @@ class TestSplitText:
 
 class TestSplitTextAccordingToTokens:
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def llm_config(self) -> LLMConfiguration:
         return LLMConfiguration(
             model="test-model-1",
@@ -121,7 +121,7 @@ class TestSplitTextAccordingToTokens:
 
 class TestSearchForAPIKey:
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def llm_config(self) -> LLMConfiguration:
         return LLMConfiguration(
             model="test-model-1",
@@ -188,7 +188,7 @@ class TestSearchForAPIKey:
 
 class TestCallLLM:
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def llm_config(self) -> LLMConfiguration:
         return LLMConfiguration(
             model="test-model-1",

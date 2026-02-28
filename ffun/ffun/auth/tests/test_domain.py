@@ -51,7 +51,10 @@ class TestLogoutUserFromAllSessions:
     @pytest.mark.asyncio
     async def test_logout_user(self, internal_user_id: UserId, mocker: MockerFixture) -> None:
         get_user_external_ids = mocker.patch("ffun.users.domain.get_user_external_ids")
-        get_user_external_ids.return_value = {primary_oidc_service_id: "oidc_id", single_user_service_id: "single_id"}
+        get_user_external_ids.return_value = {  # type: ignore
+            primary_oidc_service_id: "oidc_id",
+            single_user_service_id: "single_id",
+        }
 
         logout_user = mocker.patch("ffun.auth.domain.logout_user_from_all_sessions_in_service")
 

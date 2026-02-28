@@ -130,7 +130,7 @@ class TestLoadContent:
     async def test_expected_error(self, respx_mock: MockRouter) -> None:
         respx_mock.get("/test").mock(side_effect=httpx.ConnectTimeout("some message"))
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             with pytest.raises(errors.LoadError) as expected_error:
                 await load_content(
                     url=str_to_absolute_url("http://example.com/test"),
@@ -139,14 +139,14 @@ class TestLoadContent:
 
         assert expected_error.value.feed_error_code == FeedError.network_connection_timeout
 
-        assert_logs(logs, error_while_loading_feed=0)
-        assert_logs_have_no_errors(logs)
+        assert_logs(logs, error_while_loading_feed=0)  # type: ignore
+        assert_logs_have_no_errors(logs)  # type: ignore
 
     @pytest.mark.asyncio
     async def test_unexpected_error(self, respx_mock: MockRouter) -> None:
         respx_mock.get("/test").mock(side_effect=Exception("some message"))
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             with pytest.raises(errors.LoadError) as expected_error:
                 await load_content(
                     url=str_to_absolute_url("http://example.com/test"),
@@ -155,5 +155,5 @@ class TestLoadContent:
 
         assert expected_error.value.feed_error_code == FeedError.network_unknown
 
-        assert_logs(logs, error_while_loading_feed=1)
-        assert_logs_levels(logs, error_while_loading_feed="error")
+        assert_logs(logs, error_while_loading_feed=1)  # type: ignore
+        assert_logs_levels(logs, error_while_loading_feed="error")  # type: ignore

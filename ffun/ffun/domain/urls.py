@@ -1,7 +1,7 @@
 import contextlib
 import re
 import unicodedata
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, MutableMapping, Protocol, cast
 from urllib.parse import quote_plus, unquote
 
 import tldextract
@@ -19,6 +19,54 @@ logger = logging.get_module_logger()
 #            - that the logic of dependent functions is not broken
 #            - that the UIDs generation is not changed (check on backup)
 #            - in case UIDs generation is changed, you MUST update all affected entities
+
+
+###############
+# furl Protocol
+###############
+
+
+class FUrlPath(Protocol):
+    segments: list[str]
+
+    def __str__(self) -> str:
+        pass
+
+    def __eq__(self, other: object) -> bool:
+        pass
+
+
+class FUrlQuery(Protocol):
+    params: MutableMapping[str, str]
+
+    def __str__(self) -> str:
+        pass
+
+
+class FUrl(Protocol):
+    scheme: str | None
+    host: str | None
+    port: int | None
+    username: str | None
+    password: str | None
+
+    fragment: str | None
+
+    path: FUrlPath
+
+    query: FUrlQuery
+
+    def remove(self, *args: object, **kwargs: object) -> "FUrl":
+        pass
+
+    def join(self, url: str) -> "FUrl":
+        pass
+
+    def __str__(self) -> str:
+        pass
+
+
+###############
 
 
 RE_SCHEMA = re.compile(r"^(\w+):")
@@ -40,10 +88,10 @@ def check_furl_error() -> Iterator[None]:
         raise
 
 
-def construct_f_url(url: UnknownUrl | AbsoluteUrl | str) -> furl | None:
+def construct_f_url(url: UnknownUrl | AbsoluteUrl | str) -> FUrl | None:
     try:
         with check_furl_error():
-            return furl(url)
+            return furl(url)  # type: ignore
     except errors.ExpectedFUrlError:
         return None
 
@@ -100,7 +148,7 @@ def normalize_classic_unknown_url(url: UnknownUrl) -> AbsoluteUrl | None:  # noq
         return None
 
     if f_url.path == "/":
-        f_url.path = None
+        f_url.path = ""  # type: ignore
 
     if url.startswith("//"):
         return AbsoluteUrl(str(f_url))
@@ -156,8 +204,11 @@ def adjust_classic_full_url(url: UnknownUrl, original_url: AbsoluteUrl | FeedUrl
     fixed_url = normalize_classic_unknown_url(url)
     assert fixed_url is not None
 
-    f_original_url = furl(original_url)
-    f_url = furl(fixed_url)
+    f_original_url = construct_f_url(original_url)
+    f_url = construct_f_url(fixed_url)
+
+    if f_original_url is None or f_url is None:
+        return None
 
     # own schema has priority over origin schema
     # we expect that owner of site (who specify urls) know what they are doing
@@ -252,13 +303,17 @@ def url_to_uid(url: AbsoluteUrl | FeedUrl) -> UrlUid:
 
     normalized_url = unicodedata.normalize("NFC", normalized_url)
 
-    url_object = furl(normalized_url)
+    url_object = construct_f_url(normalized_url)
+
+    assert url_object is not None, "url_to_uid should be called only with linted urls, but got unparsable url"
 
     url_object.scheme = None
     url_object.port = None
     url_object.fragment = None
 
-    url_object.query.params = omdict(sorted(url_object.query.params.allitems()))
+    raw_params = cast(list[tuple[str, str]], url_object.query.params.allitems())  # type: ignore
+
+    url_object.query.params = omdict(sorted(raw_params))  # type: ignore
 
     # Attention: we must not remove username:password from the url
     #            because it will create a vector for hacking by accessing private news of other users
@@ -271,7 +326,7 @@ def url_to_uid(url: AbsoluteUrl | FeedUrl) -> UrlUid:
     if path and path[-1] == "/":
         path = path[:-1]
 
-    url_object.path = path
+    url_object.path = path  # type: ignore
 
     # unquote again because furl will quote all parts of the url
     resulted_url = unquote(str(url_object))
@@ -292,9 +347,13 @@ def url_to_source_uid(url: AbsoluteUrl | FeedUrl) -> SourceUid:
 
     normalized_url = unicodedata.normalize("NFC", url).lower().strip()
 
-    url_object = furl(normalized_url)
+    url_object = construct_f_url(normalized_url)
+
+    assert url_object is not None, "url_to_source_uid should be called only with linted urls, but got unparsable url"
 
     domain = url_object.host
+
+    assert domain is not None
 
     # TODO: move rules to settings
 
@@ -311,9 +370,9 @@ def url_to_source_uid(url: AbsoluteUrl | FeedUrl) -> SourceUid:
 
 
 def url_to_host(url: AbsoluteUrl | FeedUrl) -> str:
-    f_url = furl(url)
+    f_url = construct_f_url(url)
 
-    if f_url.host in (None, ""):
+    if f_url is None or f_url.host in (None, ""):
         raise NotImplementedError("AbsoluteUrl & FeedUrl must always have a host")
 
     host = f_url.host
@@ -324,7 +383,9 @@ def url_to_host(url: AbsoluteUrl | FeedUrl) -> str:
 
 
 def url_has_extension(url: AbsoluteUrl, expected_extensions: list[str]) -> bool:
-    f_url = furl(url)
+    f_url = construct_f_url(url)
+
+    assert f_url is not None, "AbsoluteUrl & FeedUrl must always be parsable by furl"
 
     if not f_url.path.segments:
         return "" in expected_extensions
@@ -357,7 +418,9 @@ def filter_out_duplicated_urls(urls: Iterable[AbsoluteUrl]) -> list[AbsoluteUrl]
 
 
 def get_parent_url(url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
-    f_url = furl(url)
+    f_url = construct_f_url(url)
+
+    assert f_url is not None, "AbsoluteUrl & FeedUrl must always be parsable by furl"
 
     if not f_url.path.segments or f_url.path == "/":
         return None
@@ -373,7 +436,9 @@ def get_parent_url(url: AbsoluteUrl | FeedUrl) -> AbsoluteUrl | None:
 
 
 def to_feed_url(url: AbsoluteUrl) -> FeedUrl:
-    f_url = furl(url)
+    f_url = construct_f_url(url)
+
+    assert f_url is not None, "AbsoluteUrl must always be parsable by furl"
 
     f_url.fragment = None
 

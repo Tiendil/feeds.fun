@@ -19,7 +19,7 @@ _test_collections_configs = _root / "fixtures" / "test_collections"
 
 class TestCollections:
 
-    @pytest_asyncio.fixture(scope="session")
+    @pytest_asyncio.fixture(scope="session")  # type: ignore
     async def collections(self) -> Collections:
         collections = Collections()
 

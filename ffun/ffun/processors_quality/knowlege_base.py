@@ -1,18 +1,20 @@
 import pathlib
 import re
 import uuid
+from typing import cast
 
 import frontmatter
 import toml
 
 from ffun.core import utils
 from ffun.domain.entities import EntryId, SourceId
+from ffun.domain.urls import str_to_absolute_url
 from ffun.library.entities import Entry
 from ffun.processors_quality import errors
 from ffun.processors_quality.entities import Attribution, ExpectedTags, ProcessorResult
 
 
-class FrontmatterTOMLHandler(frontmatter.TOMLHandler):  # type: ignore
+class FrontmatterTOMLHandler(frontmatter.TOMLHandler):
     FM_BOUNDARY = re.compile(r"^\-{3,}\s*$", re.MULTILINE)
     START_DELIMITER = END_DELIMITER = "---"
 
@@ -57,16 +59,25 @@ class KnowlegeBase:
         self._dir_tags_actual = root / "tags-actual"
         self._dir_tags_last = root / "tags-last"
 
+    def _load_data_and_body(self, path: pathlib.Path) -> tuple[dict[str, object], str]:
+        file_body = path.read_text()
+        return frontmatter.parse(file_body, handler=FrontmatterTOMLHandler())
+
     def get_news_entry(self, id_: int) -> Entry:
         entry_path = self._dir_news / f"{id_to_name(id_)}.toml"
 
-        data, body = frontmatter.parse(entry_path.read_text(), handler=FrontmatterTOMLHandler())
+        data, body = self._load_data_and_body(entry_path)
 
         # attribution should be defined for the entry
         try:
+            assert isinstance(data["attribution"], dict)
             Attribution(**data["attribution"])
         except Exception as e:
             raise errors.AttributionNotDefined(message=str(e)) from e
+
+        assert isinstance(data["title"], str)
+        assert isinstance(data["external_url"], str)
+        assert isinstance(data["published_at"], str)
 
         return Entry(
             id=EntryId(uuid.UUID(int=0)),
@@ -74,33 +85,38 @@ class KnowlegeBase:
             title=data["title"],
             body=body,
             external_id="",
-            external_url=data["external_url"],
-            external_tags=data["external_tags"],
+            external_url=str_to_absolute_url(data["external_url"]),
+            external_tags=cast(set[str], data["external_tags"]),
             cataloged_at=utils.now(),
-            published_at=data["published_at"],
+            published_at=data["published_at"],  # type: ignore
         )
 
     def get_expected_tags(self, processor: str, id_: int) -> ExpectedTags:
         tags_path = self._dir_tags_expected / processor / f"{id_to_name(id_)}.toml"
 
-        data = toml.loads(tags_path.read_text())
+        data: dict[str, object] = toml.loads(tags_path.read_text())
 
-        return ExpectedTags(must_have=set(data["tags_must_have"]), should_have=set(data["tags_should_have"]))
+        return ExpectedTags(
+            must_have=set(cast(list[str], data["tags_must_have"])),
+            should_have=set(cast(list[str], data["tags_should_have"])),
+        )
 
     def get_actual_results(self, processor: str, id_: int) -> ProcessorResult:
         tags_path = self._dir_tags_actual / processor / f"{id_to_name(id_)}.toml"
-        return ProcessorResult(**toml.loads(tags_path.read_text()))
+        return ProcessorResult(**toml.loads(tags_path.read_text()))  # type: ignore
 
     def get_last_results(self, processor: str, id_: int) -> ProcessorResult:
         tags_path = self._dir_tags_last / processor / f"{id_to_name(id_)}.toml"
-        return ProcessorResult(**toml.loads(tags_path.read_text()))
+        return ProcessorResult(**toml.loads(tags_path.read_text()))  # type: ignore
 
     def save_processor_result(self, processor: str, entry_id: int, result: ProcessorResult, actual: bool) -> None:
         (self._dir_tags_last / processor).mkdir(parents=True, exist_ok=True)
 
         last_path = self._dir_tags_last / processor / f"{id_to_name(entry_id)}.toml"
 
-        content = toml.dumps(result.dict())
+        dump: dict[str, object] = result.dict()
+
+        content: str = toml.dumps(dump)
 
         last_path.write_text(content)
 

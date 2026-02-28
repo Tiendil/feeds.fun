@@ -44,9 +44,8 @@ class TestClient:
         async with http.client() as client:
             await client.get("http://example.com/test")
 
-        assert (
-            respx_mock.calls[0].request.headers["Accept-Encoding"] == "br;q=1.0, zstd;q=0.9, gzip;q=0.8, deflate;q=0.7"
-        )
+        expected_encoding = "br;q=1.0, zstd;q=0.9, gzip;q=0.8, deflate;q=0.7"
+        assert respx_mock.calls[0].request.headers["Accept-Encoding"] == expected_encoding  # type: ignore
 
     @pytest.mark.asyncio
     async def test_user_agent_header(self, respx_mock: MockRouter, mocker: MockerFixture) -> None:
@@ -59,4 +58,4 @@ class TestClient:
         async with http.client() as client:
             await client.get("http://example.com/test")
 
-        assert respx_mock.calls[0].request.headers["User-Agent"] == test_user_agent
+        assert respx_mock.calls[0].request.headers["User-Agent"] == test_user_agent  # type: ignore

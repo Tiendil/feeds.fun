@@ -29,6 +29,6 @@ async def run(apply: bool, chunk: int, log_every_n: int) -> None:  # noqa: CCR00
     logger.info("normalized_entries", number=counter)
 
 
-@app.command()
+@app.command()  # type: ignore
 def normalize_entries(apply: bool = False, chunk: int = 1000, log_every_n: int = 1000) -> None:
     asyncio.run(run(apply=apply, chunk=chunk, log_every_n=log_every_n))

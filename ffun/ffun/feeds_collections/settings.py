@@ -1,5 +1,4 @@
 import pathlib
-from typing import Any
 
 import pydantic
 import pydantic_settings
@@ -16,7 +15,7 @@ class Settings(BaseSettings):
 
     @pydantic.field_validator("collection_configs", mode="before")
     @classmethod
-    def detect_disabled_collection_configs(cls, v: Any) -> Any:
+    def detect_disabled_collection_configs(cls, v: object) -> object:
         if v == "":
             return None
 

@@ -30,14 +30,14 @@ class TestAddMapping:
 
     @pytest.mark.asyncio
     async def test_new_user(self, external_user_id: str) -> None:
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("u_users", delta=1):
                 async with TableSizeDelta("u_mapping", delta=1):
                     internal_user_id = await add_mapping(primary_oidc_service_id, external_user_id)
 
         assert await get_mapping(primary_oidc_service_id, external_user_id) == internal_user_id
 
-        assert_logs_has_business_event(logs, "user_created", user_id=internal_user_id)
+        assert_logs_has_business_event(logs, "user_created", user_id=internal_user_id)  # type: ignore
 
     @pytest.mark.asyncio
     async def test_different_service(self, external_user_id: str) -> None:
@@ -51,14 +51,14 @@ class TestAddMapping:
 
     @pytest.mark.asyncio
     async def test_existing_user(self, external_user_id: str, internal_user_id: UserId) -> None:
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             async with TableSizeNotChanged("u_users"):
                 async with TableSizeNotChanged("u_mapping"):
                     assert await add_mapping(primary_oidc_service_id, external_user_id) == internal_user_id
 
         assert await get_mapping(primary_oidc_service_id, external_user_id) == internal_user_id
 
-        assert_logs_has_no_business_event(logs, "user_created")
+        assert_logs_has_no_business_event(logs, "user_created")  # type: ignore
 
 
 # most of functionality are tested in other tests
@@ -95,10 +95,10 @@ class TestStoreUser:
         async with TableSizeDelta("u_users", delta=1):
             await store_user(execute, user_id)
 
-        result = await execute("SELECT * FROM u_users WHERE id = %(id)s", {"id": user_id})
+        result = await execute("SELECT * FROM u_users WHERE id = %(id)s", {"id": user_id})  # type: ignore
 
         assert len(result) == 1
-        assert result[0]["id"] == user_id
+        assert result[0]["id"] == user_id  # type: ignore
 
     @pytest.mark.asyncio
     async def test_existing_user(self) -> None:
@@ -111,11 +111,11 @@ class TestStoreUser:
         async with TableSizeNotChanged("u_users"):
             await store_user(execute, user_id)
 
-        result = await execute("SELECT * FROM u_users WHERE id = %(id)s", {"id": user_id})
+        result = await execute("SELECT * FROM u_users WHERE id = %(id)s", {"id": user_id})  # type: ignore
 
         assert len(result) == 1
-        assert result[0]["id"] == user_id
-        assert result[0]["created_at"] < timestamp
+        assert result[0]["id"] == user_id  # type: ignore
+        assert result[0]["created_at"] < timestamp  # type: ignore
 
 
 # currently we do not support multiple mappings for the same user

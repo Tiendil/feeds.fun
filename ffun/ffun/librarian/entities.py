@@ -1,6 +1,6 @@
 import datetime
 import enum
-from typing import TYPE_CHECKING, Annotated, Any, Literal, Protocol
+from typing import TYPE_CHECKING, Annotated, Literal, Protocol
 
 import pydantic
 from pydantic_core import PydanticCustomError
@@ -95,7 +95,7 @@ class LLMGeneralProcessor(BaseProcessor):
 
     @pydantic.model_validator(mode="before")
     @classmethod
-    def collections_api_key_none(cls, data: Any) -> Any:
+    def collections_api_key_none(cls, data: dict[str, object]) -> object:
         """Translate empty string to None because TOML does not support None value"""
         if data.get("collections_api_key") == "":
             data["collections_api_key"] = None
@@ -116,7 +116,7 @@ class LLMGeneralProcessor(BaseProcessor):
 
     @pydantic.model_validator(mode="before")
     @classmethod
-    def general_api_key_none(cls, data: Any) -> Any:
+    def general_api_key_none(cls, data: dict[str, object]) -> object:
         """Translate empty string to None because TOML does not support None value"""
         if data.get("general_api_key") == "":
             data["general_api_key"] = None

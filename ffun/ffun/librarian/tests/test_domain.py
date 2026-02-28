@@ -248,14 +248,19 @@ class TestProcessEntry:
             execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
         )
 
-        with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 1, 3, 1, 2):
+        with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 1, 3, 1, 2):  # type: ignore
             await process_entry(
                 processor_id=fake_processor_id,
                 processor=AlwaysConstantProcessor(name="fake-processor", tags=["tag-1", "tag-2", "tag--2"]),
                 entry=cataloged_entry,
             )
 
-        assert_logs(logs, processor_successed=1, processor_requested_to_skip_entry=0, entry_processed=1)
+        assert_logs(
+            logs,  # type: ignore
+            processor_successed=1,
+            processor_requested_to_skip_entry=0,
+            entry_processed=1,
+        )
 
         tags = await o_domain.get_tags_ids_for_entries([cataloged_entry.id])
 
@@ -280,7 +285,7 @@ class TestProcessEntry:
             execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
         )
 
-        with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 0, 0, 0, 0):
+        with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 0, 0, 0, 0):  # type: ignore
             await process_entry(
                 processor_id=fake_processor_id,
                 processor=AlwaysSkipEntryProcessor(name="fake-processor"),
@@ -288,7 +293,7 @@ class TestProcessEntry:
             )
 
         assert_logs(
-            logs,
+            logs,  # type: ignore
             processor_successed=0,
             processor_requested_to_skip_entry=1,
             entry_processed=1,
@@ -316,7 +321,7 @@ class TestProcessEntry:
             execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
         )
 
-        with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 0, 0, 0, 0):
+        with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 0, 0, 0, 0):  # type: ignore
             await process_entry(
                 processor_id=fake_processor_id,
                 processor=AlwaysTemporaryErrorProcessor(name="fake-processor"),
@@ -324,7 +329,7 @@ class TestProcessEntry:
             )
 
         assert_logs(
-            logs,
+            logs,  # type: ignore
             processor_successed=0,
             processor_requested_to_skip_entry=0,
             entry_processed=1,
@@ -352,7 +357,7 @@ class TestProcessEntry:
             execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
         )
 
-        with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 0, 0, 0, 0):
+        with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 0, 0, 0, 0):  # type: ignore
             with pytest.raises(errors.UnexpectedErrorInProcessor):
                 await process_entry(
                     processor_id=fake_processor_id,
@@ -361,7 +366,7 @@ class TestProcessEntry:
                 )
 
         assert_logs(
-            logs,
+            logs,  # type: ignore
             processor_successed=0,
             processor_requested_to_skip_entry=0,
             entry_processed=0,

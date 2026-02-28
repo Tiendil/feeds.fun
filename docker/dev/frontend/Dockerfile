@@ -6,7 +6,7 @@ RUN apt-get update \
 
 WORKDIR /repository
 
-COPY ./site/* ./
+COPY ./site/ ./
 
 # in case we copied node_modules from the host
 RUN rm -rf node_modules

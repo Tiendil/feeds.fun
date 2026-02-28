@@ -16,7 +16,7 @@ def collection_configs_must_be_none_in_tests() -> None:
     assert settings.collection_configs is None
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")  # type: ignore
 async def collection_id_for_test_feeds(collection_configs_must_be_none_in_tests: None) -> CollectionId:
 
     feed_id_ = uuid.uuid4().hex

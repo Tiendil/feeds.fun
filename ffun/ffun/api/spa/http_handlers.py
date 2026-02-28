@@ -1,5 +1,5 @@
 from importlib import metadata
-from typing import Any, Iterable
+from typing import Iterable
 
 import fastapi
 from fastapi.openapi.docs import get_swagger_ui_html
@@ -120,8 +120,10 @@ async def _external_entries(  # pylint: disable=R0914
 async def process_api_track(body: str, user_id: UserId | None) -> entities.TrackEventResponse:
     request = entities.TrackEventRequest.model_validate_json(body)
 
-    attributes = request.event.model_dump()
+    attributes: dict[str, object] = request.event.model_dump()
     event = attributes.pop("name")
+
+    assert isinstance(event, str)
 
     logger.business_event(event, user_id=user_id, **attributes)
 
@@ -153,19 +155,19 @@ async def process_api_get_entries(
 #####################
 
 
-@api_auth.get("/login")
+@api_auth.get("/login")  # type: ignore
 async def api_auth_login(return_to: str, user: User) -> RedirectResponse:
     """Dummy endpoint to trigger OIDC login flow and redirect to return_to URL if logged in."""
     return RedirectResponse(url=return_to)
 
 
-@api_auth.get("/join")
+@api_auth.get("/join")  # type: ignore
 async def api_auth_join(return_to: str, user: User) -> RedirectResponse:
     """Dummy endpoint to trigger OIDC registration flow and redirect to return_to URL if logged in."""
     return RedirectResponse(url=return_to)
 
 
-@api_auth.get("/redirect")
+@api_auth.get("/redirect")  # type: ignore
 async def api_auth_redirect(return_to: str, user: User) -> RedirectResponse:
     """Redirect endpoint for OIDC login flow."""
     return RedirectResponse(url=return_to)
@@ -176,17 +178,17 @@ async def api_auth_redirect(return_to: str, user: User) -> RedirectResponse:
 ##################
 
 
-@api_test.post("/internal-error")
+@api_test.post("/internal-error")  # type: ignore
 async def api_internal_error() -> None:
     raise Exception("test_error")
 
 
-@api_test.post("/expected-error")
+@api_test.post("/expected-error")  # type: ignore
 async def api_expected_error() -> None:
     raise APIError(code="expected_test_error", message="Expected test error")
 
 
-@api_test.post("/ok")
+@api_test.post("/ok")  # type: ignore
 async def api_ok() -> None:
     return None
 
@@ -196,7 +198,7 @@ async def api_ok() -> None:
 #############
 
 
-@api_public.post("/get-last-collection-entries")
+@api_public.post("/get-last-collection-entries")  # type: ignore
 async def api_get_last_collection_entries(
     request: entities.GetLastCollectionEntriesRequest,
 ) -> entities.GetLastCollectionEntriesResponse:
@@ -219,14 +221,14 @@ async def api_get_last_collection_entries(
     return entities.GetLastCollectionEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
 
 
-@api_public.post("/get-entries-by-ids")
+@api_public.post("/get-entries-by-ids")  # type: ignore
 async def api_get_entries_by_ids_public(
     request: entities.GetEntriesByIdsRequest,
 ) -> entities.GetEntriesByIdsResponse:
     return await process_api_get_entries(request, user_id=None)
 
 
-@api_public.post("/get-collections")
+@api_public.post("/get-collections")  # type: ignore
 async def api_get_feeds_collections(
     request: entities.GetFeedsCollectionsRequest,
 ) -> entities.GetFeedsCollectionsResponse:
@@ -238,7 +240,7 @@ async def api_get_feeds_collections(
     return entities.GetFeedsCollectionsResponse(collections=collections_to_return)
 
 
-@api_public.post("/get-collection-feeds")
+@api_public.post("/get-collection-feeds")  # type: ignore
 async def api_get_collection_feeds(request: entities.GetCollectionFeedsRequest) -> entities.GetCollectionFeedsResponse:
 
     collection = collections.collection(request.collectionId)
@@ -248,7 +250,7 @@ async def api_get_collection_feeds(request: entities.GetCollectionFeedsRequest) 
     return entities.GetCollectionFeedsResponse(feeds=feeds)
 
 
-@api_public.post("/get-tags-info")
+@api_public.post("/get-tags-info")  # type: ignore
 async def api_get_tags_info(request: entities.GetTagsInfoRequest) -> entities.GetTagsInfoResponse:
     tags_ids = await o_domain.get_ids_by_uids(request.uids)
 
@@ -262,12 +264,12 @@ async def api_get_tags_info(request: entities.GetTagsInfoRequest) -> entities.Ge
     return entities.GetTagsInfoResponse(tags=tags_info)
 
 
-@api_public.post("/get-info")
+@api_public.post("/get-info")  # type: ignore
 async def api_get_info(request: entities.GetInfoRequest) -> entities.GetInfoResponse:
     return entities.GetInfoResponse(version=utils.version(), singleUserMode=auth_settings.is_single_user_mode)
 
 
-@api_public.post("/track-event")
+@api_public.post("/track-event")  # type: ignore
 async def api_track_event_public(body: str = fastapi.Body(...)) -> entities.TrackEventResponse:
     # see comment on process_api_track
     return await process_api_track(body, user_id=None)
@@ -279,17 +281,17 @@ async def api_track_event_public(body: str = fastapi.Body(...)) -> entities.Trac
 
 
 # dummy endpoint to trigger auth refresh on the client side
-@api_private.post("/refresh-auth")
+@api_private.post("/refresh-auth")  # type: ignore
 async def api_refresh_auth(request: entities.RefreshAuthRequest, user: User) -> entities.RefreshAuthResponse:
     return entities.RefreshAuthResponse()
 
 
-@api_private.post("/get-user")
+@api_private.post("/get-user")  # type: ignore
 async def api_get_user(request: entities.GetUserRequest, user: User) -> entities.GetUserResponse:
     return entities.GetUserResponse(userId=user.id)
 
 
-@api_private.post("/get-feeds")
+@api_private.post("/get-feeds")  # type: ignore
 async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entities.GetFeedsResponse:
     linked_feeds = await fl_domain.get_linked_feeds(user.id)
 
@@ -307,7 +309,7 @@ async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entiti
     return entities.GetFeedsResponse(feeds=external_feeds)
 
 
-@api_private.post("/get-last-entries")
+@api_private.post("/get-last-entries")  # type: ignore
 async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: User) -> entities.GetLastEntriesResponse:
     linked_feeds = await fl_domain.get_linked_feeds(user.id)
 
@@ -327,7 +329,7 @@ async def api_get_last_entries(request: entities.GetLastEntriesRequest, user: Us
     return entities.GetLastEntriesResponse(entries=external_entries, tagsMapping=tags_mapping)
 
 
-@api_private.post("/create-or-update-rule")
+@api_private.post("/create-or-update-rule")  # type: ignore
 async def api_create_or_update_rule(
     request: entities.CreateOrUpdateRuleRequest, user: User
 ) -> entities.CreateOrUpdateRuleResponse:
@@ -344,14 +346,14 @@ async def api_create_or_update_rule(
     return entities.CreateOrUpdateRuleResponse()
 
 
-@api_private.post("/delete-rule")
+@api_private.post("/delete-rule")  # type: ignore
 async def api_delete_rule(request: entities.DeleteRuleRequest, user: User) -> entities.DeleteRuleResponse:
     await s_domain.delete_rule(user_id=user.id, rule_id=request.id)
 
     return entities.DeleteRuleResponse()
 
 
-@api_private.post("/update-rule")
+@api_private.post("/update-rule")  # type: ignore
 async def api_update_rule(request: entities.UpdateRuleRequest, user: User) -> entities.UpdateRuleResponse:
     required_tags_ids = await o_domain.get_ids_by_uids(request.requiredTags)
     excluded_tags_ids = await o_domain.get_ids_by_uids(request.excludedTags)
@@ -381,7 +383,7 @@ async def _prepare_rules(rules: Iterable[s_entities.Rule]) -> list[entities.Rule
     return external_rules
 
 
-@api_private.post("/get-rules")
+@api_private.post("/get-rules")  # type: ignore
 async def api_get_rules(request: entities.GetRulesRequest, user: User) -> entities.GetRulesResponse:
     rules = await s_domain.get_rules_for_user(user_id=user.id)
 
@@ -390,7 +392,7 @@ async def api_get_rules(request: entities.GetRulesRequest, user: User) -> entiti
     return entities.GetRulesResponse(rules=external_rules)
 
 
-@api_private.post("/get-score-details")
+@api_private.post("/get-score-details")  # type: ignore
 async def api_get_score_details(
     request: entities.GetScoreDetailsRequest, user: User
 ) -> entities.GetScoreDetailsResponse:
@@ -407,21 +409,21 @@ async def api_get_score_details(
     return entities.GetScoreDetailsResponse(rules=external_rules)
 
 
-@api_private.post("/set-marker")
+@api_private.post("/set-marker")  # type: ignore
 async def api_set_marker(request: entities.SetMarkerRequest, user: User) -> entities.SetMarkerResponse:
     await m_domain.set_marker(user_id=user.id, entry_id=request.entryId, marker=request.marker.to_internal())
 
     return entities.SetMarkerResponse()
 
 
-@api_private.post("/remove-marker")
+@api_private.post("/remove-marker")  # type: ignore
 async def api_remove_marker(request: entities.RemoveMarkerRequest, user: User) -> entities.RemoveMarkerResponse:
     await m_domain.remove_marker(user_id=user.id, entry_id=request.entryId, marker=request.marker.to_internal())
 
     return entities.RemoveMarkerResponse()
 
 
-@api_private.post("/discover-feeds")
+@api_private.post("/discover-feeds")  # type: ignore
 async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User) -> entities.DiscoverFeedsResponse:
     result = await fd_domain.discover(url=request.url, depth=1)
 
@@ -464,7 +466,7 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
     return entities.DiscoverFeedsResponse(feeds=external_feeds, messages=messages)
 
 
-@api_private.post("/add-feed")
+@api_private.post("/add-feed")  # type: ignore
 async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities.AddFeedResponse:
     discover_result = await fd_domain.discover(url=request.url, depth=0)
 
@@ -486,7 +488,7 @@ async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities
     return entities.AddFeedResponse(feed=entities.Feed.from_internal(feed, link=link, collection_ids=collection_ids))
 
 
-@api_private.post("/add-opml")
+@api_private.post("/add-opml")  # type: ignore
 async def api_add_opml(request: entities.AddOpmlRequest, user: User) -> entities.AddOpmlResponse:
     from ffun.parsers import errors as p_errors
 
@@ -504,7 +506,7 @@ async def api_add_opml(request: entities.AddOpmlRequest, user: User) -> entities
     return entities.AddOpmlResponse()
 
 
-@api_private.get("/get-opml")
+@api_private.get("/get-opml")  # type: ignore
 async def api_get_opml(user: User) -> PlainTextResponse:
     linked_feeds = await fl_domain.get_linked_feeds(user.id)
 
@@ -519,14 +521,14 @@ async def api_get_opml(user: User) -> PlainTextResponse:
     return PlainTextResponse(content=content, media_type="application/xml", headers=headers)
 
 
-@api_private.post("/unsubscribe")
+@api_private.post("/unsubscribe")  # type: ignore
 async def api_unsubscribe(request: entities.UnsubscribeRequest, user: User) -> entities.UnsubscribeResponse:
     await fl_domain.remove_link(user_id=user.id, feed_id=request.feedId)
 
     return entities.UnsubscribeResponse()
 
 
-@api_private.post("/subscribe-to-collections")
+@api_private.post("/subscribe-to-collections")  # type: ignore
 async def api_subscribe_to_collections(
     request: entities.SubscribeToCollectionsRequest, user: User
 ) -> entities.SubscribeToCollectionsResponse:
@@ -551,7 +553,7 @@ async def api_subscribe_to_collections(
     return entities.SubscribeToCollectionsResponse()
 
 
-@api_private.post("/get-resource-history")
+@api_private.post("/get-resource-history")  # type: ignore
 async def api_get_resource_history(
     request: entities.GetResourceHistoryRequest, user: User
 ) -> entities.GetResourceHistoryResponse:
@@ -562,7 +564,7 @@ async def api_get_resource_history(
     )
 
 
-@api_private.post("/get-user-settings")
+@api_private.post("/get-user-settings")  # type: ignore
 async def api_get_user_settings(
     request: entities.GetUserSettingsRequest, user: User
 ) -> entities.GetUserSettingsResponse:
@@ -581,14 +583,14 @@ async def api_get_user_settings(
     return entities.GetUserSettingsResponse(settings=result_values)
 
 
-@api_private.post("/set-user-setting")
+@api_private.post("/set-user-setting")  # type: ignore
 async def api_set_user_setting(request: entities.SetUserSettingRequest, user: User) -> entities.SetUserSettingResponse:
     await us_domain.save_setting(user_id=user.id, kind=request.kind.to_internal(), value=request.value)
 
     return entities.SetUserSettingResponse()
 
 
-@api_private.post("/remove-user")
+@api_private.post("/remove-user")  # type: ignore
 async def api_remove_user(
     request: fastapi.Request, _request: entities.RemoveUserRequest, user: User, response: fastapi.Response
 ) -> entities.RemoveUserResponse:
@@ -604,13 +606,13 @@ async def api_remove_user(
     return entities.RemoveUserResponse()
 
 
-@api_private.post("/track-event")
+@api_private.post("/track-event")  # type: ignore
 async def api_track_event_private(user: User, body: str = fastapi.Body(...)) -> entities.TrackEventResponse:
     # see comment on process_api_track
     return await process_api_track(body, user_id=user.id)
 
 
-@api_private.post("/get-entries-by-ids")
+@api_private.post("/get-entries-by-ids")  # type: ignore
 async def api_get_entries_by_ids_private(
     request: entities.GetEntriesByIdsRequest, user: User
 ) -> entities.GetEntriesByIdsResponse:
@@ -621,7 +623,7 @@ async def api_get_entries_by_ids_private(
 # Swagger documentation
 #######################
 
-swagger_ui_api_parameters: dict[str, Any] = {
+swagger_ui_api_parameters: dict[str, int] = {
     "defaultModelsExpandDepth": -1,
     "defaultModelExpandDepth": 10,
 }
@@ -655,21 +657,21 @@ Thank you for your interest in the Feeds Fun. We look forward to your contributi
 """
 
 
-@api_docs.get("/openapi.json", include_in_schema=False)
+@api_docs.get("/openapi.json", include_in_schema=False)  # type: ignore
 async def openapi(request: fastapi.Request) -> JSONResponse:
-    content = get_openapi(
+    content: str = get_openapi(
         title="Feeds Fun SPA API",
         version=metadata.version("ffun"),
         description=swagger_description,
-        routes=request.app.routes,
+        routes=request.app.routes,  # type: ignore
     )
 
     return JSONResponse(content=content)
 
 
-@api_docs.get("/", include_in_schema=False)
+@api_docs.get("/", include_in_schema=False)  # type: ignore
 async def docs(request: fastapi.Request) -> HTMLResponse:
-    openapi_url = request.scope.get("root_path", "") + "/spa/docs/openapi.json"
+    openapi_url: str = request.scope.get("root_path", "") + "/spa/docs/openapi.json"
 
     return get_swagger_ui_html(
         openapi_url=openapi_url, title=swagger_title, swagger_ui_parameters=swagger_ui_api_parameters

@@ -31,6 +31,6 @@ async def get_feed(feed_id: FeedId) -> Feed:
     feeds = await get_feeds([feed_id])
 
     if not feeds:
-        raise errors.NoFeedFound(feed_id=feed_id)
+        raise errors.NoFeedFound(feed_id=str(feed_id))
 
     return feeds[0]

@@ -1,6 +1,5 @@
 import asyncio
 import uuid
-from typing import Any
 
 import pytest
 
@@ -8,10 +7,11 @@ from ffun.core import errors
 from ffun.core.logging import (
     ArgumentConstructor,
     IdentityConstructor,
+    async_args_to_log,
     bound_log_args,
     bound_measure_labels,
-    function_args_to_log,
     get_module_logger,
+    sync_args_to_log,
 )
 from ffun.core.tests.helpers import assert_log_context_vars, assert_logs_has_business_event, capture_logs
 from ffun.domain.domain import new_user_id
@@ -31,11 +31,11 @@ class TestMeasuringBoundLoggerMixin:
     """
 
     def test_measure__no_labels(self) -> None:
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             logger.measure("my_event", 42)
             assert_log_context_vars()
 
-        assert logs == [
+        assert logs == [  # type: ignore
             {
                 "module": "ffun.core.tests.test_logging",
                 "m_kind": "measure",
@@ -46,10 +46,10 @@ class TestMeasuringBoundLoggerMixin:
         ]
 
     def test_measure__has_labels(self) -> None:
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             logger.measure("my_event", 42, x="a", y=2)
 
-        assert logs == [
+        assert logs == [  # type: ignore
             {
                 "module": "ffun.core.tests.test_logging",
                 "m_kind": "measure",
@@ -64,16 +64,16 @@ class TestMeasuringBoundLoggerMixin:
     async def test_measure_block_time__no_labels(self) -> None:
         delta = 0.1
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             with logger.measure_block_time("my_event"):
                 await asyncio.sleep(delta)
 
-        assert delta == pytest.approx(logs[0]["m_value"], 0.05)
-        assert logs == [
-            {
+        assert delta == pytest.approx(logs[0]["m_value"], 0.05)  # type: ignore
+        assert logs == [  # type: ignore
+            {  # type: ignore
                 "module": "ffun.core.tests.test_logging",
                 "m_kind": "measure",
-                "m_value": logs[0]["m_value"],
+                "m_value": logs[0]["m_value"],  # type: ignore
                 "event": "my_event",
                 "log_level": "info",
             }
@@ -83,20 +83,20 @@ class TestMeasuringBoundLoggerMixin:
     async def test_measure_block_time__has_labels(self) -> None:
         delta = 0.1
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             with logger.measure_block_time("my_event", x="a", y=2):
                 await asyncio.sleep(delta)
                 assert_log_context_vars(m_labels={"x": "a", "y": 2})
 
-        assert delta == pytest.approx(logs[0]["m_value"], 0.05)
-        assert logs == [
-            {
+        assert delta == pytest.approx(logs[0]["m_value"], 0.05)  # type: ignore
+        assert logs == [  # type: ignore
+            {  # type: ignore
                 "module": "ffun.core.tests.test_logging",
                 "m_kind": "measure",
-                "m_value": logs[0]["m_value"],
+                "m_value": logs[0]["m_value"],  # type: ignore
                 "event": "my_event",
                 "log_level": "info",
-                "m_labels": {
+                "m_labels": {  # type: ignore
                     "x": "a",
                     "y": 2,
                 },
@@ -107,20 +107,20 @@ class TestMeasuringBoundLoggerMixin:
     async def test_measure_block_time__extra_labels(self) -> None:
         delta = 0.1
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             with logger.measure_block_time("my_event", x="a", y=2) as extra_labels:
                 await asyncio.sleep(delta)
                 extra_labels["z"] = 3
 
-        assert delta == pytest.approx(logs[0]["m_value"], 0.05)
-        assert logs == [
-            {
+        assert delta == pytest.approx(logs[0]["m_value"], 0.05)  # type: ignore
+        assert logs == [  # type: ignore
+            {  # type: ignore
                 "module": "ffun.core.tests.test_logging",
                 "m_kind": "measure",
-                "m_value": logs[0]["m_value"],
+                "m_value": logs[0]["m_value"],  # type: ignore
                 "event": "my_event",
                 "log_level": "info",
-                "m_labels": {"x": "a", "y": 2, "z": 3},
+                "m_labels": {"x": "a", "y": 2, "z": 3},  # type: ignore
             }
         ]
 
@@ -134,50 +134,50 @@ class TestBusinessBoundLoggerMixin:
     def test_business_event(self) -> None:
         user_id = new_user_id()
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             logger.business_event("my_event", user_id=user_id, a="b")
 
-        assert logs == [
-            {
+        assert logs == [  # type: ignore
+            {  # type: ignore
                 "module": "ffun.core.tests.test_logging",
                 "event": "my_event",
                 "log_level": "info",
                 "b_user_id": str(user_id),
                 "b_kind": "event",
-                "b_uid": logs[0]["b_uid"],
-                "b_attributes": {"a": "b"},
+                "b_uid": logs[0]["b_uid"],  # type: ignore
+                "b_attributes": {"a": "b"},  # type: ignore
             }
         ]
 
-        assert uuid.UUID(logs[0]["b_uid"])
+        assert uuid.UUID(logs[0]["b_uid"])  # type: ignore
 
-        assert_logs_has_business_event(logs, "my_event", user_id=user_id, a="b")
-        assert_logs_has_business_event(logs, "my_event", user_id=user_id)
+        assert_logs_has_business_event(logs, "my_event", user_id=user_id, a="b")  # type: ignore
+        assert_logs_has_business_event(logs, "my_event", user_id=user_id)  # type: ignore
 
     @pytest.mark.xfail
     def test_business_event__helper_expected_to_fail_because_of_arguments(self) -> None:
         user_id = new_user_id()
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             logger.business_event("my_event", user_id=user_id, a="b")
 
-        assert_logs_has_business_event(logs, "my_event", user_id=user_id, a="c")
+        assert_logs_has_business_event(logs, "my_event", user_id=user_id, a="c")  # type: ignore
 
     @pytest.mark.xfail
     def test_business_event__helper_expected_to_fail_because_of_user_id(self) -> None:
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             logger.business_event("my_event", user_id=new_user_id(), a="b")
 
-        assert_logs_has_business_event(logs, "my_event", user_id=new_user_id())
+        assert_logs_has_business_event(logs, "my_event", user_id=new_user_id())  # type: ignore
 
     @pytest.mark.xfail
     def test_business_event__helper_expected_to_fail_because_event_name(self) -> None:
         user_id = new_user_id()
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             logger.business_event("my_event", user_id=user_id, a="b")
 
-        assert_logs_has_business_event(logs, "wrong_event", user_id=user_id, a="b")
+        assert_logs_has_business_event(logs, "wrong_event", user_id=user_id, a="b")  # type: ignore
 
     @pytest.mark.parametrize(
         "in_attrs, expected",
@@ -191,7 +191,7 @@ class TestBusinessBoundLoggerMixin:
             ),
         ],
     )
-    def test_normalize_value(self, in_attrs: dict[str, Any], expected: dict[str, Any]) -> None:
+    def test_normalize_value(self, in_attrs: dict[str, object], expected: dict[str, object]) -> None:
         assert logger._normalize_value(in_attrs) == expected
 
 
@@ -242,15 +242,15 @@ class TestFunctionArgsToLog:
 
     def test_sync(self) -> None:
 
-        @function_args_to_log("y", "x.my_arg")
+        @sync_args_to_log("y", "x.my_arg")
         def func(y: int, x: X, z: int) -> None:
             logger.info("my_event")
             assert_log_context_vars(y=1, x_my_arg="abc")
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             func(y=1, x=X("abc"), z=2)
 
-        assert logs == [
+        assert logs == [  # type: ignore
             {
                 "module": "ffun.core.tests.test_logging",
                 "event": "my_event",
@@ -263,16 +263,16 @@ class TestFunctionArgsToLog:
     @pytest.mark.asyncio
     async def test_async(self) -> None:
 
-        @function_args_to_log("y", "x.my_arg")
+        @async_args_to_log("y", "x.my_arg")
         async def func(y: int, x: X, z: int) -> None:
             await asyncio.sleep(0)
             logger.info("my_event")
             assert_log_context_vars(y=1, x_my_arg="abc")
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             await func(y=1, x=X("abc"), z=2)
 
-        assert logs == [
+        assert logs == [  # type: ignore
             {
                 "module": "ffun.core.tests.test_logging",
                 "event": "my_event",
@@ -286,13 +286,13 @@ class TestFunctionArgsToLog:
 class TestBoundLogArgs:
 
     def test_no_args(self) -> None:
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             with bound_log_args():
                 logger.info("my_event", a="b")
                 logger.measure("my_event", 42, z=3)
                 assert_log_context_vars()
 
-        assert logs == [
+        assert logs == [  # type: ignore
             {"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b"},
             {
                 "module": "ffun.core.tests.test_logging",
@@ -305,13 +305,13 @@ class TestBoundLogArgs:
         ]
 
     def test_with_args(self) -> None:
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             with bound_log_args(x=1, y="a"):
                 logger.info("my_event", a="b")
                 logger.measure("my_event", 42, z=3)
                 assert_log_context_vars(x=1, y="a")
 
-        assert logs == [
+        assert logs == [  # type: ignore
             {
                 "module": "ffun.core.tests.test_logging",
                 "event": "my_event",
@@ -339,7 +339,7 @@ class TestBoundLogArgs:
                 pass
 
     def test_recursive(self) -> None:
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             with bound_log_args(x=1):
                 with bound_log_args(y=2):
                     logger.info("my_event", a="b")
@@ -353,7 +353,7 @@ class TestBoundLogArgs:
 
             assert_log_context_vars()
 
-        assert logs == [
+        assert logs == [  # type: ignore
             {
                 "module": "ffun.core.tests.test_logging",
                 "event": "my_event",
@@ -394,13 +394,13 @@ class TestBoundLogArgs:
 class TestBoundMeasureLabels:
 
     def test_no_labels(self) -> None:
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             with bound_measure_labels():
                 logger.info("my_event", a="b")
                 logger.measure("my_event", 42, z=3)
                 assert_log_context_vars()
 
-        assert logs == [
+        assert logs == [  # type: ignore
             {"module": "ffun.core.tests.test_logging", "event": "my_event", "log_level": "info", "a": "b"},
             {
                 "module": "ffun.core.tests.test_logging",
@@ -413,13 +413,13 @@ class TestBoundMeasureLabels:
         ]
 
     def test_with_labels(self) -> None:
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             with bound_measure_labels(x=1, y="a"):
                 logger.info("my_event", a="b")
                 logger.measure("my_event", 42, z=3)
                 assert_log_context_vars(m_labels={"x": 1, "y": "a"})
 
-        assert logs == [
+        assert logs == [  # type: ignore
             {
                 "module": "ffun.core.tests.test_logging",
                 "event": "my_event",
@@ -438,7 +438,7 @@ class TestBoundMeasureLabels:
         ]
 
     def test_recursive(self) -> None:
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             with bound_measure_labels(x=1):
                 assert_log_context_vars(m_labels={"x": 1})
 
@@ -454,7 +454,7 @@ class TestBoundMeasureLabels:
 
             assert_log_context_vars()
 
-        assert logs == [
+        assert logs == [  # type: ignore
             {
                 "module": "ffun.core.tests.test_logging",
                 "event": "my_event",

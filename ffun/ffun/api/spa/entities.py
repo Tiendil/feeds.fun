@@ -1,7 +1,7 @@
 import datetime
 import enum
 from decimal import Decimal
-from typing import Any, Iterable
+from typing import Iterable
 
 import pydantic
 
@@ -209,13 +209,15 @@ class UserSettingKind(enum.StrEnum):
     def to_internal(self) -> int:
         from ffun.application.user_settings import UserSetting
 
-        return getattr(UserSetting, self.name)  # type: ignore
+        value: object = getattr(UserSetting, self.name)
+        assert isinstance(value, int)
+        return value
 
 
 class UserSetting(BaseEntity):
     kind: UserSettingKind
     type: us_types.TypeId  # should not differ between front & back => no need to convert
-    value: Any
+    value: object
     name: str
 
     @classmethod
@@ -249,7 +251,9 @@ class ResourceKind(enum.StrEnum):
     def to_internal(self) -> int:
         from ffun.application.resources import Resource
 
-        return getattr(Resource, self.name)  # type: ignore
+        value: object = getattr(Resource, self.name)
+        assert isinstance(value, int)
+        return value
 
 
 class ResourceHistoryRecord(pydantic.BaseModel):
@@ -501,14 +505,18 @@ class GetUserSettingsResponse(api.APISuccess):
 
 class SetUserSettingRequest(api.APIRequest):
     kind: UserSettingKind
-    value: Any
+    value: object
 
     @pydantic.model_validator(mode="before")
     @classmethod
-    def validate_value(cls, values: dict[str, Any]) -> dict[str, Any]:
+    def validate_value(cls, values: dict[str, object]) -> dict[str, object]:
         from ffun.application.user_settings import UserSetting
 
-        kind = UserSettingKind(values["kind"]).to_internal()
+        raw_kind = values.get("kind")
+
+        assert isinstance(raw_kind, str), "kind must be a string"
+
+        kind = UserSettingKind(raw_kind).to_internal()
         value = values.get("value")
 
         real_kind = UserSetting(kind)

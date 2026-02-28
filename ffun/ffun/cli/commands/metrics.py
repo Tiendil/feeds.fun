@@ -220,7 +220,7 @@ async def run_system() -> None:
         await system_slice_processors()
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def system() -> None:
     asyncio.run(run_system())
 
@@ -330,6 +330,6 @@ async def run_users() -> None:
         await users_slice_resources()
 
 
-@cli_app.command()
+@cli_app.command()  # type: ignore
 def users() -> None:
     asyncio.run(run_users())

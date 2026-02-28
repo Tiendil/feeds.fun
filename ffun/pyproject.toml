@@ -124,13 +124,15 @@ flake8-pyproject = "1.2.*"
 flake8-eradicate = "1.5.*"
 autoflake = "2.3.*"
 
-mypy = "1.16.*"
+mypy = "1.19.*"
 codespell = "2.4.*"
 
 types-toml = "0.10.*"
 types-python-slugify = "8.0.*"
 types-setuptools = "80.9.*"
 types-tabulate = "0.9.*"
+types-beautifulsoup4 = "4.12.*"
+types-orjson = "3.6.*"
 
 [project.scripts]
 ffun = "ffun.cli.cli:app"
@@ -147,6 +149,7 @@ plugins = ["pydantic.mypy"]
 strict = true
 implicit_reexport = true
 allow_untyped_calls = true
+disallow_any_expr = true
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
@@ -156,31 +159,51 @@ warn_untyped_fields = true
 
 [[tool.mypy.overrides]]
 module = "yoyo.*"
-ignore_missing_imports = true
+follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 module = "feedparser.*"
-ignore_missing_imports = true
+follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 module = "furl.*"
-ignore_missing_imports = true
+follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 module = "orderedmultidict.*"
-ignore_missing_imports = true
+follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 module = "pypika.*"
-ignore_missing_imports = true
+follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 module = "frontmatter.*"
-ignore_missing_imports = true
+follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 module = "lemminflect.*"
-ignore_missing_imports = true
+follow_untyped_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+  "ffun.*.migrations.*",
+  #######################
+  # operation modules require too many type conversions from PostgreSQL types to Python types.
+  # TODO: do smth with it
+  "ffun.*.operations",
+  "ffun.core.postgresql",
+  #######################
+  # numpy magic
+  # TODO: do smth with it
+  "ffun.tags.normalizers.form_normalizer",
+  #######################
+]
+disallow_any_expr = false
+
+[[tool.mypy.overrides]]
+module = "get_arxiv_taxonomy"
+disallow_any_expr = false
 
 [tool.pytest.ini_options]
 # possibly it is not good option value, because we'll lose detecting of lost coroutines

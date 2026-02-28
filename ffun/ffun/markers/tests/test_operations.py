@@ -27,23 +27,27 @@ class TestSetMarker:
 
     @pytest.mark.asyncio
     async def test_set_marker(self, internal_user_id: UserId, new_entry: Entry) -> None:
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("m_markers", delta=1):
                 await set_marker(internal_user_id, Marker.read, new_entry.id)
 
         assert_logs_has_business_event(
-            logs, "marker_set", user_id=internal_user_id, entry_id=str(new_entry.id), marker=Marker.read
+            logs,  # type: ignore
+            "marker_set",
+            user_id=internal_user_id,
+            entry_id=str(new_entry.id),
+            marker=Marker.read,
         )
 
     @pytest.mark.asyncio
     async def test_set_marker_twice(self, internal_user_id: UserId, new_entry: Entry) -> None:
         await set_marker(internal_user_id, Marker.read, new_entry.id)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             async with TableSizeNotChanged("m_markers"):
                 await set_marker(internal_user_id, Marker.read, new_entry.id)
 
-        assert_logs_has_no_business_event(logs, "marker_set")
+        assert_logs_has_no_business_event(logs, "marker_set")  # type: ignore
 
 
 class TestRemoveMarker:
@@ -52,12 +56,16 @@ class TestRemoveMarker:
     async def test_remove_marker(self, internal_user_id: UserId, new_entry: Entry) -> None:
         await set_marker(internal_user_id, Marker.read, new_entry.id)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("m_markers", delta=-1):
                 await remove_marker(internal_user_id, Marker.read, new_entry.id)
 
         assert_logs_has_business_event(
-            logs, "marker_removed", user_id=internal_user_id, entry_id=str(new_entry.id), marker=Marker.read
+            logs,  # type: ignore
+            "marker_removed",
+            user_id=internal_user_id,
+            entry_id=str(new_entry.id),
+            marker=Marker.read,
         )
 
     @pytest.mark.asyncio
@@ -65,11 +73,11 @@ class TestRemoveMarker:
         await set_marker(internal_user_id, Marker.read, new_entry.id)
         await remove_marker(internal_user_id, Marker.read, new_entry.id)
 
-        with capture_logs() as logs:
+        with capture_logs() as logs:  # type: ignore
             async with TableSizeNotChanged("m_markers"):
                 await remove_marker(internal_user_id, Marker.read, new_entry.id)
 
-        assert_logs_has_no_business_event(logs, "marker_removed")
+        assert_logs_has_no_business_event(logs, "marker_removed")  # type: ignore
 
 
 class TestMergeFeeds:

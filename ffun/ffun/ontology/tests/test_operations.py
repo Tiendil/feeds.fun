@@ -65,8 +65,8 @@ class TestSaveTags:
         self, cataloged_entry: Entry, another_cataloged_entry: Entry, three_tags_ids: tuple[TagId, TagId, TagId]
     ) -> None:
         async with TableSizeDelta("o_relations", delta=4):
-            await _save_tags(execute, cataloged_entry.id, three_tags_ids[:2])
-            await _save_tags(execute, another_cataloged_entry.id, three_tags_ids[1:])
+            await _save_tags(execute, cataloged_entry.id, three_tags_ids[:2])  # type: ignore
+            await _save_tags(execute, another_cataloged_entry.id, three_tags_ids[1:])  # type: ignore
 
         await assert_has_tags(
             {
@@ -86,10 +86,10 @@ class TestRegisterRelationsProcessors:
     async def test(
         self, cataloged_entry: Entry, fake_processor_id: int, three_tags_ids: tuple[TagId, TagId, TagId]
     ) -> None:
-        await _save_tags(execute, cataloged_entry.id, three_tags_ids[:2])
+        await _save_tags(execute, cataloged_entry.id, three_tags_ids[:2])  # type: ignore
 
         relations_ids = await get_relations_for(
-            execute, entry_ids=[cataloged_entry.id], tag_ids=list(three_tags_ids[:2])
+            execute, entry_ids=[cataloged_entry.id], tag_ids=list(three_tags_ids[:2])  # type: ignore
         )
 
         async with TableSizeDelta("o_relations_processors", delta=2):
@@ -149,7 +149,10 @@ class TestRemoveRelations:
     ) -> None:
         async with transaction() as trx:
             await apply_tags(
-                trx, entry_id=cataloged_entry.id, processor_id=fake_processor_id, tag_ids=list(three_tags_ids[:2])
+                trx,
+                entry_id=cataloged_entry.id,
+                processor_id=fake_processor_id,
+                tag_ids=list(three_tags_ids[:2]),  # type: ignore
             )
 
         async with transaction() as trx:
@@ -157,7 +160,7 @@ class TestRemoveRelations:
                 trx,
                 entry_id=cataloged_entry.id,
                 processor_id=another_fake_processor_id,
-                tag_ids=list(three_tags_ids[1:]),
+                tag_ids=list(three_tags_ids[1:]),  # type: ignore
             )
 
         async with transaction() as trx:
@@ -458,7 +461,7 @@ class TestRemoveTags:
 
         properties = []
 
-        for tag_id, tag in zip(five_tags_ids[2:], five_processor_tags[2:]):
+        for tag_id, tag in zip(five_tags_ids[2:], five_processor_tags[2:]):  # type: ignore
             tag.link = f"https://example.com?{tag.uid}"
             properties.append(tag.build_properties_for(tag_id=tag_id, processor_id=fake_processor_id)[0])
 
@@ -583,7 +586,7 @@ class TestGetRelationsFor:
                 trx,
                 entry_id=another_cataloged_entry.id,
                 processor_id=fake_processor_id,
-                tag_ids=list(three_tags_ids[1:]),
+                tag_ids=list(three_tags_ids[1:]),  # type: ignore
             )
 
         relation_1_ids = await get_relations_for(execute, tag_ids=[three_tags_ids[0]])
@@ -628,7 +631,7 @@ class TestGetRelationsFor:
             execute,
             entry_id=another_cataloged_entry.id,
             processor_id=fake_processor_id,
-            tag_ids=list(three_tags_ids[1:]),
+            tag_ids=list(three_tags_ids[1:]),  # type: ignore
         )
 
         relation_1_ids = await get_relations_for(

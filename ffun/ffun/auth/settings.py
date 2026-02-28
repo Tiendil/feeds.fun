@@ -1,5 +1,3 @@
-from typing import Any
-
 import pydantic
 import pydantic_settings
 
@@ -37,7 +35,7 @@ class IdP(BaseSettings):
     # @pydantic.field_validator('plugin', mode='before')
     @pydantic.model_validator(mode="before")
     @classmethod
-    def build_plugin(cls, data: Any) -> Any:
+    def build_plugin(cls, data: object) -> object:
         if not isinstance(data, dict):
             return data
 
@@ -46,7 +44,7 @@ class IdP(BaseSettings):
         if not isinstance(v, str):
             raise ValueError("plugin must be defined as a string module.path:callable_constructor")
 
-        extras = data.get("extras", {}) or {}
+        extras = data.get("extras", {}) or {}  # type: ignore
 
         try:
             constructor = utils.import_from_string(v)

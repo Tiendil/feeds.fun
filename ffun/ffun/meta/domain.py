@@ -105,7 +105,7 @@ async def clean_orphaned_feeds(chunk: int) -> int:
 async def clean_orphaned_tags(chunk: int) -> int:
     protected_tags = await s_domain.get_all_tags_in_rules()
 
-    return await o_domain.remove_orphaned_tags(chunk=chunk, protected_tags=list(protected_tags))  # type: ignore
+    return await o_domain.remove_orphaned_tags(chunk=chunk, protected_tags=list(protected_tags))
 
 
 # We expect, that when this function is called, all logic (workers, api) is already working on the new configs

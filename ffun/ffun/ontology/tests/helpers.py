@@ -32,6 +32,6 @@ async def get_relation_signatures(relation_ids: list[int]) -> list[tuple[EntryId
     ORDER BY r.entry_id, r.tag_id, rp.processor_id
     """
 
-    result = await execute(sql, {"ids": relation_ids})
+    result = await execute(sql, {"ids": relation_ids})  # type: ignore
 
     return [(row["entry_id"], row["tag_id"], row["processor_id"]) for row in result]

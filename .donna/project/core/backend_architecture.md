@@ -38,3 +38,7 @@ All backend is placed in the `./ffun/ffun` directory, which is a Python package.
 - `ffun.tags` — tag-related code: normalization, validation. Not managing or storing tags — only domain-specific logic related to tags.
 - `ffun.users` — storing and managing users.
 - `ffun.user_settings` — storing and managing user settings.
+
+## Data structures
+
+- Do not use `dataclass` for data structures. Use `ffun.core.entities.BaseEntity` (subclass of the `pydantic.BaseModel`) instead.

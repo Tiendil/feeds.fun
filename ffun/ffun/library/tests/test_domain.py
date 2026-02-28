@@ -89,15 +89,15 @@ class TestGetFeedsForEntry:
 # so, we may test only fallback logic
 class TestGetEntriesByFilterWithFallback:
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def time_delta(self) -> datetime.timedelta:
         return datetime.timedelta(days=1)
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def time_border(self, time_delta: datetime.timedelta) -> datetime.datetime:
         return utils.now() - time_delta
 
-    @pytest_asyncio.fixture
+    @pytest_asyncio.fixture  # type: ignore
     async def prepared_entries(self, loaded_feed: Feed, time_border: datetime.datetime) -> list[Entry]:
         entries = await make.n_entries_list(loaded_feed, n=3)
 

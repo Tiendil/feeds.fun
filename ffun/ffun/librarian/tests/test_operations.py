@@ -123,7 +123,7 @@ class TestSavePointer:
 
 class TestGetAllPointers:
 
-    @pytest_asyncio.fixture(autouse=True)
+    @pytest_asyncio.fixture(autouse=True)  # type: ignore
     async def cleanup_fake_pointers(self, fake_processor_id: int, another_fake_processor_id: int) -> None:
         await operations.delete_pointer(fake_processor_id)
         await operations.delete_pointer(another_fake_processor_id)
