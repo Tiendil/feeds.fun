@@ -202,7 +202,7 @@ class TestCleanOrphanedFeeds:
 
         unlink_feed_tail_mock = mocker.patch("ffun.library.domain.unlink_feed_tail")
         tech_remove_feed_mock = mocker.patch("ffun.feeds.domain.tech_remove_feed")
-        tech_remove_all_links = mocker.patch("ffun.feeds_links.domain.tech_remove_all_links")
+        unlink_feeds_from_all_users = mocker.patch("ffun.feeds_links.domain.unlink_feeds_from_all_users")
 
         assert await clean_orphaned_feeds(chunk=100) == 3
 
@@ -212,7 +212,7 @@ class TestCleanOrphanedFeeds:
 
         assert tech_remove_feed_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]  # type: ignore
 
-        assert tech_remove_all_links.call_args_list == [mocker.call([feed.id for feed in feeds])]  # type: ignore
+        assert unlink_feeds_from_all_users.call_args_list == [mocker.call([feed.id for feed in feeds])]  # type: ignore
 
 
 # test that everything is connected correctly

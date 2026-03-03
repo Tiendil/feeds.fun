@@ -39,7 +39,7 @@ async def remove_link(user_id: UserId, feed_id: FeedId) -> None:
     )
 
 
-async def tech_remove_all_links(feed_ids: Iterable[FeedId]) -> None:
+async def unlink_feeds_from_all_users(feed_ids: Iterable[FeedId]) -> None:
     sql = """
     DELETE FROM fl_links WHERE feed_id = ANY(%(feed_ids)s)
     """

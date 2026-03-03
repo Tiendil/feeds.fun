@@ -3,6 +3,7 @@ import typer
 from ffun.cli.commands import cleaner  # noqa: F401
 from ffun.cli.commands import estimates  # noqa: F401
 from ffun.cli.commands import experiments  # noqa: F401
+from ffun.cli.commands import feeds  # noqa: F401
 from ffun.cli.commands import fixtures  # noqa: F401
 from ffun.cli.commands import metrics  # noqa: F401
 from ffun.cli.commands import processors_quality  # noqa: F401
@@ -24,6 +25,7 @@ app.add_typer(profile.cli_app, name="profile")
 app.add_typer(experiments.cli_app, name="experiments")
 app.add_typer(fixtures.cli_app, name="fixtures")
 app.add_typer(estimates.cli_app, name="estimates")
+app.add_typer(feeds.cli_app, name="feeds")
 app.add_typer(users.cli_app, name="users")
 
 
