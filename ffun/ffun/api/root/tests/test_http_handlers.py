@@ -1,16 +1,21 @@
 import pytest
+from fastapi.responses import PlainTextResponse
 
 from ffun.api.root import http_handlers
+
+
+def _response_text(response: PlainTextResponse) -> str:
+    return bytes(response.body).decode()
 
 
 class TestRobotsTxt:
 
     @pytest.mark.asyncio
     async def test_success(self) -> None:
-        response = await http_handlers.robots_txt()
+        response: PlainTextResponse = await http_handlers.robots_txt()
 
         assert response.status_code == 200
-        assert response.body.decode() == (
+        assert _response_text(response) == (
             "User-agent: *\n"
             "Sitemap: feeds.fun.local/sitemap.xml\n"
             "Disallow: /api/\n"
@@ -23,10 +28,10 @@ class TestSitemapXml:
 
     @pytest.mark.asyncio
     async def test_success(self) -> None:
-        response = await http_handlers.sitemap_xml()
+        response: PlainTextResponse = await http_handlers.sitemap_xml()
 
         assert response.status_code == 200
-        assert response.body.decode() == (
+        assert _response_text(response) == (
             '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
             "<sitemap><loc>/blog/sitemap.xml</loc></sitemap>"
             "<sitemap><loc>/sitemaps/pages.xml</loc></sitemap>"
@@ -38,10 +43,12 @@ class TestSitemapsPagesXml:
 
     @pytest.mark.asyncio
     async def test_success(self) -> None:
-        response = await http_handlers.sitemaps_pages()
+        response: PlainTextResponse = await http_handlers.sitemaps_pages()
 
         assert response.status_code == 200
-        assert response.body.decode() == """
+        assert (
+            _response_text(response)
+            == """
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset
     xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
@@ -64,3 +71,4 @@ class TestSitemapsPagesXml:
   </url>
 </urlset>
         """.strip()
+        )
