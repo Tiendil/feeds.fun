@@ -17,7 +17,7 @@ class TestRobotsTxt:
         assert response.status_code == 200
         assert _response_text(response) == (
             "User-agent: *\n"
-            "Sitemap: feeds.fun.local/sitemap.xml\n"
+            "Sitemap: https://feeds.fun.local/sitemap.xml\n"
             "Disallow: /api/\n"
             "Disallow: /show/\n"
             "/blog/en/tags/"

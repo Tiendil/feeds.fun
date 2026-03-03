@@ -23,12 +23,13 @@ def add_routes_to_app(app: fastapi.FastAPI) -> None:
 async def robots_txt() -> PlainTextResponse:
     lines = [
         "User-agent: *",
-        f"Sitemap: {app_settings.app_domain}/sitemap.xml",
+        f"Sitemap: https://{app_settings.app_domain}/sitemap.xml",
         "Disallow: /api/",
-        "Disallow: /show/",
     ]
 
-    lines.extend(root_settings.robots_extra_disallowed_paths)
+    lines.extend(
+        [f"Disallow: {path}"
+         for path in root_settings.robots_extra_disallowed_paths])
 
     content = "\n".join(lines)
 
@@ -52,9 +53,9 @@ def build_sitemap_index(
     for url in sorted(sitemap_urls):
         sitemap = ET.SubElement(root, "sitemap")
         location = ET.SubElement(sitemap, "loc")
-        location.text = url
+        location.text = f"https://{app_settings.app_domain}{url}"
 
-    return ET.tostring(root, encoding="unicode")
+    return ET.tostring(root, encoding="unicode", xml_declaration=True)
 
 
 @api_root.get("/sitemap.xml")  # type: ignore
@@ -81,10 +82,6 @@ async def sitemaps_pages() -> PlainTextResponse:
   <url>
     <loc>https://{app_settings.app_domain}/terms</loc>
     <changefreq>yearly</changefreq>
-  </url>
-  <url>
-    <loc>https://{app_settings.app_domain}/api/docs</loc>
-    <changefreq>weekly</changefreq>
   </url>
 </urlset>
     """.strip()

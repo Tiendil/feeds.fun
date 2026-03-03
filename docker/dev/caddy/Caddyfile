@@ -107,6 +107,18 @@ feeds.fun.local {
     import backend_proxy
   }
 
+  handle /robots.txt {
+    import backend_proxy
+  }
+
+  handle /sitemap.xml {
+    import backend_proxy
+  }
+
+  handle /sitemaps/* {
+    import backend_proxy
+  }
+
   handle {
     import frontend_proxy
   }
