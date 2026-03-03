@@ -6,7 +6,7 @@ description = "News of our project and related topics."
 show_on_main = false
 
 [[feeds]]
-  url = "https://blog.feeds.fun/en/feeds/atom"
+  url = "https://feeds.fun/blog/en/feeds/atom"
   title = "Feeds Fun Blog"
   description = "News and documentation of the Feeds Fun project"
 
