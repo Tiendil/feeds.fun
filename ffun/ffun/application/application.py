@@ -6,8 +6,8 @@ import fastapi
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 
-from ffun.api.spa import http_handlers as spa_http_handlers
 from ffun.api.root import http_handlers as root_http_handlers
+from ffun.api.spa import http_handlers as spa_http_handlers
 from ffun.application import errors
 from ffun.application import utils as app_utils
 from ffun.application.settings import settings
