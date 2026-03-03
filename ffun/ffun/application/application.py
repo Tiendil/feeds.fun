@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 
 from ffun.api.spa import http_handlers as spa_http_handlers
+from ffun.api.root import http_handlers as root_http_handlers
 from ffun.application import errors
 from ffun.application import utils as app_utils
 from ffun.application.settings import settings
@@ -72,6 +73,19 @@ async def use_api_spa(app: fastapi.FastAPI) -> AsyncGenerator[None, None]:
 
 
 @contextlib.asynccontextmanager
+async def use_root_handlers(app: fastapi.FastAPI) -> AsyncGenerator[None, None]:
+    logger.info("root_handlers_enabled")
+
+    root_http_handlers.add_routes_to_app(app)
+
+    logger.info("root_handlers_initialized")
+
+    yield
+
+    logger.info("root_handlers_deinitialized")
+
+
+@contextlib.asynccontextmanager
 async def use_sentry() -> AsyncGenerator[None, None]:
     logger.info("sentry_enabled")
 
@@ -105,6 +119,9 @@ def create_app() -> fastapi.FastAPI:  # noqa: CCR001
 
             if settings.enable_api_spa:
                 await stack.enter_async_context(use_api_spa(app))
+
+            if settings.enable_api_root:
+                await stack.enter_async_context(use_root_handlers(app))
 
             await app.router.startup()
 

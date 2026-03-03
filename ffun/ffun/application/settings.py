@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     environment: str = "local"
 
     enable_api_spa: bool = False
+    enable_api_root: bool = False
     enable_sentry: bool = False
 
     postgresql: PostgreSQL = PostgreSQL()
