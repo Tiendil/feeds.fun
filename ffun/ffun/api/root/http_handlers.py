@@ -27,9 +27,7 @@ async def robots_txt() -> PlainTextResponse:
         "Disallow: /api/",
     ]
 
-    lines.extend(
-        [f"Disallow: {path}"
-         for path in root_settings.robots_extra_disallowed_paths])
+    lines.extend([f"Disallow: {path}" for path in root_settings.robots_extra_disallowed_paths])
 
     content = "\n".join(lines)
 

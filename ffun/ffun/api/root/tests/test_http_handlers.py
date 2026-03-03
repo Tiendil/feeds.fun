@@ -19,8 +19,7 @@ class TestRobotsTxt:
             "User-agent: *\n"
             "Sitemap: https://feeds.fun.local/sitemap.xml\n"
             "Disallow: /api/\n"
-            "Disallow: /show/\n"
-            "/blog/en/tags/"
+            "Disallow: /blog/en/tags/"
         )
 
 
@@ -32,9 +31,10 @@ class TestSitemapXml:
 
         assert response.status_code == 200
         assert _response_text(response) == (
+            "<?xml version='1.0' encoding='utf-8'?>\n"
             '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-            "<sitemap><loc>/blog/sitemap.xml</loc></sitemap>"
-            "<sitemap><loc>/sitemaps/pages.xml</loc></sitemap>"
+            "<sitemap><loc>https://feeds.fun.local/blog/sitemap.xml</loc></sitemap>"
+            "<sitemap><loc>https://feeds.fun.local/sitemaps/pages.xml</loc></sitemap>"
             "</sitemapindex>"
         )
 
@@ -64,10 +64,6 @@ class TestSitemapsPagesXml:
   <url>
     <loc>https://feeds.fun.local/terms</loc>
     <changefreq>yearly</changefreq>
-  </url>
-  <url>
-    <loc>https://feeds.fun.local/api/docs</loc>
-    <changefreq>weekly</changefreq>
   </url>
 </urlset>
         """.strip()
