@@ -11,6 +11,7 @@ networks:
 
 x-backend-api-environment: &backend-api-environment
   FFUN_ENABLE_API_SPA: "${FFUN_ENABLE_API_SPA:-True}"
+  FFUN_ENABLE_API_ROOT: "${FFUN_ENABLE_API_ROOT:-True}"
   FFUN_ENABLE_SENTRY: "${FFUN_ENABLE_SENTRY:-False}"
   FFUN_SENTRY__DSN: "${FFUN_SENTRY__DSN:-not-specified}"
   # set to /repository/feeds_collections/collections in case you want to use the default collection
