@@ -4,7 +4,7 @@ export const version = __APP_VERSION__;
 
 export const authRefreshInterval = import.meta.env.VITE_FFUN_AUTH_REFRESH_INTERVAL || 10 * 60 * 1000;
 
-export const blog = import.meta.env.VITE_FFUN_BLOG || "https://blog.feeds.fun";
+export const blog = import.meta.env.VITE_FFUN_BLOG || "https://feeds.fun/blog";
 export const roadmap = import.meta.env.VITE_FFUN_ROADMAP || "https://github.com/users/Tiendil/projects/1";
 export const githubRepo = import.meta.env.VITE_FFUN_GITHUB_REPO || "https://github.com/Tiendil/feeds.fun";
 export const discordInvite = import.meta.env.VITE_FFUN_DISCORD_INVITE || "https://discord.gg/C5RVusHQXy";
