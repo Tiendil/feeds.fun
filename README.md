@@ -8,7 +8,7 @@ News reader with tags & AI. Self-hosted, if it is your way.
 
 Site: [feeds.fun](https://feeds.fun) with curated collections of feeds that are tagged for free.
 
-Blog: [blog.feeds.fun](https://blog.feeds.fun)
+Blog: [feeds.fun/blog](https://feeds.fun/blog)
 
 Roadmap: [long-term plans](https://github.com/users/Tiendil/projects/1/views/1?pane=info)
 
