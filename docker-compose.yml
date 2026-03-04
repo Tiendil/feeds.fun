@@ -284,8 +284,9 @@ services:
 
       VITE_FFUN_TRACK_EVENTS: "true"
 
-      VITE_FFUN_CRM_TERMS: "${FFUN_CRM_TERMS-not-specified}"
-      VITE_FFUN_CRM_PRIVACY: "${FFUN_CRM_PRIVACY-not-specified}"
+      VITE_FFUN_CRM_TERMS: "${FFUN_CRM_TERMS:-not-specified}"
+      VITE_FFUN_CRM_PRIVACY: "${FFUN_CRM_PRIVACY:-not-specified}"
+      VITE_FFUN_CRM_IMPRESSUM: "${FFUN_CRM_IMPRESSUM:-not-specified}"
 
       VITE_FFUN_HAS_COLLECTIONS: "true"
 

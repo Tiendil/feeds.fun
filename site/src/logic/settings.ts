@@ -20,6 +20,7 @@ export const utmLifetime = import.meta.env.VITE_FFUN_UTM_LIFETIME || 7; // days
 
 export const crmTerms = import.meta.env.VITE_FFUN_CRM_TERMS || null;
 export const crmPrivacy = import.meta.env.VITE_FFUN_CRM_PRIVACY || null;
+export const crmImpressum = import.meta.env.VITE_FFUN_CRM_IMPRESSUM || null;
 
 export const hasCollections = import.meta.env.VITE_FFUN_HAS_COLLECTIONS == "true" || false;
 

@@ -8,3 +8,4 @@
 
 - ff-661 — Added `gemini-2.5-*` models, removed `gemini-2.0-*` models.
 - ff-662 — Better coloring for tags in rules in the Rule view.
+- ff-666 — Added Impressum page (required by German law).
