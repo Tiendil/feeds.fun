@@ -1,5 +1,7 @@
 <template>
+  <strong v-if="excluded">not </strong>
   <span>
+
     {{ tagInfo.name }}
 
     <a
@@ -26,5 +28,6 @@
 
   const properties = defineProps<{
     tagInfo: t.TagInfo;
+    excluded?: boolean;
   }>();
 </script>
