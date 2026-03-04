@@ -2,7 +2,9 @@
   <div
     :class="classes"
     @click.prevent="onClick()">
-    <tag-base :tag-info="tagInfo" />
+    <tag-base
+      :tag-info="tagInfo"
+      :excluded="excluded" />
   </div>
 </template>
 
@@ -26,6 +28,7 @@
   const properties = defineProps<{
     uid: string;
     cssModifier: string;
+    excluded: boolean;
   }>();
 
   const tagInfo = computed(() => {

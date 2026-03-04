@@ -24,6 +24,7 @@
           v-for="tag of rule.tags"
           :key="tag"
           :uid="tag"
+          :excluded="rule.excludedTags.includes(tag)"
           :css-modifier="cssModifiers[tag]" />
       </div>
     </div>
@@ -80,11 +81,11 @@
 
   const cssModifiers: {[key: string]: string} = {};
 
+  const modifier = properties.rule.score > 0 ? "positive" : "negative";
+
+  console.log("score", properties.rule.score, "modifier", modifier);
+
   for (const tag of properties.rule.tags) {
-    if (properties.rule.excludedTags.includes(tag)) {
-      cssModifiers[tag] = "negative";
-      continue;
-    }
-    cssModifiers[tag] = "positive";
+    cssModifiers[tag] = modifier;
   }
 </script>
