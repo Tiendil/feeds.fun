@@ -107,3 +107,31 @@
   max_tokens_per_entry = 300000
   input_1m_tokens_cost = '0.075'
   output_1m_tokens_cost = '0.3'
+
+[[models]]
+  provider="google"
+  name="gemini-2.5-pro"
+  # We limit the context size to 128,000 tokens because Google increases fees after exceeding 200,000 tokens
+  max_context_size=200000
+  max_return_tokens=8192
+  max_tokens_per_entry = 300000
+  input_1m_tokens_cost = '1.25'
+  output_1m_tokens_cost = '10.0'
+
+[[models]]
+  provider="google"
+  name="gemini-2.5-flash"
+  max_context_size=1000000
+  max_return_tokens=8192
+  max_tokens_per_entry = 300000
+  input_1m_tokens_cost = '0.30'
+  output_1m_tokens_cost = '2.50'
+
+[[models]]
+  provider="google"
+  name="gemini-2.5-flash-lite"
+  max_context_size=1000000
+  max_return_tokens=8192
+  max_tokens_per_entry = 300000
+  input_1m_tokens_cost = '0.10'
+  output_1m_tokens_cost = '0.40'
