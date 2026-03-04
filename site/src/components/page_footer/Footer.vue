@@ -74,6 +74,14 @@
           </a>
 
           <a
+            v-if="settings.crmImpressum"
+            :href="router.resolve({name: 'impressum'}).href"
+            class="ffun-normal-link"
+            @click.prevent="router.push({name: 'impressum'})">
+            Impressum
+          </a>
+
+          <a
             v-if="!globalState.isSingleUserMode"
             href="#"
             class="ffun-normal-link"

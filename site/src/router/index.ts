@@ -70,6 +70,12 @@ const router = createRouter({
       props: {content: settings.crmPrivacy, kind: "privacy"}
     },
     {
+      path: "/impressum",
+      name: "impressum",
+      component: CRMView,
+      props: {content: settings.crmImpressum, kind: "impressum"}
+    },
+    {
       path: "/:pathMatch(.*)*",
       redirect: "/"
     }
