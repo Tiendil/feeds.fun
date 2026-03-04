@@ -2,7 +2,9 @@
   <div
     :class="classes"
     @click.prevent="onClick()">
-    <tag-base :tag-info="tagInfo" :excluded="excluded" />
+    <tag-base
+      :tag-info="tagInfo"
+      :excluded="excluded" />
   </div>
 </template>
 

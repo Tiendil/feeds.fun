@@ -1,7 +1,6 @@
 <template>
   <strong v-if="excluded">not </strong>
   <span>
-
     {{ tagInfo.name }}
 
     <a

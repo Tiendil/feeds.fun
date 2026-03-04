@@ -81,9 +81,9 @@
 
   const cssModifiers: {[key: string]: string} = {};
 
-const modifier = properties.rule.score > 0 ? "positive" : "negative";
+  const modifier = properties.rule.score > 0 ? "positive" : "negative";
 
-console.log("score", properties.rule.score, "modifier", modifier);
+  console.log("score", properties.rule.score, "modifier", modifier);
 
   for (const tag of properties.rule.tags) {
     cssModifiers[tag] = modifier;
