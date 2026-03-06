@@ -4,8 +4,6 @@
       <div class="flex flex-col col-span-2 items-center sm:items-start">
         <h3 class="text-lg font-semibold mb-4">Feeds Fun</h3>
         <div class="flex flex-col space-y-2">
-          <div class="font-medium"> The project is in demo mode and free of charge </div>
-
           <div>Version: {{ settings.version }}</div>
 
           <div>
