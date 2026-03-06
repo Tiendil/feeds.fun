@@ -342,7 +342,6 @@ services:
     volumes:
       - ffun_filebrowser_database:/database
       - ffun_caddy_markers:/srv/markers
-      - ./docker/dev/filebrowser/config.json:/config/config.json:ro
 
     networks:
       ffun_network: {}
