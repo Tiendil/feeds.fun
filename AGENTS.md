@@ -32,6 +32,8 @@ Command you are allowed to use:
 
 If you need to do complex "test & lint & fix" activities, you MUST use the `donna-do` skill to run the code polish workflow.
 
+If you need to search or manipulate code, do that on the host machine, no need to use scripts from `./bin` or docker containers for that.
+
 ## Resticted changes / operations
 
 You ABSOLUTELY MUST NOT perform the following operations without explicit instructions to do so:
