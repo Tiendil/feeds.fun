@@ -333,6 +333,8 @@ services:
   filebrowser:
     image: filebrowser/filebrowser:v2.61.1
 
+    profiles: ["filebrowser"]
+
     command: "--noauth"
 
     user: "0:0" # need to have ./markers writable
