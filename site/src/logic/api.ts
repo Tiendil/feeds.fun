@@ -41,6 +41,10 @@ export function logoutRedirect() {
   window.location.assign("/spa/auth/logout");
 }
 
+function handle503() {
+  window.location.reload();
+}
+
 let _refreshingAuth: Promise<void> | null = null;
 
 enum Ffun401Behaviour {
@@ -58,6 +62,10 @@ apiPrivate.interceptors.response.use(
 
     if (!response) {
       throw error;
+    }
+
+    if (response.status === 503) {
+      return handle503();
     }
 
     if (response.status !== 401) {
@@ -96,6 +104,23 @@ apiPrivate.interceptors.response.use(
     await _refreshingAuth; // all 401s await the same refresh
 
     return await apiPrivate(config); // retry the original request generically
+  }
+);
+
+apiPublic.interceptors.response.use(
+  (r) => r,
+  async (error: AxiosError) => {
+    const {response} = error;
+
+    if (!response) {
+      throw error;
+    }
+
+    if (response.status === 503) {
+      return handle503();
+    }
+
+    throw error;
   }
 );
 

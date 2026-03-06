@@ -38,12 +38,50 @@
   }
 }
 
+(filebrowser_proxy) {
+  reverse_proxy filebrowser:80 {
+    header_up Host {host}
+  }
+}
+
 #######
 # sites
 #######
 
 feeds.fun.local {
   tls internal
+
+  ##################
+  # maintenance mode
+  @maintenance_page {
+    method GET HEAD
+    file {
+      root /markers/feeds.fun.local
+      try_files /503.html
+    }
+  }
+
+  handle @maintenance_page {
+    rewrite * /503.html
+    file_server {
+      root /markers/feeds.fun.local
+      status 503
+    }
+  }
+
+  @maintenance_other {
+    not method GET HEAD
+    file {
+      root /markers/feeds.fun.local
+      try_files /503.html
+    }
+  }
+
+  handle @maintenance_other {
+    header Content-Type application/json
+    respond `{"error":"maintenance"}` 503
+  }
+  ###################
 
   # Remove all X-* headers to prevent header injection attacks
   request_header -X-*
@@ -141,4 +179,15 @@ auth.feeds.fun.local {
   tls internal
 
   import auth_proxy
+}
+
+filebrowser.feeds.fun.local {
+  tls internal
+
+  basic_auth {
+    # admin:admin
+		admin "$2a$14$2eltu3xN7D9L3QiLUPrDw.Fwswgt8Z0xsjdZ2OoHSdb0bBISFlWA6"
+	}
+
+  import filebrowser_proxy
 }
