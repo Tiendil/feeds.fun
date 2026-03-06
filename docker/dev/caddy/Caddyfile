@@ -38,6 +38,12 @@
   }
 }
 
+(filebrowser_proxy) {
+  reverse_proxy filebrowser:80 {
+    header_up Host {host}
+  }
+}
+
 #######
 # sites
 #######
@@ -141,4 +147,15 @@ auth.feeds.fun.local {
   tls internal
 
   import auth_proxy
+}
+
+filebrowser.feeds.fun.local {
+  tls internal
+
+  basic_auth {
+    # admin:admin
+		admin "$2a$14$2eltu3xN7D9L3QiLUPrDw.Fwswgt8Z0xsjdZ2OoHSdb0bBISFlWA6"
+	}
+
+  import filebrowser_proxy
 }

@@ -1,6 +1,8 @@
 volumes:
   ffun_postgresql_data: {}
   ffun_caddy_data: {}
+  ffun_caddy_markers: {}
+  ffun_filebrowser_database: {}
 
 networks:
   ffun_network:
@@ -314,6 +316,7 @@ services:
     volumes:
       - ./docker/dev/caddy:/etc/caddy:ro
       - ffun_caddy_data:/data
+      - ffun_caddy_markers:/markers
 
     ports:
       - "80:80"
@@ -325,3 +328,19 @@ services:
           - feeds.fun.local
           - idp.feeds.fun.local
           - auth.feeds.fun.local  # is required by Pomerium
+          - filebrowser.feeds.fun.local
+
+  filebrowser:
+    image: filebrowser/filebrowser:v2.61.1
+
+    command: "--noauth"
+
+    user: "0:0" # need to have ./markers writable
+
+    volumes:
+      - ffun_filebrowser_database:/database
+      - ffun_caddy_markers:/srv/markers
+      - ./docker/dev/filebrowser/config.json:/config/config.json:ro
+
+    networks:
+      ffun_network: {}
