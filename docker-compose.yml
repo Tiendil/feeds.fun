@@ -53,19 +53,13 @@ x-backend-api: &backend-api
 services:
 
   postgresql:
-    # image: postgres:15.17
     image: postgres:18.3-trixie
-
-    # command: pg_checksums -D /var/lib/postgresql/data --enable --progress
 
     volumes:
       - type: tmpfs
-        # target: /var/lib/postgresql/data
         target: /var/lib/postgresql/18/docker
         tmpfs:
           size: 2g
-      # - ffun_postgresql_data:/var/lib/postgresql/data
-      # - ffun_postgresql_data_18:/var/lib/postgresql/18/docker
       - ./docker/dev/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
       - ./docker/dev/postgresql/healthcheck.sh:/healthcheck.sh
 
@@ -89,6 +83,9 @@ services:
       timeout: 5s
       retries: 10
 
+  # TODO: this is an example of Postgres migration
+  #       - remove after feeds.fun prod will be migrated to Postgres 18
+  #       - also remove ./docker/dev/postgresql_upgrade_15_18 directory
   # postgresql_upgrade:
   #   image: postgresql_upgrade_15_18
   #   build:
