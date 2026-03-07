@@ -1,5 +1,5 @@
 volumes:
-  ffun_postgresql_data: {}
+  ffun_postgresql_data: {}  # TODO: remove after Postgres 18 migration will be completed and tested
   ffun_postgresql_data_18: {}
   ffun_caddy_data: {}
   ffun_caddy_markers: {}
@@ -60,6 +60,7 @@ services:
         target: /var/lib/postgresql/18/docker
         tmpfs:
           size: 2g
+      # - ffun_postgresql_data_18:/var/lib/postgresql/18/docker
       - ./docker/dev/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
       - ./docker/dev/postgresql/healthcheck.sh:/healthcheck.sh
 
