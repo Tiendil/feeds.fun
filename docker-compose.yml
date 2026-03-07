@@ -57,9 +57,9 @@ services:
     volumes:
       - type: tmpfs
         target: /var/lib/postgresql/data
-        tmpfs:
-          size: 2g
-      # - ffun_postgresql_data:/var/lib/postgresql/data
+        # tmpfs:
+        #   size: 2g
+      - ffun_postgresql_data:/var/lib/postgresql/data
       - ./docker/dev/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
       - ./docker/dev/postgresql/healthcheck.sh:/healthcheck.sh
 
