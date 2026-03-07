@@ -59,12 +59,13 @@ services:
     # command: pg_checksums -D /var/lib/postgresql/data --enable --progress
 
     volumes:
-      # - type: tmpfs
-      #   target: /var/lib/postgresql/data
-      #   tmpfs:
-      #     size: 2g
+      - type: tmpfs
+        # target: /var/lib/postgresql/data
+        target: /var/lib/postgresql/18/docker
+        tmpfs:
+          size: 2g
       # - ffun_postgresql_data:/var/lib/postgresql/data
-      - ffun_postgresql_data_18:/var/lib/postgresql/18/docker
+      # - ffun_postgresql_data_18:/var/lib/postgresql/18/docker
       - ./docker/dev/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
       - ./docker/dev/postgresql/healthcheck.sh:/healthcheck.sh
 
