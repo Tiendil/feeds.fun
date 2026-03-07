@@ -1,5 +1,6 @@
 volumes:
   ffun_postgresql_data: {}
+  ffun_postgresql_data_18: {}
   ffun_caddy_data: {}
   ffun_caddy_markers: {}
   ffun_filebrowser_database: {}
@@ -52,14 +53,18 @@ x-backend-api: &backend-api
 services:
 
   postgresql:
-    image: postgres:15.17
+    # image: postgres:15.17
+    image: postgres:18.3-trixie
+
+    # command: pg_checksums -D /var/lib/postgresql/data --enable --progress
 
     volumes:
-      - type: tmpfs
-        target: /var/lib/postgresql/data
-        # tmpfs:
-        #   size: 2g
-      - ffun_postgresql_data:/var/lib/postgresql/data
+      # - type: tmpfs
+      #   target: /var/lib/postgresql/data
+      #   tmpfs:
+      #     size: 2g
+      # - ffun_postgresql_data:/var/lib/postgresql/data
+      - ffun_postgresql_data_18:/var/lib/postgresql/18/docker
       - ./docker/dev/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
       - ./docker/dev/postgresql/healthcheck.sh:/healthcheck.sh
 
@@ -82,6 +87,30 @@ services:
       interval: 1s
       timeout: 5s
       retries: 10
+
+  # postgresql_upgrade:
+  #   image: postgresql_upgrade_15_18
+  #   build:
+  #     context: ./docker/dev/postgresql_upgrade_15_18
+  #     dockerfile: ./Dockerfile
+
+  #   command: ["pg_upgrade"]
+
+  #   volumes:
+  #     - ffun_postgresql_data:/var/lib/postgresql/15/data
+  #     - ffun_postgresql_data_18:/var/lib/postgresql/18/docker
+  #     - ./docker/dev/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+  #     - ./docker/dev/postgresql/healthcheck.sh:/healthcheck.sh
+
+  #   environment:
+  #     PGDATAOLD: /var/lib/postgresql/15/data
+  #     PGDATANEW: /var/lib/postgresql/18/docker
+
+  #     PGUSER: root
+  #     POSTGRES_INITDB_ARGS: "--username=root"
+
+  #   networks:
+  #     ffun_network: {}
 
   idp:
     image: tiendil/keycloak-simple:latest
