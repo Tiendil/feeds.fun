@@ -1,5 +1,4 @@
 volumes:
-  ffun_postgresql_data: {}  # TODO: remove after Postgres 18 migration will be completed and tested
   ffun_postgresql_data_18: {}
   ffun_caddy_data: {}
   ffun_caddy_markers: {}
@@ -60,7 +59,6 @@ services:
         target: /var/lib/postgresql/18/docker
         tmpfs:
           size: 2g
-      # - ffun_postgresql_data_18:/var/lib/postgresql/18/docker
       - ./docker/dev/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
       - ./docker/dev/postgresql/healthcheck.sh:/healthcheck.sh
 
@@ -83,33 +81,6 @@ services:
       interval: 1s
       timeout: 5s
       retries: 10
-
-  # TODO: this is an example of Postgres migration
-  #       - remove after feeds.fun prod will be migrated to Postgres 18
-  #       - also remove ./docker/dev/postgresql_upgrade_15_18 directory
-  # postgresql_upgrade:
-  #   image: postgresql_upgrade_15_18
-  #   build:
-  #     context: ./docker/dev/postgresql_upgrade_15_18
-  #     dockerfile: ./Dockerfile
-
-  #   command: ["pg_upgrade"]
-
-  #   volumes:
-  #     - ffun_postgresql_data:/var/lib/postgresql/15/data
-  #     - ffun_postgresql_data_18:/var/lib/postgresql/18/docker
-  #     - ./docker/dev/postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
-  #     - ./docker/dev/postgresql/healthcheck.sh:/healthcheck.sh
-
-  #   environment:
-  #     PGDATAOLD: /var/lib/postgresql/15/data
-  #     PGDATANEW: /var/lib/postgresql/18/docker
-
-  #     PGUSER: root
-  #     POSTGRES_INITDB_ARGS: "--username=root"
-
-  #   networks:
-  #     ffun_network: {}
 
   idp:
     image: tiendil/keycloak-simple:latest
