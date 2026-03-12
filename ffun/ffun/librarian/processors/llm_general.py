@@ -1,12 +1,13 @@
 from typing import Any, Sequence
 
 from ffun.core import logging
+from ffun.domain.entities import LLMTokens
 from ffun.librarian import errors
 from ffun.librarian.entities import TagsExtractor, TextCleaner
 from ffun.librarian.processors import base
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors as llmsf_errors
-from ffun.llms_framework.domain import call_llm, search_for_api_key, cut_text_to_max_tokens
+from ffun.llms_framework.domain import call_llm, cut_text_to_max_tokens, search_for_api_key
 from ffun.llms_framework.entities import (
     ChatResponse,
     LLMCollectionApiKey,
@@ -17,7 +18,6 @@ from ffun.llms_framework.entities import (
 from ffun.llms_framework.providers import llm_providers
 from ffun.ontology.entities import RawTag
 from ffun.tags.entities import TagCategory
-from ffun.domain.entities import LLMTokens
 
 logger = logging.get_module_logger()
 
@@ -67,10 +67,7 @@ class Processor(base.Processor):
         cleaned_text = self.text_cleaner(dirty_text)
 
         cut_text = cut_text_to_max_tokens(
-            llm=self.llm_provider,
-            llm_config=self.llm_config,
-            text=cleaned_text,
-            max_tokens=self.max_tokens_per_entry
+            llm=self.llm_provider, llm_config=self.llm_config, text=cleaned_text, max_tokens=self.max_tokens_per_entry
         )
 
         return cut_text

@@ -7,11 +7,19 @@ from ffun.domain.datetime_intervals import month_interval_start
 from ffun.domain.entities import UserId
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
-from ffun.llms_framework.domain import call_llm, search_for_api_key, split_text, split_text_according_to_tokens
+from ffun.llms_framework.domain import (
+    call_llm,
+    cut_text_to_max_tokens,
+    search_for_api_key,
+    split_text,
+    split_text_according_to_tokens,
+)
 from ffun.llms_framework.entities import APIKeyUsage, LLMApiKey, LLMConfiguration, LLMGeneralApiKey, LLMTokens, USDCost
 from ffun.llms_framework.keys_rotator import _cost_points
 from ffun.llms_framework.provider_interface import ChatRequestTest, ChatResponseTest, ProviderTest
 from ffun.resources import domain as r_domain
+
+_text_parts_intersection = 100
 
 
 class TestSplitText:
@@ -71,7 +79,6 @@ class TestSplitTextAccordingToTokens:
             model="test-model-1",
             system="system prompt",
             max_return_tokens=LLMTokens(143),
-            text_parts_intersection=100,
             temperature=0,
             top_p=0,
         )
@@ -79,7 +86,12 @@ class TestSplitTextAccordingToTokens:
     def test_single_part(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
         text = "some text"
 
-        parts = split_text_according_to_tokens(llm=fake_llm_provider, llm_config=llm_config, text=text)
+        parts = split_text_according_to_tokens(
+            llm=fake_llm_provider,
+            llm_config=llm_config,
+            text=text,
+            text_parts_intersection=_text_parts_intersection,
+        )
 
         assert parts == [text]
 
@@ -93,30 +105,34 @@ class TestSplitTextAccordingToTokens:
 
         text = "a" * size
 
-        parts = split_text_according_to_tokens(llm=fake_llm_provider, llm_config=llm_config, text=text)
+        parts = split_text_according_to_tokens(
+            llm=fake_llm_provider,
+            llm_config=llm_config,
+            text=text,
+            text_parts_intersection=_text_parts_intersection,
+        )
 
         assert len(parts) == 3
 
-        assert size < sum(len(part) for part in parts) < size + 2 * 2 * llm_config.text_parts_intersection + 1
+        assert size < sum(len(part) for part in parts) < size + 2 * 2 * _text_parts_intersection + 1
 
-        assert abs(len(parts[0]) - len(parts[1])) <= llm_config.text_parts_intersection + 1
-        assert abs(len(parts[1]) - len(parts[2])) <= llm_config.text_parts_intersection + 1
+        assert abs(len(parts[0]) - len(parts[1])) <= _text_parts_intersection + 1
+        assert abs(len(parts[1]) - len(parts[2])) <= _text_parts_intersection + 1
         assert abs(len(parts[0]) - len(parts[2])) <= 1
 
-    def test_trim_if_there_are_too_many_tokens_for_entry(
+    def test_uses_requested_intersection_size(
         self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration
     ) -> None:
         model = fake_llm_provider.get_model(llm_config)
 
-        text = "a" * (model.max_tokens_per_entry + 1)
+        text = "a" * (model.max_context_size - llm_config.max_return_tokens)
 
-        trimmed_parts = split_text_according_to_tokens(llm=fake_llm_provider, llm_config=llm_config, text=text)
-
-        head = "".join(trimmed_parts)
-
-        assert head != text
-        assert len("".join(trimmed_parts)) <= len(text)
-        assert head == text[: len(head)]
+        assert split_text_according_to_tokens(
+            llm=fake_llm_provider,
+            llm_config=llm_config,
+            text=text,
+            text_parts_intersection=2,
+        ) == split_text(text, parts=2, intersection=2)
 
 
 class TestSearchForAPIKey:
@@ -127,7 +143,6 @@ class TestSearchForAPIKey:
             model="test-model-1",
             system="system prompt",
             max_return_tokens=LLMTokens(143),
-            text_parts_intersection=100,
             temperature=0,
             top_p=0,
         )
@@ -145,7 +160,9 @@ class TestSearchForAPIKey:
 
         text = "some-text"
 
-        requests = fake_llm_provider.prepare_requests(llm_config, text)
+        requests = fake_llm_provider.prepare_requests(
+            llm_config, text, text_parts_intersection=_text_parts_intersection
+        )
 
         key_usage = await search_for_api_key(
             llm=fake_llm_provider,
@@ -172,7 +189,9 @@ class TestSearchForAPIKey:
 
         text = "some-text"
 
-        requests = fake_llm_provider.prepare_requests(llm_config, text)
+        requests = fake_llm_provider.prepare_requests(
+            llm_config, text, text_parts_intersection=_text_parts_intersection
+        )
 
         key_usage = await search_for_api_key(
             llm=fake_llm_provider,
@@ -186,6 +205,61 @@ class TestSearchForAPIKey:
         assert key_usage is None
 
 
+class TestCutTextToMaxTokens:
+
+    @pytest.fixture  # type: ignore
+    def llm_config(self) -> LLMConfiguration:
+        return LLMConfiguration(
+            model="test-model-1",
+            system="system prompt",
+            max_return_tokens=LLMTokens(143),
+            temperature=0,
+            top_p=0,
+        )
+
+    @pytest.mark.parametrize(
+        "text, max_tokens, expected",
+        [
+            ("some text", LLMTokens(len("some text")), "some text"),
+            ("some text", LLMTokens(len("some text") * 10), "some text"),
+            ("", LLMTokens(1), ""),
+            ("a", LLMTokens(1), "a"),
+            ("a", LLMTokens(2), "a"),
+            ("abcdefghij", LLMTokens(4), "abcd"),
+            ("abcdefghij", LLMTokens(1), "a"),
+            ("some text", LLMTokens(len("some text") - 1), "some tex"),
+        ],
+    )
+    def test_cut_text(
+        self,
+        fake_llm_provider: ProviderTest,
+        llm_config: LLMConfiguration,
+        text: str,
+        max_tokens: LLMTokens,
+        expected: str,
+    ) -> None:
+        assert (
+            cut_text_to_max_tokens(
+                llm=fake_llm_provider,
+                llm_config=llm_config,
+                text=text,
+                max_tokens=max_tokens,
+            )
+            == expected
+        )
+
+    def test_max_tokens_must_be_positive(
+        self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration
+    ) -> None:
+        with pytest.raises(errors.MaxTokensMustBePositive):
+            cut_text_to_max_tokens(
+                llm=fake_llm_provider,
+                llm_config=llm_config,
+                text="some text",
+                max_tokens=LLMTokens(0),
+            )
+
+
 class TestCallLLM:
 
     @pytest.fixture  # type: ignore
@@ -194,7 +268,6 @@ class TestCallLLM:
             model="test-model-1",
             system="system prompt",
             max_return_tokens=LLMTokens(143),
-            text_parts_intersection=100,
             temperature=0,
             top_p=0,
         )

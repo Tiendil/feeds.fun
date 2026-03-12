@@ -88,7 +88,7 @@ class LLMGeneralProcessor(BaseProcessor):
     # because it complicates understanding and configuring this parameter for users
     # as well as testing changes
     # So, `max_tokens_per_entry` tells how we cut the original text,
-    # regardles of the system prompt or output limit
+    # regardless of the system prompt or output limit
     max_tokens_per_entry: LLMTokens
     text_parts_intersection: int
 

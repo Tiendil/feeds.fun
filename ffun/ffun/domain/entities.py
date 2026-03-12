@@ -1,6 +1,6 @@
+import decimal
 import uuid
 from typing import NewType
-import decimal
 
 UserId = NewType("UserId", uuid.UUID)
 EntryId = NewType("EntryId", uuid.UUID)

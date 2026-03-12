@@ -35,3 +35,7 @@ class UsedTokensHasNotSpecified(Error):
 
 class FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys(Error):
     pass
+
+
+class MaxTokensMustBePositive(Error):
+    pass

@@ -15,7 +15,6 @@ class TestLLMGeneralProcessor:
             model="test-model",
             system="some system prompt",
             max_return_tokens=LLMTokens(1017),
-            text_parts_intersection=113,
             temperature=0.3,
             top_p=0.9,
         )
@@ -34,6 +33,8 @@ class TestLLMGeneralProcessor:
                 entry_template="<h1>{entry.title}</h1><a href='{entry.external_url}'>full article</a>{entry.body}",
                 text_cleaner=clear_nothing,
                 tags_extractor=dog_tags_extractor,
+                max_tokens_per_entry=LLMTokens(5_000),
+                text_parts_intersection=113,
                 collections_api_key=None,
                 general_api_key=None,
             )
@@ -59,6 +60,8 @@ class TestLLMGeneralProcessor:
                 entry_template="<h1>{entry.title}</h1><a href='{entry.external_url}'>full article</a>{entry.body}",
                 text_cleaner=clear_nothing,
                 tags_extractor=dog_tags_extractor,
+                max_tokens_per_entry=LLMTokens(5_000),
+                text_parts_intersection=113,
                 collections_api_key=None,
                 general_api_key=LLMGeneralApiKey(LLMApiKey("some key")),
                 general_api_key_warning=key_warning,

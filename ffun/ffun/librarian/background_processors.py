@@ -72,7 +72,7 @@ for processor_config in settings.tag_processors:
             collections_api_key=processor_config.collections_api_key,
             general_api_key=processor_config.general_api_key,
             max_tokens_per_entry=processor_config.max_tokens_per_entry,
-            text_parts_intersection=processor_config.text_parts_intersection
+            text_parts_intersection=processor_config.text_parts_intersection,
         )
     else:
         raise NotImplementedError(f"Unknown processor type: {processor_config.type}")

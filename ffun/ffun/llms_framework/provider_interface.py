@@ -23,7 +23,9 @@ class ProviderInterface:
 
         raise errors.ModelDoesNotFound(model=config.model)
 
-    def prepare_requests(self, config: LLMConfiguration, text: str) -> Sequence[ChatRequest]:
+    def prepare_requests(
+        self, config: LLMConfiguration, text: str, text_parts_intersection: int
+    ) -> Sequence[ChatRequest]:
         raise NotImplementedError("Must be implemented in a subclass")
 
     def estimate_tokens(self, config: LLMConfiguration, text: str) -> int:
@@ -57,7 +59,9 @@ class ChatResponseTest(ChatResponse):
 class ProviderTest(ProviderInterface):
     provider = LLMProvider.test
 
-    def prepare_requests(self, config: LLMConfiguration, text: str, text_parts_intersection: int) -> Sequence[ChatRequestTest]:
+    def prepare_requests(
+        self, config: LLMConfiguration, text: str, text_parts_intersection: int
+    ) -> Sequence[ChatRequestTest]:
         return [ChatRequestTest(text=text)]
 
     def estimate_tokens(self, config: LLMConfiguration, text: str) -> int:

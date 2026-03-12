@@ -1,5 +1,4 @@
 import datetime
-import decimal
 import enum
 from typing import Annotated, Literal, NewType
 
@@ -7,7 +6,7 @@ import pydantic
 
 from ffun.core.entities import BaseEntity
 from ffun.domain.datetime_intervals import month_interval_start
-from ffun.domain.entities import UserId, USDCost, LLMTokens
+from ffun.domain.entities import LLMTokens, USDCost, UserId
 from ffun.feeds.entities import FeedId
 
 LLMApiKey = NewType("LLMApiKey", str)

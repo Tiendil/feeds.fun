@@ -59,10 +59,10 @@ def split_text(text: str, parts: int, intersection: int) -> list[str]:
 
 
 def split_text_according_to_tokens(  # noqa: CCR001
-        llm: ProviderInterface,
-        llm_config: LLMConfiguration,
-        text: str,
-        text_parts_intersection: int,
+    llm: ProviderInterface,
+    llm_config: LLMConfiguration,
+    text: str,
+    text_parts_intersection: int,
 ) -> list[str]:
     parts_number = 0
 
@@ -87,6 +87,9 @@ def cut_text_to_max_tokens(  # noqa: CCR001
     text: str,
     max_tokens: LLMTokens,
 ) -> str:
+
+    if max_tokens <= 0:
+        raise errors.MaxTokensMustBePositive()
 
     left_border = 0
 

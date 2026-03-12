@@ -1,5 +1,6 @@
 import datetime
 from itertools import chain
+from typing import Callable, cast
 from unittest import mock
 
 import pytest
@@ -15,7 +16,7 @@ from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
 from ffun.feeds.tests import make as f_make
 from ffun.library.domain import get_entry
-from ffun.library.entities import Entry
+from ffun.library.entities import Entry, FeedEntryLink
 from ffun.library.operations import (
     _catalog_entry,
     all_entries_iterator,
@@ -79,13 +80,15 @@ class TestCatalogEntry:
 
         assert len(links[new_entry.id]) == 2
 
-        link_1 = links[new_entry.id][0]
+        sorted_links = sorted(links[new_entry.id], key=lambda link: link.created_at)
+
+        link_1 = sorted_links[0]
 
         assert link_1.feed_id == loaded_feed_id
         assert link_1.entry_id == new_entry.id
         assert_times_is_near(link_1.created_at, utils.now())
 
-        link_2 = links[new_entry.id][1]
+        link_2 = sorted_links[1]
 
         assert link_2.feed_id == another_loaded_feed_id
         assert link_2.entry_id == new_entry.id
