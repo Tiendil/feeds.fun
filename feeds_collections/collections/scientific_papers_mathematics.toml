@@ -1,0 +1,196 @@
+id = "dffec048-a58b-4292-9848-eacd6cff7bf5"
+slug = "scientific-papers-mathematics"
+gui_order = 4
+name = "Mathematics"
+description = "New scientific papers and preprints in mathematics, aggregated from official sources."
+show_on_main = true
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.AC"
+title = "arXiv.org :: Mathematics :: Commutative Algebra"
+description = "Commutative rings, modules, ideals, homological algebra, computational aspects, invariant theory, connections to algebraic geometry and combinatorics"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.AG"
+title = "arXiv.org :: Mathematics :: Algebraic Geometry"
+description = "Algebraic varieties, stacks, sheaves, schemes, moduli spaces, complex geometry, quantum cohomology"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.AP"
+title = "arXiv.org :: Mathematics :: Analysis of PDEs"
+description = "Existence and uniqueness, boundary conditions, linear and non-linear operators, stability, soliton theory, integrable PDE's, conservation laws, qualitative dynamics"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.AT"
+title = "arXiv.org :: Mathematics :: Algebraic Topology"
+description = "Homotopy theory, homological algebra, algebraic treatments of manifolds"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.CA"
+title = "arXiv.org :: Mathematics :: Classical Analysis and ODEs"
+description = "Special functions, orthogonal polynomials, harmonic analysis, ODE's, differential relations, calculus of variations, approximations, expansions, asymptotics"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.CO"
+title = "arXiv.org :: Mathematics :: Combinatorics"
+description = "Discrete mathematics, graph theory, enumeration, combinatorial optimization, Ramsey theory, combinatorial game theory"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.CT"
+title = "arXiv.org :: Mathematics :: Category Theory"
+description = "Enriched categories, topoi, abelian categories, monoidal categories, homological algebra"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.CV"
+title = "arXiv.org :: Mathematics :: Complex Variables"
+description = "Holomorphic functions, automorphic group actions and forms, pseudoconvexity, complex geometry, analytic spaces, analytic sheaves"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.DG"
+title = "arXiv.org :: Mathematics :: Differential Geometry"
+description = "Complex, contact, Riemannian, pseudo-Riemannian and Finsler geometry, relativity, gauge theory, global analysis"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.DS"
+title = "arXiv.org :: Mathematics :: Dynamical Systems"
+description = "Dynamics of differential equations and flows, mechanics, classical few-body problems, iterations, complex dynamics, delayed differential equations"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.FA"
+title = "arXiv.org :: Mathematics :: Functional Analysis"
+description = "Banach spaces, function spaces, real functions, integral transforms, theory of distributions, measure theory"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.GM"
+title = "arXiv.org :: Mathematics :: General Mathematics"
+description = "Mathematical material of general interest, topics not covered elsewhere"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.GN"
+title = "arXiv.org :: Mathematics :: General Topology"
+description = "Continuum theory, point-set topology, spaces with algebraic structure, foundations, dimension theory, local and global properties"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.GR"
+title = "arXiv.org :: Mathematics :: Group Theory"
+description = "Finite groups, topological groups, representation theory, cohomology, classification and structure"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.GT"
+title = "arXiv.org :: Mathematics :: Geometric Topology"
+description = "Manifolds, orbifolds, polyhedra, cell complexes, foliations, geometric structures"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.HO"
+title = "arXiv.org :: Mathematics :: History and Overview"
+description = "Biographies, philosophy of mathematics, mathematics education, recreational mathematics, communication of mathematics, ethics in mathematics"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.IT"
+title = "arXiv.org :: Mathematics :: Information Theory"
+description = "math.IT is an alias for cs.IT. Covers theoretical and experimental aspects of information theory and coding."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.KT"
+title = "arXiv.org :: Mathematics :: K-Theory and Homology"
+description = "Algebraic and topological K-theory, relations with topology, commutative algebra, and operator algebras"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.LO"
+title = "arXiv.org :: Mathematics :: Logic"
+description = "Logic, set theory, point-set topology, formal mathematics"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.MG"
+title = "arXiv.org :: Mathematics :: Metric Geometry"
+description = "Euclidean, hyperbolic, discrete, convex, coarse geometry, comparisons in Riemannian geometry, symmetric spaces"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.MP"
+title = "arXiv.org :: Mathematics :: Mathematical Physics"
+description = "math.MP is an alias for math-ph. Articles in this category focus on areas of research that illustrate the application of mathematics to problems in physics, develop mathematical methods for such applications, or provide mathematically rigorous formulations of existing physical theories. Submissions to math-ph should be of interest to both physically oriented mathematicians and mathematically oriented physicists; submissions which are primarily of interest to theoretical physicists or to mathematicians should probably be directed to the respective physics/math categories"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.NA"
+title = "arXiv.org :: Mathematics :: Numerical Analysis"
+description = "Numerical algorithms for problems in analysis and algebra, scientific computation"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.NT"
+title = "arXiv.org :: Mathematics :: Number Theory"
+description = "Prime numbers, diophantine equations, analytic number theory, algebraic number theory, arithmetic geometry, Galois theory"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.OA"
+title = "arXiv.org :: Mathematics :: Operator Algebras"
+description = "Algebras of operators on Hilbert space, C^*-algebras, von Neumann algebras, non-commutative geometry"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.OC"
+title = "arXiv.org :: Mathematics :: Optimization and Control"
+description = "Operations research, linear programming, control theory, systems theory, optimal control, game theory"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.PR"
+title = "arXiv.org :: Mathematics :: Probability"
+description = "Theory and applications of probability and stochastic processes: e.g. central limit theorems, large deviations, stochastic differential equations, models from statistical mechanics, queuing theory"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.QA"
+title = "arXiv.org :: Mathematics :: Quantum Algebra"
+description = "Quantum groups, skein theories, operadic and diagrammatic algebra, quantum field theory"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.RA"
+title = "arXiv.org :: Mathematics :: Rings and Algebras"
+description = "Non-commutative rings and algebras, non-associative algebras, universal algebra and lattice theory, linear algebra, semigroups"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.RT"
+title = "arXiv.org :: Mathematics :: Representation Theory"
+description = "Linear representations of algebras and groups, Lie theory, associative algebras, multilinear algebra"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.SG"
+title = "arXiv.org :: Mathematics :: Symplectic Geometry"
+description = "Hamiltonian systems, symplectic flows, classical integrable systems"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.SP"
+title = "arXiv.org :: Mathematics :: Spectral Theory"
+description = "Schrodinger operators, operators on manifolds, general differential operators, numerical studies, integral operators, discrete models, resonances, non-self-adjoint operators, random operators/matrices"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math.ST"
+title = "arXiv.org :: Mathematics :: Statistics Theory"
+description = "Applied, computational and theoretical statistics: e.g. statistical inference, regression, time series, multivariate analysis, data analysis, Markov chain Monte Carlo, design of experiments, case studies"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/stat.AP"
+title = "arXiv.org :: Statistics :: Applications"
+description = "Biology, Education, Epidemiology, Engineering, Environmental Sciences, Medical, Physical Sciences, Quality Control, Social Sciences"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/stat.CO"
+title = "arXiv.org :: Statistics :: Computation"
+description = "Algorithms, Simulation, Visualization"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/stat.ME"
+title = "arXiv.org :: Statistics :: Methodology"
+description = "Design, Surveys, Model Selection, Multiple Testing, Multivariate Methods, Signal and Image Processing, Time Series, Smoothing, Spatial Statistics, Survival Analysis, Nonparametric and Semiparametric Methods"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/stat.ML"
+title = "arXiv.org :: Statistics :: Machine Learning"
+description = "Covers machine learning papers (supervised, unsupervised, semi-supervised learning, graphical models, reinforcement learning, bandits, high dimensional inference, etc.) with a statistical or theoretical grounding"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/stat.OT"
+title = "arXiv.org :: Statistics :: Other Statistics"
+description = "Work in statistics that does not fit into the other stat classifications"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/stat.TH"
+title = "arXiv.org :: Statistics :: Statistics Theory"
+description = "stat.TH is an alias for math.ST. Asymptotics, Bayesian Inference, Decision Theory, Estimation, Foundations, Inference, Testing."

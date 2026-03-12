@@ -1,0 +1,66 @@
+id = "9ef4627e-4ec7-4c41-93c7-b245dde5f334"
+slug = "scientific-papers-economics"
+gui_order = 7
+name = "Economics"
+description = "New scientific papers and preprints in economics, aggregated from official sources."
+show_on_main = true
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/econ.EM"
+title = "arXiv.org :: Economics :: Econometrics"
+description = "Econometric Theory, Micro-Econometrics, Macro-Econometrics, Empirical Content of Economic Relations discovered via New Methods, Methodological Aspects of the Application of Statistical Inference to Economic Data."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/econ.GN"
+title = "arXiv.org :: Economics :: General Economics"
+description = "General methodological, applied, and empirical contributions to economics."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/econ.TH"
+title = "arXiv.org :: Economics :: Theoretical Economics"
+description = "Includes theoretical contributions to Contract Theory, Decision Theory, Game Theory, General Equilibrium, Growth, Learning and Evolution, Macroeconomics, Market and Mechanism Design, and Social Choice."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-fin.CP"
+title = "arXiv.org :: Quantitative Finance :: Computational Finance"
+description = "Computational methods, including Monte Carlo, PDE, lattice and other numerical methods with applications to financial modeling"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-fin.EC"
+title = "arXiv.org :: Quantitative Finance :: Economics"
+description = "q-fin.EC is an alias for econ.GN. Economics, including micro and macro economics, international economics, theory of the firm, labor economics, and other economic topics outside finance"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-fin.GN"
+title = "arXiv.org :: Quantitative Finance :: General Finance"
+description = "Development of general quantitative methodologies with applications in finance"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-fin.MF"
+title = "arXiv.org :: Quantitative Finance :: Mathematical Finance"
+description = "Mathematical and analytical methods of finance, including stochastic, probabilistic and functional analysis, algebraic, geometric and other methods"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-fin.PM"
+title = "arXiv.org :: Quantitative Finance :: Portfolio Management"
+description = "Security selection and optimization, capital allocation, investment strategies and performance measurement"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-fin.PR"
+title = "arXiv.org :: Quantitative Finance :: Pricing of Securities"
+description = "Valuation and hedging of financial securities, their derivatives, and structured products"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-fin.RM"
+title = "arXiv.org :: Quantitative Finance :: Risk Management"
+description = "Measurement and management of financial risks in trading, banking, insurance, corporate and other applications"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-fin.ST"
+title = "arXiv.org :: Quantitative Finance :: Statistical Finance"
+description = "Statistical, econometric and econophysics analyses with applications to financial markets and economic data"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-fin.TR"
+title = "arXiv.org :: Quantitative Finance :: Trading and Market Microstructure"
+description = "Market microstructure, liquidity, exchange and auction design, automated trading, agent-based modeling and market-making"
