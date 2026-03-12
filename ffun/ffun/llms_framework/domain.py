@@ -59,7 +59,10 @@ def split_text(text: str, parts: int, intersection: int) -> list[str]:
 
 
 def split_text_according_to_tokens(  # noqa: CCR001
-    llm: ProviderInterface, llm_config: LLMConfiguration, text: str
+        llm: ProviderInterface,
+        llm_config: LLMConfiguration,
+        text: str,
+        text_parts_intersection: int,
 ) -> list[str]:
     parts_number = 0
 
@@ -68,32 +71,45 @@ def split_text_according_to_tokens(  # noqa: CCR001
     while True:
         parts_number += 1
 
-        parts = split_text(text, parts=parts_number, intersection=llm_config.text_parts_intersection)
+        parts = split_text(text, parts=parts_number, intersection=text_parts_intersection)
 
         parts_tokens = [llm.estimate_tokens(llm_config, text=part) for part in parts]
 
         if any(tokens + llm_config.max_return_tokens >= model.max_context_size for tokens in parts_tokens):
             continue
 
-        result: list[str] = []
-        total_tokens = 0
+        return parts
 
-        for part, tokens in zip(parts, parts_tokens):
-            total_tokens += tokens + llm_config.max_return_tokens
 
-            if total_tokens > model.max_tokens_per_entry:
-                # trim the last part if the text exceeds the model limit
-                logger.warning(
-                    "entry_trimmed_for_llm",
-                    model_provider=model.provider,
-                    model_name=model.name,
-                    model_max_tokens_per_entry=model.max_tokens_per_entry,
-                )
-                return result
+def cut_text_to_max_tokens(  # noqa: CCR001
+    llm: ProviderInterface,
+    llm_config: LLMConfiguration,
+    text: str,
+    max_tokens: LLMTokens,
+) -> str:
 
-            result.append(part)
+    left_border = 0
 
-        return result
+    right_border = len(text)
+    right_tokens = llm.estimate_tokens(llm_config, text=text)
+
+    if right_tokens <= max_tokens:
+        return text
+
+    while True:
+        mid_border = (left_border + right_border) // 2
+        mid_tokens = llm.estimate_tokens(llm_config, text=text[:mid_border])
+
+        if mid_tokens > max_tokens:
+            right_border = mid_border
+            right_tokens = mid_tokens
+        else:
+            left_border = mid_border
+
+        if right_border - left_border <= 1:
+            break
+
+    return text[:left_border]
 
 
 async def search_for_api_key(
