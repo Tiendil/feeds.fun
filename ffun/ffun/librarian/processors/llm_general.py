@@ -1,12 +1,13 @@
 from typing import Any, Sequence
 
 from ffun.core import logging
+from ffun.domain.entities import LLMTokens
 from ffun.librarian import errors
 from ffun.librarian.entities import TagsExtractor, TextCleaner
 from ffun.librarian.processors import base
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors as llmsf_errors
-from ffun.llms_framework.domain import call_llm, search_for_api_key
+from ffun.llms_framework.domain import call_llm, cut_text_to_max_tokens, search_for_api_key
 from ffun.llms_framework.entities import (
     ChatResponse,
     LLMCollectionApiKey,
@@ -30,6 +31,8 @@ class Processor(base.Processor):
         "tag_extractor",
         "collections_api_key",
         "general_api_key",
+        "max_tokens_per_entry",
+        "text_parts_intersection",
     )
 
     def __init__(  # noqa
@@ -41,6 +44,8 @@ class Processor(base.Processor):
         tag_extractor: TagsExtractor,
         collections_api_key: LLMCollectionApiKey | None,
         general_api_key: LLMGeneralApiKey | None,
+        max_tokens_per_entry: LLMTokens,
+        text_parts_intersection: int,
         **kwargs: Any,
     ):
         super().__init__(**kwargs)  # type: ignore
@@ -53,12 +58,25 @@ class Processor(base.Processor):
         self.collections_api_key = collections_api_key
         self.general_api_key = general_api_key
 
-    async def process(self, entry: Entry) -> list[RawTag]:
+        self.max_tokens_per_entry = max_tokens_per_entry
+        self.text_parts_intersection = text_parts_intersection
+
+    def _text_to_process(self, entry: Entry) -> str:
         dirty_text = self.entry_template.format(entry=entry)
 
         cleaned_text = self.text_cleaner(dirty_text)
 
-        requests = self.llm_provider.prepare_requests(self.llm_config, cleaned_text)
+        cut_text = cut_text_to_max_tokens(
+            llm=self.llm_provider, llm_config=self.llm_config, text=cleaned_text, max_tokens=self.max_tokens_per_entry
+        )
+
+        return cut_text
+
+    async def process(self, entry: Entry) -> list[RawTag]:
+
+        cleaned_text = self._text_to_process(entry)
+
+        requests = self.llm_provider.prepare_requests(self.llm_config, cleaned_text, self.text_parts_intersection)
 
         api_key_usage = await search_for_api_key(
             llm=self.llm_provider,

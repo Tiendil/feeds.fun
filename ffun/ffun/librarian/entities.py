@@ -7,7 +7,7 @@ from pydantic_core import PydanticCustomError
 
 from ffun.core import logging
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import EntryId
+from ffun.domain.entities import EntryId, LLMTokens
 from ffun.llms_framework.entities import LLMCollectionApiKey, LLMConfiguration, LLMGeneralApiKey, LLMProvider
 
 logger = logging.get_module_logger()
@@ -83,6 +83,14 @@ class LLMGeneralProcessor(BaseProcessor):
 
     text_cleaner: PydanticTextCleaner
     tags_extractor: PydanticTagsExtractor
+
+    # `max_tokens_per_entry` does not include output tokens,
+    # because it complicates understanding and configuring this parameter for users
+    # as well as testing changes
+    # So, `max_tokens_per_entry` tells how we cut the original text,
+    # regardless of the system prompt or output limit
+    max_tokens_per_entry: LLMTokens
+    text_parts_intersection: int
 
     llm_provider: LLMProvider
 

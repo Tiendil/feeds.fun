@@ -19,7 +19,6 @@ class TestProcessor:
             model="test-model-1",
             system="system prompt",
             max_return_tokens=LLMTokens(143),
-            text_parts_intersection=100,
             temperature=0,
             top_p=0,
         )
@@ -35,6 +34,8 @@ class TestProcessor:
             tag_extractor=dog_tags_extractor,
             collections_api_key=None,
             general_api_key=None,
+            max_tokens_per_entry=LLMTokens(1_000),
+            text_parts_intersection=100,
         )
 
     def test_extract_tags(self, llm_processor: Processor) -> None:
@@ -55,6 +56,19 @@ class TestProcessor:
             RawTag(raw_uid="tag-2", categories={TagCategory.free_form}),
             RawTag(raw_uid="tag-3", categories={TagCategory.free_form}),
         ]
+
+    def test__text_to_process__formats_cleans_and_cuts(self, llm_processor: Processor, cataloged_entry: Entry) -> None:
+        llm_processor.entry_template = "title={entry.title}; body={entry.body}"
+        llm_processor.max_tokens_per_entry = LLMTokens(10)
+
+        def text_cleaner(text: str) -> str:
+            return text.upper()
+
+        llm_processor.text_cleaner = text_cleaner
+
+        entry = cataloged_entry.replace(title="hello", body="world")
+
+        assert llm_processor._text_to_process(entry) == "TITLE=HELL"
 
     @pytest.mark.asyncio
     async def test_process__no_api_key_found(self, llm_processor: Processor, cataloged_entry: Entry) -> None:

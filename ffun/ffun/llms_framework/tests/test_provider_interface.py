@@ -36,7 +36,6 @@ class TestBaseProviderInterfaceClass:
             model="test-model-1",
             system="system prompt",
             max_return_tokens=LLMTokens(143),
-            text_parts_intersection=100,
             temperature=0,
             top_p=0,
         )
@@ -46,7 +45,6 @@ class TestBaseProviderInterfaceClass:
             name="test-model-1",
             max_context_size=LLMTokens(12800),
             max_return_tokens=LLMTokens(4096),
-            max_tokens_per_entry=LLMTokens(300000),
             input_1m_tokens_cost=USDCost(Decimal("0.3")),
             output_1m_tokens_cost=USDCost(Decimal("0.7")),
         )
@@ -58,7 +56,6 @@ class TestBaseProviderInterfaceClass:
             name="test-model-2",
             max_context_size=LLMTokens(14212),
             max_return_tokens=LLMTokens(1024),
-            max_tokens_per_entry=LLMTokens(300000),
             input_1m_tokens_cost=USDCost(Decimal("0.7")),
             output_1m_tokens_cost=USDCost(Decimal("0.3")),
         )
@@ -72,7 +69,6 @@ class TestBaseProviderInterfaceClass:
             name="gpt-4o-2024-08-06",
             max_context_size=LLMTokens(128000),
             max_return_tokens=LLMTokens(16384),
-            max_tokens_per_entry=LLMTokens(300000),
             input_1m_tokens_cost=USDCost(Decimal("2.5")),
             output_1m_tokens_cost=USDCost(Decimal("10")),
         )
@@ -83,7 +79,6 @@ class TestBaseProviderInterfaceClass:
             model="gpt-4o-2024-08-06",
             system="system prompt",
             max_return_tokens=LLMTokens(143),
-            text_parts_intersection=100,
             temperature=0,
             top_p=0,
         )
@@ -100,7 +95,6 @@ class TestBaseProviderInterfaceClass:
             model="test-model-wrong",
             system="system prompt",
             max_return_tokens=LLMTokens(143),
-            text_parts_intersection=100,
             temperature=0,
             top_p=0,
         )

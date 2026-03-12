@@ -51,10 +51,12 @@
   allowed_for_collections = false
   allowed_for_users = true
 
+  text_parts_intersection = 200
+  max_tokens_per_entry = 5000
+
   [tag_processors.llm_config]
     model = "gpt-4o-mini-2024-07-18"
     max_return_tokens = 8192
-    text_parts_intersection = 200
     temperature = 0
     top_p = 0
     system = """
@@ -147,10 +149,12 @@ Your task is to analyze the given text by following these steps:
   # currently, we do not support tracking tokens for Gemini
   allowed_for_users = false
 
+  text_parts_intersection = 200
+  max_tokens_per_entry = 5000
+
   [tag_processors.llm_config]
     model = "gemini-2.0-flash-001"
     max_return_tokens = 8192
-    text_parts_intersection = 200
     temperature = 0
     top_p = 0
     system = """
@@ -231,10 +235,12 @@ Your task is to analyze the given text by following these steps:
   allowed_for_collections = false
   allowed_for_users = true
 
+  text_parts_intersection = 200
+  max_tokens_per_entry = 5000
+
   [tag_processors.llm_config]
     model = "gpt-5-nano-2025-08-07"
     max_return_tokens = 8192
-    text_parts_intersection = 200
     verbosity = "low"  # medium, high
     reasoning_effort = "minimal"  # low, medium, high
     lark_description = "Register tags into Feeds Fun service. YOU MUST REASON HEAVILY ABOUT THE OUTPUT AND MAKE SURE IT OBEYS THE GRAMMAR."

@@ -57,7 +57,6 @@ _llm_config = LLMConfiguration(
     model="test-model",
     system="some system prompt",
     max_return_tokens=LLMTokens(1017),
-    text_parts_intersection=113,
     temperature=0.3,
     top_p=0.9,
 )

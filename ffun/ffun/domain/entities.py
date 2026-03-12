@@ -1,3 +1,4 @@
+import decimal
 import uuid
 from typing import NewType
 
@@ -24,3 +25,7 @@ FeedUrl = NewType("FeedUrl", str)
 
 UrlUid = NewType("UrlUid", str)  # uid that was built from URL
 SourceUid = NewType("SourceUid", str)  # uid that was built from URL
+
+USDCost = NewType("USDCost", decimal.Decimal)
+
+LLMTokens = NewType("LLMTokens", int)

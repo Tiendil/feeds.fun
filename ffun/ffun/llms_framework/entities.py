@@ -1,5 +1,4 @@
 import datetime
-import decimal
 import enum
 from typing import Annotated, Literal, NewType
 
@@ -7,17 +6,13 @@ import pydantic
 
 from ffun.core.entities import BaseEntity
 from ffun.domain.datetime_intervals import month_interval_start
-from ffun.domain.entities import UserId
+from ffun.domain.entities import LLMTokens, USDCost, UserId
 from ffun.feeds.entities import FeedId
 
 LLMApiKey = NewType("LLMApiKey", str)
 LLMUserApiKey = NewType("LLMUserApiKey", LLMApiKey)
 LLMCollectionApiKey = NewType("LLMCollectionApiKey", LLMApiKey)
 LLMGeneralApiKey = NewType("LLMGeneralApiKey", LLMApiKey)
-
-USDCost = NewType("USDCost", decimal.Decimal)
-
-LLMTokens = NewType("LLMTokens", int)
 
 
 class LLMProvider(enum.StrEnum):
@@ -31,9 +26,6 @@ class ModelInfo(pydantic.BaseModel):
     name: str
     max_context_size: LLMTokens
     max_return_tokens: LLMTokens
-
-    # protection from overuse/overspend
-    max_tokens_per_entry: LLMTokens
 
     input_1m_tokens_cost: USDCost
     output_1m_tokens_cost: USDCost
@@ -61,7 +53,6 @@ class LLMConfiguration(BaseEntity):
     model: str
     system: Annotated[str, pydantic.StringConstraints(strip_whitespace=True)]
     max_return_tokens: LLMTokens
-    text_parts_intersection: int
     temperature: float | None = None
     top_p: float | None = None
     verbosity: Literal["low", "medium", "high"] | None = None
