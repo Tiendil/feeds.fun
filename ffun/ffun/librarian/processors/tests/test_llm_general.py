@@ -57,9 +57,7 @@ class TestProcessor:
             RawTag(raw_uid="tag-3", categories={TagCategory.free_form}),
         ]
 
-    def test__text_to_process__formats_cleans_and_cuts(
-        self, llm_processor: Processor, cataloged_entry: Entry
-    ) -> None:
+    def test__text_to_process__formats_cleans_and_cuts(self, llm_processor: Processor, cataloged_entry: Entry) -> None:
         llm_processor.entry_template = "title={entry.title}; body={entry.body}"
         llm_processor.max_tokens_per_entry = LLMTokens(10)
 

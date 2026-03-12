@@ -248,9 +248,7 @@ class TestCutTextToMaxTokens:
             == expected
         )
 
-    def test_max_tokens_must_be_positive(
-        self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration
-    ) -> None:
+    def test_max_tokens_must_be_positive(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
         with pytest.raises(errors.MaxTokensMustBePositive):
             cut_text_to_max_tokens(
                 llm=fake_llm_provider,

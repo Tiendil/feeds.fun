@@ -1,6 +1,5 @@
 import datetime
 from itertools import chain
-from typing import Callable, cast
 from unittest import mock
 
 import pytest
@@ -34,6 +33,10 @@ from ffun.library.operations import (
     update_external_url,
 )
 from ffun.library.tests import helpers, make
+
+
+def _feed_entry_link_created_at(link: FeedEntryLink) -> datetime.datetime:
+    return link.created_at
 
 
 class TestCatalogEntry:
@@ -80,7 +83,7 @@ class TestCatalogEntry:
 
         assert len(links[new_entry.id]) == 2
 
-        sorted_links = sorted(links[new_entry.id], key=lambda link: link.created_at)
+        sorted_links = sorted(links[new_entry.id], key=_feed_entry_link_created_at)
 
         link_1 = sorted_links[0]
 
