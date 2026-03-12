@@ -10,3 +10,4 @@
 - ff-640 — Changes in LLM-related configs:
   - Config `max_tokens_per_entry` (`models.toml`) moved to the `llm_general` tag processor (`tag_processors.toml`) under the same name.
   - Config `text_parts_intersection` moved out of nested `tag_processors.llm_config` section to the root of `tag_processors` section (`tag_processors.toml`)
+- ff-641 — Split the default scientific papers collections into multiple smaller ones. Improved collections UI on the main page.

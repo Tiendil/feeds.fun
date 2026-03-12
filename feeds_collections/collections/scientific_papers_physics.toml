@@ -1,0 +1,261 @@
+id = "993a4b91-6273-4563-8727-af2d90f9c534"
+slug = "scientific-papers-physics"
+gui_order = 5
+name = "Physics"
+description = "New scientific papers and preprints in physics, aggregated from official sources."
+show_on_main = true
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/astro-ph.CO"
+title = "arXiv.org :: Physics :: Astrophysics :: Cosmology and Nongalactic Astrophysics"
+description = "Phenomenology of early universe, cosmic microwave background, cosmological parameters, primordial element abundances, extragalactic distance scale, large-scale structure of the universe. Groups, superclusters, voids, intergalactic medium. Particle astrophysics: dark energy, dark matter, baryogenesis, leptogenesis, inflationary models, reheating, monopoles, WIMPs, cosmic strings, primordial black holes, cosmological gravitational radiation"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/astro-ph.EP"
+title = "arXiv.org :: Physics :: Astrophysics :: Earth and Planetary Astrophysics"
+description = "Interplanetary medium, planetary physics, planetary astrobiology, extrasolar planets, comets, asteroids, meteorites. Structure and formation of the solar system"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/astro-ph.GA"
+title = "arXiv.org :: Physics :: Astrophysics :: Astrophysics of Galaxies"
+description = "Phenomena pertaining to galaxies or the Milky Way. Star clusters, HII regions and planetary nebulae, the interstellar medium, atomic and molecular clouds, dust. Stellar populations. Galactic structure, formation, dynamics. Galactic nuclei, bulges, disks, halo. Active Galactic Nuclei, supermassive black holes, quasars. Gravitational lens systems. The Milky Way and its contents"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/astro-ph.HE"
+title = "arXiv.org :: Physics :: Astrophysics :: High Energy Astrophysical Phenomena"
+description = "Cosmic ray production, acceleration, propagation, detection. Gamma ray astronomy and bursts, X-rays, charged particles, supernovae and other explosive phenomena, stellar remnants and accretion systems, jets, microquasars, neutron stars, pulsars, black holes"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/astro-ph.IM"
+title = "arXiv.org :: Physics :: Astrophysics :: Instrumentation and Methods for Astrophysics"
+description = "Detector and telescope design, experiment proposals. Laboratory Astrophysics. Methods for data analysis, statistical methods. Software, database design"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/astro-ph.SR"
+title = "arXiv.org :: Physics :: Astrophysics :: Solar and Stellar Astrophysics"
+description = "White dwarfs, brown dwarfs, cataclysmic variables. Star formation and protostellar systems, stellar astrobiology, binary and multiple systems of stars, stellar evolution and structure, coronas. Central stars of planetary nebulae. Helioseismology, solar neutrinos, production and detection of gravitational radiation from stellar systems"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/cond-mat.dis-nn"
+title = "arXiv.org :: Physics :: Condensed Matter :: Disordered Systems and Neural Networks"
+description = "Glasses and spin glasses; properties of random, aperiodic and quasiperiodic systems; transport in disordered media; localization; phenomena mediated by defects and disorder; neural networks"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/cond-mat.mes-hall"
+title = "arXiv.org :: Physics :: Condensed Matter :: Mesoscale and Nanoscale Physics"
+description = "Semiconducting nanostructures: quantum dots, wires, and wells. Single electronics, spintronics, 2d electron gases, quantum Hall effect, nanotubes, graphene, plasmonic nanostructures"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/cond-mat.mtrl-sci"
+title = "arXiv.org :: Physics :: Condensed Matter :: Materials Science"
+description = "Techniques, synthesis, characterization, structure.  Structural phase transitions, mechanical properties, phonons. Defects, adsorbates, interfaces"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/cond-mat.other"
+title = "arXiv.org :: Physics :: Condensed Matter :: Other Condensed Matter"
+description = "Work in condensed matter that does not fit into the other cond-mat classifications"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/cond-mat.quant-gas"
+title = "arXiv.org :: Physics :: Condensed Matter :: Quantum Gases"
+description = "Ultracold atomic and molecular gases, Bose-Einstein condensation, Feshbach resonances, spinor condensates, optical lattices, quantum simulation with cold atoms and molecules, macroscopic interference phenomena"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/cond-mat.soft"
+title = "arXiv.org :: Physics :: Condensed Matter :: Soft Condensed Matter"
+description = "Membranes, polymers, liquid crystals, glasses, colloids, granular matter"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/cond-mat.stat-mech"
+title = "arXiv.org :: Physics :: Condensed Matter :: Statistical Mechanics"
+description = "Phase transitions, thermodynamics, field theory, non-equilibrium phenomena, renormalization group and scaling, integrable models, turbulence"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/cond-mat.str-el"
+title = "arXiv.org :: Physics :: Condensed Matter :: Strongly Correlated Electrons"
+description = "Quantum magnetism, non-Fermi liquids, spin liquids, quantum criticality, charge density waves, metal-insulator transitions"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/cond-mat.supr-con"
+title = "arXiv.org :: Physics :: Condensed Matter :: Superconductivity"
+description = "Superconductivity: theory, models, experiment.  Superflow in helium"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/gr-qc"
+title = "arXiv.org :: Physics :: General Relativity and Quantum Cosmology"
+description = "General Relativity and Quantum Cosmology Areas of gravitational physics, including experiments and observations related to the detection and interpretation of gravitational waves, experimental tests of gravitational theories, computational general relativity, relativistic astrophysics, solutions to Einstein's equations and their properties, alternative theories of gravity, classical and quantum cosmology, and quantum gravity."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/hep-ex"
+title = "arXiv.org :: Physics :: High Energy Physics - Experiment"
+description = "Results from high-energy/particle physics experiments and prospects for future experimental results, including tests of the standard model, measurements of standard model parameters, searches for physics beyond the standard model, and astroparticle physics experimental results. Does not include: detectors and instrumentation nor analysis methods to conduct experiments."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/hep-lat"
+title = "arXiv.org :: Physics :: High Energy Physics - Lattice"
+description = "Lattice field theory. Phenomenology from lattice field theory. Algorithms for lattice field theory.  Hardware for lattice field theory."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/hep-ph"
+title = "arXiv.org :: Physics :: High Energy Physics - Phenomenology"
+description = "Theoretical particle physics and its interrelation with experiment. Prediction of particle physics observables: models, effective field theories, calculation techniques. Particle physics: analysis of theory through experimental results."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/hep-th"
+title = "arXiv.org :: Physics :: High Energy Physics - Theory"
+description = "Formal aspects of quantum field theory. String theory, supersymmetry and supergravity."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/math-ph"
+title = "arXiv.org :: Physics :: Mathematical Physics"
+description = "Articles in this category focus on areas of research that illustrate the application of mathematics to problems in physics, develop mathematical methods for such applications, or provide mathematically rigorous formulations of existing physical theories. Submissions to math-ph should be of interest to both physically oriented mathematicians and mathematically oriented physicists; submissions which are primarily of interest to theoretical physicists or to mathematicians should probably be directed to the respective physics/math categories"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/nlin.AO"
+title = "arXiv.org :: Physics :: Nonlinear Sciences :: Adaptation and Self-Organizing Systems"
+description = "Adaptation, self-organizing systems, statistical physics, fluctuating systems, stochastic processes, interacting particle systems, machine learning"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/nlin.CD"
+title = "arXiv.org :: Physics :: Nonlinear Sciences :: Chaotic Dynamics"
+description = "Dynamical systems, chaos, quantum chaos, topological dynamics, cycle expansions, turbulence, propagation"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/nlin.CG"
+title = "arXiv.org :: Physics :: Nonlinear Sciences :: Cellular Automata and Lattice Gases"
+description = "Computational methods, time series analysis, signal processing, wavelets, lattice gases"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/nlin.PS"
+title = "arXiv.org :: Physics :: Nonlinear Sciences :: Pattern Formation and Solitons"
+description = "Pattern formation, coherent structures, solitons"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/nlin.SI"
+title = "arXiv.org :: Physics :: Nonlinear Sciences :: Exactly Solvable and Integrable Systems"
+description = "Exactly solvable systems, integrable PDEs, integrable ODEs, Painleve analysis, integrable discrete maps, solvable lattice models, integrable quantum systems"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/nucl-ex"
+title = "arXiv.org :: Physics :: Nuclear Experiment"
+description = "Nuclear Experiment Results from experimental nuclear physics including the areas of fundamental interactions, measurements at low- and medium-energy, as well as relativistic heavy-ion collisions.  Does not include: detectors and instrumentation nor analysis methods to conduct experiments; descriptions of experimental programs (present or future); comments on published results"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/nucl-th"
+title = "arXiv.org :: Physics :: Nuclear Theory"
+description = "Nuclear Theory Theory of nuclear structure covering wide area from models of hadron structure to neutron stars. Nuclear equation of states at different external conditions. Theory of nuclear reactions including heavy-ion reactions at low and high energies. It does not include problems of data analysis, physics of nuclear reactors, problems of safety, reactor construction"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.acc-ph"
+title = "arXiv.org :: Physics :: Accelerator Physics"
+description = "Accelerator theory and simulation. Accelerator technology. Accelerator experiments. Beam Physics. Accelerator design and optimization. Advanced accelerator concepts. Radiation sources including synchrotron light sources and free electron lasers. Applications of accelerators."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.ao-ph"
+title = "arXiv.org :: Physics :: Atmospheric and Oceanic Physics"
+description = "Atmospheric and oceanic physics and physical chemistry, biogeophysics, and climate science"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.app-ph"
+title = "arXiv.org :: Physics :: Applied Physics"
+description = "Applications of physics to new technology, including electronic devices, optics, photonics, microwaves, spintronics, advanced materials, metamaterials, nanotechnology, and energy sciences."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.atm-clus"
+title = "arXiv.org :: Physics :: Atomic and Molecular Clusters"
+description = "Atomic and molecular clusters, nanoparticles: geometric, electronic, optical, chemical, magnetic properties, shell structure, phase transitions, optical spectroscopy, mass spectrometry, photoelectron spectroscopy, ionization potential, electron affinity, interaction with intense light pulses, electron diffraction, light scattering, ab initio calculations, DFT theory, fragmentation, Coulomb explosion, hydrodynamic expansion."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.atom-ph"
+title = "arXiv.org :: Physics :: Atomic Physics"
+description = "Atomic and molecular structure, spectra, collisions, and data. Atoms and molecules in external fields. Molecular dynamics and coherent and optical control. Cold atoms and molecules. Cold collisions. Optical lattices."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.bio-ph"
+title = "arXiv.org :: Physics :: Biological Physics"
+description = "Molecular biophysics, cellular biophysics, neurological biophysics, membrane biophysics, single-molecule biophysics, ecological biophysics, quantum phenomena in biological systems (quantum biophysics), theoretical biophysics, molecular dynamics/modeling and simulation, game theory, biomechanics, bioinformatics, microorganisms, virology, evolution, biophysical methods."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.chem-ph"
+title = "arXiv.org :: Physics :: Chemical Physics"
+description = "Experimental, computational, and theoretical physics of atoms, molecules, and clusters - Classical and quantum description of states, processes, and dynamics; spectroscopy, electronic structure, conformations, reactions, interactions, and phases. Chemical thermodynamics. Disperse systems. High pressure chemistry. Solid state chemistry. Surface and interface chemistry."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.class-ph"
+title = "arXiv.org :: Physics :: Classical Physics"
+description = "Newtonian and relativistic dynamics; many particle systems; planetary motions; chaos in classical dynamics. Maxwell's  equations and  dynamics of charged systems and  electromagnetic forces in materials. Vibrating systems such as membranes and cantilevers; optomechanics. Classical waves, including acoustics and elasticity; physics of music and musical instruments. Classical thermodynamics and  heat flow problems."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.comp-ph"
+title = "arXiv.org :: Physics :: Computational Physics"
+description = "All aspects of computational science applied to physics."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.data-an"
+title = "arXiv.org :: Physics :: Data Analysis, Statistics and Probability"
+description = "Methods, software and hardware for physics data analysis: data processing and storage; measurement methodology; statistical and mathematical aspects such as parametrization and uncertainties."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.ed-ph"
+title = "arXiv.org :: Physics :: Physics Education"
+description = "Report of results of a research study, laboratory experience, assessment or classroom practice that represents a way to improve teaching and learning in physics. Also, report on misconceptions of students, textbook errors, and other similar information relative to promoting physics understanding."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.flu-dyn"
+title = "arXiv.org :: Physics :: Fluid Dynamics"
+description = "Turbulence, instabilities, incompressible/compressible flows, reacting flows. Aero/hydrodynamics, fluid-structure interactions, acoustics. Biological fluid dynamics, micro/nanofluidics, interfacial phenomena. Complex fluids, suspensions and granular flows, porous media flows. Geophysical flows, thermoconvective and stratified flows. Mathematical and computational methods for fluid dynamics, fluid flow models, experimental techniques."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.gen-ph"
+title = "arXiv.org :: Physics :: General Physics"
+description = "Description coming soon"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.geo-ph"
+title = "arXiv.org :: Physics :: Geophysics"
+description = "Atmospheric physics. Biogeosciences. Computational geophysics. Geographic location. Geoinformatics. Geophysical techniques. Hydrospheric geophysics. Magnetospheric physics. Mathematical geophysics. Planetology. Solar system. Solid earth geophysics. Space plasma physics. Mineral physics. High pressure physics."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.hist-ph"
+title = "arXiv.org :: Physics :: History and Philosophy of Physics"
+description = "History and philosophy of all branches of physics, astrophysics, and cosmology, including appreciations of physicists."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.ins-det"
+title = "arXiv.org :: Physics :: Instrumentation and Detectors"
+description = "Instrumentation and Detectors for research in natural science, including optical, molecular, atomic, nuclear and particle physics instrumentation and the associated electronics, services, infrastructure and control equipment. "
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.med-ph"
+title = "arXiv.org :: Physics :: Medical Physics"
+description = "Radiation therapy. Radiation dosimetry. Biomedical imaging modelling.  Reconstruction, processing, and analysis. Biomedical system modelling and analysis. Health physics. New imaging or therapy modalities."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.optics"
+title = "arXiv.org :: Physics :: Optics"
+description = "Adaptive optics. Astronomical optics. Atmospheric optics. Biomedical optics. Cardinal points. Collimation. Doppler effect. Fiber optics. Fourier optics. Geometrical optics (Gradient index optics. Holography. Infrared optics. Integrated optics. Laser applications. Laser optical systems. Lasers. Light amplification. Light diffraction. Luminescence. Microoptics. Nano optics. Ocean optics. Optical computing. Optical devices. Optical imaging. Optical materials. Optical metrology. Optical microscopy. Optical properties. Optical signal processing. Optical testing techniques. Optical wave propagation. Paraxial optics. Photoabsorption. Photoexcitations. Physical optics. Physiological optics. Quantum optics. Segmented optics. Spectra. Statistical optics. Surface optics. Ultrafast optics. Wave optics. X-ray optics."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.plasm-ph"
+title = "arXiv.org :: Physics :: Plasma Physics"
+description = "Fundamental plasma physics. Magnetically Confined Plasmas (includes magnetic fusion energy research). High Energy Density Plasmas (inertial confinement plasmas, laser-plasma interactions). Ionospheric, Heliophysical, and Astrophysical plasmas (includes sun and solar system plasmas). Lasers, Accelerators, and Radiation Generation. Low temperature plasmas and plasma applications (include dusty plasmas, semiconductor etching, plasma-based nanotechnology, medical applications). Plasma Diagnostics, Engineering and Enabling Technologies (includes fusion reactor design, heating systems, diagnostics, experimental techniques)"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.pop-ph"
+title = "arXiv.org :: Physics :: Popular Physics"
+description = "Description coming soon"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.soc-ph"
+title = "arXiv.org :: Physics :: Physics and Society"
+description = "Structure, dynamics and collective behavior of societies and groups (human or otherwise). Quantitative analysis of social networks and other complex networks. Physics and engineering of infrastructure and systems of broad societal impact (e.g., energy grids, transportation networks)."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/physics.space-ph"
+title = "arXiv.org :: Physics :: Space Physics"
+description = "Space plasma physics. Heliophysics. Space weather. Planetary magnetospheres, ionospheres and magnetotail. Auroras. Interplanetary space. Cosmic rays. Synchrotron radiation. Radio astronomy."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/quant-ph"
+title = "arXiv.org :: Physics :: Quantum Physics"
+description = "Description coming soon"

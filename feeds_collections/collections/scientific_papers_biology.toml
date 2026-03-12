@@ -1,0 +1,56 @@
+id = "058ffa20-9beb-4c58-badf-2a8f53768136"
+slug = "scientific-papers-biology"
+gui_order = 6
+name = "Biology"
+description = "New scientific papers and preprints in biology, aggregated from official sources."
+show_on_main = true
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-bio.BM"
+title = "arXiv.org :: Quantitative Biology :: Biomolecules"
+description = "DNA, RNA, proteins, lipids, etc.; molecular structures and folding kinetics; molecular interactions; single-molecule manipulation."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-bio.CB"
+title = "arXiv.org :: Quantitative Biology :: Cell Behavior"
+description = "Cell-cell signaling and interaction; morphogenesis and development; apoptosis; bacterial conjugation; viral-host interaction; immunology"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-bio.GN"
+title = "arXiv.org :: Quantitative Biology :: Genomics"
+description = "DNA sequencing and assembly; gene and motif finding; RNA editing and alternative splicing; genomic structure and processes (replication, transcription, methylation, etc); mutational processes."
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-bio.MN"
+title = "arXiv.org :: Quantitative Biology :: Molecular Networks"
+description = "Gene regulation, signal transduction, proteomics, metabolomics, gene and enzymatic networks"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-bio.NC"
+title = "arXiv.org :: Quantitative Biology :: Neurons and Cognition"
+description = "Synapse, cortex, neuronal dynamics, neural network, sensorimotor control, behavior, attention"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-bio.OT"
+title = "arXiv.org :: Quantitative Biology :: Other Quantitative Biology"
+description = "Work in quantitative biology that does not fit into the other q-bio classifications"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-bio.PE"
+title = "arXiv.org :: Quantitative Biology :: Populations and Evolution"
+description = "Population dynamics, spatio-temporal and epidemiological models, dynamic speciation, co-evolution, biodiversity, foodwebs, aging; molecular evolution and phylogeny; directed evolution; origin of life"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-bio.QM"
+title = "arXiv.org :: Quantitative Biology :: Quantitative Methods"
+description = "All experimental, numerical, statistical and mathematical contributions of value to biology"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-bio.SC"
+title = "arXiv.org :: Quantitative Biology :: Subcellular Processes"
+description = "Assembly and control of subcellular structures (channels, organelles, cytoskeletons, capsules, etc.); molecular motors, transport, subcellular localization; mitosis and meiosis"
+
+[[feeds]]
+url = "https://rss.arxiv.org/rss/q-bio.TO"
+title = "arXiv.org :: Quantitative Biology :: Tissues and Organs"
+description = "Blood flow in vessels, biomechanics of bones, electrical waves, endocrine system, tumor growth"

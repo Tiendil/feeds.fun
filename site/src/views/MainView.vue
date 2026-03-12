@@ -200,7 +200,7 @@
     <main-block v-if="settings.hasCollections">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <template
-          v-for="collectionId in collections.collectionsOrder"
+          v-for="collectionId in collectionsToShow"
           :key="collectionId">
           <main-item v-if="collections.collections[collectionId].showOnMain">
             <template #caption>
@@ -219,6 +219,16 @@
             </template>
           </main-item>
         </template>
+      </div>
+
+      <div
+        v-if="showMoreCollectionsButtonRequired"
+        class="mt-4 text-center">
+        <button
+          class="ffun-main-button short"
+          @click="showAllCollections = !showAllCollections">
+          {{ showAllCollections ? "Show less" : "Show more" }}
+        </button>
       </div>
     </main-block>
 
@@ -251,6 +261,22 @@
   const eventsView = "main";
 
   provide("eventsViewName", eventsView);
+
+  const showAllCollections = ref(false);
+
+  const alwaysVisibleCollectionsCount = 4;
+
+  const collectionsToShow = computed(() => {
+    if (showAllCollections.value) {
+      return collections.collectionsOrder;
+    }
+
+    return collections.collectionsOrder.slice(0, alwaysVisibleCollectionsCount + 1);
+  });
+
+  const showMoreCollectionsButtonRequired = computed(() => {
+    return collections.collectionsOrder.length > alwaysVisibleCollectionsCount;
+  });
 
   function publicCollectionHref(collectionSlug: t.CollectionSlug) {
     return router.resolve({name: "public-collection", params: {collectionSlug: collectionSlug}}).href;
