@@ -70,8 +70,7 @@ export type LastEntriesPeriodProperty = {
   readonly default?: boolean;
 };
 
-// Map preserves the order of the keys
-export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, LastEntriesPeriodProperty>([
+const lastEntriesPeriodEntries: ReadonlyArray<readonly [LastEntriesPeriod, LastEntriesPeriodProperty]> = [
   [LastEntriesPeriod.Hour1, {text: "1 hour", seconds: c.hour}],
   [LastEntriesPeriod.Hour3, {text: "3 hours", seconds: 3 * c.hour}],
   [LastEntriesPeriod.Hour6, {text: "6 hours", seconds: 6 * c.hour}],
@@ -85,7 +84,12 @@ export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, LastEntrie
   [LastEntriesPeriod.Month6, {text: "6 months", seconds: 6 * c.month}],
   [LastEntriesPeriod.Year1, {text: "1 year", seconds: c.year}],
   [LastEntriesPeriod.AllTime, {text: "all time", seconds: c.infinity}]
-].filter(([key, property]) => settings.entriesPeriodList.includes(key)));
+];
+
+// Map preserves the order of the keys
+export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, LastEntriesPeriodProperty>(
+  lastEntriesPeriodEntries.filter(([key]) => settings.entriesPeriodList.includes(key))
+);
 
 ////////////////
 // Entries order

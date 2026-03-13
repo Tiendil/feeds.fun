@@ -35,8 +35,17 @@ function jsonOrDefault<T>(value: string | undefined, defaultValue: T): T {
   }
 }
 
-export const entriesPeriodList = jsonOrDefault(import.meta.env.VITE_FFUN_ENTRIES_PERIOD_LIST,
-["hour1", "hour3", "hour6", "hour12", "day1", "day3", "week", "week2", "month1"]);
+export const entriesPeriodList = jsonOrDefault(import.meta.env.VITE_FFUN_ENTRIES_PERIOD_LIST, [
+  "hour1",
+  "hour3",
+  "hour6",
+  "hour12",
+  "day1",
+  "day3",
+  "week",
+  "week2",
+  "month1"
+]);
 
 console.log("settings.version", version);
 
