@@ -4,6 +4,7 @@ import pytest
 import pytest_asyncio
 
 from ffun.core import utils
+from ffun.core.postgresql import execute
 from ffun.feeds.entities import Feed
 from ffun.library import operations
 from ffun.library.domain import get_entries_by_filter_with_fallback, get_entry, get_feeds_for_entry, normalize_entry
@@ -78,7 +79,7 @@ class TestGetFeedsForEntry:
     async def test_no_feeds(self, new_entry: Entry, loaded_feed: Feed) -> None:
         await operations.catalog_entries(loaded_feed.id, [new_entry])
 
-        await operations.unlink_feed_tail(loaded_feed.id, 0)
+        await operations.unlink_feed_tail(execute, loaded_feed.id, 0)
 
         feeds = await get_feeds_for_entry(new_entry.id)
 

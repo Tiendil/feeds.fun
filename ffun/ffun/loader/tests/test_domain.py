@@ -280,13 +280,11 @@ class TestProcessFeed:
             assert_entriy_equal_to_info(entry_info, entry)
 
     @pytest.mark.asyncio
-    async def test_remove_too_long_entries_tail__when_feed_is_updated(
+    async def test_cleanup_logic_called__when_feed_is_updated(
         self, internal_user_id: UserId, saved_feed: f_entities.Feed, mocker: MockerFixture
     ) -> None:
-        n = 5
-        m = 3
+        entry_infos = [p_make.fake_entry_info() for _ in range(5)]
 
-        entry_infos = [p_make.fake_entry_info() for _ in range(n)]
         entry_infos.sort(key=lambda e: e.title)
 
         assert saved_feed.title
@@ -300,48 +298,38 @@ class TestProcessFeed:
             uid=url_to_uid(saved_feed.url),
         )
 
-        mocker.patch("ffun.loader.domain.extract_feed_info", return_value=feed_info)
-        mocker.patch("ffun.library.settings.settings.max_entries_per_feed", m)
+        extract_feed_info = mocker.patch("ffun.loader.domain.extract_feed_info", return_value=feed_info)
+        unlink_feed_tail = mocker.patch("ffun.library.domain.unlink_feed_tail")
+        unlink_old_entries = mocker.patch("ffun.library.domain.unlink_old_entries")
 
         await fl_domain.add_link(internal_user_id, saved_feed.id)
 
-        with capture_logs() as logs:  # type: ignore
-            await process_feed(feed=saved_feed)
+        await process_feed(feed=saved_feed)
 
-        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
-
-        loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
-
-        assert len(loaded_entries) == m
+        extract_feed_info.assert_called_once_with(feed_id=saved_feed.id, feed_url=saved_feed.url)
+        assert unlink_feed_tail.call_args_list == [mocker.call(saved_feed.id)]  # type: ignore
+        assert unlink_old_entries.call_args_list == [mocker.call(saved_feed.id)]  # type: ignore
 
     @pytest.mark.asyncio
-    async def test_remove_too_long_entries_tail__when_feed_is_not_updated(
+    async def test_cleanup_logic_called__when_feed_is_not_updated(
         self, internal_user_id: UserId, saved_feed: f_entities.Feed, mocker: MockerFixture
     ) -> None:
-        n = 5
-        m = 3
-
-        entry_infos = [p_make.fake_entry_info() for _ in range(n)]
+        entry_infos = [p_make.fake_entry_info() for _ in range(5)]
         entry_infos.sort(key=lambda e: e.title)
-
-        assert saved_feed.title
-        assert saved_feed.description
 
         await store_entries(saved_feed, entry_infos)
 
-        mocker.patch("ffun.loader.domain.extract_feed_info", return_value=None)
-        mocker.patch("ffun.library.settings.settings.max_entries_per_feed", m)
+        extract_feed_info = mocker.patch("ffun.loader.domain.extract_feed_info", return_value=None)
+        unlink_feed_tail = mocker.patch("ffun.library.domain.unlink_feed_tail")
+        unlink_old_entries = mocker.patch("ffun.library.domain.unlink_old_entries")
 
         await fl_domain.add_link(internal_user_id, saved_feed.id)
 
-        with capture_logs() as logs:  # type: ignore
-            await process_feed(feed=saved_feed)
+        await process_feed(feed=saved_feed)
 
-        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
-
-        loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
-
-        assert len(loaded_entries) == m
+        extract_feed_info.assert_called_once_with(feed_id=saved_feed.id, feed_url=saved_feed.url)
+        assert unlink_feed_tail.call_args_list == [mocker.call(saved_feed.id)]  # type: ignore
+        assert unlink_old_entries.call_args_list == [mocker.call(saved_feed.id)]  # type: ignore
 
 
 class TestCheckProxiesAvailability:

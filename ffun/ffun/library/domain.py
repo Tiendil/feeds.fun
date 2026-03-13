@@ -1,10 +1,12 @@
 import datetime
+from typing import Iterable
 
+from ffun.core.postgresql import ExecuteType, run_in_transaction
 from ffun.domain import urls as d_urls
 from ffun.domain.entities import EntryId, FeedId, UnknownUrl
 from ffun.feeds import domain as f_domain
 from ffun.library import operations
-from ffun.library.entities import Entry, EntryChange
+from ffun.library.entities import Entry, EntryChange, FeedEntryLink
 
 catalog_entries = operations.catalog_entries
 get_entries_by_ids = operations.get_entries_by_ids
@@ -12,11 +14,30 @@ get_entries_by_filter = operations.get_entries_by_filter
 find_stored_entries_for_feed = operations.find_stored_entries_for_feed
 all_entries_iterator = operations.all_entries_iterator
 get_entries_after_pointer = operations.get_entries_after_pointer
-unlink_feed_tail = operations.unlink_feed_tail
-get_feed_links_for_entries = operations.get_feed_links_for_entries
 get_orphaned_entries = operations.get_orphaned_entries
-remove_entries_by_ids = operations.remove_entries_by_ids
 count_total_entries = operations.count_total_entries
+
+
+@run_in_transaction
+async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | None = None) -> None:
+    return await operations.unlink_feed_tail(execute, feed_id, offset)
+
+
+@run_in_transaction
+async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: datetime.timedelta | None = None) -> None:
+    return await operations.unlink_old_entries(execute, feed_id, period)
+
+
+@run_in_transaction
+async def get_feed_links_for_entries(
+    execute: ExecuteType, entries_ids: Iterable[EntryId]
+) -> dict[EntryId, list[FeedEntryLink]]:
+    return await operations.get_feed_links_for_entries(execute, entries_ids)
+
+
+@run_in_transaction
+async def remove_entries_by_ids(execute: ExecuteType, entries_ids: Iterable[EntryId]) -> None:
+    return await operations.remove_entries_by_ids(execute, entries_ids)
 
 
 async def get_entry(entry_id: EntryId) -> Entry:
