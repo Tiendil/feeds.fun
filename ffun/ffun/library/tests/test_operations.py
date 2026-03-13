@@ -30,6 +30,7 @@ from ffun.library.operations import (
     remove_entries_by_ids,
     try_mark_as_orphanes,
     unlink_feed_tail,
+    unlink_old_entries,
     update_external_url,
 )
 from ffun.library.tests import helpers, make
@@ -497,6 +498,70 @@ class TestUnlinkFeedTail:
         orphaned_entries = await get_orphaned_entries(limit=100500)
 
         assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries[10:]}
+
+
+class TestUnlinkOldEntries:
+
+    @pytest.mark.asyncio
+    async def test_no_old_entries(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=5)
+
+        with capture_logs() as logs:  # type: ignore
+            async with TableSizeNotChanged("l_feeds_to_entries"):
+                async with TableSizeNotChanged("l_entries"):
+                    await unlink_old_entries(loaded_feed.id,
+                                             period=datetime.timedelta(days=1))
+
+        assert_logs(logs, feed_has_no_old_entries=1, feed_old_entries_removed=0)  # type: ignore
+
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
+
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries}
+
+    @pytest.mark.asyncio
+    async def test_all_old_entries(
+        self, loaded_feed: Feed
+    ) -> None:
+        await make.n_entries(loaded_feed, n=5)
+
+        with capture_logs() as logs:  # type: ignore
+            async with TableSizeDelta("l_feeds_to_entries", delta=-5):
+                async with TableSizeNotChanged("l_entries"):
+                    await unlink_old_entries(loaded_feed.id, period=datetime.timedelta(seconds=0))
+
+        assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
+
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
+
+        assert set() == {entry.id for entry in feed_entries}
+
+    @pytest.mark.asyncio
+    async def test_old_entries(
+        self, loaded_feed: Feed
+    ) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=15)
+
+        period = datetime.timedelta(days=1)
+        new_cataloged_time = utils.now() - period
+
+        await helpers.update_cataloged_time(
+            entries_ids=[entry.id for entry in entries[:5]], new_time=new_cataloged_time
+        )
+
+        with capture_logs() as logs:  # type: ignore
+            async with TableSizeDelta("l_feeds_to_entries", delta=-5):
+                async with TableSizeNotChanged("l_entries"):
+                    await unlink_old_entries(loaded_feed.id, period=period)
+
+        assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
+
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
+
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[5:]}
+
+        orphaned_entries = await get_orphaned_entries(limit=100500)
+
+        assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries[:5]}
 
 
 class TestRemoveEntriesByIds:
