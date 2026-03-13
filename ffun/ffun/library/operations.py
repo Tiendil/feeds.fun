@@ -69,7 +69,7 @@ async def catalog_entries(feed_id: FeedId, entries: Iterable[Entry]) -> None:
         await _catalog_entry(feed_id, entry)
 
 
-async def get_feed_links_for_entries(entries_ids: Iterable[EntryId]) -> dict[EntryId, list[FeedEntryLink]]:
+async def get_feed_links_for_entries(execute: ExecuteType, entries_ids: Iterable[EntryId]) -> dict[EntryId, list[FeedEntryLink]]:
     sql = """
     SELECT entry_id, feed_id, created_at
     FROM l_feeds_to_entries
@@ -207,7 +207,7 @@ async def update_external_url(entity_id: EntryId, url: str) -> None:
     await execute(sql, {"entity_id": entity_id, "url": url})
 
 
-async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
+async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | None = None) -> None:
 
     if offset is None:
         offset = settings.max_entries_per_feed
@@ -238,10 +238,10 @@ async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
 
     potential_orphanes = [row["entry_id"] for row in result]
 
-    await try_mark_as_orphanes(potential_orphanes)
+    await try_mark_as_orphanes(execute, potential_orphanes)
 
 
-async def unlink_old_entries(feed_id: FeedId, period: datetime.timedelta | None = None) -> None:
+async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: datetime.timedelta | None = None) -> None:
 
     if period is None:
         period = settings.max_entry_age
@@ -269,12 +269,12 @@ async def unlink_old_entries(feed_id: FeedId, period: datetime.timedelta | None 
 
     potential_orphanes = [row["entry_id"] for row in result]
 
-    await try_mark_as_orphanes(potential_orphanes)
+    await try_mark_as_orphanes(execute, potential_orphanes)
 
 
 # TODO: metrics for orphaned entries and for feeds that produce them
-async def try_mark_as_orphanes(entry_ids: Iterable[EntryId]) -> None:
-    feed_links = await get_feed_links_for_entries(entry_ids)
+async def try_mark_as_orphanes(execute: ExecuteType, entry_ids: Iterable[EntryId]) -> None:
+    feed_links = await get_feed_links_for_entries(execute, entry_ids)
 
     orphans = [entry_id for entry_id in entry_ids if entry_id not in feed_links]
 
@@ -303,7 +303,6 @@ async def get_orphaned_entries(limit: int) -> set[EntryId]:
     return {row["entry_id"] for row in rows}
 
 
-@run_in_transaction
 async def remove_entries_by_ids(execute: ExecuteType, entry_ids: Iterable[EntryId]) -> None:
     ids = list(entry_ids)
 
