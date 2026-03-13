@@ -13,6 +13,7 @@ find_stored_entries_for_feed = operations.find_stored_entries_for_feed
 all_entries_iterator = operations.all_entries_iterator
 get_entries_after_pointer = operations.get_entries_after_pointer
 unlink_feed_tail = operations.unlink_feed_tail
+unlink_old_entries = operations.unlink_old_entries
 get_feed_links_for_entries = operations.get_feed_links_for_entries
 get_orphaned_entries = operations.get_orphaned_entries
 remove_entries_by_ids = operations.remove_entries_by_ids

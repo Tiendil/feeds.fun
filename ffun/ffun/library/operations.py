@@ -241,6 +241,37 @@ async def unlink_feed_tail(feed_id: FeedId, offset: int | None = None) -> None:
     await try_mark_as_orphanes(potential_orphanes)
 
 
+async def unlink_old_entries(feed_id: FeedId, period: datetime.timedelta | None = None) -> None:
+
+    if period is None:
+        period = settings.max_entry_age
+
+    sql = """
+    WITH cte AS (
+        SELECT feed_id, entry_id
+        FROM l_feeds_to_entries
+        WHERE feed_id = %(feed_id)s AND created_at < NOW() - %(period)s
+    )
+    DELETE FROM l_feeds_to_entries
+    USING cte
+    WHERE l_feeds_to_entries.feed_id = cte.feed_id
+      AND l_feeds_to_entries.entry_id = cte.entry_id
+    RETURNING l_feeds_to_entries.entry_id AS entry_id
+    """
+
+    result = await execute(sql, {"feed_id": feed_id, "period": period})
+
+    if not result:
+        logger.info("feed_has_no_old_entries", feed_id=feed_id, old_period=period)
+        return
+
+    logger.info("feed_old_entries_removed", feed_id=feed_id, old_period=period, entries_removed=len(result))
+
+    potential_orphanes = [row["entry_id"] for row in result]
+
+    await try_mark_as_orphanes(potential_orphanes)
+
+
 # TODO: metrics for orphaned entries and for feeds that produce them
 async def try_mark_as_orphanes(entry_ids: Iterable[EntryId]) -> None:
     feed_links = await get_feed_links_for_entries(entry_ids)
