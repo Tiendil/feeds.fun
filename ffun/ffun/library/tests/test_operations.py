@@ -54,7 +54,7 @@ class TestCatalogEntry:
 
         assert loaded_entry == new_entry.replace(cataloged_at=loaded_entry.cataloged_at)
 
-        links = await get_feed_links_for_entries([new_entry.id])
+        links = await get_feed_links_for_entries(execute, [new_entry.id])
 
         assert len(links[new_entry.id]) == 1
 
@@ -80,7 +80,7 @@ class TestCatalogEntry:
 
         assert loaded_entry == new_entry.replace(cataloged_at=loaded_entry.cataloged_at)
 
-        links = await get_feed_links_for_entries([new_entry.id])
+        links = await get_feed_links_for_entries(execute, [new_entry.id])
 
         assert len(links[new_entry.id]) == 2
 
@@ -114,7 +114,7 @@ class TestCatalogEntry:
 
         assert loaded_entry == new_entry.replace(cataloged_at=loaded_entry.cataloged_at)
 
-        links = await get_feed_links_for_entries([new_entry.id])
+        links = await get_feed_links_for_entries(execute, [new_entry.id])
 
         assert len(links[new_entry.id]) == 1
 
@@ -140,7 +140,7 @@ class TestCatalogEntry:
 
         assert loaded_another_entry == another_new_entry.replace(cataloged_at=loaded_another_entry.cataloged_at)
 
-        links = await get_feed_links_for_entries([another_new_entry.id])
+        links = await get_feed_links_for_entries(execute, [another_new_entry.id])
 
         assert len(links[another_new_entry.id]) == 1
 
@@ -188,7 +188,7 @@ class TestGetFeedLinksForEntries:
 
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
-        assert await get_feed_links_for_entries([]) == {}
+        assert await get_feed_links_for_entries(execute, []) == {}
 
 
 class TestFindStoredEntriesForFeed:
@@ -457,7 +457,7 @@ class TestUnlinkFeedTail:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_feed_tail(loaded_feed.id, offset=0)
+                    await unlink_feed_tail(execute, loaded_feed.id, offset=0)
 
         assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
 
@@ -472,7 +472,7 @@ class TestUnlinkFeedTail:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeNotChanged("l_feeds_to_entries"):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_feed_tail(loaded_feed.id, offset=10)
+                    await unlink_feed_tail(execute, loaded_feed.id, offset=10)
 
         assert_logs(logs, feed_has_no_entries_tail=1, feed_entries_tail_removed=0)  # type: ignore
 
@@ -487,7 +487,7 @@ class TestUnlinkFeedTail:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_feed_tail(loaded_feed.id, offset=10)
+                    await unlink_feed_tail(execute, loaded_feed.id, offset=10)
 
         assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
 
@@ -509,8 +509,7 @@ class TestUnlinkOldEntries:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeNotChanged("l_feeds_to_entries"):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_old_entries(loaded_feed.id,
-                                             period=datetime.timedelta(days=1))
+                    await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(days=1))
 
         assert_logs(logs, feed_has_no_old_entries=1, feed_old_entries_removed=0)  # type: ignore
 
@@ -519,15 +518,13 @@ class TestUnlinkOldEntries:
         assert {entry.id for entry in feed_entries} == {entry.id for entry in entries}
 
     @pytest.mark.asyncio
-    async def test_all_old_entries(
-        self, loaded_feed: Feed
-    ) -> None:
+    async def test_all_old_entries(self, loaded_feed: Feed) -> None:
         await make.n_entries(loaded_feed, n=5)
 
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_old_entries(loaded_feed.id, period=datetime.timedelta(seconds=0))
+                    await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(seconds=0))
 
         assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
 
@@ -536,9 +533,7 @@ class TestUnlinkOldEntries:
         assert set() == {entry.id for entry in feed_entries}
 
     @pytest.mark.asyncio
-    async def test_old_entries(
-        self, loaded_feed: Feed
-    ) -> None:
+    async def test_old_entries(self, loaded_feed: Feed) -> None:
         entries = await make.n_entries_list(loaded_feed, n=15)
 
         period = datetime.timedelta(days=1)
@@ -551,7 +546,7 @@ class TestUnlinkOldEntries:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_old_entries(loaded_feed.id, period=period)
+                    await unlink_old_entries(execute, loaded_feed.id, period=period)
 
         assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
 
@@ -569,12 +564,12 @@ class TestRemoveEntriesByIds:
     @pytest.mark.asyncio
     async def test_no_entries_in_request(self) -> None:
         async with TableSizeNotChanged("l_orphaned_entries"):
-            await remove_entries_by_ids([new_entry_id()])
+            await remove_entries_by_ids(execute, [new_entry_id()])
 
     @pytest.mark.asyncio
     async def test_no_entries_to_remove(self) -> None:
         async with TableSizeNotChanged("l_orphaned_entries"):
-            await remove_entries_by_ids([])
+            await remove_entries_by_ids(execute, [])
 
     @pytest.mark.asyncio
     async def test_remove(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
@@ -582,7 +577,7 @@ class TestRemoveEntriesByIds:
 
         await catalog_entries(another_loaded_feed.id, entries[2:7])
 
-        await unlink_feed_tail(loaded_feed.id, 6)
+        await unlink_feed_tail(execute, loaded_feed.id, 6)
 
         # 0,1 entries goes to orphanes
         # 2,3 is linked only to another_loaded_feed
@@ -594,7 +589,7 @@ class TestRemoveEntriesByIds:
         async with TableSizeDelta("l_orphaned_entries", delta=-1):
             async with TableSizeDelta("l_feeds_to_entries", delta=-6):
                 async with TableSizeDelta("l_entries", delta=-5):
-                    await remove_entries_by_ids(entries_to_remove)
+                    await remove_entries_by_ids(execute, entries_to_remove)
 
 
 class TestGetOrphanedEntries:
@@ -615,7 +610,7 @@ class TestGetOrphanedEntries:
     async def test_orphaned_entries(self, loaded_feed: Feed) -> None:
         entries = await make.n_entries_list(loaded_feed, n=5)
 
-        await unlink_feed_tail(loaded_feed.id, 2)
+        await unlink_feed_tail(execute, loaded_feed.id, 2)
 
         assert await get_orphaned_entries(limit=100) == {entry.id for entry in entries[2:]}
 
@@ -623,7 +618,7 @@ class TestGetOrphanedEntries:
     async def test_limit(self, loaded_feed: Feed) -> None:
         entries = await make.n_entries_list(loaded_feed, n=5)
 
-        await unlink_feed_tail(loaded_feed.id, 1)
+        await unlink_feed_tail(execute, loaded_feed.id, 1)
 
         orphaned_entries = await get_orphaned_entries(limit=2)
 
@@ -637,24 +632,24 @@ class TestTryMarkAsOrphanes:
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
         async with TableSizeNotChanged("l_orphaned_entries"):
-            await try_mark_as_orphanes([])
+            await try_mark_as_orphanes(execute, [])
 
     @pytest.mark.asyncio
     async def test_no_orphanes_found(self, loaded_feed: Feed) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
         async with TableSizeNotChanged("l_orphaned_entries"):
-            await try_mark_as_orphanes([entry.id for entry in entries])
+            await try_mark_as_orphanes(execute, [entry.id for entry in entries])
 
     @pytest.mark.asyncio
     async def test_orphanes_found(self, loaded_feed: Feed) -> None:
         entries = await make.n_entries_list(loaded_feed, n=5)
 
         with mock.patch("ffun.library.operations.try_mark_as_orphanes"):
-            await unlink_feed_tail(loaded_feed.id, 3)
+            await unlink_feed_tail(execute, loaded_feed.id, 3)
 
         async with TableSizeDelta("l_orphaned_entries", delta=2):
-            await try_mark_as_orphanes([entry.id for entry in entries])
+            await try_mark_as_orphanes(execute, [entry.id for entry in entries])
 
         orphaned_entries = await get_orphaned_entries(limit=100500)
 

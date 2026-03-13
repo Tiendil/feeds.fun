@@ -1,5 +1,6 @@
-import pydantic_settings
 import datetime
+
+import pydantic_settings
 
 from ffun.core.settings import BaseSettings
 

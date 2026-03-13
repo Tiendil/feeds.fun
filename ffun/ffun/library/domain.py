@@ -1,9 +1,9 @@
 import datetime
 from typing import Iterable
 
+from ffun.core.postgresql import ExecuteType, run_in_transaction
 from ffun.domain import urls as d_urls
 from ffun.domain.entities import EntryId, FeedId, UnknownUrl
-from ffun.core.postgresql import ExecuteType, run_in_transaction
 from ffun.feeds import domain as f_domain
 from ffun.library import operations
 from ffun.library.entities import Entry, EntryChange, FeedEntryLink
@@ -29,7 +29,9 @@ async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: date
 
 
 @run_in_transaction
-async def get_feed_links_for_entries(execute: ExecuteType, entries_ids: Iterable[EntryId]) -> dict[EntryId, list[FeedEntryLink]]:
+async def get_feed_links_for_entries(
+    execute: ExecuteType, entries_ids: Iterable[EntryId]
+) -> dict[EntryId, list[FeedEntryLink]]:
     return await operations.get_feed_links_for_entries(execute, entries_ids)
 
 
