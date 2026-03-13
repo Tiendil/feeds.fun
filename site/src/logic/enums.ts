@@ -57,7 +57,7 @@ export enum LastEntriesPeriod {
   Day3 = "day3",
   Week = "week",
   Week2 = "week2",
-  Month1 = "month",
+  Month1 = "month1",
   Month3 = "month3",
   Month6 = "month6",
   Year1 = "year1",
@@ -85,7 +85,7 @@ export const LastEntriesPeriodProperties = new Map<LastEntriesPeriod, LastEntrie
   [LastEntriesPeriod.Month6, {text: "6 months", seconds: 6 * c.month}],
   [LastEntriesPeriod.Year1, {text: "1 year", seconds: c.year}],
   [LastEntriesPeriod.AllTime, {text: "all time", seconds: c.infinity}]
-]);
+].filter(([key, property]) => settings.entriesPeriodList.includes(key)));
 
 ////////////////
 // Entries order

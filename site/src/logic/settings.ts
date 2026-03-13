@@ -24,6 +24,20 @@ export const crmImpressum = import.meta.env.VITE_FFUN_CRM_IMPRESSUM || null;
 
 export const hasCollections = import.meta.env.VITE_FFUN_HAS_COLLECTIONS == "true" || false;
 
+function jsonOrDefault<T>(value: string | undefined, defaultValue: T): T {
+  if (!value) return defaultValue;
+
+  try {
+    return JSON.parse(value);
+  } catch (e) {
+    console.warn("Failed to parse JSON value, using default", {value, error: e});
+    return defaultValue;
+  }
+}
+
+export const entriesPeriodList = jsonOrDefault(import.meta.env.VITE_FFUN_ENTRIES_PERIOD_LIST,
+["hour1", "hour3", "hour6", "hour12", "day1", "day3", "week", "week2", "month1"]);
+
 console.log("settings.version", version);
 
 console.log("settings.authRefreshInterval", authRefreshInterval);
