@@ -178,7 +178,7 @@ async def get_entries_by_filter(
         ORDER BY entry_id, published_at DESC, created_at DESC
     ) AS picked
     JOIN l_entries AS le ON le.id = picked.entry_id
-    ORDER BY picked.published_at DESC, picked.created_at DESC, picked.entry_id DESC
+    ORDER BY picked.picked_published_at DESC, picked.picked_created_at DESC, picked.entry_id DESC
     LIMIT %(limit)s
     """
 
