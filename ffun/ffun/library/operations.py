@@ -154,30 +154,32 @@ async def get_entries_by_filter(
     if period is None:
         period = settings.max_entry_age
 
-    # Here is an important logic implemented
-    # When we are applying published time restriction
-    # we are looking at a time of entry publishing in a requested feeds,
-    # not the published time from the entry itself
-    # In most cases, those times should be nearly the same, but there is a possibility
-    # that there will be aggregator-style feeds that include old entries as new.
-    # In such cases, we'll show such an entry as new to a user.
-    # We may want to change this logic in the future.
-
-    # Also, we order by two fields (published_at and created_at) to work around the case
-    # when published_at is the same for several entries
+    # 1. Here is an important logic implemented
+    #    When we are applying published time restriction
+    #    we are looking at a time of entry publishing in a requested feeds,
+    #    not the published time from the entry itself
+    #    In most cases, those times should be nearly the same, but there is a possibility
+    #    that there will be aggregator-style feeds that include old entries as new.
+    #    In such cases, we'll show such an entry as new to a user.
+    #    We may want to change this logic in the future.
+    #
+    # 2. Also, we order by two fields (published_at and created_at) to work around the case
+    #    when published_at is the same for several entries
+    #
+    # 3. Outer sorting uses entry_id to ensure deterministic order
+    #    when there are multiple entries with the same published_at and created_at
     sql = """
-    SELECT le.*, re.max_published_at
+    SELECT le.*, picked.published_at as picked_published_at, picked.created_at as picked_created_at
     FROM (
-        SELECT lfe.entry_id AS id, MAX(lfe.published_at) AS max_published_at
-        FROM l_feeds_to_entries AS lfe
-        WHERE lfe.published_at > NOW() - %(period)s
-          AND lfe.feed_id = ANY(%(feeds_ids)s)
-        GROUP BY lfe.entry_id
-        ORDER BY MAX(lfe.published_at) DESC, MAX(lfe.created_at) DESC
-        LIMIT %(limit)s
-    ) AS re
-    JOIN l_entries AS le ON le.id = re.id
-    ORDER BY re.max_published_at DESC;
+        SELECT DISTINCT ON (entry_id) entry_id, published_at, created_at
+        FROM l_feeds_to_entries
+        WHERE published_at > NOW() - %(period)s
+          AND feed_id = ANY(%(feeds_ids)s)
+        ORDER BY entry_id, published_at DESC, created_at DESC
+    ) AS picked
+    JOIN l_entries AS le ON le.id = picked.entry_id
+    ORDER BY picked.published_at DESC, picked.created_at DESC, picked.entry_id DESC
+    LIMIT %(limit)s
     """
 
     rows = await execute(sql, {"feeds_ids": feeds_ids, "period": period, "limit": limit})
@@ -186,7 +188,7 @@ async def get_entries_by_filter(
         # We ensure that `published_at` is specific for feeds, not for global load history
         # So the user will see the entry as published at the time when the user could see it in their feeds
         # not at the time when the entry was published by some other feed that the user does not follow.
-        row["published_at"] = row.pop("max_published_at")
+        row["published_at"] = row.pop("picked_published_at")
 
     return [row_to_personalized_entry(row) for row in rows]
 
