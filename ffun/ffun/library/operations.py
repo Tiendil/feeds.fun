@@ -16,6 +16,7 @@ logger = logging.get_module_logger()
 
 
 def row_to_entry(row: dict[str, Any]) -> Entry:
+    row.pop("created_at", None)
     return Entry(**row)
 
 
