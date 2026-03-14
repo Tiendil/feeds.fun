@@ -2,11 +2,13 @@ import datetime
 import uuid
 from typing import Any, AsyncGenerator, Iterable
 
+import psycopg
 from pypika import PostgreSQLQuery
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain.entities import EntryId, FeedId
+from ffun.library import errors
 from ffun.library.entities import Entry, FeedEntryLink
 from ffun.library.settings import settings
 
@@ -305,12 +307,27 @@ async def get_orphaned_entries(limit: int) -> set[EntryId]:
     return {row["entry_id"] for row in rows}
 
 
+async def sync_orphaned_entries() -> None:
+    """Detect entries that are no longer orphaned and remove them from orphaned entries table."""
+    sql = """
+    DELETE FROM l_orphaned_entries AS oe
+    USING l_feeds_to_entries AS fe
+    WHERE oe.entry_id = fe.entry_id
+    """
+
+    await execute(sql)
+
+
 async def remove_entries_by_ids(execute: ExecuteType, entry_ids: Iterable[EntryId]) -> None:
     ids = list(entry_ids)
 
-    await execute("DELETE FROM l_feeds_to_entries WHERE entry_id = ANY(%(ids)s)", {"ids": ids})
-    await execute("DELETE FROM l_entries WHERE id = ANY(%(ids)s)", {"ids": ids})
-    await execute("DELETE FROM l_orphaned_entries WHERE entry_id = ANY(%(ids)s)", {"ids": ids})
+    try:
+        await execute("DELETE FROM l_feeds_to_entries WHERE entry_id = ANY(%(ids)s)", {"ids": ids})
+        await execute("DELETE FROM l_entries WHERE id = ANY(%(ids)s)", {"ids": ids})
+        await execute("DELETE FROM l_orphaned_entries WHERE entry_id = ANY(%(ids)s)", {"ids": ids})
+    except psycopg.errors.ForeignKeyViolation as e:
+        logger.warning("foreign_key_violation_on_entry_removal", entry_ids=ids)
+        raise errors.ConcurentOperationOnRemovedEntries() from e
 
 
 async def count_total_entries() -> int:

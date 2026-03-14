@@ -16,6 +16,7 @@ all_entries_iterator = operations.all_entries_iterator
 get_entries_after_pointer = operations.get_entries_after_pointer
 get_orphaned_entries = operations.get_orphaned_entries
 count_total_entries = operations.count_total_entries
+sync_orphaned_entries = operations.sync_orphaned_entries
 
 
 @run_in_transaction

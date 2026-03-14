@@ -4,9 +4,12 @@ from itertools import chain
 import pytest
 import pytest_asyncio
 from pytest_mock import MockerFixture
+from structlog.testing import capture_logs
 
 from ffun.core import utils
 from ffun.core.postgresql import execute
+from ffun.core.tests.helpers import assert_logs
+from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import TagId, TagUid, UserId
 from ffun.domain.urls import str_to_feed_url, url_to_source_uid, url_to_uid
 from ffun.feeds import domain as f_domain
@@ -14,6 +17,7 @@ from ffun.feeds.entities import Feed
 from ffun.feeds.tests import make as f_make
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
+from ffun.library import errors as l_errors
 from ffun.library.tests import make as l_make
 from ffun.meta.domain import (
     _apply_renormalized_tags,
@@ -36,7 +40,7 @@ from ffun.tags.entities import TagCategory
 class TestRemoveEntries:
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
-        await remove_entries([])
+        assert await remove_entries([])
 
     @pytest.mark.asyncio
     async def test_success(
@@ -74,7 +78,7 @@ class TestRemoveEntries:
             entry_id=another_entries[2].id, processor_id=another_fake_processor_id, tags=[tag_c]
         )
 
-        await remove_entries([entries[0].id, another_entries[1].id, entries[2].id])
+        assert await remove_entries([entries[0].id, another_entries[1].id, entries[2].id])
 
         loaded_entries = await l_domain.get_entries_by_ids(
             [entry.id for entry in entries] + [entry.id for entry in another_entries]
@@ -88,6 +92,25 @@ class TestRemoveEntries:
             another_entries[1].id: None,
             another_entries[2].id: another_entries[2],
         }
+
+    @pytest.mark.asyncio
+    async def test_concurent_operation_on_removed_entries(self, mocker: MockerFixture) -> None:
+        entry_ids = [new_entry_id(), new_entry_id()]
+
+        remove_entries_by_ids_mock = mocker.patch(
+            "ffun.library.domain.remove_entries_by_ids", side_effect=l_errors.ConcurentOperationOnRemovedEntries()
+        )
+        remove_markers_mock = mocker.patch("ffun.markers.domain.remove_markers_for_entries")
+        remove_relations_mock = mocker.patch("ffun.ontology.domain.remove_relations_for_entries")
+
+        with capture_logs() as logs:  # type: ignore
+            assert not await remove_entries(entry_ids)
+
+        assert_logs(logs, entities_have_not_removed_because_of_concurent_operations=1)  # type: ignore
+
+        remove_entries_by_ids_mock.assert_called_once()
+        remove_markers_mock.assert_not_called()
+        remove_relations_mock.assert_not_called()
 
 
 class TestAddFeeds:
@@ -167,6 +190,42 @@ class TestCleanOrphanedEntries:
         loaded_entries = await l_domain.get_entries_by_ids([entry.id for entry in entries])
 
         assert loaded_entries == {entry.id: entry for entry in entries[:3]} | {entry.id: None for entry in entries[3:]}
+
+    @pytest.mark.asyncio
+    async def test_sync_before_remove(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
+        entries = await l_make.n_entries_list(loaded_feed, n=10)
+
+        await l_domain.unlink_feed_tail(loaded_feed.id, offset=3)
+        await l_domain.catalog_entries(another_loaded_feed.id, [entries[3]])
+
+        removed = await clean_orphaned_entries(chunk=10)
+
+        assert removed == 6
+
+        loaded_entries = await l_domain.get_entries_by_ids([entry.id for entry in entries])
+
+        assert loaded_entries == {
+            entries[0].id: entries[0],
+            entries[1].id: entries[1],
+            entries[2].id: entries[2],
+            entries[3].id: entries[3],
+            entries[4].id: None,
+            entries[5].id: None,
+            entries[6].id: None,
+            entries[7].id: None,
+            entries[8].id: None,
+            entries[9].id: None,
+        }
+
+    @pytest.mark.asyncio
+    async def test_return_zero_when_entries_not_removed(self, mocker: MockerFixture) -> None:
+        orphaned_entries = {new_entry_id(), new_entry_id()}
+
+        mocker.patch("ffun.library.domain.sync_orphaned_entries")
+        mocker.patch("ffun.library.domain.get_orphaned_entries", return_value=orphaned_entries)
+        mocker.patch("ffun.meta.domain.remove_entries", return_value=False)
+
+        assert await clean_orphaned_entries(chunk=10) == 0
 
 
 # test that everything is connected correctly
