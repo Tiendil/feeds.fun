@@ -28,7 +28,6 @@ from ffun.librarian.processors.base import (
 )
 from ffun.librarian.tests import helpers, make
 from ffun.library.entities import Entry
-from ffun.library.tests import helpers as l_helpers
 from ffun.library.tests import make as l_make
 from ffun.ontology import domain as o_domain
 
@@ -51,12 +50,11 @@ class TestPushEntriesAndMovePointer:
     ) -> None:
         original_pointer = await operations.get_or_create_pointer(fake_processor_id)
 
-        sorted_entries = await l_helpers.sort_entries_by_created_at([cataloged_entry, another_cataloged_entry])
-        pointer_entry, pointer_entry_created_at = sorted_entries[-1]
-
+        entries = sorted([cataloged_entry, another_cataloged_entry], key=lambda entry: (entry.created_at, entry.id))
+        pointer_entry = entries[-1]
         next_pointer = ProcessorPointer(
             processor_id=fake_processor_id,
-            pointer_created_at=pointer_entry_created_at,
+            pointer_created_at=pointer_entry.created_at,
             pointer_entry_id=pointer_entry.id,
         )
 
@@ -112,9 +110,8 @@ class TestPlanProcessorQueue:
         await make.end_processor_pointer(1)
 
         entries = await l_make.n_entries(loaded_feed, 3)
-        sorted_entries = await l_helpers.sort_entries_by_created_at(list(entries.values()))
-        pointer_entry, pointer_entry_created_at = sorted_entries[-1]
-
+        sorted_entries = sorted(entries.values(), key=lambda entry: (entry.created_at, entry.id))
+        pointer_entry = sorted_entries[-1]
         async with TableSizeDelta("ln_processors_queue", delta=3):
             await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=100)
 
@@ -122,7 +119,7 @@ class TestPlanProcessorQueue:
 
         assert loaded_pointer == ProcessorPointer(
             processor_id=fake_processor_id,
-            pointer_created_at=pointer_entry_created_at,
+            pointer_created_at=pointer_entry.created_at,
             pointer_entry_id=pointer_entry.id,
         )
 
@@ -131,9 +128,8 @@ class TestPlanProcessorQueue:
         await make.end_processor_pointer(1)
 
         entries = await l_make.n_entries(loaded_feed, 3)
-        sorted_entries = await l_helpers.sort_entries_by_created_at(list(entries.values()))
-        pointer_entry, pointer_entry_created_at = sorted_entries[-2]
-
+        sorted_entries = sorted(entries.values(), key=lambda entry: (entry.created_at, entry.id))
+        pointer_entry = sorted_entries[-2]
         async with TableSizeDelta("ln_processors_queue", delta=2):
             await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=2)
 
@@ -141,7 +137,7 @@ class TestPlanProcessorQueue:
 
         assert loaded_pointer == ProcessorPointer(
             processor_id=fake_processor_id,
-            pointer_created_at=pointer_entry_created_at,
+            pointer_created_at=pointer_entry.created_at,
             pointer_entry_id=pointer_entry.id,
         )
 
@@ -152,9 +148,8 @@ class TestPlanProcessorQueue:
         await make.end_processor_pointer(fake_processor_id)
 
         entries = await l_make.n_entries(loaded_feed, 5)
-        sorted_entries = await l_helpers.sort_entries_by_created_at(list(entries.values()))
-        pointer_entry, pointer_entry_created_at = sorted_entries[2]
-
+        sorted_entries = sorted(entries.values(), key=lambda entry: (entry.created_at, entry.id))
+        pointer_entry = sorted_entries[2]
         async with TableSizeDelta("ln_processors_queue", delta=3):
             await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=3)
 
@@ -162,7 +157,7 @@ class TestPlanProcessorQueue:
 
         assert loaded_pointer == ProcessorPointer(
             processor_id=fake_processor_id,
-            pointer_created_at=pointer_entry_created_at,
+            pointer_created_at=pointer_entry.created_at,
             pointer_entry_id=pointer_entry.id,
         )
 
@@ -173,9 +168,8 @@ class TestPlanProcessorQueue:
         await make.end_processor_pointer(fake_processor_id)
 
         entries = await l_make.n_entries(loaded_feed, 5)
-        sorted_entries = await l_helpers.sort_entries_by_created_at(list(entries.values()))
-        pointer_entry, pointer_entry_created_at = sorted_entries[2]
-
+        sorted_entries = sorted(entries.values(), key=lambda entry: (entry.created_at, entry.id))
+        pointer_entry = sorted_entries[2]
         await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=3)
 
         async with TableSizeNotChanged("ln_processors_queue"):
@@ -185,7 +179,7 @@ class TestPlanProcessorQueue:
 
         assert loaded_pointer == ProcessorPointer(
             processor_id=fake_processor_id,
-            pointer_created_at=pointer_entry_created_at,
+            pointer_created_at=pointer_entry.created_at,
             pointer_entry_id=pointer_entry.id,
         )
 

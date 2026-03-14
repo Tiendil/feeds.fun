@@ -32,6 +32,7 @@ class Entry(BaseEntry):
     #       from the DB, since it contain not-so-correct values
     #       (published_at is a property of FeedEntryLink, not of Entry)
     published_at: datetime.datetime
+    created_at: datetime.datetime
 
     @property
     def global_age(self) -> datetime.timedelta:
@@ -52,6 +53,19 @@ class Entry(BaseEntry):
 
 class CollectedEntry(BaseEntry):
     published_at: datetime.datetime
+
+    def fake_entry(self, created_at: datetime.datetime) -> Entry:
+        return Entry(
+            id=self.id,
+            source_id=self.source_id,
+            title=self.title,
+            body=self.body,
+            external_id=self.external_id,
+            external_url=self.external_url,
+            external_tags=self.external_tags,
+            published_at=self.published_at,
+            created_at=created_at,
+        )
 
 
 class PersonalizedEntry(BaseEntry):

@@ -8,7 +8,7 @@ from ffun.core.postgresql import execute
 from ffun.feeds.entities import Feed
 from ffun.library import operations
 from ffun.library.domain import get_entries_by_filter_with_fallback, get_entry, get_feeds_for_entry, normalize_entry
-from ffun.library.entities import Entry, EntryChange
+from ffun.library.entities import CollectedEntry, Entry, EntryChange
 from ffun.library.tests import helpers, make
 
 
@@ -24,7 +24,7 @@ class TestNormalizeEntry:
     @pytest.mark.parametrize("apply", [True, False])
     @pytest.mark.asyncio
     async def test_normalize_external_url(
-        self, new_entry: Entry, loaded_feed: Feed, another_loaded_feed: Feed, apply: bool
+        self, new_entry: CollectedEntry, loaded_feed: Feed, another_loaded_feed: Feed, apply: bool
     ) -> None:
         wrong_url = "/relative/url"
         expected_url = f"{loaded_feed.url}{wrong_url}"
@@ -59,7 +59,7 @@ class TestNormalizeEntry:
 class TestGetFeedsForEntry:
 
     @pytest.mark.asyncio
-    async def test_single_feed(self, new_entry: Entry, loaded_feed: Feed) -> None:
+    async def test_single_feed(self, new_entry: CollectedEntry, loaded_feed: Feed) -> None:
         await operations.catalog_entries(loaded_feed.id, [new_entry])
 
         feeds = await get_feeds_for_entry(new_entry.id)
@@ -67,7 +67,7 @@ class TestGetFeedsForEntry:
         assert feeds == {loaded_feed.id}
 
     @pytest.mark.asyncio
-    async def test_multiple_feed(self, new_entry: Entry, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
+    async def test_multiple_feed(self, new_entry: CollectedEntry, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
         await operations.catalog_entries(loaded_feed.id, [new_entry])
         await operations.catalog_entries(another_loaded_feed.id, [new_entry])
 
@@ -76,7 +76,7 @@ class TestGetFeedsForEntry:
         assert feeds == {loaded_feed.id, another_loaded_feed.id}
 
     @pytest.mark.asyncio
-    async def test_no_feeds(self, new_entry: Entry, loaded_feed: Feed) -> None:
+    async def test_no_feeds(self, new_entry: CollectedEntry, loaded_feed: Feed) -> None:
         await operations.catalog_entries(loaded_feed.id, [new_entry])
 
         await operations.unlink_feed_tail(execute, loaded_feed.id, 0)

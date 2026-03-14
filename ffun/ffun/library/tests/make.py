@@ -7,7 +7,7 @@ from ffun.domain.entities import AbsoluteUrl, EntryId, SourceId
 from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds.entities import Feed
 from ffun.library import domain
-from ffun.library.entities import Entry
+from ffun.library.entities import CollectedEntry, Entry
 
 
 def fake_url() -> str:
@@ -32,12 +32,11 @@ def fake_entry(  # noqa: CFQ002, CCR001
     external_url: AbsoluteUrl | str | None = None,
     external_tags: set[str] | None = None,
     published_at: datetime.datetime | None = None,
-    cataloged_at: datetime.datetime | None = None,
-) -> Entry:
+) -> CollectedEntry:
     resolved_external_url = fake_url() if external_url is None else external_url
     resolved_entry_id = new_entry_id() if id is None else EntryId(id)
 
-    return Entry(
+    return CollectedEntry(
         id=resolved_entry_id,
         source_id=source_id,
         title=fake_title() if title is None else title,
