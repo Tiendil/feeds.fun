@@ -283,7 +283,7 @@ class TestGetEntriesByFilter:
         await catalog_entries(loaded_feed.id, [common_entry])
         await catalog_entries(another_loaded_feed.id, [common_entry])
 
-        await helpers.update_cataloged_time(
+        await helpers.update_published_time(
             entries_ids=[entries[0].id, another_entries[0].id], new_time=time_border - datetime.timedelta(seconds=10)
         )
 
@@ -541,7 +541,7 @@ class TestUnlinkOldEntries:
         period = datetime.timedelta(days=1)
         new_cataloged_time = utils.now() - period
 
-        await helpers.update_cataloged_time(
+        await helpers.update_published_time(
             entries_ids=[entry.id for entry in entries[:5]], new_time=new_cataloged_time
         )
 

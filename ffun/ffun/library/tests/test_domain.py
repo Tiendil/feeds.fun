@@ -102,14 +102,14 @@ class TestGetEntriesByFilterWithFallback:
     async def prepared_entries(self, loaded_feed: Feed, time_border: datetime.datetime) -> list[Entry]:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_cataloged_time(
+        await helpers.update_published_time(
             entries_ids=[entry.id for entry in entries], new_time=time_border - datetime.timedelta(seconds=10)
         )
 
         all_entries = await operations.get_entries_by_ids(ids=[entry.id for entry in entries])
 
         all_entries_list = [entry for entry in all_entries.values() if entry is not None]
-        all_entries_list.sort(key=lambda entry: entry.cataloged_at)
+        all_entries_list.sort(key=lambda entry: entry.published_at)
 
         return all_entries_list
 
@@ -127,7 +127,7 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_cataloged_time(
+        await helpers.update_published_time(
             entries_ids=[entries[-1].id], new_time=time_border - datetime.timedelta(seconds=10)
         )
 
@@ -143,7 +143,7 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_cataloged_time(
+        await helpers.update_published_time(
             entries_ids=[entries[-1].id], new_time=time_border - datetime.timedelta(seconds=10)
         )
 
@@ -160,7 +160,7 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_cataloged_time(
+        await helpers.update_published_time(
             entries_ids=[entry.id for entry in entries], new_time=time_border - datetime.timedelta(seconds=10)
         )
 
@@ -176,7 +176,7 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_cataloged_time(
+        await helpers.update_published_time(
             entries_ids=[entry.id for entry in entries], new_time=time_border - datetime.timedelta(seconds=10)
         )
 
