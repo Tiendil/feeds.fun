@@ -35,14 +35,17 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Collected
     RETURNING id
     """
 
-    # TODO: we may want to update `published_at` on conflict if it is changed
-    #       so, feeds could correct `published_at` for their entries.
-    #       However, a fixed `published_at` can be a good protection from
-    #       feeds misbehaviour.
+    # We update `published_at` in case of link exists but published_at is different
+    # This logic works in pair with check for old entries in `catalog_entries`
+    # so the actual logic is "only update published_at if the new value is in acceptable lifetime range`
+    # it is as intended.
     sql_insert_feed_to_entry = """
     INSERT INTO l_feeds_to_entries (feed_id, entry_id, published_at)
     VALUES (%(feed_id)s, %(entry_id)s, %(published_at)s)
-    ON CONFLICT (feed_id, entry_id) DO NOTHING
+    ON CONFLICT (feed_id, entry_id) DO UPDATE
+    SET published_at = EXCLUDED.published_at
+    WHERE l_feeds_to_entries.published_at IS DISTINCT FROM EXCLUDED.published_at
+
     """
 
     result = await execute(

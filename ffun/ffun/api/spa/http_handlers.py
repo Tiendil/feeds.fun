@@ -139,6 +139,11 @@ async def process_api_get_entries(
     entries = await l_domain.get_entries_by_ids(request.ids)
 
     found_entries = [entry for entry in entries.values() if entry is not None]
+
+    # TODO: We should refactor that in one of the next ways:
+    #       1. If the we have user_id here, we should load their feed links to the entries
+    #          and extract published_at from the links.
+    #       2. Update `GetEntriesByIdsResponse` to return entries without publishedAt at all.
     personalized_entries = [entry.personalize(published_at=None) for entry in found_entries]
 
     # We cannot know here the whole distribution of tags on the user side
