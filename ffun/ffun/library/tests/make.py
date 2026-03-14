@@ -46,7 +46,6 @@ def fake_entry(  # noqa: CFQ002, CCR001
         external_url=str_to_absolute_url(resolved_external_url),
         external_tags={uuid.uuid4().hex, uuid.uuid4().hex} if external_tags is None else external_tags,
         published_at=utils.now() if published_at is None else published_at,
-        cataloged_at=utils.now() if cataloged_at is None else cataloged_at,
     )
 
 
