@@ -5,7 +5,7 @@ from typing import Any, AsyncGenerator, Iterable
 import psycopg
 from pypika import PostgreSQLQuery
 
-from ffun.core import logging
+from ffun.core import logging, utils
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain.entities import EntryId, FeedId
 from ffun.library import errors
@@ -70,9 +70,17 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Entry) ->
     await execute(sql_insert_feed_to_entry, {"feed_id": feed_id, "entry_id": entry_id, "published_at": entry.published_at})
 
 
-async def catalog_entries(feed_id: FeedId, entries: Iterable[Entry]) -> None:
+async def catalog_entries(feed_id: FeedId, entries: Iterable[Entry]) -> int:
+    count = 0
+
     for entry in entries:
+        if entry.published_at < utils.now() - settings.max_entry_age:
+            # hard protection from storing old entries
+            continue
         await _catalog_entry(feed_id, entry)
+        count += 1
+
+    return count
 
 
 async def get_feed_links_for_entries(
