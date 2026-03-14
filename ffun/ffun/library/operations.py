@@ -129,7 +129,7 @@ async def get_entries_by_filter(
     feeds_ids: Iterable[FeedId], limit: int, period: datetime.timedelta | None = None
 ) -> list[Entry]:
     if period is None:
-        period = datetime.timedelta(days=100 * 365)
+        period = settings.max_entry_age
 
     # Here is an important logic implemented
     # When we are applying created time restriction
