@@ -8,6 +8,7 @@ from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
+from ffun.library import errors as l_errors
 from ffun.markers import domain as m_domain
 from ffun.meta.settings import settings
 from ffun.ontology import cache as o_cache
@@ -26,13 +27,22 @@ logger = logging.get_module_logger()
 # Note: fully unlinked entry can be linked again before removing from l_entries
 #       we should do something with it in the future, but it is ok for now
 #       there should not a lot of such cases
-async def remove_entries(entries_ids: Iterable[EntryId]) -> None:
+async def remove_entries(entries_ids: Iterable[EntryId]) -> bool:
     """Remove entries and all related markers and relations."""
     entries_to_remove = list(entries_ids)
 
+    try:
+        await l_domain.remove_entries_by_ids(entries_to_remove)
+    except l_errors.ConcurentOperationOnRemovedEntries:
+        logger.warning("entities_have_not_removed_because_of_concurent_operations", entries_ids=entries_to_remove)
+        return False
+
+    # continue removing related entities only if entries were removed successfully.
+
     await m_domain.remove_markers_for_entries(entries_to_remove)
     await o_domain.remove_relations_for_entries(entries_to_remove)
-    await l_domain.remove_entries_by_ids(entries_to_remove)
+
+    return True
 
 
 async def add_feeds(feed_infos: list[p_entities.FeedInfo], user_id: UserId) -> list[FeedId]:
@@ -61,12 +71,12 @@ async def add_feeds(feed_infos: list[p_entities.FeedInfo], user_id: UserId) -> l
 
 
 async def clean_orphaned_entries(chunk: int) -> int:
-    # TODO: tests
     await l_domain.sync_orphaned_entries()
 
     orphanes = await l_domain.get_orphaned_entries(limit=chunk)
 
-    await remove_entries(orphanes)
+    if not await remove_entries(orphanes):
+        return 0
 
     return len(orphanes)
 

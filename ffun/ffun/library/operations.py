@@ -307,7 +307,6 @@ async def get_orphaned_entries(limit: int) -> set[EntryId]:
     return {row["entry_id"] for row in rows}
 
 
-# TODO: tests
 async def sync_orphaned_entries() -> None:
     """Detect entries that are no longer orphaned and remove them from orphaned entries table.
     """
@@ -320,7 +319,6 @@ async def sync_orphaned_entries() -> None:
     await execute(sql)
 
 
-# TODO: tests
 async def remove_entries_by_ids(execute: ExecuteType, entry_ids: Iterable[EntryId]) -> None:
     ids = list(entry_ids)
 
