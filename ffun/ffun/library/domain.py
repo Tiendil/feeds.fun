@@ -70,6 +70,9 @@ async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange
 
     # use oldest link to chose normalization feed
     # TODO: give priority to feeds from collections
+    # TODO: since we constantly unlink entries from feeds
+    #       doing anything based on feed_id (of any kind) looks like a not so good idea
+    #       we should find some better solution.
     feed_id = feed_links[0].feed_id
 
     feed = await f_domain.get_feed(feed_id)

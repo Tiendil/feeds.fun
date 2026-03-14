@@ -75,7 +75,7 @@ async def get_feed_links_for_entries(
     execute: ExecuteType, entries_ids: Iterable[EntryId]
 ) -> dict[EntryId, list[FeedEntryLink]]:
     sql = """
-    SELECT entry_id, feed_id, published_at
+    SELECT entry_id, feed_id, published_at, created_at
     FROM l_feeds_to_entries
     WHERE entry_id = ANY(%(entries_ids)s)
     """
@@ -88,11 +88,16 @@ async def get_feed_links_for_entries(
         entry_id = row["entry_id"]
         feed_id = row["feed_id"]
         published_at = row["published_at"]
+        created_at = row["created_at"]
 
         if entry_id not in feeds_for_entries:
             feeds_for_entries[entry_id] = []
 
-        feeds_for_entries[entry_id].append(FeedEntryLink(feed_id=feed_id, entry_id=entry_id, created_at=published_at))
+        feeds_for_entries[entry_id].append(
+            FeedEntryLink(feed_id=feed_id,
+                          entry_id=entry_id,
+                          published_at=published_at,
+                          created_at=created_at))
 
     return feeds_for_entries
 
