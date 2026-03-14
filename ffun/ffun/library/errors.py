@@ -9,3 +9,7 @@ class Error(errors.Error):
 
 class CanNotMoveEntryAlreadyInFeed(Error):
     entry_id: uuid.UUID
+
+
+class ConcurentOperationOnRemovedEntries(Error):
+    pass

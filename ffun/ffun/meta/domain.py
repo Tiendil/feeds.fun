@@ -61,6 +61,9 @@ async def add_feeds(feed_infos: list[p_entities.FeedInfo], user_id: UserId) -> l
 
 
 async def clean_orphaned_entries(chunk: int) -> int:
+    # TODO: tests
+    await l_domain.sync_orphaned_entries()
+
     orphanes = await l_domain.get_orphaned_entries(limit=chunk)
 
     await remove_entries(orphanes)
