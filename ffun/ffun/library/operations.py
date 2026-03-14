@@ -167,7 +167,10 @@ async def get_entries_by_filter(
     rows = await execute(sql, {"feeds_ids": feeds_ids, "period": period, "limit": limit})
 
     for row in rows:
-        row.pop("max_published_at")
+        # We ensure that `published_at` is specific for feeds, not for global load history
+        # So the user will see the entry as published at the time when the user could see it in their feeds
+        # not at the time when the entry was published by some other feed that the user does not follow.
+        row["published_at"] = row.pop("max_published_at")
 
     return [row_to_entry(row) for row in rows]
 
