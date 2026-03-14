@@ -27,11 +27,11 @@ class BaseEntry(BaseEntity):
 
 
 class Entry(BaseEntry):
-    created_at: datetime.datetime
+    published_at: datetime.datetime
 
     @property
-    def global_ege(self) -> datetime.timedelta:
-        return utils.now() - self.created_at
+    def global_age(self) -> datetime.timedelta:
+        return utils.now() - self.published_at
 
     def personalize(self, published_at: datetime.datetime | None) -> "PersonalizedEntry":
         return PersonalizedEntry(

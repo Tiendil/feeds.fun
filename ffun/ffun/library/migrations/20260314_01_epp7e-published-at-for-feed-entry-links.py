@@ -26,11 +26,6 @@ ALTER TABLE l_feeds_to_entries
 ALTER COLUMN published_at SET NOT NULL;
 """
 
-sql_drop_published_at_from_entries = """
-ALTER TABLE l_entries
-DROP COLUMN published_at
-"""
-
 sql_drop_old_index = """
 DROP INDEX IF EXISTS l_feeds_to_entries_feed_id_created_at_entity_id_idx
 """
@@ -46,16 +41,12 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor.execute(sql_add_published_at_column)
     cursor.execute(sql_fill_published_at_column)
     cursor.execute(sql_set_not_null_constraint)
-    cursor.execute(sql_drop_published_at_from_entries)
     cursor.execute(sql_drop_old_index)
     cursor.execute(sql_create_new_index)
 
 
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
-    cursor.execute("ALTER TABLE l_entries ADD COLUMN published_at TIMESTAMP WITH TIME ZONE NULL")
-    cursor.execute("UPDATE l_entries SET published_at = created_at")
-    cursor.execute("ALTER TABLE l_entries ALTER COLUMN published_at SET NOT NULL")
     cursor.execute("ALTER TABLE l_feeds_to_entries DROP COLUMN published_at")
     cursor.execute(
         """CREATE INDEX l_feeds_to_entries_feed_id_created_at_entity_id_idx

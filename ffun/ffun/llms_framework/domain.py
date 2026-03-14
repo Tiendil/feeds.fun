@@ -138,7 +138,7 @@ async def search_for_api_key(
     select_key_context = SelectKeyContext(
         llm_config=llm_config,
         feed_ids=feed_ids,
-        entry_age=entry.global_ege,
+        entry_age=entry.global_age,
         reserved_cost=reserved_cost,
         collections_api_key=collections_api_key,
         general_api_key=general_api_key,

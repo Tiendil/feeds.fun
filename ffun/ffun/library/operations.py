@@ -16,7 +16,7 @@ logger = logging.get_module_logger()
 
 
 def row_to_entry(row: dict[str, Any]) -> Entry:
-    row.pop("published_at", None)
+    row.pop("created_at", None)
     return Entry(**row)
 
 
@@ -28,9 +28,9 @@ def row_to_personalized_entry(row: dict[str, Any]) -> PersonalizedEntry:
 @run_in_transaction
 async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: CollectedEntry) -> None:
     sql_insert_entry = """
-    INSERT INTO l_entries (id, source_id, title, body, external_id, external_url, external_tags)
+    INSERT INTO l_entries (id, source_id, title, body, external_id, external_url, external_tags, published_at)
     VALUES (%(id)s, %(source_id)s, %(title)s, %(body)s, %(external_id)s,
-            %(external_url)s, %(external_tags)s)
+            %(external_url)s, %(external_tags)s, %(published_at)s)
     ON CONFLICT (source_id, external_id) DO NOTHING
     RETURNING id
     """
@@ -55,6 +55,7 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Collected
             "external_id": entry.external_id,
             "external_url": entry.external_url,
             "external_tags": list(entry.external_tags),
+            "published_at": entry.published_at,
         },
     )
 
