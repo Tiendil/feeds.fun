@@ -2,9 +2,9 @@ import datetime
 from itertools import chain
 from unittest import mock
 
+import psycopg
 import pytest
 import pytest_asyncio
-import psycopg
 from structlog.testing import capture_logs
 
 from ffun.core import utils

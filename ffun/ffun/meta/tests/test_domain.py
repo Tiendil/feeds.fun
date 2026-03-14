@@ -9,6 +9,7 @@ from structlog.testing import capture_logs
 from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
+from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import TagId, TagUid, UserId
 from ffun.domain.urls import str_to_feed_url, url_to_source_uid, url_to_uid
 from ffun.feeds import domain as f_domain
@@ -94,7 +95,7 @@ class TestRemoveEntries:
 
     @pytest.mark.asyncio
     async def test_concurent_operation_on_removed_entries(self, mocker: MockerFixture) -> None:
-        entry_ids = [uuid.uuid4(), uuid.uuid4()]
+        entry_ids = [new_entry_id(), new_entry_id()]
 
         remove_entries_by_ids_mock = mocker.patch(
             "ffun.library.domain.remove_entries_by_ids", side_effect=l_errors.ConcurentOperationOnRemovedEntries()
@@ -218,11 +219,11 @@ class TestCleanOrphanedEntries:
 
     @pytest.mark.asyncio
     async def test_return_zero_when_entries_not_removed(self, mocker: MockerFixture) -> None:
-        sync_orphaned_entries_mock = mocker.patch("ffun.library.domain.sync_orphaned_entries")
-        get_orphaned_entries_mock = mocker.patch(
-            "ffun.library.domain.get_orphaned_entries", return_value={uuid.uuid4(), uuid.uuid4()}
-        )
-        remove_entries_mock = mocker.patch("ffun.meta.domain.remove_entries", return_value=False)
+        orphaned_entries = {new_entry_id(), new_entry_id()}
+
+        mocker.patch("ffun.library.domain.sync_orphaned_entries")
+        mocker.patch("ffun.library.domain.get_orphaned_entries", return_value=orphaned_entries)
+        mocker.patch("ffun.meta.domain.remove_entries", return_value=False)
 
         assert await clean_orphaned_entries(chunk=10) == 0
 

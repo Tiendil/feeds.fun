@@ -1,16 +1,16 @@
 import datetime
 import uuid
 from typing import Any, AsyncGenerator, Iterable
-import psycopg
 
+import psycopg
 from pypika import PostgreSQLQuery
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain.entities import EntryId, FeedId
+from ffun.library import errors
 from ffun.library.entities import Entry, FeedEntryLink
 from ffun.library.settings import settings
-from ffun.library import errors
 
 logger = logging.get_module_logger()
 
@@ -308,8 +308,7 @@ async def get_orphaned_entries(limit: int) -> set[EntryId]:
 
 
 async def sync_orphaned_entries() -> None:
-    """Detect entries that are no longer orphaned and remove them from orphaned entries table.
-    """
+    """Detect entries that are no longer orphaned and remove them from orphaned entries table."""
     sql = """
     DELETE FROM l_orphaned_entries AS oe
     USING l_feeds_to_entries AS fe
