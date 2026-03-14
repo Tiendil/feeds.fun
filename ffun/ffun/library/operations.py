@@ -26,7 +26,7 @@ def row_to_personalized_entry(row: dict[str, Any]) -> PersonalizedEntry:
 
 
 @run_in_transaction
-async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: CollectedEntry) -> None:
+async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: CollectedEntry) -> bool:
     sql_insert_entry = """
     INSERT INTO l_entries (id, source_id, title, body, external_id, external_url, external_tags, published_at)
     VALUES (%(id)s, %(source_id)s, %(title)s, %(body)s, %(external_id)s,
@@ -45,7 +45,6 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Collected
     ON CONFLICT (feed_id, entry_id) DO UPDATE
     SET published_at = EXCLUDED.published_at
     WHERE l_feeds_to_entries.published_at IS DISTINCT FROM EXCLUDED.published_at
-
     """
 
     result = await execute(
@@ -62,9 +61,13 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Collected
         },
     )
 
+    new_entry_created: bool
+
     if result:
+        new_entry_created = True
         entry_id = result[0]["id"]
     else:
+        new_entry_created = False
         result = await execute(
             "SELECT id FROM l_entries WHERE source_id = %(source_id)s AND external_id = %(external_id)s",
             {"source_id": entry.source_id, "external_id": entry.external_id},
@@ -77,6 +80,8 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Collected
 
     await execute(sql_insert_feed_to_entry, {"feed_id": feed_id, "entry_id": entry_id, "published_at": entry.published_at})
 
+    return new_entry_created
+
 
 async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) -> int:
     count = 0
@@ -85,8 +90,9 @@ async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) ->
         if entry.published_at < utils.now() - settings.max_entry_age:
             # hard protection from storing old entries
             continue
-        await _catalog_entry(feed_id, entry)
-        count += 1
+
+        if await _catalog_entry(feed_id, entry):
+            count += 1
 
     return count
 
@@ -122,20 +128,6 @@ async def get_feed_links_for_entries(
     return feeds_for_entries
 
 
-async def find_stored_entries_for_feed(feed_id: FeedId, external_ids: Iterable[str]) -> set[str]:
-
-    sql = """
-    SELECT external_id
-    FROM l_entries
-    JOIN l_feeds_to_entries ON l_entries.id = l_feeds_to_entries.entry_id
-    WHERE feed_id = %(feed_id)s AND external_id = ANY(%(external_ids)s)
-    """
-
-    rows = await execute(sql, {"external_ids": external_ids, "feed_id": feed_id})
-
-    return {row["external_id"] for row in rows}
-
-
 async def get_entries_by_ids(ids: Iterable[EntryId]) -> dict[EntryId, Entry | None]:
 
     sql_select_entries = """SELECT * FROM l_entries WHERE id = ANY(%(ids)s)"""
@@ -165,6 +157,8 @@ async def get_entries_by_filter(
     # In such cases, we'll show such an entry as new to a user.
     # We may want to change this logic in the future.
 
+    # Also, we order by two fields (published_at and created_at) to work around the case
+    # when published_at is the same for several entries
     sql = """
     SELECT le.*, re.max_published_at
     FROM (
@@ -173,7 +167,7 @@ async def get_entries_by_filter(
         WHERE lfe.published_at > NOW() - %(period)s
           AND lfe.feed_id = ANY(%(feeds_ids)s)
         GROUP BY lfe.entry_id
-        ORDER BY MAX(lfe.published_at) DESC
+        ORDER BY MAX(lfe.published_at) DESC, MAX(lfe.created_at) DESC
         LIMIT %(limit)s
     ) AS re
     JOIN l_entries AS le ON le.id = re.id

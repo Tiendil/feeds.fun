@@ -23,7 +23,6 @@ from ffun.library.operations import (
     all_entries_iterator,
     catalog_entries,
     count_total_entries,
-    find_stored_entries_for_feed,
     get_entries_after_pointer,
     get_entries_by_filter,
     get_entries_by_ids,

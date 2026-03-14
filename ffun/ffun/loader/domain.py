@@ -132,34 +132,25 @@ async def sync_feed_info(feed: Feed, feed_info: p_entities.FeedInfo) -> None:
 
 
 async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None:
-    external_ids = [entry.external_id for entry in entries]
-
-    stored_entries_external_ids = await l_domain.find_stored_entries_for_feed(feed.id, external_ids)
-
-    entries_to_store = [entry for entry in entries if entry.external_id not in stored_entries_external_ids]
-
     prepared_entries: list[l_entities.CollectedEntry] = [
         l_entities.CollectedEntry(
             id=new_entry_id(),
             source_id=feed.source_id,
             **entry_info.model_dump(),  # type: ignore
         )
-        for entry_info in entries_to_store
+        for entry_info in entries
     ]
 
-    entries_stored = await l_domain.catalog_entries(feed.id, entries=prepared_entries)
+    entries_cataloged = await l_domain.catalog_entries(feed.id, entries=prepared_entries)
 
-    entries_already_stored = len(entries) - len(entries_to_store)
-
-    entries_skipped = len(prepared_entries) - entries_stored
+    entries_skipped = len(prepared_entries) - entries_cataloged
 
     logger.info("entries_stored",
-                entries_number=entries_stored,
-                entries_already_stored=entries_already_stored,
+                entries_cataloged=entries_cataloged,
                 entries_skipped=entries_skipped)
 
-    if entries_stored > 0:
-        logger.business_event("news_entries_stored", user_id=None, feed_id=feed.id, entries_number=entries_stored)
+    if entries_cataloged > 0:
+        logger.business_event("news_entries_stored", user_id=None, feed_id=feed.id, entries_number=entries_cataloged)
 
 
 @logging.async_args_to_log("feed.id", "feed.url")

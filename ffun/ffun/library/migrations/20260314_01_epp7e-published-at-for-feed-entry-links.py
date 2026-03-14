@@ -14,6 +14,9 @@ ALTER TABLE l_feeds_to_entries
 ADD COLUMN published_at TIMESTAMP WITH TIME ZONE NULL
 """
 
+# We have no other source of truth for published_at value except l_entries.published_at
+# so we can just copy values from l_entries.published_at to l_feeds_to_entries.published_at
+# to have them as accurate as possible.
 sql_fill_published_at_column = """
 UPDATE l_feeds_to_entries AS f2e
 SET published_at = e.published_at
