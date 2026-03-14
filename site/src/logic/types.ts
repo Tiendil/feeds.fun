@@ -130,7 +130,6 @@ export class Entry {
   readonly scoreContributions: {[key: string]: number};
   readonly scoreToZero: number;
   readonly publishedAt: Date;
-  readonly catalogedAt: Date;
   body: string | null;
 
   constructor({
@@ -143,7 +142,6 @@ export class Entry {
     score,
     scoreContributions,
     publishedAt,
-    catalogedAt,
     body
   }: {
     id: EntryId;
@@ -155,7 +153,6 @@ export class Entry {
     score: number;
     scoreContributions: {[key: string]: number};
     publishedAt: Date;
-    catalogedAt: Date;
     body: string | null;
   }) {
     this.id = id;
@@ -167,7 +164,6 @@ export class Entry {
     this.score = score;
     this.scoreContributions = scoreContributions;
     this.publishedAt = publishedAt;
-    this.catalogedAt = catalogedAt;
     this.body = body;
 
     this.scoreToZero = -Math.abs(score);
@@ -205,7 +201,6 @@ export function entryFromJSON(
     score: number;
     scoreContributions: {[key: number]: number};
     publishedAt: string;
-    catalogedAt: string;
     body: string | null;
   },
   tagsMapping: {[key: number]: string}
@@ -233,7 +228,6 @@ export function entryFromJSON(
     // map keys from int to string
     scoreContributions: contributions,
     publishedAt: new Date(rawEntry.publishedAt),
-    catalogedAt: new Date(rawEntry.catalogedAt),
 
     body: rawEntry.body
   });

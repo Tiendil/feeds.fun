@@ -99,8 +99,7 @@ export enum EntriesOrder {
   Score = "score",
   ScoreToZero = "score-to-zero",
   ScoreBackward = "score-backward",
-  Published = "published",
-  Cataloged = "cataloged"
+  Published = "published"
 }
 
 export type EntriesOrderProperty = {
@@ -112,11 +111,10 @@ export type EntriesOrderProperty = {
 };
 
 export const EntriesOrderProperties = new Map<EntriesOrder, EntriesOrderProperty>([
-  [EntriesOrder.Score, {text: "score", orderField: "score", timeField: "catalogedAt", direction: 1, default: true}],
-  [EntriesOrder.ScoreToZero, {text: "score ~ 0", orderField: "scoreToZero", timeField: "catalogedAt", direction: 1}],
-  [EntriesOrder.ScoreBackward, {text: "score backward", orderField: "score", timeField: "catalogedAt", direction: -1}],
+  [EntriesOrder.Score, {text: "score", orderField: "score", timeField: "publishedAt", direction: 1, default: true}],
+  [EntriesOrder.ScoreToZero, {text: "score ~ 0", orderField: "scoreToZero", timeField: "publishedAt", direction: 1}],
+  [EntriesOrder.ScoreBackward, {text: "score backward", orderField: "score", timeField: "publishedAt", direction: -1}],
   [EntriesOrder.Published, {text: "published", orderField: "publishedAt", timeField: "publishedAt", direction: 1}],
-  [EntriesOrder.Cataloged, {text: "cataloged", orderField: "catalogedAt", timeField: "catalogedAt", direction: 1}]
 ]);
 
 /////////////////////

@@ -86,7 +86,6 @@ class Entry(BaseEntity):
     score: int
     scoreContributions: dict[TagId, int]
     publishedAt: datetime.datetime
-    catalogedAt: datetime.datetime
     body: str | None = None
 
     @classmethod
@@ -108,7 +107,6 @@ class Entry(BaseEntity):
             score=score,
             scoreContributions=score_contributions,
             publishedAt=entry.published_at,
-            catalogedAt=entry.cataloged_at,
             body=entry.body if with_body else None,
         )
 

@@ -16,7 +16,6 @@ logger = logging.get_module_logger()
 
 
 def row_to_entry(row: dict[str, Any]) -> Entry:
-    row["cataloged_at"] = row.pop("created_at")
     return Entry(**row)
 
 
@@ -31,8 +30,8 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Entry) ->
     """
 
     sql_insert_feed_to_entry = """
-    INSERT INTO l_feeds_to_entries (feed_id, entry_id)
-    VALUES (%(feed_id)s, %(entry_id)s)
+    INSERT INTO l_feeds_to_entries (feed_id, entry_id, published_at)
+    VALUES (%(feed_id)s, %(entry_id)s, %(published_at)s)
     ON CONFLICT (feed_id, entry_id) DO NOTHING
     """
 
@@ -63,7 +62,7 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Entry) ->
         else:
             raise NotImplementedError("Can not find entry by source_id and external_id")
 
-    await execute(sql_insert_feed_to_entry, {"feed_id": feed_id, "entry_id": entry_id})
+    await execute(sql_insert_feed_to_entry, {"feed_id": feed_id, "entry_id": entry_id, "published_at": entry.published_at})
 
 
 async def catalog_entries(feed_id: FeedId, entries: Iterable[Entry]) -> None:
@@ -75,7 +74,7 @@ async def get_feed_links_for_entries(
     execute: ExecuteType, entries_ids: Iterable[EntryId]
 ) -> dict[EntryId, list[FeedEntryLink]]:
     sql = """
-    SELECT entry_id, feed_id, created_at
+    SELECT entry_id, feed_id, published_at
     FROM l_feeds_to_entries
     WHERE entry_id = ANY(%(entries_ids)s)
     """
@@ -87,12 +86,12 @@ async def get_feed_links_for_entries(
     for row in result:
         entry_id = row["entry_id"]
         feed_id = row["feed_id"]
-        created_at = row["created_at"]
+        published_at = row["published_at"]
 
         if entry_id not in feeds_for_entries:
             feeds_for_entries[entry_id] = []
 
-        feeds_for_entries[entry_id].append(FeedEntryLink(feed_id=feed_id, entry_id=entry_id, created_at=created_at))
+        feeds_for_entries[entry_id].append(FeedEntryLink(feed_id=feed_id, entry_id=entry_id, created_at=published_at))
 
     return feeds_for_entries
 
@@ -132,32 +131,33 @@ async def get_entries_by_filter(
         period = settings.max_entry_age
 
     # Here is an important logic implemented
-    # When we are applying created time restriction
-    # we are looking at a time of creating a link between entry and feed, not the real cataloged time
+    # When we are applying published time restriction
+    # we are looking at a time of entry publishing in a requested feeds,
+    # not the published time from the entry itself
     # In most cases, those times should be nearly the same, but there is a possibility
     # that there will be aggregator-style feeds that include old entries as new.
     # In such cases, we'll show such an entry as new to a user.
     # We may want to change this logic in the future.
 
     sql = """
-    SELECT le.*, re.max_created_at
+    SELECT le.*, re.max_published_at
     FROM (
-        SELECT lfe.entry_id AS id, MAX(lfe.created_at) AS max_created_at
+        SELECT lfe.entry_id AS id, MAX(lfe.published_at) AS max_published_at
         FROM l_feeds_to_entries AS lfe
-        WHERE lfe.created_at > NOW() - %(period)s
+        WHERE lfe.published_at > NOW() - %(period)s
           AND lfe.feed_id = ANY(%(feeds_ids)s)
         GROUP BY lfe.entry_id
-        ORDER BY MAX(lfe.created_at) DESC
+        ORDER BY MAX(lfe.published_at) DESC
         LIMIT %(limit)s
     ) AS re
     JOIN l_entries AS le ON le.id = re.id
-    ORDER BY re.max_created_at DESC;
+    ORDER BY re.max_published_at DESC;
     """
 
     rows = await execute(sql, {"feeds_ids": feeds_ids, "period": period, "limit": limit})
 
     for row in rows:
-        row.pop("max_created_at")
+        row.pop("max_published_at")
 
     return [row_to_entry(row) for row in rows]
 
@@ -222,7 +222,7 @@ async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | 
         SELECT feed_id, entry_id
         FROM l_feeds_to_entries
         WHERE feed_id = %(feed_id)s
-        ORDER BY created_at DESC
+        ORDER BY published_at DESC
         OFFSET %(offset)s
     )
     DELETE FROM l_feeds_to_entries
@@ -254,7 +254,7 @@ async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: date
     WITH cte AS (
         SELECT feed_id, entry_id
         FROM l_feeds_to_entries
-        WHERE feed_id = %(feed_id)s AND created_at < NOW() - %(period)s
+        WHERE feed_id = %(feed_id)s AND published_at < NOW() - %(period)s
     )
     DELETE FROM l_feeds_to_entries
     USING cte

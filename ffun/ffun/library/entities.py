@@ -23,14 +23,6 @@ class Entry(BaseEntity):
     external_tags: set[str]
     published_at: datetime.datetime
 
-    # TODO: we do not save this field to the database
-    #       at the saving time it set to NOW()
-    #       => a value that is set up on the loading time will be lost
-    #       maybe, it will be a good idea to have a two separate classes:
-    #       - LoadedEntry — only for loader
-    #       - SavedEntry — for everyone else
-    cataloged_at: datetime.datetime
-
     @property
     def age(self) -> datetime.timedelta:
         return utils.now() - self.published_at

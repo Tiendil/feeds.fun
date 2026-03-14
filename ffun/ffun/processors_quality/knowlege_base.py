@@ -87,7 +87,6 @@ class KnowlegeBase:
             external_id="",
             external_url=str_to_absolute_url(data["external_url"]),
             external_tags=cast(set[str], data["external_tags"]),
-            cataloged_at=utils.now(),
             published_at=data["published_at"],  # type: ignore
         )
 

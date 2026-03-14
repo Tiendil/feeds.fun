@@ -142,7 +142,6 @@ async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None
         l_entities.Entry(
             id=new_entry_id(),
             source_id=feed.source_id,
-            cataloged_at=utils.now(),
             **entry_info.model_dump(),  # type: ignore
         )
         for entry_info in entries_to_store

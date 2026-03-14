@@ -82,7 +82,6 @@ async def fake_entry(feed: Feed) -> Entry:
         external_url=url,
         external_tags=set(),
         published_at=timestamp,
-        cataloged_at=timestamp,
     )
 
     await catalog_entries(feed.id, [entry])
