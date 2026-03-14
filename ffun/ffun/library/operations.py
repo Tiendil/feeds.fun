@@ -245,7 +245,7 @@ async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | 
         SELECT feed_id, entry_id
         FROM l_feeds_to_entries
         WHERE feed_id = %(feed_id)s
-        ORDER BY published_at, created_at DESC
+        ORDER BY published_at DESC, created_at DESC
         OFFSET %(offset)s
     )
     DELETE FROM l_feeds_to_entries
