@@ -227,12 +227,14 @@ async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | 
         offset = settings.max_entries_per_feed
 
     # TODO: refactor to use https://www.psycopg.org/psycopg3/docs/api/cursors.html#psycopg.Cursor.rowcount
+    # We use `created_at` as a second sorting field to ensure that tail will be detected correctly
+    # in the case when the feeds sets equal `published_at` for several entries.
     sql = """
     WITH cte AS (
         SELECT feed_id, entry_id
         FROM l_feeds_to_entries
         WHERE feed_id = %(feed_id)s
-        ORDER BY published_at DESC
+        ORDER BY published_at, created_at DESC
         OFFSET %(offset)s
     )
     DELETE FROM l_feeds_to_entries
