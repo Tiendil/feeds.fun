@@ -9,23 +9,28 @@ from ffun.core import logging, utils
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain.entities import EntryId, FeedId
 from ffun.library import errors
-from ffun.library.entities import Entry, FeedEntryLink
+from ffun.library.entities import CollectedEntry, Entry, FeedEntryLink, PersonalizedEntry
 from ffun.library.settings import settings
 
 logger = logging.get_module_logger()
 
 
 def row_to_entry(row: dict[str, Any]) -> Entry:
-    row.pop("created_at", None)
+    row.pop("published_at", None)
     return Entry(**row)
 
 
+def row_to_personalized_entry(row: dict[str, Any]) -> PersonalizedEntry:
+    row.pop("created_at", None)
+    return PersonalizedEntry(**row)
+
+
 @run_in_transaction
-async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Entry) -> None:
+async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: CollectedEntry) -> None:
     sql_insert_entry = """
-    INSERT INTO l_entries (id, source_id, title, body, external_id, external_url, external_tags, published_at)
+    INSERT INTO l_entries (id, source_id, title, body, external_id, external_url, external_tags)
     VALUES (%(id)s, %(source_id)s, %(title)s, %(body)s, %(external_id)s,
-            %(external_url)s, %(external_tags)s, %(published_at)s)
+            %(external_url)s, %(external_tags)s)
     ON CONFLICT (source_id, external_id) DO NOTHING
     RETURNING id
     """
@@ -50,7 +55,6 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Entry) ->
             "external_id": entry.external_id,
             "external_url": entry.external_url,
             "external_tags": list(entry.external_tags),
-            "published_at": entry.published_at,
         },
     )
 
@@ -70,7 +74,7 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Entry) ->
     await execute(sql_insert_feed_to_entry, {"feed_id": feed_id, "entry_id": entry_id, "published_at": entry.published_at})
 
 
-async def catalog_entries(feed_id: FeedId, entries: Iterable[Entry]) -> int:
+async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) -> int:
     count = 0
 
     for entry in entries:
@@ -144,7 +148,7 @@ async def get_entries_by_ids(ids: Iterable[EntryId]) -> dict[EntryId, Entry | No
 
 async def get_entries_by_filter(
     feeds_ids: Iterable[FeedId], limit: int, period: datetime.timedelta | None = None
-) -> list[Entry]:
+) -> list[PersonalizedEntry]:
     if period is None:
         period = settings.max_entry_age
 
@@ -180,7 +184,7 @@ async def get_entries_by_filter(
         # not at the time when the entry was published by some other feed that the user does not follow.
         row["published_at"] = row.pop("max_published_at")
 
-    return [row_to_entry(row) for row in rows]
+    return [row_to_personalized_entry(row) for row in rows]
 
 
 async def get_entries_after_pointer(

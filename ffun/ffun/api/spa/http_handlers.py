@@ -54,7 +54,7 @@ def add_routes_to_app(app: fastapi.FastAPI) -> None:
 
 
 async def _external_entries(  # pylint: disable=R0914
-    entries: Iterable[l_entities.Entry],
+    entries: Iterable[l_entities.PersonalizedEntry],
     with_body: bool,
     user_id: UserId | None,
     min_tag_count: int,
@@ -129,7 +129,6 @@ async def process_api_track(body: str, user_id: UserId | None) -> entities.Track
 
     return entities.TrackEventResponse()
 
-
 async def process_api_get_entries(
     request: entities.GetEntriesByIdsRequest, user_id: UserId | None
 ) -> entities.GetEntriesByIdsResponse:
@@ -140,11 +139,12 @@ async def process_api_get_entries(
     entries = await l_domain.get_entries_by_ids(request.ids)
 
     found_entries = [entry for entry in entries.values() if entry is not None]
+    personalized_entries = [entry.personalize(published_at=None) for entry in found_entries]
 
     # We cannot know here the whole distribution of tags on the user side
     # => we set min_tag_count=0
     external_entries, tags_mapping = await _external_entries(
-        found_entries, with_body=True, user_id=user_id, min_tag_count=0
+        personalized_entries, with_body=True, user_id=user_id, min_tag_count=0
     )
 
     return entities.GetEntriesByIdsResponse(entries=external_entries, tagsMapping=tags_mapping)

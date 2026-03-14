@@ -9,7 +9,7 @@ import toml
 from ffun.core import utils
 from ffun.domain.entities import EntryId, SourceId
 from ffun.domain.urls import str_to_absolute_url
-from ffun.library.entities import Entry
+from ffun.library.entities import CollectedEntry
 from ffun.processors_quality import errors
 from ffun.processors_quality.entities import Attribution, ExpectedTags, ProcessorResult
 
@@ -63,7 +63,7 @@ class KnowlegeBase:
         file_body = path.read_text()
         return frontmatter.parse(file_body, handler=FrontmatterTOMLHandler())
 
-    def get_news_entry(self, id_: int) -> Entry:
+    def get_news_entry(self, id_: int) -> CollectedEntry:
         entry_path = self._dir_news / f"{id_to_name(id_)}.toml"
 
         data, body = self._load_data_and_body(entry_path)
@@ -79,7 +79,7 @@ class KnowlegeBase:
         assert isinstance(data["external_url"], str)
         assert isinstance(data["published_at"], str)
 
-        return Entry(
+        return CollectedEntry(
             id=EntryId(uuid.UUID(int=0)),
             source_id=SourceId(uuid.UUID(int=0)),
             title=data["title"],

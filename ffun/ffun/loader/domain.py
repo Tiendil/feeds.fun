@@ -138,8 +138,8 @@ async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None
 
     entries_to_store = [entry for entry in entries if entry.external_id not in stored_entries_external_ids]
 
-    prepared_entries = [
-        l_entities.Entry(
+    prepared_entries: list[l_entities.CollectedEntry] = [
+        l_entities.CollectedEntry(
             id=new_entry_id(),
             source_id=feed.source_id,
             **entry_info.model_dump(),  # type: ignore

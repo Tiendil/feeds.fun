@@ -23,7 +23,7 @@ from ffun.feeds.domain import get_feeds, get_source_ids, save_feed
 from ffun.feeds.entities import Feed, FeedState
 from ffun.feeds_links.domain import add_link
 from ffun.library.domain import catalog_entries, get_entries_by_ids
-from ffun.library.entities import Entry
+from ffun.library.entities import CollectedEntry, Entry
 from ffun.ontology.domain import apply_tags_to_entry
 from ffun.ontology.entities import NormalizedTag
 from ffun.users import domain as u_domain
@@ -73,7 +73,7 @@ async def fake_entry(feed: Feed) -> Entry:
 
     assert url is not None
 
-    entry = Entry(
+    entry = CollectedEntry(
         id=new_entry_id(),
         source_id=feed.source_id,
         title=f"Title {_id}",
