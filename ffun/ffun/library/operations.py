@@ -169,7 +169,7 @@ async def get_entries_by_filter(
     # 3. Outer sorting uses entry_id to ensure deterministic order
     #    when there are multiple entries with the same published_at and created_at
     sql = """
-    SELECT le.*, picked.published_at as picked_published_at, picked.created_at as picked_created_at
+    SELECT le.*, picked.published_at AS picked_published_at
     FROM (
         SELECT DISTINCT ON (entry_id) entry_id, published_at, created_at
         FROM l_feeds_to_entries
@@ -178,7 +178,7 @@ async def get_entries_by_filter(
         ORDER BY entry_id, published_at DESC, created_at DESC
     ) AS picked
     JOIN l_entries AS le ON le.id = picked.entry_id
-    ORDER BY picked.picked_published_at DESC, picked.picked_created_at DESC, picked.entry_id DESC
+    ORDER BY picked.published_at DESC, picked.created_at DESC, picked.entry_id DESC
     LIMIT %(limit)s
     """
 
