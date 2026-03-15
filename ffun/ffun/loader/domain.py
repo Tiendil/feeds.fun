@@ -1,6 +1,6 @@
 import httpx
 
-from ffun.core import logging, utils
+from ffun.core import logging
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import AbsoluteUrl, FeedUrl
 from ffun.domain.urls import construct_f_url
@@ -13,6 +13,7 @@ from ffun.library import entities as l_entities
 from ffun.loader import errors, operations
 from ffun.loader.entities import ProxyState
 from ffun.loader.settings import settings
+from ffun.meta import domain as m_domain
 from ffun.parsers import entities as p_entities
 
 logger = logging.get_module_logger()
@@ -132,30 +133,23 @@ async def sync_feed_info(feed: Feed, feed_info: p_entities.FeedInfo) -> None:
 
 
 async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None:
-    external_ids = [entry.external_id for entry in entries]
-
-    stored_entries_external_ids = await l_domain.find_stored_entries_for_feed(feed.id, external_ids)
-
-    entries_to_store = [entry for entry in entries if entry.external_id not in stored_entries_external_ids]
-
-    prepared_entries = [
-        l_entities.Entry(
+    prepared_entries: list[l_entities.CollectedEntry] = [
+        l_entities.CollectedEntry(
             id=new_entry_id(),
             source_id=feed.source_id,
-            cataloged_at=utils.now(),
             **entry_info.model_dump(),  # type: ignore
         )
-        for entry_info in entries_to_store
+        for entry_info in entries
     ]
 
-    await l_domain.catalog_entries(feed.id, entries=prepared_entries)
+    entries_cataloged = await l_domain.catalog_entries(feed.id, entries=prepared_entries)
 
-    entries_stored = len(prepared_entries)
+    entries_skipped = len(prepared_entries) - entries_cataloged
 
-    logger.info("entries_stored", entries_number=entries_stored)
+    logger.info("entries_stored", entries_cataloged=entries_cataloged, entries_skipped=entries_skipped)
 
-    if entries_stored > 0:
-        logger.business_event("news_entries_stored", user_id=None, feed_id=feed.id, entries_number=entries_stored)
+    if entries_cataloged > 0:
+        logger.business_event("news_entries_stored", user_id=None, feed_id=feed.id, entries_number=entries_cataloged)
 
 
 @logging.async_args_to_log("feed.id", "feed.url")
@@ -178,8 +172,7 @@ async def process_feed(feed: Feed) -> None:
     # We should sync the list of entries in the feed even if we failed to load it
     # to automatically sync it after any configuration change.
     # We should not do so for orphaned feeds, because they will be removed.
-    await l_domain.unlink_feed_tail(feed.id)
-    await l_domain.unlink_old_entries(feed.id)
+    await m_domain.shrink_feed(feed.id)
 
 
 async def check_proxies_availability() -> None:

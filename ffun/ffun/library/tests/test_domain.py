@@ -8,7 +8,8 @@ from ffun.core.postgresql import execute
 from ffun.feeds.entities import Feed
 from ffun.library import operations
 from ffun.library.domain import get_entries_by_filter_with_fallback, get_entry, get_feeds_for_entry, normalize_entry
-from ffun.library.entities import Entry, EntryChange
+from ffun.library.entities import CollectedEntry, Entry, EntryChange
+from ffun.library.settings import settings
 from ffun.library.tests import helpers, make
 
 
@@ -24,7 +25,7 @@ class TestNormalizeEntry:
     @pytest.mark.parametrize("apply", [True, False])
     @pytest.mark.asyncio
     async def test_normalize_external_url(
-        self, new_entry: Entry, loaded_feed: Feed, another_loaded_feed: Feed, apply: bool
+        self, new_entry: CollectedEntry, loaded_feed: Feed, another_loaded_feed: Feed, apply: bool
     ) -> None:
         wrong_url = "/relative/url"
         expected_url = f"{loaded_feed.url}{wrong_url}"
@@ -59,7 +60,7 @@ class TestNormalizeEntry:
 class TestGetFeedsForEntry:
 
     @pytest.mark.asyncio
-    async def test_single_feed(self, new_entry: Entry, loaded_feed: Feed) -> None:
+    async def test_single_feed(self, new_entry: CollectedEntry, loaded_feed: Feed) -> None:
         await operations.catalog_entries(loaded_feed.id, [new_entry])
 
         feeds = await get_feeds_for_entry(new_entry.id)
@@ -67,7 +68,9 @@ class TestGetFeedsForEntry:
         assert feeds == {loaded_feed.id}
 
     @pytest.mark.asyncio
-    async def test_multiple_feed(self, new_entry: Entry, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
+    async def test_multiple_feed(
+        self, new_entry: CollectedEntry, loaded_feed: Feed, another_loaded_feed: Feed
+    ) -> None:
         await operations.catalog_entries(loaded_feed.id, [new_entry])
         await operations.catalog_entries(another_loaded_feed.id, [new_entry])
 
@@ -76,7 +79,7 @@ class TestGetFeedsForEntry:
         assert feeds == {loaded_feed.id, another_loaded_feed.id}
 
     @pytest.mark.asyncio
-    async def test_no_feeds(self, new_entry: Entry, loaded_feed: Feed) -> None:
+    async def test_no_feeds(self, new_entry: CollectedEntry, loaded_feed: Feed) -> None:
         await operations.catalog_entries(loaded_feed.id, [new_entry])
 
         await operations.unlink_feed_tail(execute, loaded_feed.id, 0)
@@ -102,14 +105,14 @@ class TestGetEntriesByFilterWithFallback:
     async def prepared_entries(self, loaded_feed: Feed, time_border: datetime.datetime) -> list[Entry]:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_cataloged_time(
+        await helpers.update_published_time(
             entries_ids=[entry.id for entry in entries], new_time=time_border - datetime.timedelta(seconds=10)
         )
 
         all_entries = await operations.get_entries_by_ids(ids=[entry.id for entry in entries])
 
         all_entries_list = [entry for entry in all_entries.values() if entry is not None]
-        all_entries_list.sort(key=lambda entry: entry.cataloged_at)
+        all_entries_list.sort(key=lambda entry: entry.published_at)
 
         return all_entries_list
 
@@ -127,7 +130,7 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_cataloged_time(
+        await helpers.update_published_time(
             entries_ids=[entries[-1].id], new_time=time_border - datetime.timedelta(seconds=10)
         )
 
@@ -143,7 +146,7 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_cataloged_time(
+        await helpers.update_published_time(
             entries_ids=[entries[-1].id], new_time=time_border - datetime.timedelta(seconds=10)
         )
 
@@ -160,8 +163,25 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_cataloged_time(
+        await helpers.update_published_time(
             entries_ids=[entry.id for entry in entries], new_time=time_border - datetime.timedelta(seconds=10)
+        )
+
+        loaded_entries = await get_entries_by_filter_with_fallback(
+            feeds_ids=[loaded_feed.id], period=time_delta, limit=1, fallback_limit=10
+        )
+
+        assert {entry.id for entry in loaded_entries} == {entry.id for entry in entries}
+
+    @pytest.mark.asyncio
+    async def test_fallback_returns_entries_older_than_max_entry_age(
+        self, loaded_feed: Feed, time_delta: datetime.timedelta
+    ) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=3)
+
+        await helpers.update_published_time(
+            entries_ids=[entry.id for entry in entries],
+            new_time=utils.now() - settings.max_entry_age - datetime.timedelta(days=1),
         )
 
         loaded_entries = await get_entries_by_filter_with_fallback(
@@ -176,7 +196,7 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_cataloged_time(
+        await helpers.update_published_time(
             entries_ids=[entry.id for entry in entries], new_time=time_border - datetime.timedelta(seconds=10)
         )
 

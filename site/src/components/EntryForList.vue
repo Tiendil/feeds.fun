@@ -125,10 +125,6 @@
       return "How long ago the news was published";
     }
 
-    if (properties.timeField === "catalogedAt") {
-      return "How long ago the news was collected";
-    }
-
     return "";
   });
 

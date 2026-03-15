@@ -6,17 +6,18 @@ from ffun.domain import urls as d_urls
 from ffun.domain.entities import EntryId, FeedId, UnknownUrl
 from ffun.feeds import domain as f_domain
 from ffun.library import operations
-from ffun.library.entities import Entry, EntryChange, FeedEntryLink
+from ffun.library.entities import Entry, EntryChange, FeedEntryLink, PersonalizedEntry
 
 catalog_entries = operations.catalog_entries
 get_entries_by_ids = operations.get_entries_by_ids
 get_entries_by_filter = operations.get_entries_by_filter
-find_stored_entries_for_feed = operations.find_stored_entries_for_feed
 all_entries_iterator = operations.all_entries_iterator
 get_entries_after_pointer = operations.get_entries_after_pointer
 get_orphaned_entries = operations.get_orphaned_entries
 count_total_entries = operations.count_total_entries
 sync_orphaned_entries = operations.sync_orphaned_entries
+
+_fallback_period = datetime.timedelta(days=365 * 100)
 
 
 @run_in_transaction
@@ -69,6 +70,9 @@ async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange
 
     # use oldest link to chose normalization feed
     # TODO: give priority to feeds from collections
+    # TODO: since we constantly unlink entries from feeds
+    #       doing anything based on feed_id (of any kind) looks like a not so good idea
+    #       we should find some better solution.
     feed_id = feed_links[0].feed_id
 
     feed = await f_domain.get_feed(feed_id)
@@ -89,7 +93,7 @@ async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange
 
 async def get_entries_by_filter_with_fallback(
     feeds_ids: list[FeedId], period: datetime.timedelta | None, limit: int, fallback_limit: int
-) -> list[Entry]:
+) -> list[PersonalizedEntry]:
 
     entries = await get_entries_by_filter(feeds_ids=feeds_ids, period=period, limit=limit)
 
@@ -97,8 +101,6 @@ async def get_entries_by_filter_with_fallback(
         return entries
 
     # if there is no news in requested interval try to get some older news
-    entries = await get_entries_by_filter(
-        feeds_ids=feeds_ids, period=datetime.timedelta(days=10 * 365), limit=fallback_limit
-    )
+    entries = await get_entries_by_filter(feeds_ids=feeds_ids, period=_fallback_period, limit=fallback_limit)
 
     return entries

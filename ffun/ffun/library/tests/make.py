@@ -7,7 +7,7 @@ from ffun.domain.entities import AbsoluteUrl, EntryId, SourceId
 from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds.entities import Feed
 from ffun.library import domain
-from ffun.library.entities import Entry
+from ffun.library.entities import CollectedEntry, Entry
 
 
 def fake_url() -> str:
@@ -32,12 +32,11 @@ def fake_entry(  # noqa: CFQ002, CCR001
     external_url: AbsoluteUrl | str | None = None,
     external_tags: set[str] | None = None,
     published_at: datetime.datetime | None = None,
-    cataloged_at: datetime.datetime | None = None,
-) -> Entry:
+) -> CollectedEntry:
     resolved_external_url = fake_url() if external_url is None else external_url
     resolved_entry_id = new_entry_id() if id is None else EntryId(id)
 
-    return Entry(
+    return CollectedEntry(
         id=resolved_entry_id,
         source_id=source_id,
         title=fake_title() if title is None else title,
@@ -46,7 +45,6 @@ def fake_entry(  # noqa: CFQ002, CCR001
         external_url=str_to_absolute_url(resolved_external_url),
         external_tags={uuid.uuid4().hex, uuid.uuid4().hex} if external_tags is None else external_tags,
         published_at=utils.now() if published_at is None else published_at,
-        cataloged_at=utils.now() if cataloged_at is None else cataloged_at,
     )
 
 
@@ -62,6 +60,6 @@ async def n_entries_list(feed: Feed, n: int) -> list[Entry]:
     result = list(entries.values())
 
     # from newest to oldest
-    result.sort(key=lambda entry: entry.cataloged_at, reverse=True)
+    result.sort(key=lambda entry: entry.published_at, reverse=True)
 
     return result

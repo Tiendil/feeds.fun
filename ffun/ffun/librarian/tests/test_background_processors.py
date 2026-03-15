@@ -11,8 +11,17 @@ from ffun.librarian import operations
 from ffun.librarian.background_processors import EntriesProcessor
 from ffun.librarian.tests import make
 from ffun.library import domain as l_domain
+from ffun.library.entities import Entry
 from ffun.library.tests import make as l_make
 from ffun.ontology import domain as o_domain
+
+
+def _entry_sort_key(entry: Entry) -> tuple[object, object]:
+    return (entry.created_at, entry.id)
+
+
+def _feed_retention_sort_key(entry: Entry) -> tuple[object, object]:
+    return (entry.published_at, entry.created_at)
 
 
 class TestEntriesProcessors:
@@ -35,7 +44,7 @@ class TestEntriesProcessors:
 
         entries = await l_make.n_entries(loaded_feed, 9)
         entries_list = list(entries.values())
-        entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
+        entries_list.sort(key=_entry_sort_key)
 
         assert fake_entries_processor.concurrency <= len(entries)
 
@@ -63,7 +72,7 @@ class TestEntriesProcessors:
 
         entries = await l_make.n_entries(loaded_feed, 2)
         entries_list = list(entries.values())
-        entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
+        entries_list.sort(key=_entry_sort_key)
 
         assert fake_entries_processor.concurrency > len(entries)
 
@@ -88,7 +97,7 @@ class TestEntriesProcessors:
 
         entries = await l_make.n_entries(loaded_feed, 2)
         entries_list = list(entries.values())
-        entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
+        entries_list.sort(key=_entry_sort_key)
 
         fake_entries_ids = [new_entry_id() for _ in range(3)]
 
@@ -120,7 +129,7 @@ class TestEntriesProcessors:
     ) -> None:
         entries = await l_make.n_entries(loaded_feed, 2)
         entries_list = list(entries.values())
-        entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
+        entries_list.sort(key=_entry_sort_key)
 
         fake_entries_ids = [new_entry_id() for _ in range(3)]
 
@@ -149,7 +158,9 @@ class TestEntriesProcessors:
     ) -> None:
         entries = await l_make.n_entries(loaded_feed, 5)
         entries_list = list(entries.values())
-        entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
+
+        # sort by published_at because we do unlink_feed_tail
+        entries_list.sort(key=_feed_retention_sort_key)
 
         await l_domain.unlink_feed_tail(loaded_feed.id, offset=3)
 
@@ -186,7 +197,7 @@ class TestEntriesProcessors:
         await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
 
         entries_list = list(entries_1.values()) + list(entries_2.values())
-        entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
+        entries_list.sort(key=_entry_sort_key)
 
         entries_ids = [entry.id for entry in entries_list]
 
@@ -219,12 +230,15 @@ class TestEntriesProcessors:
         entries_1 = await l_make.n_entries_list(loaded_feed, 3)
         entries_2 = await l_make.n_entries_list(another_loaded_feed, 2)
 
-        await l_domain.catalog_entries(another_loaded_feed.id, entries_1[:2])
+        await l_domain.catalog_entries(
+            another_loaded_feed.id,
+            [entry.collected_entry() for entry in entries_1[:2]],
+        )
 
         await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
 
         entries_list = list(entries_1) + list(entries_2)
-        entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
+        entries_list.sort(key=_entry_sort_key)
 
         entries_ids = [entry.id for entry in entries_list]
 
@@ -260,7 +274,7 @@ class TestEntriesProcessors:
         await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
 
         entries_list = list(entries_1.values()) + list(entries_2.values())
-        entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
+        entries_list.sort(key=_entry_sort_key)
 
         entries_ids = [entry.id for entry in entries_list]
 
@@ -296,7 +310,7 @@ class TestEntriesProcessors:
         await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
 
         entries_list = list(entries_1.values()) + list(entries_2.values())
-        entries_list.sort(key=lambda entry: (entry.cataloged_at, entry.id))
+        entries_list.sort(key=_entry_sort_key)
 
         entries_ids = [entry.id for entry in entries_list]
 

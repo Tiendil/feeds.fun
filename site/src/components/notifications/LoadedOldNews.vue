@@ -41,6 +41,11 @@
 
     return properties.entries.every((entryId) => {
       const entry = entriesStore.entries[entryId];
+      if (entry.publishedAt === null) {
+        // we do not expect publishedAt to be null here
+        // but just in case we treat such entries as old ones
+        return true;
+      }
       return entry.publishedAt.getTime() < Date.now() - properties.period.seconds * 1000;
     });
   });

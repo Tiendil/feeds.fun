@@ -85,14 +85,13 @@ class Entry(BaseEntity):
     markers: list[Marker] = []
     score: int
     scoreContributions: dict[TagId, int]
-    publishedAt: datetime.datetime
-    catalogedAt: datetime.datetime
+    publishedAt: datetime.datetime | None
     body: str | None = None
 
     @classmethod
     def from_internal(  # noqa: CFQ002
         cls,
-        entry: l_entities.Entry,
+        entry: l_entities.PersonalizedEntry,
         tags: Iterable[TagId],
         markers: Iterable[Marker],
         score: int,
@@ -108,7 +107,6 @@ class Entry(BaseEntity):
             score=score,
             scoreContributions=score_contributions,
             publishedAt=entry.published_at,
-            catalogedAt=entry.cataloged_at,
             body=entry.body if with_body else None,
         )
 

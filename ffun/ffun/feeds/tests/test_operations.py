@@ -15,6 +15,7 @@ from ffun.feeds import errors
 from ffun.feeds.domain import get_feed, save_feeds
 from ffun.feeds.entities import Feed, FeedError, FeedState
 from ffun.feeds.operations import (
+    all_feeds_iterator,
     count_total_feeds,
     count_total_feeds_per_last_error,
     count_total_feeds_per_state,
@@ -393,6 +394,22 @@ class TestTechRemoveFeed:
     @pytest.mark.asyncio
     async def test_no_feed(self) -> None:
         await tech_remove_feed(new_feed_id())
+
+
+class TestAllFeedsIterator:
+    @pytest.mark.parametrize("chunk", [1, 2, 3, 4, 5, 6, 7])
+    @pytest.mark.asyncio
+    async def test(self, chunk: int) -> None:
+        feed_ids = []
+
+        for _ in range(6):
+            feed_ids.append(await save_feed(await make.fake_feed()))
+
+        feed_ids.sort()
+
+        found_ids = [feed.id async for feed in all_feeds_iterator(chunk=chunk) if feed.id in feed_ids]
+
+        assert found_ids == feed_ids
 
 
 class TestCountTotalFeeds:

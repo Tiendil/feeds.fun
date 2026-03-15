@@ -1,5 +1,6 @@
 import datetime
-from typing import Any, Iterable
+import uuid
+from typing import Any, AsyncGenerator, Iterable
 
 import psycopg
 from pypika import PostgreSQLQuery
@@ -241,3 +242,25 @@ async def count_total_feeds_per_last_error() -> dict[FeedError, int]:
         numbers[FeedError(row["last_error"])] = row["count"]
 
     return numbers
+
+
+async def all_feeds_iterator(chunk: int) -> AsyncGenerator[Feed, None]:
+    feed_id = uuid.UUID("00000000-0000-0000-0000-000000000000")
+
+    sql = """
+    SELECT * FROM f_feeds
+    WHERE %(feed_id)s < id
+    ORDER BY id ASC
+    LIMIT %(chunk)s
+    """
+
+    while True:
+        rows = await execute(sql, {"feed_id": feed_id, "chunk": chunk})
+
+        if not rows:
+            break
+
+        for row in rows:
+            yield row_to_feed(row)
+
+        feed_id = rows[-1]["id"]
