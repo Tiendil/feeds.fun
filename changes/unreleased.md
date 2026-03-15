@@ -13,3 +13,4 @@
   - For the news entries that appear in multiple feeds, the published date is now determined from the user's feeds, not from the first feed where the news entry is encountered.
   - If a feed changes the news entry's published date, it will be updated (saved) next time the feed is processed.
   - Added CLI command `ffun cleaner shrink-feeds` to unlink old news entries from feeds, so they can be removed as orphans later.
+  - Max entry age was increased to 90 days, but it can be changed in the future if needed.
