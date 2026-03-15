@@ -1,4 +1,5 @@
 import datetime
+import uuid
 from itertools import chain
 from unittest import mock
 
@@ -49,7 +50,7 @@ class TestCatalogEntry:
     async def test_new_entry_new_feed(self, loaded_feed_id: FeedId, new_entry: CollectedEntry) -> None:
         async with TableSizeDelta("l_entries", delta=1):
             async with TableSizeDelta("l_feeds_to_entries", delta=1):
-                await _catalog_entry(loaded_feed_id, new_entry)
+                assert await _catalog_entry(loaded_feed_id, new_entry)
 
         loaded_entry = await get_entry(new_entry.id)
 
@@ -75,7 +76,7 @@ class TestCatalogEntry:
 
         async with TableSizeNotChanged("l_entries"):
             async with TableSizeDelta("l_feeds_to_entries", delta=1):
-                await _catalog_entry(another_loaded_feed_id, new_entry)
+                assert not await _catalog_entry(another_loaded_feed_id, new_entry)
 
         loaded_entry = await get_entry(new_entry.id)
 
@@ -110,7 +111,7 @@ class TestCatalogEntry:
 
         async with TableSizeNotChanged("l_entries"):
             async with TableSizeNotChanged("l_feeds_to_entries"):
-                await _catalog_entry(loaded_feed_id, new_entry)
+                assert not await _catalog_entry(loaded_feed_id, new_entry)
 
         loaded_entry = await get_entry(new_entry.id)
 
@@ -136,7 +137,7 @@ class TestCatalogEntry:
 
         async with TableSizeDelta("l_entries", delta=1):
             async with TableSizeDelta("l_feeds_to_entries", delta=1):
-                await _catalog_entry(loaded_feed_id, another_new_entry)
+                assert await _catalog_entry(loaded_feed_id, another_new_entry)
 
         loaded_another_entry = await get_entry(another_new_entry.id)
 
@@ -154,12 +155,35 @@ class TestCatalogEntry:
         assert link.published_at == another_new_entry.published_at
         assert_times_is_near(link.created_at, utils.now())
 
+    @pytest.mark.asyncio
+    async def test_update_link_published_at_for_same_feed_same_entry(
+        self, loaded_feed_id: FeedId, new_entry: CollectedEntry
+    ) -> None:
+        await _catalog_entry(loaded_feed_id, new_entry)
+
+        new_published_at = new_entry.published_at + datetime.timedelta(hours=1)
+        updated_entry = new_entry.replace(published_at=new_published_at)
+
+        async with TableSizeNotChanged("l_entries"):
+            async with TableSizeNotChanged("l_feeds_to_entries"):
+                assert not await _catalog_entry(loaded_feed_id, updated_entry)
+
+        loaded_entry = await get_entry(new_entry.id)
+
+        assert loaded_entry.published_at == new_entry.published_at
+
+        links = await get_feed_links_for_entries(execute, [new_entry.id])
+
+        assert len(links[new_entry.id]) == 1
+        assert links[new_entry.id][0].published_at == new_published_at
+
 
 class TestCatalogEntries:
     @pytest.mark.asyncio
     async def test_no_entries(self, loaded_feed_id: FeedId) -> None:
         async with TableSizeNotChanged("l_entries"):
-            await catalog_entries(loaded_feed_id, [])
+            count = await catalog_entries(loaded_feed_id, [])
+            assert count == 0
 
     @pytest.mark.asyncio
     async def test_success(
@@ -168,7 +192,8 @@ class TestCatalogEntries:
         entries_data = [new_entry, another_new_entry]
 
         async with TableSizeDelta("l_entries", delta=2):
-            await catalog_entries(loaded_feed_id, entries_data)
+            count = await catalog_entries(loaded_feed_id, entries_data)
+            assert count == 2
 
         loaded_entries = await get_entries_by_ids(ids=[new_entry.id, another_new_entry.id])
 
@@ -185,6 +210,31 @@ class TestCatalogEntries:
 
         assert loaded_new_entry == new_entry.fake_entry(loaded_new_entry.created_at)
         assert loaded_another_new_entry == another_new_entry.fake_entry(loaded_another_new_entry.created_at)
+
+    @pytest.mark.asyncio
+    async def test_count_only_new_entries(self, loaded_feed_id: FeedId, new_entry: CollectedEntry) -> None:
+        await _catalog_entry(loaded_feed_id, new_entry)
+
+        another_new_entry = new_entry.replace(id=new_entry_id(), external_id=uuid.uuid4().hex)
+
+        async with TableSizeDelta("l_entries", delta=1):
+            count = await catalog_entries(loaded_feed_id, [new_entry, another_new_entry])
+            assert count == 1
+
+    @pytest.mark.asyncio
+    async def test_skip_old_entries(
+        self, loaded_feed_id: FeedId, new_entry: CollectedEntry, another_new_entry: CollectedEntry
+    ) -> None:
+        old_entry = new_entry.replace(published_at=utils.now() - settings.max_entry_age - datetime.timedelta(seconds=1))
+
+        async with TableSizeDelta("l_entries", delta=1):
+            count = await catalog_entries(loaded_feed_id, [old_entry, another_new_entry])
+            assert count == 1
+
+        loaded_entries = await get_entries_by_ids(ids=[old_entry.id, another_new_entry.id])
+
+        assert loaded_entries[old_entry.id] is None
+        assert loaded_entries[another_new_entry.id] is not None
 
 
 # Most of the functionality is tested in the tests for catalog_entry and other functions
