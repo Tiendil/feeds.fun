@@ -35,6 +35,7 @@ from ffun.library.operations import (
     unlink_old_entries,
     update_external_url,
 )
+from ffun.library.settings import settings
 from ffun.library.tests import helpers, make
 
 
@@ -308,6 +309,77 @@ class TestGetEntriesByFilter:
 
         loaded_entries_ids = {entry.id for entry in loaded_entries}
         assert loaded_entries_ids == {entry.id for entry in chain(prepared_entries[0][1:], prepared_entries[1][1:])}
+
+    @pytest.mark.asyncio
+    async def test_default_period_uses_max_entry_age(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=3)
+
+        old_time = utils.now() - settings.max_entry_age - datetime.timedelta(seconds=1)
+
+        await helpers.update_published_time(entries_ids=[entries[0].id], new_time=old_time)
+
+        loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
+
+        assert {entry.id for entry in loaded_entries} == {entries[1].id, entries[2].id}
+
+    @pytest.mark.asyncio
+    async def test_uses_feed_specific_published_at_for_shared_entry(
+        self, loaded_feed: Feed, another_loaded_feed: Feed
+    ) -> None:
+        entry_published_at = utils.now() - datetime.timedelta(hours=1)
+        common_entry = make.fake_entry(loaded_feed.source_id, published_at=entry_published_at)
+
+        await catalog_entries(loaded_feed.id, [common_entry])
+        await catalog_entries(another_loaded_feed.id, [common_entry])
+
+        loaded_entry = await get_entry(common_entry.id)
+
+        assert loaded_entry.published_at == entry_published_at
+
+        feed_published_at = utils.now() - datetime.timedelta(days=2)
+        another_feed_published_at = utils.now() - datetime.timedelta(minutes=10)
+
+        await helpers.update_link_published_time(loaded_feed.id, common_entry.id, feed_published_at)
+        await helpers.update_link_published_time(another_loaded_feed.id, common_entry.id, another_feed_published_at)
+
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
+        another_feed_entries = await get_entries_by_filter(feeds_ids=[another_loaded_feed.id], limit=100)
+        combined_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id, another_loaded_feed.id], limit=100)
+
+        assert len(feed_entries) == 1
+        assert len(another_feed_entries) == 1
+        assert len(combined_entries) == 1
+
+        assert feed_entries[0].id == common_entry.id
+        assert another_feed_entries[0].id == common_entry.id
+        assert combined_entries[0].id == common_entry.id
+
+        assert feed_entries[0].published_at == feed_published_at
+        assert another_feed_entries[0].published_at == another_feed_published_at
+        assert combined_entries[0].published_at == another_feed_published_at
+
+    @pytest.mark.asyncio
+    async def test_order_by_published_at_created_at_and_entry_id(self, loaded_feed: Feed) -> None:
+        published_at = utils.now() - datetime.timedelta(hours=1)
+        entries = [make.fake_entry(loaded_feed.source_id, published_at=published_at) for _ in range(4)]
+
+        await catalog_entries(loaded_feed.id, entries)
+
+        created_ats = {
+            entries[0].id: utils.now() - datetime.timedelta(minutes=3),
+            entries[1].id: utils.now() - datetime.timedelta(minutes=1),
+            entries[2].id: utils.now() - datetime.timedelta(minutes=2),
+            entries[3].id: utils.now() - datetime.timedelta(minutes=2),
+        }
+
+        for entry in entries:
+            await helpers.update_link_created_time(loaded_feed.id, entry.id, created_ats[entry.id])
+
+        loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
+
+        expected_order = sorted(entries, key=lambda entry: (published_at, created_ats[entry.id], entry.id), reverse=True)
+
+        assert [entry.id for entry in loaded_entries] == [entry.id for entry in expected_order]
 
 
 class TestGetEntriesAfterPointer:
