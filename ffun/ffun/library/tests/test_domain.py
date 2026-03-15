@@ -9,6 +9,7 @@ from ffun.feeds.entities import Feed
 from ffun.library import operations
 from ffun.library.domain import get_entries_by_filter_with_fallback, get_entry, get_feeds_for_entry, normalize_entry
 from ffun.library.entities import CollectedEntry, Entry, EntryChange
+from ffun.library.settings import settings
 from ffun.library.tests import helpers, make
 
 
@@ -164,6 +165,23 @@ class TestGetEntriesByFilterWithFallback:
 
         await helpers.update_published_time(
             entries_ids=[entry.id for entry in entries], new_time=time_border - datetime.timedelta(seconds=10)
+        )
+
+        loaded_entries = await get_entries_by_filter_with_fallback(
+            feeds_ids=[loaded_feed.id], period=time_delta, limit=1, fallback_limit=10
+        )
+
+        assert {entry.id for entry in loaded_entries} == {entry.id for entry in entries}
+
+    @pytest.mark.asyncio
+    async def test_fallback_returns_entries_older_than_max_entry_age(
+        self, loaded_feed: Feed, time_delta: datetime.timedelta
+    ) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=3)
+
+        await helpers.update_published_time(
+            entries_ids=[entry.id for entry in entries],
+            new_time=utils.now() - settings.max_entry_age - datetime.timedelta(days=1),
         )
 
         loaded_entries = await get_entries_by_filter_with_fallback(
