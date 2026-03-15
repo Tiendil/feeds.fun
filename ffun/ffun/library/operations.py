@@ -162,7 +162,7 @@ async def get_entries_by_filter(
     #    In such cases, we'll show such an entry as new to a user.
     #    We may want to change this logic in the future.
     #
-    # 2. Also, we order by two fields (published_at and created_at) to work around the case
+    # 2. We order by two fields (published_at and created_at) to work around the case
     #    when published_at is the same for several entries
     #
     # 3. Outer sorting uses entry_id to ensure deterministic order
