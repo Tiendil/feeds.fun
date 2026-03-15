@@ -17,7 +17,11 @@ from ffun.ontology import domain as o_domain
 
 
 def _entry_sort_key(entry: Entry) -> tuple[object, object]:
-    return (entry.published_at, entry.id)
+    return (entry.created_at, entry.id)
+
+
+def _feed_retention_sort_key(entry: Entry) -> tuple[object, object]:
+    return (entry.published_at, entry.created_at)
 
 
 class TestEntriesProcessors:
@@ -154,7 +158,9 @@ class TestEntriesProcessors:
     ) -> None:
         entries = await l_make.n_entries(loaded_feed, 5)
         entries_list = list(entries.values())
-        entries_list.sort(key=_entry_sort_key)
+
+        # sort by published_at because we do unlink_feed_tail
+        entries_list.sort(key=_feed_retention_sort_key)
 
         await l_domain.unlink_feed_tail(loaded_feed.id, offset=3)
 

@@ -90,16 +90,25 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Collected
     return new_entry_created
 
 
+async def count_linked_entries(feed_id: FeedId) -> int:
+    result = await execute("SELECT COUNT(*) FROM l_feeds_to_entries WHERE feed_id = %(feed_id)s", {"feed_id": feed_id})
+    return result[0]["count"]  # type: ignore
+
+
 async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) -> int:
     count = 0
+    linked_entries = await count_linked_entries(feed_id)
+    sorted_entries = sorted(entries, key=lambda entry: entry.published_at, reverse=True)
+    min_published_at = utils.now() - settings.max_entry_age
 
-    for entry in entries:
-        if entry.published_at < utils.now() - settings.max_entry_age:
-            # hard protection from storing old entries
+    for entry in sorted_entries:
+        if entry.published_at < min_published_at and linked_entries >= settings.min_entries_per_feed:
+            # Skip old entries once the feed has reached the protected minimum.
             continue
 
         if await _catalog_entry(feed_id, entry):
             count += 1
+            linked_entries += 1
 
     return count
 
@@ -283,19 +292,38 @@ async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: date
         period = settings.max_entry_age
 
     sql = """
-    WITH cte AS (
+    WITH protected AS (
+        SELECT entry_id
+        FROM l_feeds_to_entries
+        WHERE feed_id = %(feed_id)s
+        ORDER BY published_at DESC, created_at DESC, entry_id DESC
+        LIMIT %(min_entries_per_feed)s
+    ),
+    old_rows AS (
         SELECT feed_id, entry_id
         FROM l_feeds_to_entries
         WHERE feed_id = %(feed_id)s AND published_at < NOW() - %(period)s
     )
     DELETE FROM l_feeds_to_entries
-    USING cte
-    WHERE l_feeds_to_entries.feed_id = cte.feed_id
-      AND l_feeds_to_entries.entry_id = cte.entry_id
+    USING old_rows
+    WHERE l_feeds_to_entries.feed_id = old_rows.feed_id
+      AND l_feeds_to_entries.entry_id = old_rows.entry_id
+      AND NOT EXISTS (
+          SELECT 1
+          FROM protected
+          WHERE protected.entry_id = old_rows.entry_id
+      )
     RETURNING l_feeds_to_entries.entry_id AS entry_id
     """
 
-    result = await execute(sql, {"feed_id": feed_id, "period": period})
+    result = await execute(
+        sql,
+        {
+            "feed_id": feed_id,
+            "period": period,
+            "min_entries_per_feed": settings.min_entries_per_feed,
+        },
+    )
 
     if not result:
         logger.info("feed_has_no_old_entries", feed_id=feed_id, old_period=period)

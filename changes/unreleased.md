@@ -9,6 +9,7 @@
   - In most places, ordering of entries refactored from `created_at` to `published_at`.
   - The logic related to the time of cataloging news entry was removed from the backend, because it worked incorrectly.
   - News entries with the publish date older than `FFUN_LIBRARY_MAX_ENTRY_AGE` now will not be saved to the database.
+  - Added config `FFUN_LIBRARY_MIN_ENTRIES_PER_FEED` to keep at least N entries per feed, even if they are older than `FFUN_LIBRARY_MAX_ENTRY_AGE`.
   - Removed ordering of news by cataloged time from the news page, because detection of correct catalogged time is broken, and nobody uses it.
   - For the news entries that appear in multiple feeds, the published date is now determined from the user's feeds, not from the first feed where the news entry is encountered.
   - If a feed changes the news entry's published date, it will be updated (saved) next time the feed is processed.
