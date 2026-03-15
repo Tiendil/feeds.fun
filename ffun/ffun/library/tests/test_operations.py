@@ -459,6 +459,40 @@ class TestUnlinkFeedTail:
 
         assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries[10:]}
 
+    @pytest.mark.asyncio
+    async def test_created_at_as_second_sort_key(self, loaded_feed: Feed) -> None:
+        now = utils.now()
+
+        published_at = now - datetime.timedelta(hours=1)
+        entries = [make.fake_entry(loaded_feed.source_id, published_at=published_at) for _ in range(4)]
+
+        await catalog_entries(loaded_feed.id, entries)
+
+        created_ats = [
+            now - datetime.timedelta(minutes=4),
+            now - datetime.timedelta(minutes=1),
+            now - datetime.timedelta(minutes=3),
+            now - datetime.timedelta(minutes=2),
+        ]
+
+        for entry, created_at in zip(entries, created_ats):
+            await helpers.update_link_created_time(loaded_feed.id, entry.id, created_at)
+
+        with capture_logs() as logs:  # type: ignore
+            async with TableSizeDelta("l_feeds_to_entries", delta=-2):
+                async with TableSizeNotChanged("l_entries"):
+                    await unlink_feed_tail(execute, loaded_feed.id, offset=2)
+
+        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
+
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
+
+        assert {entry.id for entry in feed_entries} == {entries[1].id, entries[3].id}
+
+        orphaned_entries = await get_orphaned_entries(limit=100500)
+
+        assert orphaned_entries & {entry.id for entry in entries} == {entries[0].id, entries[2].id}
+
 
 class TestUnlinkOldEntries:
 
