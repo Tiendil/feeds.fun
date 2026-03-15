@@ -16,6 +16,7 @@ tech_remove_feed = operations.tech_remove_feed
 count_total_feeds = operations.count_total_feeds
 count_total_feeds_per_state = operations.count_total_feeds_per_state
 count_total_feeds_per_last_error = operations.count_total_feeds_per_last_error
+all_feeds_iterator = operations.all_feeds_iterator
 
 
 async def save_feeds(feeds: list[Feed]) -> list[FeedId]:
