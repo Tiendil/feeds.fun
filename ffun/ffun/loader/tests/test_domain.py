@@ -4,7 +4,12 @@ import pytest
 from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
-from ffun.core.tests.helpers import assert_logs, assert_logs_has_business_event
+from ffun.core.tests.helpers import (
+    assert_logs,
+    assert_logs_has_business_event,
+    assert_logs_has_no_business_event,
+    assert_logs_has_record,
+)
 from ffun.domain.entities import UserId
 from ffun.domain.urls import url_to_uid
 from ffun.feeds import domain as f_domain
@@ -136,6 +141,8 @@ class TestStoreEntries:
             await store_entries(saved_feed, [])
 
         assert_logs(logs, news_entries_stored=0)  # type: ignore
+        assert_logs_has_record(logs, "entries_stored", entries_cataloged=0, entries_skipped=0)  # type: ignore
+        assert_logs_has_no_business_event(logs, "news_entries_stored")  # type: ignore
 
         entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=1)
 
@@ -150,6 +157,7 @@ class TestStoreEntries:
         with capture_logs() as logs:  # type: ignore
             await store_entries(saved_feed, entry_infos)
 
+        assert_logs_has_record(logs, "entries_stored", entries_cataloged=n, entries_skipped=0)  # type: ignore
         assert_logs_has_business_event(
             logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=n  # type: ignore
         )
@@ -178,6 +186,7 @@ class TestStoreEntries:
         with capture_logs() as logs:  # type: ignore
             await store_entries(saved_feed, entry_infos[:m])
 
+        assert_logs_has_record(logs, "entries_stored", entries_cataloged=m, entries_skipped=0)  # type: ignore
         assert_logs_has_business_event(
             logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=m  # type: ignore
         )
@@ -195,6 +204,7 @@ class TestStoreEntries:
         with capture_logs() as logs:  # type: ignore
             await store_entries(saved_feed, entry_infos)
 
+        assert_logs_has_record(logs, "entries_stored", entries_cataloged=n - m, entries_skipped=m)  # type: ignore
         assert_logs_has_business_event(
             logs, "news_entries_stored", user_id=None, feed_id=str(saved_feed.id), entries_number=n - m  # type: ignore
         )
@@ -208,6 +218,18 @@ class TestStoreEntries:
         for entry_info, entry in zip(entry_infos, loaded_entries):
             assert entry.source_id == saved_feed.source_id
             assert_entriy_equal_to_info(entry_info, entry)
+
+    @pytest.mark.asyncio
+    async def test_skip_all_entries(self, saved_feed: f_entities.Feed) -> None:
+        entry_infos = [p_make.fake_entry_info() for _ in range(3)]
+
+        await store_entries(saved_feed, entry_infos)
+
+        with capture_logs() as logs:  # type: ignore
+            await store_entries(saved_feed, entry_infos)
+
+        assert_logs_has_record(logs, "entries_stored", entries_cataloged=0, entries_skipped=3)  # type: ignore
+        assert_logs_has_no_business_event(logs, "news_entries_stored")  # type: ignore
 
 
 class TestProcessFeed:

@@ -184,6 +184,30 @@ def assert_logs(logs: list[MutableMapping[str, object]], **kwargs: int) -> None:
             )
 
 
+def assert_logs_has_record(logs: list[MutableMapping[str, object]], name: str, **attributes: object) -> None:
+    found_records = False
+
+    for record in logs:
+        if record["event"] != name:
+            continue
+
+        found_records = True
+
+        for key, value in attributes.items():
+            if key not in record:
+                break
+
+            if record[key] != value:
+                break
+        else:
+            return
+
+    if not found_records:
+        pytest.fail(f"Event {name} not found in logs")
+
+    pytest.fail(f"Event {name} found in logs but without matching attributes {attributes!r}")
+
+
 def assert_log_context_vars(**expected: object) -> None:
     bound_vars = structlog_contextvars.get_contextvars()  # type: ignore
 
