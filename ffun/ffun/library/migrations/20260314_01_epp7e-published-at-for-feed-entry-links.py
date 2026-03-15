@@ -34,9 +34,10 @@ sql_drop_old_index = """
 DROP INDEX IF EXISTS l_feeds_to_entries_feed_id_created_at_entity_id_idx
 """
 
+# In case this index is too big, we may try reducing it to (feed_id, published_at DESC)
 sql_create_new_index = """
-CREATE INDEX l_feeds_to_entries_feed_id_published_at_entity_id_idx
-ON l_feeds_to_entries(feed_id, published_at DESC, entry_id)
+CREATE INDEX l_feeds_to_entries_feed_id_published_at_created_at_entry_id_idx
+ON l_feeds_to_entries(feed_id, published_at DESC, created_at DESC, entry_id)
 """
 
 
@@ -52,6 +53,7 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
+    cursor.execute("DROP INDEX IF EXISTS l_feeds_to_entries_feed_id_published_at_created_at_entry_id_idx")
     cursor.execute("ALTER TABLE l_feeds_to_entries DROP COLUMN published_at")
     cursor.execute(
         """CREATE INDEX l_feeds_to_entries_feed_id_created_at_entity_id_idx
