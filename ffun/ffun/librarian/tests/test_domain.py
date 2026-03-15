@@ -1,5 +1,4 @@
 import contextlib
-import datetime
 from typing import Generator
 
 import pytest
@@ -109,9 +108,9 @@ class TestPlanProcessorQueue:
     async def test_move_pointer_to_the_end(self, loaded_feed: Feed, fake_processor_id: int) -> None:
         await make.end_processor_pointer(1)
 
-        entries = await l_make.n_entries(loaded_feed, 3)
-        sorted_entries = sorted(entries.values(), key=lambda entry: (entry.created_at, entry.id))
-        pointer_entry = sorted_entries[-1]
+        entries = await l_make.n_entries_list(loaded_feed, 3)
+        entries.sort(key=lambda entry: (entry.created_at, entry.id))
+        pointer_entry = entries[-1]
         async with TableSizeDelta("ln_processors_queue", delta=3):
             await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=100)
 
@@ -127,9 +126,9 @@ class TestPlanProcessorQueue:
     async def test_move_pointer_to_not_the_end(self, loaded_feed: Feed, fake_processor_id: int) -> None:
         await make.end_processor_pointer(1)
 
-        entries = await l_make.n_entries(loaded_feed, 3)
-        sorted_entries = sorted(entries.values(), key=lambda entry: (entry.created_at, entry.id))
-        pointer_entry = sorted_entries[-2]
+        entries = await l_make.n_entries_list(loaded_feed, 3)
+        entries.sort(key=lambda entry: (entry.created_at, entry.id))
+        pointer_entry = entries[-2]
         async with TableSizeDelta("ln_processors_queue", delta=2):
             await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=2)
 
@@ -147,9 +146,9 @@ class TestPlanProcessorQueue:
 
         await make.end_processor_pointer(fake_processor_id)
 
-        entries = await l_make.n_entries(loaded_feed, 5)
-        sorted_entries = sorted(entries.values(), key=lambda entry: (entry.created_at, entry.id))
-        pointer_entry = sorted_entries[2]
+        entries = await l_make.n_entries_list(loaded_feed, 5)
+        entries.sort(key=lambda entry: (entry.created_at, entry.id))
+        pointer_entry = entries[2]
         async with TableSizeDelta("ln_processors_queue", delta=3):
             await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=3)
 
@@ -167,9 +166,9 @@ class TestPlanProcessorQueue:
 
         await make.end_processor_pointer(fake_processor_id)
 
-        entries = await l_make.n_entries(loaded_feed, 5)
-        sorted_entries = sorted(entries.values(), key=lambda entry: (entry.created_at, entry.id))
-        pointer_entry = sorted_entries[2]
+        entries = await l_make.n_entries_list(loaded_feed, 5)
+        entries.sort(key=lambda entry: (entry.created_at, entry.id))
+        pointer_entry = entries[2]
         await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=3)
 
         async with TableSizeNotChanged("ln_processors_queue"):

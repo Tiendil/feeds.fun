@@ -224,7 +224,10 @@ class TestEntriesProcessors:
         entries_1 = await l_make.n_entries_list(loaded_feed, 3)
         entries_2 = await l_make.n_entries_list(another_loaded_feed, 2)
 
-        await l_domain.catalog_entries(another_loaded_feed.id, entries_1[:2])
+        await l_domain.catalog_entries(
+            another_loaded_feed.id,
+            [entry.collected_entry() for entry in entries_1[:2]],
+        )
 
         await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
 

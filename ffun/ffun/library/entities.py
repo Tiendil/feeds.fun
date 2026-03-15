@@ -38,7 +38,19 @@ class Entry(BaseEntry):
     def global_age(self) -> datetime.timedelta:
         return utils.now() - self.published_at
 
-    def personalize(self, published_at: datetime.datetime | None) -> "PersonalizedEntry":
+    def collected_entry(self) -> "CollectedEntry":
+        return CollectedEntry(
+            id=self.id,
+            source_id=self.source_id,
+            title=self.title,
+            body=self.body,
+            external_id=self.external_id,
+            external_url=self.external_url,
+            external_tags=self.external_tags,
+            published_at=self.published_at,
+        )
+
+    def personalized_entry(self, published_at: datetime.datetime | None) -> "PersonalizedEntry":
         return PersonalizedEntry(
             id=self.id,
             source_id=self.source_id,

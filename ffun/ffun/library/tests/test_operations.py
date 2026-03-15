@@ -236,9 +236,7 @@ class TestGetEntriesByFilter:
         await catalog_entries(another_loaded_feed.id, [common_entry])
         old_time = time_border - datetime.timedelta(seconds=10)
 
-        await helpers.update_published_time(
-            entries_ids=[entries[0].id, another_entries[0].id], new_time=old_time
-        )
+        await helpers.update_published_time(entries_ids=[entries[0].id, another_entries[0].id], new_time=old_time)
 
         all_entries = await get_entries_by_ids(
             ids=[entry.id for entry in chain(entries, another_entries, [common_entry])]
@@ -290,7 +288,9 @@ class TestGetEntriesByFilter:
         assert loaded_entries_ids == {entry.id for entry in chain(prepared_entries[0][1:], prepared_entries[1][1:])}
 
     @pytest.mark.asyncio
-    async def test_feeds_filter(self, loaded_feed_id: FeedId, prepared_entries: tuple[list[Entry], list[Entry]]) -> None:
+    async def test_feeds_filter(
+        self, loaded_feed_id: FeedId, prepared_entries: tuple[list[Entry], list[Entry]]
+    ) -> None:
         loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed_id], limit=100)
         loaded_entries_ids = {entry.id for entry in loaded_entries}
         assert loaded_entries_ids == {entry.id for entry in prepared_entries[0]}
@@ -535,7 +535,10 @@ class TestRemoveEntriesByIds:
     async def test_remove(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
         entries = await make.n_entries_list(loaded_feed, n=10)
 
-        await catalog_entries(another_loaded_feed.id, entries[2:7])
+        await catalog_entries(
+            another_loaded_feed.id,
+            [entry.collected_entry() for entry in entries[2:7]],
+        )
 
         await unlink_feed_tail(execute, loaded_feed.id, 6)
 
@@ -649,7 +652,10 @@ class TestSyncOrphanedEntries:
         entries = await make.n_entries_list(loaded_feed, n=5)
 
         await unlink_feed_tail(execute, loaded_feed.id, 3)
-        await catalog_entries(another_loaded_feed.id, [entries[3]])
+        await catalog_entries(
+            another_loaded_feed.id,
+            [entries[3].collected_entry()],
+        )
 
         async with TableSizeDelta("l_orphaned_entries", delta=-1):
             await sync_orphaned_entries()

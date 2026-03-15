@@ -145,7 +145,7 @@ async def process_api_get_entries(
     #       1. If the we have user_id here, we should load their feed links to the entries
     #          and extract published_at from the links.
     #       2. Update `GetEntriesByIdsResponse` to return entries without publishedAt at all.
-    personalized_entries = [entry.personalize(published_at=None) for entry in found_entries]
+    personalized_entries = [entry.personalized_entry(published_at=None) for entry in found_entries]
 
     # We cannot know here the whole distribution of tags on the user side
     # => we set min_tag_count=0

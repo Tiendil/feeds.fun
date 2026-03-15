@@ -196,7 +196,10 @@ class TestCleanOrphanedEntries:
         entries = await l_make.n_entries_list(loaded_feed, n=10)
 
         await l_domain.unlink_feed_tail(loaded_feed.id, offset=3)
-        await l_domain.catalog_entries(another_loaded_feed.id, [entries[3]])
+        await l_domain.catalog_entries(
+            another_loaded_feed.id,
+            [entries[3].collected_entry()],
+        )
 
         removed = await clean_orphaned_entries(chunk=10)
 
