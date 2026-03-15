@@ -25,21 +25,27 @@ async def update_published_time(entries_ids: Iterable[EntryId], new_time: dateti
 
 async def update_link_created_time(feed_id: FeedId, entry_id: EntryId, new_time: datetime.datetime) -> None:
     await execute(
-        "UPDATE l_feeds_to_entries SET created_at = %(created_at)s WHERE feed_id = %(feed_id)s AND entry_id = %(entry_id)s",
+        (
+            "UPDATE l_feeds_to_entries SET created_at = %(created_at)s "
+            "WHERE feed_id = %(feed_id)s AND entry_id = %(entry_id)s"
+        ),
         {  # type: ignore
             "created_at": new_time,
-            "feed_id": feed_id,  # type: ignore
-            "entry_id": entry_id,  # type: ignore
+            "feed_id": feed_id,
+            "entry_id": entry_id,
         },
     )
 
 
 async def update_link_published_time(feed_id: FeedId, entry_id: EntryId, new_time: datetime.datetime) -> None:
     await execute(
-        "UPDATE l_feeds_to_entries SET published_at = %(published_at)s WHERE feed_id = %(feed_id)s AND entry_id = %(entry_id)s",
+        (
+            "UPDATE l_feeds_to_entries SET published_at = %(published_at)s "
+            "WHERE feed_id = %(feed_id)s AND entry_id = %(entry_id)s"
+        ),
         {  # type: ignore
             "published_at": new_time,
-            "feed_id": feed_id,  # type: ignore
-            "entry_id": entry_id,  # type: ignore
+            "feed_id": feed_id,
+            "entry_id": entry_id,
         },
     )

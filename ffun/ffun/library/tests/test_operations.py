@@ -12,7 +12,7 @@ from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import Delta, TableSizeDelta, TableSizeNotChanged, assert_logs, assert_times_is_near
 from ffun.domain.domain import new_entry_id
-from ffun.domain.entities import FeedId
+from ffun.domain.entities import EntryId, FeedId
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
 from ffun.feeds.tests import make as f_make
@@ -225,7 +225,9 @@ class TestCatalogEntries:
     async def test_skip_old_entries(
         self, loaded_feed_id: FeedId, new_entry: CollectedEntry, another_new_entry: CollectedEntry
     ) -> None:
-        old_entry = new_entry.replace(published_at=utils.now() - settings.max_entry_age - datetime.timedelta(seconds=1))
+        old_entry = new_entry.replace(
+            published_at=utils.now() - settings.max_entry_age - datetime.timedelta(seconds=1)
+        )
 
         async with TableSizeDelta("l_entries", delta=1):
             count = await catalog_entries(loaded_feed_id, [old_entry, another_new_entry])
@@ -411,11 +413,13 @@ class TestGetEntriesByFilter:
     @pytest.mark.asyncio
     async def test_order_by_published_at_created_at_and_entry_id(self, loaded_feed: Feed) -> None:
         published_at = utils.now() - datetime.timedelta(hours=1)
-        entries = [make.fake_entry(loaded_feed.source_id, published_at=published_at) for _ in range(4)]
+        entries: list[CollectedEntry] = [
+            make.fake_entry(loaded_feed.source_id, published_at=published_at) for _ in range(4)
+        ]
 
         await catalog_entries(loaded_feed.id, entries)
 
-        created_ats = {
+        created_ats: dict[EntryId, datetime.datetime] = {
             entries[0].id: utils.now() - datetime.timedelta(minutes=3),
             entries[1].id: utils.now() - datetime.timedelta(minutes=1),
             entries[2].id: utils.now() - datetime.timedelta(minutes=2),
@@ -427,7 +431,10 @@ class TestGetEntriesByFilter:
 
         loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
 
-        expected_order = sorted(entries, key=lambda entry: (published_at, created_ats[entry.id], entry.id), reverse=True)
+        def sort_key(entry: CollectedEntry) -> tuple[datetime.datetime, datetime.datetime, EntryId]:
+            return published_at, created_ats[entry.id], entry.id
+
+        expected_order = sorted(entries, key=sort_key, reverse=True)
 
         assert [entry.id for entry in loaded_entries] == [entry.id for entry in expected_order]
 

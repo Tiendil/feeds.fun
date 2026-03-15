@@ -184,7 +184,9 @@ def assert_logs(logs: list[MutableMapping[str, object]], **kwargs: int) -> None:
             )
 
 
-def assert_logs_has_record(logs: list[MutableMapping[str, object]], name: str, **attributes: object) -> None:
+def assert_logs_has_record(  # noqa: CCR001
+    logs: list[MutableMapping[str, object]], name: str, **attributes: object
+) -> None:
     found_records = False
 
     for record in logs:
