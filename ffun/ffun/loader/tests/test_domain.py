@@ -301,16 +301,14 @@ class TestProcessFeed:
         )
 
         extract_feed_info = mocker.patch("ffun.loader.domain.extract_feed_info", return_value=feed_info)
-        unlink_feed_tail = mocker.patch("ffun.library.domain.unlink_feed_tail")
-        unlink_old_entries = mocker.patch("ffun.library.domain.unlink_old_entries")
+        shrink_feed = mocker.patch("ffun.meta.domain.shrink_feed")
 
         await fl_domain.add_link(internal_user_id, saved_feed.id)
 
         await process_feed(feed=saved_feed)
 
         extract_feed_info.assert_called_once_with(feed_id=saved_feed.id, feed_url=saved_feed.url)
-        assert unlink_feed_tail.call_args_list == [mocker.call(saved_feed.id)]  # type: ignore
-        assert unlink_old_entries.call_args_list == [mocker.call(saved_feed.id)]  # type: ignore
+        assert shrink_feed.call_args_list == [mocker.call(saved_feed.id)]  # type: ignore
 
     @pytest.mark.asyncio
     async def test_cleanup_logic_called__when_feed_is_not_updated(
@@ -322,16 +320,14 @@ class TestProcessFeed:
         await store_entries(saved_feed, entry_infos)
 
         extract_feed_info = mocker.patch("ffun.loader.domain.extract_feed_info", return_value=None)
-        unlink_feed_tail = mocker.patch("ffun.library.domain.unlink_feed_tail")
-        unlink_old_entries = mocker.patch("ffun.library.domain.unlink_old_entries")
+        shrink_feed = mocker.patch("ffun.meta.domain.shrink_feed")
 
         await fl_domain.add_link(internal_user_id, saved_feed.id)
 
         await process_feed(feed=saved_feed)
 
         extract_feed_info.assert_called_once_with(feed_id=saved_feed.id, feed_url=saved_feed.url)
-        assert unlink_feed_tail.call_args_list == [mocker.call(saved_feed.id)]  # type: ignore
-        assert unlink_old_entries.call_args_list == [mocker.call(saved_feed.id)]  # type: ignore
+        assert shrink_feed.call_args_list == [mocker.call(saved_feed.id)]  # type: ignore
 
 
 class TestCheckProxiesAvailability:
