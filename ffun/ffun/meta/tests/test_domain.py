@@ -30,6 +30,7 @@ from ffun.meta.domain import (
     remove_entries,
     remove_tags,
     renormalize_tags,
+    shrink_feed,
 )
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import NormalizedTag, RawTag, TagProperty, TagPropertyType
@@ -309,6 +310,18 @@ class TestCleanOrphanedTags:
         assert remove_orphaned_tags_mock.call_args_list == [
             mocker.call(chunk=100, protected_tags=protected_tags)  # type: ignore
         ]
+
+
+class TestShrinkFeed:
+    @pytest.mark.asyncio
+    async def test_all_required_methods_called(self, mocker: MockerFixture, loaded_feed: Feed) -> None:
+        unlink_feed_tail = mocker.patch("ffun.library.domain.unlink_feed_tail")
+        unlink_old_entries = mocker.patch("ffun.library.domain.unlink_old_entries")
+
+        await shrink_feed(loaded_feed.id)
+
+        assert unlink_feed_tail.call_args_list == [mocker.call(loaded_feed.id)]  # type: ignore
+        assert unlink_old_entries.call_args_list == [mocker.call(loaded_feed.id)]  # type: ignore
 
 
 # test that everything is connected correctly
