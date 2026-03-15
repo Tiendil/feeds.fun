@@ -13,7 +13,8 @@ processors = {info.processor.name: info.processor for info in ln_processors}
 
 async def run_processor(kb: KnowlegeBase, processor_name: str, entry_id: int) -> ProcessorResult:
 
-    entry = kb.get_news_entry(entry_id)
+    raw_entry = kb.get_news_entry(entry_id)
+    entry = raw_entry.fake_entry(created_at=utils.now())
 
     processor = processors[processor_name]
 

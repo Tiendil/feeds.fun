@@ -41,7 +41,7 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Collected
     #    This logic is required to better handle the case when the feed updates the published_at for the entry
     #    but we remove it because the previous published_at is too old, which leads to reprocessing of the same entry
     #    and we don't want that.
-    # 2. The current logic introduces a weird behaviour when the feeds contains two exemples of the same entry.
+    # 2. The current logic introduces a weird behaviour when the feeds contains two examples of the same entry.
     #    In that case the last one will overwrite the published_at for the previous one.
     #    That is not what we may want, but it should be a very rare case.
     sql_insert_feed_to_entry = """
@@ -83,7 +83,9 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Collected
         else:
             raise NotImplementedError("Can not find entry by source_id and external_id")
 
-    await execute(sql_insert_feed_to_entry, {"feed_id": feed_id, "entry_id": entry_id, "published_at": entry.published_at})
+    await execute(
+        sql_insert_feed_to_entry, {"feed_id": feed_id, "entry_id": entry_id, "published_at": entry.published_at}
+    )
 
     return new_entry_created
 
@@ -125,10 +127,8 @@ async def get_feed_links_for_entries(
             feeds_for_entries[entry_id] = []
 
         feeds_for_entries[entry_id].append(
-            FeedEntryLink(feed_id=feed_id,
-                          entry_id=entry_id,
-                          published_at=published_at,
-                          created_at=created_at))
+            FeedEntryLink(feed_id=feed_id, entry_id=entry_id, published_at=published_at, created_at=created_at)
+        )
 
     return feeds_for_entries
 

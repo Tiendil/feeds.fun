@@ -67,7 +67,9 @@ class TestGetFeedsForEntry:
         assert feeds == {loaded_feed.id}
 
     @pytest.mark.asyncio
-    async def test_multiple_feed(self, new_entry: CollectedEntry, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
+    async def test_multiple_feed(
+        self, new_entry: CollectedEntry, loaded_feed: Feed, another_loaded_feed: Feed
+    ) -> None:
         await operations.catalog_entries(loaded_feed.id, [new_entry])
         await operations.catalog_entries(another_loaded_feed.id, [new_entry])
 

@@ -1,12 +1,13 @@
 """
 published_at for feed-entry links
 """
+
 from typing import Any
 
 from psycopg import Connection
 from yoyo import step
 
-__depends__ = {'20240928_01_fIeAw-feeds-to-entries-many-to-many'}
+__depends__ = {"20240928_01_fIeAw-feeds-to-entries-many-to-many"}
 
 
 sql_add_published_at_column = """
@@ -37,6 +38,7 @@ sql_create_new_index = """
 CREATE INDEX l_feeds_to_entries_feed_id_published_at_entity_id_idx
 ON l_feeds_to_entries(feed_id, published_at DESC, entry_id)
 """
+
 
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()

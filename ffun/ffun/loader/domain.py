@@ -1,6 +1,6 @@
 import httpx
 
-from ffun.core import logging, utils
+from ffun.core import logging
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import AbsoluteUrl, FeedUrl
 from ffun.domain.urls import construct_f_url
@@ -145,9 +145,7 @@ async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None
 
     entries_skipped = len(prepared_entries) - entries_cataloged
 
-    logger.info("entries_stored",
-                entries_cataloged=entries_cataloged,
-                entries_skipped=entries_skipped)
+    logger.info("entries_stored", entries_cataloged=entries_cataloged, entries_skipped=entries_skipped)
 
     if entries_cataloged > 0:
         logger.business_event("news_entries_stored", user_id=None, feed_id=feed.id, entries_number=entries_cataloged)

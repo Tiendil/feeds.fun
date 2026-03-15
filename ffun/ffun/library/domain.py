@@ -6,8 +6,8 @@ from ffun.domain import urls as d_urls
 from ffun.domain.entities import EntryId, FeedId, UnknownUrl
 from ffun.feeds import domain as f_domain
 from ffun.library import operations
-from ffun.library.settings import settings
 from ffun.library.entities import Entry, EntryChange, FeedEntryLink, PersonalizedEntry
+from ffun.library.settings import settings
 
 catalog_entries = operations.catalog_entries
 get_entries_by_ids = operations.get_entries_by_ids
@@ -100,8 +100,6 @@ async def get_entries_by_filter_with_fallback(
         return entries
 
     # if there is no news in requested interval try to get some older news
-    entries = await get_entries_by_filter(
-        feeds_ids=feeds_ids, period=settings.max_entry_age, limit=fallback_limit
-    )
+    entries = await get_entries_by_filter(feeds_ids=feeds_ids, period=settings.max_entry_age, limit=fallback_limit)
 
     return entries

@@ -129,6 +129,7 @@ async def process_api_track(body: str, user_id: UserId | None) -> entities.Track
 
     return entities.TrackEventResponse()
 
+
 async def process_api_get_entries(
     request: entities.GetEntriesByIdsRequest, user_id: UserId | None
 ) -> entities.GetEntriesByIdsResponse:

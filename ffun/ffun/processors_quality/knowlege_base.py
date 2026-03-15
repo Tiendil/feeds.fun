@@ -6,7 +6,6 @@ from typing import cast
 import frontmatter
 import toml
 
-from ffun.core import utils
 from ffun.domain.entities import EntryId, SourceId
 from ffun.domain.urls import str_to_absolute_url
 from ffun.library.entities import CollectedEntry
