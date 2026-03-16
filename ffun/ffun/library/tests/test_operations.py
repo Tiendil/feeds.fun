@@ -160,7 +160,7 @@ class TestCatalogEntry:
         assert_times_is_near(link.created_at, utils.now())
 
     @pytest.mark.asyncio
-    async def test_update_link_published_at_for_same_feed_same_entry(
+    async def test_no_updating_link_published_at_for_same_feed_same_entry(
         self, loaded_feed_id: FeedId, new_entry: CollectedEntry
     ) -> None:
         await _catalog_entry(loaded_feed_id, new_entry)
@@ -179,7 +179,7 @@ class TestCatalogEntry:
         links = await get_feed_links_for_entries(execute, [new_entry.id])
 
         assert len(links[new_entry.id]) == 1
-        assert links[new_entry.id][0].published_at == new_published_at
+        assert links[new_entry.id][0].published_at == new_entry.published_at
 
 
 class TestCatalogEntries:
