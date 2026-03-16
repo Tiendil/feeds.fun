@@ -34,22 +34,16 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Collected
     RETURNING id
     """
 
-    # 1. We update `published_at` in case of link exists but published_at is different
-    #    This logic works in pair with check for old entries in `catalog_entries`
-    #    so the actual logic is "only update published_at if the new value is in acceptable lifetime range`
-    #    it is as intended.
-    #    This logic is required to better handle the case when the feed updates the published_at for the entry
-    #    but we remove it because the previous published_at is too old, which leads to reprocessing of the same entry
-    #    and we don't want that.
-    # 2. The current logic introduces a weird behaviour when the feeds contains two examples of the same entry.
-    #    In that case the last one will overwrite the published_at for the previous one.
-    #    That is not what we may want, but it should be a very rare case.
+    # We do not update `published_at` for existing entries because of the following reasons:
+    # 1. Feeds without `published_at` data exist. For them, we use the time of load as `published_at`.
+    #    That leads to moving entries forward in time each time the feed is loaded.
+    #    We may introduce a separate logic of treating cases when published_at is None,
+    #    but such logic will be too complicated and potentially unreliable.
+    # 2. Bugs on the side of feed providers may lead to reordering entries and confusing users.
     sql_insert_feed_to_entry = """
     INSERT INTO l_feeds_to_entries (feed_id, entry_id, published_at)
     VALUES (%(feed_id)s, %(entry_id)s, %(published_at)s)
-    ON CONFLICT (feed_id, entry_id) DO UPDATE
-    SET published_at = EXCLUDED.published_at
-    WHERE l_feeds_to_entries.published_at IS DISTINCT FROM EXCLUDED.published_at
+    ON CONFLICT (feed_id, entry_id) DO NOTHING
     """
 
     result = await execute(
