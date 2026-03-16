@@ -37,6 +37,9 @@ def _should_skip(entry: Mapping[str, object]) -> bool:
 def _extract_published_at(entry: Mapping[str, object]) -> datetime.datetime:
     published_at = entry.get("published_parsed")
 
+    if published_at is None and "updated_parsed" in entry:
+        published_at = entry.get("updated_parsed")
+
     if published_at is None:
         return utils.now()
 

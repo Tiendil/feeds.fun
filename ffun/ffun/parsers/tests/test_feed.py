@@ -142,6 +142,20 @@ class TestExtractPublishedAt:
         published_parsed = (1, 1, 1, 0, 0, 0, 0, 1, 0)
         assert (utils.now() - _extract_published_at({"published_parsed": published_parsed})).total_seconds() < 1
 
+    def test_no_published_but_has_updated(self) -> None:
+        updated_parsed = (2023, 7, 25, 17, 15, 0, 0, 0, -1)
+        expected_published_at = datetime.datetime(2023, 7, 25, 17, 15, 0, tzinfo=datetime.timezone.utc)
+        assert _extract_published_at({"updated_parsed": updated_parsed}) == expected_published_at
+
+    def test_published_priority_over_updated(self) -> None:
+        published_parsed = (2023, 7, 25, 17, 15, 0, 0, 0, -1)
+        updated_parsed = (2022, 1, 1, 0, 0, 0, 0, 0, -1)
+        expected_published_at = datetime.datetime(2023, 7, 25, 17, 15, 0, tzinfo=datetime.timezone.utc)
+        assert (
+            _extract_published_at({"published_parsed": published_parsed, "updated_parsed": updated_parsed})
+            == expected_published_at
+        )
+
 
 class TestExtractContent:
 
