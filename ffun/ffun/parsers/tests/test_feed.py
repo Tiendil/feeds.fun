@@ -151,8 +151,10 @@ class TestExtractPublishedAt:
         published_parsed = (2023, 7, 25, 17, 15, 0, 0, 0, -1)
         updated_parsed = (2022, 1, 1, 0, 0, 0, 0, 0, -1)
         expected_published_at = datetime.datetime(2023, 7, 25, 17, 15, 0, tzinfo=datetime.timezone.utc)
-        assert _extract_published_at({"published_parsed": published_parsed,
-                                      "updated_parsed": updated_parsed}) == expected_published_at
+        assert (
+            _extract_published_at({"published_parsed": published_parsed, "updated_parsed": updated_parsed})
+            == expected_published_at
+        )
 
 
 class TestExtractContent:
