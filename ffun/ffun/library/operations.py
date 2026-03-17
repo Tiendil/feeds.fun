@@ -156,6 +156,7 @@ async def get_entries_by_ids(ids: Iterable[EntryId]) -> dict[EntryId, Entry | No
     return result
 
 
+# TODO: maybe we shoud switch to l_entry.created_at to simplify http api
 async def get_entries_by_filter(
     feeds_ids: Iterable[FeedId], limit: int, period: datetime.timedelta | None = None
 ) -> list[PersonalizedEntry]:
