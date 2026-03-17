@@ -14,6 +14,13 @@ from ffun.library.settings import settings
 
 logger = logging.get_module_logger()
 
+# Note: We do not use `published_at` for ordering entries in feeds, because of the following reasons:
+# 1. Feeds without `published_at` data exist. There is no clear way to handle their ordering.
+# 2. Feeds can have weird `published_at` values:
+#    - in the future, because that's how devs desided to implement "locked head post" in their blog engine.
+#    - in the past such as `1970-01-01T00:00:00Z` because devs don't care about `published_at` value.
+#    - in wrong format.
+
 
 def row_to_entry(row: dict[str, Any]) -> Entry:
     return Entry(**row)
@@ -25,7 +32,9 @@ def row_to_personalized_entry(row: dict[str, Any]) -> PersonalizedEntry:
 
 
 @run_in_transaction
-async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: CollectedEntry) -> bool:
+async def _catalog_entry(
+        execute: ExecuteType, feed_id: FeedId, entry: CollectedEntry, ingested_at: datetime.datetime
+) -> bool:
     sql_insert_entry = """
     INSERT INTO l_entries (id, source_id, title, body, external_id, external_url, external_tags, published_at)
     VALUES (%(id)s, %(source_id)s, %(title)s, %(body)s, %(external_id)s,
@@ -34,16 +43,12 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Collected
     RETURNING id
     """
 
-    # We do not update `published_at` for existing entries because of the following reasons:
-    # 1. Feeds without `published_at` data exist. For them, we use the time of load as `published_at`.
-    #    That leads to moving entries forward in time each time the feed is loaded.
-    #    We may introduce a separate logic of treating cases when published_at is None,
-    #    but such logic will be too complicated and potentially unreliable.
-    # 2. Bugs on the side of feed providers may lead to reordering entries and confusing users.
+    # TODO: test ingestion
+    # TODO: remove published_at from l_feeds_to_entries
     sql_insert_feed_to_entry = """
-    INSERT INTO l_feeds_to_entries (feed_id, entry_id, published_at)
-    VALUES (%(feed_id)s, %(entry_id)s, %(published_at)s)
-    ON CONFLICT (feed_id, entry_id) DO NOTHING
+    INSERT INTO l_feeds_to_entries (feed_id, entry_id, ingested_at)
+    VALUES (%(feed_id)s, %(entry_id)s, %(ingested_at)s)
+    ON CONFLICT (feed_id, entry_id) DO UPDATE SET ingested_at = EXCLUDED.ingested_at
     """
 
     result = await execute(
@@ -78,31 +83,33 @@ async def _catalog_entry(execute: ExecuteType, feed_id: FeedId, entry: Collected
             raise NotImplementedError("Can not find entry by source_id and external_id")
 
     await execute(
-        sql_insert_feed_to_entry, {"feed_id": feed_id, "entry_id": entry_id, "published_at": entry.published_at}
+        sql_insert_feed_to_entry, {"feed_id": feed_id, "entry_id": entry_id, "ingested_at": ingested_at,}
     )
 
     return new_entry_created
 
 
-async def count_linked_entries(feed_id: FeedId) -> int:
-    result = await execute("SELECT COUNT(*) FROM l_feeds_to_entries WHERE feed_id = %(feed_id)s", {"feed_id": feed_id})
-    return result[0]["count"]  # type: ignore
-
-
+# TODO: tests
 async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) -> int:
+
+    # We MUST use the same `ingested_at` value for all entries ingested in the same load
+    # to be able to use `ingested_at` as a marker/version of ingested bunch of entries
+    ingested_at = utils.now()
+
     count = 0
-    linked_entries = await count_linked_entries(feed_id)
-    sorted_entries = sorted(entries, key=lambda entry: entry.published_at, reverse=True)
-    min_published_at = utils.now() - settings.max_entry_age
 
-    for entry in sorted_entries:
-        if entry.published_at < min_published_at and linked_entries >= settings.min_entries_per_feed:
-            # Skip old entries once the feed has reached the protected minimum.
-            continue
-
-        if await _catalog_entry(feed_id, entry):
+    # 1. We process all ingested entries, as it is the only way to ensure
+    #    that there will be no unexpected jumps in time for entries from long feeds without a published date specified.
+    #    `_catalog_entry` will update `igested_at` for all loaded entries,
+    #    so we'll be able to detect and remove old feed entries that are not ingested anymore.
+    #
+    # 2. We expect that entries list is sorted by the feed source in some reasonable way to
+    #    represent publishing order. It is important, because we set `created_at` independently
+    #    for each entry and feed_to_entry link, so we can not rely on `created_at`
+    #    in all other places as a sorting criteria for entries in feeds.
+    for entry in entries:
+        if await _catalog_entry(feed_id, entry, ingested_at):
             count += 1
-            linked_entries += 1
 
     return count
 
@@ -111,7 +118,7 @@ async def get_feed_links_for_entries(
     execute: ExecuteType, entries_ids: Iterable[EntryId]
 ) -> dict[EntryId, list[FeedEntryLink]]:
     sql = """
-    SELECT entry_id, feed_id, published_at, created_at
+    SELECT entry_id, feed_id, ingested_at, created_at
     FROM l_feeds_to_entries
     WHERE entry_id = ANY(%(entries_ids)s)
     """
@@ -123,14 +130,15 @@ async def get_feed_links_for_entries(
     for row in result:
         entry_id = row["entry_id"]
         feed_id = row["feed_id"]
-        published_at = row["published_at"]
+        ingested_at = row["ingested_at"]
         created_at = row["created_at"]
 
         if entry_id not in feeds_for_entries:
             feeds_for_entries[entry_id] = []
 
         feeds_for_entries[entry_id].append(
-            FeedEntryLink(feed_id=feed_id, entry_id=entry_id, published_at=published_at, created_at=created_at)
+            # TODO: rename published_at to ingested_at in FeedEntryLink
+            FeedEntryLink(feed_id=feed_id, entry_id=entry_id, published_at=ingested_at, created_at=created_at)
         )
 
     return feeds_for_entries
@@ -150,47 +158,58 @@ async def get_entries_by_ids(ids: Iterable[EntryId]) -> dict[EntryId, Entry | No
     return result
 
 
+# TODO: do we still need l_entries_created_at_idx?
 async def get_entries_by_filter(
     feeds_ids: Iterable[FeedId], limit: int, period: datetime.timedelta | None = None
 ) -> list[PersonalizedEntry]:
     if period is None:
         period = settings.max_entry_age
 
-    # 1. Here is an important logic implemented
-    #    When we are applying published time restriction
-    #    we are looking at a time of entry publishing in a requested feeds,
-    #    not the published time from the entry itself
-    #    In most cases, those times should be nearly the same, but there is a possibility
-    #    that there will be aggregator-style feeds that include old entries as new.
-    #    In such cases, we'll show such an entry as new to a user.
-    #    We may want to change this logic in the future.
+    # 1. When we are applying ingested time restriction
+    #    we are looking at a time of entry ingested from a requested feeds,
+    #    not the ingesting/creation time from the entry itself
     #
-    # 2. We order by two fields (published_at and created_at) to work around the case
-    #    when published_at is the same for several entries
+    # 2. We sort by `created_at` instead of `<ingested_at, created_at>`
+    #    because from the user's perspective the entry that appeared earlier should be removed earlier too
     #
-    # 3. Outer sorting uses entry_id to ensure deterministic order
+    # 3. Inner sorting choose entry link with the oldest `created_at` for each entry
+    #    to ensure that entry will stay at place where the user encountered it for the first time,
+    #    and will not jump to the top of the feed when it is reingested from another feed that the user follows.
+    #
+    # 4. Outer sorting uses entry_id to ensure deterministic order
     #    when there are multiple entries with the same published_at and created_at
+    #
+    # Note: by using `created_at` for sorting in the inner select
+    #       we introduce a case of rare inconsistency,
+    #       when not every entry link is selected for the future sorting and selecting best created_at
+    #       because it is filtered out by `created_at > NOW() - %(period)s`
+    #
+    # Note: we may simplify this query by using l_entry.created_at, however, it eiether:
+    #       - introduces an incosinstency in filterting & sorting, because of using created_at
+    #         from different tables (inner and outer selects)
+    #       - leads to a much bigger entries extraction in the inner select
+    #         because of removing filtering by created_at from there
+    #       => for now we prefer to keep the more complex query and logic by using l_feeds_to_entries.created_at
+    #          as a single source of truth.
     sql = """
-    SELECT le.*, picked.published_at AS picked_published_at
+    SELECT le.*, picked.created_at AS picked_created_at
     FROM (
-        SELECT DISTINCT ON (entry_id) entry_id, published_at, created_at
+        SELECT DISTINCT ON (entry_id) entry_id, created_at
         FROM l_feeds_to_entries
-        WHERE published_at > NOW() - %(period)s
+        WHERE created_at > NOW() - %(period)s
           AND feed_id = ANY(%(feeds_ids)s)
-        ORDER BY entry_id, published_at DESC, created_at DESC
+        ORDER BY entry_id, created_at ASC
     ) AS picked
     JOIN l_entries AS le ON le.id = picked.entry_id
-    ORDER BY picked.published_at DESC, picked.created_at DESC, picked.entry_id DESC
+    ORDER BY picked.created_at DESC, picked.entry_id DESC
     LIMIT %(limit)s
     """
 
     rows = await execute(sql, {"feeds_ids": feeds_ids, "period": period, "limit": limit})
 
     for row in rows:
-        # We ensure that `published_at` is specific for feeds, not for global load history
-        # So the user will see the entry as published at the time when the user could see it in their feeds
-        # not at the time when the entry was published by some other feed that the user does not follow.
-        row["published_at"] = row.pop("picked_published_at")
+        # TODO: this is a temporary hack, should be refactored later
+        row["published_at"] = row.pop("picked_created_at")
 
     return [row_to_personalized_entry(row) for row in rows]
 
@@ -244,30 +263,59 @@ async def update_external_url(entity_id: EntryId, url: str) -> None:
     await execute(sql, {"entity_id": entity_id, "url": url})
 
 
+# TODO: test
+async def get_last_ingested_at(execute: ExecuteType, feed_id: FeedId) -> datetime.datetime | None:
+    sql = """
+    SELECT MAX(ingested_at) AS last_ingested_at
+    FROM l_feeds_to_entries
+    WHERE feed_id = %(feed_id)s
+    """
+
+    result = await execute(sql, {"feed_id": feed_id})
+
+    if not result:
+        return
+
+    return result[0]["last_ingested_at"]  # type: ignore
+
+
+# TODO: test
 async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | None = None) -> None:
+    """Ensure that feed contains no more than `offset` entries."""
 
     if offset is None:
         offset = settings.max_entries_per_feed
 
-    # TODO: refactor to use https://www.psycopg.org/psycopg3/docs/api/cursors.html#psycopg.Cursor.rowcount
-    # We use `created_at` as a second sorting field to ensure that tail will be detected correctly
-    # in the case when the feeds sets equal `published_at` for several entries.
+    # TODO: test
+    if offset < settings.min_entries_per_feed:
+        raise errors.FeedHeadIsTooShort()
+
+    # We use `last_ingested_at` to protect entries ingested on the last feed load
+    last_ingested_at = await get_last_ingested_at(execute, feed_id)
+
+    if last_ingested_at is None:
+        logger.info("feed_has_no_entries", feed_id=feed_id)
+        return
+
+    # We sort by `created_at` instead of `<ingested_at, created_at>`
+    # because from the user's perspective the entry that appeared earlier should be removed earlier too
     sql = """
-    WITH cte AS (
+    WITH tail AS (
         SELECT feed_id, entry_id
         FROM l_feeds_to_entries
         WHERE feed_id = %(feed_id)s
-        ORDER BY published_at DESC, created_at DESC
+        ORDER BY created_at DESC, entry_id DESC
         OFFSET %(offset)s
     )
     DELETE FROM l_feeds_to_entries
-    USING cte
-    WHERE l_feeds_to_entries.feed_id = cte.feed_id
-      AND l_feeds_to_entries.entry_id = cte.entry_id
+    USING tail
+    WHERE l_feeds_to_entries.feed_id = tail.feed_id
+      AND l_feeds_to_entries.entry_id = tail.entry_id
+      AND l_feeds_to_entries.ingested_at < %(last_ingested_at)s
     RETURNING l_feeds_to_entries.entry_id AS entry_id
     """
 
-    result = await execute(sql, {"feed_id": feed_id, "offset": offset})
+    result = await execute(sql, {"feed_id": feed_id, "offset": offset, "last_ingested_at": last_ingested_at})
 
     if not result:
         logger.info("feed_has_no_entries_tail", feed_id=feed_id, entries_limit=offset)
@@ -280,28 +328,40 @@ async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | 
     await try_mark_as_orphanes(execute, potential_orphanes)
 
 
+# TODO: tests
 async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: datetime.timedelta | None = None) -> None:
+    """Ensure that feed contains no entries older than `period`."""
 
     if period is None:
         period = settings.max_entry_age
 
+    # We use `last_ingested_at` to protect entries ingested on the last feed load
+    last_ingested_at = await get_last_ingested_at(execute, feed_id)
+
+    if last_ingested_at is None:
+        logger.info("feed_has_no_entries", feed_id=feed_id)
+        return
+
+    # We sort by `created_at` instead of `<ingested_at, created_at>`
+    # because from the user's perspective the entry that appeared earlier should be removed earlier too
     sql = """
     WITH protected AS (
         SELECT entry_id
         FROM l_feeds_to_entries
         WHERE feed_id = %(feed_id)s
-        ORDER BY published_at DESC, created_at DESC, entry_id DESC
+        ORDER BY created_at DESC, entry_id DESC
         LIMIT %(min_entries_per_feed)s
     ),
     old_rows AS (
         SELECT feed_id, entry_id
         FROM l_feeds_to_entries
-        WHERE feed_id = %(feed_id)s AND published_at < NOW() - %(period)s
+        WHERE feed_id = %(feed_id)s AND created < NOW() - %(period)s
     )
     DELETE FROM l_feeds_to_entries
     USING old_rows
     WHERE l_feeds_to_entries.feed_id = old_rows.feed_id
       AND l_feeds_to_entries.entry_id = old_rows.entry_id
+      AND l_feeds_to_entries.ingested_at < %(last_ingested_at)s
       AND NOT EXISTS (
           SELECT 1
           FROM protected
@@ -316,6 +376,7 @@ async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: date
             "feed_id": feed_id,
             "period": period,
             "min_entries_per_feed": settings.min_entries_per_feed,
+            "last_ingested_at": last_ingested_at,
         },
     )
 

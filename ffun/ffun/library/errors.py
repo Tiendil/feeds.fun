@@ -13,3 +13,7 @@ class CanNotMoveEntryAlreadyInFeed(Error):
 
 class ConcurentOperationOnRemovedEntries(Error):
     pass
+
+
+class FeedHeadIsTooShort(Error):
+    pass
