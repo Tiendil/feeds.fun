@@ -2,6 +2,7 @@ import datetime
 import uuid
 from itertools import chain
 from unittest import mock
+from pytest_mock import MockerFixture
 
 import psycopg
 import pytest
@@ -28,6 +29,7 @@ from ffun.library.operations import (
     get_entries_by_filter,
     get_entries_by_ids,
     get_feed_links_for_entries,
+    get_last_ingested_at,
     get_orphaned_entries,
     remove_entries_by_ids,
     sync_orphaned_entries,
@@ -52,9 +54,11 @@ class TestCatalogEntry:
 
     @pytest.mark.asyncio
     async def test_new_entry_new_feed(self, loaded_feed_id: FeedId, new_entry: CollectedEntry) -> None:
+        ingested_at = utils.now()
+
         async with TableSizeDelta("l_entries", delta=1):
             async with TableSizeDelta("l_feeds_to_entries", delta=1):
-                assert await _catalog_entry(loaded_feed_id, new_entry)
+                assert await _catalog_entry(loaded_feed_id, new_entry, ingested_at)
 
         loaded_entry = await get_entry(new_entry.id)
 
@@ -69,18 +73,21 @@ class TestCatalogEntry:
 
         assert link.feed_id == loaded_feed_id
         assert link.entry_id == new_entry.id
-        assert link.published_at == new_entry.published_at
+        assert link.published_at == ingested_at
         assert_times_is_near(link.created_at, utils.now())
 
     @pytest.mark.asyncio
     async def test_same_entry_new_feed(
         self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, new_entry: CollectedEntry
     ) -> None:
-        await _catalog_entry(loaded_feed_id, new_entry)
+        second_ingested_at = utils.now()
+        first_ingested_at = second_ingested_at - datetime.timedelta(minutes=1)
+
+        await _catalog_entry(loaded_feed_id, new_entry, first_ingested_at)
 
         async with TableSizeNotChanged("l_entries"):
             async with TableSizeDelta("l_feeds_to_entries", delta=1):
-                assert not await _catalog_entry(another_loaded_feed_id, new_entry)
+                assert not await _catalog_entry(another_loaded_feed_id, new_entry, second_ingested_at)
 
         loaded_entry = await get_entry(new_entry.id)
 
@@ -97,25 +104,30 @@ class TestCatalogEntry:
 
         assert link_1.feed_id == loaded_feed_id
         assert link_1.entry_id == new_entry.id
-        assert link_1.published_at == new_entry.published_at
+        assert link_1.published_at == first_ingested_at
         assert_times_is_near(link_1.created_at, utils.now())
 
         link_2 = sorted_links[1]
 
         assert link_2.feed_id == another_loaded_feed_id
         assert link_2.entry_id == new_entry.id
-        assert link_2.published_at == new_entry.published_at
+        assert link_2.published_at == second_ingested_at
         assert_times_is_near(link_2.created_at, utils.now())
 
         assert link_1.created_at < link_2.created_at
 
     @pytest.mark.asyncio
     async def test_same_entry_same_feed(self, loaded_feed_id: FeedId, new_entry: CollectedEntry) -> None:
-        await _catalog_entry(loaded_feed_id, new_entry)
+        second_ingested_at = utils.now()
+        first_ingested_at = second_ingested_at - datetime.timedelta(minutes=1)
+
+        await _catalog_entry(loaded_feed_id, new_entry, first_ingested_at)
+        initial_links = await get_feed_links_for_entries(execute, [new_entry.id])
+        initial_link = initial_links[new_entry.id][0]
 
         async with TableSizeNotChanged("l_entries"):
             async with TableSizeNotChanged("l_feeds_to_entries"):
-                assert not await _catalog_entry(loaded_feed_id, new_entry)
+                assert not await _catalog_entry(loaded_feed_id, new_entry, second_ingested_at)
 
         loaded_entry = await get_entry(new_entry.id)
 
@@ -130,18 +142,61 @@ class TestCatalogEntry:
 
         assert link.feed_id == loaded_feed_id
         assert link.entry_id == new_entry.id
-        assert link.published_at == new_entry.published_at
-        assert_times_is_near(link.created_at, utils.now())
+        assert link.published_at == second_ingested_at
+        assert link.created_at == initial_link.created_at
+
+    @pytest.mark.asyncio
+    async def test_do_not_update_entry_published_at_for_same_entry_same_feed(
+        self, loaded_feed_id: FeedId, new_entry: CollectedEntry
+    ) -> None:
+        second_ingested_at = utils.now()
+        first_ingested_at = second_ingested_at - datetime.timedelta(hours=1)
+
+        await _catalog_entry(loaded_feed_id, new_entry, first_ingested_at)
+
+        new_published_at = new_entry.published_at + datetime.timedelta(hours=1)
+        updated_entry = new_entry.replace(published_at=new_published_at)
+
+        async with TableSizeNotChanged("l_entries"):
+            async with TableSizeNotChanged("l_feeds_to_entries"):
+                assert not await _catalog_entry(loaded_feed_id, updated_entry, second_ingested_at)
+
+        loaded_entry = await get_entry(new_entry.id)
+
+        assert loaded_entry.published_at == new_entry.published_at
+
+    @pytest.mark.asyncio
+    async def test_do_not_update_entry_published_at_for_same_entry_new_feed(
+        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, new_entry: CollectedEntry
+    ) -> None:
+        second_ingested_at = utils.now()
+        first_ingested_at = second_ingested_at - datetime.timedelta(hours=1)
+
+        await _catalog_entry(loaded_feed_id, new_entry, first_ingested_at)
+
+        new_published_at = new_entry.published_at + datetime.timedelta(hours=1)
+        updated_entry = new_entry.replace(published_at=new_published_at)
+
+        async with TableSizeNotChanged("l_entries"):
+            async with TableSizeDelta("l_feeds_to_entries", delta=1):
+                assert not await _catalog_entry(another_loaded_feed_id, updated_entry, second_ingested_at)
+
+        loaded_entry = await get_entry(new_entry.id)
+
+        assert loaded_entry.published_at == new_entry.published_at
 
     @pytest.mark.asyncio
     async def test_new_entry_same_feed(
         self, loaded_feed_id: FeedId, new_entry: CollectedEntry, another_new_entry: CollectedEntry
     ) -> None:
-        await _catalog_entry(loaded_feed_id, new_entry)
+        second_ingested_at = utils.now()
+        first_ingested_at = second_ingested_at - datetime.timedelta(minutes=1)
+
+        await _catalog_entry(loaded_feed_id, new_entry, first_ingested_at)
 
         async with TableSizeDelta("l_entries", delta=1):
             async with TableSizeDelta("l_feeds_to_entries", delta=1):
-                assert await _catalog_entry(loaded_feed_id, another_new_entry)
+                assert await _catalog_entry(loaded_feed_id, another_new_entry, second_ingested_at)
 
         loaded_another_entry = await get_entry(another_new_entry.id)
 
@@ -156,31 +211,8 @@ class TestCatalogEntry:
 
         assert link.feed_id == loaded_feed_id
         assert link.entry_id == another_new_entry.id
-        assert link.published_at == another_new_entry.published_at
+        assert link.published_at == second_ingested_at
         assert_times_is_near(link.created_at, utils.now())
-
-    @pytest.mark.asyncio
-    async def test_no_updating_link_published_at_for_same_feed_same_entry(
-        self, loaded_feed_id: FeedId, new_entry: CollectedEntry
-    ) -> None:
-        await _catalog_entry(loaded_feed_id, new_entry)
-
-        new_published_at = new_entry.published_at + datetime.timedelta(hours=1)
-        updated_entry = new_entry.replace(published_at=new_published_at)
-
-        async with TableSizeNotChanged("l_entries"):
-            async with TableSizeNotChanged("l_feeds_to_entries"):
-                assert not await _catalog_entry(loaded_feed_id, updated_entry)
-
-        loaded_entry = await get_entry(new_entry.id)
-
-        assert loaded_entry.published_at == new_entry.published_at
-
-        links = await get_feed_links_for_entries(execute, [new_entry.id])
-
-        assert len(links[new_entry.id]) == 1
-        assert links[new_entry.id][0].published_at == new_entry.published_at
-
 
 class TestCatalogEntries:
     @pytest.mark.asyncio
@@ -217,7 +249,7 @@ class TestCatalogEntries:
 
     @pytest.mark.asyncio
     async def test_count_only_new_entries(self, loaded_feed_id: FeedId, new_entry: CollectedEntry) -> None:
-        await _catalog_entry(loaded_feed_id, new_entry)
+        await _catalog_entry(loaded_feed_id, new_entry, utils.now())
 
         another_new_entry = new_entry.replace(id=new_entry_id(), external_id=uuid.uuid4().hex)
 
@@ -226,7 +258,7 @@ class TestCatalogEntries:
             assert count == 1
 
     @pytest.mark.asyncio
-    async def test_skip_old_entries(
+    async def test_catalog_old_entries(
         self, loaded_feed: Feed, new_entry: CollectedEntry, another_new_entry: CollectedEntry
     ) -> None:
         await make.n_entries(loaded_feed, n=settings.min_entries_per_feed + 1)
@@ -235,17 +267,17 @@ class TestCatalogEntries:
             published_at=utils.now() - settings.max_entry_age - datetime.timedelta(seconds=1)
         )
 
-        async with TableSizeDelta("l_entries", delta=1):
+        async with TableSizeDelta("l_entries", delta=2):
             count = await catalog_entries(loaded_feed.id, [old_entry, another_new_entry])
-            assert count == 1
+            assert count == 2
 
         loaded_entries = await get_entries_by_ids(ids=[old_entry.id, another_new_entry.id])
 
-        assert loaded_entries[old_entry.id] is None
+        assert loaded_entries[old_entry.id] is not None
         assert loaded_entries[another_new_entry.id] is not None
 
     @pytest.mark.asyncio
-    async def test_catalog_old_entries_only_till_min_entries_border(self, loaded_feed: Feed) -> None:
+    async def test_catalog_all_old_entries_even_above_min_entries_border(self, loaded_feed: Feed) -> None:
         await make.n_entries(loaded_feed, n=settings.min_entries_per_feed - 2)
 
         old_entries = [
@@ -256,23 +288,17 @@ class TestCatalogEntries:
             for index in range(5)
         ]
 
-        expected_cataloged_entries = sorted(old_entries, key=_collected_entry_published_at, reverse=True)[:2]
-        expected_ignored_entries = sorted(old_entries, key=_collected_entry_published_at, reverse=True)[2:]
-
-        async with TableSizeDelta("l_entries", delta=2):
+        async with TableSizeDelta("l_entries", delta=5):
             count = await catalog_entries(loaded_feed.id, old_entries)
-            assert count == 2
+            assert count == 5
 
         loaded_entries = await get_entries_by_ids(ids=[entry.id for entry in old_entries])
 
-        for entry in expected_cataloged_entries:
+        for entry in old_entries:
             assert loaded_entries[entry.id] is not None
 
-        for entry in expected_ignored_entries:
-            assert loaded_entries[entry.id] is None
-
     @pytest.mark.asyncio
-    async def test_do_not_catalog_old_entries_at_min_entries_border(self, loaded_feed: Feed) -> None:
+    async def test_catalog_old_entries_at_min_entries_border(self, loaded_feed: Feed) -> None:
         await make.n_entries(loaded_feed, n=settings.min_entries_per_feed)
 
         old_entries = [
@@ -283,17 +309,41 @@ class TestCatalogEntries:
             for index in range(3)
         ]
 
-        async with TableSizeNotChanged("l_entries"):
+        async with TableSizeDelta("l_entries", delta=3):
             count = await catalog_entries(loaded_feed.id, old_entries)
-            assert count == 0
+            assert count == 3
 
         loaded_entries = await get_entries_by_ids(ids=[entry.id for entry in old_entries])
 
         for entry in old_entries:
-            assert loaded_entries[entry.id] is None
+            assert loaded_entries[entry.id] is not None
 
 
 # Most of the functionality is tested in the tests for catalog_entry and other functions
+class TestGetLastIngestedAt:
+
+    @pytest.mark.asyncio
+    async def test_no_entries(self, loaded_feed_id: FeedId) -> None:
+        assert await get_last_ingested_at(execute, loaded_feed_id) is None
+
+    @pytest.mark.asyncio
+    async def test_returns_max_ingested_at_for_requested_feed(
+        self, loaded_feed: Feed, another_loaded_feed: Feed
+    ) -> None:
+        first_entry = make.fake_entry(loaded_feed.source_id)
+        second_entry = make.fake_entry(another_loaded_feed.source_id)
+        third_entry = make.fake_entry(loaded_feed.source_id)
+
+        await catalog_entries(loaded_feed.id, [first_entry])
+        await catalog_entries(another_loaded_feed.id, [second_entry])
+        await catalog_entries(loaded_feed.id, [third_entry])
+
+        links = await get_feed_links_for_entries(execute, [first_entry.id, third_entry.id])
+        expected_ingested_at = max(link.published_at for feed_links in links.values() for link in feed_links)
+
+        assert await get_last_ingested_at(execute, loaded_feed.id) == expected_ingested_at
+
+
 class TestGetFeedLinksForEntries:
 
     @pytest.mark.asyncio
@@ -594,87 +644,101 @@ class TestUpdateExternalUrl:
 class TestUnlinkFeedTail:
 
     @pytest.mark.asyncio
-    async def test_zero_head(self, loaded_feed: Feed) -> None:
-        await make.n_entries(loaded_feed, n=5)
+    async def test_too_short_head(self, loaded_feed: Feed) -> None:
+        with pytest.raises(errors.FeedHeadIsTooShort):
+            await unlink_feed_tail(execute, loaded_feed.id, offset=settings.min_entries_per_feed - 1)
+
+    @pytest.mark.asyncio
+    async def test_respect_last_ingestion(self, loaded_feed: Feed) -> None:
+        min_entries = settings.min_entries_per_feed
+        keep_entries = min_entries + 3
+
+        entries = await make.n_entries_list(loaded_feed, n=keep_entries + 5)
+
+        await catalog_entries(loaded_feed.id, entries[:keep_entries])
 
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_feed_tail(execute, loaded_feed.id, offset=0)
+                    await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries)
 
         assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
 
-        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
 
-        assert set() == {entry.id for entry in feed_entries}
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:min_entries + 3]}
+
+        orphaned_entries = await get_orphaned_entries(limit=100500)
+
+        assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries[min_entries + 3 :]}
 
     @pytest.mark.asyncio
-    async def test_not_excceed_limit(self, loaded_feed: Feed) -> None:
-        entries = await make.n_entries_list(loaded_feed, n=5)
+    async def test_respect_offset(self, loaded_feed: Feed) -> None:
+        min_entries = settings.min_entries_per_feed
+        keep_entries = min_entries + 3
+
+        entries = await make.n_entries_list(loaded_feed, n=keep_entries + 5)
+
+        await catalog_entries(loaded_feed.id, entries[:min_entries])
+
+        with capture_logs() as logs:  # type: ignore
+            async with TableSizeDelta("l_feeds_to_entries", delta=-5):
+                async with TableSizeNotChanged("l_entries"):
+                    await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries + 3)
+
+        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
+
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
+
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:min_entries + 3]}
+
+        orphaned_entries = await get_orphaned_entries(limit=100500)
+
+        assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries[min_entries + 3 :]}
+
+    @pytest.mark.asyncio
+    async def test_default_offset(self, loaded_feed: Feed, mocker: MockerFixture) -> None:
+        min_entries = settings.min_entries_per_feed
+
+        expected_offset = min_entries + 2
+
+        mocker.patch("ffun.library.settings.settings.max_entries_per_feed", expected_offset)
+
+        entries = await make.n_entries_list(loaded_feed, n=min_entries + 5)
+
+        await catalog_entries(loaded_feed.id, entries[:min_entries])
+
+        with capture_logs() as logs:  # type: ignore
+            async with TableSizeDelta("l_feeds_to_entries", delta=-3):
+                async with TableSizeNotChanged("l_entries"):
+                    await unlink_feed_tail(execute, loaded_feed.id)
+
+    @pytest.mark.asyncio
+    async def test_no_entries(self, loaded_feed: Feed) -> None:
+        with capture_logs() as logs:
+            async with TableSizeNotChanged("l_feeds_to_entries"):
+                async with TableSizeNotChanged("l_entries"):
+                    await unlink_feed_tail(execute, loaded_feed.id)
+
+        assert_logs(logs, feed_has_no_entries=1, feed_entries_tail_removed=0)  # type: ignore
+
+    @pytest.mark.asyncio
+    async def test_less_than_min_entries(self, loaded_feed: Feed) -> None:
+        min_entries = settings.min_entries_per_feed
+        keep_entries = min_entries - 3
+
+        assert keep_entries > 2
+
+        entries = await make.n_entries_list(loaded_feed, n=keep_entries)
+
+        await catalog_entries(loaded_feed.id, entries[:-2])
 
         with capture_logs() as logs:  # type: ignore
             async with TableSizeNotChanged("l_feeds_to_entries"):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_feed_tail(execute, loaded_feed.id, offset=10)
+                    await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries)
 
-        assert_logs(logs, feed_has_no_entries_tail=1, feed_entries_tail_removed=0)  # type: ignore
-
-        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
-
-        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries}
-
-    @pytest.mark.asyncio
-    async def test_limit(self, loaded_feed: Feed) -> None:
-        entries = await make.n_entries_list(loaded_feed, n=15)
-
-        with capture_logs() as logs:  # type: ignore
-            async with TableSizeDelta("l_feeds_to_entries", delta=-5):
-                async with TableSizeNotChanged("l_entries"):
-                    await unlink_feed_tail(execute, loaded_feed.id, offset=10)
-
-        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
-
-        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
-
-        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:10]}
-
-        orphaned_entries = await get_orphaned_entries(limit=100500)
-
-        assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries[10:]}
-
-    @pytest.mark.asyncio
-    async def test_created_at_as_second_sort_key(self, loaded_feed: Feed) -> None:
-        now = utils.now()
-
-        published_at = now - datetime.timedelta(hours=1)
-        entries = [make.fake_entry(loaded_feed.source_id, published_at=published_at) for _ in range(4)]
-
-        await catalog_entries(loaded_feed.id, entries)
-
-        created_ats = [
-            now - datetime.timedelta(minutes=4),
-            now - datetime.timedelta(minutes=1),
-            now - datetime.timedelta(minutes=3),
-            now - datetime.timedelta(minutes=2),
-        ]
-
-        for entry, created_at in zip(entries, created_ats):
-            await helpers.update_link_created_time(loaded_feed.id, entry.id, created_at)
-
-        with capture_logs() as logs:  # type: ignore
-            async with TableSizeDelta("l_feeds_to_entries", delta=-2):
-                async with TableSizeNotChanged("l_entries"):
-                    await unlink_feed_tail(execute, loaded_feed.id, offset=2)
-
-        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
-
-        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
-
-        assert {entry.id for entry in feed_entries} == {entries[1].id, entries[3].id}
-
-        orphaned_entries = await get_orphaned_entries(limit=100500)
-
-        assert orphaned_entries & {entry.id for entry in entries} == {entries[0].id, entries[2].id}
+        assert_logs(logs, feed_has_no_entries_tail=1, feed_entries_tail_removed=0)
 
 
 class TestUnlinkOldEntries:

@@ -43,8 +43,6 @@ async def _catalog_entry(
     RETURNING id
     """
 
-    # TODO: test ingestion
-    # TODO: remove published_at from l_feeds_to_entries
     sql_insert_feed_to_entry = """
     INSERT INTO l_feeds_to_entries (feed_id, entry_id, ingested_at)
     VALUES (%(feed_id)s, %(entry_id)s, %(ingested_at)s)
@@ -89,7 +87,6 @@ async def _catalog_entry(
     return new_entry_created
 
 
-# TODO: tests
 async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) -> int:
 
     # We MUST use the same `ingested_at` value for all entries ingested in the same load
@@ -104,10 +101,11 @@ async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) ->
     #    so we'll be able to detect and remove old feed entries that are not ingested anymore.
     #
     # 2. We expect that entries list is sorted by the feed source in some reasonable way to
-    #    represent publishing order. It is important, because we set `created_at` independently
-    #    for each entry and feed_to_entry link, so we can not rely on `created_at`
+    #    represent publishing order (from new to old). It is important, because we set `created_at` independently
+    #    for each entry and feed_to_entry link, so we can rely on `created_at`
     #    in all other places as a sorting criteria for entries in feeds.
-    for entry in entries:
+    #    That's why we catalog entries in reversed order, so the oldest entry will have the oldest `created_at`.
+    for entry in reversed(entries):  # TODO: test reversed
         if await _catalog_entry(feed_id, entry, ingested_at):
             count += 1
 
@@ -158,7 +156,6 @@ async def get_entries_by_ids(ids: Iterable[EntryId]) -> dict[EntryId, Entry | No
     return result
 
 
-# TODO: do we still need l_entries_created_at_idx?
 async def get_entries_by_filter(
     feeds_ids: Iterable[FeedId], limit: int, period: datetime.timedelta | None = None
 ) -> list[PersonalizedEntry]:
@@ -263,7 +260,6 @@ async def update_external_url(entity_id: EntryId, url: str) -> None:
     await execute(sql, {"entity_id": entity_id, "url": url})
 
 
-# TODO: test
 async def get_last_ingested_at(execute: ExecuteType, feed_id: FeedId) -> datetime.datetime | None:
     sql = """
     SELECT MAX(ingested_at) AS last_ingested_at
@@ -279,14 +275,12 @@ async def get_last_ingested_at(execute: ExecuteType, feed_id: FeedId) -> datetim
     return result[0]["last_ingested_at"]  # type: ignore
 
 
-# TODO: test
 async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | None = None) -> None:
     """Ensure that feed contains no more than `offset` entries."""
 
     if offset is None:
         offset = settings.max_entries_per_feed
 
-    # TODO: test
     if offset < settings.min_entries_per_feed:
         raise errors.FeedHeadIsTooShort()
 
