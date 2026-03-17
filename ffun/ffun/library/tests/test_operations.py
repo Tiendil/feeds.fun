@@ -396,14 +396,17 @@ class TestGetEntriesByFilter:
         await catalog_entries(another_loaded_feed.id, [common_entry])
         old_time = time_border - datetime.timedelta(seconds=10)
 
-        await helpers.update_published_time(entries_ids=[entries[0].id, another_entries[0].id], new_time=old_time)
+        await helpers.update_link_created_time(loaded_feed.id, entries[0].id, old_time)
+        await helpers.update_link_created_time(another_loaded_feed.id, another_entries[0].id, old_time)
+        # await helpers.update_published_time(entries_ids=[entries[0].id, another_entries[0].id], new_time=old_time)
 
+        # TODO: problem is in the next line because it extracts wrong created_at values
         all_entries = await get_entries_by_ids(
             ids=[entry.id for entry in chain(entries, another_entries, [common_entry])]
         )
 
         all_entries_list = list(all_entries.values())
-        all_entries_list.sort(key=lambda entry: entry.published_at)  # type: ignore
+        all_entries_list.sort(key=lambda entry: entry.created_at)  # type: ignore
 
         entries_1 = []
         entries_2 = []
@@ -475,7 +478,8 @@ class TestGetEntriesByFilter:
 
         old_time = utils.now() - settings.max_entry_age - datetime.timedelta(seconds=1)
 
-        await helpers.update_published_time(entries_ids=[entries[0].id], new_time=old_time)
+        await helpers.update_link_ingested_time(loaded_feed.id, entries[0].id, old_time)
+        # await helpers.update_published_time(entries_ids=[entries[0].id], new_time=old_time)
 
         loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
 

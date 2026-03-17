@@ -162,19 +162,21 @@ async def get_entries_by_filter(
     if period is None:
         period = settings.max_entry_age
 
-    # 1. When we are applying ingested time restriction
-    #    we are looking at a time of entry ingested from a requested feeds,
-    #    not the ingesting/creation time from the entry itself
+    # 1. When we are applying creation time restriction
+    #    we are looking at a time of entry linked to a requested feeds,
+    #    not the creation time from the entry itself
     #
-    # 2. We sort by `created_at` instead of `<ingested_at, created_at>`
-    #    because from the user's perspective the entry that appeared earlier should be removed earlier too
+    # 2. We can not sort by `published_at` because it is absolutely unreliable
     #
     # 3. Inner sorting choose entry link with the oldest `created_at` for each entry
     #    to ensure that entry will stay at place where the user encountered it for the first time,
     #    and will not jump to the top of the feed when it is reingested from another feed that the user follows.
+    #    Also, from the user's perspective the entry that appeared earlier should disapper earlier too.
     #
-    # 4. Outer sorting uses entry_id to ensure deterministic order
-    #    when there are multiple entries with the same published_at and created_at
+    # Note: by using `created_at` for sorting in the outer select
+    #       we introduce a minor unsertainty in sorting
+    #       in case the limit separate entries with the same `created_at`.
+    #       However, it is a highly unlikely situation.
     #
     # Note: by using `created_at` for sorting in the inner select
     #       we introduce a case of rare inconsistency,
@@ -198,7 +200,7 @@ async def get_entries_by_filter(
         ORDER BY entry_id, created_at ASC
     ) AS picked
     JOIN l_entries AS le ON le.id = picked.entry_id
-    ORDER BY picked.created_at DESC, picked.entry_id DESC
+    ORDER BY picked.created_at DESC
     LIMIT %(limit)s
     """
 
@@ -294,7 +296,7 @@ async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | 
     # We sort by `created_at` instead of `<ingested_at, created_at>`
     # because from the user's perspective the entry that appeared earlier should be removed earlier too
     sql = """
-    WITH tail AS (
+    WITH tail AS MATERIALIZED (
         SELECT feed_id, entry_id
         FROM l_feeds_to_entries
         WHERE feed_id = %(feed_id)s
@@ -336,14 +338,14 @@ async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: date
     # We sort by `created_at` because from the user's perspective
     # the entry that appeared earlier should be removed earlier too
     sql = """
-    WITH protected AS (
+    WITH protected AS MATERIALIZED (
         SELECT entry_id
         FROM l_feeds_to_entries
         WHERE feed_id = %(feed_id)s
         ORDER BY created_at DESC, entry_id DESC
         LIMIT %(min_entries_per_feed)s
     ),
-    old_rows AS (
+    old_rows AS MATERIALIZED (
         SELECT feed_id, entry_id
         FROM l_feeds_to_entries
         WHERE feed_id = %(feed_id)s AND created_at < NOW() - %(period)s
