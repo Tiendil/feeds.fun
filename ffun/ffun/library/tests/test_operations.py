@@ -660,16 +660,15 @@ class TestUnlinkFeedTail:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries)
+                    async with TableSizeDelta("l_orphaned_entries", delta=5):
+                        await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries)
 
         assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
 
         feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
-
         assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:min_entries + 3]}
 
         orphaned_entries = await get_orphaned_entries(limit=100500)
-
         assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries[min_entries + 3 :]}
 
     @pytest.mark.asyncio
@@ -741,7 +740,7 @@ class TestUnlinkFeedTail:
         assert_logs(logs, feed_has_no_entries_tail=1, feed_entries_tail_removed=0)
 
     @pytest.mark.asyncio
-    async def test_respect_another_feed(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
+    async def test_respect_separate_feed(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
         min_entries = settings.min_entries_per_feed
         keep_entries = min_entries + 3
 
@@ -763,6 +762,30 @@ class TestUnlinkFeedTail:
 
         another_feed_entries = await get_entries_by_filter(feeds_ids=[another_loaded_feed.id], limit=100500)
         assert {entry.id for entry in another_feed_entries} == {entry.id for entry in another_entries}
+
+    @pytest.mark.asyncio
+    async def test_respect_neighbour_feed(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
+        min_entries = settings.min_entries_per_feed
+        keep_entries = min_entries + 3
+
+        entries = await make.n_entries_list(loaded_feed, n=keep_entries + 5)
+        await catalog_entries(loaded_feed.id, entries[:min_entries])
+
+        await catalog_entries(another_loaded_feed.id, entries)
+        await catalog_entries(another_loaded_feed.id, entries[:min_entries])
+
+        with capture_logs() as logs:  # type: ignore
+            async with TableSizeDelta("l_feeds_to_entries", delta=-5):
+                async with TableSizeNotChanged("l_entries"):
+                    await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries + 3)
+
+        assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
+
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:min_entries + 3]}
+
+        another_feed_entries = await get_entries_by_filter(feeds_ids=[another_loaded_feed.id], limit=100500)
+        assert {entry.id for entry in another_feed_entries} == {entry.id for entry in entries}
 
 
 class TestUnlinkOldEntries:
@@ -901,7 +924,7 @@ class TestUnlinkOldEntries:
         assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:keep_entries]}
 
     @pytest.mark.asyncio
-    async def test_respect_another_feed(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
+    async def test_respect_separate_feed(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
         min_entries = settings.min_entries_per_feed
         keep_entries = min_entries + 3
 
@@ -923,6 +946,30 @@ class TestUnlinkOldEntries:
 
         another_feed_entries = await get_entries_by_filter(feeds_ids=[another_loaded_feed.id], limit=100500)
         assert {entry.id for entry in another_feed_entries} == {entry.id for entry in another_entries}
+
+    @pytest.mark.asyncio
+    async def test_respect_neighbour_feed(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
+        min_entries = settings.min_entries_per_feed
+        keep_entries = min_entries + 3
+
+        entries = await make.n_entries_list(loaded_feed, n=keep_entries + 5)
+        await catalog_entries(loaded_feed.id, entries[:keep_entries])
+
+        await catalog_entries(another_loaded_feed.id, entries)
+        await catalog_entries(another_loaded_feed.id, entries[:keep_entries])
+
+        with capture_logs() as logs:  # type: ignore
+            async with TableSizeDelta("l_feeds_to_entries", delta=-5):
+                async with TableSizeNotChanged("l_entries"):
+                    await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(days=0))
+
+        assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
+
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:keep_entries]}
+
+        another_feed_entries = await get_entries_by_filter(feeds_ids=[another_loaded_feed.id], limit=100500)
+        assert {entry.id for entry in another_feed_entries} == {entry.id for entry in entries}
 
 
 class TestRemoveEntriesByIds:
