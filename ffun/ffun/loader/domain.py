@@ -172,7 +172,7 @@ async def process_feed(feed: Feed) -> None:
     # We should sync the list of entries in the feed even if we failed to load it
     # to automatically sync it after any configuration change.
     # We should not do so for orphaned feeds, because they will be removed.
-    await m_domain.shrink_feed(feed.id)
+    await l_domain.shrink_feed(feed.id)
 
 
 async def check_proxies_availability() -> None:

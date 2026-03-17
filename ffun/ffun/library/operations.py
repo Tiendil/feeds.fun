@@ -275,7 +275,7 @@ async def get_last_ingested_at(execute: ExecuteType, feed_id: FeedId) -> datetim
     return result[0]["last_ingested_at"]  # type: ignore
 
 
-async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | None = None) -> None:
+async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | None = None) -> set[EntryId]:
     """Ensure that feed contains no more than `offset` entries."""
 
     if offset is None:
@@ -289,7 +289,7 @@ async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | 
 
     if last_ingested_at is None:
         logger.info("feed_has_no_entries", feed_id=feed_id)
-        return
+        return set()
 
     # We sort by `created_at` instead of `<ingested_at, created_at>`
     # because from the user's perspective the entry that appeared earlier should be removed earlier too
@@ -313,16 +313,14 @@ async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | 
 
     if not result:
         logger.info("feed_has_no_entries_tail", feed_id=feed_id, entries_limit=offset)
-        return
+        return set()
 
     logger.info("feed_entries_tail_removed", feed_id=feed_id, entries_limit=offset, entries_removed=len(result))
 
-    potential_orphanes = [row["entry_id"] for row in result]
-
-    await try_mark_as_orphanes(execute, potential_orphanes)
+    return {row["entry_id"] for row in result}
 
 
-async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: datetime.timedelta | None = None) -> None:
+async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: datetime.timedelta | None = None) -> set[EntryId]:
     """Ensure that feed contains no entries older than `period`."""
 
     if period is None:
@@ -333,7 +331,7 @@ async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: date
 
     if last_ingested_at is None:
         logger.info("feed_has_no_entries", feed_id=feed_id)
-        return
+        return set()
 
     # We sort by `created_at` because from the user's perspective
     # the entry that appeared earlier should be removed earlier too
@@ -375,17 +373,15 @@ async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: date
 
     if not result:
         logger.info("feed_has_no_old_entries", feed_id=feed_id, old_period=period)
-        return
+        return set()
 
     logger.info("feed_old_entries_removed", feed_id=feed_id, old_period=period, entries_removed=len(result))
 
-    potential_orphanes = [row["entry_id"] for row in result]
-
-    await try_mark_as_orphanes(execute, potential_orphanes)
+    return {row["entry_id"] for row in result}
 
 
 # TODO: metrics for orphaned entries and for feeds that produce them
-async def try_mark_as_orphanes(execute: ExecuteType, entry_ids: Iterable[EntryId]) -> None:
+async def try_mark_as_orphanes(execute: ExecuteType, entry_ids: set[EntryId]) -> None:
     feed_links = await get_feed_links_for_entries(execute, entry_ids)
 
     orphans = [entry_id for entry_id in entry_ids if entry_id not in feed_links]

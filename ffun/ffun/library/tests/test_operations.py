@@ -660,16 +660,14 @@ class TestUnlinkFeedTail:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    async with TableSizeDelta("l_orphaned_entries", delta=5):
-                        await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries)
+                    unlinked = await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries)
+
+        assert unlinked == {entry.id for entry in entries[min_entries + 3 :]}
 
         assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
 
         feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
         assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:min_entries + 3]}
-
-        orphaned_entries = await get_orphaned_entries(limit=100500)
-        assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries[min_entries + 3 :]}
 
     @pytest.mark.asyncio
     async def test_respect_offset(self, loaded_feed: Feed) -> None:
@@ -683,17 +681,15 @@ class TestUnlinkFeedTail:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries + 3)
+                    unlinked = await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries + 3)
+
+        assert unlinked == {entry.id for entry in entries[min_entries + 3 :]}
 
         assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
 
         feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
 
         assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:min_entries + 3]}
-
-        orphaned_entries = await get_orphaned_entries(limit=100500)
-
-        assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries[min_entries + 3 :]}
 
     @pytest.mark.asyncio
     async def test_default_offset(self, loaded_feed: Feed, mocker: MockerFixture) -> None:
@@ -710,14 +706,18 @@ class TestUnlinkFeedTail:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-3):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_feed_tail(execute, loaded_feed.id)
+                    unlinked = await unlink_feed_tail(execute, loaded_feed.id)
+
+        assert unlinked == {entry.id for entry in entries[expected_offset:]}
 
     @pytest.mark.asyncio
     async def test_no_entries(self, loaded_feed: Feed) -> None:
         with capture_logs() as logs:
             async with TableSizeNotChanged("l_feeds_to_entries"):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_feed_tail(execute, loaded_feed.id)
+                    unlinked = await unlink_feed_tail(execute, loaded_feed.id)
+
+        assert unlinked == set()
 
         assert_logs(logs, feed_has_no_entries=1, feed_entries_tail_removed=0)  # type: ignore
 
@@ -735,7 +735,9 @@ class TestUnlinkFeedTail:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeNotChanged("l_feeds_to_entries"):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries)
+                    unlinked = await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries)
+
+        assert unlinked == set()
 
         assert_logs(logs, feed_has_no_entries_tail=1, feed_entries_tail_removed=0)
 
@@ -753,7 +755,9 @@ class TestUnlinkFeedTail:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries + 3)
+                    unlinked = await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries + 3)
+
+        assert unlinked == {entry.id for entry in entries[min_entries + 3 :]}
 
         assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
 
@@ -777,7 +781,9 @@ class TestUnlinkFeedTail:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries + 3)
+                    unlinked = await unlink_feed_tail(execute, loaded_feed.id, offset=min_entries + 3)
+
+        assert unlinked == {entry.id for entry in entries[min_entries + 3 :]}
 
         assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
 
@@ -795,7 +801,9 @@ class TestUnlinkOldEntries:
         with capture_logs() as logs:
             async with TableSizeNotChanged("l_feeds_to_entries"):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_old_entries(execute, loaded_feed.id)
+                    unlinked = await unlink_old_entries(execute, loaded_feed.id)
+
+        assert unlinked == set()
 
         assert_logs(logs, feed_has_no_entries=1, feed_has_no_old_entries=0)  # type: ignore
 
@@ -809,7 +817,9 @@ class TestUnlinkOldEntries:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeNotChanged("l_feeds_to_entries"):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(days=1))
+                    unlinked = await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(days=1))
+
+        assert unlinked == set()
 
         assert_logs(logs, feed_has_no_old_entries=1, feed_old_entries_removed=0)  # type: ignore
 
@@ -829,7 +839,9 @@ class TestUnlinkOldEntries:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(days=0))
+                    unlinked = await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(days=0))
+
+        assert unlinked == {entry.id for entry in entries[keep_entries:]}
 
         assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
 
@@ -849,7 +861,9 @@ class TestUnlinkOldEntries:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(days=0))
+                    unlinked = await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(days=0))
+
+        assert unlinked == {entry.id for entry in entries[min_entries:]}
 
         assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
 
@@ -881,7 +895,9 @@ class TestUnlinkOldEntries:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_old_entries(execute, loaded_feed.id, period=day * 2)
+                    unlinked = await unlink_old_entries(execute, loaded_feed.id, period=day * 2)
+
+        assert unlinked == {entry.id for entry in entries[keep_entries:]}
 
         assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
 
@@ -915,7 +931,9 @@ class TestUnlinkOldEntries:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_old_entries(execute, loaded_feed.id)
+                    unlinked = await unlink_old_entries(execute, loaded_feed.id)
+
+        assert unlinked == {entry.id for entry in entries[keep_entries:]}
 
         assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
 
@@ -937,7 +955,9 @@ class TestUnlinkOldEntries:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(days=0))
+                    unlinked = await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(days=0))
+
+        assert unlinked == {entry.id for entry in entries[keep_entries:]}
 
         assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
 
@@ -961,7 +981,9 @@ class TestUnlinkOldEntries:
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(days=0))
+                    unlinked = await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(days=0))
+
+        assert unlinked == {entry.id for entry in entries[keep_entries:]}
 
         assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
 

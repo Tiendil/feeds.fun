@@ -2,6 +2,7 @@ import datetime
 
 import pytest
 import pytest_asyncio
+from pytest_mock import MockerFixture
 
 from ffun.core import utils
 from ffun.core.postgresql import execute
@@ -206,3 +207,16 @@ class TestGetEntriesByFilterWithFallback:
 
         assert len(loaded_entries) == 1
         assert loaded_entries[0].id in {entry.id for entry in entries}
+
+
+# TODO: improve
+class TestShrinkFeed:
+    @pytest.mark.asyncio
+    async def test_all_required_methods_called(self, mocker: MockerFixture, loaded_feed: Feed) -> None:
+        unlink_feed_tail = mocker.patch("ffun.library.domain.unlink_feed_tail")
+        unlink_old_entries = mocker.patch("ffun.library.domain.unlink_old_entries")
+
+        await shrink_feed(loaded_feed.id)
+
+        assert unlink_feed_tail.call_args_list == [mocker.call(loaded_feed.id)]  # type: ignore
+        assert unlink_old_entries.call_args_list == [mocker.call(loaded_feed.id)]  # type: ignore

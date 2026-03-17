@@ -238,12 +238,3 @@ async def remove_tags(tag_ids: list[TagId]) -> None:
     # tags itself will be removed later by cleaner
     await o_domain.remove_relations_for_tags(tag_ids)
     await s_domain.remove_rules_with_tags(tag_ids)
-
-
-async def shrink_feed(feed_id: FeedId) -> None:
-    logger.info("shrinking_feed_started", feed_id=feed_id)
-
-    await l_domain.unlink_feed_tail(feed_id)
-    await l_domain.unlink_old_entries(feed_id)
-
-    logger.info("shrinking_feed_finished", feed_id=feed_id)
