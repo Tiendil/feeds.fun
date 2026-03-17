@@ -173,42 +173,33 @@ async def get_entries_by_filter(
     #    and will not jump to the top of the feed when it is reingested from another feed that the user follows.
     #    Also, from the user's perspective the entry that appeared earlier should disapper earlier too.
     #
-    # Note: by using `created_at` for sorting in the outer select
-    #       we introduce a minor unsertainty in sorting
-    #       in case the limit separate entries with the same `created_at`.
-    #       However, it is a highly unlikely situation.
-    #
-    # Note: by using `created_at` for sorting in the inner select
-    #       we introduce a case of rare inconsistency,
-    #       when not every entry link is selected for the future sorting and selecting best created_at
-    #       because it is filtered out by `created_at > NOW() - %(period)s`
-    #
-    # Note: we may simplify this query by using l_entry.created_at, however, it eiether:
-    #       - introduces an incosinstency in filterting & sorting, because of using created_at
-    #         from different tables (inner and outer selects)
-    #       - leads to a much bigger entries extraction in the inner select
-    #         because of removing filtering by created_at from there
-    #       => for now we prefer to keep the more complex query and logic by using l_feeds_to_entries.created_at
-    #          as a single source of truth.
+    # Note: there is no significant gain from switching to l_entry.created_at
+    #       - we still need deduplication of entry ids => we'll still process all links for every feed
+    #       - it adds denormalization, because the best way to use l_entry.created_at
+    #         is to store its copy in l_feeds_to_entries
     sql = """
-    SELECT le.*, picked.created_at AS picked_created_at
+    SELECT le.*, limited.created_at AS limited_created_at
     FROM (
-        SELECT DISTINCT ON (entry_id) entry_id, created_at
-        FROM l_feeds_to_entries
-        WHERE created_at > NOW() - %(period)s
-          AND feed_id = ANY(%(feeds_ids)s)
-        ORDER BY entry_id, created_at ASC
-    ) AS picked
-    JOIN l_entries AS le ON le.id = picked.entry_id
-    ORDER BY picked.created_at DESC
-    LIMIT %(limit)s
+      SELECT entry_id, created_at
+      FROM (
+          SELECT DISTINCT ON (entry_id) entry_id, created_at
+          FROM l_feeds_to_entries
+          WHERE created_at > NOW() - %(period)s
+            AND feed_id = ANY(%(feeds_ids)s)
+          ORDER BY entry_id, created_at ASC
+      ) AS picked
+      ORDER BY created_at DESC, entry_id DESC
+      LIMIT %(limit)s
+    ) AS limited
+    LEFT JOIN l_entries AS le ON le.id = limited.entry_id
+    ORDER BY limited_created_at DESC, entry_id DESC
     """
 
     rows = await execute(sql, {"feeds_ids": feeds_ids, "period": period, "limit": limit})
 
     for row in rows:
         # TODO: this is a temporary hack, should be refactored later
-        row["published_at"] = row.pop("picked_created_at")
+        row["published_at"] = row.pop("limited_created_at")
 
     return [row_to_personalized_entry(row) for row in rows]
 
