@@ -8,7 +8,7 @@ from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.feeds.entities import Feed
 from ffun.library import operations
-from ffun.library.domain import get_entries_by_filter_with_fallback, get_entry, get_feeds_for_entry, normalize_entry
+from ffun.library.domain import get_entries_by_filter_with_fallback, get_entry, get_feeds_for_entry, normalize_entry, shrink_feed
 from ffun.library.entities import CollectedEntry, Entry, EntryChange
 from ffun.library.settings import settings
 from ffun.library.tests import helpers, make
@@ -83,7 +83,10 @@ class TestGetFeedsForEntry:
     async def test_no_feeds(self, new_entry: CollectedEntry, loaded_feed: Feed) -> None:
         await operations.catalog_entries(loaded_feed.id, [new_entry])
 
-        await operations.unlink_feed_tail(execute, loaded_feed.id, 0)
+        await execute("DELETE FROM l_feeds_to_entries WHERE feed_id = %(feed_id)s AND entry_id = %(entry_id)s", {
+            "feed_id": loaded_feed.id,
+            "entry_id": new_entry.id,
+        })
 
         feeds = await get_feeds_for_entry(new_entry.id)
 
@@ -106,8 +109,8 @@ class TestGetEntriesByFilterWithFallback:
     async def prepared_entries(self, loaded_feed: Feed, time_border: datetime.datetime) -> list[Entry]:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_published_time(
-            entries_ids=[entry.id for entry in entries], new_time=time_border - datetime.timedelta(seconds=10)
+        await helpers.update_links_created_time(
+            loaded_feed.id, [entry.id for entry in entries], time_border - datetime.timedelta(seconds=10)
         )
 
         all_entries = await operations.get_entries_by_ids(ids=[entry.id for entry in entries])
@@ -131,9 +134,7 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_published_time(
-            entries_ids=[entries[-1].id], new_time=time_border - datetime.timedelta(seconds=10)
-        )
+        await helpers.update_link_created_time(loaded_feed.id, entries[-1].id, time_border - datetime.timedelta(seconds=10))
 
         loaded_entries = await get_entries_by_filter_with_fallback(
             feeds_ids=[loaded_feed.id], period=time_delta, limit=10, fallback_limit=10
@@ -147,9 +148,7 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_published_time(
-            entries_ids=[entries[-1].id], new_time=time_border - datetime.timedelta(seconds=10)
-        )
+        await helpers.update_link_created_time(loaded_feed.id, entries[-1].id, time_border - datetime.timedelta(seconds=10))
 
         loaded_entries = await get_entries_by_filter_with_fallback(
             feeds_ids=[loaded_feed.id], period=time_delta, limit=1, fallback_limit=10
@@ -164,8 +163,8 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_published_time(
-            entries_ids=[entry.id for entry in entries], new_time=time_border - datetime.timedelta(seconds=10)
+        await helpers.update_links_created_time(
+            loaded_feed.id, [entry.id for entry in entries], time_border - datetime.timedelta(seconds=10)
         )
 
         loaded_entries = await get_entries_by_filter_with_fallback(
@@ -180,9 +179,10 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_published_time(
-            entries_ids=[entry.id for entry in entries],
-            new_time=utils.now() - settings.max_entry_age - datetime.timedelta(days=1),
+        await helpers.update_links_created_time(
+            loaded_feed.id,
+            [entry.id for entry in entries],
+            utils.now() - settings.max_entry_age - datetime.timedelta(days=1),
         )
 
         loaded_entries = await get_entries_by_filter_with_fallback(
@@ -197,8 +197,8 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_published_time(
-            entries_ids=[entry.id for entry in entries], new_time=time_border - datetime.timedelta(seconds=10)
+        await helpers.update_links_created_time(
+            loaded_feed.id, [entry.id for entry in entries], time_border - datetime.timedelta(seconds=10)
         )
 
         loaded_entries = await get_entries_by_filter_with_fallback(
@@ -213,10 +213,12 @@ class TestGetEntriesByFilterWithFallback:
 class TestShrinkFeed:
     @pytest.mark.asyncio
     async def test_all_required_methods_called(self, mocker: MockerFixture, loaded_feed: Feed) -> None:
-        unlink_feed_tail = mocker.patch("ffun.library.domain.unlink_feed_tail")
-        unlink_old_entries = mocker.patch("ffun.library.domain.unlink_old_entries")
+        unlink_feed_tail = mocker.patch("ffun.library.operations.unlink_feed_tail")
+        unlink_old_entries = mocker.patch("ffun.library.operations.unlink_old_entries")
 
         await shrink_feed(loaded_feed.id)
 
-        assert unlink_feed_tail.call_args_list == [mocker.call(loaded_feed.id)]  # type: ignore
-        assert unlink_old_entries.call_args_list == [mocker.call(loaded_feed.id)]  # type: ignore
+        unlink_feed_tail.assert_called_once()  # type: ignore
+        unlink_old_entries.assert_called_once()  # type: ignore
+        assert unlink_feed_tail.call_args.args[1] == loaded_feed.id  # type: ignore
+        assert unlink_old_entries.call_args.args[1] == loaded_feed.id  # type: ignore
