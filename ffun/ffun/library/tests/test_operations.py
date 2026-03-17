@@ -1010,22 +1010,31 @@ class TestRemoveEntriesByIds:
             await remove_entries_by_ids(execute, [])
 
     @pytest.mark.asyncio
-    async def test_remove(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
+    async def test_remove(
+        self,
+        loaded_feed: Feed,
+        another_loaded_feed: Feed,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch("ffun.library.settings.settings.min_entries_per_feed", 6)
+
         entries = await make.n_entries_list(loaded_feed, n=10)
 
         await catalog_entries(
             another_loaded_feed.id,
             [entry.collected_entry() for entry in entries[2:7]],
         )
+        await catalog_entries(loaded_feed.id, entries[:6])
 
-        await unlink_feed_tail(execute, loaded_feed.id, 6)
+        unlinked = await unlink_feed_tail(execute, loaded_feed.id, 6)
+        await try_mark_as_orphanes(execute, unlinked)
 
-        # 0,1 entries goes to orphanes
-        # 2,3 is linked only to another_loaded_feed
-        # 4,5,6 is linked to both feeds
-        # 7,8,9 is linked only to loaded_feed
+        # 8 is orphaned
+        # 6 is linked only to another_loaded_feed
+        # 4,5 are linked to both feeds
+        # 0 is linked only to loaded_feed
 
-        entries_to_remove = [entries[0].id, entries[3].id, entries[5].id, entries[6].id, entries[8].id]
+        entries_to_remove = [entries[0].id, entries[4].id, entries[5].id, entries[6].id, entries[8].id]
 
         async with TableSizeDelta("l_orphaned_entries", delta=-1):
             async with TableSizeDelta("l_feeds_to_entries", delta=-6):
@@ -1056,24 +1065,22 @@ class TestGetOrphanedEntries:
         assert await get_orphaned_entries(limit=0) == set()
 
     @pytest.mark.asyncio
-    async def test_orphaned_entries(self, loaded_feed: Feed) -> None:
-        entries = await make.n_entries_list(loaded_feed, n=5)
+    async def test_orphaned_entries(self) -> None:
+        ids = {new_entry_id(), new_entry_id()}
+        await try_mark_as_orphanes(execute, ids)
 
-        await unlink_feed_tail(execute, loaded_feed.id, 2)
-
-        assert await get_orphaned_entries(limit=100) == {entry.id for entry in entries[2:]}
+        assert await get_orphaned_entries(limit=100) == ids
 
     @pytest.mark.asyncio
-    async def test_limit(self, loaded_feed: Feed) -> None:
-        entries = await make.n_entries_list(loaded_feed, n=5)
-
-        await unlink_feed_tail(execute, loaded_feed.id, 1)
+    async def test_limit(self) -> None:
+        ids = {new_entry_id() for _ in range(10)}
+        await try_mark_as_orphanes(execute, ids)
 
         orphaned_entries = await get_orphaned_entries(limit=2)
 
         assert len(orphaned_entries) == 2
 
-        assert len(orphaned_entries & {entry.id for entry in entries[1:]}) == 2
+        assert len(orphaned_entries & ids) == 2
 
 
 class TestTryMarkAsOrphanes:
@@ -1091,11 +1098,12 @@ class TestTryMarkAsOrphanes:
             await try_mark_as_orphanes(execute, [entry.id for entry in entries])
 
     @pytest.mark.asyncio
-    async def test_orphanes_found(self, loaded_feed: Feed) -> None:
+    async def test_orphanes_found(self, loaded_feed: Feed, mocker: MockerFixture) -> None:
+        mocker.patch("ffun.library.settings.settings.min_entries_per_feed", 3)
         entries = await make.n_entries_list(loaded_feed, n=5)
+        await catalog_entries(loaded_feed.id, entries[:3])
 
-        with mock.patch("ffun.library.operations.try_mark_as_orphanes"):
-            await unlink_feed_tail(execute, loaded_feed.id, 3)
+        await unlink_feed_tail(execute, loaded_feed.id, 3)
 
         async with TableSizeDelta("l_orphaned_entries", delta=2):
             await try_mark_as_orphanes(execute, [entry.id for entry in entries])
@@ -1113,10 +1121,13 @@ class TestSyncOrphanedEntries:
             await sync_orphaned_entries()
 
     @pytest.mark.asyncio
-    async def test_keep_actual_orphaned_entries(self, loaded_feed: Feed) -> None:
+    async def test_keep_actual_orphaned_entries(self, loaded_feed: Feed, mocker: MockerFixture) -> None:
+        mocker.patch("ffun.library.settings.settings.min_entries_per_feed", 3)
         entries = await make.n_entries_list(loaded_feed, n=5)
+        await catalog_entries(loaded_feed.id, entries[:3])
 
-        await unlink_feed_tail(execute, loaded_feed.id, 3)
+        unlinked = await unlink_feed_tail(execute, loaded_feed.id, 3)
+        await try_mark_as_orphanes(execute, unlinked)
 
         async with TableSizeNotChanged("l_orphaned_entries"):
             await sync_orphaned_entries()
@@ -1126,10 +1137,18 @@ class TestSyncOrphanedEntries:
         assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries[3:]}
 
     @pytest.mark.asyncio
-    async def test_remove_no_longer_orphaned_entries(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
+    async def test_remove_no_longer_orphaned_entries(
+        self,
+        loaded_feed: Feed,
+        another_loaded_feed: Feed,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch("ffun.library.settings.settings.min_entries_per_feed", 3)
         entries = await make.n_entries_list(loaded_feed, n=5)
+        await catalog_entries(loaded_feed.id, entries[:3])
 
-        await unlink_feed_tail(execute, loaded_feed.id, 3)
+        unlinked = await unlink_feed_tail(execute, loaded_feed.id, 3)
+        await try_mark_as_orphanes(execute, unlinked)
         await catalog_entries(
             another_loaded_feed.id,
             [entries[3].collected_entry()],
