@@ -105,7 +105,7 @@ async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) ->
     #    for each entry and feed_to_entry link, so we can rely on `created_at`
     #    in all other places as a sorting criteria for entries in feeds.
     #    That's why we catalog entries in reversed order, so the oldest entry will have the oldest `created_at`.
-    for entry in reversed(entries):  # TODO: test reversed
+    for entry in reversed(entries):
         if await _catalog_entry(feed_id, entry, ingested_at):
             count += 1
 

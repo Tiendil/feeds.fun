@@ -244,6 +244,9 @@ class TestCatalogEntries:
         assert_times_is_near(loaded_new_entry.created_at, utils.now())
         assert_times_is_near(loaded_another_new_entry.created_at, utils.now())
 
+        # test that entries saved in reversed order
+        assert loaded_new_entry.created_at > loaded_another_new_entry.created_at
+
         assert loaded_new_entry == new_entry.fake_entry(loaded_new_entry.created_at)
         assert loaded_another_new_entry == another_new_entry.fake_entry(loaded_another_new_entry.created_at)
 
