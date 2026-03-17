@@ -322,7 +322,6 @@ async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | 
     await try_mark_as_orphanes(execute, potential_orphanes)
 
 
-# TODO: tests
 async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: datetime.timedelta | None = None) -> None:
     """Ensure that feed contains no entries older than `period`."""
 
@@ -336,8 +335,8 @@ async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: date
         logger.info("feed_has_no_entries", feed_id=feed_id)
         return
 
-    # We sort by `created_at` instead of `<ingested_at, created_at>`
-    # because from the user's perspective the entry that appeared earlier should be removed earlier too
+    # We sort by `created_at` because from the user's perspective
+    # the entry that appeared earlier should be removed earlier too
     sql = """
     WITH protected AS (
         SELECT entry_id
@@ -349,7 +348,7 @@ async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: date
     old_rows AS (
         SELECT feed_id, entry_id
         FROM l_feeds_to_entries
-        WHERE feed_id = %(feed_id)s AND created < NOW() - %(period)s
+        WHERE feed_id = %(feed_id)s AND created_at < NOW() - %(period)s
     )
     DELETE FROM l_feeds_to_entries
     USING old_rows

@@ -744,8 +744,20 @@ class TestUnlinkFeedTail:
 class TestUnlinkOldEntries:
 
     @pytest.mark.asyncio
+    async def test_no_entries(self, loaded_feed: Feed) -> None:
+        with capture_logs() as logs:
+            async with TableSizeNotChanged("l_feeds_to_entries"):
+                async with TableSizeNotChanged("l_entries"):
+                    await unlink_old_entries(execute, loaded_feed.id)
+
+        assert_logs(logs, feed_has_no_entries=1, feed_has_no_old_entries=0)  # type: ignore
+
+    @pytest.mark.asyncio
     async def test_no_old_entries(self, loaded_feed: Feed) -> None:
-        entries = await make.n_entries_list(loaded_feed, n=5)
+        min_entries = settings.min_entries_per_feed
+        keep_entries = min_entries + 3
+
+        entries = await make.n_entries_list(loaded_feed, n=keep_entries)
 
         with capture_logs() as logs:  # type: ignore
             async with TableSizeNotChanged("l_feeds_to_entries"):
@@ -754,113 +766,115 @@ class TestUnlinkOldEntries:
 
         assert_logs(logs, feed_has_no_old_entries=1, feed_old_entries_removed=0)  # type: ignore
 
-        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
 
         assert {entry.id for entry in feed_entries} == {entry.id for entry in entries}
 
     @pytest.mark.asyncio
-    async def test_all_old_entries(self, loaded_feed: Feed) -> None:
-        entries = await make.n_entries_list(loaded_feed, n=settings.min_entries_per_feed + 5)
+    async def test_respect_last_ingestion(self, loaded_feed: Feed) -> None:
+        min_entries = settings.min_entries_per_feed
+        keep_entries = min_entries + 3
 
-        await helpers.update_published_time(
-            entries_ids=[entry.id for entry in entries], new_time=utils.now() - datetime.timedelta(seconds=1)
-        )
+        entries = await make.n_entries_list(loaded_feed, n=keep_entries + 5)
 
-        with capture_logs() as logs:  # type: ignore
-            async with TableSizeDelta("l_feeds_to_entries", delta=-5):
-                async with TableSizeNotChanged("l_entries"):
-                    await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(seconds=0))
-
-        assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
-
-        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
-        orphaned_entries = await get_orphaned_entries(limit=100500)
-
-        loaded_entries_ids = {entry.id for entry in feed_entries}
-        orphaned_entries_ids = orphaned_entries & {entry.id for entry in entries}
-
-        assert len(loaded_entries_ids) == settings.min_entries_per_feed
-        assert len(orphaned_entries_ids) == 5
-        assert loaded_entries_ids.isdisjoint(orphaned_entries_ids)
-        assert loaded_entries_ids | orphaned_entries_ids == {entry.id for entry in entries}
-
-    @pytest.mark.asyncio
-    async def test_keep_all_old_entries_at_min_entries_border(self, loaded_feed: Feed) -> None:
-        entries = await make.n_entries_list(loaded_feed, n=settings.min_entries_per_feed)
-
-        await helpers.update_published_time(
-            entries_ids=[entry.id for entry in entries], new_time=utils.now() - datetime.timedelta(seconds=1)
-        )
-
-        with capture_logs() as logs:  # type: ignore
-            async with TableSizeNotChanged("l_feeds_to_entries"):
-                async with TableSizeNotChanged("l_entries"):
-                    await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(seconds=0))
-
-        assert_logs(logs, feed_has_no_old_entries=1, feed_old_entries_removed=0)  # type: ignore
-
-        feed_links = await get_feed_links_for_entries(execute, [entry.id for entry in entries])
-
-        assert set(feed_links.keys()) == {entry.id for entry in entries}
-
-    @pytest.mark.asyncio
-    async def test_old_entries(self, loaded_feed: Feed) -> None:
-        entries = await make.n_entries_list(loaded_feed, n=settings.min_entries_per_feed + 5)
-
-        period = datetime.timedelta(days=1)
-        new_cataloged_time = utils.now() - period
-
-        await helpers.update_published_time(
-            entries_ids=[entry.id for entry in entries[settings.min_entries_per_feed :]], new_time=new_cataloged_time
-        )
+        await catalog_entries(loaded_feed.id, entries[:keep_entries])
 
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_old_entries(execute, loaded_feed.id, period=period)
+                    await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(days=0))
 
         assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
 
-        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
 
-        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[: settings.min_entries_per_feed]}
-
-        orphaned_entries = await get_orphaned_entries(limit=100500)
-
-        assert orphaned_entries & {entry.id for entry in entries} == {
-            entry.id for entry in entries[settings.min_entries_per_feed :]
-        }
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:keep_entries]}
 
     @pytest.mark.asyncio
-    async def test_unlink_only_oldest_entries_beyond_min_entries_border(self, loaded_feed: Feed) -> None:
-        entries = await make.n_entries_list(loaded_feed, n=settings.min_entries_per_feed + 5)
-        old_border_entries = entries[settings.min_entries_per_feed - 5 :]
-        period = datetime.timedelta(days=1)
-        base_time = utils.now() - period - datetime.timedelta(hours=1)
+    async def test_respect_min_entries(self, loaded_feed: Feed) -> None:
+        min_entries = settings.min_entries_per_feed
+        last_ingested = min_entries - 3
 
-        for index, entry in enumerate(old_border_entries):
-            await helpers.update_link_published_time(
-                loaded_feed.id, entry.id, base_time - datetime.timedelta(minutes=index)
-            )
+        entries = await make.n_entries_list(loaded_feed, n=min_entries + 5)
 
-        kept_old_entries = old_border_entries[:5]
-        unlinked_old_entries = old_border_entries[5:]
+        await catalog_entries(loaded_feed.id, entries[:last_ingested])
 
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
                 async with TableSizeNotChanged("l_entries"):
-                    await unlink_old_entries(execute, loaded_feed.id, period=period)
+                    await unlink_old_entries(execute, loaded_feed.id, period=datetime.timedelta(days=0))
 
         assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
 
-        feed_links = await get_feed_links_for_entries(execute, [entry.id for entry in old_border_entries])
-        remaining_old_entries = set(feed_links.keys())
-        orphaned_entries = await get_orphaned_entries(limit=100500)
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
 
-        assert remaining_old_entries == {entry.id for entry in kept_old_entries}
-        assert orphaned_entries & {entry.id for entry in old_border_entries} == {
-            entry.id for entry in unlinked_old_entries
-        }
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:min_entries]}
+
+    @pytest.mark.asyncio
+    async def test_respect_period(self, loaded_feed: Feed) -> None:
+        min_entries = settings.min_entries_per_feed
+        keep_entries = min_entries + 2
+
+        now = utils.now()
+        day = datetime.timedelta(days=1)
+
+        entries = await make.n_entries_list(loaded_feed, n=keep_entries + 5)
+        await catalog_entries(loaded_feed.id, entries[:min_entries])
+
+        await helpers.update_link_created_time(loaded_feed.id, entries[-1].id, now - 5*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-2].id, now - 5*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-3].id, now - 3*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-4].id, now - 3*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-5].id, now - 3*day)
+
+        await helpers.update_link_created_time(loaded_feed.id, entries[-6].id, now - 1*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-7].id, now - 1*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-8].id, now - 1*day)
+
+        with capture_logs() as logs:  # type: ignore
+            async with TableSizeDelta("l_feeds_to_entries", delta=-5):
+                async with TableSizeNotChanged("l_entries"):
+                    await unlink_old_entries(execute, loaded_feed.id, period=day * 2)
+
+        assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
+
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
+
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:keep_entries]}
+
+    @pytest.mark.asyncio
+    async def test_default_period(self, loaded_feed: Feed, mocker: MockerFixture) -> None:
+        min_entries = settings.min_entries_per_feed
+        keep_entries = min_entries + 2
+
+        now = utils.now()
+        day = datetime.timedelta(days=1)
+
+        entries = await make.n_entries_list(loaded_feed, n=keep_entries + 5)
+        await catalog_entries(loaded_feed.id, entries[:min_entries])
+
+        await helpers.update_link_created_time(loaded_feed.id, entries[-1].id, now - 5*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-2].id, now - 5*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-3].id, now - 3*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-4].id, now - 3*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-5].id, now - 3*day)
+
+        await helpers.update_link_created_time(loaded_feed.id, entries[-6].id, now - 1*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-7].id, now - 1*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-8].id, now - 1*day)
+
+        mocker.patch("ffun.library.settings.settings.max_entry_age", day * 2)
+
+        with capture_logs() as logs:  # type: ignore
+            async with TableSizeDelta("l_feeds_to_entries", delta=-5):
+                async with TableSizeNotChanged("l_entries"):
+                    await unlink_old_entries(execute, loaded_feed.id)
+
+        assert_logs(logs, feed_has_no_old_entries=0, feed_old_entries_removed=1)  # type: ignore
+
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
+
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:keep_entries]}
 
 
 class TestRemoveEntriesByIds:

@@ -37,6 +37,7 @@ async def update_link_created_time(feed_id: FeedId, entry_id: EntryId, new_time:
     )
 
 
+# TODO: remove
 async def update_link_published_time(feed_id: FeedId, entry_id: EntryId, new_time: datetime.datetime) -> None:
     await execute(
         (
@@ -45,6 +46,21 @@ async def update_link_published_time(feed_id: FeedId, entry_id: EntryId, new_tim
         ),
         {  # type: ignore
             "published_at": new_time,
+            "feed_id": feed_id,
+            "entry_id": entry_id,
+        },
+    )
+
+
+# TODO: remove
+async def update_link_ingested_time(feed_id: FeedId, entry_id: EntryId, new_time: datetime.datetime) -> None:
+    await execute(
+        (
+            "UPDATE l_feeds_to_entries SET ingested_at = %(ingested_at)s "
+            "WHERE feed_id = %(feed_id)s AND entry_id = %(entry_id)s"
+        ),
+        {  # type: ignore
+            "ingested_at": new_time,
             "feed_id": feed_id,
             "entry_id": entry_id,
         },
