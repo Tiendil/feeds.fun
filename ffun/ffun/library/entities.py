@@ -36,6 +36,7 @@ class Entry(BaseEntry):
 
     @property
     def global_age(self) -> datetime.timedelta:
+        # TODO: THAT MUST BE FIXED
         return utils.now() - self.published_at
 
     def collected_entry(self) -> "CollectedEntry":
