@@ -209,16 +209,19 @@ class TestGetEntriesByFilterWithFallback:
         assert loaded_entries[0].id in {entry.id for entry in entries}
 
 
-# TODO: improve
 class TestShrinkFeed:
     @pytest.mark.asyncio
     async def test_all_required_methods_called(self, mocker: MockerFixture, loaded_feed: Feed) -> None:
-        unlink_feed_tail = mocker.patch("ffun.library.operations.unlink_feed_tail")
-        unlink_old_entries = mocker.patch("ffun.library.operations.unlink_old_entries")
+        unlink_feed_tail = mocker.patch("ffun.library.operations.unlink_feed_tail", return_value={1, 2})
+        unlink_old_entries = mocker.patch("ffun.library.operations.unlink_old_entries", return_value={2, 3})
+        try_mark_as_orphanes = mocker.patch("ffun.library.operations.try_mark_as_orphanes")
 
         await shrink_feed(loaded_feed.id)
 
         unlink_feed_tail.assert_called_once()  # type: ignore
         unlink_old_entries.assert_called_once()  # type: ignore
+        try_mark_as_orphanes.assert_called_once()  # type: ignore
+
         assert unlink_feed_tail.call_args.args[1] == loaded_feed.id  # type: ignore
         assert unlink_old_entries.call_args.args[1] == loaded_feed.id  # type: ignore
+        assert try_mark_as_orphanes.call_args.args[1] == {1, 2, 3}  # type: ignore
