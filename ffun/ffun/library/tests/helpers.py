@@ -3,6 +3,7 @@ from typing import Iterable
 
 from ffun.core.postgresql import execute
 from ffun.domain.entities import EntryId, FeedId
+from ffun.library.operations import try_mark_as_orphanes
 
 
 async def update_link_created_time(feed_id: FeedId, entry_id: EntryId, new_time: datetime.datetime) -> None:
@@ -52,3 +53,4 @@ async def unlink_entries_from_feed(feed_id: FeedId, entry_ids: Iterable[EntryId]
         "DELETE FROM l_feeds_to_entries WHERE feed_id = %(feed_id)s AND entry_id = ANY(%(entry_ids)s)",
         {"feed_id": feed_id, "entry_ids": entries_ids},  # type: ignore
     )
+    await try_mark_as_orphanes(execute, entries_ids)

@@ -18,7 +18,7 @@ from ffun.feeds.tests import make as f_make
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import errors as l_errors
-from ffun.library.tests import make as l_make
+from ffun.library.tests import helpers as l_helpers, make as l_make
 from ffun.meta.domain import (
     _apply_renormalized_tags,
     _normalize_tag_uid,
@@ -177,7 +177,7 @@ class TestCleanOrphanedEntries:
     async def test(self, loaded_feed: Feed) -> None:
         entries = await l_make.n_entries_list(loaded_feed, n=10)
 
-        await l_domain.unlink_feed_tail(loaded_feed.id, offset=3)
+        await l_helpers.unlink_entries_from_feed(loaded_feed.id, [entry.id for entry in entries[3:]])
 
         removed_1 = await clean_orphaned_entries(chunk=5)
 
@@ -195,7 +195,7 @@ class TestCleanOrphanedEntries:
     async def test_sync_before_remove(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
         entries = await l_make.n_entries_list(loaded_feed, n=10)
 
-        await l_domain.unlink_feed_tail(loaded_feed.id, offset=3)
+        await l_helpers.unlink_entries_from_feed(loaded_feed.id, [entry.id for entry in entries[3:]])
         await l_domain.catalog_entries(
             another_loaded_feed.id,
             [entries[3].collected_entry()],
