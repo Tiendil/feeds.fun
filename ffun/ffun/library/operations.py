@@ -73,9 +73,9 @@ async def _catalog_entry(
     sql_insert_feed_to_entry = """
     INSERT INTO l_feeds_to_entries (feed_id, entry_id, ingested_at, entry_created_at)
     VALUES (%(feed_id)s, %(entry_id)s, %(ingested_at)s, %(entry_created_at)s)
-    ON CONFLICT (feed_id, entry_id) DO UPDATE
-      SET ingested_at = EXCLUDED.ingested_at
-      SET entry_created_at = EXCLUDED.entry_created_at
+    ON CONFLICT (feed_id, entry_id) DO UPDATE SET
+      ingested_at = EXCLUDED.ingested_at,
+      entry_created_at = EXCLUDED.entry_created_at
     """
 
     result = await execute(

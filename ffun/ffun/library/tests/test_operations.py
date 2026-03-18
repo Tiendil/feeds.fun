@@ -396,27 +396,20 @@ class TestGetEntriesByFilter:
         await catalog_entries(another_loaded_feed.id, [common_entry])
         old_time = time_border - datetime.timedelta(seconds=10)
 
-        await helpers.update_link_created_time(loaded_feed.id, entries[0].id, old_time)
-        await helpers.update_link_created_time(another_loaded_feed.id, another_entries[0].id, old_time)
+        await helpers.update_entry_created_time([entries[0].id, another_entries[0].id], old_time)
 
         all_entries = await get_entries_by_ids(ids=[entry.id for entry in chain(entries, another_entries, [common_entry])])
-        all_links = await get_feed_links_for_entries(execute, [entry.id for entry in chain(entries, another_entries, [common_entry])])
+        entries_1 = [all_entries[entry.id] for entry in entries]
+        entries_1.append(all_entries[common_entry.id])
 
-        def entry_for_feed(feed_id: FeedId, entry_id: EntryId) -> Entry:
-            entry = all_entries[entry_id]
-            assert entry is not None
+        entries_2 = [all_entries[entry.id] for entry in another_entries]
+        entries_2.append(all_entries[common_entry.id])
 
-            for link in all_links[entry_id]:
-                if link.feed_id == feed_id:
-                    return entry.replace(created_at=link.created_at)
+        assert all(entry is not None for entry in entries_1)
+        assert all(entry is not None for entry in entries_2)
 
-            raise NotImplementedError()
-
-        entries_1 = [entry_for_feed(loaded_feed.id, entry.id) for entry in entries]
-        entries_1.append(entry_for_feed(loaded_feed.id, common_entry.id))
-
-        entries_2 = [entry_for_feed(another_loaded_feed.id, entry.id) for entry in another_entries]
-        entries_2.append(entry_for_feed(another_loaded_feed.id, common_entry.id))
+        entries_1 = [entry for entry in entries_1 if entry is not None]
+        entries_2 = [entry for entry in entries_2 if entry is not None]
 
         entries_1.sort(key=lambda entry: entry.created_at)
         entries_2.sort(key=lambda entry: entry.created_at)
@@ -475,14 +468,14 @@ class TestGetEntriesByFilter:
 
         old_time = utils.now() - settings.max_entry_age - datetime.timedelta(seconds=1)
 
-        await helpers.update_link_created_time(loaded_feed.id, entries[0].id, old_time)
+        await helpers.update_entry_created_time([entries[0].id], old_time)
 
         loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
 
         assert {entry.id for entry in loaded_entries} == {entries[1].id, entries[2].id}
 
     @pytest.mark.asyncio
-    async def test_uses_feed_specific_created_at_for_shared_entry(
+    async def test_uses_fixed_entry_created_at_for_shared_entry(
         self, loaded_feed: Feed, another_loaded_feed: Feed
     ) -> None:
         entry_published_at = utils.now() - datetime.timedelta(hours=1)
@@ -513,12 +506,12 @@ class TestGetEntriesByFilter:
         assert another_feed_entries[0].id == common_entry.id
         assert combined_entries[0].id == common_entry.id
 
-        assert feed_entries[0].published_at == feed_created_at
-        assert another_feed_entries[0].published_at == another_feed_created_at
-        assert combined_entries[0].published_at == feed_created_at
+        assert feed_entries[0].published_at == loaded_entry.created_at
+        assert another_feed_entries[0].published_at == loaded_entry.created_at
+        assert combined_entries[0].published_at == loaded_entry.created_at
 
     @pytest.mark.asyncio
-    async def test_order_by_published_at_created_at_and_entry_id(self, loaded_feed: Feed) -> None:
+    async def test_order_by_entry_created_at_and_entry_id(self, loaded_feed: Feed) -> None:
         published_at = utils.now() - datetime.timedelta(hours=1)
         entries: list[CollectedEntry] = [
             make.fake_entry(loaded_feed.source_id, published_at=published_at) for _ in range(4)
@@ -537,11 +530,13 @@ class TestGetEntriesByFilter:
             await helpers.update_link_created_time(loaded_feed.id, entry.id, created_ats[entry.id])
 
         loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
+        all_entries = await get_entries_by_ids(ids=[entry.id for entry in entries])
 
-        def sort_key(entry: CollectedEntry) -> tuple[datetime.datetime, datetime.datetime, EntryId]:
-            return published_at, created_ats[entry.id], entry.id
-
-        expected_order = sorted(entries, key=sort_key, reverse=True)
+        expected_order = sorted(
+            [entry for entry in all_entries.values() if entry is not None],
+            key=lambda entry: (entry.created_at, entry.id),
+            reverse=True,
+        )
 
         assert [entry.id for entry in loaded_entries] == [entry.id for entry in expected_order]
 

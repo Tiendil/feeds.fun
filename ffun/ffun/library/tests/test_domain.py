@@ -109,8 +109,8 @@ class TestGetEntriesByFilterWithFallback:
     async def prepared_entries(self, loaded_feed: Feed, time_border: datetime.datetime) -> list[Entry]:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_links_created_time(
-            loaded_feed.id, [entry.id for entry in entries], time_border - datetime.timedelta(seconds=10)
+        await helpers.update_entry_created_time(
+            [entry.id for entry in entries], time_border - datetime.timedelta(seconds=10)
         )
 
         all_entries = await operations.get_entries_by_ids(ids=[entry.id for entry in entries])
@@ -134,7 +134,7 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_link_created_time(loaded_feed.id, entries[-1].id, time_border - datetime.timedelta(seconds=10))
+        await helpers.update_entry_created_time([entries[-1].id], time_border - datetime.timedelta(seconds=10))
 
         loaded_entries = await get_entries_by_filter_with_fallback(
             feeds_ids=[loaded_feed.id], period=time_delta, limit=10, fallback_limit=10
@@ -148,7 +148,7 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_link_created_time(loaded_feed.id, entries[-1].id, time_border - datetime.timedelta(seconds=10))
+        await helpers.update_entry_created_time([entries[-1].id], time_border - datetime.timedelta(seconds=10))
 
         loaded_entries = await get_entries_by_filter_with_fallback(
             feeds_ids=[loaded_feed.id], period=time_delta, limit=1, fallback_limit=10
@@ -163,8 +163,8 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_links_created_time(
-            loaded_feed.id, [entry.id for entry in entries], time_border - datetime.timedelta(seconds=10)
+        await helpers.update_entry_created_time(
+            [entry.id for entry in entries], time_border - datetime.timedelta(seconds=10)
         )
 
         loaded_entries = await get_entries_by_filter_with_fallback(
@@ -179,8 +179,7 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_links_created_time(
-            loaded_feed.id,
+        await helpers.update_entry_created_time(
             [entry.id for entry in entries],
             utils.now() - settings.max_entry_age - datetime.timedelta(days=1),
         )
@@ -197,8 +196,8 @@ class TestGetEntriesByFilterWithFallback:
     ) -> None:
         entries = await make.n_entries_list(loaded_feed, n=3)
 
-        await helpers.update_links_created_time(
-            loaded_feed.id, [entry.id for entry in entries], time_border - datetime.timedelta(seconds=10)
+        await helpers.update_entry_created_time(
+            [entry.id for entry in entries], time_border - datetime.timedelta(seconds=10)
         )
 
         loaded_entries = await get_entries_by_filter_with_fallback(

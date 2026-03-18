@@ -24,3 +24,19 @@ async def update_links_created_time(
 ) -> None:
     for entry_id in entries_ids:
         await update_link_created_time(feed_id, entry_id, new_time)
+
+
+async def update_entry_created_time(entries_ids: Iterable[EntryId], new_time: datetime.datetime) -> None:
+    entry_ids = list(entries_ids)
+
+    if not entry_ids:
+        return
+
+    await execute(
+        "UPDATE l_entries SET created_at = %(created_at)s WHERE id = ANY(%(entry_ids)s)",
+        {"created_at": new_time, "entry_ids": entry_ids},  # type: ignore
+    )
+    await execute(
+        "UPDATE l_feeds_to_entries SET entry_created_at = %(entry_created_at)s WHERE entry_id = ANY(%(entry_ids)s)",
+        {"entry_created_at": new_time, "entry_ids": entry_ids},  # type: ignore
+    )
