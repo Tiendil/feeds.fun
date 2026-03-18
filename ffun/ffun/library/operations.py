@@ -14,12 +14,25 @@ from ffun.library.settings import settings
 
 logger = logging.get_module_logger()
 
-# Note: We do not use `published_at` for ordering entries in feeds, because of the following reasons:
-# 1. Feeds without `published_at` data exist. There is no clear way to handle their ordering.
-# 2. Feeds can have weird `published_at` values:
-#    - in the future, because that's how devs desided to implement "locked head post" in their blog engine.
-#    - in the past such as `1970-01-01T00:00:00Z` because devs don't care about `published_at` value.
-#    - in wrong format.
+# 1. We do not use `published_at` for ordering entries in feeds, because of the following reasons:
+#    - Feeds without `published_at` data exist. There is no clear way to handle their ordering.
+#    - Feeds can have weird `published_at` values:
+#        - in the future, because that's how devs desided to implement "locked head post" in their blog engine.
+#        - in the past such as `1970-01-01T00:00:00Z` because devs don't care about `published_at` value.
+#        - in wrong format.
+#
+# 2. We use `ingested_at` as the mark of actuality of feed entries, see comments
+#    in `catalog_entries` and `_catalog_entry` for details.
+#
+# 3. We use `l_entries.created_at` (and its copy `l_feeds_to_entries.entry_created_at`)
+#    for sorting and filtering entries, see comments in `catalog_entries` and `_catalog_entry` for details.
+#
+# Note: currently we have too manu indexes on `l_feeds_to_entries`, there ways to reduce their number
+#       but they require some hacks:
+#       - We can replace l_feeds_to_entries.created_at with l_feeds_to_entries.entry_created_at in queries
+#         because for most sources (sites) they should be nearly equal to the actual publish date
+#       - We can remove index on `ingested_at` in favor of getting the link with the latest `created_at`
+#         and using its `ingested_at`.
 
 
 def row_to_entry(row: dict[str, Any]) -> Entry:
@@ -40,13 +53,29 @@ async def _catalog_entry(
     VALUES (%(id)s, %(source_id)s, %(title)s, %(body)s, %(external_id)s,
             %(external_url)s, %(external_tags)s, %(published_at)s)
     ON CONFLICT (source_id, external_id) DO NOTHING
-    RETURNING id
+    RETURNING id, created_at
     """
 
+    # 1. We expect that `entry_created_at` is constant.
+    #    However, we update it on conflict, just in case (we always have it).
+    #
+    # 2. We need `enty_created_at` as a fixed published_at date for feed entries to use in the HTTP API
+    #    without it we forced to use MIN(l_feeds_to_entries.created_at) which is specific to the concrete user
+    #    => HTTP API can not always determine the best published_at value for entry
+    #    => that overcomplicates API.
+    #
+    # 3. We can use `entry_created_at` safely enough because entry is unique per source
+    #    (source is a site, blog, etc.)
+    #    => we expect that entry will appear in feeds from the same source at the same time
+    #    We MUST to rethink that approach in case we'll make feed source wider
+    #    (for example, by uniting multiple sites), that is unlikely for now
+    #    => the simplicity of the HTTP API has priority over idiomaticity of the DB schema and semantics
     sql_insert_feed_to_entry = """
-    INSERT INTO l_feeds_to_entries (feed_id, entry_id, ingested_at)
-    VALUES (%(feed_id)s, %(entry_id)s, %(ingested_at)s)
-    ON CONFLICT (feed_id, entry_id) DO UPDATE SET ingested_at = EXCLUDED.ingested_at
+    INSERT INTO l_feeds_to_entries (feed_id, entry_id, ingested_at, entry_created_at)
+    VALUES (%(feed_id)s, %(entry_id)s, %(ingested_at)s, %(entry_created_at)s)
+    ON CONFLICT (feed_id, entry_id) DO UPDATE
+      SET ingested_at = EXCLUDED.ingested_at
+      SET entry_created_at = EXCLUDED.entry_created_at
     """
 
     result = await execute(
@@ -68,20 +97,22 @@ async def _catalog_entry(
     if result:
         new_entry_created = True
         entry_id = result[0]["id"]
+        entry_created_at = result[0]["created_at"]
     else:
         new_entry_created = False
         result = await execute(
-            "SELECT id FROM l_entries WHERE source_id = %(source_id)s AND external_id = %(external_id)s",
+            "SELECT id, created_at FROM l_entries WHERE source_id = %(source_id)s AND external_id = %(external_id)s",
             {"source_id": entry.source_id, "external_id": entry.external_id},
         )
 
         if result:
             entry_id = result[0]["id"]
+            entry_created_at = result[0]["created_at"]
         else:
             raise NotImplementedError("Can not find entry by source_id and external_id")
 
     await execute(
-        sql_insert_feed_to_entry, {"feed_id": feed_id, "entry_id": entry_id, "ingested_at": ingested_at,}
+        sql_insert_feed_to_entry, {"feed_id": feed_id, "entry_id": entry_id, "ingested_at": ingested_at, "entry_created_at": entry_created_at}
     )
 
     return new_entry_created
@@ -95,16 +126,15 @@ async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) ->
 
     count = 0
 
-    # 1. We process all ingested entries, as it is the only way to ensure
-    #    that there will be no unexpected jumps in time for entries from long feeds without a published date specified.
-    #    `_catalog_entry` will update `igested_at` for all loaded entries,
-    #    so we'll be able to detect and remove old feed entries that are not ingested anymore.
+    # 1. We use the time of the last ingestion as the marker of actuality of the feed entries.
+    #    We use that maker to decide which entries can be safely unlinked from the feed.
+    #    => We should update `ingested_at` for all entries in the feed on each load, even if entry is not new.
     #
     # 2. We expect that entries list is sorted by the feed source in some reasonable way to
-    #    represent publishing order (from new to old). It is important, because we set `created_at` independently
-    #    for each entry and feed_to_entry link, so we can rely on `created_at`
-    #    in all other places as a sorting criteria for entries in feeds.
-    #    That's why we catalog entries in reversed order, so the oldest entry will have the oldest `created_at`.
+    #    represent publishing order (from new to old). It is important, because we use `l_entries.created_at`
+    #    (and its denormalized copy in `l_feeds_to_entries.entry_created_at`) for filtering and sorting
+    #    entries.
+    #    => We catalog entries in reversed order, so the oldest entry will have the oldest `created_at`.
     for entry in reversed(entries):
         if await _catalog_entry(feed_id, entry, ingested_at):
             count += 1
@@ -156,51 +186,36 @@ async def get_entries_by_ids(ids: Iterable[EntryId]) -> dict[EntryId, Entry | No
     return result
 
 
-# TODO: maybe we shoud switch to l_entry.created_at to simplify http api
 async def get_entries_by_filter(
     feeds_ids: Iterable[FeedId], limit: int, period: datetime.timedelta | None = None
 ) -> list[PersonalizedEntry]:
     if period is None:
         period = settings.max_entry_age
 
-    # 1. When we are applying creation time restriction
-    #    we are looking at a time of entry linked to a requested feeds,
-    #    not the creation time from the entry itself
+    # 1. Check comments in `_catalog_entry` function for details.
     #
     # 2. We can not sort by `published_at` because it is absolutely unreliable
     #
-    # 3. Inner sorting choose entry link with the oldest `created_at` for each entry
-    #    to ensure that entry will stay at place where the user encountered it for the first time,
-    #    and will not jump to the top of the feed when it is reingested from another feed that the user follows.
-    #    Also, from the user's perspective the entry that appeared earlier should disapper earlier too.
-    #
-    # Note: there is no significant gain from switching to l_entry.created_at
-    #       - we still need deduplication of entry ids => we'll still process all links for every feed
-    #       - it adds denormalization, because the best way to use l_entry.created_at
-    #         is to store its copy in l_feeds_to_entries
+    # 3. We can do `DISTINCT entry_id, entry_created_at` because `entry_created_at` is constant
     sql = """
-    SELECT le.*, limited.created_at AS limited_created_at
+    SELECT le.*
     FROM (
-      SELECT entry_id, created_at
-      FROM (
-          SELECT DISTINCT ON (entry_id) entry_id, created_at
-          FROM l_feeds_to_entries
-          WHERE created_at > NOW() - %(period)s
-            AND feed_id = ANY(%(feeds_ids)s)
-          ORDER BY entry_id, created_at ASC
-      ) AS picked
-      ORDER BY created_at DESC, entry_id DESC
-      LIMIT %(limit)s
-    ) AS limited
-    LEFT JOIN l_entries AS le ON le.id = limited.entry_id
-    ORDER BY limited_created_at DESC, entry_id DESC
+        SELECT DISTINCT entry_id, entry_created_at
+        FROM l_feeds_to_entries
+        WHERE entry_created_at > NOW() - %(period)s
+          AND feed_id = ANY(%(feeds_ids)s)
+        ORDER BY entry_created_at DESC, entry_id DESC
+        LIMIT %(limit)s
+    ) AS picked
+    LEFT JOIN l_entries AS le ON le.id = picked.entry_id
+    ORDER BY created_at DESC, entry_id DESC
     """
 
     rows = await execute(sql, {"feeds_ids": feeds_ids, "period": period, "limit": limit})
 
     for row in rows:
         # TODO: this is a temporary hack, should be refactored later
-        row["published_at"] = row.pop("limited_created_at")
+        row["published_at"] = row["created_at"]
 
     return [row_to_personalized_entry(row) for row in rows]
 

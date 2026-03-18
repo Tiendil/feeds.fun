@@ -27,10 +27,6 @@ class BaseEntry(BaseEntity):
 
 
 class Entry(BaseEntry):
-    # TODO: this published_at MUST be removed after we remove user-owned API keys logic
-    #       with removing this published_at, we also could remove l_entries.published_at column
-    #       from the DB, since it contain not-so-correct values
-    #       (published_at is a property of FeedEntryLink, not of Entry)
     published_at: datetime.datetime
     created_at: datetime.datetime
 
