@@ -1,11 +1,13 @@
 import datetime
+from unittest import mock
 
 import pytest
 import pytest_asyncio
 from pytest_mock import MockerFixture
 
 from ffun.core import utils
-from ffun.core.postgresql import execute
+from ffun.domain.domain import new_entry_id
+from ffun.domain.entities import EntryId
 from ffun.feeds.entities import Feed
 from ffun.library import operations
 from ffun.library.domain import (
@@ -89,13 +91,7 @@ class TestGetFeedsForEntry:
     async def test_no_feeds(self, new_entry: CollectedEntry, loaded_feed: Feed) -> None:
         await operations.catalog_entries(loaded_feed.id, [new_entry])
 
-        await execute(
-            "DELETE FROM l_feeds_to_entries WHERE feed_id = %(feed_id)s AND entry_id = %(entry_id)s",
-            {
-                "feed_id": loaded_feed.id,
-                "entry_id": new_entry.id,
-            },
-        )
+        await helpers.unlink_entries_from_feed(loaded_feed.id, [new_entry.id])
 
         feeds = await get_feeds_for_entry(new_entry.id)
 
@@ -220,16 +216,23 @@ class TestGetEntriesByFilterWithFallback:
 class TestShrinkFeed:
     @pytest.mark.asyncio
     async def test_all_required_methods_called(self, mocker: MockerFixture, loaded_feed: Feed) -> None:
-        unlink_feed_tail = mocker.patch("ffun.library.operations.unlink_feed_tail", return_value={1, 2})
-        unlink_old_entries = mocker.patch("ffun.library.operations.unlink_old_entries", return_value={2, 3})
-        try_mark_as_orphanes = mocker.patch("ffun.library.operations.try_mark_as_orphanes")
+        shared_entry_id = new_entry_id()
+        removed_from_tail: set[EntryId] = {shared_entry_id, new_entry_id()}
+        removed_old_entries: set[EntryId] = {shared_entry_id, new_entry_id()}
+        removed_entries: set[EntryId] = removed_from_tail | removed_old_entries
+
+        unlink_feed_tail: mock.AsyncMock = mocker.patch(
+            "ffun.library.operations.unlink_feed_tail",
+            return_value=removed_from_tail,
+        )
+        unlink_old_entries: mock.AsyncMock = mocker.patch(
+            "ffun.library.operations.unlink_old_entries",
+            return_value=removed_old_entries,
+        )
+        try_mark_as_orphanes: mock.AsyncMock = mocker.patch("ffun.library.operations.try_mark_as_orphanes")
 
         await shrink_feed(loaded_feed.id)
 
-        unlink_feed_tail.assert_called_once()  # type: ignore
-        unlink_old_entries.assert_called_once()  # type: ignore
-        try_mark_as_orphanes.assert_called_once()  # type: ignore
-
-        assert unlink_feed_tail.call_args.args[1] == loaded_feed.id  # type: ignore
-        assert unlink_old_entries.call_args.args[1] == loaded_feed.id  # type: ignore
-        assert try_mark_as_orphanes.call_args.args[1] == {1, 2, 3}  # type: ignore
+        unlink_feed_tail.assert_called_once_with(mock.ANY, loaded_feed.id)
+        unlink_old_entries.assert_called_once_with(mock.ANY, loaded_feed.id)
+        try_mark_as_orphanes.assert_called_once_with(mock.ANY, removed_entries)

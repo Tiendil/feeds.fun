@@ -25,9 +25,7 @@ from ffun.parsers import entities as p_entities
 from ffun.parsers.tests import make as p_make
 
 
-def assert_entry_fields_equal_to_info(
-    entry_info: p_entities.EntryInfo, entry: l_entities.Entry
-) -> None:
+def assert_entry_fields_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:
     assert entry.title == entry_info.title
     assert entry.body == entry_info.body
     assert entry.external_id == entry_info.external_id
@@ -40,9 +38,7 @@ def assert_entriy_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entit
     assert entry.published_at == entry_info.published_at
 
 
-async def assert_filtered_entry_equal_to_info(
-    entry_info: p_entities.EntryInfo, entry: l_entities.Entry
-) -> None:
+async def assert_filtered_entry_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:
     assert_entry_fields_equal_to_info(entry_info, entry)
     assert entry.published_at is not None
 

@@ -17,7 +17,7 @@ logger = logging.get_module_logger()
 # 1. We do not use `published_at` for ordering entries in feeds, because of the following reasons:
 #    - Feeds without `published_at` data exist. There is no clear way to handle their ordering.
 #    - Feeds can have weird `published_at` values:
-#        - in the future, because that's how devs desided to implement "locked head post" in their blog engine.
+#        - in the future, because that's how devs decided to implement "locked head post" in their blog engine.
 #        - in the past such as `1970-01-01T00:00:00Z` because devs don't care about `published_at` value.
 #        - in wrong format.
 #
@@ -131,7 +131,7 @@ async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) ->
     #    (and its denormalized copy in `l_feeds_to_entries.entry_created_at`) for filtering and sorting
     #    entries.
     #    => We catalog entries in reversed order, so the oldest entry will have the oldest `created_at`.
-    for entry in reversed(entries):
+    for entry in reversed(list(entries)):
         if await _catalog_entry(feed_id, entry, ingested_at):
             count += 1
 
@@ -267,9 +267,11 @@ async def get_last_ingested_at(execute: ExecuteType, feed_id: FeedId) -> datetim
     result = await execute(sql, {"feed_id": feed_id})
 
     if not result:
-        return
+        return None
 
-    return result[0]["last_ingested_at"]  # type: ignore
+    last_ingested_at = result[0]["last_ingested_at"]
+    assert last_ingested_at is None or isinstance(last_ingested_at, datetime.datetime)
+    return last_ingested_at
 
 
 async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | None = None) -> set[EntryId]:
@@ -401,6 +403,9 @@ async def unlink_old_entries(
 
 # TODO: metrics for orphaned entries and for feeds that produce them
 async def try_mark_as_orphanes(execute: ExecuteType, entry_ids: set[EntryId]) -> None:
+    if not entry_ids:
+        return
+
     feed_links = await get_feed_links_for_entries(execute, entry_ids)
 
     orphans = [entry_id for entry_id in entry_ids if entry_id not in feed_links]

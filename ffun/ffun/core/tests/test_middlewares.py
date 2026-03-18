@@ -33,14 +33,14 @@ class TestHandleAPIError:
 
         request = MagicMock()
 
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             response = await _handle_api_error(request, error)
 
         assert request.state.api_error_code == "some.error.code"  # type: ignore
 
         capture_exception.assert_not_called()
 
-        assert logs == [  # type: ignore
+        assert logs == [
             {
                 "event": "api_error",
                 "log_level": "info",
@@ -74,14 +74,14 @@ class TestHandleUnexpectedError:
 
         request = MagicMock()
 
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             response = await _handle_unexpected_error(request, error)
 
         assert request.state.internal_error_code == "FakeError"  # type: ignore
 
         capture_exception.assert_called_once_with(error)
 
-        assert logs == [  # type: ignore
+        assert logs == [
             {
                 "event": "FakeError",
                 "log_level": "error",
@@ -206,19 +206,19 @@ class TestRequestMeasureMiddleware:
 
     @pytest.mark.asyncio
     async def test(self, client: AsyncClient) -> None:
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             await client.post("/spa/test/ok")
 
-        logs = [record for record in logs if record["event"] == "request_time"]  # type: ignore
+        logs = [record for record in logs if record["event"] == "request_time"]
 
-        assert logs == [  # type: ignore
-            {  # type: ignore
+        assert logs == [
+            {
                 "module": "ffun.core.middlewares",
                 "m_kind": "measure",
-                "m_value": logs[0]["m_value"],  # type: ignore
+                "m_value": logs[0]["m_value"],
                 "event": "request_time",
-                "request_uid": logs[0]["request_uid"],  # type: ignore
-                "m_labels": {  # type: ignore
+                "request_uid": logs[0]["request_uid"],
+                "m_labels": {
                     "http_path": "/spa/test/ok",
                     "result": "success",
                     "status_code": 200,
@@ -230,19 +230,19 @@ class TestRequestMeasureMiddleware:
 
     @pytest.mark.asyncio
     async def test_other_status_code(self, client: AsyncClient) -> None:
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             await client.get("/spa/test/ok")
 
-        logs = [record for record in logs if record["event"] == "request_time"]  # type: ignore
+        logs = [record for record in logs if record["event"] == "request_time"]
 
-        assert logs == [  # type: ignore
-            {  # type: ignore
+        assert logs == [
+            {
                 "module": "ffun.core.middlewares",
                 "m_kind": "measure",
-                "m_value": logs[0]["m_value"],  # type: ignore
+                "m_value": logs[0]["m_value"],
                 "event": "request_time",
-                "request_uid": logs[0]["request_uid"],  # type: ignore
-                "m_labels": {  # type: ignore
+                "request_uid": logs[0]["request_uid"],
+                "m_labels": {
                     "http_path": "/spa/test/ok",
                     "result": "success",
                     "status_code": 405,
@@ -254,19 +254,19 @@ class TestRequestMeasureMiddleware:
 
     @pytest.mark.asyncio
     async def test_wrong_url(self, client: AsyncClient) -> None:
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             await client.post("/api/bla-bla-bla")
 
-        logs = [record for record in logs if record["event"] == "request_time"]  # type: ignore
+        logs = [record for record in logs if record["event"] == "request_time"]
 
-        assert logs == [  # type: ignore
-            {  # type: ignore
+        assert logs == [
+            {
                 "module": "ffun.core.middlewares",
                 "m_kind": "measure",
-                "m_value": logs[0]["m_value"],  # type: ignore
+                "m_value": logs[0]["m_value"],
                 "event": "request_time",
-                "request_uid": logs[0]["request_uid"],  # type: ignore
-                "m_labels": {  # type: ignore
+                "request_uid": logs[0]["request_uid"],
+                "m_labels": {
                     "http_path": "wrong",
                     "result": "success",
                     "status_code": 404,
@@ -278,18 +278,18 @@ class TestRequestMeasureMiddleware:
 
     @pytest.mark.asyncio
     async def test_internal_error(self, client: AsyncClient) -> None:
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             await client.post("/spa/test/internal-error")
 
-        logs = [record for record in logs if record["event"] == "request_time"]  # type: ignore
+        logs = [record for record in logs if record["event"] == "request_time"]
 
-        assert logs[0] == {  # type: ignore
+        assert logs[0] == {
             "module": "ffun.core.middlewares",
             "m_kind": "measure",
-            "m_value": logs[0]["m_value"],  # type: ignore
+            "m_value": logs[0]["m_value"],
             "event": "request_time",
-            "request_uid": logs[0]["request_uid"],  # type: ignore
-            "m_labels": {  # type: ignore
+            "request_uid": logs[0]["request_uid"],
+            "m_labels": {
                 "http_path": "/spa/test/internal-error",
                 "result": "internal_error",
                 "status_code": 500,
@@ -300,18 +300,18 @@ class TestRequestMeasureMiddleware:
 
     @pytest.mark.asyncio
     async def test_expected_error(self, client: AsyncClient) -> None:
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             await client.post("/spa/test/expected-error")
 
-        logs = [record for record in logs if record["event"] == "request_time"]  # type: ignore
+        logs = [record for record in logs if record["event"] == "request_time"]
 
-        assert logs[0] == {  # type: ignore
+        assert logs[0] == {
             "module": "ffun.core.middlewares",
             "m_kind": "measure",
-            "m_value": logs[0]["m_value"],  # type: ignore
+            "m_value": logs[0]["m_value"],
             "event": "request_time",
-            "request_uid": logs[0]["request_uid"],  # type: ignore
-            "m_labels": {  # type: ignore
+            "request_uid": logs[0]["request_uid"],
+            "m_labels": {
                 "http_path": "/spa/test/expected-error",
                 "result": "api_error",
                 "status_code": 200,
