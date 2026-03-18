@@ -7,7 +7,7 @@ from ffun.domain import urls as d_urls
 from ffun.domain.entities import EntryId, FeedId, UnknownUrl
 from ffun.feeds import domain as f_domain
 from ffun.library import operations
-from ffun.library.entities import Entry, EntryChange, FeedEntryLink, PersonalizedEntry
+from ffun.library.entities import Entry, EntryChange, FeedEntryLink
 
 logger = logging.get_module_logger()
 
@@ -91,7 +91,7 @@ async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange
 
 async def get_entries_by_filter_with_fallback(
     feeds_ids: list[FeedId], period: datetime.timedelta | None, limit: int, fallback_limit: int
-) -> list[PersonalizedEntry]:
+) -> list[Entry]:
 
     entries = await get_entries_by_filter(feeds_ids=feeds_ids, period=period, limit=limit)
 

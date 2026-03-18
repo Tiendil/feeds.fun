@@ -9,7 +9,7 @@ from ffun.core import logging, utils
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain.entities import EntryId, FeedId
 from ffun.library import errors
-from ffun.library.entities import CollectedEntry, Entry, FeedEntryLink, PersonalizedEntry
+from ffun.library.entities import CollectedEntry, Entry, FeedEntryLink
 from ffun.library.settings import settings
 
 logger = logging.get_module_logger()
@@ -37,11 +37,6 @@ logger = logging.get_module_logger()
 
 def row_to_entry(row: dict[str, Any]) -> Entry:
     return Entry(**row)
-
-
-def row_to_personalized_entry(row: dict[str, Any]) -> PersonalizedEntry:
-    row.pop("created_at", None)
-    return PersonalizedEntry(**row)
 
 
 @run_in_transaction
@@ -185,7 +180,7 @@ async def get_entries_by_ids(ids: Iterable[EntryId]) -> dict[EntryId, Entry | No
 
 async def get_entries_by_filter(
     feeds_ids: Iterable[FeedId], limit: int, period: datetime.timedelta | None = None
-) -> list[PersonalizedEntry]:
+) -> list[Entry]:
     if period is None:
         period = settings.max_entry_age
 
@@ -210,11 +205,7 @@ async def get_entries_by_filter(
 
     rows = await execute(sql, {"feeds_ids": feeds_ids, "period": period, "limit": limit})
 
-    for row in rows:
-        # TODO: this is a temporary hack, should be refactored later
-        row["published_at"] = row["created_at"]
-
-    return [row_to_personalized_entry(row) for row in rows]
+    return [row_to_entry(row) for row in rows]
 
 
 async def get_entries_after_pointer(

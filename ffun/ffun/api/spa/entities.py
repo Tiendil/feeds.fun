@@ -85,13 +85,13 @@ class Entry(BaseEntity):
     markers: list[Marker] = []
     score: int
     scoreContributions: dict[TagId, int]
-    publishedAt: datetime.datetime | None
+    publishedAt: datetime.datetime
     body: str | None = None
 
     @classmethod
     def from_internal(  # noqa: CFQ002
         cls,
-        entry: l_entities.PersonalizedEntry,
+        entry: l_entities.Entry,
         tags: Iterable[TagId],
         markers: Iterable[Marker],
         score: int,
@@ -106,7 +106,12 @@ class Entry(BaseEntity):
             markers=list(markers),
             score=score,
             scoreContributions=score_contributions,
-            publishedAt=entry.published_at,
+            # THIS IS AN INTENDED BEHAVIOR
+            # we set publishedAt for the frontend as global entry creation time
+            # because it is the only reliable time with "published" semantic
+            # actual published_at is absolutely unreliable because comes from the third-party sources
+            # and can be broken in numerous ways.
+            publishedAt=entry.created_at,
             body=entry.body if with_body else None,
         )
 

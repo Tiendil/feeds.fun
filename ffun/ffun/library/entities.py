@@ -21,13 +21,13 @@ class BaseEntry(BaseEntity):
     external_id: str
     external_url: AbsoluteUrl
     external_tags: set[str]
+    published_at: datetime.datetime
 
     def log_info(self) -> dict[str, Any]:
         return {"id": self.id, "source_id": self.source_id, "title": self.title, "external_url": self.external_url}
 
 
 class Entry(BaseEntry):
-    published_at: datetime.datetime
     created_at: datetime.datetime
 
     @property
@@ -47,22 +47,8 @@ class Entry(BaseEntry):
             published_at=self.published_at,
         )
 
-    def personalized_entry(self, published_at: datetime.datetime | None) -> "PersonalizedEntry":
-        return PersonalizedEntry(
-            id=self.id,
-            source_id=self.source_id,
-            title=self.title,
-            body=self.body,
-            external_id=self.external_id,
-            external_url=self.external_url,
-            external_tags=self.external_tags,
-            published_at=published_at,
-        )
-
 
 class CollectedEntry(BaseEntry):
-    published_at: datetime.datetime
-
     def fake_entry(self, created_at: datetime.datetime) -> Entry:
         return Entry(
             id=self.id,
@@ -75,10 +61,6 @@ class CollectedEntry(BaseEntry):
             published_at=self.published_at,
             created_at=created_at,
         )
-
-
-class PersonalizedEntry(BaseEntry):
-    published_at: datetime.datetime | None
 
 
 class EntryChange(BaseEntity):

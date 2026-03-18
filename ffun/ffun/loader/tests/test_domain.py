@@ -26,7 +26,7 @@ from ffun.parsers.tests import make as p_make
 
 
 def assert_entry_fields_equal_to_info(
-    entry_info: p_entities.EntryInfo, entry: l_entities.Entry | l_entities.PersonalizedEntry
+    entry_info: p_entities.EntryInfo, entry: l_entities.Entry
 ) -> None:
     assert entry.title == entry_info.title
     assert entry.body == entry_info.body
@@ -40,8 +40,8 @@ def assert_entriy_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entit
     assert entry.published_at == entry_info.published_at
 
 
-async def assert_personalized_entry_equal_to_info(
-    entry_info: p_entities.EntryInfo, entry: l_entities.PersonalizedEntry
+async def assert_filtered_entry_equal_to_info(
+    entry_info: p_entities.EntryInfo, entry: l_entities.Entry
 ) -> None:
     assert_entry_fields_equal_to_info(entry_info, entry)
     assert entry.published_at is not None
@@ -49,7 +49,7 @@ async def assert_personalized_entry_equal_to_info(
     loaded_entry = await l_domain.get_entry(entry.id)
 
     assert_entriy_equal_to_info(entry_info, loaded_entry)
-    assert entry.published_at == loaded_entry.created_at
+    assert entry.published_at == loaded_entry.published_at
 
 
 class TestDetectOrphaned:
@@ -187,7 +187,7 @@ class TestStoreEntries:
 
         for entry_info, entry in zip(entry_infos, loaded_entries):
             assert entry.source_id == saved_feed.source_id
-            await assert_personalized_entry_equal_to_info(entry_info, entry)
+            await assert_filtered_entry_equal_to_info(entry_info, entry)
 
     @pytest.mark.asyncio
     async def test_save_in_parts(self, saved_feed: f_entities.Feed) -> None:
@@ -215,7 +215,7 @@ class TestStoreEntries:
 
         for entry_info, entry in zip(entry_infos, loaded_entries):
             assert entry.source_id == saved_feed.source_id
-            await assert_personalized_entry_equal_to_info(entry_info, entry)
+            await assert_filtered_entry_equal_to_info(entry_info, entry)
 
         with capture_logs() as logs:  # type: ignore
             await store_entries(saved_feed, entry_infos)
@@ -233,7 +233,7 @@ class TestStoreEntries:
 
         for entry_info, entry in zip(entry_infos, loaded_entries):
             assert entry.source_id == saved_feed.source_id
-            await assert_personalized_entry_equal_to_info(entry_info, entry)
+            await assert_filtered_entry_equal_to_info(entry_info, entry)
 
     @pytest.mark.asyncio
     async def test_skip_all_entries(self, saved_feed: f_entities.Feed) -> None:
@@ -317,7 +317,7 @@ class TestProcessFeed:
 
         for entry_info, entry in zip(entry_infos, loaded_entries):
             assert entry.source_id == saved_feed.source_id
-            await assert_personalized_entry_equal_to_info(entry_info, entry)
+            await assert_filtered_entry_equal_to_info(entry_info, entry)
 
     @pytest.mark.asyncio
     async def test_cleanup_logic_called__when_feed_is_updated(

@@ -506,9 +506,9 @@ class TestGetEntriesByFilter:
         assert another_feed_entries[0].id == common_entry.id
         assert combined_entries[0].id == common_entry.id
 
-        assert feed_entries[0].published_at == loaded_entry.created_at
-        assert another_feed_entries[0].published_at == loaded_entry.created_at
-        assert combined_entries[0].published_at == loaded_entry.created_at
+        assert feed_entries[0].published_at == loaded_entry.published_at
+        assert another_feed_entries[0].published_at == loaded_entry.published_at
+        assert combined_entries[0].published_at == loaded_entry.published_at
 
     @pytest.mark.asyncio
     async def test_order_by_entry_created_at_and_entry_id(self, loaded_feed: Feed) -> None:
