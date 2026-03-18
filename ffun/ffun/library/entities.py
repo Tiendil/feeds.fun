@@ -92,4 +92,3 @@ class FeedEntryLink(BaseEntity):
     feed_id: FeedId
     entry_id: EntryId
     created_at: datetime.datetime
-    published_at: datetime.datetime

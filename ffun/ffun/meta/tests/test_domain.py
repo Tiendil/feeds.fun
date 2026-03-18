@@ -18,7 +18,8 @@ from ffun.feeds.tests import make as f_make
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import errors as l_errors
-from ffun.library.tests import helpers as l_helpers, make as l_make
+from ffun.library.tests import helpers as l_helpers
+from ffun.library.tests import make as l_make
 from ffun.meta.domain import (
     _apply_renormalized_tags,
     _normalize_tag_uid,
@@ -29,7 +30,7 @@ from ffun.meta.domain import (
     clean_orphaned_tags,
     remove_entries,
     remove_tags,
-    renormalize_tags
+    renormalize_tags,
 )
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import NormalizedTag, RawTag, TagProperty, TagPropertyType
@@ -267,9 +268,7 @@ class TestCleanOrphanedFeeds:
 
         assert await clean_orphaned_feeds(chunk=100) == 3
 
-        assert unlink_all_mock.call_args_list == [
-            mocker.call(feed.id) for feed in feeds  # type: ignore
-        ]
+        assert unlink_all_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]  # type: ignore
 
         assert tech_remove_feed_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]  # type: ignore
 

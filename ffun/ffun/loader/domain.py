@@ -13,7 +13,6 @@ from ffun.library import entities as l_entities
 from ffun.loader import errors, operations
 from ffun.loader.entities import ProxyState
 from ffun.loader.settings import settings
-from ffun.meta import domain as m_domain
 from ffun.parsers import entities as p_entities
 
 logger = logging.get_module_logger()

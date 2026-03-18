@@ -46,7 +46,7 @@ def row_to_personalized_entry(row: dict[str, Any]) -> PersonalizedEntry:
 
 @run_in_transaction
 async def _catalog_entry(
-        execute: ExecuteType, feed_id: FeedId, entry: CollectedEntry, ingested_at: datetime.datetime
+    execute: ExecuteType, feed_id: FeedId, entry: CollectedEntry, ingested_at: datetime.datetime
 ) -> bool:
     sql_insert_entry = """
     INSERT INTO l_entries (id, source_id, title, body, external_id, external_url, external_tags, published_at)
@@ -112,7 +112,8 @@ async def _catalog_entry(
             raise NotImplementedError("Can not find entry by source_id and external_id")
 
     await execute(
-        sql_insert_feed_to_entry, {"feed_id": feed_id, "entry_id": entry_id, "ingested_at": ingested_at, "entry_created_at": entry_created_at}
+        sql_insert_feed_to_entry,
+        {"feed_id": feed_id, "entry_id": entry_id, "ingested_at": ingested_at, "entry_created_at": entry_created_at},
     )
 
     return new_entry_created
@@ -146,7 +147,7 @@ async def get_feed_links_for_entries(
     execute: ExecuteType, entries_ids: Iterable[EntryId]
 ) -> dict[EntryId, list[FeedEntryLink]]:
     sql = """
-    SELECT entry_id, feed_id, ingested_at, created_at
+    SELECT entry_id, feed_id, created_at
     FROM l_feeds_to_entries
     WHERE entry_id = ANY(%(entries_ids)s)
     """
@@ -158,16 +159,12 @@ async def get_feed_links_for_entries(
     for row in result:
         entry_id = row["entry_id"]
         feed_id = row["feed_id"]
-        ingested_at = row["ingested_at"]
         created_at = row["created_at"]
 
         if entry_id not in feeds_for_entries:
             feeds_for_entries[entry_id] = []
 
-        feeds_for_entries[entry_id].append(
-            # TODO: rename published_at to ingested_at in FeedEntryLink
-            FeedEntryLink(feed_id=feed_id, entry_id=entry_id, published_at=ingested_at, created_at=created_at)
-        )
+        feeds_for_entries[entry_id].append(FeedEntryLink(feed_id=feed_id, entry_id=entry_id, created_at=created_at))
 
     return feeds_for_entries
 
@@ -286,7 +283,6 @@ async def get_last_ingested_at(execute: ExecuteType, feed_id: FeedId) -> datetim
 
 async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | None = None) -> set[EntryId]:
     """Ensure that feed contains no more than `offset` entries."""
-
     if offset is None:
         offset = settings.max_entries_per_feed
 
@@ -351,9 +347,10 @@ async def unlink_all(execute: ExecuteType, feed_id: FeedId) -> set[EntryId]:
     return unlinked
 
 
-async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: datetime.timedelta | None = None) -> set[EntryId]:
+async def unlink_old_entries(
+    execute: ExecuteType, feed_id: FeedId, period: datetime.timedelta | None = None
+) -> set[EntryId]:
     """Ensure that feed contains no entries older than `period`."""
-
     if period is None:
         period = settings.max_entry_age
 

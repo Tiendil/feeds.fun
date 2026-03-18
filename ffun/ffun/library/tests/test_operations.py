@@ -2,11 +2,11 @@ import datetime
 import uuid
 from itertools import chain
 from unittest import mock
-from pytest_mock import MockerFixture
 
 import psycopg
 import pytest
 import pytest_asyncio
+from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
 from ffun.core import utils
@@ -47,10 +47,6 @@ def _feed_entry_link_created_at(link: FeedEntryLink) -> datetime.datetime:
     return link.created_at
 
 
-def _collected_entry_published_at(entry: CollectedEntry) -> datetime.datetime:
-    return entry.published_at
-
-
 class TestCatalogEntry:
 
     @pytest.mark.asyncio
@@ -74,7 +70,6 @@ class TestCatalogEntry:
 
         assert link.feed_id == loaded_feed_id
         assert link.entry_id == new_entry.id
-        assert link.published_at == ingested_at
         assert_times_is_near(link.created_at, utils.now())
 
     @pytest.mark.asyncio
@@ -105,14 +100,12 @@ class TestCatalogEntry:
 
         assert link_1.feed_id == loaded_feed_id
         assert link_1.entry_id == new_entry.id
-        assert link_1.published_at == first_ingested_at
         assert_times_is_near(link_1.created_at, utils.now())
 
         link_2 = sorted_links[1]
 
         assert link_2.feed_id == another_loaded_feed_id
         assert link_2.entry_id == new_entry.id
-        assert link_2.published_at == second_ingested_at
         assert_times_is_near(link_2.created_at, utils.now())
 
         assert link_1.created_at < link_2.created_at
@@ -143,7 +136,6 @@ class TestCatalogEntry:
 
         assert link.feed_id == loaded_feed_id
         assert link.entry_id == new_entry.id
-        assert link.published_at == second_ingested_at
         assert link.created_at == initial_link.created_at
 
     @pytest.mark.asyncio
@@ -212,8 +204,8 @@ class TestCatalogEntry:
 
         assert link.feed_id == loaded_feed_id
         assert link.entry_id == another_new_entry.id
-        assert link.published_at == second_ingested_at
         assert_times_is_near(link.created_at, utils.now())
+
 
 class TestCatalogEntries:
     @pytest.mark.asyncio
@@ -338,14 +330,19 @@ class TestGetLastIngestedAt:
         second_entry = make.fake_entry(another_loaded_feed.source_id)
         third_entry = make.fake_entry(loaded_feed.source_id)
 
+        first_ingested_at = utils.now() - datetime.timedelta(minutes=2)
+        second_ingested_at = first_ingested_at + datetime.timedelta(minutes=1)
+        third_ingested_at = second_ingested_at + datetime.timedelta(minutes=1)
+
         await catalog_entries(loaded_feed.id, [first_entry])
         await catalog_entries(another_loaded_feed.id, [second_entry])
         await catalog_entries(loaded_feed.id, [third_entry])
 
-        links = await get_feed_links_for_entries(execute, [first_entry.id, third_entry.id])
-        expected_ingested_at = max(link.published_at for feed_links in links.values() for link in feed_links)
+        await helpers.update_link_ingested_time(loaded_feed.id, first_entry.id, first_ingested_at)
+        await helpers.update_link_ingested_time(another_loaded_feed.id, second_entry.id, second_ingested_at)
+        await helpers.update_link_ingested_time(loaded_feed.id, third_entry.id, third_ingested_at)
 
-        assert await get_last_ingested_at(execute, loaded_feed.id) == expected_ingested_at
+        assert await get_last_ingested_at(execute, loaded_feed.id) == third_ingested_at
 
 
 class TestGetFeedLinksForEntries:
@@ -399,7 +396,9 @@ class TestGetEntriesByFilter:
 
         await helpers.update_entry_created_time([entries[0].id, another_entries[0].id], old_time)
 
-        all_entries = await get_entries_by_ids(ids=[entry.id for entry in chain(entries, another_entries, [common_entry])])
+        all_entries = await get_entries_by_ids(
+            ids=[entry.id for entry in chain(entries, another_entries, [common_entry])]
+        )
         entries_1 = [all_entries[entry.id] for entry in entries]
         entries_1.append(all_entries[common_entry.id])
 
@@ -666,7 +665,7 @@ class TestUnlinkFeedTail:
         assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
 
         feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
-        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:min_entries + 3]}
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[: min_entries + 3]}
 
     @pytest.mark.asyncio
     async def test_respect_offset(self, loaded_feed: Feed) -> None:
@@ -688,7 +687,7 @@ class TestUnlinkFeedTail:
 
         feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
 
-        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:min_entries + 3]}
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[: min_entries + 3]}
 
     @pytest.mark.asyncio
     async def test_default_offset(self, loaded_feed: Feed, mocker: MockerFixture) -> None:
@@ -702,7 +701,7 @@ class TestUnlinkFeedTail:
 
         await catalog_entries(loaded_feed.id, entries[:min_entries])
 
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs():  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-3):
                 async with TableSizeNotChanged("l_entries"):
                     unlinked = await unlink_feed_tail(execute, loaded_feed.id)
@@ -761,7 +760,7 @@ class TestUnlinkFeedTail:
         assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
 
         feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
-        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:min_entries + 3]}
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[: min_entries + 3]}
 
         another_feed_entries = await get_entries_by_filter(feeds_ids=[another_loaded_feed.id], limit=100500)
         assert {entry.id for entry in another_feed_entries} == {entry.id for entry in another_entries}
@@ -787,7 +786,7 @@ class TestUnlinkFeedTail:
         assert_logs(logs, feed_has_no_entries_tail=0, feed_entries_tail_removed=1)  # type: ignore
 
         feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
-        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[:min_entries + 3]}
+        assert {entry.id for entry in feed_entries} == {entry.id for entry in entries[: min_entries + 3]}
 
         another_feed_entries = await get_entries_by_filter(feeds_ids=[another_loaded_feed.id], limit=100500)
         assert {entry.id for entry in another_feed_entries} == {entry.id for entry in entries}
@@ -935,15 +934,15 @@ class TestUnlinkOldEntries:
         entries = await make.n_entries_list(loaded_feed, n=keep_entries + 5)
         await catalog_entries(loaded_feed.id, entries[:min_entries])
 
-        await helpers.update_link_created_time(loaded_feed.id, entries[-1].id, now - 5*day)
-        await helpers.update_link_created_time(loaded_feed.id, entries[-2].id, now - 5*day)
-        await helpers.update_link_created_time(loaded_feed.id, entries[-3].id, now - 3*day)
-        await helpers.update_link_created_time(loaded_feed.id, entries[-4].id, now - 3*day)
-        await helpers.update_link_created_time(loaded_feed.id, entries[-5].id, now - 3*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-1].id, now - 5 * day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-2].id, now - 5 * day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-3].id, now - 3 * day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-4].id, now - 3 * day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-5].id, now - 3 * day)
 
-        await helpers.update_link_created_time(loaded_feed.id, entries[-6].id, now - 1*day)
-        await helpers.update_link_created_time(loaded_feed.id, entries[-7].id, now - 1*day)
-        await helpers.update_link_created_time(loaded_feed.id, entries[-8].id, now - 1*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-6].id, now - 1 * day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-7].id, now - 1 * day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-8].id, now - 1 * day)
 
         with capture_logs() as logs:  # type: ignore
             async with TableSizeDelta("l_feeds_to_entries", delta=-5):
@@ -969,15 +968,15 @@ class TestUnlinkOldEntries:
         entries = await make.n_entries_list(loaded_feed, n=keep_entries + 5)
         await catalog_entries(loaded_feed.id, entries[:min_entries])
 
-        await helpers.update_link_created_time(loaded_feed.id, entries[-1].id, now - 5*day)
-        await helpers.update_link_created_time(loaded_feed.id, entries[-2].id, now - 5*day)
-        await helpers.update_link_created_time(loaded_feed.id, entries[-3].id, now - 3*day)
-        await helpers.update_link_created_time(loaded_feed.id, entries[-4].id, now - 3*day)
-        await helpers.update_link_created_time(loaded_feed.id, entries[-5].id, now - 3*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-1].id, now - 5 * day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-2].id, now - 5 * day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-3].id, now - 3 * day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-4].id, now - 3 * day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-5].id, now - 3 * day)
 
-        await helpers.update_link_created_time(loaded_feed.id, entries[-6].id, now - 1*day)
-        await helpers.update_link_created_time(loaded_feed.id, entries[-7].id, now - 1*day)
-        await helpers.update_link_created_time(loaded_feed.id, entries[-8].id, now - 1*day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-6].id, now - 1 * day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-7].id, now - 1 * day)
+        await helpers.update_link_created_time(loaded_feed.id, entries[-8].id, now - 1 * day)
 
         mocker.patch("ffun.library.settings.settings.max_entry_age", day * 2)
 

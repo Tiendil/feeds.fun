@@ -8,7 +8,13 @@ from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.feeds.entities import Feed
 from ffun.library import operations
-from ffun.library.domain import get_entries_by_filter_with_fallback, get_entry, get_feeds_for_entry, normalize_entry, shrink_feed
+from ffun.library.domain import (
+    get_entries_by_filter_with_fallback,
+    get_entry,
+    get_feeds_for_entry,
+    normalize_entry,
+    shrink_feed,
+)
 from ffun.library.entities import CollectedEntry, Entry, EntryChange
 from ffun.library.settings import settings
 from ffun.library.tests import helpers, make
@@ -83,10 +89,13 @@ class TestGetFeedsForEntry:
     async def test_no_feeds(self, new_entry: CollectedEntry, loaded_feed: Feed) -> None:
         await operations.catalog_entries(loaded_feed.id, [new_entry])
 
-        await execute("DELETE FROM l_feeds_to_entries WHERE feed_id = %(feed_id)s AND entry_id = %(entry_id)s", {
-            "feed_id": loaded_feed.id,
-            "entry_id": new_entry.id,
-        })
+        await execute(
+            "DELETE FROM l_feeds_to_entries WHERE feed_id = %(feed_id)s AND entry_id = %(entry_id)s",
+            {
+                "feed_id": loaded_feed.id,
+                "entry_id": new_entry.id,
+            },
+        )
 
         feeds = await get_feeds_for_entry(new_entry.id)
 
