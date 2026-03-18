@@ -329,6 +329,28 @@ async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | 
     return {row["entry_id"] for row in result}
 
 
+async def unlink_all(execute: ExecuteType, feed_id: FeedId) -> set[EntryId]:
+    sql = """
+    DELETE FROM l_feeds_to_entries
+    WHERE feed_id = %(feed_id)s
+    RETURNING entry_id
+    """
+
+    result = await execute(sql, {"feed_id": feed_id})
+
+    if not result:
+        logger.info("feed_has_no_entries", feed_id=feed_id)
+        return set()
+
+    unlinked = {row["entry_id"] for row in result}
+
+    await try_mark_as_orphanes(execute, unlinked)
+
+    logger.info("feed_entries_removed", feed_id=feed_id, entries_removed=len(result))
+
+    return unlinked
+
+
 async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: datetime.timedelta | None = None) -> set[EntryId]:
     """Ensure that feed contains no entries older than `period`."""
 

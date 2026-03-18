@@ -100,7 +100,7 @@ async def clean_orphaned_feeds(chunk: int) -> int:
         logger.info("removing_orphaned_feed", feed_id=orphan_id)
 
         # unlink all linked entries
-        await l_domain.unlink_feed_tail(orphan_id, offset=0)
+        await l_domain.unlink_all(orphan_id)
 
         await f_domain.tech_remove_feed(orphan_id)
 

@@ -234,7 +234,6 @@ class TestCleanOrphanedEntries:
 # test that everything is connected correctly
 # detailed cases are covered in tests of functions called in clean_orphaned_entries
 class TestCleanOrphanedFeeds:
-
     @pytest_asyncio.fixture(autouse=True)  # type: ignore
     async def cleanup_orphaned_feeds(self) -> None:
         orphanes = await f_domain.get_orphaned_feeds(limit=10000, loaded_before=utils.now())
@@ -262,14 +261,14 @@ class TestCleanOrphanedFeeds:
         for feed in feeds:
             await f_domain.mark_feed_as_orphaned(feed.id)
 
-        unlink_feed_tail_mock = mocker.patch("ffun.library.domain.unlink_feed_tail")
+        unlink_all_mock = mocker.patch("ffun.library.domain.unlink_all")
         tech_remove_feed_mock = mocker.patch("ffun.feeds.domain.tech_remove_feed")
         unlink_feeds_from_all_users = mocker.patch("ffun.feeds_links.domain.unlink_feeds_from_all_users")
 
         assert await clean_orphaned_feeds(chunk=100) == 3
 
-        assert unlink_feed_tail_mock.call_args_list == [
-            mocker.call(feed.id, offset=0) for feed in feeds  # type: ignore
+        assert unlink_all_mock.call_args_list == [
+            mocker.call(feed.id) for feed in feeds  # type: ignore
         ]
 
         assert tech_remove_feed_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]  # type: ignore

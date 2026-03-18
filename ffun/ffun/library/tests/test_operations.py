@@ -34,6 +34,7 @@ from ffun.library.operations import (
     remove_entries_by_ids,
     sync_orphaned_entries,
     try_mark_as_orphanes,
+    unlink_all,
     unlink_feed_tail,
     unlink_old_entries,
     update_external_url,
@@ -790,6 +791,60 @@ class TestUnlinkFeedTail:
 
         another_feed_entries = await get_entries_by_filter(feeds_ids=[another_loaded_feed.id], limit=100500)
         assert {entry.id for entry in another_feed_entries} == {entry.id for entry in entries}
+
+
+class TestUnlinkAll:
+
+    @pytest.mark.asyncio
+    async def test_no_entries(self, loaded_feed: Feed) -> None:
+        with capture_logs() as logs:
+            async with TableSizeNotChanged("l_feeds_to_entries"):
+                async with TableSizeNotChanged("l_entries"):
+                    async with TableSizeNotChanged("l_orphaned_entries"):
+                        unlinked = await unlink_all(execute, loaded_feed.id)
+
+        assert unlinked == set()
+
+        assert_logs(logs, feed_has_no_entries=1, feed_entries_removed=0)  # type: ignore
+
+    @pytest.mark.asyncio
+    async def test_unlink_all_and_mark_orphans(self, loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=5)
+
+        async with TableSizeDelta("l_feeds_to_entries", delta=-5):
+            async with TableSizeNotChanged("l_entries"):
+                async with TableSizeDelta("l_orphaned_entries", delta=5):
+                    unlinked = await unlink_all(execute, loaded_feed.id)
+
+        assert unlinked == {entry.id for entry in entries}
+
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
+        assert feed_entries == []
+
+        orphaned_entries = await get_orphaned_entries(limit=100500)
+        assert orphaned_entries & {entry.id for entry in entries} == {entry.id for entry in entries}
+
+    @pytest.mark.asyncio
+    async def test_respect_neighbour_feed(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
+        entries = await make.n_entries_list(loaded_feed, n=5)
+
+        await catalog_entries(another_loaded_feed.id, entries)
+
+        async with TableSizeDelta("l_feeds_to_entries", delta=-5):
+            async with TableSizeNotChanged("l_entries"):
+                async with TableSizeNotChanged("l_orphaned_entries"):
+                    unlinked = await unlink_all(execute, loaded_feed.id)
+
+        assert unlinked == {entry.id for entry in entries}
+
+        feed_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100500)
+        assert feed_entries == []
+
+        another_feed_entries = await get_entries_by_filter(feeds_ids=[another_loaded_feed.id], limit=100500)
+        assert {entry.id for entry in another_feed_entries} == {entry.id for entry in entries}
+
+        orphaned_entries = await get_orphaned_entries(limit=100500)
+        assert orphaned_entries & {entry.id for entry in entries} == set()
 
 
 class TestUnlinkOldEntries:

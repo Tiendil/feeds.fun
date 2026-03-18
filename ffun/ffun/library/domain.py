@@ -35,6 +35,11 @@ async def remove_entries_by_ids(execute: ExecuteType, entries_ids: Iterable[Entr
     return await operations.remove_entries_by_ids(execute, entries_ids)
 
 
+@run_in_transaction
+async def unlink_all(execute: ExecuteType, feed_id: FeedId) -> set[EntryId]:
+    return await operations.unlink_all(execute, feed_id)
+
+
 async def get_entry(entry_id: EntryId) -> Entry:
     entries = await get_entries_by_ids([entry_id])
     found_entry = entries.get(entry_id)
