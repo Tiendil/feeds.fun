@@ -40,3 +40,15 @@ async def update_entry_created_time(entries_ids: Iterable[EntryId], new_time: da
         "UPDATE l_feeds_to_entries SET entry_created_at = %(entry_created_at)s WHERE entry_id = ANY(%(entry_ids)s)",
         {"entry_created_at": new_time, "entry_ids": entry_ids},  # type: ignore
     )
+
+
+async def unlink_entries_from_feed(feed_id: FeedId, entry_ids: Iterable[EntryId]) -> None:
+    entries_ids = list(entry_ids)
+
+    if not entries_ids:
+        return
+
+    await execute(
+        "DELETE FROM l_feeds_to_entries WHERE feed_id = %(feed_id)s AND entry_id = ANY(%(entry_ids)s)",
+        {"feed_id": feed_id, "entry_ids": entries_ids},  # type: ignore
+    )

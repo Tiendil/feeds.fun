@@ -12,6 +12,7 @@ from ffun.librarian.background_processors import EntriesProcessor
 from ffun.librarian.tests import make
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
+from ffun.library.tests import helpers as l_helpers
 from ffun.library.tests import make as l_make
 from ffun.ontology import domain as o_domain
 
@@ -159,10 +160,9 @@ class TestEntriesProcessors:
         entries = await l_make.n_entries(loaded_feed, 5)
         entries_list = list(entries.values())
 
-        # sort by published_at because we do unlink_feed_tail
+        # remove the oldest entries from their only feed to simulate stale queue items
         entries_list.sort(key=_feed_retention_sort_key)
-
-        await l_domain.unlink_feed_tail(loaded_feed.id, offset=3)
+        await l_helpers.unlink_entries_from_feed(loaded_feed.id, [entry.id for entry in entries_list[:2]])
 
         entries_ids = [entry.id for entry in entries_list]
 
