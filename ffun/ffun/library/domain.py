@@ -1,12 +1,15 @@
 import datetime
 from typing import Iterable
 
+from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, run_in_transaction
 from ffun.domain import urls as d_urls
 from ffun.domain.entities import EntryId, FeedId, UnknownUrl
 from ffun.feeds import domain as f_domain
 from ffun.library import operations
-from ffun.library.entities import Entry, EntryChange, FeedEntryLink, PersonalizedEntry
+from ffun.library.entities import Entry, EntryChange, FeedEntryLink
+
+logger = logging.get_module_logger()
 
 catalog_entries = operations.catalog_entries
 get_entries_by_ids = operations.get_entries_by_ids
@@ -21,16 +24,6 @@ _fallback_period = datetime.timedelta(days=365 * 100)
 
 
 @run_in_transaction
-async def unlink_feed_tail(execute: ExecuteType, feed_id: FeedId, offset: int | None = None) -> None:
-    return await operations.unlink_feed_tail(execute, feed_id, offset)
-
-
-@run_in_transaction
-async def unlink_old_entries(execute: ExecuteType, feed_id: FeedId, period: datetime.timedelta | None = None) -> None:
-    return await operations.unlink_old_entries(execute, feed_id, period)
-
-
-@run_in_transaction
 async def get_feed_links_for_entries(
     execute: ExecuteType, entries_ids: Iterable[EntryId]
 ) -> dict[EntryId, list[FeedEntryLink]]:
@@ -40,6 +33,11 @@ async def get_feed_links_for_entries(
 @run_in_transaction
 async def remove_entries_by_ids(execute: ExecuteType, entries_ids: Iterable[EntryId]) -> None:
     return await operations.remove_entries_by_ids(execute, entries_ids)
+
+
+@run_in_transaction
+async def unlink_all(execute: ExecuteType, feed_id: FeedId) -> set[EntryId]:
+    return await operations.unlink_all(execute, feed_id)
 
 
 async def get_entry(entry_id: EntryId) -> Entry:
@@ -93,7 +91,7 @@ async def normalize_entry(entry: Entry, apply: bool = False) -> list[EntryChange
 
 async def get_entries_by_filter_with_fallback(
     feeds_ids: list[FeedId], period: datetime.timedelta | None, limit: int, fallback_limit: int
-) -> list[PersonalizedEntry]:
+) -> list[Entry]:
 
     entries = await get_entries_by_filter(feeds_ids=feeds_ids, period=period, limit=limit)
 
@@ -104,3 +102,15 @@ async def get_entries_by_filter_with_fallback(
     entries = await get_entries_by_filter(feeds_ids=feeds_ids, period=_fallback_period, limit=fallback_limit)
 
     return entries
+
+
+@run_in_transaction
+async def shrink_feed(execute: ExecuteType, feed_id: FeedId) -> None:
+    logger.info("shrinking_feed_started", feed_id=feed_id)
+
+    removed_1 = await operations.unlink_feed_tail(execute, feed_id)
+    removed_2 = await operations.unlink_old_entries(execute, feed_id)
+
+    await operations.try_mark_as_orphanes(execute, removed_1 | removed_2)
+
+    logger.info("shrinking_feed_finished", feed_id=feed_id)

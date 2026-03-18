@@ -679,12 +679,12 @@ class TestUseApiKey:
             interval_started_at=interval_started_at,
         )
 
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             async with use_api_key(key_usage):
                 key_usage.used_cost = used_cost
 
         assert_logs_has_business_event(
-            logs,  # type: ignore
+            logs,
             "llm_api_key_used",
             user_id=internal_user_id,
             llm_provider=LLMProvider.test,
@@ -735,7 +735,7 @@ class TestUseApiKey:
             interval_started_at=interval_started_at,
         )
 
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             with pytest.raises(errors.UsedTokensHasNotSpecified):
                 async with use_api_key(key_usage):
                     assert key_usage.used_cost is None
@@ -744,7 +744,7 @@ class TestUseApiKey:
                     )
 
         assert_logs_has_business_event(
-            logs,  # type: ignore
+            logs,
             "llm_api_key_used",
             user_id=internal_user_id,
             llm_provider=LLMProvider.test,
@@ -799,13 +799,13 @@ class TestUseApiKey:
             interval_started_at=interval_started_at,
         )
 
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             with pytest.raises(FakeError):
                 async with use_api_key(key_usage):
                     raise FakeError()
 
         assert_logs_has_business_event(
-            logs,  # type: ignore
+            logs,
             "llm_api_key_used",
             user_id=internal_user_id,
             llm_provider=LLMProvider.test,
@@ -845,12 +845,12 @@ class TestUseApiKey:
             interval_started_at=interval_started_at,
         )
 
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             async with use_api_key(key_usage):
                 key_usage.used_cost = used_cost
 
         assert_logs_has_business_event(
-            logs,  # type: ignore
+            logs,
             "llm_api_key_used",
             user_id=None,
             llm_provider=LLMProvider.test,

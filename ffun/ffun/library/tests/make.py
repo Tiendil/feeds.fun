@@ -50,6 +50,10 @@ def fake_entry(  # noqa: CFQ002, CCR001
 
 async def n_entries(feed: Feed, n: int) -> dict[EntryId, Entry]:
     new_entries = [fake_entry(feed.source_id) for _ in range(n)]
+
+    # we sort entries because catalog_entries expects sorted entries
+    new_entries.sort(key=lambda entry: entry.published_at, reverse=True)
+
     await domain.catalog_entries(feed.id, new_entries)
     return await domain.get_entries_by_ids([entry.id for entry in new_entries])  # type: ignore
 

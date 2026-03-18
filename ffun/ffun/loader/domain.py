@@ -13,7 +13,6 @@ from ffun.library import entities as l_entities
 from ffun.loader import errors, operations
 from ffun.loader.entities import ProxyState
 from ffun.loader.settings import settings
-from ffun.meta import domain as m_domain
 from ffun.parsers import entities as p_entities
 
 logger = logging.get_module_logger()
@@ -172,7 +171,7 @@ async def process_feed(feed: Feed) -> None:
     # We should sync the list of entries in the feed even if we failed to load it
     # to automatically sync it after any configuration change.
     # We should not do so for orphaned feeds, because they will be removed.
-    await m_domain.shrink_feed(feed.id)
+    await l_domain.shrink_feed(feed.id)
 
 
 async def check_proxies_availability() -> None:

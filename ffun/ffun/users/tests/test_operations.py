@@ -30,14 +30,14 @@ class TestAddMapping:
 
     @pytest.mark.asyncio
     async def test_new_user(self, external_user_id: str) -> None:
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             async with TableSizeDelta("u_users", delta=1):
                 async with TableSizeDelta("u_mapping", delta=1):
                     internal_user_id = await add_mapping(primary_oidc_service_id, external_user_id)
 
         assert await get_mapping(primary_oidc_service_id, external_user_id) == internal_user_id
 
-        assert_logs_has_business_event(logs, "user_created", user_id=internal_user_id)  # type: ignore
+        assert_logs_has_business_event(logs, "user_created", user_id=internal_user_id)
 
     @pytest.mark.asyncio
     async def test_different_service(self, external_user_id: str) -> None:
@@ -51,14 +51,14 @@ class TestAddMapping:
 
     @pytest.mark.asyncio
     async def test_existing_user(self, external_user_id: str, internal_user_id: UserId) -> None:
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             async with TableSizeNotChanged("u_users"):
                 async with TableSizeNotChanged("u_mapping"):
                     assert await add_mapping(primary_oidc_service_id, external_user_id) == internal_user_id
 
         assert await get_mapping(primary_oidc_service_id, external_user_id) == internal_user_id
 
-        assert_logs_has_no_business_event(logs, "user_created")  # type: ignore
+        assert_logs_has_no_business_event(logs, "user_created")
 
 
 # most of functionality are tested in other tests

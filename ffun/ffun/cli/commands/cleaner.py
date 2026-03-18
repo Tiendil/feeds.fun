@@ -6,6 +6,7 @@ from ffun.application.application import with_app
 from ffun.core import logging
 from ffun.domain.entities import TagId
 from ffun.feeds import domain as f_domain
+from ffun.library import domain as l_domain
 from ffun.meta import domain as m_domain
 
 logger = logging.get_module_logger()
@@ -72,7 +73,7 @@ async def run_shrink_feeds(chunk: int, log_every_n: int) -> None:
             if counter % log_every_n == 0:
                 logger.info("shrinked_feeds", number=counter)
 
-            await m_domain.shrink_feed(feed.id)
+            await l_domain.shrink_feed(feed.id)
 
         logger.info("feeds_shrinking_finished")
 

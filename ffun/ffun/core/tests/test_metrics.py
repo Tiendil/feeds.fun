@@ -45,10 +45,10 @@ class TestAccumulator:
 
     def test_flush_if_time__no_measures(self, accumulator: Accumulator) -> None:
 
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             accumulator.flush_if_time()
 
-        assert_logs_has_no_business_slice(logs, name=accumulator.event)  # type: ignore
+        assert_logs_has_no_business_slice(logs, name=accumulator.event)
 
         assert accumulator._last_measure_at is None
         assert accumulator._count == 0
@@ -57,10 +57,10 @@ class TestAccumulator:
     def test_flush_if_time__measures_not_ready(self, accumulator: Accumulator) -> None:
         accumulator.measure(5)
 
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             accumulator.flush_if_time()
 
-        assert_logs_has_no_business_slice(logs, name=accumulator.event)  # type: ignore
+        assert_logs_has_no_business_slice(logs, name=accumulator.event)
 
         assert accumulator._last_measure_at is not None
         assert accumulator._count == 1
@@ -74,11 +74,11 @@ class TestAccumulator:
 
         accumulator._last_measure_at -= datetime.timedelta(seconds=11)
 
-        with capture_logs() as logs:  # type: ignore
+        with capture_logs() as logs:
             accumulator.flush_if_time()
 
         assert_logs_has_business_slice(
-            logs,  # type: ignore
+            logs,
             name=accumulator.event,
             user_id=None,
             count=2,

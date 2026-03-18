@@ -25,15 +25,27 @@ from ffun.parsers import entities as p_entities
 from ffun.parsers.tests import make as p_make
 
 
-def assert_entriy_equal_to_info(
-    entry_info: p_entities.EntryInfo, entry: l_entities.Entry | l_entities.PersonalizedEntry
-) -> None:
+def assert_entry_fields_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:
     assert entry.title == entry_info.title
     assert entry.body == entry_info.body
     assert entry.external_id == entry_info.external_id
     assert entry.external_url == entry_info.external_url
     assert entry.external_tags == entry_info.external_tags
+
+
+def assert_entriy_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:
+    assert_entry_fields_equal_to_info(entry_info, entry)
     assert entry.published_at == entry_info.published_at
+
+
+async def assert_filtered_entry_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:
+    assert_entry_fields_equal_to_info(entry_info, entry)
+    assert entry.published_at is not None
+
+    loaded_entry = await l_domain.get_entry(entry.id)
+
+    assert_entriy_equal_to_info(entry_info, loaded_entry)
+    assert entry.published_at == loaded_entry.published_at
 
 
 class TestDetectOrphaned:
@@ -171,7 +183,7 @@ class TestStoreEntries:
 
         for entry_info, entry in zip(entry_infos, loaded_entries):
             assert entry.source_id == saved_feed.source_id
-            assert_entriy_equal_to_info(entry_info, entry)
+            await assert_filtered_entry_equal_to_info(entry_info, entry)
 
     @pytest.mark.asyncio
     async def test_save_in_parts(self, saved_feed: f_entities.Feed) -> None:
@@ -199,7 +211,7 @@ class TestStoreEntries:
 
         for entry_info, entry in zip(entry_infos, loaded_entries):
             assert entry.source_id == saved_feed.source_id
-            assert_entriy_equal_to_info(entry_info, entry)
+            await assert_filtered_entry_equal_to_info(entry_info, entry)
 
         with capture_logs() as logs:  # type: ignore
             await store_entries(saved_feed, entry_infos)
@@ -217,7 +229,7 @@ class TestStoreEntries:
 
         for entry_info, entry in zip(entry_infos, loaded_entries):
             assert entry.source_id == saved_feed.source_id
-            assert_entriy_equal_to_info(entry_info, entry)
+            await assert_filtered_entry_equal_to_info(entry_info, entry)
 
     @pytest.mark.asyncio
     async def test_skip_all_entries(self, saved_feed: f_entities.Feed) -> None:
@@ -301,7 +313,7 @@ class TestProcessFeed:
 
         for entry_info, entry in zip(entry_infos, loaded_entries):
             assert entry.source_id == saved_feed.source_id
-            assert_entriy_equal_to_info(entry_info, entry)
+            await assert_filtered_entry_equal_to_info(entry_info, entry)
 
     @pytest.mark.asyncio
     async def test_cleanup_logic_called__when_feed_is_updated(
@@ -323,7 +335,7 @@ class TestProcessFeed:
         )
 
         extract_feed_info = mocker.patch("ffun.loader.domain.extract_feed_info", return_value=feed_info)
-        shrink_feed = mocker.patch("ffun.meta.domain.shrink_feed")
+        shrink_feed = mocker.patch("ffun.loader.domain.l_domain.shrink_feed")
 
         await fl_domain.add_link(internal_user_id, saved_feed.id)
 
@@ -342,7 +354,7 @@ class TestProcessFeed:
         await store_entries(saved_feed, entry_infos)
 
         extract_feed_info = mocker.patch("ffun.loader.domain.extract_feed_info", return_value=None)
-        shrink_feed = mocker.patch("ffun.meta.domain.shrink_feed")
+        shrink_feed = mocker.patch("ffun.loader.domain.l_domain.shrink_feed")
 
         await fl_domain.add_link(internal_user_id, saved_feed.id)
 

@@ -18,6 +18,7 @@ from ffun.feeds.tests import make as f_make
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import errors as l_errors
+from ffun.library.tests import helpers as l_helpers
 from ffun.library.tests import make as l_make
 from ffun.meta.domain import (
     _apply_renormalized_tags,
@@ -30,7 +31,6 @@ from ffun.meta.domain import (
     remove_entries,
     remove_tags,
     renormalize_tags,
-    shrink_feed,
 )
 from ffun.ontology import domain as o_domain
 from ffun.ontology.entities import NormalizedTag, RawTag, TagProperty, TagPropertyType
@@ -178,7 +178,7 @@ class TestCleanOrphanedEntries:
     async def test(self, loaded_feed: Feed) -> None:
         entries = await l_make.n_entries_list(loaded_feed, n=10)
 
-        await l_domain.unlink_feed_tail(loaded_feed.id, offset=3)
+        await l_helpers.unlink_entries_from_feed(loaded_feed.id, [entry.id for entry in entries[3:]])
 
         removed_1 = await clean_orphaned_entries(chunk=5)
 
@@ -196,7 +196,7 @@ class TestCleanOrphanedEntries:
     async def test_sync_before_remove(self, loaded_feed: Feed, another_loaded_feed: Feed) -> None:
         entries = await l_make.n_entries_list(loaded_feed, n=10)
 
-        await l_domain.unlink_feed_tail(loaded_feed.id, offset=3)
+        await l_helpers.unlink_entries_from_feed(loaded_feed.id, [entry.id for entry in entries[3:]])
         await l_domain.catalog_entries(
             another_loaded_feed.id,
             [entries[3].collected_entry()],
@@ -235,7 +235,6 @@ class TestCleanOrphanedEntries:
 # test that everything is connected correctly
 # detailed cases are covered in tests of functions called in clean_orphaned_entries
 class TestCleanOrphanedFeeds:
-
     @pytest_asyncio.fixture(autouse=True)  # type: ignore
     async def cleanup_orphaned_feeds(self) -> None:
         orphanes = await f_domain.get_orphaned_feeds(limit=10000, loaded_before=utils.now())
@@ -263,15 +262,13 @@ class TestCleanOrphanedFeeds:
         for feed in feeds:
             await f_domain.mark_feed_as_orphaned(feed.id)
 
-        unlink_feed_tail_mock = mocker.patch("ffun.library.domain.unlink_feed_tail")
+        unlink_all_mock = mocker.patch("ffun.library.domain.unlink_all")
         tech_remove_feed_mock = mocker.patch("ffun.feeds.domain.tech_remove_feed")
         unlink_feeds_from_all_users = mocker.patch("ffun.feeds_links.domain.unlink_feeds_from_all_users")
 
         assert await clean_orphaned_feeds(chunk=100) == 3
 
-        assert unlink_feed_tail_mock.call_args_list == [
-            mocker.call(feed.id, offset=0) for feed in feeds  # type: ignore
-        ]
+        assert unlink_all_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]  # type: ignore
 
         assert tech_remove_feed_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]  # type: ignore
 
@@ -310,18 +307,6 @@ class TestCleanOrphanedTags:
         assert remove_orphaned_tags_mock.call_args_list == [
             mocker.call(chunk=100, protected_tags=protected_tags)  # type: ignore
         ]
-
-
-class TestShrinkFeed:
-    @pytest.mark.asyncio
-    async def test_all_required_methods_called(self, mocker: MockerFixture, loaded_feed: Feed) -> None:
-        unlink_feed_tail = mocker.patch("ffun.library.domain.unlink_feed_tail")
-        unlink_old_entries = mocker.patch("ffun.library.domain.unlink_old_entries")
-
-        await shrink_feed(loaded_feed.id)
-
-        assert unlink_feed_tail.call_args_list == [mocker.call(loaded_feed.id)]  # type: ignore
-        assert unlink_old_entries.call_args_list == [mocker.call(loaded_feed.id)]  # type: ignore
 
 
 # test that everything is connected correctly

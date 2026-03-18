@@ -54,7 +54,7 @@ def add_routes_to_app(app: fastapi.FastAPI) -> None:
 
 
 async def _external_entries(  # pylint: disable=R0914
-    entries: Iterable[l_entities.PersonalizedEntry],
+    entries: Iterable[l_entities.Entry],
     with_body: bool,
     user_id: UserId | None,
     min_tag_count: int,
@@ -141,16 +141,10 @@ async def process_api_get_entries(
 
     found_entries = [entry for entry in entries.values() if entry is not None]
 
-    # TODO: We should refactor that in one of the next ways:
-    #       1. If the we have user_id here, we should load their feed links to the entries
-    #          and extract published_at from the links.
-    #       2. Update `GetEntriesByIdsResponse` to return entries without publishedAt at all.
-    personalized_entries = [entry.personalized_entry(published_at=None) for entry in found_entries]
-
     # We cannot know here the whole distribution of tags on the user side
     # => we set min_tag_count=0
     external_entries, tags_mapping = await _external_entries(
-        personalized_entries, with_body=True, user_id=user_id, min_tag_count=0
+        found_entries, with_body=True, user_id=user_id, min_tag_count=0
     )
 
     return entities.GetEntriesByIdsResponse(entries=external_entries, tagsMapping=tags_mapping)

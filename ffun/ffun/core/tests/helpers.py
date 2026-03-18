@@ -10,12 +10,12 @@ import pytest
 from structlog import _config as structlog_config
 from structlog import contextvars as structlog_contextvars
 from structlog.testing import LogCapture
-from structlog.types import EventDict
 
 from ffun.core.postgresql import execute
 from ffun.domain.entities import UserId
 
 PRODUCER = Callable[[], object]
+LOG_RECORDS = list[MutableMapping[str, object]]
 
 
 class Comparator:
@@ -174,7 +174,7 @@ def assert_times_is_near(
     assert abs(a - b) < delta
 
 
-def assert_logs(logs: list[MutableMapping[str, object]], **kwargs: int) -> None:
+def assert_logs(logs: LOG_RECORDS, **kwargs: int) -> None:
     found_enents = Counter(log["event"] for log in logs)
 
     for key, expected_count in kwargs.items():
@@ -184,9 +184,7 @@ def assert_logs(logs: list[MutableMapping[str, object]], **kwargs: int) -> None:
             )
 
 
-def assert_logs_has_record(  # noqa: CCR001
-    logs: list[MutableMapping[str, object]], name: str, **attributes: object
-) -> None:
+def assert_logs_has_record(logs: LOG_RECORDS, name: str, **attributes: object) -> None:  # noqa: CCR001
     found_records = False
 
     for record in logs:
@@ -217,7 +215,7 @@ def assert_log_context_vars(**expected: object) -> None:
         assert bound_vars.get(key) == value, f"Key {key} = {bound_vars} not equal to expected {value}"  # type: ignore
 
 
-def assert_logs_levels(logs: list[MutableMapping[str, object]], **kwargs: str) -> None:
+def assert_logs_levels(logs: LOG_RECORDS, **kwargs: str) -> None:
     for record in logs:
         if record["event"] in kwargs:
             assert record["log_level"] == kwargs[record["event"]], (  # type: ignore
@@ -225,14 +223,14 @@ def assert_logs_levels(logs: list[MutableMapping[str, object]], **kwargs: str) -
             )
 
 
-def assert_logs_have_no_errors(logs: list[MutableMapping[str, object]]) -> None:
+def assert_logs_have_no_errors(logs: LOG_RECORDS) -> None:
     for record in logs:
         if record["log_level"].lower() == "error":  # type: ignore
             pytest.fail(f"Error found in logs: {record}")
 
 
 @contextlib.contextmanager
-def capture_logs() -> Generator[list[EventDict], None, None]:
+def capture_logs() -> Generator[LOG_RECORDS, None, None]:
     """
     This is a modified version of capture_logs from structlog.testing
 
@@ -259,7 +257,7 @@ def capture_logs() -> Generator[list[EventDict], None, None]:
 
 
 def assert_logs_has_business_event(  # noqa: CCR001
-    logs: list[MutableMapping[str, object]],
+    logs: LOG_RECORDS,
     name: str,
     user_id: UserId | None,
     b_kind: str = "event",
@@ -286,9 +284,7 @@ def assert_logs_has_business_event(  # noqa: CCR001
         pytest.fail(f"Event {name} not found in logs")
 
 
-def assert_logs_has_no_business_event(
-    logs: list[MutableMapping[str, object]], name: str, b_kind: str = "event"
-) -> None:
+def assert_logs_has_no_business_event(logs: LOG_RECORDS, name: str, b_kind: str = "event") -> None:
     for record in logs:
         if record.get("b_kind") == b_kind and record["event"] == name:
             pytest.fail(f"Event {name} found in logs")
