@@ -1,9 +1,19 @@
 import datetime
 
+from ffun.core import utils
 from ffun.library.entities import CollectedEntry, Entry, PersonalizedEntry
 
 
 class TestEntry:
+    def test_global_age_uses_created_at(self, new_entry: CollectedEntry) -> None:
+        created_at = datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.UTC)
+        entry = new_entry.fake_entry(created_at).replace(published_at=created_at - datetime.timedelta(days=7))
+        before = utils.now()
+        global_age = entry.global_age
+        after = utils.now()
+
+        assert before - created_at <= global_age <= after - created_at
+
     def test_collected_entry(self, new_entry: CollectedEntry) -> None:
         created_at = datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.UTC)
         entry = new_entry.fake_entry(created_at)
