@@ -96,10 +96,6 @@ export const useEntriesStore = defineStore("entriesStore", () => {
           entry.body = existingEntry.body;
         }
 
-        if (entry.publishedAt === null && existingEntry.publishedAt !== null) {
-          entry.publishedAt = existingEntry.publishedAt;
-        }
-
         if (!updateTags) {
           entry.tags = _.cloneDeep(existingEntry.tags);
         }

@@ -29,6 +29,7 @@ class TestEntry:
             published_at=entry.published_at,
         )
 
+
 class TestCollectedEntry:
     def test_fake_entry(self, new_entry: CollectedEntry) -> None:
         created_at = datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.UTC)
