@@ -1,18 +1,69 @@
 import datetime
 
+import pytest
+
 from ffun.core import utils
 from ffun.library.entities import CollectedEntry, Entry
 
 
 class TestEntry:
-    def test_global_age_uses_created_at(self, new_entry: CollectedEntry) -> None:
+    @pytest.mark.parametrize(
+        ("published_at", "created_at", "expected_published_at"),
+        [
+            (
+                datetime.datetime(2026, 1, 2, 3, 4, 4, tzinfo=datetime.UTC),
+                datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.UTC),
+                datetime.datetime(2026, 1, 2, 3, 4, 4, tzinfo=datetime.UTC),
+            ),
+            (
+                datetime.datetime.min.replace(tzinfo=datetime.UTC),
+                datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.UTC),
+                datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.UTC),
+            ),
+            (
+                utils.zero_timestamp(),
+                datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.UTC),
+                datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.UTC),
+            ),
+            (
+                datetime.datetime(2026, 1, 2, 3, 4, 6, tzinfo=datetime.UTC),
+                datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.UTC),
+                datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.UTC),
+            ),
+        ],
+    )
+    def test_published_at_for_processing(
+        self,
+        new_entry: CollectedEntry,
+        published_at: datetime.datetime,
+        created_at: datetime.datetime,
+        expected_published_at: datetime.datetime,
+    ) -> None:
+        entry = new_entry.replace(published_at=published_at).fake_entry(created_at)
+
+        assert entry.published_at_for_processing == expected_published_at
+
+    def test_published_at_for_processing__asserts_timezone_in_published_at(self, new_entry: CollectedEntry) -> None:
         created_at = datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.UTC)
-        entry = new_entry.fake_entry(created_at).replace(published_at=created_at - datetime.timedelta(days=7))
+        entry = new_entry.replace(published_at=datetime.datetime(2026, 1, 2, 3, 4, 4)).fake_entry(created_at)
+
+        with pytest.raises(AssertionError):
+            _ = entry.published_at_for_processing
+
+    def test_published_at_for_processing__asserts_timezone_in_created_at(self, new_entry: CollectedEntry) -> None:
+        entry = new_entry.fake_entry(datetime.datetime(2026, 1, 2, 3, 4, 5))
+
+        with pytest.raises(AssertionError):
+            _ = entry.published_at_for_processing
+
+    def test_age_for_processing(self, new_entry: CollectedEntry) -> None:
+        created_at = datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.UTC)
+        entry = new_entry.replace(published_at=utils.zero_timestamp()).fake_entry(created_at)
         before = utils.now()
-        global_age = entry.global_age
+        age_for_processing = entry.age_for_processing
         after = utils.now()
 
-        assert before - created_at <= global_age <= after - created_at
+        assert before - created_at <= age_for_processing <= after - created_at
 
     def test_collected_entry(self, new_entry: CollectedEntry) -> None:
         created_at = datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.UTC)

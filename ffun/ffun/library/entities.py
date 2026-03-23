@@ -31,8 +31,46 @@ class Entry(BaseEntry):
     created_at: datetime.datetime
 
     @property
-    def global_age(self) -> datetime.timedelta:
-        return utils.now() - self.created_at
+    def published_at_for_processing(self) -> datetime.datetime:
+        """Entry published_at that is used to determine whether the entry is too old for processing.
+
+        We use the smart algorithm to determine the "real" published_at value
+        because an actual third-party published_at is absolutely unreliable.
+
+        Such behavior is required to reduce siturations when the user adds a new feed source,
+        and all entries from it is treated as published "now", which leads to spending
+        tokens on processing old entries, that normally shouldn't be processed.
+
+        The logic is the following.
+
+        Assumptions/expectations from other code:
+
+        - If the feed source has no published_at, it will be set equal to created_at
+          at the moment of entry creation.
+
+        Algorithm:
+
+        1. If published_at looks broken (start of epoch, datetime.min, etc.), we use created_at as published_at.
+        2. If published_at is in the future (relative to created_at), we use created_at as published_at.
+        3. Otherwise, we use published_at as is.
+        """
+        assert self.published_at.tzinfo is not None and self.published_at.utcoffset() is not None
+        assert self.created_at.tzinfo is not None and self.created_at.utcoffset() is not None
+
+        if self.published_at == datetime.datetime.min.replace(tzinfo=datetime.UTC):
+            return self.created_at
+
+        if self.published_at == utils.zero_timestamp():
+            return self.created_at
+
+        if self.published_at > self.created_at:
+            return self.created_at
+
+        return self.published_at
+
+    @property
+    def age_for_processing(self) -> datetime.timedelta:
+        return utils.now() - self.published_at_for_processing
 
     def collected_entry(self) -> "CollectedEntry":
         return CollectedEntry(
