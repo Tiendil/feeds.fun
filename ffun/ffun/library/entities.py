@@ -37,7 +37,7 @@ class Entry(BaseEntry):
         We use the smart algorithm to determine the "real" published_at value
         because an actual third-party published_at is absolutely unreliable.
 
-        Such behavior is required to reduce siturations when the user adds a new feed source,
+        Such behavior is required to reduce situations when the user adds a new feed source,
         and all entries from it is treated as published "now", which leads to spending
         tokens on processing old entries, that normally shouldn't be processed.
 
