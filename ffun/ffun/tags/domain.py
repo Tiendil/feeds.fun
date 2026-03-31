@@ -12,15 +12,15 @@ from ffun.tags.normalizers import NormalizerInfo, normalizers
 # - There are two options: define explicitly or implicitly (derive from categories)
 # - It may look like a good idea to define it explicitly, so we could have a normalizer
 #   that could say "I produce this new tag which should be processed as raw/preserve/final"
-# - But this approach leads to uncertainty when we doing re-normalization of tags in the database
+# - But this approach leads to uncertainty when we do re-normalization of tags in the database
 #   because we don't store the final normalization mode in the database
 #   (and it may be wrong in case of re-normalization)
 #   So, on re-normalization we use tag categories to derive the mode (again)
 #   We also use RawTag, not TagInNormalization as a result of running a normalizer.
-# - That's why it seems more consistent to try building logic of normalizators around categories only
-#   To be consistent in the whole system
-# => We expect, that normalizer, if it requires, will be able to set new categories for the tags it produces
-#    For example, there may be a normalizer that detects network domains in free-form tags
+# - That's why it seems more consistent to build the logic of normalizers around categories only,
+#   to keep the behavior consistent across the whole system.
+# => We expect that a normalizer, if needed, will be able to set new categories for the tags it produces.
+#    For example, there may be a normalizer that detects network domains in free-form tags.
 def mode_from_categories(categories: set[TagCategory]) -> NormalizationMode:  # noqa: CCR001
     # The order of checks is important here
 
