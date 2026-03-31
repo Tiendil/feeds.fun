@@ -8,7 +8,7 @@ from ffun.core import metrics
 from ffun.domain.entities import TagUid
 from ffun.ontology.entities import RawTag
 from ffun.tags import utils
-from ffun.tags.entities import TagCategory, TagInNormalization
+from ffun.tags.entities import NormalizationMode, TagCategory, TagInNormalization
 from ffun.tags.normalizers.base import FakeNormalizer, NormalizerAlwaysError, NormalizerInfo
 
 
@@ -62,6 +62,7 @@ class TestNormalizerInfo:
             parts=utils.uid_to_parts(uid),
             link=None,
             categories={TagCategory.test_preserve},
+            mode=NormalizationMode.preserve,
         )
 
     @pytest.fixture  # type: ignore

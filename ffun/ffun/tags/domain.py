@@ -2,21 +2,81 @@ from typing import Iterable
 
 from ffun.ontology.entities import NormalizedTag, RawTag
 from ffun.tags import converters, utils
-from ffun.tags.entities import NormalizationMode, TagInNormalization
+from ffun.tags.entities import NormalizationMode, TagCategory, TagInNormalization
 from ffun.tags.normalizers import NormalizerInfo, normalizers
 
 
+# Here is going some complicated unclear logic:
+# - normalizers work with TagInNormalization
+# - TagInNormalization should define how it should be processed by normalizers
+# - There are two options: define explicitly or implicitly (derive from categories)
+# - It may look like a good idea to define it explicitly, so we could have a normalizer
+#   that could say "I produce this new tag which should be processed as raw/preserve/final"
+# - But this approach leads to uncertainty when we do re-normalization of tags in the database
+#   because we don't store the final normalization mode in the database
+#   (and it may be wrong in case of re-normalization)
+#   So, on re-normalization we use tag categories to derive the mode (again)
+#   We also use RawTag, not TagInNormalization as a result of running a normalizer.
+# - That's why it seems more consistent to build the logic of normalizers around categories only,
+#   to keep the behavior consistent across the whole system.
+# => We expect that a normalizer, if needed, will be able to set new categories for the tags it produces.
+#    For example, there may be a normalizer that detects network domains in free-form tags.
+def mode_from_categories(categories: set[TagCategory]) -> NormalizationMode:  # noqa: CCR001
+    # The order of checks is important here
+
+    if TagCategory.network_domain in categories:
+        return NormalizationMode.final
+
+    if TagCategory.special in categories:
+        return NormalizationMode.final
+
+    # We do not normalize native feed tags, because:
+    # - We have no control over the logic that assigns them
+    # - Sometimes they are (semi-)technical (special terms, domain names, codes)
+    # - Sometimes they are very specific, like r-sideproject (for subreddits)
+    #   and we don't want to create a duplicated tag like r-sideprojects that actually has no meaning
+    if TagCategory.feed_tag in categories:
+        return NormalizationMode.final
+
+    if TagCategory.free_form in categories:
+        return NormalizationMode.raw
+
+    if TagCategory.test_final in categories:
+        return NormalizationMode.final
+
+    if TagCategory.test_preserve in categories:
+        return NormalizationMode.preserve
+
+    if TagCategory.test_raw in categories:
+        return NormalizationMode.raw
+
+    raise NotImplementedError(f"Tag with unknown categories: {categories}")
+
+
 def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
-    # we better normalize uids even for final tags:
-    # - In case all works well, they will remain unchanged
-    # - In case of some issues, we'll stop an error propagation here
-    uid = converters.normalize(tag.raw_uid)
+    # 1. We better normalize uids even for final tags:
+    #    - In case all works well, they will remain unchanged
+    #    - In case of some issues, we'll stop an error propagation here
+    # 2. We keep text normalization outside of the normalizers list, since:
+    #    - it is a common step for all tags, and we don't want to repeat it in each normalizer
+    #    - it is not a normalizer itself, but rather a preparation step for normalizers,
+    #      so it is better to keep it outside of the normalizers list. For example,
+    #      we fill .parts field on the base of normalized uid.
+
+    mode = mode_from_categories(tag.categories)
+
+    # We do not allow unicode characters in raw tags, they must be pure ASCII. At least for now.
+    # It can be changed in https://github.com/Tiendil/feeds.fun/issues/348
+    allow_unicode = mode != NormalizationMode.raw
+
+    uid = converters.normalize(tag.raw_uid, allow_unicode=allow_unicode)
 
     return TagInNormalization(
         uid=uid,
         parts=utils.uid_to_parts(uid),
         link=tag.link,
         categories=set(tag.categories),
+        mode=mode,
     )
 
 

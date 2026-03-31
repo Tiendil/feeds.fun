@@ -3,10 +3,33 @@ from pytest_mock import MockerFixture
 
 from ffun.domain.entities import TagUid, TagUidPart
 from ffun.ontology.entities import NormalizedTag, RawTag
-from ffun.tags.domain import apply_normalizers, normalize, prepare_for_normalization
+from ffun.tags.domain import apply_normalizers, mode_from_categories, normalize, prepare_for_normalization
 from ffun.tags.entities import NormalizationMode, TagCategory, TagInNormalization
 from ffun.tags.normalizers import FakeNormalizer, NormalizerAlwaysError, NormalizerInfo
+from ffun.tags.normalizers.base import Normalizer
 from ffun.tags.utils import uid_to_parts
+
+
+class TestModeFromCategories:
+    @pytest.mark.parametrize("category", TagCategory)
+    def test_each_category_has_mode(self, category: TagCategory) -> None:
+        assert mode_from_categories({category}) in NormalizationMode
+
+    @pytest.mark.parametrize(
+        "categories, expected_mode",
+        [
+            ({TagCategory.network_domain}, NormalizationMode.final),
+            ({TagCategory.special}, NormalizationMode.final),
+            ({TagCategory.feed_tag}, NormalizationMode.final),
+            ({TagCategory.free_form}, NormalizationMode.raw),
+            ({TagCategory.test_final}, NormalizationMode.final),
+            ({TagCategory.test_preserve}, NormalizationMode.preserve),
+            ({TagCategory.test_raw}, NormalizationMode.raw),
+            ({TagCategory.network_domain, TagCategory.free_form}, NormalizationMode.final),
+        ],
+    )
+    def test(self, categories: set[TagCategory], expected_mode: NormalizationMode) -> None:
+        assert mode_from_categories(categories) == expected_mode
 
 
 class TestPrepareForNormalization:
@@ -25,7 +48,24 @@ class TestPrepareForNormalization:
             parts=[TagUidPart("example"), TagUidPart("tag")],
             link=raw_tag.link,
             categories=raw_tag.categories,
+            mode=NormalizationMode.final,
         )
+
+    @pytest.mark.parametrize(
+        "categories, expected_mode, expected_uid",
+        [
+            ({TagCategory.test_raw}, NormalizationMode.raw, TagUid("cafe-au-lait")),
+            ({TagCategory.test_preserve}, NormalizationMode.preserve, TagUid("café-au-lait")),
+            ({TagCategory.test_final}, NormalizationMode.final, TagUid("café-au-lait")),
+        ],
+    )
+    def test_allow_unicode_depends_on_mode(
+        self, categories: set[TagCategory], expected_mode: NormalizationMode, expected_uid: TagUid
+    ) -> None:
+        prepared_tag = prepare_for_normalization(RawTag(raw_uid="Café au lait", link=None, categories=categories))
+
+        assert prepared_tag.mode == expected_mode
+        assert prepared_tag.uid == expected_uid
 
 
 class TestApplyNormalizers:
@@ -38,6 +78,7 @@ class TestApplyNormalizers:
             parts=uid_to_parts(uid),
             link=None,
             categories={TagCategory.test_preserve},
+            mode=NormalizationMode.preserve,
         )
 
     @pytest.fixture  # type: ignore
@@ -62,7 +103,7 @@ class TestApplyNormalizers:
     async def test_single_normalizer__preserve(
         self, tag_valid: bool, tag: TagInNormalization, raw_tags: list[RawTag]
     ) -> None:
-        tag = tag.replace(categories={TagCategory.test_preserve})
+        tag = tag.replace(categories={TagCategory.test_preserve}, mode=NormalizationMode.preserve)
 
         normalizer = FakeNormalizer(tag_valid, raw_tags)
         info = NormalizerInfo(id=1, name="fake", normalizer=normalizer)
@@ -76,7 +117,7 @@ class TestApplyNormalizers:
     async def test_single_normalizer__raw(
         self, tag_valid: bool, tag: TagInNormalization, raw_tags: list[RawTag]
     ) -> None:
-        tag = tag.replace(categories={TagCategory.test_raw})
+        tag = tag.replace(categories={TagCategory.test_raw}, mode=NormalizationMode.raw)
 
         normalizer = FakeNormalizer(tag_valid, raw_tags)
         info = NormalizerInfo(id=1, name="fake", normalizer=normalizer)
@@ -90,7 +131,7 @@ class TestApplyNormalizers:
     async def test_single_normalizer__final(
         self, tag_valid: bool, tag: TagInNormalization, raw_tags: list[RawTag]
     ) -> None:
-        tag = tag.replace(categories={TagCategory.test_final})
+        tag = tag.replace(categories={TagCategory.test_final}, mode=NormalizationMode.final)
 
         normalizer = FakeNormalizer(tag_valid, raw_tags)
         info = NormalizerInfo(id=1, name="fake", normalizer=normalizer)
@@ -101,7 +142,7 @@ class TestApplyNormalizers:
 
     @pytest.mark.asyncio
     async def test_chain_of_normalizers__preserve(self, tag: TagInNormalization, raw_tags: list[RawTag]) -> None:
-        tag = tag.replace(categories={TagCategory.test_preserve})
+        tag = tag.replace(categories={TagCategory.test_preserve}, mode=NormalizationMode.preserve)
 
         normalizers = [
             FakeNormalizer(True, [raw_tags[0]]),
@@ -119,7 +160,7 @@ class TestApplyNormalizers:
 
     @pytest.mark.asyncio
     async def test_chain_of_normalizers__not_preserve(self, tag: TagInNormalization, raw_tags: list[RawTag]) -> None:
-        tag = tag.replace(categories={TagCategory.test_raw})
+        tag = tag.replace(categories={TagCategory.test_raw}, mode=NormalizationMode.raw)
 
         normalizers = [
             FakeNormalizer(True, [raw_tags[0]]),
@@ -176,6 +217,24 @@ class TestNormalize:
     @pytest.mark.asyncio
     async def test_no_tags(self) -> None:
         assert await normalize([]) == []
+
+    @pytest.mark.asyncio
+    async def test_final_tag_skips_normalizers(self) -> None:
+        calls = []
+
+        class RecordingNormalizer(Normalizer):
+            async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[RawTag]]:
+                calls.append(tag.uid)
+                return True, [RawTag(raw_uid="unexpected-child", categories={TagCategory.test_raw})]
+
+        info = NormalizerInfo(id=1, name="recording", normalizer=RecordingNormalizer())
+
+        result = await normalize([RawTag(raw_uid="Café au lait", categories={TagCategory.test_final})], [info])
+
+        assert calls == []
+        assert result == [
+            NormalizedTag(uid=TagUid("café-au-lait"), link=None, categories={TagCategory.test_final}),
+        ]
 
     @pytest.mark.parametrize(
         "raw_uid,norm_uid",
@@ -295,7 +354,6 @@ class TestNormalize:
 
         assert resulted == expected
 
-    # TODO: add test_final somewhere here?
     @pytest.mark.asyncio
     async def test_tags_chain(self, mocker: MockerFixture) -> None:  # pylint: disable=R0914
         tag_1 = RawTag(raw_uid="tag-1", link=None, categories={TagCategory.test_preserve})
