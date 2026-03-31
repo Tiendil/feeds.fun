@@ -54,6 +54,9 @@ def normalize(tag: str, allow_unicode: bool) -> TagUid:
 
     tag = _encode_special_characters(tag)
 
+    # Note: with allow_unicode True slugify normalizes unicode to NFKC
+    #       if in the future we'll decide to change library for slugification
+    #       we should either ensure that behavior or renormalize tags in the database.
     return slugify(
         tag,
         entities=True,
