@@ -6,7 +6,6 @@ from ffun.tags.entities import NormalizationMode, TagInNormalization, TagCategor
 from ffun.tags.normalizers import NormalizerInfo, normalizers
 
 
-# TODO: move tests from test_entities to test_domain
 # Here is going some complicated unclear logic:
 # - normalizers work with TagInNormalization
 # - TagInNormalization should define how it should be processed by normalizers
@@ -64,10 +63,8 @@ def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
     #      so it is better to keep it outside of the normalizers list. For example,
     #      we fill .parts field on the base of normalized uid.
 
-    # TODO: add tests that mode is detected correctly, if there are no test for it yet
     mode = mode_from_categories(tag.categories)
 
-    # TODO: add test to check allow_unicode true|false behavior
     # We do not allow unicode characters in raw tags, they must be pure ASCII. At list for now.
     # It can be changed in https://github.com/Tiendil/feeds.fun/issues/348
     allow_unicode = (mode != NormalizationMode.raw)
