@@ -65,7 +65,7 @@ def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
 
     mode = mode_from_categories(tag.categories)
 
-    # We do not allow unicode characters in raw tags, they must be pure ASCII. At list for now.
+    # We do not allow unicode characters in raw tags, they must be pure ASCII. At least for now.
     # It can be changed in https://github.com/Tiendil/feeds.fun/issues/348
     allow_unicode = mode != NormalizationMode.raw
 
