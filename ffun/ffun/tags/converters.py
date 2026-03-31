@@ -48,7 +48,8 @@ def _decode_special_characters(tag: str) -> str:
     return "".join(result)
 
 
-def normalize(tag: str) -> TagUid:
+# TODO: add tests for allow_unicode behaviour
+def normalize(tag: str, allow_unicode: bool) -> TagUid:
     tag = tag.lower()
 
     tag = _encode_special_characters(tag)
@@ -66,7 +67,7 @@ def normalize(tag: str) -> TagUid:
         regex_pattern=DISALLOWED_CHARS_PATTERN,  # type: ignore
         lowercase=True,
         replacements=(),
-        allow_unicode=False,
+        allow_unicode=allow_unicode
     )
 
 
