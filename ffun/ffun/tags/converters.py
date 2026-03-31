@@ -43,7 +43,6 @@ def _decode_special_characters(tag: str) -> str:
     return "".join(result)
 
 
-# TODO: add tests for allow_unicode behaviour
 def normalize(tag: str, allow_unicode: bool) -> TagUid:
     tag = tag.lower()
 
