@@ -6,7 +6,7 @@ import pytest
 from ffun.domain.entities import TagUid
 from ffun.ontology.entities import RawTag
 from ffun.tags import converters, utils
-from ffun.tags.entities import TagCategory, TagInNormalization
+from ffun.tags.entities import NormalizationMode, TagCategory, TagInNormalization
 from ffun.tags.normalizers import form_normalizer
 
 normalizer = form_normalizer.Normalizer()
@@ -176,14 +176,15 @@ class TestNormalizer:
     )
     @pytest.mark.asyncio
     async def test(self, input_uid: TagUid, expected_tag_valid: bool, expected_new_uids: list[str]) -> None:
-        assert converters.normalize(input_uid) == input_uid
-        assert all(converters.normalize(new_uid) == new_uid for new_uid in expected_new_uids)
+        assert converters.normalize(input_uid, allow_unicode=False) == input_uid
+        assert all(converters.normalize(new_uid, allow_unicode=False) == new_uid for new_uid in expected_new_uids)
 
         input_tag = TagInNormalization(
             uid=input_uid,
             parts=utils.uid_to_parts(input_uid),
             link="http://example.com/tag",
             categories={TagCategory.test_raw},
+            mode=NormalizationMode.raw,
         )
 
         expected_new_tags = [
@@ -203,6 +204,45 @@ class TestNormalizer:
         assert tag_valid == expected_tag_valid
         assert new_tags == expected_new_tags
 
+    @pytest.mark.parametrize(
+        "input_uid, expected_tag_valid, expected_new_uids",
+        [
+            ("café-reviews", True, []),
+            ("résumé-services", True, []),
+            ("привет-миры", True, []),
+            ("данные-аналитики", True, []),
+            ("cafés-review", False, ["cafés-reviews"]),
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_unicode_input_is_safe(
+        self, input_uid: TagUid, expected_tag_valid: bool, expected_new_uids: list[str]
+    ) -> None:
+        assert converters.normalize(input_uid, allow_unicode=True) == input_uid
+        assert all(converters.normalize(new_uid, allow_unicode=True) == new_uid for new_uid in expected_new_uids)
+
+        input_tag = TagInNormalization(
+            uid=input_uid,
+            parts=utils.uid_to_parts(input_uid),
+            link="http://example.com/tag",
+            categories={TagCategory.test_preserve},
+            mode=NormalizationMode.preserve,
+        )
+
+        expected_new_tags = [
+            RawTag(
+                raw_uid=new_uid,
+                link=input_tag.link,
+                categories=input_tag.categories,
+            )
+            for new_uid in expected_new_uids
+        ]
+
+        tag_valid, new_tags = await normalizer.normalize(input_tag)
+
+        assert tag_valid == expected_tag_valid
+        assert new_tags == expected_new_tags
+
     @pytest.mark.skipif(reason="Performance test disabled by default.")
     @pytest.mark.asyncio
     async def test_performance(self) -> None:
@@ -214,6 +254,7 @@ class TestNormalizer:
                 parts=utils.uid_to_parts(TagUid(input_uid)),
                 link="http://example.com/tag",
                 categories={TagCategory.test_raw},
+                mode=NormalizationMode.raw,
             )
             for input_uid in [
                 "book-cover-review",

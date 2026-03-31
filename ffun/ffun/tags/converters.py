@@ -67,7 +67,8 @@ def normalize(tag: str, allow_unicode: bool) -> TagUid:
         save_order=True,
         separator="-",
         stopwords=(),
-        regex_pattern=DISALLOWED_CHARS_PATTERN,  # type: ignore
+        # regex_pattern=DISALLOWED_CHARS_PATTERN,  # type: ignore
+        regex_pattern=None,
         lowercase=True,
         replacements=(),
         allow_unicode=allow_unicode
