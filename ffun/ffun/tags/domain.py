@@ -2,7 +2,7 @@ from typing import Iterable
 
 from ffun.ontology.entities import NormalizedTag, RawTag
 from ffun.tags import converters, utils
-from ffun.tags.entities import NormalizationMode, TagInNormalization, TagCategory
+from ffun.tags.entities import NormalizationMode, TagCategory, TagInNormalization
 from ffun.tags.normalizers import NormalizerInfo, normalizers
 
 
@@ -67,7 +67,7 @@ def prepare_for_normalization(tag: RawTag) -> TagInNormalization:
 
     # We do not allow unicode characters in raw tags, they must be pure ASCII. At list for now.
     # It can be changed in https://github.com/Tiendil/feeds.fun/issues/348
-    allow_unicode = (mode != NormalizationMode.raw)
+    allow_unicode = mode != NormalizationMode.raw
 
     uid = converters.normalize(tag.raw_uid, allow_unicode=allow_unicode)
 

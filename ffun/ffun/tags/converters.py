@@ -1,11 +1,6 @@
-import re
-
 from slugify import slugify
 
 from ffun.domain.entities import TagUid
-
-DISALLOWED_CHARS_PATTERN = re.compile(r"[^-a-zA-Z0-9]+")
-
 
 _encode_replacements = {
     "#": "-sharp-",  # c# -> c-sharp
@@ -57,21 +52,22 @@ def normalize(tag: str, allow_unicode: bool) -> TagUid:
     # Note: with allow_unicode True slugify normalizes unicode to NFKC
     #       if in the future we'll decide to change library for slugification
     #       we should either ensure that behavior or renormalize tags in the database.
-    return slugify(
-        tag,
-        entities=True,
-        decimal=True,
-        hexadecimal=True,
-        max_length=0,
-        word_boundary=False,
-        save_order=True,
-        separator="-",
-        stopwords=(),
-        # regex_pattern=DISALLOWED_CHARS_PATTERN,  # type: ignore
-        regex_pattern=None,
-        lowercase=True,
-        replacements=(),
-        allow_unicode=allow_unicode
+    return TagUid(
+        slugify(
+            tag,
+            entities=True,
+            decimal=True,
+            hexadecimal=True,
+            max_length=0,
+            word_boundary=False,
+            save_order=True,
+            separator="-",
+            stopwords=(),
+            regex_pattern=None,
+            lowercase=True,
+            replacements=(),
+            allow_unicode=allow_unicode,
+        )
     )
 
 

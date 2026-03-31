@@ -6,6 +6,7 @@ from ffun.ontology.entities import NormalizedTag, RawTag
 from ffun.tags.domain import apply_normalizers, mode_from_categories, normalize, prepare_for_normalization
 from ffun.tags.entities import NormalizationMode, TagCategory, TagInNormalization
 from ffun.tags.normalizers import FakeNormalizer, NormalizerAlwaysError, NormalizerInfo
+from ffun.tags.normalizers.base import Normalizer
 from ffun.tags.utils import uid_to_parts
 
 
@@ -221,7 +222,7 @@ class TestNormalize:
     async def test_final_tag_skips_normalizers(self) -> None:
         calls = []
 
-        class RecordingNormalizer:
+        class RecordingNormalizer(Normalizer):
             async def normalize(self, tag: TagInNormalization) -> tuple[bool, list[RawTag]]:
                 calls.append(tag.uid)
                 return True, [RawTag(raw_uid="unexpected-child", categories={TagCategory.test_raw})]
