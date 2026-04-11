@@ -301,6 +301,7 @@ async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | 
     return context, None
 
 
+# TODO: tests
 async def _discover_extract_feeds_for_plugins(context: Context) -> tuple[Context, Result | None]:
     assert context.url is not None
 
