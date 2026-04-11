@@ -300,7 +300,6 @@ async def _discover_stop_recursion(context: Context) -> DiscoverResult:
     return context, None
 
 
-# TODO: tests
 async def _discover_extract_feeds_for_plugins(context: Context) -> DiscoverResult:
     assert context.url is not None
 

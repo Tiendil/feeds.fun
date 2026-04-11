@@ -3,7 +3,8 @@ import pytest
 from pytest_mock import MockerFixture
 from respx.router import MockRouter
 
-from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
+from ffun.domain.entities import AbsoluteUrl, FeedUrl, SourceUid, UnknownUrl
+from ffun.feeds_discoverer import domain as fd_domain
 from ffun.feeds_discoverer.domain import (
     _VISITED_URLS,
     _discover_adjust_url,
@@ -22,6 +23,7 @@ from ffun.feeds_discoverer.domain import (
 )
 from ffun.feeds_discoverer.entities import Context, Result, Status
 from ffun.feeds_discoverer.tests import make
+from ffun.integrations.plugins import fake as fake_plugin
 
 
 class TestDiscoverAdjustUrl:
@@ -518,7 +520,107 @@ class TestDiscoverStopRecursion:
         assert result is None
 
 
-# TODO: tests for _discover_extract_feeds_for_plugins
+class _FakeIntegration:
+    def __init__(self, source: str, urls: list[str]):
+        self.source = SourceUid(source)
+        self.plugin = fake_plugin.construct(urls=urls)
+
+
+def _fake_integration(source: str, urls: list[str]) -> _FakeIntegration:
+    return _FakeIntegration(source=source, urls=urls)
+
+
+class TestDiscoverExtractFeedsForPlugins:
+
+    @pytest.fixture  # type: ignore
+    def configured_fake_integrations(self, mocker: MockerFixture) -> list[_FakeIntegration]:
+        integrations = [
+            _fake_integration(
+                "example.com",
+                ["https://feeds.example.com/rss", "https://feeds.example.com/atom"],
+            ),
+            _fake_integration("reddit.com", ["https://reddit.com/r/feedsfun/.rss"]),
+            _fake_integration(
+                "news.ycombinator.com",
+                ["https://news.ycombinator.com/rss"],
+            ),
+        ]
+        mocker.patch.object(fd_domain.i_settings, "integrations", integrations)
+        return integrations
+
+    @pytest.mark.asyncio
+    async def test_no_plugins(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(fd_domain.i_settings, "integrations", [])
+
+        context = make.context("https://example.com/post")
+
+        new_context, result = await _discover_extract_feeds_for_plugins(context)
+
+        assert new_context == context
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_no_plugin_for_source(self, configured_fake_integrations: list[_FakeIntegration]) -> None:
+        context = make.context("https://github.com/openai")
+
+        new_context, result = await _discover_extract_feeds_for_plugins(context)
+
+        assert new_context == context
+        assert result is None
+
+    @pytest.mark.parametrize(
+        "url,expected_candidate_urls",
+        [
+            (
+                "https://example.com/post",
+                {
+                    AbsoluteUrl("https://feeds.example.com/rss"),
+                    AbsoluteUrl("https://feeds.example.com/atom"),
+                },
+            ),
+            (
+                "https://www.reddit.com/r/feedsfun/",
+                {AbsoluteUrl("https://reddit.com/r/feedsfun/.rss")},
+            ),
+            (
+                "https://old.reddit.com/r/feedsfun/",
+                {AbsoluteUrl("https://reddit.com/r/feedsfun/.rss")},
+            ),
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_matching_plugin_selected_for_source(
+        self,
+        configured_fake_integrations: list[_FakeIntegration],
+        url: str,
+        expected_candidate_urls: set[AbsoluteUrl],
+    ) -> None:
+        context = make.context(url)
+
+        new_context, result = await _discover_extract_feeds_for_plugins(context)
+
+        assert new_context == context.replace(candidate_urls=expected_candidate_urls)
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_matching_plugin_merges_with_existing_candidate_urls(
+        self, configured_fake_integrations: list[_FakeIntegration]
+    ) -> None:
+        context = make.context(
+            "https://example.com/post",
+            candidate_urls={AbsoluteUrl("https://existing.example.com/feed.xml")},
+        )
+
+        new_context, result = await _discover_extract_feeds_for_plugins(context)
+
+        assert new_context == context.replace(
+            candidate_urls={
+                AbsoluteUrl("https://existing.example.com/feed.xml"),
+                AbsoluteUrl("https://feeds.example.com/rss"),
+                AbsoluteUrl("https://feeds.example.com/atom"),
+            }
+        )
+        assert result is None
 
 
 def test_discoverers_list_not_changed() -> None:
