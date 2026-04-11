@@ -20,7 +20,7 @@ class Plugin(BasePlugin):
     # TODO: test
     async def discover_feed_urls(
         self, context: fd_entities.Context
-    ) -> tuple[fd_entities.Context, fd_entities.Result | None]:
+    ) -> fd_entities.DiscoverResult:
         """Construct RSS URLs for new Reddit pages that do not expose feed links.
 
         Detects reddit.com subreddit paths, synthesizes the `.rss` URL, and adds it

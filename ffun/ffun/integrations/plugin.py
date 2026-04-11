@@ -6,5 +6,5 @@ class Plugin:
 
     async def discover_feed_urls(
         self, context: fd_entities.Context
-    ) -> tuple[fd_entities.Context, fd_entities.Result | None]:
+    ) -> fd_entities.DiscoverResult:
         raise NotImplementedError("discover_feed_urls must be implemented by the plugin")

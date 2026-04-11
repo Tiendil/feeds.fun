@@ -18,7 +18,7 @@ from ffun.domain.urls import (
     url_to_host,
     url_to_source_uid,
 )
-from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
+from ffun.feeds_discoverer.entities import Context, DiscoverResult, Discoverer, Result, Status
 from ffun.integrations.settings import settings as i_settings
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
@@ -46,7 +46,7 @@ ALLOWED_EXTENSIONS_FOR_LINKS = [".xml", ".rss", ".atom", ".rdf", ".feed", ".php"
 ALLOWED_EXTENSIONS_FOR_ANCHORS = [".xml", ".rss", ".atom", ".feed"]
 
 
-async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None]:
+async def _discover_adjust_url(context: Context) -> DiscoverResult:
     """Normalize the raw URL and convert it to a canonical feed URL."""
     logger.info("discovering_adjusting_url", raw_url=context.raw_url)
 
@@ -67,7 +67,7 @@ async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None
     return context.replace(url=url, host=host), None
 
 
-async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
+async def _discover_load_url(context: Context) -> DiscoverResult:
     """Fetch the URL content via the loader."""
     assert context.url is not None
 
@@ -98,7 +98,7 @@ async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
     return context.replace(content=content), None
 
 
-async def _discover_extract_feed_info(context: Context) -> tuple[Context, Result | None]:
+async def _discover_extract_feed_info(context: Context) -> DiscoverResult:
     """Try to parse the loaded content directly as a feed."""
     assert context.url is not None
     assert context.content is not None
@@ -119,7 +119,7 @@ async def _discover_extract_feed_info(context: Context) -> tuple[Context, Result
     return context, Result(feeds=[feed_info], status=Status.feeds_found)
 
 
-async def _discover_create_soup(context: Context) -> tuple[Context, Result | None]:
+async def _discover_create_soup(context: Context) -> DiscoverResult:
     """Parse loaded HTML into a BeautifulSoup document for link extraction."""
     assert context.content is not None
 
@@ -136,7 +136,7 @@ async def _discover_create_soup(context: Context) -> tuple[Context, Result | Non
     return context.replace(soup=soup), None
 
 
-async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context, Result | None]:  # noqa: CCR001
+async def _discover_extract_feeds_from_links(context: Context) -> DiscoverResult:  # noqa: CCR001
     """Collect candidate feed URLs from <link> tags in the HTML head.
 
     Skips common non-feed rel values, adjusts relative URLs to absolute ones.
@@ -179,7 +179,7 @@ async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context,
     return context.replace(candidate_urls=context.candidate_urls | links_to_check), None
 
 
-async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Context, Result | None]:  # noqa: CCR001
+async def _discover_extract_feeds_from_anchors(context: Context) -> DiscoverResult:  # noqa: CCR001
     """Collect candidate feed URLs from <a> tags in the HTML body.
 
     Filters by allowed file extensions, normalizes relative links.
@@ -217,7 +217,7 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
     return context.replace(candidate_urls=context.candidate_urls | anchors_to_check), None
 
 
-async def _discover_check_parent_urls(context: Context) -> tuple[Context, Result | None]:
+async def _discover_check_parent_urls(context: Context) -> DiscoverResult:
     """Check the parent URL for feeds when the current page yields none.
 
     Recurses one level up in the URL hierarchy with depth=1 to look for HTML
@@ -251,7 +251,7 @@ async def _discover_check_parent_urls(context: Context) -> tuple[Context, Result
     return context, None
 
 
-async def _discover_check_candidate_links(context: Context) -> tuple[Context, Result | None]:  # noqa: CCR001
+async def _discover_check_candidate_links(context: Context) -> DiscoverResult:  # noqa: CCR001
     """Recursively check candidate URLs and aggregate any feeds found.
 
     De-duplicates candidates, discovers each with reduced depth in parallel,
@@ -287,7 +287,7 @@ async def _discover_check_candidate_links(context: Context) -> tuple[Context, Re
     return context.replace(candidate_urls=set()), Result(feeds=feeds, status=Status.feeds_found)
 
 
-async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | None]:
+async def _discover_stop_recursion(context: Context) -> DiscoverResult:
     """Stop discovery when recursion depth is exhausted."""
     logger.info("discovering_check_recursion", depth=context.depth)
 
@@ -301,7 +301,7 @@ async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | 
 
 
 # TODO: tests
-async def _discover_extract_feeds_for_plugins(context: Context) -> tuple[Context, Result | None]:
+async def _discover_extract_feeds_for_plugins(context: Context) -> DiscoverResult:
     assert context.url is not None
 
     logger.info("discovering_plugin_extracting_feeds", url=context.url)
