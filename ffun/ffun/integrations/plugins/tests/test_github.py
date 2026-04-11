@@ -103,7 +103,10 @@ class TestPluginMethods:
         self, plugin: github.Plugin
     ) -> None:
         assert plugin._extract_discussion_category_slug(["openai", "openai", "discussions"]) is None
-        assert plugin._extract_discussion_category_slug(["openai", "openai", "issues", "categories", "announcements"]) is None
+        assert (
+            plugin._extract_discussion_category_slug(["openai", "openai", "issues", "categories", "announcements"])
+            is None
+        )
 
     def test__extract_discussion_category_slug__returns_slug(self, plugin: github.Plugin) -> None:
         assert (

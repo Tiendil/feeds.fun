@@ -19,7 +19,7 @@ class Plugin(BasePlugin):
         "_owner_repo_discussion_category_feed_urls",
     )
 
-    def __init__(
+    def __init__(  # noqa: CFQ002
         self,
         canonical_host: str,
         domains: list[str],
@@ -83,9 +83,7 @@ class Plugin(BasePlugin):
         return {url.format(owner=owner, repo=repo) for url in self._owner_repo_feed_urls}
 
     def _construct_owner_repo_branch_feed_urls(self, owner: str, repo: str, branch: str) -> set[str]:
-        return {
-            url.format(owner=owner, repo=repo, branch=branch) for url in self._owner_repo_branch_feed_urls
-        }
+        return {url.format(owner=owner, repo=repo, branch=branch) for url in self._owner_repo_branch_feed_urls}
 
     def _construct_owner_repo_discussion_category_feed_urls(
         self, owner: str, repo: str, category_slug: str
