@@ -523,7 +523,7 @@ class TestDiscoverStopRecursion:
 class _FakeIntegration:
     def __init__(self, source: str, urls: list[str]):
         self.source = SourceUid(source)
-        self.plugin = fake_plugin.construct(urls=urls)
+        self.plugin_instance = fake_plugin.construct(urls=urls)
 
 
 def _fake_integration(source: str, urls: list[str]) -> _FakeIntegration:

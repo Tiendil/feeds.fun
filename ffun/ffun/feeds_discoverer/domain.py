@@ -315,7 +315,7 @@ async def _discover_extract_feeds_for_plugins(context: Context) -> DiscoverResul
 
     logger.info("discovering_plugin_integration_found", source_uid=source_uid)
 
-    return await integration.plugin.discover_feed_urls(context)
+    return await integration.plugin_instance.discover_feed_urls(context)
 
 
 # Note: we do not add internal feed discoverer here (like db check: url -> uid -> feed_id), because

@@ -1,8 +1,10 @@
+from functools import cached_property
+
 import pydantic
 import pydantic_settings
 
 from ffun.auth.idps.plugin import Plugin
-from ffun.core import utils
+from ffun.core.plugins import build_plugin
 from ffun.core.settings import BaseSettings
 from ffun.domain.entities import IdPId
 
@@ -25,38 +27,16 @@ class IdP(BaseSettings):
     # id that we store in the database and use internally
     internal_id: IdPId
 
-    # IdP plugin used to support extended functionality
+    # Path to the IdP plugin constructor used to support extended functionality
     # like removing users, logging user out from all sessions, etc.
-    plugin: Plugin
+    plugin: str
 
     # additional configs for the identity provider plugin, passed as is to the plugin constructor
     extras: dict[str, str] = pydantic.Field(default_factory=dict)
 
-    # @pydantic.field_validator('plugin', mode='before')
-    @pydantic.model_validator(mode="before")
-    @classmethod
-    def build_plugin(cls, data: object) -> object:
-        if not isinstance(data, dict):
-            return data
-
-        v = data.get("plugin")
-
-        if not isinstance(v, str):
-            raise ValueError("plugin must be defined as a string module.path:callable_constructor")
-
-        extras = data.get("extras", {}) or {}  # type: ignore
-
-        try:
-            constructor = utils.import_from_string(v)
-        except Exception as e:
-            raise ValueError(f"Cannot import '{v}': {e}") from e
-
-        try:
-            data["plugin"] = constructor(**extras)  # type: ignore
-        except Exception as e:
-            raise ValueError(f"Cannot construct plugin from '{v}': {e}") from e
-
-        return data
+    @cached_property
+    def plugin_instance(self) -> Plugin:
+        return build_plugin(Plugin, self.plugin, self.extras)
 
 
 class Settings(BaseSettings):
@@ -82,7 +62,7 @@ class Settings(BaseSettings):
             IdP(
                 external_id=primary_oidc_service,
                 internal_id=primary_oidc_service_id,
-                plugin="ffun.auth.idps.keycloak:construct",  # type: ignore
+                plugin="ffun.auth.idps.keycloak:construct",
                 extras={
                     "entrypoint": "http://idp:8080",
                     "service_realm": "dev",
@@ -93,7 +73,7 @@ class Settings(BaseSettings):
             IdP(
                 external_id=single_user_service,
                 internal_id=single_user_service_id,
-                plugin="ffun.auth.idps.no_idp:construct",  # type: ignore
+                plugin="ffun.auth.idps.no_idp:construct",
             ),
         ]
     )

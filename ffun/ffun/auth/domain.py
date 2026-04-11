@@ -13,7 +13,7 @@ async def remove_user_from_external_service(service: IdPId, external_user_id: st
     if idp is None:
         raise errors.NoIdPFound()
 
-    await idp.plugin.remove_user(external_user_id)
+    await idp.plugin_instance.remove_user(external_user_id)
 
 
 async def logout_user_from_all_sessions_in_service(service: IdPId, external_user_id: str) -> None:
@@ -22,7 +22,7 @@ async def logout_user_from_all_sessions_in_service(service: IdPId, external_user
     if idp is None:
         raise errors.NoIdPFound()
 
-    await idp.plugin.revoke_all_user_sessions(external_user_id)
+    await idp.plugin_instance.revoke_all_user_sessions(external_user_id)
 
 
 async def logout_user_from_all_sessions(user_id: u_entities.UserId) -> None:
@@ -45,4 +45,4 @@ async def import_user_to_external_service(
         if not await u_domain.check_external_user_exists(service, external_user_id):
             raise errors.InternalUserDoesNotExistForImportedUser()
 
-    await idp.plugin.import_user(external_user_id, email, created_at)
+    await idp.plugin_instance.import_user(external_user_id, email, created_at)

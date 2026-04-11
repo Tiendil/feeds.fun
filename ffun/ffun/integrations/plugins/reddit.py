@@ -17,7 +17,6 @@ class Plugin(BasePlugin):
         self._domains = set(domains)
         self._domains_to_skip = set(domains_to_skip)
 
-    # TODO: test
     async def discover_feed_urls(
         self, context: fd_entities.Context
     ) -> fd_entities.DiscoverResult:
