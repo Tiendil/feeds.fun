@@ -1,16 +1,16 @@
 import re
+from typing import cast
+
 from ffun.core import logging
-from ffun.integrations.plugin import Plugin as BasePlugin
 from ffun.domain.urls import construct_f_url
 from ffun.feeds_discoverer import entities as fd_entities
+from ffun.integrations.plugin import Plugin as BasePlugin
 
 logger = logging.get_module_logger()
 
 
 class Plugin(BasePlugin):
-    __slots__ = ('_path_prefix_regex',
-                 '_domains',
-                 '_domains_to_skip')
+    __slots__ = ("_path_prefix_regex", "_domains", "_domains_to_skip")
 
     def __init__(self, path_prefix_regex: str, domains: list[str], domains_to_skip: list[str]):
         self._path_prefix_regex = re.compile(path_prefix_regex)
@@ -18,7 +18,9 @@ class Plugin(BasePlugin):
         self._domains_to_skip = set(domains_to_skip)
 
     # TODO: test
-    async def discover_feed_urls(self, context: fd_entities.Context) -> tuple[fd_entities.Context, fd_entities.Result | None]:
+    async def discover_feed_urls(
+        self, context: fd_entities.Context
+    ) -> tuple[fd_entities.Context, fd_entities.Result | None]:
         """Construct RSS URLs for new Reddit pages that do not expose feed links.
 
         Detects reddit.com subreddit paths, synthesizes the `.rss` URL, and adds it
@@ -67,9 +69,13 @@ class Plugin(BasePlugin):
         return context.replace(candidate_urls={str(f_url)}), None
 
 
-def construct(**kwargs) -> Plugin:
+def construct(**kwargs: object) -> Plugin:
+    path_prefix_regex = cast(str, kwargs.get("path_prefix_regex", r"^/r/[^/]+/?"))
+    domains = cast(list[str], kwargs.get("domains", ["www.reddit.com", "reddit.com", "old.reddit.com"]))
+    domains_to_skip = cast(list[str], kwargs.get("domains_to_skip", ["old.reddit.com"]))
+
     return Plugin(
-        path_prefix_regex=kwargs.get("path_prefix_regex", r"^/r/[^/]+/?"),
-        domains=kwargs.get("domains", ["www.reddit.com", "reddit.com", "old.reddit.com"]),
-        domains_to_skip=kwargs.get("domains_to_skip", ["old.reddit.com"]),
+        path_prefix_regex=path_prefix_regex,
+        domains=domains,
+        domains_to_skip=domains_to_skip,
     )

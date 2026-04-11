@@ -1,7 +1,6 @@
 import asyncio
 import contextlib
 import contextvars
-import re
 from typing import Iterator, cast
 
 from bs4 import BeautifulSoup, ResultSet, Tag
@@ -17,13 +16,13 @@ from ffun.domain.urls import (
     to_feed_url,
     url_has_extension,
     url_to_host,
-    url_to_source_uid
+    url_to_source_uid,
 )
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
+from ffun.integrations.settings import settings as i_settings
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
 from ffun.parsers import entities as p_entities
-from ffun.integrations.settings import settings as i_settings
 
 logger = logging.get_module_logger()
 
@@ -307,11 +306,7 @@ async def _discover_extract_feeds_for_plugins(context: Context) -> tuple[Context
 
     logger.info("discovering_plugin_extracting_feeds", url=context.url)
 
-    f_url = construct_f_url(context.url)
-
-    assert f_url is not None
-
-    source_uid = url_to_source_uid(f_url)
+    source_uid = url_to_source_uid(context.url)
 
     integration = i_settings.get_integration_by_source(source_uid)
 
@@ -329,7 +324,7 @@ async def _discover_extract_feeds_for_plugins(context: Context) -> tuple[Context
 #       - internal feed data (news list) may be slightly outdated (not containing the latest news)
 _discoverers: list[Discoverer] = [
     _discover_adjust_url,
-    # We MUST process plugins before loading url bacause:
+    # We MUST process plugins before loading url because:
     # - because some sites (like Reddit) blocks access to the non-rss urls for bots
     # - also, most URLs plugins will construct without making requests to the page
     #   => it is a kind of short-circuit

@@ -1,12 +1,9 @@
-from typing import TypedDict, Unpack
-
 import httpx
 import pytest
 from pytest_mock import MockerFixture
 from respx.router import MockRouter
 
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
-from ffun.domain.urls import str_to_feed_url, url_to_host
 from ffun.feeds_discoverer.domain import (
     _VISITED_URLS,
     _discover_adjust_url,
@@ -23,7 +20,7 @@ from ffun.feeds_discoverer.domain import (
     discover,
     visited_cache,
 )
-from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
+from ffun.feeds_discoverer.entities import Context, Result, Status
 from ffun.feeds_discoverer.tests import make
 
 

@@ -1,10 +1,10 @@
 import contextlib
 import re
 import unicodedata
-import pydantic
-from typing import Iterable, Iterator, MutableMapping, Protocol, cast, Annotated
+from typing import Annotated, Iterable, Iterator, MutableMapping, Protocol, cast
 from urllib.parse import quote_plus, unquote
 
+import pydantic
 import tldextract
 from furl import furl
 from orderedmultidict import omdict
@@ -449,6 +449,7 @@ def to_feed_url(url: AbsoluteUrl) -> FeedUrl:
 #################
 # Pydantic Fields
 #################
+
 
 # TODO: test?
 def _pydantic_source_uid_validator(value: str) -> SourceUid:

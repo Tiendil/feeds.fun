@@ -1,12 +1,11 @@
-
 import pydantic
 import pydantic_settings
 
-from ffun.integrations.plugin import Plugin
 from ffun.core import utils
 from ffun.core.settings import BaseSettings
 from ffun.domain.entities import SourceUid
 from ffun.domain.urls import SourceUidField
+from ffun.integrations.plugin import Plugin
 
 
 class Integration(BaseSettings):
