@@ -28,7 +28,12 @@ class Settings(BaseSettings):
                 source="reddit.com",
                 plugin="ffun.integrations.plugins.reddit:construct",
                 extras={},
-            )
+            ),
+            Integration(
+                source="github.com",
+                plugin="ffun.integrations.plugins.github:construct",
+                extras={},
+            ),
         ]
     )
 
