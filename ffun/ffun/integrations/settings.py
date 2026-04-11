@@ -48,6 +48,7 @@ class Settings(BaseSettings):
             Integration(
                 source="reddit.com",
                 plugin="ffun.integrations.plugins.reddit:construct",  # type: ignore
+                kwargs={},
             )
         ]
     )
