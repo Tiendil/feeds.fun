@@ -9,7 +9,6 @@ from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import (
     adjust_external_url,
-    construct_f_url,
     filter_out_duplicated_urls,
     get_parent_url,
     normalize_classic_unknown_url,
@@ -18,7 +17,7 @@ from ffun.domain.urls import (
     url_to_host,
     url_to_source_uid,
 )
-from ffun.feeds_discoverer.entities import Context, DiscoverResult, Discoverer, Result, Status
+from ffun.feeds_discoverer.entities import Context, Discoverer, DiscoverResult, Result, Status
 from ffun.integrations.settings import settings as i_settings
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors

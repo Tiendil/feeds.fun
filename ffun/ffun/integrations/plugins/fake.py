@@ -9,9 +9,7 @@ class Plugin(BasePlugin):
     def __init__(self, urls: list[str]):
         self._urls = {str_to_absolute_url(url) for url in urls}
 
-    async def discover_feed_urls(
-        self, context: fd_entities.Context
-    ) -> fd_entities.DiscoverResult:
+    async def discover_feed_urls(self, context: fd_entities.Context) -> fd_entities.DiscoverResult:
         return context.replace(candidate_urls=context.candidate_urls | self._urls), None
 
 
