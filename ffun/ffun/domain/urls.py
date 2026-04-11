@@ -1,7 +1,8 @@
 import contextlib
 import re
 import unicodedata
-from typing import Iterable, Iterator, MutableMapping, Protocol, cast
+import pydantic
+from typing import Iterable, Iterator, MutableMapping, Protocol, cast, Annotated
 from urllib.parse import quote_plus, unquote
 
 import tldextract
@@ -443,3 +444,21 @@ def to_feed_url(url: AbsoluteUrl) -> FeedUrl:
     f_url.fragment = None
 
     return FeedUrl(str(f_url))
+
+
+#################
+# Pydantic Fields
+#################
+
+# TODO: test?
+def _pydantic_source_uid_validator(value: str) -> SourceUid:
+    absolute_url = normalize_classic_unknown_url(UnknownUrl(value))
+
+    if absolute_url is None:
+        raise ValueError(f"Invalid URL for source uid: {value}")
+
+    return url_to_source_uid(absolute_url)
+
+
+# TODO: test?
+SourceUidField = Annotated[str, pydantic.AfterValidator(_pydantic_source_uid_validator)]

@@ -17,11 +17,13 @@ from ffun.domain.urls import (
     to_feed_url,
     url_has_extension,
     url_to_host,
+    url_to_source_uid
 )
 from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
 from ffun.parsers import entities as p_entities
+from ffun.integrations.settings import settings as i_settings
 
 logger = logging.get_module_logger()
 
@@ -299,55 +301,26 @@ async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | 
     return context, None
 
 
-_RE_REDDIT_PATH_PREFIX = re.compile(r"^/r/[^/]+/?")
-
-
-async def _discover_extract_feeds_for_reddit(context: Context) -> tuple[Context, Result | None]:
-    """Construct RSS URLs for new Reddit pages that do not expose feed links.
-
-    Detects reddit.com subreddit paths, synthesizes the `.rss` URL, and adds it
-    as a candidate unless it matches the current URL.
-    """
+async def _discover_extract_feeds_for_plugins(context: Context) -> tuple[Context, Result | None]:
     assert context.url is not None
 
-    logger.info("discovering_reddit_extracting_feeds", url=context.url)
+    logger.info("discovering_plugin_extracting_feeds", url=context.url)
 
     f_url = construct_f_url(context.url)
 
     assert f_url is not None
 
-    if f_url.host not in ("www.reddit.com", "reddit.com", "old.reddit.com"):
-        # We are not interested in not reddit.com domains
-        logger.info("discovering_reddit_not_reddit_domain")
+    source_uid = url_to_source_uid(f_url)
+
+    integration = i_settings.get_integration_by_source(source_uid)
+
+    if integration is None:
+        logger.info("discovering_plugin_no_integration_found", source_uid=source_uid)
         return context, None
 
-    if f_url.host == "old.reddit.com":
-        # Old Reddit site has marked RSS urls in the header
-        logger.info("discovering_reddit_old_reddit_domain")
-        return context, None
+    logger.info("discovering_plugin_integration_found", source_uid=source_uid)
 
-    match = _RE_REDDIT_PATH_PREFIX.match(str(f_url.path))
-
-    if match is None:
-        logger.info("discovering_reddit_not_reddit_path")
-        return context, None
-
-    base_path = match.group()
-
-    if not base_path.endswith("/"):
-        base_path += "/"
-
-    f_url.path = f"{base_path}.rss"  # type: ignore
-    f_url.query = ""  # type: ignore
-
-    # this check is required to stop recursion on _discover_check_candidate_links
-    if str(f_url) == context.url:
-        logger.info("discovering_reddit_same_url")
-        return context, None
-
-    logger.info("discovering_reddit_feed", feed_url=f_url)
-
-    return context.replace(candidate_urls={str(f_url)}), None
+    return await integration.plugin.discover_feed_urls(context)
 
 
 # Note: we do not add internal feed discoverer here (like db check: url -> uid -> feed_id), because
@@ -355,12 +328,11 @@ async def _discover_extract_feeds_for_reddit(context: Context) -> tuple[Context,
 #       - internal feed data (news list) may be slightly outdated (not containing the latest news)
 _discoverers: list[Discoverer] = [
     _discover_adjust_url,
-    # This Reddit urls hack MUST go before loading url
-    # because Reddit blocks access to the non-rss urls for bots
-    #
-    # TODO: Should we simulate browser behavior?
-    #       Better not to, but it may be the only way to get the page data.
-    _discover_extract_feeds_for_reddit,
+    # We MUST process plugins before loading url bacause:
+    # - because some sites (like Reddit) blocks access to the non-rss urls for bots
+    # - also, most URLs plugins will construct without making requests to the page
+    #   => it is a kind of short-circuit
+    _discover_extract_feeds_for_plugins,
     _discover_check_candidate_links,
     _discover_load_url,
     _discover_extract_feed_info,
