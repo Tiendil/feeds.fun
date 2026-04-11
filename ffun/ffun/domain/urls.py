@@ -451,7 +451,6 @@ def to_feed_url(url: AbsoluteUrl) -> FeedUrl:
 #################
 
 
-# TODO: test?
 def _pydantic_source_uid_validator(value: str) -> SourceUid:
     absolute_url = normalize_classic_unknown_url(UnknownUrl(value))
 
@@ -461,5 +460,4 @@ def _pydantic_source_uid_validator(value: str) -> SourceUid:
     return url_to_source_uid(absolute_url)
 
 
-# TODO: test?
 SourceUidField = Annotated[str, pydantic.AfterValidator(_pydantic_source_uid_validator)]
