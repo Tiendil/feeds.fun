@@ -24,6 +24,23 @@ class ReferenceSemantics(enum.StrEnum):
     document = "document"
 
 
+# TODO: test that priorities has not changed
+# The priority of the semantics is used when merging references to the same URL.
+# The highest priority semantics will be used as the semantics of the merged reference.
+REFERENCE_SEMANTICS_PRIORITY: dict[ReferenceSemantics, int] = {
+    ReferenceSemantics.unknown: 0,
+    ReferenceSemantics.page: 1,
+    ReferenceSemantics.document: 2,
+    ReferenceSemantics.author: 3,
+    ReferenceSemantics.comments: 3,
+    ReferenceSemantics.audio: 3,
+    ReferenceSemantics.video: 3,
+    ReferenceSemantics.image: 3,
+}
+
+
+# The primary goal of the Reference entity is to simplify all the pleathora of media references
+# to some reasonable common denominator, that is easier to process and visualize
 class Reference(BaseEntity):
     semantics: ReferenceSemantics
     url: AbsoluteUrl
@@ -37,6 +54,34 @@ class Reference(BaseEntity):
     # extra is a free-form dictionary for any source-specific data
     # for example, for YouTube video id.
     extra: dict[str, int | float | str | None] | None = None
+
+    # TODO: test
+    def merge(self, other: "Reference") -> "Reference":
+        if self.url != other.url:
+            # TODO: replace with proper error
+            raise NotImplementedError("Merging references with different URLs is not supported")
+
+        other_has_priority = REFERENCE_SEMANTICS_PRIORITY[self.semantics] > REFERENCE_SEMANTICS_PRIORITY[other.semantics]
+
+        if other_has_priority:
+            original = other
+            secondary = self
+        else:
+            original = self
+            secondary = other
+
+        # That merging policy is questionable, but it should work in most cases.
+        return Reference(
+            semantics=original.semantics,
+            url=original.url,
+            title=original.title if original.title is not None else secondary.title,
+            mime_type=original.mime_type if original.mime_type is not None else secondary.mime_type,
+            width=original.width if original.width is not None else secondary.width,
+            height=original.height if original.height is not None else secondary.height,
+            duration=original.duration if original.duration is not None else secondary.duration,
+            size=original.size if original.size is not None else secondary.size,
+            extra=original.extra if original.extra is not None else secondary.extra,
+        )
 
 
 class BaseEntry(BaseEntity):
