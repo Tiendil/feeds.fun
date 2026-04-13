@@ -1,3 +1,4 @@
+import pydantic
 import pytest
 from furl import furl
 
@@ -221,6 +222,28 @@ class TestUrlToSourceUid:
     def test_unsupported_representation(self) -> None:
         with pytest.raises(AssertionError, match="linted urls"):
             urls.url_to_source_uid(AbsoluteUrl("at://did:plc:fakeperson000000000000000/app.bsky.actor.profile/self"))
+
+
+class TestSourceUidField:
+    class Model(pydantic.BaseModel):
+        source: urls.SourceUidField
+
+    @pytest.mark.parametrize(
+        "value, source_uid",
+        [
+            ("https://www.example.com/path/a/b", "example.com"),
+            ("https://old.reddit.com/r/feedsfun/", "reddit.com"),
+            ("https://api.reddit.com/r/python", "reddit.com"),
+        ],
+    )
+    def test_parses_source_uid(self, value: str, source_uid: SourceUid) -> None:
+        model = self.Model(source=value)
+
+        assert model.source == source_uid
+
+    def test_invalid_url(self) -> None:
+        with pytest.raises(pydantic.ValidationError, match="Invalid URL for source uid"):
+            self.Model(source="wrong_url")
 
 
 class TestCheckFurlError:

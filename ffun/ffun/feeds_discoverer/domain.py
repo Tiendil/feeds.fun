@@ -1,7 +1,6 @@
 import asyncio
 import contextlib
 import contextvars
-import re
 from typing import Iterator, cast
 
 from bs4 import BeautifulSoup, ResultSet, Tag
@@ -10,15 +9,16 @@ from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import (
     adjust_external_url,
-    construct_f_url,
     filter_out_duplicated_urls,
     get_parent_url,
     normalize_classic_unknown_url,
     to_feed_url,
     url_has_extension,
     url_to_host,
+    url_to_source_uid,
 )
-from ffun.feeds_discoverer.entities import Context, Discoverer, Result, Status
+from ffun.feeds_discoverer.entities import Context, Discoverer, DiscoverResult, Result, Status
+from ffun.integrations.settings import settings as i_settings
 from ffun.loader import domain as lo_domain
 from ffun.loader import errors as lo_errors
 from ffun.parsers import entities as p_entities
@@ -45,7 +45,7 @@ ALLOWED_EXTENSIONS_FOR_LINKS = [".xml", ".rss", ".atom", ".rdf", ".feed", ".php"
 ALLOWED_EXTENSIONS_FOR_ANCHORS = [".xml", ".rss", ".atom", ".feed"]
 
 
-async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None]:
+async def _discover_adjust_url(context: Context) -> DiscoverResult:
     """Normalize the raw URL and convert it to a canonical feed URL."""
     logger.info("discovering_adjusting_url", raw_url=context.raw_url)
 
@@ -66,7 +66,7 @@ async def _discover_adjust_url(context: Context) -> tuple[Context, Result | None
     return context.replace(url=url, host=host), None
 
 
-async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
+async def _discover_load_url(context: Context) -> DiscoverResult:
     """Fetch the URL content via the loader."""
     assert context.url is not None
 
@@ -97,7 +97,7 @@ async def _discover_load_url(context: Context) -> tuple[Context, Result | None]:
     return context.replace(content=content), None
 
 
-async def _discover_extract_feed_info(context: Context) -> tuple[Context, Result | None]:
+async def _discover_extract_feed_info(context: Context) -> DiscoverResult:
     """Try to parse the loaded content directly as a feed."""
     assert context.url is not None
     assert context.content is not None
@@ -118,7 +118,7 @@ async def _discover_extract_feed_info(context: Context) -> tuple[Context, Result
     return context, Result(feeds=[feed_info], status=Status.feeds_found)
 
 
-async def _discover_create_soup(context: Context) -> tuple[Context, Result | None]:
+async def _discover_create_soup(context: Context) -> DiscoverResult:
     """Parse loaded HTML into a BeautifulSoup document for link extraction."""
     assert context.content is not None
 
@@ -135,7 +135,7 @@ async def _discover_create_soup(context: Context) -> tuple[Context, Result | Non
     return context.replace(soup=soup), None
 
 
-async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context, Result | None]:  # noqa: CCR001
+async def _discover_extract_feeds_from_links(context: Context) -> DiscoverResult:  # noqa: CCR001
     """Collect candidate feed URLs from <link> tags in the HTML head.
 
     Skips common non-feed rel values, adjusts relative URLs to absolute ones.
@@ -178,7 +178,7 @@ async def _discover_extract_feeds_from_links(context: Context) -> tuple[Context,
     return context.replace(candidate_urls=context.candidate_urls | links_to_check), None
 
 
-async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Context, Result | None]:  # noqa: CCR001
+async def _discover_extract_feeds_from_anchors(context: Context) -> DiscoverResult:  # noqa: CCR001
     """Collect candidate feed URLs from <a> tags in the HTML body.
 
     Filters by allowed file extensions, normalizes relative links.
@@ -216,7 +216,7 @@ async def _discover_extract_feeds_from_anchors(context: Context) -> tuple[Contex
     return context.replace(candidate_urls=context.candidate_urls | anchors_to_check), None
 
 
-async def _discover_check_parent_urls(context: Context) -> tuple[Context, Result | None]:
+async def _discover_check_parent_urls(context: Context) -> DiscoverResult:
     """Check the parent URL for feeds when the current page yields none.
 
     Recurses one level up in the URL hierarchy with depth=1 to look for HTML
@@ -250,7 +250,7 @@ async def _discover_check_parent_urls(context: Context) -> tuple[Context, Result
     return context, None
 
 
-async def _discover_check_candidate_links(context: Context) -> tuple[Context, Result | None]:  # noqa: CCR001
+async def _discover_check_candidate_links(context: Context) -> DiscoverResult:  # noqa: CCR001
     """Recursively check candidate URLs and aggregate any feeds found.
 
     De-duplicates candidates, discovers each with reduced depth in parallel,
@@ -286,7 +286,7 @@ async def _discover_check_candidate_links(context: Context) -> tuple[Context, Re
     return context.replace(candidate_urls=set()), Result(feeds=feeds, status=Status.feeds_found)
 
 
-async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | None]:
+async def _discover_stop_recursion(context: Context) -> DiscoverResult:
     """Stop discovery when recursion depth is exhausted."""
     logger.info("discovering_check_recursion", depth=context.depth)
 
@@ -299,55 +299,22 @@ async def _discover_stop_recursion(context: Context) -> tuple[Context, Result | 
     return context, None
 
 
-_RE_REDDIT_PATH_PREFIX = re.compile(r"^/r/[^/]+/?")
-
-
-async def _discover_extract_feeds_for_reddit(context: Context) -> tuple[Context, Result | None]:
-    """Construct RSS URLs for new Reddit pages that do not expose feed links.
-
-    Detects reddit.com subreddit paths, synthesizes the `.rss` URL, and adds it
-    as a candidate unless it matches the current URL.
-    """
+async def _discover_extract_feeds_for_plugins(context: Context) -> DiscoverResult:
     assert context.url is not None
 
-    logger.info("discovering_reddit_extracting_feeds", url=context.url)
+    logger.info("discovering_plugin_extracting_feeds", url=context.url)
 
-    f_url = construct_f_url(context.url)
+    source_uid = url_to_source_uid(context.url)
 
-    assert f_url is not None
+    integration = i_settings.get_integration_by_source(source_uid)
 
-    if f_url.host not in ("www.reddit.com", "reddit.com", "old.reddit.com"):
-        # We are not interested in not reddit.com domains
-        logger.info("discovering_reddit_not_reddit_domain")
+    if integration is None:
+        logger.info("discovering_plugin_no_integration_found", source_uid=source_uid)
         return context, None
 
-    if f_url.host == "old.reddit.com":
-        # Old Reddit site has marked RSS urls in the header
-        logger.info("discovering_reddit_old_reddit_domain")
-        return context, None
+    logger.info("discovering_plugin_integration_found", source_uid=source_uid)
 
-    match = _RE_REDDIT_PATH_PREFIX.match(str(f_url.path))
-
-    if match is None:
-        logger.info("discovering_reddit_not_reddit_path")
-        return context, None
-
-    base_path = match.group()
-
-    if not base_path.endswith("/"):
-        base_path += "/"
-
-    f_url.path = f"{base_path}.rss"  # type: ignore
-    f_url.query = ""  # type: ignore
-
-    # this check is required to stop recursion on _discover_check_candidate_links
-    if str(f_url) == context.url:
-        logger.info("discovering_reddit_same_url")
-        return context, None
-
-    logger.info("discovering_reddit_feed", feed_url=f_url)
-
-    return context.replace(candidate_urls={str(f_url)}), None
+    return await integration.plugin_instance.discover_feed_urls(context)
 
 
 # Note: we do not add internal feed discoverer here (like db check: url -> uid -> feed_id), because
@@ -355,12 +322,11 @@ async def _discover_extract_feeds_for_reddit(context: Context) -> tuple[Context,
 #       - internal feed data (news list) may be slightly outdated (not containing the latest news)
 _discoverers: list[Discoverer] = [
     _discover_adjust_url,
-    # This Reddit urls hack MUST go before loading url
-    # because Reddit blocks access to the non-rss urls for bots
-    #
-    # TODO: Should we simulate browser behavior?
-    #       Better not to, but it may be the only way to get the page data.
-    _discover_extract_feeds_for_reddit,
+    # We MUST process plugins before loading url because:
+    # - because some sites (like Reddit) blocks access to the non-rss urls for bots
+    # - also, most URLs plugins will construct without making requests to the page
+    #   => it is a kind of short-circuit
+    _discover_extract_feeds_for_plugins,
     _discover_check_candidate_links,
     _discover_load_url,
     _discover_extract_feed_info,
