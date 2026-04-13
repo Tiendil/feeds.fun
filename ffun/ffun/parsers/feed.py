@@ -13,6 +13,14 @@ from ffun.parsers.entities import EntryInfo, FeedInfo
 logger = logging.get_module_logger()
 
 
+# Known feedparser issues:
+#
+# - Media groups are ignored: https://github.com/kurtmckee/feedparser/issues/195
+#   On the example of YouTube feed that leads to separation of media link to the video from
+#   the media link to the thumbnail => we treat them as separate entries
+# - feedparser is "too smart" and may try to make an HTTP request if we pass content as a string
+
+
 def _parse_tags(tags: Iterable[dict[str, str]]) -> set[str]:
     result: set[str] = set()
 
