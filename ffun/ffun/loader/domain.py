@@ -9,7 +9,6 @@ from ffun.feeds.entities import Feed, FeedId, FeedState
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
-from ffun.library import entities as l_entities
 from ffun.loader import errors, operations
 from ffun.loader.entities import ProxyState
 from ffun.loader.settings import settings
@@ -132,13 +131,8 @@ async def sync_feed_info(feed: Feed, feed_info: p_entities.FeedInfo) -> None:
 
 
 async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None:
-    prepared_entries: list[l_entities.CollectedEntry] = [
-        l_entities.CollectedEntry(
-            id=new_entry_id(),
-            source_id=feed.source_id,
-            **entry_info.model_dump(),  # type: ignore
-        )
-        for entry_info in entries
+    prepared_entries = [
+        entry_info.to_collected_entry(entry_id=new_entry_id(), source_id=feed.source_id) for entry_info in entries
     ]
 
     entries_cataloged = await l_domain.catalog_entries(feed.id, entries=prepared_entries)

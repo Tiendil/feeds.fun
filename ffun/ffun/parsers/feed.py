@@ -135,6 +135,7 @@ def parse_entry(raw_entry: Mapping[str, object], original_url: FeedUrl) -> Entry
         external_url=_extract_external_url(raw_entry, original_url),
         external_tags=_parse_tags(raw_entry.get("tags", ())),  # type: ignore
         published_at=published_at,
+        references=[],
     )
 
 

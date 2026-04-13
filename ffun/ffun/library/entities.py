@@ -7,10 +7,32 @@ from ffun.core.entities import BaseEntity
 from ffun.domain.entities import AbsoluteUrl, EntryId, FeedId, SourceId
 
 
-class ProcessedState(int, enum.Enum):
+class ProcessedState(enum.IntEnum):
     success = 1
     error = 2
     retry_later = 3
+
+
+class ReferenceSemantics(enum.StrEnum):
+    unknown = "unknown"
+    author = "author"
+    comments = "comments"
+    page = "page"
+    video = "video"
+    audio = "audio"
+    image = "image"
+    document = "document"
+
+
+class Reference(BaseEntity):
+    semantics: ReferenceSemantics
+    url: AbsoluteUrl
+    title: str | None = None
+    mime_type: str | None = None
+    width: int | None = None
+    height: int | None = None
+    duration: datetime.timedelta | None = None
+    size: int | None = None
 
 
 class BaseEntry(BaseEntity):
@@ -22,6 +44,8 @@ class BaseEntry(BaseEntity):
     external_url: AbsoluteUrl
     external_tags: set[str]
     published_at: datetime.datetime
+
+    references: list[Reference]
 
     def log_info(self) -> dict[str, Any]:
         return {"id": self.id, "source_id": self.source_id, "title": self.title, "external_url": self.external_url}
@@ -82,6 +106,7 @@ class Entry(BaseEntry):
             external_url=self.external_url,
             external_tags=self.external_tags,
             published_at=self.published_at,
+            references=self.references,
         )
 
 
@@ -97,6 +122,7 @@ class CollectedEntry(BaseEntry):
             external_tags=self.external_tags,
             published_at=self.published_at,
             created_at=created_at,
+            references=self.references,
         )
 
 

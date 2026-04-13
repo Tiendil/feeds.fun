@@ -40,6 +40,7 @@ class TestParseEntry:
             external_url=normalize_classic_unknown_url(UnknownUrl("https://example.com/2023/07/25/news-1.html")),
             published_at=datetime.datetime(2023, 7, 25, 17, 15, 0, tzinfo=datetime.timezone.utc),
             external_tags={"tag1", "tag2", "tag3"},
+            references=[],
         )
 
         assert parsed_entry == expected_entry

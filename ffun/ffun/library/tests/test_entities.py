@@ -78,6 +78,7 @@ class TestEntry:
             external_url=entry.external_url,
             external_tags=entry.external_tags,
             published_at=entry.published_at,
+            references=entry.references,
         )
 
 
@@ -95,4 +96,5 @@ class TestCollectedEntry:
             external_tags=new_entry.external_tags,
             published_at=new_entry.published_at,
             created_at=created_at,
+            references=new_entry.references,
         )
