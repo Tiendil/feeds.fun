@@ -8,6 +8,7 @@ import feedparser
 from ffun.core import logging, utils
 from ffun.domain import urls
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
+from ffun.library.entities import Reference
 from ffun.parsers.entities import EntryInfo, FeedInfo
 
 logger = logging.get_module_logger()
@@ -123,6 +124,12 @@ def _extract_body(entry: Mapping[str, object]) -> str:
     return description
 
 
+def _extract_references(entry: Mapping[str, object]) -> list[Reference]:
+    references = []
+
+    return references
+
+
 def parse_entry(raw_entry: Mapping[str, object], original_url: FeedUrl) -> EntryInfo:
     # TODO: remove all tags from title
     # TODO: extract tags from <category> tag
@@ -135,7 +142,7 @@ def parse_entry(raw_entry: Mapping[str, object], original_url: FeedUrl) -> Entry
         external_url=_extract_external_url(raw_entry, original_url),
         external_tags=_parse_tags(raw_entry.get("tags", ())),  # type: ignore
         published_at=published_at,
-        references=[],
+        references=_extract_references(raw_entry),
     )
 
 

@@ -34,6 +34,10 @@ class Reference(BaseEntity):
     duration: datetime.timedelta | None = None
     size: int | None = None
 
+    # extra is a free-form dictionary for any source-specific data
+    # for example, for YouTube video id.
+    extra: dict[str, int | float | str | None] | None = None
+
 
 class BaseEntry(BaseEntity):
     id: EntryId
