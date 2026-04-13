@@ -8,7 +8,7 @@ import feedparser
 from ffun.core import logging, utils
 from ffun.domain import urls
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
-from ffun.library.entities import Reference
+from ffun.library.entities import REFERENCE_SEMANTICS_PRIORITY, Reference, ReferenceSemantics
 from ffun.parsers.entities import EntryInfo, FeedInfo
 
 logger = logging.get_module_logger()
@@ -124,7 +124,35 @@ def _extract_body(entry: Mapping[str, object]) -> str:
     return description
 
 
-def _extract_references(entry: Mapping[str, object]) -> list[Reference]:
+# TODO: try to improve, maybe
+def _media_type_to_semantics(media_type: str | None) -> ReferenceSemantics:  # noqa: CCR001
+    if media_type is None:
+        return ReferenceSemantics.unknown
+
+    normalized_media_type = media_type.split(";", 1)[0].strip().lower()
+
+    if normalized_media_type.startswith("image/"):
+        return ReferenceSemantics.image
+
+    if normalized_media_type.startswith("audio/"):
+        return ReferenceSemantics.audio
+
+    if normalized_media_type.startswith("video/"):
+        return ReferenceSemantics.video
+
+    if normalized_media_type in {"text/html", "application/xhtml+xml"}:
+        return ReferenceSemantics.page
+
+    if normalized_media_type in {"application/x-shockwave-flash"}:
+        return ReferenceSemantics.video
+
+    if normalized_media_type.startswith("text/") or normalized_media_type.startswith("application/"):
+        return ReferenceSemantics.document
+
+    return ReferenceSemantics.unknown
+
+
+def _extract_references(entry: Mapping[str, object], original_url: FeedUrl) -> list[Reference]:
     references = []
 
     return references
