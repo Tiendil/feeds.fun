@@ -8,7 +8,7 @@ from ffun.integrations.plugin import Plugin as BasePlugin
 logger = logging.get_module_logger()
 
 
-# Note: there are no oficial documentation on GitHub feed URLs,
+# Note: there are no official documentation on GitHub feed URLs,
 #       so we use whatever the community has discovered and documented in various places.
 # TODO: there are some other feeds that are dependent on the `Accept` header, rather than the URL structure
 #       for example: `https://github.com/{user}` + `Accept: application/atom+xml`
