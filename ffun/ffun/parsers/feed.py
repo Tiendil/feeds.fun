@@ -140,14 +140,24 @@ def _parse_stream(input_stream: io.IOBase) -> Channel:
     return feedparser.parse(input_stream)  # type: ignore
 
 
-def parse_feed(content: str, original_url: FeedUrl) -> FeedInfo | None:  # noqa: CCR001
+# TODO: tests
+def parse_into_feedparser(content: str) -> Channel | None:
     try:
         # ATTENTION: feedparser is "too smart" and may try to make an HTTP request if we pass content as a string
         #            also it does not accept io.StringIO, so we have to use io.BytesIO
         input_stream = io.BytesIO(content.encode("utf-8"))
         channel = _parse_stream(input_stream)
     except Exception:
-        logger.exception("error_while_parsing_feed", original_url=original_url)
+        logger.exception("error_while_parsing_feed")
+        return None
+
+    return channel
+
+
+def parse_feed(content: str, original_url: FeedUrl) -> FeedInfo | None:  # noqa: CCR001
+    channel = parse_into_feedparser(content)
+
+    if channel is None:
         return None
 
     # do not remove `getattr` till we confirm that feedparser channel object always has version field

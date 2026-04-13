@@ -97,8 +97,8 @@ async def detect_orphaned(feed_id: FeedId) -> bool:
 async def extract_feed_info(feed_id: FeedId | None, feed_url: FeedUrl) -> p_entities.FeedInfo | None:
     try:
         response = await load_content_with_proxies(feed_url)
-        content = await operations.decode_content(response)
-        feed_info = await operations.parse_content(content, original_url=feed_url)
+        content = await decode_content(response)
+        feed_info = await parse_content(content, original_url=feed_url)
     except errors.AllProxiesSuspended:
         logger.info("all_proxies_suspended")
         return None
