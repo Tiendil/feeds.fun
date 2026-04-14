@@ -56,12 +56,14 @@ class Reference(BaseEntity):
     extra: dict[str, int | float | str | None] | None = None
 
     # TODO: test
-    def merge(self, other: "Reference") -> "Reference":
+    def merge(self, other: "Reference") -> "Reference":  # noqa: CCR001
         if self.url != other.url:
             # TODO: replace with proper error
             raise NotImplementedError("Merging references with different URLs is not supported")
 
-        other_has_priority = REFERENCE_SEMANTICS_PRIORITY[self.semantics] > REFERENCE_SEMANTICS_PRIORITY[other.semantics]
+        other_has_priority = (
+            REFERENCE_SEMANTICS_PRIORITY[self.semantics] > REFERENCE_SEMANTICS_PRIORITY[other.semantics]
+        )
 
         if other_has_priority:
             original = other

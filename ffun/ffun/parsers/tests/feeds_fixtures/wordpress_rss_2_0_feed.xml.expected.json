@@ -19,7 +19,19 @@
         "Блог"
       ],
       "published_at": "2023-09-24T08:35:23Z",
-      "references": []
+      "references": [
+        {
+          "semantics": "comments",
+          "url": "https://example.com/news-1/#respond",
+          "title": "Comments",
+          "mime_type": null,
+          "width": null,
+          "height": null,
+          "duration": null,
+          "size": null,
+          "extra": null
+        }
+      ]
     },
     {
       "title": "Новость 2",
@@ -34,7 +46,19 @@
         "Блог"
       ],
       "published_at": "2023-08-30T19:56:11Z",
-      "references": []
+      "references": [
+        {
+          "semantics": "comments",
+          "url": "https://example.com/news-2/#respond",
+          "title": "Comments",
+          "mime_type": null,
+          "width": null,
+          "height": null,
+          "duration": null,
+          "size": null,
+          "extra": null
+        }
+      ]
     }
   ]
 }

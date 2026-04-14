@@ -19,3 +19,7 @@ class OPMLNoRoot(MalformedOPML):
 
 class OPMLNoBody(MalformedOPML):
     pass
+
+
+class CanNotExtractExternalUrl(Error):
+    pass

@@ -10,7 +10,7 @@ class EntryInfo(pydantic.BaseModel):
     title: str
     body: str
     external_id: str
-    external_url: AbsoluteUrl | None
+    external_url: AbsoluteUrl
     external_tags: set[str]
     published_at: datetime.datetime
 
@@ -21,8 +21,6 @@ class EntryInfo(pydantic.BaseModel):
 
     # TODO: tests
     def to_collected_entry(self, entry_id: EntryId, source_id: SourceId) -> "CollectedEntry":
-        assert self.external_url is not None
-
         return CollectedEntry(
             id=entry_id,
             source_id=source_id,

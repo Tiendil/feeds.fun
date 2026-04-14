@@ -8,7 +8,8 @@ import feedparser
 from ffun.core import logging, utils
 from ffun.domain import urls
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
-from ffun.library.entities import REFERENCE_SEMANTICS_PRIORITY, Reference, ReferenceSemantics
+from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.parsers import errors
 from ffun.parsers.entities import EntryInfo, FeedInfo
 
 logger = logging.get_module_logger()
@@ -71,12 +72,18 @@ def _extract_external_id(entry: object) -> str:
     return entry.get("link")  # type: ignore
 
 
-def _extract_external_url(entry: Mapping[str, object], original_url: FeedUrl) -> AbsoluteUrl | None:
+def _extract_external_url(entry: Mapping[str, object], original_url: FeedUrl) -> AbsoluteUrl:
     url = entry.get("link")
 
-    assert isinstance(url, str)
+    if not isinstance(url, str):
+        raise errors.CanNotExtractExternalUrl()
 
-    return urls.adjust_external_url(UnknownUrl(url), original_url)
+    adjusted_url = urls.adjust_external_url(UnknownUrl(url), original_url)
+
+    if adjusted_url is None:
+        raise errors.CanNotExtractExternalUrl()
+
+    return adjusted_url
 
 
 def _extract_content(entry: Mapping[str, object]) -> str | None:
@@ -152,25 +159,196 @@ def _media_type_to_semantics(media_type: str | None) -> ReferenceSemantics:  # n
     return ReferenceSemantics.unknown
 
 
-def _extract_references(entry: Mapping[str, object], original_url: FeedUrl) -> list[Reference]:
-    references = []
+def _create_reference(  # noqa: PLR0913, CFQ002
+    semantics: ReferenceSemantics,
+    url: str | None,
+    original_url: FeedUrl,
+    title: str | None = None,
+    mime_type: str | None = None,
+    width: str | int | None = None,
+    height: str | int | None = None,
+    duration: str | int | float | None = None,
+    size: str | int | None = None,
+    extra: dict[str, int | float | str | None] | None = None,
+) -> Reference | None:
+    if url is None:
+        return None
 
-    return references
+    try:
+        adjusted_url = urls.adjust_external_url(UnknownUrl(url), original_url)
+
+        if adjusted_url is None:
+            return None
+
+        return Reference(
+            semantics=semantics,
+            url=adjusted_url,
+            title=title,
+            mime_type=mime_type,
+            width=int(width) if width is not None else None,
+            height=int(height) if height is not None else None,
+            duration=datetime.timedelta(seconds=float(duration)) if duration is not None else None,
+            size=int(size) if size is not None else None,
+            extra=extra,
+        )
+    except Exception:
+        return None
+
+
+def _reference_semantics_from_link(rel: str | None, media_type: str | None) -> ReferenceSemantics:
+    if rel == "replies":
+        return ReferenceSemantics.comments
+
+    semantics = _media_type_to_semantics(media_type)
+
+    if semantics != ReferenceSemantics.unknown:
+        return semantics
+
+    if rel in {"alternate", "related", "via"}:
+        return ReferenceSemantics.page
+
+    return ReferenceSemantics.unknown
+
+
+def _extract_link_reference(
+    raw_link: object,
+    original_url: FeedUrl,
+) -> Reference | None:
+    assert isinstance(raw_link, Mapping)
+
+    reference = _create_reference(
+        semantics=_reference_semantics_from_link(raw_link.get("rel"), raw_link.get("type")),
+        url=cast(str | None, raw_link.get("href")),
+        original_url=original_url,
+        title=raw_link.get("title"),
+        mime_type=raw_link.get("type"),
+    )
+
+    if reference is None:
+        return None
+
+    return reference
+
+
+def _extract_media_reference(
+    raw_media_entry: object,
+    original_url: FeedUrl,
+    default_semantics: ReferenceSemantics,
+) -> Reference | None:
+    assert isinstance(raw_media_entry, Mapping)
+
+    semantics = _media_type_to_semantics(raw_media_entry.get("type"))
+
+    if semantics == ReferenceSemantics.unknown:
+        semantics = default_semantics
+
+    return _create_reference(
+        semantics=semantics,
+        url=cast(str | None, raw_media_entry.get("url")),
+        original_url=original_url,
+        title=raw_media_entry.get("title"),
+        mime_type=raw_media_entry.get("type"),
+        width=raw_media_entry.get("width"),
+        height=raw_media_entry.get("height"),
+        duration=raw_media_entry.get("duration"),
+        size=raw_media_entry.get("filesize", raw_media_entry.get("file_size")),
+    )
+
+
+def _extract_media_content_reference(raw_media_entry: object, original_url: FeedUrl) -> Reference | None:
+    return _extract_media_reference(
+        raw_media_entry=raw_media_entry,
+        original_url=original_url,
+        default_semantics=ReferenceSemantics.unknown,
+    )
+
+
+def _extract_media_thumbnail_reference(raw_media_entry: object, original_url: FeedUrl) -> Reference | None:
+    return _extract_media_reference(
+        raw_media_entry=raw_media_entry,
+        original_url=original_url,
+        default_semantics=ReferenceSemantics.image,
+    )
+
+
+def _extract_comments_reference(raw_comments_url: object, original_url: FeedUrl) -> Reference | None:
+    return _create_reference(
+        semantics=ReferenceSemantics.comments,
+        url=cast(str | None, raw_comments_url),
+        original_url=original_url,
+        title="Comments",
+    )
+
+def _extract_enclosure_reference(raw_enclosure: object, original_url: FeedUrl) -> Reference | None:
+    assert isinstance(raw_enclosure, Mapping)
+
+    return _create_reference(
+        semantics=_media_type_to_semantics(raw_enclosure.get("type")),
+        url=cast(str | None, raw_enclosure.get("href")),
+        original_url=original_url,
+        title=raw_enclosure.get("title"),
+        mime_type=raw_enclosure.get("type"),
+        size=raw_enclosure.get("length"),
+    )
+
+
+def _merge_references_list(references: list[Reference]) -> list[Reference]:
+    merged_references: dict[str, Reference] = {}
+
+    for reference in references:
+        existing_reference = merged_references.get(reference.url)
+
+        if existing_reference is None:
+            merged_references[reference.url] = reference
+            continue
+
+        merged_references[reference.url] = existing_reference.merge(reference)
+
+    return sorted(merged_references.values(), key=lambda reference: reference.url)
+
+
+def _extract_references_raw(
+    entry: Mapping[str, object], original_url: FeedUrl, primary_url: AbsoluteUrl
+) -> list[Reference]:  # noqa: CCR001
+    references: list[Reference | None] = []
+
+    for raw_link in entry.get("links", ()):
+        references.append(_extract_link_reference(raw_link, original_url))
+
+    for raw_enclosure in entry.get("enclosures", ()):
+        references.append(_extract_enclosure_reference(raw_enclosure, original_url))
+
+    for raw_media_entry in entry.get("media_content", ()):
+        references.append(_extract_media_content_reference(raw_media_entry, original_url))
+
+    for raw_media_entry in entry.get("media_thumbnail", ()):
+        references.append(_extract_media_thumbnail_reference(raw_media_entry, original_url))
+
+    references.append(_extract_comments_reference(entry.get("comments"), original_url))
+    return [reference for reference in references if reference is not None and reference.url != primary_url]
+
+
+def _extract_references(
+    entry: Mapping[str, object], original_url: FeedUrl, primary_url: AbsoluteUrl
+) -> list[Reference]:
+    references = _extract_references_raw(entry, original_url, primary_url)
+    return _merge_references_list(references)
 
 
 def parse_entry(raw_entry: Mapping[str, object], original_url: FeedUrl) -> EntryInfo:
     # TODO: remove all tags from title
     # TODO: extract tags from <category> tag
     published_at = _extract_published_at(raw_entry)
+    external_url = _extract_external_url(raw_entry, original_url)
 
     return EntryInfo(
         title=raw_entry.get("title", ""),  # type: ignore
         body=_extract_body(raw_entry),
         external_id=_extract_external_id(raw_entry),
-        external_url=_extract_external_url(raw_entry, original_url),
+        external_url=external_url,
         external_tags=_parse_tags(raw_entry.get("tags", ())),  # type: ignore
         published_at=published_at,
-        references=_extract_references(raw_entry),
+        references=_extract_references(raw_entry, original_url, external_url),
     )
 
 
