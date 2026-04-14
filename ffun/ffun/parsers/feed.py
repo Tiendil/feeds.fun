@@ -279,6 +279,7 @@ def _extract_comments_reference(raw_comments_url: object, original_url: FeedUrl)
         title="Comments",
     )
 
+
 def _extract_enclosure_reference(raw_enclosure: object, original_url: FeedUrl) -> Reference | None:
     assert isinstance(raw_enclosure, Mapping)
 
@@ -304,7 +305,17 @@ def _merge_references_list(references: list[Reference]) -> list[Reference]:
 
         merged_references[reference.url] = existing_reference.merge(reference)
 
-    return sorted(merged_references.values(), key=lambda reference: reference.url)
+    return [merged_references[url] for url in sorted(merged_references)]
+
+
+def _extract_raw_reference_items(entry: Mapping[str, object], key: str) -> list[object]:
+    items = entry.get(key)
+
+    if items is None:
+        return []
+
+    assert isinstance(items, list)
+    return items
 
 
 def _extract_references_raw(
@@ -312,16 +323,16 @@ def _extract_references_raw(
 ) -> list[Reference]:  # noqa: CCR001
     references: list[Reference | None] = []
 
-    for raw_link in entry.get("links", ()):
+    for raw_link in _extract_raw_reference_items(entry, "links"):
         references.append(_extract_link_reference(raw_link, original_url))
 
-    for raw_enclosure in entry.get("enclosures", ()):
+    for raw_enclosure in _extract_raw_reference_items(entry, "enclosures"):
         references.append(_extract_enclosure_reference(raw_enclosure, original_url))
 
-    for raw_media_entry in entry.get("media_content", ()):
+    for raw_media_entry in _extract_raw_reference_items(entry, "media_content"):
         references.append(_extract_media_content_reference(raw_media_entry, original_url))
 
-    for raw_media_entry in entry.get("media_thumbnail", ()):
+    for raw_media_entry in _extract_raw_reference_items(entry, "media_thumbnail"):
         references.append(_extract_media_thumbnail_reference(raw_media_entry, original_url))
 
     references.append(_extract_comments_reference(entry.get("comments"), original_url))

@@ -4,8 +4,8 @@ from typing import Any
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
-from ffun.library import errors
 from ffun.domain.entities import AbsoluteUrl, EntryId, FeedId, SourceId
+from ffun.library import errors
 
 
 class ProcessedState(enum.IntEnum):

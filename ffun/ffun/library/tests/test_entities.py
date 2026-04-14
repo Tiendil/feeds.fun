@@ -4,6 +4,7 @@ import pytest
 
 from ffun.core import utils
 from ffun.domain.urls import str_to_absolute_url
+from ffun.library import errors
 from ffun.library.entities import (
     REFERENCE_SEMANTICS_PRIORITY,
     CollectedEntry,
@@ -11,7 +12,6 @@ from ffun.library.entities import (
     Reference,
     ReferenceSemantics,
 )
-from ffun.library import errors
 
 
 class TestEntry:

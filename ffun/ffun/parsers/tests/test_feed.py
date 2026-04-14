@@ -1,4 +1,7 @@
 import datetime
+import io
+from types import SimpleNamespace
+from typing import Mapping
 
 import pytest
 from pytest_mock import MockerFixture
@@ -98,12 +101,15 @@ class TestParseEntry:
         assert original_url is not None
 
         parsed_entry = parse_entry(raw_entry, to_feed_url(original_url))
+        expected_external_url = normalize_classic_unknown_url(UnknownUrl("https://example.com/2023/07/25/news-1.html"))
+
+        assert expected_external_url is not None
 
         expected_entry = EntryInfo(
             title="Entry title 1",
             body="Body 1",
             external_id="/2023/07/25/news-1.html",
-            external_url=normalize_classic_unknown_url(UnknownUrl("https://example.com/2023/07/25/news-1.html")),
+            external_url=expected_external_url,
             published_at=datetime.datetime(2023, 7, 25, 17, 15, 0, tzinfo=datetime.timezone.utc),
             external_tags={"tag1", "tag2", "tag3"},
             references=[],
@@ -202,7 +208,9 @@ class TestParseFeed:
         assert result is None, "Broken HTML should return None"
 
     def test_returns_none_when_channel_has_no_version_and_no_entries(self, mocker: MockerFixture) -> None:
-        channel = mocker.Mock(feed={}, entries=[], version="")
+        feed: Mapping[str, object] = {}
+        entries: list[Mapping[str, object]] = []
+        channel = SimpleNamespace(feed=feed, entries=entries, version="")
         mocker.patch("ffun.parsers.feed.parse_into_feedparser", return_value=channel)
 
         assert parse_feed("<feed />", _feed_url()) is None
@@ -543,7 +551,9 @@ class TestExtractReferencesRaw:
         )
 
         assert references == [
-            Reference(semantics=ReferenceSemantics.page, url=_absolute_url("https://example.com/page"), mime_type="text/html"),
+            Reference(
+                semantics=ReferenceSemantics.page, url=_absolute_url("https://example.com/page"), mime_type="text/html"
+            ),
             Reference(
                 semantics=ReferenceSemantics.document,
                 url=_absolute_url("https://example.com/file.pdf"),
@@ -590,7 +600,7 @@ class TestExtractReferences:
 class TestParseStream:
 
     def test_delegates_to_feedparser(self, mocker: MockerFixture) -> None:
-        input_stream = object()
+        input_stream = io.BytesIO(b"feed")
         expected = object()
         parse = mocker.patch("feedparser.parse", return_value=expected)
 
