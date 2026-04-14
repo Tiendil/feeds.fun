@@ -5,11 +5,77 @@ from pytest_mock import MockerFixture
 
 from ffun.core import json, utils
 from ffun.core.tests.helpers import assert_logs, capture_logs
-from ffun.domain.entities import FeedUrl, UnknownUrl
+from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url
+from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.parsers import errors
 from ffun.parsers.entities import EntryInfo, FeedInfo
-from ffun.parsers.feed import _extract_body, _extract_content, _extract_published_at, parse_entry, parse_feed
+from ffun.parsers.feed import (
+    _create_reference,
+    _extract_body,
+    _extract_comments_reference,
+    _extract_content,
+    _extract_enclosure_reference,
+    _extract_external_id,
+    _extract_external_url,
+    _extract_link_reference,
+    _extract_media_content_reference,
+    _extract_media_reference,
+    _extract_media_thumbnail_reference,
+    _extract_published_at,
+    _extract_references,
+    _extract_references_raw,
+    _media_type_to_semantics,
+    _merge_references_list,
+    _parse_stream,
+    _parse_tags,
+    _reference_semantics_from_link,
+    _should_skip,
+    parse_entry,
+    parse_feed,
+    parse_into_feedparser,
+)
 from ffun.parsers.tests.helpers import feeds_fixtures_directory, feeds_fixtures_names
+
+
+def _feed_url(url: str = "https://example.com/feed/") -> FeedUrl:
+    normalized_url = normalize_classic_unknown_url(UnknownUrl(url))
+    assert normalized_url is not None
+    return to_feed_url(normalized_url)
+
+
+def _absolute_url(url: str) -> AbsoluteUrl:
+    normalized_url = normalize_classic_unknown_url(UnknownUrl(url))
+    assert normalized_url is not None
+    return normalized_url
+
+
+class TestParseTags:
+
+    def test_empty(self) -> None:
+        assert _parse_tags([]) == set()
+
+    def test_prefers_label_and_falls_back_to_term(self) -> None:
+        tags = [
+            {"label": "label-1", "term": "term-1"},
+            {"term": "term-2"},
+            {},
+        ]
+
+        assert _parse_tags(tags) == {"label-1", "term-2"}
+
+
+class TestShouldSkip:
+
+    def test_returns_true_and_logs_when_link_is_missing(self) -> None:
+        with capture_logs() as logs:
+            result = _should_skip({})
+
+        assert result is True
+        assert_logs(logs, feed_does_not_has_link_field=1)
+
+    def test_returns_false_when_link_exists(self) -> None:
+        assert _should_skip({"link": "https://example.com/news"}) is False
 
 
 class TestParseEntry:
@@ -44,6 +110,10 @@ class TestParseEntry:
         )
 
         assert parsed_entry == expected_entry
+
+    def test_raises_when_external_url_can_not_be_extracted(self) -> None:
+        with pytest.raises(errors.CanNotExtractExternalUrl):
+            parse_entry({"title": "Entry", "link": "mailto:test@example.com"}, _feed_url())
 
 
 class TestParseFeed:
@@ -131,6 +201,29 @@ class TestParseFeed:
         result = parse_feed(input, to_feed_url(url))
         assert result is None, "Broken HTML should return None"
 
+    def test_returns_none_when_channel_has_no_version_and_no_entries(self, mocker: MockerFixture) -> None:
+        channel = mocker.Mock(feed={}, entries=[], version="")
+        mocker.patch("ffun.parsers.feed.parse_into_feedparser", return_value=channel)
+
+        assert parse_feed("<feed />", _feed_url()) is None
+
+    def test_skips_entries_without_link(self) -> None:
+        result = parse_feed(
+            """
+            <rss version="2.0">
+              <channel>
+                <title>Title</title>
+                <description>Description</description>
+                <item><title>Broken entry</title></item>
+              </channel>
+            </rss>
+            """,
+            _feed_url(),
+        )
+
+        assert result is not None
+        assert result.entries == []
+
 
 class TestExtractPublishedAt:
 
@@ -156,6 +249,9 @@ class TestExtractPublishedAt:
             _extract_published_at({"published_parsed": published_parsed, "updated_parsed": updated_parsed})
             == expected_published_at
         )
+
+    def test_returns_now_when_both_dates_are_missing(self) -> None:
+        assert (utils.now() - _extract_published_at({})).total_seconds() < 1
 
 
 class TestExtractContent:
@@ -215,3 +311,306 @@ class TestExtractBody:
             "content": [{"value": "short"}],
         }
         assert _extract_body(entry) == "description-is-longer"
+
+
+class TestExtractExternalId:
+
+    def test_returns_link(self) -> None:
+        assert _extract_external_id({"link": "https://example.com/news"}) == "https://example.com/news"
+
+
+class TestExtractExternalUrl:
+
+    def test_returns_adjusted_url(self) -> None:
+        assert _extract_external_url({"link": "/news"}, _feed_url()) == "https://example.com/news"
+
+    def test_raises_when_link_is_missing(self) -> None:
+        with pytest.raises(errors.CanNotExtractExternalUrl):
+            _extract_external_url({}, _feed_url())
+
+    def test_raises_when_link_is_not_valid(self) -> None:
+        with pytest.raises(errors.CanNotExtractExternalUrl):
+            _extract_external_url({"link": "mailto:test@example.com"}, _feed_url())
+
+
+class TestMediaTypeToSemantics:
+
+    @pytest.mark.parametrize(
+        ("media_type", "expected"),
+        [
+            (None, ReferenceSemantics.unknown),
+            ("image/png", ReferenceSemantics.image),
+            ("audio/mpeg", ReferenceSemantics.audio),
+            ("video/mp4", ReferenceSemantics.video),
+            ("text/html", ReferenceSemantics.page),
+            ("application/xhtml+xml", ReferenceSemantics.page),
+            ("application/x-shockwave-flash", ReferenceSemantics.video),
+            ("application/pdf", ReferenceSemantics.document),
+            ("application/octet-stream", ReferenceSemantics.document),
+            ("x-custom/thing", ReferenceSemantics.unknown),
+        ],
+    )
+    def test(self, media_type: str | None, expected: ReferenceSemantics) -> None:
+        assert _media_type_to_semantics(media_type) == expected
+
+
+class TestCreateReference:
+
+    def test_returns_none_when_url_is_missing(self) -> None:
+        assert _create_reference(ReferenceSemantics.page, None, _feed_url()) is None
+
+    def test_returns_none_when_url_is_invalid(self) -> None:
+        assert _create_reference(ReferenceSemantics.page, "mailto:test@example.com", _feed_url()) is None
+
+    def test_returns_none_on_metadata_parsing_error(self) -> None:
+        assert _create_reference(ReferenceSemantics.page, "/news", _feed_url(), width="bad-int") is None
+
+    def test_creates_reference(self) -> None:
+        reference = _create_reference(
+            semantics=ReferenceSemantics.video,
+            url="/video",
+            original_url=_feed_url(),
+            title="Title",
+            mime_type="video/mp4",
+            width="640",
+            height="360",
+            duration="12.5",
+            size="99",
+            extra={"id": "video-id"},
+        )
+
+        assert reference == Reference(
+            semantics=ReferenceSemantics.video,
+            url=_absolute_url("https://example.com/video"),
+            title="Title",
+            mime_type="video/mp4",
+            width=640,
+            height=360,
+            duration=datetime.timedelta(seconds=12.5),
+            size=99,
+            extra={"id": "video-id"},
+        )
+
+
+class TestReferenceSemanticsFromLink:
+
+    def test_returns_comments_for_replies(self) -> None:
+        assert _reference_semantics_from_link("replies", None) == ReferenceSemantics.comments
+
+    def test_prefers_media_type_when_it_is_known(self) -> None:
+        assert _reference_semantics_from_link("alternate", "image/png") == ReferenceSemantics.image
+
+    @pytest.mark.parametrize("rel", ["alternate", "related", "via"])
+    def test_returns_page_for_page_like_rels(self, rel: str) -> None:
+        assert _reference_semantics_from_link(rel, None) == ReferenceSemantics.page
+
+    def test_returns_unknown_for_other_rels(self) -> None:
+        assert _reference_semantics_from_link("self", None) == ReferenceSemantics.unknown
+
+
+class TestExtractLinkReference:
+
+    def test_returns_none_when_href_is_missing(self) -> None:
+        assert _extract_link_reference({}, _feed_url()) is None
+
+    def test_returns_reference(self) -> None:
+        assert _extract_link_reference(
+            {"href": "/page", "rel": "alternate", "type": "text/html", "title": "Page"},
+            _feed_url(),
+        ) == Reference(
+            semantics=ReferenceSemantics.page,
+            url=_absolute_url("https://example.com/page"),
+            title="Page",
+            mime_type="text/html",
+        )
+
+
+class TestExtractMediaReference:
+
+    def test_returns_none_when_url_is_missing(self) -> None:
+        assert _extract_media_reference({}, _feed_url(), ReferenceSemantics.image) is None
+
+    def test_uses_default_semantics_for_unknown_media_type(self) -> None:
+        assert _extract_media_reference({"url": "/asset"}, _feed_url(), ReferenceSemantics.image) == Reference(
+            semantics=ReferenceSemantics.image,
+            url=_absolute_url("https://example.com/asset"),
+        )
+
+    def test_known_media_type_overrides_default(self) -> None:
+        assert _extract_media_reference(
+            {"url": "/asset", "type": "video/mp4"},
+            _feed_url(),
+            ReferenceSemantics.image,
+        ) == Reference(
+            semantics=ReferenceSemantics.video,
+            url=_absolute_url("https://example.com/asset"),
+            mime_type="video/mp4",
+        )
+
+
+class TestExtractMediaContentReference:
+
+    def test_uses_unknown_default_semantics(self) -> None:
+        assert _extract_media_content_reference({"url": "/asset"}, _feed_url()) == Reference(
+            semantics=ReferenceSemantics.unknown,
+            url=_absolute_url("https://example.com/asset"),
+        )
+
+
+class TestExtractMediaThumbnailReference:
+
+    def test_uses_image_default_semantics(self) -> None:
+        assert _extract_media_thumbnail_reference({"url": "/image"}, _feed_url()) == Reference(
+            semantics=ReferenceSemantics.image,
+            url=_absolute_url("https://example.com/image"),
+        )
+
+
+class TestExtractCommentsReference:
+
+    def test_returns_none_when_missing(self) -> None:
+        assert _extract_comments_reference(None, _feed_url()) is None
+
+    def test_returns_comments_reference(self) -> None:
+        assert _extract_comments_reference("/comments", _feed_url()) == Reference(
+            semantics=ReferenceSemantics.comments,
+            url=_absolute_url("https://example.com/comments"),
+            title="Comments",
+        )
+
+
+class TestExtractEnclosureReference:
+
+    def test_returns_none_when_href_is_missing(self) -> None:
+        assert _extract_enclosure_reference({}, _feed_url()) is None
+
+    def test_returns_reference(self) -> None:
+        assert _extract_enclosure_reference(
+            {"href": "/file.pdf", "type": "application/pdf", "title": "File", "length": "42"},
+            _feed_url(),
+        ) == Reference(
+            semantics=ReferenceSemantics.document,
+            url=_absolute_url("https://example.com/file.pdf"),
+            title="File",
+            mime_type="application/pdf",
+            size=42,
+        )
+
+
+class TestMergeReferencesList:
+
+    def test_merges_duplicates(self) -> None:
+        references = [
+            Reference(semantics=ReferenceSemantics.page, url=_absolute_url("https://example.com/b"), title="page"),
+            Reference(
+                semantics=ReferenceSemantics.comments,
+                url=_absolute_url("https://example.com/b"),
+                title="comments",
+            ),
+        ]
+
+        assert len(_merge_references_list(references)) == 1
+
+    def test_returns_references_sorted_by_url(self) -> None:
+        references = [
+            Reference(semantics=ReferenceSemantics.page, url=_absolute_url("https://example.com/b")),
+            Reference(semantics=ReferenceSemantics.page, url=_absolute_url("https://example.com/a")),
+        ]
+
+        assert _merge_references_list(references) == [
+            Reference(semantics=ReferenceSemantics.page, url=_absolute_url("https://example.com/a")),
+            Reference(semantics=ReferenceSemantics.page, url=_absolute_url("https://example.com/b")),
+        ]
+
+
+class TestExtractReferencesRaw:
+
+    def test_collects_references_and_filters_primary_url(self) -> None:
+        primary_url = _absolute_url("https://example.com/news")
+        references = _extract_references_raw(
+            {
+                "links": [
+                    {"href": "https://example.com/news", "rel": "alternate", "type": "text/html"},
+                    {"href": "/page", "rel": "alternate", "type": "text/html"},
+                ],
+                "enclosures": [{"href": "/file.pdf", "type": "application/pdf"}],
+                "media_content": [{"url": "/video", "type": "video/mp4"}],
+                "media_thumbnail": [{"url": "/image"}],
+                "comments": "/comments",
+            },
+            _feed_url(),
+            primary_url,
+        )
+
+        assert references == [
+            Reference(semantics=ReferenceSemantics.page, url=_absolute_url("https://example.com/page"), mime_type="text/html"),
+            Reference(
+                semantics=ReferenceSemantics.document,
+                url=_absolute_url("https://example.com/file.pdf"),
+                mime_type="application/pdf",
+            ),
+            Reference(
+                semantics=ReferenceSemantics.video,
+                url=_absolute_url("https://example.com/video"),
+                mime_type="video/mp4",
+            ),
+            Reference(semantics=ReferenceSemantics.image, url=_absolute_url("https://example.com/image")),
+            Reference(
+                semantics=ReferenceSemantics.comments,
+                url=_absolute_url("https://example.com/comments"),
+                title="Comments",
+            ),
+        ]
+
+
+class TestExtractReferences:
+
+    def test_merges_duplicates_and_sorts(self) -> None:
+        references = _extract_references(
+            {
+                "links": [{"href": "/b", "rel": "alternate", "type": "text/html"}],
+                "comments": "/b",
+                "media_thumbnail": [{"url": "/a"}],
+            },
+            _feed_url(),
+            _absolute_url("https://example.com/news"),
+        )
+
+        assert references == [
+            Reference(semantics=ReferenceSemantics.image, url=_absolute_url("https://example.com/a")),
+            Reference(
+                semantics=ReferenceSemantics.page,
+                url=_absolute_url("https://example.com/b"),
+                title="Comments",
+                mime_type="text/html",
+            ),
+        ]
+
+
+class TestParseStream:
+
+    def test_delegates_to_feedparser(self, mocker: MockerFixture) -> None:
+        input_stream = object()
+        expected = object()
+        parse = mocker.patch("feedparser.parse", return_value=expected)
+
+        assert _parse_stream(input_stream) is expected
+        parse.assert_called_once_with(input_stream)
+
+
+class TestParseIntoFeedparser:
+
+    def test_returns_channel(self, mocker: MockerFixture) -> None:
+        channel = object()
+        mocker.patch("ffun.parsers.feed._parse_stream", return_value=channel)
+
+        assert parse_into_feedparser("<rss />") is channel
+
+    def test_returns_none_and_logs_on_error(self, mocker: MockerFixture) -> None:
+        mocker.patch("ffun.parsers.feed._parse_stream", side_effect=ValueError("boom"))
+
+        with capture_logs() as logs:
+            result = parse_into_feedparser("<rss />")
+
+        assert result is None
+        assert_logs(logs, error_while_parsing_feed=1)
