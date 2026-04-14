@@ -131,7 +131,6 @@ def _extract_body(entry: Mapping[str, object]) -> str:
     return description
 
 
-# TODO: try to improve, maybe
 def _media_type_to_semantics(media_type: str | None) -> ReferenceSemantics:  # noqa: CCR001
     if media_type is None:
         return ReferenceSemantics.unknown
