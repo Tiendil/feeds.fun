@@ -372,7 +372,6 @@ def _parse_stream(input_stream: io.IOBase) -> Channel:
     return feedparser.parse(input_stream)  # type: ignore
 
 
-# TODO: tests
 def parse_into_feedparser(content: str) -> Channel | None:
     try:
         # ATTENTION: feedparser is "too smart" and may try to make an HTTP request if we pass content as a string
