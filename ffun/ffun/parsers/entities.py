@@ -19,7 +19,6 @@ class EntryInfo(pydantic.BaseModel):
     def log_info(self) -> dict[str, object]:
         return {"title": self.title, "external_url": self.external_url}
 
-    # TODO: tests
     def to_collected_entry(self, entry_id: EntryId, source_id: SourceId) -> "CollectedEntry":
         return CollectedEntry(
             id=entry_id,
