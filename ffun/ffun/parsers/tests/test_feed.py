@@ -579,7 +579,7 @@ class TestExtractReferences:
         assert references == [
             Reference(semantics=ReferenceSemantics.image, url=_absolute_url("https://example.com/a")),
             Reference(
-                semantics=ReferenceSemantics.page,
+                semantics=ReferenceSemantics.comments,
                 url=_absolute_url("https://example.com/b"),
                 title="Comments",
                 mime_type="text/html",

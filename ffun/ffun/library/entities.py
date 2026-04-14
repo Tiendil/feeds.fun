@@ -4,6 +4,7 @@ from typing import Any
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
+from ffun.library import errors
 from ffun.domain.entities import AbsoluteUrl, EntryId, FeedId, SourceId
 
 
@@ -55,14 +56,12 @@ class Reference(BaseEntity):
     # for example, for YouTube video id.
     extra: dict[str, int | float | str | None] | None = None
 
-    # TODO: test
     def merge(self, other: "Reference") -> "Reference":  # noqa: CCR001
         if self.url != other.url:
-            # TODO: replace with proper error
-            raise NotImplementedError("Merging references with different URLs is not supported")
+            raise errors.ReferenceUrlsMissmatchOnMerge()
 
         other_has_priority = (
-            REFERENCE_SEMANTICS_PRIORITY[self.semantics] > REFERENCE_SEMANTICS_PRIORITY[other.semantics]
+            REFERENCE_SEMANTICS_PRIORITY[self.semantics] < REFERENCE_SEMANTICS_PRIORITY[other.semantics]
         )
 
         if other_has_priority:

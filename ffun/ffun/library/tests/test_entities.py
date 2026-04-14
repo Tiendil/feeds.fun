@@ -3,7 +3,15 @@ import datetime
 import pytest
 
 from ffun.core import utils
-from ffun.library.entities import CollectedEntry, Entry
+from ffun.domain.urls import str_to_absolute_url
+from ffun.library.entities import (
+    REFERENCE_SEMANTICS_PRIORITY,
+    CollectedEntry,
+    Entry,
+    Reference,
+    ReferenceSemantics,
+)
+from ffun.library import errors
 
 
 class TestEntry:
@@ -97,4 +105,94 @@ class TestCollectedEntry:
             published_at=new_entry.published_at,
             created_at=created_at,
             references=new_entry.references,
+        )
+
+
+class TestReferenceSemanticsPriority:
+    def test_is_not_changed(self) -> None:
+        assert REFERENCE_SEMANTICS_PRIORITY == {
+            ReferenceSemantics.unknown: 0,
+            ReferenceSemantics.page: 1,
+            ReferenceSemantics.document: 2,
+            ReferenceSemantics.author: 3,
+            ReferenceSemantics.comments: 3,
+            ReferenceSemantics.audio: 3,
+            ReferenceSemantics.video: 3,
+            ReferenceSemantics.image: 3,
+        }
+
+
+class TestReference:
+    def test_merge_raises_on_different_urls(self) -> None:
+        reference_1 = Reference(semantics=ReferenceSemantics.page, url=str_to_absolute_url("https://example.com/1"))
+        reference_2 = Reference(semantics=ReferenceSemantics.page, url=str_to_absolute_url("https://example.com/2"))
+
+        with pytest.raises(errors.ReferenceUrlsMissmatchOnMerge):
+            reference_1.merge(reference_2)
+
+    def test_merge_keeps_self_when_self_has_higher_or_equal_priority(self) -> None:
+        reference_1 = Reference(
+            semantics=ReferenceSemantics.comments,
+            url=str_to_absolute_url("https://example.com/reference"),
+            title="title-1",
+            mime_type="text/html",
+            width=100,
+            duration=datetime.timedelta(seconds=5),
+            extra={"a": "b"},
+        )
+        reference_2 = Reference(
+            semantics=ReferenceSemantics.page,
+            url=str_to_absolute_url("https://example.com/reference"),
+            title="title-2",
+            mime_type="application/pdf",
+            height=200,
+            size=42,
+        )
+
+        assert reference_1.merge(reference_2) == Reference(
+            semantics=ReferenceSemantics.comments,
+            url=str_to_absolute_url("https://example.com/reference"),
+            title="title-1",
+            mime_type="text/html",
+            width=100,
+            height=200,
+            duration=datetime.timedelta(seconds=5),
+            size=42,
+            extra={"a": "b"},
+        )
+
+    def test_merge_uses_other_when_other_has_higher_priority(self) -> None:
+        reference_1 = Reference(
+            semantics=ReferenceSemantics.page,
+            url=str_to_absolute_url("https://example.com/reference"),
+            title=None,
+            mime_type=None,
+            width=None,
+            height=200,
+            duration=None,
+            size=42,
+            extra=None,
+        )
+        reference_2 = Reference(
+            semantics=ReferenceSemantics.video,
+            url=str_to_absolute_url("https://example.com/reference"),
+            title="video",
+            mime_type="video/mp4",
+            width=640,
+            height=None,
+            duration=datetime.timedelta(seconds=5),
+            size=None,
+            extra={"id": "123"},
+        )
+
+        assert reference_1.merge(reference_2) == Reference(
+            semantics=ReferenceSemantics.video,
+            url=str_to_absolute_url("https://example.com/reference"),
+            title="video",
+            mime_type="video/mp4",
+            width=640,
+            height=200,
+            duration=datetime.timedelta(seconds=5),
+            size=42,
+            extra={"id": "123"},
         )

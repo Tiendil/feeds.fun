@@ -21,5 +21,9 @@ class OPMLNoBody(MalformedOPML):
     pass
 
 
-class CanNotExtractExternalUrl(Error):
+class MalformedFeed(Error):
+    pass
+
+
+class CanNotExtractExternalUrl(MalformedFeed):
     pass

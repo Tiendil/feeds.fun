@@ -17,3 +17,7 @@ class ConcurentOperationOnRemovedEntries(Error):
 
 class FeedHeadIsTooShort(Error):
     pass
+
+
+class ReferenceUrlsMissmatchOnMerge(Error):
+    pass
