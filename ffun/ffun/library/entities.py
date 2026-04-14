@@ -25,7 +25,6 @@ class ReferenceSemantics(enum.StrEnum):
     document = "document"
 
 
-# TODO: test that priorities has not changed
 # The priority of the semantics is used when merging references to the same URL.
 # The highest priority semantics will be used as the semantics of the merged reference.
 REFERENCE_SEMANTICS_PRIORITY: dict[ReferenceSemantics, int] = {
