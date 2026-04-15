@@ -65,8 +65,10 @@ import SocialLink from "./values/SocialLink.vue";
 import BodyListReverseTimeColumn from "./components/body_list/ReverseTimeColumn.vue";
 import BodyListFaviconColumn from "./components/body_list/FaviconColumn.vue";
 import BodyListEntryBody from "./components/body_list/EntryBody.vue";
+import BodyListEntryCover from "./components/body_list/EntryCover.vue";
 import BodyListReferences from "./components/body_list/References.vue";
 import BodyLustReference from "./components/body_list/Reference.vue";
+import IntegrationsYouTube from "./integrations/YouTube.vue";
 
 import MainDescription from "./components/main/Description.vue";
 import MainItem from "./components/main/Item.vue";
@@ -140,8 +142,10 @@ app.component("SocialLink", SocialLink);
 app.component("BodyListReverseTimeColumn", BodyListReverseTimeColumn);
 app.component("BodyListFaviconColumn", BodyListFaviconColumn);
 app.component("BodyListEntryBody", BodyListEntryBody);
+app.component("BodyListEntryCover", BodyListEntryCover);
 app.component("BodyListReferences", BodyListReferences);
 app.component("BodyLustReference", BodyLustReference);
+app.component("IntegrationsYouTube", IntegrationsYouTube);
 
 app.component("MainDescription", MainDescription);
 app.component("MainItem", MainItem);

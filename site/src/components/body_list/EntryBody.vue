@@ -22,21 +22,19 @@
           class="prose max-w-none"
           v-html="text" />
       </div>
+      <body-list-entry-cover
+        v-if="coverReference !== null"
+        class="mt-4"
+        :reference="coverReference" />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import _ from "lodash";
-  import {computed, ref, useTemplateRef, onMounted} from "vue";
-  import type * as t from "@/logic/types";
-  import * as events from "@/logic/events";
+  import {computed} from "vue";
   import * as e from "@/logic/enums";
-  import {computedAsync} from "@vueuse/core";
-  import DOMPurify from "dompurify";
-  import {useEntriesStore} from "@/stores/entries";
-
-  const entriesStore = useEntriesStore();
+  import type * as t from "@/logic/types";
+  import {youtubeVideoIdFromUrl} from "@/logic/youtube";
 
   const properties = defineProps<{
     url: string | null;
@@ -47,4 +45,24 @@
   }>();
 
   const emit = defineEmits(["body-title-clicked"]);
+
+  const coverReference = computed(() => {
+    for (const reference of properties.references) {
+      if (reference.semantics !== e.ReferenceSemantics.Video) {
+        continue;
+      }
+
+      if (youtubeVideoIdFromUrl(reference.url) !== null) {
+        return reference;
+      }
+    }
+
+    for (const reference of properties.references) {
+      if (reference.semantics === e.ReferenceSemantics.Image) {
+        return reference;
+      }
+    }
+
+    return null;
+  });
 </script>

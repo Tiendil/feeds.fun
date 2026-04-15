@@ -1,0 +1,42 @@
+<template>
+  <div
+    v-if="youtubeVideoId !== null"
+    >
+    <integrations-you-tube
+      :video-id="youtubeVideoId"
+      :title="reference.title ?? 'YouTube video'" />
+  </div>
+
+  <a
+    v-else-if="isImage"
+    class="block"
+    :href="reference.url"
+    target="_blank"
+    rel="noopener noreferrer">
+    <img
+      class="block max-h-[32rem] w-full rounded border border-slate-300 object-cover"
+      :src="reference.url"
+      :alt="reference.title ?? 'Entry cover'" />
+  </a>
+</template>
+
+<script lang="ts" setup>
+  import {computed} from "vue";
+  import * as e from "@/logic/enums";
+  import type * as t from "@/logic/types";
+  import {youtubeVideoIdFromUrl} from "@/logic/youtube";
+
+  const properties = defineProps<{
+    reference: t.Reference;
+  }>();
+
+  const youtubeVideoId = computed(() => {
+    if (properties.reference.semantics !== e.ReferenceSemantics.Video) {
+      return null;
+    }
+
+    return youtubeVideoIdFromUrl(properties.reference.url);
+  });
+
+  const isImage = computed(() => properties.reference.semantics === e.ReferenceSemantics.Image);
+</script>
