@@ -84,6 +84,18 @@ export class Feed {
   }
 }
 
+export type RawFeed = {
+  id: string;
+  title: string | null;
+  description: string | null;
+  url: string;
+  state: string;
+  lastError?: string | null;
+  loadedAt?: string | null;
+  linkedAt: string;
+  collectionIds: string[];
+};
+
 export function feedFromJSON({
   id,
   title,
@@ -94,25 +106,15 @@ export function feedFromJSON({
   loadedAt,
   linkedAt,
   collectionIds
-}: {
-  id: string;
-  title: string;
-  description: string;
-  url: string;
-  state: string;
-  lastError: string | null;
-  loadedAt: string;
-  linkedAt: string;
-  collectionIds: string[];
-}): Feed {
+}: RawFeed): Feed {
   return {
     id: toFeedId(id),
     title: title !== null ? title : null,
     description: description !== null ? description : null,
     url: toURL(url),
     state: state,
-    lastError: lastError,
-    loadedAt: loadedAt !== null ? new Date(loadedAt) : null,
+    lastError: lastError !== undefined ? lastError : null,
+    loadedAt: loadedAt !== undefined && loadedAt !== null ? new Date(loadedAt) : null,
     linkedAt: new Date(linkedAt),
     isOk: state === "loaded",
     collectionIds: collectionIds.map(toCollectionId)
@@ -276,22 +278,21 @@ export class Entry {
   }
 }
 
-export function entryFromJSON(
-  rawEntry: {
-    id: string;
-    feedId: string;
-    title: string;
-    url: string;
-    tags: number[];
-    markers: string[];
-    score: number;
-    scoreContributions: {[key: number]: number};
-    publishedAt: string;
-    body?: string | null;
-    references?: RawReference[] | null;
-  },
-  tagsMapping: {[key: number]: string}
-): Entry {
+export type RawEntry = {
+  id: string;
+  feedId: string;
+  title: string;
+  url: string;
+  tags: number[];
+  markers: string[];
+  score: number;
+  scoreContributions: {[key: number]: number};
+  publishedAt: string;
+  body?: string | null;
+  references?: RawReference[] | null;
+};
+
+export function entryFromJSON(rawEntry: RawEntry, tagsMapping: {[key: number]: string}): Entry {
   const contributions: {[key: string]: number} = {};
 
   for (const key in rawEntry.scoreContributions) {
@@ -369,17 +370,14 @@ export type EntryInfo = {
   readonly publishedAt: Date;
 };
 
-export function entryInfoFromJSON({
-  title,
-  body,
-  url,
-  publishedAt
-}: {
+export type RawEntryInfo = {
   title: string;
   body: string;
   url: string;
   publishedAt: string;
-}): EntryInfo {
+};
+
+export function entryInfoFromJSON({title, body, url, publishedAt}: RawEntryInfo): EntryInfo {
   return {title, body, url: toURL(url), publishedAt: new Date(publishedAt)};
 }
 
@@ -391,19 +389,15 @@ export type FeedInfo = {
   readonly isLinked: boolean;
 };
 
-export function feedInfoFromJSON({
-  url,
-  title,
-  description,
-  entries,
-  isLinked
-}: {
+export type RawFeedInfo = {
   url: string;
   title: string;
   description: string;
-  entries: any[];
+  entries: RawEntryInfo[];
   isLinked: boolean;
-}): FeedInfo {
+};
+
+export function feedInfoFromJSON({url, title, description, entries, isLinked}: RawFeedInfo): FeedInfo {
   return {
     url: toURL(url),
     title,
