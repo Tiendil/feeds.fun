@@ -15,6 +15,11 @@
         v-if="references.length > 0"
         :references="references" />
 
+      <body-list-entry-cover
+        v-if="coverReference !== null"
+        class="mt-4"
+        :reference="coverReference" />
+
       <div
         v-if="loading || text"
         class="mt-4">
@@ -25,10 +30,6 @@
           v-html="text" />
       </div>
 
-      <body-list-entry-cover
-        v-if="coverReference !== null"
-        class="mt-4"
-        :reference="coverReference" />
     </div>
   </div>
 </template>
