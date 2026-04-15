@@ -14,16 +14,15 @@ class ProcessedState(enum.IntEnum):
     retry_later = 3
 
 
-# TODO: replace with IntEnum
-class ReferenceSemantics(enum.StrEnum):
-    unknown = "unknown"
-    author = "author"
-    comments = "comments"
-    page = "page"
-    video = "video"
-    audio = "audio"
-    image = "image"
-    document = "document"
+class ReferenceSemantics(enum.IntEnum):
+    unknown = 0
+    author = 1
+    comments = 2
+    page = 3
+    video = 4
+    audio = 5
+    image = 6
+    document = 7
 
 
 # The priority of the semantics is used when merging references to the same URL.
