@@ -1,7 +1,5 @@
 <template>
-  <div
-    v-if="youtubeVideoId !== null"
-    >
+  <div v-if="youtubeVideoId !== null">
     <integrations-you-tube
       :video-id="youtubeVideoId"
       :title="reference.title ?? 'YouTube video'" />

@@ -14,11 +14,10 @@ class Plugin(BasePlugin):
         return context.replace(candidate_urls=context.candidate_urls | self._urls), None
 
     def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
-        return entry.model_copy(
-            update={
-                "external_tags": entry.external_tags | {"fake-plugin"},
-            }
-        )
+        external_tags = set(entry.external_tags)
+        external_tags.add("fake-plugin")
+        update: dict[str, object] = {"external_tags": external_tags}
+        return entry.model_copy(update=update)
 
 
 def construct(urls: list[str]) -> Plugin:

@@ -119,13 +119,20 @@ class TestCatalogEntry:
 
         await _catalog_entry(loaded_feed_id, entry_with_references, utils.now())
 
-        rows = await execute("SELECT refs FROM l_entries WHERE id = %(id)s", {"id": entry_with_references.id})
-
-        assert rows == [
-            {
-                "refs": [ref.model_dump(mode="json", exclude_defaults=True, exclude_none=True) for ref in references]
-            }
+        rows = await execute(
+            "SELECT refs FROM l_entries WHERE id = %(id)s",
+            {"id": entry_with_references.id},  # type: ignore
+        )
+        expected_refs = [
+            ref.model_dump(
+                mode="json",
+                exclude_defaults=True,
+                exclude_none=True,
+            )  # type: ignore
+            for ref in references
         ]
+
+        assert rows == [{"refs": expected_refs}]  # type: ignore
 
         loaded_entry = await get_entry(entry_with_references.id)
 

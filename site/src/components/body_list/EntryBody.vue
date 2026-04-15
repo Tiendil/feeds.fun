@@ -29,7 +29,6 @@
           class="prose max-w-none"
           v-html="text" />
       </div>
-
     </div>
   </div>
 </template>

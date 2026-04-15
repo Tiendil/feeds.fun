@@ -1,8 +1,8 @@
-import datetime
 import copy
+import datetime
 import enum
 from decimal import Decimal
-from typing import Iterable
+from typing import Callable, Iterable
 
 import pydantic
 
@@ -106,7 +106,7 @@ class Reference(BaseEntity):
     extra: dict[str, int | float | str | None] | None = None
 
     @pydantic.model_serializer(mode="wrap")
-    def serialize_model(self, handler):
+    def serialize_model(self, handler: Callable[["Reference"], dict[str, object | None]]) -> dict[str, object]:
         data = handler(self)
         return {key: value for key, value in data.items() if value is not None}
 

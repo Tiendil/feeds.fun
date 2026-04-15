@@ -1,21 +1,22 @@
 import re
+from collections.abc import Callable
+from importlib import import_module
+from typing import cast
 from urllib.parse import parse_qs, unquote, urlsplit
 
-import markdown
-
 from ffun.domain.entities import AbsoluteUrl
-from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
 from ffun.library.entities import Reference, ReferenceSemantics
 from ffun.parsers import entities as p_entities
 
 _BARE_URL_RE = re.compile(r'(?<!\()(?<!<)(?<!")(?P<url>https?://[^\s<]+)')
 _YOUTUBE_PATH_PREFIXES = {"embed", "e", "live", "shorts", "v"}
+_RENDER_MARKDOWN = cast(Callable[[str], str], getattr(import_module("markdown"), "markdown"))
 
 
 def _autolink_bare_urls(text: str) -> str:
     def _replace(match: re.Match[str]) -> str:
-        url = match.group("url")
+        url = cast(str, match.group("url"))
         stripped_url = url.rstrip(".,!?;:")
 
         if stripped_url == "":
@@ -37,7 +38,7 @@ def _is_youtube_host(hostname: str) -> bool:
     )
 
 
-def _extract_youtube_video_id_from_url(url: AbsoluteUrl, *, _depth: int = 0) -> str | None:
+def _extract_youtube_video_id_from_url(url: AbsoluteUrl, *, _depth: int = 0) -> str | None:  # noqa: CCR001
     if _depth > 1:
         return None
 
@@ -108,12 +109,11 @@ class Plugin(BasePlugin):
     __slots__ = ()
 
     def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
-        return entry.model_copy(
-            update={
-                "body": markdown.markdown(_autolink_bare_urls(entry.body)),
-                "references": [_postprocess_reference(reference) for reference in entry.references],
-            }
-        )
+        update: dict[str, object] = {
+            "body": _RENDER_MARKDOWN(_autolink_bare_urls(entry.body)),
+            "references": [_postprocess_reference(reference) for reference in entry.references],
+        }
+        return entry.model_copy(update=update)
 
 
 def construct() -> Plugin:

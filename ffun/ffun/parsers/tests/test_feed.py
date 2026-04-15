@@ -17,8 +17,8 @@ from ffun.parsers import feed as p_feed
 from ffun.parsers.entities import EntryInfo, FeedInfo
 from ffun.parsers.feed import (
     _create_reference,
-    _extract_body,
     _extract_author_reference,
+    _extract_body,
     _extract_comments_reference,
     _extract_content,
     _extract_enclosure_reference,
@@ -44,7 +44,7 @@ from ffun.parsers.feed import (
 from ffun.parsers.tests.helpers import feeds_fixtures_directory, feeds_fixtures_names
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def feed_url() -> FeedUrl:
     normalized_url = normalize_classic_unknown_url(UnknownUrl("https://example.com/feed/"))
     assert normalized_url is not None

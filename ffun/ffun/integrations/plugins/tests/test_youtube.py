@@ -28,26 +28,26 @@ class TestPostprocessEntry:
         entry = p_make.fake_entry_info(
             body="Watch [this video](https://www.youtube.com/watch?v=abc)\n\n- **First**\n- Second"
         )
+        expected_body = (
+            '<p>Watch <a href="https://www.youtube.com/watch?v=abc">this video</a></p>\n'
+            "<ul>\n<li><strong>First</strong></li>\n<li>Second</li>\n</ul>"
+        )
+        expected_update: dict[str, object] = {"body": expected_body}
 
         processed_entry = plugin.postprocess_entry(entry)
 
-        assert processed_entry == entry.model_copy(
-            update={
-                "body": (
-                    '<p>Watch <a href="https://www.youtube.com/watch?v=abc">this video</a></p>\n'
-                    "<ul>\n<li><strong>First</strong></li>\n<li>Second</li>\n</ul>"
-                )
-            }
-        )
+        assert processed_entry == entry.model_copy(update=expected_update)
 
     def test_renders_bare_url_as_link(self, plugin: youtube.Plugin) -> None:
         entry = p_make.fake_entry_info(body="Watch https://www.youtube.com/watch?v=abc")
+        expected_body = (
+            '<p>Watch <a href="https://www.youtube.com/watch?v=abc">' "https://www.youtube.com/watch?v=abc</a></p>"
+        )
+        expected_update: dict[str, object] = {"body": expected_body}
 
         processed_entry = plugin.postprocess_entry(entry)
 
-        assert processed_entry == entry.model_copy(
-            update={"body": '<p>Watch <a href="https://www.youtube.com/watch?v=abc">https://www.youtube.com/watch?v=abc</a></p>'}
-        )
+        assert processed_entry == entry.model_copy(update=expected_update)
 
     @pytest.mark.parametrize(
         ("url", "youtube_id"),
@@ -78,7 +78,9 @@ class TestPostprocessEntry:
 
         processed_entry = plugin.postprocess_entry(entry)
 
-        assert processed_entry.references[0] == reference.replace(extra={"source": "youtube", "youtube_id": youtube_id})
+        assert processed_entry.references[0] == reference.replace(
+            extra={"source": "youtube", "youtube_id": youtube_id}
+        )
 
     def test_does_not_store_youtube_id_for_non_youtube_video_reference(self, plugin: youtube.Plugin) -> None:
         reference = Reference(
