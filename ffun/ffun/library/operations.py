@@ -3,6 +3,7 @@ import uuid
 from typing import Any, AsyncGenerator, Iterable
 
 import psycopg
+from psycopg.types.json import Jsonb
 from pypika import PostgreSQLQuery
 
 from ffun.core import logging, utils
@@ -39,7 +40,7 @@ def dict_to_reference(row: dict[str, Any]) -> Reference:
     return Reference(
         semantics=row["semantics"],
         url=row["url"],
-        title=row["title"],
+        title=row.get("title"),
         mime_type=row.get("mime_type"),
         width=row.get("width"),
         height=row.get("height"),
@@ -60,7 +61,7 @@ def row_to_entry(row: dict[str, Any]) -> Entry:
         external_tags=row["external_tags"],
         published_at=row["published_at"],
         created_at=row["created_at"],
-        references=[dict_to_reference(ref) for ref in row["refs"]]
+        references=[dict_to_reference(ref) for ref in row["refs"]],
     )
 
 
@@ -109,7 +110,9 @@ async def _catalog_entry(
             "external_url": entry.external_url,
             "external_tags": list(entry.external_tags),
             "published_at": entry.published_at,
-            "refs": [ref.model_dump(exclude_defaults=True, exclude_none=True) for ref in entry.references],
+            "refs": Jsonb(
+                [ref.model_dump(mode="json", exclude_defaults=True, exclude_none=True) for ref in entry.references]
+            ),
         },
     )
 
