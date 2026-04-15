@@ -279,6 +279,17 @@ def _extract_comments_reference(raw_comments_url: object, original_url: FeedUrl)
     )
 
 
+def _extract_author_reference(raw_author: object, original_url: FeedUrl) -> Reference | None:
+    assert isinstance(raw_author, Mapping)
+
+    return _create_reference(
+        semantics=ReferenceSemantics.author,
+        url=cast(str | None, raw_author.get("href")),
+        original_url=original_url,
+        title=cast(str | None, raw_author.get("name")),
+    )
+
+
 def _extract_enclosure_reference(raw_enclosure: object, original_url: FeedUrl) -> Reference | None:
     assert isinstance(raw_enclosure, Mapping)
 
@@ -335,6 +346,12 @@ def _extract_references_raw(
         references.append(_extract_media_thumbnail_reference(raw_media_entry, original_url))
 
     references.append(_extract_comments_reference(entry.get("comments"), original_url))
+
+    references.append(_extract_author_reference(entry.get("author_detail"), original_url))
+
+    for raw_contributor in _extract_raw_reference_items(entry, "contributors"):
+        references.append(_extract_author_reference(raw_contributor, original_url))
+
     return [reference for reference in references if reference is not None and reference.url != primary_url]
 
 

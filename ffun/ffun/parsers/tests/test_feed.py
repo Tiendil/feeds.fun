@@ -16,6 +16,7 @@ from ffun.parsers.entities import EntryInfo, FeedInfo
 from ffun.parsers.feed import (
     _create_reference,
     _extract_body,
+    _extract_author_reference,
     _extract_comments_reference,
     _extract_content,
     _extract_enclosure_reference,
@@ -493,6 +494,19 @@ class TestExtractCommentsReference:
         )
 
 
+class TestExtractAuthorReference:
+
+    def test_returns_none_when_href_is_missing(self) -> None:
+        assert _extract_author_reference({"name": "Author"}, _feed_url()) is None
+
+    def test_returns_author_reference(self) -> None:
+        assert _extract_author_reference({"href": "/author", "name": "Author"}, _feed_url()) == Reference(
+            semantics=ReferenceSemantics.author,
+            url=_absolute_url("https://example.com/author"),
+            title="Author",
+        )
+
+
 class TestExtractEnclosureReference:
 
     def test_returns_none_when_href_is_missing(self) -> None:
@@ -551,6 +565,8 @@ class TestExtractReferencesRaw:
                 "media_content": [{"url": "/video", "type": "video/mp4"}],
                 "media_thumbnail": [{"url": "/image"}],
                 "comments": "/comments",
+                "author_detail": {"href": "/author", "name": "Author"},
+                "contributors": [{"href": "/contributor", "name": "Contributor"}],
             },
             _feed_url(),
             primary_url,
@@ -575,6 +591,16 @@ class TestExtractReferencesRaw:
                 semantics=ReferenceSemantics.comments,
                 url=_absolute_url("https://example.com/comments"),
                 title="Comments",
+            ),
+            Reference(
+                semantics=ReferenceSemantics.author,
+                url=_absolute_url("https://example.com/author"),
+                title="Author",
+            ),
+            Reference(
+                semantics=ReferenceSemantics.author,
+                url=_absolute_url("https://example.com/contributor"),
+                title="Contributor",
             ),
         ]
 
