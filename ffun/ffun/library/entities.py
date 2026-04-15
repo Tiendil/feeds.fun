@@ -14,6 +14,7 @@ class ProcessedState(enum.IntEnum):
     retry_later = 3
 
 
+# TODO: replace with IntEnum
 class ReferenceSemantics(enum.StrEnum):
     unknown = "unknown"
     author = "author"
