@@ -60,6 +60,7 @@
     :url="null"
     :title="null"
     :loading="false"
+    :references="[]"
     :text="purifiedDescription" />
 </template>
 

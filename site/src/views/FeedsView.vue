@@ -60,12 +60,14 @@
   import {computed, ref, onUnmounted, watch, provide} from "vue";
   import {computedAsync} from "@vueuse/core";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
+  import {useGlobalState} from "@/stores/globalState";
   import {useFeedsStore} from "@/stores/feeds";
   import * as api from "@/logic/api";
   import type * as t from "@/logic/types";
   import * as e from "@/logic/enums";
 
   const globalSettings = useGlobalSettingsStore();
+  const globalState = useGlobalState();
 
   const feedsStore = useFeedsStore();
 
@@ -73,7 +75,15 @@
 
   globalSettings.mainPanelMode = e.MainPanelMode.Feeds;
 
+  const readyToUseSettings = computed(() => {
+    return globalSettings.userSettingsPresent || !globalState.loginConfirmed;
+  });
+
   const sortedFeeds = computed(() => {
+    if (!readyToUseSettings.value) {
+      return null;
+    }
+
     let sorted = Object.values(feedsStore.feeds);
 
     if (sorted.length === 0) {

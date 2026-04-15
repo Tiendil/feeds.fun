@@ -41,6 +41,7 @@
   import {useRoute, useRouter} from "vue-router";
   import {computedAsync} from "@vueuse/core";
   import {useGlobalSettingsStore} from "@/stores/globalSettings";
+  import {useGlobalState} from "@/stores/globalState";
   import _ from "lodash";
   import * as utils from "@/logic/utils";
   import * as api from "@/logic/api";
@@ -57,6 +58,7 @@
   provide("eventsViewName", "rules");
 
   const globalSettings = useGlobalSettingsStore();
+  const globalState = useGlobalState();
 
   tagsFilterState.setSyncingTagsWithRoute({
     tagsStates: tagsStates.value as unknown as tagsFilterState.Storage,
@@ -75,7 +77,11 @@
     router.push({name: e.MainPanelMode.Entries, params: {}});
   }
 
-  const loading = computed(() => rules.value === null);
+  const readyToUseSettings = computed(() => {
+    return globalSettings.userSettingsPresent || !globalState.loginConfirmed;
+  });
+
+  const loading = computed(() => rules.value === null || !readyToUseSettings.value);
 
   const rules = computedAsync(async () => {
     // force refresh
@@ -84,7 +90,7 @@
   }, null);
 
   const sortedRules = computed(() => {
-    if (!rules.value) {
+    if (!rules.value || !readyToUseSettings.value) {
       return null;
     }
 
