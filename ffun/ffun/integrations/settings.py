@@ -34,6 +34,11 @@ class Settings(BaseSettings):
                 plugin="ffun.integrations.plugins.github:construct",
                 extras={},
             ),
+            Integration(
+                source="youtube.com",
+                plugin="ffun.integrations.plugins.youtube:construct",
+                extras={},
+            ),
         ]
     )
 
