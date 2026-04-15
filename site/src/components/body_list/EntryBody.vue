@@ -8,10 +8,8 @@
           :href="url"
           target="_blank"
           @click="emit('body-title-clicked')"
-          v-html="title"
-          />
-        </h2
-      >
+          v-html="title" />
+      </h2>
       <body-list-references
         v-if="references.length > 0"
         :references="references" />

@@ -6,7 +6,7 @@
     :title="semanticTitle"
     class="block max-w-full break-words rounded border bg-white px-1 py-1 text-sm font-medium leading-tight text-gray-900 hover:bg-gray-50">
     <template v-if="title !== null">
-      <span v-html="title"/>
+      <span v-html="title" />
     </template>
     <icon
       v-else
