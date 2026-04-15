@@ -109,11 +109,10 @@ class Plugin(BasePlugin):
     __slots__ = ()
 
     def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
-        update: dict[str, object] = {
-            "body": _RENDER_MARKDOWN(_autolink_bare_urls(entry.body)),
-            "references": [_postprocess_reference(reference) for reference in entry.references],
-        }
-        return entry.model_copy(update=update)
+        return entry.replace(
+            body=_RENDER_MARKDOWN(_autolink_bare_urls(entry.body)),
+            references=[_postprocess_reference(reference) for reference in entry.references],
+        )
 
 
 def construct() -> Plugin:

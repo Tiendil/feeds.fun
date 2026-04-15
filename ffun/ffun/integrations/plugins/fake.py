@@ -16,8 +16,7 @@ class Plugin(BasePlugin):
     def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
         external_tags = set(entry.external_tags)
         external_tags.add("fake-plugin")
-        update: dict[str, object] = {"external_tags": external_tags}
-        return entry.model_copy(update=update)
+        return entry.replace(external_tags=external_tags)
 
 
 def construct(urls: list[str]) -> Plugin:

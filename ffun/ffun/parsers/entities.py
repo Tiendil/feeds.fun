@@ -1,12 +1,11 @@
 import datetime
 
-import pydantic
-
+from ffun.core.entities import BaseEntity
 from ffun.domain.entities import AbsoluteUrl, EntryId, FeedUrl, SourceId, UrlUid
 from ffun.library.entities import CollectedEntry, Reference
 
 
-class EntryInfo(pydantic.BaseModel):
+class EntryInfo(BaseEntity):
     title: str
     body: str
     external_id: str
@@ -33,7 +32,7 @@ class EntryInfo(pydantic.BaseModel):
         )
 
 
-class FeedInfo(pydantic.BaseModel):
+class FeedInfo(BaseEntity):
     url: FeedUrl
     title: str
     description: str

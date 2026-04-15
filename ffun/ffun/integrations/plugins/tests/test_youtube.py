@@ -36,7 +36,7 @@ class TestPostprocessEntry:
 
         processed_entry = plugin.postprocess_entry(entry)
 
-        assert processed_entry == entry.model_copy(update=expected_update)
+        assert processed_entry == entry.replace(**expected_update)
 
     def test_renders_bare_url_as_link(self, plugin: youtube.Plugin) -> None:
         entry = p_make.fake_entry_info(body="Watch https://www.youtube.com/watch?v=abc")
@@ -47,7 +47,7 @@ class TestPostprocessEntry:
 
         processed_entry = plugin.postprocess_entry(entry)
 
-        assert processed_entry == entry.model_copy(update=expected_update)
+        assert processed_entry == entry.replace(**expected_update)
 
     @pytest.mark.parametrize(
         ("url", "youtube_id"),
