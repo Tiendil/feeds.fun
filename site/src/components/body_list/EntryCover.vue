@@ -7,24 +7,17 @@
       :title="reference.title ?? 'YouTube video'" />
   </div>
 
-  <a
+  <img
     v-else-if="isImage"
-    class="block"
-    :href="reference.url"
-    target="_blank"
-    rel="noopener noreferrer">
-    <img
-      class="block max-h-[32rem] w-full rounded border border-slate-300 object-cover"
-      :src="reference.url"
-      :alt="reference.title ?? 'Entry cover'" />
-  </a>
+    class="block max-h-[32rem] w-full rounded border border-slate-300 object-cover"
+    :src="reference.url"
+    :alt="reference.title ?? 'Entry cover'" />
 </template>
 
 <script lang="ts" setup>
   import {computed} from "vue";
   import * as e from "@/logic/enums";
   import type * as t from "@/logic/types";
-  import {youtubeVideoIdFromUrl} from "@/logic/youtube";
 
   const properties = defineProps<{
     reference: t.Reference;
@@ -35,7 +28,7 @@
       return null;
     }
 
-    return youtubeVideoIdFromUrl(properties.reference.url);
+    return properties.reference.youtubeId();
   });
 
   const isImage = computed(() => properties.reference.semantics === e.ReferenceSemantics.Image);

@@ -10,9 +10,11 @@
           @click="emit('body-title-clicked')"
           v-html="title" />
       </h2>
+
       <body-list-references
         v-if="references.length > 0"
         :references="references" />
+
       <div
         v-if="loading || text"
         class="mt-4">
@@ -22,6 +24,7 @@
           class="prose max-w-none"
           v-html="text" />
       </div>
+
       <body-list-entry-cover
         v-if="coverReference !== null"
         class="mt-4"
@@ -34,7 +37,6 @@
   import {computed} from "vue";
   import * as e from "@/logic/enums";
   import type * as t from "@/logic/types";
-  import {youtubeVideoIdFromUrl} from "@/logic/youtube";
 
   const properties = defineProps<{
     url: string | null;
@@ -52,7 +54,7 @@
         continue;
       }
 
-      if (youtubeVideoIdFromUrl(reference.url) !== null) {
+      if (reference.youtubeId() !== null) {
         return reference;
       }
     }

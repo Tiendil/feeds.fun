@@ -177,6 +177,12 @@ export class Reference {
     this.size = size;
     this.extra = extra;
   }
+
+  youtubeId(): string | null {
+    const youtubeId = this.extra?.youtube_id;
+
+    return typeof youtubeId === "string" && youtubeId.length > 0 ? youtubeId : null;
+  }
 }
 
 export function referenceFromJSON({
