@@ -8,10 +8,12 @@ from pytest_mock import MockerFixture
 
 from ffun.core import json, utils
 from ffun.core.tests.helpers import assert_logs, capture_logs
-from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
-from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url
+from ffun.domain.entities import AbsoluteUrl, FeedUrl, SourceUid, UnknownUrl
+from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url, url_to_source_uid
+from ffun.integrations.tests.helpers import FakeIntegration
 from ffun.library.entities import Reference, ReferenceSemantics
 from ffun.parsers import errors
+from ffun.parsers import feed as p_feed
 from ffun.parsers.entities import EntryInfo, FeedInfo
 from ffun.parsers.feed import (
     _create_reference,
@@ -42,8 +44,9 @@ from ffun.parsers.feed import (
 from ffun.parsers.tests.helpers import feeds_fixtures_directory, feeds_fixtures_names
 
 
-def _feed_url(url: str = "https://example.com/feed/") -> FeedUrl:
-    normalized_url = normalize_classic_unknown_url(UnknownUrl(url))
+@pytest.fixture
+def feed_url() -> FeedUrl:
+    normalized_url = normalize_classic_unknown_url(UnknownUrl("https://example.com/feed/"))
     assert normalized_url is not None
     return to_feed_url(normalized_url)
 
@@ -84,12 +87,13 @@ class TestShouldSkip:
 
 class TestParseEntry:
 
-    def test_parse(self) -> None:
+    def test_parse_without_plugin(self, feed_url: FeedUrl) -> None:
         raw_entry = {
             "title": "Entry title 1",
             "link": "/2023/07/25/news-1.html",
             "published_parsed": (2023, 7, 25, 17, 15, 0, 0, 0, -1),
             "description": "Body 1",
+            "author_detail": {},
             "tags": [
                 {"term": "tag1"},
                 {"term": "tag2"},
@@ -97,11 +101,7 @@ class TestParseEntry:
             ],
         }
 
-        original_url = normalize_classic_unknown_url(UnknownUrl("https://example.com/feed/"))
-
-        assert original_url is not None
-
-        parsed_entry = parse_entry(raw_entry, to_feed_url(original_url))
+        parsed_entry = parse_entry(raw_entry, feed_url, url_to_source_uid(feed_url))
         expected_external_url = normalize_classic_unknown_url(UnknownUrl("https://example.com/2023/07/25/news-1.html"))
 
         assert expected_external_url is not None
@@ -118,28 +118,44 @@ class TestParseEntry:
 
         assert parsed_entry == expected_entry
 
-    def test_raises_when_external_url_can_not_be_extracted(self) -> None:
+    def test_calls_plugin_and_returns_updated_entry(self, mocker: MockerFixture, feed_url: FeedUrl) -> None:
+        raw_entry = {
+            "title": "Entry title 1",
+            "link": "/2023/07/25/news-1.html",
+            "published_parsed": (2023, 7, 25, 17, 15, 0, 0, 0, -1),
+            "description": "Body 1",
+            "author_detail": {},
+            "tags": [{"term": "tag1"}],
+        }
+        integration = FakeIntegration("example.com", [])
+        mocker.patch.object(
+            p_feed.i_settings,
+            "integrations",
+            [integration],
+        )
+
+        parsed_entry = parse_entry(raw_entry, feed_url, url_to_source_uid(feed_url))
+
+        assert "fake-plugin" in parsed_entry.external_tags
+
+    def test_raises_when_external_url_can_not_be_extracted(self, feed_url: FeedUrl) -> None:
         with pytest.raises(errors.CanNotExtractExternalUrl):
-            parse_entry({"title": "Entry", "link": "mailto:test@example.com"}, _feed_url())
+            parse_entry({"title": "Entry", "link": "mailto:test@example.com"}, feed_url, url_to_source_uid(feed_url))
 
 
 class TestParseFeed:
 
-    def test_error_in_feedparser(self, mocker: MockerFixture) -> None:
-        url = normalize_classic_unknown_url(UnknownUrl("https://example.com/feed/"))
-
-        assert url is not None
-
+    def test_error_in_feedparser(self, mocker: MockerFixture, feed_url: FeedUrl) -> None:
         mocker.patch("feedparser.parse", side_effect=ValueError("Test error in feedparser"))
 
         with capture_logs() as logs:
-            feed_info = parse_feed("", to_feed_url(url))
+            feed_info = parse_feed("", feed_url, url_to_source_uid(feed_url))
 
         assert feed_info is None
         assert_logs(logs, error_while_parsing_feed=1)
 
     @pytest.mark.parametrize("raw_fixture_name", feeds_fixtures_names())
-    def test_on_row_fixtures(self, raw_fixture_name: str) -> None:
+    def test_on_row_fixtures(self, raw_fixture_name: str, feed_url: FeedUrl) -> None:
         raw_fixture_path = feeds_fixtures_directory / raw_fixture_name
         expected_fixture_path = str(raw_fixture_path) + ".expected.json"
 
@@ -149,16 +165,12 @@ class TestParseFeed:
         with open(expected_fixture_path, "r", encoding="utf-8") as expected_fixture_file:
             expected_fixture = expected_fixture_file.read()
 
-        url = normalize_classic_unknown_url(UnknownUrl("https://example.com/feed/"))
-
-        assert url is not None
-
-        feed_info = parse_feed(raw_fixture, to_feed_url(url))
+        feed_info = parse_feed(raw_fixture, feed_url, url_to_source_uid(feed_url))
 
         assert feed_info == FeedInfo.model_validate_json(expected_fixture)
 
     @pytest.mark.parametrize("raw_fixture_name", feeds_fixtures_names())
-    def test_skip_entry_on_error(self, raw_fixture_name: str, mocker: MockerFixture) -> None:
+    def test_skip_entry_on_error(self, raw_fixture_name: str, mocker: MockerFixture, feed_url: FeedUrl) -> None:
         raw_fixture_path = feeds_fixtures_directory / raw_fixture_name
         expected_fixture_path = str(raw_fixture_path) + ".expected.json"
 
@@ -168,24 +180,20 @@ class TestParseFeed:
         with open(expected_fixture_path, "r", encoding="utf-8") as expected_fixture_file:
             expected_fixture = expected_fixture_file.read()
 
-        url = normalize_classic_unknown_url(UnknownUrl("https://example.com/feed/"))
-
-        assert url is not None
-
         call_number = {"calls": 0}
 
-        def mocked_parse_entry(raw_entry: object, original_url: FeedUrl) -> EntryInfo:
+        def mocked_parse_entry(raw_entry: object, original_url: FeedUrl, source: SourceUid) -> EntryInfo:
             call_number["calls"] += 1
 
             if call_number["calls"] == 1:
                 raise ValueError("Test error on entry parsing")
 
-            return parse_entry(raw_entry, original_url)  # type: ignore
+            return parse_entry(raw_entry, original_url, source)  # type: ignore
 
         mocker.patch("ffun.parsers.feed.parse_entry", side_effect=mocked_parse_entry)
 
         with capture_logs() as logs:
-            feed_info = parse_feed(raw_fixture, to_feed_url(url))
+            feed_info = parse_feed(raw_fixture, feed_url, url_to_source_uid(feed_url))
 
         assert_logs(logs, error_while_parsing_feed_entry=1)
 
@@ -195,28 +203,27 @@ class TestParseFeed:
 
         assert feed_info == FeedInfo.model_validate(parsed_expected_fixture)
 
-    def test_parse_broken_html(self) -> None:
-        url = normalize_classic_unknown_url(UnknownUrl("https://example.com/feed/"))
-        assert url is not None
-
-        result = parse_feed("I'm a broken feed content", to_feed_url(url))
+    def test_parse_broken_html(self, feed_url: FeedUrl) -> None:
+        result = parse_feed("I'm a broken feed content", feed_url, url_to_source_uid(feed_url))
         assert result is None, "Broken HTML should return None"
 
         # a real example of misplaced content
         input = """\n// Copyright 2012 Google Inc. All rights reserved.\n \n (function(w,g){w[g]=w[g]||{};\n w[g].e=function(s){return eval(s);};})(window,\'google_tag_manager\');\n \n(function(){\n\nvar data = {\n"resource": {\n  "version":"29",\n  \n  "macros":[{"function":"__u","vtp_component":"HOST","vtp_enableMultiQueryKeys":false,"vtp_enableIgnoreEmptyQueryParam":false},{"function":"__v","vtp_name":"gtm.historyChangeSource","vtp_dataLayerVersion":1},{"function":"__u","vtp_component":"PATH","vtp_enableMultiQueryKeys":false,"vtp_enableIgnoreEmptyQueryParam":false},{"function":"__e"},{"function":"__v","vtp_dataLayerVersion":2,"vtp_setDefaultValue":false,"vtp_name":"originalLocation"},{"function":"__jsm","vtp_javascript":["template","(function(){return document.location.pathname+document.location.search})();"]},{"function":"__jsm","vtp_javascript":["template","(function(){var b=9;return function(a){a.set(\\"dimension\\"+b,a.get(\\"hitType\\"))}})();"]},{"function":"__gas","vtp_cookieDomain":"auto","vtp_doubleClick":false"""  # noqa: E501
 
-        result = parse_feed(input, to_feed_url(url))
+        result = parse_feed(input, feed_url, url_to_source_uid(feed_url))
         assert result is None, "Broken HTML should return None"
 
-    def test_returns_none_when_channel_has_no_version_and_no_entries(self, mocker: MockerFixture) -> None:
+    def test_returns_none_when_channel_has_no_version_and_no_entries(
+        self, mocker: MockerFixture, feed_url: FeedUrl
+    ) -> None:
         feed: Mapping[str, object] = {}
         entries: list[Mapping[str, object]] = []
         channel = SimpleNamespace(feed=feed, entries=entries, version="")
         mocker.patch("ffun.parsers.feed.parse_into_feedparser", return_value=channel)
 
-        assert parse_feed("<feed />", _feed_url()) is None
+        assert parse_feed("<feed />", feed_url, url_to_source_uid(feed_url)) is None
 
-    def test_skips_entries_without_link(self) -> None:
+    def test_skips_entries_without_link(self, feed_url: FeedUrl) -> None:
         result = parse_feed(
             """
             <rss version="2.0">
@@ -227,7 +234,8 @@ class TestParseFeed:
               </channel>
             </rss>
             """,
-            _feed_url(),
+            feed_url,
+            url_to_source_uid(feed_url),
         )
 
         assert result is not None
@@ -330,16 +338,16 @@ class TestExtractExternalId:
 
 class TestExtractExternalUrl:
 
-    def test_returns_adjusted_url(self) -> None:
-        assert _extract_external_url({"link": "/news"}, _feed_url()) == "https://example.com/news"
+    def test_returns_adjusted_url(self, feed_url: FeedUrl) -> None:
+        assert _extract_external_url({"link": "/news"}, feed_url) == "https://example.com/news"
 
-    def test_raises_when_link_is_missing(self) -> None:
+    def test_raises_when_link_is_missing(self, feed_url: FeedUrl) -> None:
         with pytest.raises(errors.CanNotExtractExternalUrl):
-            _extract_external_url({}, _feed_url())
+            _extract_external_url({}, feed_url)
 
-    def test_raises_when_link_is_not_valid(self) -> None:
+    def test_raises_when_link_is_not_valid(self, feed_url: FeedUrl) -> None:
         with pytest.raises(errors.CanNotExtractExternalUrl):
-            _extract_external_url({"link": "mailto:test@example.com"}, _feed_url())
+            _extract_external_url({"link": "mailto:test@example.com"}, feed_url)
 
 
 class TestMediaTypeToSemantics:
@@ -371,20 +379,20 @@ class TestMediaTypeToSemantics:
 
 class TestCreateReference:
 
-    def test_returns_none_when_url_is_missing(self) -> None:
-        assert _create_reference(ReferenceSemantics.page, None, _feed_url()) is None
+    def test_returns_none_when_url_is_missing(self, feed_url: FeedUrl) -> None:
+        assert _create_reference(ReferenceSemantics.page, None, feed_url) is None
 
-    def test_returns_none_when_url_is_invalid(self) -> None:
-        assert _create_reference(ReferenceSemantics.page, "mailto:test@example.com", _feed_url()) is None
+    def test_returns_none_when_url_is_invalid(self, feed_url: FeedUrl) -> None:
+        assert _create_reference(ReferenceSemantics.page, "mailto:test@example.com", feed_url) is None
 
-    def test_returns_none_on_metadata_parsing_error(self) -> None:
-        assert _create_reference(ReferenceSemantics.page, "/news", _feed_url(), width="bad-int") is None
+    def test_returns_none_on_metadata_parsing_error(self, feed_url: FeedUrl) -> None:
+        assert _create_reference(ReferenceSemantics.page, "/news", feed_url, width="bad-int") is None
 
-    def test_creates_reference(self) -> None:
+    def test_creates_reference(self, feed_url: FeedUrl) -> None:
         reference = _create_reference(
             semantics=ReferenceSemantics.video,
             url="/video",
-            original_url=_feed_url(),
+            original_url=feed_url,
             title="Title",
             mime_type="video/mp4",
             width="640",
@@ -425,13 +433,13 @@ class TestReferenceSemanticsFromLink:
 
 class TestExtractLinkReference:
 
-    def test_returns_none_when_href_is_missing(self) -> None:
-        assert _extract_link_reference({}, _feed_url()) is None
+    def test_returns_none_when_href_is_missing(self, feed_url: FeedUrl) -> None:
+        assert _extract_link_reference({}, feed_url) is None
 
-    def test_returns_reference(self) -> None:
+    def test_returns_reference(self, feed_url: FeedUrl) -> None:
         assert _extract_link_reference(
             {"href": "/page", "rel": "alternate", "type": "text/html", "title": "Page"},
-            _feed_url(),
+            feed_url,
         ) == Reference(
             semantics=ReferenceSemantics.page,
             url=_absolute_url("https://example.com/page"),
@@ -442,19 +450,19 @@ class TestExtractLinkReference:
 
 class TestExtractMediaReference:
 
-    def test_returns_none_when_url_is_missing(self) -> None:
-        assert _extract_media_reference({}, _feed_url(), ReferenceSemantics.image) is None
+    def test_returns_none_when_url_is_missing(self, feed_url: FeedUrl) -> None:
+        assert _extract_media_reference({}, feed_url, ReferenceSemantics.image) is None
 
-    def test_uses_default_semantics_for_unknown_media_type(self) -> None:
-        assert _extract_media_reference({"url": "/asset"}, _feed_url(), ReferenceSemantics.image) == Reference(
+    def test_uses_default_semantics_for_unknown_media_type(self, feed_url: FeedUrl) -> None:
+        assert _extract_media_reference({"url": "/asset"}, feed_url, ReferenceSemantics.image) == Reference(
             semantics=ReferenceSemantics.image,
             url=_absolute_url("https://example.com/asset"),
         )
 
-    def test_known_media_type_overrides_default(self) -> None:
+    def test_known_media_type_overrides_default(self, feed_url: FeedUrl) -> None:
         assert _extract_media_reference(
             {"url": "/asset", "type": "video/mp4"},
-            _feed_url(),
+            feed_url,
             ReferenceSemantics.image,
         ) == Reference(
             semantics=ReferenceSemantics.video,
@@ -465,8 +473,8 @@ class TestExtractMediaReference:
 
 class TestExtractMediaContentReference:
 
-    def test_uses_unknown_default_semantics(self) -> None:
-        assert _extract_media_content_reference({"url": "/asset"}, _feed_url()) == Reference(
+    def test_uses_unknown_default_semantics(self, feed_url: FeedUrl) -> None:
+        assert _extract_media_content_reference({"url": "/asset"}, feed_url) == Reference(
             semantics=ReferenceSemantics.unknown,
             url=_absolute_url("https://example.com/asset"),
         )
@@ -474,8 +482,8 @@ class TestExtractMediaContentReference:
 
 class TestExtractMediaThumbnailReference:
 
-    def test_uses_image_default_semantics(self) -> None:
-        assert _extract_media_thumbnail_reference({"url": "/image"}, _feed_url()) == Reference(
+    def test_uses_image_default_semantics(self, feed_url: FeedUrl) -> None:
+        assert _extract_media_thumbnail_reference({"url": "/image"}, feed_url) == Reference(
             semantics=ReferenceSemantics.image,
             url=_absolute_url("https://example.com/image"),
         )
@@ -483,11 +491,11 @@ class TestExtractMediaThumbnailReference:
 
 class TestExtractCommentsReference:
 
-    def test_returns_none_when_missing(self) -> None:
-        assert _extract_comments_reference(None, _feed_url()) is None
+    def test_returns_none_when_missing(self, feed_url: FeedUrl) -> None:
+        assert _extract_comments_reference(None, feed_url) is None
 
-    def test_returns_comments_reference(self) -> None:
-        assert _extract_comments_reference("/comments", _feed_url()) == Reference(
+    def test_returns_comments_reference(self, feed_url: FeedUrl) -> None:
+        assert _extract_comments_reference("/comments", feed_url) == Reference(
             semantics=ReferenceSemantics.comments,
             url=_absolute_url("https://example.com/comments"),
             title="Comments",
@@ -496,11 +504,11 @@ class TestExtractCommentsReference:
 
 class TestExtractAuthorReference:
 
-    def test_returns_none_when_href_is_missing(self) -> None:
-        assert _extract_author_reference({"name": "Author"}, _feed_url()) is None
+    def test_returns_none_when_href_is_missing(self, feed_url: FeedUrl) -> None:
+        assert _extract_author_reference({"name": "Author"}, feed_url) is None
 
-    def test_returns_author_reference(self) -> None:
-        assert _extract_author_reference({"href": "/author", "name": "Author"}, _feed_url()) == Reference(
+    def test_returns_author_reference(self, feed_url: FeedUrl) -> None:
+        assert _extract_author_reference({"href": "/author", "name": "Author"}, feed_url) == Reference(
             semantics=ReferenceSemantics.author,
             url=_absolute_url("https://example.com/author"),
             title="Author",
@@ -509,13 +517,13 @@ class TestExtractAuthorReference:
 
 class TestExtractEnclosureReference:
 
-    def test_returns_none_when_href_is_missing(self) -> None:
-        assert _extract_enclosure_reference({}, _feed_url()) is None
+    def test_returns_none_when_href_is_missing(self, feed_url: FeedUrl) -> None:
+        assert _extract_enclosure_reference({}, feed_url) is None
 
-    def test_returns_reference(self) -> None:
+    def test_returns_reference(self, feed_url: FeedUrl) -> None:
         assert _extract_enclosure_reference(
             {"href": "/file.pdf", "type": "application/pdf", "title": "File", "length": "42"},
-            _feed_url(),
+            feed_url,
         ) == Reference(
             semantics=ReferenceSemantics.document,
             url=_absolute_url("https://example.com/file.pdf"),
@@ -553,7 +561,7 @@ class TestMergeReferencesList:
 
 class TestExtractReferencesRaw:
 
-    def test_collects_references_and_filters_primary_url(self) -> None:
+    def test_collects_references_and_filters_primary_url(self, feed_url: FeedUrl) -> None:
         primary_url = _absolute_url("https://example.com/news")
         references = _extract_references_raw(
             {
@@ -568,7 +576,7 @@ class TestExtractReferencesRaw:
                 "author_detail": {"href": "/author", "name": "Author"},
                 "contributors": [{"href": "/contributor", "name": "Contributor"}],
             },
-            _feed_url(),
+            feed_url,
             primary_url,
         )
 
@@ -607,14 +615,14 @@ class TestExtractReferencesRaw:
 
 class TestExtractReferences:
 
-    def test_merges_duplicates_and_sorts(self) -> None:
+    def test_merges_duplicates_and_sorts(self, feed_url: FeedUrl) -> None:
         references = _extract_references(
             {
                 "links": [{"href": "/b", "rel": "alternate", "type": "text/html"}],
                 "comments": "/b",
                 "media_thumbnail": [{"url": "/a"}],
             },
-            _feed_url(),
+            feed_url,
             _absolute_url("https://example.com/news"),
         )
 

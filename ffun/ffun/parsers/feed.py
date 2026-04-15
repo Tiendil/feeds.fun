@@ -7,7 +7,8 @@ import feedparser
 
 from ffun.core import logging, utils
 from ffun.domain import urls
-from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
+from ffun.domain.entities import AbsoluteUrl, FeedUrl, SourceUid, UnknownUrl
+from ffun.integrations.settings import settings as i_settings
 from ffun.library.entities import Reference, ReferenceSemantics
 from ffun.parsers import errors
 from ffun.parsers.entities import EntryInfo, FeedInfo
@@ -280,7 +281,8 @@ def _extract_comments_reference(raw_comments_url: object, original_url: FeedUrl)
 
 
 def _extract_author_reference(raw_author: object, original_url: FeedUrl) -> Reference | None:
-    assert isinstance(raw_author, Mapping)
+    if not isinstance(raw_author, Mapping):
+        return None
 
     return _create_reference(
         semantics=ReferenceSemantics.author,
@@ -362,13 +364,13 @@ def _extract_references(
     return _merge_references_list(references)
 
 
-def parse_entry(raw_entry: Mapping[str, object], original_url: FeedUrl) -> EntryInfo:
+def parse_entry(raw_entry: Mapping[str, object], original_url: FeedUrl, source: SourceUid) -> EntryInfo:
     # TODO: remove all tags from title
     # TODO: extract tags from <category> tag
     published_at = _extract_published_at(raw_entry)
     external_url = _extract_external_url(raw_entry, original_url)
 
-    return EntryInfo(
+    entry = EntryInfo(
         title=raw_entry.get("title", ""),  # type: ignore
         body=_extract_body(raw_entry),
         external_id=_extract_external_id(raw_entry),
@@ -377,6 +379,13 @@ def parse_entry(raw_entry: Mapping[str, object], original_url: FeedUrl) -> Entry
         published_at=published_at,
         references=_extract_references(raw_entry, original_url, external_url),
     )
+
+    integration = i_settings.get_integration_by_source(source)
+
+    if integration is None:
+        return entry
+
+    return integration.plugin_instance.postprocess_entry(entry)
 
 
 class Channel(Protocol):
@@ -402,7 +411,7 @@ def parse_into_feedparser(content: str) -> Channel | None:
     return channel
 
 
-def parse_feed(content: str, original_url: FeedUrl) -> FeedInfo | None:  # noqa: CCR001
+def parse_feed(content: str, original_url: FeedUrl, source: SourceUid) -> FeedInfo | None:  # noqa: CCR001
     channel = parse_into_feedparser(content)
 
     if channel is None:
@@ -425,7 +434,7 @@ def parse_feed(content: str, original_url: FeedUrl) -> FeedInfo | None:  # noqa:
             continue
 
         try:
-            parsed_entry = parse_entry(entry, original_url)
+            parsed_entry = parse_entry(entry, original_url, source)
         except Exception:
             logger.exception("error_while_parsing_feed_entry", entry=entry, original_url=original_url)
             continue

@@ -5,7 +5,7 @@ import typer
 from rich import print as rich_print
 
 from ffun.application.application import with_app
-from ffun.domain.urls import str_to_feed_url
+from ffun.domain.urls import str_to_feed_url, url_to_source_uid
 from ffun.loader import domain as l_domain
 from ffun.parsers.feed import parse_into_feedparser
 
@@ -18,7 +18,11 @@ async def run_load_feed_internal(feed_url: str) -> None:
             normalized_feed_url = str_to_feed_url(feed_url)
             response = await l_domain.load_content_with_proxies(normalized_feed_url)
             content = await l_domain.decode_content(response)
-            feed_info = await l_domain.parse_content(content, original_url=normalized_feed_url)
+            feed_info = await l_domain.parse_content(
+                content,
+                original_url=normalized_feed_url,
+                source=url_to_source_uid(normalized_feed_url),
+            )
         except Exception as e:
             sys.stdout.write(f"Failed to load feed info: {e}\n")
             return

@@ -3,7 +3,7 @@ import httpx
 from ffun.core import logging
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import AbsoluteUrl, FeedUrl
-from ffun.domain.urls import construct_f_url
+from ffun.domain.urls import construct_f_url, url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedId, FeedState
 from ffun.feeds_collections.collections import collections
@@ -97,7 +97,7 @@ async def extract_feed_info(feed_id: FeedId | None, feed_url: FeedUrl) -> p_enti
     try:
         response = await load_content_with_proxies(feed_url)
         content = await decode_content(response)
-        feed_info = await parse_content(content, original_url=feed_url)
+        feed_info = await parse_content(content, original_url=feed_url, source=url_to_source_uid(feed_url))
     except errors.AllProxiesSuspended:
         logger.info("all_proxies_suspended")
         return None
