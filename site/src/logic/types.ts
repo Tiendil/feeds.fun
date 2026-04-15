@@ -119,6 +119,88 @@ export function feedFromJSON({
   };
 }
 
+export type ReferenceExtraValue = number | string | null;
+
+export type RawReference = {
+  semantics: e.ReferenceSemantics;
+  url: string;
+  title?: string | null;
+  mime_type?: string | null;
+  width?: number | null;
+  height?: number | null;
+  duration?: string | null;
+  size?: number | null;
+  extra?: {[key: string]: ReferenceExtraValue} | null;
+};
+
+export class Reference {
+  readonly semantics: e.ReferenceSemantics;
+  readonly url: URL;
+  readonly title: string | null;
+  readonly mimeType: string | null;
+  readonly width: number | null;
+  readonly height: number | null;
+  readonly duration: string | null;
+  readonly size: number | null;
+  readonly extra: {[key: string]: ReferenceExtraValue} | null;
+
+  constructor({
+    semantics,
+    url,
+    title,
+    mimeType,
+    width,
+    height,
+    duration,
+    size,
+    extra
+  }: {
+    semantics: e.ReferenceSemantics;
+    url: URL;
+    title: string | null;
+    mimeType: string | null;
+    width: number | null;
+    height: number | null;
+    duration: string | null;
+    size: number | null;
+    extra: {[key: string]: ReferenceExtraValue} | null;
+  }) {
+    this.semantics = semantics;
+    this.url = url;
+    this.title = title;
+    this.mimeType = mimeType;
+    this.width = width;
+    this.height = height;
+    this.duration = duration;
+    this.size = size;
+    this.extra = extra;
+  }
+}
+
+export function referenceFromJSON({
+  semantics,
+  url,
+  title,
+  mime_type,
+  width,
+  height,
+  duration,
+  size,
+  extra
+}: RawReference): Reference {
+  return new Reference({
+    semantics: semantics,
+    url: toURL(url),
+    title: title !== undefined ? title : null,
+    mimeType: mime_type !== undefined ? mime_type : null,
+    width: width !== undefined ? width : null,
+    height: height !== undefined ? height : null,
+    duration: duration !== undefined ? duration : null,
+    size: size !== undefined ? size : null,
+    extra: extra !== undefined ? extra : null
+  });
+}
+
 export class Entry {
   readonly id: EntryId;
   readonly feedId: FeedId;
@@ -131,6 +213,7 @@ export class Entry {
   readonly scoreToZero: number;
   readonly publishedAt: Date;
   body: string | null;
+  references: Reference[] | null;
 
   constructor({
     id,
@@ -142,7 +225,8 @@ export class Entry {
     score,
     scoreContributions,
     publishedAt,
-    body
+    body,
+    references
   }: {
     id: EntryId;
     feedId: FeedId;
@@ -154,6 +238,7 @@ export class Entry {
     scoreContributions: {[key: string]: number};
     publishedAt: Date;
     body: string | null;
+    references: Reference[] | null;
   }) {
     this.id = id;
     this.feedId = feedId;
@@ -165,6 +250,7 @@ export class Entry {
     this.scoreContributions = scoreContributions;
     this.publishedAt = publishedAt;
     this.body = body;
+    this.references = references;
 
     this.scoreToZero = -Math.abs(score);
   }
@@ -201,7 +287,8 @@ export function entryFromJSON(
     score: number;
     scoreContributions: {[key: number]: number};
     publishedAt: string;
-    body: string | null;
+    body?: string | null;
+    references?: RawReference[] | null;
   },
   tagsMapping: {[key: number]: string}
 ): Entry {
@@ -228,8 +315,11 @@ export function entryFromJSON(
     // map keys from int to string
     scoreContributions: contributions,
     publishedAt: new Date(rawEntry.publishedAt),
-
-    body: rawEntry.body
+    body: rawEntry.body !== undefined ? rawEntry.body : null,
+    references:
+      rawEntry.references !== undefined && rawEntry.references !== null
+        ? rawEntry.references.map(referenceFromJSON)
+        : null
   });
 }
 

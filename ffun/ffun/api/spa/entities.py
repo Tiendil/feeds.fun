@@ -1,4 +1,5 @@
 import datetime
+import copy
 import enum
 from decimal import Decimal
 from typing import Iterable
@@ -77,6 +78,53 @@ class Feed(BaseEntity):
         )
 
 
+class ReferenceSemantics(enum.StrEnum):
+    unknown = "unknown"
+    author = "author"
+    comments = "comments"
+    page = "page"
+    video = "video"
+    audio = "audio"
+    image = "image"
+    document = "document"
+
+
+REFERENCE_SEMANTICS_MAPPING: dict[l_entities.ReferenceSemantics, ReferenceSemantics] = {
+    reference: ReferenceSemantics(reference.name) for reference in l_entities.ReferenceSemantics
+}
+
+
+class Reference(BaseEntity):
+    semantics: ReferenceSemantics
+    url: AbsoluteUrl
+    title: str | None = None
+    mime_type: str | None = None
+    width: int | None = None
+    height: int | None = None
+    duration: datetime.timedelta | None = None
+    size: int | None = None
+    extra: dict[str, int | float | str | None] | None = None
+
+    @pydantic.model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        data = handler(self)
+        return {key: value for key, value in data.items() if value is not None}
+
+    @classmethod
+    def from_internal(cls, reference: l_entities.Reference) -> "Reference":
+        return cls(
+            semantics=REFERENCE_SEMANTICS_MAPPING[reference.semantics],
+            url=reference.url,
+            title=reference.title,
+            mime_type=reference.mime_type,
+            width=reference.width,
+            height=reference.height,
+            duration=reference.duration,
+            size=reference.size,
+            extra=copy.deepcopy(reference.extra) if reference.extra is not None else None,
+        )
+
+
 class Entry(BaseEntity):
     id: EntryId
     title: str
@@ -87,6 +135,7 @@ class Entry(BaseEntity):
     scoreContributions: dict[TagId, int]
     publishedAt: datetime.datetime
     body: str | None = None
+    references: list[Reference] | None = None
 
     @classmethod
     def from_internal(  # noqa: CFQ002
@@ -112,7 +161,9 @@ class Entry(BaseEntity):
             # actual published_at is absolutely unreliable because comes from the third-party sources
             # and can be broken in numerous ways.
             publishedAt=entry.created_at,
+            # Some APIs return full entry info, some return shorter info to safe traffic and speed up the response.
             body=entry.body if with_body else None,
+            references=[Reference.from_internal(reference) for reference in entry.references] if with_body else None,
         )
 
 

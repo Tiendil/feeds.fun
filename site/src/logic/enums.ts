@@ -155,6 +155,21 @@ export const reverseMarker: {[key: string]: Marker} = {
   read: Marker.Read
 };
 
+/////////////////////
+// Reference semantics
+/////////////////////
+
+export enum ReferenceSemantics {
+  Unknown = "unknown",
+  Author = "author",
+  Comments = "comments",
+  Page = "page",
+  Video = "video",
+  Audio = "audio",
+  Image = "image",
+  Document = "document"
+}
+
 //////////////
 // Feeds order
 //////////////
