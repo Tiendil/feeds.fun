@@ -3,19 +3,27 @@
     <div class="max-w-3xl flex-1 bg-white border rounded p-4">
       <h2
         v-if="url"
-        class="mt-0"
+        class="mt-0 mb-0"
         ><a
           :href="url"
           target="_blank"
           @click="emit('body-title-clicked')"
-          >{{ title }}</a
-        ></h2
+          v-html="title"
+          />
+        </h2
       >
-      <p v-if="loading">loading…</p>
+      <body-list-references
+        v-if="references.length > 0"
+        :references="references" />
       <div
-        v-if="text"
-        class="prose max-w-none"
-        v-html="text" />
+        v-if="loading || text"
+        class="mt-4">
+        <p v-if="loading">loading…</p>
+        <div
+          v-if="text"
+          class="prose max-w-none"
+          v-html="text" />
+      </div>
     </div>
   </div>
 </template>
@@ -37,6 +45,7 @@
     title: string | null;
     loading: boolean;
     text: string | null;
+    references: t.Reference[];
   }>();
 
   const emit = defineEmits(["body-title-clicked"]);

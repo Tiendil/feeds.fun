@@ -37,9 +37,9 @@
         :href="entry.url"
         target="_blank"
         :class="[{'font-bold': !isRead}, 'flex-grow', 'min-w-fit', 'line-clamp-1', 'pr-4', 'mb-0']"
-        @click="onTitleClick">
-        {{ purifiedTitle }}
-      </a>
+        @click="onTitleClick"
+        v-html="purifiedTitle"
+        />
 
       <entry-tags-list
         class="mt-0 pt-0"
@@ -62,6 +62,7 @@
     :title="purifiedTitle"
     :loading="entry.body === null"
     :text="purifiedBody"
+    :references="references"
     @body-title-clicked="newsLinkOpenedEvent" />
 </template>
 
@@ -134,6 +135,10 @@
 
   const purifiedBody = computed(() => {
     return utils.purifyBody({raw: entry.value.body, default_: "No description"});
+  });
+
+  const references = computed(() => {
+    return entry.value.references ?? [];
   });
 
   function newsLinkOpenedEvent() {

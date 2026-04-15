@@ -170,6 +170,22 @@ export enum ReferenceSemantics {
   Document = "document"
 }
 
+export type ReferenceSemanticsProperty = {
+  readonly title: string;
+  readonly icon: string;
+};
+
+export const ReferenceSemanticsProperties = new Map<ReferenceSemantics, ReferenceSemanticsProperty>([
+  [ReferenceSemantics.Unknown, {title: "Unknown", icon: "dots"}],
+  [ReferenceSemantics.Author, {title: "Author", icon: "user"}],
+  [ReferenceSemantics.Comments, {title: "Comments", icon: "comments"}],
+  [ReferenceSemantics.Page, {title: "Page", icon: "world"}],
+  [ReferenceSemantics.Video, {title: "Video", icon: "player-play"}],
+  [ReferenceSemantics.Audio, {title: "Audio", icon: "volume"}],
+  [ReferenceSemantics.Image, {title: "Image", icon: "photo"}],
+  [ReferenceSemantics.Document, {title: "Document", icon: "file-text"}]
+]);
+
 //////////////
 // Feeds order
 //////////////
