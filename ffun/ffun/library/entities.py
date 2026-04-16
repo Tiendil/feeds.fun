@@ -39,7 +39,7 @@ REFERENCE_SEMANTICS_PRIORITY: dict[ReferenceSemantics, int] = {
 }
 
 
-# The primary goal of the Reference entity is to simplify all the pleathora of media references
+# The primary goal of the Reference entity is to simplify all the plethora of media references
 # to some reasonable common denominator, that is easier to process and visualize
 class Reference(BaseEntity):
     semantics: ReferenceSemantics
