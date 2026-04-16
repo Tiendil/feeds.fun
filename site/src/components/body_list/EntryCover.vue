@@ -9,6 +9,7 @@
     v-else-if="isImage"
     class="block max-h-[32rem] w-full rounded border border-slate-300 object-cover"
     :src="reference.url"
+    :style="imageStyle"
     :alt="reference.title ?? 'Entry cover'" />
 </template>
 
@@ -30,4 +31,16 @@
   });
 
   const isImage = computed(() => properties.reference.semantics === e.ReferenceSemantics.Image);
+
+  const imageStyle = computed(() => {
+    if (properties.reference.semantics !== e.ReferenceSemantics.Image) {
+      return null;
+    }
+
+    if (properties.reference.width === null || properties.reference.width <= 0) {
+      return null;
+    }
+
+    return {maxWidth: `${properties.reference.width}px`};
+  });
 </script>
