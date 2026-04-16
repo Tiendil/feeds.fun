@@ -1,9 +1,12 @@
 import pytest
+from pytest_mock import MockerFixture
 
-from ffun.domain.urls import str_to_absolute_url
+from ffun.domain.urls import str_to_absolute_url, str_to_feed_url
+from ffun.feeds.entities import FeedError
 from ffun.feeds_discoverer.tests import make as fd_make
 from ffun.integrations.plugins import youtube
 from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.loader import errors as lo_errors
 from ffun.parsers.tests import make as p_make
 
 
@@ -12,15 +15,377 @@ def plugin() -> youtube.Plugin:
     return youtube.construct()
 
 
+class TestConstruct:
+    def test_uses_default_values(self) -> None:
+        plugin = youtube.construct()
+
+        assert plugin._channel_feed_url == youtube.DEFAULT_CHANNEL_FEED_URL
+
+    def test_uses_passed_values(self) -> None:
+        plugin = youtube.construct(channel_feed_url="https://example.com/{channel_id}.xml")
+
+        assert plugin._channel_feed_url == "https://example.com/{channel_id}.xml"
+
+
+class TestAutolinkBareUrls:
+    def test_wraps_bare_urls_but_keeps_trailing_punctuation_outside_link(self) -> None:
+        text = "Watch https://www.youtube.com/watch?v=abc, then reply."
+
+        assert youtube._autolink_bare_urls(text) == "Watch <https://www.youtube.com/watch?v=abc>, then reply."
+
+
+class TestIsYoutubeHost:
+    @pytest.mark.parametrize(
+        ("hostname", "expected"),
+        [
+            ("youtube.com", True),
+            ("www.youtube.com", True),
+            ("m.youtube.com", True),
+            ("youtu.be", True),
+            ("www.youtube-nocookie.com", True),
+            ("example.com", False),
+        ],
+    )
+    def test_detects_supported_hosts(self, hostname: str, expected: bool) -> None:
+        assert youtube._is_youtube_host(hostname) is expected
+
+
+class TestIsYoutubeFeedUrl:
+    @pytest.mark.parametrize(
+        ("url", "expected"),
+        [
+            ("https://www.youtube.com/feeds/videos.xml?channel_id=UC1234567890123456789012", True),
+            ("https://www.youtube.com/watch?v=abc", False),
+        ],
+    )
+    def test_detects_feed_urls(self, url: str, expected: bool) -> None:
+        assert youtube._is_youtube_feed_url(url) is expected
+
+
+class TestDetectYoutubePageKind:
+    @pytest.mark.parametrize(
+        ("url", "expected_kind"),
+        [
+            ("https://www.youtube.com/watch?v=abc", youtube.YouTubePageKind.video),
+            ("https://youtu.be/M7lc1UVf-VE", youtube.YouTubePageKind.video),
+            ("https://www.youtube.com/embed/M7lc1UVf-VE", youtube.YouTubePageKind.video),
+            ("https://www.youtube.com/@feedsfun/videos", youtube.YouTubePageKind.channel),
+            ("https://www.youtube.com/channel/UC1234567890123456789012", youtube.YouTubePageKind.channel),
+            (
+                "https://www.youtube.com/feeds/videos.xml?channel_id=UC1234567890123456789012",
+                youtube.YouTubePageKind.feed,
+            ),
+            ("https://www.youtube.com/playlist?list=abc", youtube.YouTubePageKind.other),
+            ("https://example.com/watch?v=abc", youtube.YouTubePageKind.non_youtube),
+        ],
+    )
+    def test_detects_page_kind(self, url: str, expected_kind: youtube.YouTubePageKind) -> None:
+        assert youtube._detect_youtube_page_kind(url) == expected_kind
+
+
+class TestExtractChannelIdsWithPatterns:
+    def test_extracts_ids_for_passed_patterns(self) -> None:
+        content = """
+            <script>
+                {
+                    "videoDetails":{"videoId":"abc","channelId":"UC1234567890123456789012"},
+                    "externalChannelId":"UCabcdefghijklmnopqrstuv"
+                }
+            </script>
+        """
+
+        assert youtube._extract_channel_ids_with_patterns(content, youtube._YOUTUBE_VIDEO_PAGE_CHANNEL_PATTERNS) == {
+            "UC1234567890123456789012",
+            "UCabcdefghijklmnopqrstuv",
+        }
+
+
+class TestExtractChannelIdsFromVideoPageContent:
+    def test_extracts_only_explicit_owner_channel_ids(self) -> None:
+        content = """
+            <script>
+                {
+                    "videoDetails":{"videoId":"abc","channelId":"UC1234567890123456789012"},
+                    "externalChannelId":"UC1234567890123456789012",
+                    "channelMetadataRenderer":{"externalId":"UCabcdefghijklmnopqrstuv"},
+                    "secondaryResults":[
+                        {"compactVideoRenderer":{"browseId":"UCrelated0000000000000000"}},
+                        {"compactVideoRenderer":{"browseId":"UCmoreRelated0000000000000"}}
+                    ]
+                }
+            </script>
+        """
+
+        assert youtube._extract_channel_ids_from_video_page_content(content) == {
+            "UC1234567890123456789012",
+        }
+
+
+class TestExtractChannelIdsFromChannelPageContent:
+    def test_extracts_channel_id_from_channel_metadata(self) -> None:
+        content = """
+            <script>
+                {
+                    "channelMetadataRenderer":{"externalId":"UCabcdefghijklmnopqrstuv"},
+                    "secondaryResults":[
+                        {"compactVideoRenderer":{"browseId":"UCrelated0000000000000000"}}
+                    ]
+                }
+            </script>
+        """
+
+        assert youtube._extract_channel_ids_from_channel_page_content(content) == {
+            "UCabcdefghijklmnopqrstuv",
+        }
+
+
+class TestBuildFeedUrlsForChannelIds:
+    def test_builds_feed_urls_from_template(self) -> None:
+        assert youtube._build_feed_urls_for_channel_ids(
+            {"UC1234567890123456789012"},
+            "https://example.com/channels/{channel_id}.xml",
+        ) == {str_to_absolute_url("https://example.com/channels/UC1234567890123456789012.xml")}
+
+
+class TestLoadPageContent:
+    @pytest.mark.asyncio
+    async def test_returns_decoded_content(self, mocker: MockerFixture) -> None:
+        async def fake_load_content_with_proxies(url: object, headers: object = None) -> object:
+            assert url == "https://www.youtube.com/watch?v=abc"
+            assert headers == youtube._YOUTUBE_DISCOVERY_HEADERS
+            return object()
+
+        async def fake_decode_content(response: object) -> str:
+            assert response is not None
+            return "<html>content</html>"
+
+        mocker.patch.object(
+            youtube.lo_domain, "load_content_with_proxies", side_effect=fake_load_content_with_proxies
+        )
+        mocker.patch.object(youtube.lo_domain, "decode_content", side_effect=fake_decode_content)
+
+        assert await youtube._load_page_content(str_to_feed_url("https://www.youtube.com/watch?v=abc")) == (
+            "<html>content</html>"
+        )
+
+    @pytest.mark.asyncio
+    async def test_returns_none_on_load_error(self, mocker: MockerFixture) -> None:
+        async def fake_load_content_with_proxies(url: object, headers: object = None) -> object:
+            assert url == "https://www.youtube.com/watch?v=abc"
+            assert headers == youtube._YOUTUBE_DISCOVERY_HEADERS
+            raise lo_errors.LoadError(feed_error_code=FeedError.network_connection_timeout)
+
+        mocker.patch.object(
+            youtube.lo_domain, "load_content_with_proxies", side_effect=fake_load_content_with_proxies
+        )
+
+        assert await youtube._load_page_content(str_to_feed_url("https://www.youtube.com/watch?v=abc")) is None
+
+
 class TestDiscoverFeedUrls:
     @pytest.mark.asyncio
-    async def test_returns_context_without_changes(self, plugin: youtube.Plugin) -> None:
-        context = fd_make.context("https://www.youtube.com/@feedsfun/videos")
+    async def test_returns_context_without_changes_for_non_youtube_page(self, plugin: youtube.Plugin) -> None:
+        context = fd_make.context("https://example.com/watch?v=abc")
 
         new_context, result = await plugin.discover_feed_urls(context)
 
         assert new_context == context
         assert result is None
+
+    @pytest.mark.asyncio
+    async def test_loads_video_page_and_constructs_feed_urls(
+        self, mocker: MockerFixture, plugin: youtube.Plugin
+    ) -> None:
+        context = fd_make.context("https://www.youtube.com/watch?v=abc")
+
+        async def fake_load_page_content(url: object) -> str | None:
+            assert url == "https://www.youtube.com/watch?v=abc"
+            return """
+                <html>
+                    <script>
+                        var ytInitialData = {
+                            "videoDetails": {"channelId": "UCabcdefghijklmnopqrstuv"},
+                            "externalChannelId": "UC1234567890123456789012",
+                            "secondaryResults": [
+                                {"compactVideoRenderer": {"browseId": "UCrelated0000000000000000"}}
+                            ]
+                        };
+                    </script>
+                </html>
+            """
+
+        mocker.patch.object(youtube, "_load_page_content", side_effect=fake_load_page_content)
+
+        new_context, result = await plugin.discover_feed_urls(context)
+
+        assert new_context == context.replace(
+            candidate_urls={
+                "https://www.youtube.com/feeds/videos.xml?channel_id=UC1234567890123456789012",
+                "https://www.youtube.com/feeds/videos.xml?channel_id=UCabcdefghijklmnopqrstuv",
+            }
+        )
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_loads_channel_page_and_constructs_feed_urls(
+        self, mocker: MockerFixture, plugin: youtube.Plugin
+    ) -> None:
+        context = fd_make.context("https://www.youtube.com/@feedsfun/videos")
+
+        async def fake_load_page_content(url: object) -> str | None:
+            assert url == "https://www.youtube.com/@feedsfun/videos"
+            return (
+                '<script>{"channelMetadataRenderer":{"externalId":"UC1234567890123456789012"},'
+                '"browseId":"UCrelated0000000000000000"}</script>'
+            )
+
+        mocker.patch.object(youtube, "_load_page_content", side_effect=fake_load_page_content)
+
+        new_context, result = await plugin.discover_feed_urls(context)
+
+        assert new_context == context.replace(
+            candidate_urls={
+                "https://www.youtube.com/feeds/videos.xml?channel_id=UC1234567890123456789012",
+            }
+        )
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_loads_channel_handle_page_and_constructs_feed_urls(
+        self, mocker: MockerFixture, plugin: youtube.Plugin
+    ) -> None:
+        context = fd_make.context("https://www.youtube.com/@CainOnGames")
+
+        async def fake_load_page_content(url: object) -> str | None:
+            assert url == "https://www.youtube.com/@CainOnGames"
+            return '<script>{"channelMetadataRenderer":{"externalId":"UCTAfm-YD2M9xzvbYvRc5ttA"}}</script>'
+
+        mocker.patch.object(youtube, "_load_page_content", side_effect=fake_load_page_content)
+
+        new_context, result = await plugin.discover_feed_urls(context)
+
+        assert new_context == context.replace(
+            candidate_urls={
+                "https://www.youtube.com/feeds/videos.xml?channel_id=UCTAfm-YD2M9xzvbYvRc5ttA",
+            }
+        )
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_keeps_existing_candidate_urls(
+        self, mocker: MockerFixture, plugin: youtube.Plugin
+    ) -> None:
+        context = fd_make.context(
+            "https://www.youtube.com/watch?v=abc",
+            candidate_urls={str_to_absolute_url("https://existing.example.com/feed.xml")},
+        )
+
+        async def fake_load_page_content(url: object) -> str | None:
+            assert url == "https://www.youtube.com/watch?v=abc"
+            return (
+                '<script>{"videoDetails":{"channelId":"UC1234567890123456789012"},'
+                '"browseId":"UCrelated0000000000000000"}</script>'
+            )
+
+        mocker.patch.object(youtube, "_load_page_content", side_effect=fake_load_page_content)
+
+        new_context, result = await plugin.discover_feed_urls(context)
+
+        assert new_context == context.replace(
+            candidate_urls={
+                str_to_absolute_url("https://existing.example.com/feed.xml"),
+                "https://www.youtube.com/feeds/videos.xml?channel_id=UC1234567890123456789012",
+            }
+        )
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_uses_configured_channel_feed_url(
+        self, mocker: MockerFixture
+    ) -> None:
+        plugin = youtube.construct(channel_feed_url="https://example.com/channels/{channel_id}.xml")
+        context = fd_make.context("https://www.youtube.com/watch?v=abc")
+
+        async def fake_load_page_content(url: object) -> str | None:
+            assert url == "https://www.youtube.com/watch?v=abc"
+            return (
+                '<script>{"videoDetails":{"channelId":"UC1234567890123456789012"},'
+                '"browseId":"UCrelated0000000000000000"}</script>'
+            )
+
+        mocker.patch.object(youtube, "_load_page_content", side_effect=fake_load_page_content)
+
+        new_context, result = await plugin.discover_feed_urls(context)
+
+        assert new_context == context.replace(
+            candidate_urls={
+                "https://example.com/channels/UC1234567890123456789012.xml",
+            }
+        )
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_skips_existing_youtube_feed_url(self, plugin: youtube.Plugin) -> None:
+        context = fd_make.context("https://www.youtube.com/feeds/videos.xml?channel_id=UC1234567890123456789012")
+
+        new_context, result = await plugin.discover_feed_urls(context)
+
+        assert new_context == context
+        assert result is None
+
+
+class TestExtractYoutubeVideoIdFromUrl:
+    @pytest.mark.parametrize(
+        ("url", "youtube_id"),
+        [
+            ("https://www.youtube.com/watch?v=M7lc1UVf-VE", "M7lc1UVf-VE"),
+            ("https://youtu.be/M7lc1UVf-VE?t=42", "M7lc1UVf-VE"),
+            ("https://www.youtube.com/embed/M7lc1UVf-VE", "M7lc1UVf-VE"),
+            ("https://www.youtube.com/v/TWti2_bVsNM?version=3", "TWti2_bVsNM"),
+            ("https://www.youtube.com/e/M7lc1UVf-VE", "M7lc1UVf-VE"),
+            ("https://www.youtube.com/shorts/M7lc1UVf-VE", "M7lc1UVf-VE"),
+            ("https://www.youtube.com/live/M7lc1UVf-VE", "M7lc1UVf-VE"),
+            ("https://www.youtube-nocookie.com/embed/M7lc1UVf-VE?start=30", "M7lc1UVf-VE"),
+            (
+                "https://www.youtube.com/attribution_link?u=%2Fwatch%3Fv%3DM7lc1UVf-VE%26feature%3Dshare",
+                "M7lc1UVf-VE",
+            ),
+        ],
+    )
+    def test_extracts_video_id(self, url: str, youtube_id: str) -> None:
+        assert youtube._extract_youtube_video_id_from_url(str_to_absolute_url(url)) == youtube_id
+
+    def test_returns_none_for_non_youtube_url(self) -> None:
+        assert youtube._extract_youtube_video_id_from_url(str_to_absolute_url("https://example.com/video.mp4")) is None
+
+
+class TestPostprocessReference:
+    def test_stores_youtube_id_in_video_reference_extra(self) -> None:
+        reference = Reference(
+            semantics=ReferenceSemantics.video,
+            url=str_to_absolute_url("https://www.youtube.com/watch?v=M7lc1UVf-VE"),
+            extra={"source": "youtube"},
+        )
+
+        assert youtube._postprocess_reference(reference) == reference.replace(
+            extra={"source": "youtube", "youtube_id": "M7lc1UVf-VE"}
+        )
+
+    def test_keeps_non_youtube_video_reference(self) -> None:
+        reference = Reference(
+            semantics=ReferenceSemantics.video,
+            url=str_to_absolute_url("https://example.com/video.mp4"),
+        )
+
+        assert youtube._postprocess_reference(reference) == reference
+
+    def test_keeps_non_video_reference(self) -> None:
+        reference = Reference(
+            semantics=ReferenceSemantics.page,
+            url=str_to_absolute_url("https://www.youtube.com/watch?v=M7lc1UVf-VE"),
+        )
+
+        assert youtube._postprocess_reference(reference) == reference
 
 
 class TestPostprocessEntry:
@@ -49,40 +414,7 @@ class TestPostprocessEntry:
 
         assert processed_entry == entry.replace(**expected_update)
 
-    @pytest.mark.parametrize(
-        ("url", "youtube_id"),
-        [
-            ("https://www.youtube.com/watch?v=M7lc1UVf-VE", "M7lc1UVf-VE"),
-            ("https://youtu.be/M7lc1UVf-VE?t=42", "M7lc1UVf-VE"),
-            ("https://www.youtube.com/embed/M7lc1UVf-VE", "M7lc1UVf-VE"),
-            ("https://www.youtube.com/v/TWti2_bVsNM?version=3", "TWti2_bVsNM"),
-            ("https://www.youtube.com/e/M7lc1UVf-VE", "M7lc1UVf-VE"),
-            ("https://www.youtube.com/shorts/M7lc1UVf-VE", "M7lc1UVf-VE"),
-            ("https://www.youtube.com/live/M7lc1UVf-VE", "M7lc1UVf-VE"),
-            ("https://www.youtube-nocookie.com/embed/M7lc1UVf-VE?start=30", "M7lc1UVf-VE"),
-            (
-                "https://www.youtube.com/attribution_link?u=%2Fwatch%3Fv%3DM7lc1UVf-VE%26feature%3Dshare",
-                "M7lc1UVf-VE",
-            ),
-        ],
-    )
-    def test_stores_youtube_id_in_video_reference_extra(
-        self, plugin: youtube.Plugin, url: str, youtube_id: str
-    ) -> None:
-        reference = Reference(
-            semantics=ReferenceSemantics.video,
-            url=str_to_absolute_url(url),
-            extra={"source": "youtube"},
-        )
-        entry = p_make.fake_entry_info(body="Video", references=[reference])
-
-        processed_entry = plugin.postprocess_entry(entry)
-
-        assert processed_entry.references[0] == reference.replace(
-            extra={"source": "youtube", "youtube_id": youtube_id}
-        )
-
-    def test_does_not_store_youtube_id_for_non_youtube_video_reference(self, plugin: youtube.Plugin) -> None:
+    def test_uses_postprocessed_references(self, plugin: youtube.Plugin) -> None:
         reference = Reference(
             semantics=ReferenceSemantics.video,
             url=str_to_absolute_url("https://example.com/video.mp4"),

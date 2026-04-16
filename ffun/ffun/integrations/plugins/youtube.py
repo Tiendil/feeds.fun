@@ -1,15 +1,47 @@
+import enum
 import re
 from urllib.parse import parse_qs, unquote, urlsplit
 
 import markdown  # type: ignore
 
-from ffun.domain.entities import AbsoluteUrl
+from ffun.core import logging
+from ffun.domain.entities import AbsoluteUrl, FeedUrl
+from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
 from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.loader import domain as lo_domain
+from ffun.loader import errors as lo_errors
 from ffun.parsers import entities as p_entities
 
 _BARE_URL_RE = re.compile(r'(?<!\()(?<!<)(?<!")(?P<url>https?://[^\s<]+)')
+_YOUTUBE_CHANNEL_ID_RE = re.compile(r"\bUC[a-zA-Z0-9_-]{22}\b")
+_YOUTUBE_CHANNEL_PAGE_PREFIXES = ("@", "channel", "c", "user")
+_YOUTUBE_VIDEO_PAGE_CHANNEL_PATTERNS = (
+    re.compile(r'"videoDetails"\s*:\s*\{.*?"channelId"\s*:\s*"(?P<channel_id>UC[a-zA-Z0-9_-]{22})"', re.DOTALL),
+    re.compile(r'"externalChannelId"\s*:\s*"(?P<channel_id>UC[a-zA-Z0-9_-]{22})"'),
+)
+_YOUTUBE_CHANNEL_PAGE_CHANNEL_PATTERNS = (
+    re.compile(
+        r'"channelMetadataRenderer"\s*:\s*\{.*?"externalId"\s*:\s*"(?P<channel_id>UC[a-zA-Z0-9_-]{22})"',
+        re.DOTALL,
+    ),
+)
 _YOUTUBE_PATH_PREFIXES = {"embed", "e", "live", "shorts", "v"}
+# YouTube can answer channel pages with a consent interstitial instead of the real page.
+# Sending SOCS=CAI opts into the non-interstitial response so we can extract channel ids.
+_YOUTUBE_DISCOVERY_HEADERS = {"Cookie": "SOCS=CAI"}
+
+logger = logging.get_module_logger()
+
+DEFAULT_CHANNEL_FEED_URL = "https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}"
+
+
+class YouTubePageKind(enum.StrEnum):
+    non_youtube = "non_youtube"
+    feed = "feed"
+    video = "video"
+    channel = "channel"
+    other = "other"
 
 
 def _autolink_bare_urls(text: str) -> str:
@@ -34,6 +66,88 @@ def _is_youtube_host(hostname: str) -> bool:
         or hostname.endswith(".youtube.com")
         or hostname.endswith(".youtube-nocookie.com")
     )
+
+
+def _is_youtube_feed_url(url: str) -> bool:
+    parsed_url = urlsplit(url)
+
+    return parsed_url.path == "/feeds/videos.xml"
+
+
+def _is_youtube_video_page(
+    hostname: str,
+    path: str,
+    path_segments: list[str],
+) -> bool:
+    return (
+        hostname == "youtu.be"
+        or path == "/watch"
+        or (len(path_segments) >= 2 and path_segments[0] in _YOUTUBE_PATH_PREFIXES)
+    )
+
+
+def _is_youtube_channel_page(path_segments: list[str]) -> bool:
+    return bool(
+        path_segments
+        and (
+            path_segments[0].startswith("@")
+            or path_segments[0] in _YOUTUBE_CHANNEL_PAGE_PREFIXES
+        )
+    )
+
+
+def _detect_youtube_page_kind(url: str) -> YouTubePageKind:
+    parsed_url = urlsplit(url)
+    hostname = parsed_url.hostname
+
+    if hostname is None or not _is_youtube_host(hostname.lower()):
+        return YouTubePageKind.non_youtube
+
+    if _is_youtube_feed_url(url):
+        return YouTubePageKind.feed
+
+    path_segments = [segment for segment in parsed_url.path.split("/") if segment]
+
+    if _is_youtube_video_page(hostname.lower(), parsed_url.path, path_segments):
+        return YouTubePageKind.video
+
+    if _is_youtube_channel_page(path_segments):
+        return YouTubePageKind.channel
+
+    return YouTubePageKind.other
+
+
+def _extract_channel_ids_with_patterns(content: str, patterns: tuple[re.Pattern[str], ...]) -> set[str]:
+    channel_ids: set[str] = set()
+
+    for pattern in patterns:
+        channel_ids.update(match.group("channel_id") for match in pattern.finditer(content))
+
+    return channel_ids
+
+
+def _extract_channel_ids_from_video_page_content(content: str) -> set[str]:
+    return _extract_channel_ids_with_patterns(content, _YOUTUBE_VIDEO_PAGE_CHANNEL_PATTERNS)
+
+
+def _extract_channel_ids_from_channel_page_content(content: str) -> set[str]:
+    return _extract_channel_ids_with_patterns(content, _YOUTUBE_CHANNEL_PAGE_CHANNEL_PATTERNS)
+
+
+def _build_feed_urls_for_channel_ids(channel_ids: set[str], channel_feed_url: str) -> set[AbsoluteUrl]:
+    return {
+        AbsoluteUrl(channel_feed_url.format(channel_id=channel_id))
+        for channel_id in channel_ids
+    }
+
+
+async def _load_page_content(url: FeedUrl) -> str | None:
+    try:
+        response = await lo_domain.load_content_with_proxies(url, headers=_YOUTUBE_DISCOVERY_HEADERS)
+        return await lo_domain.decode_content(response)
+    except lo_errors.LoadError:
+        logger.info("discovering_youtube_cannot_access_channel_page", url=url)
+        return None
 
 
 def _extract_youtube_video_id_from_url(url: AbsoluteUrl, *, _depth: int = 0) -> str | None:  # noqa: CCR001
@@ -104,7 +218,37 @@ def _postprocess_reference(reference: Reference) -> Reference:
 
 
 class Plugin(BasePlugin):
-    __slots__ = ()
+    __slots__ = ("_channel_feed_url",)
+
+    def __init__(self, channel_feed_url: str):
+        self._channel_feed_url = channel_feed_url
+
+    async def discover_feed_urls(self, context: fd_entities.Context) -> fd_entities.DiscoverResult:
+        assert context.url is not None
+
+        page_kind = _detect_youtube_page_kind(context.url)
+
+        if page_kind not in {YouTubePageKind.video, YouTubePageKind.channel}:
+            return context, None
+
+        content = await _load_page_content(context.url)
+
+        if content is None:
+            return context, None
+
+        if page_kind == YouTubePageKind.video:
+            channel_ids = _extract_channel_ids_from_video_page_content(content)
+        else:
+            channel_ids = _extract_channel_ids_from_channel_page_content(content)
+
+        if not channel_ids:
+            return context, None
+
+        candidate_urls = context.candidate_urls | _build_feed_urls_for_channel_ids(
+            channel_ids, self._channel_feed_url
+        )
+
+        return context.replace(candidate_urls=candidate_urls), None
 
     def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
         return entry.replace(
@@ -114,5 +258,9 @@ class Plugin(BasePlugin):
         )
 
 
-def construct() -> Plugin:
-    return Plugin()
+def construct(**kwargs: object) -> Plugin:
+    channel_feed_url = kwargs.get("channel_feed_url", DEFAULT_CHANNEL_FEED_URL)
+
+    assert isinstance(channel_feed_url, str)
+
+    return Plugin(channel_feed_url=channel_feed_url)

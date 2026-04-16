@@ -1,5 +1,6 @@
 import asyncio
 import ssl
+from typing import Mapping
 
 import anyio
 import h2
@@ -27,7 +28,10 @@ _accept_enconding_header = "br;q=1.0, zstd;q=0.9, gzip;q=0.8, deflate;q=0.7"
 
 
 async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R0915
-    url: AbsoluteUrl, proxy: Proxy, semaphore: asyncio.Semaphore = _load_semaphor
+    url: AbsoluteUrl,
+    proxy: Proxy,
+    semaphore: asyncio.Semaphore = _load_semaphor,
+    headers: Mapping[str, object] | None = None,
 ) -> httpx.Response:
     error_code = FeedError.network_unknown
 
@@ -37,7 +41,7 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         log.info("loading_feed")
 
         async with semaphore:
-            async with http.client(proxy=proxy.url) as client:
+            async with http.client(proxy=proxy.url, headers=headers) as client:
                 response = await client.get(url, follow_redirects=True)
 
     # This long list of exceptions works as a knowledge base for possible errors
