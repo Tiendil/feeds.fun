@@ -1,7 +1,6 @@
-from collections.abc import Callable
-from importlib import import_module
 from typing import cast
 
+import markdown  # type: ignore
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
@@ -12,7 +11,6 @@ from ffun.integrations.plugin import Plugin as BasePlugin
 from ffun.parsers import entities as p_entities
 
 logger = logging.get_module_logger()
-_RENDER_MARKDOWN = cast(Callable[[str], str], getattr(import_module("markdown"), "markdown"))
 
 
 def _rewrite_pre_body(body: str) -> str:
@@ -36,7 +34,7 @@ def _rewrite_pre_body(body: str) -> str:
     if markdown_source == "":
         return body
 
-    return _RENDER_MARKDOWN(markdown_source)
+    return markdown.markdown(markdown_source)  # type: ignore
 
 
 # Note: there are no official documentation on GitHub feed URLs,

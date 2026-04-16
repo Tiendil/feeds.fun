@@ -1,8 +1,7 @@
 import re
-from collections.abc import Callable
-from importlib import import_module
-from typing import cast
 from urllib.parse import parse_qs, unquote, urlsplit
+
+import markdown  # type: ignore
 
 from ffun.domain.entities import AbsoluteUrl
 from ffun.integrations.plugin import Plugin as BasePlugin
@@ -11,12 +10,11 @@ from ffun.parsers import entities as p_entities
 
 _BARE_URL_RE = re.compile(r'(?<!\()(?<!<)(?<!")(?P<url>https?://[^\s<]+)')
 _YOUTUBE_PATH_PREFIXES = {"embed", "e", "live", "shorts", "v"}
-_RENDER_MARKDOWN = cast(Callable[[str], str], getattr(import_module("markdown"), "markdown"))
 
 
 def _autolink_bare_urls(text: str) -> str:
     def _replace(match: re.Match[str]) -> str:
-        url = cast(str, match.group("url"))
+        url: str = match.group("url")
         stripped_url = url.rstrip(".,!?;:")
 
         if stripped_url == "":
@@ -110,7 +108,8 @@ class Plugin(BasePlugin):
 
     def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
         return entry.replace(
-            body=_RENDER_MARKDOWN(_autolink_bare_urls(entry.body)),
+            body=markdown.markdown(_autolink_bare_urls(entry.body))  # type: ignore
+            ,
             references=[_postprocess_reference(reference) for reference in entry.references],
         )
 
