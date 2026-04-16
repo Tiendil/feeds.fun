@@ -105,7 +105,11 @@ async def _discover_extract_feed_info(context: Context) -> DiscoverResult:
     logger.info("discovering_extracting_feed_info", url=context.url)
 
     try:
-        feed_info = await lo_domain.parse_content(context.content, original_url=context.url)
+        feed_info = await lo_domain.parse_content(
+            context.content,
+            original_url=context.url,
+            source=url_to_source_uid(context.url),
+        )
     except lo_errors.LoadError:
         logger.info("feed_not_found_at_start_url")
         return context, None

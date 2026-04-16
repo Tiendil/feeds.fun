@@ -3,13 +3,14 @@ import uuid
 from typing import Any, AsyncGenerator, Iterable
 
 import psycopg
+from psycopg.types.json import Jsonb
 from pypika import PostgreSQLQuery
 
 from ffun.core import logging, utils
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain.entities import EntryId, FeedId
 from ffun.library import errors
-from ffun.library.entities import CollectedEntry, Entry, FeedEntryLink
+from ffun.library.entities import CollectedEntry, Entry, FeedEntryLink, Reference
 from ffun.library.settings import settings
 
 logger = logging.get_module_logger()
@@ -35,8 +36,33 @@ logger = logging.get_module_logger()
 #         and using its `ingested_at`.
 
 
+def dict_to_reference(row: dict[str, Any]) -> Reference:
+    return Reference(
+        semantics=row["semantics"],
+        url=row["url"],
+        title=row.get("title"),
+        mime_type=row.get("mime_type"),
+        width=row.get("width"),
+        height=row.get("height"),
+        duration=row.get("duration"),
+        size=row.get("size"),
+        extra=row.get("extra"),
+    )
+
+
 def row_to_entry(row: dict[str, Any]) -> Entry:
-    return Entry(**row)
+    return Entry(
+        id=row["id"],
+        source_id=row["source_id"],
+        title=row["title"],
+        body=row["body"],
+        external_id=row["external_id"],
+        external_url=row["external_url"],
+        external_tags=row["external_tags"],
+        published_at=row["published_at"],
+        created_at=row["created_at"],
+        references=[dict_to_reference(ref) for ref in row["refs"]],
+    )
 
 
 @run_in_transaction
@@ -44,9 +70,9 @@ async def _catalog_entry(
     execute: ExecuteType, feed_id: FeedId, entry: CollectedEntry, ingested_at: datetime.datetime
 ) -> bool:
     sql_insert_entry = """
-    INSERT INTO l_entries (id, source_id, title, body, external_id, external_url, external_tags, published_at)
+    INSERT INTO l_entries (id, source_id, title, body, external_id, external_url, external_tags, published_at, refs)
     VALUES (%(id)s, %(source_id)s, %(title)s, %(body)s, %(external_id)s,
-            %(external_url)s, %(external_tags)s, %(published_at)s)
+            %(external_url)s, %(external_tags)s, %(published_at)s, %(refs)s)
     ON CONFLICT (source_id, external_id) DO NOTHING
     RETURNING id, created_at
     """
@@ -84,6 +110,9 @@ async def _catalog_entry(
             "external_url": entry.external_url,
             "external_tags": list(entry.external_tags),
             "published_at": entry.published_at,
+            "refs": Jsonb(
+                [ref.model_dump(mode="json", exclude_defaults=True, exclude_none=True) for ref in entry.references]
+            ),
         },
     )
 

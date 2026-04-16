@@ -155,6 +155,38 @@ export const reverseMarker: {[key: string]: Marker} = {
   read: Marker.Read
 };
 
+/////////////////////
+// Reference semantics
+/////////////////////
+
+export enum ReferenceSemantics {
+  Unknown = "unknown",
+  Author = "author",
+  Comments = "comments",
+  Page = "page",
+  Video = "video",
+  Audio = "audio",
+  Image = "image",
+  Document = "document"
+}
+
+export type ReferenceSemanticsProperty = {
+  readonly title: string;
+  readonly icon: string;
+  readonly priority: number;
+};
+
+export const ReferenceSemanticsProperties = new Map<ReferenceSemantics, ReferenceSemanticsProperty>([
+  [ReferenceSemantics.Unknown, {title: "Unknown", icon: "dots", priority: 80}],
+  [ReferenceSemantics.Author, {title: "Author", icon: "user", priority: 10}],
+  [ReferenceSemantics.Comments, {title: "Comments", icon: "comments", priority: 20}],
+  [ReferenceSemantics.Page, {title: "Page", icon: "world", priority: 70}],
+  [ReferenceSemantics.Video, {title: "Video", icon: "player-play", priority: 30}],
+  [ReferenceSemantics.Audio, {title: "Audio", icon: "volume", priority: 40}],
+  [ReferenceSemantics.Image, {title: "Image", icon: "photo", priority: 50}],
+  [ReferenceSemantics.Document, {title: "Document", icon: "file-text", priority: 60}]
+]);
+
 //////////////
 // Feeds order
 //////////////

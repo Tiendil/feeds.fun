@@ -1,43 +1,88 @@
 <template>
   <div class="flex my-1">
-    <div class="max-w-3xl flex-1 bg-white border rounded p-4">
+    <div
+      ref="bodyCard"
+      class="max-w-3xl flex-1 bg-white border rounded p-4">
       <h2
         v-if="url"
-        class="mt-0"
+        class="mt-0 mb-0"
         ><a
           :href="url"
           target="_blank"
           @click="emit('body-title-clicked')"
-          >{{ title }}</a
-        ></h2
+          v-html="title" />
+      </h2>
+
+      <body-list-references
+        v-if="references.length > 0"
+        :references="references" />
+
+      <p
+        v-if="loading"
+        class="mt-4"
+        >loading…</p
       >
-      <p v-if="loading">loading…</p>
+
       <div
-        v-if="text"
-        class="prose max-w-none"
-        v-html="text" />
+        v-else-if="coverReference !== null || text"
+        class="mt-4">
+        <body-list-entry-cover
+          v-if="coverReference !== null"
+          :reference="coverReference"
+          :container-width="bodyCardWidth" />
+
+        <div
+          v-if="text"
+          class="prose max-w-none"
+          v-html="text" />
+
+        <div
+          v-if="hasImageCover"
+          class="clear-both" />
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import _ from "lodash";
-  import {computed, ref, useTemplateRef, onMounted} from "vue";
-  import type * as t from "@/logic/types";
-  import * as events from "@/logic/events";
+  import {computed, useTemplateRef} from "vue";
+  import {useElementSize} from "@vueuse/core";
   import * as e from "@/logic/enums";
-  import {computedAsync} from "@vueuse/core";
-  import DOMPurify from "dompurify";
-  import {useEntriesStore} from "@/stores/entries";
-
-  const entriesStore = useEntriesStore();
+  import type * as t from "@/logic/types";
 
   const properties = defineProps<{
     url: string | null;
     title: string | null;
     loading: boolean;
     text: string | null;
+    references: t.Reference[];
   }>();
 
   const emit = defineEmits(["body-title-clicked"]);
+  const bodyCard = useTemplateRef("bodyCard");
+  const {width: bodyCardWidth} = useElementSize(bodyCard);
+
+  const coverReference = computed(() => {
+    for (const reference of properties.references) {
+      if (reference.semantics !== e.ReferenceSemantics.Video) {
+        continue;
+      }
+
+      if (reference.youtubeId() !== null) {
+        return reference;
+      }
+    }
+
+    for (const reference of properties.references) {
+      if (reference.semantics === e.ReferenceSemantics.Image) {
+        return reference;
+      }
+    }
+
+    return null;
+  });
+
+  const hasImageCover = computed(() => {
+    return coverReference.value?.semantics === e.ReferenceSemantics.Image;
+  });
 </script>

@@ -3,7 +3,7 @@ import pytest
 from pytest_mock import MockerFixture
 from respx.router import MockRouter
 
-from ffun.domain.entities import AbsoluteUrl, FeedUrl, SourceUid, UnknownUrl
+from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.feeds_discoverer import domain as fd_domain
 from ffun.feeds_discoverer.domain import (
     _VISITED_URLS,
@@ -23,7 +23,7 @@ from ffun.feeds_discoverer.domain import (
 )
 from ffun.feeds_discoverer.entities import Context, Result, Status
 from ffun.feeds_discoverer.tests import make
-from ffun.integrations.plugins import fake as fake_plugin
+from ffun.integrations.tests.helpers import FakeIntegration
 
 
 class TestDiscoverAdjustUrl:
@@ -520,27 +520,17 @@ class TestDiscoverStopRecursion:
         assert result is None
 
 
-class _FakeIntegration:
-    def __init__(self, source: str, urls: list[str]):
-        self.source = SourceUid(source)
-        self.plugin_instance = fake_plugin.construct(urls=urls)
-
-
-def _fake_integration(source: str, urls: list[str]) -> _FakeIntegration:
-    return _FakeIntegration(source=source, urls=urls)
-
-
 class TestDiscoverExtractFeedsForPlugins:
 
     @pytest.fixture  # type: ignore
-    def configured_fake_integrations(self, mocker: MockerFixture) -> list[_FakeIntegration]:
+    def configured_fake_integrations(self, mocker: MockerFixture) -> list[FakeIntegration]:
         integrations = [
-            _fake_integration(
-                "example.com",
+            FakeIntegration(
+                ["example.com", "www.example.com"],
                 ["https://feeds.example.com/rss", "https://feeds.example.com/atom"],
             ),
-            _fake_integration("reddit.com", ["https://reddit.com/r/feedsfun/.rss"]),
-            _fake_integration(
+            FakeIntegration("reddit.com", ["https://reddit.com/r/feedsfun/.rss"]),
+            FakeIntegration(
                 "news.ycombinator.com",
                 ["https://news.ycombinator.com/rss"],
             ),
@@ -560,7 +550,7 @@ class TestDiscoverExtractFeedsForPlugins:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_no_plugin_for_source(self, configured_fake_integrations: list[_FakeIntegration]) -> None:
+    async def test_no_plugin_for_source(self, configured_fake_integrations: list[FakeIntegration]) -> None:
         context = make.context("https://github.com/openai")
 
         new_context, result = await _discover_extract_feeds_for_plugins(context)
@@ -579,6 +569,13 @@ class TestDiscoverExtractFeedsForPlugins:
                 },
             ),
             (
+                "https://www.example.com/post",
+                {
+                    AbsoluteUrl("https://feeds.example.com/rss"),
+                    AbsoluteUrl("https://feeds.example.com/atom"),
+                },
+            ),
+            (
                 "https://www.reddit.com/r/feedsfun/",
                 {AbsoluteUrl("https://reddit.com/r/feedsfun/.rss")},
             ),
@@ -591,7 +588,7 @@ class TestDiscoverExtractFeedsForPlugins:
     @pytest.mark.asyncio
     async def test_matching_plugin_selected_for_source(
         self,
-        configured_fake_integrations: list[_FakeIntegration],
+        configured_fake_integrations: list[FakeIntegration],
         url: str,
         expected_candidate_urls: set[AbsoluteUrl],
     ) -> None:
@@ -604,7 +601,7 @@ class TestDiscoverExtractFeedsForPlugins:
 
     @pytest.mark.asyncio
     async def test_matching_plugin_merges_with_existing_candidate_urls(
-        self, configured_fake_integrations: list[_FakeIntegration]
+        self, configured_fake_integrations: list[FakeIntegration]
     ) -> None:
         context = make.context(
             "https://example.com/post",

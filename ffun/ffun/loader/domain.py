@@ -1,15 +1,16 @@
+from typing import Mapping
+
 import httpx
 
 from ffun.core import logging
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import AbsoluteUrl, FeedUrl
-from ffun.domain.urls import construct_f_url
+from ffun.domain.urls import construct_f_url, url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed, FeedId, FeedState
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
-from ffun.library import entities as l_entities
 from ffun.loader import errors, operations
 from ffun.loader.entities import ProxyState
 from ffun.loader.settings import settings
@@ -23,7 +24,10 @@ parse_content = operations.parse_content
 
 
 # TODO: tests
-async def load_content_with_proxies(url: FeedUrl) -> httpx.Response:  # noqa: CCR001
+async def load_content_with_proxies(  # noqa: CCR001
+    url: FeedUrl,
+    headers: Mapping[str, object] | None = None,
+) -> httpx.Response:
     url_object = construct_f_url(url)
 
     assert url_object is not None
@@ -64,7 +68,7 @@ async def load_content_with_proxies(url: FeedUrl) -> httpx.Response:  # noqa: CC
                 continue
 
             try:
-                return await operations.load_content(AbsoluteUrl(str(url_object)), proxy)
+                return await operations.load_content(AbsoluteUrl(str(url_object)), proxy, headers=headers)
             except Exception as e:
                 logger.info("proxy_error", proxy=proxy.name, error=e)
 
@@ -97,8 +101,8 @@ async def detect_orphaned(feed_id: FeedId) -> bool:
 async def extract_feed_info(feed_id: FeedId | None, feed_url: FeedUrl) -> p_entities.FeedInfo | None:
     try:
         response = await load_content_with_proxies(feed_url)
-        content = await operations.decode_content(response)
-        feed_info = await operations.parse_content(content, original_url=feed_url)
+        content = await decode_content(response)
+        feed_info = await parse_content(content, original_url=feed_url, source=url_to_source_uid(feed_url))
     except errors.AllProxiesSuspended:
         logger.info("all_proxies_suspended")
         return None
@@ -132,13 +136,8 @@ async def sync_feed_info(feed: Feed, feed_info: p_entities.FeedInfo) -> None:
 
 
 async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None:
-    prepared_entries: list[l_entities.CollectedEntry] = [
-        l_entities.CollectedEntry(
-            id=new_entry_id(),
-            source_id=feed.source_id,
-            **entry_info.model_dump(),  # type: ignore
-        )
-        for entry_info in entries
+    prepared_entries = [
+        entry_info.to_collected_entry(entry_id=new_entry_id(), source_id=feed.source_id) for entry_info in entries
     ]
 
     entries_cataloged = await l_domain.catalog_entries(feed.id, entries=prepared_entries)

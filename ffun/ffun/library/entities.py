@@ -5,12 +5,83 @@ from typing import Any
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import AbsoluteUrl, EntryId, FeedId, SourceId
+from ffun.library import errors
 
 
-class ProcessedState(int, enum.Enum):
+class ProcessedState(enum.IntEnum):
     success = 1
     error = 2
     retry_later = 3
+
+
+class ReferenceSemantics(enum.IntEnum):
+    unknown = 0
+    author = 1
+    comments = 2
+    page = 3
+    video = 4
+    audio = 5
+    image = 6
+    document = 7
+
+
+# The priority of the semantics is used when merging references to the same URL.
+# The highest priority semantics will be used as the semantics of the merged reference.
+REFERENCE_SEMANTICS_PRIORITY: dict[ReferenceSemantics, int] = {
+    ReferenceSemantics.unknown: 0,
+    ReferenceSemantics.page: 1,
+    ReferenceSemantics.document: 2,
+    ReferenceSemantics.author: 3,
+    ReferenceSemantics.comments: 3,
+    ReferenceSemantics.audio: 3,
+    ReferenceSemantics.video: 3,
+    ReferenceSemantics.image: 3,
+}
+
+
+# The primary goal of the Reference entity is to simplify all the plethora of media references
+# to some reasonable common denominator, that is easier to process and visualize
+class Reference(BaseEntity):
+    semantics: ReferenceSemantics
+    url: AbsoluteUrl
+    title: str | None = None
+    mime_type: str | None = None
+    width: int | None = None
+    height: int | None = None
+    duration: datetime.timedelta | None = None
+    size: int | None = None
+
+    # extra is a free-form dictionary for any source-specific data
+    # for example, for YouTube video id.
+    extra: dict[str, int | float | str | None] | None = None
+
+    def merge(self, other: "Reference") -> "Reference":  # noqa: CCR001
+        if self.url != other.url:
+            raise errors.ReferenceUrlsMismatchOnMerge()
+
+        other_has_priority = (
+            REFERENCE_SEMANTICS_PRIORITY[self.semantics] < REFERENCE_SEMANTICS_PRIORITY[other.semantics]
+        )
+
+        if other_has_priority:
+            original = other
+            secondary = self
+        else:
+            original = self
+            secondary = other
+
+        # That merging policy is questionable, but it should work in most cases.
+        return Reference(
+            semantics=original.semantics,
+            url=original.url,
+            title=original.title if original.title is not None else secondary.title,
+            mime_type=original.mime_type if original.mime_type is not None else secondary.mime_type,
+            width=original.width if original.width is not None else secondary.width,
+            height=original.height if original.height is not None else secondary.height,
+            duration=original.duration if original.duration is not None else secondary.duration,
+            size=original.size if original.size is not None else secondary.size,
+            extra=original.extra if original.extra is not None else secondary.extra,
+        )
 
 
 class BaseEntry(BaseEntity):
@@ -22,6 +93,8 @@ class BaseEntry(BaseEntity):
     external_url: AbsoluteUrl
     external_tags: set[str]
     published_at: datetime.datetime
+
+    references: list[Reference]
 
     def log_info(self) -> dict[str, Any]:
         return {"id": self.id, "source_id": self.source_id, "title": self.title, "external_url": self.external_url}
@@ -82,6 +155,7 @@ class Entry(BaseEntry):
             external_url=self.external_url,
             external_tags=self.external_tags,
             published_at=self.published_at,
+            references=self.references,
         )
 
 
@@ -97,6 +171,7 @@ class CollectedEntry(BaseEntry):
             external_tags=self.external_tags,
             published_at=self.published_at,
             created_at=created_at,
+            references=self.references,
         )
 
 

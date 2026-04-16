@@ -1,12 +1,88 @@
 import re
 from typing import cast
 
+from bs4 import BeautifulSoup
+from bs4.element import Tag
+
 from ffun.core import logging
-from ffun.domain.urls import construct_f_url
+from ffun.domain.entities import UnknownUrl
+from ffun.domain.urls import construct_f_url, normalize_classic_unknown_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
+from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.parsers import entities as p_entities
 
 logger = logging.get_module_logger()
+
+
+def _rewrite_preview_image_reference(reference: Reference) -> Reference:
+    # Reddit often expose images via links on the `preview.redd.it` domain:
+    #
+    #   https://preview.redd.it/<asset-id>.<ext>?width=140&height=140&crop=1:1,smart&auto=webp&s=<hash>
+    #
+    # However, Reddit restricts access to the images in that domain
+    # (return 403 or redirect through reddit.com media pages).
+    #
+    # => we rewrite urls to point to the domain that supports external access to images.
+    #
+    # We rewrite: https://preview.redd.it/<asset-id>.<ext>?...
+    #
+    # into: https://i.redd.it/<asset-id>.<ext>
+
+    if reference.semantics != ReferenceSemantics.image:
+        return reference
+
+    f_url = construct_f_url(reference.url)
+
+    if f_url is None or f_url.host != "preview.redd.it":
+        return reference
+
+    f_url.host = "i.redd.it"
+    f_url.query = ""  # type: ignore
+    f_url.fragment = None
+
+    image_url = normalize_classic_unknown_url(UnknownUrl(str(f_url)))
+
+    if image_url is None:
+        return reference
+
+    return reference.replace(url=image_url)
+
+
+def _unwrap_body_with_image_table(body: str) -> str:
+    soup = BeautifulSoup(body, "html.parser")
+
+    table = soup.find("table")
+
+    if table is None:
+        return body
+
+    assert isinstance(table, Tag)
+
+    meaningful_top_level_nodes = [
+        child for child in soup.contents if not (isinstance(child, str) and child.strip() == "")
+    ]
+
+    if meaningful_top_level_nodes != [table]:
+        return body
+
+    all_tds = cast(list[Tag], table.find_all("td"))
+
+    if len(all_tds) != 2:
+        return body
+
+    first_td, second_td = all_tds
+
+    if first_td.find("img") is None:
+        return body
+
+    if first_td.get_text(strip=True) != "":
+        return body
+
+    if second_td.get_text(strip=True) == "":
+        return body
+
+    return second_td.decode_contents()
 
 
 class Plugin(BasePlugin):
@@ -57,19 +133,37 @@ class Plugin(BasePlugin):
         f_url.query = ""  # type: ignore
 
         # this check is required to stop recursion on _discover_check_candidate_links
-        if str(f_url) == context.url:
+        feed_url = normalize_classic_unknown_url(UnknownUrl(str(f_url)))
+
+        if feed_url is None:
+            logger.info("discovering_reddit_feed_url_invalid")
+            return context, None
+
+        if str(feed_url) == str(context.url):
             logger.info("discovering_reddit_same_url")
             return context, None
 
-        logger.info("discovering_reddit_feed", feed_url=f_url)
+        logger.info("discovering_reddit_feed", feed_url=feed_url)
 
-        return context.replace(candidate_urls={str(f_url)}), None
+        return context.replace(candidate_urls={feed_url}), None
+
+    def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
+        return entry.replace(
+            body=_unwrap_body_with_image_table(entry.body),
+            references=[_rewrite_preview_image_reference(reference) for reference in entry.references],
+        )
 
 
 def construct(**kwargs: object) -> Plugin:
-    path_prefix_regex = cast(str, kwargs.get("path_prefix_regex", r"^/r/[^/]+/?"))
-    domains = cast(list[str], kwargs.get("domains", ["www.reddit.com", "reddit.com", "old.reddit.com"]))
-    domains_to_skip = cast(list[str], kwargs.get("domains_to_skip", ["old.reddit.com"]))
+    path_prefix_regex = kwargs.get("path_prefix_regex", r"^/r/[^/]+/?")
+    domains = kwargs.get("domains", ["www.reddit.com", "reddit.com", "old.reddit.com"])
+    domains_to_skip = kwargs.get("domains_to_skip", ["old.reddit.com"])
+
+    assert isinstance(path_prefix_regex, str)
+    assert isinstance(domains, list)
+    assert all(isinstance(domain, str) for domain in domains)
+    assert isinstance(domains_to_skip, list)
+    assert all(isinstance(domain, str) for domain in domains_to_skip)
 
     return Plugin(
         path_prefix_regex=path_prefix_regex,

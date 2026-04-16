@@ -455,12 +455,15 @@ async def api_discover_feeds(request: entities.DiscoverFeedsRequest, user: User)
 
     found_ids = await f_domain.get_feed_ids_by_uids([feed.uid for feed in result.feeds])
 
-    for feed in result.feeds[: settings.max_feeds_suggestions_for_site]:
-        feed.entries = feed.entries[: settings.max_entries_suggestions_for_site]
+    truncated_feeds = [
+        feed.replace(entries=feed.entries[: settings.max_entries_suggestions_for_site])
+        for feed in result.feeds[: settings.max_feeds_suggestions_for_site]
+    ]
+    feeds_for_response = truncated_feeds + result.feeds[settings.max_feeds_suggestions_for_site :]
 
     external_feeds = [
         entities.FeedInfo.from_internal(feed, is_linked=feed.uid in found_ids and found_ids[feed.uid] in linked_ids)
-        for feed in result.feeds
+        for feed in feeds_for_response
     ]
 
     return entities.DiscoverFeedsResponse(feeds=external_feeds, messages=messages)

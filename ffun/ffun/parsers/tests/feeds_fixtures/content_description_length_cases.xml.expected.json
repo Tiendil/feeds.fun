@@ -10,7 +10,8 @@
       "external_id": "/entries/e1.html",
       "external_url": "https://example.com/entries/e1.html",
       "external_tags": [],
-      "published_at": "2025-01-10T10:00:00Z"
+      "published_at": "2025-01-10T10:00:00Z",
+      "references": []
     },
     {
       "title": "E2 equal length",
@@ -18,7 +19,8 @@
       "external_id": "/entries/e2.html",
       "external_url": "https://example.com/entries/e2.html",
       "external_tags": [],
-      "published_at": "2025-01-10T11:00:00Z"
+      "published_at": "2025-01-10T11:00:00Z",
+      "references": []
     },
     {
       "title": "E3 description longer",
@@ -26,7 +28,8 @@
       "external_id": "/entries/e3.html",
       "external_url": "https://example.com/entries/e3.html",
       "external_tags": [],
-      "published_at": "2025-01-10T12:00:00Z"
+      "published_at": "2025-01-10T12:00:00Z",
+      "references": []
     }
   ]
 }

@@ -1,6 +1,7 @@
 import typer
 
 from ffun.cli.commands import cleaner  # noqa: F401
+from ffun.cli.commands import debug  # noqa: F401
 from ffun.cli.commands import estimates  # noqa: F401
 from ffun.cli.commands import experiments  # noqa: F401
 from ffun.cli.commands import feeds  # noqa: F401
@@ -27,6 +28,7 @@ app.add_typer(fixtures.cli_app, name="fixtures")
 app.add_typer(estimates.cli_app, name="estimates")
 app.add_typer(feeds.cli_app, name="feeds")
 app.add_typer(users.cli_app, name="users")
+app.add_typer(debug.cli_app, name="debug")
 
 
 if __name__ == "__main__":

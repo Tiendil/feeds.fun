@@ -84,6 +84,18 @@ export class Feed {
   }
 }
 
+export type RawFeed = {
+  id: string;
+  title: string | null;
+  description: string | null;
+  url: string;
+  state: string;
+  lastError?: string | null;
+  loadedAt?: string | null;
+  linkedAt: string;
+  collectionIds: string[];
+};
+
 export function feedFromJSON({
   id,
   title,
@@ -94,29 +106,107 @@ export function feedFromJSON({
   loadedAt,
   linkedAt,
   collectionIds
-}: {
-  id: string;
-  title: string;
-  description: string;
-  url: string;
-  state: string;
-  lastError: string | null;
-  loadedAt: string;
-  linkedAt: string;
-  collectionIds: string[];
-}): Feed {
+}: RawFeed): Feed {
   return {
     id: toFeedId(id),
     title: title !== null ? title : null,
     description: description !== null ? description : null,
     url: toURL(url),
     state: state,
-    lastError: lastError,
-    loadedAt: loadedAt !== null ? new Date(loadedAt) : null,
+    lastError: lastError !== undefined ? lastError : null,
+    loadedAt: loadedAt !== undefined && loadedAt !== null ? new Date(loadedAt) : null,
     linkedAt: new Date(linkedAt),
     isOk: state === "loaded",
     collectionIds: collectionIds.map(toCollectionId)
   };
+}
+
+export type ReferenceExtraValue = number | string | null;
+
+export type RawReference = {
+  semantics: e.ReferenceSemantics;
+  url: string;
+  title?: string | null;
+  mime_type?: string | null;
+  width?: number | null;
+  height?: number | null;
+  duration?: string | null;
+  size?: number | null;
+  extra?: {[key: string]: ReferenceExtraValue} | null;
+};
+
+export class Reference {
+  readonly semantics: e.ReferenceSemantics;
+  readonly url: URL;
+  readonly title: string | null;
+  readonly mimeType: string | null;
+  readonly width: number | null;
+  readonly height: number | null;
+  readonly duration: string | null;
+  readonly size: number | null;
+  readonly extra: {[key: string]: ReferenceExtraValue} | null;
+
+  constructor({
+    semantics,
+    url,
+    title,
+    mimeType,
+    width,
+    height,
+    duration,
+    size,
+    extra
+  }: {
+    semantics: e.ReferenceSemantics;
+    url: URL;
+    title: string | null;
+    mimeType: string | null;
+    width: number | null;
+    height: number | null;
+    duration: string | null;
+    size: number | null;
+    extra: {[key: string]: ReferenceExtraValue} | null;
+  }) {
+    this.semantics = semantics;
+    this.url = url;
+    this.title = title;
+    this.mimeType = mimeType;
+    this.width = width;
+    this.height = height;
+    this.duration = duration;
+    this.size = size;
+    this.extra = extra;
+  }
+
+  youtubeId(): string | null {
+    const youtubeId = this.extra?.youtube_id;
+
+    return typeof youtubeId === "string" && youtubeId.length > 0 ? youtubeId : null;
+  }
+}
+
+export function referenceFromJSON({
+  semantics,
+  url,
+  title,
+  mime_type,
+  width,
+  height,
+  duration,
+  size,
+  extra
+}: RawReference): Reference {
+  return new Reference({
+    semantics: semantics,
+    url: toURL(url),
+    title: title !== undefined ? title : null,
+    mimeType: mime_type !== undefined ? mime_type : null,
+    width: width !== undefined ? width : null,
+    height: height !== undefined ? height : null,
+    duration: duration !== undefined ? duration : null,
+    size: size !== undefined ? size : null,
+    extra: extra !== undefined ? extra : null
+  });
 }
 
 export class Entry {
@@ -131,6 +221,7 @@ export class Entry {
   readonly scoreToZero: number;
   readonly publishedAt: Date;
   body: string | null;
+  references: Reference[] | null;
 
   constructor({
     id,
@@ -142,7 +233,8 @@ export class Entry {
     score,
     scoreContributions,
     publishedAt,
-    body
+    body,
+    references
   }: {
     id: EntryId;
     feedId: FeedId;
@@ -154,6 +246,7 @@ export class Entry {
     scoreContributions: {[key: string]: number};
     publishedAt: Date;
     body: string | null;
+    references: Reference[] | null;
   }) {
     this.id = id;
     this.feedId = feedId;
@@ -165,6 +258,7 @@ export class Entry {
     this.scoreContributions = scoreContributions;
     this.publishedAt = publishedAt;
     this.body = body;
+    this.references = references;
 
     this.scoreToZero = -Math.abs(score);
   }
@@ -190,21 +284,21 @@ export class Entry {
   }
 }
 
-export function entryFromJSON(
-  rawEntry: {
-    id: string;
-    feedId: string;
-    title: string;
-    url: string;
-    tags: number[];
-    markers: string[];
-    score: number;
-    scoreContributions: {[key: number]: number};
-    publishedAt: string;
-    body: string | null;
-  },
-  tagsMapping: {[key: number]: string}
-): Entry {
+export type RawEntry = {
+  id: string;
+  feedId: string;
+  title: string;
+  url: string;
+  tags: number[];
+  markers: string[];
+  score: number;
+  scoreContributions: {[key: number]: number};
+  publishedAt: string;
+  body?: string | null;
+  references?: RawReference[] | null;
+};
+
+export function entryFromJSON(rawEntry: RawEntry, tagsMapping: {[key: number]: string}): Entry {
   const contributions: {[key: string]: number} = {};
 
   for (const key in rawEntry.scoreContributions) {
@@ -228,8 +322,11 @@ export function entryFromJSON(
     // map keys from int to string
     scoreContributions: contributions,
     publishedAt: new Date(rawEntry.publishedAt),
-
-    body: rawEntry.body
+    body: rawEntry.body !== undefined ? rawEntry.body : null,
+    references:
+      rawEntry.references !== undefined && rawEntry.references !== null
+        ? rawEntry.references.map(referenceFromJSON)
+        : null
   });
 }
 
@@ -279,17 +376,14 @@ export type EntryInfo = {
   readonly publishedAt: Date;
 };
 
-export function entryInfoFromJSON({
-  title,
-  body,
-  url,
-  publishedAt
-}: {
+export type RawEntryInfo = {
   title: string;
   body: string;
   url: string;
   publishedAt: string;
-}): EntryInfo {
+};
+
+export function entryInfoFromJSON({title, body, url, publishedAt}: RawEntryInfo): EntryInfo {
   return {title, body, url: toURL(url), publishedAt: new Date(publishedAt)};
 }
 
@@ -301,19 +395,15 @@ export type FeedInfo = {
   readonly isLinked: boolean;
 };
 
-export function feedInfoFromJSON({
-  url,
-  title,
-  description,
-  entries,
-  isLinked
-}: {
+export type RawFeedInfo = {
   url: string;
   title: string;
   description: string;
-  entries: any[];
+  entries: RawEntryInfo[];
   isLinked: boolean;
-}): FeedInfo {
+};
+
+export function feedInfoFromJSON({url, title, description, entries, isLinked}: RawFeedInfo): FeedInfo {
   return {
     url: toURL(url),
     title,

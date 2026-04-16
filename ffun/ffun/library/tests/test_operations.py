@@ -21,12 +21,13 @@ from ffun.core.tests.helpers import (
 )
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import EntryId, FeedId
+from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
 from ffun.feeds.tests import make as f_make
 from ffun.library import errors
 from ffun.library.domain import get_entry
-from ffun.library.entities import CollectedEntry, Entry, FeedEntryLink
+from ffun.library.entities import CollectedEntry, Entry, FeedEntryLink, Reference, ReferenceSemantics
 from ffun.library.operations import (
     _catalog_entry,
     all_entries_iterator,
@@ -66,6 +67,26 @@ def _to_collected_entries(entries: Iterable[Entry]) -> list[CollectedEntry]:
     return [entry.collected_entry() for entry in entries]
 
 
+def _sample_references() -> list[Reference]:
+    return [
+        Reference(
+            semantics=ReferenceSemantics.video,
+            url=str_to_absolute_url("https://example.com/video"),
+            title="Example video",
+            mime_type="video/mp4",
+            width=1280,
+            height=720,
+            duration=datetime.timedelta(seconds=42),
+            size=1024,
+            extra={"provider_id": "video-1", "part": 1},
+        ),
+        Reference(
+            semantics=ReferenceSemantics.comments,
+            url=str_to_absolute_url("https://example.com/comments"),
+        ),
+    ]
+
+
 class TestCatalogEntry:
 
     @pytest.mark.asyncio
@@ -90,6 +111,32 @@ class TestCatalogEntry:
         assert link.feed_id == loaded_feed_id
         assert link.entry_id == new_entry.id
         assert_times_is_near(link.created_at, utils.now())
+
+    @pytest.mark.asyncio
+    async def test_store_and_load_references(self, loaded_feed_id: FeedId, new_entry: CollectedEntry) -> None:
+        references = _sample_references()
+        entry_with_references = new_entry.replace(references=references)
+
+        await _catalog_entry(loaded_feed_id, entry_with_references, utils.now())
+
+        rows = await execute(
+            "SELECT refs FROM l_entries WHERE id = %(id)s",
+            {"id": entry_with_references.id},  # type: ignore
+        )
+        expected_refs = [
+            ref.model_dump(
+                mode="json",
+                exclude_defaults=True,
+                exclude_none=True,
+            )  # type: ignore
+            for ref in references
+        ]
+
+        assert rows == [{"refs": expected_refs}]  # type: ignore
+
+        loaded_entry = await get_entry(entry_with_references.id)
+
+        assert loaded_entry.references == references
 
     @pytest.mark.asyncio
     async def test_same_entry_new_feed(
@@ -395,6 +442,18 @@ class TestGetEntriesByIds:
         assert another_entries_list[0] == loaded_entries[another_entries_list[0].id]
         assert another_entries_list[1] == loaded_entries[another_entries_list[1].id]
 
+    @pytest.mark.asyncio
+    async def test_load_references(self, loaded_feed: Feed) -> None:
+        entry = make.fake_entry(loaded_feed.source_id, references=_sample_references())
+
+        await catalog_entries(loaded_feed.id, [entry])
+
+        loaded_entries = await get_entries_by_ids(ids=[entry.id])
+        loaded_entry = loaded_entries[entry.id]
+
+        assert loaded_entry is not None
+        assert loaded_entry == entry.fake_entry(loaded_entry.created_at)
+
 
 class TestGetEntriesByFilter:
     @pytest.fixture  # type: ignore
@@ -528,6 +587,17 @@ class TestGetEntriesByFilter:
         assert feed_entries[0].published_at == loaded_entry.published_at
         assert another_feed_entries[0].published_at == loaded_entry.published_at
         assert combined_entries[0].published_at == loaded_entry.published_at
+
+    @pytest.mark.asyncio
+    async def test_load_references(self, loaded_feed: Feed) -> None:
+        entry = make.fake_entry(loaded_feed.source_id, references=_sample_references())
+
+        await catalog_entries(loaded_feed.id, [entry])
+
+        loaded_entries = await get_entries_by_filter(feeds_ids=[loaded_feed.id], limit=100)
+
+        assert len(loaded_entries) == 1
+        assert loaded_entries[0] == entry.fake_entry(loaded_entries[0].created_at)
 
     @pytest.mark.asyncio
     async def test_order_by_entry_created_at_and_entry_id(self, loaded_feed: Feed) -> None:

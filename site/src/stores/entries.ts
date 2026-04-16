@@ -96,6 +96,10 @@ export const useEntriesStore = defineStore("entriesStore", () => {
           entry.body = existingEntry.body;
         }
 
+        if (entry.references === null && existingEntry.references !== null) {
+          entry.references = existingEntry.references;
+        }
+
         if (!updateTags) {
           entry.tags = _.cloneDeep(existingEntry.tags);
         }
@@ -202,7 +206,11 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   });
 
   function requestFullEntry({entryId}: {entryId: t.EntryId}) {
-    if (entryId in entries.value && entries.value[entryId].body !== null) {
+    if (
+      entryId in entries.value &&
+      entries.value[entryId].body !== null &&
+      entries.value[entryId].references !== null
+    ) {
       return;
     }
 

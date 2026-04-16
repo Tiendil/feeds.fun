@@ -1,6 +1,7 @@
 from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
+from ffun.parsers import entities as p_entities
 
 
 class Plugin(BasePlugin):
@@ -11,6 +12,11 @@ class Plugin(BasePlugin):
 
     async def discover_feed_urls(self, context: fd_entities.Context) -> fd_entities.DiscoverResult:
         return context.replace(candidate_urls=context.candidate_urls | self._urls), None
+
+    def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
+        external_tags = set(entry.external_tags)
+        external_tags.add("fake-plugin")
+        return entry.replace(external_tags=external_tags)
 
 
 def construct(urls: list[str]) -> Plugin:

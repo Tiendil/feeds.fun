@@ -1,5 +1,6 @@
 import asyncio
 import ssl
+from typing import Mapping
 
 import anyio
 import h2
@@ -10,7 +11,7 @@ from pypika import functions as pypika_fn
 from ffun.core import logging
 from ffun.core.postgresql import execute
 from ffun.domain import http
-from ffun.domain.entities import AbsoluteUrl, FeedUrl
+from ffun.domain.entities import AbsoluteUrl, FeedUrl, SourceUid
 from ffun.feeds.entities import FeedError
 from ffun.loader import errors
 from ffun.loader.entities import ProxyState
@@ -27,7 +28,10 @@ _accept_enconding_header = "br;q=1.0, zstd;q=0.9, gzip;q=0.8, deflate;q=0.7"
 
 
 async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R0915
-    url: AbsoluteUrl, proxy: Proxy, semaphore: asyncio.Semaphore = _load_semaphor
+    url: AbsoluteUrl,
+    proxy: Proxy,
+    semaphore: asyncio.Semaphore = _load_semaphor,
+    headers: Mapping[str, object] | None = None,
 ) -> httpx.Response:
     error_code = FeedError.network_unknown
 
@@ -37,7 +41,7 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
         log.info("loading_feed")
 
         async with semaphore:
-            async with http.client(proxy=proxy.url) as client:
+            async with http.client(proxy=proxy.url, headers=headers) as client:
                 response = await client.get(url, follow_redirects=True)
 
     # This long list of exceptions works as a knowledge base for possible errors
@@ -319,9 +323,9 @@ async def decode_content(response: httpx.Response) -> str:
 
 
 # TODO: tests
-async def parse_content(content: str, original_url: FeedUrl) -> p_entities.FeedInfo:
+async def parse_content(content: str, original_url: FeedUrl, source: SourceUid) -> p_entities.FeedInfo:
     try:
-        feed_info = parse_feed(content, original_url=original_url)
+        feed_info = parse_feed(content, original_url=original_url, source=source)
     except Exception as e:
         logger.exception("error_while_parsing_feed")
         raise errors.LoadError(feed_error_code=FeedError.parsing_format_error) from e

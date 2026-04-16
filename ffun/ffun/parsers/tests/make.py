@@ -4,6 +4,7 @@ import uuid
 from ffun.core import utils
 from ffun.domain.entities import AbsoluteUrl, UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url
+from ffun.library.entities import Reference
 from ffun.parsers.entities import EntryInfo
 
 
@@ -21,7 +22,7 @@ def fake_body() -> str:
     return f"Entry Body: {uuid.uuid4().hex}"
 
 
-def fake_entry_info(
+def fake_entry_info(  # noqa: CFQ002
     *,
     title: str | None = None,
     body: str | None = None,
@@ -29,6 +30,7 @@ def fake_entry_info(
     external_url: AbsoluteUrl | None = None,
     external_tags: set[str] | None = None,
     published_at: datetime.datetime | None = None,
+    references: list[Reference] | None = None,
 ) -> EntryInfo:
     return EntryInfo(
         title=fake_title() if title is None else title,
@@ -37,4 +39,5 @@ def fake_entry_info(
         external_url=fake_url() if external_url is None else external_url,
         external_tags={uuid.uuid4().hex, uuid.uuid4().hex} if external_tags is None else external_tags,
         published_at=utils.now() if published_at is None else published_at,
+        references=references or [],
     )
