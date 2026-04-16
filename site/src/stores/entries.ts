@@ -208,7 +208,8 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   function requestFullEntry({entryId}: {entryId: t.EntryId}) {
     if (
       entryId in entries.value &&
-      (entries.value[entryId].body !== null || entries.value[entryId].references !== null)
+        entries.value[entryId].body !== null &&
+        entries.value[entryId].references !== null
     ) {
       return;
     }
