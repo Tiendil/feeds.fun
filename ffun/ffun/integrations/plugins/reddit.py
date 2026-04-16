@@ -2,11 +2,43 @@ import re
 from typing import cast
 
 from ffun.core import logging
+from ffun.domain.entities import AbsoluteUrl
 from ffun.domain.urls import construct_f_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
+from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.parsers import entities as p_entities
 
 logger = logging.get_module_logger()
+
+
+def _rewrite_preview_image_reference(reference: Reference) -> Reference:
+    # Reddit often expose images via links on the `preview.redd.it` domain:
+    #
+    #   https://preview.redd.it/<asset-id>.<ext>?width=140&height=140&crop=1:1,smart&auto=webp&s=<hash>
+    #
+    # However, Reddit restricts access to the images in that domain
+    # (return 403 or redirect through reddit.com media pages).
+    #
+    # => we rewrite urls to point to the domain that supports external access to images.
+    #
+    # We rewrite: https://preview.redd.it/<asset-id>.<ext>?...
+    #
+    # into: https://i.redd.it/<asset-id>.<ext>
+
+    if reference.semantics != ReferenceSemantics.image:
+        return reference
+
+    f_url = construct_f_url(reference.url)
+
+    if f_url is None or f_url.host != "preview.redd.it":
+        return reference
+
+    f_url.host = "i.redd.it"
+    f_url.query = ""  # type: ignore
+    f_url.fragment = None
+
+    return reference.replace(url=AbsoluteUrl(str(f_url)))
 
 
 class Plugin(BasePlugin):
@@ -64,6 +96,11 @@ class Plugin(BasePlugin):
         logger.info("discovering_reddit_feed", feed_url=f_url)
 
         return context.replace(candidate_urls={str(f_url)}), None
+
+    def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
+        return entry.replace(
+            references=[_rewrite_preview_image_reference(reference) for reference in entry.references]
+        )
 
 
 def construct(**kwargs: object) -> Plugin:
