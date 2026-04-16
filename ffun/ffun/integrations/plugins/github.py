@@ -1,11 +1,42 @@
+from collections.abc import Callable
+from importlib import import_module
 from typing import cast
+
+from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 from ffun.core import logging
 from ffun.domain.urls import construct_f_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
+from ffun.parsers import entities as p_entities
 
 logger = logging.get_module_logger()
+_RENDER_MARKDOWN = cast(Callable[[str], str], getattr(import_module("markdown"), "markdown"))
+
+
+def _rewrite_pre_body(body: str) -> str:
+    soup = BeautifulSoup(body, "html.parser")
+    meaningful_top_level_nodes = [
+        child
+        for child in soup.contents
+        if not (isinstance(child, str) and child.strip() == "")
+    ]
+
+    if len(meaningful_top_level_nodes) != 1:
+        return body
+
+    pre = meaningful_top_level_nodes[0]
+
+    if not isinstance(pre, Tag) or pre.name != "pre":
+        return body
+
+    markdown_source = pre.get_text()
+
+    if markdown_source == "":
+        return body
+
+    return _RENDER_MARKDOWN(markdown_source)
 
 
 # Note: there are no official documentation on GitHub feed URLs,
@@ -97,6 +128,9 @@ class Plugin(BasePlugin):
             url.format(owner=owner, repo=repo, category_slug=category_slug)
             for url in self._owner_repo_discussion_category_feed_urls
         }
+
+    def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
+        return entry.replace(body=_rewrite_pre_body(entry.body))
 
     async def discover_feed_urls(self, context: fd_entities.Context) -> fd_entities.DiscoverResult:  # noqa: CCR001
         assert context.url is not None

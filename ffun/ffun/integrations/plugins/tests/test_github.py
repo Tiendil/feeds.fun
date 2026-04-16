@@ -2,6 +2,8 @@ import pytest
 
 from ffun.feeds_discoverer.tests import make as fd_make
 from ffun.integrations.plugins import github
+from ffun.integrations.plugins.github import _rewrite_pre_body
+from ffun.parsers.tests import make as p_make
 
 
 @pytest.fixture  # type: ignore
@@ -144,6 +146,43 @@ class TestPluginMethods:
         assert plugin._construct_owner_repo_discussion_category_feed_urls("openai", "openai", "announcements") == {
             "https://github.com/openai/openai/discussions/categories/announcements.atom"
         }
+
+
+class TestRewritePreBody:
+    def test_rewrites_single_top_level_pre_block_as_markdown(self) -> None:
+        body = "<pre># Release\n\n- first\n- second</pre>"
+
+        rewritten_body = _rewrite_pre_body(body)
+
+        assert "<h1>Release</h1>" in rewritten_body
+        assert "<li>first</li>" in rewritten_body
+        assert "<li>second</li>" in rewritten_body
+        assert "<pre>" not in rewritten_body
+
+    def test_keeps_body_when_pre_is_not_the_only_top_level_node(self) -> None:
+        body = "<pre># Release</pre><p>Already formatted</p>"
+
+        assert _rewrite_pre_body(body) == body
+
+    def test_keeps_body_when_top_level_node_is_not_pre(self) -> None:
+        body = "<div><pre># Release</pre></div>"
+
+        assert _rewrite_pre_body(body) == body
+
+    def test_keeps_body_when_pre_is_empty(self) -> None:
+        body = "<pre></pre>"
+
+        assert _rewrite_pre_body(body) == body
+
+
+class TestPostprocessEntry:
+    def test_rewrites_body_via_pre_body_helper(self, plugin: github.Plugin) -> None:
+        body = "<pre># Release notes\n\n- item</pre>"
+        entry = p_make.fake_entry_info(body=body)
+
+        processed_entry = plugin.postprocess_entry(entry)
+
+        assert processed_entry == entry.replace(body=_rewrite_pre_body(body))
 
 
 class TestDiscoverFeedUrls:
