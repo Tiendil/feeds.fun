@@ -3,7 +3,6 @@ from ffun.integrations.plugin import Plugin as BasePlugin
 from ffun.library.entities import Reference, ReferenceSemantics
 from ffun.parsers import entities as p_entities
 
-
 DEFAULT_ORIGINAL_HOSTS = ("news.ycombinator.com",)
 
 

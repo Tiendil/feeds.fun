@@ -55,9 +55,7 @@ def _unwrap_body_with_image_table(body: str) -> str:
     assert isinstance(table, Tag)
 
     meaningful_top_level_nodes = [
-        child
-        for child in soup.contents
-        if not (isinstance(child, str) and child.strip() == "")
+        child for child in soup.contents if not (isinstance(child, str) and child.strip() == "")
     ]
 
     if meaningful_top_level_nodes != [table]:
@@ -141,7 +139,7 @@ class Plugin(BasePlugin):
     def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
         return entry.replace(
             body=_unwrap_body_with_image_table(entry.body),
-            references=[_rewrite_preview_image_reference(reference) for reference in entry.references]
+            references=[_rewrite_preview_image_reference(reference) for reference in entry.references],
         )
 
 

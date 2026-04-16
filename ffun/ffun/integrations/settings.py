@@ -11,7 +11,7 @@ from ffun.integrations.plugin import Plugin
 
 
 class Integration(BaseSettings):
-    source: SourceUidField
+    sources: list[SourceUidField]
     plugin: str
     extras: dict[str, str] = pydantic.Field(default_factory=dict)
 
@@ -25,32 +25,27 @@ class Settings(BaseSettings):
     integrations: list[Integration] = pydantic.Field(
         default_factory=lambda: [
             Integration(
-                source="reddit.com",
+                sources=["reddit.com"],
                 plugin="ffun.integrations.plugins.reddit:construct",
                 extras={},
             ),
             Integration(
-                source="github.com",
+                sources=["github.com"],
                 plugin="ffun.integrations.plugins.github:construct",
                 extras={},
             ),
             Integration(
-                source="youtube.com",
+                sources=["youtube.com"],
                 plugin="ffun.integrations.plugins.youtube:construct",
                 extras={},
             ),
             Integration(
-                source="news.ycombinator.com",
+                sources=["news.ycombinator.com"],
                 plugin="ffun.integrations.plugins.hacker_news:construct",
                 extras={},
             ),
             Integration(
-                source="rss.arxiv.org",
-                plugin="ffun.integrations.plugins.arxiv:construct",
-                extras={},
-            ),
-            Integration(
-                source="arxiv.org",
+                sources=["rss.arxiv.org", "arxiv.org"],
                 plugin="ffun.integrations.plugins.arxiv:construct",
                 extras={},
             ),
@@ -61,7 +56,7 @@ class Settings(BaseSettings):
 
     def get_integration_by_source(self, source: SourceUid) -> Integration | None:
         for integration in self.integrations:
-            if integration.source == source:
+            if source in integration.sources:
                 return integration
 
         return None

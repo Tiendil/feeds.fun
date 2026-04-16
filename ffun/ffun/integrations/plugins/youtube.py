@@ -88,11 +88,7 @@ def _is_youtube_video_page(
 
 def _is_youtube_channel_page(path_segments: list[str]) -> bool:
     return bool(
-        path_segments
-        and (
-            path_segments[0].startswith("@")
-            or path_segments[0] in _YOUTUBE_CHANNEL_PAGE_PREFIXES
-        )
+        path_segments and (path_segments[0].startswith("@") or path_segments[0] in _YOUTUBE_CHANNEL_PAGE_PREFIXES)
     )
 
 
@@ -135,10 +131,7 @@ def _extract_channel_ids_from_channel_page_content(content: str) -> set[str]:
 
 
 def _build_feed_urls_for_channel_ids(channel_ids: set[str], channel_feed_url: str) -> set[AbsoluteUrl]:
-    return {
-        AbsoluteUrl(channel_feed_url.format(channel_id=channel_id))
-        for channel_id in channel_ids
-    }
+    return {AbsoluteUrl(channel_feed_url.format(channel_id=channel_id)) for channel_id in channel_ids}
 
 
 async def _load_page_content(url: FeedUrl) -> str | None:
@@ -244,16 +237,13 @@ class Plugin(BasePlugin):
         if not channel_ids:
             return context, None
 
-        candidate_urls = context.candidate_urls | _build_feed_urls_for_channel_ids(
-            channel_ids, self._channel_feed_url
-        )
+        candidate_urls = context.candidate_urls | _build_feed_urls_for_channel_ids(channel_ids, self._channel_feed_url)
 
         return context.replace(candidate_urls=candidate_urls), None
 
     def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
         return entry.replace(
-            body=markdown.markdown(_autolink_bare_urls(entry.body))  # type: ignore
-            ,
+            body=markdown.markdown(_autolink_bare_urls(entry.body)),  # type: ignore
             references=[_postprocess_reference(reference) for reference in entry.references],
         )
 

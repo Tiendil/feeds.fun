@@ -526,7 +526,7 @@ class TestDiscoverExtractFeedsForPlugins:
     def configured_fake_integrations(self, mocker: MockerFixture) -> list[FakeIntegration]:
         integrations = [
             FakeIntegration(
-                "example.com",
+                ["example.com", "www.example.com"],
                 ["https://feeds.example.com/rss", "https://feeds.example.com/atom"],
             ),
             FakeIntegration("reddit.com", ["https://reddit.com/r/feedsfun/.rss"]),
@@ -563,6 +563,13 @@ class TestDiscoverExtractFeedsForPlugins:
         [
             (
                 "https://example.com/post",
+                {
+                    AbsoluteUrl("https://feeds.example.com/rss"),
+                    AbsoluteUrl("https://feeds.example.com/atom"),
+                },
+            ),
+            (
+                "https://www.example.com/post",
                 {
                     AbsoluteUrl("https://feeds.example.com/rss"),
                     AbsoluteUrl("https://feeds.example.com/atom"),

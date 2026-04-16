@@ -1,5 +1,6 @@
-import httpx
 from typing import Mapping
+
+import httpx
 
 from ffun.core import logging
 from ffun.domain.domain import new_entry_id
@@ -23,10 +24,10 @@ parse_content = operations.parse_content
 
 
 # TODO: tests
-async def load_content_with_proxies(
+async def load_content_with_proxies(  # noqa: CCR001
     url: FeedUrl,
     headers: Mapping[str, object] | None = None,
-) -> httpx.Response:  # noqa: CCR001
+) -> httpx.Response:
     url_object = construct_f_url(url)
 
     assert url_object is not None

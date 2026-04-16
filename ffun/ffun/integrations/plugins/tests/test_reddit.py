@@ -125,9 +125,7 @@ class TestRewritePreviewImageReference:
 
         rewritten_reference = _rewrite_preview_image_reference(reference)
 
-        assert rewritten_reference == reference.replace(
-            url=str_to_absolute_url("https://i.redd.it/azke0yigvgvg1.jpg")
-        )
+        assert rewritten_reference == reference.replace(url=str_to_absolute_url("https://i.redd.it/azke0yigvgvg1.jpg"))
 
     def test_keeps_non_preview_image_reference_unchanged(self) -> None:
         reference = Reference(
@@ -160,7 +158,7 @@ class TestUnwrapBodyWithImageTable:
             '<table> <tbody><tr><td> <a href="https://www.reddit.com/r/SonyAlpha/comments/1smrdat/">'
             '<img title="Just got my dream camera, the A7V." '
             'src="https://preview.redd.it/azke0yigvgvg1.jpg'
-            '?width=140&height=140&crop=1:1,smart&auto=webp'
+            "?width=140&height=140&crop=1:1,smart&auto=webp"
             '&s=99284d1e12e9bb76138e5368fa0cabb9e0f11b17" '
             'alt="Just got my dream camera, the A7V."> </a> </td><td> <div class="md">'
             "<p>Started in 2020 with a borrowed A7II, mostly doing LEGO photography.</p>"

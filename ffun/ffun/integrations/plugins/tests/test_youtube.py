@@ -159,9 +159,7 @@ class TestLoadPageContent:
             assert response is not None
             return "<html>content</html>"
 
-        mocker.patch.object(
-            youtube.lo_domain, "load_content_with_proxies", side_effect=fake_load_content_with_proxies
-        )
+        mocker.patch.object(youtube.lo_domain, "load_content_with_proxies", side_effect=fake_load_content_with_proxies)
         mocker.patch.object(youtube.lo_domain, "decode_content", side_effect=fake_decode_content)
 
         assert await youtube._load_page_content(str_to_feed_url("https://www.youtube.com/watch?v=abc")) == (
@@ -175,9 +173,7 @@ class TestLoadPageContent:
             assert headers == youtube._YOUTUBE_DISCOVERY_HEADERS
             raise lo_errors.LoadError(feed_error_code=FeedError.network_connection_timeout)
 
-        mocker.patch.object(
-            youtube.lo_domain, "load_content_with_proxies", side_effect=fake_load_content_with_proxies
-        )
+        mocker.patch.object(youtube.lo_domain, "load_content_with_proxies", side_effect=fake_load_content_with_proxies)
 
         assert await youtube._load_page_content(str_to_feed_url("https://www.youtube.com/watch?v=abc")) is None
 
@@ -272,9 +268,7 @@ class TestDiscoverFeedUrls:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_keeps_existing_candidate_urls(
-        self, mocker: MockerFixture, plugin: youtube.Plugin
-    ) -> None:
+    async def test_keeps_existing_candidate_urls(self, mocker: MockerFixture, plugin: youtube.Plugin) -> None:
         context = fd_make.context(
             "https://www.youtube.com/watch?v=abc",
             candidate_urls={str_to_absolute_url("https://existing.example.com/feed.xml")},
@@ -300,9 +294,7 @@ class TestDiscoverFeedUrls:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_uses_configured_channel_feed_url(
-        self, mocker: MockerFixture
-    ) -> None:
+    async def test_uses_configured_channel_feed_url(self, mocker: MockerFixture) -> None:
         plugin = youtube.construct(channel_feed_url="https://example.com/channels/{channel_id}.xml")
         context = fd_make.context("https://www.youtube.com/watch?v=abc")
 

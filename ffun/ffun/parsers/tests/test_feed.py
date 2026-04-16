@@ -127,7 +127,7 @@ class TestParseEntry:
             "author_detail": {},
             "tags": [{"term": "tag1"}],
         }
-        integration = FakeIntegration("example.com", [])
+        integration = FakeIntegration(["example.com", "www.example.com"], [])
         mocker.patch.object(
             p_feed.i_settings,
             "integrations",
@@ -135,6 +135,28 @@ class TestParseEntry:
         )
 
         parsed_entry = parse_entry(raw_entry, feed_url, url_to_source_uid(feed_url))
+
+        assert "fake-plugin" in parsed_entry.external_tags
+
+    def test_calls_plugin_when_source_matches_secondary_configured_source(
+        self, mocker: MockerFixture, feed_url: FeedUrl
+    ) -> None:
+        raw_entry = {
+            "title": "Entry title 1",
+            "link": "/2023/07/25/news-1.html",
+            "published_parsed": (2023, 7, 25, 17, 15, 0, 0, 0, -1),
+            "description": "Body 1",
+            "author_detail": {},
+            "tags": [{"term": "tag1"}],
+        }
+        integration = FakeIntegration(["example.com", "www.example.com"], [])
+        mocker.patch.object(
+            p_feed.i_settings,
+            "integrations",
+            [integration],
+        )
+
+        parsed_entry = parse_entry(raw_entry, feed_url, SourceUid("www.example.com"))
 
         assert "fake-plugin" in parsed_entry.external_tags
 

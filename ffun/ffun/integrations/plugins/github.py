@@ -16,9 +16,7 @@ logger = logging.get_module_logger()
 def _rewrite_pre_body(body: str) -> str:
     soup = BeautifulSoup(body, "html.parser")
     meaningful_top_level_nodes = [
-        child
-        for child in soup.contents
-        if not (isinstance(child, str) and child.strip() == "")
+        child for child in soup.contents if not (isinstance(child, str) and child.strip() == "")
     ]
 
     if len(meaningful_top_level_nodes) != 1:

@@ -19,7 +19,9 @@
 
       <p
         v-if="loading"
-        class="mt-4">loading…</p>
+        class="mt-4"
+        >loading…</p
+      >
 
       <div
         v-else-if="coverReference !== null || text"
