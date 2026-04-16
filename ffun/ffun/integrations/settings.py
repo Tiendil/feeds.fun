@@ -39,6 +39,11 @@ class Settings(BaseSettings):
                 plugin="ffun.integrations.plugins.youtube:construct",
                 extras={},
             ),
+            Integration(
+                source="news.ycombinator.com",
+                plugin="ffun.integrations.plugins.hacker_news:construct",
+                extras={},
+            ),
         ]
     )
 
