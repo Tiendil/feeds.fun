@@ -67,7 +67,7 @@ import BodyListFaviconColumn from "./components/body_list/FaviconColumn.vue";
 import BodyListEntryBody from "./components/body_list/EntryBody.vue";
 import BodyListEntryCover from "./components/body_list/EntryCover.vue";
 import BodyListReferences from "./components/body_list/References.vue";
-import BodyLustReference from "./components/body_list/Reference.vue";
+import BodyListReference from "./components/body_list/Reference.vue";
 import IntegrationsYouTube from "./integrations/YouTube.vue";
 
 import MainDescription from "./components/main/Description.vue";
@@ -144,7 +144,7 @@ app.component("BodyListFaviconColumn", BodyListFaviconColumn);
 app.component("BodyListEntryBody", BodyListEntryBody);
 app.component("BodyListEntryCover", BodyListEntryCover);
 app.component("BodyListReferences", BodyListReferences);
-app.component("BodyLustReference", BodyLustReference);
+app.component("BodyListReference", BodyListReference);
 app.component("IntegrationsYouTube", IntegrationsYouTube);
 
 app.component("MainDescription", MainDescription);

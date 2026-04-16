@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-wrap gap-2">
-    <body-lust-reference
+    <body-list-reference
       v-for="reference in references"
       :key="reference.url"
       :reference="reference" />
