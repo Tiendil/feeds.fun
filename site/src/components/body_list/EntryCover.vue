@@ -7,7 +7,7 @@
 
   <img
     v-else-if="isImage"
-    class="block max-h-[32rem] w-full rounded border border-slate-300 object-cover"
+    class="mx-auto block max-h-[32rem] w-full rounded border border-slate-300 object-cover"
     :src="reference.url"
     :style="imageStyle"
     :alt="reference.title ?? 'Entry cover'" />
