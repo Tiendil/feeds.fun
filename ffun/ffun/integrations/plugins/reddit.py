@@ -1,6 +1,9 @@
 import re
 from typing import cast
 
+from bs4 import BeautifulSoup
+from bs4.element import Tag
+
 from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl
 from ffun.domain.urls import construct_f_url
@@ -39,6 +42,44 @@ def _rewrite_preview_image_reference(reference: Reference) -> Reference:
     f_url.fragment = None
 
     return reference.replace(url=AbsoluteUrl(str(f_url)))
+
+
+def _unwrap_body_with_image_table(body: str) -> str:
+    soup = BeautifulSoup(body, "html.parser")
+
+    table = soup.find("table")
+
+    if table is None:
+        return body
+
+    assert isinstance(table, Tag)
+
+    meaningful_top_level_nodes = [
+        child
+        for child in soup.contents
+        if not (isinstance(child, str) and child.strip() == "")
+    ]
+
+    if meaningful_top_level_nodes != [table]:
+        return body
+
+    all_tds = cast(list[Tag], table.find_all("td"))
+
+    if len(all_tds) != 2:
+        return body
+
+    first_td, second_td = all_tds
+
+    if first_td.find("img") is None:
+        return body
+
+    if first_td.get_text(strip=True) != "":
+        return body
+
+    if second_td.get_text(strip=True) == "":
+        return body
+
+    return second_td.decode_contents()
 
 
 class Plugin(BasePlugin):
@@ -99,14 +140,21 @@ class Plugin(BasePlugin):
 
     def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
         return entry.replace(
+            body=_unwrap_body_with_image_table(entry.body),
             references=[_rewrite_preview_image_reference(reference) for reference in entry.references]
         )
 
 
 def construct(**kwargs: object) -> Plugin:
-    path_prefix_regex = cast(str, kwargs.get("path_prefix_regex", r"^/r/[^/]+/?"))
-    domains = cast(list[str], kwargs.get("domains", ["www.reddit.com", "reddit.com", "old.reddit.com"]))
-    domains_to_skip = cast(list[str], kwargs.get("domains_to_skip", ["old.reddit.com"]))
+    path_prefix_regex = kwargs.get("path_prefix_regex", r"^/r/[^/]+/?")
+    domains = kwargs.get("domains", ["www.reddit.com", "reddit.com", "old.reddit.com"])
+    domains_to_skip = kwargs.get("domains_to_skip", ["old.reddit.com"])
+
+    assert isinstance(path_prefix_regex, str)
+    assert isinstance(domains, list)
+    assert all(isinstance(domain, str) for domain in domains)
+    assert isinstance(domains_to_skip, list)
+    assert all(isinstance(domain, str) for domain in domains_to_skip)
 
     return Plugin(
         path_prefix_regex=path_prefix_regex,
