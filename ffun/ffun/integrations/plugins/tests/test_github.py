@@ -1,5 +1,6 @@
 import pytest
 
+from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds_discoverer.tests import make as fd_make
 from ffun.integrations.plugins import github
 from ffun.integrations.plugins.github import _rewrite_pre_body
@@ -119,9 +120,9 @@ class TestPluginMethods:
         )
 
     def test__is_feed_path__detects_atom_paths(self, plugin: github.Plugin) -> None:
-        assert plugin._is_feed_path("/openai.atom") is True
-        assert plugin._is_feed_path("/openai/openai/releases.atom") is True
-        assert plugin._is_feed_path("/openai/openai/releases") is False
+        assert plugin._is_feed_path(["openai.atom"]) is True
+        assert plugin._is_feed_path(["openai", "openai", "releases.atom"]) is True
+        assert plugin._is_feed_path(["openai", "openai", "releases"]) is False
 
     def test__construct_owner_feed_urls__formats_templates(self, plugin: github.Plugin) -> None:
         assert plugin._construct_owner_feed_urls("openai") == {"https://github.com/openai.atom"}
@@ -146,6 +147,14 @@ class TestPluginMethods:
         assert plugin._construct_owner_repo_discussion_category_feed_urls("openai", "openai", "announcements") == {
             "https://github.com/openai/openai/discussions/categories/announcements.atom"
         }
+
+    def test__normalize_candidate_urls__normalizes_valid_urls_and_skips_invalid(self, plugin: github.Plugin) -> None:
+        assert plugin._normalize_candidate_urls(
+            {
+                "https://github.com/openai.atom",
+                "not a url",
+            }
+        ) == {str_to_absolute_url("https://github.com/openai.atom")}
 
 
 class TestRewritePreBody:

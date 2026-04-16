@@ -5,8 +5,8 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 from ffun.core import logging
-from ffun.domain.entities import AbsoluteUrl
-from ffun.domain.urls import construct_f_url
+from ffun.domain.entities import UnknownUrl
+from ffun.domain.urls import construct_f_url, normalize_classic_unknown_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
 from ffun.library.entities import Reference, ReferenceSemantics
@@ -41,7 +41,12 @@ def _rewrite_preview_image_reference(reference: Reference) -> Reference:
     f_url.query = ""  # type: ignore
     f_url.fragment = None
 
-    return reference.replace(url=AbsoluteUrl(str(f_url)))
+    image_url = normalize_classic_unknown_url(UnknownUrl(str(f_url)))
+
+    if image_url is None:
+        return reference
+
+    return reference.replace(url=image_url)
 
 
 def _unwrap_body_with_image_table(body: str) -> str:
@@ -128,13 +133,19 @@ class Plugin(BasePlugin):
         f_url.query = ""  # type: ignore
 
         # this check is required to stop recursion on _discover_check_candidate_links
-        if str(f_url) == context.url:
+        feed_url = normalize_classic_unknown_url(UnknownUrl(str(f_url)))
+
+        if feed_url is None:
+            logger.info("discovering_reddit_feed_url_invalid")
+            return context, None
+
+        if str(feed_url) == str(context.url):
             logger.info("discovering_reddit_same_url")
             return context, None
 
-        logger.info("discovering_reddit_feed", feed_url=f_url)
+        logger.info("discovering_reddit_feed", feed_url=feed_url)
 
-        return context.replace(candidate_urls={str(f_url)}), None
+        return context.replace(candidate_urls={feed_url}), None
 
     def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
         return entry.replace(

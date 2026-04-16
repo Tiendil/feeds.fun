@@ -1,7 +1,7 @@
 import re
 
-from ffun.domain.entities import AbsoluteUrl
-from ffun.domain.urls import construct_f_url
+from ffun.domain.entities import AbsoluteUrl, UnknownUrl
+from ffun.domain.urls import construct_f_url, normalize_classic_unknown_url
 from ffun.integrations.plugin import Plugin as BasePlugin
 from ffun.library.entities import Reference, ReferenceSemantics
 from ffun.parsers import entities as p_entities
@@ -12,16 +12,23 @@ _BODY_PREFIX_RE = re.compile(r"^arXiv:[^\s]+\s+Announce Type:\s+[^\s]+\s+Abstrac
 def _build_pdf_reference(entry_link: AbsoluteUrl) -> Reference | None:
     f_url = construct_f_url(entry_link)
 
-    if f_url is None or f_url.host != "arxiv.org" or not str(f_url.path).startswith("/abs/"):
+    path_segments = [segment for segment in f_url.path.segments if segment] if f_url is not None else []
+
+    if f_url is None or f_url.host != "arxiv.org" or len(path_segments) < 2 or path_segments[0] != "abs":
         return None
 
-    f_url.path = str(f_url.path).replace("/abs/", "/pdf/", 1)  # type: ignore
+    f_url.path.segments[0] = "pdf"
     f_url.query = ""  # type: ignore
     f_url.fragment = None
 
+    pdf_url = normalize_classic_unknown_url(UnknownUrl(str(f_url)))
+
+    if pdf_url is None:
+        return None
+
     return Reference(
         semantics=ReferenceSemantics.page,
-        url=AbsoluteUrl(str(f_url)),
+        url=pdf_url,
         title="PDF",
     )
 

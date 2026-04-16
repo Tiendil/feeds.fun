@@ -5,7 +5,8 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 from ffun.core import logging
-from ffun.domain.urls import construct_f_url
+from ffun.domain.entities import AbsoluteUrl, UnknownUrl
+from ffun.domain.urls import construct_f_url, normalize_classic_unknown_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
 from ffun.parsers import entities as p_entities
@@ -105,8 +106,8 @@ class Plugin(BasePlugin):
 
         return segments[4].removesuffix(".atom") or None
 
-    def _is_feed_path(self, path: str) -> bool:
-        return path.endswith(".atom")
+    def _is_feed_path(self, segments: list[str]) -> bool:
+        return bool(segments and segments[-1].endswith(".atom"))
 
     def _construct_owner_feed_urls(self, owner: str) -> set[str]:
         return {url.format(owner=owner) for url in self._owner_feed_urls}
@@ -125,6 +126,17 @@ class Plugin(BasePlugin):
             for url in self._owner_repo_discussion_category_feed_urls
         }
 
+    def _normalize_candidate_urls(self, urls: set[str]) -> set[AbsoluteUrl]:
+        candidate_urls: set[AbsoluteUrl] = set()
+
+        for url in urls:
+            candidate_url = normalize_classic_unknown_url(UnknownUrl(url))
+
+            if candidate_url is not None:
+                candidate_urls.add(candidate_url)
+
+        return candidate_urls
+
     def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
         return entry.replace(body=_rewrite_pre_body(entry.body))
 
@@ -141,13 +153,11 @@ class Plugin(BasePlugin):
             logger.info("discovering_github_not_github_domain")
             return context, None
 
-        path = str(f_url.path)
+        segments = [segment for segment in f_url.path.segments if segment]
 
-        if self._is_feed_path(path):
+        if self._is_feed_path(segments):
             logger.info("discovering_github_feed_url_received")
             return context, None
-
-        segments = [segment for segment in path.split("/") if segment]
 
         owner = self._extract_owner(segments)
 
@@ -155,34 +165,38 @@ class Plugin(BasePlugin):
             logger.info("discovering_github_owner_not_found")
             return context, None
 
-        candidate_urls: set[str] = self._construct_owner_feed_urls(owner)
+        raw_candidate_urls: set[str] = self._construct_owner_feed_urls(owner)
 
         if len(segments) >= 2:
             repo = segments[1]
-            candidate_urls.update(self._construct_owner_repo_feed_urls(owner, repo))
+            raw_candidate_urls.update(self._construct_owner_repo_feed_urls(owner, repo))
 
             branch = self._extract_branch(segments)
 
             if branch is not None:
-                candidate_urls.update(self._construct_owner_repo_branch_feed_urls(owner, repo, branch))
+                raw_candidate_urls.update(self._construct_owner_repo_branch_feed_urls(owner, repo, branch))
 
             category_slug = self._extract_discussion_category_slug(segments)
 
             if category_slug is not None:
-                candidate_urls.update(
+                raw_candidate_urls.update(
                     self._construct_owner_repo_discussion_category_feed_urls(owner, repo, category_slug)
                 )
 
-        candidate_urls.discard(context.url)
+        candidate_urls = {
+            candidate_url
+            for candidate_url in self._normalize_candidate_urls(raw_candidate_urls)
+            if str(candidate_url) != str(context.url)
+        }
 
         if not candidate_urls:
             logger.info("discovering_github_no_constructable_feeds")
             return context, None
 
-        feed_urls: list[str] = sorted(candidate_urls)
+        feed_urls: list[str] = sorted(str(url) for url in candidate_urls)
         logger.info("discovering_github_feeds_constructed", feed_urls=feed_urls)
 
-        return context.replace(candidate_urls=set(candidate_urls)), None
+        return context.replace(candidate_urls=candidate_urls), None
 
 
 def construct(**kwargs: object) -> Plugin:

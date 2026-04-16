@@ -147,6 +147,21 @@ class TestBuildFeedUrlsForChannelIds:
         ) == {str_to_absolute_url("https://example.com/channels/UC1234567890123456789012.xml")}
 
 
+class TestNormalizeNestedYoutubeUrl:
+    def test_normalizes_relative_url_against_youtube_root(self) -> None:
+        assert youtube._normalize_nested_youtube_url("/watch?v=M7lc1UVf-VE") == str_to_absolute_url(
+            "https://www.youtube.com/watch?v=M7lc1UVf-VE"
+        )
+
+    def test_normalizes_absolute_url(self) -> None:
+        assert youtube._normalize_nested_youtube_url("https://www.youtube.com/watch?v=M7lc1UVf-VE") == (
+            str_to_absolute_url("https://www.youtube.com/watch?v=M7lc1UVf-VE")
+        )
+
+    def test_returns_none_for_invalid_url(self) -> None:
+        assert youtube._normalize_nested_youtube_url("not a url") is None
+
+
 class TestLoadPageContent:
     @pytest.mark.asyncio
     async def test_returns_decoded_content(self, mocker: MockerFixture) -> None:

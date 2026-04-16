@@ -1,11 +1,11 @@
 import enum
 import re
-from urllib.parse import parse_qs, unquote, urlsplit
 
 import markdown  # type: ignore
 
 from ffun.core import logging
-from ffun.domain.entities import AbsoluteUrl, FeedUrl
+from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
+from ffun.domain.urls import adjust_classic_relative_url, construct_f_url, normalize_classic_unknown_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
 from ffun.library.entities import Reference, ReferenceSemantics
@@ -34,6 +34,9 @@ _YOUTUBE_DISCOVERY_HEADERS = {"Cookie": "SOCS=CAI"}
 logger = logging.get_module_logger()
 
 DEFAULT_CHANNEL_FEED_URL = "https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}"
+_YOUTUBE_ROOT_URL = normalize_classic_unknown_url(UnknownUrl("https://www.youtube.com"))
+
+assert _YOUTUBE_ROOT_URL is not None
 
 
 class YouTubePageKind(enum.StrEnum):
@@ -68,10 +71,10 @@ def _is_youtube_host(hostname: str) -> bool:
     )
 
 
-def _is_youtube_feed_url(url: str) -> bool:
-    parsed_url = urlsplit(url)
+def _is_youtube_feed_url(url: AbsoluteUrl | FeedUrl | str) -> bool:
+    f_url = construct_f_url(url)
 
-    return parsed_url.path == "/feeds/videos.xml"
+    return f_url is not None and str(f_url.path) == "/feeds/videos.xml"
 
 
 def _is_youtube_video_page(
@@ -92,19 +95,19 @@ def _is_youtube_channel_page(path_segments: list[str]) -> bool:
     )
 
 
-def _detect_youtube_page_kind(url: str) -> YouTubePageKind:
-    parsed_url = urlsplit(url)
-    hostname = parsed_url.hostname
+def _detect_youtube_page_kind(url: AbsoluteUrl | FeedUrl | str) -> YouTubePageKind:
+    f_url = construct_f_url(url)
 
-    if hostname is None or not _is_youtube_host(hostname.lower()):
+    if f_url is None or f_url.host is None or not _is_youtube_host(f_url.host.lower()):
         return YouTubePageKind.non_youtube
 
     if _is_youtube_feed_url(url):
         return YouTubePageKind.feed
 
-    path_segments = [segment for segment in parsed_url.path.split("/") if segment]
+    path = str(f_url.path)
+    path_segments = [segment for segment in f_url.path.segments if segment]
 
-    if _is_youtube_video_page(hostname.lower(), parsed_url.path, path_segments):
+    if _is_youtube_video_page(f_url.host.lower(), path, path_segments):
         return YouTubePageKind.video
 
     if _is_youtube_channel_page(path_segments):
@@ -131,7 +134,15 @@ def _extract_channel_ids_from_channel_page_content(content: str) -> set[str]:
 
 
 def _build_feed_urls_for_channel_ids(channel_ids: set[str], channel_feed_url: str) -> set[AbsoluteUrl]:
-    return {AbsoluteUrl(channel_feed_url.format(channel_id=channel_id)) for channel_id in channel_ids}
+    feed_urls: set[AbsoluteUrl] = set()
+
+    for channel_id in channel_ids:
+        feed_url = normalize_classic_unknown_url(UnknownUrl(channel_feed_url.format(channel_id=channel_id)))
+
+        if feed_url is not None:
+            feed_urls.add(feed_url)
+
+    return feed_urls
 
 
 async def _load_page_content(url: FeedUrl) -> str | None:
@@ -143,47 +154,52 @@ async def _load_page_content(url: FeedUrl) -> str | None:
         return None
 
 
+def _normalize_nested_youtube_url(url: str) -> AbsoluteUrl | None:
+    if url.startswith("/"):
+        assert _YOUTUBE_ROOT_URL is not None
+        return adjust_classic_relative_url(UnknownUrl(url), _YOUTUBE_ROOT_URL)
+
+    return normalize_classic_unknown_url(UnknownUrl(url))
+
+
 def _extract_youtube_video_id_from_url(url: AbsoluteUrl, *, _depth: int = 0) -> str | None:  # noqa: CCR001
     if _depth > 1:
         return None
 
-    parsed_url = urlsplit(url)
-    hostname = parsed_url.hostname
+    f_url = construct_f_url(url)
 
-    if hostname is None or not _is_youtube_host(hostname.lower()):
+    if f_url is None or f_url.host is None or not _is_youtube_host(f_url.host.lower()):
         return None
 
-    path_segments = [segment for segment in parsed_url.path.split("/") if segment]
+    path = str(f_url.path)
+    path_segments = [segment for segment in f_url.path.segments if segment]
 
-    if hostname.lower() == "youtu.be":
+    if f_url.host.lower() == "youtu.be":
         return path_segments[0] if path_segments else None
 
-    if parsed_url.path == "/watch":
-        query = parse_qs(parsed_url.query)
+    if path == "/watch":
         for key in ("v", "vi"):
-            values = query.get(key)
+            value = f_url.query.params.get(key)
 
-            if values:
-                return values[0]
+            if value:
+                return value
 
     if len(path_segments) >= 2 and path_segments[0] in _YOUTUBE_PATH_PREFIXES:
         return path_segments[1]
 
-    if parsed_url.path in {"/attribution_link", "/oembed"}:
-        query = parse_qs(parsed_url.query)
-
+    if path in {"/attribution_link", "/oembed"}:
         for key in ("u", "url"):
-            values = query.get(key)
+            nested_url = f_url.query.params.get(key)
 
-            if not values:
+            if not nested_url:
                 continue
 
-            nested_url = unquote(values[0])
+            absolute_nested_url = _normalize_nested_youtube_url(nested_url)
 
-            if nested_url.startswith("/"):
-                nested_url = f"https://www.youtube.com{nested_url}"
+            if absolute_nested_url is None:
+                continue
 
-            nested_video_id = _extract_youtube_video_id_from_url(AbsoluteUrl(nested_url), _depth=_depth + 1)
+            nested_video_id = _extract_youtube_video_id_from_url(absolute_nested_url, _depth=_depth + 1)
 
             if nested_video_id is not None:
                 return nested_video_id
