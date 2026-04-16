@@ -161,7 +161,7 @@ class Entry(BaseEntity):
             # actual published_at is absolutely unreliable because comes from the third-party sources
             # and can be broken in numerous ways.
             publishedAt=entry.created_at,
-            # Some APIs return full entry info, some return shorter info to safe traffic and speed up the response.
+            # Some APIs return full entry info, some return shorter info to save traffic and speed up the response.
             body=entry.body if with_body else None,
             references=[Reference.from_internal(reference) for reference in entry.references] if with_body else None,
         )
