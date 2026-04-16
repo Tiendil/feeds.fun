@@ -19,5 +19,5 @@ class FeedHeadIsTooShort(Error):
     pass
 
 
-class ReferenceUrlsMissmatchOnMerge(Error):
+class ReferenceUrlsMismatchOnMerge(Error):
     pass

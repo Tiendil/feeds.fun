@@ -57,7 +57,7 @@ class Reference(BaseEntity):
 
     def merge(self, other: "Reference") -> "Reference":  # noqa: CCR001
         if self.url != other.url:
-            raise errors.ReferenceUrlsMissmatchOnMerge()
+            raise errors.ReferenceUrlsMismatchOnMerge()
 
         other_has_priority = (
             REFERENCE_SEMANTICS_PRIORITY[self.semantics] < REFERENCE_SEMANTICS_PRIORITY[other.semantics]

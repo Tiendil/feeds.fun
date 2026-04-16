@@ -127,7 +127,7 @@ class TestReference:
         reference_1 = Reference(semantics=ReferenceSemantics.page, url=str_to_absolute_url("https://example.com/1"))
         reference_2 = Reference(semantics=ReferenceSemantics.page, url=str_to_absolute_url("https://example.com/2"))
 
-        with pytest.raises(errors.ReferenceUrlsMissmatchOnMerge):
+        with pytest.raises(errors.ReferenceUrlsMismatchOnMerge):
             reference_1.merge(reference_2)
 
     def test_merge_keeps_self_when_self_has_higher_or_equal_priority(self) -> None:
