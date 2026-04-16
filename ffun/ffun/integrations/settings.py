@@ -44,6 +44,16 @@ class Settings(BaseSettings):
                 plugin="ffun.integrations.plugins.hacker_news:construct",
                 extras={},
             ),
+            Integration(
+                source="rss.arxiv.org",
+                plugin="ffun.integrations.plugins.arxiv:construct",
+                extras={},
+            ),
+            Integration(
+                source="arxiv.org",
+                plugin="ffun.integrations.plugins.arxiv:construct",
+                extras={},
+            ),
         ]
     )
 
