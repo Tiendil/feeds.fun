@@ -117,11 +117,11 @@
 
 <style scoped>
   .head-cell {
-    @apply px-4 py-3 text-base font-medium md:text-lg;
+    @apply px-2 py-3 text-base font-medium md:px-4 md:text-lg;
   }
 
   .head-label {
-    @apply inline-flex items-center gap-1;
+    @apply flex flex-col items-center justify-center gap-0.5 text-center md:flex-row md:gap-1;
   }
 
   .head-info-icon {
@@ -129,7 +129,7 @@
   }
 
   .cell {
-    @apply px-4 py-3;
+    @apply px-2 py-3 md:px-4;
   }
 
   .cell-source {
@@ -145,6 +145,6 @@
   }
 
   .icon-badge {
-    @apply inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white;
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-white md:h-9 md:w-9;
   }
 </style>
