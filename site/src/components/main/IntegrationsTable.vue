@@ -1,6 +1,6 @@
 <template>
   <div class="mx-2">
-    <div class="overflow-hidden rounded-xl border border-slate-300 bg-slate-100">
+    <div class="overflow-hidden rounded-xl border bg-slate-100">
       <div class="overflow-x-auto">
         <table class="min-w-full table-fixed border-collapse text-left">
           <colgroup>
@@ -13,9 +13,36 @@
           <thead>
             <tr class="bg-blue-100 text-slate-900">
               <th class="head-cell">Source</th>
-              <th class="head-cell text-center">Feed discovery</th>
-              <th class="head-cell text-center">Post cleanup</th>
-              <th class="head-cell text-center">Extra tags</th>
+              <th class="head-cell text-center">
+                <span class="head-label">
+                  Feed discovery
+                  <icon
+                    class="head-info-icon"
+                    icon="info-square-filled"
+                    size="large"
+                    title="We discover feeds that are not explicitly specified by their sites and therefore are not visible to other feed readers." />
+                </span>
+              </th>
+              <th class="head-cell text-center">
+                <span class="head-label">
+                  Post cleanup
+                  <icon
+                    class="head-info-icon"
+                    icon="info-square-filled"
+                    size="large"
+                    title="We postprocess the content of posts to remove unnecessary markup and make them look better and easier to read." />
+                </span>
+              </th>
+              <th class="head-cell text-center">
+                <span class="head-label">
+                  Extra tags
+                  <icon
+                    class="head-info-icon"
+                    icon="info-square-filled"
+                    size="large"
+                    title="We add extra tags to news according to their unique properties in the source." />
+                </span>
+              </th>
             </tr>
           </thead>
 
@@ -98,6 +125,14 @@
 <style scoped>
   .head-cell {
     @apply px-4 py-3 text-base font-medium md:text-lg;
+  }
+
+  .head-label {
+    @apply inline-flex items-center gap-1;
+  }
+
+  .head-info-icon {
+    @apply text-slate-500 transition-colors cursor-pointer hover:text-black;
   }
 
   .cell {
