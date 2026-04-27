@@ -8,45 +8,25 @@ const REQUIRED_LINK_ATTRIBUTES = {
   referrerpolicy: "strict-origin-when-cross-origin"
 } as const;
 
-const SAFE_GLOBAL_BODY_ATTRIBUTES = new Set(["dir", "lang", "title"]);
+const INTERFERING_BODY_ATTRIBUTES = new Set(["class", "id", "style"]);
 
-const SAFE_GLOBAL_BODY_ATTRIBUTE_PREFIXES = ["aria-"];
+const INTERFERING_BODY_ATTRIBUTE_PREFIXES = ["data-"];
 
-const FUNCTIONAL_BODY_ATTRIBUTES_BY_TAG = new Map([
-  ["a", new Set(["href"])],
-  ["area", new Set(["alt", "coords", "href", "shape", "title"])],
-  ["audio", new Set(["controls", "src", "title"])],
-  ["col", new Set(["span"])],
-  ["colgroup", new Set(["span"])],
-  ["img", new Set(["alt", "sizes", "src", "srcset", "title"])],
-  ["li", new Set(["value"])],
-  ["ol", new Set(["reversed", "start"])],
-  ["source", new Set(["media", "sizes", "src", "srcset", "type"])],
-  ["td", new Set(["colspan", "rowspan"])],
-  ["th", new Set(["colspan", "rowspan", "scope"])],
-  ["track", new Set(["default", "kind", "label", "src", "srclang"])],
-  ["video", new Set(["controls", "poster", "src", "title"])]
-]);
-
-function isAllowedBodyAttribute(element: Element, attributeName: string) {
-  if (SAFE_GLOBAL_BODY_ATTRIBUTES.has(attributeName)) {
+function isInterferingBodyAttribute(attributeName: string) {
+  if (INTERFERING_BODY_ATTRIBUTES.has(attributeName)) {
     return true;
   }
 
-  if (SAFE_GLOBAL_BODY_ATTRIBUTE_PREFIXES.some((prefix) => attributeName.startsWith(prefix))) {
-    return true;
-  }
-
-  return FUNCTIONAL_BODY_ATTRIBUTES_BY_TAG.get(element.tagName.toLowerCase())?.has(attributeName) ?? false;
+  return INTERFERING_BODY_ATTRIBUTE_PREFIXES.some((prefix) => attributeName.startsWith(prefix));
 }
 
-function removeNonFunctionalAttributes(html: string) {
+function removeInterferingAttributes(html: string) {
   const parsed = new DOMParser().parseFromString(html, "text/html");
   const elements = parsed.body.querySelectorAll("*");
 
   for (const element of elements) {
     for (const attribute of Array.from(element.attributes)) {
-      if (!isAllowedBodyAttribute(element, attribute.name)) {
+      if (isInterferingBodyAttribute(attribute.name)) {
         element.removeAttribute(attribute.name);
       }
     }
@@ -162,7 +142,7 @@ export function purifyBody({raw, default_}: {raw: string | null; default_: strin
     return default_;
   }
 
-  body = removeNonFunctionalAttributes(body);
+  body = removeInterferingAttributes(body);
   body = hardenLinksSecurityAttributes(body);
 
   return body;
