@@ -11,6 +11,7 @@ from ffun.domain.urls import (
     adjust_external_url,
     filter_out_duplicated_urls,
     get_parent_url,
+    host_to_registered_domain,
     normalize_classic_unknown_url,
     to_feed_url,
     url_has_extension,
@@ -264,7 +265,16 @@ async def _discover_check_candidate_links(context: Context) -> DiscoverResult:  
 
     filtered_links = filter_out_duplicated_urls(context.candidate_urls)
 
-    filtered_links = [link for link in filtered_links if context.host == url_to_host(link)]
+    if not filtered_links:
+        return context, None
+
+    assert context.host is not None
+
+    current_registered_domain = host_to_registered_domain(context.host)
+
+    filtered_links = [
+        link for link in filtered_links if current_registered_domain == host_to_registered_domain(url_to_host(link))
+    ]
 
     tasks = []
 

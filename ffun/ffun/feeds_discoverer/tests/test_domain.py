@@ -26,6 +26,16 @@ from ffun.feeds_discoverer.tests import make
 from ffun.integrations.tests.helpers import FakeIntegration
 
 
+class FakeDiscover:
+    def __init__(self, result: Result | None = None) -> None:
+        self.checked_links: list[object] = []
+        self.result = result or Result(feeds=[], status=Status.no_feeds_found)
+
+    async def __call__(self, url: object, *args: object, **kwargs: object) -> Result:
+        self.checked_links.append(url)
+        return self.result
+
+
 class TestDiscoverAdjustUrl:
 
     @pytest.mark.asyncio
@@ -412,12 +422,7 @@ class TestDiscoverCheckCandidateLinks:
 
     @pytest.mark.asyncio
     async def test_works__duplicated_feeds_detected(self, mocker: MockerFixture) -> None:
-        checked_links = []
-
-        async def fake_discover(url: object, *argv: object, **kwargs: object) -> Result:
-            checked_links.append(url)
-            return Result(feeds=[], status=Status.no_feeds_found)
-
+        fake_discover = FakeDiscover()
         mocker.patch("ffun.feeds_discoverer.domain.discover", fake_discover)
 
         context = make.context(
@@ -432,20 +437,15 @@ class TestDiscoverCheckCandidateLinks:
 
         new_context, result = await _discover_check_candidate_links(context)
 
-        assert len(checked_links) == 2
-        assert set(checked_links) == {"http://localhost/feed1", "http://localhost/feed2"}
+        assert len(fake_discover.checked_links) == 2
+        assert set(fake_discover.checked_links) == {"http://localhost/feed1", "http://localhost/feed2"}
 
         assert new_context == context.replace(candidate_urls=set())
         assert result is None
 
     @pytest.mark.asyncio
     async def test_works__host_change_detected(self, mocker: MockerFixture) -> None:
-        checked_links = []
-
-        async def fake_discover(url: object, *argv: object, **kwargs: object) -> Result:
-            checked_links.append(url)
-            return Result(feeds=[], status=Status.no_feeds_found)
-
+        fake_discover = FakeDiscover()
         mocker.patch("ffun.feeds_discoverer.domain.discover", fake_discover)
 
         context = make.context(
@@ -460,8 +460,29 @@ class TestDiscoverCheckCandidateLinks:
 
         new_context, result = await _discover_check_candidate_links(context)
 
-        assert len(checked_links) == 2
-        assert set(checked_links) == {"http://localhost/feed1", "http://localhost/feed2"}
+        assert len(fake_discover.checked_links) == 2
+        assert set(fake_discover.checked_links) == {"http://localhost/feed1", "http://localhost/feed2"}
+
+        assert new_context == context.replace(candidate_urls=set())
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_works__sibling_subdomains_allowed(self, mocker: MockerFixture) -> None:
+        fake_discover = FakeDiscover()
+        mocker.patch("ffun.feeds_discoverer.domain.discover", fake_discover)
+
+        context = make.context(
+            "https://abc.xxx.com/test",
+            candidate_urls={
+                AbsoluteUrl("https://rss.xxx.com/feed1"),
+                AbsoluteUrl("https://foo.elsewhere.com/feed2"),
+            },
+            discoverers=_discoverers,
+        )
+
+        new_context, result = await _discover_check_candidate_links(context)
+
+        assert fake_discover.checked_links == ["https://rss.xxx.com/feed1"]
 
         assert new_context == context.replace(candidate_urls=set())
         assert result is None

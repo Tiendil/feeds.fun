@@ -586,3 +586,30 @@ class TestUrlToHost:
     def test_unsupported_representation(self) -> None:
         with pytest.raises(NotImplementedError):
             urls.url_to_host(AbsoluteUrl("at://did:plc:fakeperson000000000000000/app.bsky.actor.profile/self"))
+
+
+class TestHostToRegisteredDomain:
+
+    @pytest.mark.parametrize(
+        "host, registered_domain",
+        [
+            ("arxiv.org", "arxiv.org"),
+            ("rss.arxiv.org", "arxiv.org"),
+            ("cs.arxiv.org", "arxiv.org"),
+            ("abc.xxx.com", "xxx.com"),
+            ("rss.xxx.com", "xxx.com"),
+            ("deep.a.b.xxx.com", "xxx.com"),
+            ("foo.co.uk", "foo.co.uk"),
+            ("rss.foo.co.uk", "foo.co.uk"),
+            ("localhost", "localhost"),
+            ("api.localhost", "api.localhost"),
+            ("deep.api.localhost", "deep.api.localhost"),
+            ("internal", "internal"),
+            ("dev.internal", "dev.internal"),
+            ("svc.cluster.local", "svc.cluster.local"),
+            ("127.0.0.1", "127.0.0.1"),
+            ("10.10.10.10", "10.10.10.10"),
+        ],
+    )
+    def test(self, host: str, registered_domain: str) -> None:
+        assert urls.host_to_registered_domain(host) == registered_domain

@@ -1,12 +1,27 @@
 import re
 
-from ffun.domain.entities import AbsoluteUrl, UnknownUrl
+from bs4 import BeautifulSoup
+
+from ffun.core import logging
+from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import construct_f_url, normalize_classic_unknown_url
+from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
 from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.loader import domain as lo_domain
+from ffun.loader import errors as lo_errors
 from ffun.parsers import entities as p_entities
 
 _BODY_PREFIX_RE = re.compile(r"^arXiv:[^\s]+\s+Announce Type:\s+[^\s]+\s+Abstract:\s*")
+_SECTION_FROM_DELIMITED_TEXT_RE = re.compile(r"(?<=[\(\[])(?P<section>[a-z-]+\.[A-Z]{2})(?=[\s\)\]])")
+_SECTION_FROM_LINE_RE = re.compile(r"^(?P<section>[a-z-]+\.[A-Z]{2})$")
+_SECTION_FROM_LINK_RE = re.compile(r"/(?:list|archive)/(?P<section>[a-z-]+\.[A-Z]{2})")
+_ARXIV_PAGE_HOSTS = {"arxiv.org", "www.arxiv.org"}
+_ARXIV_RSS_HOST = "rss.arxiv.org"
+_ARXIV_RSS_PATH_PREFIX = "rss"
+_ARXIV_FEED_URL_TEMPLATE = "https://rss.arxiv.org/rss/{section}"
+
+logger = logging.get_module_logger()
 
 
 def _build_pdf_reference(entry_link: AbsoluteUrl) -> Reference | None:
@@ -54,9 +69,98 @@ def _append_new_references(entry: p_entities.EntryInfo, references: list[Referen
     return [*entry.references, *new_references]
 
 
+def _build_feed_url(section: str) -> AbsoluteUrl | None:
+    return normalize_classic_unknown_url(UnknownUrl(_ARXIV_FEED_URL_TEMPLATE.format(section=section)))
+
+
+def _build_feed_urls(sections: set[str]) -> set[AbsoluteUrl]:
+    feed_urls: set[AbsoluteUrl] = set()
+
+    for section in sections:
+        feed_url = _build_feed_url(section)
+
+        if feed_url is not None:
+            feed_urls.add(feed_url)
+
+    return feed_urls
+
+
+def _extract_sections_from_feed_url(url: FeedUrl) -> set[str]:
+    f_url = construct_f_url(url)
+
+    if f_url is None or f_url.host != _ARXIV_RSS_HOST:
+        return set()
+
+    path_segments = [segment for segment in f_url.path.segments if segment]
+
+    if len(path_segments) != 2 or path_segments[0] != _ARXIV_RSS_PATH_PREFIX:
+        return set()
+
+    return {section for section in path_segments[1].split("+") if section != ""}
+
+
+def _extract_sections_from_page_content(content: str) -> set[str]:
+    soup = BeautifulSoup(content, "html.parser")
+    page_text = soup.get_text("\n")
+
+    sections = {match.group("section") for match in _SECTION_FROM_DELIMITED_TEXT_RE.finditer(page_text)}
+    sections.update(match.group("section") for match in _SECTION_FROM_LINK_RE.finditer(content))
+
+    for line in page_text.splitlines():
+        line = line.strip()
+
+        if match := _SECTION_FROM_LINE_RE.fullmatch(line):
+            sections.add(match.group("section"))
+
+    return sections
+
+
+async def _load_page_content(url: FeedUrl) -> str | None:
+    try:
+        response = await lo_domain.load_content_with_proxies(url)
+        return await lo_domain.decode_content(response)
+    except lo_errors.LoadError:
+        logger.info("discovering_arxiv_cannot_access_page", url=url)
+        return None
+
+
+def _add_feed_urls_to_context(context: fd_entities.Context, sections: set[str]) -> fd_entities.Context:
+    return context.replace(candidate_urls=context.candidate_urls | _build_feed_urls(sections))
+
+
 class Plugin(BasePlugin):
     __slots__ = ()
     source_name = "ArXiv"
+
+    async def discover_feed_urls(self, context: fd_entities.Context) -> fd_entities.DiscoverResult:
+        assert context.url is not None
+
+        f_url = construct_f_url(context.url)
+
+        assert f_url is not None
+
+        if f_url.host == _ARXIV_RSS_HOST:
+            sections = _extract_sections_from_feed_url(context.url)
+
+            if len(sections) <= 1:
+                return context, None
+
+            return _add_feed_urls_to_context(context, sections), None
+
+        if f_url.host not in _ARXIV_PAGE_HOSTS:
+            return context, None
+
+        content = await _load_page_content(context.url)
+
+        if content is None:
+            return context, None
+
+        sections = _extract_sections_from_page_content(content)
+
+        if not sections:
+            return context, None
+
+        return _add_feed_urls_to_context(context, sections), None
 
     def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
         return entry.replace(
