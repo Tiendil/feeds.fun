@@ -11,7 +11,7 @@ from ffun.core.tests.helpers import assert_logs, capture_logs
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, SourceUid, UnknownUrl
 from ffun.domain.urls import normalize_classic_unknown_url, to_feed_url, url_to_source_uid
 from ffun.integrations.tests.helpers import FakeIntegration
-from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.library.entities import Reference, ReferenceKind
 from ffun.parsers import errors
 from ffun.parsers import feed as p_feed
 from ffun.parsers.entities import EntryInfo, FeedInfo
@@ -31,11 +31,11 @@ from ffun.parsers.feed import (
     _extract_published_at,
     _extract_references,
     _extract_references_raw,
-    _media_type_to_semantics,
+    _media_type_to_kind,
     _merge_references_list,
     _parse_stream,
     _parse_tags,
-    _reference_semantics_from_link,
+    _reference_kind_from_link,
     _should_skip,
     parse_entry,
     parse_feed,
@@ -372,47 +372,47 @@ class TestExtractExternalUrl:
             _extract_external_url({"link": "mailto:test@example.com"}, feed_url)
 
 
-class TestMediaTypeToSemantics:
+class TestMediaTypeToKind:
 
     @pytest.mark.parametrize(
         ("media_type", "expected"),
         [
-            (None, ReferenceSemantics.unknown),
-            ("image/png", ReferenceSemantics.image),
-            (" IMAGE/PNG ", ReferenceSemantics.image),
-            ("audio/mpeg", ReferenceSemantics.audio),
-            ("audio/mpeg; codecs=mp3", ReferenceSemantics.audio),
-            ("video/mp4", ReferenceSemantics.video),
-            (" video/mp4 ; codecs=avc1 ", ReferenceSemantics.video),
-            ("text/html", ReferenceSemantics.page),
-            ("text/html; charset=utf-8", ReferenceSemantics.page),
-            ("application/xhtml+xml", ReferenceSemantics.page),
-            ("application/x-shockwave-flash", ReferenceSemantics.video),
-            ("application/pdf", ReferenceSemantics.document),
-            ("text/plain", ReferenceSemantics.document),
-            ("application/json", ReferenceSemantics.document),
-            ("application/octet-stream", ReferenceSemantics.document),
-            ("x-custom/thing", ReferenceSemantics.unknown),
+            (None, ReferenceKind.unknown),
+            ("image/png", ReferenceKind.image),
+            (" IMAGE/PNG ", ReferenceKind.image),
+            ("audio/mpeg", ReferenceKind.audio),
+            ("audio/mpeg; codecs=mp3", ReferenceKind.audio),
+            ("video/mp4", ReferenceKind.video),
+            (" video/mp4 ; codecs=avc1 ", ReferenceKind.video),
+            ("text/html", ReferenceKind.page),
+            ("text/html; charset=utf-8", ReferenceKind.page),
+            ("application/xhtml+xml", ReferenceKind.page),
+            ("application/x-shockwave-flash", ReferenceKind.video),
+            ("application/pdf", ReferenceKind.document),
+            ("text/plain", ReferenceKind.document),
+            ("application/json", ReferenceKind.document),
+            ("application/octet-stream", ReferenceKind.document),
+            ("x-custom/thing", ReferenceKind.unknown),
         ],
     )
-    def test(self, media_type: str | None, expected: ReferenceSemantics) -> None:
-        assert _media_type_to_semantics(media_type) == expected
+    def test(self, media_type: str | None, expected: ReferenceKind) -> None:
+        assert _media_type_to_kind(media_type) == expected
 
 
 class TestCreateReference:
 
     def test_returns_none_when_url_is_missing(self, feed_url: FeedUrl) -> None:
-        assert _create_reference(ReferenceSemantics.page, None, feed_url) is None
+        assert _create_reference(ReferenceKind.page, None, feed_url) is None
 
     def test_returns_none_when_url_is_invalid(self, feed_url: FeedUrl) -> None:
-        assert _create_reference(ReferenceSemantics.page, "mailto:test@example.com", feed_url) is None
+        assert _create_reference(ReferenceKind.page, "mailto:test@example.com", feed_url) is None
 
     def test_returns_none_on_metadata_parsing_error(self, feed_url: FeedUrl) -> None:
-        assert _create_reference(ReferenceSemantics.page, "/news", feed_url, width="bad-int") is None
+        assert _create_reference(ReferenceKind.page, "/news", feed_url, width="bad-int") is None
 
     def test_creates_reference(self, feed_url: FeedUrl) -> None:
         reference = _create_reference(
-            semantics=ReferenceSemantics.video,
+            kind=ReferenceKind.video,
             url="/video",
             original_url=feed_url,
             title="Title",
@@ -425,7 +425,7 @@ class TestCreateReference:
         )
 
         assert reference == Reference(
-            semantics=ReferenceSemantics.video,
+            kind=ReferenceKind.video,
             url=_absolute_url("https://example.com/video"),
             title="Title",
             mime_type="video/mp4",
@@ -437,20 +437,20 @@ class TestCreateReference:
         )
 
 
-class TestReferenceSemanticsFromLink:
+class TestReferenceKindFromLink:
 
     def test_returns_comments_for_replies(self) -> None:
-        assert _reference_semantics_from_link("replies", None) == ReferenceSemantics.comments
+        assert _reference_kind_from_link("replies", None) == ReferenceKind.comments
 
     def test_prefers_media_type_when_it_is_known(self) -> None:
-        assert _reference_semantics_from_link("alternate", "image/png") == ReferenceSemantics.image
+        assert _reference_kind_from_link("alternate", "image/png") == ReferenceKind.image
 
     @pytest.mark.parametrize("rel", ["alternate", "related", "via"])
     def test_returns_page_for_page_like_rels(self, rel: str) -> None:
-        assert _reference_semantics_from_link(rel, None) == ReferenceSemantics.page
+        assert _reference_kind_from_link(rel, None) == ReferenceKind.page
 
     def test_returns_unknown_for_other_rels(self) -> None:
-        assert _reference_semantics_from_link("self", None) == ReferenceSemantics.unknown
+        assert _reference_kind_from_link("self", None) == ReferenceKind.unknown
 
 
 class TestExtractLinkReference:
@@ -463,7 +463,7 @@ class TestExtractLinkReference:
             {"href": "/page", "rel": "alternate", "type": "text/html", "title": "Page"},
             feed_url,
         ) == Reference(
-            semantics=ReferenceSemantics.page,
+            kind=ReferenceKind.page,
             url=_absolute_url("https://example.com/page"),
             title="Page",
             mime_type="text/html",
@@ -473,11 +473,11 @@ class TestExtractLinkReference:
 class TestExtractMediaReference:
 
     def test_returns_none_when_url_is_missing(self, feed_url: FeedUrl) -> None:
-        assert _extract_media_reference({}, feed_url, ReferenceSemantics.image) is None
+        assert _extract_media_reference({}, feed_url, ReferenceKind.image) is None
 
-    def test_uses_default_semantics_for_unknown_media_type(self, feed_url: FeedUrl) -> None:
-        assert _extract_media_reference({"url": "/asset"}, feed_url, ReferenceSemantics.image) == Reference(
-            semantics=ReferenceSemantics.image,
+    def test_uses_default_kind_for_unknown_media_type(self, feed_url: FeedUrl) -> None:
+        assert _extract_media_reference({"url": "/asset"}, feed_url, ReferenceKind.image) == Reference(
+            kind=ReferenceKind.image,
             url=_absolute_url("https://example.com/asset"),
         )
 
@@ -485,9 +485,9 @@ class TestExtractMediaReference:
         assert _extract_media_reference(
             {"url": "/asset", "type": "video/mp4"},
             feed_url,
-            ReferenceSemantics.image,
+            ReferenceKind.image,
         ) == Reference(
-            semantics=ReferenceSemantics.video,
+            kind=ReferenceKind.video,
             url=_absolute_url("https://example.com/asset"),
             mime_type="video/mp4",
         )
@@ -495,18 +495,18 @@ class TestExtractMediaReference:
 
 class TestExtractMediaContentReference:
 
-    def test_uses_unknown_default_semantics(self, feed_url: FeedUrl) -> None:
+    def test_uses_unknown_default_kind(self, feed_url: FeedUrl) -> None:
         assert _extract_media_content_reference({"url": "/asset"}, feed_url) == Reference(
-            semantics=ReferenceSemantics.unknown,
+            kind=ReferenceKind.unknown,
             url=_absolute_url("https://example.com/asset"),
         )
 
 
 class TestExtractMediaThumbnailReference:
 
-    def test_uses_image_default_semantics(self, feed_url: FeedUrl) -> None:
+    def test_uses_image_default_kind(self, feed_url: FeedUrl) -> None:
         assert _extract_media_thumbnail_reference({"url": "/image"}, feed_url) == Reference(
-            semantics=ReferenceSemantics.image,
+            kind=ReferenceKind.image,
             url=_absolute_url("https://example.com/image"),
         )
 
@@ -518,7 +518,7 @@ class TestExtractCommentsReference:
 
     def test_returns_comments_reference(self, feed_url: FeedUrl) -> None:
         assert _extract_comments_reference("/comments", feed_url) == Reference(
-            semantics=ReferenceSemantics.comments,
+            kind=ReferenceKind.comments,
             url=_absolute_url("https://example.com/comments"),
             title="Comments",
         )
@@ -531,7 +531,7 @@ class TestExtractAuthorReference:
 
     def test_returns_author_reference(self, feed_url: FeedUrl) -> None:
         assert _extract_author_reference({"href": "/author", "name": "Author"}, feed_url) == Reference(
-            semantics=ReferenceSemantics.author,
+            kind=ReferenceKind.author,
             url=_absolute_url("https://example.com/author"),
             title="Author",
         )
@@ -547,7 +547,7 @@ class TestExtractEnclosureReference:
             {"href": "/file.pdf", "type": "application/pdf", "title": "File", "length": "42"},
             feed_url,
         ) == Reference(
-            semantics=ReferenceSemantics.document,
+            kind=ReferenceKind.document,
             url=_absolute_url("https://example.com/file.pdf"),
             title="File",
             mime_type="application/pdf",
@@ -559,9 +559,9 @@ class TestMergeReferencesList:
 
     def test_merges_duplicates(self) -> None:
         references = [
-            Reference(semantics=ReferenceSemantics.page, url=_absolute_url("https://example.com/b"), title="page"),
+            Reference(kind=ReferenceKind.page, url=_absolute_url("https://example.com/b"), title="page"),
             Reference(
-                semantics=ReferenceSemantics.comments,
+                kind=ReferenceKind.comments,
                 url=_absolute_url("https://example.com/b"),
                 title="comments",
             ),
@@ -571,13 +571,13 @@ class TestMergeReferencesList:
 
     def test_returns_references_sorted_by_url(self) -> None:
         references = [
-            Reference(semantics=ReferenceSemantics.page, url=_absolute_url("https://example.com/b")),
-            Reference(semantics=ReferenceSemantics.page, url=_absolute_url("https://example.com/a")),
+            Reference(kind=ReferenceKind.page, url=_absolute_url("https://example.com/b")),
+            Reference(kind=ReferenceKind.page, url=_absolute_url("https://example.com/a")),
         ]
 
         assert _merge_references_list(references) == [
-            Reference(semantics=ReferenceSemantics.page, url=_absolute_url("https://example.com/a")),
-            Reference(semantics=ReferenceSemantics.page, url=_absolute_url("https://example.com/b")),
+            Reference(kind=ReferenceKind.page, url=_absolute_url("https://example.com/a")),
+            Reference(kind=ReferenceKind.page, url=_absolute_url("https://example.com/b")),
         ]
 
 
@@ -603,32 +603,30 @@ class TestExtractReferencesRaw:
         )
 
         assert references == [
+            Reference(kind=ReferenceKind.page, url=_absolute_url("https://example.com/page"), mime_type="text/html"),
             Reference(
-                semantics=ReferenceSemantics.page, url=_absolute_url("https://example.com/page"), mime_type="text/html"
-            ),
-            Reference(
-                semantics=ReferenceSemantics.document,
+                kind=ReferenceKind.document,
                 url=_absolute_url("https://example.com/file.pdf"),
                 mime_type="application/pdf",
             ),
             Reference(
-                semantics=ReferenceSemantics.video,
+                kind=ReferenceKind.video,
                 url=_absolute_url("https://example.com/video"),
                 mime_type="video/mp4",
             ),
-            Reference(semantics=ReferenceSemantics.image, url=_absolute_url("https://example.com/image")),
+            Reference(kind=ReferenceKind.image, url=_absolute_url("https://example.com/image")),
             Reference(
-                semantics=ReferenceSemantics.comments,
+                kind=ReferenceKind.comments,
                 url=_absolute_url("https://example.com/comments"),
                 title="Comments",
             ),
             Reference(
-                semantics=ReferenceSemantics.author,
+                kind=ReferenceKind.author,
                 url=_absolute_url("https://example.com/author"),
                 title="Author",
             ),
             Reference(
-                semantics=ReferenceSemantics.author,
+                kind=ReferenceKind.author,
                 url=_absolute_url("https://example.com/contributor"),
                 title="Contributor",
             ),
@@ -649,9 +647,9 @@ class TestExtractReferences:
         )
 
         assert references == [
-            Reference(semantics=ReferenceSemantics.image, url=_absolute_url("https://example.com/a")),
+            Reference(kind=ReferenceKind.image, url=_absolute_url("https://example.com/a")),
             Reference(
-                semantics=ReferenceSemantics.comments,
+                kind=ReferenceKind.comments,
                 url=_absolute_url("https://example.com/b"),
                 title="Comments",
                 mime_type="text/html",

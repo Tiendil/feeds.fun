@@ -78,7 +78,7 @@ class Feed(BaseEntity):
         )
 
 
-class ReferenceSemantics(enum.StrEnum):
+class ReferenceKind(enum.StrEnum):
     unknown = "unknown"
     author = "author"
     comments = "comments"
@@ -89,13 +89,13 @@ class ReferenceSemantics(enum.StrEnum):
     document = "document"
 
 
-REFERENCE_SEMANTICS_MAPPING: dict[l_entities.ReferenceSemantics, ReferenceSemantics] = {
-    reference: ReferenceSemantics(reference.name) for reference in l_entities.ReferenceSemantics
+REFERENCE_KIND_MAPPING: dict[l_entities.ReferenceKind, ReferenceKind] = {
+    reference: ReferenceKind(reference.name) for reference in l_entities.ReferenceKind
 }
 
 
 class Reference(BaseEntity):
-    semantics: ReferenceSemantics
+    kind: ReferenceKind
     url: AbsoluteUrl
     title: str | None = None
     mime_type: str | None = None
@@ -113,7 +113,7 @@ class Reference(BaseEntity):
     @classmethod
     def from_internal(cls, reference: l_entities.Reference) -> "Reference":
         return cls(
-            semantics=REFERENCE_SEMANTICS_MAPPING[reference.semantics],
+            kind=REFERENCE_KIND_MAPPING[reference.kind],
             url=reference.url,
             title=reference.title,
             mime_type=reference.mime_type,
@@ -157,7 +157,7 @@ class Entry(BaseEntity):
             scoreContributions=score_contributions,
             # THIS IS AN INTENDED BEHAVIOR
             # we set publishedAt for the frontend as global entry creation time
-            # because it is the only reliable time with "published" semantic
+            # because it is the only reliable time with "published" meaning
             # actual published_at is absolutely unreliable because comes from the third-party sources
             # and can be broken in numerous ways.
             publishedAt=entry.created_at,

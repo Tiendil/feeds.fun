@@ -140,15 +140,15 @@
     const references = (entry.value.references ?? []).slice();
 
     references.sort((left, right) => {
-      const leftProperties = e.ReferenceSemanticsProperties.get(left.semantics);
-      const rightProperties = e.ReferenceSemanticsProperties.get(right.semantics);
+      const leftProperties = e.ReferenceKindProperties.get(left.kind);
+      const rightProperties = e.ReferenceKindProperties.get(right.kind);
 
       if (leftProperties === undefined) {
-        throw new Error(`Unknown reference semantics: ${left.semantics}`);
+        throw new Error(`Unknown reference kind: ${left.kind}`);
       }
 
       if (rightProperties === undefined) {
-        throw new Error(`Unknown reference semantics: ${right.semantics}`);
+        throw new Error(`Unknown reference kind: ${right.kind}`);
       }
 
       return leftProperties.priority - rightProperties.priority;

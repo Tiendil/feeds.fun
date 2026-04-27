@@ -7,7 +7,7 @@ from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import adjust_classic_relative_url, construct_f_url, normalize_classic_unknown_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
-from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.library.entities import Reference, ReferenceKind
 from ffun.loader import domain as lo_domain
 from ffun.parsers import entities as p_entities
 
@@ -195,7 +195,7 @@ def _extract_youtube_video_id_from_url(url: AbsoluteUrl, *, _depth: int = 0) -> 
 
 
 def _postprocess_reference(reference: Reference) -> Reference:
-    if reference.semantics != ReferenceSemantics.video:
+    if reference.kind != ReferenceKind.video:
         return reference
 
     youtube_id = _extract_youtube_video_id_from_url(reference.url)

@@ -4,7 +4,7 @@ from pytest_mock import MockerFixture
 from ffun.domain.urls import str_to_absolute_url, str_to_feed_url
 from ffun.feeds_discoverer.tests import make as fd_make
 from ffun.integrations.plugins import arxiv
-from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.library.entities import Reference, ReferenceKind
 from ffun.parsers.tests import make as p_make
 
 
@@ -101,9 +101,7 @@ class TestDiscoverFeedUrls:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_ignores_aggregated_archive_categories(
-        self, mocker: MockerFixture, plugin: arxiv.Plugin
-    ) -> None:
+    async def test_ignores_aggregated_archive_categories(self, mocker: MockerFixture, plugin: arxiv.Plugin) -> None:
         context = fd_make.context("https://arxiv.org/abs/2604.21691")
 
         async def fake_load_decoded_content(url: object) -> str | None:
@@ -136,7 +134,7 @@ class TestBuildPdfReference:
         reference = arxiv._build_pdf_reference(str_to_absolute_url("https://arxiv.org/abs/2604.13180"))
 
         assert reference == Reference(
-            semantics=ReferenceSemantics.page,
+            kind=ReferenceKind.page,
             url=str_to_absolute_url("https://arxiv.org/pdf/2604.13180"),
             title="PDF",
         )
@@ -160,12 +158,12 @@ class TestRemovePrefixFromBody:
 class TestAppendNewReferences:
     def test_adds_only_new_references(self) -> None:
         existing_reference = Reference(
-            semantics=ReferenceSemantics.page,
+            kind=ReferenceKind.page,
             url=str_to_absolute_url("https://arxiv.org/pdf/2604.13180"),
             title="Existing PDF",
         )
         new_reference = Reference(
-            semantics=ReferenceSemantics.page,
+            kind=ReferenceKind.page,
             url=str_to_absolute_url("https://arxiv.org/abs/2604.13180"),
             title="Paper",
         )
@@ -255,7 +253,7 @@ class TestAddFeedUrlsToContext:
 class TestPostprocessEntry:
     def test_adds_pdf_reference_and_removes_prefix(self, plugin: arxiv.Plugin) -> None:
         author_reference = Reference(
-            semantics=ReferenceSemantics.author,
+            kind=ReferenceKind.author,
             url=str_to_absolute_url("https://arxiv.org/search/?searchtype=author&query=Liu%2C+Q"),
             title="Qibin Liu",
         )
@@ -272,7 +270,7 @@ class TestPostprocessEntry:
             references=[
                 author_reference,
                 Reference(
-                    semantics=ReferenceSemantics.page,
+                    kind=ReferenceKind.page,
                     url=str_to_absolute_url("https://arxiv.org/pdf/2604.13180"),
                     title="PDF",
                 ),
@@ -281,7 +279,7 @@ class TestPostprocessEntry:
 
     def test_keeps_existing_reference_urls_unique(self, plugin: arxiv.Plugin) -> None:
         pdf_reference = Reference(
-            semantics=ReferenceSemantics.page,
+            kind=ReferenceKind.page,
             url=str_to_absolute_url("https://arxiv.org/pdf/2604.13180"),
             title="Existing PDF",
         )

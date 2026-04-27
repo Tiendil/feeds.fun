@@ -38,7 +38,7 @@ logger = logging.get_module_logger()
 
 def dict_to_reference(row: dict[str, Any]) -> Reference:
     return Reference(
-        semantics=row["semantics"],
+        kind=row["kind"],
         url=row["url"],
         title=row.get("title"),
         mime_type=row.get("mime_type"),

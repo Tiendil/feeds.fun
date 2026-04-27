@@ -6,7 +6,7 @@ from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import construct_f_url, normalize_classic_unknown_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
-from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.library.entities import Reference, ReferenceKind
 from ffun.loader import domain as lo_domain
 from ffun.parsers import entities as p_entities
 
@@ -38,7 +38,7 @@ def _build_pdf_reference(entry_link: AbsoluteUrl) -> Reference | None:
         return None
 
     return Reference(
-        semantics=ReferenceSemantics.page,
+        kind=ReferenceKind.page,
         url=pdf_url,
         title="PDF",
     )

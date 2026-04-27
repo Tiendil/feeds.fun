@@ -14,7 +14,7 @@ class ProcessedState(enum.IntEnum):
     retry_later = 3
 
 
-class ReferenceSemantics(enum.IntEnum):
+class ReferenceKind(enum.IntEnum):
     unknown = 0
     author = 1
     comments = 2
@@ -25,24 +25,24 @@ class ReferenceSemantics(enum.IntEnum):
     document = 7
 
 
-# The priority of the semantics is used when merging references to the same URL.
-# The highest priority semantics will be used as the semantics of the merged reference.
-REFERENCE_SEMANTICS_PRIORITY: dict[ReferenceSemantics, int] = {
-    ReferenceSemantics.unknown: 0,
-    ReferenceSemantics.page: 1,
-    ReferenceSemantics.document: 2,
-    ReferenceSemantics.author: 3,
-    ReferenceSemantics.comments: 3,
-    ReferenceSemantics.audio: 3,
-    ReferenceSemantics.video: 3,
-    ReferenceSemantics.image: 3,
+# The priority of the kind is used when merging references to the same URL.
+# The highest priority kind will be used as the kind of the merged reference.
+REFERENCE_KIND_PRIORITY: dict[ReferenceKind, int] = {
+    ReferenceKind.unknown: 0,
+    ReferenceKind.page: 1,
+    ReferenceKind.document: 2,
+    ReferenceKind.author: 4,
+    ReferenceKind.comments: 3,
+    ReferenceKind.audio: 3,
+    ReferenceKind.video: 3,
+    ReferenceKind.image: 3,
 }
 
 
 # The primary goal of the Reference entity is to simplify all the plethora of media references
 # to some reasonable common denominator, that is easier to process and visualize
 class Reference(BaseEntity):
-    semantics: ReferenceSemantics
+    kind: ReferenceKind
     url: AbsoluteUrl
     title: str | None = None
     mime_type: str | None = None
@@ -59,9 +59,7 @@ class Reference(BaseEntity):
         if self.url != other.url:
             raise errors.ReferenceUrlsMismatchOnMerge()
 
-        other_has_priority = (
-            REFERENCE_SEMANTICS_PRIORITY[self.semantics] < REFERENCE_SEMANTICS_PRIORITY[other.semantics]
-        )
+        other_has_priority = REFERENCE_KIND_PRIORITY[self.kind] < REFERENCE_KIND_PRIORITY[other.kind]
 
         if other_has_priority:
             original = other
@@ -72,7 +70,7 @@ class Reference(BaseEntity):
 
         # That merging policy is questionable, but it should work in most cases.
         return Reference(
-            semantics=original.semantics,
+            kind=original.kind,
             url=original.url,
             title=original.title if original.title is not None else secondary.title,
             mime_type=original.mime_type if original.mime_type is not None else secondary.mime_type,

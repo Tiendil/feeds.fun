@@ -2,7 +2,7 @@ import datetime
 
 from ffun.domain.domain import new_entry_id, new_source_id
 from ffun.domain.urls import str_to_absolute_url
-from ffun.library.entities import CollectedEntry, Reference, ReferenceSemantics
+from ffun.library.entities import CollectedEntry, Reference, ReferenceKind
 from ffun.parsers.entities import EntryInfo
 
 
@@ -17,13 +17,13 @@ class TestEntryInfo:
             published_at=datetime.datetime(2026, 4, 14, 10, 30, tzinfo=datetime.UTC),
             references=[
                 Reference(
-                    semantics=ReferenceSemantics.video,
+                    kind=ReferenceKind.video,
                     url=str_to_absolute_url("https://example.com/video"),
                     title="Video reference",
                     mime_type="video/mp4",
                 ),
                 Reference(
-                    semantics=ReferenceSemantics.comments,
+                    kind=ReferenceKind.comments,
                     url=str_to_absolute_url("https://example.com/comments"),
                     title="Comments",
                 ),
@@ -43,13 +43,13 @@ class TestEntryInfo:
             published_at=datetime.datetime(2026, 4, 14, 10, 30, tzinfo=datetime.UTC),
             references=[
                 Reference(
-                    semantics=ReferenceSemantics.video,
+                    kind=ReferenceKind.video,
                     url=str_to_absolute_url("https://example.com/video"),
                     title="Video reference",
                     mime_type="video/mp4",
                 ),
                 Reference(
-                    semantics=ReferenceSemantics.comments,
+                    kind=ReferenceKind.comments,
                     url=str_to_absolute_url("https://example.com/comments"),
                     title="Comments",
                 ),

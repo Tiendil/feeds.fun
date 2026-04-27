@@ -4,7 +4,7 @@ from pytest_mock import MockerFixture
 from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds_discoverer.tests import make as fd_make
 from ffun.integrations.plugins import youtube
-from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.library.entities import Reference, ReferenceKind
 from ffun.parsers.tests import make as p_make
 
 
@@ -341,7 +341,7 @@ class TestExtractYoutubeVideoIdFromUrl:
 class TestPostprocessReference:
     def test_stores_youtube_id_in_video_reference_extra(self) -> None:
         reference = Reference(
-            semantics=ReferenceSemantics.video,
+            kind=ReferenceKind.video,
             url=str_to_absolute_url("https://www.youtube.com/watch?v=M7lc1UVf-VE"),
             extra={"source": "youtube"},
         )
@@ -352,7 +352,7 @@ class TestPostprocessReference:
 
     def test_keeps_non_youtube_video_reference(self) -> None:
         reference = Reference(
-            semantics=ReferenceSemantics.video,
+            kind=ReferenceKind.video,
             url=str_to_absolute_url("https://example.com/video.mp4"),
         )
 
@@ -360,7 +360,7 @@ class TestPostprocessReference:
 
     def test_keeps_non_video_reference(self) -> None:
         reference = Reference(
-            semantics=ReferenceSemantics.page,
+            kind=ReferenceKind.page,
             url=str_to_absolute_url("https://www.youtube.com/watch?v=M7lc1UVf-VE"),
         )
 
@@ -395,7 +395,7 @@ class TestPostprocessEntry:
 
     def test_uses_postprocessed_references(self, plugin: youtube.Plugin) -> None:
         reference = Reference(
-            semantics=ReferenceSemantics.video,
+            kind=ReferenceKind.video,
             url=str_to_absolute_url("https://example.com/video.mp4"),
         )
         entry = p_make.fake_entry_info(body="Video", references=[reference])

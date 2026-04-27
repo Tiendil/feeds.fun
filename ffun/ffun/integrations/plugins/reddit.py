@@ -9,7 +9,7 @@ from ffun.domain.entities import UnknownUrl
 from ffun.domain.urls import construct_f_url, normalize_classic_unknown_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
-from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.library.entities import Reference, ReferenceKind
 from ffun.parsers import entities as p_entities
 
 logger = logging.get_module_logger()
@@ -29,7 +29,7 @@ def _rewrite_preview_image_reference(reference: Reference) -> Reference:
     #
     # into: https://i.redd.it/<asset-id>.<ext>
 
-    if reference.semantics != ReferenceSemantics.image:
+    if reference.kind != ReferenceKind.image:
         return reference
 
     f_url = construct_f_url(reference.url)

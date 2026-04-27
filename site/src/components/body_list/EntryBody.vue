@@ -64,7 +64,7 @@
 
   const coverReference = computed(() => {
     for (const reference of properties.references) {
-      if (reference.semantics !== e.ReferenceSemantics.Video) {
+      if (reference.kind !== e.ReferenceKind.Video) {
         continue;
       }
 
@@ -74,7 +74,7 @@
     }
 
     for (const reference of properties.references) {
-      if (reference.semantics === e.ReferenceSemantics.Image) {
+      if (reference.kind === e.ReferenceKind.Image) {
         return reference;
       }
     }
@@ -83,6 +83,6 @@
   });
 
   const hasImageCover = computed(() => {
-    return coverReference.value?.semantics === e.ReferenceSemantics.Image;
+    return coverReference.value?.kind === e.ReferenceKind.Image;
   });
 </script>
