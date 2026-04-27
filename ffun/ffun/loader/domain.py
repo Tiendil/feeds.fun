@@ -23,6 +23,23 @@ decode_content = operations.decode_content
 parse_content = operations.parse_content
 
 
+async def load_decoded_content(
+    feed_url: FeedUrl,
+    headers: dict[str, str] | None = None,
+    none_on_error: bool = True,
+) -> str | None:
+    try:
+        response = await load_content_with_proxies(feed_url, headers=headers)
+        return await decode_content(response)
+    except errors.LoadError as e:
+        logger.info("load_decoded_content_error", url=feed_url, error_code=e.feed_error_code)
+
+        if none_on_error:
+            return None
+
+        raise
+
+
 # TODO: tests
 async def load_content_with_proxies(  # noqa: CCR001
     url: FeedUrl,

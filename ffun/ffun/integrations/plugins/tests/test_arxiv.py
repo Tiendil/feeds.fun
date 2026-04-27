@@ -2,11 +2,9 @@ import pytest
 from pytest_mock import MockerFixture
 
 from ffun.domain.urls import str_to_absolute_url, str_to_feed_url
-from ffun.feeds.entities import FeedError
 from ffun.feeds_discoverer.tests import make as fd_make
 from ffun.integrations.plugins import arxiv
 from ffun.library.entities import Reference, ReferenceSemantics
-from ffun.loader import errors as lo_errors
 from ffun.parsers.tests import make as p_make
 
 
@@ -54,7 +52,7 @@ class TestDiscoverFeedUrls:
     ) -> None:
         context = fd_make.context("https://arxiv.org/abs/2501.00001")
 
-        async def fake_load_page_content(url: object) -> str | None:
+        async def fake_load_decoded_content(url: object) -> str | None:
             assert url == "https://arxiv.org/abs/2501.00001"
             return """
                 <h1>Title: Example paper</h1>
@@ -62,7 +60,7 @@ class TestDiscoverFeedUrls:
                 <div>Cite as: arXiv:2501.00001 [cs.AI]</div>
             """
 
-        mocker.patch.object(arxiv, "_load_page_content", side_effect=fake_load_page_content)
+        mocker.patch.object(arxiv.lo_domain, "load_decoded_content", side_effect=fake_load_decoded_content)
 
         new_context, result = await plugin.discover_feed_urls(context)
 
@@ -80,7 +78,7 @@ class TestDiscoverFeedUrls:
     ) -> None:
         context = fd_make.context("https://arxiv.org")
 
-        async def fake_load_page_content(url: object) -> str | None:
+        async def fake_load_decoded_content(url: object) -> str | None:
             assert url == "https://arxiv.org"
             return """
                 <ul>
@@ -90,7 +88,7 @@ class TestDiscoverFeedUrls:
                 </ul>
             """
 
-        mocker.patch.object(arxiv, "_load_page_content", side_effect=fake_load_page_content)
+        mocker.patch.object(arxiv.lo_domain, "load_decoded_content", side_effect=fake_load_decoded_content)
 
         new_context, result = await plugin.discover_feed_urls(context)
 
@@ -108,7 +106,7 @@ class TestDiscoverFeedUrls:
     ) -> None:
         context = fd_make.context("https://arxiv.org/abs/2604.21691")
 
-        async def fake_load_page_content(url: object) -> str | None:
+        async def fake_load_decoded_content(url: object) -> str | None:
             assert url == "https://arxiv.org/abs/2604.21691"
             return """
                 <div>Subjects: Machine Learning (cs.LG); Machine Learning (stat.ML)</div>
@@ -120,7 +118,7 @@ class TestDiscoverFeedUrls:
                 </nav>
             """
 
-        mocker.patch.object(arxiv, "_load_page_content", side_effect=fake_load_page_content)
+        mocker.patch.object(arxiv.lo_domain, "load_decoded_content", side_effect=fake_load_decoded_content)
 
         new_context, result = await plugin.discover_feed_urls(context)
 
@@ -234,35 +232,6 @@ class TestExtractSectionsFromPageContent:
         """
 
         assert arxiv._extract_sections_from_page_content(content) == {"cs.LG"}
-
-
-class TestLoadPageContent:
-    @pytest.mark.asyncio
-    async def test_returns_decoded_content(self, mocker: MockerFixture) -> None:
-        async def fake_load_content_with_proxies(url: object) -> object:
-            assert url == "https://arxiv.org/abs/2604.21691"
-            return object()
-
-        async def fake_decode_content(response: object) -> str:
-            assert response is not None
-            return "<html>content</html>"
-
-        mocker.patch.object(arxiv.lo_domain, "load_content_with_proxies", side_effect=fake_load_content_with_proxies)
-        mocker.patch.object(arxiv.lo_domain, "decode_content", side_effect=fake_decode_content)
-
-        assert await arxiv._load_page_content(str_to_feed_url("https://arxiv.org/abs/2604.21691")) == (
-            "<html>content</html>"
-        )
-
-    @pytest.mark.asyncio
-    async def test_returns_none_on_load_error(self, mocker: MockerFixture) -> None:
-        async def fake_load_content_with_proxies(url: object) -> object:
-            assert url == "https://arxiv.org/abs/2604.21691"
-            raise lo_errors.LoadError(feed_error_code=FeedError.network_connection_timeout)
-
-        mocker.patch.object(arxiv.lo_domain, "load_content_with_proxies", side_effect=fake_load_content_with_proxies)
-
-        assert await arxiv._load_page_content(str_to_feed_url("https://arxiv.org/abs/2604.21691")) is None
 
 
 class TestAddFeedUrlsToContext:

@@ -2,14 +2,12 @@ import re
 
 from bs4 import BeautifulSoup
 
-from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import construct_f_url, normalize_classic_unknown_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
 from ffun.library.entities import Reference, ReferenceSemantics
 from ffun.loader import domain as lo_domain
-from ffun.loader import errors as lo_errors
 from ffun.parsers import entities as p_entities
 
 _BODY_PREFIX_RE = re.compile(r"^arXiv:[^\s]+\s+Announce Type:\s+[^\s]+\s+Abstract:\s*")
@@ -20,8 +18,6 @@ _ARXIV_PAGE_HOSTS = {"arxiv.org", "www.arxiv.org"}
 _ARXIV_RSS_HOST = "rss.arxiv.org"
 _ARXIV_RSS_PATH_PREFIX = "rss"
 _ARXIV_FEED_URL_TEMPLATE = "https://rss.arxiv.org/rss/{section}"
-
-logger = logging.get_module_logger()
 
 
 def _build_pdf_reference(entry_link: AbsoluteUrl) -> Reference | None:
@@ -115,15 +111,6 @@ def _extract_sections_from_page_content(content: str) -> set[str]:
     return sections
 
 
-async def _load_page_content(url: FeedUrl) -> str | None:
-    try:
-        response = await lo_domain.load_content_with_proxies(url)
-        return await lo_domain.decode_content(response)
-    except lo_errors.LoadError:
-        logger.info("discovering_arxiv_cannot_access_page", url=url)
-        return None
-
-
 def _add_feed_urls_to_context(context: fd_entities.Context, sections: set[str]) -> fd_entities.Context:
     return context.replace(candidate_urls=context.candidate_urls | _build_feed_urls(sections))
 
@@ -150,7 +137,7 @@ class Plugin(BasePlugin):
         if f_url.host not in _ARXIV_PAGE_HOSTS:
             return context, None
 
-        content = await _load_page_content(context.url)
+        content = await lo_domain.load_decoded_content(context.url)
 
         if content is None:
             return context, None
