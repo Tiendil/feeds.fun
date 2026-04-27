@@ -228,6 +228,7 @@ def _postprocess_reference(reference: Reference) -> Reference:
 
 class Plugin(BasePlugin):
     __slots__ = ("_channel_feed_url",)
+    source_name = "YouTube"
 
     def __init__(self, channel_feed_url: str):
         self._channel_feed_url = channel_feed_url

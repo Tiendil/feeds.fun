@@ -51,6 +51,7 @@ class Plugin(BasePlugin):
         "_owner_repo_branch_feed_urls",
         "_owner_repo_discussion_category_feed_urls",
     )
+    source_name = "GitHub"
 
     def __init__(  # noqa: CFQ002
         self,

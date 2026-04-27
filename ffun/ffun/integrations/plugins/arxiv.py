@@ -56,6 +56,7 @@ def _append_new_references(entry: p_entities.EntryInfo, references: list[Referen
 
 class Plugin(BasePlugin):
     __slots__ = ()
+    source_name = "ArXiv"
 
     def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
         return entry.replace(

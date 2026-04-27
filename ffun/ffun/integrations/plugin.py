@@ -1,9 +1,13 @@
+from types import NotImplementedType
+from typing import ClassVar
+
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.parsers import entities as p_entities
 
 
 class Plugin:
     __slots__ = ()
+    source_name: ClassVar[str | NotImplementedType] = NotImplemented
 
     @property
     def supports_discovery(self) -> bool:

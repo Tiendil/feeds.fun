@@ -87,6 +87,7 @@ def _unwrap_body_with_image_table(body: str) -> str:
 
 class Plugin(BasePlugin):
     __slots__ = ("_path_prefix_regex", "_domains", "_domains_to_skip")
+    source_name = "Reddit"
 
     def __init__(self, path_prefix_regex: str, domains: list[str], domains_to_skip: list[str]):
         self._path_prefix_regex = re.compile(path_prefix_regex)
