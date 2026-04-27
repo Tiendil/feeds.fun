@@ -84,14 +84,15 @@ async def _discover_load_url(context: Context) -> DiscoverResult:
     visited_urls.add(context.url)
 
     try:
-        response = await lo_domain.load_content_with_proxies(context.url)
-        content = await lo_domain.decode_content(response)
+        content = await lo_domain.load_decoded_content(context.url, none_on_error=False)
     except lo_errors.LoadError:
         logger.info("can_not_access_content")
         return context, Result(feeds=[], status=Status.cannot_access_url)
     except Exception:
         logger.exception("unexpected_error_while_parsing_feed")
         return context, Result(feeds=[], status=Status.cannot_access_url)
+
+    assert content is not None
 
     logger.info("discovering_content_loaded", url=context.url, content_size=len(content))
 
