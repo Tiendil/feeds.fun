@@ -232,6 +232,12 @@
       </div>
     </main-block>
 
+    <main-header-line> Advanced support for popular sources </main-header-line>n
+
+    <main-block v-if="settings.hasCollections">
+      <!-- TODO -->
+    </main-block>
+
     <main-header-line> Here, take a peek </main-header-line>
     <div class="text-center p-5">
       <img
