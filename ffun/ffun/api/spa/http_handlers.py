@@ -22,6 +22,7 @@ from ffun.feeds_collections.collections import collections
 from ffun.feeds_discoverer import domain as fd_domain
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.feeds_links import domain as fl_domain
+from ffun.integrations.settings import settings as integrations_settings
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
 from ffun.markers import domain as m_domain
@@ -248,6 +249,26 @@ async def api_get_collection_feeds(request: entities.GetCollectionFeedsRequest) 
     feeds = [entities.CollectionFeedInfo.from_internal(feed_info) for feed_info in collection.feeds]
 
     return entities.GetCollectionFeedsResponse(feeds=feeds)
+
+
+@api_public.post("/get-integrations")  # type: ignore
+async def api_get_integrations(request: entities.GetIntegrationsRequest) -> entities.GetIntegrationsResponse:
+    integrations = []
+
+    for integration in integrations_settings.integrations:
+        plugin = integration.plugin_instance
+
+        assert isinstance(plugin.source_name, str)
+
+        integrations.append(
+            entities.IntegrationInfo(
+                name=plugin.source_name,
+                discovery=plugin.supports_discovery,
+                postprocessing=plugin.supports_entry_postprocessing,
+            )
+        )
+
+    return entities.GetIntegrationsResponse(integrations=integrations)
 
 
 @api_public.post("/get-tags-info")  # type: ignore

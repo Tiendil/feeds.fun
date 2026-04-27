@@ -367,6 +367,12 @@ class CollectionFeedInfo(pydantic.BaseModel):
         return cls(url=record.url, title=record.title, description=record.description, id=record.feed_id)
 
 
+class IntegrationInfo(pydantic.BaseModel):
+    name: str
+    discovery: bool
+    postprocessing: bool
+
+
 ##################
 # Request/Response
 ##################
@@ -531,6 +537,14 @@ class GetCollectionFeedsRequest(api.APIRequest):
 
 class GetCollectionFeedsResponse(api.APISuccess):
     feeds: list[CollectionFeedInfo]
+
+
+class GetIntegrationsRequest(api.APIRequest):
+    pass
+
+
+class GetIntegrationsResponse(api.APISuccess):
+    integrations: list[IntegrationInfo]
 
 
 class SubscribeToCollectionsRequest(api.APIRequest):

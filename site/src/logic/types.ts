@@ -600,6 +600,44 @@ export function collectionFeedInfoFromJSON({
   });
 }
 
+export class IntegrationInfo {
+  readonly name: string;
+  readonly discovery: boolean;
+  readonly postprocessing: boolean;
+
+  constructor({
+    name,
+    discovery,
+    postprocessing
+  }: {
+    name: string;
+    discovery: boolean;
+    postprocessing: boolean;
+  }) {
+    this.name = name;
+    this.discovery = discovery;
+    this.postprocessing = postprocessing;
+  }
+}
+
+export type RawIntegrationInfo = {
+  name: string;
+  discovery: boolean;
+  postprocessing: boolean;
+};
+
+export function integrationInfoFromJSON({
+  name,
+  discovery,
+  postprocessing
+}: RawIntegrationInfo): IntegrationInfo {
+  return new IntegrationInfo({
+    name: name,
+    discovery: discovery,
+    postprocessing: postprocessing
+  });
+}
+
 export class ApiMessage {
   readonly type: string;
   readonly code: string;
