@@ -1,5 +1,7 @@
 <template>
-  <div class="mx-2">
+  <div
+    v-if="hasRows"
+    class="mx-2">
     <div class="overflow-hidden rounded-xl border bg-slate-100">
       <div class="overflow-x-auto">
         <table class="min-w-full table-fixed border-collapse text-left">
@@ -112,6 +114,10 @@
 
   const showToggleButton = computed(() => {
     return rows.value.length > alwaysVisibleRowsCount;
+  });
+
+  const hasRows = computed(() => {
+    return rows.value.length > 0;
   });
 </script>
 
