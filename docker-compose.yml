@@ -290,6 +290,7 @@ services:
       VITE_FFUN_CRM_IMPRESSUM: "${FFUN_CRM_IMPRESSUM:-not-specified}"
 
       VITE_FFUN_HAS_COLLECTIONS: "true"
+      VITE_FFUN_HAS_INTEGRATIONS: "true"
 
     networks:
       ffun_network: {}

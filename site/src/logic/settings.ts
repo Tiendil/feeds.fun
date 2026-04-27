@@ -23,6 +23,7 @@ export const crmPrivacy = import.meta.env.VITE_FFUN_CRM_PRIVACY || null;
 export const crmImpressum = import.meta.env.VITE_FFUN_CRM_IMPRESSUM || null;
 
 export const hasCollections = import.meta.env.VITE_FFUN_HAS_COLLECTIONS == "true" || false;
+export const hasIntegrations = import.meta.env.VITE_FFUN_HAS_INTEGRATIONS == "true" || false;
 
 function jsonOrDefault<T>(value: string | undefined, defaultValue: T): T {
   if (!value) return defaultValue;

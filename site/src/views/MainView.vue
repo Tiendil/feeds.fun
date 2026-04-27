@@ -232,9 +232,9 @@
       </div>
     </main-block>
 
-    <main-header-line> Advanced support for popular sources </main-header-line>n
+    <main-header-line v-if="settings.hasIntegrations"> Advanced support for popular sources </main-header-line>n
 
-    <main-block v-if="settings.hasCollections">
+    <main-block v-if="settings.hasIntegrations">
       <!-- TODO -->
     </main-block>
 
