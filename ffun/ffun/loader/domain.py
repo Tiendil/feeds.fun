@@ -38,6 +38,13 @@ async def load_decoded_content(
             return None
 
         raise
+    except Exception:
+        logger.exception("unexpected_error_while_loading_decoded_content", url=feed_url)
+
+        if none_on_error:
+            return None
+
+        raise
 
 
 # TODO: tests
