@@ -224,18 +224,14 @@
       <div
         v-if="showMoreCollectionsButtonRequired"
         class="mt-4 text-center">
-        <button
-          class="ffun-main-button short"
-          @click="showAllCollections = !showAllCollections">
-          {{ showAllCollections ? "Show less" : "Show more" }}
-        </button>
+        <main-show-more-button v-model:expanded="showAllCollections" />
       </div>
     </main-block>
 
-    <main-header-line v-if="settings.hasIntegrations"> Advanced support for popular sources </main-header-line>n
+    <main-header-line v-if="settings.hasIntegrations"> Advanced support for popular sources </main-header-line>
 
     <main-block v-if="settings.hasIntegrations">
-      <!-- TODO -->
+      <main-integrations-table />
     </main-block>
 
     <main-header-line> Here, take a peek </main-header-line>
