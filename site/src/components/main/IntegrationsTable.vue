@@ -58,16 +58,16 @@
               <td class="cell cell-icon">
                 <div class="icon-badge">
                   <icon
-                    :icon="row.discoverySupported ? 'check' : 'x'"
-                    :class="row.discoverySupported ? 'text-blue-700' : 'text-slate-400'" />
+                    :icon="row.discovery ? 'check' : 'x'"
+                    :class="row.discovery ? 'text-blue-700' : 'text-slate-400'" />
                 </div>
               </td>
 
               <td class="cell cell-icon">
                 <div class="icon-badge">
                   <icon
-                    :icon="row.cleanupSupported ? 'check' : 'x'"
-                    :class="row.cleanupSupported ? 'text-blue-700' : 'text-slate-400'" />
+                    :icon="row.postprocessing ? 'check' : 'x'"
+                    :class="row.postprocessing ? 'text-blue-700' : 'text-slate-400'" />
                 </div>
               </td>
 
@@ -90,35 +90,28 @@
 
 <script lang="ts" setup>
   import {computed, ref} from "vue";
+  import {useIntegrationsStore} from "@/stores/integrations";
 
-  type IntegrationRow = {
-    name: string;
-    discoverySupported: boolean;
-    cleanupSupported: boolean;
-  };
-
-  const rows: IntegrationRow[] = [
-    {name: "ArXiv", discoverySupported: false, cleanupSupported: true},
-    {name: "Reddit", discoverySupported: true, cleanupSupported: true},
-    {name: "GitHub", discoverySupported: true, cleanupSupported: true},
-    {name: "YouTube", discoverySupported: true, cleanupSupported: true},
-    {name: "Hacker News", discoverySupported: false, cleanupSupported: true}
-  ];
+  const integrations = useIntegrationsStore();
 
   const alwaysVisibleRowsCount = 3;
 
   const showAllRows = ref(false);
 
+  const rows = computed(() => {
+    return [...integrations.integrations].sort((a, b) => a.name.localeCompare(b.name));
+  });
+
   const visibleRows = computed(() => {
     if (showAllRows.value) {
-      return rows;
+      return rows.value;
     }
 
-    return rows.slice(0, alwaysVisibleRowsCount);
+    return rows.value.slice(0, alwaysVisibleRowsCount);
   });
 
   const showToggleButton = computed(() => {
-    return rows.length > alwaysVisibleRowsCount;
+    return rows.value.length > alwaysVisibleRowsCount;
   });
 </script>
 
