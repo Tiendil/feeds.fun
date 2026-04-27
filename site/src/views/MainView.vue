@@ -10,7 +10,7 @@
 
     <main-block>
       <h1 class="m-0 text-5xl">Feeds Fun</h1>
-      <p class="mt-2 text-2xl">Transparent & Personalized News</p>
+      <p class="mt-2 text-2xl">Personalized News You Control</p>
 
       <div class="h-12 grid grid-flow-col auto-cols-fr gap-3 w-max mx-auto">
         <a
