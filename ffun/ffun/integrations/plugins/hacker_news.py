@@ -39,6 +39,7 @@ def _swap_link_and_comments(
 
 class Plugin(BasePlugin):
     __slots__ = ("_original_hosts",)
+    supports_discovery = True
 
     def __init__(self, original_hosts: list[str]):
         self._original_hosts = tuple(original_hosts)
