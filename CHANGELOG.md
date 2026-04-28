@@ -10,6 +10,10 @@ No changes.
 
 ## 1.26.0 on 2026-04-28
 
+### Migration
+
+1. Run migrations `ffun migrate`
+
 ### Changes
 
 - ff-624 — Implemented support for integration plugins to improve the interaction of Feeds Fun with feed sources
