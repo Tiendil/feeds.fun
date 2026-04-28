@@ -33,7 +33,7 @@
 
         <div
           v-if="text"
-          class="prose max-w-none"
+          class="ffun-entry-body prose max-w-none"
           v-html="text" />
 
         <div
@@ -86,3 +86,11 @@
     return coverReference.value?.kind === e.ReferenceKind.Image;
   });
 </script>
+
+<style scoped>
+  .ffun-entry-body :deep(iframe) {
+    @apply block w-full max-w-full;
+    aspect-ratio: 16 / 9;
+    height: auto;
+  }
+</style>

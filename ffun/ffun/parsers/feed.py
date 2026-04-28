@@ -4,6 +4,7 @@ import time
 from typing import Iterable, Mapping, Protocol, cast
 
 import feedparser
+from feedparser.sanitizer import _HTMLSanitizer
 
 from ffun.core import logging, utils
 from ffun.domain import urls
@@ -14,6 +15,11 @@ from ffun.parsers import errors
 from ffun.parsers.entities import EntryInfo, FeedInfo
 
 logger = logging.get_module_logger()
+
+
+# IMPORTANT: For now we sanitize iframes on the frontend side.
+#            Later we'll move purification to the backend (see https://github.com/Tiendil/feeds.fun/issues/514).
+_HTMLSanitizer.acceptable_elements.add("iframe")  # type: ignore[misc]
 
 
 # Known feedparser issues:

@@ -1,6 +1,7 @@
 import _ from "lodash";
 import type * as t from "@/logic/types";
 import DOMPurify from "dompurify";
+import * as iframeSanitizer from "@/logic/iframeSanitizer";
 
 const REQUIRED_LINK_ATTRIBUTES = {
   target: "_blank",
@@ -136,13 +137,14 @@ export function purifyBody({raw, default_}: {raw: string | null; default_: strin
     return default_;
   }
 
-  let body = DOMPurify.sanitize(raw).trim();
+  let body = DOMPurify.sanitize(raw, iframeSanitizer.DOM_PURIFY_IFRAME_OPTIONS).trim();
 
   if (body.length === 0) {
     return default_;
   }
 
   body = removeInterferingAttributes(body);
+  body = iframeSanitizer.sanitizeIframes(body);
   body = hardenLinksSecurityAttributes(body);
 
   return body;

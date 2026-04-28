@@ -263,6 +263,52 @@ class TestParseFeed:
         assert result is not None
         assert result.entries == []
 
+    def test_preserves_iframe_markup_for_frontend_sanitizer(self, feed_url: FeedUrl) -> None:
+        result = parse_feed(
+            """
+            <rss version="2.0">
+              <channel>
+                <title>Title</title>
+                <description>Description</description>
+                <item>
+                  <title>Entry</title>
+                  <link>https://example.com/entry</link>
+                  <description><![CDATA[
+                    <p>Before</p>
+                    <iframe src="https://www.youtube.com/embed/video-id"
+                            width="560"
+                            height="315"
+                            title="Video"
+                            sandbox="allow-top-navigation"></iframe>
+                    <iframe src="https://www.youtube.com/embed/srcdoc-video-id"
+                            srcdoc="<p>HTML</p>"
+                            sandbox="allow-top-navigation"></iframe>
+                    <script>alert(1)</script>
+                    <p>After</p>
+                  ]]></description>
+                </item>
+              </channel>
+            </rss>
+            """,
+            feed_url,
+            url_to_source_uid(feed_url),
+        )
+
+        assert result is not None
+        assert len(result.entries) == 1
+        body = result.entries[0].body
+
+        assert "<iframe" in body
+        assert 'src="https://www.youtube.com/embed/video-id"' in body
+        assert 'width="560"' in body
+        assert 'height="315"' in body
+        assert 'title="Video"' in body
+        assert 'srcdoc="' not in body
+        assert 'src="https://www.youtube.com/embed/srcdoc-video-id"' in body
+        assert "sandbox" not in body
+        assert "<script" not in body
+        assert "alert(1)" not in body
+
 
 class TestExtractPublishedAt:
 

@@ -84,6 +84,48 @@ describe("purifyBody", () => {
     expect(purified).toContain('rel="noopener noreferrer nofollow"');
     expect(purified).toContain('referrerpolicy="strict-origin-when-cross-origin"');
   });
+
+  it("keeps sanitized allowlisted iframes", () => {
+    const raw = `
+      <iframe
+        src="https://www.youtube.com/embed/video-id"
+        width="560"
+        height="315"
+        title="Video title"
+        class="video"
+        allow="camera"
+        sandbox="allow-top-navigation">
+      </iframe>
+    `;
+
+    const purified = purifyBody({raw, default_: "No description"});
+    const parsed = new DOMParser().parseFromString(purified, "text/html");
+    const iframe = parsed.body.querySelector("iframe");
+
+    expect(iframe?.getAttribute("src")).toBe("https://www.youtube-nocookie.com/embed/video-id");
+    expect(iframe?.getAttribute("title")).toBe("Video title");
+    expect(iframe?.getAttribute("loading")).toBe("lazy");
+    expect(iframe?.getAttribute("referrerpolicy")).toBe("strict-origin-when-cross-origin");
+    expect(iframe?.getAttribute("sandbox")).toBe(
+      "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+    );
+    expect(iframe?.getAttribute("allow")).toBe("fullscreen; picture-in-picture; encrypted-media");
+    expect(iframe?.hasAttribute("allowfullscreen")).toBe(true);
+    expect(iframe?.hasAttribute("width")).toBe(false);
+    expect(iframe?.hasAttribute("height")).toBe(false);
+    expect(iframe?.hasAttribute("class")).toBe(false);
+  });
+
+  it("strips srcdoc from sanitized iframes", () => {
+    const raw = '<iframe src="https://www.youtube-nocookie.com/embed/video-id" srcdoc="<p>HTML</p>"></iframe>';
+
+    const purified = purifyBody({raw, default_: "No description"});
+    const parsed = new DOMParser().parseFromString(purified, "text/html");
+    const iframe = parsed.body.querySelector("iframe");
+
+    expect(iframe?.getAttribute("src")).toBe("https://www.youtube-nocookie.com/embed/video-id");
+    expect(iframe?.hasAttribute("srcdoc")).toBe(false);
+  });
 });
 
 describe("purifyTitle", () => {
