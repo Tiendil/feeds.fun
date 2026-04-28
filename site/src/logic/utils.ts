@@ -1,12 +1,40 @@
 import _ from "lodash";
 import type * as t from "@/logic/types";
 import DOMPurify from "dompurify";
+import * as iframeSanitizer from "@/logic/iframeSanitizer";
 
 const REQUIRED_LINK_ATTRIBUTES = {
   target: "_blank",
   rel: "noopener noreferrer nofollow",
   referrerpolicy: "strict-origin-when-cross-origin"
 } as const;
+
+const INTERFERING_BODY_ATTRIBUTES = new Set(["class", "id", "style"]);
+
+const INTERFERING_BODY_ATTRIBUTE_PREFIXES = ["data-"];
+
+function isInterferingBodyAttribute(attributeName: string) {
+  if (INTERFERING_BODY_ATTRIBUTES.has(attributeName)) {
+    return true;
+  }
+
+  return INTERFERING_BODY_ATTRIBUTE_PREFIXES.some((prefix) => attributeName.startsWith(prefix));
+}
+
+function removeInterferingAttributes(html: string) {
+  const parsed = new DOMParser().parseFromString(html, "text/html");
+  const elements = parsed.body.querySelectorAll("*");
+
+  for (const element of elements) {
+    for (const attribute of Array.from(element.attributes)) {
+      if (isInterferingBodyAttribute(attribute.name)) {
+        element.removeAttribute(attribute.name);
+      }
+    }
+  }
+
+  return parsed.body.innerHTML;
+}
 
 function hardenLinksSecurityAttributes(html: string) {
   const parsed = new DOMParser().parseFromString(html, "text/html");
@@ -109,12 +137,14 @@ export function purifyBody({raw, default_}: {raw: string | null; default_: strin
     return default_;
   }
 
-  let body = DOMPurify.sanitize(raw).trim();
+  let body = DOMPurify.sanitize(raw, iframeSanitizer.DOM_PURIFY_IFRAME_OPTIONS).trim();
 
   if (body.length === 0) {
     return default_;
   }
 
+  body = removeInterferingAttributes(body);
+  body = iframeSanitizer.sanitizeIframes(body);
   body = hardenLinksSecurityAttributes(body);
 
   return body;

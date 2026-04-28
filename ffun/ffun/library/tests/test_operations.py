@@ -27,7 +27,7 @@ from ffun.feeds.entities import Feed
 from ffun.feeds.tests import make as f_make
 from ffun.library import errors
 from ffun.library.domain import get_entry
-from ffun.library.entities import CollectedEntry, Entry, FeedEntryLink, Reference, ReferenceSemantics
+from ffun.library.entities import CollectedEntry, Entry, FeedEntryLink, Reference, ReferenceKind
 from ffun.library.operations import (
     _catalog_entry,
     all_entries_iterator,
@@ -70,7 +70,7 @@ def _to_collected_entries(entries: Iterable[Entry]) -> list[CollectedEntry]:
 def _sample_references() -> list[Reference]:
     return [
         Reference(
-            semantics=ReferenceSemantics.video,
+            kind=ReferenceKind.video,
             url=str_to_absolute_url("https://example.com/video"),
             title="Example video",
             mime_type="video/mp4",
@@ -81,7 +81,7 @@ def _sample_references() -> list[Reference]:
             extra={"provider_id": "video-1", "part": 1},
         ),
         Reference(
-            semantics=ReferenceSemantics.comments,
+            kind=ReferenceKind.comments,
             url=str_to_absolute_url("https://example.com/comments"),
         ),
     ]

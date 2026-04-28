@@ -29,14 +29,14 @@
   const {width: imageWidth} = useElementSize(imageElement);
 
   const youtubeVideoId = computed(() => {
-    if (properties.reference.semantics !== e.ReferenceSemantics.Video) {
+    if (properties.reference.kind !== e.ReferenceKind.Video) {
       return null;
     }
 
     return properties.reference.youtubeId();
   });
 
-  const isImage = computed(() => properties.reference.semantics === e.ReferenceSemantics.Image);
+  const isImage = computed(() => properties.reference.kind === e.ReferenceKind.Image);
   const shouldWrapImage = computed(() => {
     if (!isImage.value) {
       return false;
@@ -62,7 +62,7 @@
   });
 
   const imageStyle = computed(() => {
-    if (properties.reference.semantics !== e.ReferenceSemantics.Image) {
+    if (properties.reference.kind !== e.ReferenceKind.Image) {
       return null;
     }
 

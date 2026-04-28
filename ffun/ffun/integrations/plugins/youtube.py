@@ -3,14 +3,12 @@ import re
 
 import markdown  # type: ignore
 
-from ffun.core import logging
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, UnknownUrl
 from ffun.domain.urls import adjust_classic_relative_url, construct_f_url, normalize_classic_unknown_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
-from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.library.entities import Reference, ReferenceKind
 from ffun.loader import domain as lo_domain
-from ffun.loader import errors as lo_errors
 from ffun.parsers import entities as p_entities
 
 _BARE_URL_RE = re.compile(r'(?<!\()(?<!<)(?<!")(?P<url>https?://[^\s<]+)')
@@ -30,8 +28,6 @@ _YOUTUBE_PATH_PREFIXES = {"embed", "e", "live", "shorts", "v"}
 # YouTube can answer channel pages with a consent interstitial instead of the real page.
 # Sending SOCS=CAI opts into the non-interstitial response so we can extract channel ids.
 _YOUTUBE_DISCOVERY_HEADERS = {"Cookie": "SOCS=CAI"}
-
-logger = logging.get_module_logger()
 
 DEFAULT_CHANNEL_FEED_URL = "https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}"
 _YOUTUBE_ROOT_URL = normalize_classic_unknown_url(UnknownUrl("https://www.youtube.com"))
@@ -145,15 +141,6 @@ def _build_feed_urls_for_channel_ids(channel_ids: set[str], channel_feed_url: st
     return feed_urls
 
 
-async def _load_page_content(url: FeedUrl) -> str | None:
-    try:
-        response = await lo_domain.load_content_with_proxies(url, headers=_YOUTUBE_DISCOVERY_HEADERS)
-        return await lo_domain.decode_content(response)
-    except lo_errors.LoadError:
-        logger.info("discovering_youtube_cannot_access_channel_page", url=url)
-        return None
-
-
 def _normalize_nested_youtube_url(url: str) -> AbsoluteUrl | None:
     if url.startswith("/"):
         assert _YOUTUBE_ROOT_URL is not None
@@ -208,7 +195,7 @@ def _extract_youtube_video_id_from_url(url: AbsoluteUrl, *, _depth: int = 0) -> 
 
 
 def _postprocess_reference(reference: Reference) -> Reference:
-    if reference.semantics != ReferenceSemantics.video:
+    if reference.kind != ReferenceKind.video:
         return reference
 
     youtube_id = _extract_youtube_video_id_from_url(reference.url)
@@ -228,6 +215,7 @@ def _postprocess_reference(reference: Reference) -> Reference:
 
 class Plugin(BasePlugin):
     __slots__ = ("_channel_feed_url",)
+    source_name = "YouTube"
 
     def __init__(self, channel_feed_url: str):
         self._channel_feed_url = channel_feed_url
@@ -240,7 +228,7 @@ class Plugin(BasePlugin):
         if page_kind not in {YouTubePageKind.video, YouTubePageKind.channel}:
             return context, None
 
-        content = await _load_page_content(context.url)
+        content = await lo_domain.load_decoded_content(context.url, headers=_YOUTUBE_DISCOVERY_HEADERS)
 
         if content is None:
             return context, None

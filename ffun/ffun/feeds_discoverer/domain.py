@@ -11,6 +11,7 @@ from ffun.domain.urls import (
     adjust_external_url,
     filter_out_duplicated_urls,
     get_parent_url,
+    host_to_registered_domain,
     normalize_classic_unknown_url,
     to_feed_url,
     url_has_extension,
@@ -83,14 +84,15 @@ async def _discover_load_url(context: Context) -> DiscoverResult:
     visited_urls.add(context.url)
 
     try:
-        response = await lo_domain.load_content_with_proxies(context.url)
-        content = await lo_domain.decode_content(response)
+        content = await lo_domain.load_decoded_content(context.url, none_on_error=False)
     except lo_errors.LoadError:
         logger.info("can_not_access_content")
         return context, Result(feeds=[], status=Status.cannot_access_url)
     except Exception:
         logger.exception("unexpected_error_while_parsing_feed")
         return context, Result(feeds=[], status=Status.cannot_access_url)
+
+    assert content is not None
 
     logger.info("discovering_content_loaded", url=context.url, content_size=len(content))
 
@@ -264,7 +266,16 @@ async def _discover_check_candidate_links(context: Context) -> DiscoverResult:  
 
     filtered_links = filter_out_duplicated_urls(context.candidate_urls)
 
-    filtered_links = [link for link in filtered_links if context.host == url_to_host(link)]
+    if not filtered_links:
+        return context, None
+
+    assert context.host is not None
+
+    current_registered_domain = host_to_registered_domain(context.host)
+
+    filtered_links = [
+        link for link in filtered_links if current_registered_domain == host_to_registered_domain(url_to_host(link))
+    ]
 
     tasks = []
 

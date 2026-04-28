@@ -171,6 +171,7 @@ class TestExistedRouteUrls:
             "/spa/api/public/get-entries-by-ids",
             "/spa/api/public/get-collections",
             "/spa/api/public/get-collection-feeds",
+            "/spa/api/public/get-integrations",
             "/spa/api/public/get-tags-info",
             "/spa/api/public/get-info",
             "/spa/api/public/track-event",

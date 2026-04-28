@@ -383,6 +383,15 @@ def url_to_host(url: AbsoluteUrl | FeedUrl) -> str:
     return host
 
 
+def host_to_registered_domain(host: str) -> str:
+    extracted = tldextract.extract(host)
+
+    if extracted.suffix == "":
+        return host
+
+    return f"{extracted.domain}.{extracted.suffix}"
+
+
 def url_has_extension(url: AbsoluteUrl, expected_extensions: list[str]) -> bool:
     f_url = construct_f_url(url)
 

@@ -1,6 +1,6 @@
 from ffun.domain.urls import construct_f_url
 from ffun.integrations.plugin import Plugin as BasePlugin
-from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.library.entities import Reference, ReferenceKind
 from ffun.parsers import entities as p_entities
 
 DEFAULT_ORIGINAL_HOSTS = ("news.ycombinator.com",)
@@ -12,7 +12,7 @@ def _swap_link_and_comments(
     comments_reference = None
 
     for reference in entry.references:
-        if reference.semantics == ReferenceSemantics.comments:
+        if reference.kind == ReferenceKind.comments:
             comments_reference = reference
             break
 
@@ -26,7 +26,7 @@ def _swap_link_and_comments(
         return entry
 
     page_reference = Reference(
-        semantics=ReferenceSemantics.page,
+        kind=ReferenceKind.page,
         url=original_url,
         title="Original article",
     )
@@ -39,6 +39,8 @@ def _swap_link_and_comments(
 
 class Plugin(BasePlugin):
     __slots__ = ("_original_hosts",)
+    source_name = "Hacker News"
+    supports_discovery = True
 
     def __init__(self, original_hosts: list[str]):
         self._original_hosts = tuple(original_hosts)

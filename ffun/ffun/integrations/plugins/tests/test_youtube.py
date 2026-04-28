@@ -1,12 +1,10 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from ffun.domain.urls import str_to_absolute_url, str_to_feed_url
-from ffun.feeds.entities import FeedError
+from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds_discoverer.tests import make as fd_make
 from ffun.integrations.plugins import youtube
-from ffun.library.entities import Reference, ReferenceSemantics
-from ffun.loader import errors as lo_errors
+from ffun.library.entities import Reference, ReferenceKind
 from ffun.parsers.tests import make as p_make
 
 
@@ -162,37 +160,6 @@ class TestNormalizeNestedYoutubeUrl:
         assert youtube._normalize_nested_youtube_url("not a url") is None
 
 
-class TestLoadPageContent:
-    @pytest.mark.asyncio
-    async def test_returns_decoded_content(self, mocker: MockerFixture) -> None:
-        async def fake_load_content_with_proxies(url: object, headers: object = None) -> object:
-            assert url == "https://www.youtube.com/watch?v=abc"
-            assert headers == youtube._YOUTUBE_DISCOVERY_HEADERS
-            return object()
-
-        async def fake_decode_content(response: object) -> str:
-            assert response is not None
-            return "<html>content</html>"
-
-        mocker.patch.object(youtube.lo_domain, "load_content_with_proxies", side_effect=fake_load_content_with_proxies)
-        mocker.patch.object(youtube.lo_domain, "decode_content", side_effect=fake_decode_content)
-
-        assert await youtube._load_page_content(str_to_feed_url("https://www.youtube.com/watch?v=abc")) == (
-            "<html>content</html>"
-        )
-
-    @pytest.mark.asyncio
-    async def test_returns_none_on_load_error(self, mocker: MockerFixture) -> None:
-        async def fake_load_content_with_proxies(url: object, headers: object = None) -> object:
-            assert url == "https://www.youtube.com/watch?v=abc"
-            assert headers == youtube._YOUTUBE_DISCOVERY_HEADERS
-            raise lo_errors.LoadError(feed_error_code=FeedError.network_connection_timeout)
-
-        mocker.patch.object(youtube.lo_domain, "load_content_with_proxies", side_effect=fake_load_content_with_proxies)
-
-        assert await youtube._load_page_content(str_to_feed_url("https://www.youtube.com/watch?v=abc")) is None
-
-
 class TestDiscoverFeedUrls:
     @pytest.mark.asyncio
     async def test_returns_context_without_changes_for_non_youtube_page(self, plugin: youtube.Plugin) -> None:
@@ -209,8 +176,9 @@ class TestDiscoverFeedUrls:
     ) -> None:
         context = fd_make.context("https://www.youtube.com/watch?v=abc")
 
-        async def fake_load_page_content(url: object) -> str | None:
+        async def fake_load_decoded_content(url: object, headers: object = None) -> str | None:
             assert url == "https://www.youtube.com/watch?v=abc"
+            assert headers == youtube._YOUTUBE_DISCOVERY_HEADERS
             return """
                 <html>
                     <script>
@@ -225,7 +193,7 @@ class TestDiscoverFeedUrls:
                 </html>
             """
 
-        mocker.patch.object(youtube, "_load_page_content", side_effect=fake_load_page_content)
+        mocker.patch.object(youtube.lo_domain, "load_decoded_content", side_effect=fake_load_decoded_content)
 
         new_context, result = await plugin.discover_feed_urls(context)
 
@@ -243,14 +211,15 @@ class TestDiscoverFeedUrls:
     ) -> None:
         context = fd_make.context("https://www.youtube.com/@feedsfun/videos")
 
-        async def fake_load_page_content(url: object) -> str | None:
+        async def fake_load_decoded_content(url: object, headers: object = None) -> str | None:
             assert url == "https://www.youtube.com/@feedsfun/videos"
+            assert headers == youtube._YOUTUBE_DISCOVERY_HEADERS
             return (
                 '<script>{"channelMetadataRenderer":{"externalId":"UC1234567890123456789012"},'
                 '"browseId":"UCrelated0000000000000000"}</script>'
             )
 
-        mocker.patch.object(youtube, "_load_page_content", side_effect=fake_load_page_content)
+        mocker.patch.object(youtube.lo_domain, "load_decoded_content", side_effect=fake_load_decoded_content)
 
         new_context, result = await plugin.discover_feed_urls(context)
 
@@ -267,11 +236,12 @@ class TestDiscoverFeedUrls:
     ) -> None:
         context = fd_make.context("https://www.youtube.com/@CainOnGames")
 
-        async def fake_load_page_content(url: object) -> str | None:
+        async def fake_load_decoded_content(url: object, headers: object = None) -> str | None:
             assert url == "https://www.youtube.com/@CainOnGames"
+            assert headers == youtube._YOUTUBE_DISCOVERY_HEADERS
             return '<script>{"channelMetadataRenderer":{"externalId":"UCTAfm-YD2M9xzvbYvRc5ttA"}}</script>'
 
-        mocker.patch.object(youtube, "_load_page_content", side_effect=fake_load_page_content)
+        mocker.patch.object(youtube.lo_domain, "load_decoded_content", side_effect=fake_load_decoded_content)
 
         new_context, result = await plugin.discover_feed_urls(context)
 
@@ -289,14 +259,15 @@ class TestDiscoverFeedUrls:
             candidate_urls={str_to_absolute_url("https://existing.example.com/feed.xml")},
         )
 
-        async def fake_load_page_content(url: object) -> str | None:
+        async def fake_load_decoded_content(url: object, headers: object = None) -> str | None:
             assert url == "https://www.youtube.com/watch?v=abc"
+            assert headers == youtube._YOUTUBE_DISCOVERY_HEADERS
             return (
                 '<script>{"videoDetails":{"channelId":"UC1234567890123456789012"},'
                 '"browseId":"UCrelated0000000000000000"}</script>'
             )
 
-        mocker.patch.object(youtube, "_load_page_content", side_effect=fake_load_page_content)
+        mocker.patch.object(youtube.lo_domain, "load_decoded_content", side_effect=fake_load_decoded_content)
 
         new_context, result = await plugin.discover_feed_urls(context)
 
@@ -313,14 +284,15 @@ class TestDiscoverFeedUrls:
         plugin = youtube.construct(channel_feed_url="https://example.com/channels/{channel_id}.xml")
         context = fd_make.context("https://www.youtube.com/watch?v=abc")
 
-        async def fake_load_page_content(url: object) -> str | None:
+        async def fake_load_decoded_content(url: object, headers: object = None) -> str | None:
             assert url == "https://www.youtube.com/watch?v=abc"
+            assert headers == youtube._YOUTUBE_DISCOVERY_HEADERS
             return (
                 '<script>{"videoDetails":{"channelId":"UC1234567890123456789012"},'
                 '"browseId":"UCrelated0000000000000000"}</script>'
             )
 
-        mocker.patch.object(youtube, "_load_page_content", side_effect=fake_load_page_content)
+        mocker.patch.object(youtube.lo_domain, "load_decoded_content", side_effect=fake_load_decoded_content)
 
         new_context, result = await plugin.discover_feed_urls(context)
 
@@ -369,7 +341,7 @@ class TestExtractYoutubeVideoIdFromUrl:
 class TestPostprocessReference:
     def test_stores_youtube_id_in_video_reference_extra(self) -> None:
         reference = Reference(
-            semantics=ReferenceSemantics.video,
+            kind=ReferenceKind.video,
             url=str_to_absolute_url("https://www.youtube.com/watch?v=M7lc1UVf-VE"),
             extra={"source": "youtube"},
         )
@@ -380,7 +352,7 @@ class TestPostprocessReference:
 
     def test_keeps_non_youtube_video_reference(self) -> None:
         reference = Reference(
-            semantics=ReferenceSemantics.video,
+            kind=ReferenceKind.video,
             url=str_to_absolute_url("https://example.com/video.mp4"),
         )
 
@@ -388,7 +360,7 @@ class TestPostprocessReference:
 
     def test_keeps_non_video_reference(self) -> None:
         reference = Reference(
-            semantics=ReferenceSemantics.page,
+            kind=ReferenceKind.page,
             url=str_to_absolute_url("https://www.youtube.com/watch?v=M7lc1UVf-VE"),
         )
 
@@ -423,7 +395,7 @@ class TestPostprocessEntry:
 
     def test_uses_postprocessed_references(self, plugin: youtube.Plugin) -> None:
         reference = Reference(
-            semantics=ReferenceSemantics.video,
+            kind=ReferenceKind.video,
             url=str_to_absolute_url("https://example.com/video.mp4"),
         )
         entry = p_make.fake_entry_info(body="Video", references=[reference])

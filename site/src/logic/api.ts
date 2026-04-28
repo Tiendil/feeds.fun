@@ -232,6 +232,19 @@ export async function getCollectionFeeds({collectionId}: {collectionId: t.Collec
   return feeds;
 }
 
+export async function getIntegrations() {
+  const response = await postPublic({url: "/get-integrations", data: {}});
+
+  const integrations = [];
+
+  for (let rawIntegration of response.integrations) {
+    const integration = t.integrationInfoFromJSON(rawIntegration);
+    integrations.push(integration);
+  }
+
+  return integrations;
+}
+
 export async function getTagsInfo({uids}: {uids: string[]}) {
   const response = await postPublic({url: "/get-tags-info", data: {uids: uids}});
 

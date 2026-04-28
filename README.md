@@ -25,6 +25,7 @@ Roadmap: [long-term plans](https://github.com/users/Tiendil/projects/1/views/1?p
 - Filter news: exclude news by tags, show only news with tags.
 - Sort news by score, date, etc.
 - Track news you've read already.
+- Improved support for major feed sources like Reddit, GitHub, YouTube, ArXiv, Hacker News.
 - A lot of other features are comming.
 
 # Motivation
@@ -93,7 +94,7 @@ FFUN_AUTH_HEADER_USER_ID="X-FFun-User-Id"
 FFUN_LIBRARIAN_OPENAI_GENERAL_PROCESSOR__ENABLED="True"
 ```
 
-### Configure Tag Processors
+### Configure tag processors
 
 Feeds Fun uses different tag processors to detect tags for news entries. Some of them are simple, like `set domain as tag`, some of them are more complex, like `use LLM to detect all possible tags`.
 
@@ -114,7 +115,7 @@ Currently implemented processors:
 - `llm_general` — asks ChatGPT/GeminiGPT to detect tags. Currently, it is the most powerful processor. Must-have if you want to use Feed Fun in full power.
 - `upper_case_title` — detects news with uppercase titles and marks them with `upper-case-title` tag.
 
-#### LLM Processors
+#### LLM processors
 
 LLM tag processors are the primary source of tags for Feeds Fun.
 
@@ -163,7 +164,7 @@ For an OpenAI-compatible API, you should use the `tiktoken_ext` plugin mechanism
 
 We do not support custom token estimation for Gemini-compatible models at the moment.
 
-### Configure Tag Normalizers
+### Configure tag normalizers
 
 Tag processors produce what we call "raw tags". They are relevant to the text, but may lack consistency. It is especially true for LLM-generated tags. It makes it difficult to use them in rules and filters.
 
@@ -187,6 +188,17 @@ Currently implemented processors:
 - `part_blacklist` — removes blacklisted parts from tags: `a-book`, `the-book` ⇒ `book`.
 - `part_replacer` — replaces parts in tags: `e-mail` ⇒ `email`.
 - `splitter` — splits tags by specified parts: `google-vs-microsoft` ⇒ `google`, `microsoft`.
+
+### Configure integrations with new sources
+
+Feeds Fun allows the creation of plugins to improve interaction with specific feed sources, such as YouTube, Reddit, etc. You may find examples of such plugins in the [./ffun/ffun/integrations/plugins](./ffun/ffun/integrations/plugins) directory.
+
+Plugins can:
+
+- Define own logic of discovering feeds from the source. For example, when the source has feeds but doesn't provide links to them in the standard way, as GitHub does.
+- Define own logic of postprocessing news entries to improve formatting and extract additional information.
+
+The list of plugins can be specified via the environment variable `FFUN_INTEGRATIONS_INTEGRATIONS`. See [settings definition](./ffun/ffun/integrations/settings.py) for details.
 
 ## Backend
 

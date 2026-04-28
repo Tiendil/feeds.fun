@@ -16,8 +16,8 @@ async def run_load_feed_internal(feed_url: str) -> None:
     async with with_app():
         try:
             normalized_feed_url = str_to_feed_url(feed_url)
-            response = await l_domain.load_content_with_proxies(normalized_feed_url)
-            content = await l_domain.decode_content(response)
+            content = await l_domain.load_decoded_content(normalized_feed_url, none_on_error=False)
+            assert content is not None
             feed_info = await l_domain.parse_content(
                 content,
                 original_url=normalized_feed_url,
@@ -44,8 +44,8 @@ async def run_load_feed_feedparser(feed_url: str) -> None:
     async with with_app():
         try:
             normalized_feed_url = str_to_feed_url(feed_url)
-            response = await l_domain.load_content_with_proxies(normalized_feed_url)
-            content = await l_domain.operations.decode_content(response)
+            content = await l_domain.load_decoded_content(normalized_feed_url, none_on_error=False)
+            assert content is not None
             channel = parse_into_feedparser(content)
         except Exception as e:
             sys.stdout.write(f"Failed to load feed info: {e}\n")
@@ -68,8 +68,8 @@ async def run_load_feed_raw(feed_url: str) -> None:
     async with with_app():
         try:
             normalized_feed_url = str_to_feed_url(feed_url)
-            response = await l_domain.load_content_with_proxies(normalized_feed_url)
-            content = await l_domain.operations.decode_content(response)
+            content = await l_domain.load_decoded_content(normalized_feed_url, none_on_error=False)
+            assert content is not None
         except Exception as e:
             sys.stdout.write(f"Failed to load feed info: {e}\n")
             return

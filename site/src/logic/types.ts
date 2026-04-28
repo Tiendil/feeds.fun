@@ -124,7 +124,7 @@ export function feedFromJSON({
 export type ReferenceExtraValue = number | string | null;
 
 export type RawReference = {
-  semantics: e.ReferenceSemantics;
+  kind: e.ReferenceKind;
   url: string;
   title?: string | null;
   mime_type?: string | null;
@@ -136,7 +136,7 @@ export type RawReference = {
 };
 
 export class Reference {
-  readonly semantics: e.ReferenceSemantics;
+  readonly kind: e.ReferenceKind;
   readonly url: URL;
   readonly title: string | null;
   readonly mimeType: string | null;
@@ -147,7 +147,7 @@ export class Reference {
   readonly extra: {[key: string]: ReferenceExtraValue} | null;
 
   constructor({
-    semantics,
+    kind,
     url,
     title,
     mimeType,
@@ -157,7 +157,7 @@ export class Reference {
     size,
     extra
   }: {
-    semantics: e.ReferenceSemantics;
+    kind: e.ReferenceKind;
     url: URL;
     title: string | null;
     mimeType: string | null;
@@ -167,7 +167,7 @@ export class Reference {
     size: number | null;
     extra: {[key: string]: ReferenceExtraValue} | null;
   }) {
-    this.semantics = semantics;
+    this.kind = kind;
     this.url = url;
     this.title = title;
     this.mimeType = mimeType;
@@ -186,7 +186,7 @@ export class Reference {
 }
 
 export function referenceFromJSON({
-  semantics,
+  kind,
   url,
   title,
   mime_type,
@@ -197,7 +197,7 @@ export function referenceFromJSON({
   extra
 }: RawReference): Reference {
   return new Reference({
-    semantics: semantics,
+    kind: kind,
     url: toURL(url),
     title: title !== undefined ? title : null,
     mimeType: mime_type !== undefined ? mime_type : null,
@@ -597,6 +597,32 @@ export function collectionFeedInfoFromJSON({
     title: title,
     description: description,
     id: toFeedId(id)
+  });
+}
+
+export class IntegrationInfo {
+  readonly name: string;
+  readonly discovery: boolean;
+  readonly postprocessing: boolean;
+
+  constructor({name, discovery, postprocessing}: {name: string; discovery: boolean; postprocessing: boolean}) {
+    this.name = name;
+    this.discovery = discovery;
+    this.postprocessing = postprocessing;
+  }
+}
+
+export type RawIntegrationInfo = {
+  name: string;
+  discovery: boolean;
+  postprocessing: boolean;
+};
+
+export function integrationInfoFromJSON({name, discovery, postprocessing}: RawIntegrationInfo): IntegrationInfo {
+  return new IntegrationInfo({
+    name: name,
+    discovery: discovery,
+    postprocessing: postprocessing
   });
 }
 

@@ -4,7 +4,7 @@ from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds_discoverer.tests import make as fd_make
 from ffun.integrations.plugins import hacker_news
 from ffun.integrations.plugins.hacker_news import _swap_link_and_comments
-from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.library.entities import Reference, ReferenceKind
 from ffun.parsers.tests import make as p_make
 
 
@@ -28,12 +28,12 @@ class TestSwapLinkAndComments:
     def test_swaps_original_article_link_with_comments_link(self) -> None:
         article_url = str_to_absolute_url("https://example.com/article")
         comments_reference = Reference(
-            semantics=ReferenceSemantics.comments,
+            kind=ReferenceKind.comments,
             url=str_to_absolute_url("https://news.ycombinator.com/item?id=1"),
             title="Comments",
         )
         author_reference = Reference(
-            semantics=ReferenceSemantics.author,
+            kind=ReferenceKind.author,
             url=str_to_absolute_url("https://news.ycombinator.com/user?id=tiendil"),
             title="tiendil",
         )
@@ -51,7 +51,7 @@ class TestSwapLinkAndComments:
                 comments_reference,
                 author_reference,
                 Reference(
-                    semantics=ReferenceSemantics.page,
+                    kind=ReferenceKind.page,
                     url=article_url,
                     title="Original article",
                 ),
@@ -60,7 +60,7 @@ class TestSwapLinkAndComments:
 
     def test_keeps_entry_when_primary_link_is_already_hacker_news(self) -> None:
         comments_reference = Reference(
-            semantics=ReferenceSemantics.comments,
+            kind=ReferenceKind.comments,
             url=str_to_absolute_url("https://news.ycombinator.com/item?id=1"),
             title="Comments",
         )
@@ -77,7 +77,7 @@ class TestSwapLinkAndComments:
             external_url=article_url,
             references=[
                 Reference(
-                    semantics=ReferenceSemantics.author,
+                    kind=ReferenceKind.author,
                     url=str_to_absolute_url("https://news.ycombinator.com/user?id=tiendil"),
                 )
             ],
@@ -87,7 +87,7 @@ class TestSwapLinkAndComments:
 
     def test_keeps_entry_when_primary_link_host_is_configured_as_original(self) -> None:
         comments_reference = Reference(
-            semantics=ReferenceSemantics.comments,
+            kind=ReferenceKind.comments,
             url=str_to_absolute_url("https://news.ycombinator.com/item?id=1"),
             title="Comments",
         )
@@ -103,7 +103,7 @@ class TestPostprocessEntry:
     def test_uses_swap_link_and_comments_helper(self, plugin: hacker_news.Plugin) -> None:
         article_url = str_to_absolute_url("https://example.com/article")
         comments_reference = Reference(
-            semantics=ReferenceSemantics.comments,
+            kind=ReferenceKind.comments,
             url=str_to_absolute_url("https://news.ycombinator.com/item?id=1"),
             title="Comments",
         )
@@ -120,7 +120,7 @@ class TestPostprocessEntry:
     def test_uses_configured_original_hosts(self) -> None:
         plugin = hacker_news.construct(original_hosts=["news.ycombinator.com", "example.com"])
         comments_reference = Reference(
-            semantics=ReferenceSemantics.comments,
+            kind=ReferenceKind.comments,
             url=str_to_absolute_url("https://news.ycombinator.com/item?id=1"),
             title="Comments",
         )

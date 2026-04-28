@@ -8,7 +8,7 @@ from ffun.integrations.plugins.reddit import (
     _rewrite_preview_image_reference,
     _unwrap_body_with_image_table,
 )
-from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.library.entities import Reference, ReferenceKind
 from ffun.parsers.tests import make as p_make
 
 
@@ -79,12 +79,12 @@ class TestPostprocessEntry:
             "?width=140&height=140&crop=1:1,smart&auto=webp&s=99284d1e12e9bb76138e5368fa0cabb9e0f11b17"
         )
         image_reference = Reference(
-            semantics=ReferenceSemantics.image,
+            kind=ReferenceKind.image,
             url=str_to_absolute_url(preview_url),
             title="Just got my dream camera, the A7V.",
         )
         page_reference = Reference(
-            semantics=ReferenceSemantics.page,
+            kind=ReferenceKind.page,
             url=str_to_absolute_url(
                 "https://www.reddit.com/r/SonyAlpha/comments/1smrdat/just_got_my_dream_camera_the_a7v/"
             ),
@@ -118,7 +118,7 @@ class TestRewritePreviewImageReference:
             "?width=140&height=140&crop=1:1,smart&auto=webp&s=99284d1e12e9bb76138e5368fa0cabb9e0f11b17"
         )
         reference = Reference(
-            semantics=ReferenceSemantics.image,
+            kind=ReferenceKind.image,
             url=str_to_absolute_url(preview_url),
             title="Just got my dream camera, the A7V.",
         )
@@ -129,7 +129,7 @@ class TestRewritePreviewImageReference:
 
     def test_keeps_non_preview_image_reference_unchanged(self) -> None:
         reference = Reference(
-            semantics=ReferenceSemantics.image,
+            kind=ReferenceKind.image,
             url=str_to_absolute_url("https://i.redd.it/oabvdva50gvg1.jpeg"),
         )
 
@@ -143,7 +143,7 @@ class TestRewritePreviewImageReference:
             "?width=140&height=140&crop=1:1,smart&auto=webp&s=99284d1e12e9bb76138e5368fa0cabb9e0f11b17"
         )
         reference = Reference(
-            semantics=ReferenceSemantics.page,
+            kind=ReferenceKind.page,
             url=str_to_absolute_url(preview_url),
         )
 

@@ -4,16 +4,22 @@ import time
 from typing import Iterable, Mapping, Protocol, cast
 
 import feedparser
+from feedparser.sanitizer import _HTMLSanitizer
 
 from ffun.core import logging, utils
 from ffun.domain import urls
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, SourceUid, UnknownUrl
 from ffun.integrations.settings import settings as i_settings
-from ffun.library.entities import Reference, ReferenceSemantics
+from ffun.library.entities import Reference, ReferenceKind
 from ffun.parsers import errors
 from ffun.parsers.entities import EntryInfo, FeedInfo
 
 logger = logging.get_module_logger()
+
+
+# IMPORTANT: For now we sanitize iframes on the frontend side.
+#            Later we'll move purification to the backend (see https://github.com/Tiendil/feeds.fun/issues/514).
+_HTMLSanitizer.acceptable_elements.add("iframe")  # type: ignore[misc]
 
 
 # Known feedparser issues:
@@ -132,35 +138,35 @@ def _extract_body(entry: Mapping[str, object]) -> str:
     return description
 
 
-def _media_type_to_semantics(media_type: str | None) -> ReferenceSemantics:  # noqa: CCR001
+def _media_type_to_kind(media_type: str | None) -> ReferenceKind:  # noqa: CCR001
     if media_type is None:
-        return ReferenceSemantics.unknown
+        return ReferenceKind.unknown
 
     normalized_media_type = media_type.split(";", 1)[0].strip().lower()
 
     if normalized_media_type.startswith("image/"):
-        return ReferenceSemantics.image
+        return ReferenceKind.image
 
     if normalized_media_type.startswith("audio/"):
-        return ReferenceSemantics.audio
+        return ReferenceKind.audio
 
     if normalized_media_type.startswith("video/"):
-        return ReferenceSemantics.video
+        return ReferenceKind.video
 
     if normalized_media_type in {"text/html", "application/xhtml+xml"}:
-        return ReferenceSemantics.page
+        return ReferenceKind.page
 
     if normalized_media_type in {"application/x-shockwave-flash"}:
-        return ReferenceSemantics.video
+        return ReferenceKind.video
 
     if normalized_media_type.startswith("text/") or normalized_media_type.startswith("application/"):
-        return ReferenceSemantics.document
+        return ReferenceKind.document
 
-    return ReferenceSemantics.unknown
+    return ReferenceKind.unknown
 
 
 def _create_reference(  # noqa: PLR0913, CFQ002
-    semantics: ReferenceSemantics,
+    kind: ReferenceKind,
     url: str | None,
     original_url: FeedUrl,
     title: str | None = None,
@@ -181,7 +187,7 @@ def _create_reference(  # noqa: PLR0913, CFQ002
             return None
 
         return Reference(
-            semantics=semantics,
+            kind=kind,
             url=adjusted_url,
             title=title,
             mime_type=mime_type,
@@ -195,19 +201,19 @@ def _create_reference(  # noqa: PLR0913, CFQ002
         return None
 
 
-def _reference_semantics_from_link(rel: str | None, media_type: str | None) -> ReferenceSemantics:
+def _reference_kind_from_link(rel: str | None, media_type: str | None) -> ReferenceKind:
     if rel == "replies":
-        return ReferenceSemantics.comments
+        return ReferenceKind.comments
 
-    semantics = _media_type_to_semantics(media_type)
+    kind = _media_type_to_kind(media_type)
 
-    if semantics != ReferenceSemantics.unknown:
-        return semantics
+    if kind != ReferenceKind.unknown:
+        return kind
 
     if rel in {"alternate", "related", "via"}:
-        return ReferenceSemantics.page
+        return ReferenceKind.page
 
-    return ReferenceSemantics.unknown
+    return ReferenceKind.unknown
 
 
 def _extract_link_reference(
@@ -217,7 +223,7 @@ def _extract_link_reference(
     assert isinstance(raw_link, Mapping)
 
     reference = _create_reference(
-        semantics=_reference_semantics_from_link(raw_link.get("rel"), raw_link.get("type")),
+        kind=_reference_kind_from_link(raw_link.get("rel"), raw_link.get("type")),
         url=cast(str | None, raw_link.get("href")),
         original_url=original_url,
         title=raw_link.get("title"),
@@ -233,17 +239,17 @@ def _extract_link_reference(
 def _extract_media_reference(
     raw_media_entry: object,
     original_url: FeedUrl,
-    default_semantics: ReferenceSemantics,
+    default_kind: ReferenceKind,
 ) -> Reference | None:
     assert isinstance(raw_media_entry, Mapping)
 
-    semantics = _media_type_to_semantics(raw_media_entry.get("type"))
+    kind = _media_type_to_kind(raw_media_entry.get("type"))
 
-    if semantics == ReferenceSemantics.unknown:
-        semantics = default_semantics
+    if kind == ReferenceKind.unknown:
+        kind = default_kind
 
     return _create_reference(
-        semantics=semantics,
+        kind=kind,
         url=cast(str | None, raw_media_entry.get("url")),
         original_url=original_url,
         title=raw_media_entry.get("title"),
@@ -259,7 +265,7 @@ def _extract_media_content_reference(raw_media_entry: object, original_url: Feed
     return _extract_media_reference(
         raw_media_entry=raw_media_entry,
         original_url=original_url,
-        default_semantics=ReferenceSemantics.unknown,
+        default_kind=ReferenceKind.unknown,
     )
 
 
@@ -267,13 +273,13 @@ def _extract_media_thumbnail_reference(raw_media_entry: object, original_url: Fe
     return _extract_media_reference(
         raw_media_entry=raw_media_entry,
         original_url=original_url,
-        default_semantics=ReferenceSemantics.image,
+        default_kind=ReferenceKind.image,
     )
 
 
 def _extract_comments_reference(raw_comments_url: object, original_url: FeedUrl) -> Reference | None:
     return _create_reference(
-        semantics=ReferenceSemantics.comments,
+        kind=ReferenceKind.comments,
         url=cast(str | None, raw_comments_url),
         original_url=original_url,
         title="Comments",
@@ -285,7 +291,7 @@ def _extract_author_reference(raw_author: object, original_url: FeedUrl) -> Refe
         return None
 
     return _create_reference(
-        semantics=ReferenceSemantics.author,
+        kind=ReferenceKind.author,
         url=cast(str | None, raw_author.get("href")),
         original_url=original_url,
         title=cast(str | None, raw_author.get("name")),
@@ -296,7 +302,7 @@ def _extract_enclosure_reference(raw_enclosure: object, original_url: FeedUrl) -
     assert isinstance(raw_enclosure, Mapping)
 
     return _create_reference(
-        semantics=_media_type_to_semantics(raw_enclosure.get("type")),
+        kind=_media_type_to_kind(raw_enclosure.get("type")),
         url=cast(str | None, raw_enclosure.get("href")),
         original_url=original_url,
         title=raw_enclosure.get("title"),

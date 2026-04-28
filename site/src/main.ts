@@ -75,6 +75,8 @@ import MainItem from "./components/main/Item.vue";
 import MainNewsTitle from "./components/main/NewsTitle.vue";
 import MainHeaderLine from "./components/main/HeaderLine.vue";
 import MainBlock from "./components/main/Block.vue";
+import MainIntegrationsTable from "./components/main/IntegrationsTable.vue";
+import MainShowMoreButton from "./components/main/ShowMoreButton.vue";
 
 import SidePanelCollapseButton from "./components/side_pannel/CollapseButton.vue";
 
@@ -152,6 +154,8 @@ app.component("MainItem", MainItem);
 app.component("MainNewsTitle", MainNewsTitle);
 app.component("MainHeaderLine", MainHeaderLine);
 app.component("MainBlock", MainBlock);
+app.component("MainIntegrationsTable", MainIntegrationsTable);
+app.component("MainShowMoreButton", MainShowMoreButton);
 
 app.component("SidePanelCollapseButton", SidePanelCollapseButton);
 

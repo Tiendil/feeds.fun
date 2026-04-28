@@ -6,6 +6,7 @@ from ffun.parsers import entities as p_entities
 
 class Plugin(BasePlugin):
     __slots__ = ("_urls",)
+    source_name = "Fake"
 
     def __init__(self, urls: list[str]):
         self._urls = {str_to_absolute_url(url) for url in urls}

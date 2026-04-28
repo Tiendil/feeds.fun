@@ -23,6 +23,30 @@ decode_content = operations.decode_content
 parse_content = operations.parse_content
 
 
+async def load_decoded_content(
+    feed_url: FeedUrl,
+    headers: dict[str, str] | None = None,
+    none_on_error: bool = True,
+) -> str | None:
+    try:
+        response = await load_content_with_proxies(feed_url, headers=headers)
+        return await decode_content(response)
+    except errors.LoadError as e:
+        logger.info("load_decoded_content_error", url=feed_url, error_code=e.feed_error_code)
+
+        if none_on_error:
+            return None
+
+        raise
+    except Exception:
+        logger.exception("unexpected_error_while_loading_decoded_content", url=feed_url)
+
+        if none_on_error:
+            return None
+
+        raise
+
+
 # TODO: tests
 async def load_content_with_proxies(  # noqa: CCR001
     url: FeedUrl,
@@ -100,8 +124,8 @@ async def detect_orphaned(feed_id: FeedId) -> bool:
 # TODO: tests
 async def extract_feed_info(feed_id: FeedId | None, feed_url: FeedUrl) -> p_entities.FeedInfo | None:
     try:
-        response = await load_content_with_proxies(feed_url)
-        content = await decode_content(response)
+        content = await load_decoded_content(feed_url, none_on_error=False)
+        assert content is not None
         feed_info = await parse_content(content, original_url=feed_url, source=url_to_source_uid(feed_url))
     except errors.AllProxiesSuspended:
         logger.info("all_proxies_suspended")

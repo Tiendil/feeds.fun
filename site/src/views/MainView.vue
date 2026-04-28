@@ -10,7 +10,7 @@
 
     <main-block>
       <h1 class="m-0 text-5xl">Feeds Fun</h1>
-      <p class="mt-2 text-2xl">Transparent & Personalized News</p>
+      <p class="mt-2 text-2xl">Personalized News You Control</p>
 
       <div class="h-12 grid grid-flow-col auto-cols-fr gap-3 w-max mx-auto">
         <a
@@ -224,12 +224,14 @@
       <div
         v-if="showMoreCollectionsButtonRequired"
         class="mt-4 text-center">
-        <button
-          class="ffun-main-button short"
-          @click="showAllCollections = !showAllCollections">
-          {{ showAllCollections ? "Show less" : "Show more" }}
-        </button>
+        <main-show-more-button v-model:expanded="showAllCollections" />
       </div>
+    </main-block>
+
+    <main-header-line v-if="settings.hasIntegrations"> Advanced support for popular sources </main-header-line>
+
+    <main-block v-if="settings.hasIntegrations">
+      <main-integrations-table />
     </main-block>
 
     <main-header-line> Here, take a peek </main-header-line>

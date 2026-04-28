@@ -3,15 +3,43 @@ from typing import cast
 
 from bs4 import BeautifulSoup, Tag
 
+_SEMANTIC_ATTRIBUTES = frozenset(
+    {
+        "alt",
+        "aria-label",
+        "cite",
+        "datetime",
+        "href",
+        "lang",
+        "longdesc",
+        "poster",
+        "src",
+        "srcset",
+        "title",
+    }
+)
+
+_DECOMPOSED_TAG_NAMES = ("script", "style", "meta", "iframe")
+
+_KEPT_TAG_NAMES = frozenset({"h1", "h2", "h3", "h4", "h5", "h6", "a", "p", "li", "ul", "ol", "img"})
+
 
 def clear_nothing(text: str) -> str:
     return text
 
 
+def _remove_non_semantic_attributes(tag: Tag) -> None:
+    attributes = cast(dict[str, object], tag.attrs)
+
+    for attribute in list(attributes):
+        if attribute not in _SEMANTIC_ATTRIBUTES:
+            del attributes[attribute]
+
+
 def clear_html(text: str) -> str:
     soup = BeautifulSoup(text, "html.parser")
 
-    decomposed_tags = cast(list[Tag], soup.find_all(["script", "style", "meta", "iframe", "img"]))
+    decomposed_tags = cast(list[Tag], soup.find_all(_DECOMPOSED_TAG_NAMES))
 
     for decomposed_tag in decomposed_tags:
         decomposed_tag.decompose()
@@ -23,7 +51,9 @@ def clear_html(text: str) -> str:
         if not isinstance(tag, Tag):
             continue
 
-        if tag.name in {"h1", "h2", "h3", "h4", "h5", "h6", "a", "p", "li", "ul", "ol"}:
+        _remove_non_semantic_attributes(tag)
+
+        if tag.name in _KEPT_TAG_NAMES:
             continue
 
         tag.unwrap()

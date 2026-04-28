@@ -27,6 +27,8 @@
     IconVolume,
     IconPhoto,
     IconFileText,
+    IconInfoSquareFilled,
+    IconCheck,
     IconX,
     IconMoodSmile,
     IconMoodSad
@@ -52,6 +54,8 @@
     volume: IconVolume,
     photo: IconPhoto,
     "file-text": IconFileText,
+    "info-square-filled": IconInfoSquareFilled,
+    check: IconCheck,
     x: IconX,
     "face-smile": IconMoodSmile,
     "face-sad": IconMoodSad

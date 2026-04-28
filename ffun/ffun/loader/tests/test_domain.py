@@ -11,7 +11,7 @@ from ffun.core.tests.helpers import (
     assert_logs_has_record,
 )
 from ffun.domain.entities import UserId
-from ffun.domain.urls import url_to_uid
+from ffun.domain.urls import str_to_feed_url, url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections.collections import collections
@@ -19,7 +19,15 @@ from ffun.feeds_collections.entities import CollectionId
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
-from ffun.loader.domain import check_proxies_availability, detect_orphaned, process_feed, store_entries, sync_feed_info
+from ffun.loader import errors as lo_errors
+from ffun.loader.domain import (
+    check_proxies_availability,
+    detect_orphaned,
+    load_decoded_content,
+    process_feed,
+    store_entries,
+    sync_feed_info,
+)
 from ffun.loader.settings import Proxy, settings
 from ffun.parsers import entities as p_entities
 from ffun.parsers.tests import make as p_make
@@ -36,6 +44,104 @@ def assert_entry_fields_equal_to_info(entry_info: p_entities.EntryInfo, entry: l
 def assert_entriy_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:
     assert_entry_fields_equal_to_info(entry_info, entry)
     assert entry.published_at == entry_info.published_at
+
+
+class TestLoadDecodedContent:
+    @pytest.mark.asyncio
+    async def test_returns_decoded_content(self, mocker: MockerFixture) -> None:
+        headers = {"User-Agent": "test-agent"}
+
+        async def fake_load_content_with_proxies(url: object, headers: object = None) -> object:
+            assert url == "https://example.com/feed"
+            assert headers == {"User-Agent": "test-agent"}
+            return object()
+
+        async def fake_decode_content(response: object) -> str:
+            assert response is not None
+            return "<feed>content</feed>"
+
+        mocker.patch("ffun.loader.domain.load_content_with_proxies", side_effect=fake_load_content_with_proxies)
+        mocker.patch("ffun.loader.domain.decode_content", side_effect=fake_decode_content)
+
+        assert await load_decoded_content(str_to_feed_url("https://example.com/feed"), headers=headers) == (
+            "<feed>content</feed>"
+        )
+
+    @pytest.mark.asyncio
+    async def test_returns_none_on_load_error(self, mocker: MockerFixture) -> None:
+        async def fake_load_content_with_proxies(url: object, headers: object = None) -> object:
+            assert url == "https://example.com/feed"
+            assert headers is None
+            raise lo_errors.LoadError(feed_error_code=f_entities.FeedError.network_connection_timeout)
+
+        mocker.patch("ffun.loader.domain.load_content_with_proxies", side_effect=fake_load_content_with_proxies)
+
+        with capture_logs() as logs:  # type: ignore
+            assert await load_decoded_content(str_to_feed_url("https://example.com/feed")) is None
+
+        assert_logs_has_record(
+            logs,  # type: ignore
+            "load_decoded_content_error",
+            url="https://example.com/feed",
+            error_code=f_entities.FeedError.network_connection_timeout,
+        )
+
+    @pytest.mark.asyncio
+    async def test_raises_load_error_when_none_on_error_disabled(self, mocker: MockerFixture) -> None:
+        async def fake_load_content_with_proxies(url: object, headers: object = None) -> object:
+            assert url == "https://example.com/feed"
+            assert headers is None
+            raise lo_errors.LoadError(feed_error_code=f_entities.FeedError.network_connection_timeout)
+
+        mocker.patch("ffun.loader.domain.load_content_with_proxies", side_effect=fake_load_content_with_proxies)
+
+        with capture_logs() as logs:  # type: ignore
+            with pytest.raises(lo_errors.LoadError):
+                await load_decoded_content(str_to_feed_url("https://example.com/feed"), none_on_error=False)
+
+        assert_logs_has_record(
+            logs,  # type: ignore
+            "load_decoded_content_error",
+            url="https://example.com/feed",
+            error_code=f_entities.FeedError.network_connection_timeout,
+        )
+
+    @pytest.mark.asyncio
+    async def test_logs_and_returns_none_on_unexpected_error(self, mocker: MockerFixture) -> None:
+        async def fake_load_content_with_proxies(url: object, headers: object = None) -> object:
+            assert url == "https://example.com/feed"
+            assert headers is None
+            raise RuntimeError("boom")
+
+        mocker.patch("ffun.loader.domain.load_content_with_proxies", side_effect=fake_load_content_with_proxies)
+
+        with capture_logs() as logs:  # type: ignore
+            assert await load_decoded_content(str_to_feed_url("https://example.com/feed")) is None
+
+        assert_logs_has_record(
+            logs,  # type: ignore
+            "unexpected_error_while_loading_decoded_content",
+            url="https://example.com/feed",
+        )
+
+    @pytest.mark.asyncio
+    async def test_logs_and_raises_unexpected_error_when_none_on_error_disabled(self, mocker: MockerFixture) -> None:
+        async def fake_load_content_with_proxies(url: object, headers: object = None) -> object:
+            assert url == "https://example.com/feed"
+            assert headers is None
+            raise RuntimeError("boom")
+
+        mocker.patch("ffun.loader.domain.load_content_with_proxies", side_effect=fake_load_content_with_proxies)
+
+        with capture_logs() as logs:  # type: ignore
+            with pytest.raises(RuntimeError):
+                await load_decoded_content(str_to_feed_url("https://example.com/feed"), none_on_error=False)
+
+        assert_logs_has_record(
+            logs,  # type: ignore
+            "unexpected_error_while_loading_decoded_content",
+            url="https://example.com/feed",
+        )
 
 
 async def assert_filtered_entry_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:
