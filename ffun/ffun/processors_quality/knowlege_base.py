@@ -87,6 +87,7 @@ class KnowlegeBase:
             external_url=str_to_absolute_url(data["external_url"]),
             external_tags=cast(set[str], data["external_tags"]),
             published_at=data["published_at"],  # type: ignore
+            references=[],
         )
 
     def get_expected_tags(self, processor: str, id_: int) -> ExpectedTags:
