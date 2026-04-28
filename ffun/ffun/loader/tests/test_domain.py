@@ -125,9 +125,7 @@ class TestLoadDecodedContent:
         )
 
     @pytest.mark.asyncio
-    async def test_logs_and_raises_unexpected_error_when_none_on_error_disabled(
-        self, mocker: MockerFixture
-    ) -> None:
+    async def test_logs_and_raises_unexpected_error_when_none_on_error_disabled(self, mocker: MockerFixture) -> None:
         async def fake_load_content_with_proxies(url: object, headers: object = None) -> object:
             assert url == "https://example.com/feed"
             assert headers is None

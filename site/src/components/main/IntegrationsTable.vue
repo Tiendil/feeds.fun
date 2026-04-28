@@ -73,9 +73,7 @@
                 </div>
               </td>
 
-              <td class="cell cell-extra">
-                coming soon
-              </td>
+              <td class="cell cell-extra"> coming soon </td>
             </tr>
           </tbody>
         </table>
