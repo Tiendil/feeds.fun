@@ -465,8 +465,6 @@ class TestChooseGeneralKey:
             api_key=fake_llm_api_key,
             reserved_cost=select_key_context.reserved_cost,
             used_cost=None,
-            input_tokens=None,
-            output_tokens=None,
             interval_started_at=select_key_context.interval_started_at,
         )
 
@@ -512,8 +510,6 @@ class TestChooseCollectionsKey:
             api_key=fake_llm_api_key,
             reserved_cost=select_key_context.reserved_cost,
             used_cost=None,
-            input_tokens=None,
-            output_tokens=None,
             interval_started_at=select_key_context.interval_started_at,
         )
 
@@ -578,8 +574,6 @@ class TestChooseUserKey:
             api_key=info.api_key,
             reserved_cost=select_key_context.reserved_cost,
             used_cost=None,
-            input_tokens=None,
-            output_tokens=None,
             interval_started_at=select_key_context.interval_started_at,
         )
 
@@ -603,8 +597,6 @@ class TestChooseApiKey:
                 api_key=api_key,
                 reserved_cost=context.reserved_cost,
                 used_cost=None,
-                input_tokens=None,
-                output_tokens=None,
                 interval_started_at=context.interval_started_at,
             )
 
@@ -674,8 +666,6 @@ class TestUseApiKey:
             api_key=fake_llm_api_key,
             reserved_cost=reserved_cost,
             used_cost=None,
-            input_tokens=None,
-            output_tokens=None,
             interval_started_at=interval_started_at,
         )
 
@@ -730,8 +720,6 @@ class TestUseApiKey:
             api_key=fake_llm_api_key,
             reserved_cost=reserved_cost,
             used_cost=None,
-            input_tokens=None,
-            output_tokens=None,
             interval_started_at=interval_started_at,
         )
 
@@ -794,8 +782,6 @@ class TestUseApiKey:
             api_key=fake_llm_api_key,
             reserved_cost=reserved_cost,
             used_cost=None,
-            input_tokens=None,
-            output_tokens=None,
             interval_started_at=interval_started_at,
         )
 
@@ -840,8 +826,6 @@ class TestUseApiKey:
             api_key=fake_llm_api_key,
             reserved_cost=reserved_cost,
             used_cost=None,
-            input_tokens=None,
-            output_tokens=None,
             interval_started_at=interval_started_at,
         )
 

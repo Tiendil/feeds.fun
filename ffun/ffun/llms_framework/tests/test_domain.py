@@ -289,8 +289,6 @@ class TestCallLLM:
             api_key=fake_llm_api_key,
             reserved_cost=USDCost(Decimal(1005)),
             used_cost=None,
-            input_tokens=None,
-            output_tokens=None,
             interval_started_at=interval_started_at,
         )
 
@@ -325,4 +323,62 @@ class TestCallLLM:
             )
         )
 
+        assert resources[internal_user_id].used == _cost_points.to_points(cost)
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "scenario",
+        [
+            (["abcd", "raise TemporaryError", "99"], LLMTokens(6), 1),
+            (["raise TemporaryError 1", "abcd", "raise TemporaryError 2", "99"], LLMTokens(6), 2),
+        ],
+        ids=["single-error", "multiple-errors"],
+    )
+    async def test_counts_tokens_before_reraising_request_error(
+        self,
+        fake_llm_provider: ProviderTest,
+        llm_config: LLMConfiguration,
+        internal_user_id: UserId,
+        fake_llm_api_key: LLMApiKey,
+        scenario: tuple[list[str], LLMTokens, int],
+    ) -> None:
+
+        request_texts, successful_tokens, failed_requests = scenario
+
+        model = fake_llm_provider.get_model(llm_config)
+
+        interval_started_at = month_interval_start()
+
+        key_usage = APIKeyUsage(
+            provider=fake_llm_provider.provider,
+            user_id=internal_user_id,
+            api_key=fake_llm_api_key,
+            reserved_cost=USDCost(Decimal(1005)),
+            used_cost=None,
+            interval_started_at=interval_started_at,
+        )
+
+        await r_domain.try_to_reserve(
+            user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
+            interval_started_at=interval_started_at,
+            amount=_cost_points.to_points(key_usage.reserved_cost),
+            limit=_cost_points.to_points(USDCost(Decimal(124512512))),
+        )
+
+        requests = [ChatRequestTest(text=text) for text in request_texts]
+
+        with pytest.raises(errors.TemporaryError):
+            await call_llm(llm=fake_llm_provider, llm_config=llm_config, api_key_usage=key_usage, requests=requests)
+
+        resources = await r_domain.load_resources(
+            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
+        )
+
+        cost = USDCost(
+            model.tokens_cost(input_tokens=successful_tokens, output_tokens=successful_tokens)
+            + failed_requests * model.max_request_cost
+        )
+
+        assert key_usage.used_cost == cost
         assert resources[internal_user_id].used == _cost_points.to_points(cost)

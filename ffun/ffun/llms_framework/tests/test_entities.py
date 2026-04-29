@@ -42,8 +42,6 @@ class TestAPIKeyUsage:
             api_key=LLMApiKey("api_key"),
             reserved_cost=USDCost(decimal.Decimal(123)),
             used_cost=USDCost(decimal.Decimal(17)),
-            input_tokens=LLMTokens(100),
-            output_tokens=LLMTokens(200),
             interval_started_at=utils.now(),
         )
 
@@ -56,8 +54,6 @@ class TestAPIKeyUsage:
             api_key=LLMApiKey("api_key"),
             reserved_cost=USDCost(decimal.Decimal(132)),
             used_cost=None,
-            input_tokens=LLMTokens(100),
-            output_tokens=LLMTokens(200),
             interval_started_at=utils.now(),
         )
 
@@ -70,8 +66,6 @@ class TestAPIKeyUsage:
             api_key=LLMApiKey("api_key"),
             reserved_cost=USDCost(decimal.Decimal(132)),
             used_cost=USDCost(decimal.Decimal(0)),
-            input_tokens=LLMTokens(100),
-            output_tokens=LLMTokens(200),
             interval_started_at=utils.now(),
         )
 

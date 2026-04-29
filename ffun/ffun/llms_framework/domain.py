@@ -1,5 +1,6 @@
 import asyncio
 import math
+from decimal import Decimal
 from typing import Sequence
 
 from ffun.core import logging
@@ -144,7 +145,6 @@ async def search_for_api_key(
     return await choose_api_key(llm, select_key_context)
 
 
-# TODO: test tokens costs
 async def call_llm(
     llm: ProviderInterface, llm_config: LLMConfiguration, api_key_usage: APIKeyUsage, requests: Sequence[ChatRequest]
 ) -> list[ChatResponse]:
@@ -154,13 +154,28 @@ async def call_llm(
     async with use_api_key(api_key_usage):
         tasks = [llm.chat_request(llm_config, api_key_usage.api_key, request) for request in requests]
 
-        responses = await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        api_key_usage.input_tokens = LLMTokens(sum(response.input_tokens() for response in responses))
-        api_key_usage.output_tokens = LLMTokens(sum(response.output_tokens() for response in responses))
+        used_cost = USDCost(Decimal(0))
 
-        api_key_usage.used_cost = model.tokens_cost(
-            input_tokens=api_key_usage.input_tokens, output_tokens=api_key_usage.output_tokens
-        )
+        first_request_error: BaseException | None = None  # TODO: maybe we should use ExceptionGroup there.
 
-    return responses
+        for result in results:
+            if isinstance(result, BaseException):
+                used_cost += model.max_request_cost  # type: ignore
+
+                if first_request_error is None:
+                    first_request_error = result
+
+                continue
+
+            real_cost = model.tokens_cost(input_tokens=result.input_tokens(), output_tokens=result.output_tokens())
+
+            used_cost += real_cost  # type: ignore
+
+        api_key_usage.used_cost = used_cost
+
+        if first_request_error is not None:
+            raise first_request_error
+
+    return results  # type: ignore

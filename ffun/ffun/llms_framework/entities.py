@@ -73,10 +73,10 @@ class ChatResponse(BaseEntity):
     def response_content(self) -> str:
         raise NotImplementedError("Must be implemented in subclasses")
 
-    def input_tokens(self) -> int:
+    def input_tokens(self) -> LLMTokens:
         raise NotImplementedError("Must be implemented in subclasses")
 
-    def output_tokens(self) -> int:
+    def output_tokens(self) -> LLMTokens:
         raise NotImplementedError("Must be implemented in subclasses")
 
 
@@ -87,8 +87,6 @@ class APIKeyUsage(BaseEntity):
     user_id: UserId | None
     api_key: LLMApiKey
     reserved_cost: USDCost
-    input_tokens: LLMTokens | None
-    output_tokens: LLMTokens | None
     used_cost: USDCost | None
     interval_started_at: datetime.datetime
 
