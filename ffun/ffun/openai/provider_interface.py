@@ -8,7 +8,7 @@ import tiktoken
 from ffun.core import logging
 from ffun.llms_framework import domain as llmsf_domain
 from ffun.llms_framework import errors as llmsf_errors
-from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, LLMProvider
+from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, LLMProvider, LLMTokens
 from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.provider_interface import ChatRequest, ChatResponse, ProviderInterface
 from ffun.openai.settings import settings
@@ -27,17 +27,17 @@ def _client(api_key: str) -> openai.AsyncOpenAI:
 
 class OpenAIChatResponse(ChatResponse):
     content: str
-    prompt_tokens: int
-    completion_tokens: int
-    total_tokens: int
+    prompt_tokens: LLMTokens
+    completion_tokens: LLMTokens
+    total_tokens: LLMTokens
 
     def response_content(self) -> str:
         return self.content
 
-    def input_tokens(self) -> int:
+    def input_tokens(self) -> LLMTokens:
         return self.prompt_tokens
 
-    def output_tokens(self) -> int:
+    def output_tokens(self) -> LLMTokens:
         return self.completion_tokens
 
 
@@ -144,6 +144,10 @@ class OpenAIInterface(ProviderInterface):
 
             with track_key_status(api_key, self.api_keys_statuses):
                 answer = await _client(api_key=api_key).responses.create(**attributes)  # type: ignore
+        except (openai.AuthenticationError, openai.PermissionDeniedError, openai.RateLimitError) as e:
+            message = str(e)
+            logger.info("openai_request_rejected", message=message)
+            raise llmsf_errors.RequestWasRejected(message=message) from e
         except openai.APIError as e:
             message = str(e)
             logger.info("openai_api_error", message=message)

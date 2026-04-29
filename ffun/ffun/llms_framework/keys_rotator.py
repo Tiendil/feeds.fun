@@ -242,8 +242,6 @@ async def _choose_general_key(llm: ProviderInterface, context: SelectKeyContext)
         user_id=None,
         api_key=key,
         reserved_cost=context.reserved_cost,
-        input_tokens=None,
-        output_tokens=None,
         used_cost=None,
         interval_started_at=context.interval_started_at,
     )
@@ -264,8 +262,6 @@ async def _choose_collections_key(llm: ProviderInterface, context: SelectKeyCont
         user_id=None,
         api_key=key,
         reserved_cost=context.reserved_cost,
-        input_tokens=None,
-        output_tokens=None,
         used_cost=None,
         interval_started_at=context.interval_started_at,
     )
@@ -296,8 +292,6 @@ async def _choose_user_key(llm: ProviderInterface, context: SelectKeyContext) ->
         user_id=info.user_id,
         api_key=info.api_key,
         reserved_cost=context.reserved_cost,
-        input_tokens=None,
-        output_tokens=None,
         used_cost=None,
         interval_started_at=context.interval_started_at,
     )

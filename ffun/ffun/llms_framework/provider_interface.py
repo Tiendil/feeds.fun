@@ -1,7 +1,15 @@
 from typing import Sequence
 
 from ffun.llms_framework import errors
-from ffun.llms_framework.entities import ChatRequest, ChatResponse, KeyStatus, LLMConfiguration, LLMProvider, ModelInfo
+from ffun.llms_framework.entities import (
+    ChatRequest,
+    ChatResponse,
+    KeyStatus,
+    LLMConfiguration,
+    LLMProvider,
+    LLMTokens,
+    ModelInfo,
+)
 from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.settings import settings
 
@@ -48,12 +56,12 @@ class ChatResponseTest(ChatResponse):
     def response_content(self) -> str:
         return self.content
 
-    def input_tokens(self) -> int:
-        return len(self.content)
+    def input_tokens(self) -> LLMTokens:
+        return LLMTokens(len(self.content))
 
     # TODO: make it differ from input_tokens
-    def output_tokens(self) -> int:
-        return len(self.content)
+    def output_tokens(self) -> LLMTokens:
+        return LLMTokens(len(self.content))
 
 
 class ProviderTest(ProviderInterface):
@@ -71,6 +79,9 @@ class ProviderTest(ProviderInterface):
     async def chat_request(  # type: ignore
         self, config: LLMConfiguration, api_key: str, request: ChatRequestTest
     ) -> ChatResponseTest:
+        if "raise RequestWasRejected" in request.text:
+            raise errors.RequestWasRejected(message="request was rejected")
+
         if "raise TemporaryError" in request.text:
             raise errors.TemporaryError(message="error raise by a test request")
 

@@ -1,6 +1,7 @@
 import pydantic
 
 from ffun.core.entities import BaseEntity
+from ffun.domain.entities import LLMTokens
 from ffun.llms_framework.provider_interface import ChatRequest, ChatResponse
 
 
@@ -24,17 +25,17 @@ class GoogleChatRequest(ChatRequest):
 
 class GoogleChatResponse(ChatResponse):
     content: str
-    prompt_tokens: int
-    completion_tokens: int
-    total_tokens: int
+    prompt_tokens: LLMTokens
+    completion_tokens: LLMTokens
+    total_tokens: LLMTokens
 
     def response_content(self) -> str:
         return self.content
 
-    def input_tokens(self) -> int:
+    def input_tokens(self) -> LLMTokens:
         return self.prompt_tokens
 
-    def output_tokens(self) -> int:
+    def output_tokens(self) -> LLMTokens:
         return self.completion_tokens
 
 

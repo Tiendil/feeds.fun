@@ -29,6 +29,10 @@ class TemporaryError(Error):
     pass
 
 
+class RequestWasRejected(TemporaryError):
+    pass
+
+
 class UsedTokensHasNotSpecified(Error):
     pass
 

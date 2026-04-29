@@ -30,13 +30,16 @@ class ModelInfo(pydantic.BaseModel):
     input_1m_tokens_cost: USDCost
     output_1m_tokens_cost: USDCost
 
-    # TODO: test
     def tokens_cost(self, input_tokens: LLMTokens, output_tokens: LLMTokens) -> USDCost:
         cost = (
             self.input_1m_tokens_cost * input_tokens / 1_000_000
             + self.output_1m_tokens_cost * output_tokens / 1_000_000
         )
         return USDCost(cost)
+
+    @property
+    def max_request_cost(self) -> USDCost:
+        return self.tokens_cost(input_tokens=self.max_context_size, output_tokens=self.max_return_tokens)
 
 
 class KeyStatus(str, enum.Enum):
@@ -70,10 +73,10 @@ class ChatResponse(BaseEntity):
     def response_content(self) -> str:
         raise NotImplementedError("Must be implemented in subclasses")
 
-    def input_tokens(self) -> int:
+    def input_tokens(self) -> LLMTokens:
         raise NotImplementedError("Must be implemented in subclasses")
 
-    def output_tokens(self) -> int:
+    def output_tokens(self) -> LLMTokens:
         raise NotImplementedError("Must be implemented in subclasses")
 
 
@@ -84,13 +87,11 @@ class APIKeyUsage(BaseEntity):
     user_id: UserId | None
     api_key: LLMApiKey
     reserved_cost: USDCost
-    input_tokens: LLMTokens | None
-    output_tokens: LLMTokens | None
     used_cost: USDCost | None
     interval_started_at: datetime.datetime
 
     def cost_to_register(self) -> USDCost:
-        if self.used_cost:
+        if self.used_cost is not None:
             return self.used_cost
 
         return self.reserved_cost
