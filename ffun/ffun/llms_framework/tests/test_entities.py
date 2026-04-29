@@ -33,3 +33,17 @@ class TestAPIKeyUsage:
         )
 
         assert usage.cost_to_register() == 132
+
+    def test_spent_tokens__zero_used_cost(self) -> None:
+        usage = APIKeyUsage(
+            provider=LLMProvider.test,
+            user_id=None,
+            api_key=LLMApiKey("api_key"),
+            reserved_cost=USDCost(decimal.Decimal(132)),
+            used_cost=USDCost(decimal.Decimal(0)),
+            input_tokens=LLMTokens(100),
+            output_tokens=LLMTokens(200),
+            interval_started_at=utils.now(),
+        )
+
+        assert usage.cost_to_register() == 0

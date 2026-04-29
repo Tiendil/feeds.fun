@@ -90,7 +90,7 @@ class APIKeyUsage(BaseEntity):
     interval_started_at: datetime.datetime
 
     def cost_to_register(self) -> USDCost:
-        if self.used_cost:
+        if self.used_cost is not None:
             return self.used_cost
 
         return self.reserved_cost
