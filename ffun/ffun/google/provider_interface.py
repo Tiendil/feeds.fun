@@ -81,6 +81,11 @@ class GoogleInterface(ProviderInterface):
             with track_key_status(api_key, self.api_keys_statuses):
                 answer = await client.generate_content(model=config.model, request=request, config=generation_config)
 
+        except (errors.AuthError, errors.QuotaError) as e:
+            message = str(e)
+            logger.info("google_request_rejected", message=message)
+            raise llmsf_errors.RequestWasRejected(message=message) from e
+
         except errors.ClientError as e:
             message = str(e)
             logger.info("google_api_error", message=message)

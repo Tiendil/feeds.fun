@@ -79,6 +79,9 @@ class ProviderTest(ProviderInterface):
     async def chat_request(  # type: ignore
         self, config: LLMConfiguration, api_key: str, request: ChatRequestTest
     ) -> ChatResponseTest:
+        if "raise RequestWasRejected" in request.text:
+            raise errors.RequestWasRejected(message="request was rejected")
+
         if "raise TemporaryError" in request.text:
             raise errors.TemporaryError(message="error raise by a test request")
 

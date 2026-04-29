@@ -1,10 +1,13 @@
 from typing import Type
 
 import pytest
+from pytest_mock import MockerFixture
 
 from ffun.google import errors
-from ffun.google.provider_interface import track_key_status
-from ffun.llms_framework.entities import KeyStatus
+from ffun.google.entities import ChatMessage, GoogleChatRequest
+from ffun.google.provider_interface import GoogleInterface, track_key_status
+from ffun.llms_framework import errors as llmsf_errors
+from ffun.llms_framework.entities import KeyStatus, LLMConfiguration, LLMTokens
 from ffun.llms_framework.keys_statuses import Statuses
 
 
@@ -52,3 +55,32 @@ class TestTrackKeyStatus:
                 raise FakeError()
 
         assert api_key_statuses.get("key_1") == KeyStatus.unknown
+
+
+class TestGoogleInterface:
+
+    @pytest.fixture  # type: ignore
+    def llm_config(self) -> LLMConfiguration:
+        return LLMConfiguration(
+            model="test-model",
+            system="system prompt",
+            max_return_tokens=LLMTokens(143),
+            temperature=0,
+            top_p=0,
+        )
+
+    @pytest.mark.parametrize("exception", [errors.AuthError, errors.QuotaError])
+    @pytest.mark.asyncio
+    async def test_rejected_request_errors(
+        self, mocker: MockerFixture, llm_config: LLMConfiguration, exception: Type[Exception]
+    ) -> None:
+        mocker.patch("ffun.google.provider_interface.Client.generate_content", side_effect=exception())
+
+        with pytest.raises(llmsf_errors.RequestWasRejected):
+            await GoogleInterface().chat_request(
+                config=llm_config,
+                api_key="test-key",
+                request=GoogleChatRequest(
+                    system=ChatMessage(text="system prompt"), messages=[ChatMessage(role="user", text="user prompt")]
+                ),
+            )

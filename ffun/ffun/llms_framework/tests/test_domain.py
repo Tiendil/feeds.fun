@@ -8,6 +8,7 @@ from ffun.domain.entities import UserId
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
 from ffun.llms_framework.domain import (
+    _llm_call_result_cost,
     call_llm,
     cut_text_to_max_tokens,
     search_for_api_key,
@@ -258,6 +259,41 @@ class TestCutTextToMaxTokens:
             )
 
 
+class TestLLMCallResultCost:
+
+    @pytest.fixture  # type: ignore
+    def llm_config(self) -> LLMConfiguration:
+        return LLMConfiguration(
+            model="test-model-1",
+            system="system prompt",
+            max_return_tokens=LLMTokens(143),
+            temperature=0,
+            top_p=0,
+        )
+
+    def test_successful_response(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
+        model = fake_llm_provider.get_model(llm_config)
+        response = ChatResponseTest(content="abcd")
+
+        assert _llm_call_result_cost(model, response) == model.tokens_cost(
+            input_tokens=LLMTokens(4), output_tokens=LLMTokens(4)
+        )
+
+    def test_temporary_error(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
+        model = fake_llm_provider.get_model(llm_config)
+
+        result = errors.TemporaryError(message="some error")
+
+        assert _llm_call_result_cost(model, result) == model.max_request_cost
+
+    def test_rejected_request(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
+        model = fake_llm_provider.get_model(llm_config)
+
+        result = errors.RequestWasRejected(message="some error")
+
+        assert _llm_call_result_cost(model, result) == 0
+
+
 class TestCallLLM:
 
     @pytest.fixture  # type: ignore
@@ -379,6 +415,55 @@ class TestCallLLM:
             model.tokens_cost(input_tokens=successful_tokens, output_tokens=successful_tokens)
             + failed_requests * model.max_request_cost
         )
+
+        assert key_usage.used_cost == cost
+        assert resources[internal_user_id].used == _cost_points.to_points(cost)
+
+    @pytest.mark.asyncio
+    async def test_rejected_requests_are_not_billed(
+        self,
+        fake_llm_provider: ProviderTest,
+        llm_config: LLMConfiguration,
+        internal_user_id: UserId,
+        fake_llm_api_key: LLMApiKey,
+    ) -> None:
+
+        model = fake_llm_provider.get_model(llm_config)
+
+        interval_started_at = month_interval_start()
+
+        key_usage = APIKeyUsage(
+            provider=fake_llm_provider.provider,
+            user_id=internal_user_id,
+            api_key=fake_llm_api_key,
+            reserved_cost=USDCost(Decimal(1005)),
+            used_cost=None,
+            interval_started_at=interval_started_at,
+        )
+
+        await r_domain.try_to_reserve(
+            user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
+            interval_started_at=interval_started_at,
+            amount=_cost_points.to_points(key_usage.reserved_cost),
+            limit=_cost_points.to_points(USDCost(Decimal(124512512))),
+        )
+
+        requests = [
+            ChatRequestTest(text="raise RequestWasRejected 1"),
+            ChatRequestTest(text="abcd"),
+            ChatRequestTest(text="raise RequestWasRejected 2"),
+            ChatRequestTest(text="99"),
+        ]
+
+        with pytest.raises(errors.RequestWasRejected):
+            await call_llm(llm=fake_llm_provider, llm_config=llm_config, api_key_usage=key_usage, requests=requests)
+
+        resources = await r_domain.load_resources(
+            user_ids=[internal_user_id], kind=AppResource.tokens_cost, interval_started_at=interval_started_at
+        )
+
+        cost = model.tokens_cost(input_tokens=LLMTokens(6), output_tokens=LLMTokens(6))
 
         assert key_usage.used_cost == cost
         assert resources[internal_user_id].used == _cost_points.to_points(cost)

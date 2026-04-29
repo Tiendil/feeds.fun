@@ -15,6 +15,7 @@ from ffun.llms_framework.entities import (
     LLMConfiguration,
     LLMGeneralApiKey,
     LLMTokens,
+    ModelInfo,
     SelectKeyContext,
     USDCost,
 )
@@ -145,6 +146,16 @@ async def search_for_api_key(
     return await choose_api_key(llm, select_key_context)
 
 
+def _llm_call_result_cost(model: ModelInfo, result: ChatResponse | BaseException) -> USDCost:
+    if isinstance(result, errors.RequestWasRejected):
+        return USDCost(Decimal(0))
+
+    if isinstance(result, BaseException):
+        return model.max_request_cost
+
+    return model.tokens_cost(input_tokens=result.input_tokens(), output_tokens=result.output_tokens())
+
+
 async def call_llm(
     llm: ProviderInterface, llm_config: LLMConfiguration, api_key_usage: APIKeyUsage, requests: Sequence[ChatRequest]
 ) -> list[ChatResponse]:
@@ -161,17 +172,13 @@ async def call_llm(
         first_request_error: BaseException | None = None  # TODO: maybe we should use ExceptionGroup there.
 
         for result in results:
-            if isinstance(result, BaseException):
-                used_cost += model.max_request_cost  # type: ignore
+            used_cost += _llm_call_result_cost(model, result)  # type: ignore
 
+            if isinstance(result, BaseException):
                 if first_request_error is None:
                     first_request_error = result
 
                 continue
-
-            real_cost = model.tokens_cost(input_tokens=result.input_tokens(), output_tokens=result.output_tokens())
-
-            used_cost += real_cost  # type: ignore
 
         api_key_usage.used_cost = used_cost
 

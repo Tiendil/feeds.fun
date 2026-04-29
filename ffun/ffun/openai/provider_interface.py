@@ -144,6 +144,10 @@ class OpenAIInterface(ProviderInterface):
 
             with track_key_status(api_key, self.api_keys_statuses):
                 answer = await _client(api_key=api_key).responses.create(**attributes)  # type: ignore
+        except (openai.AuthenticationError, openai.PermissionDeniedError, openai.RateLimitError) as e:
+            message = str(e)
+            logger.info("openai_request_rejected", message=message)
+            raise llmsf_errors.RequestWasRejected(message=message) from e
         except openai.APIError as e:
             message = str(e)
             logger.info("openai_api_error", message=message)
