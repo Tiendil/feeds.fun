@@ -30,13 +30,16 @@ class ModelInfo(pydantic.BaseModel):
     input_1m_tokens_cost: USDCost
     output_1m_tokens_cost: USDCost
 
-    # TODO: test
     def tokens_cost(self, input_tokens: LLMTokens, output_tokens: LLMTokens) -> USDCost:
         cost = (
             self.input_1m_tokens_cost * input_tokens / 1_000_000
             + self.output_1m_tokens_cost * output_tokens / 1_000_000
         )
         return USDCost(cost)
+
+    @property
+    def max_request_cost(self) -> USDCost:
+        return self.tokens_cost(input_tokens=self.max_context_size, output_tokens=self.max_return_tokens)
 
 
 class KeyStatus(str, enum.Enum):

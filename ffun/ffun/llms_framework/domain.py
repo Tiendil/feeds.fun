@@ -128,10 +128,7 @@ async def search_for_api_key(
 
     model = llm.get_model(llm_config)
 
-    # TODO: test new calculation logic
-    reserved_cost = USDCost(
-        len(requests) * model.tokens_cost(input_tokens=model.max_context_size, output_tokens=model.max_return_tokens)
-    )
+    reserved_cost = USDCost(len(requests) * model.max_request_cost)
 
     feed_ids = await l_domain.get_feeds_for_entry(entry.id)
 

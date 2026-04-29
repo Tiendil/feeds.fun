@@ -1,7 +1,36 @@
 import decimal
 
 from ffun.core import utils
-from ffun.llms_framework.entities import APIKeyUsage, LLMApiKey, LLMProvider, LLMTokens, USDCost
+from ffun.llms_framework.entities import APIKeyUsage, LLMApiKey, LLMProvider, LLMTokens, ModelInfo, USDCost
+
+
+class TestModelInfo:
+
+    def test_tokens_cost(self) -> None:
+        model = ModelInfo(
+            provider=LLMProvider.test,
+            name="test-model",
+            max_context_size=LLMTokens(1000),
+            max_return_tokens=LLMTokens(500),
+            input_1m_tokens_cost=USDCost(decimal.Decimal("2.5")),
+            output_1m_tokens_cost=USDCost(decimal.Decimal("10")),
+        )
+
+        assert model.tokens_cost(input_tokens=LLMTokens(300), output_tokens=LLMTokens(20)) == decimal.Decimal(
+            "0.00095"
+        )
+
+    def test_max_request_cost(self) -> None:
+        model = ModelInfo(
+            provider=LLMProvider.test,
+            name="test-model",
+            max_context_size=LLMTokens(1000),
+            max_return_tokens=LLMTokens(500),
+            input_1m_tokens_cost=USDCost(decimal.Decimal("2.5")),
+            output_1m_tokens_cost=USDCost(decimal.Decimal("10")),
+        )
+
+        assert model.max_request_cost == decimal.Decimal("0.0075")
 
 
 class TestAPIKeyUsage:
