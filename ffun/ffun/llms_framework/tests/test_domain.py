@@ -370,7 +370,7 @@ class TestCallLLM:
         ],
         ids=["single-error", "multiple-errors"],
     )
-    async def test_counts_tokens_before_reraising_request_error(
+    async def test_registers_used_cost_before_reraising_request_error(
         self,
         fake_llm_provider: ProviderTest,
         llm_config: LLMConfiguration,
