@@ -16,7 +16,7 @@ The following topics are out of scope except when they affect how specification 
 
 ## Dictionary
 
-- `specification` — a Markdown document in `./spec/` that describes requirements, behavior, terminology, or documentation rules for the project.
+- `specification` — a Markdown document in `./specs/` that describes requirements, behavior, terminology, or documentation rules for the project.
 - `top-level section` — a section introduced by an `h2` Markdown header.
 - `nested section` — a section introduced by an `h3` or deeper Markdown header.
 
@@ -60,7 +60,7 @@ The `Goal of the document` section MUST NOT define requirements for the document
 
 The `Scope` section MUST describe the boundaries of the specification. It SHOULD be descriptive rather than normative when it explains what the document covers. It SHOULD explicitly mention important topics that are out of scope when those boundaries are useful for readers or future authors. It MUST NOT explain where to find requirements that belong to other specifications.
 
-The `Dictionary` section SHOULD be placed immediately after the `Scope` section. It SHOULD contain only terms that are specific to the specification. Terms that are used by multiple specifications SHOULD be defined in `./spec/dictionary.md`.
+The `Dictionary` section SHOULD be placed immediately after the `Scope` section. It SHOULD contain only terms that are specific to the specification. Terms that are used by multiple specifications SHOULD be defined in `./specs/dictionary.md`.
 
 ## Style
 

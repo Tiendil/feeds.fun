@@ -103,31 +103,31 @@ description = "Artifacts governed by the specification."
 [[rules]]
 relation = "governed_by"
 input = { type = "any", items = [
-  { type = "glob", pattern = "@/spec/*.md" },
-  { type = "glob", pattern = "@/spec/**/*.md" },
+  { type = "glob", pattern = "@/specs/*.md" },
+  { type = "glob", pattern = "@/specs/**/*.md" },
 ] }
-output = { type = "list", artifacts = ["@/spec/meta/general.md"] }
+output = { type = "list", artifacts = ["@/specs/meta/general.md"] }
 
 # The general specification rules govern every specification document.
 # Note: general.md governs itself too.
 [[rules]]
 relation = "governs"
-input = { type = "one_of", artifacts = ["@/spec/meta/general.md"] }
+input = { type = "one_of", artifacts = ["@/specs/meta/general.md"] }
 output = { type = "union", items = [
-  { type = "files", pattern = "@/spec/*.md" },
-  { type = "files", pattern = "@/spec/**/*.md" },
+  { type = "files", pattern = "@/specs/*.md" },
+  { type = "files", pattern = "@/specs/**/*.md" },
 ] }
 
 # Backend Python files are governed by all backend architecture specs.
 [[rules]]
 relation = "governed_by"
 input = { type = "glob", pattern = "@/ffun/ffun/**/*.py" }
-output = { type = "files", pattern = "@/spec/backend_architecture/*.md" }
+output = { type = "files", pattern = "@/specs/backend_architecture/*.md" }
 
 # Backend architecture specs govern all backend Python files.
 [[rules]]
 relation = "governs"
-input = { type = "glob", pattern = "@/spec/backend_architecture/*.md" }
+input = { type = "glob", pattern = "@/specs/backend_architecture/*.md" }
 output = { type = "files", pattern = "@/ffun/ffun/**/*.py" }
 
 # Frontend source files are governed by all frontend architecture specs.
@@ -140,12 +140,12 @@ input = { type = "any", items = [
   { type = "glob", pattern = "@/site/src/**/*.png" },
   { type = "glob", pattern = "@/site/src/**/*.ico" },
 ] }
-output = { type = "files", pattern = "@/spec/frontend_architecture/*.md" }
+output = { type = "files", pattern = "@/specs/frontend_architecture/*.md" }
 
 # Frontend architecture specs govern all frontend source files.
 [[rules]]
 relation = "governs"
-input = { type = "glob", pattern = "@/spec/frontend_architecture/*.md" }
+input = { type = "glob", pattern = "@/specs/frontend_architecture/*.md" }
 output = { type = "union", items = [
   { type = "files", pattern = "@/site/src/**/*.ts" },
   { type = "files", pattern = "@/site/src/**/*.vue" },
@@ -164,12 +164,12 @@ input = { type = "one_of", artifacts = [
   "@/bin/tach-map-query.py",
   "@/ffun/tach_map_query.py",
 ] }
-output = { type = "list", artifacts = ["@/spec/backend_architecture/modules_layout.md"] }
+output = { type = "list", artifacts = ["@/specs/backend_architecture/modules_layout.md"] }
 
 # The backend module layout spec governs depmesh/tach configuration and helpers.
 [[rules]]
 relation = "governs"
-input = { type = "one_of", artifacts = ["@/spec/backend_architecture/modules_layout.md"] }
+input = { type = "one_of", artifacts = ["@/specs/backend_architecture/modules_layout.md"] }
 output = { type = "list", artifacts = [
   "@/AGENTS.md",
   "@/depmesh.toml",
@@ -182,12 +182,12 @@ output = { type = "list", artifacts = [
 [[rules]]
 relation = "governed_by"
 input = { type = "one_of", artifacts = ["@/README.md"] }
-output = { type = "list", artifacts = ["@/spec/documentation/readme.md"] }
+output = { type = "list", artifacts = ["@/specs/documentation/readme.md"] }
 
 # The README documentation spec governs README.md.
 [[rules]]
 relation = "governs"
-input = { type = "one_of", artifacts = ["@/spec/documentation/readme.md"] }
+input = { type = "one_of", artifacts = ["@/specs/documentation/readme.md"] }
 output = { type = "list", artifacts = ["@/README.md"] }
 
 # Changelog artifacts are governed by the changelog documentation spec.
@@ -197,12 +197,12 @@ input = { type = "any", items = [
   { type = "one_of", artifacts = ["@/CHANGELOG.md"] },
   { type = "glob", pattern = "@/changes/*.md" },
 ] }
-output = { type = "list", artifacts = ["@/spec/documentation/changelog.md"] }
+output = { type = "list", artifacts = ["@/specs/documentation/changelog.md"] }
 
 # The changelog documentation spec governs changelog artifacts.
 [[rules]]
 relation = "governs"
-input = { type = "one_of", artifacts = ["@/spec/documentation/changelog.md"] }
+input = { type = "one_of", artifacts = ["@/specs/documentation/changelog.md"] }
 output = { type = "union", items = [
   { type = "list", artifacts = ["@/CHANGELOG.md"] },
   { type = "files", pattern = "@/changes/*.md" },
@@ -225,8 +225,8 @@ description = "Artifacts that use terms from the dictionary."
 [[rules]]
 relation = "terms_defined_by"
 input = { type = "any", items = [
-  { type = "glob", pattern = "@/spec/*.md" },
-  { type = "glob", pattern = "@/spec/**/*.md" },
+  { type = "glob", pattern = "@/specs/*.md" },
+  { type = "glob", pattern = "@/specs/**/*.md" },
   { type = "glob", pattern = "@/ffun/ffun/**/*.py" },
   { type = "glob", pattern = "@/site/src/**/*.ts" },
   { type = "glob", pattern = "@/site/src/**/*.vue" },
@@ -243,16 +243,16 @@ input = { type = "any", items = [
     "@/ffun/tach_map_query.py",
   ] },
 ] }
-output = { type = "list", artifacts = ["@/spec/dictionary.md"] }
+output = { type = "list", artifacts = ["@/specs/dictionary.md"] }
 
 # The dictionary defines terms used by specs, code, documentation, and dependency metadata.
 # Note: dictionary.md can define terms for itself too.
 [[rules]]
 relation = "defines_terms_for"
-input = { type = "one_of", artifacts = ["@/spec/dictionary.md"] }
+input = { type = "one_of", artifacts = ["@/specs/dictionary.md"] }
 output = { type = "union", items = [
-  { type = "files", pattern = "@/spec/*.md" },
-  { type = "files", pattern = "@/spec/**/*.md" },
+  { type = "files", pattern = "@/specs/*.md" },
+  { type = "files", pattern = "@/specs/**/*.md" },
   { type = "files", pattern = "@/ffun/ffun/**/*.py" },
   { type = "files", pattern = "@/site/src/**/*.ts" },
   { type = "files", pattern = "@/site/src/**/*.vue" },
@@ -287,17 +287,17 @@ description = "Specifications listed by the index."
 [[rules]]
 relation = "indexed_by"
 input = { type = "any", items = [
-  { type = "glob", pattern = "@/spec/*.md" },
-  { type = "glob", pattern = "@/spec/**/*.md" },
+  { type = "glob", pattern = "@/specs/*.md" },
+  { type = "glob", pattern = "@/specs/**/*.md" },
 ] }
-output = { type = "list", artifacts = ["@/spec/intro.md"] }
+output = { type = "list", artifacts = ["@/specs/intro.md"] }
 
 # intro.md indexes every specification document.
 # Note: intro.md indexes itself too.
 [[rules]]
 relation = "indexes"
-input = { type = "one_of", artifacts = ["@/spec/intro.md"] }
+input = { type = "one_of", artifacts = ["@/specs/intro.md"] }
 output = { type = "union", items = [
-  { type = "files", pattern = "@/spec/*.md" },
-  { type = "files", pattern = "@/spec/**/*.md" },
+  { type = "files", pattern = "@/specs/*.md" },
+  { type = "files", pattern = "@/specs/**/*.md" },
 ] }
