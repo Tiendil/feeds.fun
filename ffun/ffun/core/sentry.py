@@ -9,8 +9,8 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
-import ffun
 from ffun.core.errors import Error
+from ffun.core.utils import package_root
 
 
 def improve_fingerprint(event: "Event", hint: dict[str, object]) -> "Event":
@@ -46,7 +46,7 @@ def initialize(dsn: str, sample_rate: float, environment: str) -> None:
         before_send=before_send,  # type: ignore
         environment=environment,
         # set the correct project root directory
-        project_root=ffun.__path__[0],
+        project_root=str(package_root()),
         # disable ALL automatically enabled integrations, because they periodically cause issues
         # like false positive errors for correctly handled exceptions in OpenAI integration
         auto_enabling_integrations=False,

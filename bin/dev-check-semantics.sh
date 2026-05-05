@@ -2,6 +2,10 @@
 
 set -e
 
+echo "run tach"
+
+./bin/backend-utils.sh poetry run tach check
+
 echo "run autoflake"
 
 ./bin/backend-utils.sh poetry run autoflake --check --quiet .

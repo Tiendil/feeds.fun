@@ -5,7 +5,6 @@ from decimal import Decimal
 import pytest
 from pytest_mock import MockerFixture
 
-from ffun.application.resources import Resource as AppResource
 from ffun.core.tests.helpers import assert_logs_has_business_event, capture_logs
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.domain.domain import new_user_id
@@ -49,6 +48,7 @@ from ffun.llms_framework.keys_rotator import (
 )
 from ffun.llms_framework.provider_interface import ProviderInterface, ProviderTest
 from ffun.llms_framework.providers import llm_providers
+from ffun.product.resources import Resource as AppResource
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
 from ffun.user_settings import domain as us_domain
@@ -212,8 +212,8 @@ class TestGetUserKeyInfos:
 
     @pytest.mark.asyncio
     async def test_works(self, five_internal_user_ids: list[UserId]) -> None:
-        from ffun.application.resources import Resource as AppResource
-        from ffun.application.user_settings import UserSetting
+        from ffun.product.resources import Resource as AppResource
+        from ffun.product.user_settings import UserSetting
 
         interval_started_at = month_interval_start()
 

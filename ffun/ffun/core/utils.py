@@ -4,7 +4,7 @@ import operator
 import pathlib
 import sys
 import types
-from importlib import metadata
+from importlib import metadata, resources
 
 
 def now() -> datetime.datetime:
@@ -13,6 +13,10 @@ def now() -> datetime.datetime:
 
 def zero_timestamp() -> datetime.datetime:
     return datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
+
+
+def package_root() -> pathlib.Path:
+    return pathlib.Path(str(resources.files("ffun")))
 
 
 def discover_submodules(  # noqa: CCR001

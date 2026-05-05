@@ -19,8 +19,8 @@ from ffun.user_settings import domain as us_domain
 async def five_user_key_infos(
     fake_llm_provider: ProviderTest, five_internal_user_ids: list[UserId]
 ) -> list[UserKeyInfo]:
-    from ffun.application.resources import Resource as AppResource
-    from ffun.application.user_settings import UserSetting
+    from ffun.product.resources import Resource as AppResource
+    from ffun.product.user_settings import UserSetting
 
     max_tokens_cost_in_month = USDCost(Decimal(1000))
     used_cost = USDCost(Decimal(345))
