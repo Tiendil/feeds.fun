@@ -21,7 +21,7 @@ logger = logging.get_module_logger()
 
 def initialize_user_settings() -> None:
     logger.info("initialize_user_settings")
-    import ffun.application.user_settings  # noqa: F401
+    import ffun.product.user_settings  # noqa: F401
 
 
 @contextlib.asynccontextmanager

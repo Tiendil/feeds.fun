@@ -126,6 +126,7 @@ autoflake = "2.3.*"
 
 mypy = "1.19.*"
 codespell = "2.4.*"
+tach = "0.34.*"
 
 types-toml = "0.10.*"
 types-python-slugify = "8.0.*"
@@ -202,7 +203,10 @@ module = [
 disallow_any_expr = false
 
 [[tool.mypy.overrides]]
-module = "get_arxiv_taxonomy"
+module = [
+  "get_arxiv_taxonomy",
+  "tach_map_query",
+]
 disallow_any_expr = false
 
 [tool.pytest.ini_options]

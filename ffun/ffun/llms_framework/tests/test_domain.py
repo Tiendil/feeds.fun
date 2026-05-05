@@ -2,7 +2,6 @@ from decimal import Decimal
 
 import pytest
 
-from ffun.application.resources import Resource as AppResource
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.domain.entities import UserId
 from ffun.library.entities import Entry
@@ -18,6 +17,7 @@ from ffun.llms_framework.domain import (
 from ffun.llms_framework.entities import APIKeyUsage, LLMApiKey, LLMConfiguration, LLMGeneralApiKey, LLMTokens, USDCost
 from ffun.llms_framework.keys_rotator import _cost_points
 from ffun.llms_framework.provider_interface import ChatRequestTest, ChatResponseTest, ProviderTest
+from ffun.product.resources import Resource as AppResource
 from ffun.resources import domain as r_domain
 
 _text_parts_intersection = 100

@@ -1,0 +1,315 @@
+source_roots = ["."]
+root_module = "ignore"
+ignore_type_checking_imports = true
+# TODO: make forbid_circular_dependencies true and fix circular dependencies.
+forbid_circular_dependencies = false
+layers_explicit_depends_on = true
+
+exclude = [
+    ".git/",
+    ".venv/",
+    "build/",
+    "dist/",
+    "**/__pycache__/",
+    ".mypy_cache/",
+]
+
+layers = [
+    "meta-tests",
+    "cli",
+    "web_application",
+    "meta_workflow",
+    "tags_workflow",
+    "llm_integrations",
+    "feeds_workflow",
+    "user_content",
+    "product",
+    "tags",
+    "feeds",
+    "users",
+    "foundation",
+]
+
+[[modules]]
+path = "ffun.conftest"
+depends_on = [
+    "ffun.application",
+    "ffun.core.migrations",
+    "ffun.*.tests",
+    "ffun.*.*.tests",
+    "ffun.*",
+]
+  layer = "meta-tests"
+
+[[modules]]
+path = "ffun.**.tests"
+depends_on = [
+    "ffun.**",
+]
+layer = "meta-tests"
+
+[[modules]]
+path = "ffun.cli"
+depends_on = [
+    "ffun.**",
+]
+layer = "cli"
+
+[[modules]]
+path = "ffun.application"
+depends_on = [
+    "ffun.api",
+    "ffun.feeds_collections",
+    "ffun.librarian",
+    "ffun.loader",
+]
+layer = "web_application"
+
+[[modules]]
+path = "ffun.api"
+depends_on = [
+    "ffun.application",
+    "ffun.auth",
+    "ffun.data_protection",
+    "ffun.feeds",
+    "ffun.feeds_collections",
+    "ffun.feeds_discoverer",
+    "ffun.feeds_links",
+    "ffun.integrations",
+    "ffun.library",
+    "ffun.llms_framework",
+    "ffun.markers",
+    "ffun.meta",
+    "ffun.ontology",
+    "ffun.parsers",
+    "ffun.resources",
+    "ffun.scores",
+    "ffun.tags",
+    "ffun.user_settings",
+]
+layer = "web_application"
+
+[[modules]]
+path = "ffun.meta"
+depends_on = [
+    "ffun.feeds",
+    "ffun.feeds_links",
+    "ffun.library",
+    "ffun.markers",
+    "ffun.ontology",
+    "ffun.parsers",
+    "ffun.scores",
+    "ffun.tags",
+]
+layer = "meta_workflow"
+
+[[modules]]
+path = "ffun.data_protection"
+depends_on = [
+    "ffun.auth",
+    "ffun.users",
+]
+layer = "meta_workflow"
+
+[[modules]]
+path = "ffun.librarian"
+depends_on = [
+    "ffun.feeds_collections",
+    "ffun.library",
+    "ffun.llms_framework",
+    "ffun.ontology",
+    "ffun.tags",
+]
+layer = "tags_workflow"
+
+[[modules]]
+path = "ffun.processors_quality"
+depends_on = [
+    "ffun.librarian",
+    "ffun.library",
+    "ffun.tags",
+]
+layer = "tags_workflow"
+
+[[modules]]
+path = "ffun.feeds_discoverer"
+depends_on = [
+    "ffun.integrations",
+    "ffun.loader",
+    "ffun.parsers",
+]
+layer = "feeds_workflow"
+
+[[modules]]
+path = "ffun.loader"
+depends_on = [
+    "ffun.feeds",
+    "ffun.feeds_collections",
+    "ffun.feeds_links",
+    "ffun.library",
+    "ffun.parsers",
+]
+layer = "feeds_workflow"
+
+[[modules]]
+path = "ffun.integrations"
+depends_on = [
+    "ffun.feeds_discoverer",
+    "ffun.library",
+    "ffun.loader",
+    "ffun.parsers",
+]
+layer = "feeds_workflow"
+
+[[modules]]
+path = "ffun.google"
+depends_on = [
+    "ffun.llms_framework",
+]
+layer = "llm_integrations"
+
+[[modules]]
+path = "ffun.openai"
+depends_on = [
+    "ffun.llms_framework",
+]
+layer = "llm_integrations"
+
+[[modules]]
+path = "ffun.llms_framework"
+depends_on = [
+    "ffun.feeds",
+    "ffun.feeds_collections",
+    "ffun.feeds_links",
+    "ffun.google",
+    "ffun.library",
+    "ffun.openai",
+    "ffun.resources",
+    "ffun.user_settings",
+]
+layer = "llm_integrations"
+
+[[modules]]
+path = "ffun.parsers"
+depends_on = [
+    "ffun.feeds",
+    "ffun.integrations",
+    "ffun.library",
+]
+layer = "feeds_workflow"
+
+[[modules]]
+path = "ffun.markers"
+depends_on = [
+]
+layer = "user_content"
+
+[[modules]]
+path = "ffun.resources"
+depends_on = [
+]
+layer = "user_content"
+
+[[modules]]
+path = "ffun.scores"
+depends_on = [
+]
+layer = "user_content"
+
+[[modules]]
+path = "ffun.ontology"
+depends_on = [
+    "ffun.tags",
+]
+layer = "tags"
+
+[[modules]]
+path = "ffun.tags"
+depends_on = [
+    "ffun.ontology",
+]
+layer = "tags"
+
+[[modules]]
+path = "ffun.feeds"
+depends_on = [
+]
+layer = "feeds"
+
+[[modules]]
+path = "ffun.feeds_collections"
+depends_on = [
+    "ffun.feeds",
+]
+layer = "feeds"
+
+[[modules]]
+path = "ffun.feeds_links"
+depends_on = [
+    "ffun.feeds",
+    "ffun.feeds_collections",
+]
+layer = "feeds"
+
+[[modules]]
+path = "ffun.library"
+depends_on = [
+    "ffun.feeds",
+]
+layer = "feeds"
+
+[[modules]]
+path = "ffun.auth"
+depends_on = [
+    "ffun.users",
+]
+layer = "users"
+
+[[modules]]
+path = "ffun.user_settings"
+depends_on = [
+]
+layer = "users"
+
+[[modules]]
+path = "ffun.product"
+utility = true
+depends_on = ["ffun.user_settings"]
+layer = "product"
+
+[[modules]]
+path = "ffun.users"
+depends_on = [
+]
+layer = "users"
+
+[[modules]]
+path = "ffun.core"
+utility = true
+depends_on = []
+layer = "foundation"
+
+[[modules]]
+path = "ffun.core.migrations"
+depends_on = [
+    "ffun.application",
+]
+layer = "web_application"
+
+[[modules]]
+path = "ffun.domain"
+utility = true
+depends_on = []
+layer = "foundation"
+
+[external]
+exclude = [
+    "pytest",
+    "pytest_asyncio",
+    "pytest_mock",
+    "tach",
+]
+
+[rules]
+unused_ignore_directives = "warn"
+require_ignore_directive_reasons = "off"

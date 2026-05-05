@@ -1,10 +1,10 @@
 from yoyo import get_backend, read_migrations
 from yoyo.migrations import MigrationList
 
-from ffun import __path__ as ffun_path
 from ffun.application.settings import settings as app_settings
+from ffun.core.utils import package_root
 
-ffun_root = ffun_path[0]
+ffun_root = package_root()
 
 
 async def apply_all() -> None:

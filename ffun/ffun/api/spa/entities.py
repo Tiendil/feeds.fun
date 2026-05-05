@@ -255,13 +255,13 @@ class UserSettingKind(enum.StrEnum):
 
     @classmethod
     def from_internal(cls, kind: int) -> "UserSettingKind":
-        from ffun.application.user_settings import UserSetting
+        from ffun.product.user_settings import UserSetting
 
         real_kind = UserSetting(kind)
         return UserSettingKind(real_kind.name)
 
     def to_internal(self) -> int:
-        from ffun.application.user_settings import UserSetting
+        from ffun.product.user_settings import UserSetting
 
         value: object = getattr(UserSetting, self.name)
         assert isinstance(value, int)
@@ -276,7 +276,7 @@ class UserSetting(BaseEntity):
 
     @classmethod
     def from_internal(cls, kind: int, value: str | int | float | bool) -> "UserSetting":
-        from ffun.application.user_settings import UserSetting
+        from ffun.product.user_settings import UserSetting
 
         real_kind = UserSetting(kind)
 
@@ -297,13 +297,13 @@ class ResourceKind(enum.StrEnum):
 
     @classmethod
     def from_internal(cls, kind: int) -> "ResourceKind":
-        from ffun.application.resources import Resource
+        from ffun.product.resources import Resource
 
         real_kind = Resource(kind)
         return ResourceKind(real_kind.name)
 
     def to_internal(self) -> int:
-        from ffun.application.resources import Resource
+        from ffun.product.resources import Resource
 
         value: object = getattr(Resource, self.name)
         assert isinstance(value, int)
@@ -317,7 +317,7 @@ class ResourceHistoryRecord(pydantic.BaseModel):
 
     @classmethod
     def from_internal(cls, record: r_entities.Resource) -> "ResourceHistoryRecord":
-        from ffun.application.resources import Resource
+        from ffun.product.resources import Resource
 
         if record.kind == Resource.tokens_cost:
             transformer = _cost_points.to_cost
@@ -578,7 +578,7 @@ class SetUserSettingRequest(api.APIRequest):
     @pydantic.model_validator(mode="before")
     @classmethod
     def validate_value(cls, values: dict[str, object]) -> dict[str, object]:
-        from ffun.application.user_settings import UserSetting
+        from ffun.product.user_settings import UserSetting
 
         raw_kind = values.get("kind")
 

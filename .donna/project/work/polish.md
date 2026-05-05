@@ -175,7 +175,7 @@ kind = "donna.lib.request_action"
 id = "run_frontend_format"
 kind = "donna.lib.run_script"
 save_stdout_to = "frontend_format_output"
-goto_on_success = "run_backend_semantics_autoflake_check"
+goto_on_success = "run_backend_semantics_tach"
 goto_on_failure = "fix_frontend_format"
 ```
 
@@ -199,6 +199,38 @@ kind = "donna.lib.request_action"
 ```
 
 1. Fix frontend formatting issues reported above.
+2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
+
+## Run backend semantic checks: tach
+
+```toml donna
+id = "run_backend_semantics_tach"
+kind = "donna.lib.run_script"
+save_stdout_to = "backend_semantics_tach_output"
+goto_on_success = "run_backend_semantics_autoflake_check"
+goto_on_failure = "fix_backend_semantics_tach"
+```
+
+```bash donna script
+#!/usr/bin/env bash
+
+set -e
+
+./bin/backend-utils.sh poetry run tach check
+```
+
+## Fix backend semantic checks: tach
+
+```toml donna
+id = "fix_backend_semantics_tach"
+kind = "donna.lib.request_action"
+```
+
+```
+{{ donna.lib.task_variable("backend_semantics_tach_output") }}
+```
+
+1. Fix backend tach module boundary issues reported above.
 2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
 
 ## Run backend semantic checks: autoflake check

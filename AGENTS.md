@@ -52,6 +52,18 @@ If you want to change something in the above list, you MUST ask for explicit ins
 
 These tools MUST have the highest priority when an agent is deciding which tool to use for a given task:
 
+### `depmesh`
+
+`depmesh` — a tool for discovering dependencies between project artifacts.
+
+Agents MUST use `depmesh` for dependency types supported by its configuration.
+
+At the start of each work session, read the `depmesh` usage instructions for details:
+
+```bash
+depmesh skill usage
+```
+
 ### `ast-grep`
 
 `ast-grep` — a tool for searching and manipulating Abstract Syntax Trees in code. Use it when you work with particular code patterns, structures, or constructs in the codebase.
