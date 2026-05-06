@@ -162,6 +162,10 @@ Migrations MUST define apply behavior. Migrations SHOULD define rollback behavio
 
 A rollback that cannot restore data safely MAY be a no-op, but the migration SHOULD make that limitation clear by being simple and intentional.
 
+Migrations SHOULD NOT use defensive schema guards such as `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, or `DROP TABLE IF EXISTS` for normal schema objects. The absence or presence of an expected schema object is a correctness check for migration ordering and rollback behavior.
+
+When yoyo fails in the development environment because the PostgreSQL database is in an inconsistent migration state, agents SHOULD stop the project's Docker containers instead of weakening migrations with defensive guards. The development PostgreSQL database is kept in RAM, so stopping containers resets it.
+
 Migrations SHOULD keep schema DDL, indexes, and data backfills in the same migration only when they are part of one atomic compatibility step.
 
 Large data migrations SHOULD be written so their locking, ordering, and rollback properties are clear from the SQL and local comments.
