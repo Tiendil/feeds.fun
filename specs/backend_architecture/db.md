@@ -170,6 +170,38 @@ Indexes SHOULD be created or changed in the migration that introduces the query 
 
 Migration SQL SHOULD use the same safety rules as runtime SQL: bind data values as parameters and keep interpolated SQL fragments limited to trusted static identifiers or fragments.
 
+## Schema Naming
+
+Database object names SHOULD use lowercase `snake_case`.
+
+Table names SHOULD start with a short owner prefix when that keeps module ownership clear. Examples include `f_` for feeds, `l_` for library, `o_` for ontology, `u_` for users, and `q_` for queues.
+
+Table prefixes MUST NOT intersect between modules.
+
+When a new module's natural one-letter prefix is already used, the new module MUST use a longer but still short prefix that starts with the module name's first character.
+
+For example, `l_` is already used by `library`, so `librarian` uses `ln_` for tables such as `ln_processor_pointers`.
+
+Table names SHOULD describe stored concepts in plural or collective form when that matches existing module vocabulary.
+
+Primary key columns SHOULD be named `id` unless a natural composite primary key is clearer for the table.
+
+Reference columns SHOULD use `<concept>_id`, such as `feed_id`, `entry_id`, `user_id`, or `source_id`.
+
+Timestamp columns SHOULD use the `_at` suffix for points in time, such as `created_at`, `updated_at`, or `loaded_at`.
+
+Deadline or availability timestamp columns SHOULD use a name that describes the state transition, such as `freezed_till`.
+
+Index names for column indexes SHOULD use `<table>_<columns_in_order>_idx`.
+
+Columns in index names SHOULD be listed in the same order as in the index definition.
+
+Old indexes may use different names and SHOULD NOT be renamed only to match this convention.
+
+Unique indexes and named constraints SHOULD include the table name and invariant-defining columns or purpose.
+
+Existing names MAY keep legacy conventions until the corresponding schema object is changed for a real reason.
+
 ## Migration Commands
 
 Development migration commands MUST be run through the backend development container helpers.

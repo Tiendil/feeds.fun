@@ -64,6 +64,24 @@ Static typing requirements SHOULD be enforced by static analysis, code review, o
 
 Tests MAY inspect annotations only in dedicated architecture tests that validate a broad project-wide convention. Per-entity unit tests MUST NOT inspect annotations only to restate the entity declaration.
 
+## Mocking
+
+Tests SHOULD prefer real project code, local services, explicit fixtures, test constructors, and small fakes over mocks.
+
+When a test must replace a Python collaborator, setting, method, or attribute, it SHOULD use the `pytest-mock` `MockerFixture`.
+
+Patches SHOULD be scoped to the test that needs them and SHOULD patch the name as it is looked up by the code under test.
+
+Use `mocker.patch("<import.path>", ...)` for imported module-level collaborators and settings.
+
+Use `mocker.patch.object(...)` when replacing an attribute on an object or class already available in the test.
+
+Use direct `unittest.mock.MagicMock` or `unittest.mock.AsyncMock` only for local fake objects or callables that are passed into the code under test.
+
+Tests SHOULD NOT use pytest `monkeypatch` for ordinary Python attribute replacement; use `MockerFixture` for consistent cleanup and call assertions.
+
+Tests MAY use specialized test tools for their own domain boundaries, for example `respx_mock` for HTTP client behavior.
+
 ## Test module layout
 
 Each implementation module or submodule SHOULD have corresponding tests under a `tests` submodule owned by the same parent module.
