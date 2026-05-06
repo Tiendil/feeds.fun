@@ -117,3 +117,32 @@ For simple reasoning tasks, pass the reasoning goal as an inline string:
 For complex reasoning tasks, read `./specs/tools/prolog.md` before using `swipl`; complex tasks SHOULD use `./prolog/main.pl` as the shared entrypoint and call a task-specific predicate.
 
 When `swipl` materially influences a decision, the agent SHOULD mention the relevant model, query, or result in the work summary.
+
+**You MUST log each usage of prolog into `./prolog/log.md` as `h2` markdown section with explanation of why, how, prolog code in fences, output in fences, conclusions you made from it and next actions**
+
+Example of log record:
+
+```
+## <short usage description>
+
+<why I decided to use prolog, what I wanted to achieve>
+
+<how I plan to use prolog for this task>
+
+code:
+
+```prolog
+<prolog code>
+```
+
+output:
+
+```
+<prolog output>
+```
+
+<conclusions I made from the prolog output and how it influenced my decisions>
+
+<my next actions based on the prolog output and conclusions>
+
+```
