@@ -29,6 +29,7 @@ Command you are allowed to use:
 - `./bin/dev-check-semantics.sh` — check code semantics (types, linting, etc.). Both for frontend and backend code.
 - `./bin/frontend-tests.sh` — run ALL frontend tests.
 - `./bin/frontend-utils.sh` — run utils in the frontend environment.
+- `./bin/prolog.sh` — run a small inline SWI-Prolog reasoning program, passed as a single string argument.
 
 If you need to do complex "test & lint & fix" activities, you MUST use the `donna-do` skill to run the code polish workflow.
 
@@ -110,9 +111,9 @@ Agents MUST NOT use `swipl` for:
 For simple reasoning tasks, pass the reasoning goal as an inline string:
 
 ```bash
-swipl --quiet --no-packs -f none -g "<goal>, halt" -t halt
+./bin/prolog.sh "<goal>"
 ```
 
-For complex reasoning tasks, read `./specs/tools/prolog.md` before using `swipl`; complex tasks SHOULD use a script file with a `main/0` entrypoint.
+For complex reasoning tasks, read `./specs/tools/prolog.md` before using `swipl`; complex tasks SHOULD use `./prolog/main.pl` as the shared entrypoint and call a task-specific predicate.
 
 When `swipl` materially influences a decision, the agent SHOULD mention the relevant model, query, or result in the work summary.

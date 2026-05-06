@@ -91,14 +91,68 @@ Agents MUST use negation-as-failure carefully. A rule such as `needs_tagging(Ent
 
 When ranking candidates, agents MUST encode the scoring rule explicitly and SHOULD explain the meaning of the criteria when the result affects implementation decisions.
 
+## Repository Knowledge Base
+
+Agents MAY maintain reusable Prolog reasoning assets under:
+
+```text
+./prolog
+```
+
+This directory MAY contain facts, rules, helper predicates, examples, tests, and temporary generated facts used by agents.
+
+Recommended structure:
+
+```text
+./prolog/
+  main.pl                 # Shared entrypoint loaded by agent reasoning commands.
+  lib/
+    ranking.pl            # Reusable scoring and ranking predicates.
+    planning.pl           # Reusable plan validation and ordering predicates.
+    output.pl             # Reusable JSON or text output helpers.
+  facts/
+    project.pl            # Stable project-level facts, if any.
+    conventions.pl        # Stable conventions and policy facts.
+  generated/
+    current_facts.pl      # Refreshable facts extracted for the current task.
+  queries/
+    choose_entries.pl     # Query-oriented scripts for concrete decisions.
+    validate_tags.pl
+  examples/
+    score_rules.pl
+    tag_selection.pl
+```
+
+The layout is advisory, not mandatory.
+
+Agents SHOULD keep reusable predicates in `./prolog/lib`.
+
+Agents SHOULD keep stable facts in `./prolog/facts`.
+
+Agents SHOULD keep refreshable facts in `./prolog/generated`.
+
+Agents MUST NOT treat generated facts as permanently true unless they are refreshed or verified.
+
+Agents SHOULD add comments documenting fact schemas and rule meanings.
+
+Agents SHOULD enhance `./prolog` when a reusable predicate, fact schema, or reasoning pattern would improve future reasoning quality.
+
+Agents MUST NOT add Prolog files that affect production Python or TypeScript runtime behavior.
+
 ## Invocation
 
 Agents SHOULD run Prolog non-interactively.
 
+Agents SHOULD use `./bin/prolog.sh` for small inline Prolog reasoning programs.
+
+`./bin/prolog.sh` accepts exactly one argument: the Prolog goal string to run. It appends `halt`, loads `./prolog/main.pl` when that file exists, and otherwise runs the goal directly.
+
+Agents SHOULD load `./prolog/main.pl` in every direct Prolog invocation so shared predicates, conventions, and output helpers are available consistently.
+
 For small one-off reasoning tasks, agents SHOULD pass the reasoning goal as an inline string:
 
 ```bash
-swipl --quiet --no-packs -f none -g "<goal>, halt" -t halt
+./bin/prolog.sh "<goal>"
 ```
 
 The inline goal MAY use `assertz/1` to declare a small number of temporary facts or rules before running the query.
@@ -106,13 +160,13 @@ The inline goal MAY use `assertz/1` to declare a small number of temporary facts
 Example:
 
 ```bash
-swipl --quiet --no-packs -f none -g "assertz(entry_tag(entry_42, 'space')), assertz(entry_tag(entry_42, 'nasa')), findall(Tag, entry_tag(entry_42, Tag), Tags), writeln(Tags), halt" -t halt
+./bin/prolog.sh "assertz(entry_tag(entry_42, 'space')), assertz(entry_tag(entry_42, 'nasa')), findall(Tag, entry_tag(entry_42, Tag), Tags), writeln(Tags)"
 ```
 
-For complex, multi-line, recursive, or reusable reasoning models, agents SHOULD use a script file:
+For complex, multi-line, recursive, or reusable reasoning models, agents SHOULD add or use a task-specific predicate reachable from `./prolog/main.pl`:
 
 ```bash
-swipl --quiet --no-packs -f none -s <script.pl> -g main -t halt
+swipl --quiet --no-packs -f none -s ./prolog/main.pl -g <predicate> -t halt
 ```
 
 The command options have these intended meanings:
@@ -120,12 +174,12 @@ The command options have these intended meanings:
 - `--quiet` suppresses banner output.
 - `--no-packs` avoids external add-on packs.
 - `-f none` avoids user startup files.
+- `-s ./prolog/main.pl` loads the shared repository Prolog entrypoint.
 - `-g "<goal>, halt"` runs an inline goal string and exits.
-- `-s <script.pl>` loads the reasoning script.
-- `-g main` runs the entrypoint predicate.
+- `-g <predicate>` runs a named predicate loaded by the shared entrypoint.
 - `-t halt` exits instead of entering the interactive top level.
 
-Reasoning scripts SHOULD expose a deterministic `main/0` entrypoint predicate.
+Complex reasoning predicates SHOULD be deterministic and SHOULD produce all relevant output before exiting.
 
 Agents MUST inspect the command exit status and output before relying on the result.
 
