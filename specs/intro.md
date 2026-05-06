@@ -17,6 +17,7 @@ Detailed requirements for individual specifications are out of scope except for 
 - `specs/frontend_architecture/` contains specifications related to frontend architecture and tests.
 - `specs/documentation/` contains specifications related to repository documentation artifacts.
 - `specs/meta/` contains specifications related to requirements for specification documents.
+- `specs/tools/` contains specifications related to development and agent tools.
 
 ## Specification documents
 
@@ -31,3 +32,4 @@ Detailed requirements for individual specifications are out of scope except for 
 - `specs/frontend_architecture/tests.md` describes frontend Vitest test placement.
 - `specs/documentation/readme.md` describes repository README expectations.
 - `specs/documentation/changelog.md` describes changelog artifact expectations.
+- `specs/tools/prolog.md` describes agent-side use of SWI-Prolog for explicit reasoning.
