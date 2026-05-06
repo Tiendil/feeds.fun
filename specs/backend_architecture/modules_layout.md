@@ -44,6 +44,7 @@ Migration files SHOULD stay in module-local `migrations` packages for the domain
 - `ffun.openai` owns OpenAI service integration.
 - `ffun.parsers` owns feed, entry, site, and OPML parsing logic.
 - `ffun.processors_quality` owns quality validation for tagging processors.
+- `ffun.queues` owns persistent PostgreSQL-backed queue infrastructure.
 - `ffun.resources` owns per-user quotas and resource accounting.
 - `ffun.scores` owns score rules and score calculation.
 - `ffun.site` owns backend support for serving or integrating with the site when present.

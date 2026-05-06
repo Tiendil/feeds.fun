@@ -284,6 +284,12 @@ depends_on = [
 layer = "users"
 
 [[modules]]
+path = "ffun.queues"
+depends_on = [
+]
+layer = "foundation"
+
+[[modules]]
 path = "ffun.core"
 utility = true
 depends_on = []
