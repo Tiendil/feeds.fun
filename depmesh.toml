@@ -154,6 +154,30 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/site/src/**/*.ico" },
 ] }
 
+# Prolog agent reasoning artifacts are governed by the Prolog tool spec.
+[[rules]]
+relation = "governed_by"
+input = { type = "any", items = [
+  { type = "one_of", artifacts = [
+    "@/AGENTS.md",
+    "@/bin/prolog.sh",
+  ] },
+  { type = "glob", pattern = "@/prolog/**/*.pl" },
+] }
+output = { type = "list", artifacts = ["@/specs/tools/prolog.md"] }
+
+# The Prolog tool spec governs agent instructions, the wrapper, and reusable Prolog assets.
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/tools/prolog.md"] }
+output = { type = "union", items = [
+  { type = "list", artifacts = [
+    "@/AGENTS.md",
+    "@/bin/prolog.sh",
+  ] },
+  { type = "files", pattern = "@/prolog/**/*.pl" },
+] }
+
 # Dependency mesh tooling is governed by the backend module layout spec.
 [[rules]]
 relation = "governed_by"
@@ -233,10 +257,12 @@ input = { type = "any", items = [
   { type = "glob", pattern = "@/site/src/**/*.css" },
   { type = "glob", pattern = "@/site/src/**/*.png" },
   { type = "glob", pattern = "@/site/src/**/*.ico" },
+  { type = "glob", pattern = "@/prolog/**/*.pl" },
   { type = "one_of", artifacts = [
     "@/AGENTS.md",
     "@/CHANGELOG.md",
     "@/README.md",
+    "@/bin/prolog.sh",
     "@/bin/tach-map-query.py",
     "@/depmesh.toml",
     "@/ffun/tach.toml",
@@ -259,10 +285,12 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/site/src/**/*.css" },
   { type = "files", pattern = "@/site/src/**/*.png" },
   { type = "files", pattern = "@/site/src/**/*.ico" },
+  { type = "files", pattern = "@/prolog/**/*.pl" },
   { type = "list", artifacts = [
     "@/AGENTS.md",
     "@/CHANGELOG.md",
     "@/README.md",
+    "@/bin/prolog.sh",
     "@/bin/tach-map-query.py",
     "@/depmesh.toml",
     "@/ffun/tach.toml",
