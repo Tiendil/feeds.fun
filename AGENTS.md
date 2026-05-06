@@ -79,3 +79,45 @@ You MUST use it to:
 You MUST NOT use it for:
 
 - Implementing huge features or behaviors that require adding massive blocks of code (like adding a new class, module, writing a huge function, etc.).
+
+### SWI-Prolog `swipl`
+
+`swipl` — the SWI-Prolog command-line interpreter. Use it as an auxiliary reasoning engine for explicit logic, constraints, dependency reasoning, plan validation, ranking, and combinatorial choice.
+
+`swipl` is NOT a production implementation tool for this project. SWI-Prolog is used to help the agent reason about the work, not to add runtime application behavior.
+
+Agents MUST use `swipl` when a task involves non-trivial structured reasoning that can be represented as facts, rules, constraints, or search, especially when deciding between multiple valid implementation plans, file sets, test sets, refactoring strategies, dependency paths, or task orderings.
+
+Agents SHOULD use `swipl` for:
+
+- Validating a proposed plan against explicit constraints.
+- Computing transitive dependency, impact, or reachability relationships from known facts.
+- Choosing the best candidate from several alternatives using declared criteria.
+- Generating small structured plans, task orders, or decision tables from facts.
+- Checking consistency between assumptions before editing code.
+- Explaining why one option follows from a set of declared facts and rules.
+
+Agents MUST NOT use `swipl` for:
+
+- Replacing `depmesh` for dependency discovery.
+- Replacing `ast-grep` for code-pattern discovery or code transformation.
+- Writing production Python or TypeScript application logic.
+- Implementing application features in Prolog.
+- Guessing facts about the repository without deriving them from tools, files, or explicit user input.
+- Performing simple one-step reasoning that does not need a formal rule model.
+
+When repository facts are needed, agents MUST first use the appropriate source tool:
+
+- Use `depmesh` for dependency information supported by its configuration.
+- Use `ast-grep` for Abstract Syntax Tree based code structure and pattern information.
+- Then encode relevant extracted information as Prolog facts when logical reasoning over those facts is useful.
+
+At the start of the first SWI-Prolog-assisted reasoning task, read the detailed usage spec: `./specs/tools/prolog.md`.
+
+Recommended invocation pattern:
+
+```bash
+swipl --quiet --no-packs -f none -s ./prolog/main.pl -g main -t halt -- "$@"
+```
+
+When `swipl` materially influences a decision, the agent SHOULD mention the relevant Prolog model, query, or result in its work summary.
