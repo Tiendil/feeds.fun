@@ -13,13 +13,13 @@ The following topics are out of scope:
 - production Python, TypeScript, database, frontend, backend, or infrastructure behavior.
 - installation or upgrade instructions for SWI-Prolog.
 - a complete SWI-Prolog tutorial.
-- repository dependency discovery that belongs to `depmesh`.
-- source-code pattern discovery or transformation that belongs to `ast-grep`.
+- repository dependency discovery that belongs to dedicated dependency tooling.
+- source-code pattern discovery or transformation that belongs to AST-aware source tooling.
 
 ## Dictionary
 
 - `reasoning model` - a small Prolog program containing facts, rules, constraints, and a query for an agent decision.
-- `fact source` - an inspected source of truth such as user input, repository files, `depmesh` output, `ast-grep` output, test output, type-checker output, or linter output.
+- `fact source` - an inspected source of truth such as user input, repository files, dependency reports, source-code search results, test output, type-checker output, or linter output.
 - `generated fact` - a Prolog fact derived from a fact source for a specific reasoning task.
 - `entrypoint predicate` - the predicate passed to `swipl -g`, usually `main/0`, that runs the query and prints the result.
 
@@ -54,11 +54,11 @@ When information is uncertain, agents SHOULD represent uncertainty explicitly in
 Example:
 
 ```prolog
-possible_owner('ffun/users/api.py', users_area).
-confidence(possible_owner('ffun/users/api.py', users_area), low).
+possible_tag(entry_42, 'machine-learning').
+confidence(possible_tag(entry_42, 'machine-learning'), low).
 ```
 
-Do not write `owner('ffun/users/api.py', users_area).` unless that ownership is known from a fact source.
+Do not write `assigned_tag(entry_42, 'machine-learning').` unless that tag assignment is known from a fact source.
 
 Generated facts SHOULD be refreshed before reuse when the underlying repository files or tool outputs may have changed.
 
@@ -71,12 +71,12 @@ Fact names SHOULD be concrete and domain-specific.
 Good examples:
 
 ```prolog
-artifact(Path, Kind).
-depends_on(From, To, Reason).
-changed(Path).
-test_covers(TestFile, Artifact).
-candidate_plan(Id).
-plan_step(PlanId, StepIndex, Action).
+feed(FeedId, SourceKind).
+entry(EntryId, FeedId).
+entry_tag(EntryId, Tag).
+score_rule(RuleId, RequiredTags, ScoreDelta).
+tag_processor(ProcessorId, Capability).
+candidate_entry(EntryId, Score, PublishedAt).
 ```
 
 Agents SHOULD keep observed information as facts and derived information as rules.
@@ -87,7 +87,7 @@ Recursive graph rules SHOULD use tabling when cycles are possible.
 
 Agents SHOULD use `library(clpfd)` for bounded integer constraints, budgets, capacities, ordering, or finite choices.
 
-Agents MUST use negation-as-failure carefully. A rule such as `safe(Action) :- \+ unsafe(Action).` means only that `unsafe(Action)` cannot be proven from the current model; it does not prove that the action is safe.
+Agents MUST use negation-as-failure carefully. A rule such as `needs_tagging(Entry) :- entry(Entry, _Feed), \+ entry_tag(Entry, _Tag).` means only that no tag can be proven for `Entry` from the current model; it does not prove that the entry has no tags.
 
 When ranking candidates, agents MUST encode the scoring rule explicitly and SHOULD explain the meaning of the criteria when the result affects implementation decisions.
 
@@ -102,6 +102,12 @@ swipl --quiet --no-packs -f none -g "<goal>, halt" -t halt
 ```
 
 The inline goal MAY use `assertz/1` to declare a small number of temporary facts or rules before running the query.
+
+Example:
+
+```bash
+swipl --quiet --no-packs -f none -g "assertz(entry_tag(entry_42, 'space')), assertz(entry_tag(entry_42, 'nasa')), findall(Tag, entry_tag(entry_42, Tag), Tags), writeln(Tags), halt" -t halt
+```
 
 For complex, multi-line, recursive, or reusable reasoning models, agents SHOULD use a script file:
 
