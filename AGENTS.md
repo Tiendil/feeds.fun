@@ -104,9 +104,15 @@ Agents MUST NOT use `swipl` for:
 - Replacing tests, type checks, linters, or runtime validation.
 - Writing production Python, TypeScript, or application behavior.
 - Encoding repository guesses as facts.
+- Encoding a preselected answer as a `candidate` fact and then asking Prolog to confirm it.
 - Performing simple one-step reasoning that does not need a formal model.
 
 **When repository facts are needed, agents MUST extract them from the appropriate source first.**
+
+When `swipl` is used to choose between architectures, plans, files, tests, task orders, or other alternatives, agents
+SHOULD model independent facts, finite choice dimensions, and constraints, then let Prolog generate/filter/rank the
+solutions. Checklist-style validation of a manually chosen plan is allowed only when reported as validation, not as
+Prolog inference. See `./specs/tools/prolog.md` for the preferred modeling pattern.
 
 For simple reasoning tasks, pass the reasoning goal as an inline string:
 
