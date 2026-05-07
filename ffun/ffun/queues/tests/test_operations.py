@@ -328,3 +328,28 @@ class TestAcknowledge:
             acknowledged = await operations.acknowledge([saved_item.id])
 
         assert acknowledged == 0
+
+
+class TestQueuesStats:
+    @pytest.mark.asyncio
+    async def test_no_items(self) -> None:
+        for queue_kind in QueueKind:
+            await operations.tech_clear_queue(queue_kind)
+
+        assert await operations.queues_stats() == {}
+
+    @pytest.mark.asyncio
+    async def test_stats_for_primary_and_secondary_queues(self) -> None:
+        for queue_kind in QueueKind:
+            await operations.tech_clear_queue(queue_kind)
+
+        await helpers.push_item(queue_kind=QueueKind.test_queue_1, secondary_id=1)
+        await helpers.push_item(queue_kind=QueueKind.test_queue_1, secondary_id=1)
+        await helpers.push_item(queue_kind=QueueKind.test_queue_1, secondary_id=2)
+        await helpers.push_item(queue_kind=QueueKind.test_queue_2, secondary_id=1)
+
+        assert await operations.queues_stats() == {
+            (QueueKind.test_queue_1.value, 1): 2,
+            (QueueKind.test_queue_1.value, 2): 1,
+            (QueueKind.test_queue_2.value, 1): 1,
+        }

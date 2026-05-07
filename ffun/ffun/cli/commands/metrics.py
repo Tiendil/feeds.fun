@@ -10,10 +10,9 @@ from ffun.domain.entities import CollectionId, FeedId, UserId
 from ffun.feeds import domain as f_domain
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_links import domain as fl_domain
-from ffun.librarian import background_processors
-from ffun.librarian import domain as ln_domain
 from ffun.library import domain as l_domain
 from ffun.ontology import domain as o_domain
+from ffun.queues import domain as q_domain
 from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
 from ffun.users import domain as u_domain
@@ -165,45 +164,20 @@ async def system_slice_collections() -> None:
     logger.business_slice("collections_total", user_id=None, total=collections.count_total_feeds())
 
 
-async def system_slice_processors() -> None:
-    pointers_list = await ln_domain.get_all_pointers()
-    pointers = {pointer.processor_id: pointer for pointer in pointers_list}
+async def system_slice_queues() -> None:
+    stats = await q_domain.queues_stats()
 
-    processed_processors = set()
+    total_by_primary: dict[int, int] = {}
 
-    for processor in background_processors.processors:
-        processed_processors.add(processor.id)
-
-        pointer = pointers.get(processor.id)
-
-        if pointer is None:
-            logger.business_slice(
-                "processor_pointer",
-                user_id=None,
-                processor_id=processor.id,
-                is_active=True,
-                pointer_created_at=int(utils.zero_timestamp().timestamp()),
-            )
-            continue
+    for (primary_id, secondary_id), total in stats.items():
+        total_by_primary[primary_id] = total_by_primary.get(primary_id, 0) + total
 
         logger.business_slice(
-            "processor_pointer",
+            "queue_size",
             user_id=None,
-            processor_id=processor.id,
-            is_active=True,
-            pointer_created_at=int(pointer.pointer_created_at.timestamp()),
-        )
-
-    for pointer in pointers_list:
-        if pointer.processor_id in processed_processors:
-            continue
-
-        logger.business_slice(
-            "processor_pointer",
-            user_id=None,
-            processor_id=pointer.processor_id,
-            is_active=False,
-            pointer_created_at=int(pointer.pointer_created_at.timestamp()),
+            primary_id=primary_id,
+            secondary_id=secondary_id,
+            total=total,
         )
 
 
@@ -217,7 +191,7 @@ async def run_system() -> None:
         await system_slice_entries()
         await system_slice_users()
         await system_slice_collections()
-        await system_slice_processors()
+        await system_slice_queues()
 
 
 @cli_app.command()  # type: ignore

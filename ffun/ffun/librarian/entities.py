@@ -1,4 +1,3 @@
-import datetime
 import enum
 from typing import TYPE_CHECKING, Annotated, Literal, Protocol
 
@@ -7,7 +6,7 @@ from pydantic_core import PydanticCustomError
 
 from ffun.core import logging
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import EntryId, LLMTokens
+from ffun.domain.entities import LLMTokens
 from ffun.llms_framework.entities import LLMCollectionApiKey, LLMConfiguration, LLMGeneralApiKey, LLMProvider
 
 logger = logging.get_module_logger()
@@ -29,12 +28,6 @@ class ProcessorType(enum.StrEnum):
     native_tags = "native_tags"
     upper_case_title = "upper_case_title"
     llm_general = "llm_general"
-
-
-class ProcessorPointer(BaseEntity):
-    processor_id: int
-    pointer_created_at: datetime.datetime
-    pointer_entry_id: EntryId
 
 
 class BaseProcessor(BaseEntity):

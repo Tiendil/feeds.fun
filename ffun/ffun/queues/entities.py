@@ -12,7 +12,8 @@ DEFAULT_SECONDARY_ID = 1
 
 
 class QueueKind(enum.IntEnum):
-    tag_processor = 1
+    entries_to_process = 1
+    entries_to_tag = 2
     test_queue_1 = 1_000_000
     test_queue_2 = 1_000_001
 

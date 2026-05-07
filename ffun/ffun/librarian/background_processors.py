@@ -2,9 +2,11 @@ import asyncio
 
 from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
+from ffun.dispatcher import domain as d_domain
+from ffun.dispatcher.background_dispatcher import EntriesDispatcher
 from ffun.domain.entities import EntryId
 from ffun.feeds_collections.collections import collections
-from ffun.librarian import domain, operations
+from ffun.librarian import domain
 from ffun.librarian.entities import ProcessorType
 from ffun.librarian.processors.base import Processor
 from ffun.librarian.processors.domain import Processor as DomainProcessor
@@ -160,16 +162,8 @@ class EntriesProcessor(InfiniteTask):
         processor_id = self._processor_info.id
         concurrency = self._processor_info.concurrency
 
-        # most likely, this call should be in a separate worker with a more complex logic
-        # but for now it is ok to place it here
-        await domain.plan_processor_queue(
-            processor_id=processor_id,
-            fill_when_below=concurrency,
-            # TODO: move to settings
-            chunk=concurrency * 10,
-        )
-
-        entries_ids = await operations.get_entries_to_process(processor_id=processor_id, limit=concurrency)
+        records = await d_domain.get_entries_to_tag(processor_id=processor_id, limit=concurrency)
+        entries_ids = [record.item.entry_id for record in records]
 
         if not entries_ids:
             logger.info("no_entries_to_process", processor_id=processor_id)
@@ -184,20 +178,32 @@ class EntriesProcessor(InfiniteTask):
                 domain.process_entry(processor_id=processor_id, processor=self._processor_info.processor, entry=entry)
             )
 
-        if entries_to_remove:
-            tasks.append(
-                domain.remove_entries_from_processor_queue(processor_id=processor_id, entry_ids=entries_to_remove)
-            )
-
         await asyncio.gather(*tasks, return_exceptions=True)
 
+        await d_domain.acknowledge([record.id for record in records if record.id is not None])
 
-def create_background_processors() -> list[EntriesProcessor]:
-    return [
-        EntriesProcessor(
-            processor_info=processor_info,
-            name=f"entries_processor_{processor_info.processor.name}",
+
+def create_background_processors() -> list[InfiniteTask]:
+    if not processors:
+        return []
+
+    background_processors: list[InfiniteTask] = []
+
+    background_processors.append(
+        EntriesDispatcher(
+            processor_ids=[processor_info.id for processor_info in processors],
+            name="entries_dispatcher",
             delay_between_runs=1,
         )
-        for processor_info in processors
-    ]
+    )
+
+    for processor_info in processors:
+        background_processors.append(
+            EntriesProcessor(
+                processor_info=processor_info,
+                name=f"entries_processor_{processor_info.processor.name}",
+                delay_between_runs=1,
+            )
+        )
+
+    return background_processors

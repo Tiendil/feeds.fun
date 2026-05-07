@@ -53,3 +53,14 @@ class TestAcknowledge:
         removed = await domain.acknowledge([record_id])
 
         assert removed == 1
+
+
+class TestQueuesStats:
+    @pytest.mark.asyncio
+    async def test_queues_stats(self) -> None:
+        for queue_kind in QueueKind:
+            await operations.tech_clear_queue(queue_kind)
+
+        await operations.push(QueueKind.test_queue_1, [make.fake_queue_item(), make.fake_queue_item()])
+
+        assert await domain.queues_stats() == {(QueueKind.test_queue_1.value, 1): 2}

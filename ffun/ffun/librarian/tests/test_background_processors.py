@@ -1,20 +1,21 @@
 import pytest
 from structlog.testing import capture_logs
 
-from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
+from ffun.dispatcher import domain as d_domain
+from ffun.dispatcher.entities import EntryToProcess
 from ffun.domain.domain import new_entry_id
 from ffun.feeds.entities import Feed
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import CollectionId
-from ffun.librarian import operations
 from ffun.librarian.background_processors import EntriesProcessor
-from ffun.librarian.tests import make
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
 from ffun.library.tests import helpers as l_helpers
 from ffun.library.tests import make as l_make
 from ffun.ontology import domain as o_domain
+from ffun.queues import operations as q_operations
+from ffun.queues.entities import QueueKind
 
 
 def _entry_sort_key(entry: Entry) -> tuple[object, object]:
@@ -28,8 +29,7 @@ def _feed_retention_sort_key(entry: Entry) -> tuple[object, object]:
 class TestEntriesProcessors:
     @pytest.mark.asyncio
     async def test_no_entries_to_process(self, fake_entries_processor: EntriesProcessor) -> None:
-        await operations.clear_processor_queue(fake_entries_processor.id)
-        await make.end_processor_pointer(fake_entries_processor.id)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
 
         with capture_logs() as logs:  # type: ignore
             await fake_entries_processor.single_run()
@@ -40,14 +40,21 @@ class TestEntriesProcessors:
     async def test_entries_more_than_concurrency(
         self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
-        await operations.clear_processor_queue(fake_entries_processor.id)
-        await make.end_processor_pointer(fake_entries_processor.id)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
 
         entries = await l_make.n_entries(loaded_feed, 9)
         entries_list = list(entries.values())
         entries_list.sort(key=_entry_sort_key)
 
+        await d_domain.push_entries_to_tag(fake_entries_processor.id, [entry.id for entry in entries_list])
+
         assert fake_entries_processor.concurrency <= len(entries)
+
+        records = await q_operations.tech_get_queue_records(
+            QueueKind.entries_to_tag, EntryToProcess, secondary_id=fake_entries_processor.id
+        )
+        expected_processed_entries = {record.item.entry_id for record in records[: fake_entries_processor.concurrency]}
+        expected_queued_entries = {record.item.entry_id for record in records[fake_entries_processor.concurrency :]}
 
         with capture_logs() as logs:  # type: ignore
             await fake_entries_processor.single_run()
@@ -58,22 +65,29 @@ class TestEntriesProcessors:
 
         expected_ids = await o_domain.get_ids_by_uids({"fake-constant-tag-1", "fake-constant-tag-2"})  # type: ignore
 
-        for entry in entries_list[: fake_entries_processor.concurrency]:
-            assert tags[entry.id] == set(expected_ids.values())
+        assert len(tags) == fake_entries_processor.concurrency
+        assert set(tags) == expected_processed_entries
 
-        for entry in entries_list[fake_entries_processor.concurrency :]:
-            assert entry.id not in tags
+        for tagged_entry_ids in tags.values():
+            assert tagged_entry_ids == set(expected_ids.values())
+
+        records = await d_domain.get_entries_to_tag(processor_id=fake_entries_processor.id, limit=100)
+
+        assert {record.item.entry_id for record in records} == expected_queued_entries
+
+        await d_domain.acknowledge([record.id for record in records if record.id is not None])
 
     @pytest.mark.asyncio
     async def test_entries_less_than_concurrency(
         self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
-        await operations.clear_processor_queue(fake_entries_processor.id)
-        await make.end_processor_pointer(fake_entries_processor.id)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
 
         entries = await l_make.n_entries(loaded_feed, 2)
         entries_list = list(entries.values())
         entries_list.sort(key=_entry_sort_key)
+
+        await d_domain.push_entries_to_tag(fake_entries_processor.id, [entry.id for entry in entries_list])
 
         assert fake_entries_processor.concurrency > len(entries)
 
@@ -93,8 +107,7 @@ class TestEntriesProcessors:
     async def test_unexisted_entries_in_queue(
         self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
-        await operations.clear_processor_queue(fake_entries_processor.id)
-        await make.end_processor_pointer(fake_entries_processor.id)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
 
         entries = await l_make.n_entries(loaded_feed, 2)
         entries_list = list(entries.values())
@@ -102,8 +115,8 @@ class TestEntriesProcessors:
 
         fake_entries_ids = [new_entry_id() for _ in range(3)]
 
-        await operations.push_entries_to_processor_queue(
-            execute, processor_id=fake_entries_processor.id, entry_ids=fake_entries_ids
+        await d_domain.push_entries_to_tag(
+            fake_entries_processor.id, [entry.id for entry in entries_list] + fake_entries_ids
         )
 
         assert fake_entries_processor.concurrency >= len(entries) + len(fake_entries_ids)
@@ -120,9 +133,9 @@ class TestEntriesProcessors:
         for entry in entries_list:
             assert tags[entry.id] == set(expected_ids.values())
 
-        entities_in_queue = await operations.get_entries_to_process(processor_id=fake_entries_processor.id, limit=100)
+        records = await d_domain.get_entries_to_tag(processor_id=fake_entries_processor.id, limit=100)
 
-        assert entities_in_queue == []
+        assert records == []
 
     @pytest.mark.asyncio
     async def test_separate_entries__unexsisted_entries(

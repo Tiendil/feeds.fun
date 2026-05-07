@@ -122,6 +122,24 @@ async def acknowledge(record_ids: Sequence[QueueRecordId]) -> int:
     return len(rows)
 
 
+async def queues_stats() -> dict[tuple[int, int], int]:
+    sql = """
+    SELECT primary_id, secondary_id, COUNT(*) AS count
+    FROM q_items
+    GROUP BY primary_id, secondary_id
+    ORDER BY primary_id, secondary_id
+    """
+
+    rows: list[dict[str, object]] = await execute(sql)
+
+    stats: dict[tuple[int, int], int] = {}
+
+    for row in rows:
+        stats[(row["primary_id"], row["secondary_id"])] = row["count"]  # type: ignore
+
+    return stats
+
+
 async def tech_get_queue_records(
     primary_id: QueueKind,
     item_type: type[QueueItemT],
