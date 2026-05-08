@@ -64,6 +64,10 @@ Static typing requirements SHOULD be enforced by static analysis, code review, o
 
 Tests MAY inspect annotations only in dedicated architecture tests that validate a broad project-wide convention. Per-entity unit tests MUST NOT inspect annotations only to restate the entity declaration.
 
+Tests MUST NOT use identity assertions for boolean values. Use `assert condition` instead of `assert condition is True`, and `assert not condition` instead of `assert condition is False`.
+
+When a test uses `assert_logs` to verify branch-specific behavior, it MUST assert both expected log counts and zero counts for mutually exclusive branch log events.
+
 ## Mocking
 
 Tests SHOULD prefer real project code, local services, explicit fixtures, test constructors, and small fakes over mocks.
@@ -101,6 +105,18 @@ Cross-module integration tests MAY live under the module that owns the public bo
 API integration tests SHOULD live under the API package that owns the tested route or dependency boundary.
 
 Command integration tests SHOULD live under `./ffun/ffun/cli/tests/` when command behavior is present.
+
+Test data constructors reused by multiple test modules in the same package SHOULD live in `tests/make.py`.
+
+`tests/make.py` SHOULD contain small factory functions that create valid entities, value objects, queue items, and other domain data for tests.
+
+`tests/make.py` MUST NOT contain assertions or behavior-verification helpers.
+
+Test helper functions reused by multiple test modules in the same package SHOULD live in `tests/helpers.py`.
+
+`tests/helpers.py` SHOULD contain assertion helpers, cleanup helpers, and test workflow utilities.
+
+`tests/helpers.py` MUST NOT contain ordinary domain data constructors when those constructors fit `tests/make.py`.
 
 ## Test organization
 

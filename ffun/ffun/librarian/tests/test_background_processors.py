@@ -1,15 +1,16 @@
 import pytest
+from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
 from ffun.core.tests.helpers import assert_logs
 from ffun.dispatcher import domain as d_domain
-from ffun.dispatcher.entities import EntryToProcess
+from ffun.dispatcher.entities import EntryToProcess, ProcessorDispatchInfo
 from ffun.domain.domain import new_entry_id
 from ffun.feeds.entities import Feed
-from ffun.feeds_collections.collections import collections
-from ffun.feeds_collections.entities import CollectionId
+from ffun.librarian import background_processors
 from ffun.librarian.background_processors import EntriesProcessor
-from ffun.library import domain as l_domain
+from ffun.librarian.entities import ProcessorType
+from ffun.librarian.processors.base import AlwaysConstantProcessor
 from ffun.library.entities import Entry
 from ffun.library.tests import helpers as l_helpers
 from ffun.library.tests import make as l_make
@@ -26,18 +27,57 @@ def _feed_retention_sort_key(entry: Entry) -> tuple[object, object]:
     return (entry.published_at, entry.created_at)
 
 
-class TestEntriesProcessors:
+class TestProcessorInfo:
+    @pytest.mark.parametrize(
+        "allowed_for_collections, allowed_for_users",
+        [
+            (False, False),
+            (False, True),
+            (True, False),
+            (True, True),
+        ],
+    )
+    def test_disptach_info(
+        self,
+        allowed_for_collections: bool,
+        allowed_for_users: bool,
+    ) -> None:
+        processor_info = background_processors.ProcessorInfo(
+            id=101,
+            type=ProcessorType.fake,
+            processor=AlwaysConstantProcessor(name="fake_processor", tags=["tag"]),
+            concurrency=5,
+            allowed_for_collections=allowed_for_collections,
+            allowed_for_users=allowed_for_users,
+        )
+
+        dispatch_info = processor_info.disptach_info()
+
+        assert dispatch_info == ProcessorDispatchInfo(
+            processor_id=101,
+            subqueue_id=101,
+            allowed_for_collections=allowed_for_collections,
+            allowed_for_users=allowed_for_users,
+        )
+
+
+class TestEntriesProcessor:
     @pytest.mark.asyncio
-    async def test_no_entries_to_process(self, fake_entries_processor: EntriesProcessor) -> None:
+    async def test_single_run__no_entries_to_process(self, fake_entries_processor: EntriesProcessor) -> None:
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
 
         with capture_logs() as logs:  # type: ignore
             await fake_entries_processor.single_run()
 
-        assert_logs(logs, no_entries_to_process=1)  # type: ignore
+        assert_logs(
+            logs,  # type: ignore
+            no_entries_to_process=1,
+            unexisted_entry_in_queue=0,
+            entry_without_feeds_in_queue=0,
+        )
 
     @pytest.mark.asyncio
-    async def test_entries_more_than_concurrency(
+    async def test_single_run__entries_more_than_concurrency(
         self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
@@ -59,7 +99,12 @@ class TestEntriesProcessors:
         with capture_logs() as logs:  # type: ignore
             await fake_entries_processor.single_run()
 
-        assert_logs(logs, no_entries_to_process=0)  # type: ignore
+        assert_logs(
+            logs,  # type: ignore
+            no_entries_to_process=0,
+            unexisted_entry_in_queue=0,
+            entry_without_feeds_in_queue=0,
+        )
 
         tags = await o_domain.get_tags_ids_for_entries(list(entries))
 
@@ -78,7 +123,7 @@ class TestEntriesProcessors:
         await d_domain.acknowledge([record.id for record in records if record.id is not None])
 
     @pytest.mark.asyncio
-    async def test_entries_less_than_concurrency(
+    async def test_single_run__entries_less_than_concurrency(
         self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
@@ -94,7 +139,12 @@ class TestEntriesProcessors:
         with capture_logs() as logs:  # type: ignore
             await fake_entries_processor.single_run()
 
-        assert_logs(logs, no_entries_to_process=0)  # type: ignore
+        assert_logs(
+            logs,  # type: ignore
+            no_entries_to_process=0,
+            unexisted_entry_in_queue=0,
+            entry_without_feeds_in_queue=0,
+        )
 
         tags = await o_domain.get_tags_ids_for_entries(list(entries))
 
@@ -104,7 +154,7 @@ class TestEntriesProcessors:
             assert tags[entry.id] == set(expected_ids.values())
 
     @pytest.mark.asyncio
-    async def test_unexisted_entries_in_queue(
+    async def test_single_run__unexisted_entries_in_queue(
         self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
@@ -124,7 +174,12 @@ class TestEntriesProcessors:
         with capture_logs() as logs:  # type: ignore
             await fake_entries_processor.single_run()
 
-        assert_logs(logs, no_entries_to_process=0, unexisted_entry_in_queue=3)  # type: ignore
+        assert_logs(
+            logs,  # type: ignore
+            no_entries_to_process=0,
+            unexisted_entry_in_queue=3,
+            entry_without_feeds_in_queue=0,
+        )
 
         tags = await o_domain.get_tags_ids_for_entries(list(entries))
 
@@ -138,7 +193,7 @@ class TestEntriesProcessors:
         assert records == []
 
     @pytest.mark.asyncio
-    async def test_separate_entries__unexsisted_entries(
+    async def test_separate_entries__unexisted_entries(
         self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
         entries = await l_make.n_entries(loaded_feed, 2)
@@ -156,11 +211,9 @@ class TestEntriesProcessors:
 
         assert_logs(
             logs,  # type: ignore
+            no_entries_to_process=0,
             unexisted_entry_in_queue=3,
             entry_without_feeds_in_queue=0,
-            proccessor_not_allowed_for_collections=0,
-            proccessor_not_allowed_for_users=0,
-            proccessor_is_allowed_for_entry=2,
         )
 
         assert {entry.id for entry in entries_to_process} == {entry.id for entry in entries_list}
@@ -186,161 +239,24 @@ class TestEntriesProcessors:
 
         assert_logs(
             logs,  # type: ignore
+            no_entries_to_process=0,
             unexisted_entry_in_queue=0,
             entry_without_feeds_in_queue=2,
-            proccessor_not_allowed_for_collections=0,
-            proccessor_not_allowed_for_users=0,
-            proccessor_is_allowed_for_entry=3,
         )
 
         assert {entry.id for entry in entries_to_process} == {entry.id for entry in entries_list[2:]}
         assert set(entries_to_remove) == {entry.id for entry in entries_list[:2]}
 
-    @pytest.mark.asyncio
-    async def test_separate_entries__collections_not_allowed(
-        self,
-        fake_entries_processor: EntriesProcessor,
-        loaded_feed: Feed,
-        another_loaded_feed: Feed,
-        collection_id_for_test_feeds: CollectionId,
-    ) -> None:
-        entries_1 = await l_make.n_entries(loaded_feed, 3)
-        entries_2 = await l_make.n_entries(another_loaded_feed, 2)
 
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
+class TestCreateBackgroundProcessors:
+    def test_no_processors(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(background_processors, "processors", [])
 
-        entries_list = list(entries_1.values()) + list(entries_2.values())
-        entries_list.sort(key=_entry_sort_key)
+        assert background_processors.create_background_processors() == []
 
-        entries_ids = [entry.id for entry in entries_list]
+    def test_success(self, mocker: MockerFixture, fake_processor_info: background_processors.ProcessorInfo) -> None:
+        mocker.patch.object(background_processors, "processors", [fake_processor_info])
 
-        fake_entries_processor._processor_info.allowed_for_collections = False
+        tasks = background_processors.create_background_processors()
 
-        with capture_logs() as logs:  # type: ignore
-            entries_to_process, entries_to_remove = await fake_entries_processor.separate_entries(
-                entries_ids=entries_ids
-            )
-
-        assert_logs(
-            logs,  # type: ignore
-            unexisted_entry_in_queue=0,
-            proccessor_not_allowed_for_collections=2,
-            proccessor_not_allowed_for_users=0,
-            proccessor_is_allowed_for_entry=3,
-        )
-
-        assert {entry.id for entry in entries_to_process} == set(entries_1)
-        assert set(entries_to_remove) == set(entries_2)
-
-    @pytest.mark.asyncio
-    async def test_separate_entries__collections_not_allowed__entry_is_in_multiple_feeds(
-        self,
-        fake_entries_processor: EntriesProcessor,
-        loaded_feed: Feed,
-        another_loaded_feed: Feed,
-        collection_id_for_test_feeds: CollectionId,
-    ) -> None:
-        entries_1 = await l_make.n_entries_list(loaded_feed, 3)
-        entries_2 = await l_make.n_entries_list(another_loaded_feed, 2)
-
-        await l_domain.catalog_entries(
-            another_loaded_feed.id,
-            [entry.collected_entry() for entry in entries_1[:2]],
-        )
-
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
-
-        entries_list = list(entries_1) + list(entries_2)
-        entries_list.sort(key=_entry_sort_key)
-
-        entries_ids = [entry.id for entry in entries_list]
-
-        fake_entries_processor._processor_info.allowed_for_collections = False
-
-        with capture_logs() as logs:  # type: ignore
-            entries_to_process, entries_to_remove = await fake_entries_processor.separate_entries(
-                entries_ids=entries_ids
-            )
-
-        assert_logs(
-            logs,  # type: ignore
-            unexisted_entry_in_queue=0,
-            proccessor_not_allowed_for_collections=4,
-            proccessor_not_allowed_for_users=0,
-            proccessor_is_allowed_for_entry=1,
-        )
-
-        assert {entry.id for entry in entries_to_process} == {entries_1[2].id}
-        assert set(entries_to_remove) == {entry.id for entry in entries_1[:2]} | {entry.id for entry in entries_2}
-
-    @pytest.mark.asyncio
-    async def test_separate_entries__all_allowed(
-        self,
-        fake_entries_processor: EntriesProcessor,
-        loaded_feed: Feed,
-        another_loaded_feed: Feed,
-        collection_id_for_test_feeds: CollectionId,
-    ) -> None:
-        entries_1 = await l_make.n_entries(loaded_feed, 3)
-        entries_2 = await l_make.n_entries(another_loaded_feed, 2)
-
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
-
-        entries_list = list(entries_1.values()) + list(entries_2.values())
-        entries_list.sort(key=_entry_sort_key)
-
-        entries_ids = [entry.id for entry in entries_list]
-
-        fake_entries_processor._processor_info.allowed_for_collections = True
-        fake_entries_processor._processor_info.allowed_for_users = True
-
-        with capture_logs() as logs:  # type: ignore
-            entries_to_process, entries_to_remove = await fake_entries_processor.separate_entries(
-                entries_ids=entries_ids
-            )
-
-        assert_logs(
-            logs,  # type: ignore
-            unexisted_entry_in_queue=0,
-            proccessor_not_allowed_for_collections=0,
-            proccessor_not_allowed_for_users=0,
-            proccessor_is_allowed_for_entry=5,
-        )
-
-        assert {entry.id for entry in entries_to_process} == set(entries_1) | set(entries_2)
-
-    @pytest.mark.asyncio
-    async def test_separate_entries__users_not_allowed(
-        self,
-        fake_entries_processor: EntriesProcessor,
-        loaded_feed: Feed,
-        another_loaded_feed: Feed,
-        collection_id_for_test_feeds: CollectionId,
-    ) -> None:
-        entries_1 = await l_make.n_entries(loaded_feed, 3)
-        entries_2 = await l_make.n_entries(another_loaded_feed, 2)
-
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
-
-        entries_list = list(entries_1.values()) + list(entries_2.values())
-        entries_list.sort(key=_entry_sort_key)
-
-        entries_ids = [entry.id for entry in entries_list]
-
-        fake_entries_processor._processor_info.allowed_for_users = False
-
-        with capture_logs() as logs:  # type: ignore
-            entries_to_process, entries_to_remove = await fake_entries_processor.separate_entries(
-                entries_ids=entries_ids
-            )
-
-        assert_logs(
-            logs,  # type: ignore
-            unexisted_entry_in_queue=0,
-            proccessor_not_allowed_for_collections=0,
-            proccessor_not_allowed_for_users=3,
-            proccessor_is_allowed_for_entry=2,
-        )
-
-        assert {entry.id for entry in entries_to_process} == set(entries_2)
-        assert set(entries_to_remove) == set(entries_1)
+        assert [task.name for task in tasks] == ["entries_dispatcher", "entries_processor_fake_constant_processor"]

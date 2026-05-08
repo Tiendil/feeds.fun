@@ -78,11 +78,17 @@ class TestShouldSkip:
         with capture_logs() as logs:
             result = _should_skip({})
 
-        assert result is True
+        assert result
         assert_logs(logs, feed_does_not_has_link_field=1)
+        assert len(logs) == 1
 
     def test_returns_false_when_link_exists(self) -> None:
-        assert _should_skip({"link": "https://example.com/news"}) is False
+        with capture_logs() as logs:
+            result = _should_skip({"link": "https://example.com/news"})
+
+        assert not result
+        assert_logs(logs, feed_does_not_has_link_field=0)
+        assert logs == []
 
 
 class TestParseEntry:
@@ -174,7 +180,7 @@ class TestParseFeed:
             feed_info = parse_feed("", feed_url, url_to_source_uid(feed_url))
 
         assert feed_info is None
-        assert_logs(logs, error_while_parsing_feed=1)
+        assert_logs(logs, error_while_parsing_feed=1, error_while_parsing_feed_entry=0)
 
     @pytest.mark.parametrize("raw_fixture_name", feeds_fixtures_names())
     def test_on_row_fixtures(self, raw_fixture_name: str, feed_url: FeedUrl) -> None:
@@ -217,7 +223,7 @@ class TestParseFeed:
         with capture_logs() as logs:
             feed_info = parse_feed(raw_fixture, feed_url, url_to_source_uid(feed_url))
 
-        assert_logs(logs, error_while_parsing_feed_entry=1)
+        assert_logs(logs, error_while_parsing_feed=0, error_while_parsing_feed_entry=1)
 
         # the first entry will be skipped due to the error in parsing
         parsed_expected_fixture = json.parse(expected_fixture)

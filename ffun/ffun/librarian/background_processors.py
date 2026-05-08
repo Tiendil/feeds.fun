@@ -4,8 +4,8 @@ from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
 from ffun.dispatcher import domain as d_domain
 from ffun.dispatcher.background_dispatcher import EntriesDispatcher
+from ffun.dispatcher.entities import ProcessorDispatchInfo
 from ffun.domain.entities import EntryId
-from ffun.feeds_collections.collections import collections
 from ffun.librarian import domain
 from ffun.librarian.entities import ProcessorType
 from ffun.librarian.processors.base import Processor
@@ -39,6 +39,14 @@ class ProcessorInfo:
         self.concurrency = concurrency
         self.allowed_for_collections = allowed_for_collections
         self.allowed_for_users = allowed_for_users
+
+    def disptach_info(self) -> ProcessorDispatchInfo:
+        return ProcessorDispatchInfo(
+            processor_id=self.id,
+            subqueue_id=self.id,
+            allowed_for_collections=self.allowed_for_collections,
+            allowed_for_users=self.allowed_for_users,
+        )
 
 
 processors: list[ProcessorInfo] = []
@@ -139,21 +147,6 @@ class EntriesProcessor(InfiniteTask):
                 entries_to_remove.append(entry_id)
                 continue
 
-            # TODO: maybe we should create some `in_collection` marker directly for entry
-            #       this may simplify a lot of code by moveing checks from multiple places to one
-            in_collection = any(collections.has_feed(feed_id) for feed_id in feed_ids[entry_id])
-
-            if in_collection and not self._processor_info.allowed_for_collections:
-                logger.info("proccessor_not_allowed_for_collections", processor_id=processor_id, entry_id=entry_id)
-                entries_to_remove.append(entry_id)
-                continue
-
-            if not in_collection and not self._processor_info.allowed_for_users:
-                logger.info("proccessor_not_allowed_for_users", processor_id=processor_id, entry_id=entry_id)
-                entries_to_remove.append(entry_id)
-                continue
-
-            logger.info("proccessor_is_allowed_for_entry", processor_id=processor_id, entry_id=entry_id)
             entries_to_process.append(entry)
 
         return entries_to_process, entries_to_remove
@@ -191,7 +184,7 @@ def create_background_processors() -> list[InfiniteTask]:
 
     background_processors.append(
         EntriesDispatcher(
-            processor_ids=[processor_info.id for processor_info in processors],
+            processors=[processor_info.disptach_info() for processor_info in processors],
             name="entries_dispatcher",
             delay_between_runs=1,
         )
