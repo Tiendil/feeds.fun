@@ -9,6 +9,7 @@ from ffun.cli.commands import fixtures  # noqa: F401
 from ffun.cli.commands import metrics  # noqa: F401
 from ffun.cli.commands import processors_quality  # noqa: F401
 from ffun.cli.commands import profile  # noqa: F401
+from ffun.cli.commands import queues  # noqa: F401
 from ffun.cli.commands import user_settings  # noqa: F401
 from ffun.cli.commands import users  # noqa: F401
 from ffun.core import logging
@@ -28,6 +29,7 @@ app.add_typer(fixtures.cli_app, name="fixtures")
 app.add_typer(estimates.cli_app, name="estimates")
 app.add_typer(feeds.cli_app, name="feeds")
 app.add_typer(users.cli_app, name="users")
+app.add_typer(queues.cli_app, name="queues")
 app.add_typer(debug.cli_app, name="debug")
 
 
