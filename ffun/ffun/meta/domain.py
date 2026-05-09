@@ -2,7 +2,7 @@ from typing import Iterable
 
 from ffun.core import logging, utils
 from ffun.domain.domain import new_feed_id
-from ffun.domain.entities import EntryId, FeedId, TagId, TagUid, UserId
+from ffun.domain.entities import EntryId, FeedId, ProcessorId, TagId, TagUid, UserId
 from ffun.domain.urls import url_to_source_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
@@ -165,7 +165,7 @@ async def renormalize_tags(tag_ids: list[TagId]) -> None:
 
 
 async def _renormalize_tag(
-    processor_id: int, old_tag_id: TagId, old_tag_uid: TagUid, categories: set[TagCategory]
+    processor_id: ProcessorId, old_tag_id: TagId, old_tag_uid: TagUid, categories: set[TagCategory]
 ) -> None:
 
     logger.info(
@@ -192,7 +192,7 @@ async def _renormalize_tag(
 
 
 async def _normalize_tag_uid(
-    old_tag_uid: TagUid, categories: TagCategories, processor_id: int
+    old_tag_uid: TagUid, categories: TagCategories, processor_id: ProcessorId
 ) -> tuple[bool, list[TagId]]:
     if not categories:
         return False, []
@@ -227,7 +227,7 @@ async def _normalize_tag_uid(
     return original_tag_exists, tags_to_copy
 
 
-async def _apply_renormalized_tags(processor_id: int, old_tag_id: TagId, new_tag_id: TagId) -> None:
+async def _apply_renormalized_tags(processor_id: ProcessorId, old_tag_id: TagId, new_tag_id: TagId) -> None:
     await o_domain.copy_tag_properties(processor_id=processor_id, old_tag_id=old_tag_id, new_tag_id=new_tag_id)
     await o_domain.copy_relations(processor_id=processor_id, old_tag_id=old_tag_id, new_tag_id=new_tag_id)
     await s_domain.clone_rules_for_replacements({old_tag_id: new_tag_id})

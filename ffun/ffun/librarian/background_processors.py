@@ -5,7 +5,7 @@ from ffun.core.background_tasks import InfiniteTask
 from ffun.dispatcher import domain as d_domain
 from ffun.dispatcher.background_dispatcher import EntriesDispatcher
 from ffun.dispatcher.entities import ProcessorDispatchInfo, ProcessorDispatchRoute
-from ffun.domain.entities import EntryId
+from ffun.domain.entities import EntryId, ProcessorId
 from ffun.librarian import domain
 from ffun.librarian.entities import ProcessorType
 from ffun.librarian.processors.base import Processor, ProcessorContext
@@ -32,7 +32,7 @@ class ProcessorInfo:
 
     def __init__(  # noqa: disable=CFQ002
         self,
-        id: int,
+        id: ProcessorId,
         type: ProcessorType,
         processor: Processor,
         concurrency: int,
@@ -110,7 +110,7 @@ class EntriesProcessor(InfiniteTask):
         self._processor_info = processor_info
 
     @property
-    def id(self) -> int:
+    def id(self) -> ProcessorId:
         return self._processor_info.id
 
     @property

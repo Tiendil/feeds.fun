@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 
 from ffun.dispatcher.entities import ProcessorDispatchInfo, ProcessorDispatchRoute
+from ffun.domain.entities import ProcessorId
 from ffun.llms_framework.entities import LLMApiKeyType
 
 
@@ -46,8 +47,8 @@ def processor_dispatch_info(
     routes: Sequence[ProcessorDispatchRoute] | None = None,
 ) -> ProcessorDispatchInfo:
     return ProcessorDispatchInfo(
-        processor_id=processor_id,
-        subqueue_id=processor_id if subqueue_id is None else subqueue_id,
+        processor_id=ProcessorId(processor_id),
+        subqueue_id=ProcessorId(processor_id if subqueue_id is None else subqueue_id),
         routes=processor_dispatch_routes(
             allowed_for_collections=allowed_for_collections,
             allowed_for_users=allowed_for_users,

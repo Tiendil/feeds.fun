@@ -10,7 +10,7 @@ from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
 from ffun.domain.domain import new_entry_id
-from ffun.domain.entities import TagId, TagUid, UserId
+from ffun.domain.entities import ProcessorId, TagId, TagUid, UserId
 from ffun.domain.urls import str_to_feed_url, url_to_source_uid, url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
@@ -48,8 +48,8 @@ class TestRemoveEntries:
         self,
         loaded_feed: Feed,
         another_loaded_feed: Feed,
-        fake_processor_id: int,
-        another_fake_processor_id: int,
+        fake_processor_id: ProcessorId,
+        another_fake_processor_id: ProcessorId,
         three_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag],
     ) -> None:
         entries = await l_make.n_entries_list(loaded_feed, 3)
@@ -331,14 +331,16 @@ class TestRemoveTags:
 class TestApplyRenormalizedTags:
 
     @pytest.mark.asyncio
-    async def test_no_changes(self, fake_processor_id: int, three_tags_ids: tuple[TagId, TagId, TagId]) -> None:
+    async def test_no_changes(
+        self, fake_processor_id: ProcessorId, three_tags_ids: tuple[TagId, TagId, TagId]
+    ) -> None:
         await _apply_renormalized_tags(
             processor_id=fake_processor_id, old_tag_id=three_tags_ids[0], new_tag_id=three_tags_ids[1]
         )
 
     @pytest.mark.asyncio
     async def test(
-        self, mocker: MockerFixture, fake_processor_id: int, three_tags_ids: tuple[TagId, TagId, TagId]
+        self, mocker: MockerFixture, fake_processor_id: ProcessorId, three_tags_ids: tuple[TagId, TagId, TagId]
     ) -> None:
         copy_tag_properties = mocker.patch("ffun.ontology.domain.copy_tag_properties")
         copy_relations = mocker.patch("ffun.ontology.domain.copy_relations")
@@ -370,13 +372,13 @@ class TestApplyRenormalizedTags:
 class TestNormalizeTagUid:
 
     @pytest.mark.asyncio
-    async def test_no_categories(self, fake_processor_id: int) -> None:
+    async def test_no_categories(self, fake_processor_id: ProcessorId) -> None:
         assert await _normalize_tag_uid(
             old_tag_uid=TagUid("some-test-tag"), categories=set(), processor_id=fake_processor_id
         ) == (False, [])
 
     @pytest.mark.asyncio
-    async def test_no_norm_forms(self, mocker: MockerFixture, fake_processor_id: int) -> None:
+    async def test_no_norm_forms(self, mocker: MockerFixture, fake_processor_id: ProcessorId) -> None:
         normalize = mocker.patch("ffun.tags.domain.normalize", return_value=[])  # type: ignore
 
         categories = {TagCategory.test_raw, TagCategory.test_final}
@@ -392,7 +394,7 @@ class TestNormalizeTagUid:
         ]
 
     @pytest.mark.asyncio
-    async def test_normalized__no_original_form(self, mocker: MockerFixture, fake_processor_id: int) -> None:
+    async def test_normalized__no_original_form(self, mocker: MockerFixture, fake_processor_id: ProcessorId) -> None:
         norm_tag_1 = NormalizedTag(
             uid=TagUid("norm-tag-1"), link=None, categories={TagCategory.test_final, TagCategory.test_preserve}
         )
@@ -431,7 +433,7 @@ class TestNormalizeTagUid:
         assert tag_2_property.value == ",".join(sorted(category.value for category in norm_tag_2.categories))
 
     @pytest.mark.asyncio
-    async def test_normalized__keep_original_form(self, mocker: MockerFixture, fake_processor_id: int) -> None:
+    async def test_normalized__keep_original_form(self, mocker: MockerFixture, fake_processor_id: ProcessorId) -> None:
         norm_tag_1 = NormalizedTag(uid=TagUid("norm-tag-1"), link=None, categories={TagCategory.test_final})
         norm_tag_2 = NormalizedTag(
             uid=TagUid("norm-tag-2"), link=None, categories={TagCategory.test_raw, TagCategory.test_preserve}
@@ -479,7 +481,7 @@ class TestRenormalizeTag:
     @pytest.mark.asyncio
     async def test_no_removing(
         self,
-        fake_processor_id: int,
+        fake_processor_id: ProcessorId,
         three_tags_ids: tuple[TagId, TagId, TagId],
         three_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag],
         mocker: MockerFixture,
@@ -518,7 +520,7 @@ class TestRenormalizeTag:
     @pytest.mark.asyncio
     async def test_removing(
         self,
-        fake_processor_id: int,
+        fake_processor_id: ProcessorId,
         three_tags_ids: tuple[TagId, TagId, TagId],
         three_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag],
         mocker: MockerFixture,
@@ -568,8 +570,8 @@ class TestRenormalizeTags:
         mocker: MockerFixture,
         five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
         five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
-        fake_processor_id: int,
-        another_fake_processor_id: int,
+        fake_processor_id: ProcessorId,
+        another_fake_processor_id: ProcessorId,
     ) -> None:
 
         tag_ids = five_tags_ids

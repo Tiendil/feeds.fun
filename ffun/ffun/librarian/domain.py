@@ -1,6 +1,7 @@
 from ffun.core import logging, metrics
 from ffun.core.postgresql import ExecuteType, run_in_transaction
 from ffun.dispatcher import domain as d_domain
+from ffun.domain.entities import ProcessorId
 from ffun.librarian import errors, operations
 from ffun.librarian.processors.base import Processor, ProcessorContext
 from ffun.librarian.settings import settings
@@ -14,11 +15,11 @@ logger = logging.get_module_logger()
 count_failed_entries = operations.count_failed_entries
 
 
-_processor_metrics_accumulators: dict[tuple[int, str], metrics.Accumulator] = {}
+_processor_metrics_accumulators: dict[tuple[ProcessorId, str], metrics.Accumulator] = {}
 
 
 # TODO: we may move metric accumulators to the processor info
-def accumulator(event: str, processor_id: int) -> metrics.Accumulator:
+def accumulator(event: str, processor_id: ProcessorId) -> metrics.Accumulator:
     key = (processor_id, event)
 
     if key in _processor_metrics_accumulators:
@@ -34,7 +35,7 @@ def accumulator(event: str, processor_id: int) -> metrics.Accumulator:
 
 
 @run_in_transaction
-async def move_failed_entries_to_processor_queue(execute: ExecuteType, processor_id: int, limit: int) -> None:
+async def move_failed_entries_to_processor_queue(execute: ExecuteType, processor_id: ProcessorId, limit: int) -> None:
     failed_entries = await operations.get_failed_entries(execute, processor_id, limit)
 
     if not failed_entries:
@@ -47,7 +48,7 @@ async def move_failed_entries_to_processor_queue(execute: ExecuteType, processor
 
 @logging.async_args_to_log("processor.name", "entry.id")
 async def process_entry(
-    processor_id: int,
+    processor_id: ProcessorId,
     processor: Processor,
     entry: Entry,
     context: ProcessorContext,

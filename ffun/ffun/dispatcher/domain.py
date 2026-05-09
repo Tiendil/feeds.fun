@@ -8,7 +8,7 @@ from ffun.dispatcher.entities import (
     ProcessorDispatchInfo,
     ProcessorDispatchRoute,
 )
-from ffun.domain.entities import EntryId
+from ffun.domain.entities import EntryId, ProcessorId
 from ffun.feeds_collections.collections import collections
 from ffun.library import domain as l_domain
 from ffun.llms_framework.entities import LLMApiKeyType
@@ -18,18 +18,18 @@ from ffun.queues.entities import QueueKind, QueueRecord, QueueRecordId
 logger = logging.get_module_logger()
 
 
-async def push_entries_to_process(entry_ids: Iterable[EntryId], processor_id: int | None = None) -> None:
+async def push_entries_to_process(entry_ids: Iterable[EntryId], processor_id: ProcessorId | None = None) -> None:
     items = [EntryToProcess(entry_id=entry_id, processor_id=processor_id) for entry_id in entry_ids]
 
     await q_domain.push(QueueKind.entries_to_process, items)
 
 
-async def get_entries_to_tag(processor_id: int, limit: int) -> list[QueueRecord[EntryToTag]]:
+async def get_entries_to_tag(processor_id: ProcessorId, limit: int) -> list[QueueRecord[EntryToTag]]:
     return await q_domain.pull(QueueKind.entries_to_tag, EntryToTag, secondary_id=processor_id, limit=limit)
 
 
 async def push_entries_to_tag(
-    processor_id: int, entry_ids: Iterable[EntryId], llm_api_key_type: LLMApiKeyType | None
+    processor_id: ProcessorId, entry_ids: Iterable[EntryId], llm_api_key_type: LLMApiKeyType | None
 ) -> None:
     items = [EntryToTag(entry_id=entry_id, llm_api_key_type=llm_api_key_type) for entry_id in entry_ids]
 

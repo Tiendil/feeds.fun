@@ -2,7 +2,7 @@ from collections import Counter
 from typing import Iterable
 
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction, transaction
-from ffun.domain.entities import EntryId, TagId, TagUid
+from ffun.domain.entities import EntryId, ProcessorId, TagId, TagUid
 from ffun.ontology import cache, operations
 from ffun.ontology.entities import NormalizedTag, Tag, TagProperty, TagPropertyType
 from ffun.tags import converters
@@ -31,14 +31,14 @@ async def apply_tags_properties(properties: list[TagProperty]) -> None:
     await operations.apply_tags_properties(execute, properties)
 
 
-async def copy_tag_properties(processor_id: int, old_tag_id: TagId, new_tag_id: TagId) -> None:
+async def copy_tag_properties(processor_id: ProcessorId, old_tag_id: TagId, new_tag_id: TagId) -> None:
     await operations.copy_tag_properties(execute, processor_id, old_tag_id, new_tag_id)
 
 
 # TODO: in the future we could split this function into two separate functions
 #       1. tags & properties normalization
 #       2. saving tags & properties to the database
-async def apply_tags_to_entry(entry_id: EntryId, processor_id: int, tags: Iterable[NormalizedTag]) -> None:
+async def apply_tags_to_entry(entry_id: EntryId, processor_id: ProcessorId, tags: Iterable[NormalizedTag]) -> None:
     """Apply tags to entry.
 
     Function expects raw tags from processors => after normalization we could have duplicates.
@@ -157,7 +157,9 @@ async def remove_orphaned_tags(execute: ExecuteType, chunk: int, protected_tags:
 
 
 @run_in_transaction
-async def copy_relations(execute: ExecuteType, processor_id: int, old_tag_id: TagId, new_tag_id: TagId) -> None:
+async def copy_relations(
+    execute: ExecuteType, processor_id: ProcessorId, old_tag_id: TagId, new_tag_id: TagId
+) -> None:
 
     relation_ids = await operations.get_relations_for(execute, tag_ids=[old_tag_id], processor_ids=[processor_id])
 

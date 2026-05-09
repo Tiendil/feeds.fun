@@ -5,7 +5,7 @@ import pydantic
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import TagId, TagUid
+from ffun.domain.entities import ProcessorId, TagId, TagUid
 from ffun.tags.entities import TagCategories
 
 
@@ -18,7 +18,7 @@ class TagProperty(BaseEntity):
     tag_id: TagId
     type: TagPropertyType
     value: str
-    processor_id: int
+    processor_id: ProcessorId
     created_at: datetime.datetime
 
 
@@ -35,7 +35,7 @@ class NormalizedTag(pydantic.BaseModel):
     link: str | None
     categories: TagCategories
 
-    def build_properties_for(self, tag_id: TagId, processor_id: int) -> list[TagProperty]:
+    def build_properties_for(self, tag_id: TagId, processor_id: ProcessorId) -> list[TagProperty]:
         properties = []
 
         created_at = utils.now()

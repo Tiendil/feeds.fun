@@ -6,6 +6,7 @@ from ffun.core.tests.helpers import assert_logs
 from ffun.dispatcher import domain as d_domain
 from ffun.dispatcher.entities import EntryToTag, ProcessorDispatchInfo, ProcessorDispatchRoute
 from ffun.domain.domain import new_entry_id
+from ffun.domain.entities import ProcessorId
 from ffun.feeds.entities import Feed
 from ffun.librarian import background_processors
 from ffun.librarian.background_processors import EntriesProcessor
@@ -50,7 +51,7 @@ class TestProcessorInfo:
         )
 
         processor_info = background_processors.ProcessorInfo(
-            id=101,
+            id=ProcessorId(101),
             type=ProcessorType.fake,
             processor=AlwaysConstantProcessor(name="fake_processor", tags=["tag"]),
             concurrency=5,
@@ -60,8 +61,8 @@ class TestProcessorInfo:
         dispatch_info = processor_info.disptach_info()
 
         assert dispatch_info == ProcessorDispatchInfo(
-            processor_id=101,
-            subqueue_id=101,
+            processor_id=ProcessorId(101),
+            subqueue_id=ProcessorId(101),
             routes=routes,
         )
 

@@ -7,7 +7,7 @@ from pydantic_core import PydanticCustomError
 from ffun.core import logging
 from ffun.core.entities import BaseEntity
 from ffun.dispatcher.entities import ProcessorDispatchRoute
-from ffun.domain.entities import LLMTokens
+from ffun.domain.entities import LLMTokens, ProcessorId
 from ffun.llms_framework.entities import (
     LLMApiKeyType,
     LLMCollectionApiKey,
@@ -38,7 +38,7 @@ class ProcessorType(enum.StrEnum):
 
 
 class BaseProcessor(BaseEntity):
-    id: int
+    id: ProcessorId
     enabled: bool
     workers: int
     name: str

@@ -3,6 +3,7 @@ import pytest
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.domain import new_entry_id
+from ffun.domain.entities import ProcessorId
 from ffun.feeds.entities import Feed
 from ffun.librarian import operations
 from ffun.librarian.tests import helpers
@@ -11,7 +12,7 @@ from ffun.library.tests import make as l_make
 
 class TestAddEntriesToFailedStorage:
     @pytest.mark.asyncio
-    async def test_add_entries(self, loaded_feed: Feed, fake_processor_id: int) -> None:
+    async def test_add_entries(self, loaded_feed: Feed, fake_processor_id: ProcessorId) -> None:
         entries = await l_make.n_entries(loaded_feed, n=13)
 
         entries_to_add = list(entries)[:5]
@@ -26,7 +27,7 @@ class TestAddEntriesToFailedStorage:
 
 class TestGetFailedEntries:
     @pytest.mark.asyncio
-    async def test_get_entries(self, loaded_feed: Feed, fake_processor_id: int) -> None:
+    async def test_get_entries(self, loaded_feed: Feed, fake_processor_id: ProcessorId) -> None:
         entries = await l_make.n_entries(loaded_feed, n=4)
 
         await operations.add_entries_to_failed_storage(fake_processor_id, list(entries))
@@ -36,7 +37,7 @@ class TestGetFailedEntries:
         assert set(entries) <= set(failed_entries)
 
     @pytest.mark.asyncio
-    async def test_no_entries(self, fake_processor_id: int) -> None:
+    async def test_no_entries(self, fake_processor_id: ProcessorId) -> None:
         while True:
             failed_entries = await operations.get_failed_entries(execute, fake_processor_id, limit=1000)
             await operations.remove_failed_entries(execute, fake_processor_id, failed_entries)
@@ -49,7 +50,7 @@ class TestGetFailedEntries:
         assert not failed_entries
 
     @pytest.mark.asyncio
-    async def test_idempotency(self, loaded_feed: Feed, fake_processor_id: int) -> None:
+    async def test_idempotency(self, loaded_feed: Feed, fake_processor_id: ProcessorId) -> None:
         entries = await l_make.n_entries(loaded_feed, n=13)
 
         await operations.add_entries_to_failed_storage(fake_processor_id, list(entries))
@@ -62,7 +63,7 @@ class TestGetFailedEntries:
 
 class TestRemoveFailedEntries:
     @pytest.mark.asyncio
-    async def test_remove_entries(self, loaded_feed: Feed, fake_processor_id: int) -> None:
+    async def test_remove_entries(self, loaded_feed: Feed, fake_processor_id: ProcessorId) -> None:
         entries = await l_make.n_entries(loaded_feed, n=13)
 
         await operations.add_entries_to_failed_storage(fake_processor_id, list(entries))
@@ -77,7 +78,7 @@ class TestRemoveFailedEntries:
         assert set(entries_to_remove) & set(failed_entries) == set()
 
     @pytest.mark.asyncio
-    async def test_remove_non_existing_entries(self, loaded_feed: Feed, fake_processor_id: int) -> None:
+    async def test_remove_non_existing_entries(self, loaded_feed: Feed, fake_processor_id: ProcessorId) -> None:
         entries = await l_make.n_entries(loaded_feed, n=5)
 
         await operations.add_entries_to_failed_storage(fake_processor_id, list(entries))
@@ -90,7 +91,7 @@ class TestRemoveFailedEntries:
 
 class TestCountFailedEntries:
     @pytest.mark.asyncio
-    async def test_no_entries(self, fake_processor_id: int, another_fake_processor_id: int) -> None:
+    async def test_no_entries(self, fake_processor_id: ProcessorId, another_fake_processor_id: ProcessorId) -> None:
         await helpers.clean_failed_storage([fake_processor_id, another_fake_processor_id])
 
         counts = await operations.count_failed_entries()
@@ -100,7 +101,7 @@ class TestCountFailedEntries:
 
     @pytest.mark.asyncio
     async def test_some_entries(
-        self, saved_feed: Feed, fake_processor_id: int, another_fake_processor_id: int
+        self, saved_feed: Feed, fake_processor_id: ProcessorId, another_fake_processor_id: ProcessorId
     ) -> None:
         await helpers.clean_failed_storage([fake_processor_id, another_fake_processor_id])
 

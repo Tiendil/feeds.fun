@@ -10,7 +10,7 @@ from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
 from ffun.dispatcher import domain as d_domain
 from ffun.dispatcher.entities import EntryToProcess
-from ffun.domain.entities import EntryId
+from ffun.domain.entities import EntryId, ProcessorId
 from ffun.librarian import errors, operations
 from ffun.librarian.domain import (
     accumulator,
@@ -33,7 +33,7 @@ from ffun.queues.entities import QueueKind
 
 @contextlib.contextmanager
 def check_metric_accumulator(
-    processor_id: int, name: str, count_delta: int, sum_delta: int
+    processor_id: ProcessorId, name: str, count_delta: int, sum_delta: int
 ) -> Generator[None, None, None]:
 
     metric = accumulator(name, processor_id)
@@ -49,7 +49,7 @@ def check_metric_accumulator(
 
 @contextlib.contextmanager
 def check_metric_accumulators(
-    mocker: MockerFixture, processor_id: int, raw_count: int, raw_sum: int, norm_count: int, norm_sum: int
+    mocker: MockerFixture, processor_id: ProcessorId, raw_count: int, raw_sum: int, norm_count: int, norm_sum: int
 ) -> Generator[None, None, None]:
 
     raw_tags_metric = accumulator("processor_raw_tags", processor_id)
@@ -79,7 +79,9 @@ def check_metric_accumulators(
 
 class TestProcessEntry:
     @pytest.mark.asyncio
-    async def test_success(self, fake_processor_id: int, cataloged_entry: Entry, mocker: MockerFixture) -> None:
+    async def test_success(
+        self, fake_processor_id: ProcessorId, cataloged_entry: Entry, mocker: MockerFixture
+    ) -> None:
         with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 1, 3, 1, 2):  # type: ignore
             await process_entry(
                 processor_id=fake_processor_id,
@@ -106,7 +108,7 @@ class TestProcessEntry:
 
     @pytest.mark.asyncio
     async def test_skip_processing(
-        self, fake_processor_id: int, cataloged_entry: Entry, mocker: MockerFixture
+        self, fake_processor_id: ProcessorId, cataloged_entry: Entry, mocker: MockerFixture
     ) -> None:
         with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 0, 0, 0, 0):  # type: ignore
             await process_entry(
@@ -133,7 +135,7 @@ class TestProcessEntry:
 
     @pytest.mark.asyncio
     async def test_temporary_error_in_processor(
-        self, fake_processor_id: int, cataloged_entry: Entry, mocker: MockerFixture
+        self, fake_processor_id: ProcessorId, cataloged_entry: Entry, mocker: MockerFixture
     ) -> None:
         with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 0, 0, 0, 0):  # type: ignore
             await process_entry(
@@ -160,7 +162,7 @@ class TestProcessEntry:
 
     @pytest.mark.asyncio
     async def test_unexpected_error(
-        self, fake_processor_id: int, cataloged_entry: Entry, mocker: MockerFixture
+        self, fake_processor_id: ProcessorId, cataloged_entry: Entry, mocker: MockerFixture
     ) -> None:
         with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 0, 0, 0, 0):  # type: ignore
             with pytest.raises(errors.UnexpectedErrorInProcessor):
@@ -188,7 +190,7 @@ class TestProcessEntry:
 
 
 class TestMoveFailedEntriesToProcessorQueue:
-    async def get_entries_to_process(self, processor_id: int) -> set[EntryId]:
+    async def get_entries_to_process(self, processor_id: ProcessorId) -> set[EntryId]:
         records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
 
         processor_records = [record for record in records if record.item.processor_id == processor_id]
@@ -198,11 +200,11 @@ class TestMoveFailedEntriesToProcessorQueue:
 
         return entries_in_queue
 
-    async def get_failed_entries(self, processor_id: int) -> set[EntryId]:
+    async def get_failed_entries(self, processor_id: ProcessorId) -> set[EntryId]:
         return set(await operations.get_failed_entries(execute, processor_id, limit=100500))
 
     @pytest.mark.asyncio
-    async def test_no_failed_entries(self, fake_processor_id: int) -> None:
+    async def test_no_failed_entries(self, fake_processor_id: ProcessorId) -> None:
         await helpers.clean_failed_storage([fake_processor_id])
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_processor_id)
@@ -215,8 +217,8 @@ class TestMoveFailedEntriesToProcessorQueue:
     @pytest.mark.asyncio
     async def test_moved(
         self,
-        fake_processor_id: int,
-        another_fake_processor_id: int,
+        fake_processor_id: ProcessorId,
+        another_fake_processor_id: ProcessorId,
         cataloged_entry: Entry,
         another_cataloged_entry: Entry,
     ) -> None:
@@ -249,7 +251,9 @@ class TestMoveFailedEntriesToProcessorQueue:
         assert await self.get_failed_entries(another_fake_processor_id) == set()
 
     @pytest.mark.asyncio
-    async def test_limit(self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry) -> None:
+    async def test_limit(
+        self, fake_processor_id: ProcessorId, cataloged_entry: Entry, another_cataloged_entry: Entry
+    ) -> None:
         await helpers.clean_failed_storage([fake_processor_id])
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_processor_id)

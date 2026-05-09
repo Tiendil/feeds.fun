@@ -2,6 +2,7 @@ import pydantic
 import pytest
 
 from ffun.dispatcher.entities import ProcessorDispatchRoute
+from ffun.domain.entities import ProcessorId
 from ffun.librarian.entities import DomainProcessor, LLMGeneralProcessor
 from ffun.librarian.tag_extractors import dog_tags_extractor
 from ffun.librarian.text_cleaners import clear_nothing
@@ -21,7 +22,7 @@ _general_key_warning = "I understand that setting this key may be DANGEROUS and 
 class TestBaseProcessor:
     def test_dispatch_routes(self) -> None:
         processor = DomainProcessor(
-            id=101,
+            id=ProcessorId(101),
             enabled=True,
             workers=1,
             name="test-processor",
@@ -59,7 +60,7 @@ class TestLLMGeneralProcessor:
         general_api_key: LLMGeneralApiKey | None = None,
     ) -> LLMGeneralProcessor:
         return LLMGeneralProcessor(
-            id=666,
+            id=ProcessorId(666),
             enabled=True,
             workers=1,
             name="test-processor",
@@ -80,7 +81,7 @@ class TestLLMGeneralProcessor:
     def test_api_key_is_required_if_collections_enbabled(self, llm_config: LLMConfiguration) -> None:
         with pytest.raises(pydantic.ValidationError) as exc_info:
             LLMGeneralProcessor(
-                id=666,
+                id=ProcessorId(666),
                 enabled=True,
                 workers=1,
                 name="test-processor",
@@ -272,7 +273,7 @@ class TestLLMGeneralProcessor:
     ) -> None:
         with pytest.raises(pydantic.ValidationError) as exc_info:
             LLMGeneralProcessor(
-                id=666,
+                id=ProcessorId(666),
                 enabled=True,
                 workers=1,
                 name="test-processor",

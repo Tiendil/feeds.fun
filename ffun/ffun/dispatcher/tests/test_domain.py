@@ -14,7 +14,7 @@ from ffun.dispatcher.entities import (
 )
 from ffun.dispatcher.tests import make
 from ffun.domain.domain import new_entry_id
-from ffun.domain.entities import EntryId
+from ffun.domain.entities import EntryId, ProcessorId
 from ffun.feeds.entities import Feed
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import CollectionId
@@ -56,7 +56,7 @@ class TestPushEntriesToProcess:
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
 
         entry_ids = [new_entry_id(), new_entry_id()]
-        processor_id = 101
+        processor_id = ProcessorId(101)
 
         await domain.push_entries_to_process(entry_ids, processor_id=processor_id)
 
@@ -69,7 +69,7 @@ class TestPushEntriesToProcess:
 class TestGetEntriesToTag:
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
-        processor_id = 101
+        processor_id = ProcessorId(101)
 
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=processor_id)
 
@@ -77,8 +77,8 @@ class TestGetEntriesToTag:
 
     @pytest.mark.asyncio
     async def test_get_entries_from_processor_subqueue(self) -> None:
-        processor_id = 101
-        another_processor_id = 102
+        processor_id = ProcessorId(101)
+        another_processor_id = ProcessorId(102)
 
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=processor_id)
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=another_processor_id)
@@ -97,7 +97,7 @@ class TestGetEntriesToTag:
 class TestPushEntriesToTag:
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
-        processor_id = 101
+        processor_id = ProcessorId(101)
 
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=processor_id)
 
@@ -112,8 +112,8 @@ class TestPushEntriesToTag:
     @pytest.mark.parametrize("llm_api_key_type", [None, *LLMApiKeyType])
     @pytest.mark.asyncio
     async def test_push_entries_to_processor_subqueue(self, llm_api_key_type: LLMApiKeyType | None) -> None:
-        processor_id = 101
-        another_processor_id = 102
+        processor_id = ProcessorId(101)
+        another_processor_id = ProcessorId(102)
 
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=processor_id)
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=another_processor_id)
@@ -461,7 +461,7 @@ class TestProcessorItemsToTag:
 
         items = [
             EntryToProcess(entry_id=target_entry_id, processor_id=processor.processor_id),
-            EntryToProcess(entry_id=other_entry_id, processor_id=processor.processor_id + 1),
+            EntryToProcess(entry_id=other_entry_id, processor_id=ProcessorId(processor.processor_id + 1)),
             EntryToProcess(entry_id=common_entry_id, processor_id=None),
         ]
 
@@ -631,7 +631,7 @@ class TestDispatchEntries:
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
 
         entry_ids = [new_entry_id(), new_entry_id(), new_entry_id()]
-        processor_id = 101
+        processor_id = ProcessorId(101)
 
         await domain.push_entries_to_process(entry_ids)
 
@@ -664,7 +664,7 @@ class TestDispatchEntries:
             (second_processor.processor_id, entry_ids[2]),
             (second_processor.processor_id, entry_ids[1]),
         }
-        calls: list[tuple[int, EntryId]] = []
+        calls: list[tuple[ProcessorId, EntryId]] = []
 
         def dispatch_decision(
             processor: ProcessorDispatchInfo, item: EntryToProcess, *, in_collection: bool

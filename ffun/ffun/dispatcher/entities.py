@@ -1,12 +1,12 @@
 from ffun.core.entities import BaseEntity
-from ffun.domain.entities import EntryId
+from ffun.domain.entities import EntryId, ProcessorId
 from ffun.llms_framework.entities import LLMApiKeyType
 from ffun.queues.entities import BaseQueueItem
 
 
 class EntryToProcess(BaseQueueItem):
     entry_id: EntryId
-    processor_id: int | None = None
+    processor_id: ProcessorId | None = None
 
 
 class EntryToTag(BaseQueueItem):
@@ -25,6 +25,6 @@ class ProcessorDispatchRoute(BaseEntity):
 
 
 class ProcessorDispatchInfo(BaseEntity):
-    processor_id: int
-    subqueue_id: int
+    processor_id: ProcessorId
+    subqueue_id: ProcessorId
     routes: tuple[ProcessorDispatchRoute, ...]

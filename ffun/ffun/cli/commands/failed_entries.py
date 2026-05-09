@@ -5,6 +5,7 @@ from tabulate import tabulate
 
 from ffun.application.application import with_app
 from ffun.cli.application import app
+from ffun.domain.entities import ProcessorId
 from ffun.librarian.background_processors import processors
 from ffun.librarian.domain import count_failed_entries, move_failed_entries_to_processor_queue
 
@@ -29,11 +30,13 @@ def failed_entries_count() -> None:
 
 
 async def run_failed_enties_move_to_queue(processor_id: int, limit: int) -> None:
-    if not any(processor_info.id == processor_id for processor_info in processors):
+    typed_processor_id = ProcessorId(processor_id)
+
+    if not any(processor_info.id == typed_processor_id for processor_info in processors):
         raise ValueError(f"Processor with id {processor_id} not found")
 
     async with with_app():
-        await move_failed_entries_to_processor_queue(processor_id, limit=limit)
+        await move_failed_entries_to_processor_queue(typed_processor_id, limit=limit)
         await count_failed_entries()
 
 
