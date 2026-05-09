@@ -2,6 +2,8 @@
 #
 # ATTENTION: processors ids <= 10000 are reserved for the system.
 #            if you want to add a custom processor, use ids > 10000.
+#
+# Routes are checked in order; the first route matching the entry kind is used.
 
 [[tag_processors]]
   id = 1
@@ -9,8 +11,12 @@
   workers = 1
   name = "domain"
   type = "domain"
-  allowed_for_collections = true
-  allowed_for_users = true
+
+  [[tag_processors.routes]]
+    id = "default"
+    allowed_for_collections = true
+    allowed_for_users = true
+    allowed_for_quality_tests = true
 
 [[tag_processors]]
   id = 2
@@ -18,8 +24,12 @@
   workers = 1
   name = "native_tags"
   type = "native_tags"
-  allowed_for_collections = true
-  allowed_for_users = true
+
+  [[tag_processors.routes]]
+    id = "default"
+    allowed_for_collections = true
+    allowed_for_users = true
+    allowed_for_quality_tests = true
 
 [[tag_processors]]
   id = 3
@@ -36,23 +46,21 @@
 
   llm_provider = "openai"
 
+  text_parts_intersection = 200
+  max_tokens_per_entry = 5000
+
   #####################################
   # ATTENTION!!!
   # setting up this values may lead to significant costs
 
-  # setup if you want to process feeds from collections with a specific API key
-  collections_api_key = ""
-
-  # setup if you want to process ALL feeds with a specific API key
-  general_api_key = ""
+  # setup routes with API keys if you want to process entries with configured keys
   #####################################
 
-  # using for collections is disabled because there are no API keys set
-  allowed_for_collections = false
-  allowed_for_users = true
-
-  text_parts_intersection = 200
-  max_tokens_per_entry = 5000
+  [[tag_processors.routes]]
+    id = "user-api-key"
+    allowed_for_collections = false
+    allowed_for_users = true
+    api_key = ""
 
   [tag_processors.llm_config]
     model = "gpt-4o-mini-2024-07-18"
@@ -113,8 +121,12 @@ Your task is to analyze the given text by following these steps:
   workers = 1
   name = "upper_case_title"
   type = "upper_case_title"
-  allowed_for_collections = true
-  allowed_for_users = true
+
+  [[tag_processors.routes]]
+    id = "default"
+    allowed_for_collections = true
+    allowed_for_users = true
+    allowed_for_quality_tests = true
 
 
 [[tag_processors]]
@@ -136,18 +148,11 @@ Your task is to analyze the given text by following these steps:
   # ATTENTION!!!
   # setting up this values may lead to significant costs
 
-  # setup if you want to process feeds from collections with a specific API key
-  collections_api_key = ""
-
-  # setup if you want to process ALL feeds with a specific API key
-  general_api_key = ""
+  # setup routes with API keys if you want to process entries with configured keys
   #####################################
 
-  # using for collections is disabled because there are no API keys set
-  allowed_for_collections = false
-
-  # currently, we do not support tracking tokens for Gemini
-  allowed_for_users = false
+  # currently, this processor has no routes because we do not support tracking tokens for Gemini
+  routes = []
 
   text_parts_intersection = 200
   max_tokens_per_entry = 5000
@@ -220,23 +225,21 @@ Your task is to analyze the given text by following these steps:
 
   llm_provider = "openai"
 
+  text_parts_intersection = 200
+  max_tokens_per_entry = 5000
+
   #####################################
   # ATTENTION!!!
   # setting up this values may lead to significant costs
 
-  # setup if you want to process feeds from collections with a specific API key
-  collections_api_key = ""
-
-  # setup if you want to process ALL feeds with a specific API key
-  general_api_key = ""
+  # setup routes with API keys if you want to process entries with configured keys
   #####################################
 
-  # using for collections is disabled because there are no API keys set
-  allowed_for_collections = false
-  allowed_for_users = true
-
-  text_parts_intersection = 200
-  max_tokens_per_entry = 5000
+  [[tag_processors.routes]]
+    id = "user-api-key"
+    allowed_for_collections = false
+    allowed_for_users = true
+    api_key = ""
 
   [tag_processors.llm_config]
     model = "gpt-5-nano-2025-08-07"

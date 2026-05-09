@@ -11,21 +11,12 @@ from ffun.feeds.entities import FeedId
 
 LLMApiKey = NewType("LLMApiKey", str)
 LLMUserApiKey = NewType("LLMUserApiKey", LLMApiKey)
-LLMCollectionApiKey = NewType("LLMCollectionApiKey", LLMApiKey)
-LLMGeneralApiKey = NewType("LLMGeneralApiKey", LLMApiKey)
 
 
 class LLMProvider(enum.StrEnum):
     test = "test"
     openai = "openai"
     google = "google"
-
-
-class LLMApiKeyType(enum.StrEnum):
-    general = "general"
-    collection = "collection"
-    user = "user"
-    subscription = "subscription"
 
 
 class ModelInfo(pydantic.BaseModel):

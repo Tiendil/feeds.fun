@@ -1,7 +1,10 @@
+from typing import NewType
+
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import EntryId, ProcessorId
-from ffun.llms_framework.entities import LLMApiKeyType
 from ffun.queues.entities import BaseQueueItem
+
+ProcessorRouteId = NewType("ProcessorRouteId", str)
 
 
 class EntryToProcess(BaseQueueItem):
@@ -11,17 +14,17 @@ class EntryToProcess(BaseQueueItem):
 
 class EntryToTag(BaseQueueItem):
     entry_id: EntryId
-    llm_api_key_type: LLMApiKeyType | None = None
+    route_id: ProcessorRouteId
 
 
 class DispatchDecision(BaseEntity):
-    llm_api_key_type: LLMApiKeyType | None = None
+    route_id: ProcessorRouteId
 
 
 class ProcessorDispatchRoute(BaseEntity):
+    id: ProcessorRouteId
     allowed_for_collections: bool
     allowed_for_users: bool
-    llm_api_key_type: LLMApiKeyType | None = None
 
 
 class ProcessorDispatchInfo(BaseEntity):

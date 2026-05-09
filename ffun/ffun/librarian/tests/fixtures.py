@@ -1,6 +1,6 @@
 import pytest
 
-from ffun.dispatcher.entities import ProcessorDispatchRoute
+from ffun.dispatcher.entities import ProcessorDispatchRoute, ProcessorRouteId
 from ffun.domain.entities import ProcessorId
 from ffun.librarian.background_processors import EntriesProcessor, ProcessorInfo
 from ffun.librarian.entities import ProcessorType
@@ -28,10 +28,12 @@ def fake_processor_info(fake_processor_id: ProcessorId) -> ProcessorInfo:
         concurrency=5,
         routes=(
             ProcessorDispatchRoute(
+                id=ProcessorRouteId("default"),
                 allowed_for_collections=True,
                 allowed_for_users=True,
             ),
         ),
+        quality_route_id=ProcessorRouteId("default"),
     )
 
 

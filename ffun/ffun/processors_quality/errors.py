@@ -7,3 +7,7 @@ class Error(errors.Error):
 
 class AttributionNotDefined(Error):
     pass
+
+
+class NoQualityTestRoute(Error):
+    pass

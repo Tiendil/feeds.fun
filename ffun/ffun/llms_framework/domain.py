@@ -12,9 +12,8 @@ from ffun.llms_framework.entities import (
     APIKeyUsage,
     ChatRequest,
     ChatResponse,
-    LLMCollectionApiKey,
+    LLMApiKey,
     LLMConfiguration,
-    LLMGeneralApiKey,
     LLMTokens,
     ModelInfo,
     SelectKeyContext,
@@ -128,30 +127,11 @@ def _estimate_reserved_cost(
     return USDCost(len(requests) * model.max_request_cost)
 
 
-def general_api_key_usage(
+def configured_api_key_usage(
     *,
     llm: ProviderInterface,
     llm_config: LLMConfiguration,
-    api_key: LLMGeneralApiKey,
-    requests: Sequence[ChatRequest],
-) -> APIKeyUsage:
-    reserved_cost = _estimate_reserved_cost(llm=llm, llm_config=llm_config, requests=requests)
-
-    return APIKeyUsage(
-        provider=llm.provider,
-        user_id=None,
-        api_key=api_key,
-        reserved_cost=reserved_cost,
-        used_cost=None,
-        interval_started_at=month_interval_start(),
-    )
-
-
-def collection_api_key_usage(
-    *,
-    llm: ProviderInterface,
-    llm_config: LLMConfiguration,
-    api_key: LLMCollectionApiKey,
+    api_key: LLMApiKey,
     requests: Sequence[ChatRequest],
 ) -> APIKeyUsage:
     reserved_cost = _estimate_reserved_cost(llm=llm, llm_config=llm_config, requests=requests)

@@ -4,7 +4,7 @@ from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
 from ffun.dispatcher import domain as d_domain
 from ffun.dispatcher.background_dispatcher import EntriesDispatcher
-from ffun.dispatcher.entities import ProcessorDispatchInfo, ProcessorDispatchRoute
+from ffun.dispatcher.entities import EntryToTag, ProcessorDispatchInfo, ProcessorDispatchRoute, ProcessorRouteId
 from ffun.domain.entities import EntryId, ProcessorId
 from ffun.librarian import domain
 from ffun.librarian.entities import ProcessorType
@@ -28,6 +28,8 @@ class ProcessorInfo:
         "concurrency",
         "type",
         "routes",
+        "route_ids",
+        "quality_route_id",
     )
 
     def __init__(  # noqa: disable=CFQ002
@@ -37,12 +39,15 @@ class ProcessorInfo:
         processor: Processor,
         concurrency: int,
         routes: tuple[ProcessorDispatchRoute, ...],
+        quality_route_id: ProcessorRouteId | None,
     ):
         self.type = type
         self.id = id
         self.processor = processor
         self.concurrency = concurrency
         self.routes = routes
+        self.route_ids = frozenset(route.id for route in self.routes)
+        self.quality_route_id = quality_route_id
 
     def disptach_info(self) -> ProcessorDispatchInfo:
         return ProcessorDispatchInfo(
@@ -64,8 +69,6 @@ for processor_config in settings.tag_processors:
 
     logger.info("add_tag_processor", processor_id=processor_config.id, processor_name=processor_config.name)
 
-    info_arguments = {}
-
     tags_processor: Processor
     if processor_config.type == ProcessorType.domain:
         tags_processor = DomainProcessor(name=processor_config.name)
@@ -81,15 +84,12 @@ for processor_config in settings.tag_processors:
             tag_extractor=processor_config.tags_extractor,
             llm_provider=processor_config.llm_provider,
             llm_config=processor_config.llm_config,
-            collections_api_key=processor_config.collections_api_key,
-            general_api_key=processor_config.general_api_key,
             max_tokens_per_entry=processor_config.max_tokens_per_entry,
             text_parts_intersection=processor_config.text_parts_intersection,
+            routes=processor_config.routes,
         )
     else:
         raise NotImplementedError(f"Unknown processor type: {processor_config.type}")
-
-    info_arguments["processor"] = tags_processor
 
     processor = ProcessorInfo(
         id=processor_config.id,
@@ -97,6 +97,7 @@ for processor_config in settings.tag_processors:
         processor=tags_processor,
         concurrency=processor_config.workers,
         routes=processor_config.dispatch_routes(),
+        quality_route_id=processor_config.quality_route_id,
     )
 
     processors.append(processor)
@@ -152,17 +153,44 @@ class EntriesProcessor(InfiniteTask):
 
         return entries_to_process, entries_to_remove
 
+    async def filter_records_with_known_routes(
+        self, records: list[d_domain.QueueRecord[EntryToTag]]
+    ) -> list[d_domain.QueueRecord[EntryToTag]]:
+        processor_id = self._processor_info.id
+
+        records_to_requeue = [
+            record for record in records if record.item.route_id not in self._processor_info.route_ids
+        ]
+        records_to_process = [record for record in records if record.item.route_id in self._processor_info.route_ids]
+
+        if records_to_requeue:
+            for record in records_to_requeue:
+                logger.warning(
+                    "unknown_processor_route_in_queue",
+                    processor_id=processor_id,
+                    entry_id=record.item.entry_id,
+                    route_id=record.item.route_id,
+                )
+
+            await d_domain.push_entries_to_process(
+                [record.item.entry_id for record in records_to_requeue], processor_id=processor_id
+            )
+
+        return records_to_process
+
     async def single_run(self) -> None:
         processor_id = self._processor_info.id
         concurrency = self._processor_info.concurrency
 
         records = await d_domain.get_entries_to_tag(processor_id=processor_id, limit=concurrency)
-        entries_ids = [record.item.entry_id for record in records]
-        items_by_entry_id = {record.item.entry_id: record.item for record in records}
 
-        if not entries_ids:
+        if not records:
             logger.info("no_entries_to_process", processor_id=processor_id)
             return
+
+        records_to_process = await self.filter_records_with_known_routes(records)
+        entries_ids = [record.item.entry_id for record in records_to_process]
+        items_by_entry_id = {record.item.entry_id: record.item for record in records_to_process}
 
         entries_to_process, entries_to_remove = await self.separate_entries(entries_ids=entries_ids)
 
@@ -170,7 +198,7 @@ class EntriesProcessor(InfiniteTask):
 
         for entry in entries_to_process:
             item = items_by_entry_id[entry.id]
-            context = ProcessorContext(llm_api_key_type=item.llm_api_key_type)
+            context = ProcessorContext(route_id=item.route_id)
             tasks.append(
                 domain.process_entry(
                     processor_id=processor_id, processor=self._processor_info.processor, entry=entry, context=context

@@ -1,5 +1,6 @@
 import pytest
 
+from ffun.dispatcher.entities import ProcessorRouteId
 from ffun.librarian.processors import upper_case_title
 from ffun.librarian.processors.base import ProcessorContext
 from ffun.library.entities import Entry
@@ -9,6 +10,7 @@ from ffun.tags.entities import TagCategory
 processor = upper_case_title.Processor(name="upper_case_title")
 
 expected_tag = "upper-case-title"
+test_route_id = ProcessorRouteId("test-route")
 
 
 class TestEncodeSpecialCharacters:
@@ -29,7 +31,7 @@ class TestEncodeSpecialCharacters:
     async def test(self, cataloged_entry: Entry, title: str, has_tag: bool) -> None:
         cataloged_entry = cataloged_entry.replace(title=title)
 
-        tags = await processor.process(cataloged_entry, context=ProcessorContext())
+        tags = await processor.process(cataloged_entry, context=ProcessorContext(route_id=test_route_id))
 
         expected_tags = []
 

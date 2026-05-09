@@ -9,7 +9,7 @@ from ffun.core.metrics import Accumulator
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
 from ffun.dispatcher import domain as d_domain
-from ffun.dispatcher.entities import EntryToProcess
+from ffun.dispatcher.entities import EntryToProcess, ProcessorRouteId
 from ffun.domain.entities import EntryId, ProcessorId
 from ffun.librarian import errors, operations
 from ffun.librarian.domain import (
@@ -29,6 +29,8 @@ from ffun.library.entities import Entry
 from ffun.ontology import domain as o_domain
 from ffun.queues import operations as q_operations
 from ffun.queues.entities import QueueKind
+
+TEST_ROUTE_ID = ProcessorRouteId("test-route")
 
 
 @contextlib.contextmanager
@@ -87,7 +89,7 @@ class TestProcessEntry:
                 processor_id=fake_processor_id,
                 processor=AlwaysConstantProcessor(name="fake-processor", tags=["tag-1", "tag-2", "tag--2"]),
                 entry=cataloged_entry,
-                context=ProcessorContext(),
+                context=ProcessorContext(route_id=TEST_ROUTE_ID),
             )
 
         assert_logs(
@@ -115,7 +117,7 @@ class TestProcessEntry:
                 processor_id=fake_processor_id,
                 processor=AlwaysSkipEntryProcessor(name="fake-processor"),
                 entry=cataloged_entry,
-                context=ProcessorContext(),
+                context=ProcessorContext(route_id=TEST_ROUTE_ID),
             )
 
         assert_logs(
@@ -142,7 +144,7 @@ class TestProcessEntry:
                 processor_id=fake_processor_id,
                 processor=AlwaysTemporaryErrorProcessor(name="fake-processor"),
                 entry=cataloged_entry,
-                context=ProcessorContext(),
+                context=ProcessorContext(route_id=TEST_ROUTE_ID),
             )
 
         assert_logs(
@@ -170,7 +172,7 @@ class TestProcessEntry:
                     processor_id=fake_processor_id,
                     processor=AlwaysErrorProcessor(name="fake-processor"),
                     entry=cataloged_entry,
-                    context=ProcessorContext(),
+                    context=ProcessorContext(route_id=TEST_ROUTE_ID),
                 )
 
         assert_logs(

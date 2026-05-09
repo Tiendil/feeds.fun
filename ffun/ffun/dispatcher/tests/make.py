@@ -1,20 +1,19 @@
 from collections.abc import Sequence
 
-from ffun.dispatcher.entities import ProcessorDispatchInfo, ProcessorDispatchRoute
+from ffun.dispatcher.entities import ProcessorDispatchInfo, ProcessorDispatchRoute, ProcessorRouteId
 from ffun.domain.entities import ProcessorId
-from ffun.llms_framework.entities import LLMApiKeyType
 
 
 def processor_dispatch_route(
     *,
+    id: str = "default",
     allowed_for_collections: bool = True,
     allowed_for_users: bool = True,
-    llm_api_key_type: LLMApiKeyType | None = None,
 ) -> ProcessorDispatchRoute:
     return ProcessorDispatchRoute(
+        id=ProcessorRouteId(id),
         allowed_for_collections=allowed_for_collections,
         allowed_for_users=allowed_for_users,
-        llm_api_key_type=llm_api_key_type,
     )
 
 

@@ -11,9 +11,8 @@ from ffun.llms_framework.domain import (
     _estimate_reserved_cost,
     _llm_call_result_cost,
     call_llm,
-    collection_api_key_usage,
+    configured_api_key_usage,
     cut_text_to_max_tokens,
-    general_api_key_usage,
     search_for_user_api_key,
     split_text,
     split_text_according_to_tokens,
@@ -21,9 +20,7 @@ from ffun.llms_framework.domain import (
 from ffun.llms_framework.entities import (
     APIKeyUsage,
     LLMApiKey,
-    LLMCollectionApiKey,
     LLMConfiguration,
-    LLMGeneralApiKey,
     LLMTokens,
     USDCost,
     UserKeyInfo,
@@ -294,7 +291,7 @@ class TestEstimateReservedCost:
         )
 
 
-class TestGeneralAPIKeyUsage:
+class TestConfiguredAPIKeyUsage:
 
     @pytest.fixture  # type: ignore
     def llm_config(self) -> LLMConfiguration:
@@ -307,42 +304,11 @@ class TestGeneralAPIKeyUsage:
         )
 
     def test_constructs_usage(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
-        api_key = LLMGeneralApiKey(LLMApiKey("general-api-key"))
+        api_key = LLMApiKey("configured-api-key")
         requests = [ChatRequestTest(text="abcd"), ChatRequestTest(text="efgh1234")]
         reserved_cost = _estimate_reserved_cost(llm=fake_llm_provider, llm_config=llm_config, requests=requests)
 
-        key_usage = general_api_key_usage(
-            llm=fake_llm_provider, llm_config=llm_config, api_key=api_key, requests=requests
-        )
-
-        assert key_usage == APIKeyUsage(
-            provider=fake_llm_provider.provider,
-            user_id=None,
-            api_key=api_key,
-            reserved_cost=reserved_cost,
-            used_cost=None,
-            interval_started_at=month_interval_start(),
-        )
-
-
-class TestCollectionAPIKeyUsage:
-
-    @pytest.fixture  # type: ignore
-    def llm_config(self) -> LLMConfiguration:
-        return LLMConfiguration(
-            model="test-model-1",
-            system="system prompt",
-            max_return_tokens=LLMTokens(143),
-            temperature=0,
-            top_p=0,
-        )
-
-    def test_constructs_usage(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
-        api_key = LLMCollectionApiKey(LLMApiKey("collection-api-key"))
-        requests = [ChatRequestTest(text="abcd"), ChatRequestTest(text="efgh1234")]
-        reserved_cost = _estimate_reserved_cost(llm=fake_llm_provider, llm_config=llm_config, requests=requests)
-
-        key_usage = collection_api_key_usage(
+        key_usage = configured_api_key_usage(
             llm=fake_llm_provider, llm_config=llm_config, api_key=api_key, requests=requests
         )
 

@@ -1,13 +1,13 @@
 from ffun.core.entities import BaseEntity
+from ffun.dispatcher.entities import ProcessorRouteId
 from ffun.librarian import errors
 from ffun.library.entities import Entry
-from ffun.llms_framework.entities import LLMApiKeyType
 from ffun.ontology.entities import RawTag
 from ffun.tags.entities import TagCategory
 
 
 class ProcessorContext(BaseEntity):
-    llm_api_key_type: LLMApiKeyType | None = None
+    route_id: ProcessorRouteId
 
 
 class Processor:

@@ -99,6 +99,10 @@ FFUN_LIBRARIAN_OPENAI_GENERAL_PROCESSOR__ENABLED="True"
 Feeds Fun uses different tag processors to detect tags for news entries. Some of them are simple, like `set domain as tag`, some of them are more complex, like `use LLM to detect all possible tags`.
 
 Processors are configured via a separate configuration file.
+Each processor defines explicit routes that decide which entries it can handle.
+When multiple routes can handle an entry, the dispatcher uses the first acceptable route, so route order in the processor config is important.
+LLM routes can also carry a configured API key; routes without a configured key use user API keys.
+Routes can additionally opt in to processor quality checks with `allowed_for_quality_tests`.
 
 You can find an example of configuration [in the code](./ffun/ffun/librarian/fixtures/tag_processors.toml).
 
@@ -123,9 +127,9 @@ Currently, we support two API providers: OpenAI (ChatGPT) and Google (Gemini). I
 
 By default, LLM processors will skip feeds from default collections and use user API keys to process their news.
 
-You can set the API key for collections in the processor's config.
+You can set the API key for collections in a processor route.
 
-**DANGER!!!** You can set the "general API key" in the processor's config; in this case, the processor will use it to process **ALL** news. It may be convenient if you self-host the service and fully control who has access to it.
+**DANGER!!!** You can allow a route with a configured API key to process user feeds; in this case, the processor will use it to process **ALL** news matched by that route. It may be convenient if you self-host the service and fully control who has access to it.
 
 ### Use third-party LLM models
 

@@ -4,7 +4,13 @@ from structlog.testing import capture_logs
 
 from ffun.core.tests.helpers import assert_logs
 from ffun.dispatcher import domain as d_domain
-from ffun.dispatcher.entities import EntryToTag, ProcessorDispatchInfo, ProcessorDispatchRoute
+from ffun.dispatcher.entities import (
+    EntryToProcess,
+    EntryToTag,
+    ProcessorDispatchInfo,
+    ProcessorDispatchRoute,
+    ProcessorRouteId,
+)
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import ProcessorId
 from ffun.feeds.entities import Feed
@@ -29,6 +35,23 @@ def _feed_retention_sort_key(entry: Entry) -> tuple[object, object]:
 
 
 class TestProcessorInfo:
+    def processor_info(
+        self,
+        *,
+        routes: tuple[ProcessorDispatchRoute, ...],
+        processor_id: ProcessorId = ProcessorId(101),
+        concurrency: int = 5,
+        quality_route_id: ProcessorRouteId | None = None,
+    ) -> background_processors.ProcessorInfo:
+        return background_processors.ProcessorInfo(
+            id=processor_id,
+            type=ProcessorType.fake,
+            processor=AlwaysConstantProcessor(name="fake_processor", tags=["tag"]),
+            concurrency=concurrency,
+            routes=routes,
+            quality_route_id=quality_route_id,
+        )
+
     @pytest.mark.parametrize(
         "allowed_for_collections, allowed_for_users",
         [
@@ -38,36 +61,138 @@ class TestProcessorInfo:
             (True, True),
         ],
     )
-    def test_disptach_info(
+    def test_disptach_info__success(
         self,
         allowed_for_collections: bool,
         allowed_for_users: bool,
     ) -> None:
-        routes = (
+        expected_routes = (
             ProcessorDispatchRoute(
+                id=ProcessorRouteId("default"),
                 allowed_for_collections=allowed_for_collections,
                 allowed_for_users=allowed_for_users,
             ),
         )
 
-        processor_info = background_processors.ProcessorInfo(
-            id=ProcessorId(101),
-            type=ProcessorType.fake,
-            processor=AlwaysConstantProcessor(name="fake_processor", tags=["tag"]),
-            concurrency=5,
-            routes=routes,
-        )
+        processor_info = self.processor_info(routes=expected_routes)
 
         dispatch_info = processor_info.disptach_info()
 
         assert dispatch_info == ProcessorDispatchInfo(
             processor_id=ProcessorId(101),
             subqueue_id=ProcessorId(101),
-            routes=routes,
+            routes=expected_routes,
         )
+
+    def test_init__stores_route_ids(self) -> None:
+        processor_info = self.processor_info(
+            routes=(
+                ProcessorDispatchRoute(
+                    id=ProcessorRouteId("default"),
+                    allowed_for_collections=True,
+                    allowed_for_users=True,
+                ),
+                ProcessorDispatchRoute(
+                    id=ProcessorRouteId("fallback"),
+                    allowed_for_collections=False,
+                    allowed_for_users=True,
+                ),
+            ),
+        )
+
+        route_ids = processor_info.route_ids
+
+        assert route_ids == {ProcessorRouteId("default"), ProcessorRouteId("fallback")}
+
+    def test_init__stores_quality_route_id(self) -> None:
+        processor_info = self.processor_info(
+            routes=(
+                ProcessorDispatchRoute(
+                    id=ProcessorRouteId("default"),
+                    allowed_for_collections=True,
+                    allowed_for_users=True,
+                ),
+                ProcessorDispatchRoute(
+                    id=ProcessorRouteId("quality-route"),
+                    allowed_for_collections=False,
+                    allowed_for_users=False,
+                ),
+            ),
+            quality_route_id=ProcessorRouteId("quality-route"),
+        )
+
+        assert processor_info.quality_route_id == ProcessorRouteId("quality-route")
 
 
 class TestEntriesProcessor:
+    @pytest.mark.asyncio
+    async def test_filter_records_with_known_routes__known_route_returns_records(
+        self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
+    ) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
+
+        entries = await l_make.n_entries(loaded_feed, 2)
+        entries_ids = list(entries)
+
+        await d_domain.push_entries_to_tag(
+            fake_entries_processor.id, entries_ids, route_id=ProcessorRouteId("default")
+        )
+
+        records = await d_domain.get_entries_to_tag(processor_id=fake_entries_processor.id, limit=100)
+
+        with capture_logs() as logs:  # type: ignore
+            records_to_process = await fake_entries_processor.filter_records_with_known_routes(records)
+
+        assert_logs(logs, unknown_processor_route_in_queue=0)  # type: ignore
+
+        process_records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
+
+        assert {record.item.entry_id for record in records_to_process} == set(entries_ids)
+        assert process_records == []
+
+        await d_domain.acknowledge([record.id for record in records if record.id is not None])
+
+    @pytest.mark.asyncio
+    async def test_filter_records_with_known_routes__mixed_routes_requeues_unknown_records(
+        self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
+    ) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
+
+        entries = await l_make.n_entries(loaded_feed, 4)
+        entries_list = list(entries.values())
+        entries_list.sort(key=_entry_sort_key)
+
+        known_route_entries = entries_list[:2]
+        unknown_route_entries = entries_list[2:]
+
+        await d_domain.push_entries_to_tag(
+            fake_entries_processor.id,
+            [entry.id for entry in known_route_entries],
+            route_id=ProcessorRouteId("default"),
+        )
+        await d_domain.push_entries_to_tag(
+            fake_entries_processor.id,
+            [entry.id for entry in unknown_route_entries],
+            route_id=ProcessorRouteId("unknown-route"),
+        )
+
+        records = await d_domain.get_entries_to_tag(processor_id=fake_entries_processor.id, limit=100)
+
+        with capture_logs() as logs:  # type: ignore
+            records_to_process = await fake_entries_processor.filter_records_with_known_routes(records)
+
+        assert_logs(logs, unknown_processor_route_in_queue=len(unknown_route_entries))  # type: ignore
+
+        process_records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
+
+        assert {record.item.entry_id for record in records_to_process} == {entry.id for entry in known_route_entries}
+        assert {record.item.entry_id for record in process_records} == {entry.id for entry in unknown_route_entries}
+        assert {record.item.processor_id for record in process_records} == {fake_entries_processor.id}
+
+        await d_domain.acknowledge([record.id for record in records if record.id is not None])
+
     @pytest.mark.asyncio
     async def test_single_run__no_entries_to_process(self, fake_entries_processor: EntriesProcessor) -> None:
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
@@ -83,6 +208,32 @@ class TestEntriesProcessor:
         )
 
     @pytest.mark.asyncio
+    async def test_single_run__unknown_route_acknowledges_records(
+        self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
+    ) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
+
+        entries = await l_make.n_entries(loaded_feed, 1)
+        entry = next(iter(entries.values()))
+
+        await d_domain.push_entries_to_tag(
+            fake_entries_processor.id,
+            [entry.id],
+            route_id=ProcessorRouteId("unknown-route"),
+        )
+
+        await fake_entries_processor.single_run()
+
+        tagged_records = await q_operations.tech_get_queue_records(
+            QueueKind.entries_to_tag, EntryToTag, secondary_id=fake_entries_processor.id
+        )
+        process_records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
+
+        assert tagged_records == []
+        assert {record.item.entry_id for record in process_records} == {entry.id}
+
+    @pytest.mark.asyncio
     async def test_single_run__entries_more_than_concurrency(
         self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
@@ -93,7 +244,7 @@ class TestEntriesProcessor:
         entries_list.sort(key=_entry_sort_key)
 
         await d_domain.push_entries_to_tag(
-            fake_entries_processor.id, [entry.id for entry in entries_list], llm_api_key_type=None
+            fake_entries_processor.id, [entry.id for entry in entries_list], route_id=ProcessorRouteId("default")
         )
 
         assert fake_entries_processor.concurrency <= len(entries)
@@ -141,7 +292,7 @@ class TestEntriesProcessor:
         entries_list.sort(key=_entry_sort_key)
 
         await d_domain.push_entries_to_tag(
-            fake_entries_processor.id, [entry.id for entry in entries_list], llm_api_key_type=None
+            fake_entries_processor.id, [entry.id for entry in entries_list], route_id=ProcessorRouteId("default")
         )
 
         assert fake_entries_processor.concurrency > len(entries)
@@ -178,7 +329,7 @@ class TestEntriesProcessor:
         await d_domain.push_entries_to_tag(
             fake_entries_processor.id,
             [entry.id for entry in entries_list] + fake_entries_ids,
-            llm_api_key_type=None,
+            route_id=ProcessorRouteId("default"),
         )
 
         assert fake_entries_processor.concurrency >= len(entries) + len(fake_entries_ids)

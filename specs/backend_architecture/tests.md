@@ -64,6 +64,10 @@ Static typing requirements SHOULD be enforced by static analysis, code review, o
 
 Tests MAY inspect annotations only in dedicated architecture tests that validate a broad project-wide convention. Per-entity unit tests MUST NOT inspect annotations only to restate the entity declaration.
 
+Tests MUST NOT use identity assertions except for `None` checks. Use `assert value is None` and `assert value is not None` only when checking for `None`.
+
+Tests MUST NOT use `assert <value> is <other_value>` or `assert <value> is not <other_value>` for non-`None` values. Use equality, membership, or an explicit behavioral assertion instead.
+
 Tests MUST NOT use identity assertions for boolean values. Use `assert condition` instead of `assert condition is True`, and `assert not condition` instead of `assert condition is False`.
 
 When a test uses `assert_logs` to verify branch-specific behavior, it MUST assert both expected log counts and zero counts for mutually exclusive branch log events.

@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from random import choice
 
 import pytest
 from pytest_mock import MockerFixture
@@ -11,6 +10,7 @@ from ffun.dispatcher.entities import (
     EntryToTag,
     ProcessorDispatchInfo,
     ProcessorDispatchRoute,
+    ProcessorRouteId,
 )
 from ffun.dispatcher.tests import make
 from ffun.domain.domain import new_entry_id
@@ -20,7 +20,6 @@ from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import CollectionId
 from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
-from ffun.llms_framework.entities import LLMApiKeyType
 from ffun.queues import operations as q_operations
 from ffun.queues.entities import QueueKind, QueueRecord
 
@@ -86,8 +85,8 @@ class TestGetEntriesToTag:
         entry_ids = [new_entry_id(), new_entry_id()]
         another_entry_ids = [new_entry_id()]
 
-        await domain.push_entries_to_tag(processor_id, entry_ids, llm_api_key_type=None)
-        await domain.push_entries_to_tag(another_processor_id, another_entry_ids, llm_api_key_type=None)
+        await domain.push_entries_to_tag(processor_id, entry_ids, route_id=ProcessorRouteId("default"))
+        await domain.push_entries_to_tag(another_processor_id, another_entry_ids, route_id=ProcessorRouteId("default"))
 
         records = await domain.get_entries_to_tag(processor_id=processor_id, limit=10)
 
@@ -101,7 +100,7 @@ class TestPushEntriesToTag:
 
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=processor_id)
 
-        await domain.push_entries_to_tag(processor_id, [], llm_api_key_type=None)
+        await domain.push_entries_to_tag(processor_id, [], route_id=ProcessorRouteId("default"))
 
         records = await q_operations.tech_get_queue_records(
             QueueKind.entries_to_tag, EntryToTag, secondary_id=processor_id
@@ -109,18 +108,18 @@ class TestPushEntriesToTag:
 
         assert records == []
 
-    @pytest.mark.parametrize("llm_api_key_type", [None, *LLMApiKeyType])
     @pytest.mark.asyncio
-    async def test_push_entries_to_processor_subqueue(self, llm_api_key_type: LLMApiKeyType | None) -> None:
+    async def test_push_entries_to_processor_subqueue(self) -> None:
         processor_id = ProcessorId(101)
         another_processor_id = ProcessorId(102)
+        route_id = ProcessorRouteId("test-route")
 
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=processor_id)
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=another_processor_id)
 
         entry_ids = [new_entry_id(), new_entry_id()]
 
-        await domain.push_entries_to_tag(processor_id, entry_ids, llm_api_key_type=llm_api_key_type)
+        await domain.push_entries_to_tag(processor_id, entry_ids, route_id=route_id)
 
         records = await q_operations.tech_get_queue_records(
             QueueKind.entries_to_tag, EntryToTag, secondary_id=processor_id
@@ -130,7 +129,7 @@ class TestPushEntriesToTag:
         )
 
         assert record_entry_ids(records) == set(entry_ids)
-        assert {record.item.llm_api_key_type for record in records} == {llm_api_key_type}
+        assert {record.item.route_id for record in records} == {route_id}
         assert another_records == []
 
 
@@ -222,14 +221,14 @@ class TestProcessorDispatchRoute:
                 True,
                 [
                     make.processor_dispatch_route(
+                        id="user-route",
                         allowed_for_collections=False,
                         allowed_for_users=True,
-                        llm_api_key_type=LLMApiKeyType.user,
                     ),
                     make.processor_dispatch_route(
+                        id="shared-route",
                         allowed_for_collections=True,
                         allowed_for_users=True,
-                        llm_api_key_type=LLMApiKeyType.general,
                     ),
                 ],
                 1,
@@ -238,14 +237,14 @@ class TestProcessorDispatchRoute:
                 False,
                 [
                     make.processor_dispatch_route(
+                        id="collection-route",
                         allowed_for_collections=True,
                         allowed_for_users=False,
-                        llm_api_key_type=LLMApiKeyType.collection,
                     ),
                     make.processor_dispatch_route(
+                        id="shared-route",
                         allowed_for_collections=True,
                         allowed_for_users=True,
-                        llm_api_key_type=LLMApiKeyType.general,
                     ),
                 ],
                 1,
@@ -254,9 +253,9 @@ class TestProcessorDispatchRoute:
                 True,
                 [
                     make.processor_dispatch_route(
+                        id="user-route",
                         allowed_for_collections=False,
                         allowed_for_users=True,
-                        llm_api_key_type=LLMApiKeyType.user,
                     )
                 ],
                 None,
@@ -265,9 +264,9 @@ class TestProcessorDispatchRoute:
                 False,
                 [
                     make.processor_dispatch_route(
+                        id="collection-route",
                         allowed_for_collections=True,
                         allowed_for_users=False,
-                        llm_api_key_type=LLMApiKeyType.collection,
                     )
                 ],
                 None,
@@ -293,53 +292,53 @@ class TestProcessorDispatchRoute:
 
 class TestProcessorDispatchDecision:
     @pytest.mark.parametrize(
-        "in_collection, routes, expected_key_type",
+        "in_collection, routes, expected_route_id",
         [
             (
                 True,
                 [
                     make.processor_dispatch_route(
+                        id="collection-route",
                         allowed_for_collections=True,
                         allowed_for_users=False,
-                        llm_api_key_type=LLMApiKeyType.collection,
                     )
                 ],
-                LLMApiKeyType.collection,
+                ProcessorRouteId("collection-route"),
             ),
             (
                 True,
                 [
                     make.processor_dispatch_route(
+                        id="collection-route",
                         allowed_for_collections=True,
                         allowed_for_users=False,
-                        llm_api_key_type=LLMApiKeyType.collection,
                     ),
                     make.processor_dispatch_route(
+                        id="shared-route",
                         allowed_for_collections=True,
                         allowed_for_users=True,
-                        llm_api_key_type=LLMApiKeyType.general,
                     ),
                 ],
-                LLMApiKeyType.collection,
+                ProcessorRouteId("collection-route"),
             ),
             (
                 True,
                 [
                     make.processor_dispatch_route(
+                        id="shared-route",
                         allowed_for_collections=True,
                         allowed_for_users=True,
-                        llm_api_key_type=LLMApiKeyType.general,
                     )
                 ],
-                LLMApiKeyType.general,
+                ProcessorRouteId("shared-route"),
             ),
             (
                 True,
                 [
                     make.processor_dispatch_route(
+                        id="user-route",
                         allowed_for_collections=False,
                         allowed_for_users=True,
-                        llm_api_key_type=LLMApiKeyType.user,
                     )
                 ],
                 None,
@@ -348,52 +347,52 @@ class TestProcessorDispatchDecision:
                 False,
                 [
                     make.processor_dispatch_route(
+                        id="collection-route",
                         allowed_for_collections=True,
                         allowed_for_users=False,
-                        llm_api_key_type=LLMApiKeyType.collection,
                     ),
                     make.processor_dispatch_route(
+                        id="user-route",
                         allowed_for_collections=False,
                         allowed_for_users=True,
-                        llm_api_key_type=LLMApiKeyType.user,
                     ),
                 ],
-                LLMApiKeyType.user,
+                ProcessorRouteId("user-route"),
             ),
             (
                 False,
                 [
                     make.processor_dispatch_route(
+                        id="shared-route",
                         allowed_for_collections=True,
                         allowed_for_users=True,
-                        llm_api_key_type=LLMApiKeyType.general,
                     ),
                     make.processor_dispatch_route(
+                        id="user-route",
                         allowed_for_collections=False,
                         allowed_for_users=True,
-                        llm_api_key_type=LLMApiKeyType.user,
                     ),
                 ],
-                LLMApiKeyType.general,
+                ProcessorRouteId("shared-route"),
             ),
             (
                 False,
                 [
                     make.processor_dispatch_route(
+                        id="user-route",
                         allowed_for_collections=False,
                         allowed_for_users=True,
-                        llm_api_key_type=LLMApiKeyType.user,
                     )
                 ],
-                LLMApiKeyType.user,
+                ProcessorRouteId("user-route"),
             ),
         ],
     )
-    def test_llm_key_type_selection(
+    def test_route_id_selection(
         self,
         in_collection: bool,
         routes: list[ProcessorDispatchRoute],
-        expected_key_type: LLMApiKeyType | None,
+        expected_route_id: ProcessorRouteId | None,
     ) -> None:
         item = EntryToProcess(entry_id=new_entry_id())
         processor = make.processor_dispatch_info(
@@ -403,22 +402,22 @@ class TestProcessorDispatchDecision:
 
         decision = domain._processor_dispatch_decision(processor, item, in_collection=in_collection)
 
-        if expected_key_type is None:
+        if expected_route_id is None:
             assert decision is None
             return
 
         assert decision is not None
-        assert decision.llm_api_key_type == expected_key_type
+        assert decision.route_id == expected_route_id
 
-    def test_non_llm_processor_has_no_key_type(self) -> None:
+    def test_processor_dispatch_uses_route_id(self) -> None:
         item = EntryToProcess(entry_id=new_entry_id())
         processor = make.processor_dispatch_info(101)
 
-        assert processor.routes[0].llm_api_key_type is None
+        assert processor.routes[0].id == ProcessorRouteId("default")
 
         decision = domain._processor_dispatch_decision(processor, item, in_collection=False)
 
-        assert decision == DispatchDecision(llm_api_key_type=None)
+        assert decision == DispatchDecision(route_id=ProcessorRouteId("default"))
 
 
 class TestProcessorItemsToTag:
@@ -430,9 +429,9 @@ class TestProcessorItemsToTag:
             101,
             routes=[
                 make.processor_dispatch_route(
+                    id="user-route",
                     allowed_for_collections=False,
                     allowed_for_users=True,
-                    llm_api_key_type=LLMApiKeyType.user,
                 )
             ],
         )
@@ -449,8 +448,8 @@ class TestProcessorItemsToTag:
         items_to_tag = domain._processor_items_to_tag(processor, items, entries_in_collections)
 
         assert items_to_tag == [
-            EntryToTag(entry_id=first_entry_id, llm_api_key_type=LLMApiKeyType.user),
-            EntryToTag(entry_id=third_entry_id, llm_api_key_type=LLMApiKeyType.user),
+            EntryToTag(entry_id=first_entry_id, route_id=ProcessorRouteId("user-route")),
+            EntryToTag(entry_id=third_entry_id, route_id=ProcessorRouteId("user-route")),
         ]
 
     def test_keeps_only_items_targeted_to_processor(self) -> None:
@@ -468,8 +467,8 @@ class TestProcessorItemsToTag:
         items_to_tag = domain._processor_items_to_tag(processor, items, entries_in_collections={})
 
         assert items_to_tag == [
-            EntryToTag(entry_id=target_entry_id, llm_api_key_type=None),
-            EntryToTag(entry_id=common_entry_id, llm_api_key_type=None),
+            EntryToTag(entry_id=target_entry_id, route_id=ProcessorRouteId("default")),
+            EntryToTag(entry_id=common_entry_id, route_id=ProcessorRouteId("default")),
         ]
 
 
@@ -511,14 +510,14 @@ class TestDispatchEntries:
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
 
         entry_ids = [new_entry_id(), new_entry_id()]
-        llm_api_key_type = choice(list(LLMApiKeyType))
+        route_id = ProcessorRouteId("target-route")
         target_processor = make.processor_dispatch_info(
             101,
             routes=[
                 make.processor_dispatch_route(
+                    id=route_id,
                     allowed_for_collections=True,
                     allowed_for_users=True,
-                    llm_api_key_type=llm_api_key_type,
                 )
             ],
         )
@@ -538,7 +537,7 @@ class TestDispatchEntries:
         )
 
         assert record_entry_ids(target_records) == set(entry_ids)
-        assert {record.item.llm_api_key_type for record in target_records} == {llm_api_key_type}
+        assert {record.item.route_id for record in target_records} == {route_id}
         assert other_records == []
 
     @pytest.mark.asyncio
@@ -560,9 +559,9 @@ class TestDispatchEntries:
             101,
             routes=[
                 make.processor_dispatch_route(
+                    id="collection-route",
                     allowed_for_collections=True,
                     allowed_for_users=False,
-                    llm_api_key_type=None,
                 )
             ],
         )
@@ -579,19 +578,19 @@ class TestDispatchEntries:
         assert record_entry_ids(records) == set(collection_entry_ids)
 
     @pytest.mark.asyncio
-    async def test_dispatch_saves_llm_api_key_type(self) -> None:
+    async def test_dispatch_saves_route_id(self) -> None:
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
 
         entry_ids = [new_entry_id(), new_entry_id()]
-        llm_api_key_type = choice(list(LLMApiKeyType))
+        route_id = ProcessorRouteId("route-to-save")
         processor = make.processor_dispatch_info(
             101,
             routes=[
                 make.processor_dispatch_route(
+                    id=route_id,
                     allowed_for_collections=True,
                     allowed_for_users=True,
-                    llm_api_key_type=llm_api_key_type,
                 )
             ],
         )
@@ -607,7 +606,7 @@ class TestDispatchEntries:
         )
 
         assert record_entry_ids(records) == set(entry_ids)
-        assert {record.item.llm_api_key_type for record in records} == {llm_api_key_type}
+        assert {record.item.route_id for record in records} == {route_id}
 
     @pytest.mark.asyncio
     async def test_no_processors(self) -> None:
@@ -675,7 +674,7 @@ class TestDispatchEntries:
             if (processor_id, item.entry_id) not in allowed:
                 return None
 
-            return DispatchDecision()
+            return DispatchDecision(route_id=ProcessorRouteId("default"))
 
         mocker.patch.object(domain, "_processor_dispatch_decision", side_effect=dispatch_decision)
 

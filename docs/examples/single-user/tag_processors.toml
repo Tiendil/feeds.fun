@@ -1,11 +1,17 @@
+# Routes are checked in order; the first route matching the entry kind is used.
+
 [[tag_processors]]
   id = 1
   enabled = true
   workers = 10
   name = "domain"
   type = "domain"
-  allowed_for_collections = true
-  allowed_for_users = true
+
+  [[tag_processors.routes]]
+    id = "default"
+    allowed_for_collections = true
+    allowed_for_users = true
+    allowed_for_quality_tests = true
 
 [[tag_processors]]
   id = 2
@@ -13,8 +19,12 @@
   workers = 10
   name = "native_tags"
   type = "native_tags"
-  allowed_for_collections = true
-  allowed_for_users = true
+
+  [[tag_processors.routes]]
+    id = "default"
+    allowed_for_collections = true
+    allowed_for_users = true
+    allowed_for_quality_tests = true
 
 [[tag_processors]]
   id = 3
@@ -30,19 +40,19 @@
 
   llm_provider = "openai"
 
+  text_parts_intersection = 200
+  max_tokens_per_entry = 5000
+
   #############################################################
   # Generally, you do not need this configs in single-user mode
   #############################################################
-  collections_api_key = ""
-  general_api_key = ""
-  general_api_key_warning = ""
-  allowed_for_collections = false
+
+  [[tag_processors.routes]]
+    id = "user-api-key"
+    allowed_for_collections = false
+    allowed_for_users = true
+    api_key = ""
   #############################################################
-
-  allowed_for_users = true
-
-  text_parts_intersection = 200
-  max_tokens_per_entry = 5000
 
   [tag_processors.llm_config]
     model = "gpt-4o-mini-2024-07-18"
@@ -109,8 +119,12 @@ Your task is to analyze the given text by following these steps:
   workers = 10
   name = "upper_case_title"
   type = "upper_case_title"
-  allowed_for_collections = true
-  allowed_for_users = true
+
+  [[tag_processors.routes]]
+    id = "default"
+    allowed_for_collections = true
+    allowed_for_users = true
+    allowed_for_quality_tests = true
 
 
 [[tag_processors]]
@@ -127,19 +141,19 @@ Your task is to analyze the given text by following these steps:
 
   llm_provider = "google"
 
+  text_parts_intersection = 200
+  max_tokens_per_entry = 5000
+
   #############################################################
   # Generally, you do not need this configs in single-user mode
   #############################################################
-  collections_api_key = ""
-  general_api_key = ""
-  general_api_key_warning = ""
-  allowed_for_collections = false
+
+  [[tag_processors.routes]]
+    id = "user-api-key"
+    allowed_for_collections = false
+    allowed_for_users = true
+    api_key = ""
   #############################################################
-
-  allowed_for_users = true
-
-  text_parts_intersection = 200
-  max_tokens_per_entry = 5000
 
   [tag_processors.llm_config]
     model = "gemini-2.5-flash-lite"

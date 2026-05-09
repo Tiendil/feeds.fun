@@ -7,11 +7,11 @@ from ffun.dispatcher.entities import (
     EntryToTag,
     ProcessorDispatchInfo,
     ProcessorDispatchRoute,
+    ProcessorRouteId,
 )
 from ffun.domain.entities import EntryId, ProcessorId
 from ffun.feeds_collections.collections import collections
 from ffun.library import domain as l_domain
-from ffun.llms_framework.entities import LLMApiKeyType
 from ffun.queues import domain as q_domain
 from ffun.queues.entities import QueueKind, QueueRecord, QueueRecordId
 
@@ -29,9 +29,9 @@ async def get_entries_to_tag(processor_id: ProcessorId, limit: int) -> list[Queu
 
 
 async def push_entries_to_tag(
-    processor_id: ProcessorId, entry_ids: Iterable[EntryId], llm_api_key_type: LLMApiKeyType | None
+    processor_id: ProcessorId, entry_ids: Iterable[EntryId], route_id: ProcessorRouteId
 ) -> None:
-    items = [EntryToTag(entry_id=entry_id, llm_api_key_type=llm_api_key_type) for entry_id in entry_ids]
+    items = [EntryToTag(entry_id=entry_id, route_id=route_id) for entry_id in entry_ids]
 
     await q_domain.push(QueueKind.entries_to_tag, items, secondary_id=processor_id)
 
@@ -66,10 +66,10 @@ def _processor_dispatch_decision(
         "proccessor_is_allowed_for_entry",
         processor_id=processor.processor_id,
         entry_id=item.entry_id,
-        llm_api_key_type=route.llm_api_key_type,
+        route_id=route.id,
     )
 
-    return DispatchDecision(llm_api_key_type=route.llm_api_key_type)
+    return DispatchDecision(route_id=route.id)
 
 
 def _processor_dispatch_route(
@@ -101,7 +101,7 @@ def _processor_items_to_tag(
         if decision is None:
             continue
 
-        processor_items.append(EntryToTag(entry_id=item.entry_id, llm_api_key_type=decision.llm_api_key_type))
+        processor_items.append(EntryToTag(entry_id=item.entry_id, route_id=decision.route_id))
 
     return processor_items
 

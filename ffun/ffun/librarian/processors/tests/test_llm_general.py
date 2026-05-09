@@ -1,8 +1,10 @@
 import pytest
 
+from ffun.dispatcher.entities import ProcessorRouteId
 from ffun.domain.entities import FeedId
 from ffun.feeds_links import domain as fl_domain
 from ffun.librarian import errors
+from ffun.librarian.entities import LLMGeneralProcessorRoute
 from ffun.librarian.processors.base import ProcessorContext
 from ffun.librarian.processors.llm_general import Processor
 from ffun.librarian.tag_extractors import dog_tags_extractor
@@ -11,10 +13,7 @@ from ffun.library.entities import Entry
 from ffun.llms_framework.entities import (
     ChatRequest,
     LLMApiKey,
-    LLMApiKeyType,
-    LLMCollectionApiKey,
     LLMConfiguration,
-    LLMGeneralApiKey,
     LLMProvider,
     LLMTokens,
     UserKeyInfo,
@@ -22,6 +21,10 @@ from ffun.llms_framework.entities import (
 from ffun.llms_framework.provider_interface import ChatResponseTest
 from ffun.ontology.entities import RawTag
 from ffun.tags.entities import TagCategory
+
+CONFIGURED_KEY_ROUTE_ID = ProcessorRouteId("configured-key-route")
+USER_KEY_ROUTE_ID = ProcessorRouteId("user-key-route")
+UNKNOWN_ROUTE_ID = ProcessorRouteId("unknown-route")
 
 
 class TestProcessor:
@@ -37,7 +40,7 @@ class TestProcessor:
         )
 
     @pytest.fixture  # type: ignore
-    def llm_processor(self, llm_config: LLMConfiguration) -> Processor:
+    def llm_processor(self, llm_config: LLMConfiguration, fake_llm_api_key: LLMApiKey) -> Processor:
         return Processor(
             name="test-llm-processor",
             llm_provider=LLMProvider.test,
@@ -45,10 +48,22 @@ class TestProcessor:
             entry_template="{entry.title} {entry.body}",
             text_cleaner=clear_nothing,
             tag_extractor=dog_tags_extractor,
-            collections_api_key=None,
-            general_api_key=None,
             max_tokens_per_entry=LLMTokens(1_000),
             text_parts_intersection=100,
+            routes=(
+                LLMGeneralProcessorRoute(
+                    id=USER_KEY_ROUTE_ID,
+                    allowed_for_collections=False,
+                    allowed_for_users=True,
+                    api_key=None,
+                ),
+                LLMGeneralProcessorRoute(
+                    id=CONFIGURED_KEY_ROUTE_ID,
+                    allowed_for_collections=True,
+                    allowed_for_users=False,
+                    api_key=fake_llm_api_key,
+                ),
+            ),
         )
 
     def test_extract_tags__deduplicates_extracted_tags(self, llm_processor: Processor) -> None:
@@ -93,15 +108,13 @@ class TestProcessor:
         )
 
     @pytest.mark.asyncio
-    async def test__api_key_usage__general_key_found(
+    async def test__api_key_usage__configured_key_found(
         self, llm_processor: Processor, cataloged_entry: Entry, fake_llm_api_key: LLMApiKey
     ) -> None:
-        llm_processor.general_api_key = LLMGeneralApiKey(fake_llm_api_key)
-
         api_key_usage = await llm_processor._api_key_usage(
             entry=cataloged_entry,
             requests=self._requests(llm_processor, "some text"),
-            context=ProcessorContext(llm_api_key_type=LLMApiKeyType.general),
+            context=ProcessorContext(route_id=CONFIGURED_KEY_ROUTE_ID),
         )
 
         assert api_key_usage is not None
@@ -109,46 +122,13 @@ class TestProcessor:
         assert api_key_usage.user_id is None
 
     @pytest.mark.asyncio
-    async def test__api_key_usage__general_key_not_found(
-        self, llm_processor: Processor, cataloged_entry: Entry
-    ) -> None:
-        assert (
+    async def test__api_key_usage__unknown_route(self, llm_processor: Processor, cataloged_entry: Entry) -> None:
+        with pytest.raises(errors.UnknownProcessorRoute):
             await llm_processor._api_key_usage(
                 entry=cataloged_entry,
                 requests=self._requests(llm_processor, "some text"),
-                context=ProcessorContext(llm_api_key_type=LLMApiKeyType.general),
+                context=ProcessorContext(route_id=UNKNOWN_ROUTE_ID),
             )
-            is None
-        )
-
-    @pytest.mark.asyncio
-    async def test__api_key_usage__collection_key_found(
-        self, llm_processor: Processor, cataloged_entry: Entry, fake_llm_api_key: LLMApiKey
-    ) -> None:
-        llm_processor.collections_api_key = LLMCollectionApiKey(fake_llm_api_key)
-
-        api_key_usage = await llm_processor._api_key_usage(
-            entry=cataloged_entry,
-            requests=self._requests(llm_processor, "some text"),
-            context=ProcessorContext(llm_api_key_type=LLMApiKeyType.collection),
-        )
-
-        assert api_key_usage is not None
-        assert api_key_usage.api_key == fake_llm_api_key
-        assert api_key_usage.user_id is None
-
-    @pytest.mark.asyncio
-    async def test__api_key_usage__collection_key_not_found(
-        self, llm_processor: Processor, cataloged_entry: Entry
-    ) -> None:
-        assert (
-            await llm_processor._api_key_usage(
-                entry=cataloged_entry,
-                requests=self._requests(llm_processor, "some text"),
-                context=ProcessorContext(llm_api_key_type=LLMApiKeyType.collection),
-            )
-            is None
-        )
 
     @pytest.mark.asyncio
     async def test__api_key_usage__user_key_found(
@@ -165,7 +145,7 @@ class TestProcessor:
         api_key_usage = await llm_processor._api_key_usage(
             entry=cataloged_entry,
             requests=self._requests(llm_processor, "some text"),
-            context=ProcessorContext(llm_api_key_type=LLMApiKeyType.user),
+            context=ProcessorContext(route_id=USER_KEY_ROUTE_ID),
         )
 
         assert api_key_usage is not None
@@ -178,21 +158,7 @@ class TestProcessor:
             await llm_processor._api_key_usage(
                 entry=cataloged_entry,
                 requests=self._requests(llm_processor, "some text"),
-                context=ProcessorContext(llm_api_key_type=LLMApiKeyType.user),
-            )
-            is None
-        )
-
-    @pytest.mark.parametrize("llm_api_key_type", [None, LLMApiKeyType.subscription])
-    @pytest.mark.asyncio
-    async def test__api_key_usage__unsupported_key_type(
-        self, llm_processor: Processor, cataloged_entry: Entry, llm_api_key_type: LLMApiKeyType | None
-    ) -> None:
-        assert (
-            await llm_processor._api_key_usage(
-                entry=cataloged_entry,
-                requests=self._requests(llm_processor, "some text"),
-                context=ProcessorContext(llm_api_key_type=llm_api_key_type),
+                context=ProcessorContext(route_id=USER_KEY_ROUTE_ID),
             )
             is None
         )
@@ -200,18 +166,14 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_process__no_api_key_found(self, llm_processor: Processor, cataloged_entry: Entry) -> None:
         with pytest.raises(errors.SkipEntryProcessing):
-            await llm_processor.process(cataloged_entry, context=ProcessorContext(llm_api_key_type=LLMApiKeyType.user))
+            await llm_processor.process(cataloged_entry, context=ProcessorContext(route_id=USER_KEY_ROUTE_ID))
 
     @pytest.mark.asyncio
-    async def test_process__has_api_key_found(
-        self, llm_processor: Processor, cataloged_entry: Entry, fake_llm_api_key: LLMApiKey
-    ) -> None:
+    async def test_process__has_api_key_found(self, llm_processor: Processor, cataloged_entry: Entry) -> None:
 
         entry = cataloged_entry.replace(title="@tag-1 @tag-2", body="@tag-3 @tag-2")
 
-        llm_processor.general_api_key = LLMGeneralApiKey(fake_llm_api_key)
-
-        tags = await llm_processor.process(entry, context=ProcessorContext(llm_api_key_type=LLMApiKeyType.general))
+        tags = await llm_processor.process(entry, context=ProcessorContext(route_id=CONFIGURED_KEY_ROUTE_ID))
 
         tags.sort(key=lambda x: x.raw_uid)
 
@@ -222,13 +184,9 @@ class TestProcessor:
         ]
 
     @pytest.mark.asyncio
-    async def test_process__temporary_error_processing(
-        self, llm_processor: Processor, cataloged_entry: Entry, fake_llm_api_key: LLMApiKey
-    ) -> None:
+    async def test_process__temporary_error_processing(self, llm_processor: Processor, cataloged_entry: Entry) -> None:
 
         entry = cataloged_entry.replace(title="@tag-1 @tag-2", body="raise TemporaryError")
 
-        llm_processor.general_api_key = LLMGeneralApiKey(fake_llm_api_key)
-
         with pytest.raises(errors.TemporaryErrorInProcessor):
-            await llm_processor.process(entry, context=ProcessorContext(llm_api_key_type=LLMApiKeyType.general))
+            await llm_processor.process(entry, context=ProcessorContext(route_id=CONFIGURED_KEY_ROUTE_ID))
