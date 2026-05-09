@@ -1,5 +1,6 @@
 import pytest
 
+from ffun.dispatcher.entities import ProcessorDispatchRoute
 from ffun.librarian.background_processors import EntriesProcessor, ProcessorInfo
 from ffun.librarian.entities import ProcessorType
 from ffun.librarian.processors.base import AlwaysConstantProcessor
@@ -24,8 +25,12 @@ def fake_processor_info(fake_processor_id: int) -> ProcessorInfo:
             name="fake_constant_processor", tags=["fake-constant-tag-1", "fake-constant-tag-2"]
         ),
         concurrency=5,
-        allowed_for_collections=True,
-        allowed_for_users=True,
+        routes=(
+            ProcessorDispatchRoute(
+                allowed_for_collections=True,
+                allowed_for_users=True,
+            ),
+        ),
     )
 
 

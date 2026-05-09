@@ -3,18 +3,31 @@ from decimal import Decimal
 import pytest
 
 from ffun.domain.datetime_intervals import month_interval_start
-from ffun.domain.entities import UserId
+from ffun.domain.entities import FeedId, UserId
+from ffun.feeds_links import domain as fl_domain
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
 from ffun.llms_framework.domain import (
+    _estimate_reserved_cost,
     _llm_call_result_cost,
     call_llm,
+    collection_api_key_usage,
     cut_text_to_max_tokens,
-    search_for_api_key,
+    general_api_key_usage,
+    search_for_user_api_key,
     split_text,
     split_text_according_to_tokens,
 )
-from ffun.llms_framework.entities import APIKeyUsage, LLMApiKey, LLMConfiguration, LLMGeneralApiKey, LLMTokens, USDCost
+from ffun.llms_framework.entities import (
+    APIKeyUsage,
+    LLMApiKey,
+    LLMCollectionApiKey,
+    LLMConfiguration,
+    LLMGeneralApiKey,
+    LLMTokens,
+    USDCost,
+    UserKeyInfo,
+)
 from ffun.llms_framework.keys_rotator import _cost_points
 from ffun.llms_framework.provider_interface import ChatRequestTest, ChatResponseTest, ProviderTest
 from ffun.product.resources import Resource as AppResource
@@ -136,7 +149,7 @@ class TestSplitTextAccordingToTokens:
         ) == split_text(text, parts=2, intersection=2)
 
 
-class TestSearchForAPIKey:
+class TestSearchForUserAPIKey:
 
     @pytest.fixture  # type: ignore
     def llm_config(self) -> LLMConfiguration:
@@ -151,32 +164,32 @@ class TestSearchForAPIKey:
     @pytest.mark.asyncio
     async def test_key_found(
         self,
-        fake_llm_api_key: LLMApiKey,
         fake_llm_provider: ProviderTest,
         llm_config: LLMConfiguration,
+        loaded_feed_id: FeedId,
         cataloged_entry: Entry,
+        user_key_info: UserKeyInfo,
     ) -> None:
-        # Here we test meta logic => we can check the simplest case (general api key)
-        # plus check the all parameters passed to selection function
-
         text = "some-text"
 
         requests = fake_llm_provider.prepare_requests(
             llm_config, text, text_parts_intersection=_text_parts_intersection
         )
 
-        key_usage = await search_for_api_key(
+        assert user_key_info.api_key is not None
+
+        await fl_domain.add_link(user_key_info.user_id, loaded_feed_id)
+
+        key_usage = await search_for_user_api_key(
             llm=fake_llm_provider,
             llm_config=llm_config,
             entry=cataloged_entry,
             requests=requests,
-            collections_api_key=None,
-            general_api_key=LLMGeneralApiKey(fake_llm_api_key),
         )
 
         assert key_usage is not None
 
-        assert key_usage.api_key == fake_llm_api_key
+        assert key_usage.api_key == user_key_info.api_key
 
     @pytest.mark.asyncio
     async def test_key_not_found(
@@ -185,22 +198,17 @@ class TestSearchForAPIKey:
         llm_config: LLMConfiguration,
         cataloged_entry: Entry,
     ) -> None:
-        # Here we test meta logic => we can check the simplest case (general api key)
-        # plus check the all parameters passed to selection function
-
         text = "some-text"
 
         requests = fake_llm_provider.prepare_requests(
             llm_config, text, text_parts_intersection=_text_parts_intersection
         )
 
-        key_usage = await search_for_api_key(
+        key_usage = await search_for_user_api_key(
             llm=fake_llm_provider,
             llm_config=llm_config,
             entry=cataloged_entry,
             requests=requests,
-            collections_api_key=None,
-            general_api_key=None,
         )
 
         assert key_usage is None
@@ -257,6 +265,95 @@ class TestCutTextToMaxTokens:
                 text="some text",
                 max_tokens=LLMTokens(0),
             )
+
+
+class TestEstimateReservedCost:
+
+    @pytest.fixture  # type: ignore
+    def llm_config(self) -> LLMConfiguration:
+        return LLMConfiguration(
+            model="test-model-1",
+            system="system prompt",
+            max_return_tokens=LLMTokens(143),
+            temperature=0,
+            top_p=0,
+        )
+
+    def test_empty_requests(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
+        assert _estimate_reserved_cost(llm=fake_llm_provider, llm_config=llm_config, requests=[]) == 0
+
+    def test_counts_max_request_cost_per_request(
+        self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration
+    ) -> None:
+        model = fake_llm_provider.get_model(llm_config)
+
+        requests = [ChatRequestTest(text="abcd"), ChatRequestTest(text="efgh1234"), ChatRequestTest(text="99")]
+
+        assert _estimate_reserved_cost(llm=fake_llm_provider, llm_config=llm_config, requests=requests) == USDCost(
+            len(requests) * model.max_request_cost
+        )
+
+
+class TestGeneralAPIKeyUsage:
+
+    @pytest.fixture  # type: ignore
+    def llm_config(self) -> LLMConfiguration:
+        return LLMConfiguration(
+            model="test-model-1",
+            system="system prompt",
+            max_return_tokens=LLMTokens(143),
+            temperature=0,
+            top_p=0,
+        )
+
+    def test_constructs_usage(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
+        api_key = LLMGeneralApiKey(LLMApiKey("general-api-key"))
+        requests = [ChatRequestTest(text="abcd"), ChatRequestTest(text="efgh1234")]
+        reserved_cost = _estimate_reserved_cost(llm=fake_llm_provider, llm_config=llm_config, requests=requests)
+
+        key_usage = general_api_key_usage(
+            llm=fake_llm_provider, llm_config=llm_config, api_key=api_key, requests=requests
+        )
+
+        assert key_usage == APIKeyUsage(
+            provider=fake_llm_provider.provider,
+            user_id=None,
+            api_key=api_key,
+            reserved_cost=reserved_cost,
+            used_cost=None,
+            interval_started_at=month_interval_start(),
+        )
+
+
+class TestCollectionAPIKeyUsage:
+
+    @pytest.fixture  # type: ignore
+    def llm_config(self) -> LLMConfiguration:
+        return LLMConfiguration(
+            model="test-model-1",
+            system="system prompt",
+            max_return_tokens=LLMTokens(143),
+            temperature=0,
+            top_p=0,
+        )
+
+    def test_constructs_usage(self, fake_llm_provider: ProviderTest, llm_config: LLMConfiguration) -> None:
+        api_key = LLMCollectionApiKey(LLMApiKey("collection-api-key"))
+        requests = [ChatRequestTest(text="abcd"), ChatRequestTest(text="efgh1234")]
+        reserved_cost = _estimate_reserved_cost(llm=fake_llm_provider, llm_config=llm_config, requests=requests)
+
+        key_usage = collection_api_key_usage(
+            llm=fake_llm_provider, llm_config=llm_config, api_key=api_key, requests=requests
+        )
+
+        assert key_usage == APIKeyUsage(
+            provider=fake_llm_provider.provider,
+            user_id=None,
+            api_key=api_key,
+            reserved_cost=reserved_cost,
+            used_cost=None,
+            interval_started_at=month_interval_start(),
+        )
 
 
 class TestLLMCallResultCost:

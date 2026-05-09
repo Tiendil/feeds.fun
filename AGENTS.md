@@ -152,3 +152,7 @@ output:
 <my next actions based on the prolog output and conclusions>
 
 ```
+
+## Special instructions
+
+**When the developer asks you a question — answer it as a question, do not implement the answer as a code change or a plan, just answer the question.**

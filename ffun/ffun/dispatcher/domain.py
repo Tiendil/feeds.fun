@@ -1,28 +1,37 @@
 from collections.abc import Iterable, Sequence
 
 from ffun.core import logging
-from ffun.dispatcher.entities import EntryToProcess, ProcessorDispatchInfo
+from ffun.dispatcher.entities import (
+    DispatchDecision,
+    EntryToProcess,
+    EntryToTag,
+    ProcessorDispatchInfo,
+    ProcessorDispatchRoute,
+)
 from ffun.domain.entities import EntryId
 from ffun.feeds_collections.collections import collections
 from ffun.library import domain as l_domain
+from ffun.llms_framework.entities import LLMApiKeyType
 from ffun.queues import domain as q_domain
 from ffun.queues.entities import QueueKind, QueueRecord, QueueRecordId
 
 logger = logging.get_module_logger()
 
 
-async def push_entries_to_process(entry_ids: Iterable[EntryId]) -> None:
-    items = [EntryToProcess(entry_id=entry_id) for entry_id in entry_ids]
+async def push_entries_to_process(entry_ids: Iterable[EntryId], processor_id: int | None = None) -> None:
+    items = [EntryToProcess(entry_id=entry_id, processor_id=processor_id) for entry_id in entry_ids]
 
     await q_domain.push(QueueKind.entries_to_process, items)
 
 
-async def get_entries_to_tag(processor_id: int, limit: int) -> list[QueueRecord[EntryToProcess]]:
-    return await q_domain.pull(QueueKind.entries_to_tag, EntryToProcess, secondary_id=processor_id, limit=limit)
+async def get_entries_to_tag(processor_id: int, limit: int) -> list[QueueRecord[EntryToTag]]:
+    return await q_domain.pull(QueueKind.entries_to_tag, EntryToTag, secondary_id=processor_id, limit=limit)
 
 
-async def push_entries_to_tag(processor_id: int, entry_ids: Iterable[EntryId]) -> None:
-    items = [EntryToProcess(entry_id=entry_id) for entry_id in entry_ids]
+async def push_entries_to_tag(
+    processor_id: int, entry_ids: Iterable[EntryId], llm_api_key_type: LLMApiKeyType | None
+) -> None:
+    items = [EntryToTag(entry_id=entry_id, llm_api_key_type=llm_api_key_type) for entry_id in entry_ids]
 
     await q_domain.push(QueueKind.entries_to_tag, items, secondary_id=processor_id)
 
@@ -39,20 +48,62 @@ async def _entries_in_collections(entries_ids: Iterable[EntryId]) -> dict[EntryI
     }
 
 
-def _processor_is_allowed(processor: ProcessorDispatchInfo, item: EntryToProcess, *, in_collection: bool) -> bool:
-    if in_collection and not processor.allowed_for_collections:
+def _processor_dispatch_decision(
+    processor: ProcessorDispatchInfo, item: EntryToProcess, *, in_collection: bool
+) -> DispatchDecision | None:
+    route = _processor_dispatch_route(processor, in_collection=in_collection)
+
+    if route is None:
         logger.info(
-            "proccessor_not_allowed_for_collections", processor_id=processor.processor_id, entry_id=item.entry_id
+            "proccessor_is_not_allowed_for_entry",
+            processor_id=processor.processor_id,
+            entry_id=item.entry_id,
+            in_collection=in_collection,
         )
-        return False
+        return None
 
-    if not in_collection and not processor.allowed_for_users:
-        logger.info("proccessor_not_allowed_for_users", processor_id=processor.processor_id, entry_id=item.entry_id)
-        return False
+    logger.info(
+        "proccessor_is_allowed_for_entry",
+        processor_id=processor.processor_id,
+        entry_id=item.entry_id,
+        llm_api_key_type=route.llm_api_key_type,
+    )
 
-    logger.info("proccessor_is_allowed_for_entry", processor_id=processor.processor_id, entry_id=item.entry_id)
+    return DispatchDecision(llm_api_key_type=route.llm_api_key_type)
 
-    return True
+
+def _processor_dispatch_route(
+    processor: ProcessorDispatchInfo, *, in_collection: bool
+) -> ProcessorDispatchRoute | None:
+    for route in processor.routes:
+        if in_collection and route.allowed_for_collections:
+            return route
+
+        if not in_collection and route.allowed_for_users:
+            return route
+
+    return None
+
+
+def _processor_items_to_tag(
+    processor: ProcessorDispatchInfo, items: Sequence[EntryToProcess], entries_in_collections: dict[EntryId, bool]
+) -> list[EntryToTag]:
+    processor_items = []
+
+    for item in items:
+        if item.processor_id is not None and item.processor_id != processor.processor_id:
+            continue
+
+        decision = _processor_dispatch_decision(
+            processor, item, in_collection=entries_in_collections.get(item.entry_id, False)
+        )
+
+        if decision is None:
+            continue
+
+        processor_items.append(EntryToTag(entry_id=item.entry_id, llm_api_key_type=decision.llm_api_key_type))
+
+    return processor_items
 
 
 async def dispatch_entries(processors: Sequence[ProcessorDispatchInfo], limit: int) -> int:
@@ -70,12 +121,7 @@ async def dispatch_entries(processors: Sequence[ProcessorDispatchInfo], limit: i
     entries_in_collections = await _entries_in_collections(item.entry_id for item in items)
 
     for processor in processors:
-        processor_items = [
-            item
-            for item in items
-            if _processor_is_allowed(processor, item, in_collection=entries_in_collections.get(item.entry_id, False))
-        ]
-
+        processor_items = _processor_items_to_tag(processor, items, entries_in_collections)
         await q_domain.push(QueueKind.entries_to_tag, processor_items, secondary_id=processor.subqueue_id)
 
     record_ids = [record.id for record in records if record.id is not None]

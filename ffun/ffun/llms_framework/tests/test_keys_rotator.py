@@ -7,7 +7,6 @@ from pytest_mock import MockerFixture
 
 from ffun.core.tests.helpers import assert_logs_has_business_event, capture_logs
 from ffun.domain.datetime_intervals import month_interval_start
-from ffun.domain.domain import new_user_id
 from ffun.domain.entities import UserId
 from ffun.feeds.entities import FeedId
 from ffun.feeds_collections.collections import collections
@@ -18,9 +17,7 @@ from ffun.llms_framework.entities import (
     APIKeyUsage,
     KeyStatus,
     LLMApiKey,
-    LLMCollectionApiKey,
     LLMConfiguration,
-    LLMGeneralApiKey,
     LLMProvider,
     LLMTokens,
     SelectKeyContext,
@@ -29,10 +26,7 @@ from ffun.llms_framework.entities import (
 )
 from ffun.llms_framework.keys_rotator import (
     _api_key_is_working,
-    _choose_collections_key,
-    _choose_general_key,
     _choose_user,
-    _choose_user_key,
     _cost_points,
     _filter_out_users_for_whome_entry_is_too_old,
     _filter_out_users_with_overused_keys,
@@ -42,11 +36,10 @@ from ffun.llms_framework.keys_rotator import (
     _find_best_user_with_key,
     _get_candidates,
     _get_user_key_infos,
-    _key_selectors,
-    choose_api_key,
+    choose_user_api_key,
     use_api_key,
 )
-from ffun.llms_framework.provider_interface import ProviderInterface, ProviderTest
+from ffun.llms_framework.provider_interface import ProviderTest
 from ffun.llms_framework.providers import llm_providers
 from ffun.product.resources import Resource as AppResource
 from ffun.resources import domain as r_domain
@@ -432,107 +425,17 @@ class TestFindBestUserWithKey:
 def select_key_context(saved_feed_id: FeedId) -> SelectKeyContext:
     return SelectKeyContext(
         llm_config=_llm_config,
-        collections_api_key=None,
-        general_api_key=None,
         feed_ids={saved_feed_id},
         entry_age=datetime.timedelta(seconds=0),
         reserved_cost=USDCost(Decimal(0)),
     )
 
 
-class TestChooseGeneralKey:
-
-    @pytest.mark.asyncio
-    async def test_no_general_key_specified(
-        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext
-    ) -> None:
-        assert select_key_context.general_api_key is None
-
-        assert await _choose_general_key(fake_llm_provider, select_key_context) is None
-
-    @pytest.mark.asyncio
-    async def test_general_key_specified(
-        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext, fake_llm_api_key: LLMApiKey
-    ) -> None:
-
-        select_key_context = select_key_context.replace(general_api_key=LLMGeneralApiKey(fake_llm_api_key))
-
-        usage = await _choose_general_key(fake_llm_provider, select_key_context)
-
-        assert usage == APIKeyUsage(
-            provider=fake_llm_provider.provider,
-            user_id=None,
-            api_key=fake_llm_api_key,
-            reserved_cost=select_key_context.reserved_cost,
-            used_cost=None,
-            interval_started_at=select_key_context.interval_started_at,
-        )
-
-
-class TestChooseCollectionsKey:
-
-    @pytest.mark.asyncio
-    async def test_no_collections_key_specified(
-        self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext, another_saved_feed_id: FeedId
-    ) -> None:
-        select_key_context.feed_ids.add(another_saved_feed_id)
-
-        assert select_key_context.collections_api_key is None
-        assert len(select_key_context.feed_ids) > 1
-
-        assert await _choose_collections_key(fake_llm_provider, select_key_context) is None
-
-    @pytest.mark.parametrize("collection_feed_index", [0, 1])
-    @pytest.mark.asyncio
-    async def test_collections_key_specified__in_collection(  # noqa: ignore=CFQ002
-        self,
-        fake_llm_provider: ProviderTest,
-        select_key_context: SelectKeyContext,
-        fake_llm_api_key: LLMApiKey,
-        collection_id_for_test_feeds: CollectionId,
-        another_saved_feed_id: FeedId,
-        collection_feed_index: int,
-    ) -> None:
-        select_key_context = select_key_context.replace(
-            collections_api_key=LLMCollectionApiKey(fake_llm_api_key),
-            feed_ids=select_key_context.feed_ids.union({another_saved_feed_id}),
-        )
-
-        await collections.add_test_feed_to_collections(
-            collection_id_for_test_feeds, list(select_key_context.feed_ids)[collection_feed_index]
-        )
-
-        usage = await _choose_collections_key(fake_llm_provider, select_key_context)
-
-        assert usage == APIKeyUsage(
-            provider=fake_llm_provider.provider,
-            user_id=None,
-            api_key=fake_llm_api_key,
-            reserved_cost=select_key_context.reserved_cost,
-            used_cost=None,
-            interval_started_at=select_key_context.interval_started_at,
-        )
-
-    @pytest.mark.asyncio
-    async def test_collections_key_specified__not_in_collection(
-        self,
-        fake_llm_provider: ProviderTest,
-        select_key_context: SelectKeyContext,
-    ) -> None:
-        key = uuid.uuid4().hex
-
-        select_key_context = select_key_context.replace(collections_api_key=key)
-
-        assert all(not collections.has_feed(feed_id) for feed_id in select_key_context.feed_ids)
-
-        assert await _choose_collections_key(fake_llm_provider, select_key_context) is None
-
-
-class TestChooseUserKey:
+class TestChooseUserApiKey:
 
     @pytest.mark.asyncio
     async def test_no_users(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
-        assert await _choose_user_key(fake_llm_provider, select_key_context) is None
+        assert await choose_user_api_key(fake_llm_provider, select_key_context) is None
 
     @pytest.mark.parametrize("collection_feed_index", [0, 1])
     @pytest.mark.asyncio
@@ -550,7 +453,7 @@ class TestChooseUserKey:
         )
 
         with pytest.raises(errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys):
-            await _choose_user_key(fake_llm_provider, select_key_context)
+            await choose_user_api_key(fake_llm_provider, select_key_context)
 
     @pytest.mark.asyncio
     async def test_found_user(
@@ -566,7 +469,7 @@ class TestChooseUserKey:
 
         await fl_domain.add_link(info.user_id, saved_feed_id)
 
-        usage = await _choose_user_key(fake_llm_provider, select_key_context)
+        usage = await choose_user_api_key(fake_llm_provider, select_key_context)
 
         assert usage == APIKeyUsage(
             provider=fake_llm_provider.provider,
@@ -576,65 +479,6 @@ class TestChooseUserKey:
             used_cost=None,
             interval_started_at=select_key_context.interval_started_at,
         )
-
-
-class TestKeySelectors:
-
-    def test_order(self) -> None:
-        """Just double protection from overriding this constant"""
-        assert _key_selectors == (_choose_collections_key, _choose_general_key, _choose_user_key)
-
-
-class TestChooseApiKey:
-
-    def create_selector(self, api_key: LLMApiKey | None) -> object:
-        async def success_selector(llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage:
-            assert api_key is not None
-
-            return APIKeyUsage(
-                provider=llm.provider,
-                user_id=new_user_id(),
-                api_key=api_key,
-                reserved_cost=context.reserved_cost,
-                used_cost=None,
-                interval_started_at=context.interval_started_at,
-            )
-
-        async def fail_selector(llm: ProviderInterface, context: SelectKeyContext) -> None:
-            return None
-
-        return success_selector if api_key is not None else fail_selector
-
-    @pytest.mark.asyncio
-    async def test_no_selectors(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
-        key_usage = await choose_api_key(fake_llm_provider, select_key_context, selectors=[])
-        assert key_usage is None
-
-    @pytest.mark.asyncio
-    async def test_key_not_found(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
-        selectors = [self.create_selector(None), self.create_selector(None), self.create_selector(None)]
-
-        key_usage = await choose_api_key(fake_llm_provider, select_key_context, selectors=selectors)  # type: ignore
-
-        assert key_usage is None
-
-    @pytest.mark.asyncio
-    async def test_choose_first(self, fake_llm_provider: ProviderTest, select_key_context: SelectKeyContext) -> None:
-        expected_key = LLMApiKey(uuid.uuid4().hex)
-
-        selectors = [
-            self.create_selector(None),
-            self.create_selector(expected_key),
-            self.create_selector(None),
-            self.create_selector(LLMApiKey(uuid.uuid4().hex)),
-            self.create_selector(None),
-        ]
-
-        usage = await choose_api_key(fake_llm_provider, select_key_context, selectors=selectors)  # type: ignore
-
-        assert usage is not None
-
-        assert usage.api_key == expected_key
 
 
 class TestUseApiKey:

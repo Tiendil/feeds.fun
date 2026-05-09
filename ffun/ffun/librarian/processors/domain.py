@@ -32,7 +32,7 @@ def domain_to_parts(domain: str) -> list[str]:
 class Processor(base.Processor):
     __slots__ = ()
 
-    async def process(self, entry: Entry) -> list[RawTag]:
+    async def process(self, entry: Entry, context: base.ProcessorContext) -> list[RawTag]:
         tags: list[RawTag] = []
 
         if not entry.external_url:

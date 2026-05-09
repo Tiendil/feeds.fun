@@ -4,11 +4,11 @@ from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
 from ffun.dispatcher import domain as d_domain
 from ffun.dispatcher.background_dispatcher import EntriesDispatcher
-from ffun.dispatcher.entities import ProcessorDispatchInfo
+from ffun.dispatcher.entities import ProcessorDispatchInfo, ProcessorDispatchRoute
 from ffun.domain.entities import EntryId
 from ffun.librarian import domain
 from ffun.librarian.entities import ProcessorType
-from ffun.librarian.processors.base import Processor
+from ffun.librarian.processors.base import Processor, ProcessorContext
 from ffun.librarian.processors.domain import Processor as DomainProcessor
 from ffun.librarian.processors.llm_general import Processor as LLMGeneralProcessor
 from ffun.librarian.processors.native_tags import Processor as NativeTagsProcessor
@@ -22,7 +22,13 @@ logger = logging.get_module_logger()
 
 # TODO: merge with EntriesProcessor or with base.Processor?
 class ProcessorInfo:
-    __slots__ = ("id", "processor", "concurrency", "type", "allowed_for_collections", "allowed_for_users")
+    __slots__ = (
+        "id",
+        "processor",
+        "concurrency",
+        "type",
+        "routes",
+    )
 
     def __init__(  # noqa: disable=CFQ002
         self,
@@ -30,22 +36,19 @@ class ProcessorInfo:
         type: ProcessorType,
         processor: Processor,
         concurrency: int,
-        allowed_for_collections: bool,
-        allowed_for_users: bool,
+        routes: tuple[ProcessorDispatchRoute, ...],
     ):
         self.type = type
         self.id = id
         self.processor = processor
         self.concurrency = concurrency
-        self.allowed_for_collections = allowed_for_collections
-        self.allowed_for_users = allowed_for_users
+        self.routes = routes
 
     def disptach_info(self) -> ProcessorDispatchInfo:
         return ProcessorDispatchInfo(
             processor_id=self.id,
             subqueue_id=self.id,
-            allowed_for_collections=self.allowed_for_collections,
-            allowed_for_users=self.allowed_for_users,
+            routes=self.routes,
         )
 
 
@@ -64,7 +67,6 @@ for processor_config in settings.tag_processors:
     info_arguments = {}
 
     tags_processor: Processor
-
     if processor_config.type == ProcessorType.domain:
         tags_processor = DomainProcessor(name=processor_config.name)
     elif processor_config.type == ProcessorType.native_tags:
@@ -94,8 +96,7 @@ for processor_config in settings.tag_processors:
         type=processor_config.type,
         processor=tags_processor,
         concurrency=processor_config.workers,
-        allowed_for_collections=processor_config.allowed_for_collections,
-        allowed_for_users=processor_config.allowed_for_users,
+        routes=processor_config.dispatch_routes(),
     )
 
     processors.append(processor)
@@ -157,6 +158,7 @@ class EntriesProcessor(InfiniteTask):
 
         records = await d_domain.get_entries_to_tag(processor_id=processor_id, limit=concurrency)
         entries_ids = [record.item.entry_id for record in records]
+        items_by_entry_id = {record.item.entry_id: record.item for record in records}
 
         if not entries_ids:
             logger.info("no_entries_to_process", processor_id=processor_id)
@@ -167,8 +169,12 @@ class EntriesProcessor(InfiniteTask):
         tasks = []
 
         for entry in entries_to_process:
+            item = items_by_entry_id[entry.id]
+            context = ProcessorContext(llm_api_key_type=item.llm_api_key_type)
             tasks.append(
-                domain.process_entry(processor_id=processor_id, processor=self._processor_info.processor, entry=entry)
+                domain.process_entry(
+                    processor_id=processor_id, processor=self._processor_info.processor, entry=entry, context=context
+                )
             )
 
         await asyncio.gather(*tasks, return_exceptions=True)

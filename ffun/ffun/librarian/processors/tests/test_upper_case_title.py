@@ -1,6 +1,7 @@
 import pytest
 
 from ffun.librarian.processors import upper_case_title
+from ffun.librarian.processors.base import ProcessorContext
 from ffun.library.entities import Entry
 from ffun.ontology.entities import RawTag
 from ffun.tags.entities import TagCategory
@@ -28,7 +29,7 @@ class TestEncodeSpecialCharacters:
     async def test(self, cataloged_entry: Entry, title: str, has_tag: bool) -> None:
         cataloged_entry = cataloged_entry.replace(title=title)
 
-        tags = await processor.process(cataloged_entry)
+        tags = await processor.process(cataloged_entry, context=ProcessorContext())
 
         expected_tags = []
 

@@ -6,8 +6,15 @@ from pydantic_core import PydanticCustomError
 
 from ffun.core import logging
 from ffun.core.entities import BaseEntity
+from ffun.dispatcher.entities import ProcessorDispatchRoute
 from ffun.domain.entities import LLMTokens
-from ffun.llms_framework.entities import LLMCollectionApiKey, LLMConfiguration, LLMGeneralApiKey, LLMProvider
+from ffun.llms_framework.entities import (
+    LLMApiKeyType,
+    LLMCollectionApiKey,
+    LLMConfiguration,
+    LLMGeneralApiKey,
+    LLMProvider,
+)
 
 logger = logging.get_module_logger()
 
@@ -38,6 +45,14 @@ class BaseProcessor(BaseEntity):
     type: ProcessorType
     allowed_for_collections: bool
     allowed_for_users: bool
+
+    def dispatch_routes(self) -> tuple[ProcessorDispatchRoute, ...]:
+        return (
+            ProcessorDispatchRoute(
+                allowed_for_collections=self.allowed_for_collections,
+                allowed_for_users=self.allowed_for_users,
+            ),
+        )
 
 
 class DomainProcessor(BaseProcessor):
@@ -93,6 +108,48 @@ class LLMGeneralProcessor(BaseProcessor):
     general_api_key: LLMGeneralApiKey | None = None
 
     general_api_key_warning: str | None = None
+
+    def collection_api_key_dispatch_route(self) -> ProcessorDispatchRoute | None:
+        if self.collections_api_key is None or not self.allowed_for_collections:
+            return None
+
+        return ProcessorDispatchRoute(
+            allowed_for_collections=True,
+            allowed_for_users=False,
+            llm_api_key_type=LLMApiKeyType.collection,
+        )
+
+    def general_api_key_dispatch_route(self) -> ProcessorDispatchRoute | None:
+        if self.general_api_key is None:
+            return None
+
+        if not (self.allowed_for_collections or self.allowed_for_users):
+            return None
+
+        return ProcessorDispatchRoute(
+            allowed_for_collections=self.allowed_for_collections,
+            allowed_for_users=self.allowed_for_users,
+            llm_api_key_type=LLMApiKeyType.general,
+        )
+
+    def user_api_key_dispatch_route(self) -> ProcessorDispatchRoute | None:
+        if not self.allowed_for_users:
+            return None
+
+        return ProcessorDispatchRoute(
+            allowed_for_collections=False,
+            allowed_for_users=True,
+            llm_api_key_type=LLMApiKeyType.user,
+        )
+
+    def dispatch_routes(self) -> tuple[ProcessorDispatchRoute, ...]:
+        routes = (
+            self.collection_api_key_dispatch_route(),
+            self.general_api_key_dispatch_route(),
+            self.user_api_key_dispatch_route(),
+        )
+
+        return tuple(route for route in routes if route is not None)
 
     @pydantic.model_validator(mode="before")
     @classmethod

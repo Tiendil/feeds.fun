@@ -7,9 +7,18 @@ from ffun.librarian.entities import TagsExtractor, TextCleaner
 from ffun.librarian.processors import base
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors as llmsf_errors
-from ffun.llms_framework.domain import call_llm, cut_text_to_max_tokens, search_for_api_key
+from ffun.llms_framework.domain import (
+    call_llm,
+    collection_api_key_usage,
+    cut_text_to_max_tokens,
+    general_api_key_usage,
+    search_for_user_api_key,
+)
 from ffun.llms_framework.entities import (
+    APIKeyUsage,
+    ChatRequest,
     ChatResponse,
+    LLMApiKeyType,
     LLMCollectionApiKey,
     LLMConfiguration,
     LLMGeneralApiKey,
@@ -72,20 +81,44 @@ class Processor(base.Processor):
 
         return cut_text
 
-    async def process(self, entry: Entry) -> list[RawTag]:
+    async def _api_key_usage(
+        self, entry: Entry, requests: Sequence[ChatRequest], context: base.ProcessorContext
+    ) -> APIKeyUsage | None:
+        match context.llm_api_key_type:
+            case LLMApiKeyType.general if self.general_api_key is not None:
+                return general_api_key_usage(
+                    llm=self.llm_provider,
+                    llm_config=self.llm_config,
+                    api_key=self.general_api_key,
+                    requests=requests,
+                )
+
+            case LLMApiKeyType.collection if self.collections_api_key is not None:
+                return collection_api_key_usage(
+                    llm=self.llm_provider,
+                    llm_config=self.llm_config,
+                    api_key=self.collections_api_key,
+                    requests=requests,
+                )
+
+            case LLMApiKeyType.user:
+                return await search_for_user_api_key(
+                    llm=self.llm_provider,
+                    llm_config=self.llm_config,
+                    entry=entry,
+                    requests=requests,
+                )
+
+            case _:
+                return None
+
+    async def process(self, entry: Entry, context: base.ProcessorContext) -> list[RawTag]:
 
         cleaned_text = self._text_to_process(entry)
 
         requests = self.llm_provider.prepare_requests(self.llm_config, cleaned_text, self.text_parts_intersection)
 
-        api_key_usage = await search_for_api_key(
-            llm=self.llm_provider,
-            llm_config=self.llm_config,
-            entry=entry,
-            requests=requests,
-            collections_api_key=self.collections_api_key,
-            general_api_key=self.general_api_key,
-        )
+        api_key_usage = await self._api_key_usage(entry=entry, requests=requests, context=context)
 
         if api_key_usage is None:
             raise errors.SkipEntryProcessing(message="no api key found")

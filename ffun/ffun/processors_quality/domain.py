@@ -4,6 +4,7 @@ import tabulate
 
 from ffun.core import utils
 from ffun.librarian.background_processors import processors as ln_processors
+from ffun.librarian.processors.base import ProcessorContext
 from ffun.processors_quality.entities import ProcessorResult, ProcessorResultDiff
 from ffun.processors_quality.knowlege_base import KnowlegeBase, id_to_name
 from ffun.tags import domain as t_domain
@@ -18,7 +19,7 @@ async def run_processor(kb: KnowlegeBase, processor_name: str, entry_id: int) ->
 
     processor = processors[processor_name]
 
-    raw_tags = await processor.process(entry)
+    raw_tags = await processor.process(entry, context=ProcessorContext())
 
     norm_tags = await t_domain.normalize(raw_tags)
 

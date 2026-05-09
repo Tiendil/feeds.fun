@@ -2,7 +2,7 @@ from ffun.core import logging, metrics
 from ffun.core.postgresql import ExecuteType, run_in_transaction
 from ffun.dispatcher import domain as d_domain
 from ffun.librarian import errors, operations
-from ffun.librarian.processors.base import Processor
+from ffun.librarian.processors.base import Processor, ProcessorContext
 from ffun.librarian.settings import settings
 from ffun.library.entities import Entry
 from ffun.ontology import domain as o_domain
@@ -40,20 +40,25 @@ async def move_failed_entries_to_processor_queue(execute: ExecuteType, processor
     if not failed_entries:
         return
 
-    await d_domain.push_entries_to_tag(processor_id, failed_entries)
+    await d_domain.push_entries_to_process(failed_entries, processor_id=processor_id)
 
     await operations.remove_failed_entries(execute, processor_id, failed_entries)
 
 
 @logging.async_args_to_log("processor.name", "entry.id")
-async def process_entry(processor_id: int, processor: Processor, entry: Entry) -> None:
+async def process_entry(
+    processor_id: int,
+    processor: Processor,
+    entry: Entry,
+    context: ProcessorContext,
+) -> None:
     logger.info("dicover_tags")
 
     raw_tags_metric = accumulator("processor_raw_tags", processor_id)
     normalized_tags_metric = accumulator("processor_normalized_tags", processor_id)
 
     try:
-        raw_tags = await processor.process(entry)
+        raw_tags = await processor.process(entry, context=context)
 
         raw_tags_for_log = set(tag.raw_uid for tag in raw_tags)
 

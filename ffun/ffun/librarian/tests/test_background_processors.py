@@ -4,7 +4,7 @@ from structlog.testing import capture_logs
 
 from ffun.core.tests.helpers import assert_logs
 from ffun.dispatcher import domain as d_domain
-from ffun.dispatcher.entities import EntryToProcess, ProcessorDispatchInfo
+from ffun.dispatcher.entities import EntryToTag, ProcessorDispatchInfo, ProcessorDispatchRoute
 from ffun.domain.domain import new_entry_id
 from ffun.feeds.entities import Feed
 from ffun.librarian import background_processors
@@ -42,13 +42,19 @@ class TestProcessorInfo:
         allowed_for_collections: bool,
         allowed_for_users: bool,
     ) -> None:
+        routes = (
+            ProcessorDispatchRoute(
+                allowed_for_collections=allowed_for_collections,
+                allowed_for_users=allowed_for_users,
+            ),
+        )
+
         processor_info = background_processors.ProcessorInfo(
             id=101,
             type=ProcessorType.fake,
             processor=AlwaysConstantProcessor(name="fake_processor", tags=["tag"]),
             concurrency=5,
-            allowed_for_collections=allowed_for_collections,
-            allowed_for_users=allowed_for_users,
+            routes=routes,
         )
 
         dispatch_info = processor_info.disptach_info()
@@ -56,8 +62,7 @@ class TestProcessorInfo:
         assert dispatch_info == ProcessorDispatchInfo(
             processor_id=101,
             subqueue_id=101,
-            allowed_for_collections=allowed_for_collections,
-            allowed_for_users=allowed_for_users,
+            routes=routes,
         )
 
 
@@ -86,12 +91,14 @@ class TestEntriesProcessor:
         entries_list = list(entries.values())
         entries_list.sort(key=_entry_sort_key)
 
-        await d_domain.push_entries_to_tag(fake_entries_processor.id, [entry.id for entry in entries_list])
+        await d_domain.push_entries_to_tag(
+            fake_entries_processor.id, [entry.id for entry in entries_list], llm_api_key_type=None
+        )
 
         assert fake_entries_processor.concurrency <= len(entries)
 
         records = await q_operations.tech_get_queue_records(
-            QueueKind.entries_to_tag, EntryToProcess, secondary_id=fake_entries_processor.id
+            QueueKind.entries_to_tag, EntryToTag, secondary_id=fake_entries_processor.id
         )
         expected_processed_entries = {record.item.entry_id for record in records[: fake_entries_processor.concurrency]}
         expected_queued_entries = {record.item.entry_id for record in records[fake_entries_processor.concurrency :]}
@@ -132,7 +139,9 @@ class TestEntriesProcessor:
         entries_list = list(entries.values())
         entries_list.sort(key=_entry_sort_key)
 
-        await d_domain.push_entries_to_tag(fake_entries_processor.id, [entry.id for entry in entries_list])
+        await d_domain.push_entries_to_tag(
+            fake_entries_processor.id, [entry.id for entry in entries_list], llm_api_key_type=None
+        )
 
         assert fake_entries_processor.concurrency > len(entries)
 
@@ -166,7 +175,9 @@ class TestEntriesProcessor:
         fake_entries_ids = [new_entry_id() for _ in range(3)]
 
         await d_domain.push_entries_to_tag(
-            fake_entries_processor.id, [entry.id for entry in entries_list] + fake_entries_ids
+            fake_entries_processor.id,
+            [entry.id for entry in entries_list] + fake_entries_ids,
+            llm_api_key_type=None,
         )
 
         assert fake_entries_processor.concurrency >= len(entries) + len(fake_entries_ids)

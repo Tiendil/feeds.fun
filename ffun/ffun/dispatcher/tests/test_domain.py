@@ -1,10 +1,17 @@
 from collections.abc import Sequence
+from random import choice
 
 import pytest
 from pytest_mock import MockerFixture
 
 from ffun.dispatcher import domain
-from ffun.dispatcher.entities import EntryToProcess, ProcessorDispatchInfo
+from ffun.dispatcher.entities import (
+    DispatchDecision,
+    EntryToProcess,
+    EntryToTag,
+    ProcessorDispatchInfo,
+    ProcessorDispatchRoute,
+)
 from ffun.dispatcher.tests import make
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import EntryId
@@ -13,11 +20,12 @@ from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import CollectionId
 from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
+from ffun.llms_framework.entities import LLMApiKeyType
 from ffun.queues import operations as q_operations
 from ffun.queues.entities import QueueKind, QueueRecord
 
 
-def record_entry_ids(records: Sequence[QueueRecord[EntryToProcess]]) -> set[EntryId]:
+def record_entry_ids(records: Sequence[QueueRecord[EntryToProcess] | QueueRecord[EntryToTag]]) -> set[EntryId]:
     return {record.item.entry_id for record in records}
 
 
@@ -41,6 +49,21 @@ class TestPushEntriesToProcess:
         records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
 
         assert record_entry_ids(records) == set(entry_ids)
+        assert {record.item.processor_id for record in records} == {None}
+
+    @pytest.mark.asyncio
+    async def test_push_entries_for_processor(self) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+
+        entry_ids = [new_entry_id(), new_entry_id()]
+        processor_id = 101
+
+        await domain.push_entries_to_process(entry_ids, processor_id=processor_id)
+
+        records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
+
+        assert record_entry_ids(records) == set(entry_ids)
+        assert {record.item.processor_id for record in records} == {processor_id}
 
 
 class TestGetEntriesToTag:
@@ -63,8 +86,8 @@ class TestGetEntriesToTag:
         entry_ids = [new_entry_id(), new_entry_id()]
         another_entry_ids = [new_entry_id()]
 
-        await domain.push_entries_to_tag(processor_id, entry_ids)
-        await domain.push_entries_to_tag(another_processor_id, another_entry_ids)
+        await domain.push_entries_to_tag(processor_id, entry_ids, llm_api_key_type=None)
+        await domain.push_entries_to_tag(another_processor_id, another_entry_ids, llm_api_key_type=None)
 
         records = await domain.get_entries_to_tag(processor_id=processor_id, limit=10)
 
@@ -78,16 +101,17 @@ class TestPushEntriesToTag:
 
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=processor_id)
 
-        await domain.push_entries_to_tag(processor_id, [])
+        await domain.push_entries_to_tag(processor_id, [], llm_api_key_type=None)
 
         records = await q_operations.tech_get_queue_records(
-            QueueKind.entries_to_tag, EntryToProcess, secondary_id=processor_id
+            QueueKind.entries_to_tag, EntryToTag, secondary_id=processor_id
         )
 
         assert records == []
 
+    @pytest.mark.parametrize("llm_api_key_type", [None, *LLMApiKeyType])
     @pytest.mark.asyncio
-    async def test_push_entries_to_processor_subqueue(self) -> None:
+    async def test_push_entries_to_processor_subqueue(self, llm_api_key_type: LLMApiKeyType | None) -> None:
         processor_id = 101
         another_processor_id = 102
 
@@ -96,16 +120,17 @@ class TestPushEntriesToTag:
 
         entry_ids = [new_entry_id(), new_entry_id()]
 
-        await domain.push_entries_to_tag(processor_id, entry_ids)
+        await domain.push_entries_to_tag(processor_id, entry_ids, llm_api_key_type=llm_api_key_type)
 
         records = await q_operations.tech_get_queue_records(
-            QueueKind.entries_to_tag, EntryToProcess, secondary_id=processor_id
+            QueueKind.entries_to_tag, EntryToTag, secondary_id=processor_id
         )
         another_records = await q_operations.tech_get_queue_records(
-            QueueKind.entries_to_tag, EntryToProcess, secondary_id=another_processor_id
+            QueueKind.entries_to_tag, EntryToTag, secondary_id=another_processor_id
         )
 
         assert record_entry_ids(records) == set(entry_ids)
+        assert {record.item.llm_api_key_type for record in records} == {llm_api_key_type}
         assert another_records == []
 
 
@@ -189,41 +214,263 @@ class TestEntriesInCollections:
         assert await domain._entries_in_collections([entry_id]) == {}
 
 
-class TestProcessorIsAllowed:
+class TestProcessorDispatchRoute:
     @pytest.mark.parametrize(
-        "case",
+        "in_collection, routes, expected_route_index",
         [
-            (False, False, False, False),
-            (False, False, True, True),
-            (False, True, False, False),
-            (False, True, True, True),
-            (True, False, False, False),
-            (True, False, True, False),
-            (True, True, False, True),
-            (True, True, True, True),
+            (
+                True,
+                [
+                    make.processor_dispatch_route(
+                        allowed_for_collections=False,
+                        allowed_for_users=True,
+                        llm_api_key_type=LLMApiKeyType.user,
+                    ),
+                    make.processor_dispatch_route(
+                        allowed_for_collections=True,
+                        allowed_for_users=True,
+                        llm_api_key_type=LLMApiKeyType.general,
+                    ),
+                ],
+                1,
+            ),
+            (
+                False,
+                [
+                    make.processor_dispatch_route(
+                        allowed_for_collections=True,
+                        allowed_for_users=False,
+                        llm_api_key_type=LLMApiKeyType.collection,
+                    ),
+                    make.processor_dispatch_route(
+                        allowed_for_collections=True,
+                        allowed_for_users=True,
+                        llm_api_key_type=LLMApiKeyType.general,
+                    ),
+                ],
+                1,
+            ),
+            (
+                True,
+                [
+                    make.processor_dispatch_route(
+                        allowed_for_collections=False,
+                        allowed_for_users=True,
+                        llm_api_key_type=LLMApiKeyType.user,
+                    )
+                ],
+                None,
+            ),
+            (
+                False,
+                [
+                    make.processor_dispatch_route(
+                        allowed_for_collections=True,
+                        allowed_for_users=False,
+                        llm_api_key_type=LLMApiKeyType.collection,
+                    )
+                ],
+                None,
+            ),
         ],
     )
-    def test_all_permission_combinations(
+    def test_selects_first_route_allowed_for_entry_source(
         self,
-        case: tuple[bool, bool, bool, bool],
+        in_collection: bool,
+        routes: list[ProcessorDispatchRoute],
+        expected_route_index: int | None,
     ) -> None:
-        (
-            in_collection,
-            allowed_for_collections,
-            allowed_for_users,
-            expected_allowed,
-        ) = case
+        processor = make.processor_dispatch_info(101, routes=routes)
 
+        route = domain._processor_dispatch_route(processor, in_collection=in_collection)
+
+        if expected_route_index is None:
+            assert route is None
+            return
+
+        assert route == routes[expected_route_index]
+
+
+class TestProcessorDispatchDecision:
+    @pytest.mark.parametrize(
+        "in_collection, routes, expected_key_type",
+        [
+            (
+                True,
+                [
+                    make.processor_dispatch_route(
+                        allowed_for_collections=True,
+                        allowed_for_users=False,
+                        llm_api_key_type=LLMApiKeyType.collection,
+                    )
+                ],
+                LLMApiKeyType.collection,
+            ),
+            (
+                True,
+                [
+                    make.processor_dispatch_route(
+                        allowed_for_collections=True,
+                        allowed_for_users=False,
+                        llm_api_key_type=LLMApiKeyType.collection,
+                    ),
+                    make.processor_dispatch_route(
+                        allowed_for_collections=True,
+                        allowed_for_users=True,
+                        llm_api_key_type=LLMApiKeyType.general,
+                    ),
+                ],
+                LLMApiKeyType.collection,
+            ),
+            (
+                True,
+                [
+                    make.processor_dispatch_route(
+                        allowed_for_collections=True,
+                        allowed_for_users=True,
+                        llm_api_key_type=LLMApiKeyType.general,
+                    )
+                ],
+                LLMApiKeyType.general,
+            ),
+            (
+                True,
+                [
+                    make.processor_dispatch_route(
+                        allowed_for_collections=False,
+                        allowed_for_users=True,
+                        llm_api_key_type=LLMApiKeyType.user,
+                    )
+                ],
+                None,
+            ),
+            (
+                False,
+                [
+                    make.processor_dispatch_route(
+                        allowed_for_collections=True,
+                        allowed_for_users=False,
+                        llm_api_key_type=LLMApiKeyType.collection,
+                    ),
+                    make.processor_dispatch_route(
+                        allowed_for_collections=False,
+                        allowed_for_users=True,
+                        llm_api_key_type=LLMApiKeyType.user,
+                    ),
+                ],
+                LLMApiKeyType.user,
+            ),
+            (
+                False,
+                [
+                    make.processor_dispatch_route(
+                        allowed_for_collections=True,
+                        allowed_for_users=True,
+                        llm_api_key_type=LLMApiKeyType.general,
+                    ),
+                    make.processor_dispatch_route(
+                        allowed_for_collections=False,
+                        allowed_for_users=True,
+                        llm_api_key_type=LLMApiKeyType.user,
+                    ),
+                ],
+                LLMApiKeyType.general,
+            ),
+            (
+                False,
+                [
+                    make.processor_dispatch_route(
+                        allowed_for_collections=False,
+                        allowed_for_users=True,
+                        llm_api_key_type=LLMApiKeyType.user,
+                    )
+                ],
+                LLMApiKeyType.user,
+            ),
+        ],
+    )
+    def test_llm_key_type_selection(
+        self,
+        in_collection: bool,
+        routes: list[ProcessorDispatchRoute],
+        expected_key_type: LLMApiKeyType | None,
+    ) -> None:
         item = EntryToProcess(entry_id=new_entry_id())
         processor = make.processor_dispatch_info(
             101,
-            allowed_for_collections=allowed_for_collections,
-            allowed_for_users=allowed_for_users,
+            routes=routes,
         )
 
-        allowed = domain._processor_is_allowed(processor, item, in_collection=in_collection)
+        decision = domain._processor_dispatch_decision(processor, item, in_collection=in_collection)
 
-        assert allowed == expected_allowed
+        if expected_key_type is None:
+            assert decision is None
+            return
+
+        assert decision is not None
+        assert decision.llm_api_key_type == expected_key_type
+
+    def test_non_llm_processor_has_no_key_type(self) -> None:
+        item = EntryToProcess(entry_id=new_entry_id())
+        processor = make.processor_dispatch_info(101)
+
+        assert processor.routes[0].llm_api_key_type is None
+
+        decision = domain._processor_dispatch_decision(processor, item, in_collection=False)
+
+        assert decision == DispatchDecision(llm_api_key_type=None)
+
+
+class TestProcessorItemsToTag:
+    def test_keeps_allowed_items_and_skips_rejected_items(self) -> None:
+        first_entry_id = new_entry_id()
+        second_entry_id = new_entry_id()
+        third_entry_id = new_entry_id()
+        processor = make.processor_dispatch_info(
+            101,
+            routes=[
+                make.processor_dispatch_route(
+                    allowed_for_collections=False,
+                    allowed_for_users=True,
+                    llm_api_key_type=LLMApiKeyType.user,
+                )
+            ],
+        )
+        items = [
+            EntryToProcess(entry_id=first_entry_id),
+            EntryToProcess(entry_id=second_entry_id),
+            EntryToProcess(entry_id=third_entry_id),
+        ]
+        entries_in_collections = {
+            first_entry_id: False,
+            second_entry_id: True,
+        }
+
+        items_to_tag = domain._processor_items_to_tag(processor, items, entries_in_collections)
+
+        assert items_to_tag == [
+            EntryToTag(entry_id=first_entry_id, llm_api_key_type=LLMApiKeyType.user),
+            EntryToTag(entry_id=third_entry_id, llm_api_key_type=LLMApiKeyType.user),
+        ]
+
+    def test_keeps_only_items_targeted_to_processor(self) -> None:
+        processor = make.processor_dispatch_info(101)
+        target_entry_id = new_entry_id()
+        other_entry_id = new_entry_id()
+        common_entry_id = new_entry_id()
+
+        items = [
+            EntryToProcess(entry_id=target_entry_id, processor_id=processor.processor_id),
+            EntryToProcess(entry_id=other_entry_id, processor_id=processor.processor_id + 1),
+            EntryToProcess(entry_id=common_entry_id, processor_id=None),
+        ]
+
+        items_to_tag = domain._processor_items_to_tag(processor, items, entries_in_collections={})
+
+        assert items_to_tag == [
+            EntryToTag(entry_id=target_entry_id, llm_api_key_type=None),
+            EntryToTag(entry_id=common_entry_id, llm_api_key_type=None),
+        ]
 
 
 class TestDispatchEntries:
@@ -253,10 +500,114 @@ class TestDispatchEntries:
 
         for processor_id in processor_ids:
             records = await q_operations.tech_get_queue_records(
-                QueueKind.entries_to_tag, EntryToProcess, secondary_id=processor_id
+                QueueKind.entries_to_tag, EntryToTag, secondary_id=processor_id
             )
 
             assert record_entry_ids(records) == set(entry_ids)
+
+    @pytest.mark.asyncio
+    async def test_dispatch_to_target_processor_subqueue(self) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+
+        entry_ids = [new_entry_id(), new_entry_id()]
+        llm_api_key_type = choice(list(LLMApiKeyType))
+        target_processor = make.processor_dispatch_info(
+            101,
+            routes=[
+                make.processor_dispatch_route(
+                    allowed_for_collections=True,
+                    allowed_for_users=True,
+                    llm_api_key_type=llm_api_key_type,
+                )
+            ],
+        )
+        other_processor = make.processor_dispatch_info(102)
+
+        await domain.push_entries_to_process(entry_ids, processor_id=target_processor.processor_id)
+
+        dispatched = await domain.dispatch_entries(processors=[target_processor, other_processor], limit=10)
+
+        assert dispatched == len(entry_ids)
+
+        target_records = await q_operations.tech_get_queue_records(
+            QueueKind.entries_to_tag, EntryToTag, secondary_id=target_processor.subqueue_id
+        )
+        other_records = await q_operations.tech_get_queue_records(
+            QueueKind.entries_to_tag, EntryToTag, secondary_id=other_processor.subqueue_id
+        )
+
+        assert record_entry_ids(target_records) == set(entry_ids)
+        assert {record.item.llm_api_key_type for record in target_records} == {llm_api_key_type}
+        assert other_records == []
+
+    @pytest.mark.asyncio
+    async def test_targeted_dispatch_respects_processor_routes(
+        self,
+        loaded_feed: Feed,
+        another_loaded_feed: Feed,
+        collection_id_for_test_feeds: CollectionId,
+    ) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+
+        user_entry_ids = await l_make.n_entries(loaded_feed, 2)
+        collection_entry_ids = await l_make.n_entries(another_loaded_feed, 2)
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
+
+        entry_ids = [*user_entry_ids, *collection_entry_ids]
+        processor = make.processor_dispatch_info(
+            101,
+            routes=[
+                make.processor_dispatch_route(
+                    allowed_for_collections=True,
+                    allowed_for_users=False,
+                    llm_api_key_type=None,
+                )
+            ],
+        )
+
+        await domain.push_entries_to_process(entry_ids, processor_id=processor.processor_id)
+
+        dispatched = await domain.dispatch_entries(processors=[processor], limit=10)
+
+        assert dispatched == len(entry_ids)
+        records = await q_operations.tech_get_queue_records(
+            QueueKind.entries_to_tag, EntryToTag, secondary_id=processor.subqueue_id
+        )
+
+        assert record_entry_ids(records) == set(collection_entry_ids)
+
+    @pytest.mark.asyncio
+    async def test_dispatch_saves_llm_api_key_type(self) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+
+        entry_ids = [new_entry_id(), new_entry_id()]
+        llm_api_key_type = choice(list(LLMApiKeyType))
+        processor = make.processor_dispatch_info(
+            101,
+            routes=[
+                make.processor_dispatch_route(
+                    allowed_for_collections=True,
+                    allowed_for_users=True,
+                    llm_api_key_type=llm_api_key_type,
+                )
+            ],
+        )
+
+        await domain.push_entries_to_process(entry_ids)
+
+        dispatched = await domain.dispatch_entries(processors=[processor], limit=10)
+
+        assert dispatched == len(entry_ids)
+
+        records = await q_operations.tech_get_queue_records(
+            QueueKind.entries_to_tag, EntryToTag, secondary_id=processor.subqueue_id
+        )
+
+        assert record_entry_ids(records) == set(entry_ids)
+        assert {record.item.llm_api_key_type for record in records} == {llm_api_key_type}
 
     @pytest.mark.asyncio
     async def test_no_processors(self) -> None:
@@ -289,7 +640,7 @@ class TestDispatchEntries:
         assert dispatched == 2
 
         dispatched_records = await q_operations.tech_get_queue_records(
-            QueueKind.entries_to_tag, EntryToProcess, secondary_id=processor_id
+            QueueKind.entries_to_tag, EntryToTag, secondary_id=processor_id
         )
         remaining_records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
 
@@ -298,7 +649,7 @@ class TestDispatchEntries:
         assert record_entry_ids(dispatched_records) | record_entry_ids(remaining_records) == set(entry_ids)
 
     @pytest.mark.asyncio
-    async def test_uses_processor_allowance_result(self, mocker: MockerFixture) -> None:
+    async def test_uses_processor_dispatch_decision(self, mocker: MockerFixture) -> None:
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
 
@@ -315,12 +666,18 @@ class TestDispatchEntries:
         }
         calls: list[tuple[int, EntryId]] = []
 
-        def is_allowed(processor: ProcessorDispatchInfo, item: EntryToProcess, *, in_collection: bool) -> bool:
+        def dispatch_decision(
+            processor: ProcessorDispatchInfo, item: EntryToProcess, *, in_collection: bool
+        ) -> DispatchDecision | None:
             processor_id = processor.processor_id
             calls.append((processor_id, item.entry_id))
-            return (processor_id, item.entry_id) in allowed
 
-        mocker.patch.object(domain, "_processor_is_allowed", side_effect=is_allowed)
+            if (processor_id, item.entry_id) not in allowed:
+                return None
+
+            return DispatchDecision()
+
+        mocker.patch.object(domain, "_processor_dispatch_decision", side_effect=dispatch_decision)
 
         await domain.push_entries_to_process(entry_ids)
 
@@ -330,10 +687,10 @@ class TestDispatchEntries:
         assert set(calls) == {(processor.processor_id, entry_id) for processor in processors for entry_id in entry_ids}
 
         first_records = await q_operations.tech_get_queue_records(
-            QueueKind.entries_to_tag, EntryToProcess, secondary_id=first_processor.subqueue_id
+            QueueKind.entries_to_tag, EntryToTag, secondary_id=first_processor.subqueue_id
         )
         second_records = await q_operations.tech_get_queue_records(
-            QueueKind.entries_to_tag, EntryToProcess, secondary_id=second_processor.subqueue_id
+            QueueKind.entries_to_tag, EntryToTag, secondary_id=second_processor.subqueue_id
         )
 
         assert record_entry_ids(first_records) == {entry_ids[0], entry_ids[2]}
@@ -354,13 +711,13 @@ class TestDispatchEntries:
         assert dispatched == len(entry_ids)
         assert (
             await q_operations.tech_get_queue_records(
-                QueueKind.entries_to_tag, EntryToProcess, secondary_id=processor.processor_id
+                QueueKind.entries_to_tag, EntryToTag, secondary_id=processor.processor_id
             )
             == []
         )
 
         records = await q_operations.tech_get_queue_records(
-            QueueKind.entries_to_tag, EntryToProcess, secondary_id=processor.subqueue_id
+            QueueKind.entries_to_tag, EntryToTag, secondary_id=processor.subqueue_id
         )
 
         assert record_entry_ids(records) == set(entry_ids)

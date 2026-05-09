@@ -21,6 +21,13 @@ class LLMProvider(enum.StrEnum):
     google = "google"
 
 
+class LLMApiKeyType(enum.StrEnum):
+    general = "general"
+    collection = "collection"
+    user = "user"
+    subscription = "subscription"
+
+
 class ModelInfo(pydantic.BaseModel):
     provider: LLMProvider
     name: str
@@ -111,5 +118,3 @@ class SelectKeyContext(BaseEntity):
     entry_age: datetime.timedelta
     reserved_cost: USDCost
     interval_started_at: datetime.datetime = pydantic.Field(default_factory=month_interval_start)
-    collections_api_key: LLMCollectionApiKey | None
-    general_api_key: LLMGeneralApiKey | None

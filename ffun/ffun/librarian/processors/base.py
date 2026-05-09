@@ -1,7 +1,13 @@
+from ffun.core.entities import BaseEntity
 from ffun.librarian import errors
 from ffun.library.entities import Entry
+from ffun.llms_framework.entities import LLMApiKeyType
 from ffun.ontology.entities import RawTag
 from ffun.tags.entities import TagCategory
+
+
+class ProcessorContext(BaseEntity):
+    llm_api_key_type: LLMApiKeyType | None = None
 
 
 class Processor:
@@ -14,7 +20,7 @@ class Processor:
     def name(self) -> str:
         return self._name
 
-    async def process(self, entry: Entry) -> list[RawTag]:
+    async def process(self, entry: Entry, context: ProcessorContext) -> list[RawTag]:
         raise NotImplementedError('You must implement "process" method in child class')
 
 
@@ -30,12 +36,12 @@ class AlwaysConstantProcessor(Processor):
         super().__init__(**kwargs)  # type: ignore
         self._tags = tags
 
-    async def process(self, entry: Entry) -> list[RawTag]:
+    async def process(self, entry: Entry, context: ProcessorContext) -> list[RawTag]:
         return [RawTag(raw_uid=tag, categories={TagCategory.test_final}) for tag in self._tags]
 
 
 class AlwaysSkipEntryProcessor(Processor):
-    async def process(self, entry: Entry) -> list[RawTag]:
+    async def process(self, entry: Entry, context: ProcessorContext) -> list[RawTag]:
         raise errors.SkipEntryProcessing()
 
 
@@ -43,10 +49,10 @@ class AlwaysErrorProcessor(Processor):
     class CustomError(Exception):
         pass
 
-    async def process(self, entry: Entry) -> list[RawTag]:
+    async def process(self, entry: Entry, context: ProcessorContext) -> list[RawTag]:
         raise self.CustomError()
 
 
 class AlwaysTemporaryErrorProcessor(Processor):
-    async def process(self, entry: Entry) -> list[RawTag]:
+    async def process(self, entry: Entry, context: ProcessorContext) -> list[RawTag]:
         raise errors.TemporaryErrorInProcessor()
