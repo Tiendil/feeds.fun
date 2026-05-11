@@ -53,7 +53,7 @@ async def process_entry(
     entry: Entry,
     context: ProcessorContext,
 ) -> None:
-    logger.info("dicover_tags")
+    logger.info("dicover_tags", route_id=context.route_id)
 
     raw_tags_metric = accumulator("processor_raw_tags", processor_id)
     normalized_tags_metric = accumulator("processor_normalized_tags", processor_id)

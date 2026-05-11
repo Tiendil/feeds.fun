@@ -192,7 +192,10 @@ class EntriesProcessor(InfiniteTask):
         entries_ids = [record.item.entry_id for record in records_to_process]
         items_by_entry_id = {record.item.entry_id: record.item for record in records_to_process}
 
-        entries_to_process, entries_to_remove = await self.separate_entries(entries_ids=entries_ids)
+        # no need to do anything with _entries_to_remove,
+        # because we will just acknowledge all records in the end of the method
+        # and they will be removed from the queue
+        entries_to_process, _entries_to_remove = await self.separate_entries(entries_ids=entries_ids)
 
         tasks = []
 
