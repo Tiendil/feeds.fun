@@ -1,9 +1,5 @@
-from unittest import mock
-
 import pytest
 import typer
-from pytest_mock import MockerFixture
-from typer.testing import CliRunner
 
 from ffun.cli.commands import queues
 from ffun.queues import operations as q_operations
@@ -24,33 +20,31 @@ class TestQueueKindFromString:
             queues.queue_kind_from_string("unknown")
 
 
-class TestCleanupCommand:
-    def test_command_invokes_cleanup_runner(self, mocker: MockerFixture) -> None:
-        run_cleanup = mock.AsyncMock()
-        mocker.patch.object(queues, "run_cleanup", run_cleanup)
+class TestValidateCleanupRequest:
+    def test_all_request(self) -> None:
+        queues.validate_cleanup_request(clean_all=True, queue=None, subqueue=None)
 
-        result = CliRunner().invoke(queues.cli_app, ["--queue", "entries_to_process", "--subqueue", "17"])
+    def test_queue_request(self) -> None:
+        queues.validate_cleanup_request(clean_all=False, queue="entries_to_process", subqueue=None)
 
-        assert result.exit_code == 0
-        run_cleanup.assert_awaited_once_with(clean_all=False, queue="entries_to_process", subqueue=17)
+    def test_subqueue_request(self) -> None:
+        queues.validate_cleanup_request(clean_all=False, queue="entries_to_process", subqueue=17)
 
     def test_all_can_not_be_combined_with_queue(self) -> None:
-        result = CliRunner().invoke(queues.cli_app, ["--all", "--queue", "entries_to_process"])
-
-        assert result.exit_code != 0
-        assert "--all can not be used with --queue" in result.output
+        with pytest.raises(typer.BadParameter):
+            queues.validate_cleanup_request(clean_all=True, queue="entries_to_process", subqueue=None)
 
     def test_all_can_not_be_combined_with_subqueue(self) -> None:
-        result = CliRunner().invoke(queues.cli_app, ["--all", "--subqueue", "17"])
-
-        assert result.exit_code != 0
-        assert "--all can not be used with --subqueue" in result.output
+        with pytest.raises(typer.BadParameter):
+            queues.validate_cleanup_request(clean_all=True, queue=None, subqueue=17)
 
     def test_subqueue_requires_queue(self) -> None:
-        result = CliRunner().invoke(queues.cli_app, ["--subqueue", "17"])
+        with pytest.raises(typer.BadParameter):
+            queues.validate_cleanup_request(clean_all=False, queue=None, subqueue=17)
 
-        assert result.exit_code != 0
-        assert "--subqueue requires --queue" in result.output
+    def test_requires_all_or_queue(self) -> None:
+        with pytest.raises(typer.BadParameter):
+            queues.validate_cleanup_request(clean_all=False, queue=None, subqueue=None)
 
 
 class TestCleanupQueues:

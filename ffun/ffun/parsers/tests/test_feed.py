@@ -716,7 +716,7 @@ class TestParseStream:
         expected = object()
         parse = mocker.patch("feedparser.parse", return_value=expected)
 
-        assert _parse_stream(input_stream) is expected
+        assert _parse_stream(input_stream) == expected
         parse.assert_called_once_with(input_stream)
 
 
@@ -726,7 +726,7 @@ class TestParseIntoFeedparser:
         channel = object()
         mocker.patch("ffun.parsers.feed._parse_stream", return_value=channel)
 
-        assert parse_into_feedparser("<rss />") is channel
+        assert parse_into_feedparser("<rss />") == channel
 
     def test_returns_none_and_logs_on_error(self, mocker: MockerFixture) -> None:
         mocker.patch("ffun.parsers.feed._parse_stream", side_effect=ValueError("boom"))

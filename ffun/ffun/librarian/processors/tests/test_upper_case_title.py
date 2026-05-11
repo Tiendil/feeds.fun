@@ -13,7 +13,7 @@ expected_tag = "upper-case-title"
 test_route_id = ProcessorRouteId("test-route")
 
 
-class TestEncodeSpecialCharacters:
+class TestProcessor:
     @pytest.mark.parametrize(
         "title, has_tag",
         [
@@ -28,7 +28,7 @@ class TestEncodeSpecialCharacters:
         ],
     )
     @pytest.mark.asyncio
-    async def test(self, cataloged_entry: Entry, title: str, has_tag: bool) -> None:
+    async def test_process__detects_upper_case_titles(self, cataloged_entry: Entry, title: str, has_tag: bool) -> None:
         cataloged_entry = cataloged_entry.replace(title=title)
 
         tags = await processor.process(cataloged_entry, context=ProcessorContext(route_id=test_route_id))
