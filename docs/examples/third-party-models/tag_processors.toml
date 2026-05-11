@@ -47,7 +47,7 @@
   # Configure this tag processor to run for every news
   #############################################################
   [[tag_processors.routes]]
-    id = "configured-api-key"
+    id = "users"
     allowed_for_collections = true
     allowed_for_users = true
     allowed_for_quality_tests = true
