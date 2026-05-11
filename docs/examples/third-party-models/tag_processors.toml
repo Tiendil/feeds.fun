@@ -43,16 +43,15 @@
   text_parts_intersection = 200
   max_tokens_per_entry = 5000
 
-  #############################################################
-  # Configure this tag processor to run for every news
-  #############################################################
+  # This config tells Feeds Fun to use specific API key for all news and all users.
+  # Note: In the simplest local LLM setup you don't need to worry about API keys at all.
+  #       So you can enter any string here, except an empty string.
   [[tag_processors.routes]]
     id = "users"
     allowed_for_collections = true
     allowed_for_users = true
     allowed_for_quality_tests = true
     api_key = "this-key-is-not-important-for-llm-setup"
-  #############################################################
 
   [tag_processors.llm_config]
     model = "mistralai/ministral-3-3b"
