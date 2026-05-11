@@ -151,11 +151,11 @@ Your task is to analyze the given text by following these steps:
   # setup routes with API keys if you want to process entries with configured keys
   #####################################
 
-  # currently, this processor has no routes because we do not support tracking tokens for Gemini
-  routes = []
-
   text_parts_intersection = 200
   max_tokens_per_entry = 5000
+
+  # currently, this processor has no routes because we do not support tracking tokens for Gemini
+  routes = []
 
   [tag_processors.llm_config]
     model = "gemini-2.0-flash-001"
