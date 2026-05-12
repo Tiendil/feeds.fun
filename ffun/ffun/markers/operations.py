@@ -5,8 +5,16 @@ from ffun.core import logging
 from ffun.core.postgresql import execute
 from ffun.domain.entities import EntryId, UserId
 from ffun.markers.entities import Marker
+from ffun.markers.settings import settings
 
 logger = logging.get_module_logger()
+
+
+def log_business_event(event: str, user_id: UserId | None, marker: Marker, entry_id: EntryId) -> None:
+    if marker not in settings.log_business_events_for:
+        return
+
+    logger.business_event(event, user_id=user_id, marker=marker, entry_id=entry_id)
 
 
 async def set_marker(user_id: UserId | None, marker: Marker, entry_id: EntryId) -> None:
@@ -28,7 +36,7 @@ async def set_marker(user_id: UserId | None, marker: Marker, entry_id: EntryId) 
     results = await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "marker": marker, "entry_id": entry_id})
 
     if results:
-        logger.business_event("marker_set", user_id=user_id, marker=marker, entry_id=entry_id)
+        log_business_event("marker_set", user_id=user_id, marker=marker, entry_id=entry_id)
 
 
 async def remove_marker(user_id: UserId | None, marker: Marker, entry_id: EntryId) -> None:
@@ -41,7 +49,7 @@ async def remove_marker(user_id: UserId | None, marker: Marker, entry_id: EntryI
     results = await execute(sql, {"user_id": user_id, "marker": marker, "entry_id": entry_id})
 
     if results:
-        logger.business_event("marker_removed", user_id=user_id, marker=marker, entry_id=entry_id)
+        log_business_event("marker_removed", user_id=user_id, marker=marker, entry_id=entry_id)
 
 
 async def get_markers(user_id: UserId | None, entries_ids: Iterable[EntryId]) -> dict[EntryId, set[Marker]]:

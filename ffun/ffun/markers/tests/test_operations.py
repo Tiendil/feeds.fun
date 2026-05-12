@@ -1,4 +1,5 @@
 import pytest
+from pytest_mock import MockerFixture
 
 from ffun.core.tests.helpers import (
     TableSizeDelta,
@@ -14,11 +15,39 @@ from ffun.library.tests import make as l_make
 from ffun.markers.entities import Marker
 from ffun.markers.operations import (
     get_markers,
+    log_business_event,
     remove_marker,
     remove_markers_for_entries,
     set_marker,
 )
+from ffun.markers.settings import settings
 from ffun.users.tests import make as u_make
+
+
+class TestLogBusinessEvent:
+    @pytest.mark.asyncio
+    async def test_logs_enabled_marker(self, internal_user_id: UserId, new_entry: Entry) -> None:
+        with capture_logs() as logs:
+            log_business_event("marker_test_event", internal_user_id, Marker.can_see_tags, new_entry.id)
+
+        assert_logs_has_business_event(
+            logs,
+            "marker_test_event",
+            user_id=internal_user_id,
+            entry_id=str(new_entry.id),
+            marker=Marker.can_see_tags,
+        )
+
+    @pytest.mark.asyncio
+    async def test_skips_disabled_marker(
+        self, internal_user_id: UserId, new_entry: Entry, mocker: MockerFixture
+    ) -> None:
+        mocker.patch.object(settings, "log_business_events_for", [Marker.read])
+
+        with capture_logs() as logs:
+            log_business_event("marker_test_event", internal_user_id, Marker.can_see_tags, new_entry.id)
+
+        assert_logs_has_no_business_event(logs, "marker_test_event")
 
 
 class TestSetMarker:
