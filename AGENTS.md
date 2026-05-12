@@ -29,7 +29,6 @@ Command you are allowed to use:
 - `./bin/dev-check-semantics.sh` — check code semantics (types, linting, etc.). Both for frontend and backend code.
 - `./bin/frontend-tests.sh` — run ALL frontend tests.
 - `./bin/frontend-utils.sh` — run utils in the frontend environment.
-- `./bin/prolog.sh` — run a small inline SWI-Prolog reasoning program, passed as a single string argument.
 
 If you need to do complex "test & lint & fix" activities, you MUST use the `donna-do` skill to run the code polish workflow.
 
@@ -80,78 +79,6 @@ You MUST use it to:
 You MUST NOT use it for:
 
 - Implementing huge features or behaviors that require adding massive blocks of code (like adding a new class, module, writing a huge function, etc.).
-
-### SWI-Prolog `swipl`
-
-`swipl` — the SWI-Prolog command-line interpreter. Use it as an auxiliary reasoning tool for explicit facts, rules, constraints, dependency reasoning, plan validation, ranking, and combinatorial choice.
-
-SWI-Prolog is NOT a production implementation tool for this project.
-
-Agents MUST use `swipl` when a task involves non-trivial structured reasoning that is easier to check as explicit facts, rules, constraints, or search.
-
-Good uses include:
-
-- validating a plan against explicit constraints.
-- computing transitive impact or reachability from known facts.
-- choosing between several candidates with declared criteria.
-- checking consistency between assumptions before editing code.
-- deriving an ordered task, file, or test plan from known dependencies.
-
-Agents MUST NOT use `swipl` for:
-
-- Replacing `depmesh` for dependency discovery.
-- Replacing `ast-grep` for code-pattern discovery or code transformation.
-- Replacing tests, type checks, linters, or runtime validation.
-- Writing production Python, TypeScript, or application behavior.
-- Encoding repository guesses as facts.
-- Encoding a preselected answer as a `candidate` fact and then asking Prolog to confirm it.
-- Performing simple one-step reasoning that does not need a formal model.
-
-**When repository facts are needed, agents MUST extract them from the appropriate source first.**
-
-When `swipl` is used to choose between architectures, plans, files, tests, task orders, or other alternatives, agents
-SHOULD model independent facts, finite choice dimensions, and constraints, then let Prolog generate/filter/rank the
-solutions. Checklist-style validation of a manually chosen plan is allowed only when reported as validation, not as
-Prolog inference. See `./specs/tools/prolog.md` for the preferred modeling pattern.
-
-For simple reasoning tasks, pass the reasoning goal as an inline string:
-
-```bash
-./bin/prolog.sh "<goal>"
-```
-
-For complex reasoning tasks, read `./specs/tools/prolog.md` before using `swipl`; complex tasks SHOULD use `./prolog/main.pl` as the shared entrypoint and call a task-specific predicate.
-
-When `swipl` materially influences a decision, the agent SHOULD mention the relevant model, query, or result in the work summary.
-
-**You MUST log each usage of prolog into `./prolog/log.md` as `h2` markdown section with explanation of why, how, prolog code in fences, output in fences, conclusions you made from it and next actions**
-
-Example of log record:
-
-```
-## <short usage description>
-
-<why I decided to use prolog, what I wanted to achieve>
-
-<how I plan to use prolog for this task>
-
-code:
-
-```prolog
-<prolog code>
-```
-
-output:
-
-```
-<prolog output>
-```
-
-<conclusions I made from the prolog output and how it influenced my decisions>
-
-<my next actions based on the prolog output and conclusions>
-
-```
 
 ## Special instructions
 
