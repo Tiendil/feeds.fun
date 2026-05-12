@@ -19,3 +19,7 @@ class CanNotSaveUnexistingPointer(Error):
 
 class UnexpectedErrorInProcessor(Error):
     pass
+
+
+class UnknownProcessorRoute(Error):
+    pass

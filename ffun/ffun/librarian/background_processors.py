@@ -2,11 +2,13 @@ import asyncio
 
 from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
-from ffun.domain.entities import EntryId
-from ffun.feeds_collections.collections import collections
-from ffun.librarian import domain, operations
+from ffun.dispatcher import domain as d_domain
+from ffun.dispatcher.background_dispatcher import EntriesDispatcher
+from ffun.dispatcher.entities import EntryToTag, ProcessorDispatchInfo, ProcessorDispatchRoute, ProcessorRouteId
+from ffun.domain.entities import EntryId, ProcessorId
+from ffun.librarian import domain
 from ffun.librarian.entities import ProcessorType
-from ffun.librarian.processors.base import Processor
+from ffun.librarian.processors.base import Processor, ProcessorContext
 from ffun.librarian.processors.domain import Processor as DomainProcessor
 from ffun.librarian.processors.llm_general import Processor as LLMGeneralProcessor
 from ffun.librarian.processors.native_tags import Processor as NativeTagsProcessor
@@ -20,23 +22,39 @@ logger = logging.get_module_logger()
 
 # TODO: merge with EntriesProcessor or with base.Processor?
 class ProcessorInfo:
-    __slots__ = ("id", "processor", "concurrency", "type", "allowed_for_collections", "allowed_for_users")
+    __slots__ = (
+        "id",
+        "processor",
+        "concurrency",
+        "type",
+        "routes",
+        "route_ids",
+        "quality_route_id",
+    )
 
     def __init__(  # noqa: disable=CFQ002
         self,
-        id: int,
+        id: ProcessorId,
         type: ProcessorType,
         processor: Processor,
         concurrency: int,
-        allowed_for_collections: bool,
-        allowed_for_users: bool,
+        routes: tuple[ProcessorDispatchRoute, ...],
+        quality_route_id: ProcessorRouteId | None,
     ):
         self.type = type
         self.id = id
         self.processor = processor
         self.concurrency = concurrency
-        self.allowed_for_collections = allowed_for_collections
-        self.allowed_for_users = allowed_for_users
+        self.routes = routes
+        self.route_ids = frozenset(route.id for route in self.routes)
+        self.quality_route_id = quality_route_id
+
+    def disptach_info(self) -> ProcessorDispatchInfo:
+        return ProcessorDispatchInfo(
+            processor_id=self.id,
+            subqueue_id=self.id,
+            routes=self.routes,
+        )
 
 
 processors: list[ProcessorInfo] = []
@@ -51,10 +69,7 @@ for processor_config in settings.tag_processors:
 
     logger.info("add_tag_processor", processor_id=processor_config.id, processor_name=processor_config.name)
 
-    info_arguments = {}
-
     tags_processor: Processor
-
     if processor_config.type == ProcessorType.domain:
         tags_processor = DomainProcessor(name=processor_config.name)
     elif processor_config.type == ProcessorType.native_tags:
@@ -69,23 +84,20 @@ for processor_config in settings.tag_processors:
             tag_extractor=processor_config.tags_extractor,
             llm_provider=processor_config.llm_provider,
             llm_config=processor_config.llm_config,
-            collections_api_key=processor_config.collections_api_key,
-            general_api_key=processor_config.general_api_key,
             max_tokens_per_entry=processor_config.max_tokens_per_entry,
             text_parts_intersection=processor_config.text_parts_intersection,
+            routes=processor_config.routes,
         )
     else:
         raise NotImplementedError(f"Unknown processor type: {processor_config.type}")
-
-    info_arguments["processor"] = tags_processor
 
     processor = ProcessorInfo(
         id=processor_config.id,
         type=processor_config.type,
         processor=tags_processor,
         concurrency=processor_config.workers,
-        allowed_for_collections=processor_config.allowed_for_collections,
-        allowed_for_users=processor_config.allowed_for_users,
+        routes=processor_config.dispatch_routes(),
+        quality_route_id=processor_config.quality_route_id,
     )
 
     processors.append(processor)
@@ -99,7 +111,7 @@ class EntriesProcessor(InfiniteTask):
         self._processor_info = processor_info
 
     @property
-    def id(self) -> int:
+    def id(self) -> ProcessorId:
         return self._processor_info.id
 
     @property
@@ -137,67 +149,91 @@ class EntriesProcessor(InfiniteTask):
                 entries_to_remove.append(entry_id)
                 continue
 
-            # TODO: maybe we should create some `in_collection` marker directly for entry
-            #       this may simplify a lot of code by moveing checks from multiple places to one
-            in_collection = any(collections.has_feed(feed_id) for feed_id in feed_ids[entry_id])
-
-            if in_collection and not self._processor_info.allowed_for_collections:
-                logger.info("proccessor_not_allowed_for_collections", processor_id=processor_id, entry_id=entry_id)
-                entries_to_remove.append(entry_id)
-                continue
-
-            if not in_collection and not self._processor_info.allowed_for_users:
-                logger.info("proccessor_not_allowed_for_users", processor_id=processor_id, entry_id=entry_id)
-                entries_to_remove.append(entry_id)
-                continue
-
-            logger.info("proccessor_is_allowed_for_entry", processor_id=processor_id, entry_id=entry_id)
             entries_to_process.append(entry)
 
         return entries_to_process, entries_to_remove
+
+    async def filter_records_with_known_routes(
+        self, records: list[d_domain.QueueRecord[EntryToTag]]
+    ) -> list[d_domain.QueueRecord[EntryToTag]]:
+        processor_id = self._processor_info.id
+
+        records_to_requeue = [
+            record for record in records if record.item.route_id not in self._processor_info.route_ids
+        ]
+        records_to_process = [record for record in records if record.item.route_id in self._processor_info.route_ids]
+
+        if records_to_requeue:
+            for record in records_to_requeue:
+                logger.warning(
+                    "unknown_processor_route_in_queue",
+                    processor_id=processor_id,
+                    entry_id=record.item.entry_id,
+                    route_id=record.item.route_id,
+                )
+
+            await d_domain.push_entries_to_process(
+                [record.item.entry_id for record in records_to_requeue], processor_id=processor_id
+            )
+
+        return records_to_process
 
     async def single_run(self) -> None:
         processor_id = self._processor_info.id
         concurrency = self._processor_info.concurrency
 
-        # most likely, this call should be in a separate worker with a more complex logic
-        # but for now it is ok to place it here
-        await domain.plan_processor_queue(
-            processor_id=processor_id,
-            fill_when_below=concurrency,
-            # TODO: move to settings
-            chunk=concurrency * 10,
-        )
+        records = await d_domain.get_entries_to_tag(processor_id=processor_id, limit=concurrency)
 
-        entries_ids = await operations.get_entries_to_process(processor_id=processor_id, limit=concurrency)
-
-        if not entries_ids:
+        if not records:
             logger.info("no_entries_to_process", processor_id=processor_id)
             return
 
-        entries_to_process, entries_to_remove = await self.separate_entries(entries_ids=entries_ids)
+        records_to_process = await self.filter_records_with_known_routes(records)
+        entries_ids = [record.item.entry_id for record in records_to_process]
+        items_by_entry_id = {record.item.entry_id: record.item for record in records_to_process}
+
+        # no need to do anything with _entries_to_remove,
+        # because we will just acknowledge all records in the end of the method
+        # and they will be removed from the queue
+        entries_to_process, _entries_to_remove = await self.separate_entries(entries_ids=entries_ids)
 
         tasks = []
 
         for entry in entries_to_process:
+            item = items_by_entry_id[entry.id]
+            context = ProcessorContext(route_id=item.route_id)
             tasks.append(
-                domain.process_entry(processor_id=processor_id, processor=self._processor_info.processor, entry=entry)
-            )
-
-        if entries_to_remove:
-            tasks.append(
-                domain.remove_entries_from_processor_queue(processor_id=processor_id, entry_ids=entries_to_remove)
+                domain.process_entry(
+                    processor_id=processor_id, processor=self._processor_info.processor, entry=entry, context=context
+                )
             )
 
         await asyncio.gather(*tasks, return_exceptions=True)
 
+        await d_domain.acknowledge([record.id for record in records if record.id is not None])
 
-def create_background_processors() -> list[EntriesProcessor]:
-    return [
-        EntriesProcessor(
-            processor_info=processor_info,
-            name=f"entries_processor_{processor_info.processor.name}",
+
+def create_background_processors() -> list[InfiniteTask]:
+    if not processors:
+        return []
+
+    background_processors: list[InfiniteTask] = []
+
+    background_processors.append(
+        EntriesDispatcher(
+            processors=[processor_info.disptach_info() for processor_info in processors],
+            name="entries_dispatcher",
             delay_between_runs=1,
         )
-        for processor_info in processors
-    ]
+    )
+
+    for processor_info in processors:
+        background_processors.append(
+            EntriesProcessor(
+                processor_info=processor_info,
+                name=f"entries_processor_{processor_info.processor.name}",
+                delay_between_runs=1,
+            )
+        )
+
+    return background_processors

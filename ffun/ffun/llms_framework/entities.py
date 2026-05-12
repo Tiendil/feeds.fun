@@ -11,8 +11,6 @@ from ffun.feeds.entities import FeedId
 
 LLMApiKey = NewType("LLMApiKey", str)
 LLMUserApiKey = NewType("LLMUserApiKey", LLMApiKey)
-LLMCollectionApiKey = NewType("LLMCollectionApiKey", LLMApiKey)
-LLMGeneralApiKey = NewType("LLMGeneralApiKey", LLMApiKey)
 
 
 class LLMProvider(enum.StrEnum):
@@ -111,5 +109,3 @@ class SelectKeyContext(BaseEntity):
     entry_age: datetime.timedelta
     reserved_cost: USDCost
     interval_started_at: datetime.datetime = pydantic.Field(default_factory=month_interval_start)
-    collections_api_key: LLMCollectionApiKey | None
-    general_api_key: LLMGeneralApiKey | None

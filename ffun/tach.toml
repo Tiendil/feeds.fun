@@ -114,6 +114,7 @@ layer = "meta_workflow"
 [[modules]]
 path = "ffun.librarian"
 depends_on = [
+    "ffun.dispatcher",
     "ffun.feeds_collections",
     "ffun.library",
     "ffun.llms_framework",
@@ -143,6 +144,7 @@ layer = "feeds_workflow"
 [[modules]]
 path = "ffun.loader"
 depends_on = [
+    "ffun.dispatcher",
     "ffun.feeds",
     "ffun.feeds_collections",
     "ffun.feeds_links",
@@ -195,6 +197,16 @@ depends_on = [
     "ffun.feeds",
     "ffun.integrations",
     "ffun.library",
+]
+layer = "feeds_workflow"
+
+[[modules]]
+path = "ffun.dispatcher"
+depends_on = [
+    "ffun.feeds_collections",
+    "ffun.library",
+    "ffun.markers",
+    "ffun.queues",
 ]
 layer = "feeds_workflow"
 
@@ -282,6 +294,12 @@ path = "ffun.users"
 depends_on = [
 ]
 layer = "users"
+
+[[modules]]
+path = "ffun.queues"
+depends_on = [
+]
+layer = "foundation"
 
 [[modules]]
 path = "ffun.core"

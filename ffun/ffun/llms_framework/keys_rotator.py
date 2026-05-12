@@ -1,7 +1,7 @@
 import contextlib
 import datetime
 from decimal import Decimal
-from typing import Any, AsyncGenerator, Collection, Iterable, Protocol
+from typing import Any, AsyncGenerator, Iterable
 
 from ffun.core import logging
 from ffun.domain.entities import UserId
@@ -45,11 +45,6 @@ _cost_points = CostPoints(k=1_000_000_000)
 
 # Note: this code is not about billing, it is about protection from the overuse of keys
 #       i.e. in case of a problem, we should count a key as used with a maximum used tokens
-
-
-class KeySelector(Protocol):
-    async def __call__(self, llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage | None:
-        """Selector function"""
 
 
 #######################
@@ -225,49 +220,7 @@ async def _find_best_user_with_key(
     return await _choose_user(infos=infos, reserved_cost=reserved_cost, interval_started_at=interval_started_at)
 
 
-####################
-# choosing key logic
-####################
-
-
-async def _choose_general_key(llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage | None:
-
-    key = context.general_api_key
-
-    if key is None:
-        return None
-
-    return APIKeyUsage(
-        provider=llm.provider,
-        user_id=None,
-        api_key=key,
-        reserved_cost=context.reserved_cost,
-        used_cost=None,
-        interval_started_at=context.interval_started_at,
-    )
-
-
-async def _choose_collections_key(llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage | None:
-
-    key = context.collections_api_key
-
-    if key is None:
-        return None
-
-    if all(not collections.has_feed(feed_id) for feed_id in context.feed_ids):
-        return None
-
-    return APIKeyUsage(
-        provider=llm.provider,
-        user_id=None,
-        api_key=key,
-        reserved_cost=context.reserved_cost,
-        used_cost=None,
-        interval_started_at=context.interval_started_at,
-    )
-
-
-async def _choose_user_key(llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage | None:
+async def choose_user_api_key(llm: ProviderInterface, context: SelectKeyContext) -> APIKeyUsage | None:
 
     if any(collections.has_feed(feed_id) for feed_id in context.feed_ids):
         raise errors.FeedsFromCollectionsMustNotBeProcessedWithUserAPIKeys(feed_ids=str(context.feed_ids))
@@ -295,23 +248,6 @@ async def _choose_user_key(llm: ProviderInterface, context: SelectKeyContext) ->
         used_cost=None,
         interval_started_at=context.interval_started_at,
     )
-
-
-# Collections key has priority over general key
-# Because otherwise there will be not possible to use general key only for users
-_key_selectors: Collection[KeySelector] = (_choose_collections_key, _choose_general_key, _choose_user_key)
-
-
-async def choose_api_key(
-    llm: ProviderInterface, context: SelectKeyContext, selectors: Iterable[KeySelector] = _key_selectors
-) -> APIKeyUsage | None:
-    for key_selector in selectors:
-        key_usage = await key_selector(llm, context)
-
-        if key_usage is not None:
-            return key_usage
-
-    return None
 
 
 #################

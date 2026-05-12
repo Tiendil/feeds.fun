@@ -10,7 +10,7 @@ logger = logging.get_module_logger()
 class Processor(base.Processor):
     __slots__ = ()
 
-    async def process(self, entry: Entry) -> list[RawTag]:
+    async def process(self, entry: Entry, context: base.ProcessorContext) -> list[RawTag]:
         if entry.title.isupper():
             return [
                 RawTag(

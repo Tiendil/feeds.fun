@@ -26,6 +26,7 @@ from ffun.integrations.settings import settings as integrations_settings
 from ffun.library import domain as l_domain
 from ffun.library import entities as l_entities
 from ffun.markers import domain as m_domain
+from ffun.markers import entities as m_entities
 from ffun.meta import domain as meta_domain
 from ffun.ontology import domain as o_domain
 from ffun.parsers import domain as p_domain
@@ -67,11 +68,15 @@ async def _external_entries(  # pylint: disable=R0914
     # load rules and markers
     ########################
 
-    if user_id is not None:
-        markers = await m_domain.get_markers(user_id=user_id, entries_ids=entries_ids)
+    markers = await m_domain.get_markers(user_id=user_id, entries_ids=entries_ids)
+
+    entries_with_tags = [
+        entry_id for entry_id in entries_ids if m_entities.Marker.can_see_tags in markers.get(entry_id, ())
+    ]
+
+    if user_id is not None and entries_with_tags:
         rules = await s_domain.get_rules_for_user(user_id)
     else:
-        markers = {}
         rules = []
 
     ##############
@@ -84,7 +89,7 @@ async def _external_entries(  # pylint: disable=R0914
         must_have_tags.update(rule.excluded_tags)
 
     entry_tag_ids, tag_mapping = await o_domain.prepare_tags_for_entries(
-        entry_ids=entries_ids, must_have_tags=must_have_tags, min_tag_count=min_tag_count
+        entry_ids=entries_with_tags, must_have_tags=must_have_tags, min_tag_count=min_tag_count
     )
 
     ####################

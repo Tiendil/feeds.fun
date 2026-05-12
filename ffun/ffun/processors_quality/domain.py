@@ -4,11 +4,13 @@ import tabulate
 
 from ffun.core import utils
 from ffun.librarian.background_processors import processors as ln_processors
+from ffun.librarian.processors.base import ProcessorContext
+from ffun.processors_quality import errors
 from ffun.processors_quality.entities import ProcessorResult, ProcessorResultDiff
 from ffun.processors_quality.knowlege_base import KnowlegeBase, id_to_name
 from ffun.tags import domain as t_domain
 
-processors = {info.processor.name: info.processor for info in ln_processors}
+processors = {info.processor.name: info for info in ln_processors}
 
 
 async def run_processor(kb: KnowlegeBase, processor_name: str, entry_id: int) -> ProcessorResult:
@@ -16,9 +18,14 @@ async def run_processor(kb: KnowlegeBase, processor_name: str, entry_id: int) ->
     raw_entry = kb.get_news_entry(entry_id)
     entry = raw_entry.fake_entry(created_at=utils.now())
 
-    processor = processors[processor_name]
+    processor_info = processors[processor_name]
+    processor = processor_info.processor
+    quality_route_id = processor_info.quality_route_id
 
-    raw_tags = await processor.process(entry)
+    if quality_route_id is None:
+        raise errors.NoQualityTestRoute(processor_name=processor_name)
+
+    raw_tags = await processor.process(entry, context=ProcessorContext(route_id=quality_route_id))
 
     norm_tags = await t_domain.normalize(raw_tags)
 

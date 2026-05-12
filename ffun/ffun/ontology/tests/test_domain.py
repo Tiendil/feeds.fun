@@ -6,7 +6,7 @@ from pytest_mock import MockerFixture
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.domain import new_entry_id
-from ffun.domain.entities import EntryId, TagId
+from ffun.domain.entities import EntryId, ProcessorId, TagId
 from ffun.library.entities import Entry
 from ffun.ontology import operations
 from ffun.ontology.domain import (
@@ -26,7 +26,7 @@ from ffun.ontology.tests import helpers
 class TestApplyTagsToEntry:
 
     @pytest.mark.asyncio
-    async def test_apply_no_tags(self, cataloged_entry: Entry, fake_processor_id: int) -> None:
+    async def test_apply_no_tags(self, cataloged_entry: Entry, fake_processor_id: ProcessorId) -> None:
         async with (
             TableSizeNotChanged("o_tags_properties"),
             TableSizeNotChanged("o_relations"),
@@ -42,7 +42,7 @@ class TestApplyTagsToEntry:
     async def test_apply_tags(
         self,
         cataloged_entry: Entry,
-        fake_processor_id: int,
+        fake_processor_id: ProcessorId,
         three_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag],
     ) -> None:
 
@@ -289,7 +289,7 @@ class TestPrepareTagsForEntries:
         self,
         cataloged_entry: Entry,
         another_cataloged_entry: Entry,
-        fake_processor_id: int,
+        fake_processor_id: ProcessorId,
         five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
     ) -> None:
         tags = five_processor_tags
@@ -315,7 +315,7 @@ class TestPrepareTagsForEntries:
         self,
         cataloged_entry: Entry,
         another_cataloged_entry: Entry,
-        fake_processor_id: int,
+        fake_processor_id: ProcessorId,
         five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
     ) -> None:
         tags = five_processor_tags
@@ -363,7 +363,7 @@ class TestRemoveOrphanedTags:
     @pytest.mark.asyncio
     async def test_foreign_key_violation(
         self,
-        fake_processor_id: int,
+        fake_processor_id: ProcessorId,
         cataloged_entry: Entry,
         three_tags_ids: tuple[TagId, TagId, TagId],
         mocker: MockerFixture,
@@ -385,8 +385,8 @@ class TestCopyRelations:
         self,
         cataloged_entry: Entry,
         another_cataloged_entry: Entry,
-        fake_processor_id: int,
-        another_fake_processor_id: int,
+        fake_processor_id: ProcessorId,
+        another_fake_processor_id: ProcessorId,
         five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
     ) -> None:
         tags = five_processor_tags
@@ -411,8 +411,8 @@ class TestCopyRelations:
         self,
         cataloged_entry: Entry,
         another_cataloged_entry: Entry,
-        fake_processor_id: int,
-        another_fake_processor_id: int,
+        fake_processor_id: ProcessorId,
+        another_fake_processor_id: ProcessorId,
         five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
         five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
     ) -> None:
@@ -476,8 +476,8 @@ class TestRemoveRelationsForTags:
         self,
         cataloged_entry: Entry,
         another_cataloged_entry: Entry,
-        fake_processor_id: int,
-        another_fake_processor_id: int,
+        fake_processor_id: ProcessorId,
+        another_fake_processor_id: ProcessorId,
         five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
     ) -> None:
         tags = five_processor_tags
@@ -497,8 +497,8 @@ class TestRemoveRelationsForTags:
         self,
         cataloged_entry: Entry,
         another_cataloged_entry: Entry,
-        fake_processor_id: int,
-        another_fake_processor_id: int,
+        fake_processor_id: ProcessorId,
+        another_fake_processor_id: ProcessorId,
         five_tags_ids: tuple[TagId, TagId, TagId, TagId, TagId],
         five_processor_tags: tuple[NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag, NormalizedTag],
     ) -> None:

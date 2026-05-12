@@ -290,7 +290,7 @@ export type RawEntry = {
   title: string;
   url: string;
   tags: number[];
-  markers: string[];
+  markers: number[];
   score: number;
   scoreContributions: {[key: number]: number};
   publishedAt: string;
@@ -311,7 +311,7 @@ export function entryFromJSON(rawEntry: RawEntry, tagsMapping: {[key: number]: s
     title: rawEntry.title,
     url: toURL(rawEntry.url),
     tags: rawEntry.tags.map((t: number) => tagsMapping[t]),
-    markers: rawEntry.markers.map((m: string) => {
+    markers: rawEntry.markers.map((m: number) => {
       if (m in e.reverseMarker) {
         return e.reverseMarker[m];
       }

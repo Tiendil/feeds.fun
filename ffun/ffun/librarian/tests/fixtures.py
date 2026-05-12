@@ -1,22 +1,24 @@
 import pytest
 
+from ffun.dispatcher.entities import ProcessorDispatchRoute, ProcessorRouteId
+from ffun.domain.entities import ProcessorId
 from ffun.librarian.background_processors import EntriesProcessor, ProcessorInfo
 from ffun.librarian.entities import ProcessorType
 from ffun.librarian.processors.base import AlwaysConstantProcessor
 
 
 @pytest.fixture  # type: ignore
-def fake_processor_id() -> int:
-    return 11042
+def fake_processor_id() -> ProcessorId:
+    return ProcessorId(11042)
 
 
 @pytest.fixture  # type: ignore
-def another_fake_processor_id() -> int:
-    return 11043
+def another_fake_processor_id() -> ProcessorId:
+    return ProcessorId(11043)
 
 
 @pytest.fixture  # type: ignore
-def fake_processor_info(fake_processor_id: int) -> ProcessorInfo:
+def fake_processor_info(fake_processor_id: ProcessorId) -> ProcessorInfo:
     return ProcessorInfo(
         id=fake_processor_id,
         type=ProcessorType.fake,
@@ -24,8 +26,14 @@ def fake_processor_info(fake_processor_id: int) -> ProcessorInfo:
             name="fake_constant_processor", tags=["fake-constant-tag-1", "fake-constant-tag-2"]
         ),
         concurrency=5,
-        allowed_for_collections=True,
-        allowed_for_users=True,
+        routes=(
+            ProcessorDispatchRoute(
+                id=ProcessorRouteId("default"),
+                allowed_for_collections=True,
+                allowed_for_users=True,
+            ),
+        ),
+        quality_route_id=ProcessorRouteId("default"),
     )
 
 

@@ -2,47 +2,71 @@ import uuid
 from typing import Iterable
 
 from ffun.core import logging
-from ffun.core.postgresql import ExecuteType, execute
+from ffun.core.postgresql import execute
 from ffun.domain.entities import EntryId, UserId
 from ffun.markers.entities import Marker
+from ffun.markers.settings import settings
 
 logger = logging.get_module_logger()
 
 
-async def set_marker(user_id: UserId, marker: Marker, entry_id: EntryId) -> None:
-    sql = """
-        INSERT INTO m_markers (id, user_id, marker, entry_id)
-        VALUES (%(id)s, %(user_id)s, %(marker)s, %(entry_id)s)
-        ON CONFLICT (user_id, marker, entry_id) DO NOTHING
-        RETURNING id
-    """
+def log_business_event(event: str, user_id: UserId | None, marker: Marker, entry_id: EntryId) -> None:
+    if marker not in settings.log_business_events_for:
+        return
+
+    logger.business_event(event, user_id=user_id, marker=marker, entry_id=entry_id)
+
+
+async def set_marker(user_id: UserId | None, marker: Marker, entry_id: EntryId) -> None:
+    if user_id is None:
+        sql = """
+            INSERT INTO m_markers (id, user_id, marker, entry_id)
+            VALUES (%(id)s, %(user_id)s, %(marker)s, %(entry_id)s)
+            ON CONFLICT (entry_id, marker) WHERE user_id IS NULL DO NOTHING
+            RETURNING id
+        """
+    else:
+        sql = """
+            INSERT INTO m_markers (id, user_id, marker, entry_id)
+            VALUES (%(id)s, %(user_id)s, %(marker)s, %(entry_id)s)
+            ON CONFLICT (user_id, entry_id, marker) WHERE user_id IS NOT NULL DO NOTHING
+            RETURNING id
+        """
 
     results = await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "marker": marker, "entry_id": entry_id})
 
     if results:
-        logger.business_event("marker_set", user_id=user_id, marker=marker, entry_id=entry_id)
+        log_business_event("marker_set", user_id=user_id, marker=marker, entry_id=entry_id)
 
 
-async def remove_marker(user_id: UserId, marker: Marker, entry_id: EntryId) -> None:
+async def remove_marker(user_id: UserId | None, marker: Marker, entry_id: EntryId) -> None:
     sql = """
         DELETE FROM m_markers
-        WHERE user_id = %(user_id)s AND marker = %(marker)s AND entry_id = %(entry_id)s
+        WHERE user_id IS NOT DISTINCT FROM %(user_id)s AND marker = %(marker)s AND entry_id = %(entry_id)s
         RETURNING id
     """
 
     results = await execute(sql, {"user_id": user_id, "marker": marker, "entry_id": entry_id})
 
     if results:
-        logger.business_event("marker_removed", user_id=user_id, marker=marker, entry_id=entry_id)
+        log_business_event("marker_removed", user_id=user_id, marker=marker, entry_id=entry_id)
 
 
-# TODO: tests
-async def get_markers(user_id: UserId, entries_ids: Iterable[EntryId]) -> dict[EntryId, set[Marker]]:
-    sql = """
-        SELECT entry_id, marker
-        FROM m_markers
-        WHERE user_id = %(user_id)s AND entry_id = ANY(%(entries_ids)s)
-    """
+async def get_markers(user_id: UserId | None, entries_ids: Iterable[EntryId]) -> dict[EntryId, set[Marker]]:
+    entries_ids = list(entries_ids)
+
+    if user_id is None:
+        sql = """
+            SELECT entry_id, marker
+            FROM m_markers
+            WHERE user_id IS NULL AND entry_id = ANY(%(entries_ids)s)
+        """
+    else:
+        sql = """
+            SELECT entry_id, marker
+            FROM m_markers
+            WHERE (user_id = %(user_id)s OR user_id IS NULL) AND entry_id = ANY(%(entries_ids)s)
+        """
 
     results = await execute(sql, {"user_id": user_id, "entries_ids": entries_ids})
 
@@ -58,25 +82,6 @@ async def get_markers(user_id: UserId, entries_ids: Iterable[EntryId]) -> dict[E
         result[entry_id].add(marker)
 
     return result
-
-
-# TODO: add business events?
-async def tech_merge_markers(execute: ExecuteType, from_entry_id: EntryId, to_entry_id: EntryId) -> None:
-    sql = """
-        DELETE FROM m_markers AS m
-        WHERE entry_id = %(from_entry_id)s
-              AND EXISTS (SELECT 1 FROM m_markers WHERE entry_id = %(to_entry_id)s AND user_id = m.user_id)
-    """
-
-    await execute(sql, {"from_entry_id": from_entry_id, "to_entry_id": to_entry_id})
-
-    sql = """
-        UPDATE m_markers
-        SET entry_id = %(to_entry_id)s
-        WHERE entry_id = %(from_entry_id)s
-    """
-
-    await execute(sql, {"from_entry_id": from_entry_id, "to_entry_id": to_entry_id})
 
 
 async def remove_markers_for_entries(entries_ids: Iterable[EntryId]) -> None:

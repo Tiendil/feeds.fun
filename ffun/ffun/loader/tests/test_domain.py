@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Iterable
 
 import pytest
 from pytest_mock import MockerFixture
@@ -10,7 +11,7 @@ from ffun.core.tests.helpers import (
     assert_logs_has_no_business_event,
     assert_logs_has_record,
 )
-from ffun.domain.entities import UserId
+from ffun.domain.entities import EntryId, UserId
 from ffun.domain.urls import str_to_feed_url, url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
@@ -44,6 +45,18 @@ def assert_entry_fields_equal_to_info(entry_info: p_entities.EntryInfo, entry: l
 def assert_entriy_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:
     assert_entry_fields_equal_to_info(entry_info, entry)
     assert entry.published_at == entry_info.published_at
+
+
+@pytest.fixture  # type: ignore
+def pushed_entries_to_process(mocker: MockerFixture) -> set[EntryId]:
+    pushed_entries: set[EntryId] = set()
+
+    async def fake_push_entries_to_process(entry_ids: Iterable[EntryId]) -> None:
+        pushed_entries.update(entry_ids)
+
+    mocker.patch("ffun.loader.domain.d_domain.push_entries_to_process", side_effect=fake_push_entries_to_process)
+
+    return pushed_entries
 
 
 class TestLoadDecodedContent:
@@ -254,7 +267,7 @@ class TestSyncFeedInfo:
 
 class TestStoreEntries:
     @pytest.mark.asyncio
-    async def test_no_entries(self, saved_feed: f_entities.Feed) -> None:
+    async def test_no_entries(self, saved_feed: f_entities.Feed, pushed_entries_to_process: set[EntryId]) -> None:
         with capture_logs() as logs:  # type: ignore
             await store_entries(saved_feed, [])
 
@@ -265,9 +278,12 @@ class TestStoreEntries:
         entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=1)
 
         assert not entries
+        assert pushed_entries_to_process == set()
 
     @pytest.mark.asyncio
-    async def test_save_new_entries(self, saved_feed: f_entities.Feed) -> None:
+    async def test_save_new_entries(
+        self, saved_feed: f_entities.Feed, pushed_entries_to_process: set[EntryId]
+    ) -> None:
         n = 3
 
         entry_infos = [p_make.fake_entry_info() for _ in range(n)]
@@ -284,6 +300,8 @@ class TestStoreEntries:
 
         assert len(loaded_entries) == 3
 
+        assert pushed_entries_to_process == {entry.id for entry in loaded_entries}
+
         entry_infos.sort(key=lambda e: e.title)
         loaded_entries.sort(key=lambda e: e.title)
 
@@ -292,7 +310,7 @@ class TestStoreEntries:
             await assert_filtered_entry_equal_to_info(entry_info, entry)
 
     @pytest.mark.asyncio
-    async def test_save_in_parts(self, saved_feed: f_entities.Feed) -> None:
+    async def test_save_in_parts(self, saved_feed: f_entities.Feed, pushed_entries_to_process: set[EntryId]) -> None:
         n = 5
         m = 3
 
@@ -312,6 +330,10 @@ class TestStoreEntries:
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 
         assert len(loaded_entries) == m
+        first_entries_ids = {entry.id for entry in loaded_entries}
+
+        assert pushed_entries_to_process == first_entries_ids
+        pushed_entries_to_process.clear()
 
         loaded_entries.sort(key=lambda e: e.title)
 
@@ -330,6 +352,9 @@ class TestStoreEntries:
         loaded_entries = await l_domain.get_entries_by_filter([saved_feed.id], limit=n + 1)
 
         assert len(loaded_entries) == n
+        second_entries_ids = {entry.id for entry in loaded_entries} - first_entries_ids
+
+        assert pushed_entries_to_process == second_entries_ids
 
         loaded_entries.sort(key=lambda e: e.title)
 
@@ -338,16 +363,20 @@ class TestStoreEntries:
             await assert_filtered_entry_equal_to_info(entry_info, entry)
 
     @pytest.mark.asyncio
-    async def test_skip_all_entries(self, saved_feed: f_entities.Feed) -> None:
+    async def test_skip_all_entries(
+        self, saved_feed: f_entities.Feed, pushed_entries_to_process: set[EntryId]
+    ) -> None:
         entry_infos = [p_make.fake_entry_info() for _ in range(3)]
 
         await store_entries(saved_feed, entry_infos)
+        pushed_entries_to_process.clear()
 
         with capture_logs() as logs:  # type: ignore
             await store_entries(saved_feed, entry_infos)
 
         assert_logs_has_record(logs, "entries_stored", entries_cataloged=0, entries_skipped=3)  # type: ignore
         assert_logs_has_no_business_event(logs, "news_entries_stored")  # type: ignore
+        assert pushed_entries_to_process == set()
 
 
 class TestProcessFeed:

@@ -65,12 +65,12 @@ There are two options.
 
 ### Temporarily disable LLM tag processor for user feeds
 
-1. Set `allowed_for_users=false` in the `tag_processors.toml`.
+1. Set `allowed_for_users=false` on the LLM route in the `tag_processors.toml`.
 2. Wait a bit untill the `llm_general` processor skips all old news.
-3. Set `allowed_for_users=true` back.
+3. Set `allowed_for_users=true` back on the route.
 
 ### Emulate setting an OpenAI API key by the user
 
-1. Set `general_api_key` to an empty string in the `tag_processors.toml`.
+1. Set the LLM route to `allowed_for_collections=false`, `allowed_for_users=true`, and `api_key=""` in the `tag_processors.toml`.
 2. Add a random string as an OpenAI API key in your user settings on the site.
 3. You'll be able to configure the age of processed news (see `Process entries not older than N days` setting in the GUI).

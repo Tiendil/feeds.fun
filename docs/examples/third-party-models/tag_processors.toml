@@ -1,11 +1,17 @@
+# Routes are checked in order; the first route matching the entry kind is used.
+
 [[tag_processors]]
   id = 1
   enabled = true
   workers = 10
   name = "domain"
   type = "domain"
-  allowed_for_collections = true
-  allowed_for_users = true
+
+  [[tag_processors.routes]]
+    id = "default"
+    allowed_for_collections = true
+    allowed_for_users = true
+    allowed_for_quality_tests = true
 
 [[tag_processors]]
   id = 2
@@ -13,8 +19,12 @@
   workers = 10
   name = "native_tags"
   type = "native_tags"
-  allowed_for_collections = true
-  allowed_for_users = true
+
+  [[tag_processors.routes]]
+    id = "default"
+    allowed_for_collections = true
+    allowed_for_users = true
+    allowed_for_quality_tests = true
 
 [[tag_processors]]
   id = 3
@@ -30,17 +40,18 @@
 
   llm_provider = "openai"
 
-  #############################################################
-  # Configure this tag processor to run for every news
-  #############################################################
-  collections_api_key = "this-key-is-not-important-for-llm-setup"
-  general_api_key = "this-key-is-not-important-for-llm-setup"
-  general_api_key_warning = "I understand that setting this key may be DANGEROUS and COSTLY."
-  allowed_for_collections = true
-  allowed_for_users = true
   text_parts_intersection = 200
   max_tokens_per_entry = 5000
-  #############################################################
+
+  # This config tells Feeds Fun to use specific API key for all news and all users.
+  # Note: In the simplest local LLM setup you don't need to worry about API keys at all.
+  #       So you can enter any string here, except an empty string.
+  [[tag_processors.routes]]
+    id = "users"
+    allowed_for_collections = true
+    allowed_for_users = true
+    allowed_for_quality_tests = true
+    api_key = "this-key-is-not-important-for-llm-setup"
 
   [tag_processors.llm_config]
     model = "mistralai/ministral-3-3b"
@@ -107,5 +118,9 @@ Your task is to analyze the given text by following these steps:
   workers = 10
   name = "upper_case_title"
   type = "upper_case_title"
-  allowed_for_collections = true
-  allowed_for_users = true
+
+  [[tag_processors.routes]]
+    id = "default"
+    allowed_for_collections = true
+    allowed_for_users = true
+    allowed_for_quality_tests = true

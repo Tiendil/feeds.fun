@@ -120,9 +120,9 @@ class TestPluginMethods:
         )
 
     def test__is_feed_path__detects_atom_paths(self, plugin: github.Plugin) -> None:
-        assert plugin._is_feed_path(["openai.atom"]) is True
-        assert plugin._is_feed_path(["openai", "openai", "releases.atom"]) is True
-        assert plugin._is_feed_path(["openai", "openai", "releases"]) is False
+        assert plugin._is_feed_path(["openai.atom"])
+        assert plugin._is_feed_path(["openai", "openai", "releases.atom"])
+        assert not plugin._is_feed_path(["openai", "openai", "releases"])
 
     def test__construct_owner_feed_urls__formats_templates(self, plugin: github.Plugin) -> None:
         assert plugin._construct_owner_feed_urls("openai") == {"https://github.com/openai.atom"}

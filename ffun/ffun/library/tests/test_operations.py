@@ -277,8 +277,8 @@ class TestCatalogEntries:
     @pytest.mark.asyncio
     async def test_no_entries(self, loaded_feed_id: FeedId) -> None:
         async with TableSizeNotChanged("l_entries"):
-            count = await catalog_entries(loaded_feed_id, [])
-            assert count == 0
+            new_entry_ids = await catalog_entries(loaded_feed_id, [])
+            assert new_entry_ids == []
 
     @pytest.mark.asyncio
     async def test_success(
@@ -287,8 +287,8 @@ class TestCatalogEntries:
         entries_data = [new_entry, another_new_entry]
 
         async with TableSizeDelta("l_entries", delta=2):
-            count = await catalog_entries(loaded_feed_id, entries_data)
-            assert count == 2
+            new_entry_ids = await catalog_entries(loaded_feed_id, entries_data)
+            assert set(new_entry_ids) == {new_entry.id, another_new_entry.id}
 
         loaded_entries = await get_entries_by_ids(ids=[new_entry.id, another_new_entry.id])
 
@@ -316,8 +316,8 @@ class TestCatalogEntries:
         another_new_entry = new_entry.replace(id=new_entry_id(), external_id=uuid.uuid4().hex)
 
         async with TableSizeDelta("l_entries", delta=1):
-            count = await catalog_entries(loaded_feed_id, [new_entry, another_new_entry])
-            assert count == 1
+            new_entry_ids = await catalog_entries(loaded_feed_id, [new_entry, another_new_entry])
+            assert new_entry_ids == [another_new_entry.id]
 
     @pytest.mark.asyncio
     async def test_catalog_old_entries(
@@ -330,8 +330,8 @@ class TestCatalogEntries:
         )
 
         async with TableSizeDelta("l_entries", delta=2):
-            count = await catalog_entries(loaded_feed.id, [old_entry, another_new_entry])
-            assert count == 2
+            new_entry_ids = await catalog_entries(loaded_feed.id, [old_entry, another_new_entry])
+            assert set(new_entry_ids) == {old_entry.id, another_new_entry.id}
 
         loaded_entries = await get_entries_by_ids(ids=[old_entry.id, another_new_entry.id])
 
@@ -351,8 +351,8 @@ class TestCatalogEntries:
         ]
 
         async with TableSizeDelta("l_entries", delta=5):
-            count = await catalog_entries(loaded_feed.id, old_entries)
-            assert count == 5
+            new_entry_ids = await catalog_entries(loaded_feed.id, old_entries)
+            assert set(new_entry_ids) == {entry.id for entry in old_entries}
 
         loaded_entries = await get_entries_by_ids(ids=[entry.id for entry in old_entries])
 
@@ -372,8 +372,8 @@ class TestCatalogEntries:
         ]
 
         async with TableSizeDelta("l_entries", delta=3):
-            count = await catalog_entries(loaded_feed.id, old_entries)
-            assert count == 3
+            new_entry_ids = await catalog_entries(loaded_feed.id, old_entries)
+            assert set(new_entry_ids) == {entry.id for entry in old_entries}
 
         loaded_entries = await get_entries_by_ids(ids=[entry.id for entry in old_entries])
 

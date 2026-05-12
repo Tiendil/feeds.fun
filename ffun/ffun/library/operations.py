@@ -68,7 +68,7 @@ def row_to_entry(row: dict[str, Any]) -> Entry:
 @run_in_transaction
 async def _catalog_entry(
     execute: ExecuteType, feed_id: FeedId, entry: CollectedEntry, ingested_at: datetime.datetime
-) -> bool:
+) -> EntryId | None:
     sql_insert_entry = """
     INSERT INTO l_entries (id, source_id, title, body, external_id, external_url, external_tags, published_at, refs)
     VALUES (%(id)s, %(source_id)s, %(title)s, %(body)s, %(external_id)s,
@@ -116,11 +116,9 @@ async def _catalog_entry(
         },
     )
 
-    new_entry_created: bool
-
     if result:
         new_entry_created = True
-        entry_id = result[0]["id"]
+        entry_id = EntryId(result[0]["id"])
         entry_created_at = result[0]["created_at"]
     else:
         new_entry_created = False
@@ -130,26 +128,33 @@ async def _catalog_entry(
         )
 
         if result:
-            entry_id = result[0]["id"]
+            entry_id = EntryId(result[0]["id"])
             entry_created_at = result[0]["created_at"]
         else:
             raise NotImplementedError("Can not find entry by source_id and external_id")
 
     await execute(
         sql_insert_feed_to_entry,
-        {"feed_id": feed_id, "entry_id": entry_id, "ingested_at": ingested_at, "entry_created_at": entry_created_at},
+        {
+            "feed_id": feed_id,
+            "entry_id": entry_id,
+            "ingested_at": ingested_at,
+            "entry_created_at": entry_created_at,
+        },
     )
 
-    return new_entry_created
+    if new_entry_created:
+        return entry_id
+
+    return None
 
 
-async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) -> int:
-
+async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) -> list[EntryId]:
     # We MUST use the same `ingested_at` value for all entries ingested in the same load
     # to be able to use `ingested_at` as a marker/version of ingested bunch of entries
     ingested_at = utils.now()
 
-    count = 0
+    new_entries_ids = []
 
     # 1. We use the time of the last ingestion as the marker of actuality of the feed entries.
     #    We use that maker to decide which entries can be safely unlinked from the feed.
@@ -161,10 +166,12 @@ async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) ->
     #    entries.
     #    => We catalog entries in reversed order, so the oldest entry will have the oldest `created_at`.
     for entry in reversed(list(entries)):
-        if await _catalog_entry(feed_id, entry, ingested_at):
-            count += 1
+        entry_id = await _catalog_entry(feed_id, entry, ingested_at)
 
-    return count
+        if entry_id is not None:
+            new_entries_ids.append(entry_id)
+
+    return new_entries_ids
 
 
 async def get_feed_links_for_entries(

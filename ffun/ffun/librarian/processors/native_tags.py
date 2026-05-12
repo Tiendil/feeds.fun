@@ -7,7 +7,7 @@ from ffun.tags.entities import TagCategory
 class Processor(base.Processor):
     __slots__ = ()
 
-    async def process(self, entry: Entry) -> list[RawTag]:
+    async def process(self, entry: Entry, context: base.ProcessorContext) -> list[RawTag]:
         tags: list[RawTag] = []
 
         for external_tag in entry.external_tags:

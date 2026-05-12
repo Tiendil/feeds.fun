@@ -79,3 +79,7 @@ You MUST use it to:
 You MUST NOT use it for:
 
 - Implementing huge features or behaviors that require adding massive blocks of code (like adding a new class, module, writing a huge function, etc.).
+
+## Special instructions
+
+**When the developer asks you a question — answer it as a question, do not implement the answer as a code change or a plan, just answer the question.**

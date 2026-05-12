@@ -3,6 +3,7 @@ from typing import Mapping
 import httpx
 
 from ffun.core import logging
+from ffun.dispatcher import domain as d_domain
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import AbsoluteUrl, FeedUrl
 from ffun.domain.urls import construct_f_url, url_to_source_uid
@@ -164,13 +165,15 @@ async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None
         entry_info.to_collected_entry(entry_id=new_entry_id(), source_id=feed.source_id) for entry_info in entries
     ]
 
-    entries_cataloged = await l_domain.catalog_entries(feed.id, entries=prepared_entries)
+    new_entries_ids = await l_domain.catalog_entries(feed.id, entries=prepared_entries)
+    entries_cataloged = len(new_entries_ids)
 
     entries_skipped = len(prepared_entries) - entries_cataloged
 
     logger.info("entries_stored", entries_cataloged=entries_cataloged, entries_skipped=entries_skipped)
 
     if entries_cataloged > 0:
+        await d_domain.push_entries_to_process(new_entries_ids)
         logger.business_event("news_entries_stored", user_id=None, feed_id=feed.id, entries_number=entries_cataloged)
 
 

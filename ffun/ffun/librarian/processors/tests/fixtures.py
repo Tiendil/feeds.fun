@@ -6,7 +6,7 @@ from ffun.librarian.processors.llm_general import Processor as LLMGeneralProcess
 
 
 @pytest.fixture(scope="session", autouse=True)
-def do_not_use_real_collection_api_keys_in_tests() -> None:
+def do_not_use_real_configured_api_keys_in_tests() -> None:
 
     for processor in processors:
         if processor.type != ProcessorType.llm_general:
@@ -16,18 +16,5 @@ def do_not_use_real_collection_api_keys_in_tests() -> None:
 
         assert isinstance(tags_processor, LLMGeneralProcessor)  # type: ignore
 
-        assert tags_processor.collections_api_key is None, "You should disable the real API keys processors' settings"
-
-
-@pytest.fixture(scope="session", autouse=True)
-def do_not_use_real_general_api_keys_in_tests() -> None:
-
-    for processor in processors:
-        if processor.type != ProcessorType.llm_general:
-            continue
-
-        tags_processor = processor.processor
-
-        assert isinstance(tags_processor, LLMGeneralProcessor)  # type: ignore
-
-        assert tags_processor.general_api_key is None, "You should disable the real API keys processors' settings"
+        for route in tags_processor.routes_by_id.values():
+            assert route.api_key is None, "You should disable the real API keys processors' settings"

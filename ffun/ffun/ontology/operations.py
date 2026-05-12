@@ -8,7 +8,7 @@ from pypika import PostgreSQLQuery, Table
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
-from ffun.domain.entities import EntryId, TagId, TagUid
+from ffun.domain.entities import EntryId, ProcessorId, TagId, TagUid
 from ffun.ontology import errors
 from ffun.ontology.entities import TagProperty, TagPropertyType, TagStatsBucket
 from ffun.tags.entities import TagCategory
@@ -89,7 +89,9 @@ async def _save_tags(execute: ExecuteType, entry_id: EntryId, tags_ids: Iterable
     await execute(str(query))
 
 
-async def register_relations_processors(execute: ExecuteType, relations_ids: Iterable[int], processor_id: int) -> None:
+async def register_relations_processors(
+    execute: ExecuteType, relations_ids: Iterable[int], processor_id: ProcessorId
+) -> None:
 
     if not relations_ids:
         return
@@ -104,7 +106,7 @@ async def register_relations_processors(execute: ExecuteType, relations_ids: Ite
     await execute(str(query))
 
 
-async def apply_tags(execute: ExecuteType, entry_id: EntryId, processor_id: int, tag_ids: list[TagId]) -> None:
+async def apply_tags(execute: ExecuteType, entry_id: EntryId, processor_id: ProcessorId, tag_ids: list[TagId]) -> None:
     await _save_tags(execute, entry_id, tag_ids)
 
     relation_ids = await get_relations_for(execute, entry_ids=[entry_id], tag_ids=tag_ids)
@@ -340,7 +342,7 @@ async def get_relations_for(
     execute: ExecuteType,
     entry_ids: list[EntryId] | None = None,
     tag_ids: list[TagId] | None = None,
-    processor_ids: list[int] | None = None,
+    processor_ids: list[ProcessorId] | None = None,
 ) -> list[int]:
 
     if entry_ids is None and tag_ids is None and processor_ids is None:
@@ -385,7 +387,9 @@ async def copy_relations_to_new_tag(execute: ExecuteType, relation_ids: list[int
     return [row["id"] for row in results]
 
 
-async def copy_tag_properties(execute: ExecuteType, processor_id: int, old_tag_id: TagId, new_tag_id: TagId) -> None:
+async def copy_tag_properties(
+    execute: ExecuteType, processor_id: ProcessorId, old_tag_id: TagId, new_tag_id: TagId
+) -> None:
     sql = """
     INSERT INTO o_tags_properties (tag_id, type, value, processor_id, created_at)
     SELECT %(new_tag_id)s, type, value, processor_id, created_at

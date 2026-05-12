@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Sequence
 
 from ffun.core import logging
+from ffun.domain.datetime_intervals import month_interval_start
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
 from ffun.llms_framework import errors
@@ -11,15 +12,14 @@ from ffun.llms_framework.entities import (
     APIKeyUsage,
     ChatRequest,
     ChatResponse,
-    LLMCollectionApiKey,
+    LLMApiKey,
     LLMConfiguration,
-    LLMGeneralApiKey,
     LLMTokens,
     ModelInfo,
     SelectKeyContext,
     USDCost,
 )
-from ffun.llms_framework.keys_rotator import choose_api_key, use_api_key
+from ffun.llms_framework.keys_rotator import choose_user_api_key, use_api_key
 from ffun.llms_framework.provider_interface import ProviderInterface
 
 logger = logging.get_module_logger()
@@ -117,20 +117,42 @@ def cut_text_to_max_tokens(  # noqa: CCR001
     return text[:left_border]
 
 
-async def search_for_api_key(
+def _estimate_reserved_cost(
+    llm: ProviderInterface, llm_config: LLMConfiguration, requests: Sequence[ChatRequest]
+) -> USDCost:
+    # TODO: here may be problems with too big context window for gemini
+    #       (we'll reserve too much tokens), see ModelInfo.max_tokens_per_entry as a potential solution
+    model = llm.get_model(llm_config)
+
+    return USDCost(len(requests) * model.max_request_cost)
+
+
+def configured_api_key_usage(
+    *,
+    llm: ProviderInterface,
+    llm_config: LLMConfiguration,
+    api_key: LLMApiKey,
+    requests: Sequence[ChatRequest],
+) -> APIKeyUsage:
+    reserved_cost = _estimate_reserved_cost(llm=llm, llm_config=llm_config, requests=requests)
+
+    return APIKeyUsage(
+        provider=llm.provider,
+        user_id=None,
+        api_key=api_key,
+        reserved_cost=reserved_cost,
+        used_cost=None,
+        interval_started_at=month_interval_start(),
+    )
+
+
+async def search_for_user_api_key(
     llm: ProviderInterface,
     llm_config: LLMConfiguration,
     entry: Entry,
     requests: Sequence[ChatRequest],
-    collections_api_key: LLMCollectionApiKey | None,
-    general_api_key: LLMGeneralApiKey | None,
 ) -> APIKeyUsage | None:
-    # TODO: here may be problems with too big context window for gemini
-    #       (we'll reserve too much tokens), see ModelInfo.max_tokens_per_entry as a potential solution
-
-    model = llm.get_model(llm_config)
-
-    reserved_cost = USDCost(len(requests) * model.max_request_cost)
+    reserved_cost = _estimate_reserved_cost(llm=llm, llm_config=llm_config, requests=requests)
 
     feed_ids = await l_domain.get_feeds_for_entry(entry.id)
 
@@ -139,11 +161,9 @@ async def search_for_api_key(
         feed_ids=feed_ids,
         entry_age=entry.age_for_processing,
         reserved_cost=reserved_cost,
-        collections_api_key=collections_api_key,
-        general_api_key=general_api_key,
     )
 
-    return await choose_api_key(llm, select_key_context)
+    return await choose_user_api_key(llm, select_key_context)
 
 
 def _llm_call_result_cost(model: ModelInfo, result: ChatResponse | BaseException) -> USDCost:

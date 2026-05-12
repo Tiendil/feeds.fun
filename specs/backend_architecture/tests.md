@@ -64,6 +64,32 @@ Static typing requirements SHOULD be enforced by static analysis, code review, o
 
 Tests MAY inspect annotations only in dedicated architecture tests that validate a broad project-wide convention. Per-entity unit tests MUST NOT inspect annotations only to restate the entity declaration.
 
+Tests MUST NOT use identity assertions except for `None` checks. Use `assert value is None` and `assert value is not None` only when checking for `None`.
+
+Tests MUST NOT use `assert <value> is <other_value>` or `assert <value> is not <other_value>` for non-`None` values. Use equality, membership, or an explicit behavioral assertion instead.
+
+Tests MUST NOT use identity assertions for boolean values. Use `assert condition` instead of `assert condition is True`, and `assert not condition` instead of `assert condition is False`.
+
+When a test uses `assert_logs` to verify branch-specific behavior, it MUST assert both expected log counts and zero counts for mutually exclusive branch log events.
+
+## Mocking
+
+Tests SHOULD prefer real project code, local services, explicit fixtures, test constructors, and small fakes over mocks.
+
+When a test must replace a Python collaborator, setting, method, or attribute, it SHOULD use the `pytest-mock` `MockerFixture`.
+
+Patches SHOULD be scoped to the test that needs them and SHOULD patch the name as it is looked up by the code under test.
+
+Use `mocker.patch("<import.path>", ...)` for imported module-level collaborators and settings.
+
+Use `mocker.patch.object(...)` when replacing an attribute on an object or class already available in the test.
+
+Use direct `unittest.mock.MagicMock` or `unittest.mock.AsyncMock` only for local fake objects or callables that are passed into the code under test.
+
+Tests SHOULD NOT use pytest `monkeypatch` for ordinary Python attribute replacement; use `MockerFixture` for consistent cleanup and call assertions.
+
+Tests MAY use specialized test tools for their own domain boundaries, for example `respx_mock` for HTTP client behavior.
+
 ## Test module layout
 
 Each implementation module or submodule SHOULD have corresponding tests under a `tests` submodule owned by the same parent module.
@@ -83,6 +109,18 @@ Cross-module integration tests MAY live under the module that owns the public bo
 API integration tests SHOULD live under the API package that owns the tested route or dependency boundary.
 
 Command integration tests SHOULD live under `./ffun/ffun/cli/tests/` when command behavior is present.
+
+Test data constructors reused by multiple test modules in the same package SHOULD live in `tests/make.py`.
+
+`tests/make.py` SHOULD contain small factory functions that create valid entities, value objects, queue items, and other domain data for tests.
+
+`tests/make.py` MUST NOT contain assertions or behavior-verification helpers.
+
+Test helper functions reused by multiple test modules in the same package SHOULD live in `tests/helpers.py`.
+
+`tests/helpers.py` SHOULD contain assertion helpers, cleanup helpers, and test workflow utilities.
+
+`tests/helpers.py` MUST NOT contain ordinary domain data constructors when those constructors fit `tests/make.py`.
 
 ## Test organization
 
@@ -164,13 +202,31 @@ Corner cases include:
 
 Entity tests SHOULD verify local invariants of entities.
 
+Entity tests MUST verify behavior or invariants owned by the entity.
+
 Entity tests SHOULD cover:
 
 - entity-specific Pydantic field validation.
 - entity-specific Pydantic model validation.
+- non-trivial defaults or default factories.
 - normalization behavior owned by the entity.
 - entity-specific methods and properties.
+- serialization or deserialization behavior owned by the entity.
 - rejection of invalid values that the entity is responsible for rejecting.
+
+Entity tests MUST NOT be added only to satisfy file-to-module layout symmetry.
+
+Entity tests MUST NOT verify that constructor arguments are assigned to fields unchanged.
+
+Entity tests MUST NOT verify simple Pydantic model construction when the entity has no custom validators, constrained
+fields, non-trivial defaults, normalization, serialization, computed properties, or entity-specific methods.
+
+Entity tests MUST NOT verify plain `NewType`, enum member existence, or passive data-container fields unless the module
+owns non-trivial conversion, validation, serialization, persistence compatibility, API compatibility, or external-input
+compatibility behavior for them.
+
+For entity-only modules that contain only passive entities, the absence of a matching `tests/test_<module>.py` file is
+acceptable and SHOULD be preferred over meaningless tests.
 
 Entity tests SHOULD NOT test behavior inherited unchanged from the shared base entity.
 
@@ -181,6 +237,25 @@ Entity tests MUST NOT require filesystem access unless the entity itself explici
 Entity tests MUST NOT verify API or CLI rendering.
 
 Entity tests MAY assert `pydantic.ValidationError` for invalid low-level model construction.
+
+## Settings tests
+
+Settings tests MUST verify behavior owned by the settings class or application setup boundary.
+
+Settings tests SHOULD cover:
+
+- supported settings structure.
+- environment variable parsing.
+- path normalization.
+- invalid configuration failures.
+
+Settings tests MUST NOT be added only to satisfy file-to-module layout symmetry.
+
+Settings tests MUST NOT verify that literal default values are assigned unchanged when the settings class has no custom
+parsing, validation, normalization, computed values, or application setup behavior.
+
+For settings-only modules that contain only passive settings declarations, the absence of a matching
+`tests/test_settings.py` file is acceptable and SHOULD be preferred over meaningless tests.
 
 ## Error tests
 
@@ -205,9 +280,13 @@ API tests SHOULD verify that fatal errors are mapped to the expected HTTP status
 
 API tests SHOULD verify that unmapped project exceptions use the default failure category.
 
-Command tests SHOULD verify that fatal errors are mapped to the expected non-zero exit behavior.
+Command tests SHOULD NOT verify full CLI execution blocks, including Typer argument parsing, option validation, command
+wiring, process exit behavior, and rendered command errors.
 
-Command tests SHOULD verify that unmapped project exceptions use the default non-zero exit behavior.
+Full CLI execution blocks are assumed to be covered by manual testing.
+
+Command module tests SHOULD cover only narrow helper functions that own non-trivial local behavior and can be tested
+without invoking the command runner.
 
 Worker and background-processing tests SHOULD verify that expected non-fatal problems are represented as warning log records, retries, or persisted processing states.
 
@@ -221,11 +300,7 @@ Backend tests SHOULD cover examples and rules in architecture specifications whe
 
 Configuration and application setup tests SHOULD cover:
 
-- supported settings structure.
-- environment variable parsing.
 - application initialization failures.
-- path normalization.
-- invalid configuration failures.
 
 API tests SHOULD cover:
 
@@ -253,12 +328,12 @@ Worker and operation tests SHOULD cover:
 - persisted error states.
 - coordination across module public boundaries.
 
-Command tests SHOULD cover:
+Command helper tests SHOULD cover:
 
-- command forms.
-- option parsing.
-- warnings.
-- errors and exit behavior.
+- parsing or validation helpers extracted from commands.
+- output-shaping helpers when they return structured data.
+- command-adjacent workflows that are callable without invoking the CLI runner.
+- warnings or errors produced by those narrow helpers.
 
 ## Fixtures and temporary data
 

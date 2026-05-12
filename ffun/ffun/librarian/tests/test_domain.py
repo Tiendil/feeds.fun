@@ -5,191 +5,37 @@ import pytest
 from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
-from ffun.core import utils
 from ffun.core.metrics import Accumulator
 from ffun.core.postgresql import execute
-from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged, assert_logs
-from ffun.feeds.entities import Feed
+from ffun.core.tests.helpers import assert_logs
+from ffun.dispatcher import domain as d_domain
+from ffun.dispatcher.entities import EntryToProcess, ProcessorRouteId
+from ffun.domain.entities import EntryId, ProcessorId
 from ffun.librarian import errors, operations
 from ffun.librarian.domain import (
     accumulator,
     move_failed_entries_to_processor_queue,
-    plan_processor_queue,
     process_entry,
-    push_entries_and_move_pointer,
 )
-from ffun.librarian.entities import ProcessorPointer
 from ffun.librarian.processors.base import (
     AlwaysConstantProcessor,
     AlwaysErrorProcessor,
     AlwaysSkipEntryProcessor,
     AlwaysTemporaryErrorProcessor,
+    ProcessorContext,
 )
-from ffun.librarian.tests import helpers, make
+from ffun.librarian.tests import helpers
 from ffun.library.entities import Entry
-from ffun.library.tests import make as l_make
 from ffun.ontology import domain as o_domain
+from ffun.queues import operations as q_operations
+from ffun.queues.entities import QueueKind
 
-
-def _entry_sort_key(entry: Entry) -> tuple[object, object]:
-    return (entry.created_at, entry.id)
-
-
-class TestPushEntriesAndMovePointer:
-    @pytest.mark.asyncio
-    async def test_no_entries(self, fake_processor_id: int) -> None:
-        pointer = await operations.get_or_create_pointer(fake_processor_id)
-
-        async with TableSizeNotChanged("ln_processors_queue"):
-            await push_entries_and_move_pointer(pointer, [])
-
-        loaded_pointer = await operations.get_or_create_pointer(fake_processor_id)
-
-        assert loaded_pointer == pointer
-
-    @pytest.mark.asyncio
-    async def test_push_entries(
-        self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry
-    ) -> None:
-        original_pointer = await operations.get_or_create_pointer(fake_processor_id)
-
-        entries: list[Entry] = sorted([cataloged_entry, another_cataloged_entry], key=_entry_sort_key)
-        pointer_entry = entries[-1]
-        next_pointer = ProcessorPointer(
-            processor_id=fake_processor_id,
-            pointer_created_at=pointer_entry.created_at,
-            pointer_entry_id=pointer_entry.id,
-        )
-
-        async with TableSizeDelta("ln_processors_queue", delta=2):
-            await push_entries_and_move_pointer(next_pointer, [cataloged_entry.id, another_cataloged_entry.id])
-
-        loaded_pointer = await operations.get_or_create_pointer(fake_processor_id)
-
-        assert loaded_pointer == next_pointer
-        assert loaded_pointer != original_pointer
-
-    @pytest.mark.asyncio
-    async def test_no_new_entries(self, fake_processor_id: int) -> None:
-        pointer = await make.end_processor_pointer(fake_processor_id)
-
-        next_pointer = pointer.replace(pointer_created_at=utils.now())
-
-        async with TableSizeNotChanged("ln_processors_queue"):
-            await push_entries_and_move_pointer(next_pointer, [])
-
-        loaded_pointer = await operations.get_or_create_pointer(fake_processor_id)
-
-        assert loaded_pointer == next_pointer
-
-    @pytest.mark.asyncio
-    async def test_entries_found_and_moved(
-        self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry
-    ) -> None:
-        pointer = await make.end_processor_pointer(fake_processor_id)
-
-        async with TableSizeDelta("ln_processors_queue", delta=2):
-            await push_entries_and_move_pointer(pointer, [cataloged_entry.id, another_cataloged_entry.id])
-
-        loaded_pointer = await operations.get_or_create_pointer(fake_processor_id)
-
-        assert loaded_pointer == pointer
-
-
-class TestPlanProcessorQueue:
-    @pytest.mark.asyncio
-    async def test_no_new_entries(self, fake_processor_id: int, cataloged_entry: Entry) -> None:
-        pointer = await make.end_processor_pointer(fake_processor_id)
-
-        async with TableSizeNotChanged("ln_processors_queue"):
-            await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=100)
-
-        loaded_pointer = await operations.get_or_create_pointer(fake_processor_id)
-
-        assert loaded_pointer == pointer
-
-    @pytest.mark.asyncio
-    async def test_move_pointer_to_the_end(self, loaded_feed: Feed, fake_processor_id: int) -> None:
-        await make.end_processor_pointer(1)
-
-        entries = await l_make.n_entries_list(loaded_feed, 3)
-        entries.sort(key=_entry_sort_key)
-        pointer_entry = entries[-1]
-        async with TableSizeDelta("ln_processors_queue", delta=3):
-            await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=100)
-
-        loaded_pointer = await operations.get_or_create_pointer(fake_processor_id)
-
-        assert loaded_pointer == ProcessorPointer(
-            processor_id=fake_processor_id,
-            pointer_created_at=pointer_entry.created_at,
-            pointer_entry_id=pointer_entry.id,
-        )
-
-    @pytest.mark.asyncio
-    async def test_move_pointer_to_not_the_end(self, loaded_feed: Feed, fake_processor_id: int) -> None:
-        await make.end_processor_pointer(1)
-
-        entries = await l_make.n_entries_list(loaded_feed, 3)
-        entries.sort(key=_entry_sort_key)
-        pointer_entry = entries[-2]
-        async with TableSizeDelta("ln_processors_queue", delta=2):
-            await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=2)
-
-        loaded_pointer = await operations.get_or_create_pointer(fake_processor_id)
-
-        assert loaded_pointer == ProcessorPointer(
-            processor_id=fake_processor_id,
-            pointer_created_at=pointer_entry.created_at,
-            pointer_entry_id=pointer_entry.id,
-        )
-
-    @pytest.mark.asyncio
-    async def test_chunk_limit(self, loaded_feed: Feed, fake_processor_id: int) -> None:
-        await operations.clear_processor_queue(fake_processor_id)
-
-        await make.end_processor_pointer(fake_processor_id)
-
-        entries = await l_make.n_entries_list(loaded_feed, 5)
-        entries.sort(key=_entry_sort_key)
-        pointer_entry = entries[2]
-        async with TableSizeDelta("ln_processors_queue", delta=3):
-            await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=3)
-
-        loaded_pointer = await operations.get_or_create_pointer(fake_processor_id)
-
-        assert loaded_pointer == ProcessorPointer(
-            processor_id=fake_processor_id,
-            pointer_created_at=pointer_entry.created_at,
-            pointer_entry_id=pointer_entry.id,
-        )
-
-    @pytest.mark.asyncio
-    async def test_do_not_push_if_there_are_enough_entries(self, loaded_feed: Feed, fake_processor_id: int) -> None:
-        await operations.clear_processor_queue(fake_processor_id)
-
-        await make.end_processor_pointer(fake_processor_id)
-
-        entries = await l_make.n_entries_list(loaded_feed, 5)
-        entries.sort(key=_entry_sort_key)
-        pointer_entry = entries[2]
-        await plan_processor_queue(fake_processor_id, fill_when_below=100500, chunk=3)
-
-        async with TableSizeNotChanged("ln_processors_queue"):
-            await plan_processor_queue(fake_processor_id, fill_when_below=3, chunk=2)
-
-        loaded_pointer = await operations.get_or_create_pointer(fake_processor_id)
-
-        assert loaded_pointer == ProcessorPointer(
-            processor_id=fake_processor_id,
-            pointer_created_at=pointer_entry.created_at,
-            pointer_entry_id=pointer_entry.id,
-        )
+TEST_ROUTE_ID = ProcessorRouteId("test-route")
 
 
 @contextlib.contextmanager
 def check_metric_accumulator(
-    processor_id: int, name: str, count_delta: int, sum_delta: int
+    processor_id: ProcessorId, name: str, count_delta: int, sum_delta: int
 ) -> Generator[None, None, None]:
 
     metric = accumulator(name, processor_id)
@@ -205,7 +51,7 @@ def check_metric_accumulator(
 
 @contextlib.contextmanager
 def check_metric_accumulators(
-    mocker: MockerFixture, processor_id: int, raw_count: int, raw_sum: int, norm_count: int, norm_sum: int
+    mocker: MockerFixture, processor_id: ProcessorId, raw_count: int, raw_sum: int, norm_count: int, norm_sum: int
 ) -> Generator[None, None, None]:
 
     raw_tags_metric = accumulator("processor_raw_tags", processor_id)
@@ -236,19 +82,14 @@ def check_metric_accumulators(
 class TestProcessEntry:
     @pytest.mark.asyncio
     async def test_success(
-        self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry, mocker: MockerFixture
+        self, fake_processor_id: ProcessorId, cataloged_entry: Entry, mocker: MockerFixture
     ) -> None:
-        await operations.clear_processor_queue(fake_processor_id)
-
-        await operations.push_entries_to_processor_queue(
-            execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
-        )
-
         with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 1, 3, 1, 2):  # type: ignore
             await process_entry(
                 processor_id=fake_processor_id,
                 processor=AlwaysConstantProcessor(name="fake-processor", tags=["tag-1", "tag-2", "tag--2"]),
                 entry=cataloged_entry,
+                context=ProcessorContext(route_id=TEST_ROUTE_ID),
             )
 
         assert_logs(
@@ -264,28 +105,19 @@ class TestProcessEntry:
 
         assert tags[cataloged_entry.id] == set(expected_ids.values())
 
-        entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, limit=100500)
-
-        assert set(entries_in_queue) == {another_cataloged_entry.id}
-
         failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
         assert cataloged_entry.id not in failed_entry_ids
 
     @pytest.mark.asyncio
     async def test_skip_processing(
-        self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry, mocker: MockerFixture
+        self, fake_processor_id: ProcessorId, cataloged_entry: Entry, mocker: MockerFixture
     ) -> None:
-        await operations.clear_processor_queue(fake_processor_id)
-
-        await operations.push_entries_to_processor_queue(
-            execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
-        )
-
         with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 0, 0, 0, 0):  # type: ignore
             await process_entry(
                 processor_id=fake_processor_id,
                 processor=AlwaysSkipEntryProcessor(name="fake-processor"),
                 entry=cataloged_entry,
+                context=ProcessorContext(route_id=TEST_ROUTE_ID),
             )
 
         assert_logs(
@@ -300,28 +132,19 @@ class TestProcessEntry:
 
         assert cataloged_entry.id not in tags
 
-        entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, limit=100500)
-
-        assert set(entries_in_queue) == {another_cataloged_entry.id}
-
         failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
         assert cataloged_entry.id not in failed_entry_ids
 
     @pytest.mark.asyncio
     async def test_temporary_error_in_processor(
-        self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry, mocker: MockerFixture
+        self, fake_processor_id: ProcessorId, cataloged_entry: Entry, mocker: MockerFixture
     ) -> None:
-        await operations.clear_processor_queue(fake_processor_id)
-
-        await operations.push_entries_to_processor_queue(
-            execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
-        )
-
         with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 0, 0, 0, 0):  # type: ignore
             await process_entry(
                 processor_id=fake_processor_id,
                 processor=AlwaysTemporaryErrorProcessor(name="fake-processor"),
                 entry=cataloged_entry,
+                context=ProcessorContext(route_id=TEST_ROUTE_ID),
             )
 
         assert_logs(
@@ -336,29 +159,20 @@ class TestProcessEntry:
 
         assert cataloged_entry.id not in tags
 
-        entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, limit=100500)
-
-        assert set(entries_in_queue) == {another_cataloged_entry.id}
-
         failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
         assert cataloged_entry.id in failed_entry_ids
 
     @pytest.mark.asyncio
     async def test_unexpected_error(
-        self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry, mocker: MockerFixture
+        self, fake_processor_id: ProcessorId, cataloged_entry: Entry, mocker: MockerFixture
     ) -> None:
-        await operations.clear_processor_queue(fake_processor_id)
-
-        await operations.push_entries_to_processor_queue(
-            execute, processor_id=fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
-        )
-
         with capture_logs() as logs, check_metric_accumulators(mocker, fake_processor_id, 0, 0, 0, 0):  # type: ignore
             with pytest.raises(errors.UnexpectedErrorInProcessor):
                 await process_entry(
                     processor_id=fake_processor_id,
                     processor=AlwaysErrorProcessor(name="fake-processor"),
                     entry=cataloged_entry,
+                    context=ProcessorContext(route_id=TEST_ROUTE_ID),
                 )
 
         assert_logs(
@@ -373,26 +187,47 @@ class TestProcessEntry:
 
         assert cataloged_entry.id not in tags
 
-        entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, limit=100500)
-
-        assert set(entries_in_queue) == {another_cataloged_entry.id}
-
         failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
         assert cataloged_entry.id in failed_entry_ids
 
 
 class TestMoveFailedEntriesToProcessorQueue:
+    async def get_entries_to_process(self, processor_id: ProcessorId) -> set[EntryId]:
+        records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
+
+        processor_records = [record for record in records if record.item.processor_id == processor_id]
+        entries_in_queue = {record.item.entry_id for record in processor_records}
+
+        await d_domain.acknowledge([record.id for record in processor_records if record.id is not None])
+
+        return entries_in_queue
+
+    async def get_failed_entries(self, processor_id: ProcessorId) -> set[EntryId]:
+        return set(await operations.get_failed_entries(execute, processor_id, limit=100500))
+
+    @pytest.mark.asyncio
+    async def test_no_failed_entries(self, fake_processor_id: ProcessorId) -> None:
+        await helpers.clean_failed_storage([fake_processor_id])
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_processor_id)
+
+        await move_failed_entries_to_processor_queue(fake_processor_id, limit=100500)
+
+        assert await self.get_entries_to_process(fake_processor_id) == set()
+        assert await self.get_failed_entries(fake_processor_id) == set()
+
     @pytest.mark.asyncio
     async def test_moved(
         self,
-        fake_processor_id: int,
-        another_fake_processor_id: int,
+        fake_processor_id: ProcessorId,
+        another_fake_processor_id: ProcessorId,
         cataloged_entry: Entry,
         another_cataloged_entry: Entry,
     ) -> None:
         await helpers.clean_failed_storage([fake_processor_id, another_fake_processor_id])
-        await operations.clear_processor_queue(fake_processor_id)
-        await operations.clear_processor_queue(another_fake_processor_id)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_processor_id)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=another_fake_processor_id)
 
         await operations.add_entries_to_failed_storage(
             fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
@@ -401,34 +236,48 @@ class TestMoveFailedEntriesToProcessorQueue:
             another_fake_processor_id, entry_ids=[another_cataloged_entry.id]
         )
 
-        async with TableSizeDelta("ln_processors_queue", delta=2):
-            await move_failed_entries_to_processor_queue(fake_processor_id, limit=100500)
+        await move_failed_entries_to_processor_queue(fake_processor_id, limit=100500)
 
-        entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, limit=100500)
+        assert await self.get_entries_to_process(fake_processor_id) == {
+            cataloged_entry.id,
+            another_cataloged_entry.id,
+        }
+        assert await self.get_failed_entries(fake_processor_id) == set()
 
-        assert set(entries_in_queue) == {cataloged_entry.id, another_cataloged_entry.id}
+        assert await self.get_entries_to_process(another_fake_processor_id) == set()
+        assert await self.get_failed_entries(another_fake_processor_id) == {another_cataloged_entry.id}
 
-        async with TableSizeDelta("ln_processors_queue", delta=1):
-            await move_failed_entries_to_processor_queue(another_fake_processor_id, limit=100500)
+        await move_failed_entries_to_processor_queue(another_fake_processor_id, limit=100500)
 
-        entries_in_queue = await operations.get_entries_to_process(
-            processor_id=another_fake_processor_id, limit=100500
-        )
-
-        assert set(entries_in_queue) == {another_cataloged_entry.id}
+        assert await self.get_entries_to_process(another_fake_processor_id) == {another_cataloged_entry.id}
+        assert await self.get_failed_entries(another_fake_processor_id) == set()
 
     @pytest.mark.asyncio
-    async def test_limit(self, fake_processor_id: int, cataloged_entry: Entry, another_cataloged_entry: Entry) -> None:
+    async def test_limit(
+        self, fake_processor_id: ProcessorId, cataloged_entry: Entry, another_cataloged_entry: Entry
+    ) -> None:
         await helpers.clean_failed_storage([fake_processor_id])
-        await operations.clear_processor_queue(fake_processor_id)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_processor_id)
 
         await operations.add_entries_to_failed_storage(
             fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
         )
 
-        async with TableSizeDelta("ln_processors_queue", delta=1):
-            await move_failed_entries_to_processor_queue(fake_processor_id, limit=1)
+        await move_failed_entries_to_processor_queue(fake_processor_id, limit=1)
 
-        entries_in_queue = await operations.get_entries_to_process(processor_id=fake_processor_id, limit=100500)
+        all_entry_ids = {cataloged_entry.id, another_cataloged_entry.id}
 
-        assert set(entries_in_queue) == {cataloged_entry.id}
+        moved_entries = await self.get_entries_to_process(fake_processor_id)
+
+        assert len(moved_entries) == 1
+        assert moved_entries <= all_entry_ids
+
+        failed_entries = await self.get_failed_entries(fake_processor_id)
+
+        assert failed_entries == all_entry_ids - moved_entries
+
+        await move_failed_entries_to_processor_queue(fake_processor_id, limit=100500)
+
+        assert await self.get_entries_to_process(fake_processor_id) == failed_entries
+        assert await self.get_failed_entries(fake_processor_id) == set()
