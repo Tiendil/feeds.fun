@@ -148,11 +148,13 @@ export const MinNewsTagCountProperties = new Map<MinNewsTagCount, MinNewsTagCoun
 /////////
 
 export enum Marker {
-  Read = "read"
+  Read = 1,
+  CanSeeTags = 2
 }
 
-export const reverseMarker: {[key: string]: Marker} = {
-  read: Marker.Read
+export const reverseMarker: {[key: number]: Marker} = {
+  [Marker.Read]: Marker.Read,
+  [Marker.CanSeeTags]: Marker.CanSeeTags
 };
 
 /////////////////////

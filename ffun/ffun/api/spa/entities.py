@@ -39,15 +39,16 @@ from ffun.user_settings import types as us_types
 from ffun.user_settings.values import user_settings
 
 
-class Marker(enum.StrEnum):
-    read = "read"
+class Marker(enum.IntEnum):
+    read = 1
+    can_see_tags = 2
 
     @classmethod
     def from_internal(cls, marker: m_entities.Marker) -> "Marker":
-        return cls(marker.name)
+        return cls(marker.value)
 
     def to_internal(self) -> m_entities.Marker:
-        return m_entities.Marker[self.value]
+        return m_entities.Marker(self.value)
 
 
 class Feed(BaseEntity):
