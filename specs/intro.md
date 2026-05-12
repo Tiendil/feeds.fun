@@ -33,4 +33,3 @@ Detailed requirements for individual specifications are out of scope except for 
 - `specs/frontend_architecture/tests.md` describes frontend Vitest test placement.
 - `specs/documentation/readme.md` describes repository README expectations.
 - `specs/documentation/changelog.md` describes changelog artifact expectations.
-- `specs/tools/prolog.md` describes agent-side use of SWI-Prolog for explicit reasoning.
