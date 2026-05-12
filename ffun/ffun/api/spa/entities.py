@@ -47,6 +47,10 @@ class Marker(enum.IntEnum):
     def from_internal(cls, marker: m_entities.Marker) -> "Marker":
         return cls(marker.value)
 
+
+class MutableMarker(enum.IntEnum):
+    read = Marker.read
+
     def to_internal(self) -> m_entities.Marker:
         return m_entities.Marker(self.value)
 
@@ -476,7 +480,7 @@ class GetScoreDetailsResponse(api.APISuccess):
 
 class SetMarkerRequest(api.APIRequest):
     entryId: EntryId
-    marker: Marker
+    marker: MutableMarker
 
 
 class SetMarkerResponse(api.APISuccess):
@@ -485,7 +489,7 @@ class SetMarkerResponse(api.APISuccess):
 
 class RemoveMarkerRequest(api.APIRequest):
     entryId: EntryId
-    marker: Marker
+    marker: MutableMarker
 
 
 class RemoveMarkerResponse(api.APISuccess):
