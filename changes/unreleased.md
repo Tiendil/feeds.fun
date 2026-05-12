@@ -21,4 +21,6 @@
 ### Changes
 
 - ff-688 — Added depmesh and tach integration.
-- ff-638 — Added `dispatcher` module as a central point for dispatching entries to tag processors. Improved loguc of choosing api_keys for LLM-based processors.
+- ff-638 — Added `dispatcher` module as a central point for dispatching entries to tag processors.
+  - Improved logic of choosing api_keys for LLM-based processors.
+  - Added `can_see_tags` marker to control whether tags of a news entry are visible to a user.
