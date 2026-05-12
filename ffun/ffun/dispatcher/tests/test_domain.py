@@ -3,6 +3,7 @@ from collections.abc import Sequence
 import pytest
 from pytest_mock import MockerFixture
 
+from ffun.core.tests.helpers import TableSizeNotChanged
 from ffun.dispatcher import domain
 from ffun.dispatcher.entities import (
     DispatchDecision,
@@ -20,6 +21,8 @@ from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import CollectionId
 from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
+from ffun.markers import domain as m_domain
+from ffun.markers.entities import Marker
 from ffun.queues import operations as q_operations
 from ffun.queues.entities import QueueKind, QueueRecord
 
@@ -211,6 +214,60 @@ class TestEntriesInCollections:
         entry_id = new_entry_id()
 
         assert await domain._entries_in_collections([entry_id]) == {}
+
+
+class TestMarkEntryTagsVisible:
+    @pytest.mark.asyncio
+    async def test_collection_entry(self) -> None:
+        entry_id = new_entry_id()
+        item = EntryToProcess(entry_id=entry_id)
+
+        await domain._mark_entry_tags_visible(item, in_collection=True)
+
+        assert await m_domain.get_markers(user_id=None, entries_ids=[entry_id]) == {entry_id: {Marker.can_see_tags}}
+
+    @pytest.mark.asyncio
+    async def test_user_entry_temporary_global_marker(self) -> None:
+        entry_id = new_entry_id()
+        item = EntryToProcess(entry_id=entry_id)
+
+        await domain._mark_entry_tags_visible(item, in_collection=False)
+
+        assert await m_domain.get_markers(user_id=None, entries_ids=[entry_id]) == {entry_id: {Marker.can_see_tags}}
+
+
+class TestMarkEntriesTagsVisible:
+    @pytest.mark.asyncio
+    async def test_no_items(self) -> None:
+        async with TableSizeNotChanged("m_markers"):
+            await domain._mark_entries_tags_visible([], {})
+
+    @pytest.mark.asyncio
+    async def test_marks_items_with_explicit_and_default_collection_flags(self) -> None:
+        first_entry_id = new_entry_id()
+        second_entry_id = new_entry_id()
+        third_entry_id = new_entry_id()
+        items = [
+            EntryToProcess(entry_id=first_entry_id),
+            EntryToProcess(entry_id=second_entry_id),
+            EntryToProcess(entry_id=third_entry_id),
+        ]
+
+        await domain._mark_entries_tags_visible(
+            items,
+            {
+                first_entry_id: True,
+                second_entry_id: False,
+            },
+        )
+
+        assert await m_domain.get_markers(
+            user_id=None, entries_ids=[first_entry_id, second_entry_id, third_entry_id]
+        ) == {
+            first_entry_id: {Marker.can_see_tags},
+            second_entry_id: {Marker.can_see_tags},
+            third_entry_id: {Marker.can_see_tags},
+        }
 
 
 class TestProcessorDispatchRoute:
@@ -576,6 +633,31 @@ class TestDispatchEntries:
         )
 
         assert record_entry_ids(records) == set(collection_entry_ids)
+
+    @pytest.mark.asyncio
+    async def test_dispatch_marks_entries_tags_visible(
+        self,
+        loaded_feed: Feed,
+        another_loaded_feed: Feed,
+        collection_id_for_test_feeds: CollectionId,
+    ) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+
+        user_entry_ids = await l_make.n_entries(loaded_feed, 2)
+        collection_entry_ids = await l_make.n_entries(another_loaded_feed, 2)
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
+
+        entry_ids = [*user_entry_ids, *collection_entry_ids]
+
+        await domain.push_entries_to_process(entry_ids)
+
+        dispatched = await domain.dispatch_entries(processors=[make.processor_dispatch_info(101)], limit=10)
+
+        assert dispatched == len(entry_ids)
+        assert await m_domain.get_markers(user_id=None, entries_ids=entry_ids) == {
+            entry_id: {Marker.can_see_tags} for entry_id in entry_ids
+        }
 
     @pytest.mark.asyncio
     async def test_dispatch_saves_route_id(self) -> None:

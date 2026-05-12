@@ -12,6 +12,8 @@ from ffun.dispatcher.entities import (
 from ffun.domain.entities import EntryId, ProcessorId
 from ffun.feeds_collections.collections import collections
 from ffun.library import domain as l_domain
+from ffun.markers import domain as m_domain
+from ffun.markers.entities import Marker
 from ffun.queues import domain as q_domain
 from ffun.queues.entities import QueueKind, QueueRecord, QueueRecordId
 
@@ -85,6 +87,23 @@ def _processor_dispatch_route(
     return None
 
 
+async def _mark_entry_tags_visible(item: EntryToProcess, *, in_collection: bool) -> None:
+    if in_collection:
+        await m_domain.set_marker(user_id=None, marker=Marker.can_see_tags, entry_id=item.entry_id)
+        return
+
+    # TODO: temporary global visibility for all entries.
+    #       Must be removed after removing processing entries with custom user API keys.
+    await m_domain.set_marker(user_id=None, marker=Marker.can_see_tags, entry_id=item.entry_id)
+
+
+async def _mark_entries_tags_visible(
+    items: Sequence[EntryToProcess], entries_in_collections: dict[EntryId, bool]
+) -> None:
+    for item in items:
+        await _mark_entry_tags_visible(item, in_collection=entries_in_collections.get(item.entry_id, False))
+
+
 def _processor_items_to_tag(
     processor: ProcessorDispatchInfo, items: Sequence[EntryToProcess], entries_in_collections: dict[EntryId, bool]
 ) -> list[EntryToTag]:
@@ -119,6 +138,8 @@ async def dispatch_entries(processors: Sequence[ProcessorDispatchInfo], limit: i
 
     items = [record.item for record in records]
     entries_in_collections = await _entries_in_collections(item.entry_id for item in items)
+
+    await _mark_entries_tags_visible(items, entries_in_collections)
 
     for processor in processors:
         processor_items = _processor_items_to_tag(processor, items, entries_in_collections)
