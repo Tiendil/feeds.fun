@@ -198,6 +198,31 @@ Corner cases include:
 - values that require normalization.
 - repeated calls that may reveal state leaks.
 
+## Domain operation re-exports
+
+Some domain modules intentionally re-export operation functions with assignments like:
+
+```python
+get_entry = operations.get_entry
+```
+
+These assignments are public domain-level names, but the behavior belongs to the operation module.
+
+When a domain module re-exports an operation function without wrapping it, the domain test class for that function SHOULD
+contain only a minimal identity assertion that verifies the public name points to the operation function.
+
+Example:
+
+```python
+class TestGetEntry:
+    def test_reexports_operation(self) -> None:
+        assert domain.get_entry is operations.get_entry
+```
+
+This is a narrow exception to the general rule forbidding non-`None` identity assertions.
+
+Behavior tests for the re-exported function MUST live in the operation module's tests, not in the domain module's tests.
+
 ## Entity tests
 
 Entity tests SHOULD verify local invariants of entities.

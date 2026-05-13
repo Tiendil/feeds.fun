@@ -9,7 +9,8 @@ from ffun.core.metrics import Accumulator
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
 from ffun.dispatcher import domain as d_domain
-from ffun.dispatcher.entities import EntryToProcess, ProcessorRouteId
+from ffun.dispatcher.entities import EntryProcessingStatus, EntryToProcess, ProcessorRouteId
+from ffun.dispatcher.tests.helpers import assert_processing_status
 from ffun.domain.entities import EntryId, ProcessorId
 from ffun.librarian import errors, operations
 from ffun.librarian.domain import (
@@ -107,6 +108,7 @@ class TestProcessEntry:
 
         failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
         assert cataloged_entry.id not in failed_entry_ids
+        await assert_processing_status(fake_processor_id, cataloged_entry.id, EntryProcessingStatus.processed)
 
     @pytest.mark.asyncio
     async def test_skip_processing(
@@ -134,6 +136,7 @@ class TestProcessEntry:
 
         failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
         assert cataloged_entry.id not in failed_entry_ids
+        await assert_processing_status(fake_processor_id, cataloged_entry.id, EntryProcessingStatus.skipped)
 
     @pytest.mark.asyncio
     async def test_temporary_error_in_processor(
@@ -161,6 +164,7 @@ class TestProcessEntry:
 
         failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
         assert cataloged_entry.id in failed_entry_ids
+        await assert_processing_status(fake_processor_id, cataloged_entry.id, EntryProcessingStatus.failed)
 
     @pytest.mark.asyncio
     async def test_unexpected_error(
@@ -189,6 +193,7 @@ class TestProcessEntry:
 
         failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
         assert cataloged_entry.id in failed_entry_ids
+        await assert_processing_status(fake_processor_id, cataloged_entry.id, EntryProcessingStatus.failed)
 
 
 class TestMoveFailedEntriesToProcessorQueue:
@@ -235,6 +240,14 @@ class TestMoveFailedEntriesToProcessorQueue:
         await operations.add_entries_to_failed_storage(
             another_fake_processor_id, entry_ids=[another_cataloged_entry.id]
         )
+        await d_domain.set_entry_processing_statuses(
+            fake_processor_id,
+            [cataloged_entry.id, another_cataloged_entry.id],
+            EntryProcessingStatus.failed,
+        )
+        await d_domain.set_entry_processing_statuses(
+            another_fake_processor_id, [another_cataloged_entry.id], EntryProcessingStatus.failed
+        )
 
         await move_failed_entries_to_processor_queue(fake_processor_id, limit=100500)
 
@@ -243,14 +256,24 @@ class TestMoveFailedEntriesToProcessorQueue:
             another_cataloged_entry.id,
         }
         assert await self.get_failed_entries(fake_processor_id) == set()
+        await assert_processing_status(fake_processor_id, cataloged_entry.id, EntryProcessingStatus.retry_requested)
+        await assert_processing_status(
+            fake_processor_id, another_cataloged_entry.id, EntryProcessingStatus.retry_requested
+        )
 
         assert await self.get_entries_to_process(another_fake_processor_id) == set()
         assert await self.get_failed_entries(another_fake_processor_id) == {another_cataloged_entry.id}
+        await assert_processing_status(
+            another_fake_processor_id, another_cataloged_entry.id, EntryProcessingStatus.failed
+        )
 
         await move_failed_entries_to_processor_queue(another_fake_processor_id, limit=100500)
 
         assert await self.get_entries_to_process(another_fake_processor_id) == {another_cataloged_entry.id}
         assert await self.get_failed_entries(another_fake_processor_id) == set()
+        await assert_processing_status(
+            another_fake_processor_id, another_cataloged_entry.id, EntryProcessingStatus.retry_requested
+        )
 
     @pytest.mark.asyncio
     async def test_limit(
@@ -262,6 +285,11 @@ class TestMoveFailedEntriesToProcessorQueue:
 
         await operations.add_entries_to_failed_storage(
             fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
+        )
+        await d_domain.set_entry_processing_statuses(
+            fake_processor_id,
+            [cataloged_entry.id, another_cataloged_entry.id],
+            EntryProcessingStatus.failed,
         )
 
         await move_failed_entries_to_processor_queue(fake_processor_id, limit=1)
@@ -276,6 +304,12 @@ class TestMoveFailedEntriesToProcessorQueue:
         failed_entries = await self.get_failed_entries(fake_processor_id)
 
         assert failed_entries == all_entry_ids - moved_entries
+
+        for entry_id in moved_entries:
+            await assert_processing_status(fake_processor_id, entry_id, EntryProcessingStatus.retry_requested)
+
+        for entry_id in failed_entries:
+            await assert_processing_status(fake_processor_id, entry_id, EntryProcessingStatus.failed)
 
         await move_failed_entries_to_processor_queue(fake_processor_id, limit=100500)
 

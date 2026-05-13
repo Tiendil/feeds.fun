@@ -27,6 +27,7 @@ Migration files SHOULD stay in module-local `migrations` packages for the domain
 - `ffun.cli` owns command-line commands for managing the application.
 - `ffun.core` owns framework-level base classes, utilities, logging, metrics, PostgreSQL helpers, plugins, and shared infrastructure.
 - `ffun.data_protection` owns data protection and privacy-related behavior.
+- `ffun.dispatcher` owns dispatching entries to tag processor queues and tracking per-processor entry processing status.
 - `ffun.domain` owns cross-domain entities and domain utilities.
 - `ffun.feeds` owns feed storage and feed management.
 - `ffun.feeds_collections` owns curated feed collection configuration and behavior.

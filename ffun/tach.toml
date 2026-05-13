@@ -92,6 +92,7 @@ layer = "web_application"
 [[modules]]
 path = "ffun.meta"
 depends_on = [
+    "ffun.dispatcher",
     "ffun.feeds",
     "ffun.feeds_links",
     "ffun.library",

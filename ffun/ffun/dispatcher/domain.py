@@ -1,8 +1,11 @@
 from collections.abc import Iterable, Sequence
 
 from ffun.core import logging
+from ffun.dispatcher import errors
+from ffun.dispatcher import operations
 from ffun.dispatcher.entities import (
     DispatchDecision,
+    EntryProcessingStatus,
     EntryToProcess,
     EntryToTag,
     ProcessorDispatchInfo,
@@ -18,6 +21,11 @@ from ffun.queues import domain as q_domain
 from ffun.queues.entities import QueueKind, QueueRecord, QueueRecordId
 
 logger = logging.get_module_logger()
+
+
+get_entries_processing_statuses = operations.get_entries_processing_statuses
+set_entry_processing_statuses = operations.set_entry_processing_statuses
+remove_entry_processing_statuses = operations.remove_entry_processing_statuses
 
 
 async def push_entries_to_process(entry_ids: Iterable[EntryId], processor_id: ProcessorId | None = None) -> None:
@@ -125,10 +133,28 @@ def _processor_items_to_tag(
     return processor_items
 
 
+def _processor_items_allowed_by_status(
+    processor_items: Sequence[EntryToTag],
+    statuses: dict[EntryId, EntryProcessingStatus],
+) -> list[EntryToTag]:
+    allowed_statuses = {
+        None,  # first-time processing for this processor
+        EntryProcessingStatus.skipped,  # reprocess because of a potential relinking of an entry
+        EntryProcessingStatus.retry_requested,  # explicit request to redispatch
+    }
+
+    return [item for item in processor_items if statuses.get(item.entry_id) in allowed_statuses]
+
+
 async def dispatch_entries(processors: Sequence[ProcessorDispatchInfo], limit: int) -> int:
     if not processors:
         logger.info("no_processors_to_dispatch_entries")
         return 0
+
+    processor_ids = [processor.processor_id for processor in processors]
+
+    if len(processor_ids) != len(set(processor_ids)):
+        raise errors.DuplicatedProcessors()
 
     records = await q_domain.pull(QueueKind.entries_to_process, EntryToProcess, limit=limit)
 
@@ -140,9 +166,21 @@ async def dispatch_entries(processors: Sequence[ProcessorDispatchInfo], limit: i
     entries_in_collections = await _entries_in_collections(item.entry_id for item in items)
 
     await _mark_entries_tags_visible(items, entries_in_collections)
+    statuses = await get_entries_processing_statuses(
+        [processor.processor_id for processor in processors], [item.entry_id for item in items]
+    )
 
     for processor in processors:
         processor_items = _processor_items_to_tag(processor, items, entries_in_collections)
+        processor_items = _processor_items_allowed_by_status(processor_items, statuses.get(processor.processor_id, {}))
+        # Set status before pushing to queue, because in case of a persistent error on pushing it is better
+        # to not push unprocessed entries, than infinitely push already processed entries causing money loses.
+        await set_entry_processing_statuses(
+            processor.processor_id,
+            [item.entry_id for item in processor_items],
+            EntryProcessingStatus.dispatched,
+        )
+
         await q_domain.push(QueueKind.entries_to_tag, processor_items, secondary_id=processor.subqueue_id)
 
     record_ids = [record.id for record in records if record.id is not None]

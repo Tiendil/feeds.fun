@@ -9,6 +9,8 @@ from structlog.testing import capture_logs
 from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
+from ffun.dispatcher import domain as d_domain
+from ffun.dispatcher.entities import EntryProcessingStatus
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import ProcessorId, TagId, TagUid, UserId
 from ffun.domain.urls import str_to_feed_url, url_to_source_uid, url_to_uid
@@ -78,6 +80,16 @@ class TestRemoveEntries:
         await o_domain.apply_tags_to_entry(
             entry_id=another_entries[2].id, processor_id=another_fake_processor_id, tags=[tag_c]
         )
+        await d_domain.set_entry_processing_statuses(
+            fake_processor_id,
+            [entries[0].id, entries[1].id, another_entries[1].id],
+            EntryProcessingStatus.dispatched,
+        )
+        await d_domain.set_entry_processing_statuses(
+            another_fake_processor_id,
+            [another_entries[1].id, another_entries[2].id],
+            EntryProcessingStatus.processed,
+        )
 
         assert await remove_entries([entries[0].id, another_entries[1].id, entries[2].id])
 
@@ -93,6 +105,15 @@ class TestRemoveEntries:
             another_entries[1].id: None,
             another_entries[2].id: another_entries[2],
         }
+        processing_statuses = await d_domain.get_entries_processing_statuses(
+            [fake_processor_id, another_fake_processor_id],
+            [entry.id for entry in entries] + [entry.id for entry in another_entries],
+        )
+
+        assert processing_statuses.get(fake_processor_id, {}) == {entries[1].id: EntryProcessingStatus.dispatched}
+        assert processing_statuses.get(another_fake_processor_id, {}) == {
+            another_entries[2].id: EntryProcessingStatus.processed
+        }
 
     @pytest.mark.asyncio
     async def test_concurent_operation_on_removed_entries(self, mocker: MockerFixture) -> None:
@@ -103,6 +124,7 @@ class TestRemoveEntries:
         )
         remove_markers_mock = mocker.patch("ffun.markers.domain.remove_markers_for_entries")
         remove_relations_mock = mocker.patch("ffun.ontology.domain.remove_relations_for_entries")
+        remove_processing_statuses_mock = mocker.patch("ffun.dispatcher.domain.remove_entry_processing_statuses")
 
         with capture_logs() as logs:  # type: ignore
             assert not await remove_entries(entry_ids)
@@ -112,6 +134,7 @@ class TestRemoveEntries:
         remove_entries_by_ids_mock.assert_called_once()
         remove_markers_mock.assert_not_called()
         remove_relations_mock.assert_not_called()
+        remove_processing_statuses_mock.assert_not_called()
 
 
 class TestAddFeeds:

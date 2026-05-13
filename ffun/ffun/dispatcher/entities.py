@@ -1,3 +1,4 @@
+import enum
 from typing import NewType
 
 from ffun.core.entities import BaseEntity
@@ -5,6 +6,14 @@ from ffun.domain.entities import EntryId, ProcessorId
 from ffun.queues.entities import BaseQueueItem
 
 ProcessorRouteId = NewType("ProcessorRouteId", str)
+
+
+class EntryProcessingStatus(enum.IntEnum):
+    dispatched = 1
+    processed = 2
+    failed = 3
+    skipped = 4
+    retry_requested = 5
 
 
 class EntryToProcess(BaseQueueItem):

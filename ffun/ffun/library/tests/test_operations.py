@@ -1,5 +1,4 @@
 import datetime
-import uuid
 from itertools import chain
 from typing import Iterable
 from unittest import mock
