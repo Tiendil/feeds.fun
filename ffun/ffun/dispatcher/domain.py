@@ -164,6 +164,35 @@ def _processor_items_allowed_by_status(
     return [item for item in processor_items if statuses.get(item.entry_id) in allowed_statuses]
 
 
+async def _dispatch_entries_to_processor(
+    processor: ProcessorDispatchInfo,
+    items: Sequence[EntryToProcess],
+    entries_in_collections: dict[EntryId, bool],
+    statuses: dict[EntryId, EntryProcessingStatus],
+) -> None:
+    processor_items = _processor_items_allowed_by_status(items, statuses)
+    processor_items = _processor_items_targeted_to_processor(processor, processor_items)
+    processor_items_to_tag, skipped_entry_ids = _processor_items_to_tag(
+        processor, processor_items, entries_in_collections
+    )
+
+    await set_entry_processing_statuses(
+        processor.processor_id,
+        skipped_entry_ids,
+        EntryProcessingStatus.skipped_by_dispatcher,
+    )
+
+    # Set status before pushing to queue, because in case of a persistent error on pushing it is better
+    # to not push unprocessed entries, than infinitely push already processed entries causing money loses.
+    await set_entry_processing_statuses(
+        processor.processor_id,
+        [item.entry_id for item in processor_items_to_tag],
+        EntryProcessingStatus.dispatched,
+    )
+
+    await q_domain.push(QueueKind.entries_to_tag, processor_items_to_tag, secondary_id=processor.subqueue_id)
+
+
 async def dispatch_entries(processors: Sequence[ProcessorDispatchInfo], limit: int) -> int:
     if not processors:
         logger.info("no_processors_to_dispatch_entries")
@@ -189,28 +218,12 @@ async def dispatch_entries(processors: Sequence[ProcessorDispatchInfo], limit: i
     )
 
     for processor in processors:
-        processor_items = items
-        processor_items = _processor_items_allowed_by_status(processor_items, statuses.get(processor.processor_id, {}))
-        processor_items = _processor_items_targeted_to_processor(processor, processor_items)
-        processor_items_to_tag, skipped_entry_ids = _processor_items_to_tag(
-            processor, processor_items, entries_in_collections
+        await _dispatch_entries_to_processor(
+            processor,
+            items,
+            entries_in_collections,
+            statuses.get(processor.processor_id, {}),
         )
-
-        await set_entry_processing_statuses(
-            processor.processor_id,
-            skipped_entry_ids,
-            EntryProcessingStatus.skipped_by_dispatcher,
-        )
-
-        # Set status before pushing to queue, because in case of a persistent error on pushing it is better
-        # to not push unprocessed entries, than infinitely push already processed entries causing money loses.
-        await set_entry_processing_statuses(
-            processor.processor_id,
-            [item.entry_id for item in processor_items_to_tag],
-            EntryProcessingStatus.dispatched,
-        )
-
-        await q_domain.push(QueueKind.entries_to_tag, processor_items_to_tag, secondary_id=processor.subqueue_id)
 
     record_ids = [record.id for record in records if record.id is not None]
 

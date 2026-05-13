@@ -64,6 +64,10 @@ Tests MUST NOT modify Docker configuration or runtime parameters.
 
 Tests SHOULD verify observable behavior and locally owned validation instead of implementation declarations such as annotations, imports, or exact helper types.
 
+Tests SHOULD prefer separate tests for orthogonal execution paths or validation cases instead of one combined test that verifies all cases at once.
+
+Example: `test_a` and `test_b` are better than `test_a_or_b` when `a` and `b` describe independent behavior.
+
 Static typing requirements SHOULD be enforced by static analysis, code review, or dedicated architecture checks, not by ordinary unit tests that inspect runtime annotations.
 
 Tests MAY inspect annotations only in dedicated architecture tests that validate a broad project-wide convention. Per-entity unit tests MUST NOT inspect annotations only to restate the entity declaration.
