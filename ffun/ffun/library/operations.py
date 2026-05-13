@@ -69,6 +69,7 @@ def row_to_entry(row: dict[str, Any]) -> Entry:
 async def _catalog_entry(
     execute: ExecuteType, feed_id: FeedId, entry: CollectedEntry, ingested_at: datetime.datetime
 ) -> EntryId | None:
+    """Catalog entry for the feed and return its id when a new feed link was created."""
     sql_insert_entry = """
     INSERT INTO l_entries (id, source_id, title, body, external_id, external_url, external_tags, published_at, refs)
     VALUES (%(id)s, %(source_id)s, %(title)s, %(body)s, %(external_id)s,
@@ -91,12 +92,16 @@ async def _catalog_entry(
     #    We MUST to rethink that approach in case we'll make feed source wider
     #    (for example, by uniting multiple sites), that is unlikely for now
     #    => the simplicity of the HTTP API has priority over idiomaticity of the DB schema and semantics
+    #
+    # 4. `created_at = updated_at` is true only for newly inserted links, because conflicts update `updated_at`.
     sql_insert_feed_to_entry = """
     INSERT INTO l_feeds_to_entries (feed_id, entry_id, ingested_at, entry_created_at)
     VALUES (%(feed_id)s, %(entry_id)s, %(ingested_at)s, %(entry_created_at)s)
     ON CONFLICT (feed_id, entry_id) DO UPDATE SET
       ingested_at = EXCLUDED.ingested_at,
-      entry_created_at = EXCLUDED.entry_created_at
+      entry_created_at = EXCLUDED.entry_created_at,
+      updated_at = NOW()
+    RETURNING entry_id, created_at = updated_at AS new_link_created
     """
 
     result = await execute(
@@ -117,11 +122,9 @@ async def _catalog_entry(
     )
 
     if result:
-        new_entry_created = True
         entry_id = EntryId(result[0]["id"])
         entry_created_at = result[0]["created_at"]
     else:
-        new_entry_created = False
         result = await execute(
             "SELECT id, created_at FROM l_entries WHERE source_id = %(source_id)s AND external_id = %(external_id)s",
             {"source_id": entry.source_id, "external_id": entry.external_id},
@@ -133,7 +136,7 @@ async def _catalog_entry(
         else:
             raise NotImplementedError("Can not find entry by source_id and external_id")
 
-    await execute(
+    result = await execute(
         sql_insert_feed_to_entry,
         {
             "feed_id": feed_id,
@@ -143,18 +146,19 @@ async def _catalog_entry(
         },
     )
 
-    if new_entry_created:
+    if result[0]["new_link_created"]:
         return entry_id
 
     return None
 
 
 async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) -> list[EntryId]:
+    """Catalog entries and return ids for entries newly linked to the feed."""
     # We MUST use the same `ingested_at` value for all entries ingested in the same load
     # to be able to use `ingested_at` as a marker/version of ingested bunch of entries
     ingested_at = utils.now()
 
-    new_entries_ids = []
+    linked_entry_ids = []
 
     # 1. We use the time of the last ingestion as the marker of actuality of the feed entries.
     #    We use that maker to decide which entries can be safely unlinked from the feed.
@@ -169,9 +173,9 @@ async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) ->
         entry_id = await _catalog_entry(feed_id, entry, ingested_at)
 
         if entry_id is not None:
-            new_entries_ids.append(entry_id)
+            linked_entry_ids.append(entry_id)
 
-    return new_entries_ids
+    return linked_entry_ids
 
 
 async def get_feed_links_for_entries(
