@@ -1,9 +1,8 @@
 from ffun.core import logging, metrics
-from ffun.core.postgresql import ExecuteType, run_in_transaction
 from ffun.dispatcher import domain as d_domain
 from ffun.dispatcher.entities import EntryProcessingStatus
 from ffun.domain.entities import ProcessorId
-from ffun.librarian import errors, operations
+from ffun.librarian import errors
 from ffun.librarian.processors.base import Processor, ProcessorContext
 from ffun.librarian.settings import settings
 from ffun.library.entities import Entry
@@ -11,9 +10,6 @@ from ffun.ontology import domain as o_domain
 from ffun.tags import domain as t_domain
 
 logger = logging.get_module_logger()
-
-
-count_failed_entries = operations.count_failed_entries
 
 
 _processor_metrics_accumulators: dict[tuple[ProcessorId, str], metrics.Accumulator] = {}
@@ -33,19 +29,6 @@ def accumulator(event: str, processor_id: ProcessorId) -> metrics.Accumulator:
     _processor_metrics_accumulators[key] = accumulator
 
     return accumulator
-
-
-@run_in_transaction
-async def move_failed_entries_to_processor_queue(execute: ExecuteType, processor_id: ProcessorId, limit: int) -> None:
-    failed_entries = await operations.get_failed_entries(execute, processor_id, limit)
-
-    if not failed_entries:
-        return
-
-    await d_domain.set_entry_processing_statuses(processor_id, failed_entries, EntryProcessingStatus.retry_requested)
-    await d_domain.push_entries_to_process(failed_entries, processor_id=processor_id)
-
-    await operations.remove_failed_entries(execute, processor_id, failed_entries)
 
 
 @logging.async_args_to_log("processor.name", "entry.id")
@@ -88,15 +71,11 @@ async def process_entry(
         logger.warning("processor_requested_to_skip_entry", error_info=str(e))
         await d_domain.set_entry_processing_statuses(processor_id, [entry.id], EntryProcessingStatus.skipped)
     except errors.TemporaryErrorInProcessor as e:
-        # log the error and move the entry to the failed storage
         # Note: it is a general plug, for some custom cases we may want to add custom processing
-        # Note: currently, there are no logic to process failed storage, entries will just accumulate there
         logger.info("processor_temporary_error", error_info=str(e))
-        await operations.add_entries_to_failed_storage(processor_id, [entry.id])
         await d_domain.set_entry_processing_statuses(processor_id, [entry.id], EntryProcessingStatus.failed)
     except Exception as e:
         logger.exception("processor_failed")
-        await operations.add_entries_to_failed_storage(processor_id, [entry.id])
         await d_domain.set_entry_processing_statuses(processor_id, [entry.id], EntryProcessingStatus.failed)
         raise errors.UnexpectedErrorInProcessor(processor_id=processor_id, entry_id=str(entry.id)) from e
     finally:

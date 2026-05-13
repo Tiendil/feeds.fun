@@ -2,10 +2,9 @@ from collections.abc import Sequence
 
 import pytest
 from pytest_mock import MockerFixture
+
 from ffun.core.tests.helpers import TableSizeNotChanged
-from ffun.dispatcher import domain
-from ffun.dispatcher import errors
-from ffun.dispatcher import operations
+from ffun.dispatcher import domain, errors, operations
 from ffun.dispatcher.entities import (
     DispatchDecision,
     EntryProcessingStatus,
@@ -16,6 +15,7 @@ from ffun.dispatcher.entities import (
     ProcessorRouteId,
 )
 from ffun.dispatcher.tests import make
+from ffun.dispatcher.tests.helpers import assert_processing_status
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import EntryId, ProcessorId
 from ffun.feeds.entities import Feed
@@ -143,6 +143,16 @@ class TestGetEntriesProcessingStatuses:
         assert domain.get_entries_processing_statuses is operations.get_entries_processing_statuses
 
 
+class TestGetEntriesByProcessingStatus:
+    def test_reexports_operation(self) -> None:
+        assert domain.get_entries_by_processing_status is operations.get_entries_by_processing_status
+
+
+class TestCountEntriesByProcessingStatus:
+    def test_reexports_operation(self) -> None:
+        assert domain.count_entries_by_processing_status is operations.count_entries_by_processing_status
+
+
 class TestSetEntryProcessingStatuses:
     def test_reexports_operation(self) -> None:
         assert domain.set_entry_processing_statuses is operations.set_entry_processing_statuses
@@ -177,6 +187,104 @@ class TestAcknowledge:
         )
 
         assert record_entry_ids(records_after_acknowledgement) == record_entry_ids(records_to_keep)
+
+
+class TestMoveFailedEntriesToProcessorQueue:
+    async def get_entries_to_process(self, processor_id: ProcessorId) -> set[EntryId]:
+        records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
+
+        processor_records = [record for record in records if record.item.processor_id == processor_id]
+
+        return {record.item.entry_id for record in processor_records}
+
+    @pytest.mark.parametrize(
+        "status",
+        [status for status in EntryProcessingStatus if status != EntryProcessingStatus.failed],
+    )
+    @pytest.mark.asyncio
+    async def test_no_failed_entries(self, fake_processor_id: ProcessorId, status: EntryProcessingStatus) -> None:
+        processor_id = fake_processor_id
+        entry_id = new_entry_id()
+
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await domain.set_entry_processing_statuses(processor_id, [entry_id], status)
+
+        await domain.move_failed_entries_to_processor_queue(processor_id, limit=100500)
+
+        assert await self.get_entries_to_process(processor_id) == set()
+        assert (
+            await domain.get_entries_by_processing_status(processor_id, EntryProcessingStatus.failed, limit=100500)
+            == []
+        )
+        await assert_processing_status(processor_id, entry_id, status)
+
+    @pytest.mark.asyncio
+    async def test_moved(self, fake_processor_id: ProcessorId) -> None:
+        processor_id = fake_processor_id
+        failed_entry_id = new_entry_id()
+        processed_entry_id = new_entry_id()
+
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await domain.set_entry_processing_statuses(
+            processor_id,
+            [failed_entry_id],
+            EntryProcessingStatus.failed,
+        )
+        await domain.set_entry_processing_statuses(
+            processor_id,
+            [processed_entry_id],
+            EntryProcessingStatus.processed,
+        )
+
+        await domain.move_failed_entries_to_processor_queue(processor_id, limit=100500)
+
+        assert await self.get_entries_to_process(processor_id) == {failed_entry_id}
+        assert (
+            await domain.get_entries_by_processing_status(processor_id, EntryProcessingStatus.failed, limit=100500)
+            == []
+        )
+        await assert_processing_status(processor_id, failed_entry_id, EntryProcessingStatus.retry_requested)
+        await assert_processing_status(processor_id, processed_entry_id, EntryProcessingStatus.processed)
+
+    @pytest.mark.asyncio
+    async def test_limit(self, fake_processor_id: ProcessorId) -> None:
+        processor_id = fake_processor_id
+        entry_ids = [new_entry_id(), new_entry_id(), new_entry_id(), new_entry_id()]
+
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await domain.set_entry_processing_statuses(
+            processor_id,
+            entry_ids,
+            EntryProcessingStatus.failed,
+        )
+
+        await domain.move_failed_entries_to_processor_queue(processor_id, limit=2)
+
+        all_entry_ids = set(entry_ids)
+        moved_entries = await self.get_entries_to_process(processor_id)
+
+        assert len(moved_entries) == 2
+        assert moved_entries <= all_entry_ids
+
+        failed_entries = set(
+            await domain.get_entries_by_processing_status(processor_id, EntryProcessingStatus.failed, limit=100500)
+        )
+
+        assert failed_entries == all_entry_ids - moved_entries
+
+        for entry_id in moved_entries:
+            await assert_processing_status(processor_id, entry_id, EntryProcessingStatus.retry_requested)
+
+        for entry_id in failed_entries:
+            await assert_processing_status(processor_id, entry_id, EntryProcessingStatus.failed)
+
+        await domain.move_failed_entries_to_processor_queue(processor_id, limit=100500)
+
+        assert await self.get_entries_to_process(processor_id) == all_entry_ids
+        assert (
+            await domain.get_entries_by_processing_status(processor_id, EntryProcessingStatus.failed, limit=100500)
+            == []
+        )
 
 
 class TestEntriesInCollections:

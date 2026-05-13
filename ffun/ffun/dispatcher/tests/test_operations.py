@@ -51,6 +51,98 @@ class TestGetEntriesProcessingStatuses:
         }
 
 
+class TestGetEntriesByProcessingStatus:
+    @pytest.mark.asyncio
+    async def test_returns_entries_for_processor_and_status(
+        self, fake_processor_id: ProcessorId, another_fake_processor_id: ProcessorId
+    ) -> None:
+        processor_id = fake_processor_id
+        another_processor_id = another_fake_processor_id
+        first_entry_id = new_entry_id()
+        second_entry_id = new_entry_id()
+        processed_entry_id = new_entry_id()
+        another_processor_entry_id = new_entry_id()
+
+        await operations.set_entry_processing_statuses(
+            processor_id, [first_entry_id, second_entry_id], EntryProcessingStatus.dispatched
+        )
+        await operations.set_entry_processing_statuses(
+            processor_id, [processed_entry_id], EntryProcessingStatus.processed
+        )
+        await operations.set_entry_processing_statuses(
+            another_processor_id, [another_processor_entry_id], EntryProcessingStatus.dispatched
+        )
+
+        dispatched_entries = await operations.get_entries_by_processing_status(
+            processor_id, EntryProcessingStatus.dispatched, limit=100500
+        )
+
+        assert set(dispatched_entries) == {first_entry_id, second_entry_id}
+
+        processed_entries = await operations.get_entries_by_processing_status(
+            processor_id, EntryProcessingStatus.processed, limit=100500
+        )
+
+        assert processed_entries == [processed_entry_id]
+
+        await operations.set_entry_processing_statuses(
+            processor_id, [first_entry_id, second_entry_id], EntryProcessingStatus.processed
+        )
+        await operations.set_entry_processing_statuses(
+            another_processor_id, [another_processor_entry_id], EntryProcessingStatus.processed
+        )
+
+    @pytest.mark.asyncio
+    async def test_limit(self, fake_processor_id: ProcessorId) -> None:
+        processor_id = fake_processor_id
+        entry_ids = [new_entry_id(), new_entry_id(), new_entry_id()]
+
+        await operations.set_entry_processing_statuses(processor_id, entry_ids, EntryProcessingStatus.dispatched)
+
+        dispatched_entries = await operations.get_entries_by_processing_status(
+            processor_id, EntryProcessingStatus.dispatched, limit=2
+        )
+
+        assert len(dispatched_entries) == 2
+        assert set(dispatched_entries) <= set(entry_ids)
+
+        await operations.set_entry_processing_statuses(processor_id, entry_ids, EntryProcessingStatus.processed)
+
+
+class TestCountEntriesByProcessingStatus:
+    @pytest.mark.asyncio
+    async def test_counts_entries_per_processor_for_status(
+        self, fake_processor_id: ProcessorId, another_fake_processor_id: ProcessorId
+    ) -> None:
+        processor_id = fake_processor_id
+        another_processor_id = another_fake_processor_id
+        first_entry_id = new_entry_id()
+        second_entry_id = new_entry_id()
+        processed_entry_id = new_entry_id()
+
+        await operations.set_entry_processing_statuses(
+            processor_id, [first_entry_id, second_entry_id], EntryProcessingStatus.dispatched
+        )
+        await operations.set_entry_processing_statuses(
+            processor_id, [processed_entry_id], EntryProcessingStatus.processed
+        )
+        await operations.set_entry_processing_statuses(
+            another_processor_id, [first_entry_id], EntryProcessingStatus.dispatched
+        )
+
+        counts = await operations.count_entries_by_processing_status(EntryProcessingStatus.dispatched)
+
+        assert counts[processor_id] == 2
+        assert counts[another_processor_id] == 1
+
+        await operations.set_entry_processing_statuses(
+            processor_id, [first_entry_id, second_entry_id], EntryProcessingStatus.processed
+        )
+        await operations.set_entry_processing_statuses(
+            another_processor_id, [first_entry_id], EntryProcessingStatus.processed
+        )
+
+
 class TestSetEntryProcessingStatuses:
     @pytest.mark.asyncio
     async def test_empty_entries(self) -> None:

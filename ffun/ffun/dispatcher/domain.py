@@ -1,8 +1,7 @@
 from collections.abc import Iterable, Sequence
 
 from ffun.core import logging
-from ffun.dispatcher import errors
-from ffun.dispatcher import operations
+from ffun.dispatcher import errors, operations
 from ffun.dispatcher.entities import (
     DispatchDecision,
     EntryProcessingStatus,
@@ -24,6 +23,8 @@ logger = logging.get_module_logger()
 
 
 get_entries_processing_statuses = operations.get_entries_processing_statuses
+get_entries_by_processing_status = operations.get_entries_by_processing_status
+count_entries_by_processing_status = operations.count_entries_by_processing_status
 set_entry_processing_statuses = operations.set_entry_processing_statuses
 remove_entry_processing_statuses = operations.remove_entry_processing_statuses
 
@@ -32,6 +33,16 @@ async def push_entries_to_process(entry_ids: Iterable[EntryId], processor_id: Pr
     items = [EntryToProcess(entry_id=entry_id, processor_id=processor_id) for entry_id in entry_ids]
 
     await q_domain.push(QueueKind.entries_to_process, items)
+
+
+async def move_failed_entries_to_processor_queue(processor_id: ProcessorId, limit: int) -> None:
+    failed_entries = await get_entries_by_processing_status(processor_id, EntryProcessingStatus.failed, limit)
+
+    if not failed_entries:
+        return
+
+    await set_entry_processing_statuses(processor_id, failed_entries, EntryProcessingStatus.retry_requested)
+    await push_entries_to_process(failed_entries, processor_id=processor_id)
 
 
 async def get_entries_to_tag(processor_id: ProcessorId, limit: int) -> list[QueueRecord[EntryToTag]]:

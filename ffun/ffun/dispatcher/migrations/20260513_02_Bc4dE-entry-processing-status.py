@@ -22,11 +22,17 @@ CREATE TABLE d_entry_processing_status (
 )
 """
 
+sql_create_entry_processing_status_processor_id_status_index = """
+CREATE INDEX d_entry_processing_status_processor_id_status_idx
+ON d_entry_processing_status (processor_id, status)
+"""
+
 
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
 
     cursor.execute(sql_create_entry_processing_status)
+    cursor.execute(sql_create_entry_processing_status_processor_id_status_index)
 
 
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:

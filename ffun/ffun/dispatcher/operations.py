@@ -33,6 +33,39 @@ async def get_entries_processing_statuses(
     return statuses
 
 
+async def get_entries_by_processing_status(
+    processor_id: ProcessorId, status: EntryProcessingStatus, limit: int
+) -> list[EntryId]:
+    sql = """
+    SELECT entry_id
+    FROM d_entry_processing_status
+    WHERE processor_id = %(processor_id)s
+      AND status = %(status)s
+    ORDER BY updated_at ASC, entry_id ASC
+    LIMIT %(limit)s
+    """
+
+    rows = await execute(
+        sql,
+        {"processor_id": processor_id, "status": int(status), "limit": limit},
+    )
+
+    return [row["entry_id"] for row in rows]
+
+
+async def count_entries_by_processing_status(status: EntryProcessingStatus) -> dict[ProcessorId, int]:
+    sql = """
+    SELECT processor_id, COUNT(*) AS count
+    FROM d_entry_processing_status
+    WHERE status = %(status)s
+    GROUP BY processor_id
+    """
+
+    rows = await execute(sql, {"status": int(status)})
+
+    return {ProcessorId(row["processor_id"]): row["count"] for row in rows}
+
+
 async def set_entry_processing_statuses(
     processor_id: ProcessorId, entry_ids: Iterable[EntryId], status: EntryProcessingStatus
 ) -> None:
