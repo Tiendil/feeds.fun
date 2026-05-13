@@ -44,6 +44,10 @@ The preferred command form for running targeted backend tests is:
 
 Tests SHOULD be deterministic for the same repository state and filesystem state.
 
+Tests that require specific shared state MUST prepare that state at the start of the relevant test or with an autouse fixture at the test class or test module level.
+
+Tests MUST NOT clean up shared state after themselves unless the developer explicitly requests cleanup behavior.
+
 Tests SHOULD prefer end-to-end coverage through public boundaries when that is practical for the behavior under test.
 
 Tests SHOULD use mocks, stubs, and monkeypatching as little as possible.
@@ -59,6 +63,10 @@ Tests MUST NOT depend on user-specific files outside test-created temporary dire
 Tests MUST NOT modify Docker configuration or runtime parameters.
 
 Tests SHOULD verify observable behavior and locally owned validation instead of implementation declarations such as annotations, imports, or exact helper types.
+
+Tests SHOULD prefer separate tests for orthogonal execution paths or validation cases instead of one combined test that verifies all cases at once.
+
+Example: `test_a` and `test_b` are better than `test_a_or_b` when `a` and `b` describe independent behavior.
 
 Static typing requirements SHOULD be enforced by static analysis, code review, or dedicated architecture checks, not by ordinary unit tests that inspect runtime annotations.
 
@@ -197,6 +205,31 @@ Corner cases include:
 - paths that do not exist.
 - values that require normalization.
 - repeated calls that may reveal state leaks.
+
+## Domain operation re-exports
+
+Some domain modules intentionally re-export operation functions with assignments like:
+
+```python
+get_entry = operations.get_entry
+```
+
+These assignments are public domain-level names, but the behavior belongs to the operation module.
+
+When a domain module re-exports an operation function without wrapping it, the domain test class for that function SHOULD
+contain only a minimal identity assertion that verifies the public name points to the operation function.
+
+Example:
+
+```python
+class TestGetEntry:
+    def test_reexports_operation(self) -> None:
+        assert domain.get_entry is operations.get_entry
+```
+
+This is a narrow exception to the general rule forbidding non-`None` identity assertions.
+
+Behavior tests for the re-exported function MUST live in the operation module's tests, not in the domain module's tests.
 
 ## Entity tests
 

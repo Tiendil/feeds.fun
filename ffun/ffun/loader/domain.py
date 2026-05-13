@@ -165,15 +165,15 @@ async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None
         entry_info.to_collected_entry(entry_id=new_entry_id(), source_id=feed.source_id) for entry_info in entries
     ]
 
-    new_entries_ids = await l_domain.catalog_entries(feed.id, entries=prepared_entries)
-    entries_cataloged = len(new_entries_ids)
+    linked_entry_ids = await l_domain.catalog_entries(feed.id, entries=prepared_entries)
+    entries_cataloged = len(linked_entry_ids)
 
     entries_skipped = len(prepared_entries) - entries_cataloged
 
     logger.info("entries_stored", entries_cataloged=entries_cataloged, entries_skipped=entries_skipped)
 
     if entries_cataloged > 0:
-        await d_domain.push_entries_to_process(new_entries_ids)
+        await d_domain.push_entries_to_process(linked_entry_ids)
         logger.business_event("news_entries_stored", user_id=None, feed_id=feed.id, entries_number=entries_cataloged)
 
 

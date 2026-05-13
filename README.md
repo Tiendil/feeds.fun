@@ -98,11 +98,11 @@ FFUN_LIBRARIAN_OPENAI_GENERAL_PROCESSOR__ENABLED="True"
 
 Feeds Fun uses different tag processors to detect tags for news entries. Some of them are simple, like `set domain as tag`, some of them are more complex, like `use LLM to detect all possible tags`.
 
-Processors are configured via a separate configuration file.
-Each processor defines explicit routes that decide which entries it can handle.
-When multiple routes can handle an entry, the dispatcher uses the first acceptable route, so route order in the processor config is important.
-LLM routes can also carry a configured API key; routes without a configured key use user API keys.
-Routes can additionally opt in to processor quality checks with `allowed_for_quality_tests`.
+- Processors are configured via a separate configuration file.
+- Each processor defines explicit routes that decide which entries it can handle.
+- When multiple routes can handle an entry, the dispatcher uses the first acceptable route, so route order in the processor config is important.
+- LLM routes can also carry a configured API key; routes without a configured key use user API keys.
+- Routes can additionally opt in to processor quality checks with `allowed_for_quality_tests`.
 
 You can find an example of configuration [in the code](./ffun/ffun/librarian/fixtures/tag_processors.toml).
 

@@ -25,3 +25,6 @@
   - Added `queues` module as a unified interface for working with persistent queues.
   - The logic of choosing API keys for LLM-based processors became clearer and more flexible.
   - Added `can_see_tags` marker to control whether tags of a news entry are visible to a user.
+- ff-690 — `dispatcher` now tracks processing status of entries for each processor to avoid reprocessing the same entry for the same processor.
+  - Failed-entry redispatch is now based on dispatcher processing status instead of the removed `ln_failed_entries` table.
+  - `ffun failed-entries` CLI command renamed to `ffun dispatcher`.

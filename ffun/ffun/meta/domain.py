@@ -1,6 +1,7 @@
 from typing import Iterable
 
 from ffun.core import logging, utils
+from ffun.dispatcher import domain as d_domain
 from ffun.domain.domain import new_feed_id
 from ffun.domain.entities import EntryId, FeedId, ProcessorId, TagId, TagUid, UserId
 from ffun.domain.urls import url_to_source_uid
@@ -41,6 +42,7 @@ async def remove_entries(entries_ids: Iterable[EntryId]) -> bool:
 
     await m_domain.remove_markers_for_entries(entries_to_remove)
     await o_domain.remove_relations_for_entries(entries_to_remove)
+    await d_domain.remove_entry_processing_statuses(entries_to_remove)
 
     return True
 

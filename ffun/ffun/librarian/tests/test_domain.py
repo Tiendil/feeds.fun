@@ -6,15 +6,13 @@ from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
 from ffun.core.metrics import Accumulator
-from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
-from ffun.dispatcher import domain as d_domain
-from ffun.dispatcher.entities import EntryToProcess, ProcessorRouteId
-from ffun.domain.entities import EntryId, ProcessorId
-from ffun.librarian import errors, operations
+from ffun.dispatcher.entities import EntryProcessingStatus, ProcessorRouteId
+from ffun.dispatcher.tests.helpers import assert_processing_status
+from ffun.domain.entities import ProcessorId
+from ffun.librarian import errors
 from ffun.librarian.domain import (
     accumulator,
-    move_failed_entries_to_processor_queue,
     process_entry,
 )
 from ffun.librarian.processors.base import (
@@ -24,11 +22,8 @@ from ffun.librarian.processors.base import (
     AlwaysTemporaryErrorProcessor,
     ProcessorContext,
 )
-from ffun.librarian.tests import helpers
 from ffun.library.entities import Entry
 from ffun.ontology import domain as o_domain
-from ffun.queues import operations as q_operations
-from ffun.queues.entities import QueueKind
 
 TEST_ROUTE_ID = ProcessorRouteId("test-route")
 
@@ -105,8 +100,7 @@ class TestProcessEntry:
 
         assert tags[cataloged_entry.id] == set(expected_ids.values())
 
-        failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
-        assert cataloged_entry.id not in failed_entry_ids
+        await assert_processing_status(fake_processor_id, cataloged_entry.id, EntryProcessingStatus.processed)
 
     @pytest.mark.asyncio
     async def test_skip_processing(
@@ -132,8 +126,9 @@ class TestProcessEntry:
 
         assert cataloged_entry.id not in tags
 
-        failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
-        assert cataloged_entry.id not in failed_entry_ids
+        await assert_processing_status(
+            fake_processor_id, cataloged_entry.id, EntryProcessingStatus.skipped_by_processor
+        )
 
     @pytest.mark.asyncio
     async def test_temporary_error_in_processor(
@@ -159,8 +154,7 @@ class TestProcessEntry:
 
         assert cataloged_entry.id not in tags
 
-        failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
-        assert cataloged_entry.id in failed_entry_ids
+        await assert_processing_status(fake_processor_id, cataloged_entry.id, EntryProcessingStatus.failed)
 
     @pytest.mark.asyncio
     async def test_unexpected_error(
@@ -187,97 +181,4 @@ class TestProcessEntry:
 
         assert cataloged_entry.id not in tags
 
-        failed_entry_ids = await operations.get_failed_entries(execute, fake_processor_id, limit=100500)
-        assert cataloged_entry.id in failed_entry_ids
-
-
-class TestMoveFailedEntriesToProcessorQueue:
-    async def get_entries_to_process(self, processor_id: ProcessorId) -> set[EntryId]:
-        records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
-
-        processor_records = [record for record in records if record.item.processor_id == processor_id]
-        entries_in_queue = {record.item.entry_id for record in processor_records}
-
-        await d_domain.acknowledge([record.id for record in processor_records if record.id is not None])
-
-        return entries_in_queue
-
-    async def get_failed_entries(self, processor_id: ProcessorId) -> set[EntryId]:
-        return set(await operations.get_failed_entries(execute, processor_id, limit=100500))
-
-    @pytest.mark.asyncio
-    async def test_no_failed_entries(self, fake_processor_id: ProcessorId) -> None:
-        await helpers.clean_failed_storage([fake_processor_id])
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_processor_id)
-
-        await move_failed_entries_to_processor_queue(fake_processor_id, limit=100500)
-
-        assert await self.get_entries_to_process(fake_processor_id) == set()
-        assert await self.get_failed_entries(fake_processor_id) == set()
-
-    @pytest.mark.asyncio
-    async def test_moved(
-        self,
-        fake_processor_id: ProcessorId,
-        another_fake_processor_id: ProcessorId,
-        cataloged_entry: Entry,
-        another_cataloged_entry: Entry,
-    ) -> None:
-        await helpers.clean_failed_storage([fake_processor_id, another_fake_processor_id])
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_processor_id)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=another_fake_processor_id)
-
-        await operations.add_entries_to_failed_storage(
-            fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
-        )
-        await operations.add_entries_to_failed_storage(
-            another_fake_processor_id, entry_ids=[another_cataloged_entry.id]
-        )
-
-        await move_failed_entries_to_processor_queue(fake_processor_id, limit=100500)
-
-        assert await self.get_entries_to_process(fake_processor_id) == {
-            cataloged_entry.id,
-            another_cataloged_entry.id,
-        }
-        assert await self.get_failed_entries(fake_processor_id) == set()
-
-        assert await self.get_entries_to_process(another_fake_processor_id) == set()
-        assert await self.get_failed_entries(another_fake_processor_id) == {another_cataloged_entry.id}
-
-        await move_failed_entries_to_processor_queue(another_fake_processor_id, limit=100500)
-
-        assert await self.get_entries_to_process(another_fake_processor_id) == {another_cataloged_entry.id}
-        assert await self.get_failed_entries(another_fake_processor_id) == set()
-
-    @pytest.mark.asyncio
-    async def test_limit(
-        self, fake_processor_id: ProcessorId, cataloged_entry: Entry, another_cataloged_entry: Entry
-    ) -> None:
-        await helpers.clean_failed_storage([fake_processor_id])
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_processor_id)
-
-        await operations.add_entries_to_failed_storage(
-            fake_processor_id, entry_ids=[cataloged_entry.id, another_cataloged_entry.id]
-        )
-
-        await move_failed_entries_to_processor_queue(fake_processor_id, limit=1)
-
-        all_entry_ids = {cataloged_entry.id, another_cataloged_entry.id}
-
-        moved_entries = await self.get_entries_to_process(fake_processor_id)
-
-        assert len(moved_entries) == 1
-        assert moved_entries <= all_entry_ids
-
-        failed_entries = await self.get_failed_entries(fake_processor_id)
-
-        assert failed_entries == all_entry_ids - moved_entries
-
-        await move_failed_entries_to_processor_queue(fake_processor_id, limit=100500)
-
-        assert await self.get_entries_to_process(fake_processor_id) == failed_entries
-        assert await self.get_failed_entries(fake_processor_id) == set()
+        await assert_processing_status(fake_processor_id, cataloged_entry.id, EntryProcessingStatus.failed)

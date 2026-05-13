@@ -5,14 +5,15 @@ from tabulate import tabulate
 
 from ffun.application.application import with_app
 from ffun.cli.application import app
+from ffun.dispatcher.domain import count_entries_by_processing_status, move_failed_entries_to_processor_queue
+from ffun.dispatcher.entities import EntryProcessingStatus
 from ffun.domain.entities import ProcessorId
 from ffun.librarian.background_processors import processors
-from ffun.librarian.domain import count_failed_entries, move_failed_entries_to_processor_queue
 
 
-async def run_failed_entries_count() -> None:
+async def run_dispatcher_failed_entries_count() -> None:
     async with with_app():
-        failed_entries_count = await count_failed_entries()
+        failed_entries_count = await count_entries_by_processing_status(EntryProcessingStatus.failed)
 
     table = []
 
@@ -25,11 +26,11 @@ async def run_failed_entries_count() -> None:
 
 
 @app.command()  # type: ignore
-def failed_entries_count() -> None:
-    asyncio.run(run_failed_entries_count())
+def dispatcher_failed_entries_count() -> None:
+    asyncio.run(run_dispatcher_failed_entries_count())
 
 
-async def run_failed_enties_move_to_queue(processor_id: int, limit: int) -> None:
+async def run_dispatcher_failed_entries_move_to_queue(processor_id: int, limit: int) -> None:
     typed_processor_id = ProcessorId(processor_id)
 
     if not any(processor_info.id == typed_processor_id for processor_info in processors):
@@ -37,9 +38,8 @@ async def run_failed_enties_move_to_queue(processor_id: int, limit: int) -> None
 
     async with with_app():
         await move_failed_entries_to_processor_queue(typed_processor_id, limit=limit)
-        await count_failed_entries()
 
 
 @app.command()  # type: ignore
-def failed_entries_move_to_queue(processor_id: int, limit: int) -> None:
-    asyncio.run(run_failed_enties_move_to_queue(processor_id, limit))
+def dispatcher_failed_entries_move_to_queue(processor_id: int, limit: int) -> None:
+    asyncio.run(run_dispatcher_failed_entries_move_to_queue(processor_id, limit))
