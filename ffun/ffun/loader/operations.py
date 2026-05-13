@@ -65,6 +65,9 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
             # and, thus, caused the client error
             log.warning("network_server_closed_connection_too_early")
             error_code = FeedError.network_server_closed_connection_too_early
+        elif "InvalidBodyLengthError" in message:
+            log.warning("network_body_length_error")
+            error_code = FeedError.network_body_length_error
         else:
             log.exception("local_protocol_error_while_loading_feed")
 
