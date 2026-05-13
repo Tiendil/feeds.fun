@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 
 import pytest
+import pytest_asyncio
 from pytest_mock import MockerFixture
 
 from ffun.core.tests.helpers import TableSizeNotChanged
@@ -190,6 +191,10 @@ class TestAcknowledge:
 
 
 class TestMoveFailedEntriesToProcessorQueue:
+    @pytest_asyncio.fixture(autouse=True)  # type: ignore
+    async def prepare_processing_statuses(self) -> None:
+        await operations.tech_truncate_entry_processing_statuses()
+
     async def get_entries_to_process(self, processor_id: ProcessorId) -> set[EntryId]:
         records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
 
@@ -627,12 +632,20 @@ class TestProcessorItemsToTag:
             second_entry_id: True,
         }
 
-        items_to_tag = domain._processor_items_to_tag(processor, items, entries_in_collections)
+        items_to_tag, skipped_entry_ids = domain._processor_items_to_tag(processor, items, entries_in_collections)
 
         assert items_to_tag == [
             EntryToTag(entry_id=first_entry_id, route_id=ProcessorRouteId("user-route")),
             EntryToTag(entry_id=third_entry_id, route_id=ProcessorRouteId("user-route")),
         ]
+        assert skipped_entry_ids == [second_entry_id]
+
+
+class TestProcessorItemsTargetedToProcessor:
+    def test_no_items(self) -> None:
+        processor = make.processor_dispatch_info(101)
+
+        assert domain._processor_items_targeted_to_processor(processor, []) == []
 
     def test_keeps_only_items_targeted_to_processor(self) -> None:
         processor = make.processor_dispatch_info(101)
@@ -646,17 +659,21 @@ class TestProcessorItemsToTag:
             EntryToProcess(entry_id=common_entry_id, processor_id=None),
         ]
 
-        items_to_tag = domain._processor_items_to_tag(processor, items, entries_in_collections={})
+        processor_items = domain._processor_items_targeted_to_processor(processor, items)
 
-        assert items_to_tag == [
-            EntryToTag(entry_id=target_entry_id, route_id=ProcessorRouteId("default")),
-            EntryToTag(entry_id=common_entry_id, route_id=ProcessorRouteId("default")),
+        assert processor_items == [
+            EntryToProcess(entry_id=target_entry_id, processor_id=processor.processor_id),
+            EntryToProcess(entry_id=common_entry_id, processor_id=None),
         ]
 
 
 class TestProcessorItemsAllowedByStatus:
     def test_all_processing_statuses_are_classified(self) -> None:
-        allowed_statuses = {EntryProcessingStatus.skipped, EntryProcessingStatus.retry_requested}
+        allowed_statuses = {
+            EntryProcessingStatus.skipped_by_processor,
+            EntryProcessingStatus.skipped_by_dispatcher,
+            EntryProcessingStatus.retry_requested,
+        }
         blocked_statuses = {
             EntryProcessingStatus.dispatched,
             EntryProcessingStatus.processed,
@@ -670,22 +687,23 @@ class TestProcessorItemsAllowedByStatus:
 
     def test_allows_items_without_status(self) -> None:
         entry_id = new_entry_id()
-        item = EntryToTag(entry_id=entry_id, route_id=ProcessorRouteId("default"))
+        item = EntryToProcess(entry_id=entry_id)
 
         assert domain._processor_items_allowed_by_status([item], {}) == [item]
 
     @pytest.mark.parametrize(
         "status",
         [
-            EntryProcessingStatus.skipped,
+            EntryProcessingStatus.skipped_by_processor,
+            EntryProcessingStatus.skipped_by_dispatcher,
             EntryProcessingStatus.retry_requested,
         ],
     )
     def test_allows_items_with_status_that_requires_redispatch(self, status: EntryProcessingStatus) -> None:
         entry_id = new_entry_id()
         blocked_entry_id = new_entry_id()
-        item = EntryToTag(entry_id=entry_id, route_id=ProcessorRouteId("default"))
-        blocked_item = EntryToTag(entry_id=blocked_entry_id, route_id=ProcessorRouteId("default"))
+        item = EntryToProcess(entry_id=entry_id)
+        blocked_item = EntryToProcess(entry_id=blocked_entry_id)
 
         assert domain._processor_items_allowed_by_status(
             [item, blocked_item],
@@ -705,12 +723,16 @@ class TestProcessorItemsAllowedByStatus:
     )
     def test_skips_items_with_final_or_in_progress_status(self, status: EntryProcessingStatus) -> None:
         entry_id = new_entry_id()
-        item = EntryToTag(entry_id=entry_id, route_id=ProcessorRouteId("default"))
+        item = EntryToProcess(entry_id=entry_id)
 
         assert domain._processor_items_allowed_by_status([item], {entry_id: status}) == []
 
 
 class TestDispatchEntries:
+    @pytest_asyncio.fixture(autouse=True)  # type: ignore
+    async def prepare_processing_statuses(self) -> None:
+        await operations.tech_truncate_entry_processing_statuses()
+
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
@@ -814,6 +836,13 @@ class TestDispatchEntries:
         )
 
         assert record_entry_ids(records) == set(collection_entry_ids)
+
+        processing_statuses = await domain.get_entries_processing_statuses([processor.processor_id], entry_ids)
+
+        assert processing_statuses.get(processor.processor_id, {}) == {
+            **{entry_id: EntryProcessingStatus.skipped_by_dispatcher for entry_id in user_entry_ids},
+            **{entry_id: EntryProcessingStatus.dispatched for entry_id in collection_entry_ids},
+        }
 
     @pytest.mark.asyncio
     async def test_dispatch_marks_entries_tags_visible(
@@ -1007,14 +1036,16 @@ class TestDispatchEntries:
 
         processed_entry_id = new_entry_id()
         retry_requested_entry_id = new_entry_id()
-        skipped_entry_id = new_entry_id()
+        skipped_by_processor_entry_id = new_entry_id()
+        skipped_by_dispatcher_entry_id = new_entry_id()
         failed_entry_id = new_entry_id()
         dispatched_entry_id = new_entry_id()
         unknown_status_entry_id = new_entry_id()
         entry_ids = [
             processed_entry_id,
             retry_requested_entry_id,
-            skipped_entry_id,
+            skipped_by_processor_entry_id,
+            skipped_by_dispatcher_entry_id,
             failed_entry_id,
             dispatched_entry_id,
             unknown_status_entry_id,
@@ -1025,7 +1056,12 @@ class TestDispatchEntries:
         await domain.set_entry_processing_statuses(
             processor_id, [retry_requested_entry_id], EntryProcessingStatus.retry_requested
         )
-        await domain.set_entry_processing_statuses(processor_id, [skipped_entry_id], EntryProcessingStatus.skipped)
+        await domain.set_entry_processing_statuses(
+            processor_id, [skipped_by_processor_entry_id], EntryProcessingStatus.skipped_by_processor
+        )
+        await domain.set_entry_processing_statuses(
+            processor_id, [skipped_by_dispatcher_entry_id], EntryProcessingStatus.skipped_by_dispatcher
+        )
         await domain.set_entry_processing_statuses(processor_id, [failed_entry_id], EntryProcessingStatus.failed)
         await domain.set_entry_processing_statuses(
             processor_id, [dispatched_entry_id], EntryProcessingStatus.dispatched
@@ -1041,14 +1077,88 @@ class TestDispatchEntries:
             QueueKind.entries_to_tag, EntryToTag, secondary_id=processor_id
         )
 
-        assert record_entry_ids(records) == {skipped_entry_id, retry_requested_entry_id, unknown_status_entry_id}
+        assert record_entry_ids(records) == {
+            skipped_by_processor_entry_id,
+            skipped_by_dispatcher_entry_id,
+            retry_requested_entry_id,
+            unknown_status_entry_id,
+        }
         processing_statuses = await domain.get_entries_processing_statuses([processor_id], entry_ids)
 
         assert processing_statuses.get(processor_id, {}) == {
             processed_entry_id: EntryProcessingStatus.processed,
             retry_requested_entry_id: EntryProcessingStatus.dispatched,
-            skipped_entry_id: EntryProcessingStatus.dispatched,
+            skipped_by_processor_entry_id: EntryProcessingStatus.dispatched,
+            skipped_by_dispatcher_entry_id: EntryProcessingStatus.dispatched,
             failed_entry_id: EntryProcessingStatus.failed,
             dispatched_entry_id: EntryProcessingStatus.dispatched,
             unknown_status_entry_id: EntryProcessingStatus.dispatched,
         }
+
+    @pytest.mark.asyncio
+    async def test_dispatch_marks_entries_without_route_as_skipped_by_dispatcher(self) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+
+        entry_id = new_entry_id()
+        processor = make.processor_dispatch_info(101, allowed_for_collections=True, allowed_for_users=False)
+
+        await domain.push_entries_to_process([entry_id])
+
+        dispatched = await domain.dispatch_entries(processors=[processor], limit=10)
+
+        assert dispatched == 1
+        assert (
+            await q_operations.tech_get_queue_records(
+                QueueKind.entries_to_tag, EntryToTag, secondary_id=processor.subqueue_id
+            )
+            == []
+        )
+        await assert_processing_status(processor.processor_id, entry_id, EntryProcessingStatus.skipped_by_dispatcher)
+
+    @pytest.mark.asyncio
+    async def test_dispatch_does_not_mark_other_processor_targeted_entries_as_skipped(self) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+
+        entry_id = new_entry_id()
+        processor = make.processor_dispatch_info(101, allowed_for_collections=True, allowed_for_users=False)
+        other_processor_id = ProcessorId(102)
+
+        await domain.push_entries_to_process([entry_id], processor_id=other_processor_id)
+
+        dispatched = await domain.dispatch_entries(processors=[processor], limit=10)
+
+        assert dispatched == 1
+        assert (
+            await q_operations.tech_get_queue_records(
+                QueueKind.entries_to_tag, EntryToTag, secondary_id=processor.subqueue_id
+            )
+            == []
+        )
+
+        processing_statuses = await domain.get_entries_processing_statuses([processor.processor_id], [entry_id])
+
+        assert processing_statuses.get(processor.processor_id, {}) == {}
+
+    @pytest.mark.asyncio
+    async def test_dispatch_does_not_mark_entries_blocked_by_status_as_skipped(self) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+
+        entry_id = new_entry_id()
+        processor = make.processor_dispatch_info(101, allowed_for_collections=True, allowed_for_users=False)
+
+        await domain.set_entry_processing_statuses(processor.processor_id, [entry_id], EntryProcessingStatus.failed)
+        await domain.push_entries_to_process([entry_id])
+
+        dispatched = await domain.dispatch_entries(processors=[processor], limit=10)
+
+        assert dispatched == 1
+        assert (
+            await q_operations.tech_get_queue_records(
+                QueueKind.entries_to_tag, EntryToTag, secondary_id=processor.subqueue_id
+            )
+            == []
+        )
+        await assert_processing_status(processor.processor_id, entry_id, EntryProcessingStatus.failed)

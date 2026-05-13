@@ -126,7 +126,9 @@ class TestProcessEntry:
 
         assert cataloged_entry.id not in tags
 
-        await assert_processing_status(fake_processor_id, cataloged_entry.id, EntryProcessingStatus.skipped)
+        await assert_processing_status(
+            fake_processor_id, cataloged_entry.id, EntryProcessingStatus.skipped_by_processor
+        )
 
     @pytest.mark.asyncio
     async def test_temporary_error_in_processor(

@@ -44,6 +44,10 @@ The preferred command form for running targeted backend tests is:
 
 Tests SHOULD be deterministic for the same repository state and filesystem state.
 
+Tests that require specific shared state MUST prepare that state at the start of the relevant test or with an autouse fixture at the test class or test module level.
+
+Tests MUST NOT clean up shared state after themselves unless the developer explicitly requests cleanup behavior.
+
 Tests SHOULD prefer end-to-end coverage through public boundaries when that is practical for the behavior under test.
 
 Tests SHOULD use mocks, stubs, and monkeypatching as little as possible.

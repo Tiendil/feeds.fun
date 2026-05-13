@@ -12,8 +12,9 @@ class EntryProcessingStatus(enum.IntEnum):
     dispatched = 1
     processed = 2
     failed = 3
-    skipped = 4
+    skipped_by_processor = 4
     retry_requested = 5
+    skipped_by_dispatcher = 6
 
 
 class EntryToProcess(BaseQueueItem):

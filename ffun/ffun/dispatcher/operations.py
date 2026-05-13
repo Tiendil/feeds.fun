@@ -101,3 +101,7 @@ async def remove_entry_processing_statuses(entry_ids: Iterable[EntryId]) -> None
     """
 
     await execute(sql, {"entry_ids": ids})
+
+
+async def tech_truncate_entry_processing_statuses() -> None:
+    await execute("TRUNCATE TABLE d_entry_processing_status")

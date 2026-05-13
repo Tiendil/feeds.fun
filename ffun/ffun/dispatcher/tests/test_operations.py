@@ -1,9 +1,15 @@
 import pytest
+import pytest_asyncio
 
 from ffun.dispatcher import operations
 from ffun.dispatcher.entities import EntryProcessingStatus
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import ProcessorId
+
+
+@pytest_asyncio.fixture(autouse=True)  # type: ignore
+async def prepare_processing_statuses() -> None:
+    await operations.tech_truncate_entry_processing_statuses()
 
 
 class TestGetEntriesProcessingStatuses:

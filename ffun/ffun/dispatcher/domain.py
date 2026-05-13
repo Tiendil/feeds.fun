@@ -125,32 +125,39 @@ async def _mark_entries_tags_visible(
 
 def _processor_items_to_tag(
     processor: ProcessorDispatchInfo, items: Sequence[EntryToProcess], entries_in_collections: dict[EntryId, bool]
-) -> list[EntryToTag]:
+) -> tuple[list[EntryToTag], list[EntryId]]:
     processor_items = []
+    skipped_entry_ids = []
 
     for item in items:
-        if item.processor_id is not None and item.processor_id != processor.processor_id:
-            continue
-
         decision = _processor_dispatch_decision(
             processor, item, in_collection=entries_in_collections.get(item.entry_id, False)
         )
 
         if decision is None:
+            skipped_entry_ids.append(item.entry_id)
             continue
 
         processor_items.append(EntryToTag(entry_id=item.entry_id, route_id=decision.route_id))
 
-    return processor_items
+    return processor_items, skipped_entry_ids
+
+
+def _processor_items_targeted_to_processor(
+    processor: ProcessorDispatchInfo,
+    items: Sequence[EntryToProcess],
+) -> list[EntryToProcess]:
+    return [item for item in items if item.processor_id is None or item.processor_id == processor.processor_id]
 
 
 def _processor_items_allowed_by_status(
-    processor_items: Sequence[EntryToTag],
+    processor_items: Sequence[EntryToProcess],
     statuses: dict[EntryId, EntryProcessingStatus],
-) -> list[EntryToTag]:
+) -> list[EntryToProcess]:
     allowed_statuses = {
         None,  # first-time processing for this processor
-        EntryProcessingStatus.skipped,  # reprocess because of a potential relinking of an entry
+        EntryProcessingStatus.skipped_by_processor,  # reprocess because of a potential relinking of an entry
+        EntryProcessingStatus.skipped_by_dispatcher,  # reprocess because of a potential relinking of an entry
         EntryProcessingStatus.retry_requested,  # explicit request to redispatch
     }
 
@@ -182,17 +189,28 @@ async def dispatch_entries(processors: Sequence[ProcessorDispatchInfo], limit: i
     )
 
     for processor in processors:
-        processor_items = _processor_items_to_tag(processor, items, entries_in_collections)
+        processor_items = items
         processor_items = _processor_items_allowed_by_status(processor_items, statuses.get(processor.processor_id, {}))
+        processor_items = _processor_items_targeted_to_processor(processor, processor_items)
+        processor_items_to_tag, skipped_entry_ids = _processor_items_to_tag(
+            processor, processor_items, entries_in_collections
+        )
+
+        await set_entry_processing_statuses(
+            processor.processor_id,
+            skipped_entry_ids,
+            EntryProcessingStatus.skipped_by_dispatcher,
+        )
+
         # Set status before pushing to queue, because in case of a persistent error on pushing it is better
         # to not push unprocessed entries, than infinitely push already processed entries causing money loses.
         await set_entry_processing_statuses(
             processor.processor_id,
-            [item.entry_id for item in processor_items],
+            [item.entry_id for item in processor_items_to_tag],
             EntryProcessingStatus.dispatched,
         )
 
-        await q_domain.push(QueueKind.entries_to_tag, processor_items, secondary_id=processor.subqueue_id)
+        await q_domain.push(QueueKind.entries_to_tag, processor_items_to_tag, secondary_id=processor.subqueue_id)
 
     record_ids = [record.id for record in records if record.id is not None]
 

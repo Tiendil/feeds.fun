@@ -69,7 +69,9 @@ async def process_entry(
         logger.info("processor_successed")
     except errors.SkipEntryProcessing as e:
         logger.warning("processor_requested_to_skip_entry", error_info=str(e))
-        await d_domain.set_entry_processing_statuses(processor_id, [entry.id], EntryProcessingStatus.skipped)
+        await d_domain.set_entry_processing_statuses(
+            processor_id, [entry.id], EntryProcessingStatus.skipped_by_processor
+        )
     except errors.TemporaryErrorInProcessor as e:
         # Note: it is a general plug, for some custom cases we may want to add custom processing
         logger.info("processor_temporary_error", error_info=str(e))
