@@ -48,13 +48,13 @@ class TestSwapLinkAndComments:
         assert processed_entry == entry.replace(
             external_url=comments_reference.url,
             references=[
-                comments_reference,
-                author_reference,
                 Reference(
                     kind=ReferenceKind.page,
                     url=article_url,
                     title="Original article",
                 ),
+                comments_reference,
+                author_reference,
             ],
         )
 

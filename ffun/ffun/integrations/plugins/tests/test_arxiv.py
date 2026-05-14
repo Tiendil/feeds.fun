@@ -155,28 +155,6 @@ class TestRemovePrefixFromBody:
         assert arxiv._remove_prefix_from_body(body) == body
 
 
-class TestAppendNewReferences:
-    def test_adds_only_new_references(self) -> None:
-        existing_reference = Reference(
-            kind=ReferenceKind.page,
-            url=str_to_absolute_url("https://arxiv.org/pdf/2604.13180"),
-            title="Existing PDF",
-        )
-        new_reference = Reference(
-            kind=ReferenceKind.page,
-            url=str_to_absolute_url("https://arxiv.org/abs/2604.13180"),
-            title="Paper",
-        )
-        entry = p_make.fake_entry_info(references=[existing_reference])
-
-        references = arxiv._append_new_references(
-            entry,
-            [None, existing_reference, new_reference],
-        )
-
-        assert references == [existing_reference, new_reference]
-
-
 class TestBuildFeedUrl:
     def test_builds_feed_url_for_section(self) -> None:
         assert arxiv._build_feed_url("cs.LG") == str_to_absolute_url("https://rss.arxiv.org/rss/cs.LG")
@@ -268,12 +246,12 @@ class TestPostprocessEntry:
         assert processed_entry == entry.replace(
             body="Example abstract",
             references=[
-                author_reference,
                 Reference(
                     kind=ReferenceKind.page,
                     url=str_to_absolute_url("https://arxiv.org/pdf/2604.13180"),
                     title="PDF",
                 ),
+                author_reference,
             ],
         )
 

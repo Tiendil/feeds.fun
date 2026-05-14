@@ -2,7 +2,7 @@ import re
 from typing import cast
 
 from bs4 import BeautifulSoup
-from bs4.element import Tag
+from bs4.element import Comment, Tag
 
 from ffun.core import logging
 from ffun.domain.entities import UnknownUrl
@@ -10,9 +10,15 @@ from ffun.domain.urls import construct_f_url, normalize_classic_unknown_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
 from ffun.library.entities import Reference, ReferenceKind
+from ffun.library.utils import merge_references_list
 from ffun.parsers import entities as p_entities
 
 logger = logging.get_module_logger()
+
+
+_REDDIT_VIDEO_PLAYER_URL_RE = re.compile(
+    r"^https://(?:www\.)?reddit\.com/link/(?P<post_id>[^/]+)/video/(?P<video_id>[^/]+)/player/?$"
+)
 
 
 def _rewrite_preview_image_reference(reference: Reference) -> Reference:
@@ -85,6 +91,102 @@ def _unwrap_body_with_image_table(body: str) -> str:
     return second_td.decode_contents()
 
 
+def _is_empty_text_or_comment(node: object) -> bool:
+    return isinstance(node, Comment) or (isinstance(node, str) and node.strip() == "")
+
+
+def _first_visible_tag(tag: Tag) -> Tag | None:
+    for child in tag.contents:
+        if _is_empty_text_or_comment(child):
+            continue
+
+        if isinstance(child, Tag):
+            return child
+
+        return None
+
+    return None
+
+
+def _only_visible_tag(tag: Tag) -> Tag | None:
+    visible_children = [child for child in tag.contents if not _is_empty_text_or_comment(child)]
+
+    if len(visible_children) != 1:
+        return None
+
+    child = visible_children[0]
+
+    if not isinstance(child, Tag):
+        return None
+
+    return child
+
+
+def _single_anchor_in_first_visible_paragraph(soup: BeautifulSoup) -> tuple[Tag, Tag] | None:
+    post_body = soup.find("div", class_="md")
+
+    if post_body is None:
+        return None
+
+    assert isinstance(post_body, Tag)
+
+    first_tag = _first_visible_tag(post_body)
+
+    if first_tag is None or first_tag.name != "p":
+        return None
+
+    only_child = _only_visible_tag(first_tag)
+
+    if only_child is None or only_child.name != "a":
+        return None
+
+    return first_tag, only_child
+
+
+def _build_reddit_video_reference(url: str) -> Reference | None:
+    match = _REDDIT_VIDEO_PLAYER_URL_RE.match(url)
+
+    if match is None:
+        return None
+
+    video_url = normalize_classic_unknown_url(UnknownUrl(url))
+
+    if video_url is None:
+        return None
+
+    return Reference(
+        kind=ReferenceKind.video,
+        url=video_url,
+    )
+
+
+def _extract_reddit_video_link_from_first_visible_paragraph(body: str) -> tuple[str, Reference | None]:
+    soup = BeautifulSoup(body, "html.parser")
+    video_anchor = _single_anchor_in_first_visible_paragraph(soup)
+
+    if video_anchor is None:
+        return body, None
+
+    paragraph, link = video_anchor
+
+    href = link.get("href")
+
+    if not isinstance(href, str):
+        return body, None
+
+    reference = _build_reddit_video_reference(href)
+
+    if reference is None:
+        return body, None
+
+    paragraph.decompose()
+
+    return (
+        str(soup),
+        reference,
+    )
+
+
 class Plugin(BasePlugin):
     __slots__ = ("_path_prefix_regex", "_domains", "_domains_to_skip")
     source_name = "Reddit"
@@ -149,9 +251,13 @@ class Plugin(BasePlugin):
         return context.replace(candidate_urls={feed_url}), None
 
     def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
+        body = _unwrap_body_with_image_table(entry.body)
+        body, reddit_video_reference = _extract_reddit_video_link_from_first_visible_paragraph(body)
+        references = [_rewrite_preview_image_reference(reference) for reference in entry.references]
+
         return entry.replace(
-            body=_unwrap_body_with_image_table(entry.body),
-            references=[_rewrite_preview_image_reference(reference) for reference in entry.references],
+            body=body,
+            references=merge_references_list([*references, reddit_video_reference]),
         )
 
 
