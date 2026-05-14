@@ -32,7 +32,6 @@ from ffun.parsers.feed import (
     _extract_references,
     _extract_references_raw,
     _media_type_to_kind,
-    _merge_references_list,
     _parse_stream,
     _parse_tags,
     _reference_kind_from_link,
@@ -605,32 +604,6 @@ class TestExtractEnclosureReference:
             mime_type="application/pdf",
             size=42,
         )
-
-
-class TestMergeReferencesList:
-
-    def test_merges_duplicates(self) -> None:
-        references = [
-            Reference(kind=ReferenceKind.page, url=_absolute_url("https://example.com/b"), title="page"),
-            Reference(
-                kind=ReferenceKind.comments,
-                url=_absolute_url("https://example.com/b"),
-                title="comments",
-            ),
-        ]
-
-        assert len(_merge_references_list(references)) == 1
-
-    def test_returns_references_sorted_by_url(self) -> None:
-        references = [
-            Reference(kind=ReferenceKind.page, url=_absolute_url("https://example.com/b")),
-            Reference(kind=ReferenceKind.page, url=_absolute_url("https://example.com/a")),
-        ]
-
-        assert _merge_references_list(references) == [
-            Reference(kind=ReferenceKind.page, url=_absolute_url("https://example.com/a")),
-            Reference(kind=ReferenceKind.page, url=_absolute_url("https://example.com/b")),
-        ]
 
 
 class TestExtractReferencesRaw:

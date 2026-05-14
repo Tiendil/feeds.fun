@@ -7,6 +7,7 @@ from ffun.domain.urls import construct_f_url, normalize_classic_unknown_url
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.integrations.plugin import Plugin as BasePlugin
 from ffun.library.entities import Reference, ReferenceKind
+from ffun.library.utils import merge_references_list
 from ffun.loader import domain as lo_domain
 from ffun.parsers import entities as p_entities
 
@@ -46,23 +47,6 @@ def _build_pdf_reference(entry_link: AbsoluteUrl) -> Reference | None:
 
 def _remove_prefix_from_body(body: str) -> str:
     return _BODY_PREFIX_RE.sub("", body, count=1)
-
-
-def _append_new_references(entry: p_entities.EntryInfo, references: list[Reference | None]) -> list[Reference]:
-    existing_urls = {reference.url for reference in entry.references}
-    new_references: list[Reference] = []
-
-    for reference in references:
-        if reference is None:
-            continue
-
-        if reference.url in existing_urls:
-            continue
-
-        existing_urls.add(reference.url)
-        new_references.append(reference)
-
-    return [*entry.references, *new_references]
 
 
 def _build_feed_url(section: str) -> AbsoluteUrl | None:
@@ -152,10 +136,7 @@ class Plugin(BasePlugin):
     def postprocess_entry(self, entry: p_entities.EntryInfo) -> p_entities.EntryInfo:
         return entry.replace(
             body=_remove_prefix_from_body(entry.body),
-            references=_append_new_references(
-                entry,
-                [_build_pdf_reference(entry.external_url)],
-            ),
+            references=merge_references_list([*entry.references, _build_pdf_reference(entry.external_url)]),
         )
 
 

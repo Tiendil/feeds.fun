@@ -5,6 +5,8 @@ from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds_discoverer.tests import make as fd_make
 from ffun.integrations.plugins import reddit
 from ffun.integrations.plugins.reddit import (
+    _build_reddit_video_reference,
+    _extract_reddit_video_link_from_first_visible_paragraph,
     _rewrite_preview_image_reference,
     _unwrap_body_with_image_table,
 )
@@ -109,6 +111,160 @@ class TestPostprocessEntry:
         processed_entry = plugin.postprocess_entry(entry)
 
         assert processed_entry.body == _unwrap_body_with_image_table(body)
+
+    def test_extracts_first_visible_reddit_video_link_as_reference(self, plugin: reddit.Plugin) -> None:
+        body = (
+            '<!-- SC_OFF --><div class="md">'
+            '<p><a href="https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player">'
+            "https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player"
+            "</a></p>"
+            "<p>Hi everyone!</p>"
+            "</div><!-- SC_ON --> "
+            '<a href="https://www.reddit.com/user/United-Metal4470">/u/United-Metal4470</a>'
+        )
+        entry = p_make.fake_entry_info(body=body)
+
+        processed_entry = plugin.postprocess_entry(entry)
+
+        assert "n0k50i6mop0h1/player" not in processed_entry.body
+        assert "Hi everyone!" in processed_entry.body
+        assert processed_entry.references == [
+            Reference(
+                kind=ReferenceKind.video,
+                url=str_to_absolute_url("https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player"),
+            )
+        ]
+
+    def test_keeps_reddit_video_link_when_it_is_not_first_visible_post_element(self, plugin: reddit.Plugin) -> None:
+        body = (
+            '<div class="md">'
+            "<p>Hi everyone!</p>"
+            '<p><a href="https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player">'
+            "https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player"
+            "</a></p>"
+            "</div>"
+        )
+        entry = p_make.fake_entry_info(body=body)
+
+        processed_entry = plugin.postprocess_entry(entry)
+
+        assert processed_entry.body == body
+        assert processed_entry.references == []
+
+    def test_does_not_duplicate_extracted_reddit_video_reference(self, plugin: reddit.Plugin) -> None:
+        video_reference = Reference(
+            kind=ReferenceKind.video,
+            url=str_to_absolute_url("https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player"),
+        )
+        body = (
+            '<div class="md">'
+            '<p><a href="https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player">'
+            "https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player"
+            "</a></p>"
+            "<p>Hi everyone!</p>"
+            "</div>"
+        )
+        entry = p_make.fake_entry_info(body=body, references=[video_reference])
+
+        processed_entry = plugin.postprocess_entry(entry)
+
+        assert processed_entry.references == [video_reference]
+
+
+class TestBuildRedditVideoReference:
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player",
+            "https://www.reddit.com/link/1tb297b/video/n0k50i6mop0h1/player",
+            "https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player/",
+        ],
+    )
+    def test_builds_reference(self, url: str) -> None:
+        assert _build_reddit_video_reference(url) == Reference(
+            kind=ReferenceKind.video,
+            url=str_to_absolute_url(url),
+        )
+
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "http://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player",
+            "https://old.reddit.com/link/1tb297b/video/n0k50i6mop0h1/player",
+            "https://reddit.com/link/1tb297b/comments/n0k50i6mop0h1/player",
+            "https://reddit.com/r/alife/comments/1tb297b/i_built_a_virtual_civilization_run_entirely_by/",
+            "not-a-url",
+        ],
+    )
+    def test_returns_none_for_unsupported_url(self, url: str) -> None:
+        assert _build_reddit_video_reference(url) is None
+
+
+class TestExtractRedditVideoLinkFromFirstVisibleParagraph:
+    def test_extracts_reference_and_removes_first_video_paragraph(self) -> None:
+        body = (
+            '<!-- SC_OFF --><div class="md">'
+            '<p><a href="https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player">'
+            "https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player"
+            "</a></p>"
+            "<p>Hi everyone!</p>"
+            "</div><!-- SC_ON --> "
+            '<a href="https://www.reddit.com/user/United-Metal4470">/u/United-Metal4470</a>'
+        )
+
+        body, reference = _extract_reddit_video_link_from_first_visible_paragraph(body)
+
+        assert "n0k50i6mop0h1/player" not in body
+        assert "Hi everyone!" in body
+        assert 'href="https://www.reddit.com/user/United-Metal4470"' in body
+        assert reference == Reference(
+            kind=ReferenceKind.video,
+            url=str_to_absolute_url("https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player"),
+        )
+
+    def test_keeps_body_without_reddit_post_container(self) -> None:
+        body = (
+            '<p><a href="https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player">'
+            "https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player"
+            "</a></p>"
+        )
+
+        processed_body, reference = _extract_reddit_video_link_from_first_visible_paragraph(body)
+
+        assert processed_body == body
+        assert reference is None
+
+    def test_keeps_body_when_first_visible_element_is_not_paragraph(self) -> None:
+        body = (
+            '<div class="md">'
+            '<div><a href="https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player">video</a></div>'
+            "</div>"
+        )
+
+        processed_body, reference = _extract_reddit_video_link_from_first_visible_paragraph(body)
+
+        assert processed_body == body
+        assert reference is None
+
+    def test_keeps_body_when_first_paragraph_contains_extra_text(self) -> None:
+        body = (
+            '<div class="md">'
+            '<p>Watch <a href="https://reddit.com/link/1tb297b/video/n0k50i6mop0h1/player">video</a></p>'
+            "</div>"
+        )
+
+        processed_body, reference = _extract_reddit_video_link_from_first_visible_paragraph(body)
+
+        assert processed_body == body
+        assert reference is None
+
+    def test_keeps_body_when_first_paragraph_link_is_not_reddit_video(self) -> None:
+        body = '<div class="md"><p><a href="https://example.com/video">video</a></p></div>'
+
+        processed_body, reference = _extract_reddit_video_link_from_first_visible_paragraph(body)
+
+        assert processed_body == body
+        assert reference is None
 
 
 class TestRewritePreviewImageReference:

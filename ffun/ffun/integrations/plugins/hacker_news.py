@@ -1,6 +1,7 @@
 from ffun.domain.urls import construct_f_url
 from ffun.integrations.plugin import Plugin as BasePlugin
 from ffun.library.entities import Reference, ReferenceKind
+from ffun.library.utils import merge_references_list
 from ffun.parsers import entities as p_entities
 
 DEFAULT_ORIGINAL_HOSTS = ("news.ycombinator.com",)
@@ -33,7 +34,7 @@ def _swap_link_and_comments(
 
     return entry.replace(
         external_url=comments_reference.url,
-        references=[*entry.references, page_reference],
+        references=merge_references_list([*entry.references, page_reference]),
     )
 
 

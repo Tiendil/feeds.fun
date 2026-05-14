@@ -11,6 +11,7 @@ from ffun.domain import urls
 from ffun.domain.entities import AbsoluteUrl, FeedUrl, SourceUid, UnknownUrl
 from ffun.integrations.settings import settings as i_settings
 from ffun.library.entities import Reference, ReferenceKind
+from ffun.library.utils import merge_references_list
 from ffun.parsers import errors
 from ffun.parsers.entities import EntryInfo, FeedInfo
 
@@ -311,21 +312,6 @@ def _extract_enclosure_reference(raw_enclosure: object, original_url: FeedUrl) -
     )
 
 
-def _merge_references_list(references: list[Reference]) -> list[Reference]:
-    merged_references: dict[str, Reference] = {}
-
-    for reference in references:
-        existing_reference = merged_references.get(reference.url)
-
-        if existing_reference is None:
-            merged_references[reference.url] = reference
-            continue
-
-        merged_references[reference.url] = existing_reference.merge(reference)
-
-    return [merged_references[url] for url in sorted(merged_references)]
-
-
 def _extract_raw_reference_items(entry: Mapping[str, object], key: str) -> list[object]:
     items = entry.get(key)
 
@@ -367,7 +353,7 @@ def _extract_references(
     entry: Mapping[str, object], original_url: FeedUrl, primary_url: AbsoluteUrl
 ) -> list[Reference]:
     references = _extract_references_raw(entry, original_url, primary_url)
-    return _merge_references_list(references)
+    return merge_references_list(references)
 
 
 def parse_entry(raw_entry: Mapping[str, object], original_url: FeedUrl, source: SourceUid) -> EntryInfo:
