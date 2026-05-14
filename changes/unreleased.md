@@ -29,3 +29,4 @@
   - Failed-entry redispatch is now based on dispatcher processing status instead of the removed `ln_failed_entries` table.
   - `ffun failed-entries` CLI command renamed to `ffun dispatcher`.
 - ff-693 — Silenced expected `httpx.LocalProtocolError` in feeds loader.
+- ff-695 — Added extraction of video reference from `video+text` Reddit posts. The reference is removed from the top of the post's body.
