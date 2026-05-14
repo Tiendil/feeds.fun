@@ -2,6 +2,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from ffun.cli.commands import metrics
+from ffun.cli.commands.metrics import _snapshot_at
 from ffun.queues import operations as q_operations
 from ffun.queues.entities import QueueKind
 from ffun.queues.tests import helpers as q_helpers
@@ -28,13 +29,32 @@ class TestSystemSliceQueues:
 
         await metrics.system_slice_queues()
 
-        business_slice.assert_any_call("queue_size", user_id=None, primary_id=1, secondary_id=1, total=3)
         business_slice.assert_any_call(
-            "queue_size", user_id=None, primary_id=2, secondary_id=first_processor_id, total=2
+            "queue_size", user_id=None, primary_id=1, secondary_id=1, total=3, snapshot_at=_snapshot_at
         )
         business_slice.assert_any_call(
-            "queue_size", user_id=None, primary_id=2, secondary_id=second_processor_id, total=1
+            "queue_size",
+            user_id=None,
+            primary_id=2,
+            secondary_id=first_processor_id,
+            total=2,
+            snapshot_at=_snapshot_at,
         )
-        business_slice.assert_any_call("queue_size", user_id=None, primary_id=1_000_000, secondary_id=1, total=1)
+        business_slice.assert_any_call(
+            "queue_size",
+            user_id=None,
+            primary_id=2,
+            secondary_id=second_processor_id,
+            total=1,
+            snapshot_at=_snapshot_at,
+        )
+        business_slice.assert_any_call(
+            "queue_size",
+            user_id=None,
+            primary_id=1_000_000,
+            secondary_id=1,
+            total=1,
+            snapshot_at=_snapshot_at,
+        )
 
         assert business_slice.call_count == 4

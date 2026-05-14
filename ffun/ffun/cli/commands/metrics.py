@@ -21,6 +21,14 @@ logger = logging.get_module_logger()
 
 cli_app = typer.Typer()
 
+_snapshot_at = int(utils.now().timestamp())
+
+
+def _business_slice(event: str, user_id: UserId | None, **attributes: logging.LabelValue) -> object:
+    attributes["snapshot_at"] = _snapshot_at
+    return logger.business_slice(event, user_id=user_id, **attributes)
+
+
 ################
 # System metrics
 ################
@@ -29,17 +37,17 @@ cli_app = typer.Typer()
 async def system_slice_tags() -> None:
     tags_total = await o_domain.count_total_tags()
 
-    logger.business_slice("tags_total", user_id=None, total=tags_total)
+    _business_slice("tags_total", user_id=None, total=tags_total)
 
     tags_per_type = await o_domain.count_total_tags_per_type()
 
-    logger.business_slice(
+    _business_slice(
         "tags_per_type", user_id=None, **{tag_type.name: count for tag_type, count in tags_per_type.items()}
     )
 
     tags_per_category = await o_domain.count_total_tags_per_category()
 
-    logger.business_slice(
+    _business_slice(
         "tags_per_category",
         user_id=None,
         **{tag_category.name: count for tag_category, count in tags_per_category.items()},
@@ -49,7 +57,7 @@ async def system_slice_tags() -> None:
 async def _system_slice_new_tags_count(date: datetime.date) -> None:
     count = await o_domain.count_new_tags_at(date)
 
-    logger.business_slice("new_tags_count", user_id=None, date=date.isoformat(), count=count)
+    _business_slice("new_tags_count", user_id=None, date=date.isoformat(), count=count)
 
 
 # We count new tags for yesterday to ensure that
@@ -121,7 +129,7 @@ async def system_slice_tag_frequencies() -> None:
 
     stats = await o_domain.tag_frequency_statistics(buckets)
 
-    logger.business_slice(
+    _business_slice(
         "tag_frequency",
         user_id=None,
         **{f"b{i:02d}_{b.lower_bound}_{b.upper_bound}": b.count for i, b in enumerate(stats)},
@@ -131,17 +139,17 @@ async def system_slice_tag_frequencies() -> None:
 async def system_slice_feeds() -> None:
     feeds_total = await f_domain.count_total_feeds()
 
-    logger.business_slice("feeds_total", user_id=None, total=feeds_total)
+    _business_slice("feeds_total", user_id=None, total=feeds_total)
 
     feeds_per_state = await f_domain.count_total_feeds_per_state()
 
-    logger.business_slice(
+    _business_slice(
         "feeds_per_state", user_id=None, **{feed_state.name: count for feed_state, count in feeds_per_state.items()}
     )
 
     feeds_per_last_error = await f_domain.count_total_feeds_per_last_error()
 
-    logger.business_slice(
+    _business_slice(
         "feeds_per_last_error",
         user_id=None,
         **{feed_error.name: count for feed_error, count in feeds_per_last_error.items()},
@@ -151,17 +159,17 @@ async def system_slice_feeds() -> None:
 async def system_slice_entries() -> None:
     entries_total = await l_domain.count_total_entries()
 
-    logger.business_slice("entries_total", user_id=None, total=entries_total)
+    _business_slice("entries_total", user_id=None, total=entries_total)
 
 
 async def system_slice_users() -> None:
     users_total = await u_domain.count_total_users()
 
-    logger.business_slice("users_total", user_id=None, total=users_total)
+    _business_slice("users_total", user_id=None, total=users_total)
 
 
 async def system_slice_collections() -> None:
-    logger.business_slice("collections_total", user_id=None, total=collections.count_total_feeds())
+    _business_slice("collections_total", user_id=None, total=collections.count_total_feeds())
 
 
 async def system_slice_queues() -> None:
@@ -172,7 +180,7 @@ async def system_slice_queues() -> None:
     for (primary_id, secondary_id), total in stats.items():
         total_by_primary[primary_id] = total_by_primary.get(primary_id, 0) + total
 
-        logger.business_slice(
+        _business_slice(
             "queue_size",
             user_id=None,
             primary_id=primary_id,
@@ -182,7 +190,6 @@ async def system_slice_queues() -> None:
 
 
 async def run_system() -> None:
-
     async with with_app():
         await system_slice_tags()
         await system_slice_new_tags_count()
@@ -210,7 +217,7 @@ async def users_slice_rules() -> None:
     for user_id, count in rules_per_user.items():
         if count == 0:
             continue
-        logger.business_slice("rules_per_user", user_id=user_id, total=count)
+        _business_slice("rules_per_user", user_id=user_id, total=count)
 
 
 async def count_collections_for_users() -> None:  # noqa: CCR001
@@ -232,7 +239,7 @@ async def count_collections_for_users() -> None:  # noqa: CCR001
             continue
 
         attributes = {f"collection_{collection_id}": count for collection_id, count in counts.items()}
-        logger.business_slice("collection_feeds_per_user", user_id=user_id, **attributes)
+        _business_slice("collection_feeds_per_user", user_id=user_id, **attributes)
 
 
 async def count_feeds_fun_news_for_users() -> None:  # noqa: CCR001
@@ -256,7 +263,7 @@ async def count_feeds_fun_news_for_users() -> None:  # noqa: CCR001
             continue
 
         attributes = {f"feed_{feed_id}": count for feed_id, count in counts.items()}
-        logger.business_slice("feeds_fun_feeds_per_user", user_id=user_id, **attributes)
+        _business_slice("feeds_fun_feeds_per_user", user_id=user_id, **attributes)
 
 
 async def users_slice_feeds_links() -> None:  # noqa: CCR001
@@ -267,7 +274,7 @@ async def users_slice_feeds_links() -> None:  # noqa: CCR001
         if count == 0:
             continue
 
-        logger.business_slice("feeds_per_user", user_id=user_id, total=count)
+        _business_slice("feeds_per_user", user_id=user_id, total=count)
 
     await count_collections_for_users()
 
@@ -294,7 +301,7 @@ async def users_slice_resources() -> None:  # noqa: CCR001
     for user_id, resources in users.items():
         if all(count == 0 for count in resources.values()):
             continue
-        logger.business_slice("resources_per_user", user_id=user_id, **resources)
+        _business_slice("resources_per_user", user_id=user_id, **resources)
 
 
 async def run_users() -> None:
