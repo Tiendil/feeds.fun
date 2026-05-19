@@ -80,6 +80,9 @@ async def load_content(  # noqa: CFQ001, CCR001, C901 # pylint: disable=R0912, R
             #       for example `http://gopractice.ru/feed/` tries to redirect to use HTTP/0.9
             log.warning("network_illegal_request_line")
             error_code = FeedError.network_illegal_request_line
+        if "illegal header line" in message:
+            log.warning("network_illegal_header_line")
+            error_code = FeedError.network_illegal_header_line
         elif "Server disconnected without sending a response" in message:
             log.warning("network_disconection_without_response")
             error_code = FeedError.network_disconection_without_response
