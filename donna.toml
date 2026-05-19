@@ -1,0 +1,11 @@
+version = 1
+
+session_dir = ".session/donna"
+
+workflow_dirs = [
+    "./workflows",
+    "./.session/donna",
+]
+
+[journal]
+cmd = ["./bin/taskwarior.sh", "log", "+journal", "+donna", "kind:event", "{message}"]

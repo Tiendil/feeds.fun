@@ -1,0 +1,12 @@
+data.location=.session/taskwarrior
+confirmation=no
+
+uda.kind.type=string
+uda.kind.label=Kind
+uda.kind.values=goal,step,thought,assumption,change,event,
+
+uda.logged_at.type=string
+uda.logged_at.label=Logged
+
+uda.logged_time.type=string
+uda.logged_time.label=Time
