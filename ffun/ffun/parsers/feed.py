@@ -356,7 +356,7 @@ def _extract_references(
     return merge_references_list(references)
 
 
-def parse_entry(raw_entry: Mapping[str, object], original_url: FeedUrl, source: SourceUid) -> EntryInfo:
+def _parse_entry_strict(raw_entry: Mapping[str, object], original_url: FeedUrl, source: SourceUid) -> EntryInfo:
     # TODO: remove all tags from title
     # TODO: extract tags from <category> tag
     published_at = _extract_published_at(raw_entry)
@@ -378,6 +378,20 @@ def parse_entry(raw_entry: Mapping[str, object], original_url: FeedUrl, source: 
         return entry
 
     return integration.plugin_instance.postprocess_entry(entry)
+
+
+def parse_entry(raw_entry: Mapping[str, object], original_url: FeedUrl, source: SourceUid) -> EntryInfo | None:
+    if _should_skip(raw_entry):
+        return None
+
+    try:
+        return _parse_entry_strict(raw_entry, original_url, source)
+    except errors.CanNotExtractExternalUrl:
+        logger.warning("can_not_extract_external_url_from_feed_entry", entry=raw_entry, original_url=original_url)
+    except Exception:
+        logger.exception("error_while_parsing_feed_entry", entry=raw_entry, original_url=original_url)
+
+    return None
 
 
 class Channel(Protocol):
@@ -422,13 +436,9 @@ def parse_feed(content: str, original_url: FeedUrl, source: SourceUid) -> FeedIn
     )
 
     for entry in channel.entries:
-        if _should_skip(entry):
-            continue
+        parsed_entry = parse_entry(entry, original_url, source)
 
-        try:
-            parsed_entry = parse_entry(entry, original_url, source)
-        except Exception:
-            logger.exception("error_while_parsing_feed_entry", entry=entry, original_url=original_url)
+        if parsed_entry is None:
             continue
 
         feed_info.entries.append(parsed_entry)

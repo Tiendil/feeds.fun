@@ -32,6 +32,7 @@ from ffun.parsers.feed import (
     _extract_references,
     _extract_references_raw,
     _media_type_to_kind,
+    _parse_entry_strict,
     _parse_stream,
     _parse_tags,
     _reference_kind_from_link,
@@ -90,9 +91,9 @@ class TestShouldSkip:
         assert logs == []
 
 
-class TestParseEntry:
+class TestParseEntryStrict:
 
-    def test_parse_without_plugin(self, feed_url: FeedUrl) -> None:
+    def test_without_plugin(self, feed_url: FeedUrl) -> None:
         raw_entry = {
             "title": "Entry title 1",
             "link": "/2023/07/25/news-1.html",
@@ -106,7 +107,7 @@ class TestParseEntry:
             ],
         }
 
-        parsed_entry = parse_entry(raw_entry, feed_url, url_to_source_uid(feed_url))
+        parsed_entry = _parse_entry_strict(raw_entry, feed_url, url_to_source_uid(feed_url))
         expected_external_url = normalize_classic_unknown_url(UnknownUrl("https://example.com/2023/07/25/news-1.html"))
 
         assert expected_external_url is not None
@@ -139,7 +140,7 @@ class TestParseEntry:
             [integration],
         )
 
-        parsed_entry = parse_entry(raw_entry, feed_url, url_to_source_uid(feed_url))
+        parsed_entry = _parse_entry_strict(raw_entry, feed_url, url_to_source_uid(feed_url))
 
         assert "fake-plugin" in parsed_entry.external_tags
 
@@ -161,13 +162,75 @@ class TestParseEntry:
             [integration],
         )
 
-        parsed_entry = parse_entry(raw_entry, feed_url, SourceUid("www.example.com"))
+        parsed_entry = _parse_entry_strict(raw_entry, feed_url, SourceUid("www.example.com"))
 
         assert "fake-plugin" in parsed_entry.external_tags
 
     def test_raises_when_external_url_can_not_be_extracted(self, feed_url: FeedUrl) -> None:
         with pytest.raises(errors.CanNotExtractExternalUrl):
-            parse_entry({"title": "Entry", "link": "mailto:test@example.com"}, feed_url, url_to_source_uid(feed_url))
+            _parse_entry_strict(
+                {"title": "Entry", "link": "mailto:test@example.com"}, feed_url, url_to_source_uid(feed_url)
+            )
+
+
+class TestParseEntry:
+
+    def test_returns_entry(self, feed_url: FeedUrl) -> None:
+        result = parse_entry(
+            {
+                "title": "Entry title 1",
+                "link": "/2023/07/25/news-1.html",
+                "description": "Body 1",
+                "author_detail": {},
+            },
+            feed_url,
+            url_to_source_uid(feed_url),
+        )
+
+        assert result is not None
+        assert result.external_url == "https://example.com/2023/07/25/news-1.html"
+
+    def test_returns_none_when_entry_should_be_skipped(self, feed_url: FeedUrl) -> None:
+        with capture_logs() as logs:
+            result = parse_entry({}, feed_url, url_to_source_uid(feed_url))
+
+        assert result is None
+        assert_logs(
+            logs,
+            feed_does_not_has_link_field=1,
+            can_not_extract_external_url_from_feed_entry=0,
+            error_while_parsing_feed_entry=0,
+        )
+
+    def test_returns_none_when_external_url_can_not_be_extracted(self, feed_url: FeedUrl) -> None:
+        with capture_logs() as logs:
+            result = parse_entry(
+                {"title": "Entry", "link": "mailto:test@example.com"},
+                feed_url,
+                url_to_source_uid(feed_url),
+            )
+
+        assert result is None
+        assert_logs(
+            logs,
+            feed_does_not_has_link_field=0,
+            can_not_extract_external_url_from_feed_entry=1,
+            error_while_parsing_feed_entry=0,
+        )
+
+    def test_returns_none_on_unexpected_error(self, mocker: MockerFixture, feed_url: FeedUrl) -> None:
+        mocker.patch("ffun.parsers.feed._parse_entry_strict", side_effect=ValueError("Test error on entry parsing"))
+
+        with capture_logs() as logs:
+            result = parse_entry({"title": "Entry", "link": "/news"}, feed_url, url_to_source_uid(feed_url))
+
+        assert result is None
+        assert_logs(
+            logs,
+            feed_does_not_has_link_field=0,
+            can_not_extract_external_url_from_feed_entry=0,
+            error_while_parsing_feed_entry=1,
+        )
 
 
 class TestParseFeed:
@@ -179,7 +242,12 @@ class TestParseFeed:
             feed_info = parse_feed("", feed_url, url_to_source_uid(feed_url))
 
         assert feed_info is None
-        assert_logs(logs, error_while_parsing_feed=1, error_while_parsing_feed_entry=0)
+        assert_logs(
+            logs,
+            error_while_parsing_feed=1,
+            error_while_parsing_feed_entry=0,
+            can_not_extract_external_url_from_feed_entry=0,
+        )
 
     @pytest.mark.parametrize("raw_fixture_name", feeds_fixtures_names())
     def test_on_row_fixtures(self, raw_fixture_name: str, feed_url: FeedUrl) -> None:
@@ -209,20 +277,25 @@ class TestParseFeed:
 
         call_number = {"calls": 0}
 
-        def mocked_parse_entry(raw_entry: object, original_url: FeedUrl, source: SourceUid) -> EntryInfo:
+        def mocked_parse_entry_strict(raw_entry: object, original_url: FeedUrl, source: SourceUid) -> EntryInfo:
             call_number["calls"] += 1
 
             if call_number["calls"] == 1:
                 raise ValueError("Test error on entry parsing")
 
-            return parse_entry(raw_entry, original_url, source)  # type: ignore
+            return _parse_entry_strict(raw_entry, original_url, source)  # type: ignore
 
-        mocker.patch("ffun.parsers.feed.parse_entry", side_effect=mocked_parse_entry)
+        mocker.patch("ffun.parsers.feed._parse_entry_strict", side_effect=mocked_parse_entry_strict)
 
         with capture_logs() as logs:
             feed_info = parse_feed(raw_fixture, feed_url, url_to_source_uid(feed_url))
 
-        assert_logs(logs, error_while_parsing_feed=0, error_while_parsing_feed_entry=1)
+        assert_logs(
+            logs,
+            error_while_parsing_feed=0,
+            error_while_parsing_feed_entry=1,
+            can_not_extract_external_url_from_feed_entry=0,
+        )
 
         # the first entry will be skipped due to the error in parsing
         parsed_expected_fixture = json.parse(expected_fixture)
@@ -234,7 +307,7 @@ class TestParseFeed:
         result = parse_feed("I'm a broken feed content", feed_url, url_to_source_uid(feed_url))
         assert result is None, "Broken HTML should return None"
 
-        # a real example of misplaced content
+    def test_parse_misplaced_javascript(self, feed_url: FeedUrl) -> None:
         input = """\n// Copyright 2012 Google Inc. All rights reserved.\n \n (function(w,g){w[g]=w[g]||{};\n w[g].e=function(s){return eval(s);};})(window,\'google_tag_manager\');\n \n(function(){\n\nvar data = {\n"resource": {\n  "version":"29",\n  \n  "macros":[{"function":"__u","vtp_component":"HOST","vtp_enableMultiQueryKeys":false,"vtp_enableIgnoreEmptyQueryParam":false},{"function":"__v","vtp_name":"gtm.historyChangeSource","vtp_dataLayerVersion":1},{"function":"__u","vtp_component":"PATH","vtp_enableMultiQueryKeys":false,"vtp_enableIgnoreEmptyQueryParam":false},{"function":"__e"},{"function":"__v","vtp_dataLayerVersion":2,"vtp_setDefaultValue":false,"vtp_name":"originalLocation"},{"function":"__jsm","vtp_javascript":["template","(function(){return document.location.pathname+document.location.search})();"]},{"function":"__jsm","vtp_javascript":["template","(function(){var b=9;return function(a){a.set(\\"dimension\\"+b,a.get(\\"hitType\\"))}})();"]},{"function":"__gas","vtp_cookieDomain":"auto","vtp_doubleClick":false"""  # noqa: E501
 
         result = parse_feed(input, feed_url, url_to_source_uid(feed_url))
@@ -708,4 +781,9 @@ class TestParseIntoFeedparser:
             result = parse_into_feedparser("<rss />")
 
         assert result is None
-        assert_logs(logs, error_while_parsing_feed=1)
+        assert_logs(
+            logs,
+            error_while_parsing_feed=1,
+            error_while_parsing_feed_entry=0,
+            can_not_extract_external_url_from_feed_entry=0,
+        )
