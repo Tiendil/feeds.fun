@@ -4,12 +4,6 @@ This document provides instructions and guidelines for the AI agents working on 
 
 Every agent MUST follow the rules and guidelines outlined in this document when performing their work.
 
-## Initialization
-
-You MUST run the next commands on the start of your work session:
-
-- `donna -p llm -r <project-root> artifacts view '*:intro'` — to get an introduction to the project and its context.
-
 ## Environment
 
 All development-related operations MUST be performed in Docker containers, see `./docker-compose.yml` for details.
@@ -29,8 +23,7 @@ Command you are allowed to use:
 - `./bin/dev-check-semantics.sh` — check code semantics (types, linting, etc.). Both for frontend and backend code.
 - `./bin/frontend-tests.sh` — run ALL frontend tests.
 - `./bin/frontend-utils.sh` — run utils in the frontend environment.
-
-If you need to do complex "test & lint & fix" activities, you MUST use the `donna-do` skill to run the code polish workflow.
+- `./bin/taskwarior.sh` — run Taskwarrior commands related to project journaling.
 
 If you need to search or manipulate code, do that on the host machine, no need to use scripts from `./bin` or docker containers for that.
 
