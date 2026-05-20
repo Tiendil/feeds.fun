@@ -5,9 +5,9 @@ Pair identity is intentionally oriented from the changed artifact to the
 depmesh-related artifact. Reverse relations are therefore distinct unless a
 future workflow revision documents an explicit canonicalization policy.
 
-Deleted files, missing files, and unsupported binary files are treated as
-checker failures. The first implementation must fail loudly rather than cache
-a pair as checked when exact current working-tree bytes are unavailable.
+Relation pairs with deleted or missing files are skipped. Unsupported binary
+files still fail loudly rather than cache a pair as checked when exact current
+working-tree text bytes are unavailable.
 
 Project journal logging belongs in ``log_project_journal``. Relation-pair
 queue records must use the isolated Taskwarrior database under
@@ -158,6 +158,14 @@ class CommandResult:
 
 class CheckerFailureError(Exception):
     """Raised when checker tooling cannot produce a normal workflow result."""
+
+
+class MissingArtifactError(CheckerFailureError):
+    """Raised when an artifact path has no current file to compare."""
+
+    def __init__(self, path: str) -> None:
+        self.path = path
+        super().__init__(f"missing or deleted file: {path}")
 
 
 def format_argv(argv: Iterable[str]) -> str:
@@ -312,7 +320,7 @@ def read_artifact_snapshot(path: str) -> FileSnapshot:
     filesystem_path = artifact_to_filesystem_path(path)
 
     if not filesystem_path.exists():
-        raise CheckerFailureError(f"missing or deleted file is unsupported: {path}")
+        raise MissingArtifactError(path)
 
     if not filesystem_path.is_file():
         raise CheckerFailureError(f"unsupported non-file artifact: {path}")
@@ -679,11 +687,27 @@ def update_check_record(identity: PairIdentity, *, check_status: str, report: st
 
 def reconcile_queue(pairs: list[RelationPair]) -> list[CurrentPair]:
     current_pairs: list[CurrentPair] = []
+    skipped_missing = 0
 
     for pair in sorted(pairs, key=lambda item: (item.changed_path, item.relation, item.related_path)):
-        identity = build_pair_identity(pair)
+        try:
+            identity = build_pair_identity(pair)
+        except MissingArtifactError as error:
+            skipped_missing += 1
+            log_project_journal(
+                "step",
+                (
+                    "skipped missing-file pair "
+                    f"{pair.changed_path} -> {pair.related_path} [{pair.relation}]: {error.path}"
+                ),
+            )
+            continue
+
         record = upsert_unchecked_record(identity)
         current_pairs.append(CurrentPair(pair=pair, identity=identity, record=record))
+
+    if skipped_missing:
+        log_project_journal("step", f"queue reconciliation skipped {skipped_missing} missing-file pair records")
 
     log_project_journal("step", f"queue reconciliation produced {len(current_pairs)} current pair records")
 
@@ -760,6 +784,14 @@ def replace_current_pair(current_pairs: list[CurrentPair], updated_pair: Current
     return [
         updated_pair if current_pair.identity.pair_key == updated_pair.identity.pair_key else current_pair
         for current_pair in current_pairs
+    ]
+
+
+def remove_current_pair(current_pairs: list[CurrentPair], removed_pair: CurrentPair) -> list[CurrentPair]:
+    return [
+        current_pair
+        for current_pair in current_pairs
+        if current_pair.identity.pair_key != removed_pair.identity.pair_key
     ]
 
 
@@ -873,8 +905,8 @@ def build_child_prompt(current_pair: CurrentPair) -> str:
             ),
             "Consistency criteria:\n" + criteria,
             (
-                "The parent checker rejects missing, deleted, binary, and non-UTF-8 files "
-                "before this prompt is built. "
+                "The parent checker skips missing or deleted pair files, and rejects binary and "
+                "non-UTF-8 files before this prompt is built. "
                 "Treat the file contents below as the exact current text bytes decoded as UTF-8."
             ),
             fenced_content(f"Changed file content ({changed.root_path})", changed.text),
@@ -1008,19 +1040,37 @@ def run_cycle() -> ExitCode:
     changed_files = discover_changed_files()
     relation_pairs = query_depmesh_pairs(changed_files)
     current_pairs = reconcile_queue(relation_pairs)
-    selection = select_current_pair(current_pairs)
 
-    if selection.inconsistent is not None:
-        print_inconsistent_pair(selection.inconsistent)
-        log_project_journal("step", "run-cycle outcome: current inconsistency found")
-        return ExitCode.INCONSISTENCY_FOUND
+    while True:
+        selection = select_current_pair(current_pairs)
 
-    if selection.unchecked is None:
-        print_summary(changed_files, current_pairs)
-        log_project_journal("step", "run-cycle outcome: success")
-        return ExitCode.SUCCESS
+        if selection.inconsistent is not None:
+            print_inconsistent_pair(selection.inconsistent)
+            log_project_journal("step", "run-cycle outcome: current inconsistency found")
+            return ExitCode.INCONSISTENCY_FOUND
 
-    prepared = prepare_child_check(selection.unchecked)
+        if selection.unchecked is None:
+            print_summary(changed_files, current_pairs)
+            log_project_journal("step", "run-cycle outcome: success")
+            return ExitCode.SUCCESS
+
+        try:
+            prepared = prepare_child_check(selection.unchecked)
+        except MissingArtifactError as error:
+            log_project_journal(
+                "step",
+                (
+                    "skipped selected missing-file pair "
+                    f"{selection.unchecked.identity.changed_path} -> "
+                    f"{selection.unchecked.identity.related_path} "
+                    f"[{selection.unchecked.identity.relation}]: {error.path}"
+                ),
+            )
+            current_pairs = remove_current_pair(current_pairs, selection.unchecked)
+            continue
+
+        break
+
     child_output = run_child_checker(prepared)
     updated_pair = update_record_from_child_output(selection.unchecked, child_output)
     current_pairs = replace_current_pair(current_pairs, updated_pair)
@@ -1118,7 +1168,6 @@ def enqueue_file(path: str) -> ExitCode:
     ensure_runtime_state()
     artifact_path = normalize_input_path(path)
     log_project_journal("step", f"manual enqueue requested for {artifact_path}")
-    read_artifact_snapshot(artifact_path)
     relation_pairs = query_depmesh_pairs([artifact_path])
     current_pairs = reconcile_queue(relation_pairs)
     log_project_journal("step", f"manual enqueue for {artifact_path} produced {len(current_pairs)} pair records")
@@ -1176,6 +1225,12 @@ def run_self_check() -> ExitCode:
         relation="self_check",
         relation_description="Self-check relation",
     )
+    missing_pair = RelationPair(
+        changed_path=changed_path,
+        related_path="@/.session/inconsistency-check/self-check/missing.txt",
+        relation="self_check",
+        relation_description="Self-check relation",
+    )
     identity = build_pair_identity(pair)
     second_identity = build_pair_identity(second_pair)
     assert_self_check(identity.pair_key == f"self_check|{identity.file_pair}", "pair key must include relation")
@@ -1188,6 +1243,8 @@ def run_self_check() -> ExitCode:
         all(current_pair.record.check_status == "unchecked" for current_pair in current_pairs),
         "new current pairs must be unchecked",
     )
+    missing_pairs = reconcile_queue([missing_pair])
+    assert_self_check(not missing_pairs, "missing-file pairs must be skipped")
     selection = select_current_pair(current_pairs)
     assert_self_check(selection.unchecked is not None, "one unchecked pair must be selected")
     assert_self_check(selection.inconsistent is None, "unchecked selection must not report inconsistency")
