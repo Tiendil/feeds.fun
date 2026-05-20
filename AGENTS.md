@@ -78,6 +78,34 @@ At the start of each work session, read the `depmesh` usage instructions for det
 depmesh skill usage
 ```
 
+### `inconsistency-check.py`
+
+`./bin/inconsistency-check.py` — a direct helper script for managing the depmesh-backed consistency-check queue.
+
+Use this script only when the developer explicitly asks you to run it, or when an active Donna workflow explicitly
+instructs you to run it. Do not run it opportunistically as a general dependency or consistency check.
+
+The queue is an isolated Taskwarrior database of relation-pair checks. Each queued record represents one oriented
+`depmesh` relation from a changed or manually selected file to one related artifact, plus the current SHA-256 checksums
+of both files, the relation id, the check status, and an optional markdown report. Pair keys include the relation and
+both file checksums, so old records remain as history while changed file content creates a fresh unchecked pair.
+
+The checker loop is the `run-cycle` command. It discovers files changed relative to `main`, queries all configured
+`depmesh` relations for those files, reconciles the current relation pairs into the queue, then handles at most one
+unchecked pair. If a current pair is already marked `inconsistent`, the loop prints it and exits before spawning any
+child checker. Otherwise it runs one read-only child Codex checker for the first unchecked pair, stores the result, and
+exits with a code that tells the Donna workflow whether to stop for a fix, continue the loop, or finish successfully.
+
+Main commands:
+
+- `python ./bin/inconsistency-check.py enqueue @/path/to/file` — manually add one file and all configured depmesh relation pairs for that file to the isolated queue.
+- `python ./bin/inconsistency-check.py enqueue @/first @/second` — enqueue multiple files.
+- `python ./bin/inconsistency-check.py progress --file @/path/to/file` — show queued records where the file is either the changed side or the related side.
+- `python ./bin/inconsistency-check.py run-cycle` — run one checker cycle: discover changed files relative to `main`, reconcile relation pairs, and process at most one unchecked pair.
+- `python ./bin/inconsistency-check.py self-check` — run deterministic script verification without spawning a child Codex checker.
+
+The script stores its relation-pair queue and runtime files only under `@/.session/inconsistency-check/`.
+
 ### `ast-grep`
 
 `ast-grep` — a tool for searching and manipulating Abstract Syntax Trees in code. Use it when you work with particular code patterns, structures, or constructs in the codebase.
