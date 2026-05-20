@@ -22,6 +22,7 @@ import argparse
 import hashlib
 import json
 import shlex
+import shutil
 import subprocess  # noqa: S404
 import sys
 from collections import Counter
@@ -510,10 +511,17 @@ def query_depmesh_pairs(changed_files: list[str]) -> list[RelationPair]:
             pairs = parse_depmesh_dependencies(records, changed_path=changed_path, relation=relation)
             log_project_journal(
                 "step",
-                f"depmesh query for {changed_path} relation {relation.relation_id} returned {len(pairs)} pairs",
+                f"depmesh query for {changed_path} relation {relation.relation_id} found {len(pairs)} related files",
             )
 
             for pair in pairs:
+                log_project_journal(
+                    "step",
+                    (
+                        "depmesh relation pair found "
+                        f"{pair.changed_path} -> {pair.related_path} [{pair.relation}]"
+                    ),
+                )
                 pair_map[(pair.changed_path, pair.relation, pair.related_path)] = pair
 
     return [pair_map[key] for key in sorted(pair_map)]
@@ -548,10 +556,11 @@ def log_project_journal(kind: str, message: str) -> None:
 
 
 def pair_journal_subject(identity: PairIdentity) -> str:
-    return (
-        f"{identity.changed_path} -> {identity.related_path} "
-        f"[{identity.relation}] pair_key:{identity.pair_key}"
-    )
+    return f"{identity.changed_path} -> {identity.related_path} [{identity.relation}]"
+
+
+def record_journal_subject(record: CheckRecord) -> str:
+    return f"{record.changed_path} -> {record.related_path} [{record.relation}]"
 
 
 def log_pair_queued(identity: PairIdentity, check_status: str) -> None:
@@ -617,17 +626,6 @@ def load_taskwarrior_records() -> list[dict[str, Any]]:
     return records
 
 
-def delete_taskwarrior_record(uuid: str) -> None:
-    if not uuid:
-        raise CheckerFailureError("cannot delete isolated Taskwarrior record without uuid")
-
-    run_command(
-        task_command_args(uuid, "delete"),
-        check=True,
-        failure_context=f"deleting isolated inconsistency-check Taskwarrior record {uuid}",
-    )
-
-
 def raw_record_to_check_record(record: dict[str, Any]) -> CheckRecord:
     return CheckRecord(
         uuid=str(record.get("uuid") or ""),
@@ -648,7 +646,7 @@ def find_raw_record_by_pair_key(records: list[dict[str, Any]], pair_key: str) ->
     matches = [record for record in records if record.get("pair_key") == pair_key]
 
     if len(matches) > 1:
-        raise CheckerFailureError(f"isolated Taskwarrior DB has duplicate pair_key records: {pair_key}")
+        raise CheckerFailureError("isolated Taskwarrior DB has duplicate pair_key records")
 
     return matches[0] if matches else None
 
@@ -694,7 +692,7 @@ def write_task_record(
     raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
 
     if raw_record is None:
-        raise CheckerFailureError(f"Taskwarrior record was not found after write: {identity.pair_key}")
+        raise CheckerFailureError(f"Taskwarrior record was not found after write: {pair_journal_subject(identity)}")
 
     return raw_record_to_check_record(raw_record)
 
@@ -724,7 +722,7 @@ def update_check_record(identity: PairIdentity, *, check_status: str, report: st
     raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
 
     if raw_record is None:
-        raise CheckerFailureError(f"cannot update missing pair record: {identity.pair_key}")
+        raise CheckerFailureError(f"cannot update missing pair record: {pair_journal_subject(identity)}")
 
     existing = raw_record_to_check_record(raw_record)
     previous_status = existing.check_status or "unchecked"
@@ -781,7 +779,7 @@ def normalized_check_status(record: CheckRecord) -> str:
     status = record.check_status or "unchecked"
 
     if status not in VALID_CHECK_STATUSES:
-        raise CheckerFailureError(f"unsupported check_status {status!r} for pair {record.pair_key}")
+        raise CheckerFailureError(f"unsupported check_status {status!r} for pair {record_journal_subject(record)}")
 
     return status
 
@@ -791,12 +789,15 @@ def select_current_pair(current_pairs: list[CurrentPair]) -> PairSelection:
 
     for current_pair in ordered_pairs:
         if normalized_check_status(current_pair.record) == "inconsistent":
-            log_project_journal("step", f"existing current inconsistency found: {current_pair.identity.pair_key}")
+            log_project_journal(
+                "step",
+                f"existing current inconsistency found: {pair_journal_subject(current_pair.identity)}",
+            )
             return PairSelection(inconsistent=current_pair, unchecked=None)
 
     for current_pair in ordered_pairs:
         if normalized_check_status(current_pair.record) == "unchecked":
-            log_project_journal("step", f"selected unchecked pair: {current_pair.identity.pair_key}")
+            log_project_journal("step", f"selected unchecked pair: {pair_journal_subject(current_pair.identity)}")
             return PairSelection(inconsistent=None, unchecked=current_pair)
 
     log_project_journal("step", "no current unchecked or inconsistent pairs remain")
@@ -996,7 +997,8 @@ def prepare_child_check(current_pair: CurrentPair) -> PreparedChildCheck:
 
 
 def run_child_checker(prepared: PreparedChildCheck) -> str:
-    log_project_journal("step", f"child checker start for {prepared.current_pair.identity.pair_key}")
+    pair_subject = pair_journal_subject(prepared.current_pair.identity)
+    log_project_journal("step", f"child checker start for {pair_subject}")
     result = run_command(
         [
             "codex",
@@ -1015,7 +1017,7 @@ def run_child_checker(prepared: PreparedChildCheck) -> str:
             "-",
         ],
         input_text=prepared.prompt,
-        failure_context=f"running child Codex checker for {prepared.current_pair.identity.pair_key}",
+        failure_context=f"running child Codex checker for {pair_subject}",
     )
 
     if result.returncode != 0:
@@ -1025,7 +1027,7 @@ def run_child_checker(prepared: PreparedChildCheck) -> str:
         raise CheckerFailureError(f"child Codex checker did not write output file: {prepared.output_path}")
 
     output = prepared.output_path.read_text(encoding="utf-8")
-    log_project_journal("step", f"child checker completed for {prepared.current_pair.identity.pair_key}")
+    log_project_journal("step", f"child checker completed for {pair_subject}")
 
     return output
 
@@ -1084,7 +1086,10 @@ def update_record_from_child_output(current_pair: CurrentPair, output: str) -> C
         report=report,
         checked_at=utc_timestamp(),
     )
-    log_project_journal("step", f"pair status update for {current_pair.identity.pair_key}: {check_status}")
+    log_project_journal(
+        "step",
+        f"pair status update for {pair_journal_subject(current_pair.identity)}: {check_status}",
+    )
 
     return CurrentPair(pair=current_pair.pair, identity=current_pair.identity, record=record)
 
@@ -1240,12 +1245,13 @@ def enqueue_files(paths: list[str]) -> ExitCode:
 
 def clear_queue() -> ExitCode:
     ensure_runtime_state()
-    records = [raw_record_to_check_record(record) for record in load_taskwarrior_records()]
-
-    for record in records:
-        delete_taskwarrior_record(record.uuid)
-
+    records = load_taskwarrior_records()
     count = len(records)
+
+    if TASK_DATA_DIR.exists():
+        shutil.rmtree(TASK_DATA_DIR)
+
+    ensure_runtime_state()
     log_project_journal("change", f"inconsistency-check cleared queue records:{count}")
     print(f"Cleared inconsistency-check queue records: {count}")
 
