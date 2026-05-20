@@ -11,7 +11,9 @@ working-tree text bytes are unavailable.
 
 Project journal logging belongs in ``log_project_journal``. Relation-pair
 queue records must use the isolated Taskwarrior database under
-``.session/inconsistency-check`` and must never use ``bin/taskwarior.sh``.
+``.session/inconsistency-check``; project journal entries must use
+``bin/taskwarior.sh`` through ``log_project_journal`` and carry the
+``+consistency`` tag.
 """
 
 from __future__ import annotations
@@ -42,6 +44,7 @@ SCHEMA_DIR = RUNTIME_DIR / "schemas"
 SELF_CHECK_DIR = RUNTIME_DIR / "self-check"
 TASKWARRIOR_BIN = "task"
 PROJECT_JOURNAL_CMD = "./bin/taskwarior.sh"
+PROJECT_JOURNAL_TAG = "consistency"
 VALID_CHECK_STATUSES = {"unchecked", "consistent", "inconsistent"}
 TASKRC_CONTENT = f"""data.location={RELATIVE_RUNTIME_DIR / "taskwarrior"}
 confirmation=no
@@ -529,12 +532,47 @@ def log_project_journal(kind: str, message: str) -> None:
         raise CheckerFailureError(f"invalid journal kind: {kind!r}")
 
     result = run_command(
-        [PROJECT_JOURNAL_CMD, "log", "+journal", "+agent", f"kind:{clean_kind}", single_line(message)],
+        [
+            PROJECT_JOURNAL_CMD,
+            "log",
+            "+journal",
+            "+agent",
+            f"+{PROJECT_JOURNAL_TAG}",
+            f"kind:{clean_kind}",
+            single_line(message),
+        ],
         failure_context="project journal logging failed",
     )
 
     if result.returncode != 0:
         raise CheckerFailureError(build_command_failure("project journal logging failed", result))
+
+
+def pair_journal_subject(identity: PairIdentity) -> str:
+    return (
+        f"{identity.changed_path} -> {identity.related_path} "
+        f"[{identity.relation}] pair_key:{identity.pair_key}"
+    )
+
+
+def log_pair_queued(identity: PairIdentity, check_status: str) -> None:
+    log_project_journal(
+        "change",
+        f"inconsistency-check queued pair {pair_journal_subject(identity)} status:{check_status}",
+    )
+
+
+def log_pair_state_change(identity: PairIdentity, previous_status: str, next_status: str) -> None:
+    if previous_status == next_status:
+        return
+
+    log_project_journal(
+        "change",
+        (
+            "inconsistency-check pair state changed "
+            f"{pair_journal_subject(identity)} {previous_status}->{next_status}"
+        ),
+    )
 
 
 def ensure_runtime_state() -> None:
@@ -655,14 +693,18 @@ def upsert_unchecked_record(identity: PairIdentity) -> CheckRecord:
     raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
 
     if raw_record is None:
-        return write_task_record(identity, uuid=None, check_status="unchecked", report="", checked_at="")
+        record = write_task_record(identity, uuid=None, check_status="unchecked", report="", checked_at="")
+        log_pair_queued(identity, record.check_status or "unchecked")
+
+        return record
 
     existing = raw_record_to_check_record(raw_record)
+    existing_status = existing.check_status or "unchecked"
 
     return write_task_record(
         identity,
         uuid=existing.uuid,
-        check_status=existing.check_status or "unchecked",
+        check_status=existing_status,
         report=existing.report,
         checked_at=existing.checked_at,
     )
@@ -675,14 +717,17 @@ def update_check_record(identity: PairIdentity, *, check_status: str, report: st
         raise CheckerFailureError(f"cannot update missing pair record: {identity.pair_key}")
 
     existing = raw_record_to_check_record(raw_record)
-
-    return write_task_record(
+    previous_status = existing.check_status or "unchecked"
+    record = write_task_record(
         identity,
         uuid=existing.uuid,
         check_status=check_status,
         report=report,
         checked_at=checked_at,
     )
+    log_pair_state_change(identity, previous_status, check_status)
+
+    return record
 
 
 def reconcile_queue(pairs: list[RelationPair]) -> list[CurrentPair]:
@@ -1195,7 +1240,9 @@ def reset_self_check_record(identity: PairIdentity) -> None:
         return
 
     existing = raw_record_to_check_record(raw_record)
+    previous_status = existing.check_status or "unchecked"
     write_task_record(identity, uuid=existing.uuid, check_status="unchecked", report="", checked_at="")
+    log_pair_state_change(identity, previous_status, "unchecked")
 
 
 def run_self_check() -> ExitCode:
