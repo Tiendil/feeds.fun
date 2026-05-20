@@ -17,6 +17,18 @@ Implement a Donna workflow that repeatedly checks consistency between files chan
 
 No Docker configuration, dependency files, lock files, or project structure outside the explicitly declared `bin/inconsistency-check/` script directory should change.
 
+## Project Journal Requirement
+
+The implemented supporting scripts must log each important runtime step or operation with the standard project Taskwarrior journal command from `AGENTS.md`:
+
+```bash
+./bin/taskwarior.sh log +journal +agent kind:<kind> "<single-line message>"
+```
+
+This logging is only for project journal events. It must not be used for relation-pair records; the pair-check queue must still use the isolated `.session/inconsistency-check/taskwarrior` database.
+
+The script should log at least: command start, changed-file discovery result, depmesh relation query result, queue reconciliation result, existing current inconsistency detection, selected unchecked pair, child checker start and result, pair status update, final run-cycle outcome, progress report invocation, and checker failures.
+
 ## Donna Workflow Shape
 
 The workflow can be a small state machine:
