@@ -103,6 +103,7 @@ Main commands:
 - `python ./bin/inconsistency-check.py progress --file @/path/to/file` — show queued records where the file is either the changed side or the related side.
 - `python ./bin/inconsistency-check.py clear-queue` — delete all records from the isolated relation-pair queue.
 - `python ./bin/inconsistency-check.py run-cycle` — run one checker cycle: discover changed files relative to `main`, reconcile relation pairs, and process at most one unchecked pair.
+- `python ./bin/inconsistency-check.py process-queue` — process already queued relation pairs until all are checked or the first inconsistency is found.
 - `python ./bin/inconsistency-check.py self-check` — run deterministic script verification without spawning a child Codex checker.
 
 The script stores its relation-pair queue and runtime files only under `@/.session/inconsistency-check/`.

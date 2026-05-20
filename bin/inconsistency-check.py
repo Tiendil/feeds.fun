@@ -1094,24 +1094,24 @@ def update_record_from_child_output(current_pair: CurrentPair, output: str) -> C
     return CurrentPair(pair=current_pair.pair, identity=current_pair.identity, record=record)
 
 
-def run_cycle() -> ExitCode:
-    ensure_runtime_state()
-    log_project_journal("step", "run-cycle command started")
-    changed_files = discover_changed_files()
-    relation_pairs = query_depmesh_pairs(changed_files)
-    current_pairs = reconcile_queue(relation_pairs)
-
+def process_current_pairs(
+    changed_files: list[str],
+    current_pairs: list[CurrentPair],
+    *,
+    command_name: str,
+    consume_all: bool,
+) -> ExitCode:
     while True:
         selection = select_current_pair(current_pairs)
 
         if selection.inconsistent is not None:
             print_inconsistent_pair(selection.inconsistent)
-            log_project_journal("step", "run-cycle outcome: current inconsistency found")
+            log_project_journal("step", f"{command_name} outcome: current inconsistency found")
             return ExitCode.INCONSISTENCY_FOUND
 
         if selection.unchecked is None:
             print_summary(changed_files, current_pairs)
-            log_project_journal("step", "run-cycle outcome: success")
+            log_project_journal("step", f"{command_name} outcome: success")
             return ExitCode.SUCCESS
 
         try:
@@ -1129,27 +1129,80 @@ def run_cycle() -> ExitCode:
             current_pairs = remove_current_pair(current_pairs, selection.unchecked)
             continue
 
-        break
+        child_output = run_child_checker(prepared)
+        updated_pair = update_record_from_child_output(selection.unchecked, child_output)
+        current_pairs = replace_current_pair(current_pairs, updated_pair)
 
-    child_output = run_child_checker(prepared)
-    updated_pair = update_record_from_child_output(selection.unchecked, child_output)
-    current_pairs = replace_current_pair(current_pairs, updated_pair)
+        inconsistent_pair = first_inconsistent_pair(current_pairs)
 
-    inconsistent_pair = first_inconsistent_pair(current_pairs)
+        if inconsistent_pair is not None:
+            print_inconsistent_pair(inconsistent_pair)
+            log_project_journal("step", f"{command_name} outcome: child found inconsistency")
+            return ExitCode.INCONSISTENCY_FOUND
 
-    if inconsistent_pair is not None:
-        print_inconsistent_pair(inconsistent_pair)
-        log_project_journal("step", "run-cycle outcome: child found inconsistency")
-        return ExitCode.INCONSISTENCY_FOUND
+        if normalized_check_status(updated_pair.record) == "consistent" and has_unchecked_pair(current_pairs):
+            if consume_all:
+                continue
 
-    if normalized_check_status(updated_pair.record) == "consistent" and has_unchecked_pair(current_pairs):
+            print_summary(changed_files, current_pairs)
+            log_project_journal("step", f"{command_name} outcome: continue cycle")
+            return ExitCode.CONTINUE_CYCLE
+
         print_summary(changed_files, current_pairs)
-        log_project_journal("step", "run-cycle outcome: continue cycle")
-        return ExitCode.CONTINUE_CYCLE
+        log_project_journal("step", f"{command_name} outcome: success")
+        return ExitCode.SUCCESS
 
-    print_summary(changed_files, current_pairs)
-    log_project_journal("step", "run-cycle outcome: success")
-    return ExitCode.SUCCESS
+
+def run_cycle() -> ExitCode:
+    ensure_runtime_state()
+    log_project_journal("step", "run-cycle command started")
+    changed_files = discover_changed_files()
+    relation_pairs = query_depmesh_pairs(changed_files)
+    current_pairs = reconcile_queue(relation_pairs)
+
+    return process_current_pairs(changed_files, current_pairs, command_name="run-cycle", consume_all=False)
+
+
+def record_to_current_pair(record: CheckRecord, relation_descriptions: dict[str, str]) -> CurrentPair:
+    identity = PairIdentity(
+        pair_key=record.pair_key,
+        file_pair=record.file_pair,
+        changed_path=record.changed_path,
+        related_path=record.related_path,
+        relation=record.relation,
+        checksum_changed=record.checksum_changed,
+        checksum_related=record.checksum_related,
+    )
+    pair = RelationPair(
+        changed_path=record.changed_path,
+        related_path=record.related_path,
+        relation=record.relation,
+        relation_description=relation_descriptions.get(record.relation, "No current depmesh relation description."),
+    )
+
+    return CurrentPair(pair=pair, identity=identity, record=record)
+
+
+def load_queued_current_pairs() -> list[CurrentPair]:
+    relation_descriptions = {relation.relation_id: relation.description for relation in load_depmesh_relations()}
+    records = [raw_record_to_check_record(record) for record in load_taskwarrior_records()]
+    current_pairs = [
+        record_to_current_pair(record, relation_descriptions)
+        for record in records
+        if record.pair_key
+    ]
+    log_project_journal("step", f"loaded {len(current_pairs)} queued pair records")
+
+    return current_pairs
+
+
+def process_queue() -> ExitCode:
+    ensure_runtime_state()
+    log_project_journal("step", "process-queue command started")
+    current_pairs = load_queued_current_pairs()
+    changed_files = sorted({current_pair.pair.changed_path for current_pair in current_pairs})
+
+    return process_current_pairs(changed_files, current_pairs, command_name="process-queue", consume_all=True)
 
 
 def build_progress_report(path: str) -> str:
@@ -1410,6 +1463,7 @@ def parse_args() -> argparse.Namespace:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     subparsers.add_parser("run-cycle", help="reconcile and check at most one relation pair")
+    subparsers.add_parser("process-queue", help="process queued relation pairs until completion or inconsistency")
 
     enqueue_parser = subparsers.add_parser("enqueue", help="manually enqueue one file's depmesh relation pairs")
     enqueue_parser.add_argument("files", nargs="*", help="project paths or root-anchored artifact ids")
@@ -1436,6 +1490,9 @@ def main() -> int:
 
         if args.command == "run-cycle":
             return int(run_cycle())
+
+        if args.command == "process-queue":
+            return int(process_queue())
 
         if args.command == "enqueue":
             return int(enqueue_files(parse_enqueue_files(args)))
