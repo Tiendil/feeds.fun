@@ -101,6 +101,7 @@ Main commands:
 - `python ./bin/inconsistency-check.py enqueue @/path/to/file` — manually add one file and all configured depmesh relation pairs for that file to the isolated queue.
 - `python ./bin/inconsistency-check.py enqueue @/first @/second` — enqueue multiple files.
 - `python ./bin/inconsistency-check.py progress --file @/path/to/file` — show queued records where the file is either the changed side or the related side.
+- `python ./bin/inconsistency-check.py clear-queue` — delete all records from the isolated relation-pair queue.
 - `python ./bin/inconsistency-check.py run-cycle` — run one checker cycle: discover changed files relative to `main`, reconcile relation pairs, and process at most one unchecked pair.
 - `python ./bin/inconsistency-check.py self-check` — run deterministic script verification without spawning a child Codex checker.
 

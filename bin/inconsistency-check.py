@@ -617,6 +617,17 @@ def load_taskwarrior_records() -> list[dict[str, Any]]:
     return records
 
 
+def delete_taskwarrior_record(uuid: str) -> None:
+    if not uuid:
+        raise CheckerFailureError("cannot delete isolated Taskwarrior record without uuid")
+
+    run_command(
+        task_command_args(uuid, "delete"),
+        check=True,
+        failure_context=f"deleting isolated inconsistency-check Taskwarrior record {uuid}",
+    )
+
+
 def raw_record_to_check_record(record: dict[str, Any]) -> CheckRecord:
     return CheckRecord(
         uuid=str(record.get("uuid") or ""),
@@ -1227,6 +1238,20 @@ def enqueue_files(paths: list[str]) -> ExitCode:
     return ExitCode.SUCCESS
 
 
+def clear_queue() -> ExitCode:
+    ensure_runtime_state()
+    records = [raw_record_to_check_record(record) for record in load_taskwarrior_records()]
+
+    for record in records:
+        delete_taskwarrior_record(record.uuid)
+
+    count = len(records)
+    log_project_journal("change", f"inconsistency-check cleared queue records:{count}")
+    print(f"Cleared inconsistency-check queue records: {count}")
+
+    return ExitCode.SUCCESS
+
+
 def assert_self_check(condition: bool, message: str) -> None:
     if not condition:
         raise CheckerFailureError(f"self-check failed: {message}")
@@ -1392,6 +1417,8 @@ def parse_args() -> argparse.Namespace:
     progress_parser = subparsers.add_parser("progress", help="show cached relation-pair progress")
     progress_parser.add_argument("--file", required=True, help="project path or root-anchored artifact id")
 
+    subparsers.add_parser("clear-queue", help="delete all isolated relation-pair queue records")
+
     subparsers.add_parser("self-check", help="run deterministic helper-script checks without spawning Codex")
 
     return parser.parse_args()
@@ -1409,6 +1436,9 @@ def main() -> int:
 
         if args.command == "progress":
             return int(report_progress(args.file))
+
+        if args.command == "clear-queue":
+            return int(clear_queue())
 
         if args.command == "self-check":
             return int(run_self_check())
