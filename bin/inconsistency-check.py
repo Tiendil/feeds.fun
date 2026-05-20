@@ -536,7 +536,6 @@ def log_project_journal(kind: str, message: str) -> None:
             PROJECT_JOURNAL_CMD,
             "log",
             "+journal",
-            "+agent",
             f"+{PROJECT_JOURNAL_TAG}",
             f"kind:{clean_kind}",
             single_line(message),
