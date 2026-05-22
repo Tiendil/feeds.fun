@@ -738,6 +738,56 @@ def update_check_record(identity: PairIdentity, *, check_status: str, report: st
     return record
 
 
+def relation_description_for(relation_id: str) -> str:
+    relations = load_depmesh_relations()
+    descriptions = {relation.relation_id: relation.description for relation in relations}
+
+    if relation_id not in descriptions:
+        valid_relations = ", ".join(sorted(descriptions)) or "(none)"
+        raise CheckerFailureError(
+            f"unknown depmesh relation {relation_id!r}; valid relations: {valid_relations}"
+        )
+
+    return descriptions[relation_id]
+
+
+def normalize_explicit_report(check_status: str, report: str | None) -> str:
+    if check_status == "consistent":
+        return report or ""
+
+    inconsistent_report = report or "No report was provided."
+
+    if any(line.startswith("## ") for line in inconsistent_report.splitlines()):
+        return inconsistent_report
+
+    return "\n\n".join(["## Manually marked inconsistent", inconsistent_report])
+
+
+def set_relation_pair_check_status(
+    pair: RelationPair,
+    *,
+    check_status: str,
+    report: str | None,
+) -> CurrentPair:
+    if check_status not in {"consistent", "inconsistent"}:
+        raise CheckerFailureError(f"unsupported explicit check status: {check_status}")
+
+    identity = build_pair_identity(pair)
+    upsert_unchecked_record(identity)
+    record = update_check_record(
+        identity,
+        check_status=check_status,
+        report=normalize_explicit_report(check_status, report),
+        checked_at=utc_timestamp(),
+    )
+    log_project_journal(
+        "step",
+        f"explicit pair status set for {pair_journal_subject(identity)}: {check_status}",
+    )
+
+    return CurrentPair(pair=pair, identity=identity, record=record)
+
+
 def reconcile_queue(pairs: list[RelationPair]) -> list[CurrentPair]:
     current_pairs: list[CurrentPair] = []
     skipped_missing = 0
@@ -1257,6 +1307,38 @@ def report_progress(path: str) -> ExitCode:
     return ExitCode.SUCCESS
 
 
+def print_status_update(current_pair: CurrentPair) -> None:
+    record = current_pair.record
+    print("Updated relation pair status")
+    print(f"changed file: {record.changed_path}")
+    print(f"related file: {record.related_path}")
+    print(f"relation: {record.relation}")
+    print(f"status: {record.check_status}")
+    print(f"checked at: {record.checked_at}")
+    print(f"pair key: {record.pair_key}")
+
+
+def mark_pair_status(args: argparse.Namespace, *, check_status: str) -> ExitCode:
+    ensure_runtime_state()
+    changed_path = normalize_input_path(args.changed)
+    related_path = normalize_input_path(args.related)
+    relation = str(args.relation)
+    pair = RelationPair(
+        changed_path=changed_path,
+        related_path=related_path,
+        relation=relation,
+        relation_description=relation_description_for(relation),
+    )
+    current_pair = set_relation_pair_check_status(
+        pair,
+        check_status=check_status,
+        report=args.report,
+    )
+    print_status_update(current_pair)
+
+    return ExitCode.SUCCESS
+
+
 def print_enqueue_summary(artifact_path: str, current_pairs: list[CurrentPair]) -> None:
     counts = status_counts(current_pairs)
     print(f"Enqueued relation pairs for {artifact_path}")
@@ -1414,6 +1496,28 @@ def run_self_check() -> ExitCode:
     reset_self_check_record(changed_identity)
     changed_current_pair = reconcile_queue([pair])[0]
     assert_self_check(changed_current_pair.record.check_status == "unchecked", "changed checksum must force unchecked")
+    explicitly_consistent_pair = set_relation_pair_check_status(
+        pair,
+        check_status="consistent",
+        report="Manual self-check consistency note.",
+    )
+    assert_self_check(
+        explicitly_consistent_pair.record.check_status == "consistent",
+        "explicit status command helper must set consistent",
+    )
+    explicitly_inconsistent_pair = set_relation_pair_check_status(
+        pair,
+        check_status="inconsistent",
+        report="Manual self-check inconsistency note.",
+    )
+    assert_self_check(
+        explicitly_inconsistent_pair.record.check_status == "inconsistent",
+        "explicit status command helper must set inconsistent",
+    )
+    assert_self_check(
+        explicitly_inconsistent_pair.record.report.startswith("## Manually marked inconsistent"),
+        "explicit inconsistent reports without a section must be normalized",
+    )
     changed_report = build_progress_report(changed_path)
     related_report = build_progress_report(related_path)
     assert_self_check(changed_identity.pair_key in changed_report, "progress must match changed_path side")
@@ -1458,6 +1562,28 @@ def parse_enqueue_files(args: argparse.Namespace) -> list[str]:
     return sorted(dict.fromkeys(paths))
 
 
+def add_pair_status_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--changed",
+        required=True,
+        help="changed-side project path or root-anchored artifact id",
+    )
+    parser.add_argument(
+        "--related",
+        required=True,
+        help="related-side project path or root-anchored artifact id",
+    )
+    parser.add_argument(
+        "--relation",
+        required=True,
+        help="depmesh relation id for this oriented file pair",
+    )
+    parser.add_argument(
+        "--report",
+        help="optional markdown report to store with the explicit status",
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run depmesh-backed consistency checks.")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -1476,6 +1602,18 @@ def parse_args() -> argparse.Namespace:
 
     progress_parser = subparsers.add_parser("progress", help="show cached relation-pair progress")
     progress_parser.add_argument("--file", required=True, help="project path or root-anchored artifact id")
+
+    mark_consistent_parser = subparsers.add_parser(
+        "mark-consistent",
+        help="explicitly mark one current-checksum relation pair as consistent",
+    )
+    add_pair_status_arguments(mark_consistent_parser)
+
+    mark_inconsistent_parser = subparsers.add_parser(
+        "mark-inconsistent",
+        help="explicitly mark one current-checksum relation pair as inconsistent",
+    )
+    add_pair_status_arguments(mark_inconsistent_parser)
 
     subparsers.add_parser("clear-queue", help="delete all isolated relation-pair queue records")
 
@@ -1499,6 +1637,12 @@ def main() -> int:
 
         if args.command == "progress":
             return int(report_progress(args.file))
+
+        if args.command == "mark-consistent":
+            return int(mark_pair_status(args, check_status="consistent"))
+
+        if args.command == "mark-inconsistent":
+            return int(mark_pair_status(args, check_status="inconsistent"))
 
         if args.command == "clear-queue":
             return int(clear_queue())
