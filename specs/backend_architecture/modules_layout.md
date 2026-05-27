@@ -18,6 +18,13 @@ Backend modules SHOULD keep tests in colocated `tests` packages when the module 
 
 Migration files SHOULD stay in module-local `migrations` packages for the domain area they modify.
 
+## Domain and product boundaries
+
+Reusable domain modules SHOULD own generic behavior, storage, validation, and extension points for their domain area.
+Product-specific choices that configure those reusable modules for Feeds Fun SHOULD stay outside the reusable domain
+implementation. For example, `ffun.user_settings` owns the generic user settings machinery, while `ffun.product` owns
+the concrete product setting definitions registered in that machinery.
+
 ## Module responsibilities
 
 - `ffun.api` owns HTTP API endpoint wiring.
@@ -44,6 +51,7 @@ Migration files SHOULD stay in module-local `migrations` packages for the domain
 - `ffun.ontology` owns stored tag ontology behavior.
 - `ffun.openai` owns OpenAI service integration.
 - `ffun.parsers` owns feed, entry, site, and OPML parsing logic.
+- `ffun.product` owns product-level configuration and registration glue that binds reusable domain modules to concrete product settings.
 - `ffun.processors_quality` owns quality validation for tagging processors.
 - `ffun.queues` owns persistent PostgreSQL-backed queue infrastructure.
 - `ffun.resources` owns per-user quotas and resource accounting.
