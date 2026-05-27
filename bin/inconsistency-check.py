@@ -49,7 +49,7 @@ PROJECT_JOURNAL_TAG = "consistency"
 VALID_CHECK_STATUSES = {"unchecked", "consistent", "inconsistent"}
 # TODO: that should be in config file
 # TODO: what to do with reflected relations?
-ALLOWED_FILE_RELATIONS = ["governs"]
+ALLOWED_FILE_RELATIONS = ["governed_by"]
 TASKRC_CONTENT = f"""data.location={RELATIVE_RUNTIME_DIR / "taskwarrior"}
 confirmation=no
 
