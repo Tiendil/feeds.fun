@@ -65,6 +65,17 @@ def row_to_entry(row: dict[str, Any]) -> Entry:
     )
 
 
+async def _increment_feed_entries_count(execute: ExecuteType, feed_id: FeedId, date: datetime.date) -> None:
+    sql = """
+    INSERT INTO l_feed_entries_count (feed_id, date, entries)
+    VALUES (%(feed_id)s, %(date)s, 1)
+    ON CONFLICT (feed_id, date) DO UPDATE SET
+      entries = l_feed_entries_count.entries + EXCLUDED.entries
+    """
+
+    await execute(sql, {"feed_id": feed_id, "date": date})
+
+
 @run_in_transaction
 async def _catalog_entry(
     execute: ExecuteType, feed_id: FeedId, entry: CollectedEntry, ingested_at: datetime.datetime
@@ -147,6 +158,7 @@ async def _catalog_entry(
     )
 
     if result[0]["new_link_created"]:
+        await _increment_feed_entries_count(execute, feed_id, ingested_at.astimezone(datetime.UTC).date())
         return entry_id
 
     return None
@@ -176,6 +188,65 @@ async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) ->
             linked_entry_ids.append(entry_id)
 
     return linked_entry_ids
+
+
+async def entries_in_period(feed_ids: Iterable[FeedId], period: int) -> dict[FeedId, int]:
+    feed_ids = list(feed_ids)
+    result = {feed_id: 0 for feed_id in feed_ids}
+
+    if not feed_ids or period <= 0:
+        return result
+
+    last_date = utils.now().date()
+    first_date = last_date - datetime.timedelta(days=period - 1)
+
+    sql = """
+    SELECT feed_id, SUM(entries) AS entries
+    FROM l_feed_entries_count
+    WHERE feed_id = ANY(%(feed_ids)s)
+      AND date >= %(first_date)s
+      AND date <= %(last_date)s
+    GROUP BY feed_id
+    """
+
+    rows = await execute(sql, {"feed_ids": feed_ids, "first_date": first_date, "last_date": last_date})
+
+    for row in rows:
+        result[row["feed_id"]] = int(row["entries"])
+
+    return result
+
+
+async def entries_in_period_details(feed_ids: Iterable[FeedId], period: int) -> dict[FeedId, list[int]]:
+    feed_ids = list(feed_ids)
+    result: dict[FeedId, list[int]] = {feed_id: [] for feed_id in feed_ids}
+
+    if not feed_ids or period <= 0:
+        return result
+
+    last_date = utils.now().date()
+    first_date = last_date - datetime.timedelta(days=period - 1)
+    counts: dict[FeedId, dict[datetime.date, int]] = {feed_id: {} for feed_id in feed_ids}
+
+    sql = """
+    SELECT feed_id, date, entries
+    FROM l_feed_entries_count
+    WHERE feed_id = ANY(%(feed_ids)s)
+      AND date >= %(first_date)s
+      AND date <= %(last_date)s
+    """
+
+    rows = await execute(sql, {"feed_ids": feed_ids, "first_date": first_date, "last_date": last_date})
+
+    for row in rows:
+        counts[row["feed_id"]][row["date"]] = int(row["entries"])
+
+    for feed_id in feed_ids:
+        result[feed_id] = [
+            counts[feed_id].get(first_date + datetime.timedelta(days=shift), 0) for shift in range(period)
+        ]
+
+    return result
 
 
 async def get_feed_links_for_entries(

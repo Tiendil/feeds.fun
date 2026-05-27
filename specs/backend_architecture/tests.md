@@ -44,6 +44,10 @@ The preferred command form for running targeted backend tests is:
 
 Tests SHOULD be deterministic for the same repository state and filesystem state.
 
+Tests SHOULD prefer a real current-time value as the baseline for time-related cases when the exact calendar date is not
+part of the behavior under test. Hard-coded calendar datetimes SHOULD be used only when the specific date, month, year,
+weekday, or timezone boundary is itself relevant to the tested behavior.
+
 Tests that require specific shared state MUST prepare that state at the start of the relevant test or with an autouse fixture at the test class or test module level.
 
 Tests MUST NOT clean up shared state after themselves unless the developer explicitly requests cleanup behavior.

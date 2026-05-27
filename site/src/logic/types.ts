@@ -44,9 +44,11 @@ export class Feed {
   readonly state: string;
   readonly lastError: string | null;
   readonly loadedAt: Date | null;
-  readonly linkedAt: Date;
+  readonly linkedAt: Date | null;
   readonly isOk: boolean;
   readonly collectionIds: CollectionId[];
+  readonly entriesLoaded: number;
+  readonly entriesLoadedDetails: number[] | null;
 
   constructor({
     id,
@@ -58,7 +60,9 @@ export class Feed {
     loadedAt,
     linkedAt,
     isOk,
-    collectionIds
+    collectionIds,
+    entriesLoaded,
+    entriesLoadedDetails
   }: {
     id: FeedId;
     title: string | null;
@@ -67,9 +71,11 @@ export class Feed {
     state: string;
     lastError: string | null;
     loadedAt: Date | null;
-    linkedAt: Date;
+    linkedAt: Date | null;
     isOk: boolean;
     collectionIds: CollectionId[];
+    entriesLoaded: number;
+    entriesLoadedDetails: number[] | null;
   }) {
     this.id = id;
     this.title = title;
@@ -81,6 +87,8 @@ export class Feed {
     this.linkedAt = linkedAt;
     this.isOk = isOk;
     this.collectionIds = collectionIds;
+    this.entriesLoaded = entriesLoaded;
+    this.entriesLoadedDetails = entriesLoadedDetails;
   }
 }
 
@@ -92,8 +100,10 @@ export type RawFeed = {
   state: string;
   lastError?: string | null;
   loadedAt?: string | null;
-  linkedAt: string;
+  linkedAt?: string | null;
   collectionIds: string[];
+  entriesLoaded: number;
+  entriesLoadedDetails?: number[] | null;
 };
 
 export function feedFromJSON({
@@ -105,7 +115,9 @@ export function feedFromJSON({
   lastError,
   loadedAt,
   linkedAt,
-  collectionIds
+  collectionIds,
+  entriesLoaded,
+  entriesLoadedDetails
 }: RawFeed): Feed {
   return {
     id: toFeedId(id),
@@ -115,9 +127,11 @@ export function feedFromJSON({
     state: state,
     lastError: lastError !== undefined ? lastError : null,
     loadedAt: loadedAt !== undefined && loadedAt !== null ? new Date(loadedAt) : null,
-    linkedAt: new Date(linkedAt),
+    linkedAt: linkedAt !== undefined && linkedAt !== null ? new Date(linkedAt) : null,
     isOk: state === "loaded",
-    collectionIds: collectionIds.map(toCollectionId)
+    collectionIds: collectionIds.map(toCollectionId),
+    entriesLoaded: entriesLoaded,
+    entriesLoadedDetails: entriesLoadedDetails !== undefined ? entriesLoadedDetails : null
   };
 }
 

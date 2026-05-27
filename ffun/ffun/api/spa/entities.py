@@ -24,7 +24,6 @@ from ffun.domain.entities import (
 )
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
-from ffun.feeds_links import entities as fl_entities
 from ffun.library import entities as l_entities
 
 # TODO: rename to public name
@@ -65,10 +64,17 @@ class Feed(BaseEntity):
     loadedAt: datetime.datetime | None
     linkedAt: datetime.datetime | None
     collectionIds: list[CollectionId]
+    entriesLoaded: int
+    entriesLoadedDetails: list[int] | None = None
 
     @classmethod
     def from_internal(
-        cls, feed: f_entities.Feed, link: fl_entities.FeedLink, collection_ids: list[CollectionId]
+        cls,
+        feed: f_entities.Feed,
+        linked_at: datetime.datetime | None,
+        collection_ids: list[CollectionId],
+        entries_loaded: int,
+        entries_loaded_details: list[int] | None = None,
     ) -> "Feed":
         return cls(
             id=feed.id,
@@ -78,8 +84,10 @@ class Feed(BaseEntity):
             state=feed.state.name,
             lastError=feed.last_error.name if feed.last_error else None,
             loadedAt=feed.loaded_at,
-            linkedAt=link.created_at,
+            linkedAt=linked_at,
             collectionIds=collection_ids,
+            entriesLoaded=entries_loaded,
+            entriesLoadedDetails=entries_loaded_details,
         )
 
 
@@ -388,6 +396,14 @@ class GetFeedsRequest(api.APIRequest):
 
 
 class GetFeedsResponse(api.APISuccess):
+    feeds: list[Feed]
+
+
+class GetFeedsByIdsRequest(api.APIRequest):
+    ids: list[FeedId]
+
+
+class GetFeedsByIdsResponse(api.APISuccess):
     feeds: list[Feed]
 
 

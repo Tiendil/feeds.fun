@@ -1,8 +1,28 @@
 import pydantic
 import pytest
 
-from ffun.api.spa.entities import Marker, MutableMarker, RemoveMarkerRequest, SetMarkerRequest
+from ffun.api.spa.entities import Feed, Marker, MutableMarker, RemoveMarkerRequest, SetMarkerRequest
+from ffun.core import utils
 from ffun.domain.domain import new_entry_id
+from ffun.feeds.entities import Feed as InternalFeed
+
+
+class TestFeed:
+    @pytest.mark.asyncio
+    async def test_from_internal__with_entries_metrics(self, loaded_feed: InternalFeed) -> None:
+        linked_at = utils.now()
+
+        external_feed = Feed.from_internal(
+            loaded_feed,
+            linked_at=linked_at,
+            collection_ids=[],
+            entries_loaded=3,
+            entries_loaded_details=[0, 1, 2],
+        )
+
+        assert external_feed.linkedAt == linked_at
+        assert external_feed.entriesLoaded == 3
+        assert external_feed.entriesLoadedDetails == [0, 1, 2]
 
 
 class TestSetMarkerRequest:

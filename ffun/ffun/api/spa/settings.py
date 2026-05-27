@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     max_entries_details_requests: int = 100
 
     news_outside_period: int = 100
+    feed_metrics_period: int = 30
 
     model_config = pydantic_settings.SettingsConfigDict(env_prefix="FFUN_API_SPA_")
 

@@ -1,5 +1,6 @@
+import datetime
 from importlib import metadata
-from typing import Iterable
+from typing import Iterable, Mapping
 
 import fastapi
 from fastapi.openapi.docs import get_swagger_ui_html
@@ -15,9 +16,10 @@ from ffun.core import logging, utils
 from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
 from ffun.data_protection import domain as dp_domain
-from ffun.domain.entities import TagId, TagUid, UserId
+from ffun.domain.entities import FeedId, TagId, TagUid, UserId
 from ffun.domain.urls import url_to_uid
 from ffun.feeds import domain as f_domain
+from ffun.feeds import entities as f_entities
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_discoverer import domain as fd_domain
 from ffun.feeds_discoverer import entities as fd_entities
@@ -317,22 +319,56 @@ async def api_get_user(request: entities.GetUserRequest, user: User) -> entities
     return entities.GetUserResponse(userId=user.id)
 
 
-@api_private.post("/get-feeds")  # type: ignore
-async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entities.GetFeedsResponse:
-    linked_feeds = await fl_domain.get_linked_feeds(user.id)
+async def _external_feeds(
+    linked_at_by_feed: Mapping[FeedId, datetime.datetime | None], feeds: list[f_entities.Feed], with_details: bool
+) -> list[entities.Feed]:
+    feeds_ids = [feed.id for feed in feeds]
+    entries_loaded = await l_domain.entries_in_period(feeds_ids, settings.feed_metrics_period)
 
-    feeds_to_links = {link.feed_id: link for link in linked_feeds}
+    details: dict[FeedId, list[int]] = {}
 
-    feeds = await f_domain.get_feeds(ids=list(feeds_to_links.keys()))
+    if with_details:
+        details = await l_domain.entries_in_period_details(feeds_ids, settings.feed_metrics_period)
 
     external_feeds = []
 
     for feed in feeds:
         collection_ids = collections.collections_for_feed(feed.id)
-        external_feed = entities.Feed.from_internal(feed, link=feeds_to_links[feed.id], collection_ids=collection_ids)
+        external_feed = entities.Feed.from_internal(
+            feed,
+            linked_at=linked_at_by_feed.get(feed.id),
+            collection_ids=collection_ids,
+            entries_loaded=entries_loaded[feed.id],
+            entries_loaded_details=details.get(feed.id),
+        )
         external_feeds.append(external_feed)
 
+    return external_feeds
+
+
+@api_private.post("/get-feeds")  # type: ignore
+async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entities.GetFeedsResponse:
+    linked_feeds = await fl_domain.get_linked_feeds(user.id)
+
+    linked_at_by_feed = {link.feed_id: link.created_at for link in linked_feeds}
+
+    feeds = await f_domain.get_feeds(ids=list(linked_at_by_feed.keys()))
+
+    external_feeds = await _external_feeds(linked_at_by_feed=linked_at_by_feed, feeds=feeds, with_details=False)
+
     return entities.GetFeedsResponse(feeds=external_feeds)
+
+
+@api_private.post("/get-feeds-by-ids")  # type: ignore
+async def api_get_feeds_by_ids(request: entities.GetFeedsByIdsRequest, user: User) -> entities.GetFeedsByIdsResponse:
+    linked_feeds = await fl_domain.get_linked_feeds(user.id)
+    linked_at_by_feed = {link.feed_id: link.created_at for link in linked_feeds}
+
+    feeds = await f_domain.get_feeds(ids=request.ids)
+
+    external_feeds = await _external_feeds(linked_at_by_feed=linked_at_by_feed, feeds=feeds, with_details=True)
+
+    return entities.GetFeedsByIdsResponse(feeds=external_feeds)
 
 
 @api_private.post("/get-last-entries")  # type: ignore
@@ -508,13 +544,15 @@ async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities
 
     feed = await f_domain.get_feed(ids[0])
 
-    collection_ids = collections.collections_for_feed(feed.id)
-
     link = await fl_domain.get_link(user.id, feed.id)
 
     assert link is not None
 
-    return entities.AddFeedResponse(feed=entities.Feed.from_internal(feed, link=link, collection_ids=collection_ids))
+    external_feeds = await _external_feeds(
+        linked_at_by_feed={feed.id: link.created_at}, feeds=[feed], with_details=False
+    )
+
+    return entities.AddFeedResponse(feed=external_feeds[0])
 
 
 @api_private.post("/add-opml")  # type: ignore

@@ -38,6 +38,7 @@ You ABSOLUTELY MUST NOT perform the following operations without explicit instru
 - Updating lock files.
 - Installing any new tools, utilities, or software on the host machine or in the development containers.
 - Changing project structure, such as moving files around, creating new directories, etc.
+- Staging or unstaging files in git, including commands such as `git add`, `git restore --staged`, and `git reset`.
 
 If you want to change something in the above list, you MUST ask for explicit instructions and permission to do so.
 
