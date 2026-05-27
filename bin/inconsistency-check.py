@@ -1307,6 +1307,56 @@ def report_progress(path: str) -> ExitCode:
     return ExitCode.SUCCESS
 
 
+def build_list_pairs_report() -> str:
+    records = [
+        raw_record_to_check_record(record)
+        for record in load_taskwarrior_records()
+        if record.get("pair_key")
+    ]
+    records.sort(key=lambda record: (record.changed_path, record.relation, record.related_path, record.pair_key))
+    counts = Counter(record.check_status or "unknown" for record in records)
+    lines = [
+        "Queued relation pairs",
+        f"records: {len(records)}",
+    ]
+
+    if counts:
+        lines.append("status counts:")
+
+        for status, count in sorted(counts.items()):
+            lines.append(f"- {status}: {count}")
+
+    if not records:
+        return "\n".join(lines)
+
+    lines.append("records:")
+
+    for record in records:
+        report_status = "present" if record.report else "empty"
+        lines.extend(
+            [
+                f"- relation: {record.relation}",
+                f"  changed file: {record.changed_path}",
+                f"  related file: {record.related_path}",
+                f"  changed checksum: {record.checksum_changed}",
+                f"  related checksum: {record.checksum_related}",
+                f"  status: {record.check_status or 'unknown'}",
+                f"  report: {report_status}",
+                f"  pair key: {record.pair_key}",
+            ]
+        )
+
+    return "\n".join(lines)
+
+
+def list_pairs() -> ExitCode:
+    ensure_runtime_state()
+    log_project_journal("step", "list-pairs command started")
+    print(build_list_pairs_report())
+
+    return ExitCode.SUCCESS
+
+
 def print_status_update(current_pair: CurrentPair) -> None:
     record = current_pair.record
     print("Updated relation pair status")
@@ -1520,8 +1570,11 @@ def run_self_check() -> ExitCode:
     )
     changed_report = build_progress_report(changed_path)
     related_report = build_progress_report(related_path)
+    list_pairs_report = build_list_pairs_report()
     assert_self_check(changed_identity.pair_key in changed_report, "progress must match changed_path side")
     assert_self_check(changed_identity.pair_key in related_report, "progress must match related_path side")
+    assert_self_check(changed_identity.pair_key in list_pairs_report, "list-pairs report must include queued pair")
+    assert_self_check("Queued relation pairs" in list_pairs_report, "list-pairs report must include heading")
     pair_records = load_taskwarrior_records()
     project_journal = json.loads(
         run_command(
@@ -1603,6 +1656,8 @@ def parse_args() -> argparse.Namespace:
     progress_parser = subparsers.add_parser("progress", help="show cached relation-pair progress")
     progress_parser.add_argument("--file", required=True, help="project path or root-anchored artifact id")
 
+    subparsers.add_parser("list-pairs", help="list all queued relation pairs")
+
     mark_consistent_parser = subparsers.add_parser(
         "mark-consistent",
         help="explicitly mark one current-checksum relation pair as consistent",
@@ -1637,6 +1692,9 @@ def main() -> int:
 
         if args.command == "progress":
             return int(report_progress(args.file))
+
+        if args.command == "list-pairs":
+            return int(list_pairs())
 
         if args.command == "mark-consistent":
             return int(mark_pair_status(args, check_status="consistent"))
