@@ -47,6 +47,9 @@ TASKWARRIOR_BIN = "task"
 PROJECT_JOURNAL_CMD = "./bin/taskwarior.sh"
 PROJECT_JOURNAL_TAG = "consistency"
 VALID_CHECK_STATUSES = {"unchecked", "consistent", "inconsistent"}
+# TODO: that should be in config file
+# TODO: what to do with reflected relations?
+ALLOWED_FILE_RELATIONS = ["governs"]
 TASKRC_CONTENT = f"""data.location={RELATIVE_RUNTIME_DIR / "taskwarrior"}
 confirmation=no
 
@@ -499,7 +502,11 @@ def parse_depmesh_dependencies(
 
 
 def query_depmesh_pairs(changed_files: list[str]) -> list[RelationPair]:
-    relations = load_depmesh_relations()
+    relations = [
+        relation
+        for relation in load_depmesh_relations()
+        if relation.relation_id in ALLOWED_FILE_RELATIONS
+    ]
     pair_map: dict[tuple[str, str, str], RelationPair] = {}
 
     for changed_path in sorted(changed_files):
@@ -1239,7 +1246,7 @@ def load_queued_current_pairs() -> list[CurrentPair]:
     current_pairs = [
         record_to_current_pair(record, relation_descriptions)
         for record in records
-        if record.pair_key
+        if record.pair_key and record.relation in ALLOWED_FILE_RELATIONS
     ]
     log_project_journal("step", f"loaded {len(current_pairs)} queued pair records")
 
@@ -1261,6 +1268,7 @@ def build_progress_report(path: str) -> str:
         raw_record_to_check_record(record)
         for record in load_taskwarrior_records()
         if record.get("changed_path") == artifact_path or record.get("related_path") == artifact_path
+        if record.get("relation") in ALLOWED_FILE_RELATIONS
     ]
     records.sort(key=lambda record: (record.changed_path, record.relation, record.related_path, record.pair_key))
     counts = Counter(record.check_status or "unknown" for record in records)
@@ -1311,7 +1319,7 @@ def build_list_pairs_report() -> str:
     records = [
         raw_record_to_check_record(record)
         for record in load_taskwarrior_records()
-        if record.get("pair_key")
+        if record.get("pair_key") and record.get("relation") in ALLOWED_FILE_RELATIONS
     ]
     records.sort(key=lambda record: (record.changed_path, record.relation, record.related_path, record.pair_key))
     counts = Counter(record.check_status or "unknown" for record in records)
@@ -1373,6 +1381,19 @@ def mark_pair_status(args: argparse.Namespace, *, check_status: str) -> ExitCode
     changed_path = normalize_input_path(args.changed)
     related_path = normalize_input_path(args.related)
     relation = str(args.relation)
+
+    if relation not in ALLOWED_FILE_RELATIONS:
+        log_project_journal(
+            "step",
+            f"skipped explicit pair status for disallowed relation {changed_path} -> {related_path} [{relation}]",
+        )
+        print("Skipped relation pair")
+        print(f"changed file: {changed_path}")
+        print(f"related file: {related_path}")
+        print(f"relation: {relation}")
+        print("reason: relation is not allowed")
+        return ExitCode.SUCCESS
+
     pair = RelationPair(
         changed_path=changed_path,
         related_path=related_path,
@@ -1478,24 +1499,24 @@ def run_self_check() -> ExitCode:
     pair = RelationPair(
         changed_path=changed_path,
         related_path=related_path,
-        relation="self_check",
+        relation="governs",
         relation_description="Self-check relation",
     )
     second_pair = RelationPair(
         changed_path=changed_path,
         related_path=second_related_path,
-        relation="self_check",
+        relation="governs",
         relation_description="Self-check relation",
     )
     missing_pair = RelationPair(
         changed_path=changed_path,
         related_path="@/.session/inconsistency-check/self-check/missing.txt",
-        relation="self_check",
+        relation="governs",
         relation_description="Self-check relation",
     )
     identity = build_pair_identity(pair)
     second_identity = build_pair_identity(second_pair)
-    assert_self_check(identity.pair_key == f"self_check|{identity.file_pair}", "pair key must include relation")
+    assert_self_check(identity.pair_key == f"governs|{identity.file_pair}", "pair key must include relation")
     assert_self_check(identity.file_pair.startswith("<.session/"), "file_pair must use root-relative paths")
     reset_self_check_record(identity)
     reset_self_check_record(second_identity)
