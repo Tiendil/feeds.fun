@@ -34,6 +34,6 @@ class UserSetting(enum.IntEnum):
     show_sidebar = 19
 
 
-class Resource(int, enum.Enum):
+class Resource(enum.IntEnum):
     # openai_tokens = 1  # noqa
     tokens_cost = 2
