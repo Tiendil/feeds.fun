@@ -21,9 +21,8 @@ Migration files SHOULD stay in module-local `migrations` packages for the domain
 ## Domain and product boundaries
 
 Reusable domain modules SHOULD own generic behavior, storage, validation, and extension points for their domain area.
-Product-specific choices that configure those reusable modules for Feeds Fun SHOULD stay outside the reusable domain
-implementation. For example, `ffun.user_settings` owns the generic user settings machinery, while `ffun.product` owns
-the concrete product setting definitions registered in that machinery.
+
+Product-specific choices that configure those reusable modules for Feeds Fun SHOULD stay outside the reusable domain implementation. For example, `ffun.user_settings` owns the generic user settings machinery, while `ffun.product` owns the concrete product setting definitions registered in that machinery.
 
 ## Module responsibilities
 
@@ -213,41 +212,23 @@ Most backend modules are domain-level modules. They own reusable business capabi
 keep product-specific choices and application/interface wiring outside their implementation. Product-specific choices
 SHOULD live in `ffun.product`; external interface concerns SHOULD live in edge-layer modules.
 
-Production code in one domain-level module that needs types, values, behavior, or errors from another domain-level
-module MUST use only that module's `domain`, `entities`, or `errors` submodules. Domain-level modules SHOULD expose
-cross-module production API through those submodules when such API is needed.
+Production code in one domain-level module that needs types, values, behavior, or errors from another domain-level module MUST use only that module's `domain`, `entities`, or `errors` submodules. Domain-level modules SHOULD expose cross-module production API through those submodules when such API is needed.
 
-A supported domain API MAY return or accept objects whose concrete classes are defined in the module's implementation
-submodules. The cross-module dependency rule constrains the import path used by callers; it does not require every
-object reachable through a public API to be defined in `domain`, `entities`, or `errors`. Callers MUST still import and
-call the supported API through the allowed submodules, and MUST NOT import implementation submodules only to access the
-same objects directly.
+A supported domain API MAY return or accept objects whose concrete classes are defined in the module's implementation submodules. The cross-module dependency rule constrains the import path used by callers; it does not require every object reachable through a public API to be defined in `domain`, `entities`, or `errors`. Callers MUST still import and call the supported API through the allowed submodules, and MUST NOT import implementation submodules only to access the same objects directly.
 
-Tests MAY additionally import another domain-level module's `tests.make` and `tests.helpers` submodules for reusable
-test data construction and setup helpers. Production code MUST NOT import another module's `tests`, `tests.make`, or
-`tests.helpers` submodules.
+Tests MAY additionally import another domain-level module's `tests.make` and `tests.helpers` submodules for reusable test data construction and setup helpers. Production code MUST NOT import another module's `tests`, `tests.make`, or `tests.helpers` submodules.
 
-Domain-level modules MUST NOT import implementation submodules from another domain-level module. Domain-level modules
-MUST NOT import another domain-level module's `operations` submodule.
+Domain-level modules MUST NOT import implementation submodules from another domain-level module. Domain-level modules MUST NOT import another domain-level module's `operations` submodule.
 
 ### Edge-layer modules
 
-`ffun.application`, `ffun.api`, and `ffun.cli` are edge-layer modules. They adapt the backend to external entry points
-such as application construction, HTTP APIs, and command-line interfaces. Edge-layer modules SHOULD follow the same
-cross-module dependency rules as domain-level modules when they use domain-level modules. Foundational and domain-level
-modules MUST NOT import edge-layer modules.
+`ffun.application`, `ffun.api`, and `ffun.cli` are edge-layer modules. They adapt the backend to external entry points such as application construction, HTTP APIs, and command-line interfaces. Edge-layer modules SHOULD follow the same cross-module dependency rules as domain-level modules when they use domain-level modules. Foundational and domain-level modules MUST NOT import edge-layer modules.
 
 ## Import paths
 
-Code that imports objects, functions, classes, entities, constants, or other named Python definitions from another
-module MUST import them from the module where they are defined. Importing a definition into a module for local use does
-not make that module a supported import path for other callers. Callers MUST NOT import definitions through unrelated
-intermediate modules unless a specification or a code comment explicitly documents that import path as a supported
-public facade.
+Code that imports objects, functions, classes, entities, constants, or other named Python definitions from another module MUST import them from the module where they are defined. Importing a definition into a module for local use does not make that module a supported import path for other callers. Callers MUST NOT import definitions through unrelated intermediate modules unless a specification or a code comment explicitly documents that import path as a supported public facade.
 
-When a named definition moves to another module, all imports of that definition MUST be updated to the new definition
-module as part of the same change. Obsolete compatibility import paths and re-export-only modules MUST be removed
-instead of preserved as hidden alternate public paths.
+When a named definition moves to another module, all imports of that definition MUST be updated to the new definition module as part of the same change. Obsolete compatibility import paths and re-export-only modules MUST be removed instead of preserved as hidden alternate public paths.
 
 ## Data structures
 
