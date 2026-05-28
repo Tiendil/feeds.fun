@@ -571,8 +571,19 @@ class TestEntriesInPeriodDetails:
         }
 
     @pytest.mark.asyncio
-    async def test_returns_zeroes_for_feeds_without_entries(self, loaded_feed_id: FeedId) -> None:
-        assert await entries_in_period_details([loaded_feed_id], Days(3)) == {loaded_feed_id: [0, 0, 0]}
+    async def test_returns_zeroes_for_feeds_without_entries(
+        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId, mocker: MockerFixture
+    ) -> None:
+        today = utils.now()
+        mocker.patch("ffun.library.operations.utils.now", return_value=today)
+
+        await _increment_feed_entries_count(execute, loaded_feed_id, today.date())
+        await _increment_feed_entries_count(execute, loaded_feed_id, (today - datetime.timedelta(days=2)).date())
+
+        assert await entries_in_period_details([loaded_feed_id, another_loaded_feed_id], Days(3)) == {
+            loaded_feed_id: [1, 0, 1],
+            another_loaded_feed_id: [0, 0, 0],
+        }
 
     @pytest.mark.asyncio
     async def test_ignores_entries_before_requested_period(
