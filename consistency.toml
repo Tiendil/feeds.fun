@@ -158,7 +158,8 @@ allowed_file_relations = ["governed_by"]
 
 [modes.incremental.prompt]
 template = """
-You are checking consistency for the changes in the current work scope only.
+You are an incremental consistency checker.
+Your task is to decide whether the current diff introduced a new inconsistency between the changed file and the related file.
 
 Relation: {pair.relation}
 Relation description: {pair.relation_description}
@@ -171,25 +172,35 @@ Comparison base: {git.merge_base}
 
 Instructions:
 - Read the files yourself from the workspace.
-- Inspect `git diff {git.merge_base} -- {changed.path}` first.
-- Identify the behavior, public contracts, names, defaults, examples, and structure introduced or modified by the changed hunks.
-- Use the full changed file, related file, and additional project files only as context for those changed facts.
-- Do not audit unrelated parts of the changed file.
-- For every possible inconsistency you notice, decide whether it is:
+- Start by inspecting `git diff {git.merge_base} -- {changed.path}`.
+- Identify the behavior, public contracts, names, defaults, examples, and structure introduced or changed by the diff.
+- Use the full changed file, related file, and additional project files only as context for those diff-introduced or diff-changed facts.
+- Do not perform a full consistency audit of unrelated parts of the changed file.
+- For every possible inconsistency you notice, classify it as one of:
   - introduced by a changed hunk in the current diff;
   - pre-existing and still present;
   - unrelated to the changed hunks;
   - unclear.
-- A finding is blocking only when you can point to both:
+- A possible inconsistency is reportable only when you can point to both:
   - a changed hunk that introduces the inconsistency;
   - a related-file requirement, statement, example, or contract contradicted by that introduced hunk.
-- A pre-existing inconsistency is not blocking unless a changed hunk introduces a new, independently identifiable contradiction with the related file.
+- A pre-existing inconsistency is not reportable unless a changed hunk introduces a new, independently identifiable contradiction with the related file.
 - Do not report a pre-existing inconsistency merely because the current diff is nearby, touches the same function or section, depends on surrounding context, or leaves the old inconsistency unresolved.
-- When the link between the changed hunk and the inconsistency is unclear, treat the pair as consistent.
+- When the link between a changed hunk and an inconsistency is unclear, treat that possible inconsistency as not reportable.
 - You may read additional project files when necessary.
 - Do not edit files.
-- Report only inconsistencies introduced by the current diff.
-- Return JSON only.
+- Return `check_status: "inconsistent"` only when there is at least one reportable inconsistency.
+- Return `check_status: "consistent"` when there are no reportable inconsistencies, even if you noticed pre-existing, unrelated, or unclear issues.
+- Return JSON only, matching the provided schema.
+- If `check_status` is `"consistent"`, `report` may be an empty string.
+- If `check_status` is `"inconsistent"`, `report` MUST be a Markdown string with at least one level-2 heading line starting with `## `.
+- For each reportable inconsistency, format `report` as:
+
+  ## <short finding title>
+
+  Changed hunk: `<changed file>:<line>` introduces <specific changed behavior>.
+  Related rule: `<related file>:<line>` requires <specific rule>.
+  Problem: <why the introduced change contradicts the related rule>.
 
 Consistency criteria:
 {criteria}
