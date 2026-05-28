@@ -200,17 +200,11 @@ Backend modules have different dependency roles.
 
 ### Foundational modules
 
-`ffun.core`, `ffun.domain`, and `ffun.product` are foundational modules. They own shared technical primitives,
-cross-domain value types and utilities, and product-wide definitions that bind reusable domain mechanisms to Feeds Fun
-product choices. Other backend modules MAY import any submodule of a foundational module when they need functionality
-owned by that submodule. Foundational modules SHOULD avoid depending on domain-level or edge-layer modules, so shared
-primitives do not acquire feature or interface dependencies.
+`ffun.core`, `ffun.domain`, and `ffun.product` are foundational modules. They own shared technical primitives, cross-domain value types and utilities, and product-wide definitions that bind reusable domain mechanisms to Feeds Fun product choices. Other backend modules MAY import any submodule of a foundational module when they need functionality owned by that submodule. Foundational modules SHOULD avoid depending on domain-level or edge-layer modules, so shared primitives do not acquire feature or interface dependencies.
 
 ### Domain-level modules
 
-Most backend modules are domain-level modules. They own reusable business capabilities for one domain area and SHOULD
-keep product-specific choices and application/interface wiring outside their implementation. Product-specific choices
-SHOULD live in `ffun.product`; external interface concerns SHOULD live in edge-layer modules.
+Most backend modules are domain-level modules. They own reusable business capabilities for one domain area and SHOULD keep product-specific choices and application/interface wiring outside their implementation. Product-specific choices SHOULD live in `ffun.product`; external interface concerns SHOULD live in edge-layer modules.
 
 Production code in one domain-level module that needs types, values, behavior, or errors from another domain-level module MUST use only that module's `domain`, `entities`, or `errors` submodules. Domain-level modules SHOULD expose cross-module production API through those submodules when such API is needed.
 
