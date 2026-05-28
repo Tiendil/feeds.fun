@@ -13,6 +13,12 @@ from ffun.users.entities import User
 
 class TestApiGetFeeds:
     @pytest.mark.asyncio
+    async def test_empty_linked_feeds(self, internal_user_id: UserId) -> None:
+        response = await api_get_feeds(entities.GetFeedsRequest(), User(id=internal_user_id))
+
+        assert response.feeds == []
+
+    @pytest.mark.asyncio
     async def test_returns_entries_loaded_without_details(
         self, internal_user_id: UserId, loaded_feed: Feed, new_entry: CollectedEntry
     ) -> None:
