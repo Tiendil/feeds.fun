@@ -29,6 +29,7 @@ from ffun.library.domain import get_entry
 from ffun.library.entities import CollectedEntry, Entry, FeedEntryLink, Reference, ReferenceKind
 from ffun.library.operations import (
     _catalog_entry,
+    _increment_feed_entries_count,
     all_entries_iterator,
     catalog_entries,
     count_total_entries,
@@ -472,6 +473,30 @@ class TestCatalogEntries:
             assert loaded_entries[entry.id] is not None
 
 
+class TestIncrementFeedEntriesCount:
+    @pytest.mark.asyncio
+    async def test_increments_counter_for_feed_and_date(
+        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId
+    ) -> None:
+        today = utils.now().date()
+
+        async with TableSizeDelta("l_feed_entries_count", delta=2):
+            await _increment_feed_entries_count(execute, loaded_feed_id, today)
+            await _increment_feed_entries_count(execute, loaded_feed_id, today)
+            await _increment_feed_entries_count(execute, another_loaded_feed_id, today)
+
+        rows = await execute(
+            "SELECT feed_id, entries FROM l_feed_entries_count "
+            "WHERE feed_id = ANY(%(feed_ids)s) AND date = %(date)s",
+            {"feed_ids": [loaded_feed_id, another_loaded_feed_id], "date": today},  # type: ignore
+        )
+
+        assert {row["feed_id"]: row["entries"] for row in rows} == {  # type: ignore
+            loaded_feed_id: 2,
+            another_loaded_feed_id: 1,
+        }
+
+
 class TestEntriesInPeriod:
     @pytest.mark.asyncio
     async def test_counts_entries_for_each_feed_in_requested_period(
@@ -497,6 +522,28 @@ class TestEntriesInPeriod:
     @pytest.mark.asyncio
     async def test_returns_zero_for_feeds_without_entries(self, loaded_feed_id: FeedId) -> None:
         assert await entries_in_period([loaded_feed_id], Days(30)) == {loaded_feed_id: 0}
+
+    @pytest.mark.asyncio
+    async def test_ignores_entries_before_requested_period(
+        self, loaded_feed_id: FeedId, mocker: MockerFixture
+    ) -> None:
+        today = utils.now()
+        mocker.patch("ffun.library.operations.utils.now", return_value=today)
+
+        await _increment_feed_entries_count(execute, loaded_feed_id, today.date())
+        await _increment_feed_entries_count(execute, loaded_feed_id, (today - datetime.timedelta(days=1)).date())
+        await _increment_feed_entries_count(execute, loaded_feed_id, (today - datetime.timedelta(days=2)).date())
+
+        assert await entries_in_period([loaded_feed_id], Days(2)) == {loaded_feed_id: 2}
+
+    @pytest.mark.asyncio
+    async def test_empty_feed_ids(self) -> None:
+        assert await entries_in_period([], Days(30)) == {}
+
+    @pytest.mark.parametrize("period", [Days(0), Days(-1)])
+    @pytest.mark.asyncio
+    async def test_non_positive_period(self, loaded_feed_id: FeedId, period: Days) -> None:
+        assert await entries_in_period([loaded_feed_id], period) == {loaded_feed_id: 0}
 
 
 class TestEntriesInPeriodDetails:
@@ -526,6 +573,28 @@ class TestEntriesInPeriodDetails:
     @pytest.mark.asyncio
     async def test_returns_zeroes_for_feeds_without_entries(self, loaded_feed_id: FeedId) -> None:
         assert await entries_in_period_details([loaded_feed_id], Days(3)) == {loaded_feed_id: [0, 0, 0]}
+
+    @pytest.mark.asyncio
+    async def test_ignores_entries_before_requested_period(
+        self, loaded_feed_id: FeedId, mocker: MockerFixture
+    ) -> None:
+        today = utils.now()
+        mocker.patch("ffun.library.operations.utils.now", return_value=today)
+
+        await _increment_feed_entries_count(execute, loaded_feed_id, today.date())
+        await _increment_feed_entries_count(execute, loaded_feed_id, (today - datetime.timedelta(days=2)).date())
+        await _increment_feed_entries_count(execute, loaded_feed_id, (today - datetime.timedelta(days=3)).date())
+
+        assert await entries_in_period_details([loaded_feed_id], Days(3)) == {loaded_feed_id: [1, 0, 1]}
+
+    @pytest.mark.asyncio
+    async def test_empty_feed_ids(self) -> None:
+        assert await entries_in_period_details([], Days(3)) == {}
+
+    @pytest.mark.parametrize("period", [Days(0), Days(-1)])
+    @pytest.mark.asyncio
+    async def test_non_positive_period(self, loaded_feed_id: FeedId, period: Days) -> None:
+        assert await entries_in_period_details([loaded_feed_id], period) == {loaded_feed_id: []}
 
 
 # Most of the functionality is tested in the tests for catalog_entry and other functions
