@@ -134,6 +134,15 @@ class CheckRecord:
 
 
 @dataclass(frozen=True)
+class ListPairsOptions:
+    multi_line: bool = False
+    include_report: bool = False
+    include_all_fields: bool = False
+    statuses: tuple[str, ...] = ()
+    include_count: bool = True
+
+
+@dataclass(frozen=True)
 class CurrentPair:
     pair: RelationPair
     identity: PairIdentity
@@ -1315,52 +1324,109 @@ def report_progress(path: str) -> ExitCode:
     return ExitCode.SUCCESS
 
 
-def build_list_pairs_report() -> str:
+def load_list_pair_records(statuses: Iterable[str] = ()) -> list[CheckRecord]:
+    status_filter = set(statuses)
     records = [
         raw_record_to_check_record(record)
         for record in load_taskwarrior_records()
         if record.get("pair_key") and record.get("relation") in ALLOWED_FILE_RELATIONS
     ]
+    if status_filter:
+        records = [record for record in records if (record.check_status or "unknown") in status_filter]
+
     records.sort(key=lambda record: (record.changed_path, record.relation, record.related_path, record.pair_key))
-    counts = Counter(record.check_status or "unknown" for record in records)
-    lines = [
-        "Queued relation pairs",
-        f"records: {len(records)}",
+
+    return records
+
+
+def list_pair_record_fields(record: CheckRecord, options: ListPairsOptions) -> list[tuple[str, str]]:
+    fields = [
+        ("changed file", record.changed_path),
+        ("related file", record.related_path),
+        ("status", record.check_status or "unknown"),
     ]
 
-    if counts:
-        lines.append("status counts:")
+    if options.include_all_fields:
+        fields = [
+            ("uuid", record.uuid),
+            ("pair key", record.pair_key),
+            ("file pair", record.file_pair),
+            ("changed file", record.changed_path),
+            ("related file", record.related_path),
+            ("relation", record.relation),
+            ("changed checksum", record.checksum_changed),
+            ("related checksum", record.checksum_related),
+            ("status", record.check_status or "unknown"),
+            ("report", "present" if record.report else "empty"),
+            ("checked at", record.checked_at),
+        ]
 
-        for status, count in sorted(counts.items()):
-            lines.append(f"- {status}: {count}")
+    return fields
 
-    if not records:
-        return "\n".join(lines)
 
-    lines.append("records:")
+def format_list_pair_record_single_line(record: CheckRecord, options: ListPairsOptions) -> list[str]:
+    fields = list_pair_record_fields(record, options)
+    status = record.check_status or "unknown"
+    fields_without_status = [(name, value) for name, value in fields if name != "status"]
+    lines = [" | ".join([status, *(f"{name}: {value}" for name, value in fields_without_status)])]
 
-    for record in records:
-        report_status = "present" if record.report else "empty"
-        lines.extend(
-            [
-                f"- relation: {record.relation}",
-                f"  changed file: {record.changed_path}",
-                f"  related file: {record.related_path}",
-                f"  changed checksum: {record.checksum_changed}",
-                f"  related checksum: {record.checksum_related}",
-                f"  status: {record.check_status or 'unknown'}",
-                f"  report: {report_status}",
-                f"  pair key: {record.pair_key}",
-            ]
-        )
+    if options.include_report:
+        lines.append("report:")
+        lines.append(record.report or "(empty report)")
+
+    return lines
+
+
+def format_list_pair_record_multi_line(record: CheckRecord, options: ListPairsOptions) -> list[str]:
+    lines = [f"{name}: {value}" for name, value in list_pair_record_fields(record, options)]
+
+    if options.include_report:
+        lines.append("report:")
+        lines.append(record.report or "(empty report)")
+
+    return lines
+
+
+def build_list_pairs_report(options: ListPairsOptions | None = None) -> str:
+    options = options or ListPairsOptions()
+    records = load_list_pair_records(options.statuses)
+    lines: list[str] = []
+
+    for index, record in enumerate(records):
+        if index and options.multi_line:
+            lines.append("")
+
+        if options.multi_line:
+            lines.extend(format_list_pair_record_multi_line(record, options))
+        else:
+            lines.extend(format_list_pair_record_single_line(record, options))
+
+    if options.include_count:
+        if lines:
+            lines.append("")
+
+        lines.append(f"records: {len(records)}")
 
     return "\n".join(lines)
 
 
-def list_pairs() -> ExitCode:
+def list_pairs(args: argparse.Namespace) -> ExitCode:
     ensure_runtime_state()
-    log_project_journal("step", "list-pairs command started")
-    print(build_list_pairs_report())
+    options = ListPairsOptions(
+        multi_line=bool(args.multi_line),
+        include_report=bool(args.report),
+        include_all_fields=bool(args.all),
+        statuses=tuple(args.statuses or ()),
+        include_count=not bool(args.no_count),
+    )
+    log_project_journal(
+        "step",
+        f"list-pairs command started statuses:{','.join(options.statuses) or 'all'}",
+    )
+    report = build_list_pairs_report(options)
+
+    if report:
+        print(report)
 
     return ExitCode.SUCCESS
 
@@ -1499,24 +1565,27 @@ def run_self_check() -> ExitCode:
     pair = RelationPair(
         changed_path=changed_path,
         related_path=related_path,
-        relation="governs",
+        relation=ALLOWED_FILE_RELATIONS[0],
         relation_description="Self-check relation",
     )
     second_pair = RelationPair(
         changed_path=changed_path,
         related_path=second_related_path,
-        relation="governs",
+        relation=ALLOWED_FILE_RELATIONS[0],
         relation_description="Self-check relation",
     )
     missing_pair = RelationPair(
         changed_path=changed_path,
         related_path="@/.session/inconsistency-check/self-check/missing.txt",
-        relation="governs",
+        relation=ALLOWED_FILE_RELATIONS[0],
         relation_description="Self-check relation",
     )
     identity = build_pair_identity(pair)
     second_identity = build_pair_identity(second_pair)
-    assert_self_check(identity.pair_key == f"governs|{identity.file_pair}", "pair key must include relation")
+    assert_self_check(
+        identity.pair_key == f"{ALLOWED_FILE_RELATIONS[0]}|{identity.file_pair}",
+        "pair key must include relation",
+    )
     assert_self_check(identity.file_pair.startswith("<.session/"), "file_pair must use root-relative paths")
     reset_self_check_record(identity)
     reset_self_check_record(second_identity)
@@ -1591,11 +1660,53 @@ def run_self_check() -> ExitCode:
     )
     changed_report = build_progress_report(changed_path)
     related_report = build_progress_report(related_path)
-    list_pairs_report = build_list_pairs_report()
+    list_pairs_report = build_list_pairs_report(ListPairsOptions(statuses=("inconsistent",)))
+    list_pairs_all_report = build_list_pairs_report(
+        ListPairsOptions(include_all_fields=True, statuses=("inconsistent",))
+    )
+    list_pairs_report_report = build_list_pairs_report(
+        ListPairsOptions(include_report=True, statuses=("inconsistent",))
+    )
+    list_pairs_multiline_report = build_list_pairs_report(
+        ListPairsOptions(multi_line=True, statuses=("inconsistent",))
+    )
+    list_pairs_no_count_report = build_list_pairs_report(
+        ListPairsOptions(statuses=("inconsistent",), include_count=False)
+    )
     assert_self_check(changed_identity.pair_key in changed_report, "progress must match changed_path side")
     assert_self_check(changed_identity.pair_key in related_report, "progress must match related_path side")
-    assert_self_check(changed_identity.pair_key in list_pairs_report, "list-pairs report must include queued pair")
-    assert_self_check("Queued relation pairs" in list_pairs_report, "list-pairs report must include heading")
+    assert_self_check(changed_path in list_pairs_report, "list-pairs default report must include changed file")
+    assert_self_check(related_path in list_pairs_report, "list-pairs default report must include related file")
+    assert_self_check(
+        list_pairs_report.startswith("inconsistent | "),
+        "list-pairs default report must start with status",
+    )
+    assert_self_check(
+        "status: inconsistent" not in list_pairs_report,
+        "list-pairs default report must omit status label",
+    )
+    assert_self_check(
+        changed_identity.pair_key not in list_pairs_report,
+        "list-pairs default report must omit pair key",
+    )
+    assert_self_check(changed_identity.pair_key in list_pairs_all_report, "list-pairs --all must include pair key")
+    assert_self_check(
+        "## Manually marked inconsistent" in list_pairs_report_report,
+        "list-pairs --report must include full report",
+    )
+    assert_self_check(
+        "\nrelated file:" in list_pairs_multiline_report,
+        "list-pairs --multi-line must place fields on separate lines",
+    )
+    assert_self_check(
+        not list_pairs_no_count_report.splitlines()[-1].startswith("records:"),
+        "list-pairs --no-count must omit output count",
+    )
+    assert_self_check(
+        build_list_pairs_report(ListPairsOptions(statuses=("self-check-missing-status",))).strip()
+        == "records: 0",
+        "list-pairs status filter must filter records",
+    )
     pair_records = load_taskwarrior_records()
     project_journal = json.loads(
         run_command(
@@ -1677,7 +1788,33 @@ def parse_args() -> argparse.Namespace:
     progress_parser = subparsers.add_parser("progress", help="show cached relation-pair progress")
     progress_parser.add_argument("--file", required=True, help="project path or root-anchored artifact id")
 
-    subparsers.add_parser("list-pairs", help="list all queued relation pairs")
+    list_pairs_parser = subparsers.add_parser("list-pairs", help="list all queued relation pairs")
+    list_pairs_parser.add_argument(
+        "--multi-line",
+        action="store_true",
+        help="print each relation-pair record across multiple lines",
+    )
+    list_pairs_parser.add_argument(
+        "--report",
+        action="store_true",
+        help="include the full markdown report for each relation-pair record",
+    )
+    list_pairs_parser.add_argument(
+        "--all",
+        action="store_true",
+        help="include all stored relation-pair fields",
+    )
+    list_pairs_parser.add_argument(
+        "--status",
+        action="append",
+        dest="statuses",
+        help="include only records with this status; may be repeated",
+    )
+    list_pairs_parser.add_argument(
+        "--no-count",
+        action="store_true",
+        help="do not print the number of output records",
+    )
 
     mark_consistent_parser = subparsers.add_parser(
         "mark-consistent",
@@ -1715,7 +1852,7 @@ def main() -> int:
             return int(report_progress(args.file))
 
         if args.command == "list-pairs":
-            return int(list_pairs())
+            return int(list_pairs(args))
 
         if args.command == "mark-consistent":
             return int(mark_pair_status(args, check_status="consistent"))
