@@ -3,7 +3,7 @@ from typing import Iterable
 from ffun.core import logging
 from ffun.core.postgresql import execute
 from ffun.domain.entities import UserId
-from ffun.user_settings.entities import UserSettings
+from ffun.user_settings.entities import SettingKind, UserSettings
 
 logger = logging.get_module_logger()
 
@@ -39,7 +39,7 @@ async def load_settings_for_users(user_ids: Iterable[UserId], kinds: Iterable[in
 
     for row in result:
         user_id = row["user_id"]
-        kind = row["kind"]
+        kind = SettingKind(row["kind"])
         value = row["value"]
 
         values[user_id][kind] = value

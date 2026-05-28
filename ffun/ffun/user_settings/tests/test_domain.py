@@ -8,6 +8,7 @@ from ffun.core.register import Register
 from ffun.core.tests.helpers import TableSizeDecreased, TableSizeNotChanged
 from ffun.domain.entities import UserId
 from ffun.user_settings import domain, errors, operations, types
+from ffun.user_settings.entities import SettingKind, UserSettings
 from ffun.user_settings.tests import asserts
 from ffun.user_settings.values import SettingsRegister, Value
 
@@ -22,6 +23,10 @@ class Setting(enum.IntEnum):
     kind_secret = 4
 
 
+def _kind(setting: Setting) -> SettingKind:
+    return SettingKind(int(setting))
+
+
 _integer_default = 123
 _string_default = "abc"
 _boolean_default = True
@@ -31,31 +36,33 @@ _secret_default = "secret"  # noqa: S105
 register: SettingsRegister = Register()
 
 
-register.add(Value(key=Setting.kind_integer, name="integer", type=types.Integer(), default=_integer_default))
+register.add(Value(key=_kind(Setting.kind_integer), name="integer", type=types.Integer(), default=_integer_default))
 
-register.add(Value(key=Setting.kind_string, name="string", type=types.String(), default=_string_default))
+register.add(Value(key=_kind(Setting.kind_string), name="string", type=types.String(), default=_string_default))
 
-register.add(Value(key=Setting.kind_boolean, name="boolean", type=types.Boolean(), default=_boolean_default))
+register.add(Value(key=_kind(Setting.kind_boolean), name="boolean", type=types.Boolean(), default=_boolean_default))
 
-register.add(Value(key=Setting.kind_secret, name="secret", type=types.Secret(), default=_secret_default))
+register.add(Value(key=_kind(Setting.kind_secret), name="secret", type=types.Secret(), default=_secret_default))
 
 
 class TestSetting:
     def test(self) -> None:
-        assert domain.setting(Setting.kind_integer, register=register) is register.get(Setting.kind_integer)
+        assert domain.setting(_kind(Setting.kind_integer), register=register) is register.get(
+            _kind(Setting.kind_integer)
+        )
 
 
 class TestSave:
     @pytest.mark.asyncio
     async def test_save_with_conversion(self, internal_user_id: UserId) -> None:
-        await domain.save_setting(internal_user_id, Setting.kind_integer, 124, register=register)
+        await domain.save_setting(internal_user_id, _kind(Setting.kind_integer), 124, register=register)
         await asserts.has_settings(internal_user_id, {Setting.kind_integer: "124"})
 
     @pytest.mark.asyncio
     async def test_do_not_save_after_error(self, internal_user_id: UserId) -> None:
         with pytest.raises(errors.WrongValueType):
             await domain.save_setting(
-                internal_user_id, Setting.kind_integer, "string instead of int", register=register
+                internal_user_id, _kind(Setting.kind_integer), "string instead of int", register=register
             )
 
         await asserts.has_no_settings(internal_user_id, {Setting.kind_integer})
@@ -63,97 +70,108 @@ class TestSave:
 
 class TestFullSettings:
     def test(self) -> None:
-        values: dict[int, object] = {Setting.kind_integer: "666", Setting.kind_boolean: "false"}
+        values: UserSettings = {_kind(Setting.kind_integer): "666", _kind(Setting.kind_boolean): "false"}
 
-        settings = domain._full_settings(values, kinds=list(Setting), register=register)  # type: ignore
+        settings = domain._full_settings(values, kinds=[_kind(setting) for setting in Setting], register=register)
 
         assert settings == {
-            Setting.kind_integer: 666,
-            Setting.kind_boolean: False,
-            Setting.kind_string: _string_default,
-            Setting.kind_secret: _secret_default,
+            _kind(Setting.kind_integer): 666,
+            _kind(Setting.kind_boolean): False,
+            _kind(Setting.kind_string): _string_default,
+            _kind(Setting.kind_secret): _secret_default,
         }
 
     def test_skip_unknown(self) -> None:
-        values: dict[int, object] = {Setting.kind_integer: "666", _kind_1: "123"}
+        unknown_kind = SettingKind(_kind_1)
+        values: UserSettings = {_kind(Setting.kind_integer): "666", unknown_kind: "123"}
 
-        settings = domain._full_settings(values, kinds=list(Setting) + [_kind_1], register=register)  # type: ignore
+        settings = domain._full_settings(
+            values, kinds=[_kind(setting) for setting in Setting] + [unknown_kind], register=register
+        )
 
         assert settings == {
-            Setting.kind_integer: 666,
-            Setting.kind_string: _string_default,
-            Setting.kind_boolean: _boolean_default,
-            Setting.kind_secret: _secret_default,
+            _kind(Setting.kind_integer): 666,
+            _kind(Setting.kind_string): _string_default,
+            _kind(Setting.kind_boolean): _boolean_default,
+            _kind(Setting.kind_secret): _secret_default,
         }
 
 
 class TestLoadSettings:
     @pytest.mark.asyncio
     async def test_no_settings(self, internal_user_id: UserId) -> None:
-        settings = await domain.load_settings(internal_user_id, kinds=list(Setting), register=register)
+        settings = await domain.load_settings(
+            internal_user_id, kinds=[_kind(setting) for setting in Setting], register=register
+        )
 
         assert settings == {
-            Setting.kind_integer: _integer_default,
-            Setting.kind_string: _string_default,
-            Setting.kind_boolean: _boolean_default,
-            Setting.kind_secret: _secret_default,
+            _kind(Setting.kind_integer): _integer_default,
+            _kind(Setting.kind_string): _string_default,
+            _kind(Setting.kind_boolean): _boolean_default,
+            _kind(Setting.kind_secret): _secret_default,
         }
 
     @pytest.mark.asyncio
     async def test_has_settings(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
-        await domain.save_setting(internal_user_id, Setting.kind_integer, 124, register=register)
-        await domain.save_setting(internal_user_id, Setting.kind_string, "xxxyyy", register=register)
-        await domain.save_setting(another_internal_user_id, Setting.kind_integer, 421, register=register)
+        await domain.save_setting(internal_user_id, _kind(Setting.kind_integer), 124, register=register)
+        await domain.save_setting(internal_user_id, _kind(Setting.kind_string), "xxxyyy", register=register)
+        await domain.save_setting(another_internal_user_id, _kind(Setting.kind_integer), 421, register=register)
 
-        settings = await domain.load_settings(internal_user_id, kinds=list(Setting), register=register)
+        settings = await domain.load_settings(
+            internal_user_id, kinds=[_kind(setting) for setting in Setting], register=register
+        )
         assert settings == {
-            Setting.kind_integer: 124,
-            Setting.kind_string: "xxxyyy",
-            Setting.kind_boolean: _boolean_default,
-            Setting.kind_secret: _secret_default,
+            _kind(Setting.kind_integer): 124,
+            _kind(Setting.kind_string): "xxxyyy",
+            _kind(Setting.kind_boolean): _boolean_default,
+            _kind(Setting.kind_secret): _secret_default,
         }
 
-        settings = await domain.load_settings(another_internal_user_id, kinds=list(Setting), register=register)
+        settings = await domain.load_settings(
+            another_internal_user_id, kinds=[_kind(setting) for setting in Setting], register=register
+        )
         assert settings == {
-            Setting.kind_integer: 421,
-            Setting.kind_string: _string_default,
-            Setting.kind_boolean: _boolean_default,
-            Setting.kind_secret: _secret_default,
+            _kind(Setting.kind_integer): 421,
+            _kind(Setting.kind_string): _string_default,
+            _kind(Setting.kind_boolean): _boolean_default,
+            _kind(Setting.kind_secret): _secret_default,
         }
 
     @pytest.mark.asyncio
     async def test_filter_by_kinds(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
-        await domain.save_setting(internal_user_id, Setting.kind_integer, 124, register=register)
-        await domain.save_setting(internal_user_id, Setting.kind_string, "xxxyyy", register=register)
+        await domain.save_setting(internal_user_id, _kind(Setting.kind_integer), 124, register=register)
+        await domain.save_setting(internal_user_id, _kind(Setting.kind_string), "xxxyyy", register=register)
 
         settings = await domain.load_settings(
-            internal_user_id, kinds=[Setting.kind_integer, Setting.kind_secret], register=register
+            internal_user_id,
+            kinds=[_kind(Setting.kind_integer), _kind(Setting.kind_secret)],
+            register=register,
         )
-        assert settings == {Setting.kind_integer: 124, Setting.kind_secret: _secret_default}
+        assert settings == {_kind(Setting.kind_integer): 124, _kind(Setting.kind_secret): _secret_default}
 
 
 class TestLoadSettingsForUsers:
     @pytest.mark.asyncio
     async def test(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
-        await domain.save_setting(internal_user_id, Setting.kind_integer, 124, register=register)
-        await domain.save_setting(internal_user_id, Setting.kind_string, "xxxyyy", register=register)
-        await domain.save_setting(another_internal_user_id, Setting.kind_integer, 421, register=register)
-        await domain.save_setting(another_internal_user_id, Setting.kind_secret, "my-secret", register=register)
+        await domain.save_setting(internal_user_id, _kind(Setting.kind_integer), 124, register=register)
+        await domain.save_setting(internal_user_id, _kind(Setting.kind_string), "xxxyyy", register=register)
+        await domain.save_setting(another_internal_user_id, _kind(Setting.kind_integer), 421, register=register)
+        await domain.save_setting(another_internal_user_id, _kind(Setting.kind_secret), "my-secret", register=register)
 
-        kinds = [Setting.kind_integer, Setting.kind_secret, Setting.kind_string]
+        kinds = [_kind(Setting.kind_integer), _kind(Setting.kind_secret), _kind(Setting.kind_string)]
 
         settings = await domain.load_settings(internal_user_id, kinds=kinds, register=register)
         assert settings == {
-            Setting.kind_integer: 124,
-            Setting.kind_string: "xxxyyy",
-            Setting.kind_secret: _secret_default,
+            _kind(Setting.kind_integer): 124,
+            _kind(Setting.kind_string): "xxxyyy",
+            _kind(Setting.kind_secret): _secret_default,
         }
 
         settings = await domain.load_settings(another_internal_user_id, kinds=kinds, register=register)
         assert settings == {
-            Setting.kind_integer: 421,
-            Setting.kind_string: _string_default,
-            Setting.kind_secret: "my-secret",
+            _kind(Setting.kind_integer): 421,
+            _kind(Setting.kind_string): _string_default,
+            _kind(Setting.kind_secret): "my-secret",
         }
 
 
@@ -161,28 +179,30 @@ class TestGetUsersWithSetting:
     @pytest.mark.asyncio
     async def test_wrong_value(self) -> None:
         with pytest.raises(errors.WrongValueType):
-            await domain.get_users_with_setting(Setting.kind_integer, "sdassd", register=register)
+            await domain.get_users_with_setting(_kind(Setting.kind_integer), "sdassd", register=register)
 
     @pytest.mark.asyncio
     async def test_no_users(self) -> None:
         value = uuid.uuid4().int
-        user_ids = await domain.get_users_with_setting(Setting.kind_integer, value, register=register)
+        user_ids = await domain.get_users_with_setting(_kind(Setting.kind_integer), value, register=register)
         assert user_ids == set()
 
     @pytest.mark.asyncio
     async def test_found_users(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
         value = uuid.uuid4().hex
 
-        await domain.save_setting(internal_user_id, Setting.kind_string, value, register=register)
-        await domain.save_setting(another_internal_user_id, Setting.kind_string, uuid.uuid4().hex, register=register)
+        await domain.save_setting(internal_user_id, _kind(Setting.kind_string), value, register=register)
+        await domain.save_setting(
+            another_internal_user_id, _kind(Setting.kind_string), uuid.uuid4().hex, register=register
+        )
 
-        user_ids = await domain.get_users_with_setting(Setting.kind_string, value, register=register)
+        user_ids = await domain.get_users_with_setting(_kind(Setting.kind_string), value, register=register)
 
         assert user_ids == {internal_user_id}
 
-        await domain.save_setting(another_internal_user_id, Setting.kind_string, value, register=register)
+        await domain.save_setting(another_internal_user_id, _kind(Setting.kind_string), value, register=register)
 
-        user_ids = await domain.get_users_with_setting(Setting.kind_string, value, register=register)
+        user_ids = await domain.get_users_with_setting(_kind(Setting.kind_string), value, register=register)
 
         assert user_ids == {internal_user_id, another_internal_user_id}
 
@@ -197,11 +217,15 @@ class TestRemoveDeprecatedSettings:
         str_values = [uuid.uuid4().hex, uuid.uuid4().hex]
         int_values = [uuid.uuid4().int, uuid.uuid4().int]
 
-        await domain.save_setting(internal_user_id, Setting.kind_string, str_values[0], register=register)
-        await domain.save_setting(another_internal_user_id, Setting.kind_string, str_values[1], register=register)
+        await domain.save_setting(internal_user_id, _kind(Setting.kind_string), str_values[0], register=register)
+        await domain.save_setting(
+            another_internal_user_id, _kind(Setting.kind_string), str_values[1], register=register
+        )
 
-        await domain.save_setting(internal_user_id, Setting.kind_integer, int_values[0], register=register)
-        await domain.save_setting(another_internal_user_id, Setting.kind_integer, int_values[1], register=register)
+        await domain.save_setting(internal_user_id, _kind(Setting.kind_integer), int_values[0], register=register)
+        await domain.save_setting(
+            another_internal_user_id, _kind(Setting.kind_integer), int_values[1], register=register
+        )
 
         await operations.find_all_kinds()
 
@@ -210,13 +234,16 @@ class TestRemoveDeprecatedSettings:
 
         user_ids = await domain.load_settings_for_users(
             [internal_user_id, another_internal_user_id],
-            {Setting.kind_string, Setting.kind_integer},
+            {_kind(Setting.kind_string), _kind(Setting.kind_integer)},
             register=register,
         )
 
         assert user_ids == {
-            internal_user_id: {Setting.kind_string: str_values[0], Setting.kind_integer: int_values[0]},
-            another_internal_user_id: {Setting.kind_string: str_values[1], Setting.kind_integer: int_values[1]},
+            internal_user_id: {_kind(Setting.kind_string): str_values[0], _kind(Setting.kind_integer): int_values[0]},
+            another_internal_user_id: {
+                _kind(Setting.kind_string): str_values[1],
+                _kind(Setting.kind_integer): int_values[1],
+            },
         }
 
     @pytest.mark.asyncio
@@ -224,11 +251,15 @@ class TestRemoveDeprecatedSettings:
         str_values = [uuid.uuid4().hex, uuid.uuid4().hex]
         int_values = [uuid.uuid4().int, uuid.uuid4().int]
 
-        await domain.save_setting(internal_user_id, Setting.kind_string, str_values[0], register=register)
-        await domain.save_setting(another_internal_user_id, Setting.kind_string, str_values[1], register=register)
+        await domain.save_setting(internal_user_id, _kind(Setting.kind_string), str_values[0], register=register)
+        await domain.save_setting(
+            another_internal_user_id, _kind(Setting.kind_string), str_values[1], register=register
+        )
 
-        await domain.save_setting(internal_user_id, Setting.kind_integer, int_values[0], register=register)
-        await domain.save_setting(another_internal_user_id, Setting.kind_integer, int_values[1], register=register)
+        await domain.save_setting(internal_user_id, _kind(Setting.kind_integer), int_values[0], register=register)
+        await domain.save_setting(
+            another_internal_user_id, _kind(Setting.kind_integer), int_values[1], register=register
+        )
 
         await operations.find_all_kinds()
 
@@ -240,11 +271,11 @@ class TestRemoveDeprecatedSettings:
 
         user_ids = await domain.load_settings_for_users(
             [internal_user_id, another_internal_user_id],
-            {Setting.kind_string, Setting.kind_integer},
+            {_kind(Setting.kind_string), _kind(Setting.kind_integer)},
             register=updated_register,
         )
 
         assert user_ids == {
-            internal_user_id: {Setting.kind_integer: int_values[0]},
-            another_internal_user_id: {Setting.kind_integer: int_values[1]},
+            internal_user_id: {_kind(Setting.kind_integer): int_values[0]},
+            another_internal_user_id: {_kind(Setting.kind_integer): int_values[1]},
         }

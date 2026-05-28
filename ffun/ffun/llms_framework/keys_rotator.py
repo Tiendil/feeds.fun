@@ -23,6 +23,7 @@ from ffun.llms_framework.entities import (
 from ffun.llms_framework.provider_interface import ProviderInterface
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
+from ffun.user_settings import entities as us_entities
 
 logger = logging.get_module_logger()
 
@@ -125,7 +126,14 @@ async def _get_user_key_infos(  # pylint: disable=R0914
 
     key_setting = provider_to_settings[provider]
 
-    kinds = [UserSetting.max_tokens_cost_in_month, UserSetting.process_entries_not_older_than, key_setting]
+    def setting_kind(setting: UserSetting) -> us_entities.SettingKind:
+        return us_entities.SettingKind(int(setting))
+
+    kinds = [
+        setting_kind(UserSetting.max_tokens_cost_in_month),
+        setting_kind(UserSetting.process_entries_not_older_than),
+        setting_kind(key_setting),
+    ]
 
     users_settings = await us_domain.load_settings_for_users(
         user_ids,
@@ -141,15 +149,15 @@ async def _get_user_key_infos(  # pylint: disable=R0914
     for user_id in user_ids:
         settings = users_settings[user_id]
 
-        days = settings.get(UserSetting.process_entries_not_older_than)
+        days = settings.get(setting_kind(UserSetting.process_entries_not_older_than))
         assert days is not None
         assert isinstance(days, int)
 
-        max_tokens_cost_in_month_raw = settings.get(UserSetting.max_tokens_cost_in_month)
+        max_tokens_cost_in_month_raw = settings.get(setting_kind(UserSetting.max_tokens_cost_in_month))
         assert isinstance(max_tokens_cost_in_month_raw, Decimal)
         max_tokens_cost_in_month = USDCost(max_tokens_cost_in_month_raw)
 
-        api_key_raw = settings.get(key_setting)
+        api_key_raw = settings.get(setting_kind(key_setting))
         assert isinstance(api_key_raw, str)
         api_key = LLMApiKey(api_key_raw)
 

@@ -37,6 +37,7 @@ from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 from ffun.user_settings import domain as us_domain
+from ffun.user_settings import entities as us_entities
 
 logger = logging.get_module_logger()
 
@@ -637,12 +638,14 @@ async def api_get_user_settings(
 ) -> entities.GetUserSettingsResponse:
     from ffun.product.entities import UserSetting
 
-    values = await us_domain.load_settings(user_id=user.id, kinds=[int(kind) for kind in UserSetting])
+    values = await us_domain.load_settings(
+        user_id=user.id, kinds=[us_entities.SettingKind(int(kind)) for kind in UserSetting]
+    )
 
     result_values = []
 
     for kind, value in values.items():
-        if kind == UserSetting.test_api_key:
+        if kind == us_entities.SettingKind(int(UserSetting.test_api_key)):
             continue
 
         result_values.append(entities.UserSetting.from_internal(kind, value))

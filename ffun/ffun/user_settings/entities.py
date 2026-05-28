@@ -1,5 +1,5 @@
 import enum
-from typing import Any
+from typing import Any, NewType
 
 
 class TypeId(str, enum.Enum):
@@ -10,4 +10,6 @@ class TypeId(str, enum.Enum):
     decimal = "decimal"
 
 
-UserSettings = dict[int, Any]
+SettingKind = NewType("SettingKind", int)
+
+UserSettings = dict[SettingKind, Any]

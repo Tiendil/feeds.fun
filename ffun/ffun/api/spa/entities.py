@@ -268,14 +268,14 @@ class UserSettingKind(enum.StrEnum):
     show_sidebar = "show_sidebar"
 
     @classmethod
-    def from_internal(cls, kind: int) -> "UserSettingKind":
-        real_kind = product_entities.UserSetting(kind)
+    def from_internal(cls, kind: us_entities.SettingKind) -> "UserSettingKind":
+        real_kind = product_entities.UserSetting(int(kind))
         return UserSettingKind(real_kind.name)
 
-    def to_internal(self) -> int:
+    def to_internal(self) -> us_entities.SettingKind:
         value: object = getattr(product_entities.UserSetting, self.name)
         assert isinstance(value, int)
-        return value
+        return us_entities.SettingKind(value)
 
 
 class UserSetting(BaseEntity):
@@ -285,12 +285,11 @@ class UserSetting(BaseEntity):
     name: str
 
     @classmethod
-    def from_internal(cls, kind: int, value: str | int | float | bool) -> "UserSetting":
-        real_kind = product_entities.UserSetting(kind)
-        real_setting = us_domain.setting(real_kind)
+    def from_internal(cls, kind: us_entities.SettingKind, value: str | int | float | bool) -> "UserSetting":
+        real_setting = us_domain.setting(kind)
 
         return cls(
-            kind=UserSettingKind.from_internal(real_kind),
+            kind=UserSettingKind.from_internal(kind),
             type=real_setting.type.id,
             value=real_setting.type.normalize(value),
             name=real_setting.name,
@@ -595,7 +594,7 @@ class SetUserSettingRequest(api.APIRequest):
         kind = UserSettingKind(raw_kind).to_internal()
         value = values.get("value")
 
-        real_setting = us_domain.setting(product_entities.UserSetting(kind))
+        real_setting = us_domain.setting(kind)
         values["value"] = real_setting.type.normalize(value)
 
         return values

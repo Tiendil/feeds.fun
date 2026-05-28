@@ -13,6 +13,7 @@ from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.provider_interface import ProviderTest
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
+from ffun.user_settings.entities import SettingKind
 
 
 async def _save_user_key_info_settings(user_id: UserId, interval_started_at: datetime.datetime) -> None:
@@ -22,13 +23,17 @@ async def _save_user_key_info_settings(user_id: UserId, interval_started_at: dat
     max_tokens_cost_in_month = USDCost(Decimal(1000))
     used_cost = USDCost(Decimal(345))
 
-    await us_domain.save_setting(user_id=user_id, kind=UserSetting.test_api_key, value=uuid.uuid4().hex)
-
     await us_domain.save_setting(
-        user_id=user_id, kind=UserSetting.max_tokens_cost_in_month, value=max_tokens_cost_in_month
+        user_id=user_id, kind=SettingKind(int(UserSetting.test_api_key)), value=uuid.uuid4().hex
     )
 
-    await us_domain.save_setting(user_id=user_id, kind=UserSetting.process_entries_not_older_than, value=3)
+    await us_domain.save_setting(
+        user_id=user_id, kind=SettingKind(int(UserSetting.max_tokens_cost_in_month)), value=max_tokens_cost_in_month
+    )
+
+    await us_domain.save_setting(
+        user_id=user_id, kind=SettingKind(int(UserSetting.process_entries_not_older_than)), value=3
+    )
 
     await r_domain.try_to_reserve(
         user_id=user_id,
