@@ -12,6 +12,7 @@ from ffun.llms_framework.domain import (
     _llm_call_result_cost,
     call_llm,
     configured_api_key_usage,
+    cost_points_to_usd_cost,
     cut_text_to_max_tokens,
     search_for_user_api_key,
     split_text,
@@ -21,6 +22,7 @@ from ffun.llms_framework.entities import (
     APIKeyUsage,
     LLMApiKey,
     LLMConfiguration,
+    LLMCostPoints,
     LLMTokens,
     USDCost,
     UserKeyInfo,
@@ -31,6 +33,12 @@ from ffun.product.entities import Resource as AppResource
 from ffun.resources import domain as r_domain
 
 _text_parts_intersection = 100
+
+
+class TestCostPointsToUsdCost:
+
+    def test_converts_points_to_usd_cost(self) -> None:
+        assert cost_points_to_usd_cost(LLMCostPoints(1_500_000_000)) == USDCost(Decimal("1.5"))
 
 
 class TestSplitText:
