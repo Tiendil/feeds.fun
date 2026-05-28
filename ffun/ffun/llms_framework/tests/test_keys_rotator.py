@@ -41,7 +41,7 @@ from ffun.llms_framework.keys_rotator import (
 )
 from ffun.llms_framework.provider_interface import ProviderTest
 from ffun.llms_framework.providers import llm_providers
-from ffun.product.resources import Resource as AppResource
+from ffun.product.entities import Resource as AppResource
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
 from ffun.user_settings import domain as us_domain
@@ -205,8 +205,8 @@ class TestGetUserKeyInfos:
 
     @pytest.mark.asyncio
     async def test_works(self, five_internal_user_ids: list[UserId]) -> None:
-        from ffun.product.resources import Resource as AppResource
-        from ffun.product.user_settings import UserSetting
+        from ffun.product.entities import Resource as AppResource
+        from ffun.product.entities import UserSetting
 
         interval_started_at = month_interval_start()
 

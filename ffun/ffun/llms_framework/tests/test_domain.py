@@ -27,7 +27,7 @@ from ffun.llms_framework.entities import (
 )
 from ffun.llms_framework.keys_rotator import _cost_points
 from ffun.llms_framework.provider_interface import ChatRequestTest, ChatResponseTest, ProviderTest
-from ffun.product.resources import Resource as AppResource
+from ffun.product.entities import Resource as AppResource
 from ffun.resources import domain as r_domain
 
 _text_parts_intersection = 100

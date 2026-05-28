@@ -40,6 +40,11 @@ register.add(Value(key=Setting.kind_boolean, name="boolean", type=types.Boolean(
 register.add(Value(key=Setting.kind_secret, name="secret", type=types.Secret(), default=_secret_default))
 
 
+class TestSetting:
+    def test(self) -> None:
+        assert domain.setting(Setting.kind_integer, register=register) is register.get(Setting.kind_integer)
+
+
 class TestSave:
     @pytest.mark.asyncio
     async def test_save_with_conversion(self, internal_user_id: UserId) -> None:

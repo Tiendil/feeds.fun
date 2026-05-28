@@ -20,22 +20,22 @@ from ffun.domain.entities import (
     TagId,
     TagUid,
     UnknownUrl,
+    USDCost,
     UserId,
 )
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.library import entities as l_entities
-
-# TODO: rename to public name
-from ffun.llms_framework.keys_rotator import USDCost, _cost_points
+from ffun.llms_framework import domain as llms_domain
 from ffun.markers import entities as m_entities
 from ffun.ontology import entities as o_entities
 from ffun.parsers import entities as p_entities
+from ffun.product import entities as product_entities
 from ffun.resources import entities as r_entities
 from ffun.scores import entities as s_entities
 from ffun.tags import entities as t_entities
-from ffun.user_settings import types as us_types
-from ffun.user_settings.values import user_settings
+from ffun.user_settings import domain as us_domain
+from ffun.user_settings import entities as us_entities
 
 
 class Marker(enum.IntEnum):
@@ -268,34 +268,25 @@ class UserSettingKind(enum.StrEnum):
 
     @classmethod
     def from_internal(cls, kind: int) -> "UserSettingKind":
-        from ffun.product.user_settings import UserSetting
-
-        real_kind = UserSetting(kind)
+        real_kind = product_entities.UserSetting(kind)
         return UserSettingKind(real_kind.name)
 
     def to_internal(self) -> int:
-        from ffun.product.user_settings import UserSetting
-
-        value: object = getattr(UserSetting, self.name)
+        value: object = getattr(product_entities.UserSetting, self.name)
         assert isinstance(value, int)
         return value
 
 
 class UserSetting(BaseEntity):
     kind: UserSettingKind
-    type: us_types.TypeId  # should not differ between front & back => no need to convert
+    type: us_entities.TypeId  # should not differ between front & back => no need to convert
     value: object
     name: str
 
     @classmethod
     def from_internal(cls, kind: int, value: str | int | float | bool) -> "UserSetting":
-        from ffun.product.user_settings import UserSetting
-
-        real_kind = UserSetting(kind)
-
-        real_setting = user_settings.get(real_kind)
-
-        assert real_setting is not None
+        real_kind = product_entities.UserSetting(kind)
+        real_setting = us_domain.setting(real_kind)
 
         return cls(
             kind=UserSettingKind.from_internal(real_kind),
@@ -310,15 +301,11 @@ class ResourceKind(enum.StrEnum):
 
     @classmethod
     def from_internal(cls, kind: int) -> "ResourceKind":
-        from ffun.product.resources import Resource
-
-        real_kind = Resource(kind)
+        real_kind = product_entities.Resource(kind)
         return ResourceKind(real_kind.name)
 
     def to_internal(self) -> int:
-        from ffun.product.resources import Resource
-
-        value: object = getattr(Resource, self.name)
+        value: object = getattr(product_entities.Resource, self.name)
         assert isinstance(value, int)
         return value
 
@@ -330,10 +317,8 @@ class ResourceHistoryRecord(pydantic.BaseModel):
 
     @classmethod
     def from_internal(cls, record: r_entities.Resource) -> "ResourceHistoryRecord":
-        from ffun.product.resources import Resource
-
-        if record.kind == Resource.tokens_cost:
-            transformer = _cost_points.to_cost
+        if record.kind == product_entities.Resource.tokens_cost:
+            transformer = llms_domain.cost_points_to_usd_cost
         else:
 
             def transformer(points: int) -> USDCost:
@@ -599,8 +584,6 @@ class SetUserSettingRequest(api.APIRequest):
     @pydantic.model_validator(mode="before")
     @classmethod
     def validate_value(cls, values: dict[str, object]) -> dict[str, object]:
-        from ffun.product.user_settings import UserSetting
-
         raw_kind = values.get("kind")
 
         assert isinstance(raw_kind, str), "kind must be a string"
@@ -608,10 +591,7 @@ class SetUserSettingRequest(api.APIRequest):
         kind = UserSettingKind(raw_kind).to_internal()
         value = values.get("value")
 
-        real_kind = UserSetting(kind)
-
-        real_setting = user_settings.get(real_kind)
-
+        real_setting = us_domain.setting(product_entities.UserSetting(kind))
         values["value"] = real_setting.type.normalize(value)
 
         return values

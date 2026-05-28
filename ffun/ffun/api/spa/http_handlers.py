@@ -635,7 +635,7 @@ async def api_get_resource_history(
 async def api_get_user_settings(
     request: entities.GetUserSettingsRequest, user: User
 ) -> entities.GetUserSettingsResponse:
-    from ffun.product.user_settings import UserSetting
+    from ffun.product.entities import UserSetting
 
     values = await us_domain.load_settings(user_id=user.id, kinds=[int(kind) for kind in UserSetting])
 

@@ -282,7 +282,7 @@ async def users_slice_feeds_links() -> None:  # noqa: CCR001
 
 
 async def users_slice_resources() -> None:  # noqa: CCR001
-    from ffun.product.resources import Resource
+    from ffun.product.entities import Resource
 
     users: dict[UserId, dict[str, int]] = {}
 

@@ -16,8 +16,8 @@ from ffun.user_settings import domain as us_domain
 
 
 async def _save_user_key_info_settings(user_id: UserId, interval_started_at: datetime.datetime) -> None:
-    from ffun.product.resources import Resource as AppResource
-    from ffun.product.user_settings import UserSetting
+    from ffun.product.entities import Resource as AppResource
+    from ffun.product.entities import UserSetting
 
     max_tokens_cost_in_month = USDCost(Decimal(1000))
     used_cost = USDCost(Decimal(345))

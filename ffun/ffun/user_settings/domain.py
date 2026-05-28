@@ -3,7 +3,11 @@ from typing import Iterable
 from ffun.domain.entities import UserId
 from ffun.user_settings import operations
 from ffun.user_settings.entities import UserSettings
-from ffun.user_settings.values import SettingsRegister, user_settings
+from ffun.user_settings.values import SettingsRegister, Value, user_settings
+
+
+def setting(kind: int, register: SettingsRegister = user_settings) -> Value:
+    return register.get(kind)
 
 
 async def save_setting(user_id: UserId, kind: int, value: object, register: SettingsRegister = user_settings) -> None:

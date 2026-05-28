@@ -19,10 +19,14 @@ from ffun.llms_framework.entities import (
     SelectKeyContext,
     USDCost,
 )
-from ffun.llms_framework.keys_rotator import choose_user_api_key, use_api_key
+from ffun.llms_framework.keys_rotator import _cost_points, choose_user_api_key, use_api_key
 from ffun.llms_framework.provider_interface import ProviderInterface
 
 logger = logging.get_module_logger()
+
+
+def cost_points_to_usd_cost(points: int) -> USDCost:
+    return _cost_points.to_cost(points)
 
 
 def split_text(text: str, parts: int, intersection: int) -> list[str]:

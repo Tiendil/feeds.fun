@@ -92,7 +92,7 @@ async def _filter_out_users_with_overused_keys(
 async def _choose_user(
     infos: list[UserKeyInfo], reserved_cost: USDCost, interval_started_at: datetime.datetime
 ) -> UserKeyInfo | None:
-    from ffun.product.resources import Resource as AppResource
+    from ffun.product.entities import Resource as AppResource
 
     for info in infos:
 
@@ -112,8 +112,8 @@ async def _choose_user(
 async def _get_user_key_infos(  # pylint: disable=R0914
     provider: LLMProvider, user_ids: Iterable[UserId], interval_started_at: datetime.datetime
 ) -> list[UserKeyInfo]:
-    from ffun.product.resources import Resource as AppResource
-    from ffun.product.user_settings import UserSetting
+    from ffun.product.entities import Resource as AppResource
+    from ffun.product.entities import UserSetting
 
     # TODO: move somewhere in configs
     provider_to_settings = {
@@ -258,7 +258,7 @@ async def choose_user_api_key(llm: ProviderInterface, context: SelectKeyContext)
 @contextlib.asynccontextmanager
 async def use_api_key(key_usage: APIKeyUsage) -> AsyncGenerator[None, None]:
     from ffun.llms_framework.providers import llm_providers
-    from ffun.product.resources import Resource as AppResource
+    from ffun.product.entities import Resource as AppResource
 
     log = logger.bind(function="_use_key", user_id=key_usage.user_id)
 
