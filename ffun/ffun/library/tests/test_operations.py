@@ -524,6 +524,15 @@ class TestEntriesInPeriod:
         assert await entries_in_period([loaded_feed_id], Days(30)) == {loaded_feed_id: 0}
 
     @pytest.mark.asyncio
+    async def test_duplicate_feed_ids(self, loaded_feed_id: FeedId, mocker: MockerFixture) -> None:
+        today = utils.now()
+        mocker.patch("ffun.library.operations.utils.now", return_value=today)
+
+        await _increment_feed_entries_count(execute, loaded_feed_id, today.date())
+
+        assert await entries_in_period([loaded_feed_id, loaded_feed_id], Days(1)) == {loaded_feed_id: 1}
+
+    @pytest.mark.asyncio
     async def test_ignores_entries_before_requested_period(
         self, loaded_feed_id: FeedId, mocker: MockerFixture
     ) -> None:
@@ -583,6 +592,17 @@ class TestEntriesInPeriodDetails:
         assert await entries_in_period_details([loaded_feed_id, another_loaded_feed_id], Days(3)) == {
             loaded_feed_id: [1, 0, 1],
             another_loaded_feed_id: [0, 0, 0],
+        }
+
+    @pytest.mark.asyncio
+    async def test_duplicate_feed_ids(self, loaded_feed_id: FeedId, mocker: MockerFixture) -> None:
+        today = utils.now()
+        mocker.patch("ffun.library.operations.utils.now", return_value=today)
+
+        await _increment_feed_entries_count(execute, loaded_feed_id, today.date())
+
+        assert await entries_in_period_details([loaded_feed_id, loaded_feed_id], Days(3)) == {
+            loaded_feed_id: [0, 0, 1]
         }
 
     @pytest.mark.asyncio
