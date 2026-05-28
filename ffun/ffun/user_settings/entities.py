@@ -2,7 +2,7 @@ import enum
 from typing import Any, NewType
 
 
-class TypeId(str, enum.Enum):
+class TypeId(enum.StrEnum):
     integer = "integer"
     string = "string"
     boolean = "boolean"
