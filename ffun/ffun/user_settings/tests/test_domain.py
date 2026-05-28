@@ -46,7 +46,7 @@ register.add(Value(key=_kind(Setting.kind_secret), name="secret", type=types.Sec
 
 
 class TestSetting:
-    def test(self) -> None:
+    def test_returns_registered_value(self) -> None:
         assert domain.setting(_kind(Setting.kind_integer), register=register) is register.get(
             _kind(Setting.kind_integer)
         )
