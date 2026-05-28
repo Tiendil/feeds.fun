@@ -27,6 +27,7 @@ from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.library import entities as l_entities
 from ffun.llms_framework import domain as llms_domain
+from ffun.llms_framework.entities import LLMCostPoints
 from ffun.markers import entities as m_entities
 from ffun.ontology import entities as o_entities
 from ffun.parsers import entities as p_entities
@@ -318,7 +319,10 @@ class ResourceHistoryRecord(pydantic.BaseModel):
     @classmethod
     def from_internal(cls, record: r_entities.Resource) -> "ResourceHistoryRecord":
         if record.kind == product_entities.Resource.tokens_cost:
-            transformer = llms_domain.cost_points_to_usd_cost
+
+            def transformer(points: int) -> USDCost:
+                return llms_domain.cost_points_to_usd_cost(LLMCostPoints(points))
+
         else:
 
             def transformer(points: int) -> USDCost:

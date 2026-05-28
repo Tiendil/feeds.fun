@@ -14,6 +14,7 @@ from ffun.llms_framework.entities import (
     KeyStatus,
     LLMApiKey,
     LLMConfiguration,
+    LLMCostPoints,
     LLMProvider,
     SelectKeyContext,
     USDCost,
@@ -33,11 +34,11 @@ class CostPoints:
     def __init__(self, k: int) -> None:
         self._k = k
 
-    def to_cost(self, points: int) -> USDCost:
+    def to_cost(self, points: LLMCostPoints) -> USDCost:
         return USDCost(Decimal(points) / self._k)
 
-    def to_points(self, cost: USDCost) -> int:
-        return int(cost * self._k)
+    def to_points(self, cost: USDCost) -> LLMCostPoints:
+        return LLMCostPoints(int(cost * self._k))
 
 
 _cost_points = CostPoints(k=1_000_000_000)
@@ -158,7 +159,7 @@ async def _get_user_key_infos(  # pylint: disable=R0914
                 api_key=api_key,
                 max_tokens_cost_in_month=max_tokens_cost_in_month,
                 process_entries_not_older_than=datetime.timedelta(days=days),
-                cost_used=_cost_points.to_cost(resources[user_id].total),
+                cost_used=_cost_points.to_cost(LLMCostPoints(resources[user_id].total)),
             )
         )
 
