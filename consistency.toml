@@ -5,7 +5,7 @@ mode = "incremental"
 runtime_dir = ".session/inconsistency-check"
 comparison_base_refs = ["main", "origin/main"]
 allowed_file_relations = ["governed_by"]
-jobs = 5
+jobs = 10
 
 [journal]
 cmd = ["./bin/taskwarior.sh", "log", "+journal", "+consistency", "kind:{kind}", "{message}"]
