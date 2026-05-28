@@ -46,7 +46,7 @@ SELF_CHECK_DIR = RUNTIME_DIR / "self-check"
 TASKWARRIOR_BIN = "task"
 PROJECT_JOURNAL_CMD = "./bin/taskwarior.sh"
 PROJECT_JOURNAL_TAG = "consistency"
-VALID_CHECK_STATUSES = {"unchecked", "consistent", "inconsistent"}
+VALID_CHECK_STATUSES = {"unchecked", "consistent", "inconsistent", "outdated"}
 # TODO: that should be in config file
 # TODO: what to do with reflected relations?
 ALLOWED_FILE_RELATIONS = ["governed_by"]
@@ -69,7 +69,7 @@ uda.checksum_related.type=string
 uda.checksum_related.label=Related Checksum
 uda.check_status.type=string
 uda.check_status.label=Check Status
-uda.check_status.values=unchecked,consistent,inconsistent,
+uda.check_status.values=unchecked,consistent,inconsistent,outdated,
 uda.report.type=string
 uda.report.label=Report
 uda.checked_at.type=string
@@ -182,6 +182,14 @@ class MissingArtifactError(CheckerFailureError):
     def __init__(self, path: str) -> None:
         self.path = path
         super().__init__(f"missing or deleted file: {path}")
+
+
+class OutdatedPairError(CheckerFailureError):
+    """Raised when a pair's stored checksums do not match current files."""
+
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+        super().__init__(reason)
 
 
 def format_argv(argv: Iterable[str]) -> str:
@@ -579,6 +587,18 @@ def record_journal_subject(record: CheckRecord) -> str:
     return f"{record.changed_path} -> {record.related_path} [{record.relation}]"
 
 
+def record_identity(record: CheckRecord) -> PairIdentity:
+    return PairIdentity(
+        pair_key=record.pair_key,
+        file_pair=record.file_pair,
+        changed_path=record.changed_path,
+        related_path=record.related_path,
+        relation=record.relation,
+        checksum_changed=record.checksum_changed,
+        checksum_related=record.checksum_related,
+    )
+
+
 def log_pair_queued(identity: PairIdentity, check_status: str) -> None:
     log_project_journal(
         "change",
@@ -724,14 +744,22 @@ def upsert_unchecked_record(identity: PairIdentity) -> CheckRecord:
 
     existing = raw_record_to_check_record(raw_record)
     existing_status = existing.check_status or "unchecked"
+    next_status = "unchecked" if existing_status == "outdated" else existing_status
+    next_report = "" if existing_status == "outdated" else existing.report
+    next_checked_at = "" if existing_status == "outdated" else existing.checked_at
 
-    return write_task_record(
+    record = write_task_record(
         identity,
         uuid=existing.uuid,
-        check_status=existing_status,
-        report=existing.report,
-        checked_at=existing.checked_at,
+        check_status=next_status,
+        report=next_report,
+        checked_at=next_checked_at,
     )
+
+    if existing_status == "outdated":
+        log_pair_state_change(identity, "outdated", "unchecked")
+
+    return record
 
 
 def update_check_record(identity: PairIdentity, *, check_status: str, report: str, checked_at: str) -> CheckRecord:
@@ -752,6 +780,68 @@ def update_check_record(identity: PairIdentity, *, check_status: str, report: st
     log_pair_state_change(identity, previous_status, check_status)
 
     return record
+
+
+def record_outdated_reason(record: CheckRecord) -> str | None:
+    try:
+        changed = read_artifact_snapshot(record.changed_path)
+    except MissingArtifactError:
+        return f"changed file is missing: {record.changed_path}"
+
+    try:
+        related = read_artifact_snapshot(record.related_path)
+    except MissingArtifactError:
+        return f"related file is missing: {record.related_path}"
+
+    if changed.checksum != record.checksum_changed:
+        return (
+            f"changed file checksum differs: {record.changed_path} "
+            f"expected sha256:{record.checksum_changed} actual sha256:{changed.checksum}"
+        )
+
+    if related.checksum != record.checksum_related:
+        return (
+            f"related file checksum differs: {record.related_path} "
+            f"expected sha256:{record.checksum_related} actual sha256:{related.checksum}"
+        )
+
+    return None
+
+
+def mark_record_outdated(record: CheckRecord, reason: str) -> CheckRecord:
+    if normalized_check_status(record) == "outdated":
+        return record
+
+    identity = record_identity(record)
+    updated_record = write_task_record(
+        identity,
+        uuid=record.uuid,
+        check_status="outdated",
+        report=record.report,
+        checked_at=utc_timestamp(),
+    )
+    log_pair_state_change(identity, record.check_status or "unchecked", "outdated")
+    log_project_journal("step", f"outdated pair detected for {record_journal_subject(record)}: {single_line(reason)}")
+
+    return updated_record
+
+
+def mark_record_outdated_if_needed(record: CheckRecord) -> CheckRecord:
+    reason = record_outdated_reason(record)
+
+    if reason is None:
+        return record
+
+    return mark_record_outdated(record, reason)
+
+
+def mark_current_pair_outdated_if_needed(current_pair: CurrentPair) -> CurrentPair:
+    record = mark_record_outdated_if_needed(current_pair.record)
+
+    if record.uuid == current_pair.record.uuid and record.check_status == current_pair.record.check_status:
+        return current_pair
+
+    return CurrentPair(pair=current_pair.pair, identity=current_pair.identity, record=record)
 
 
 def relation_description_for(relation_id: str) -> str:
@@ -894,6 +984,7 @@ def print_summary(changed_files: list[str], current_pairs: list[CurrentPair]) ->
     print(f"consistent pairs: {counts.get('consistent', 0)}")
     print(f"inconsistent pairs: {counts.get('inconsistent', 0)}")
     print(f"unchecked pairs: {counts.get('unchecked', 0)}")
+    print(f"outdated pairs: {counts.get('outdated', 0)}")
 
     if changed_files:
         print("changed file list:")
@@ -999,10 +1090,10 @@ def validate_prompt_snapshots(current_pair: CurrentPair) -> tuple[FileSnapshot, 
     changed, related = read_pair_snapshots(current_pair.pair)
 
     if changed.checksum != current_pair.identity.checksum_changed:
-        raise CheckerFailureError(f"changed file checksum drifted before child check: {changed.artifact_path}")
+        raise OutdatedPairError(f"changed file checksum drifted before child check: {changed.artifact_path}")
 
     if related.checksum != current_pair.identity.checksum_related:
-        raise CheckerFailureError(f"related file checksum drifted before child check: {related.artifact_path}")
+        raise OutdatedPairError(f"related file checksum drifted before child check: {related.artifact_path}")
 
     return changed, related
 
@@ -1180,23 +1271,55 @@ def process_current_pairs(
             log_project_journal("step", f"{command_name} outcome: success")
             return ExitCode.SUCCESS
 
+        checked_pair = mark_current_pair_outdated_if_needed(selection.unchecked)
+
+        if normalized_check_status(checked_pair.record) == "outdated":
+            current_pairs = replace_current_pair(current_pairs, checked_pair)
+            continue
+
         try:
-            prepared = prepare_child_check(selection.unchecked)
+            prepared = prepare_child_check(checked_pair)
+        except MissingArtifactError as error:
+            updated_record = mark_record_outdated(
+                checked_pair.record,
+                f"file is missing before child check: {error.path}",
+            )
+            current_pairs = replace_current_pair(
+                current_pairs,
+                CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+            )
+            continue
+        except OutdatedPairError as error:
+            updated_record = mark_record_outdated(checked_pair.record, error.reason)
+            current_pairs = replace_current_pair(
+                current_pairs,
+                CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+            )
+            continue
+
+        try:
+            child_output = run_child_checker(prepared)
         except MissingArtifactError as error:
             log_project_journal(
                 "step",
                 (
-                    "skipped selected missing-file pair "
-                    f"{selection.unchecked.identity.changed_path} -> "
-                    f"{selection.unchecked.identity.related_path} "
-                    f"[{selection.unchecked.identity.relation}]: {error.path}"
+                    "selected pair file disappeared "
+                    f"{checked_pair.identity.changed_path} -> "
+                    f"{checked_pair.identity.related_path} "
+                    f"[{checked_pair.identity.relation}]: {error.path}"
                 ),
             )
-            current_pairs = remove_current_pair(current_pairs, selection.unchecked)
+            updated_record = mark_record_outdated(
+                checked_pair.record,
+                f"file disappeared during child check: {error.path}",
+            )
+            current_pairs = replace_current_pair(
+                current_pairs,
+                CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+            )
             continue
 
-        child_output = run_child_checker(prepared)
-        updated_pair = update_record_from_child_output(selection.unchecked, child_output)
+        updated_pair = update_record_from_child_output(checked_pair, child_output)
         current_pairs = replace_current_pair(current_pairs, updated_pair)
 
         inconsistent_pair = first_inconsistent_pair(current_pairs)
@@ -1230,15 +1353,7 @@ def run_cycle() -> ExitCode:
 
 
 def record_to_current_pair(record: CheckRecord, relation_descriptions: dict[str, str]) -> CurrentPair:
-    identity = PairIdentity(
-        pair_key=record.pair_key,
-        file_pair=record.file_pair,
-        changed_path=record.changed_path,
-        related_path=record.related_path,
-        relation=record.relation,
-        checksum_changed=record.checksum_changed,
-        checksum_related=record.checksum_related,
-    )
+    identity = record_identity(record)
     pair = RelationPair(
         changed_path=record.changed_path,
         related_path=record.related_path,
@@ -1251,7 +1366,10 @@ def record_to_current_pair(record: CheckRecord, relation_descriptions: dict[str,
 
 def load_queued_current_pairs() -> list[CurrentPair]:
     relation_descriptions = {relation.relation_id: relation.description for relation in load_depmesh_relations()}
-    records = [raw_record_to_check_record(record) for record in load_taskwarrior_records()]
+    records = [
+        mark_record_outdated_if_needed(raw_record_to_check_record(record))
+        for record in load_taskwarrior_records()
+    ]
     current_pairs = [
         record_to_current_pair(record, relation_descriptions)
         for record in records
@@ -1269,6 +1387,43 @@ def process_queue() -> ExitCode:
     changed_files = sorted({current_pair.pair.changed_path for current_pair in current_pairs})
 
     return process_current_pairs(changed_files, current_pairs, command_name="process-queue", consume_all=True)
+
+
+def mark_outdated_records() -> tuple[int, int]:
+    checked_count = 0
+    marked_count = 0
+
+    for raw_record in load_taskwarrior_records():
+        if not raw_record.get("pair_key") or raw_record.get("relation") not in ALLOWED_FILE_RELATIONS:
+            continue
+
+        checked_count += 1
+        record = raw_record_to_check_record(raw_record)
+        reason = record_outdated_reason(record)
+
+        if reason is None:
+            continue
+
+        updated_record = mark_record_outdated(record, reason)
+
+        if updated_record.check_status == "outdated" and record.check_status != "outdated":
+            marked_count += 1
+
+    return checked_count, marked_count
+
+
+def mark_outdated() -> ExitCode:
+    ensure_runtime_state()
+    log_project_journal("step", "mark-outdated command started")
+    checked_count, marked_count = mark_outdated_records()
+    log_project_journal(
+        "step",
+        f"mark-outdated command completed checked:{checked_count} marked:{marked_count}",
+    )
+    print(f"checked records: {checked_count}")
+    print(f"marked outdated: {marked_count}")
+
+    return ExitCode.SUCCESS
 
 
 def build_progress_report(path: str) -> str:
@@ -1483,6 +1638,7 @@ def print_enqueue_summary(artifact_path: str, current_pairs: list[CurrentPair]) 
     print(f"consistent pairs: {counts.get('consistent', 0)}")
     print(f"inconsistent pairs: {counts.get('inconsistent', 0)}")
     print(f"unchecked pairs: {counts.get('unchecked', 0)}")
+    print(f"outdated pairs: {counts.get('outdated', 0)}")
 
     if not current_pairs:
         return
@@ -1629,6 +1785,20 @@ def run_self_check() -> ExitCode:
     assert_self_check(
         "## Checker output was malformed" in malformed_pair.record.report,
         "malformed output must produce a markdown issue section",
+    )
+    changed_file.write_text("changed self-check content v2\n", encoding="utf-8")
+    checked_count, marked_count = mark_outdated_records()
+    outdated_raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
+    assert_self_check(outdated_raw_record is not None, "outdated source pair record must still exist")
+    outdated_record = raw_record_to_check_record(outdated_raw_record)
+    assert_self_check(checked_count > 0, "mark-outdated helper must check pair records")
+    assert_self_check(marked_count > 0, "mark-outdated helper must mark stale pair records")
+    assert_self_check(outdated_record.check_status == "outdated", "changed checksum must mark old pair outdated")
+    changed_file.write_text("changed self-check content\n", encoding="utf-8")
+    restored_pair = reconcile_queue([pair])[0]
+    assert_self_check(
+        restored_pair.record.check_status == "unchecked",
+        "restored outdated pair must be reset to unchecked",
     )
     changed_file.write_text("changed self-check content v2\n", encoding="utf-8")
     changed_identity = build_pair_identity(pair)
@@ -1828,6 +1998,11 @@ def parse_args() -> argparse.Namespace:
     )
     add_pair_status_arguments(mark_inconsistent_parser)
 
+    subparsers.add_parser(
+        "mark-outdated",
+        help="mark registered relation pairs whose files are missing or have different checksums as outdated",
+    )
+
     subparsers.add_parser("clear-queue", help="delete all isolated relation-pair queue records")
 
     subparsers.add_parser("self-check", help="run deterministic helper-script checks without spawning Codex")
@@ -1859,6 +2034,9 @@ def main() -> int:
 
         if args.command == "mark-inconsistent":
             return int(mark_pair_status(args, check_status="inconsistent"))
+
+        if args.command == "mark-outdated":
+            return int(mark_outdated())
 
         if args.command == "clear-queue":
             return int(clear_queue())
