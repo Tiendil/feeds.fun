@@ -8,6 +8,16 @@ from ffun.feeds.entities import Feed as InternalFeed
 
 
 class TestFeed:
+    def test_from_internal__default_entries_metrics_details(self, loaded_feed: InternalFeed) -> None:
+        external_feed = Feed.from_internal(
+            loaded_feed,
+            linked_at=None,
+            collection_ids=[],
+            entries_loaded=0,
+        )
+
+        assert external_feed.entriesLoadedDetails is None
+
     @pytest.mark.asyncio
     async def test_from_internal__with_entries_metrics(self, loaded_feed: InternalFeed) -> None:
         linked_at = utils.now()
