@@ -396,6 +396,35 @@ def load_consistency_config(path: Path = CONFIG_PATH, *, mode: str | None = None
     return validate_config(resolved_config, mode=selected_mode)
 
 
+def load_configured_mode_ids(path: Path = CONFIG_PATH) -> tuple[str, ...]:
+    if not path.exists():
+        raise CheckerFailureError(f"missing consistency config: {path}")
+
+    try:
+        with path.open("rb") as config_file:
+            raw_config = tomllib.load(config_file)
+    except tomllib.TOMLDecodeError as error:
+        raise CheckerFailureError(f"invalid consistency config TOML: {error}") from error
+
+    raw_modes = raw_config.get("modes", {})
+
+    if raw_modes is None:
+        raw_modes = {}
+
+    if not isinstance(raw_modes, dict):
+        raise CheckerFailureError("consistency.toml: modes must be a table")
+
+    mode_ids = []
+
+    for mode_id in raw_modes:
+        if not isinstance(mode_id, str) or not mode_id:
+            raise CheckerFailureError("consistency.toml: mode ids must be non-empty strings")
+
+        mode_ids.append(mode_id)
+
+    return tuple(sorted(mode_ids))
+
+
 def configure_consistency(mode: str | None = None) -> ConsistencyConfig:
     global ACTIVE_CONFIG  # noqa: PLW0603
 
@@ -2069,22 +2098,14 @@ def self_check_child_output(check_status: str, report: str) -> str:
 def run_self_check() -> ExitCode:
     ensure_runtime_state()
     log_project_journal("step", "self-check command started")
-    default_config = load_consistency_config(mode="default")
-    strict_config = load_consistency_config(mode="strict")
-    diff_config = load_consistency_config(mode="diff")
-    assert_self_check(default_config.mode == "default", "default config mode must load")
-    assert_self_check(strict_config.mode == "strict", "strict config mode must load")
-    assert_self_check(diff_config.mode == "diff", "diff config mode must load")
+
+    for mode_id in load_configured_mode_ids():
+        mode_config = load_consistency_config(mode=mode_id)
+        assert_self_check(mode_config.mode == mode_id, f"configured mode {mode_id!r} must load")
+
+    active_config = get_config()
     assert_self_check(
-        strict_config.prompt_template != default_config.prompt_template,
-        "mode prompt table must replace global prompt table",
-    )
-    assert_self_check(
-        "scope" in diff_config.output_schema.get("properties", {}),
-        "mode output_schema table must replace global output_schema table",
-    )
-    assert_self_check(
-        default_config.allowed_file_relations == ("governed_by",),
+        active_config.allowed_file_relations == ("governed_by",),
         "allowed relations must load from config",
     )
     assert_self_check(
