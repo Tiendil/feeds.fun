@@ -5,6 +5,7 @@ from ffun.api.spa.entities import Feed, Marker, MutableMarker, RemoveMarkerReque
 from ffun.core import utils
 from ffun.domain.domain import new_entry_id
 from ffun.feeds.entities import Feed as InternalFeed
+from ffun.feeds.entities import FeedError
 
 
 class TestFeed:
@@ -33,6 +34,19 @@ class TestFeed:
         assert external_feed.linkedAt == linked_at
         assert external_feed.entriesLoaded == 3
         assert external_feed.entriesLoadedDetails == [0, 1, 2]
+
+    def test_from_internal__with_last_error(self, loaded_feed: InternalFeed) -> None:
+        error = FeedError.network_connection_timeout
+        failed_feed = loaded_feed.replace(last_error=error)
+
+        external_feed = Feed.from_internal(
+            failed_feed,
+            linked_at=None,
+            collection_ids=[],
+            entries_loaded=0,
+        )
+
+        assert external_feed.lastError == error.name
 
 
 class TestSetMarkerRequest:

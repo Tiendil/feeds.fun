@@ -44,9 +44,7 @@ The preferred command form for running targeted backend tests is:
 
 Tests SHOULD be deterministic for the same repository state and filesystem state.
 
-Tests SHOULD prefer a real current-time value as the baseline for time-related cases when the exact calendar date is not
-part of the behavior under test. Hard-coded calendar datetimes SHOULD be used only when the specific date, month, year,
-weekday, or timezone boundary is itself relevant to the tested behavior.
+Tests SHOULD prefer a real current-time value as the baseline for time-related cases when the exact calendar date is not part of the behavior under test. Hard-coded calendar datetimes SHOULD be used only when the specific date, month, year, weekday, or timezone boundary is itself relevant to the tested behavior.
 
 Tests that require specific shared state MUST prepare that state at the start of the relevant test or with an autouse fixture at the test class or test module level.
 
@@ -84,13 +82,9 @@ Tests MUST NOT use identity assertions for ordinary value checks.
 
 Tests MAY use `assert value is None` and `assert value is not None` when checking for `None`.
 
-Tests MAY use `assert <value> is <other_value>` or `assert <value> is not <other_value>` for non-`None`
-values only when object identity is the explicit behavior under test, such as checking singleton values, module
-re-exports or aliases, or registry/cache/container APIs that promise to return the exact registered or stored object
-instance.
+Tests MAY use `assert <value> is <other_value>` or `assert <value> is not <other_value>` for non-`None` values only when object identity is the explicit behavior under test, such as checking singleton values, module re-exports or aliases, or registry/cache/container APIs that promise to return the exact registered or stored object instance.
 
-Tests with non-`None` identity assertions SHOULD make the identity contract clear through the test name, setup, or
-surrounding assertion context.
+Tests with non-`None` identity assertions SHOULD make the identity contract clear through the test name, setup, or surrounding assertion context.
 
 Tests MUST NOT use identity assertions for boolean values. Use `assert condition` instead of `assert condition is True`, and `assert not condition` instead of `assert condition is False`.
 
@@ -152,9 +146,7 @@ Tests SHOULD be organized around the tested function or tested class.
 
 Each production module-level function MUST have a corresponding test class.
 
-Yoyo migration modules under module-local `migrations` packages do not need separate per-function test classes for
-their migration step functions. Migration-sensitive changes SHOULD be verified through tests that exercise the resulting
-operation behavior after migrations are applied.
+Yoyo migration modules under module-local `migrations` packages do not need separate per-function test classes for their migration step functions. Migration-sensitive changes SHOULD be verified through tests that exercise the resulting operation behavior after migrations are applied.
 
 Each class SHOULD have a corresponding test class.
 
