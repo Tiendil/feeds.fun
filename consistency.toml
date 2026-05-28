@@ -1,0 +1,199 @@
+version = 1
+
+mode = "default"
+
+runtime_dir = ".session/inconsistency-check"
+comparison_base_refs = ["main", "origin/main"]
+allowed_file_relations = ["governed_by"]
+
+[journal]
+cmd = ["./bin/taskwarior.sh", "log", "+journal", "+consistency", "kind:{kind}", "{message}"]
+
+[agent]
+cmd = [
+  "codex", "exec",
+  "--cd", "{project_root}",
+  "--sandbox", "read-only",
+  "-c", "approval_policy=\"never\"",
+  "--ephemeral",
+  "--output-schema", "{schema_path}",
+  "--output-last-message", "{output_path}",
+  "-"
+]
+timeout_seconds = 3600
+
+[prompt]
+template = """
+You are checking consistency between project artifacts.
+
+Relation: {pair.relation}
+Relation description: {pair.relation_description}
+
+Changed file: {changed.path}
+
+Related file: {related.path}
+
+Comparison base: {git.merge_base}
+
+Instructions:
+- Read the files yourself from the workspace.
+- Use git diff against the comparison base to identify the current work scope.
+- You may read additional project files when necessary to understand the consistency question.
+- Do not edit files.
+- Report only inconsistencies that are actionable for the current work scope.
+- Return JSON only.
+
+Consistency criteria:
+{criteria}
+"""
+
+[output_schema]
+type = "object"
+additionalProperties = false
+required = ["check_status", "report"]
+
+[output_schema.properties.check_status]
+type = "string"
+enum = ["consistent", "inconsistent"]
+
+[output_schema.properties.report]
+type = "string"
+
+[criteria]
+common = [
+  "No stale names, missing cases, contradictory defaults, or incompatible examples.",
+  "Prefer issues introduced by or made actionable by the current work scope over pre-existing whole-file issues.",
+]
+
+[relations.governed_by]
+description = "Specifications that apply to the artifact."
+criteria = [
+  "The implementation or artifact must follow the governing specification's behavior and public contract.",
+]
+
+[relations.governs]
+description = "Artifacts governed by the specification."
+criteria = [
+  "The specification must accurately describe the governed artifact's visible behavior and public contract.",
+]
+
+[relations.tested_by]
+description = "Tests that verify the artifact."
+criteria = [
+  "The test must assert behavior that the implementation actually provides.",
+  "The implementation must satisfy the documented intent of the test.",
+]
+
+[relations.tests]
+description = "Artifacts verified by the test."
+criteria = [
+  "The tested artifact must match the expectations and edge cases encoded in the test.",
+]
+
+[relations.imports]
+description = "Backend Python files imported by the artifact."
+criteria = [
+  "Imported APIs, names, types, side effects, and call signatures must still be available and compatible.",
+]
+
+[relations.imported_by]
+description = "Backend Python files that import the artifact."
+criteria = [
+  "Caller code must use available APIs, names, types, side effects, and call signatures correctly.",
+]
+
+[relations.terms_defined_by]
+description = "Dictionaries that define terms used by the artifact."
+criteria = [
+  "Dictionary terms used by the artifact must match the dictionary's spelling and meaning.",
+]
+
+[relations.defines_terms_for]
+description = "Artifacts that use terms from the dictionary."
+criteria = [
+  "Artifacts using dictionary terms must match the dictionary's spelling and meaning.",
+]
+
+[relations.indexed_by]
+description = "Indexes that list the specification."
+criteria = [
+  "Index references must include the artifact correctly and without stale names.",
+]
+
+[relations.indexes]
+description = "Specifications listed by the index."
+criteria = [
+  "Indexed artifacts must exist conceptually in the index and match its references.",
+]
+
+[modes.strict]
+allowed_file_relations = ["governed_by"]
+
+[modes.strict.prompt]
+template = """
+You are checking full consistency between project artifacts.
+
+Relation: {pair.relation}
+Relation description: {pair.relation_description}
+
+Changed file: {changed.path}
+
+Related file: {related.path}
+
+Comparison base: {git.merge_base}
+
+Instructions:
+- Read the files yourself from the workspace.
+- You may read additional project files when necessary.
+- Do not edit files.
+- Report any inconsistency between the changed file and related file, even if it appears pre-existing.
+- Return JSON only.
+
+Consistency criteria:
+{criteria}
+"""
+
+[modes.diff]
+allowed_file_relations = ["governed_by"]
+
+[modes.diff.prompt]
+template = """
+You are checking whether the current work introduced or exposed an inconsistency.
+
+Relation: {pair.relation}
+Relation description: {pair.relation_description}
+
+Changed file: {changed.path}
+
+Related file: {related.path}
+
+Comparison base: {git.merge_base}
+
+Instructions:
+- Read the files yourself from the workspace.
+- Use git diff against the comparison base to inspect the changed hunks.
+- You may read additional project files when necessary.
+- Do not edit files.
+- Report only inconsistencies caused by, changed by, or directly actionable because of the current diff.
+- Ignore true but unrelated pre-existing inconsistencies.
+- Return JSON only.
+
+Consistency criteria:
+{criteria}
+"""
+
+[modes.diff.output_schema]
+type = "object"
+additionalProperties = false
+required = ["check_status", "scope", "report"]
+
+[modes.diff.output_schema.properties.check_status]
+type = "string"
+enum = ["consistent", "inconsistent"]
+
+[modes.diff.output_schema.properties.scope]
+type = "string"
+enum = ["changed", "unchanged", "unclear"]
+
+[modes.diff.output_schema.properties.report]
+type = "string"
