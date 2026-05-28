@@ -62,8 +62,7 @@ async def get_users_with_setting(
     return await operations.get_users_with_setting(kind, value_to_find)
 
 
-async def remove_setting_for_all_users(kind: SettingKind) -> None:
-    await operations.remove_setting_for_all_users(kind)
+remove_setting_for_all_users = operations.remove_setting_for_all_users
 
 
 async def remove_deprecated_settings(register: SettingsRegister = user_settings) -> None:

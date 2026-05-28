@@ -8,7 +8,7 @@ from ffun.user_settings.entities import SettingKind, UserSettings
 logger = logging.get_module_logger()
 
 
-async def save_setting(user_id: UserId, kind: int, value: str) -> None:
+async def save_setting(user_id: UserId, kind: SettingKind, value: str) -> None:
     sql = """
         INSERT INTO us_settings (user_id, kind, value)
         VALUES (%(user_id)s, %(kind)s, %(value)s)
@@ -25,7 +25,9 @@ async def save_setting(user_id: UserId, kind: int, value: str) -> None:
     logger.business_event("setting_updated", user_id=user_id, kind=kind, first_set=first_set)
 
 
-async def load_settings_for_users(user_ids: Iterable[UserId], kinds: Iterable[int]) -> dict[UserId, UserSettings]:
+async def load_settings_for_users(
+    user_ids: Iterable[UserId], kinds: Iterable[SettingKind]
+) -> dict[UserId, UserSettings]:
     sql = """
         SELECT *
         FROM us_settings
@@ -47,7 +49,7 @@ async def load_settings_for_users(user_ids: Iterable[UserId], kinds: Iterable[in
     return values
 
 
-async def get_users_with_setting(kind: int, value: str) -> set[UserId]:
+async def get_users_with_setting(kind: SettingKind, value: str) -> set[UserId]:
     sql = """
         SELECT user_id
         FROM us_settings
@@ -60,7 +62,7 @@ async def get_users_with_setting(kind: int, value: str) -> set[UserId]:
     return {row["user_id"] for row in result}
 
 
-async def remove_setting_for_all_users(kind: int) -> None:
+async def remove_setting_for_all_users(kind: SettingKind) -> None:
     sql = """
         DELETE FROM us_settings
         WHERE kind = %(kind)s
