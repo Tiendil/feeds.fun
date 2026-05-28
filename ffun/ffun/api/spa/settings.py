@@ -1,7 +1,7 @@
 import pydantic_settings
 
-from ffun.core.entities import Days
 from ffun.core.settings import BaseSettings
+from ffun.domain.entities import Days
 
 
 class Settings(BaseSettings):

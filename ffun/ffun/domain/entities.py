@@ -14,6 +14,7 @@ TagUid = NewType("TagUid", str)
 TagUidPart = NewType("TagUidPart", str)
 IdPId = NewType("IdPId", int)  # Identity provider ID
 ProcessorId = NewType("ProcessorId", int)
+Days = NewType("Days", int)
 
 # URL types for better normalization control in code
 # conversion schemas:

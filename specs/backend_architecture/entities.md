@@ -109,17 +109,13 @@ Raw primitive types MAY be used inside local helper code when the value has alre
 
 Semantic primitive types SHOULD be owned by the module that owns the corresponding backend concept.
 
-Shared Feeds Fun semantic primitive types SHOULD belong to the domain module.
-
-Domain-neutral semantic primitive types that are universal across backend modules MAY belong to the core module.
+Shared semantic primitive types SHOULD belong to the domain module.
 
 Module-specific semantic primitive types SHOULD belong to the owning module.
 
 ## Entity ownership
 
 Shared entity infrastructure MUST belong to the core module.
-
-Domain-neutral universal primitive types MAY belong to the core module when they are not Feeds Fun business concepts.
 
 Shared domain primitive types and universal domain entities MUST belong to the domain module.
 
@@ -135,9 +131,9 @@ Public re-exports MUST NOT hide ownership. The defining module MUST remain clear
 
 ## Core domain entities
 
-The core module MUST contain only shared entity infrastructure and domain-neutral universal primitive types.
+The core module MUST contain only shared entity infrastructure.
 
-Core entity infrastructure and primitives MUST NOT contain domain-specific Feeds Fun concepts such as feeds, entries, rules, tags, users, or provider keys.
+Core entity infrastructure MUST NOT contain domain-specific Feeds Fun concepts such as feeds, entries, rules, tags, users, or provider keys.
 
 The domain layer MUST contain only universal entities for concepts shared by all or most other backend modules.
 

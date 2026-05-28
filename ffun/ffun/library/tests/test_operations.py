@@ -9,7 +9,6 @@ import pytest_asyncio
 from pytest_mock import MockerFixture
 
 from ffun.core import utils
-from ffun.core.entities import Days
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import (
     Delta,
@@ -20,7 +19,7 @@ from ffun.core.tests.helpers import (
     capture_logs,
 )
 from ffun.domain.domain import new_entry_id
-from ffun.domain.entities import EntryId, FeedId
+from ffun.domain.entities import Days, EntryId, FeedId
 from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed

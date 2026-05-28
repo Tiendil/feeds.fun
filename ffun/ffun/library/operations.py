@@ -7,9 +7,8 @@ from psycopg.types.json import Jsonb
 from pypika import PostgreSQLQuery
 
 from ffun.core import logging, utils
-from ffun.core.entities import Days
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
-from ffun.domain.entities import EntryId, FeedId
+from ffun.domain.entities import Days, EntryId, FeedId
 from ffun.library import errors
 from ffun.library.entities import CollectedEntry, Entry, FeedEntryLink, Reference
 from ffun.library.settings import settings
