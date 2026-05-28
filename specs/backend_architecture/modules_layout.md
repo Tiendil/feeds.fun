@@ -169,7 +169,7 @@ See `specs/backend_architecture/db.md` for detailed schema ownership and migrati
 
 The `tests` submodule owns colocated tests for the parent module and its submodules.
 
-Tests SHOULD exercise behavior through public boundaries when practical, while operation tests MAY verify persistence-specific behavior owned by the module.
+The `tests` submodule MUST follow the test architecture rules in `specs/backend_architecture/tests.md`.
 
 Test files SHOULD mirror implementation module names with the `test_` prefix and organize test classes around the tested function or class.
 

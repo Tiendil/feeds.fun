@@ -54,6 +54,10 @@ Tests MUST NOT clean up shared state after themselves unless the developer expli
 
 Tests SHOULD prefer end-to-end coverage through public boundaries when that is practical for the behavior under test.
 
+Tests SHOULD exercise behavior of other top-level modules through their public boundaries.
+
+Tests MAY use any convenient functionality from the parent top-level module when testing behavior owned by that parent module. This includes private module-level helpers when the helper is the direct subject of the corresponding required test class.
+
 Tests SHOULD use mocks, stubs, and monkeypatching as little as possible.
 
 Tests SHOULD prefer real project code, temporary files, local test services, and explicit fixtures over mocked collaborators.
