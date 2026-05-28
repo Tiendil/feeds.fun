@@ -152,6 +152,10 @@ Tests SHOULD be organized around the tested function or tested class.
 
 Each production module-level function MUST have a corresponding test class.
 
+Yoyo migration modules under module-local `migrations` packages do not need separate per-function test classes for
+their migration step functions. Migration-sensitive changes SHOULD be verified through tests that exercise the resulting
+operation behavior after migrations are applied.
+
 Each class SHOULD have a corresponding test class.
 
 Test classes MUST use `Test<SubjectName>` naming, where `<SubjectName>` is the tested function or class name converted to PascalCase.
