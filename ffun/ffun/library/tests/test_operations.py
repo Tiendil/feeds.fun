@@ -9,6 +9,7 @@ import pytest_asyncio
 from pytest_mock import MockerFixture
 
 from ffun.core import utils
+from ffun.core.entities import Days
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import (
     Delta,
@@ -286,20 +287,20 @@ class TestCatalogEntry:
         ingested_at = utils.now()
         feed_ids = [loaded_feed_id, another_loaded_feed_id]
 
-        assert await entries_in_period(feed_ids, 1) == {loaded_feed_id: 0, another_loaded_feed_id: 0}
+        assert await entries_in_period(feed_ids, Days(1)) == {loaded_feed_id: 0, another_loaded_feed_id: 0}
 
         assert await _catalog_entry(loaded_feed_id, new_entry, ingested_at) == new_entry.id
 
-        assert await entries_in_period(feed_ids, 1) == {loaded_feed_id: 1, another_loaded_feed_id: 0}
+        assert await entries_in_period(feed_ids, Days(1)) == {loaded_feed_id: 1, another_loaded_feed_id: 0}
 
         duplicate_entry = new_entry.replace(id=new_entry_id())
 
         assert await _catalog_entry(loaded_feed_id, duplicate_entry, ingested_at) is None
 
-        assert await entries_in_period(feed_ids, 1) == {loaded_feed_id: 1, another_loaded_feed_id: 0}
+        assert await entries_in_period(feed_ids, Days(1)) == {loaded_feed_id: 1, another_loaded_feed_id: 0}
         assert await _catalog_entry(another_loaded_feed_id, duplicate_entry, ingested_at) == new_entry.id
 
-        assert await entries_in_period(feed_ids, 1) == {loaded_feed_id: 1, another_loaded_feed_id: 1}
+        assert await entries_in_period(feed_ids, Days(1)) == {loaded_feed_id: 1, another_loaded_feed_id: 1}
 
 
 class TestCatalogEntries:
@@ -489,14 +490,14 @@ class TestEntriesInPeriod:
         )
         await _catalog_entry(another_loaded_feed.id, make.fake_entry(another_loaded_feed.source_id), today)
 
-        assert await entries_in_period([loaded_feed.id, another_loaded_feed.id], 2) == {
+        assert await entries_in_period([loaded_feed.id, another_loaded_feed.id], Days(2)) == {
             loaded_feed.id: 2,
             another_loaded_feed.id: 1,
         }
 
     @pytest.mark.asyncio
     async def test_returns_zero_for_feeds_without_entries(self, loaded_feed_id: FeedId) -> None:
-        assert await entries_in_period([loaded_feed_id], 30) == {loaded_feed_id: 0}
+        assert await entries_in_period([loaded_feed_id], Days(30)) == {loaded_feed_id: 0}
 
 
 class TestEntriesInPeriodDetails:
@@ -518,14 +519,14 @@ class TestEntriesInPeriodDetails:
             loaded_feed.id, make.fake_entry(loaded_feed.source_id), today - datetime.timedelta(days=3)
         )
 
-        assert await entries_in_period_details([loaded_feed.id, another_loaded_feed.id], 3) == {
+        assert await entries_in_period_details([loaded_feed.id, another_loaded_feed.id], Days(3)) == {
             loaded_feed.id: [1, 0, 1],
             another_loaded_feed.id: [0, 1, 0],
         }
 
     @pytest.mark.asyncio
     async def test_returns_zeroes_for_feeds_without_entries(self, loaded_feed_id: FeedId) -> None:
-        assert await entries_in_period_details([loaded_feed_id], 3) == {loaded_feed_id: [0, 0, 0]}
+        assert await entries_in_period_details([loaded_feed_id], Days(3)) == {loaded_feed_id: [0, 0, 0]}
 
 
 # Most of the functionality is tested in the tests for catalog_entry and other functions

@@ -7,6 +7,7 @@ from psycopg.types.json import Jsonb
 from pypika import PostgreSQLQuery
 
 from ffun.core import logging, utils
+from ffun.core.entities import Days
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain.entities import EntryId, FeedId
 from ffun.library import errors
@@ -190,7 +191,7 @@ async def catalog_entries(feed_id: FeedId, entries: Iterable[CollectedEntry]) ->
     return linked_entry_ids
 
 
-async def entries_in_period(feed_ids: Iterable[FeedId], period: int) -> dict[FeedId, int]:
+async def entries_in_period(feed_ids: Iterable[FeedId], period: Days) -> dict[FeedId, int]:
     feed_ids = list(feed_ids)
     result = {feed_id: 0 for feed_id in feed_ids}
 
@@ -217,7 +218,7 @@ async def entries_in_period(feed_ids: Iterable[FeedId], period: int) -> dict[Fee
     return result
 
 
-async def entries_in_period_details(feed_ids: Iterable[FeedId], period: int) -> dict[FeedId, list[int]]:
+async def entries_in_period_details(feed_ids: Iterable[FeedId], period: Days) -> dict[FeedId, list[int]]:
     feed_ids = list(feed_ids)
     result: dict[FeedId, list[int]] = {feed_id: [] for feed_id in feed_ids}
 

@@ -1,6 +1,8 @@
-from typing import TypeVar
+from typing import NewType, TypeVar
 
 import pydantic
+
+Days = NewType("Days", int)
 
 BASE_ENTITY = TypeVar("BASE_ENTITY", bound="BaseEntity")
 
