@@ -26,6 +26,7 @@ import shlex
 import shutil
 import subprocess  # noqa: S404
 import sys
+import time
 import tomllib
 from collections import Counter
 from dataclasses import dataclass
@@ -54,6 +55,7 @@ class ConsistencyConfig:
     runtime_dir: Path
     comparison_base_refs: tuple[str, ...]
     allowed_file_relations: tuple[str, ...]
+    jobs: int
     journal_cmd: tuple[str, ...]
     agent_cmd: tuple[str, ...]
     agent_timeout_seconds: int
@@ -164,6 +166,16 @@ class PreparedChildCheck:
     schema_path: Path
     output_path: Path
     prompt: str
+
+
+@dataclass(frozen=True)
+class RunningChildCheck:
+    prepared: PreparedChildCheck
+    argv: tuple[str, ...]
+    process: subprocess.Popen[str]
+    stdout_path: Path
+    stderr_path: Path
+    started_at: float
 
 
 @dataclass(frozen=True)
@@ -318,6 +330,10 @@ def validate_config(config: dict[str, Any], *, mode: str) -> ConsistencyConfig:
     runtime_dir = normalize_runtime_dir(require_string(config, "runtime_dir", context="consistency.toml"))
     comparison_base_refs = require_string_list(config, "comparison_base_refs", context="consistency.toml")
     allowed_file_relations = require_string_list(config, "allowed_file_relations", context="consistency.toml")
+    jobs = require_int(config, "jobs", context="consistency.toml")
+
+    if jobs <= 0:
+        raise CheckerFailureError("consistency.toml: jobs must be positive")
 
     journal = require_table(config, "journal", context="consistency.toml")
     journal_cmd = require_string_list(journal, "cmd", context="consistency.toml journal")
@@ -371,6 +387,7 @@ def validate_config(config: dict[str, Any], *, mode: str) -> ConsistencyConfig:
         runtime_dir=runtime_dir,
         comparison_base_refs=comparison_base_refs,
         allowed_file_relations=allowed_file_relations,
+        jobs=jobs,
         journal_cmd=journal_cmd,
         agent_cmd=agent_cmd,
         agent_timeout_seconds=agent_timeout_seconds,
@@ -1478,6 +1495,7 @@ def prepare_child_check(current_pair: CurrentPair) -> PreparedChildCheck:
     schema_path = paths.schema_dir / f"{key_hash}.schema.json"
     output_path = paths.agent_output_dir / f"{key_hash}.json"
     prompt = build_child_prompt(current_pair)
+    output_path.unlink(missing_ok=True)
     prompt_path.write_text(prompt, encoding="utf-8")
     schema_path.write_text(json.dumps(get_config().output_schema, indent=2, sort_keys=True), encoding="utf-8")
 
@@ -1491,6 +1509,24 @@ def prepare_child_check(current_pair: CurrentPair) -> PreparedChildCheck:
 
 
 def run_child_checker(prepared: PreparedChildCheck) -> str:
+    running = start_child_checker(prepared)
+
+    while running.process.poll() is None:
+        if child_checker_timed_out(running):
+            kill_running_child(running)
+            raise CheckerFailureError(
+                "running child Codex checker for "
+                f"{pair_journal_subject(prepared.current_pair.identity)}: "
+                f"timed out after {get_config().agent_timeout_seconds} seconds: "
+                f"{format_argv(running.argv)}"
+            )
+
+        time.sleep(0.1)
+
+    return finish_child_checker(running)
+
+
+def start_child_checker(prepared: PreparedChildCheck) -> RunningChildCheck:
     pair_subject = pair_journal_subject(prepared.current_pair.identity)
     log_project_journal("step", f"child checker start for {pair_subject}")
     command = render_command_argv(
@@ -1502,20 +1538,93 @@ def run_child_checker(prepared: PreparedChildCheck) -> str:
             "output_path": str(prepared.output_path),
         },
     )
-    result = run_command(
-        command,
-        input_text=prepared.prompt,
-        failure_context=f"running child Codex checker for {pair_subject}",
-        timeout_seconds=get_config().agent_timeout_seconds,
+
+    stdout_path = prepared.output_path.with_suffix(".stdout.txt")
+    stderr_path = prepared.output_path.with_suffix(".stderr.txt")
+
+    try:
+        with stdout_path.open("w", encoding="utf-8") as stdout_file, stderr_path.open(
+            "w",
+            encoding="utf-8",
+        ) as stderr_file:
+            process = subprocess.Popen(  # noqa: S603
+                command,
+                cwd=PROJECT_ROOT,
+                stdin=subprocess.PIPE,
+                stdout=stdout_file,
+                stderr=stderr_file,
+                text=True,
+            )
+    except OSError as error:
+        raise CheckerFailureError(
+            f"running child Codex checker for {pair_subject}: {format_argv(command)}: {error}"
+        ) from error
+
+    if process.stdin is None:
+        kill_running_child(
+            RunningChildCheck(
+                prepared=prepared,
+                argv=command,
+                process=process,
+                stdout_path=stdout_path,
+                stderr_path=stderr_path,
+                started_at=time.monotonic(),
+            )
+        )
+        raise CheckerFailureError(f"child Codex checker stdin was unavailable for {pair_subject}")
+
+    try:
+        process.stdin.write(prepared.prompt)
+        process.stdin.close()
+    except OSError as error:
+        kill_running_child(
+            RunningChildCheck(
+                prepared=prepared,
+                argv=command,
+                process=process,
+                stdout_path=stdout_path,
+                stderr_path=stderr_path,
+                started_at=time.monotonic(),
+            )
+        )
+        raise CheckerFailureError(f"writing child Codex checker prompt failed for {pair_subject}: {error}") from error
+
+    return RunningChildCheck(
+        prepared=prepared,
+        argv=command,
+        process=process,
+        stdout_path=stdout_path,
+        stderr_path=stderr_path,
+        started_at=time.monotonic(),
     )
+
+
+def child_checker_timed_out(running: RunningChildCheck) -> bool:
+    return time.monotonic() - running.started_at > get_config().agent_timeout_seconds
+
+
+def kill_running_child(running: RunningChildCheck) -> None:
+    if running.process.poll() is not None:
+        return
+
+    running.process.kill()
+    running.process.wait()
+
+
+def finish_child_checker(running: RunningChildCheck) -> str:
+    pair_subject = pair_journal_subject(running.prepared.current_pair.identity)
+    returncode = running.process.wait()
+    stdout = running.stdout_path.read_text(encoding="utf-8") if running.stdout_path.exists() else ""
+    stderr = running.stderr_path.read_text(encoding="utf-8") if running.stderr_path.exists() else ""
+    result = CommandResult(argv=running.argv, returncode=returncode, stdout=stdout, stderr=stderr)
 
     if result.returncode != 0:
         raise CheckerFailureError(build_command_failure("child Codex checker failed", result))
 
-    if not prepared.output_path.exists():
-        raise CheckerFailureError(f"child Codex checker did not write output file: {prepared.output_path}")
+    if not running.prepared.output_path.exists():
+        raise CheckerFailureError(f"child Codex checker did not write output file: {running.prepared.output_path}")
 
-    output = prepared.output_path.read_text(encoding="utf-8")
+    output = running.prepared.output_path.read_text(encoding="utf-8")
     log_project_journal("step", f"child checker completed for {pair_subject}")
 
     return output
@@ -1608,105 +1717,147 @@ def update_record_from_child_output(current_pair: CurrentPair, output: str) -> C
     return CurrentPair(pair=current_pair.pair, identity=current_pair.identity, record=record)
 
 
+def first_unchecked_pair(current_pairs: list[CurrentPair], excluded_pair_keys: set[str]) -> CurrentPair | None:
+    for current_pair in sorted(current_pairs, key=current_pair_sort_key):
+        if current_pair.identity.pair_key in excluded_pair_keys:
+            continue
+
+        if normalized_check_status(current_pair.record) == "unchecked":
+            return current_pair
+
+    return None
+
+
+def wait_for_finished_children(running: dict[str, RunningChildCheck]) -> list[RunningChildCheck]:
+    while True:
+        finished = [child for child in running.values() if child.process.poll() is not None]
+
+        if finished:
+            return finished
+
+        timed_out = [child for child in running.values() if child_checker_timed_out(child)]
+
+        if timed_out:
+            timed_out_child = sorted(
+                timed_out,
+                key=lambda child: current_pair_sort_key(child.prepared.current_pair),
+            )[0]
+            kill_running_child(timed_out_child)
+            raise CheckerFailureError(
+                "running child Codex checker for "
+                f"{pair_journal_subject(timed_out_child.prepared.current_pair.identity)}: "
+                f"timed out after {get_config().agent_timeout_seconds} seconds: "
+                f"{format_argv(timed_out_child.argv)}"
+            )
+
+        time.sleep(0.1)
+
+
+def terminate_running_children(running: dict[str, RunningChildCheck]) -> None:
+    for child in running.values():
+        kill_running_child(child)
+
+
 def process_current_pairs(
     changed_files: list[str],
     current_pairs: list[CurrentPair],
     *,
     command_name: str,
-    consume_all: bool,
+    jobs: int,
 ) -> ExitCode:
-    while True:
-        selection = select_current_pair(current_pairs)
+    running: dict[str, RunningChildCheck] = {}
+    inconsistency_found = False
+    log_project_journal("step", f"{command_name} processing with jobs:{jobs}")
 
-        if selection.inconsistent is not None:
-            print_inconsistent_pair(selection.inconsistent)
-            log_project_journal("step", f"{command_name} outcome: current inconsistency found")
-            return ExitCode.INCONSISTENCY_FOUND
+    try:
+        while True:
+            inconsistent_pair = first_inconsistent_pair(current_pairs)
 
-        if selection.unchecked is None:
-            print_summary(changed_files, current_pairs)
-            log_project_journal("step", f"{command_name} outcome: success")
-            return ExitCode.SUCCESS
+            if inconsistent_pair is not None:
+                inconsistency_found = True
 
-        checked_pair = mark_current_pair_outdated_if_needed(selection.unchecked)
+                if not running:
+                    print_inconsistent_pair(inconsistent_pair)
+                    log_project_journal("step", f"{command_name} outcome: current inconsistency found")
+                    return ExitCode.INCONSISTENCY_FOUND
 
-        if normalized_check_status(checked_pair.record) == "outdated":
-            current_pairs = replace_current_pair(current_pairs, checked_pair)
-            continue
+            while not inconsistency_found and len(running) < jobs:
+                unchecked_pair = first_unchecked_pair(current_pairs, set(running))
 
-        try:
-            prepared = prepare_child_check(checked_pair)
-        except MissingArtifactError as error:
-            updated_record = mark_record_outdated_during_processing(
-                checked_pair.record,
-                f"file is missing before child check: {error.path}",
-            )
-            current_pairs = replace_current_pair(
-                current_pairs,
-                CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
-            )
-            continue
-        except OutdatedPairError as error:
-            updated_record = mark_record_outdated_during_processing(checked_pair.record, error.reason)
-            current_pairs = replace_current_pair(
-                current_pairs,
-                CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
-            )
-            continue
+                if unchecked_pair is None:
+                    break
 
-        try:
-            child_output = run_child_checker(prepared)
-        except MissingArtifactError as error:
-            log_project_journal(
-                "step",
-                (
-                    "selected pair file disappeared "
-                    f"{checked_pair.identity.changed_path} -> "
-                    f"{checked_pair.identity.related_path} "
-                    f"[{checked_pair.identity.relation}]: {error.path}"
-                ),
-            )
-            updated_record = mark_record_outdated_during_processing(
-                checked_pair.record,
-                f"file disappeared during child check: {error.path}",
-            )
-            current_pairs = replace_current_pair(
-                current_pairs,
-                CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
-            )
-            continue
+                checked_pair = mark_current_pair_outdated_if_needed(unchecked_pair)
 
-        updated_pair = update_record_from_child_output(checked_pair, child_output)
-        current_pairs = replace_current_pair(current_pairs, updated_pair)
+                if normalized_check_status(checked_pair.record) == "outdated":
+                    current_pairs = replace_current_pair(current_pairs, checked_pair)
+                    continue
 
-        inconsistent_pair = first_inconsistent_pair(current_pairs)
+                try:
+                    prepared = prepare_child_check(checked_pair)
+                except MissingArtifactError as error:
+                    updated_record = mark_record_outdated_during_processing(
+                        checked_pair.record,
+                        f"file is missing before child check: {error.path}",
+                    )
+                    current_pairs = replace_current_pair(
+                        current_pairs,
+                        CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                    )
+                    continue
+                except OutdatedPairError as error:
+                    updated_record = mark_record_outdated_during_processing(checked_pair.record, error.reason)
+                    current_pairs = replace_current_pair(
+                        current_pairs,
+                        CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                    )
+                    continue
 
-        if inconsistent_pair is not None:
-            print_inconsistent_pair(inconsistent_pair)
-            log_project_journal("step", f"{command_name} outcome: child found inconsistency")
-            return ExitCode.INCONSISTENCY_FOUND
+                running[checked_pair.identity.pair_key] = start_child_checker(prepared)
 
-        if normalized_check_status(updated_pair.record) == "consistent" and has_unchecked_pair(current_pairs):
-            if consume_all:
-                continue
+            if not running:
+                inconsistent_pair = first_inconsistent_pair(current_pairs)
 
-            print_summary(changed_files, current_pairs)
-            log_project_journal("step", f"{command_name} outcome: continue cycle")
-            return ExitCode.CONTINUE_CYCLE
+                if inconsistent_pair is not None:
+                    print_inconsistent_pair(inconsistent_pair)
+                    log_project_journal("step", f"{command_name} outcome: child found inconsistency")
+                    return ExitCode.INCONSISTENCY_FOUND
 
-        print_summary(changed_files, current_pairs)
-        log_project_journal("step", f"{command_name} outcome: success")
-        return ExitCode.SUCCESS
+                print_summary(changed_files, current_pairs)
+                log_project_journal("step", f"{command_name} outcome: success")
+                return ExitCode.SUCCESS
+
+            for finished_child in wait_for_finished_children(running):
+                pair_key = finished_child.prepared.current_pair.identity.pair_key
+                running.pop(pair_key)
+                child_output = finish_child_checker(finished_child)
+                updated_pair = update_record_from_child_output(finished_child.prepared.current_pair, child_output)
+                current_pairs = replace_current_pair(current_pairs, updated_pair)
+
+                if normalized_check_status(updated_pair.record) == "inconsistent":
+                    inconsistency_found = True
+    except CheckerFailureError:
+        terminate_running_children(running)
+        raise
 
 
-def run_cycle() -> ExitCode:
+def effective_jobs(args: argparse.Namespace) -> int:
+    jobs = args.jobs if getattr(args, "jobs", None) is not None else get_config().jobs
+
+    if jobs <= 0:
+        raise CheckerFailureError("jobs must be positive")
+
+    return jobs
+
+
+def run_cycle(args: argparse.Namespace) -> ExitCode:
     ensure_runtime_state()
     log_project_journal("step", "run-cycle command started")
     changed_files = discover_changed_files()
     relation_pairs = query_depmesh_pairs(changed_files)
     current_pairs = reconcile_queue(relation_pairs)
 
-    return process_current_pairs(changed_files, current_pairs, command_name="run-cycle", consume_all=False)
+    return process_current_pairs(changed_files, current_pairs, command_name="run-cycle", jobs=effective_jobs(args))
 
 
 def record_to_current_pair(record: CheckRecord, relation_descriptions: dict[str, str]) -> CurrentPair:
@@ -1740,13 +1891,13 @@ def load_queued_current_pairs() -> list[CurrentPair]:
     return current_pairs
 
 
-def process_queue() -> ExitCode:
+def process_queue(args: argparse.Namespace) -> ExitCode:
     ensure_runtime_state()
     log_project_journal("step", "process-queue command started")
     current_pairs = load_queued_current_pairs()
     changed_files = sorted({current_pair.pair.changed_path for current_pair in current_pairs})
 
-    return process_current_pairs(changed_files, current_pairs, command_name="process-queue", consume_all=True)
+    return process_current_pairs(changed_files, current_pairs, command_name="process-queue", jobs=effective_jobs(args))
 
 
 def mark_outdated_records() -> tuple[int, int]:
@@ -2108,6 +2259,7 @@ def run_self_check() -> ExitCode:
         active_config.allowed_file_relations == ("governed_by",),
         "allowed relations must load from config",
     )
+    assert_self_check(active_config.jobs > 0, "jobs must load from config")
     assert_self_check(
         relation_specific_criteria("governed_by")[0].startswith("The implementation"),
         "relation criteria must load from config",
@@ -2373,6 +2525,14 @@ def add_pair_status_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def add_jobs_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        help="number of child agent checks to keep running; defaults to consistency.toml jobs",
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run depmesh-backed consistency checks.")
     parser.add_argument(
@@ -2381,8 +2541,17 @@ def parse_args() -> argparse.Namespace:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    subparsers.add_parser("run-cycle", help="reconcile and check at most one relation pair")
-    subparsers.add_parser("process-queue", help="process queued relation pairs until completion or inconsistency")
+    run_cycle_parser = subparsers.add_parser(
+        "run-cycle",
+        help="reconcile and check relation pairs until completion or inconsistency",
+    )
+    add_jobs_argument(run_cycle_parser)
+
+    process_queue_parser = subparsers.add_parser(
+        "process-queue",
+        help="process queued relation pairs until completion or inconsistency",
+    )
+    add_jobs_argument(process_queue_parser)
 
     enqueue_parser = subparsers.add_parser("enqueue", help="manually enqueue one file's depmesh relation pairs")
     enqueue_parser.add_argument("files", nargs="*", help="project paths or root-anchored artifact ids")
@@ -2454,10 +2623,10 @@ def main() -> int:
         configure_consistency(mode=args.mode)
 
         if args.command == "run-cycle":
-            return int(run_cycle())
+            return int(run_cycle(args))
 
         if args.command == "process-queue":
-            return int(process_queue())
+            return int(process_queue(args))
 
         if args.command == "enqueue":
             return int(enqueue_files(parse_enqueue_files(args)))
