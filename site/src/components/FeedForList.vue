@@ -46,10 +46,9 @@
       <div
         class="flex min-w-0 cursor-pointer items-baseline gap-2"
         @click="onTitleClick">
-        <external-url
-          class="ffun-normal-link flex-shrink-0"
-          :url="feed.url"
-          :text="purifiedTitle" />
+        <span
+          class="flex-shrink-0 min-w-fit line-clamp-1 mb-0"
+          v-html="purifiedTitle" />
 
         <span
           v-if="purifiedDescriptionPreview"
@@ -74,16 +73,17 @@
   <body-list-entry-body
     v-if="showDescription"
     class="justify-center"
-    :url="feed.url"
+    :url="bodyTitleUrl"
     :title="purifiedTitle"
     :loading="feed.entriesLoadedDetails === null"
-    :references="[]"
+    :references="feedReferences"
     :text="purifiedDescription" />
 </template>
 
 <script lang="ts" setup>
   import {computed, useTemplateRef} from "vue";
-  import type * as t from "@/logic/types";
+  import * as e from "@/logic/enums";
+  import * as t from "@/logic/types";
   import * as utils from "@/logic/utils";
   import {useFeedsStore} from "@/stores/feeds";
   import {useCollectionsStore} from "@/stores/collections";
@@ -112,6 +112,26 @@
 
   const purifiedDescription = computed(() => {
     return utils.purifyBody({raw: properties.feed.description, default_: "No description"});
+  });
+
+  const bodyTitleUrl = computed(() => {
+    return properties.feed.siteUrl ?? properties.feed.url;
+  });
+
+  const feedReferences = computed(() => {
+    return [
+      new t.Reference({
+        kind: e.ReferenceKind.Page,
+        url: properties.feed.url,
+        title: "feed",
+        mimeType: null,
+        width: null,
+        height: null,
+        duration: null,
+        size: null,
+        extra: null
+      })
+    ];
   });
 
   const entriesPerDayTitle = computed(() => {
