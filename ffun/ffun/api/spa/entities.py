@@ -66,16 +66,18 @@ class Feed(BaseEntity):
     loadedAt: datetime.datetime | None
     linkedAt: datetime.datetime | None
     collectionIds: list[CollectionId]
-    entriesLoaded: int
+    young: bool
+    entriesPerDay: int
     entriesLoadedDetails: list[int] | None = None
 
     @classmethod
-    def from_internal(
+    def from_internal(  # noqa: CFQ002
         cls,
         feed: f_entities.Feed,
         linked_at: datetime.datetime | None,
         collection_ids: list[CollectionId],
-        entries_loaded: int,
+        young: bool,
+        entries_per_day: int,
         entries_loaded_details: list[int] | None = None,
     ) -> "Feed":
         return cls(
@@ -89,7 +91,8 @@ class Feed(BaseEntity):
             loadedAt=feed.loaded_at,
             linkedAt=linked_at,
             collectionIds=collection_ids,
-            entriesLoaded=entries_loaded,
+            young=young,
+            entriesPerDay=entries_per_day,
             entriesLoadedDetails=entries_loaded_details,
         )
 

@@ -48,7 +48,8 @@ export class Feed {
   readonly linkedAt: Date | null;
   readonly isOk: boolean;
   readonly collectionIds: CollectionId[];
-  readonly entriesLoaded: number;
+  readonly young: boolean;
+  readonly entriesPerDay: number;
   readonly entriesLoadedDetails: number[] | null;
 
   constructor({
@@ -63,7 +64,8 @@ export class Feed {
     linkedAt,
     isOk,
     collectionIds,
-    entriesLoaded,
+    young,
+    entriesPerDay,
     entriesLoadedDetails
   }: {
     id: FeedId;
@@ -77,7 +79,8 @@ export class Feed {
     linkedAt: Date | null;
     isOk: boolean;
     collectionIds: CollectionId[];
-    entriesLoaded: number;
+    young: boolean;
+    entriesPerDay: number;
     entriesLoadedDetails: number[] | null;
   }) {
     this.id = id;
@@ -91,7 +94,8 @@ export class Feed {
     this.linkedAt = linkedAt;
     this.isOk = isOk;
     this.collectionIds = collectionIds;
-    this.entriesLoaded = entriesLoaded;
+    this.young = young;
+    this.entriesPerDay = entriesPerDay;
     this.entriesLoadedDetails = entriesLoadedDetails;
   }
 }
@@ -107,7 +111,8 @@ export type RawFeed = {
   loadedAt?: string | null;
   linkedAt?: string | null;
   collectionIds: string[];
-  entriesLoaded: number;
+  young: boolean;
+  entriesPerDay: number;
   entriesLoadedDetails?: number[] | null;
 };
 
@@ -122,7 +127,8 @@ export function feedFromJSON({
   loadedAt,
   linkedAt,
   collectionIds,
-  entriesLoaded,
+  young,
+  entriesPerDay,
   entriesLoadedDetails
 }: RawFeed): Feed {
   return {
@@ -137,7 +143,8 @@ export function feedFromJSON({
     linkedAt: linkedAt !== undefined && linkedAt !== null ? new Date(linkedAt) : null,
     isOk: state === "loaded",
     collectionIds: collectionIds.map(toCollectionId),
-    entriesLoaded: entriesLoaded,
+    young: young,
+    entriesPerDay: entriesPerDay,
     entriesLoadedDetails: entriesLoadedDetails !== undefined ? entriesLoadedDetails : null
   };
 }

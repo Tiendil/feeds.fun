@@ -11,7 +11,8 @@ function rawFeed(overrides: Partial<RawFeed> = {}): RawFeed {
     url: "https://example.com/feed",
     state: "loaded",
     collectionIds: [],
-    entriesLoaded: 7,
+    young: true,
+    entriesPerDay: 7,
     ...overrides
   };
 }
@@ -39,7 +40,8 @@ describe("feedFromJSON", () => {
         siteUrl: "https://example.com",
         lastError: "network_connection_timeout",
         collectionIds: ["dca40ac1-73da-49dc-b7d8-40dac312ae41"],
-        entriesLoaded: 3,
+        young: false,
+        entriesPerDay: 3,
         entriesLoadedDetails: [1, 0, 3]
       })
     );
@@ -53,7 +55,8 @@ describe("feedFromJSON", () => {
     expect(feed.linkedAt).toEqual(new Date("2026-05-11T12:00:00Z"));
     expect(feed.isOk).toBe(true);
     expect(feed.collectionIds).toEqual(["dca40ac1-73da-49dc-b7d8-40dac312ae41"]);
-    expect(feed.entriesLoaded).toBe(3);
+    expect(feed.young).toBe(false);
+    expect(feed.entriesPerDay).toBe(3);
     expect(feed.entriesLoadedDetails).toEqual([1, 0, 3]);
   });
 

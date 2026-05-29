@@ -15,9 +15,11 @@ class TestFeed:
             loaded_feed,
             linked_at=None,
             collection_ids=[],
-            entries_loaded=0,
+            young=True,
+            entries_per_day=0,
         )
 
+        assert external_feed.young
         assert external_feed.entriesLoadedDetails is None
         assert external_feed.siteUrl is None
 
@@ -30,13 +32,15 @@ class TestFeed:
             loaded_feed.replace(site_url=site_url),
             linked_at=linked_at,
             collection_ids=[],
-            entries_loaded=3,
+            young=False,
+            entries_per_day=3,
             entries_loaded_details=[0, 1, 2],
         )
 
         assert external_feed.linkedAt == linked_at
         assert external_feed.siteUrl == site_url
-        assert external_feed.entriesLoaded == 3
+        assert not external_feed.young
+        assert external_feed.entriesPerDay == 3
         assert external_feed.entriesLoadedDetails == [0, 1, 2]
 
     def test_from_internal__with_last_error(self, loaded_feed: InternalFeed) -> None:
@@ -47,7 +51,8 @@ class TestFeed:
             failed_feed,
             linked_at=None,
             collection_ids=[],
-            entries_loaded=0,
+            young=True,
+            entries_per_day=0,
         )
 
         assert external_feed.lastError == error.name

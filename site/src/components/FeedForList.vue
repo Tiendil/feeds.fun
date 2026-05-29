@@ -24,7 +24,7 @@
     <div
       class="ffun-body-list-number-column"
       title="Number of news loaded per day">
-      {{ feed.entriesLoaded }}
+      {{ feed.entriesPerDay }}
     </div>
 
     <div class="ffun-body-list-icon-column ml-3">

@@ -20,6 +20,7 @@ from ffun.domain.entities import FeedId, TagId, TagUid, UserId
 from ffun.domain.urls import url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
+from ffun.feeds import utils as f_utils
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_discoverer import domain as fd_domain
 from ffun.feeds_discoverer import entities as fd_entities
@@ -339,7 +340,8 @@ async def _external_feeds(
             feed,
             linked_at=linked_at_by_feed.get(feed.id),
             collection_ids=collection_ids,
-            entries_loaded=entries_loaded[feed.id],
+            young=f_utils.is_young(feed, settings.feed_metrics_period),
+            entries_per_day=f_utils.entries_per_day(feed, entries_loaded[feed.id], settings.feed_metrics_period),
             entries_loaded_details=details.get(feed.id),
         )
         external_feeds.append(external_feed)

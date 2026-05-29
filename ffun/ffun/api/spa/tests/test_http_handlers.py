@@ -19,7 +19,7 @@ class TestApiGetFeeds:
         assert response.feeds == []
 
     @pytest.mark.asyncio
-    async def test_returns_entries_loaded_without_details(
+    async def test_returns_entries_per_day_without_details(
         self, internal_user_id: UserId, loaded_feed: Feed, new_entry: CollectedEntry
     ) -> None:
         await fl_domain.add_link(internal_user_id, loaded_feed.id)
@@ -29,11 +29,13 @@ class TestApiGetFeeds:
 
         assert len(response.feeds) == 1
         assert response.feeds[0].id == loaded_feed.id
-        assert response.feeds[0].entriesLoaded == 1
+        assert response.feeds[0].young
+        assert response.feeds[0].entriesPerDay == 1
         assert response.feeds[0].entriesLoadedDetails is None
 
 
 class TestExternalFeeds:
+
     @pytest.mark.asyncio
     async def test_returns_feed_metrics_details(self, loaded_feed: Feed, new_entry: CollectedEntry) -> None:
         linked_at = utils.now()
@@ -48,7 +50,8 @@ class TestExternalFeeds:
         assert len(feeds) == 1
         assert feeds[0].id == loaded_feed.id
         assert feeds[0].linkedAt == linked_at
-        assert feeds[0].entriesLoaded == 1
+        assert feeds[0].young
+        assert feeds[0].entriesPerDay == 1
         assert feeds[0].entriesLoadedDetails is not None
         assert len(feeds[0].entriesLoadedDetails) == 30
         assert feeds[0].entriesLoadedDetails[-1] == 1
@@ -76,14 +79,16 @@ class TestApiGetFeedsByIds:
         assert set(feeds) == {loaded_feed.id, another_loaded_feed.id}
 
         assert feeds[loaded_feed.id].linkedAt is not None
-        assert feeds[loaded_feed.id].entriesLoaded == 1
+        assert feeds[loaded_feed.id].young
+        assert feeds[loaded_feed.id].entriesPerDay == 1
         loaded_feed_details = feeds[loaded_feed.id].entriesLoadedDetails
         assert loaded_feed_details is not None
         assert len(loaded_feed_details) == 30
         assert loaded_feed_details[-1] == 1
 
         assert feeds[another_loaded_feed.id].linkedAt is None
-        assert feeds[another_loaded_feed.id].entriesLoaded == 0
+        assert feeds[another_loaded_feed.id].young
+        assert feeds[another_loaded_feed.id].entriesPerDay == 0
         assert feeds[another_loaded_feed.id].entriesLoadedDetails == [0] * 30
 
     @pytest.mark.asyncio

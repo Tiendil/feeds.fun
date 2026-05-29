@@ -45,8 +45,9 @@ class TestSaveFeed:
         saved_feed = await get_feed(feed_id)
 
         assert feed_id == new_feed.id
+        assert saved_feed.created_at is not None
         assert saved_feed.site_url == site_url
-        assert saved_feed == new_feed
+        assert saved_feed.replace(created_at=None) == new_feed
 
     @pytest.mark.asyncio
     async def test_existed_feed(self, new_feed: Feed) -> None:
@@ -58,7 +59,10 @@ class TestSaveFeed:
 
         assert original_feed_id == saved_feed_id
 
-        assert await get_feed(original_feed_id) == new_feed
+        saved_feed = await get_feed(original_feed_id)
+
+        assert saved_feed.created_at is not None
+        assert saved_feed.replace(created_at=None) == new_feed
 
         with pytest.raises(errors.NoFeedFound):
             await get_feed(cloned_feed.id)
@@ -75,7 +79,10 @@ class TestSaveFeed:
 
         assert feed_1_id == feed_2_id
 
-        assert await get_feed(feed_1_id) == feed_1
+        saved_feed = await get_feed(feed_1_id)
+
+        assert saved_feed.created_at is not None
+        assert saved_feed.replace(created_at=None) == feed_1
 
         with pytest.raises(errors.NoFeedFound):
             await get_feed(feed_2.id)

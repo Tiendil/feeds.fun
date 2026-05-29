@@ -21,6 +21,7 @@ def row_to_feed(row: dict[str, Any]) -> Feed:
         source_id=row["source_id"],
         url=row["url"],
         site_url=row["site_url"],
+        created_at=row["created_at"],
         state=FeedState(row["state"]),
         last_error=FeedError(row["last_error"]) if row["last_error"] else None,
         load_attempted_at=row["load_attempted_at"],

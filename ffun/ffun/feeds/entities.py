@@ -75,6 +75,7 @@ class Feed(BaseEntity):
     source_id: SourceId
     url: FeedUrl
     site_url: AbsoluteUrl | None = None
+    created_at: datetime.datetime | None = None
     state: FeedState = FeedState.not_loaded
     last_error: FeedError | None = None
     load_attempted_at: datetime.datetime | None = None
