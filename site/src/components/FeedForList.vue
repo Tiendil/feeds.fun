@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="feedTop"
     v-if="feed !== null"
     class="flex text-lg">
     <div class="ffun-body-list-icon-column">
@@ -20,6 +21,12 @@
       title="How long ago the feed was added"
       :time="feed.linkedAt" />
 
+    <div
+      class="ffun-body-list-number-column"
+      title="Number of news loaded per day">
+      {{ feed.entriesLoaded }}
+    </div>
+
     <div class="ffun-body-list-icon-column ml-3">
       <icon
         v-if="feed.isOk"
@@ -35,11 +42,21 @@
 
     <body-list-favicon-column :url="feed.url" />
 
-    <div class="flex-grow">
-      <external-url
-        class="ffun-normal-link"
-        :url="feed.url"
-        :text="purifiedTitle" />
+    <div class="flex-grow min-w-0">
+      <div
+        class="flex min-w-0 cursor-pointer items-baseline gap-2"
+        @click="onTitleClick">
+        <external-url
+          class="ffun-normal-link flex-shrink-0"
+          :url="feed.url"
+          :text="purifiedTitle" />
+
+        <span
+          v-if="purifiedDescriptionPreview"
+          class="min-w-0 flex-1 truncate text-sm text-gray-600">
+          {{ purifiedDescriptionPreview }}
+        </span>
+      </div>
 
       <template v-if="feed.collectionIds.length > 0">
         <span v-for="(collectionId, index) in feed.collectionIds">
@@ -55,38 +72,72 @@
   </div>
 
   <body-list-entry-body
-    v-if="globalSettings.showFeedsDescriptions"
-    class="ml-56"
+    v-if="showDescription"
+    class="justify-center"
     :url="null"
     :title="null"
-    :loading="false"
+    :loading="feed.entriesLoadedDetails === null"
     :references="[]"
     :text="purifiedDescription" />
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref} from "vue";
+  import {computed, useTemplateRef} from "vue";
   import type * as t from "@/logic/types";
-  import * as e from "@/logic/enums";
-  import * as api from "@/logic/api";
   import * as utils from "@/logic/utils";
-  import {computedAsync} from "@vueuse/core";
-  import DOMPurify from "dompurify";
-  import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useFeedsStore} from "@/stores/feeds";
   import {useCollectionsStore} from "@/stores/collections";
 
-  const globalSettings = useGlobalSettingsStore();
   const feedsStore = useFeedsStore();
   const collections = useCollectionsStore();
+  const topElement = useTemplateRef("feedTop");
 
   const properties = defineProps<{feed: t.Feed}>();
+
+  const showDescription = computed(() => {
+    return properties.feed.id == feedsStore.displayedFeedId;
+  });
 
   const purifiedTitle = computed(() => {
     return utils.purifyTitle({raw: properties.feed.title, default_: properties.feed.url});
   });
 
+  const purifiedDescriptionPreview = computed(() => {
+    if (properties.feed.description === null) {
+      return "";
+    }
+
+    return utils.purifyTitle({raw: properties.feed.description, default_: ""});
+  });
+
   const purifiedDescription = computed(() => {
     return utils.purifyBody({raw: properties.feed.description, default_: "No description"});
   });
+
+  function onTitleClick(event: MouseEvent) {
+    if (!event.ctrlKey) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (showDescription.value) {
+        feedsStore.hideFeed({feedId: properties.feed.id});
+      } else {
+        feedsStore.displayFeed({feedId: properties.feed.id});
+
+        if (topElement.value) {
+          const rect = topElement.value.getBoundingClientRect();
+
+          const isVisible =
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth);
+
+          if (!isVisible) {
+            topElement.value.scrollIntoView({behavior: "instant"});
+          }
+        }
+      }
+    }
+  }
 </script>

@@ -12,6 +12,7 @@ export const useFeedsStore = defineStore("feedsStore", () => {
 
   const feeds = ref<{[key: t.FeedId]: t.Feed}>({});
   const requestedFeeds = ref<{[key: t.FeedId]: boolean}>({});
+  const displayedFeedId = ref<t.FeedId | null>(null);
 
   function feedWithFullDataFromStorage(feed: t.Feed) {
     if (feed.id in feeds.value) {
@@ -65,6 +66,18 @@ export const useFeedsStore = defineStore("feedsStore", () => {
     requestedFeeds.value[feedId] = true;
   }
 
+  function displayFeed({feedId}: {feedId: t.FeedId}) {
+    displayedFeedId.value = feedId;
+
+    requestFullFeed({feedId: feedId});
+  }
+
+  function hideFeed({feedId}: {feedId: t.FeedId}) {
+    if (displayedFeedId.value === feedId) {
+      displayedFeedId.value = null;
+    }
+  }
+
   async function loadFullFeeds() {
     const ids: t.FeedId[] = Object.keys(requestedFeeds.value).map((key) => t.toFeedId(key));
 
@@ -114,7 +127,10 @@ export const useFeedsStore = defineStore("feedsStore", () => {
   return {
     feeds,
     loadedFeedsReport,
+    displayedFeedId,
     requestFullFeed,
+    displayFeed,
+    hideFeed,
     unsubscribe,
     subscribe
   };
