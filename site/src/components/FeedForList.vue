@@ -22,8 +22,8 @@
       :time="feed.linkedAt" />
 
     <div
-      class="ffun-body-list-number-column"
-      title="Number of news loaded per day">
+      :class="entriesPerDayClass"
+      :title="entriesPerDayTitle">
       {{ feed.entriesPerDay }}
     </div>
 
@@ -112,6 +112,25 @@
 
   const purifiedDescription = computed(() => {
     return utils.purifyBody({raw: properties.feed.description, default_: "No description"});
+  });
+
+  const entriesPerDayTitle = computed(() => {
+    const title = "Number of news loaded per day.";
+
+    if (!properties.feed.young) {
+      return title;
+    }
+
+    return `${title} This feed is young, so statistics may be inaccurate.`;
+  });
+
+  const entriesPerDayClass = computed(() => {
+    return [
+      "ffun-body-list-number-column",
+      {
+        "text-yellow-700": properties.feed.young
+      }
+    ];
   });
 
   function onTitleClick(event: MouseEvent) {
