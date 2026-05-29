@@ -7,11 +7,11 @@
     </template>
 
     <template #added>
-      <span title="Added: how long ago you added this feed">Added</span>
+      <span title="Subscribed: how long ago you added this feed">Subscribed</span>
     </template>
 
     <template #rate>
-      <span title="News/day: number of news loaded per day">News</span>
+      <span title="News/day: number of news loaded per day">News/day</span>
     </template>
 
     <template #favicon>
