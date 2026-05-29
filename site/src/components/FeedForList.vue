@@ -79,7 +79,13 @@
     :title="purifiedTitle"
     :loading="feed.entriesLoadedDetails === null"
     :references="feedReferences"
-    :text="purifiedDescription" />
+    :text="purifiedDescription">
+    <template
+      v-if="feed.entriesLoadedDetails !== null"
+      #body-prefix>
+      <feed-entries-per-day-chart :entries-loaded-details="feed.entriesLoadedDetails" />
+    </template>
+  </body-list-entry-body>
 </template>
 
 <script lang="ts" setup>
@@ -90,6 +96,7 @@
   import {useFeedsStore} from "@/stores/feeds";
   import {useCollectionsStore} from "@/stores/collections";
   import FeedListColumns from "@/components/feed_list/Columns.vue";
+  import FeedEntriesPerDayChart from "@/components/feed_list/FeedEntriesPerDayChart.vue";
 
   const feedsStore = useFeedsStore();
   const collections = useCollectionsStore();
