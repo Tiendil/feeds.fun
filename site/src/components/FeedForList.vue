@@ -1,73 +1,88 @@
 <template>
   <div
     ref="feedTop"
-    v-if="feed !== null"
-    class="flex text-lg">
-    <div class="ffun-body-list-icon-column">
-      <a
-        href="#"
-        class="text-red-500 hover:text-red-600"
-        title="Unsubscribe"
-        @click.prevent="feedsStore.unsubscribe(feed.id)">
-        <icon icon="x" />
-      </a>
-    </div>
+    v-if="feed !== null">
+    <feed-list-columns class="text-lg">
+      <template #action>
+        <a
+          href="#"
+          class="text-red-500 hover:text-red-600"
+          title="Unsubscribe"
+          @click.prevent="feedsStore.unsubscribe(feed.id)">
+          <icon icon="x" />
+        </a>
+      </template>
 
-    <body-list-reverse-time-column
-      title="How long ago the feed was last checked for news"
-      :time="feed.loadedAt" />
-
-    <body-list-reverse-time-column
-      title="How long ago the feed was added"
-      :time="feed.linkedAt" />
-
-    <div
-      :class="entriesPerDayClass"
-      :title="entriesPerDayTitle">
-      {{ feed.entriesPerDay }}
-    </div>
-
-    <div class="ffun-body-list-icon-column ml-3">
-      <icon
-        v-if="feed.isOk"
-        title="everything is ok"
-        icon="face-smile"
-        class="text-green-700" />
-      <icon
-        v-else
-        :title="feed.lastError || 'unknown error'"
-        icon="face-sad"
-        class="text-red-700" />
-    </div>
-
-    <body-list-favicon-column :url="feed.url" />
-
-    <div class="flex-grow min-w-0">
-      <div
-        class="flex min-w-0 cursor-pointer items-baseline gap-2"
-        @click="onTitleClick">
-        <span
-          class="flex-shrink-0 min-w-fit line-clamp-1 mb-0"
-          v-html="purifiedTitle" />
-
-        <span
-          v-if="purifiedDescriptionPreview"
-          class="min-w-0 flex-1 truncate text-sm text-gray-600">
-          {{ purifiedDescriptionPreview }}
-        </span>
-      </div>
-
-      <template v-if="feed.collectionIds.length > 0">
-        <span v-for="(collectionId, index) in feed.collectionIds">
-          <template v-if="collectionId in collections.collections">
-            <br />
-            Collections:
-            <span class="text-green-700 font-bold">{{ collections.collections[collectionId].name }}</span
-            ><span v-if="index < feed.collectionIds.length - 1">, </span>
-          </template>
+      <template #checked>
+        <span title="Checked: how long ago the feed was last checked for news">
+          <value-date-time
+            :value="feed.loadedAt"
+            :reversed="true" />
         </span>
       </template>
-    </div>
+
+      <template #added>
+        <span title="Added: how long ago you added this feed">
+          <value-date-time
+            :value="feed.linkedAt"
+            :reversed="true" />
+        </span>
+      </template>
+
+      <template #rate>
+        <span
+          :class="entriesPerDayClass"
+          :title="entriesPerDayTitle">
+          {{ feed.entriesPerDay }}/day
+        </span>
+      </template>
+
+      <template #status>
+        <icon
+          v-if="feed.isOk"
+          title="Status: loaded, no recent feed errors"
+          icon="face-smile"
+          class="text-green-700" />
+        <icon
+          v-else
+          :title="feedErrorTitle"
+          icon="face-sad"
+          class="text-red-700" />
+      </template>
+
+      <template #favicon>
+        <favicon-element
+          :url="feed.url"
+          class="w-5 h-5 mx-1 inline align-text-bottom" />
+      </template>
+
+      <template #main>
+        <div
+          class="flex min-w-0 cursor-pointer items-baseline gap-2"
+          @click="onTitleClick">
+          <span
+            class="flex-shrink-0 min-w-fit line-clamp-1 mb-0"
+            v-html="purifiedTitle" />
+
+          <span
+            v-if="purifiedDescriptionPreview"
+            class="min-w-0 flex-1 truncate text-sm text-gray-600">
+            {{ purifiedDescriptionPreview }}
+          </span>
+        </div>
+
+        <template v-if="feed.collectionIds.length > 0">
+          <span v-for="(collectionId, index) in feed.collectionIds">
+            <template v-if="collectionId in collections.collections">
+              <br />
+              Collections:
+              <span class="text-green-700 font-bold">{{ collections.collections[collectionId].name }}</span
+              ><span v-if="index < feed.collectionIds.length - 1">, </span>
+            </template>
+          </span>
+        </template>
+      </template>
+    </feed-list-columns>
   </div>
 
   <body-list-entry-body
@@ -87,6 +102,7 @@
   import * as utils from "@/logic/utils";
   import {useFeedsStore} from "@/stores/feeds";
   import {useCollectionsStore} from "@/stores/collections";
+  import FeedListColumns from "@/components/feed_list/Columns.vue";
 
   const feedsStore = useFeedsStore();
   const collections = useCollectionsStore();
@@ -135,7 +151,7 @@
   });
 
   const entriesPerDayTitle = computed(() => {
-    const title = "Number of news loaded per day.";
+    const title = "News/day: number of news loaded per day over the current statistics window.";
 
     if (!properties.feed.young) {
       return title;
@@ -145,12 +161,13 @@
   });
 
   const entriesPerDayClass = computed(() => {
-    return [
-      "ffun-body-list-number-column",
-      {
-        "text-yellow-700": properties.feed.young
-      }
-    ];
+    return {
+      "text-yellow-700": properties.feed.young
+    };
+  });
+
+  const feedErrorTitle = computed(() => {
+    return `Status: feed is failing, ${properties.feed.lastError || "unknown error"}`;
   });
 
   function onTitleClick(event: MouseEvent) {
