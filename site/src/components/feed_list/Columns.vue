@@ -16,10 +16,6 @@
       <slot name="rate" />
     </div>
 
-    <div class="flex-shrink-0 w-4 ml-3 mr-2 cursor-default">
-      <slot name="status" />
-    </div>
-
     <div class="flex-shrink-0 w-8 cursor-default text-right pr-1">
       <slot name="favicon" />
     </div>

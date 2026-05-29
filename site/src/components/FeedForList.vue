@@ -14,10 +14,10 @@
       </template>
 
       <template #checked>
-        <span title="Checked: how long ago the feed was last checked for news">
-          <value-date-time
-            :value="feed.loadedAt"
-            :reversed="true" />
+        <span
+          :class="checkedClass"
+          :title="checkedTitle">
+          {{ checkedText }}
         </span>
       </template>
 
@@ -35,19 +35,6 @@
           :title="entriesPerDayTitle">
           {{ feed.entriesPerDay }}/day
         </span>
-      </template>
-
-      <template #status>
-        <icon
-          v-if="feed.isOk"
-          title="Status: loaded, no recent feed errors"
-          icon="face-smile"
-          class="text-green-700" />
-        <icon
-          v-else
-          :title="feedErrorTitle"
-          icon="face-sad"
-          class="text-red-700" />
       </template>
 
       <template #favicon>
@@ -150,6 +137,44 @@
     ];
   });
 
+  const checkedText = computed(() => {
+    if (properties.feed.loadedAt === null) {
+      return "?";
+    }
+
+    return utils.timeSince(properties.feed.loadedAt);
+  });
+
+  const checkedClass = computed(() => {
+    if (properties.feed.loadedAt === null) {
+      return "text-yellow-700";
+    }
+
+    if (properties.feed.isOk) {
+      return "text-green-700";
+    }
+
+    return "text-red-700";
+  });
+
+  const checkedTitle = computed(() => {
+    if (properties.feed.loadedAt === null) {
+      const title = "Last load: unknown, the feed has no load timestamp.";
+
+      if (properties.feed.isOk) {
+        return `${title} Status: loaded, no recent feed errors.`;
+      }
+
+      return `${title} Status: feed is failing, ${properties.feed.lastError || "unknown error"}.`;
+    }
+
+    if (properties.feed.isOk) {
+      return "Last load: how long ago news was last loaded from the feed. Status: loaded, no recent feed errors.";
+    }
+
+    return `Last load: how long ago news was last loaded from the feed. Status: feed is failing, ${properties.feed.lastError || "unknown error"}.`;
+  });
+
   const entriesPerDayTitle = computed(() => {
     const title = "News/day: number of news loaded per day over the current statistics window.";
 
@@ -164,10 +189,6 @@
     return {
       "text-yellow-700": properties.feed.young
     };
-  });
-
-  const feedErrorTitle = computed(() => {
-    return `Status: feed is failing, ${properties.feed.lastError || "unknown error"}`;
   });
 
   function onTitleClick(event: MouseEvent) {

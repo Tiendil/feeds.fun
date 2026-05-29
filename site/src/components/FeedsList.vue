@@ -1,7 +1,9 @@
 <template>
   <feed-list-columns class="mb-1 border-b pb-1 text-xs text-gray-500">
     <template #checked>
-      <span title="Checked: how long ago the feed was last checked for news">Checked</span>
+      <span title="Last load: how long ago news was last loaded from the feed; color shows current feed status">
+        Last load
+      </span>
     </template>
 
     <template #added>
@@ -10,14 +12,6 @@
 
     <template #rate>
       <span title="News/day: number of news loaded per day">News</span>
-    </template>
-
-    <template #status>
-      <span
-        class="relative -left-2"
-        title="Status: whether the feed is loaded or failing"
-        >Status</span
-      >
     </template>
 
     <template #favicon>
