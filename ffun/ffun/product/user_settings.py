@@ -124,17 +124,6 @@ user_settings.add(
     )
 )
 
-
-user_settings.add(
-    Value(
-        key=SettingKind(int(UserSetting.view_feeds_show_feed_descriptions)),
-        name="Show feed descriptions",
-        type=types.Boolean(),
-        default=True,
-    )
-)
-
-
 user_settings.add(
     Value(
         key=SettingKind(int(UserSetting.view_feeds_feed_order)),

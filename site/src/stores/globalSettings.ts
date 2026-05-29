@@ -177,7 +177,6 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
   // Feeds filter settings
   ////////////////////////
 
-  const showFeedsDescriptions = boolBackendSettings("view_feeds_show_feed_descriptions", true);
   const feedsOrder = enumBackendSettings("view_feeds_feed_order", e.FeedsOrderProperties);
   const failedFeedsFirst = boolBackendSettings("view_feeds_failed_feeds_first", false);
 
@@ -217,7 +216,6 @@ export const useGlobalSettingsStore = defineStore("globalSettings", () => {
     entriesOrderProperties,
     dataVersion,
     updateDataVersion,
-    showFeedsDescriptions,
     userSettingsPresent,
     feedsOrder,
     failedFeedsFirst,

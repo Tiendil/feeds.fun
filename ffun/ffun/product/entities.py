@@ -25,7 +25,7 @@ class UserSetting(enum.IntEnum):
     view_news_filter_min_tags_count = 13
     view_news_filter_show_read = 14
 
-    view_feeds_show_feed_descriptions = 15
+    # view_feeds_show_feed_descriptions = 15  # noqa
     view_feeds_feed_order = 16
     view_feeds_failed_feeds_first = 17
 
