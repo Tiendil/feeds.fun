@@ -74,8 +74,8 @@
   <body-list-entry-body
     v-if="showDescription"
     class="justify-center"
-    :url="null"
-    :title="null"
+    :url="feed.url"
+    :title="purifiedTitle"
     :loading="feed.entriesLoadedDetails === null"
     :references="[]"
     :text="purifiedDescription" />
