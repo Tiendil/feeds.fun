@@ -24,6 +24,7 @@ from ffun.parsers.feed import (
     _extract_enclosure_reference,
     _extract_external_id,
     _extract_external_url,
+    _extract_feed_site_url,
     _extract_link_reference,
     _extract_media_content_reference,
     _extract_media_reference,
@@ -31,7 +32,9 @@ from ffun.parsers.feed import (
     _extract_published_at,
     _extract_references,
     _extract_references_raw,
+    _is_feed_site_link,
     _media_type_to_kind,
+    _normalize_feed_site_url,
     _parse_entry_strict,
     _parse_stream,
     _parse_tags,
@@ -89,6 +92,112 @@ class TestShouldSkip:
         assert not result
         assert_logs(logs, feed_does_not_has_link_field=0)
         assert logs == []
+
+
+class TestNormalizeFeedSiteUrl:
+
+    def test_returns_none_for_not_string(self, feed_url: FeedUrl) -> None:
+        assert _normalize_feed_site_url(None, feed_url) is None
+
+    def test_returns_none_for_invalid_url(self, feed_url: FeedUrl) -> None:
+        assert _normalize_feed_site_url("http://", feed_url) is None
+
+    def test_returns_none_for_feed_url(self, feed_url: FeedUrl) -> None:
+        assert _normalize_feed_site_url("https://example.com/feed/", feed_url) is None
+
+    def test_adjusts_relative_url(self, feed_url: FeedUrl) -> None:
+        assert _normalize_feed_site_url("/", feed_url) == "https://example.com/"
+
+    def test_returns_absolute_url(self, feed_url: FeedUrl) -> None:
+        assert _normalize_feed_site_url("https://another-example.com", feed_url) == _absolute_url(
+            "https://another-example.com"
+        )
+
+
+class TestIsFeedSiteLink:
+
+    @pytest.mark.parametrize(
+        "raw_link",
+        [
+            {},
+            {"rel": None},
+            {"rel": ""},
+            {"rel": "alternate"},
+            {"rel": "alternate", "type": ""},
+            {"rel": "alternate", "type": "text/html"},
+            {"rel": "alternate", "type": "application/xhtml+xml"},
+        ],
+    )
+    def test_accepts_site_links(self, raw_link: Mapping[str, object]) -> None:
+        assert _is_feed_site_link(raw_link)
+
+    @pytest.mark.parametrize(
+        "raw_link",
+        [
+            {"rel": 1},
+            {"rel": "self"},
+            {"rel": "related"},
+            {"rel": "alternate", "type": "application/rss+xml"},
+            {"rel": "alternate", "type": "application/atom+xml"},
+        ],
+    )
+    def test_rejects_not_site_links(self, raw_link: Mapping[str, object]) -> None:
+        assert not _is_feed_site_link(raw_link)
+
+
+class TestExtractFeedSiteUrl:
+
+    def test_returns_feed_link(self, feed_url: FeedUrl) -> None:
+        assert _extract_feed_site_url({"link": "https://example.com"}, feed_url) == _absolute_url(
+            "https://example.com"
+        )
+
+    def test_feed_link_has_priority_over_links(self, feed_url: FeedUrl) -> None:
+        assert _extract_feed_site_url(
+            {
+                "link": "https://example.com",
+                "links": [{"href": "https://another-example.com", "rel": "alternate", "type": "text/html"}],
+            },
+            feed_url,
+        ) == _absolute_url("https://example.com")
+
+    def test_falls_back_to_links(self, feed_url: FeedUrl) -> None:
+        assert (
+            _extract_feed_site_url(
+                {"links": [{"href": "/", "rel": "alternate", "type": "text/html"}]},
+                feed_url,
+            )
+            == "https://example.com/"
+        )
+
+    def test_skips_invalid_links_and_returns_first_site_url(self, feed_url: FeedUrl) -> None:
+        assert _extract_feed_site_url(
+            {
+                "link": "http://",
+                "links": [
+                    "not-a-link",
+                    {"href": "https://example.com/feed/", "rel": "self", "type": "application/atom+xml"},
+                    {"href": "https://example.com/feed/", "rel": "alternate", "type": "text/html"},
+                    {"href": "https://example.com/about", "rel": "alternate", "type": "text/html"},
+                    {"href": "https://example.com/ignored", "rel": "alternate", "type": "text/html"},
+                ],
+            },
+            feed_url,
+        ) == _absolute_url("https://example.com/about")
+
+    @pytest.mark.parametrize(
+        "feed",
+        [
+            {},
+            {"links": "not-a-list"},
+            {"link": "https://example.com/feed/"},
+            {"links": ["not-a-link"]},
+            {"links": [{"href": "https://example.com/feed/", "rel": "self", "type": "application/atom+xml"}]},
+            {"links": [{"href": "https://example.com/rss.xml", "rel": "alternate", "type": "application/rss+xml"}]},
+        ],
+    )
+    def test_returns_none_when_site_url_is_missing(self, feed: Mapping[str, object], feed_url: FeedUrl) -> None:
+        assert _extract_feed_site_url(feed, feed_url) is None
 
 
 class TestParseEntryStrict:
@@ -340,6 +449,28 @@ class TestParseFeed:
 
         assert result is not None
         assert result.entries == []
+
+    def test_extracts_site_url_from_rss_channel_link(self, feed_url: FeedUrl) -> None:
+        result = parse_feed(
+            """
+            <rss version="2.0">
+              <channel>
+                <title>Title</title>
+                <link>https://example.com</link>
+                <description>Description</description>
+                <item>
+                  <title>Entry</title>
+                  <link>https://example.com/entry</link>
+                </item>
+              </channel>
+            </rss>
+            """,
+            feed_url,
+            url_to_source_uid(feed_url),
+        )
+
+        assert result is not None
+        assert result.site_url == "https://example.com"
 
     def test_preserves_iframe_markup_for_frontend_sanitizer(self, feed_url: FeedUrl) -> None:
         result = parse_feed(

@@ -34,6 +34,7 @@ class EntryInfo(BaseEntity):
 
 class FeedInfo(BaseEntity):
     url: FeedUrl
+    site_url: AbsoluteUrl | None = None
     title: str
     description: str
     uid: UrlUid

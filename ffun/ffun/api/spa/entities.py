@@ -60,6 +60,7 @@ class Feed(BaseEntity):
     title: str | None
     description: str | None
     url: FeedUrl
+    siteUrl: AbsoluteUrl | None = None
     state: str
     lastError: str | None = None
     loadedAt: datetime.datetime | None
@@ -82,6 +83,7 @@ class Feed(BaseEntity):
             title=feed.title,
             description=feed.description,
             url=feed.url,
+            siteUrl=feed.site_url,
             state=feed.state.name,
             lastError=feed.last_error.name if feed.last_error else None,
             loadedAt=feed.loaded_at,
@@ -214,6 +216,7 @@ class EntryInfo(BaseEntity):
 
 class FeedInfo(BaseEntity):
     url: FeedUrl
+    siteUrl: AbsoluteUrl | None = None
     title: str
     description: str
     isLinked: bool
@@ -224,6 +227,7 @@ class FeedInfo(BaseEntity):
     def from_internal(cls, feed: p_entities.FeedInfo, is_linked: bool) -> "FeedInfo":
         return cls(
             url=feed.url,
+            siteUrl=feed.site_url,
             title=feed.title,
             description=feed.description,
             isLinked=is_linked,

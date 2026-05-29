@@ -41,6 +41,7 @@ export class Feed {
   readonly title: string | null;
   readonly description: string | null;
   readonly url: URL;
+  readonly siteUrl: URL | null;
   readonly state: string;
   readonly lastError: string | null;
   readonly loadedAt: Date | null;
@@ -55,6 +56,7 @@ export class Feed {
     title,
     description,
     url,
+    siteUrl,
     state,
     lastError,
     loadedAt,
@@ -68,6 +70,7 @@ export class Feed {
     title: string | null;
     description: string | null;
     url: URL;
+    siteUrl: URL | null;
     state: string;
     lastError: string | null;
     loadedAt: Date | null;
@@ -81,6 +84,7 @@ export class Feed {
     this.title = title;
     this.description = description;
     this.url = url;
+    this.siteUrl = siteUrl;
     this.state = state;
     this.lastError = lastError;
     this.loadedAt = loadedAt;
@@ -97,6 +101,7 @@ export type RawFeed = {
   title: string | null;
   description: string | null;
   url: string;
+  siteUrl?: string | null;
   state: string;
   lastError?: string | null;
   loadedAt?: string | null;
@@ -111,6 +116,7 @@ export function feedFromJSON({
   title,
   description,
   url,
+  siteUrl,
   state,
   lastError,
   loadedAt,
@@ -124,6 +130,7 @@ export function feedFromJSON({
     title: title !== null ? title : null,
     description: description !== null ? description : null,
     url: toURL(url),
+    siteUrl: siteUrl !== undefined && siteUrl !== null ? toURL(siteUrl) : null,
     state: state,
     lastError: lastError !== undefined ? lastError : null,
     loadedAt: loadedAt !== undefined && loadedAt !== null ? new Date(loadedAt) : null,
@@ -403,6 +410,7 @@ export function entryInfoFromJSON({title, body, url, publishedAt}: RawEntryInfo)
 
 export type FeedInfo = {
   readonly url: URL;
+  readonly siteUrl: URL | null;
   readonly title: string;
   readonly description: string;
   readonly entries: EntryInfo[];
@@ -411,15 +419,17 @@ export type FeedInfo = {
 
 export type RawFeedInfo = {
   url: string;
+  siteUrl?: string | null;
   title: string;
   description: string;
   entries: RawEntryInfo[];
   isLinked: boolean;
 };
 
-export function feedInfoFromJSON({url, title, description, entries, isLinked}: RawFeedInfo): FeedInfo {
+export function feedInfoFromJSON({url, siteUrl, title, description, entries, isLinked}: RawFeedInfo): FeedInfo {
   return {
     url: toURL(url),
+    siteUrl: siteUrl !== undefined && siteUrl !== null ? toURL(siteUrl) : null,
     title,
     description,
     entries: entries.map(entryInfoFromJSON),

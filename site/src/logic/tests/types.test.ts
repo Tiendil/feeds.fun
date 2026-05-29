@@ -36,6 +36,7 @@ describe("feedFromJSON", () => {
       rawFeed({
         loadedAt: "2026-05-10T12:00:00Z",
         linkedAt: "2026-05-11T12:00:00Z",
+        siteUrl: "https://example.com",
         lastError: "network_connection_timeout",
         collectionIds: ["dca40ac1-73da-49dc-b7d8-40dac312ae41"],
         entriesLoaded: 3,
@@ -45,6 +46,7 @@ describe("feedFromJSON", () => {
 
     expect(feed.id).toBe("dca40ac1-73da-49dc-b7d8-40dac312ae40");
     expect(feed.url).toBe("https://example.com/feed");
+    expect(feed.siteUrl).toBe("https://example.com");
     expect(feed.state).toBe("loaded");
     expect(feed.lastError).toBe("network_connection_timeout");
     expect(feed.loadedAt).toEqual(new Date("2026-05-10T12:00:00Z"));
@@ -61,6 +63,7 @@ describe("feedFromJSON", () => {
     expect(feed.lastError).toBeNull();
     expect(feed.loadedAt).toBeNull();
     expect(feed.linkedAt).toBeNull();
+    expect(feed.siteUrl).toBeNull();
     expect(feed.entriesLoadedDetails).toBeNull();
   });
 
@@ -70,6 +73,7 @@ describe("feedFromJSON", () => {
         lastError: null,
         loadedAt: null,
         linkedAt: null,
+        siteUrl: null,
         entriesLoadedDetails: null
       })
     );
@@ -77,6 +81,7 @@ describe("feedFromJSON", () => {
     expect(feed.lastError).toBeNull();
     expect(feed.loadedAt).toBeNull();
     expect(feed.linkedAt).toBeNull();
+    expect(feed.siteUrl).toBeNull();
     expect(feed.entriesLoadedDetails).toBeNull();
   });
 

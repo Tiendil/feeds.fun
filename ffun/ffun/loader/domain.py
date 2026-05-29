@@ -154,10 +154,12 @@ async def sync_feed_info(feed: Feed, feed_info: p_entities.FeedInfo) -> None:
         title = collections_feed_info.title
         description = collections_feed_info.description
 
-    if title == feed.title and description == feed.description:
+    if feed_info.site_url == feed.site_url and title == feed.title and description == feed.description:
         return
 
-    await f_domain.update_feed_info(feed.id, title=feed_info.title, description=feed_info.description)
+    await f_domain.update_feed_info(
+        feed.id, site_url=feed_info.site_url, title=feed_info.title, description=feed_info.description
+    )
 
 
 async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None:

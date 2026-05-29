@@ -12,7 +12,7 @@ from ffun.core.tests.helpers import (
     assert_logs_has_record,
 )
 from ffun.domain.entities import EntryId, UserId
-from ffun.domain.urls import str_to_feed_url, url_to_uid
+from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections.collections import collections
@@ -205,26 +205,32 @@ class TestSyncFeedInfo:
     @pytest.mark.asyncio
     async def test_no_sync_required(self, saved_feed: f_entities.Feed, mocker: MockerFixture) -> None:
         update_feed_info = mocker.patch("ffun.feeds.domain.update_feed_info")
+        site_url = str_to_absolute_url("https://example.com")
+        feed = saved_feed.replace(site_url=site_url)
 
-        assert saved_feed.title
-        assert saved_feed.description
+        assert feed.title
+        assert feed.description
 
         feed_info = p_entities.FeedInfo(
-            url=saved_feed.url,
-            title=saved_feed.title,
-            description=saved_feed.description,
+            url=feed.url,
+            site_url=site_url,
+            title=feed.title,
+            description=feed.description,
             entries=[],
-            uid=url_to_uid(saved_feed.url),
+            uid=url_to_uid(feed.url),
         )
 
-        await sync_feed_info(saved_feed, feed_info)
+        await sync_feed_info(feed, feed_info)
 
         update_feed_info.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_sync_required(self, saved_feed: f_entities.Feed) -> None:
+        site_url = str_to_absolute_url("https://example.com")
+
         feed_info = p_entities.FeedInfo(
             url=saved_feed.url,
+            site_url=site_url,
             title=uuid.uuid4().hex,
             description=uuid.uuid4().hex,
             entries=[],
@@ -235,6 +241,7 @@ class TestSyncFeedInfo:
 
         loaded_feed = await f_domain.get_feed(saved_feed.id)
 
+        assert loaded_feed.site_url == site_url
         assert loaded_feed.title == feed_info.title
         assert loaded_feed.description == feed_info.description
 

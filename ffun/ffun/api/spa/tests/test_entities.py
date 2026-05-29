@@ -4,6 +4,7 @@ import pytest
 from ffun.api.spa.entities import Feed, Marker, MutableMarker, RemoveMarkerRequest, SetMarkerRequest
 from ffun.core import utils
 from ffun.domain.domain import new_entry_id
+from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds.entities import Feed as InternalFeed
 from ffun.feeds.entities import FeedError
 
@@ -18,13 +19,15 @@ class TestFeed:
         )
 
         assert external_feed.entriesLoadedDetails is None
+        assert external_feed.siteUrl is None
 
     @pytest.mark.asyncio
     async def test_from_internal__with_entries_metrics(self, loaded_feed: InternalFeed) -> None:
         linked_at = utils.now()
+        site_url = str_to_absolute_url("https://example.com")
 
         external_feed = Feed.from_internal(
-            loaded_feed,
+            loaded_feed.replace(site_url=site_url),
             linked_at=linked_at,
             collection_ids=[],
             entries_loaded=3,
@@ -32,6 +35,7 @@ class TestFeed:
         )
 
         assert external_feed.linkedAt == linked_at
+        assert external_feed.siteUrl == site_url
         assert external_feed.entriesLoaded == 3
         assert external_feed.entriesLoadedDetails == [0, 1, 2]
 

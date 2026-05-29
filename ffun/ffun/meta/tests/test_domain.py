@@ -13,7 +13,7 @@ from ffun.dispatcher import domain as d_domain
 from ffun.dispatcher.entities import EntryProcessingStatus
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import ProcessorId, TagId, TagUid, UserId
-from ffun.domain.urls import str_to_feed_url, url_to_source_uid, url_to_uid
+from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_source_uid, url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
 from ffun.feeds.tests import make as f_make
@@ -151,6 +151,7 @@ class TestAddFeeds:
         feeds = [
             p_entities.FeedInfo(
                 url=urls[0],
+                site_url=str_to_absolute_url("https://example.com"),
                 title=uuid.uuid4().hex,
                 description=uuid.uuid4().hex,
                 entries=[],
@@ -181,6 +182,8 @@ class TestAddFeeds:
 
         assert {feed.url for feed in feeds_1} == {feed.url for feed in feeds[:2]}
         assert {feed.url for feed in feeds_2} == {feed.url for feed in feeds[1:]}
+        assert {feed.site_url for feed in feeds_1} == {feeds[0].site_url, feeds[1].site_url}
+        assert {feed.site_url for feed in feeds_2} == {feeds[1].site_url, feeds[2].site_url}
 
         source_uids = {url: url_to_source_uid(url) for url in urls}
         source_ids = await f_domain.get_source_ids(source_uids.values())

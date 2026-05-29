@@ -1,5 +1,6 @@
 {
   "url": "https://example.com/feed/",
+  "site_url": "http://example.com",
   "title": "Length cases feed",
   "description": "",
   "uid": "example.com/feed",

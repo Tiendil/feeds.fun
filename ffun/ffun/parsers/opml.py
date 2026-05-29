@@ -51,9 +51,14 @@ def _extract_rss_feed(outline: ET.Element) -> FeedInfo | None:
         return None
 
     feed_url = to_feed_url(url)
+    site_url = None
+
+    if "htmlUrl" in outline.attrib:
+        site_url = normalize_classic_unknown_url(UnknownUrl(outline.attrib["htmlUrl"]))
 
     return FeedInfo(
         url=feed_url,
+        site_url=site_url,
         title=outline.attrib.get("title", ""),
         description="",
         entries=[],
