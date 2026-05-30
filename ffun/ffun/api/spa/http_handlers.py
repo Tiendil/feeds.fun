@@ -1,5 +1,6 @@
+import datetime
 from importlib import metadata
-from typing import Iterable
+from typing import Iterable, Mapping
 
 import fastapi
 from fastapi.openapi.docs import get_swagger_ui_html
@@ -15,10 +16,11 @@ from ffun.core import logging, utils
 from ffun.core.api import Message, MessageType
 from ffun.core.errors import APIError
 from ffun.data_protection import domain as dp_domain
-from ffun.domain.entities import TagId, TagUid, UserId
+from ffun.domain.entities import FeedId, TagId, TagUid, UserId
 from ffun.domain.urls import url_to_uid
 from ffun.feeds import domain as f_domain
-from ffun.feeds_collections.collections import collections
+from ffun.feeds import entities as f_entities
+from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_discoverer import domain as fd_domain
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.feeds_links import domain as fl_domain
@@ -35,6 +37,7 @@ from ffun.resources import domain as r_domain
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
 from ffun.user_settings import domain as us_domain
+from ffun.user_settings import entities as us_entities
 
 logger = logging.get_module_logger()
 
@@ -209,7 +212,7 @@ async def api_get_last_collection_entries(
     request: entities.GetLastCollectionEntriesRequest,
 ) -> entities.GetLastCollectionEntriesResponse:
 
-    collection = collections.collection_by_slug(request.collectionSlug)
+    collection = fc_domain.collection_by_slug(request.collectionSlug)
 
     feed_ids = [feed_info.feed_id for feed_info in collection.feeds if feed_info.feed_id is not None]
 
@@ -239,7 +242,7 @@ async def api_get_feeds_collections(
     request: entities.GetFeedsCollectionsRequest,
 ) -> entities.GetFeedsCollectionsResponse:
 
-    internal_collections = collections.collections()
+    internal_collections = fc_domain.all_collections()
 
     collections_to_return = [entities.Collection.from_internal(collection) for collection in internal_collections]
 
@@ -249,7 +252,7 @@ async def api_get_feeds_collections(
 @api_public.post("/get-collection-feeds")  # type: ignore
 async def api_get_collection_feeds(request: entities.GetCollectionFeedsRequest) -> entities.GetCollectionFeedsResponse:
 
-    collection = collections.collection(request.collectionId)
+    collection = fc_domain.collection(request.collectionId)
 
     feeds = [entities.CollectionFeedInfo.from_internal(feed_info) for feed_info in collection.feeds]
 
@@ -317,22 +320,57 @@ async def api_get_user(request: entities.GetUserRequest, user: User) -> entities
     return entities.GetUserResponse(userId=user.id)
 
 
-@api_private.post("/get-feeds")  # type: ignore
-async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entities.GetFeedsResponse:
-    linked_feeds = await fl_domain.get_linked_feeds(user.id)
+async def _external_feeds(
+    linked_at_by_feed: Mapping[FeedId, datetime.datetime | None], feeds: list[f_entities.Feed], with_details: bool
+) -> list[entities.Feed]:
+    feeds_ids = [feed.id for feed in feeds]
+    entries_loaded = await l_domain.entries_in_period(feeds_ids, settings.feed_metrics_period)
 
-    feeds_to_links = {link.feed_id: link for link in linked_feeds}
+    details: dict[FeedId, list[int]] = {}
 
-    feeds = await f_domain.get_feeds(ids=list(feeds_to_links.keys()))
+    if with_details:
+        details = await l_domain.entries_in_period_details(feeds_ids, settings.feed_metrics_period)
 
     external_feeds = []
 
     for feed in feeds:
-        collection_ids = collections.collections_for_feed(feed.id)
-        external_feed = entities.Feed.from_internal(feed, link=feeds_to_links[feed.id], collection_ids=collection_ids)
+        collection_ids = fc_domain.collections_for_feed(feed.id)
+        external_feed = entities.Feed.from_internal(
+            feed,
+            linked_at=linked_at_by_feed.get(feed.id),
+            collection_ids=collection_ids,
+            young=f_domain.is_young(feed, settings.feed_metrics_period),
+            entries_per_day=f_domain.entries_per_day(feed, entries_loaded[feed.id], settings.feed_metrics_period),
+            entries_loaded_details=details.get(feed.id),
+        )
         external_feeds.append(external_feed)
 
+    return external_feeds
+
+
+@api_private.post("/get-feeds")  # type: ignore
+async def api_get_feeds(request: entities.GetFeedsRequest, user: User) -> entities.GetFeedsResponse:
+    linked_feeds = await fl_domain.get_linked_feeds(user.id)
+
+    linked_at_by_feed = {link.feed_id: link.created_at for link in linked_feeds}
+
+    feeds = await f_domain.get_feeds(ids=list(linked_at_by_feed.keys()))
+
+    external_feeds = await _external_feeds(linked_at_by_feed=linked_at_by_feed, feeds=feeds, with_details=False)
+
     return entities.GetFeedsResponse(feeds=external_feeds)
+
+
+@api_private.post("/get-feeds-by-ids")  # type: ignore
+async def api_get_feeds_by_ids(request: entities.GetFeedsByIdsRequest, user: User) -> entities.GetFeedsByIdsResponse:
+    linked_feeds = await fl_domain.get_linked_feeds(user.id)
+    linked_at_by_feed = {link.feed_id: link.created_at for link in linked_feeds}
+
+    feeds = await f_domain.get_feeds(ids=request.ids)
+
+    external_feeds = await _external_feeds(linked_at_by_feed=linked_at_by_feed, feeds=feeds, with_details=True)
+
+    return entities.GetFeedsByIdsResponse(feeds=external_feeds)
 
 
 @api_private.post("/get-last-entries")  # type: ignore
@@ -508,13 +546,15 @@ async def api_add_feed(request: entities.AddFeedRequest, user: User) -> entities
 
     feed = await f_domain.get_feed(ids[0])
 
-    collection_ids = collections.collections_for_feed(feed.id)
-
     link = await fl_domain.get_link(user.id, feed.id)
 
     assert link is not None
 
-    return entities.AddFeedResponse(feed=entities.Feed.from_internal(feed, link=link, collection_ids=collection_ids))
+    external_feeds = await _external_feeds(
+        linked_at_by_feed={feed.id: link.created_at}, feeds=[feed], with_details=False
+    )
+
+    return entities.AddFeedResponse(feed=external_feeds[0])
 
 
 @api_private.post("/add-opml")  # type: ignore
@@ -564,7 +604,7 @@ async def api_subscribe_to_collections(
     feeds = []
 
     for collection_id in request.collections:
-        collection = collections.collection(collection_id)
+        collection = fc_domain.collection(collection_id)
 
         for feed_info in collection.feeds:
             feeds.append(
@@ -597,14 +637,16 @@ async def api_get_resource_history(
 async def api_get_user_settings(
     request: entities.GetUserSettingsRequest, user: User
 ) -> entities.GetUserSettingsResponse:
-    from ffun.product.user_settings import UserSetting
+    from ffun.product.entities import UserSetting
 
-    values = await us_domain.load_settings(user_id=user.id, kinds=[int(kind) for kind in UserSetting])
+    values = await us_domain.load_settings(
+        user_id=user.id, kinds=[us_entities.SettingKind(int(kind)) for kind in UserSetting]
+    )
 
     result_values = []
 
     for kind, value in values.items():
-        if kind == UserSetting.test_api_key:
+        if kind == us_entities.SettingKind(int(UserSetting.test_api_key)):
             continue
 
         result_values.append(entities.UserSetting.from_internal(kind, value))

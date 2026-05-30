@@ -20,23 +20,23 @@ from ffun.domain.entities import (
     TagId,
     TagUid,
     UnknownUrl,
+    USDCost,
     UserId,
 )
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
-from ffun.feeds_links import entities as fl_entities
 from ffun.library import entities as l_entities
-
-# TODO: rename to public name
-from ffun.llms_framework.keys_rotator import USDCost, _cost_points
+from ffun.llms_framework import domain as llms_domain
+from ffun.llms_framework.entities import LLMCostPoints
 from ffun.markers import entities as m_entities
 from ffun.ontology import entities as o_entities
 from ffun.parsers import entities as p_entities
+from ffun.product import entities as product_entities
 from ffun.resources import entities as r_entities
 from ffun.scores import entities as s_entities
 from ffun.tags import entities as t_entities
-from ffun.user_settings import types as us_types
-from ffun.user_settings.values import user_settings
+from ffun.user_settings import domain as us_domain
+from ffun.user_settings import entities as us_entities
 
 
 class Marker(enum.IntEnum):
@@ -60,26 +60,40 @@ class Feed(BaseEntity):
     title: str | None
     description: str | None
     url: FeedUrl
+    siteUrl: AbsoluteUrl | None = None
     state: str
     lastError: str | None = None
     loadedAt: datetime.datetime | None
     linkedAt: datetime.datetime | None
     collectionIds: list[CollectionId]
+    young: bool
+    entriesPerDay: int
+    entriesLoadedDetails: list[int] | None = None
 
     @classmethod
-    def from_internal(
-        cls, feed: f_entities.Feed, link: fl_entities.FeedLink, collection_ids: list[CollectionId]
+    def from_internal(  # noqa: CFQ002
+        cls,
+        feed: f_entities.Feed,
+        linked_at: datetime.datetime | None,
+        collection_ids: list[CollectionId],
+        young: bool,
+        entries_per_day: int,
+        entries_loaded_details: list[int] | None = None,
     ) -> "Feed":
         return cls(
             id=feed.id,
             title=feed.title,
             description=feed.description,
             url=feed.url,
+            siteUrl=feed.site_url,
             state=feed.state.name,
             lastError=feed.last_error.name if feed.last_error else None,
             loadedAt=feed.loaded_at,
-            linkedAt=link.created_at,
+            linkedAt=linked_at,
             collectionIds=collection_ids,
+            young=young,
+            entriesPerDay=entries_per_day,
+            entriesLoadedDetails=entries_loaded_details,
         )
 
 
@@ -205,6 +219,7 @@ class EntryInfo(BaseEntity):
 
 class FeedInfo(BaseEntity):
     url: FeedUrl
+    siteUrl: AbsoluteUrl | None = None
     title: str
     description: str
     isLinked: bool
@@ -215,6 +230,7 @@ class FeedInfo(BaseEntity):
     def from_internal(cls, feed: p_entities.FeedInfo, is_linked: bool) -> "FeedInfo":
         return cls(
             url=feed.url,
+            siteUrl=feed.site_url,
             title=feed.title,
             description=feed.description,
             isLinked=is_linked,
@@ -250,7 +266,6 @@ class UserSettingKind(enum.StrEnum):
     view_news_filter_min_tags_count = "view_news_filter_min_tags_count"
     view_news_filter_show_read = "view_news_filter_show_read"
 
-    view_feeds_show_feed_descriptions = "view_feeds_show_feed_descriptions"
     view_feeds_feed_order = "view_feeds_feed_order"
     view_feeds_failed_feeds_first = "view_feeds_failed_feeds_first"
 
@@ -259,38 +274,28 @@ class UserSettingKind(enum.StrEnum):
     show_sidebar = "show_sidebar"
 
     @classmethod
-    def from_internal(cls, kind: int) -> "UserSettingKind":
-        from ffun.product.user_settings import UserSetting
-
-        real_kind = UserSetting(kind)
+    def from_internal(cls, kind: us_entities.SettingKind) -> "UserSettingKind":
+        real_kind = product_entities.UserSetting(int(kind))
         return UserSettingKind(real_kind.name)
 
-    def to_internal(self) -> int:
-        from ffun.product.user_settings import UserSetting
-
-        value: object = getattr(UserSetting, self.name)
+    def to_internal(self) -> us_entities.SettingKind:
+        value: object = getattr(product_entities.UserSetting, self.name)
         assert isinstance(value, int)
-        return value
+        return us_entities.SettingKind(value)
 
 
 class UserSetting(BaseEntity):
     kind: UserSettingKind
-    type: us_types.TypeId  # should not differ between front & back => no need to convert
+    type: us_entities.TypeId  # should not differ between front & back => no need to convert
     value: object
     name: str
 
     @classmethod
-    def from_internal(cls, kind: int, value: str | int | float | bool) -> "UserSetting":
-        from ffun.product.user_settings import UserSetting
-
-        real_kind = UserSetting(kind)
-
-        real_setting = user_settings.get(real_kind)
-
-        assert real_setting is not None
+    def from_internal(cls, kind: us_entities.SettingKind, value: str | int | float | bool) -> "UserSetting":
+        real_setting = us_domain.setting(kind)
 
         return cls(
-            kind=UserSettingKind.from_internal(real_kind),
+            kind=UserSettingKind.from_internal(kind),
             type=real_setting.type.id,
             value=real_setting.type.normalize(value),
             name=real_setting.name,
@@ -302,15 +307,11 @@ class ResourceKind(enum.StrEnum):
 
     @classmethod
     def from_internal(cls, kind: int) -> "ResourceKind":
-        from ffun.product.resources import Resource
-
-        real_kind = Resource(kind)
+        real_kind = product_entities.Resource(kind)
         return ResourceKind(real_kind.name)
 
     def to_internal(self) -> int:
-        from ffun.product.resources import Resource
-
-        value: object = getattr(Resource, self.name)
+        value: object = getattr(product_entities.Resource, self.name)
         assert isinstance(value, int)
         return value
 
@@ -322,10 +323,11 @@ class ResourceHistoryRecord(pydantic.BaseModel):
 
     @classmethod
     def from_internal(cls, record: r_entities.Resource) -> "ResourceHistoryRecord":
-        from ffun.product.resources import Resource
+        if record.kind == product_entities.Resource.tokens_cost:
 
-        if record.kind == Resource.tokens_cost:
-            transformer = _cost_points.to_cost
+            def transformer(points: int) -> USDCost:
+                return llms_domain.cost_points_to_usd_cost(LLMCostPoints(points))
+
         else:
 
             def transformer(points: int) -> USDCost:
@@ -388,6 +390,14 @@ class GetFeedsRequest(api.APIRequest):
 
 
 class GetFeedsResponse(api.APISuccess):
+    feeds: list[Feed]
+
+
+class GetFeedsByIdsRequest(api.APIRequest):
+    ids: list[FeedId]
+
+
+class GetFeedsByIdsResponse(api.APISuccess):
     feeds: list[Feed]
 
 
@@ -583,8 +593,6 @@ class SetUserSettingRequest(api.APIRequest):
     @pydantic.model_validator(mode="before")
     @classmethod
     def validate_value(cls, values: dict[str, object]) -> dict[str, object]:
-        from ffun.product.user_settings import UserSetting
-
         raw_kind = values.get("kind")
 
         assert isinstance(raw_kind, str), "kind must be a string"
@@ -592,10 +600,7 @@ class SetUserSettingRequest(api.APIRequest):
         kind = UserSettingKind(raw_kind).to_internal()
         value = values.get("value")
 
-        real_kind = UserSetting(kind)
-
-        real_setting = user_settings.get(real_kind)
-
+        real_setting = us_domain.setting(kind)
         values["value"] = real_setting.type.normalize(value)
 
         return values

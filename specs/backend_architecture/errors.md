@@ -23,11 +23,13 @@ The following topics are out of scope:
 - `non-fatal problem` - a problem discovered while processing a backend operation that does not prevent the operation from producing useful output or continuing later.
 - `error code` - a stable machine-readable identifier for a fatal error when the error is rendered across an external boundary.
 - `module root error` - the `Error` exception class in a module's `errors` submodule; it is the root for fatal errors owned by that module.
-- `exception boundary` - a module boundary where low-level exceptions are converted into Feeds Fun exceptions, API errors, feed error states, or log records.
+- `exception boundary` - a module boundary where expected low-level exceptions are converted into Feeds Fun exceptions, API errors, feed error states, or log records.
 
 ## General principles
 
-Fatal errors MUST be represented with Feeds Fun project-specific exceptions before they cross backend module boundaries.
+Expected fatal errors MUST be represented with Feeds Fun project-specific exceptions before they cross backend module boundaries.
+
+Unexpected programming, infrastructure, storage, provider, or environment failures MAY propagate as their original exceptions until the developer explicitly defines handling for them.
 
 Non-fatal problems SHOULD be represented as warning log records, persisted error states, or explicit result values instead of exceptions when processing can continue and produce useful output.
 
@@ -134,7 +136,14 @@ Pydantic validation errors MAY be used directly inside tests for low-level entit
 
 ## Exception boundaries
 
-Modules that call external systems MUST convert relevant low-level failures into Feeds Fun errors, API errors, warning log records, or persisted error states at the boundary where context is still available.
+Modules that call external systems MUST convert expected low-level failures into Feeds Fun errors, API errors, warning log records, or persisted error states at the boundary where useful domain context is still available.
+
+A low-level failure is expected when one of the following is true:
+
+- the module business logic explicitly anticipates the condition.
+- the third-party service contract defines the condition as a normal outcome.
+- the condition is a known recurring operational case that the developer has decided to handle.
+- the caller can make a useful domain decision from a module-specific error or state.
 
 External systems include:
 
@@ -147,7 +156,23 @@ External systems include:
 - LLM provider requests.
 - shell command execution.
 
-Unexpected programming errors MAY propagate during development, but code that handles expected user, provider, source, storage, or environment failures MUST convert them into Feeds Fun-specific errors or states.
+Modules SHOULD NOT catch broad low-level exception classes only to satisfy a module-boundary conversion rule.
+
+Unexpected low-level failures MAY propagate unchanged until the developer explicitly requests handling for that class of failure.
+
+Code that handles expected user, provider, source, storage, or environment failures MUST convert them into Feeds Fun-specific errors or states.
+
+For PostgreSQL operations, modules SHOULD catch and convert specific database exceptions only when the exception represents an expected business or consistency condition.
+
+For example, a `ForeignKeyViolation` MAY be converted to an operation-specific stale-reference, concurrency, or integrity error when the operation is designed to race with deletion or accepts externally supplied entity ids.
+
+Modules SHOULD NOT wrap unexpected PostgreSQL infrastructure failures such as connection errors, pool failures, timeouts, SQL syntax errors, or unexpected constraint violations unless the developer explicitly decides that the module should handle them.
+
+For HTTP, feed-source, LLM provider, and other third-party service calls, modules MUST convert expected service outcomes into module-specific errors or persisted states when those outcomes are part of normal operation.
+
+Examples include unavailable feed sources, malformed feed responses, known protocol errors, provider-declared rate limits, authentication failures, and documented validation failures.
+
+Unknown third-party failures SHOULD NOT be broadly normalized unless the module boundary intentionally treats all failures of that operation as a recoverable domain outcome.
 
 When converting an exception, the original exception SHOULD be preserved as the cause when it helps debugging.
 

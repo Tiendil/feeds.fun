@@ -36,10 +36,18 @@ from ffun.feeds.tests import make
 
 class TestSaveFeed:
     @pytest.mark.asyncio
-    async def test_new_feed(self, new_feed: Feed) -> None:
+    async def test_new_feed(self) -> None:
+        site_url = str_to_absolute_url("https://example.com")
+        new_feed = await make.fake_feed(site_url=site_url)
+
         feed_id = await save_feed(new_feed)
+
+        saved_feed = await get_feed(feed_id)
+
         assert feed_id == new_feed.id
-        assert await get_feed(new_feed.id) == new_feed
+        assert saved_feed.created_at is not None
+        assert saved_feed.site_url == site_url
+        assert saved_feed.replace(created_at=None) == new_feed
 
     @pytest.mark.asyncio
     async def test_existed_feed(self, new_feed: Feed) -> None:
@@ -51,7 +59,10 @@ class TestSaveFeed:
 
         assert original_feed_id == saved_feed_id
 
-        assert await get_feed(original_feed_id) == new_feed
+        saved_feed = await get_feed(original_feed_id)
+
+        assert saved_feed.created_at is not None
+        assert saved_feed.replace(created_at=None) == new_feed
 
         with pytest.raises(errors.NoFeedFound):
             await get_feed(cloned_feed.id)
@@ -68,7 +79,10 @@ class TestSaveFeed:
 
         assert feed_1_id == feed_2_id
 
-        assert await get_feed(feed_1_id) == feed_1
+        saved_feed = await get_feed(feed_1_id)
+
+        assert saved_feed.created_at is not None
+        assert saved_feed.replace(created_at=None) == feed_1
 
         with pytest.raises(errors.NoFeedFound):
             await get_feed(feed_2.id)
@@ -172,11 +186,28 @@ class TestUpdateFeedInfo:
     async def test(self, saved_feed: Feed) -> None:
         new_title = make.fake_title()
         new_description = make.fake_description()
+        site_url = str_to_absolute_url("https://example.com")
 
-        await update_feed_info(feed_id=saved_feed.id, title=new_title, description=new_description)
+        await update_feed_info(feed_id=saved_feed.id, site_url=site_url, title=new_title, description=new_description)
 
         updated_feed = await get_feed(saved_feed.id)
 
+        assert updated_feed.site_url == site_url
+        assert updated_feed.title == new_title
+        assert updated_feed.description == new_description
+
+    @pytest.mark.asyncio
+    async def test_clear_site_url(self, saved_feed: Feed) -> None:
+        new_title = make.fake_title()
+        new_description = make.fake_description()
+        site_url = str_to_absolute_url("https://example.com")
+
+        await update_feed_info(feed_id=saved_feed.id, site_url=site_url, title=new_title, description=new_description)
+        await update_feed_info(feed_id=saved_feed.id, site_url=None, title=new_title, description=new_description)
+
+        updated_feed = await get_feed(saved_feed.id)
+
+        assert updated_feed.site_url is None
         assert updated_feed.title == new_title
         assert updated_feed.description == new_description
 

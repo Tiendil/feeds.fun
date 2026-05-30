@@ -1,92 +1,231 @@
 <template>
   <div
-    v-if="feed !== null"
-    class="flex text-lg">
-    <div class="ffun-body-list-icon-column">
-      <a
-        href="#"
-        class="text-red-500 hover:text-red-600"
-        title="Unsubscribe"
-        @click.prevent="feedsStore.unsubscribe(feed.id)">
-        <icon icon="x" />
-      </a>
-    </div>
+    ref="feedTop"
+    v-if="feed !== null">
+    <feed-list-columns class="text-lg">
+      <template #action>
+        <a
+          href="#"
+          class="text-red-500 hover:text-red-600"
+          title="Unsubscribe"
+          @click.prevent="feedsStore.unsubscribe(feed.id)">
+          <icon icon="x" />
+        </a>
+      </template>
 
-    <body-list-reverse-time-column
-      title="How long ago the feed was last checked for news"
-      :time="feed.loadedAt" />
-
-    <body-list-reverse-time-column
-      title="How long ago the feed was added"
-      :time="feed.linkedAt" />
-
-    <div class="ffun-body-list-icon-column ml-3">
-      <icon
-        v-if="feed.isOk"
-        title="everything is ok"
-        icon="face-smile"
-        class="text-green-700" />
-      <icon
-        v-else
-        :title="feed.lastError || 'unknown error'"
-        icon="face-sad"
-        class="text-red-700" />
-    </div>
-
-    <body-list-favicon-column :url="feed.url" />
-
-    <div class="flex-grow">
-      <external-url
-        class="ffun-normal-link"
-        :url="feed.url"
-        :text="purifiedTitle" />
-
-      <template v-if="feed.collectionIds.length > 0">
-        <span v-for="(collectionId, index) in feed.collectionIds">
-          <template v-if="collectionId in collections.collections">
-            <br />
-            Collections:
-            <span class="text-green-700 font-bold">{{ collections.collections[collectionId].name }}</span
-            ><span v-if="index < feed.collectionIds.length - 1">, </span>
-          </template>
+      <template #checked>
+        <span
+          :class="checkedClass"
+          :title="checkedTitle">
+          {{ checkedText }}
         </span>
       </template>
-    </div>
+
+      <template #added>
+        <span title="Added: how long ago you added this feed">
+          <value-date-time
+            :value="feed.linkedAt"
+            :reversed="true" />
+        </span>
+      </template>
+
+      <template #rate>
+        <span
+          :class="entriesPerDayClass"
+          :title="entriesPerDayTitle">
+          {{ feed.entriesPerDay }}/day
+        </span>
+      </template>
+
+      <template #favicon>
+        <favicon-element
+          :url="feed.url"
+          class="w-5 h-5 mx-1 inline align-text-bottom" />
+      </template>
+
+      <template #main>
+        <div
+          class="flex min-w-0 cursor-pointer items-baseline gap-2"
+          @click="onTitleClick">
+          <span
+            class="flex-shrink-0 min-w-fit line-clamp-1 mb-0"
+            v-html="purifiedTitle" />
+
+          <span
+            v-if="purifiedDescriptionPreview"
+            class="min-w-0 flex-1 line-clamp-1 text-sm text-gray-600">
+            {{ purifiedDescriptionPreview }}
+          </span>
+        </div>
+
+        <div
+          v-if="feed.collectionIds.length > 0"
+          class="mt-1 flex min-w-0 flex-wrap gap-1">
+          <template
+            v-for="collectionId in feed.collectionIds"
+            :key="collectionId">
+            <span
+              v-if="collectionId in collections.collections"
+              :title="`This feed is part of the collection: ${collections.collections[collectionId].name}`"
+              class="cursor-default rounded border border-green-200 bg-green-50 px-1.5 py-0.5 text-sm font-semibold text-green-700">
+              {{ collections.collections[collectionId].name }}
+            </span>
+          </template>
+        </div>
+      </template>
+    </feed-list-columns>
   </div>
 
   <body-list-entry-body
-    v-if="globalSettings.showFeedsDescriptions"
-    class="ml-56"
-    :url="null"
-    :title="null"
-    :loading="false"
-    :references="[]"
-    :text="purifiedDescription" />
+    v-if="showDescription"
+    class="justify-center"
+    :url="bodyTitleUrl"
+    :title="purifiedTitle"
+    :loading="feed.entriesLoadedDetails === null"
+    :references="feedReferences"
+    :text="purifiedDescription">
+    <template
+      v-if="feed.entriesLoadedDetails !== null"
+      #body-prefix>
+      <feed-entries-per-day-chart :entries-loaded-details="feed.entriesLoadedDetails" />
+    </template>
+  </body-list-entry-body>
 </template>
 
 <script lang="ts" setup>
-  import {computed, ref} from "vue";
-  import type * as t from "@/logic/types";
+  import {computed, useTemplateRef} from "vue";
   import * as e from "@/logic/enums";
-  import * as api from "@/logic/api";
+  import * as t from "@/logic/types";
   import * as utils from "@/logic/utils";
-  import {computedAsync} from "@vueuse/core";
-  import DOMPurify from "dompurify";
-  import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {useFeedsStore} from "@/stores/feeds";
   import {useCollectionsStore} from "@/stores/collections";
+  import FeedListColumns from "@/components/feed_list/Columns.vue";
+  import FeedEntriesPerDayChart from "@/components/feed_list/FeedEntriesPerDayChart.vue";
 
-  const globalSettings = useGlobalSettingsStore();
   const feedsStore = useFeedsStore();
   const collections = useCollectionsStore();
+  const topElement = useTemplateRef("feedTop");
 
   const properties = defineProps<{feed: t.Feed}>();
+
+  const showDescription = computed(() => {
+    return properties.feed.id == feedsStore.displayedFeedId;
+  });
 
   const purifiedTitle = computed(() => {
     return utils.purifyTitle({raw: properties.feed.title, default_: properties.feed.url});
   });
 
+  const purifiedDescriptionPreview = computed(() => {
+    if (properties.feed.description === null) {
+      return "";
+    }
+
+    return utils.purifyTitle({raw: properties.feed.description, default_: ""});
+  });
+
   const purifiedDescription = computed(() => {
     return utils.purifyBody({raw: properties.feed.description, default_: "No description"});
   });
+
+  const bodyTitleUrl = computed(() => {
+    return properties.feed.siteUrl ?? properties.feed.url;
+  });
+
+  const feedReferences = computed(() => {
+    return [
+      new t.Reference({
+        kind: e.ReferenceKind.Page,
+        url: properties.feed.url,
+        title: "feed",
+        mimeType: null,
+        width: null,
+        height: null,
+        duration: null,
+        size: null,
+        extra: null
+      })
+    ];
+  });
+
+  const checkedText = computed(() => {
+    if (properties.feed.loadedAt === null) {
+      return "?";
+    }
+
+    return utils.timeSince(properties.feed.loadedAt);
+  });
+
+  const checkedClass = computed(() => {
+    if (properties.feed.loadedAt === null) {
+      return "text-yellow-700";
+    }
+
+    if (properties.feed.isOk) {
+      return "text-green-700";
+    }
+
+    return "text-red-700";
+  });
+
+  const checkedTitle = computed(() => {
+    if (properties.feed.loadedAt === null) {
+      const title = "Last load: unknown, the feed has no load timestamp.";
+
+      if (properties.feed.isOk) {
+        return `${title} Status: loaded, no recent feed errors.`;
+      }
+
+      return `${title} Status: feed is failing, ${properties.feed.lastError || "unknown error"}.`;
+    }
+
+    if (properties.feed.isOk) {
+      return "Last load: how long ago news was last loaded from the feed. Status: loaded, no recent feed errors.";
+    }
+
+    return `Last load: how long ago news was last loaded from the feed. Status: feed is failing, ${properties.feed.lastError || "unknown error"}.`;
+  });
+
+  const entriesPerDayTitle = computed(() => {
+    const title = "News/day: number of news loaded per day over the current statistics window.";
+
+    if (!properties.feed.young) {
+      return title;
+    }
+
+    return `${title} This feed is young, so statistics may be inaccurate.`;
+  });
+
+  const entriesPerDayClass = computed(() => {
+    return {
+      "text-yellow-700": properties.feed.young
+    };
+  });
+
+  function onTitleClick(event: MouseEvent) {
+    if (!event.ctrlKey) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (showDescription.value) {
+        feedsStore.hideFeed({feedId: properties.feed.id});
+      } else {
+        feedsStore.displayFeed({feedId: properties.feed.id});
+
+        if (topElement.value) {
+          const rect = topElement.value.getBoundingClientRect();
+
+          const isVisible =
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth);
+
+          if (!isVisible) {
+            topElement.value.scrollIntoView({behavior: "instant"});
+          }
+        }
+      }
+    }
+  }
 </script>

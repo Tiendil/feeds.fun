@@ -41,46 +41,62 @@ export class Feed {
   readonly title: string | null;
   readonly description: string | null;
   readonly url: URL;
+  readonly siteUrl: URL | null;
   readonly state: string;
   readonly lastError: string | null;
   readonly loadedAt: Date | null;
-  readonly linkedAt: Date;
+  readonly linkedAt: Date | null;
   readonly isOk: boolean;
   readonly collectionIds: CollectionId[];
+  readonly young: boolean;
+  readonly entriesPerDay: number;
+  readonly entriesLoadedDetails: number[] | null;
 
   constructor({
     id,
     title,
     description,
     url,
+    siteUrl,
     state,
     lastError,
     loadedAt,
     linkedAt,
     isOk,
-    collectionIds
+    collectionIds,
+    young,
+    entriesPerDay,
+    entriesLoadedDetails
   }: {
     id: FeedId;
     title: string | null;
     description: string | null;
     url: URL;
+    siteUrl: URL | null;
     state: string;
     lastError: string | null;
     loadedAt: Date | null;
-    linkedAt: Date;
+    linkedAt: Date | null;
     isOk: boolean;
     collectionIds: CollectionId[];
+    young: boolean;
+    entriesPerDay: number;
+    entriesLoadedDetails: number[] | null;
   }) {
     this.id = id;
     this.title = title;
     this.description = description;
     this.url = url;
+    this.siteUrl = siteUrl;
     this.state = state;
     this.lastError = lastError;
     this.loadedAt = loadedAt;
     this.linkedAt = linkedAt;
     this.isOk = isOk;
     this.collectionIds = collectionIds;
+    this.young = young;
+    this.entriesPerDay = entriesPerDay;
+    this.entriesLoadedDetails = entriesLoadedDetails;
   }
 }
 
@@ -89,11 +105,15 @@ export type RawFeed = {
   title: string | null;
   description: string | null;
   url: string;
+  siteUrl?: string | null;
   state: string;
   lastError?: string | null;
   loadedAt?: string | null;
-  linkedAt: string;
+  linkedAt?: string | null;
   collectionIds: string[];
+  young: boolean;
+  entriesPerDay: number;
+  entriesLoadedDetails?: number[] | null;
 };
 
 export function feedFromJSON({
@@ -101,23 +121,31 @@ export function feedFromJSON({
   title,
   description,
   url,
+  siteUrl,
   state,
   lastError,
   loadedAt,
   linkedAt,
-  collectionIds
+  collectionIds,
+  young,
+  entriesPerDay,
+  entriesLoadedDetails
 }: RawFeed): Feed {
   return {
     id: toFeedId(id),
     title: title !== null ? title : null,
     description: description !== null ? description : null,
     url: toURL(url),
+    siteUrl: siteUrl !== undefined && siteUrl !== null ? toURL(siteUrl) : null,
     state: state,
     lastError: lastError !== undefined ? lastError : null,
     loadedAt: loadedAt !== undefined && loadedAt !== null ? new Date(loadedAt) : null,
-    linkedAt: new Date(linkedAt),
+    linkedAt: linkedAt !== undefined && linkedAt !== null ? new Date(linkedAt) : null,
     isOk: state === "loaded",
-    collectionIds: collectionIds.map(toCollectionId)
+    collectionIds: collectionIds.map(toCollectionId),
+    young: young,
+    entriesPerDay: entriesPerDay,
+    entriesLoadedDetails: entriesLoadedDetails !== undefined ? entriesLoadedDetails : null
   };
 }
 
@@ -389,6 +417,7 @@ export function entryInfoFromJSON({title, body, url, publishedAt}: RawEntryInfo)
 
 export type FeedInfo = {
   readonly url: URL;
+  readonly siteUrl: URL | null;
   readonly title: string;
   readonly description: string;
   readonly entries: EntryInfo[];
@@ -397,15 +426,17 @@ export type FeedInfo = {
 
 export type RawFeedInfo = {
   url: string;
+  siteUrl?: string | null;
   title: string;
   description: string;
   entries: RawEntryInfo[];
   isLinked: boolean;
 };
 
-export function feedInfoFromJSON({url, title, description, entries, isLinked}: RawFeedInfo): FeedInfo {
+export function feedInfoFromJSON({url, siteUrl, title, description, entries, isLinked}: RawFeedInfo): FeedInfo {
   return {
     url: toURL(url),
+    siteUrl: siteUrl !== undefined && siteUrl !== null ? toURL(siteUrl) : null,
     title,
     description,
     entries: entries.map(entryInfoFromJSON),

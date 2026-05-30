@@ -1,13 +1,14 @@
 import decimal
 
 from ffun.core.register import Entity, Register
+from ffun.user_settings.entities import SettingKind
 from ffun.user_settings.types import Type
 
 
 class Value(Entity):
     def __init__(
         self,
-        key: int,
+        key: SettingKind,
         name: str,
         type: Type,
         default: str | int | bool | decimal.Decimal | None,

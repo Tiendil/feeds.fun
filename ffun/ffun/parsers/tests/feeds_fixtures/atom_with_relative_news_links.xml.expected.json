@@ -1,5 +1,6 @@
 {
   "url": "https://example.com/feed/",
+  "site_url": "http://example.com",
   "title": "Some author",
   "description": "",
   "uid": "example.com/feed",

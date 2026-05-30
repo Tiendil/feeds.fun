@@ -58,6 +58,7 @@ async def add_feeds(feed_infos: list[p_entities.FeedInfo], user_id: UserId) -> l
             id=new_feed_id(),
             source_id=sources_uids_to_ids[urls_to_sources_uids[feed_info.url]],
             url=feed_info.url,
+            site_url=feed_info.site_url,
             title=feed_info.title,
             description=feed_info.description,
         )
@@ -104,6 +105,9 @@ async def clean_orphaned_feeds(chunk: int) -> int:
         # unlink all linked entries
         await l_domain.unlink_all(orphan_id)
 
+    await l_domain.remove_feed_entries_count(orphanes)
+
+    for orphan_id in orphanes:
         await f_domain.tech_remove_feed(orphan_id)
 
     # just a protection in case some user linked feed while we were removing it

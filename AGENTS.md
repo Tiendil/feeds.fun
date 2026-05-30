@@ -38,6 +38,7 @@ You ABSOLUTELY MUST NOT perform the following operations without explicit instru
 - Updating lock files.
 - Installing any new tools, utilities, or software on the host machine or in the development containers.
 - Changing project structure, such as moving files around, creating new directories, etc.
+- Staging or unstaging files in git, including commands such as `git add`, `git restore --staged`, and `git reset`.
 
 If you want to change something in the above list, you MUST ask for explicit instructions and permission to do so.
 
@@ -77,6 +78,38 @@ At the start of each work session, read the `depmesh` usage instructions for det
 ```bash
 depmesh skill usage
 ```
+
+### `inconsistency-check.py`
+
+`./bin/inconsistency-check.py` — a direct helper script for managing the depmesh-backed consistency-check queue.
+
+Use this script only when the developer explicitly asks you to run it, or when an active Donna workflow explicitly
+instructs you to run it. Do not run it opportunistically as a general dependency or consistency check.
+
+The queue is an isolated Taskwarrior database of relation-pair checks. Each queued record represents one oriented
+`depmesh` relation from a changed or manually selected file to one related artifact, plus the current SHA-256 checksums
+of both files, the relation id, the check status, and an optional markdown report. Pair keys include the relation and
+both file checksums, so old records remain as history while changed file content creates a fresh unchecked pair.
+
+The checker loop is the `run-cycle` command. It discovers files changed relative to `main`, queries all configured
+`depmesh` relations for those files, reconciles the current relation pairs into the queue, then handles at most one
+unchecked pair. If a current pair is already marked `inconsistent`, the loop prints it and exits before spawning any
+child checker. Otherwise it runs one read-only child Codex checker for the first unchecked pair, stores the result, and
+exits with a code that tells the Donna workflow whether to stop for a fix, continue the loop, or finish successfully.
+
+Main commands:
+
+- `python ./bin/inconsistency-check.py enqueue @/path/to/file` — manually add one file and all configured depmesh relation pairs for that file to the isolated queue.
+- `python ./bin/inconsistency-check.py enqueue @/first @/second` — enqueue multiple files.
+- `python ./bin/inconsistency-check.py progress --file @/path/to/file` — show queued records where the file is either the changed side or the related side.
+- `python ./bin/inconsistency-check.py mark-consistent --changed @/changed --related @/related --relation <relation>` — explicitly mark the current-checksum relation pair as consistent.
+- `python ./bin/inconsistency-check.py mark-inconsistent --changed @/changed --related @/related --relation <relation> --report "<markdown>"` — explicitly mark the current-checksum relation pair as inconsistent.
+- `python ./bin/inconsistency-check.py clear-queue` — delete all records from the isolated relation-pair queue.
+- `python ./bin/inconsistency-check.py run-cycle` — run one checker cycle: discover changed files relative to `main`, reconcile relation pairs, and process at most one unchecked pair.
+- `python ./bin/inconsistency-check.py process-queue` — process already queued relation pairs until all are checked or the first inconsistency is found.
+- `python ./bin/inconsistency-check.py self-check` — run deterministic script verification without spawning a child Codex checker.
+
+The script stores its relation-pair queue and runtime files only under `@/.session/inconsistency-check/`.
 
 ### `ast-grep`
 

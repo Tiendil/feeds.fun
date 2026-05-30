@@ -1,5 +1,6 @@
 {
   "url": "https://example.com/feed/",
+  "site_url": "https://example.com",
   "title": "Юникодный заголовок",
   "description": "Юникодный заголовок",
   "uid": "example.com/feed",

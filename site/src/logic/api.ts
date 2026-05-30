@@ -331,6 +331,19 @@ export async function getFeeds() {
   return feeds;
 }
 
+export async function getFeedsByIds({ids}: {ids: t.FeedId[]}) {
+  const response = await postPrivate({url: "/get-feeds-by-ids", data: {ids: ids}});
+
+  const feeds = [];
+
+  for (let rawFeed of response.feeds) {
+    const feed = t.feedFromJSON(rawFeed);
+    feeds.push(feed);
+  }
+
+  return feeds;
+}
+
 export async function getLastEntries({period, minTagCount}: {period: number; minTagCount: number}) {
   const response = await postPrivate({
     url: "/get-last-entries",

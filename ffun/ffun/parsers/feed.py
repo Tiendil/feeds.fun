@@ -417,6 +417,72 @@ def parse_into_feedparser(content: str) -> Channel | None:
     return channel
 
 
+def _normalize_feed_site_url(raw_url: object, original_url: FeedUrl) -> AbsoluteUrl | None:
+    if not isinstance(raw_url, str):
+        return None
+
+    adjusted_url = urls.adjust_external_url(UnknownUrl(raw_url), original_url)
+
+    if adjusted_url is None:
+        return None
+
+    adjusted_f_url = urls.construct_f_url(adjusted_url)
+
+    if adjusted_f_url is None or adjusted_f_url.host in (None, ""):
+        return None
+
+    if urls.url_to_uid(adjusted_url) == urls.url_to_uid(original_url):
+        return None
+
+    return adjusted_url
+
+
+def _is_feed_site_link(raw_link: Mapping[str, object]) -> bool:
+    rel = raw_link.get("rel")
+
+    if not isinstance(rel, str) and rel is not None:
+        return False
+
+    if rel == "self":
+        return False
+
+    if rel not in {None, "", "alternate"}:
+        return False
+
+    media_type = raw_link.get("type")
+
+    if not isinstance(media_type, str) or media_type == "":
+        return True
+
+    return media_type in {"text/html", "application/xhtml+xml"}
+
+
+def _extract_feed_site_url(feed: Mapping[str, object], original_url: FeedUrl) -> AbsoluteUrl | None:  # noqa: CCR001
+    site_url = _normalize_feed_site_url(feed.get("link"), original_url)
+
+    if site_url is not None:
+        return site_url
+
+    raw_links = feed.get("links")
+
+    if not isinstance(raw_links, list):
+        return None
+
+    for raw_link in raw_links:
+        if not isinstance(raw_link, Mapping):
+            continue
+
+        if not _is_feed_site_link(raw_link):
+            continue
+
+        site_url = _normalize_feed_site_url(raw_link.get("href"), original_url)
+
+        if site_url is not None:
+            return site_url
+
+    return None
+
+
 def parse_feed(content: str, original_url: FeedUrl, source: SourceUid) -> FeedInfo | None:  # noqa: CCR001
     channel = parse_into_feedparser(content)
 
@@ -429,6 +495,7 @@ def parse_feed(content: str, original_url: FeedUrl, source: SourceUid) -> FeedIn
 
     feed_info = FeedInfo(
         url=original_url,
+        site_url=_extract_feed_site_url(channel.feed, original_url),
         title=cast(str, channel.feed.get("title", "")),
         description=cast(str, channel.feed.get("description", "")),
         entries=[],

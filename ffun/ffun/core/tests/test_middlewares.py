@@ -177,6 +177,7 @@ class TestExistedRouteUrls:
             "/spa/api/public/track-event",
             "/spa/api/private/refresh-auth",
             "/spa/api/private/get-feeds",
+            "/spa/api/private/get-feeds-by-ids",
             "/spa/api/private/get-last-entries",
             "/spa/api/private/create-or-update-rule",
             "/spa/api/private/delete-rule",

@@ -1,22 +1,13 @@
 <template>
   <side-panel-layout>
     <template #side-menu-item-1>
-      Show descriptions
-      <config-flag
-        style="min-width: 2.5rem"
-        v-model:flag="globalSettings.showFeedsDescriptions"
-        on-text="yes"
-        off-text="no" />
-    </template>
-
-    <template #side-menu-item-2>
       Sorted by
       <config-selector
         :values="e.FeedsOrderProperties"
         v-model:property="globalSettings.feedsOrder" />
     </template>
 
-    <template #side-menu-item-3>
+    <template #side-menu-item-2>
       Show failed
       <config-flag
         v-model:flag="globalSettings.failedFeedsFirst"
@@ -25,7 +16,7 @@
         off-text="last" />
     </template>
 
-    <template #side-menu-item-4>
+    <template #side-menu-item-3>
       <a
         class="ffun-form-button p-1 my-1 block w-full text-center"
         :href="api.downloadOPMLUrl"

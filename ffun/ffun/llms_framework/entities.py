@@ -11,6 +11,7 @@ from ffun.feeds.entities import FeedId
 
 LLMApiKey = NewType("LLMApiKey", str)
 LLMUserApiKey = NewType("LLMUserApiKey", LLMApiKey)
+LLMCostPoints = NewType("LLMCostPoints", int)
 
 
 class LLMProvider(enum.StrEnum):

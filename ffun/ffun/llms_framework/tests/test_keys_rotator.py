@@ -41,10 +41,11 @@ from ffun.llms_framework.keys_rotator import (
 )
 from ffun.llms_framework.provider_interface import ProviderTest
 from ffun.llms_framework.providers import llm_providers
-from ffun.product.resources import Resource as AppResource
+from ffun.product.entities import Resource as AppResource
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
 from ffun.user_settings import domain as us_domain
+from ffun.user_settings.entities import SettingKind
 
 _llm_config = LLMConfiguration(
     model="test-model",
@@ -205,8 +206,11 @@ class TestGetUserKeyInfos:
 
     @pytest.mark.asyncio
     async def test_works(self, five_internal_user_ids: list[UserId]) -> None:
-        from ffun.product.resources import Resource as AppResource
-        from ffun.product.user_settings import UserSetting
+        from ffun.product.entities import Resource as AppResource
+        from ffun.product.entities import UserSetting
+
+        def setting_kind(setting: UserSetting) -> SettingKind:
+            return SettingKind(int(setting))
 
         interval_started_at = month_interval_start()
 
@@ -217,14 +221,16 @@ class TestGetUserKeyInfos:
         reserved_costs = [USDCost(Decimal(i * 10)) for i in range(5)]
 
         for i, user_id in enumerate(five_internal_user_ids):
-            await us_domain.save_setting(user_id=user_id, kind=UserSetting.openai_api_key, value=keys[i])
+            await us_domain.save_setting(user_id=user_id, kind=setting_kind(UserSetting.openai_api_key), value=keys[i])
 
             await us_domain.save_setting(
-                user_id=user_id, kind=UserSetting.max_tokens_cost_in_month, value=max_tokens_cost_in_month[i]
+                user_id=user_id,
+                kind=setting_kind(UserSetting.max_tokens_cost_in_month),
+                value=max_tokens_cost_in_month[i],
             )
 
             await us_domain.save_setting(
-                user_id=user_id, kind=UserSetting.process_entries_not_older_than, value=days[i]
+                user_id=user_id, kind=setting_kind(UserSetting.process_entries_not_older_than), value=days[i]
             )
 
             await r_domain.try_to_reserve(

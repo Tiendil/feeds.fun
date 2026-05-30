@@ -196,6 +196,7 @@ export const ReferenceKindProperties = new Map<ReferenceKind, ReferenceKindPrope
 export enum FeedsOrder {
   Title = "title",
   Url = "url",
+  EntriesPerDay = "entries-per-day",
   Loaded = "loaded",
   Linked = "linked"
 }
@@ -210,6 +211,7 @@ export type FeedsOrderProperty = {
 export const FeedsOrderProperties = new Map<FeedsOrder, FeedsOrderProperty>([
   [FeedsOrder.Title, {text: "title", orderField: "title", orderDirection: "asc", default: true}],
   [FeedsOrder.Url, {text: "url", orderField: "url", orderDirection: "asc"}],
+  [FeedsOrder.EntriesPerDay, {text: "news/day", orderField: "entriesPerDay", orderDirection: "desc"}],
   [FeedsOrder.Loaded, {text: "loaded", orderField: "loadedAt", orderDirection: "desc"}],
   [FeedsOrder.Linked, {text: "added", orderField: "linkedAt", orderDirection: "desc"}]
 ]);

@@ -6,10 +6,11 @@ import pytest
 from ffun.core.tests.helpers import assert_logs_has_business_event, capture_logs
 from ffun.domain.entities import UserId
 from ffun.user_settings import operations
+from ffun.user_settings.entities import SettingKind
 from ffun.user_settings.tests import asserts
 
-_kind_1 = 1234
-_kind_2 = 5678
+_kind_1 = SettingKind(1234)
+_kind_2 = SettingKind(5678)
 
 
 class TestSave:
@@ -166,7 +167,7 @@ class TestFindAllKinds:
             if new_kind not in kinds_before:
                 break
 
-        await operations.save_setting(internal_user_id, new_kind, "abc")
+        await operations.save_setting(internal_user_id, SettingKind(new_kind), "abc")
 
         kinds_after = await operations.find_all_kinds()
 

@@ -13,7 +13,7 @@ from ffun.dispatcher import domain as d_domain
 from ffun.dispatcher.entities import EntryProcessingStatus
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import ProcessorId, TagId, TagUid, UserId
-from ffun.domain.urls import str_to_feed_url, url_to_source_uid, url_to_uid
+from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_source_uid, url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds.entities import Feed
 from ffun.feeds.tests import make as f_make
@@ -151,6 +151,7 @@ class TestAddFeeds:
         feeds = [
             p_entities.FeedInfo(
                 url=urls[0],
+                site_url=str_to_absolute_url("https://example.com"),
                 title=uuid.uuid4().hex,
                 description=uuid.uuid4().hex,
                 entries=[],
@@ -181,6 +182,8 @@ class TestAddFeeds:
 
         assert {feed.url for feed in feeds_1} == {feed.url for feed in feeds[:2]}
         assert {feed.url for feed in feeds_2} == {feed.url for feed in feeds[1:]}
+        assert {feed.site_url for feed in feeds_1} == {feeds[0].site_url, feeds[1].site_url}
+        assert {feed.site_url for feed in feeds_2} == {feeds[1].site_url, feeds[2].site_url}
 
         source_uids = {url: url_to_source_uid(url) for url in urls}
         source_ids = await f_domain.get_source_ids(source_uids.values())
@@ -286,12 +289,15 @@ class TestCleanOrphanedFeeds:
             await f_domain.mark_feed_as_orphaned(feed.id)
 
         unlink_all_mock = mocker.patch("ffun.library.domain.unlink_all")
+        remove_feed_entries_count_mock = mocker.patch("ffun.library.domain.remove_feed_entries_count")
         tech_remove_feed_mock = mocker.patch("ffun.feeds.domain.tech_remove_feed")
         unlink_feeds_from_all_users = mocker.patch("ffun.feeds_links.domain.unlink_feeds_from_all_users")
 
         assert await clean_orphaned_feeds(chunk=100) == 3
 
         assert unlink_all_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]  # type: ignore
+
+        remove_feed_entries_count_mock.assert_called_once_with([feed.id for feed in feeds])  # type: ignore[misc]
 
         assert tech_remove_feed_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]  # type: ignore
 

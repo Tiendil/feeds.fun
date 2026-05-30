@@ -2,20 +2,12 @@
 # TODO: refactor to use pydantic instead of custom types
 
 import decimal
-import enum
 
 from cryptography.fernet import Fernet
 
 from ffun.user_settings import errors
+from ffun.user_settings.entities import TypeId
 from ffun.user_settings.settings import settings
-
-
-class TypeId(str, enum.Enum):
-    integer = "integer"
-    string = "string"
-    boolean = "boolean"
-    secret = "secret"  # noqa: S105
-    decimal = "decimal"
 
 
 class Type:

@@ -14,6 +14,7 @@ from ffun.llms_framework.entities import (
     KeyStatus,
     LLMApiKey,
     LLMConfiguration,
+    LLMCostPoints,
     LLMProvider,
     SelectKeyContext,
     USDCost,
@@ -22,6 +23,7 @@ from ffun.llms_framework.entities import (
 from ffun.llms_framework.provider_interface import ProviderInterface
 from ffun.resources import domain as r_domain
 from ffun.user_settings import domain as us_domain
+from ffun.user_settings import entities as us_entities
 
 logger = logging.get_module_logger()
 
@@ -33,11 +35,11 @@ class CostPoints:
     def __init__(self, k: int) -> None:
         self._k = k
 
-    def to_cost(self, points: int) -> USDCost:
+    def to_cost(self, points: LLMCostPoints) -> USDCost:
         return USDCost(Decimal(points) / self._k)
 
-    def to_points(self, cost: USDCost) -> int:
-        return int(cost * self._k)
+    def to_points(self, cost: USDCost) -> LLMCostPoints:
+        return LLMCostPoints(int(cost * self._k))
 
 
 _cost_points = CostPoints(k=1_000_000_000)
@@ -92,7 +94,7 @@ async def _filter_out_users_with_overused_keys(
 async def _choose_user(
     infos: list[UserKeyInfo], reserved_cost: USDCost, interval_started_at: datetime.datetime
 ) -> UserKeyInfo | None:
-    from ffun.product.resources import Resource as AppResource
+    from ffun.product.entities import Resource as AppResource
 
     for info in infos:
 
@@ -112,8 +114,8 @@ async def _choose_user(
 async def _get_user_key_infos(  # pylint: disable=R0914
     provider: LLMProvider, user_ids: Iterable[UserId], interval_started_at: datetime.datetime
 ) -> list[UserKeyInfo]:
-    from ffun.product.resources import Resource as AppResource
-    from ffun.product.user_settings import UserSetting
+    from ffun.product.entities import Resource as AppResource
+    from ffun.product.entities import UserSetting
 
     # TODO: move somewhere in configs
     provider_to_settings = {
@@ -124,7 +126,14 @@ async def _get_user_key_infos(  # pylint: disable=R0914
 
     key_setting = provider_to_settings[provider]
 
-    kinds = [UserSetting.max_tokens_cost_in_month, UserSetting.process_entries_not_older_than, key_setting]
+    def setting_kind(setting: UserSetting) -> us_entities.SettingKind:
+        return us_entities.SettingKind(int(setting))
+
+    kinds = [
+        setting_kind(UserSetting.max_tokens_cost_in_month),
+        setting_kind(UserSetting.process_entries_not_older_than),
+        setting_kind(key_setting),
+    ]
 
     users_settings = await us_domain.load_settings_for_users(
         user_ids,
@@ -140,15 +149,15 @@ async def _get_user_key_infos(  # pylint: disable=R0914
     for user_id in user_ids:
         settings = users_settings[user_id]
 
-        days = settings.get(UserSetting.process_entries_not_older_than)
+        days = settings.get(setting_kind(UserSetting.process_entries_not_older_than))
         assert days is not None
         assert isinstance(days, int)
 
-        max_tokens_cost_in_month_raw = settings.get(UserSetting.max_tokens_cost_in_month)
+        max_tokens_cost_in_month_raw = settings.get(setting_kind(UserSetting.max_tokens_cost_in_month))
         assert isinstance(max_tokens_cost_in_month_raw, Decimal)
         max_tokens_cost_in_month = USDCost(max_tokens_cost_in_month_raw)
 
-        api_key_raw = settings.get(key_setting)
+        api_key_raw = settings.get(setting_kind(key_setting))
         assert isinstance(api_key_raw, str)
         api_key = LLMApiKey(api_key_raw)
 
@@ -158,7 +167,7 @@ async def _get_user_key_infos(  # pylint: disable=R0914
                 api_key=api_key,
                 max_tokens_cost_in_month=max_tokens_cost_in_month,
                 process_entries_not_older_than=datetime.timedelta(days=days),
-                cost_used=_cost_points.to_cost(resources[user_id].total),
+                cost_used=_cost_points.to_cost(LLMCostPoints(resources[user_id].total)),
             )
         )
 
@@ -258,7 +267,7 @@ async def choose_user_api_key(llm: ProviderInterface, context: SelectKeyContext)
 @contextlib.asynccontextmanager
 async def use_api_key(key_usage: APIKeyUsage) -> AsyncGenerator[None, None]:
     from ffun.llms_framework.providers import llm_providers
-    from ffun.product.resources import Resource as AppResource
+    from ffun.product.entities import Resource as AppResource
 
     log = logger.bind(function="_use_key", user_id=key_usage.user_id)
 

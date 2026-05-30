@@ -9,7 +9,7 @@ from ffun.core import logging, utils
 from ffun.core.postgresql import ExecuteType, execute, run_in_transaction
 from ffun.domain import urls as domain_urls
 from ffun.domain.domain import new_source_id
-from ffun.domain.entities import SourceId, UrlUid
+from ffun.domain.entities import AbsoluteUrl, SourceId, UrlUid
 from ffun.feeds.entities import Feed, FeedError, FeedId, FeedState
 
 logger = logging.get_module_logger()
@@ -20,6 +20,8 @@ def row_to_feed(row: dict[str, Any]) -> Feed:
         id=row["id"],
         source_id=row["source_id"],
         url=row["url"],
+        site_url=row["site_url"],
+        created_at=row["created_at"],
         state=FeedState(row["state"]),
         last_error=FeedError(row["last_error"]) if row["last_error"] else None,
         load_attempted_at=row["load_attempted_at"],
@@ -31,8 +33,8 @@ def row_to_feed(row: dict[str, Any]) -> Feed:
 
 async def save_feed(feed: Feed) -> FeedId:
     sql = """
-    INSERT INTO f_feeds (id, source_id, url, state, title, description, uid)
-    VALUES (%(id)s, %(source_id)s, %(url)s, %(state)s, %(title)s, %(description)s, %(uid)s)
+    INSERT INTO f_feeds (id, source_id, url, site_url, state, title, description, uid)
+    VALUES (%(id)s, %(source_id)s, %(url)s, %(site_url)s, %(state)s, %(title)s, %(description)s, %(uid)s)
     """
 
     uid = domain_urls.url_to_uid(feed.url)
@@ -44,6 +46,7 @@ async def save_feed(feed: Feed) -> FeedId:
                 "id": feed.id,
                 "source_id": feed.source_id,
                 "url": feed.url,
+                "site_url": feed.site_url,
                 "state": feed.state,
                 "title": feed.title,
                 "description": feed.description,
@@ -91,16 +94,17 @@ async def get_next_feeds_to_load(execute: ExecuteType, number: int, loaded_befor
     return [row_to_feed(row) for row in rows]
 
 
-async def update_feed_info(feed_id: FeedId, title: str, description: str) -> None:
+async def update_feed_info(feed_id: FeedId, site_url: AbsoluteUrl | None, title: str, description: str) -> None:
     sql = """
     UPDATE f_feeds
-    SET title = %(title)s,
+    SET site_url = %(site_url)s,
+        title = %(title)s,
         description = %(description)s,
         updated_at = NOW()
     WHERE id = %(id)s
     """
 
-    await execute(sql, {"id": feed_id, "title": title, "description": description})
+    await execute(sql, {"id": feed_id, "site_url": site_url, "title": title, "description": description})
 
 
 async def mark_feed_as_loaded(feed_id: FeedId, loaded_at: datetime.datetime | None = None) -> None:

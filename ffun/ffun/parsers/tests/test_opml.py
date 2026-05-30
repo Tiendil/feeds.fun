@@ -1,7 +1,7 @@
 import pytest
 
 from ffun.core.tests.helpers import assert_compare_xml
-from ffun.domain.urls import str_to_feed_url, url_to_uid
+from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_uid
 from ffun.feeds.entities import Feed
 from ffun.parsers import errors
 from ffun.parsers.entities import FeedInfo
@@ -95,6 +95,29 @@ class TestExtractFeeds:
         assert len(infos) == 1
         assert infos[0] == FeedInfo(
             url=expected_url,
+            title="",
+            description="",
+            entries=[],
+            uid=url_to_uid(expected_url),
+        )
+
+    def test_opml_with_html_url(self) -> None:
+        content = """
+<opml version="2.0">
+<body>
+  <outline type="rss" xmlUrl='https://example.com/feed' htmlUrl='https://example.com' />
+</body>
+</opml>
+        """
+
+        infos = extract_feeds(content)
+
+        expected_url = str_to_feed_url("https://example.com/feed")
+
+        assert len(infos) == 1
+        assert infos[0] == FeedInfo(
+            url=expected_url,
+            site_url=str_to_absolute_url("https://example.com"),
             title="",
             description="",
             entries=[],

@@ -17,6 +17,8 @@
         v-if="references.length > 0"
         :references="references" />
 
+      <slot name="body-prefix" />
+
       <p
         v-if="loading"
         class="mt-4"
