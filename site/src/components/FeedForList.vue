@@ -58,16 +58,20 @@
           </span>
         </div>
 
-        <template v-if="feed.collectionIds.length > 0">
-          <span v-for="(collectionId, index) in feed.collectionIds">
-            <template v-if="collectionId in collections.collections">
-              <br />
-              Collections:
-              <span class="text-green-700 font-bold">{{ collections.collections[collectionId].name }}</span
-              ><span v-if="index < feed.collectionIds.length - 1">, </span>
-            </template>
-          </span>
-        </template>
+        <div
+          v-if="feed.collectionIds.length > 0"
+          class="mt-1 flex min-w-0 flex-wrap gap-1">
+          <template
+            v-for="collectionId in feed.collectionIds"
+            :key="collectionId">
+            <span
+              v-if="collectionId in collections.collections"
+              :title="`This feed is part of the collection: ${collections.collections[collectionId].name}`"
+              class="cursor-default rounded border border-green-200 bg-green-50 px-1.5 py-0.5 text-sm font-semibold text-green-700">
+              {{ collections.collections[collectionId].name }}
+            </span>
+          </template>
+        </div>
       </template>
     </feed-list-columns>
   </div>
