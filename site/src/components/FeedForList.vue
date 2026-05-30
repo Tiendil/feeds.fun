@@ -53,7 +53,7 @@
 
           <span
             v-if="purifiedDescriptionPreview"
-            class="min-w-0 flex-1 truncate text-sm text-gray-600">
+            class="min-w-0 flex-1 line-clamp-1 text-sm text-gray-600">
             {{ purifiedDescriptionPreview }}
           </span>
         </div>
