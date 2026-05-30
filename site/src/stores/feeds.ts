@@ -14,7 +14,13 @@ export const useFeedsStore = defineStore("feedsStore", () => {
   const requestedFeeds = ref<{[key: t.FeedId]: boolean}>({});
   const displayedFeedId = ref<t.FeedId | null>(null);
 
-  function feedWithFullDataFromStorage(feed: t.Feed) {
+  function feedWithFullDataFromStorage(feed: t.Feed, preserveFullData: boolean) {
+    // Full feed details power derived UI, like activity charts. On full list
+    // refresh we must drop them so opened feed bodies reload fresh details.
+    if (!preserveFullData) {
+      return feed;
+    }
+
     if (feed.id in feeds.value) {
       const existingFeed = feeds.value[feed.id];
 
@@ -33,11 +39,23 @@ export const useFeedsStore = defineStore("feedsStore", () => {
     const delta: {[key: t.FeedId]: t.Feed} = {};
 
     for (const feed of newFeeds) {
-      delta[feed.id] = feedWithFullDataFromStorage(feed);
+      delta[feed.id] = feedWithFullDataFromStorage(feed, !replace);
     }
 
     if (replace) {
       feeds.value = delta;
+
+      if (displayedFeedId.value === null) {
+        return;
+      }
+
+      if (!(displayedFeedId.value in feeds.value)) {
+        displayedFeedId.value = null;
+        return;
+      }
+
+      requestFullFeed({feedId: displayedFeedId.value});
+
       return;
     }
 
