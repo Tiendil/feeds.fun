@@ -297,7 +297,7 @@ class TestCleanOrphanedFeeds:
 
         assert unlink_all_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]  # type: ignore
 
-        assert remove_feed_entries_count_mock.call_args_list == [mocker.call([feed.id for feed in feeds])]  # type: ignore
+        remove_feed_entries_count_mock.assert_called_once_with([feed.id for feed in feeds])  # type: ignore[misc]
 
         assert tech_remove_feed_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]  # type: ignore
 

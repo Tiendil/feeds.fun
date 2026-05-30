@@ -1,6 +1,7 @@
 import datetime
 
 import pytest
+from pytest_mock import MockerFixture
 
 from ffun.core import utils
 from ffun.domain.entities import Days
@@ -34,7 +35,7 @@ class TestEntriesPerDay:
 
         assert f_utils.entries_per_day(feed, entries_loaded=0, period=Days(30), now=now) == 0
 
-    def test_uses_current_time_by_default(self, mocker, loaded_feed: Feed) -> None:
+    def test_uses_current_time_by_default(self, mocker: MockerFixture, loaded_feed: Feed) -> None:
         now = utils.now()
         feed = loaded_feed.replace(created_at=now - datetime.timedelta(days=2))
         mocker.patch("ffun.feeds.utils.core_utils.now", return_value=now)
@@ -68,7 +69,7 @@ class TestIsYoung:
 
         assert not f_utils.is_young(feed, period=Days(30), now=now)
 
-    def test_uses_current_time_by_default(self, mocker, loaded_feed: Feed) -> None:
+    def test_uses_current_time_by_default(self, mocker: MockerFixture, loaded_feed: Feed) -> None:
         now = utils.now()
         feed = loaded_feed.replace(created_at=now - datetime.timedelta(days=29))
         mocker.patch("ffun.feeds.utils.core_utils.now", return_value=now)
