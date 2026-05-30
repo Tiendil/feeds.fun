@@ -16,6 +16,9 @@ queue records must use the isolated Taskwarrior database under
 ``+consistency`` tag.
 """
 
+# TODO: depmesh does not support missed files detection => we may miss some inconsistencies
+# TODO: we excluded tested_by/tests extensions from the checker for now, need to return them back later
+
 from __future__ import annotations
 
 import argparse
