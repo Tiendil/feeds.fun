@@ -20,8 +20,7 @@ from ffun.domain.entities import FeedId, TagId, TagUid, UserId
 from ffun.domain.urls import url_to_uid
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
-from ffun.feeds import utils as f_utils
-from ffun.feeds_collections.collections import collections
+from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_discoverer import domain as fd_domain
 from ffun.feeds_discoverer import entities as fd_entities
 from ffun.feeds_links import domain as fl_domain
@@ -213,7 +212,7 @@ async def api_get_last_collection_entries(
     request: entities.GetLastCollectionEntriesRequest,
 ) -> entities.GetLastCollectionEntriesResponse:
 
-    collection = collections.collection_by_slug(request.collectionSlug)
+    collection = fc_domain.collection_by_slug(request.collectionSlug)
 
     feed_ids = [feed_info.feed_id for feed_info in collection.feeds if feed_info.feed_id is not None]
 
@@ -243,7 +242,7 @@ async def api_get_feeds_collections(
     request: entities.GetFeedsCollectionsRequest,
 ) -> entities.GetFeedsCollectionsResponse:
 
-    internal_collections = collections.collections()
+    internal_collections = fc_domain.all_collections()
 
     collections_to_return = [entities.Collection.from_internal(collection) for collection in internal_collections]
 
@@ -253,7 +252,7 @@ async def api_get_feeds_collections(
 @api_public.post("/get-collection-feeds")  # type: ignore
 async def api_get_collection_feeds(request: entities.GetCollectionFeedsRequest) -> entities.GetCollectionFeedsResponse:
 
-    collection = collections.collection(request.collectionId)
+    collection = fc_domain.collection(request.collectionId)
 
     feeds = [entities.CollectionFeedInfo.from_internal(feed_info) for feed_info in collection.feeds]
 
@@ -335,13 +334,13 @@ async def _external_feeds(
     external_feeds = []
 
     for feed in feeds:
-        collection_ids = collections.collections_for_feed(feed.id)
+        collection_ids = fc_domain.collections_for_feed(feed.id)
         external_feed = entities.Feed.from_internal(
             feed,
             linked_at=linked_at_by_feed.get(feed.id),
             collection_ids=collection_ids,
-            young=f_utils.is_young(feed, settings.feed_metrics_period),
-            entries_per_day=f_utils.entries_per_day(feed, entries_loaded[feed.id], settings.feed_metrics_period),
+            young=f_domain.is_young(feed, settings.feed_metrics_period),
+            entries_per_day=f_domain.entries_per_day(feed, entries_loaded[feed.id], settings.feed_metrics_period),
             entries_loaded_details=details.get(feed.id),
         )
         external_feeds.append(external_feed)
@@ -605,7 +604,7 @@ async def api_subscribe_to_collections(
     feeds = []
 
     for collection_id in request.collections:
-        collection = collections.collection(collection_id)
+        collection = fc_domain.collection(collection_id)
 
         for feed_info in collection.feeds:
             feeds.append(

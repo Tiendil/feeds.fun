@@ -1,5 +1,5 @@
 from ffun.domain.entities import FeedId
-from ffun.feeds import errors, operations
+from ffun.feeds import errors, operations, utils
 from ffun.feeds.entities import Feed
 
 save_feed = operations.save_feed
@@ -17,6 +17,8 @@ count_total_feeds = operations.count_total_feeds
 count_total_feeds_per_state = operations.count_total_feeds_per_state
 count_total_feeds_per_last_error = operations.count_total_feeds_per_last_error
 all_feeds_iterator = operations.all_feeds_iterator
+entries_per_day = utils.entries_per_day
+is_young = utils.is_young
 
 
 async def save_feeds(feeds: list[Feed]) -> list[FeedId]:

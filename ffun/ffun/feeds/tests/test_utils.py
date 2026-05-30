@@ -1,5 +1,7 @@
 import datetime
 
+import pytest
+
 from ffun.core import utils
 from ffun.domain.entities import Days
 from ffun.feeds import utils as f_utils
@@ -32,6 +34,19 @@ class TestEntriesPerDay:
 
         assert f_utils.entries_per_day(feed, entries_loaded=0, period=Days(30), now=now) == 0
 
+    def test_uses_current_time_by_default(self, mocker, loaded_feed: Feed) -> None:
+        now = utils.now()
+        feed = loaded_feed.replace(created_at=now - datetime.timedelta(days=2))
+        mocker.patch("ffun.feeds.utils.core_utils.now", return_value=now)
+
+        assert f_utils.entries_per_day(feed, entries_loaded=5, period=Days(30)) == 3
+
+    def test_requires_feed_creation_time(self, loaded_feed: Feed) -> None:
+        feed = loaded_feed.replace(created_at=None)
+
+        with pytest.raises(AssertionError):
+            f_utils.entries_per_day(feed, entries_loaded=5, period=Days(30))
+
 
 class TestIsYoung:
 
@@ -52,3 +67,16 @@ class TestIsYoung:
         feed = loaded_feed.replace(created_at=now - datetime.timedelta(days=31))
 
         assert not f_utils.is_young(feed, period=Days(30), now=now)
+
+    def test_uses_current_time_by_default(self, mocker, loaded_feed: Feed) -> None:
+        now = utils.now()
+        feed = loaded_feed.replace(created_at=now - datetime.timedelta(days=29))
+        mocker.patch("ffun.feeds.utils.core_utils.now", return_value=now)
+
+        assert f_utils.is_young(feed, period=Days(30))
+
+    def test_requires_feed_creation_time(self, loaded_feed: Feed) -> None:
+        feed = loaded_feed.replace(created_at=None)
+
+        with pytest.raises(AssertionError):
+            f_utils.is_young(feed, period=Days(30))
