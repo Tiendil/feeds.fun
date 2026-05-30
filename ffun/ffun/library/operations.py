@@ -76,6 +76,20 @@ async def _increment_feed_entries_count(execute: ExecuteType, feed_id: FeedId, d
     await execute(sql, {"feed_id": feed_id, "date": date})
 
 
+async def remove_feed_entries_count(feed_ids: Iterable[FeedId]) -> None:
+    feed_ids = list(feed_ids)
+
+    if not feed_ids:
+        return
+
+    sql = """
+    DELETE FROM l_feed_entries_count
+    WHERE feed_id = ANY(%(feed_ids)s)
+    """
+
+    await execute(sql, {"feed_ids": feed_ids})
+
+
 @run_in_transaction
 async def _catalog_entry(
     execute: ExecuteType, feed_id: FeedId, entry: CollectedEntry, ingested_at: datetime.datetime

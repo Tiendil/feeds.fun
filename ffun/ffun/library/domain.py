@@ -16,6 +16,7 @@ get_entries_by_ids = operations.get_entries_by_ids
 get_entries_by_filter = operations.get_entries_by_filter
 entries_in_period = operations.entries_in_period
 entries_in_period_details = operations.entries_in_period_details
+remove_feed_entries_count = operations.remove_feed_entries_count
 all_entries_iterator = operations.all_entries_iterator
 get_entries_after_pointer = operations.get_entries_after_pointer
 get_orphaned_entries = operations.get_orphaned_entries

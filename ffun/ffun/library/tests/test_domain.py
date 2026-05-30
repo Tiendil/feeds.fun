@@ -17,6 +17,7 @@ from ffun.library.domain import (
     get_entry,
     get_feeds_for_entry,
     normalize_entry,
+    remove_feed_entries_count,
     shrink_feed,
 )
 from ffun.library.entities import CollectedEntry, Entry, EntryChange
@@ -32,6 +33,11 @@ class TestEntriesInPeriod:
 class TestEntriesInPeriodDetails:
     def test_reexports_operation(self) -> None:
         assert entries_in_period_details is operations.entries_in_period_details
+
+
+class TestRemoveFeedEntriesCount:
+    def test_reexports_operation(self) -> None:
+        assert remove_feed_entries_count is operations.remove_feed_entries_count
 
 
 class TestNormalizeEntry:

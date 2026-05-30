@@ -18,7 +18,7 @@ from ffun.core.tests.helpers import (
     assert_times_is_near,
     capture_logs,
 )
-from ffun.domain.domain import new_entry_id
+from ffun.domain.domain import new_entry_id, new_feed_id
 from ffun.domain.entities import Days, EntryId, FeedId
 from ffun.domain.urls import str_to_absolute_url
 from ffun.feeds import domain as f_domain
@@ -41,6 +41,7 @@ from ffun.library.operations import (
     get_feed_links_for_entries,
     get_last_ingested_at,
     get_orphaned_entries,
+    remove_feed_entries_count,
     remove_entries_by_ids,
     sync_orphaned_entries,
     try_mark_as_orphanes,
@@ -495,6 +496,51 @@ class TestIncrementFeedEntriesCount:
             loaded_feed_id: 2,
             another_loaded_feed_id: 1,
         }
+
+
+class TestRemoveFeedEntriesCount:
+    @pytest.mark.asyncio
+    async def test_removes_counts_for_requested_feeds_only(
+        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId
+    ) -> None:
+        today = utils.now().date()
+
+        await _increment_feed_entries_count(execute, loaded_feed_id, today)
+        await _increment_feed_entries_count(execute, loaded_feed_id, today - datetime.timedelta(days=1))
+        await _increment_feed_entries_count(execute, another_loaded_feed_id, today)
+
+        async with TableSizeDelta("l_feed_entries_count", delta=-2):
+            await remove_feed_entries_count([loaded_feed_id])
+
+        rows = await execute(
+            "SELECT feed_id, entries FROM l_feed_entries_count "
+            "WHERE feed_id = ANY(%(feed_ids)s) AND date = %(date)s",
+            {"feed_ids": [loaded_feed_id, another_loaded_feed_id], "date": today},  # type: ignore
+        )
+
+        assert {row["feed_id"]: row["entries"] for row in rows} == {another_loaded_feed_id: 1}  # type: ignore
+
+    @pytest.mark.asyncio
+    async def test_removes_counts_for_multiple_feeds(
+        self, loaded_feed_id: FeedId, another_loaded_feed_id: FeedId
+    ) -> None:
+        today = utils.now().date()
+
+        await _increment_feed_entries_count(execute, loaded_feed_id, today)
+        await _increment_feed_entries_count(execute, another_loaded_feed_id, today)
+
+        async with TableSizeDelta("l_feed_entries_count", delta=-2):
+            await remove_feed_entries_count([loaded_feed_id, another_loaded_feed_id])
+
+    @pytest.mark.asyncio
+    async def test_unknown_feed(self) -> None:
+        async with TableSizeNotChanged("l_feed_entries_count"):
+            await remove_feed_entries_count([new_feed_id()])
+
+    @pytest.mark.asyncio
+    async def test_empty_feed_ids(self) -> None:
+        async with TableSizeNotChanged("l_feed_entries_count"):
+            await remove_feed_entries_count([])
 
 
 class TestEntriesInPeriod:

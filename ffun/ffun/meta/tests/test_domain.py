@@ -289,12 +289,15 @@ class TestCleanOrphanedFeeds:
             await f_domain.mark_feed_as_orphaned(feed.id)
 
         unlink_all_mock = mocker.patch("ffun.library.domain.unlink_all")
+        remove_feed_entries_count_mock = mocker.patch("ffun.library.domain.remove_feed_entries_count")
         tech_remove_feed_mock = mocker.patch("ffun.feeds.domain.tech_remove_feed")
         unlink_feeds_from_all_users = mocker.patch("ffun.feeds_links.domain.unlink_feeds_from_all_users")
 
         assert await clean_orphaned_feeds(chunk=100) == 3
 
         assert unlink_all_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]  # type: ignore
+
+        assert remove_feed_entries_count_mock.call_args_list == [mocker.call([feed.id for feed in feeds])]  # type: ignore
 
         assert tech_remove_feed_mock.call_args_list == [mocker.call(feed.id) for feed in feeds]  # type: ignore
 
