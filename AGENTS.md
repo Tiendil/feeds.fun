@@ -90,6 +90,7 @@ The queue is an isolated Taskwarrior database of relation-pair checks. Each queu
 `depmesh` relation from a changed or manually selected file to one related artifact, plus the current SHA-256 checksums
 of both files, the relation id, the check status, and an optional markdown report. Pair keys include the relation and
 both file checksums, so old records remain as history while changed file content creates a fresh unchecked pair.
+Reconciliation immediately marks older checksum versions of the same oriented relation pair as `outdated`.
 
 The checker loop is the `run-cycle` command. It discovers files changed relative to `main`, queries all configured
 `depmesh` relations for those files, reconciles the current relation pairs into the queue, then handles at most one
@@ -97,10 +98,24 @@ unchecked pair. If a current pair is already marked `inconsistent`, the loop pri
 child checker. Otherwise it runs one read-only child Codex checker for the first unchecked pair, stores the result, and
 exits with a code that tells the Donna workflow whether to stop for a fix, continue the loop, or finish successfully.
 
+The `enqueue-changed` command performs the changed-file discovery, `depmesh` queries, and queue reconciliation portion
+of `run-cycle`, then exits successfully without processing unchecked pairs or spawning child Codex checkers.
+
+The `sync-queue` command discovers Git-changed files and non-outdated manually tracked changed-side files, reconciles
+their current `depmesh` relations, and marks stale checksum versions or relations no longer returned by `depmesh` as
+`outdated`. It does not process unchecked pairs or spawn child Codex checkers.
+
+`list-pairs` shows queue history by default. Pass `--current` to show only records whose stored checksums match the
+current files and whose oriented relation is still returned by `depmesh`; this current-only view does not mutate the
+queue.
+
 Main commands:
 
 - `python ./bin/inconsistency-check.py enqueue @/path/to/file` — manually add one file and all configured depmesh relation pairs for that file to the isolated queue.
 - `python ./bin/inconsistency-check.py enqueue @/first @/second` — enqueue multiple files.
+- `python ./bin/inconsistency-check.py enqueue-changed` — enqueue all relation pairs for files changed relative to `main` without processing unchecked pairs or spawning child checkers.
+- `python ./bin/inconsistency-check.py sync-queue` — reconcile Git-changed and manually tracked files, then mark stale checksums and removed relations outdated without processing unchecked pairs.
+- `python ./bin/inconsistency-check.py list-pairs --current` — show only current-checksum records for relations still returned by `depmesh`.
 - `python ./bin/inconsistency-check.py progress --file @/path/to/file` — show queued records where the file is either the changed side or the related side.
 - `python ./bin/inconsistency-check.py mark-consistent --changed @/changed --related @/related --relation <relation>` — explicitly mark the current-checksum relation pair as consistent.
 - `python ./bin/inconsistency-check.py mark-inconsistent --changed @/changed --related @/related --relation <relation> --report "<markdown>"` — explicitly mark the current-checksum relation pair as inconsistent.

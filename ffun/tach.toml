@@ -303,6 +303,12 @@ depends_on = [
 layer = "foundation"
 
 [[modules]]
+path = "ffun.audit"
+depends_on = [
+]
+layer = "foundation"
+
+[[modules]]
 path = "ffun.core"
 utility = true
 depends_on = []

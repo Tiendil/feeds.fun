@@ -19,9 +19,9 @@ Audit querying APIs, retention and archival policy, administrative presentation,
 
 ## Module responsibility
 
-`ffun.audit` MUST be a domain-level module that owns the common audit record entity, audit entity kinds, and append-only audit persistence.
+`ffun.audit` MUST be a domain-level module that owns the common audit record entity, audit event-name type, audit entity kinds, and append-only audit persistence.
 
-The module MUST provide persistence and validation only. The calling module owns the decision to create an audit record, the event name, and the event-specific attributes.
+The module MUST provide append-only persistence and common audit types only. The calling module owns input validation, the decision to create an audit record, the event name, and the event-specific attributes.
 
 Audit records MUST be durable database state. Business events and ordinary logs MUST NOT be treated as substitutes for required audit records.
 
@@ -45,7 +45,7 @@ Actor and subject entities can belong to different domains and can use different
 
 New kinds MUST be added explicitly to `AuditEntityKind` before they are used. Numeric kind ids are stable database values and MUST NOT be changed or reused after records use them.
 
-UUID, integer, and string ids MUST be normalized to their canonical string form before insertion. Empty ids MUST be rejected.
+Calling modules MUST normalize UUID, integer, and string ids to their canonical `ffun.domain.entities.SerializedId` string form before calling `ffun.audit.domain.record`. Calling modules MUST reject empty ids.
 
 The actor and subject MAY have the same kind or id. Their roles remain distinct.
 
@@ -65,6 +65,8 @@ An audit record MUST contain:
 - event-specific structured attributes.
 
 Event names MUST be non-empty `snake_case` values. They SHOULD name the business change rather than the function or HTTP endpoint that produced it. The module that owns an event MUST keep its meaning and attributes stable.
+
+`ffun.audit.entities` MUST define `AuditEventName` as the semantic string type used for audit event names. Calling modules retain ownership of each event's meaning and MUST pass event names typed as `AuditEventName` to `ffun.audit.domain.record`.
 
 Attributes MUST be a JSON object. They SHOULD contain only data needed to understand the audited change, such as previous and new values, provider references, or related entities. The actor and subject entity pairs remain the primary entity references.
 
@@ -98,9 +100,9 @@ CREATE TABLE a_records (
 );
 ```
 
-The `actor_kind` and `subject_kind` columns MUST use PostgreSQL `SMALLINT`. Python MUST validate their values against `AuditEntityKind`; the database MUST NOT constrain the set of allowed kind ids.
+The `actor_kind` and `subject_kind` columns MUST use PostgreSQL `SMALLINT`. Calling modules MUST pass values typed as `AuditEntityKind`; the database MUST NOT constrain the set of allowed kind ids.
 
-Python MUST validate the structure of `attributes`; the database MUST NOT constrain its JSON shape.
+Calling modules MUST validate the structure of `attributes`; the database MUST NOT constrain its JSON shape.
 
 The audit record id MUST be generated in Python and supplied explicitly to the insert. The database MUST NOT define a default for `id`.
 
@@ -114,10 +116,12 @@ Module does not require secondary indexes because this specification defines no 
 
 `ffun.audit.domain` MUST expose one record-creation operation named `record`.
 
+`ffun.audit.domain` MUST expose `new_audit_record_id`, which generates and returns a new `AuditRecordId` in the same style as the id factories in `ffun.domain.domain`.
+
 The operation MUST accept:
 
 - the caller's `ffun.core.postgresql.ExecuteType` as its first argument.
-- keyword-only `event`, `actor_kind`, `actor_id`, `subject_kind`, and `subject_id` arguments.
+- keyword-only `event`, `actor_kind`, `actor_id`, `subject_kind`, and `subject_id` arguments, with the event typed as `AuditEventName`, kinds typed as `AuditEntityKind`, and ids typed as `SerializedId`.
 - an optional keyword-only `attributes` mapping that defaults to an empty mapping.
 
 The interface SHOULD be used in this form:
@@ -125,16 +129,16 @@ The interface SHOULD be used in this form:
 ```python
 audit_record_id = await audit.domain.record(
     execute,
-    event="source_entitlement_changed",
+    event=AuditEventName("source_entitlement_changed"),
     actor_kind=AuditEntityKind.psp,
-    actor_id=psp_id,
+    actor_id=SerializedId(str(psp_id)),
     subject_kind=AuditEntityKind.user,
-    subject_id=user_id,
+    subject_id=SerializedId(str(user_id)),
     attributes={"kind_id": kind_id, "granted": True, "value": 10},
 )
 ```
 
-The operation MUST validate and normalize its inputs, generate the audit record id, insert exactly one row through the provided execute callable, and return the created audit record id.
+The calling module MUST pass already validated arguments. The operation MUST NOT normalize native ids or accept raw integer kind ids. It MUST generate the audit record id, insert exactly one row through the provided execute callable, and return the created audit record id.
 
 The operation MUST NOT open or commit a transaction. A calling module that requires an audit record for a state change MUST call `record` with the same execute callable used for that state change before committing its transaction.
 

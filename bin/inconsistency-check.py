@@ -145,6 +145,7 @@ class ListPairsOptions:
     multi_line: bool = False
     include_report: bool = False
     include_all_fields: bool = False
+    current_only: bool = False
     statuses: tuple[str, ...] = ()
     include_count: bool = True
 
@@ -154,6 +155,14 @@ class CurrentPair:
     pair: RelationPair
     identity: PairIdentity
     record: CheckRecord
+
+
+@dataclass(frozen=True)
+class QueueSyncResult:
+    tracked_files: tuple[str, ...]
+    current_pairs: tuple[CurrentPair, ...]
+    checked_records: int
+    marked_outdated_records: int
 
 
 @dataclass(frozen=True)
@@ -1063,6 +1072,16 @@ def raw_record_to_check_record(record: dict[str, Any]) -> CheckRecord:
     )
 
 
+def load_allowed_check_records() -> list[CheckRecord]:
+    allowed_relations = set(get_config().allowed_file_relations)
+
+    return [
+        raw_record_to_check_record(record)
+        for record in load_taskwarrior_records()
+        if record.get("pair_key") and record.get("relation") in allowed_relations
+    ]
+
+
 def find_raw_record_by_pair_key(records: list[dict[str, Any]], pair_key: str) -> dict[str, Any] | None:
     matches = [record for record in records if record.get("pair_key") == pair_key]
 
@@ -1234,6 +1253,31 @@ def mark_current_pair_outdated_if_needed(current_pair: CurrentPair) -> CurrentPa
     return CurrentPair(pair=current_pair.pair, identity=current_pair.identity, record=record)
 
 
+def mark_superseded_pair_versions(identity: PairIdentity, records: Iterable[CheckRecord]) -> int:
+    marked_count = 0
+
+    for record in records:
+        same_oriented_pair = (
+            record.changed_path == identity.changed_path
+            and record.related_path == identity.related_path
+            and record.relation == identity.relation
+        )
+
+        if not same_oriented_pair or record.pair_key == identity.pair_key:
+            continue
+
+        if normalized_check_status(record) == "outdated":
+            continue
+
+        mark_record_outdated(
+            record,
+            f"superseded by current relation-pair checksums: {identity.pair_key}",
+        )
+        marked_count += 1
+
+    return marked_count
+
+
 def relation_description_for(relation_id: str) -> str:
     descriptions = {
         configured_relation_id: relation.description
@@ -1286,7 +1330,9 @@ def set_relation_pair_check_status(
 
 def reconcile_queue(pairs: list[RelationPair]) -> list[CurrentPair]:
     current_pairs: list[CurrentPair] = []
+    existing_records = load_allowed_check_records()
     skipped_missing = 0
+    superseded_records = 0
 
     for pair in sorted(pairs, key=lambda item: (item.changed_path, item.relation, item.related_path)):
         try:
@@ -1303,10 +1349,17 @@ def reconcile_queue(pairs: list[RelationPair]) -> list[CurrentPair]:
             continue
 
         record = upsert_unchecked_record(identity)
+        superseded_records += mark_superseded_pair_versions(identity, existing_records)
         current_pairs.append(CurrentPair(pair=pair, identity=identity, record=record))
 
     if skipped_missing:
         log_project_journal("step", f"queue reconciliation skipped {skipped_missing} missing-file pair records")
+
+    if superseded_records:
+        log_project_journal(
+            "step",
+            f"queue reconciliation marked {superseded_records} superseded pair records outdated",
+        )
 
     log_project_journal("step", f"queue reconciliation produced {len(current_pairs)} current pair records")
 
@@ -1853,12 +1906,145 @@ def effective_jobs(args: argparse.Namespace) -> int:
     return jobs
 
 
-def run_cycle(args: argparse.Namespace) -> ExitCode:
-    ensure_runtime_state()
-    log_project_journal("step", "run-cycle command started")
+def reconcile_changed_files() -> tuple[list[str], list[CurrentPair]]:
     changed_files = discover_changed_files()
     relation_pairs = query_depmesh_pairs(changed_files)
     current_pairs = reconcile_queue(relation_pairs)
+
+    return changed_files, current_pairs
+
+
+def existing_file_artifacts(paths: Iterable[str]) -> list[str]:
+    return sorted(
+        path
+        for path in set(paths)
+        if artifact_to_filesystem_path(path).is_file()
+    )
+
+
+def current_pair_keys_for_records(records: Iterable[CheckRecord]) -> set[str]:
+    records = list(records)
+    changed_paths = existing_file_artifacts(record.changed_path for record in records)
+
+    if not changed_paths:
+        return set()
+
+    relation_pairs = query_depmesh_pairs(changed_paths)
+    current_pair_keys: set[str] = set()
+
+    for pair in relation_pairs:
+        try:
+            current_pair_keys.add(build_pair_identity(pair).pair_key)
+        except MissingArtifactError:
+            continue
+
+    return current_pair_keys
+
+
+def filter_current_records(records: Iterable[CheckRecord], current_pair_keys: set[str]) -> list[CheckRecord]:
+    return [record for record in records if record.pair_key in current_pair_keys]
+
+
+def mark_records_outside_current_pairs(
+    records: Iterable[CheckRecord],
+    current_pair_keys: set[str],
+) -> tuple[int, int]:
+    checked_count = 0
+    marked_count = 0
+
+    for record in records:
+        if normalized_check_status(record) == "outdated":
+            continue
+
+        checked_count += 1
+
+        if record.pair_key in current_pair_keys:
+            continue
+
+        reason = record_outdated_reason(record)
+
+        if reason is None:
+            reason = "relation pair is no longer returned by current depmesh relations"
+
+        mark_record_outdated(record, reason)
+        marked_count += 1
+
+    return checked_count, marked_count
+
+
+def synchronize_queue_state() -> QueueSyncResult:
+    changed_files = discover_changed_files()
+    queued_records = load_allowed_check_records()
+    active_queued_paths = {
+        record.changed_path
+        for record in queued_records
+        if normalized_check_status(record) != "outdated"
+    }
+    tracked_files = existing_file_artifacts([*changed_files, *active_queued_paths])
+    relation_pairs = query_depmesh_pairs(tracked_files) if tracked_files else []
+    current_pairs = reconcile_queue(relation_pairs)
+    current_pair_keys = {current_pair.identity.pair_key for current_pair in current_pairs}
+    checked_records, marked_outdated_records = mark_records_outside_current_pairs(
+        load_allowed_check_records(),
+        current_pair_keys,
+    )
+
+    return QueueSyncResult(
+        tracked_files=tuple(tracked_files),
+        current_pairs=tuple(current_pairs),
+        checked_records=checked_records,
+        marked_outdated_records=marked_outdated_records,
+    )
+
+
+def print_sync_summary(result: QueueSyncResult) -> None:
+    counts = status_counts(list(result.current_pairs))
+    print("Queue synchronization summary")
+    print(f"tracked files: {len(result.tracked_files)}")
+    print(f"current relation pairs: {len(result.current_pairs)}")
+    print(f"consistent pairs: {counts.get('consistent', 0)}")
+    print(f"inconsistent pairs: {counts.get('inconsistent', 0)}")
+    print(f"unchecked pairs: {counts.get('unchecked', 0)}")
+    print(f"records checked for currentness: {result.checked_records}")
+    print(f"records marked outdated: {result.marked_outdated_records}")
+
+    if result.tracked_files:
+        print("tracked file list:")
+
+        for tracked_file in result.tracked_files:
+            print(f"- {tracked_file}")
+
+
+def sync_queue() -> ExitCode:
+    ensure_runtime_state()
+    log_project_journal("step", "sync-queue command started")
+    result = synchronize_queue_state()
+    print_sync_summary(result)
+    log_project_journal(
+        "step",
+        (
+            "sync-queue command completed "
+            f"current:{len(result.current_pairs)} marked-outdated:{result.marked_outdated_records}"
+        ),
+    )
+
+    return ExitCode.SUCCESS
+
+
+def enqueue_changed() -> ExitCode:
+    ensure_runtime_state()
+    log_project_journal("step", "enqueue-changed command started")
+    changed_files, current_pairs = reconcile_changed_files()
+    print_summary(changed_files, current_pairs)
+    log_project_journal("step", "enqueue-changed outcome: queue reconciled without processing")
+
+    return ExitCode.SUCCESS
+
+
+def run_cycle(args: argparse.Namespace) -> ExitCode:
+    ensure_runtime_state()
+    log_project_journal("step", "run-cycle command started")
+    changed_files, current_pairs = reconcile_changed_files()
 
     return process_current_pairs(changed_files, current_pairs, command_name="run-cycle", jobs=effective_jobs(args))
 
@@ -1880,10 +2066,7 @@ def load_queued_current_pairs() -> list[CurrentPair]:
     relation_descriptions = {
         relation_id: relation.description for relation_id, relation in config.relations.items()
     }
-    records = [
-        mark_record_outdated_if_needed(raw_record_to_check_record(record))
-        for record in load_taskwarrior_records()
-    ]
+    records = [mark_record_outdated_if_needed(record) for record in load_allowed_check_records()]
     current_pairs = [
         record_to_current_pair(record, relation_descriptions)
         for record in records
@@ -1906,14 +2089,8 @@ def process_queue(args: argparse.Namespace) -> ExitCode:
 def mark_outdated_records() -> tuple[int, int]:
     checked_count = 0
     marked_count = 0
-    allowed_relations = set(get_config().allowed_file_relations)
-
-    for raw_record in load_taskwarrior_records():
-        if not raw_record.get("pair_key") or raw_record.get("relation") not in allowed_relations:
-            continue
-
+    for record in load_allowed_check_records():
         checked_count += 1
-        record = raw_record_to_check_record(raw_record)
         reason = record_outdated_reason(record)
 
         if reason is None:
@@ -1995,14 +2172,17 @@ def report_progress(path: str) -> ExitCode:
     return ExitCode.SUCCESS
 
 
-def load_list_pair_records(statuses: Iterable[str] = ()) -> list[CheckRecord]:
+def load_list_pair_records(
+    statuses: Iterable[str] = (),
+    *,
+    current_only: bool = False,
+) -> list[CheckRecord]:
     status_filter = set(statuses)
-    allowed_relations = set(get_config().allowed_file_relations)
-    records = [
-        raw_record_to_check_record(record)
-        for record in load_taskwarrior_records()
-        if record.get("pair_key") and record.get("relation") in allowed_relations
-    ]
+    records = load_allowed_check_records()
+
+    if current_only:
+        records = filter_current_records(records, current_pair_keys_for_records(records))
+
     if status_filter:
         records = [record for record in records if (record.check_status or "unknown") in status_filter]
 
@@ -2061,7 +2241,7 @@ def format_list_pair_record_multi_line(record: CheckRecord, options: ListPairsOp
 
 def build_list_pairs_report(options: ListPairsOptions | None = None) -> str:
     options = options or ListPairsOptions()
-    records = load_list_pair_records(options.statuses)
+    records = load_list_pair_records(options.statuses, current_only=options.current_only)
     lines: list[str] = []
 
     for index, record in enumerate(records):
@@ -2088,12 +2268,16 @@ def list_pairs(args: argparse.Namespace) -> ExitCode:
         multi_line=bool(args.multi_line),
         include_report=bool(args.report),
         include_all_fields=bool(args.all),
+        current_only=bool(args.current),
         statuses=tuple(args.statuses or ()),
         include_count=not bool(args.no_count),
     )
     log_project_journal(
         "step",
-        f"list-pairs command started statuses:{','.join(options.statuses) or 'all'}",
+        (
+            f"list-pairs command started statuses:{','.join(options.statuses) or 'all'} "
+            f"current-only:{options.current_only}"
+        ),
     )
     report = build_list_pairs_report(options)
 
@@ -2395,6 +2579,13 @@ def run_self_check() -> ExitCode:
     reset_self_check_record(changed_identity)
     changed_current_pair = reconcile_queue([pair])[0]
     assert_self_check(changed_current_pair.record.check_status == "unchecked", "changed checksum must force unchecked")
+    superseded_raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
+    assert_self_check(superseded_raw_record is not None, "superseded checksum record must remain as history")
+    superseded_record = raw_record_to_check_record(superseded_raw_record)
+    assert_self_check(
+        superseded_record.check_status == "outdated",
+        "reconciliation must eagerly mark an older checksum version outdated",
+    )
     explicitly_consistent_pair = set_relation_pair_check_status(
         pair,
         check_status="consistent",
@@ -2465,6 +2656,26 @@ def run_self_check() -> ExitCode:
         build_list_pairs_report(ListPairsOptions(statuses=("self-check-missing-status",))).strip()
         == "records: 0",
         "list-pairs status filter must filter records",
+    )
+    current_filtered_records = filter_current_records(
+        load_allowed_check_records(),
+        {changed_identity.pair_key},
+    )
+    assert_self_check(
+        [record.pair_key for record in current_filtered_records] == [changed_identity.pair_key],
+        "current-only filtering must retain only current pair keys",
+    )
+    checked_current_records, marked_removed_records = mark_records_outside_current_pairs(
+        [explicitly_inconsistent_pair.record],
+        set(),
+    )
+    assert_self_check(checked_current_records == 1, "queue synchronization must check active pair records")
+    assert_self_check(marked_removed_records == 1, "queue synchronization must mark removed relations outdated")
+    removed_raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), changed_identity.pair_key)
+    assert_self_check(removed_raw_record is not None, "removed relation record must remain as history")
+    assert_self_check(
+        raw_record_to_check_record(removed_raw_record).check_status == "outdated",
+        "removed relation record must be outdated",
     )
     pair_records = load_taskwarrior_records()
     project_journal = json.loads(
@@ -2544,6 +2755,16 @@ def parse_args() -> argparse.Namespace:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    subparsers.add_parser(
+        "enqueue-changed",
+        help="enqueue relation pairs for all Git-changed files without processing them",
+    )
+
+    subparsers.add_parser(
+        "sync-queue",
+        help="synchronize current relation pairs and mark stale or removed pairs outdated without processing",
+    )
+
     run_cycle_parser = subparsers.add_parser(
         "run-cycle",
         help="reconcile and check relation pairs until completion or inconsistency",
@@ -2585,6 +2806,11 @@ def parse_args() -> argparse.Namespace:
         help="include all stored relation-pair fields",
     )
     list_pairs_parser.add_argument(
+        "--current",
+        action="store_true",
+        help="include only records matching current file checksums and depmesh relations",
+    )
+    list_pairs_parser.add_argument(
         "--status",
         action="append",
         dest="statuses",
@@ -2624,6 +2850,12 @@ def main() -> int:
     try:
         args = parse_args()
         configure_consistency(mode=args.mode)
+
+        if args.command == "enqueue-changed":
+            return int(enqueue_changed())
+
+        if args.command == "sync-queue":
+            return int(sync_queue())
 
         if args.command == "run-cycle":
             return int(run_cycle(args))

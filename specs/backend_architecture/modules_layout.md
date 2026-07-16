@@ -136,7 +136,9 @@ Domain functions SHOULD hide low-level communication details from callers. Calle
 
 Top/input layers such as `ffun.api`, `ffun.api.spa`, and `ffun.cli` SHOULD call domain boundaries instead of operations when invoking business behavior.
 
-When a domain-level function only exposes an operation function without adding behavior, `domain.py` SHOULD prefer a direct assignment alias, such as `save_feed = operations.save_feed`, instead of a trivial wrapper.
+When a domain-level function only exposes an operation function without adding real domain behavior, such as a business decision, orchestration, validation, or result transformation, `domain.py` MUST re-export the operation instead of introducing a trivial wrapper. A direct assignment alias, such as `save_feed = operations.save_feed`, is the conventional form.
+
+Generating persistence ids, applying storage defaults, and returning identifiers for inserted records are operation-level mechanics. They MUST NOT be treated as domain behavior that justifies a domain wrapper.
 
 Domain wrappers SHOULD be used when they add real behavior, such as orchestration, validation, transaction ownership, fallback logic, caching, error conversion, or result shaping.
 
