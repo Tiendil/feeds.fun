@@ -118,6 +118,18 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/specs/**/*.md" },
 ] }
 
+# Backend module specifications are additionally governed by their common structure requirements.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/specs/backend_architecture/modules/*.md" }
+output = { type = "list", artifacts = ["@/specs/meta/backend_modules.md"] }
+
+# The backend module specification requirements govern every backend module specification.
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/meta/backend_modules.md"] }
+output = { type = "files", pattern = "@/specs/backend_architecture/modules/*.md" }
+
 # Backend Python files are governed by all backend architecture specs.
 [[rules]]
 relation = "governed_by"
@@ -129,6 +141,18 @@ output = { type = "files", pattern = "@/specs/backend_architecture/*.md" }
 relation = "governs"
 input = { type = "glob", pattern = "@/specs/backend_architecture/*.md" }
 output = { type = "files", pattern = "@/ffun/ffun/**/*.py" }
+
+# Backend module Python files are additionally governed by a matching module spec when one exists.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/ffun/ffun/{*module}/**/*.py" }
+output = { type = "files", pattern = "@/specs/backend_architecture/modules/{module}.md" }
+
+# A backend module spec governs all Python files in the matching module.
+[[rules]]
+relation = "governs"
+input = { type = "glob", pattern = "@/specs/backend_architecture/modules/{*module}.md" }
+output = { type = "files", pattern = "@/ffun/ffun/{module}/**/*.py" }
 
 # Frontend source files are governed by all frontend architecture specs.
 [[rules]]

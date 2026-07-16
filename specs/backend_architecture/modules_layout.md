@@ -29,12 +29,14 @@ Product-specific choices that configure those reusable modules for Feeds Fun SHO
 - `ffun.api` owns HTTP API endpoint wiring.
 - `ffun.api.spa` owns API endpoints used by the frontend.
 - `ffun.application` owns application construction and application-wide settings.
+- `ffun.audit` owns append-only audit records created transactionally by backend modules.
 - `ffun.auth` owns authentication and authorization logic.
 - `ffun.cli` owns command-line commands for managing the application.
 - `ffun.core` owns framework-level base classes, utilities, logging, metrics, PostgreSQL helpers, plugins, and shared infrastructure.
 - `ffun.data_protection` owns data protection and privacy-related behavior.
 - `ffun.dispatcher` owns dispatching entries to tag processor queues and tracking per-processor entry processing status.
 - `ffun.domain` owns cross-domain entities and domain utilities.
+- `ffun.entitlements` owns source-specific user entitlement state and merged effective entitlements.
 - `ffun.feeds` owns feed storage and feed management.
 - `ffun.feeds_collections` owns curated feed collection configuration and behavior.
 - `ffun.feeds_discoverer` owns discovery of feeds for external sites.
