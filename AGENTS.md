@@ -148,6 +148,12 @@ Use `rg` for text and file searches unless a structural code query is needed.
 
 `ast-grep` has a higher priority than `rg` whenever a structural code query is needed.
 
+### Specification reading
+
+Grep-like tools, including `rg`, MAY be used to discover relevant specification files. Search results MUST be treated only as discovery hints.
+
+Before relying on, interpreting, reviewing, or changing a specification file, an agent MUST read that file in full from beginning to end. Agents MUST NOT use `sed`, `head`, `tail`, line-range readers, grep context output, or any other partial-file reading method to read specification content. If a whole-file read is truncated, the agent MUST repeat it with sufficient output capacity and MUST NOT proceed until the complete file has been read.
+
 ### `taskwarrior`
 
 `task` — Taskwarrior — is the project journal for significant agent-side work.
