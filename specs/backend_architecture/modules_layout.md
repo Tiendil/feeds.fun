@@ -202,6 +202,10 @@ Production modules MUST NOT import `tests.helpers`.
 
 Backend modules have different dependency roles.
 
+Production database schemas and runtime database access in one top-level module MUST NOT reference tables owned by another top-level module. Cross-module persistence behavior MUST go through the owning modules' public domain boundaries instead of bypassing those boundaries with SQL.
+
+Tests MAY reference tables owned by other top-level modules when direct database access is useful for test setup, assertions, or cleanup. This exception MUST NOT introduce cross-module references in production schemas, migrations, or runtime database operations.
+
 ### Foundational modules
 
 `ffun.core`, `ffun.domain`, and `ffun.product` are foundational modules. They own shared technical primitives, cross-domain value types and utilities, and product-wide definitions that bind reusable domain mechanisms to Feeds Fun product choices. Other backend modules MAY import any submodule of a foundational module when they need functionality owned by that submodule. Foundational modules SHOULD avoid depending on domain-level or edge-layer modules, so shared primitives do not acquire feature or interface dependencies.

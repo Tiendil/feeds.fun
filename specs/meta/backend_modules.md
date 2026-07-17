@@ -68,13 +68,15 @@ Distinct concepts or workflows SHOULD use nested sections. Transaction and concu
 
 A module specification that defines persistent module-owned state MUST include a `Database schema` section.
 
-The section MUST identify each owned table and its columns, types, primary keys, foreign keys, uniqueness rules, checks, and required indexes. It MUST distinguish source-of-truth state from derived or historical state when the module owns more than one form.
+The section MUST identify each owned table and its columns, types, nullability, primary keys, foreign keys, uniqueness rules, and required indexes. It MUST distinguish source-of-truth state from derived or historical state when the module owns more than one form.
 
 Each table SHOULD use a nested section named after the table.
 
 Each table schema MUST be expressed as PostgreSQL DDL in a fenced `sql` code block. Markdown tables MUST NOT be used to define database schemas.
 
-The SQL MUST include all specified columns, types, defaults, keys, foreign keys, uniqueness rules, checks, and indexes. Each column MUST have an adjacent SQL comment that describes its domain meaning. Comments MUST also explain intentionally templated identifiers and constraints whose purpose is not clear from their names.
+The SQL MUST include all specified columns, types, nullability, defaults, keys, foreign keys, uniqueness rules, and indexes. Each column MUST have an adjacent SQL comment that describes its domain meaning. Comments MUST also explain intentionally templated identifiers and structural database constraints whose purpose is not clear from their names.
+
+Database schemas MUST limit database-enforced constraints to structural storage integrity, such as nullability, primary keys, foreign keys, and uniqueness. Business invariants, including allowed values, cross-column value combinations, and state-transition rules, MUST be defined under `Domain behavior` and enforced by the module's domain or service logic before persistence. Table DDL MUST NOT use `CHECK` constraints or other schema-level validation to enforce business invariants.
 
 Every `Database schema` section MUST explicitly address secondary indexes. Required secondary indexes MUST be expressed as `CREATE INDEX` or `CREATE UNIQUE INDEX` statements in the corresponding table subsection, next to the table DDL. Each index statement MUST have an adjacent SQL comment that explains the query or invariant it supports.
 

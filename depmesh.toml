@@ -130,6 +130,18 @@ relation = "governs"
 input = { type = "one_of", artifacts = ["@/specs/meta/backend_modules.md"] }
 output = { type = "files", pattern = "@/specs/backend_architecture/modules/*.md" }
 
+# Backend module specifications are additionally governed by the backend database architecture.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/specs/backend_architecture/modules/*.md" }
+output = { type = "list", artifacts = ["@/specs/backend_architecture/db.md"] }
+
+# The backend database architecture governs every backend module specification.
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/backend_architecture/db.md"] }
+output = { type = "files", pattern = "@/specs/backend_architecture/modules/*.md" }
+
 # Backend Python files are governed by all backend architecture specs.
 [[rules]]
 relation = "governed_by"

@@ -6,7 +6,7 @@ This document describes how Feeds Fun backend code works with PostgreSQL, includ
 
 ## Scope
 
-This specification covers backend database access from Python code under `ffun/ffun`, database schema migrations owned by backend modules, and tests that verify persistence-backed behavior.
+This specification covers database schema requirements expressed by backend module specifications, backend database access from Python code under `ffun/ffun`, database schema migrations owned by backend modules, and tests that verify persistence-backed behavior.
 
 This specification does not cover deployment-specific PostgreSQL administration, production backup strategy, frontend data access, Docker configuration, or database schema details for individual product features.
 
@@ -116,7 +116,9 @@ Operations that need one consistent application-level timestamp across multiple 
 
 ## Idempotency And Constraints
 
-Schema constraints SHOULD enforce durable invariants such as primary keys, uniqueness, and ownership keys.
+Schema constraints MUST be limited to structural storage integrity, such as nullability, primary keys, foreign keys, uniqueness, and ownership keys.
+
+Business invariants, including allowed values, cross-column value combinations, and state-transition rules, MUST be validated by domain or service logic before an operation persists the state. Database schemas MUST NOT use `CHECK` constraints or other schema-level validation to enforce business invariants.
 
 Database operations SHOULD use `ON CONFLICT` when repeated calls are expected to be harmless.
 
@@ -147,6 +149,8 @@ When a concurrency failure means the caller's requested state cannot be guarante
 ## Schema Ownership
 
 Each backend module SHOULD own the tables that correspond to its domain responsibility.
+
+A table owned by one top-level backend module MUST NOT define foreign keys, cascading actions, triggers, or other schema-level references to tables owned by another top-level backend module. Cross-module identifiers MUST be stored as semantic values without database-level references; validation and coordinated state changes MUST go through module domain boundaries.
 
 Table names SHOULD use a short module-related prefix when that keeps ownership clear in SQL and migrations.
 
