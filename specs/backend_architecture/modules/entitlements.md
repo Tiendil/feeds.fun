@@ -99,7 +99,7 @@ The module MUST own exactly two tables, `en_source_entitlements` for source-owne
 ```sql
 -- Stores the latest entitlement state supplied by every source.
 CREATE TABLE en_source_entitlements (
-    source TEXT NOT NULL, -- Semantic id of the source that owns this state.
+    source_id TEXT NOT NULL, -- Semantic id of the source that owns this state.
     user_id UUID NOT NULL, -- Semantic id of the user whose source state is stored.
     kind_id TEXT NOT NULL, -- Settings-defined semantic entitlement kind id.
     granted BOOLEAN NOT NULL, -- Whether the source grants the entitlement during this state's activation interval.
@@ -107,7 +107,7 @@ CREATE TABLE en_source_entitlements (
     starts_at TIMESTAMPTZ NOT NULL, -- Time at which this source state becomes active.
     expires_at TIMESTAMPTZ NOT NULL, -- Time at or after which this source state is inactive.
 
-    PRIMARY KEY (user_id, kind_id, source) -- Keeps only the current state from each source for a user and kind.
+    PRIMARY KEY (user_id, kind_id, source_id) -- Keeps only the current state from each source for a user and kind.
 );
 ```
 
@@ -125,7 +125,7 @@ CREATE TABLE en_entitlements (
     PRIMARY KEY (user_id, kind_id, starts_at) -- Identifies each interval in the effective timeline.
 );
 
-CREATE INDEX en_entitlements_expiration_idx ON en_entitlements (expires_at); -- Supports removal of expired intervals.
+CREATE INDEX en_entitlements_expires_at_idx ON en_entitlements (expires_at); -- Supports removal of expired intervals.
 ```
 
 `en_source_entitlements` remains the source of truth. Domain logic MUST ensure effective intervals are finite, satisfy `starts_at < expires_at`, and do not overlap for the same user and kind. `kind_id` MUST NOT have a foreign key because kinds are defined in settings. The effective primary key supports user-kind queries, and the expiration index supports cleanup.
@@ -134,7 +134,7 @@ CREATE INDEX en_entitlements_expiration_idx ON en_entitlements (expires_at); -- 
 
 The module domain boundary MUST provide source changes, interval cleanup, and a batch entitlement-check function. Operation names are not specified.
 
-The batch function MUST accept lists of user ids and entitlement kind ids, use one evaluation time for the whole request, and return `Mapping[UserId, Mapping[EntitlementKindId, bool]]`. Every requested user and kind MUST be present in the result; a value is `true` exactly when an effective interval covers the evaluation time and `false` otherwise.
+The batch function MUST accept lists of user ids and entitlement kind ids, use one evaluation time for the whole request, and return `Mapping[UserId, Mapping[EntitlementKindId, bool]]`. An empty entitlement kind id list MUST select every configured entitlement kind. Every requested user and selected kind MUST be present in the result; a value is `true` exactly when an effective interval covers the evaluation time and `false` otherwise.
 
 ## Audit records
 

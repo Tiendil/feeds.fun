@@ -1,0 +1,64 @@
+# Entitlements CLI
+
+## Goal of the document
+
+This document describes the Feeds Fun CLI command family for managing and inspecting user entitlements.
+
+## Scope
+
+This specification covers the public `ffun entitlements` command family and the entitlement capabilities it exposes.
+
+Entitlement domain rules, persistence, audit records, business events, and other CLI command families are out of scope. Exact output formats are not yet specified.
+
+## Command group
+
+The root CLI MUST expose `entitlements` as a command group.
+
+The command group MUST provide CLI access to source entitlement changes, batch effective-entitlement checks, and expired effective-interval cleanup.
+
+## Commands
+
+The `grant` and `revoke` commands MUST capture one current timestamp before resolving timestamp values.
+
+### `ffun entitlements grant`
+
+Stores a granted entitlement state for one source, user, and entitlement kind.
+
+Parameters:
+
+- `--user-id UUID` — required id of the affected user.
+- `--kind-id ID` — required configured entitlement kind id.
+- `--source ID` — semantic id of the source that owns the state; defaults to `system`.
+- `--value INTEGER` — required entitlement value.
+- `--starts-at TIMESTAMP` — inclusive activation time in ISO 8601 format with an explicit UTC offset; defaults to the captured current timestamp.
+- `--expires-at TIMESTAMP` — exclusive expiration time in ISO 8601 format with an explicit UTC offset; defaults to the captured current timestamp plus 31 days.
+- `--actor-kind {user|admin|psp|system}` — kind of the actor initiating the change; defaults to `admin`.
+- `--actor-id ID` — stable id of the actor initiating the change; defaults to `admin`.
+
+### `ffun entitlements revoke`
+
+Stores a revoked entitlement state for one source, user, and entitlement kind.
+
+The command MUST set the state's expiration time to the captured current timestamp plus 31 days. The expiration time MUST NOT be exposed as a command parameter.
+
+Parameters:
+
+- `--user-id UUID` — required id of the affected user.
+- `--kind-id ID` — required configured entitlement kind id.
+- `--source ID` — semantic id of the source that owns the state; defaults to `system`.
+- `--starts-at TIMESTAMP` — inclusive activation time in ISO 8601 format with an explicit UTC offset; defaults to the captured current timestamp.
+- `--actor-kind {user|admin|psp|system}` — kind of the actor initiating the change; defaults to `admin`.
+- `--actor-id ID` — stable id of the actor initiating the change; defaults to `admin`.
+
+### `ffun entitlements list`
+
+Queries effective entitlements at one evaluation time and prints a boolean result for every selected user-kind pair.
+
+Parameters:
+
+- `--user-id UUID` — required affected-user filter; MAY be supplied multiple times.
+- `--kind-id ID` — optional entitlement-kind filter; MAY be supplied multiple times. When omitted, the command returns all configured entitlement kinds for every requested user.
+
+## Integration boundary
+
+Entitlement commands MUST invoke the public `ffun.entitlements.domain` interface. They MUST NOT reproduce entitlement validation, merging, timeline materialization, audit, or business-event behavior.
