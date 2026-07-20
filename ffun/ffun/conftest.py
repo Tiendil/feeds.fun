@@ -1,10 +1,12 @@
-from typing import AsyncGenerator
+from contextlib import AbstractAsyncContextManager
+from typing import AsyncGenerator, cast
 from unittest import mock
 
 import fastapi
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from pyleak import no_event_loop_blocking, no_task_leaks
+from pyleak.base import LeakAction
 
 from ffun.application import application
 from ffun.auth.tests.fixtures import *  # noqa
@@ -22,10 +24,13 @@ from ffun.users.tests.fixtures import *  # noqa
 
 @pytest_asyncio.fixture(autouse=True)  # type: ignore
 async def detect_async_leaks() -> AsyncGenerator[None, None]:
-    async with no_task_leaks(action="raise"):
+    async with cast(AbstractAsyncContextManager[object], no_task_leaks(action=LeakAction.RAISE)):
         # TODO: Replace Rich exception rendering with a lightweight alternative; large tracebacks
         # can synchronously block the event loop long enough to trigger this detector.
-        async with no_event_loop_blocking(action="raise", threshold=5.0):
+        async with cast(
+            AbstractAsyncContextManager[object],
+            no_event_loop_blocking(action=LeakAction.RAISE, threshold=5.0),
+        ):
             yield
 
 
