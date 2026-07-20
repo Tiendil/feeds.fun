@@ -398,13 +398,13 @@ Tests that change the current working directory MUST restore it before the test 
 
 Tests SHOULD assert structured values before rendered text when structured values are available.
 
-Persistence operation tests MUST assert the exact table-size delta when the behavior under test inserts or deletes rows. They MUST use `ffun.core.tests.helpers.TableSizeDelta` rather than duplicating table-count queries in individual tests.
+Persistence operation tests MUST verify the expected persisted effects when the behavior under test inserts or deletes rows, including the number of affected records when cardinality is part of the contract.
 
-Tests for rejected writes, idempotent no-ops, or other paths whose contract includes an unchanged row count MUST assert that invariant with `ffun.core.tests.helpers.TableSizeNotChanged`.
+Tests for rejected writes, idempotent no-ops, or other paths whose contract includes unchanged persisted state MUST verify that invariant.
 
-Table-size assertion contexts MUST enclose only the operations responsible for the expected delta. They MUST supplement, not replace, structured assertions about persisted content when record contents are part of the behavior under test.
+Assertions about persisted effects MUST isolate the operations responsible for those effects. They MUST supplement, not replace, structured assertions about persisted content when record contents are part of the behavior under test.
 
-Tests whose subject is a public count operation MAY use `ffun.core.tests.helpers.Delta` with that operation as the value producer instead of asserting the underlying table size directly.
+Tests whose subject is a public count operation MAY verify affected-record cardinality through that operation.
 
 Rendered output tests SHOULD assert exact output only for stable API, CLI, or persisted-state contracts.
 

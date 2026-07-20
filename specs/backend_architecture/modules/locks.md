@@ -166,9 +166,9 @@ The module MUST NOT expose normal runtime cleanup that deletes committed rows. A
 
 ### `Lock`
 
-`ffun.locks.domain` MUST expose an asynchronous context manager class named `Lock`.
+`ffun.locks.domain` MUST expose an asynchronous context manager named `Lock`.
 
-Its constructor MUST accept:
+`Lock` MUST accept:
 
 - the caller's transaction-scoped `ffun.core.postgresql.ExecuteType` as its first argument.
 - a `LockKind` as its second argument.
@@ -187,17 +187,17 @@ async with transaction() as execute:
         ...
 ```
 
-`Lock.__aenter__` MUST validate and encode the identity, insert the acquisition row, wait when another holder transaction owns the same identity, and return the `Lock` instance after acquisition.
+On context entry, `Lock` MUST validate and encode the identity, insert the acquisition row, wait when another holder transaction owns the same identity, and enter the protected body only after acquisition.
 
-`Lock.__aexit__` MUST perform the release behavior defined above and MUST NOT suppress exceptions from the protected body.
+On context exit, `Lock` MUST perform the release behavior defined above and MUST NOT suppress exceptions from the protected body.
 
 `Lock` SHOULD be used when the caller already owns a transaction or when one transaction must acquire multiple logical mutexes.
 
 ### `locked_transaction`
 
-`ffun.locks.domain` MUST expose an asynchronous context-manager factory function named `locked_transaction`.
+`ffun.locks.domain` MUST expose an asynchronous context manager named `locked_transaction`.
 
-The function MUST accept:
+`locked_transaction` MUST accept:
 
 - a `LockKind` as its first argument.
 - zero or more positional lock arguments after the kind.

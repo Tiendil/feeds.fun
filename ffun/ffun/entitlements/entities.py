@@ -67,7 +67,10 @@ class SourceEntitlement(BaseEntity):
         starts_at: datetime.datetime,
         expires_at: datetime.datetime,
     ) -> "SourceEntitlement":
-        return self.replace(
+        return SourceEntitlement(
+            source=self.source,
+            user_id=self.user_id,
+            kind_id=self.kind_id,
             granted=False,
             value=None,
             starts_at=starts_at,
@@ -81,7 +84,10 @@ class SourceEntitlement(BaseEntity):
         starts_at: datetime.datetime,
         expires_at: datetime.datetime,
     ) -> "SourceEntitlement":
-        return self.replace(
+        return SourceEntitlement(
+            source=self.source,
+            user_id=self.user_id,
+            kind_id=self.kind_id,
             granted=True,
             value=value,
             starts_at=starts_at,
@@ -95,3 +101,16 @@ class EffectiveEntitlementInterval(BaseEntity):
     value: int
     starts_at: datetime.datetime
     expires_at: datetime.datetime
+
+    @pydantic.model_validator(mode="after")
+    def validate_interval(self) -> "EffectiveEntitlementInterval":
+        if self.starts_at.tzinfo is None or self.starts_at.utcoffset() is None:
+            raise ValueError("Effective entitlement activation timestamp must have a UTC offset")
+
+        if self.expires_at.tzinfo is None or self.expires_at.utcoffset() is None:
+            raise ValueError("Effective entitlement expiration timestamp must have a UTC offset")
+
+        if self.starts_at >= self.expires_at:
+            raise ValueError("Effective entitlement activation timestamp must be earlier than expiration")
+
+        return self

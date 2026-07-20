@@ -137,11 +137,13 @@ class TestRecord:
 class TestLoadRecordsForSubject:
     @pytest.mark.asyncio
     async def test_missing(self) -> None:
+        subject_id = SerializedId(f"missing-{uuid.uuid4()}")
+
         assert (
             await operations.load_records_for_subject(
                 execute,
                 subject_kind=AuditEntityKind.user,
-                subject_id=SerializedId("missing"),
+                subject_id=subject_id,
             )
             == []
         )

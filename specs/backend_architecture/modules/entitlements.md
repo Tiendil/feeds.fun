@@ -34,7 +34,7 @@ Callers that check a user's current entitlements MUST read effective entitlement
 - `day_tokens = 1`.
 - `month_tokens = 2`.
 
-`ffun.entitlements.entities` MUST define `ENTITLEMENT_KINDS` as an immutable collection containing exactly one `EntitlementKind` for every `EntitlementKindId` member. Each entry MUST pair the id with its merge policy. This constant is the entitlement kind registry and source of truth for kind metadata; entitlement kinds MUST NOT be stored in a database registry table or runtime settings.
+The module MUST maintain an immutable code-owned collection containing exactly one `EntitlementKind` for every `EntitlementKindId` member. Each entry MUST pair the id with its merge policy. This collection is the entitlement kind registry and source of truth for kind metadata; entitlement kinds MUST NOT be stored in a database registry table or runtime settings.
 
 The registry MUST define these entitlement kinds:
 
@@ -141,7 +141,7 @@ CREATE INDEX en_entitlements_expires_at_idx ON en_entitlements (expires_at); -- 
 
 ## Domain interface
 
-The module domain boundary MUST provide source changes, interval cleanup, and a batch entitlement-check function. Operation names are not specified.
+`ffun.entitlements.domain` MUST provide source changes, interval cleanup, and a batch entitlement-check function. Operation names are not specified.
 
 The batch function MUST accept lists of user ids and entitlement kind ids, use one evaluation time for the whole request, and return `Mapping[UserId, Mapping[EntitlementKindId, bool]]`. An empty entitlement kind id list MUST select every registered entitlement kind. Every requested user and selected kind MUST be present in the result; a value is `true` exactly when an effective interval covers the evaluation time and `false` otherwise.
 

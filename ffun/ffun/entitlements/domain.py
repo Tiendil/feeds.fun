@@ -1,4 +1,3 @@
-import dataclasses
 import datetime
 import itertools
 from collections.abc import Mapping, Sequence
@@ -26,11 +25,19 @@ from ffun.locks.entities import LockKind
 logger = logging.get_module_logger()
 
 
-@dataclasses.dataclass(frozen=True, slots=True)
 class _SourceChangeOutcome:
-    changed: bool
-    effective_state: EffectiveEntitlementState
-    effective_intervals: list[EffectiveEntitlementInterval]
+    __slots__ = ("changed", "effective_state", "effective_intervals")
+
+    def __init__(
+        self,
+        *,
+        changed: bool,
+        effective_state: EffectiveEntitlementState,
+        effective_intervals: list[EffectiveEntitlementInterval],
+    ) -> None:
+        self.changed = changed
+        self.effective_state = effective_state
+        self.effective_intervals = effective_intervals
 
 
 def get_entitlement_kind(kind_id: EntitlementKindId) -> EntitlementKind:

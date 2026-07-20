@@ -352,6 +352,79 @@ class TestEffectiveStateAt:
         assert domain.effective_state_at([interval], interval.expires_at) == (False, None)
 
 
+class TestApplySourceChange:
+    @pytest.mark.asyncio
+    async def test_stores_new_source_state_and_effective_interval(self) -> None:
+        source_state = make_source_entitlement()
+        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
+
+        async with (
+            TableSizeDelta("en_source_entitlements", delta=1),
+            TableSizeDelta("en_entitlements", delta=1),
+            TableSizeDelta("a_records", delta=1),
+        ):
+            async with transaction() as transaction_execute:
+                outcome = await domain._apply_source_change(
+                    transaction_execute,
+                    kind=domain.get_entitlement_kind(source_state.kind_id),
+                    new_source_state=source_state,
+                    evaluation_time=evaluation_time,
+                    actor_kind=_ACTOR_KIND,
+                    actor_id=_ACTOR_ID,
+                )
+
+        assert outcome.changed
+        assert outcome.effective_state == (True, source_state.value)
+        assert len(outcome.effective_intervals) == 1
+
+
+class TestEmitBusinessEvents:
+    def test_emits_source_and_effective_state(self) -> None:
+        source_state = make_source_entitlement()
+        effective_interval = make_effective_entitlement_interval(
+            user_id=source_state.user_id,
+            kind_id=source_state.kind_id,
+            value=cast(int, source_state.value),
+            starts_at=source_state.starts_at,
+            expires_at=source_state.expires_at,
+        )
+        outcome = domain._SourceChangeOutcome(
+            changed=True,
+            effective_state=(True, source_state.value),
+            effective_intervals=[effective_interval],
+        )
+
+        with capture_logs() as logs:
+            domain._emit_business_events(source_state, outcome)
+
+        assert_logs_has_business_event(
+            logs,
+            "source_entitlement_changed",
+            user_id=source_state.user_id,
+            source=source_state.source,
+            kind_id=source_state.kind_id.value,
+            granted=True,
+            value=source_state.value,
+            starts_at=source_state.starts_at.isoformat(),
+            expires_at=source_state.expires_at.isoformat(),
+        )
+        assert_logs_has_business_event(
+            logs,
+            "entitlement_changed",
+            user_id=source_state.user_id,
+            kind_id=source_state.kind_id.value,
+            granted=True,
+            value=source_state.value,
+            new_effective_intervals=[
+                {
+                    "value": effective_interval.value,
+                    "starts_at": effective_interval.starts_at.isoformat(),
+                    "expires_at": effective_interval.expires_at.isoformat(),
+                }
+            ],
+        )
+
+
 class TestChangeSourceEntitlement:
     @pytest.mark.asyncio
     async def test_invalid_input_does_not_change_persistence(self) -> None:

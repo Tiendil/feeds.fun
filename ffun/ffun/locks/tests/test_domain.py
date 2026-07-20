@@ -172,6 +172,22 @@ class TestLock:
         assert any(note.startswith("Lock cleanup failed:") for note in exception_info.value.__notes__)
 
     @pytest.mark.asyncio
+    async def test_aexit__cleanup_failure_propagates_without_body_exception(self) -> None:
+        lock_kind = new_lock_kind()
+
+        async with TableSizeNotChanged("lk_locks"):
+            with pytest.raises(errors.LockInvariantViolation):
+                async with transaction() as transaction_execute:
+                    async with Lock(transaction_execute, lock_kind, "one"):
+                        await transaction_execute(
+                            """
+                            DELETE FROM lk_locks
+                            WHERE lock_kind = %(lock_kind)s
+                            """,
+                            {"lock_kind": lock_kind},  # type: ignore[misc]
+                        )
+
+    @pytest.mark.asyncio
     async def test_aexit__before_acquisition_raises(self, mocker: MockerFixture) -> None:
         lock = Lock(cast(ExecuteType, mocker.AsyncMock()), new_lock_kind())
 

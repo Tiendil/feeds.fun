@@ -6,7 +6,7 @@ This document describes how Feeds Fun backend code works with PostgreSQL, includ
 
 ## Scope
 
-This specification covers database schema requirements expressed by backend module specifications, backend database access from Python code under `ffun/ffun`, database schema migrations owned by backend modules, and tests that verify persistence-backed behavior.
+This specification covers backend database schema requirements, backend database access from Python code under `ffun/ffun`, database schema migrations owned by backend modules, and tests that verify persistence-backed behavior.
 
 This specification does not cover deployment-specific PostgreSQL administration, production backup strategy, frontend data access, Docker configuration, or database schema details for individual product features.
 
@@ -172,7 +172,7 @@ When yoyo fails in the development environment because the PostgreSQL database i
 
 Migrations SHOULD keep schema DDL, indexes, and data backfills in the same migration only when they are part of one atomic compatibility step.
 
-Migration apply and rollback functions SHOULD pass one SQL statement to each `cursor.execute` call. Related statements MAY remain in the same migration step and transaction when they form one atomic compatibility change. Separate execution improves failure attribution and avoids relying on multi-statement driver behavior.
+Migration apply and rollback functions SHOULD execute each SQL statement separately. Related statements MAY remain in the same migration step and transaction when they form one atomic compatibility change. Separate execution improves failure attribution and avoids relying on multi-statement driver behavior.
 
 Large data migrations SHOULD be written so their locking, ordering, and rollback properties are clear from the SQL and local comments.
 
@@ -195,7 +195,7 @@ In particular, schemas SHOULD use:
 
 Closed categorical values SHOULD be represented by stable integer identifiers and stored with `SMALLINT`, `INTEGER`, or `BIGINT`, according to the required range, rather than with string labels. Numeric identifiers decouple persisted identity from human-readable names, avoid data migrations when names change, and generally require less storage and index space. The owning specification MUST define the identifier mapping, and assigned identifiers MUST NOT be changed or reused.
 
-Python code SHOULD define these categorical identifiers with `enum.IntEnum`. Enum member names SHOULD provide readable code and interface vocabulary, while enum integer values SHOULD be used for persistence and internal identifiers.
+Python code SHOULD expose these categorical identifiers as enums with the stable integer identifiers as their member values. Enum member names SHOULD provide readable code and interface vocabulary, while enum integer values SHOULD be used for persistence and internal identifiers.
 
 A schema MAY store categorical strings only when its owning specification explicitly requires string identity. Appropriate reasons include an open-ended value set, compatibility with an external protocol, or a requirement to preserve externally supplied values verbatim.
 

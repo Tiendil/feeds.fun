@@ -5,7 +5,7 @@ import pydantic
 import pytest
 
 from ffun.entitlements.entities import ENTITLEMENT_KINDS, EntitlementKindId, MergePolicy
-from ffun.entitlements.tests.make import make_source_entitlement
+from ffun.entitlements.tests.make import make_effective_entitlement_interval, make_source_entitlement
 
 
 class TestEntitlementKindId:
@@ -75,6 +75,13 @@ class TestSourceEntitlement:
             expires_at=expires_at,
         )
 
+    def test_to_revoked__validates_new_interval(self) -> None:
+        entitlement = make_source_entitlement()
+        now = datetime.datetime.now(tz=datetime.UTC)
+
+        with pytest.raises(pydantic.ValidationError, match="activation timestamp must be earlier than expiration"):
+            entitlement.to_revoked(starts_at=now, expires_at=now)
+
     def test_to_granted__returns_grant_for_new_interval(self) -> None:
         entitlement = make_source_entitlement(granted=False, value=None)
         starts_at = entitlement.expires_at
@@ -91,3 +98,30 @@ class TestSourceEntitlement:
             starts_at=starts_at,
             expires_at=expires_at,
         )
+
+    def test_to_granted__validates_new_interval(self) -> None:
+        entitlement = make_source_entitlement(granted=False, value=None)
+        now = datetime.datetime.now(tz=datetime.UTC)
+
+        with pytest.raises(pydantic.ValidationError, match="activation timestamp must be earlier than expiration"):
+            entitlement.to_granted(value=20, starts_at=now, expires_at=now)
+
+
+class TestEffectiveEntitlementInterval:
+    def test_init__activation_requires_utc_offset(self) -> None:
+        now = datetime.datetime.now(tz=datetime.UTC)
+
+        with pytest.raises(pydantic.ValidationError, match="activation timestamp must have a UTC offset"):
+            make_effective_entitlement_interval(starts_at=now.replace(tzinfo=None))
+
+    def test_init__expiration_requires_utc_offset(self) -> None:
+        now = datetime.datetime.now(tz=datetime.UTC)
+
+        with pytest.raises(pydantic.ValidationError, match="expiration timestamp must have a UTC offset"):
+            make_effective_entitlement_interval(expires_at=now.replace(tzinfo=None))
+
+    def test_init__activation_must_be_before_expiration(self) -> None:
+        now = datetime.datetime.now(tz=datetime.UTC)
+
+        with pytest.raises(pydantic.ValidationError, match="activation timestamp must be earlier than expiration"):
+            make_effective_entitlement_interval(starts_at=now, expires_at=now)

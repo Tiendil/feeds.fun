@@ -13,7 +13,7 @@ Module ownership, domain behavior, entity modeling, error behavior, test organiz
 ## Dictionary
 
 - `project-controlled class` — a class whose instance layout is defined by Feeds Fun code rather than generated or prescribed by a framework, library, standard-library protocol, metaclass, or inherited implementation contract.
-- `test class` — a class used by the test framework to group test methods.
+- `test class` — a class defined only to organize or support automated tests.
 - `instance dictionary` — the per-instance `__dict__` used to store dynamically named attributes.
 
 ## Runtime type validation
@@ -25,6 +25,8 @@ Runtime validation remains appropriate at untyped or external boundaries, includ
 Code MUST still validate semantic constraints that type annotations cannot express, such as non-empty identifiers, timezone awareness, numeric ranges, configured values, and valid cross-field combinations.
 
 ## Class instance layout
+
+Explicit instance layouts prevent unintended instance dictionaries and dynamically named state, and they keep attribute ownership predictable across inheritance. `__slots__` is required for covered classes because it enforces this layout constraint at the Python class boundary.
 
 New or substantially changed project-controlled classes other than test classes MUST define `__slots__` explicitly. Test classes are excluded from this convention and MAY omit `__slots__` without an explanatory comment.
 
@@ -48,7 +50,3 @@ A class MAY omit an explicit `__slots__` declaration when one or more of the fol
 Common examples include Pydantic models, enum classes, exception classes, protocols, and framework-defined subclasses whose parent implementation controls instance storage.
 
 When the reason for omitting `__slots__` is not evident from the base class or implemented protocol, the class MUST have an adjacent comment that states the concrete reason.
-
-### Verification
-
-Static analysis or backend architecture tests SHOULD enforce this convention. Ordinary behavioral tests SHOULD NOT inspect `__slots__` merely to restate a class declaration.
