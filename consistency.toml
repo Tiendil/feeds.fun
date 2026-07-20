@@ -5,10 +5,15 @@ mode = "incremental"
 runtime_dir = ".session/inconsistency-check"
 comparison_base_refs = ["main", "origin/main"]
 allowed_file_relations = ["governed_by"]
-jobs = 20
+# Maximum concurrent child Codex consistency checks.
+agent_jobs = 20
+# Maximum concurrent depmesh subprocesses in one dependency-discovery wave.
+discovery_jobs = 20
 
 [journal]
-cmd = ["./bin/taskwarior.sh", "log", "+journal", "+consistency", "kind:{kind}", "{message}"]
+# Disabled because recursive dependency traversal can produce hundreds of subprocess-backed journal writes.
+# Uncomment to restore detailed consistency-check journaling.
+# cmd = ["./bin/taskwarior.sh", "log", "+journal", "+consistency", "kind:{kind}", "{message}"]
 
 # Child-model options, ordered by estimated consistency-check quality.
 # Estimates are specific to this project's diff-to-specification workload. Relative cost uses

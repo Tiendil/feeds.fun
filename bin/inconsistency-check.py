@@ -32,12 +32,14 @@ import sys
 import time
 import tomllib
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import IntEnum
 from pathlib import Path, PurePosixPath
+from threading import Barrier, Lock
 from types import SimpleNamespace
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -58,8 +60,9 @@ class ConsistencyConfig:
     runtime_dir: Path
     comparison_base_refs: tuple[str, ...]
     allowed_file_relations: tuple[str, ...]
-    jobs: int
-    journal_cmd: tuple[str, ...]
+    agent_jobs: int
+    discovery_jobs: int
+    journal_cmd: tuple[str, ...] | None
     agent_cmd: tuple[str, ...]
     agent_timeout_seconds: int
     prompt_template: str
@@ -163,6 +166,36 @@ class QueueSyncResult:
     current_pairs: tuple[CurrentPair, ...]
     checked_records: int
     marked_outdated_records: int
+
+
+GraphComponent = tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class DependencyGraphs:
+    traversal_vertices: tuple[str, ...]
+    traversal_edges: tuple[tuple[str, str], ...]
+    scheduling_components: tuple[GraphComponent, ...]
+    scheduling_edges: tuple[tuple[GraphComponent, GraphComponent], ...]
+    cycles: tuple[tuple[str, ...], ...]
+    ignored_self_edges: int
+
+
+@dataclass(frozen=True)
+class DependencyState:
+    changed_files: tuple[str, ...]
+    direct_pairs: tuple[RelationPair, ...]
+    graphs: DependencyGraphs
+
+
+@dataclass(frozen=True)
+class FrontierSelection:
+    component_statuses: tuple[tuple[GraphComponent, str], ...]
+    frontier_components: tuple[GraphComponent, ...]
+    resolved_files: tuple[str, ...]
+    pending_files: tuple[str, ...]
+    blocked_files: tuple[str, ...]
+    deferred_inconsistencies: int
 
 
 @dataclass(frozen=True)
@@ -342,13 +375,21 @@ def validate_config(config: dict[str, Any], *, mode: str) -> ConsistencyConfig:
     runtime_dir = normalize_runtime_dir(require_string(config, "runtime_dir", context="consistency.toml"))
     comparison_base_refs = require_string_list(config, "comparison_base_refs", context="consistency.toml")
     allowed_file_relations = require_string_list(config, "allowed_file_relations", context="consistency.toml")
-    jobs = require_int(config, "jobs", context="consistency.toml")
+    agent_jobs = require_int(config, "agent_jobs", context="consistency.toml")
+    discovery_jobs = require_int(config, "discovery_jobs", context="consistency.toml")
 
-    if jobs <= 0:
-        raise CheckerFailureError("consistency.toml: jobs must be positive")
+    if agent_jobs <= 0:
+        raise CheckerFailureError("consistency.toml: agent_jobs must be positive")
+
+    if discovery_jobs <= 0:
+        raise CheckerFailureError("consistency.toml: discovery_jobs must be positive")
 
     journal = require_table(config, "journal", context="consistency.toml")
-    journal_cmd = require_string_list(journal, "cmd", context="consistency.toml journal")
+    journal_cmd = (
+        None
+        if journal.get("cmd") is None
+        else require_string_list(journal, "cmd", context="consistency.toml journal")
+    )
     agent = require_table(config, "agent", context="consistency.toml")
     agent_cmd = require_string_list(agent, "cmd", context="consistency.toml agent")
     agent_timeout_seconds = require_int(agent, "timeout_seconds", context="consistency.toml agent")
@@ -399,7 +440,8 @@ def validate_config(config: dict[str, Any], *, mode: str) -> ConsistencyConfig:
         runtime_dir=runtime_dir,
         comparison_base_refs=comparison_base_refs,
         allowed_file_relations=allowed_file_relations,
-        jobs=jobs,
+        agent_jobs=agent_jobs,
+        discovery_jobs=discovery_jobs,
         journal_cmd=journal_cmd,
         agent_cmd=agent_cmd,
         agent_timeout_seconds=agent_timeout_seconds,
@@ -847,7 +889,7 @@ def parse_depmesh_dependencies(
     return pairs
 
 
-def query_depmesh_pairs(changed_files: list[str]) -> list[RelationPair]:
+def resolved_allowed_relations() -> tuple[DepmeshRelation, ...]:
     config = get_config()
     depmesh_relations = {relation.relation_id: relation for relation in load_depmesh_relations()}
     missing_depmesh_relations = sorted(set(config.allowed_file_relations) - set(depmesh_relations))
@@ -858,26 +900,67 @@ def query_depmesh_pairs(changed_files: list[str]) -> list[RelationPair]:
             + ", ".join(missing_depmesh_relations)
         )
 
-    relations = [
+    return tuple(
         DepmeshRelation(
             relation_id=relation_id,
             description=config.relations[relation_id].description,
         )
         for relation_id in config.allowed_file_relations
-    ]
-    pair_map: dict[tuple[str, str, str], RelationPair] = {}
+    )
 
-    for changed_path in sorted(changed_files):
-        for relation in relations:
-            records = run_automation_jsonl(
-                ["depmesh", "-p", "automation", "dependencies", "--relation", relation.relation_id, changed_path],
-                failure_context=f"querying depmesh relation {relation.relation_id} for {changed_path}",
+
+def query_depmesh_dependency_records(
+    changed_path: str,
+    relation: DepmeshRelation,
+) -> list[dict[str, Any]]:
+    return run_automation_jsonl(
+        ["depmesh", "-p", "automation", "dependencies", "--relation", relation.relation_id, changed_path],
+        failure_context=f"querying depmesh relation {relation.relation_id} for {changed_path}",
+    )
+
+
+def query_artifacts_pairs(
+    changed_files: Iterable[str],
+    relations: Iterable[DepmeshRelation],
+    *,
+    discovery_jobs: int,
+    query_records: Callable[[str, DepmeshRelation], list[dict[str, Any]]] = query_depmesh_dependency_records,
+) -> dict[str, list[RelationPair]]:
+    if discovery_jobs <= 0:
+        raise CheckerFailureError("discovery_jobs must be positive")
+
+    changed_paths = tuple(sorted(set(changed_files)))
+    ordered_relations = tuple(sorted(relations, key=lambda item: item.relation_id))
+    queries = tuple(
+        (changed_path, relation)
+        for changed_path in changed_paths
+        for relation in ordered_relations
+    )
+    pairs_by_artifact: dict[str, list[RelationPair]] = {changed_path: [] for changed_path in changed_paths}
+
+    if not queries:
+        return pairs_by_artifact
+
+    worker_count = min(discovery_jobs, len(queries))
+
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        records_by_query = {
+            (changed_path, relation): executor.submit(
+                query_records,
+                changed_path,
+                relation,
             )
+            for changed_path, relation in queries
+        }
+
+        for changed_path, relation in queries:
+            records = records_by_query[(changed_path, relation)].result()
             pairs = parse_depmesh_dependencies(records, changed_path=changed_path, relation=relation)
             log_project_journal(
                 "step",
                 f"depmesh query for {changed_path} relation {relation.relation_id} found {len(pairs)} related files",
             )
+            pairs_by_artifact[changed_path].extend(pairs)
 
             for pair in pairs:
                 log_project_journal(
@@ -887,9 +970,238 @@ def query_depmesh_pairs(changed_files: list[str]) -> list[RelationPair]:
                         f"{pair.changed_path} -> {pair.related_path} [{pair.relation}]"
                     ),
                 )
-                pair_map[(pair.changed_path, pair.relation, pair.related_path)] = pair
+
+    return {
+        changed_path: sorted(
+            {
+                (pair.changed_path, pair.relation, pair.related_path): pair
+                for pair in pairs
+            }.values(),
+            key=lambda pair: (pair.changed_path, pair.relation, pair.related_path),
+        )
+        for changed_path, pairs in sorted(pairs_by_artifact.items())
+    }
+
+
+def query_depmesh_pairs(changed_files: list[str]) -> list[RelationPair]:
+    relations = resolved_allowed_relations()
+    pair_map: dict[tuple[str, str, str], RelationPair] = {}
+    pairs_by_artifact = query_artifacts_pairs(
+        changed_files,
+        relations,
+        discovery_jobs=get_config().discovery_jobs,
+    )
+
+    for changed_path in sorted(changed_files):
+        for pair in pairs_by_artifact[changed_path]:
+            pair_map[(pair.changed_path, pair.relation, pair.related_path)] = pair
 
     return [pair_map[key] for key in sorted(pair_map)]
+
+
+def strongly_connected_components(
+    vertices: Iterable[str],
+    edges: Iterable[tuple[str, str]],
+) -> tuple[tuple[GraphComponent, ...], dict[str, GraphComponent]]:
+    ordered_vertices = tuple(sorted(set(vertices)))
+    adjacency = {vertex: [] for vertex in ordered_vertices}
+
+    for source, target in sorted(set(edges)):
+        adjacency[source].append(target)
+
+    index = 0
+    indices: dict[str, int] = {}
+    lowlinks: dict[str, int] = {}
+    stack: list[str] = []
+    on_stack: set[str] = set()
+    components: list[GraphComponent] = []
+
+    def visit(vertex: str) -> None:
+        nonlocal index
+        indices[vertex] = index
+        lowlinks[vertex] = index
+        index += 1
+        stack.append(vertex)
+        on_stack.add(vertex)
+
+        for target in adjacency[vertex]:
+            if target not in indices:
+                visit(target)
+                lowlinks[vertex] = min(lowlinks[vertex], lowlinks[target])
+            elif target in on_stack:
+                lowlinks[vertex] = min(lowlinks[vertex], indices[target])
+
+        if lowlinks[vertex] != indices[vertex]:
+            return
+
+        members: list[str] = []
+
+        while True:
+            member = stack.pop()
+            on_stack.remove(member)
+            members.append(member)
+
+            if member == vertex:
+                break
+
+        components.append(tuple(sorted(members)))
+
+    for vertex in ordered_vertices:
+        if vertex not in indices:
+            visit(vertex)
+
+    ordered_components = tuple(sorted(components))
+    component_by_artifact = {
+        artifact: component
+        for component in ordered_components
+        for artifact in component
+    }
+
+    return ordered_components, component_by_artifact
+
+
+def build_dependency_graphs(
+    changed_files: Iterable[str],
+    dependency_adjacency: dict[str, Iterable[str]],
+) -> DependencyGraphs:
+    changed_set = set(changed_files)
+    vertices = set(changed_set)
+    traversal_edges: set[tuple[str, str]] = set()
+    ignored_self_edges = 0
+
+    for queried_path in sorted(dependency_adjacency):
+        vertices.add(queried_path)
+
+        for related_path in sorted(set(dependency_adjacency[queried_path])):
+            vertices.add(related_path)
+
+            if related_path == queried_path:
+                ignored_self_edges += 1
+                continue
+
+            traversal_edges.add((related_path, queried_path))
+
+    components, component_by_artifact = strongly_connected_components(vertices, traversal_edges)
+    component_edges: set[tuple[GraphComponent, GraphComponent]] = set()
+
+    for source, target in traversal_edges:
+        source_component = component_by_artifact[source]
+        target_component = component_by_artifact[target]
+
+        if source_component != target_component:
+            component_edges.add((source_component, target_component))
+
+    changed_components = tuple(
+        sorted(
+            tuple(sorted(changed_set.intersection(component)))
+            for component in components
+            if changed_set.intersection(component)
+        )
+    )
+    changed_component_by_full_component = {
+        component: tuple(sorted(changed_set.intersection(component)))
+        for component in components
+        if changed_set.intersection(component)
+    }
+    component_successors: dict[GraphComponent, set[GraphComponent]] = {
+        component: set() for component in components
+    }
+
+    for source_component, target_component in component_edges:
+        component_successors[source_component].add(target_component)
+
+    scheduling_edges: set[tuple[GraphComponent, GraphComponent]] = set()
+
+    for full_source, scheduling_source in sorted(changed_component_by_full_component.items()):
+        pending = sorted(component_successors[full_source])
+        visited: set[GraphComponent] = set()
+
+        while pending:
+            component = pending.pop(0)
+
+            if component in visited:
+                continue
+
+            visited.add(component)
+            scheduling_target = changed_component_by_full_component.get(component)
+
+            if scheduling_target is not None:
+                scheduling_edges.add((scheduling_source, scheduling_target))
+                continue
+
+            pending.extend(sorted(component_successors[component]))
+            pending.sort()
+
+    cycles = tuple(component for component in components if len(component) > 1)
+
+    return DependencyGraphs(
+        traversal_vertices=tuple(sorted(vertices)),
+        traversal_edges=tuple(sorted(traversal_edges)),
+        scheduling_components=changed_components,
+        scheduling_edges=tuple(sorted(scheduling_edges)),
+        cycles=cycles,
+        ignored_self_edges=ignored_self_edges,
+    )
+
+
+def discover_dependency_state(changed_files: Iterable[str]) -> DependencyState:
+    changed_paths = tuple(sorted(set(changed_files)))
+    relations = resolved_allowed_relations()
+    pending = list(changed_paths)
+    visited: set[str] = set()
+    dependency_adjacency: dict[str, tuple[str, ...]] = {}
+    direct_pair_map: dict[tuple[str, str, str], RelationPair] = {}
+    log_project_journal("step", "dependency graph construction started")
+
+    while pending:
+        wave = tuple(sorted(set(pending) - visited))
+        pending = []
+
+        if not wave:
+            break
+
+        visited.update(wave)
+        pairs_by_artifact = query_artifacts_pairs(
+            wave,
+            relations,
+            discovery_jobs=get_config().discovery_jobs,
+        )
+        next_wave: set[str] = set()
+
+        for queried_path in wave:
+            pairs = pairs_by_artifact[queried_path]
+            dependencies = tuple(sorted({pair.related_path for pair in pairs}))
+            dependency_adjacency[queried_path] = dependencies
+
+            if queried_path in changed_paths:
+                for pair in pairs:
+                    direct_pair_map[(pair.changed_path, pair.relation, pair.related_path)] = pair
+
+            next_wave.update(path for path in dependencies if path not in visited)
+
+        pending = sorted(next_wave)
+
+    graphs = build_dependency_graphs(changed_paths, dependency_adjacency)
+    log_project_journal(
+        "step",
+        (
+            "dependency graph construction completed "
+            f"traversal-vertices:{len(graphs.traversal_vertices)} "
+            f"traversal-edges:{len(graphs.traversal_edges)} "
+            f"scheduling-vertices:{len(graphs.scheduling_components)} "
+            f"scheduling-edges:{len(graphs.scheduling_edges)} "
+            f"ignored-self-edges:{graphs.ignored_self_edges}"
+        ),
+    )
+
+    for cycle in graphs.cycles:
+        log_project_journal("thought", f"collapsed dependency cycle: {', '.join(cycle)}")
+
+    return DependencyState(
+        changed_files=changed_paths,
+        direct_pairs=tuple(direct_pair_map[key] for key in sorted(direct_pair_map)),
+        graphs=graphs,
+    )
 
 
 def render_expression_template(template: str, context: dict[str, Any]) -> str:
@@ -951,13 +1263,18 @@ def single_line(value: str) -> str:
 def log_project_journal(kind: str, message: str) -> None:
     """Log project-level script events without touching relation-pair records."""
 
+    journal_cmd = get_config().journal_cmd
+
+    if journal_cmd is None:
+        return
+
     clean_kind = single_line(kind)
 
     if not clean_kind or clean_kind != kind:
         raise CheckerFailureError(f"invalid journal kind: {kind!r}")
 
     command = render_command_argv(
-        get_config().journal_cmd,
+        journal_cmd,
         {
             "kind": clean_kind,
             "message": single_line(message),
@@ -1080,6 +1397,89 @@ def load_allowed_check_records() -> list[CheckRecord]:
         for record in load_taskwarrior_records()
         if record.get("pair_key") and record.get("relation") in allowed_relations
     ]
+
+
+def load_allowed_check_records_read_only() -> list[CheckRecord]:
+    paths = runtime_paths()
+
+    if not paths.taskrc_path.is_file() or not paths.task_data_dir.is_dir():
+        return []
+
+    result = run_command(
+        task_command_args("export"),
+        check=True,
+        failure_context="exporting isolated inconsistency-check Taskwarrior records read-only",
+    )
+
+    try:
+        records = json.loads(result.stdout or "[]")
+    except json.JSONDecodeError as error:
+        raise CheckerFailureError(f"invalid Taskwarrior export JSON: {error}") from error
+
+    if not isinstance(records, list) or any(not isinstance(record, dict) for record in records):
+        raise CheckerFailureError("Taskwarrior export did not return a JSON object list")
+
+    allowed_relations = set(get_config().allowed_file_relations)
+
+    return [
+        raw_record_to_check_record(record)
+        for record in records
+        if record.get("pair_key") and record.get("relation") in allowed_relations
+    ]
+
+
+def virtual_unchecked_record(identity: PairIdentity) -> CheckRecord:
+    return CheckRecord(
+        uuid="",
+        pair_key=identity.pair_key,
+        file_pair=identity.file_pair,
+        changed_path=identity.changed_path,
+        related_path=identity.related_path,
+        relation=identity.relation,
+        checksum_changed=identity.checksum_changed,
+        checksum_related=identity.checksum_related,
+        check_status="unchecked",
+        report="",
+        checked_at="",
+    )
+
+
+def current_pairs_read_only(
+    pairs: Iterable[RelationPair],
+    records: Iterable[CheckRecord],
+) -> list[CurrentPair]:
+    records_by_key: dict[str, CheckRecord] = {}
+
+    for record in records:
+        if record.pair_key in records_by_key:
+            raise CheckerFailureError("isolated Taskwarrior DB has duplicate pair_key records")
+
+        records_by_key[record.pair_key] = record
+
+    current_pairs: list[CurrentPair] = []
+
+    for pair in sorted(pairs, key=lambda item: (item.changed_path, item.relation, item.related_path)):
+        try:
+            identity = build_pair_identity(pair)
+        except MissingArtifactError:
+            continue
+
+        record = records_by_key.get(identity.pair_key)
+        matching_record = (
+            record is not None
+            and record.checksum_changed == identity.checksum_changed
+            and record.checksum_related == identity.checksum_related
+            and normalized_check_status(record) != "outdated"
+        )
+        current_pairs.append(
+            CurrentPair(
+                pair=pair,
+                identity=identity,
+                record=record if matching_record and record is not None else virtual_unchecked_record(identity),
+            )
+        )
+
+    return current_pairs
 
 
 def find_raw_record_by_pair_key(records: list[dict[str, Any]], pair_key: str) -> dict[str, Any] | None:
@@ -1436,6 +1836,235 @@ def print_summary(changed_files: list[str], current_pairs: list[CurrentPair]) ->
             print(f"- {changed_file}")
 
 
+def artifact_statuses(
+    changed_files: Iterable[str],
+    current_pairs: Iterable[CurrentPair],
+) -> dict[str, str]:
+    statuses_by_artifact: dict[str, list[str]] = {path: [] for path in changed_files}
+
+    for current_pair in current_pairs:
+        if current_pair.pair.changed_path not in statuses_by_artifact:
+            continue
+
+        status = normalized_check_status(current_pair.record)
+
+        if status == "outdated":
+            status = "unchecked"
+
+        statuses_by_artifact[current_pair.pair.changed_path].append(status)
+
+    result: dict[str, str] = {}
+
+    for artifact, statuses in statuses_by_artifact.items():
+        if "inconsistent" in statuses:
+            result[artifact] = "inconsistent"
+        elif "unchecked" in statuses:
+            result[artifact] = "unchecked"
+        elif statuses:
+            result[artifact] = "resolved"
+        else:
+            result[artifact] = "resolved-without-pairs"
+
+    return result
+
+
+def select_frontier(
+    graphs: DependencyGraphs,
+    current_pairs: Iterable[CurrentPair],
+) -> FrontierSelection:
+    current_pairs = list(current_pairs)
+    changed_files = tuple(sorted(path for component in graphs.scheduling_components for path in component))
+    statuses_by_artifact = artifact_statuses(changed_files, current_pairs)
+    component_statuses: dict[GraphComponent, str] = {}
+
+    for component in graphs.scheduling_components:
+        member_statuses = [statuses_by_artifact[path] for path in component]
+
+        if "inconsistent" in member_statuses:
+            component_statuses[component] = "inconsistent"
+        elif "unchecked" in member_statuses:
+            component_statuses[component] = "unchecked"
+        else:
+            component_statuses[component] = "resolved"
+
+    predecessors: dict[GraphComponent, set[GraphComponent]] = {
+        component: set() for component in graphs.scheduling_components
+    }
+
+    for source, target in graphs.scheduling_edges:
+        predecessors[target].add(source)
+
+    def all_predecessors(component: GraphComponent) -> set[GraphComponent]:
+        result: set[GraphComponent] = set()
+        pending = sorted(predecessors[component])
+
+        while pending:
+            predecessor = pending.pop(0)
+
+            if predecessor in result:
+                continue
+
+            result.add(predecessor)
+            pending.extend(sorted(predecessors[predecessor]))
+            pending.sort()
+
+        return result
+
+    pending_components = {
+        component
+        for component, status in component_statuses.items()
+        if status in {"unchecked", "inconsistent"}
+    }
+    frontier_components = tuple(
+        sorted(
+            component
+            for component in pending_components
+            if all(component_statuses[predecessor] == "resolved" for predecessor in all_predecessors(component))
+        )
+    )
+
+    if pending_components and not frontier_components:
+        pending_text = ", ".join(path for component in sorted(pending_components) for path in component)
+        raise CheckerFailureError(f"pending dependency components have no selectable frontier: {pending_text}")
+
+    frontier_files = {path for component in frontier_components for path in component}
+    resolved_files = tuple(
+        sorted(path for path, status in statuses_by_artifact.items() if status.startswith("resolved"))
+    )
+    pending_files = tuple(
+        sorted(path for path, status in statuses_by_artifact.items() if status in {"unchecked", "inconsistent"})
+    )
+    blocked_files = tuple(sorted(set(pending_files) - frontier_files))
+    deferred_inconsistencies = sum(
+        1
+        for current_pair in current_pairs
+        if current_pair.pair.changed_path not in frontier_files
+        and normalized_check_status(current_pair.record) == "inconsistent"
+    )
+
+    return FrontierSelection(
+        component_statuses=tuple(sorted(component_statuses.items())),
+        frontier_components=frontier_components,
+        resolved_files=resolved_files,
+        pending_files=pending_files,
+        blocked_files=blocked_files,
+        deferred_inconsistencies=deferred_inconsistencies,
+    )
+
+
+def frontier_files(selection: FrontierSelection) -> tuple[str, ...]:
+    return tuple(sorted({path for component in selection.frontier_components for path in component}))
+
+
+def build_frontier_report(changed_files: Iterable[str], selection: FrontierSelection) -> str:
+    changed_files = tuple(changed_files)
+    selected_files = frontier_files(selection)
+    lines = [
+        "Current frontier",
+        f"changed files: {len(changed_files)}",
+        f"frontier files: {len(selected_files)}",
+    ]
+    lines.extend(f"- {selected_file}" for selected_file in selected_files)
+
+    return "\n".join(lines)
+
+
+def ordered_frontier_pairs(
+    selection: FrontierSelection,
+    current_pairs: Iterable[CurrentPair],
+) -> list[CurrentPair]:
+    component_index = {
+        path: index
+        for index, component in enumerate(selection.frontier_components)
+        for path in component
+    }
+
+    return sorted(
+        (
+            current_pair
+            for current_pair in current_pairs
+            if current_pair.pair.changed_path in component_index
+        ),
+        key=lambda current_pair: (
+            component_index[current_pair.pair.changed_path],
+            *current_pair_sort_key(current_pair),
+        ),
+    )
+
+
+def first_frontier_pair_with_status(
+    frontier_pairs: Iterable[CurrentPair],
+    status: str,
+    *,
+    excluded_pair_keys: set[str] | None = None,
+) -> CurrentPair | None:
+    excluded_pair_keys = excluded_pair_keys or set()
+
+    for current_pair in frontier_pairs:
+        if current_pair.identity.pair_key in excluded_pair_keys:
+            continue
+
+        if normalized_check_status(current_pair.record) == status:
+            return current_pair
+
+    return None
+
+
+def next_frontier_candidate(
+    frontier_pairs: Iterable[CurrentPair],
+    running_pair_keys: set[str],
+    *,
+    agent_jobs: int,
+    stop_launching: bool,
+) -> CurrentPair | None:
+    if stop_launching or len(running_pair_keys) >= agent_jobs:
+        return None
+
+    return first_frontier_pair_with_status(
+        frontier_pairs,
+        "unchecked",
+        excluded_pair_keys=running_pair_keys,
+    )
+
+
+def completed_frontier_exit_code(
+    frontier_pairs: Iterable[CurrentPair],
+    *,
+    launched_child: bool,
+    stale_found: bool,
+) -> ExitCode:
+    if stale_found:
+        return ExitCode.CONTINUE_CYCLE
+
+    if first_frontier_pair_with_status(frontier_pairs, "inconsistent") is not None:
+        return ExitCode.INCONSISTENCY_FOUND
+
+    if launched_child:
+        return ExitCode.CONTINUE_CYCLE
+
+    raise CheckerFailureError("pending frontier completed without a child launch or workflow outcome")
+
+
+def print_frontier_summary(
+    changed_files: Iterable[str],
+    current_pairs: list[CurrentPair],
+    selection: FrontierSelection,
+    *,
+    fresh_cycle_required: bool,
+) -> None:
+    counts = status_counts(current_pairs)
+    print("Consistency frontier summary")
+    print(f"changed artifacts: {len(tuple(changed_files))}")
+    print(f"resolved artifacts: {len(selection.resolved_files)}")
+    print(f"pending artifacts: {len(selection.pending_files)}")
+    print(f"blocked artifacts: {len(selection.blocked_files)}")
+    print(f"active frontier artifacts: {len(frontier_files(selection))}")
+    print(f"consistent pairs: {counts.get('consistent', 0)}")
+    print(f"inconsistent pairs: {counts.get('inconsistent', 0)}")
+    print(f"unchecked pairs: {counts.get('unchecked', 0)}")
+    print(f"fresh cycle required: {'yes' if fresh_cycle_required else 'no'}")
+
+
 def replace_current_pair(current_pairs: list[CurrentPair], updated_pair: CurrentPair) -> list[CurrentPair]:
     return [
         updated_pair if current_pair.identity.pair_key == updated_pair.identity.pair_key else current_pair
@@ -1773,17 +2402,6 @@ def update_record_from_child_output(current_pair: CurrentPair, output: str) -> C
     return CurrentPair(pair=current_pair.pair, identity=current_pair.identity, record=record)
 
 
-def first_unchecked_pair(current_pairs: list[CurrentPair], excluded_pair_keys: set[str]) -> CurrentPair | None:
-    for current_pair in sorted(current_pairs, key=current_pair_sort_key):
-        if current_pair.identity.pair_key in excluded_pair_keys:
-            continue
-
-        if normalized_check_status(current_pair.record) == "unchecked":
-            return current_pair
-
-    return None
-
-
 def wait_for_finished_children(running: dict[str, RunningChildCheck]) -> list[RunningChildCheck]:
     while True:
         finished = [child for child in running.values() if child.process.poll() is not None]
@@ -1814,31 +2432,57 @@ def terminate_running_children(running: dict[str, RunningChildCheck]) -> None:
         kill_running_child(child)
 
 
-def process_current_pairs(
+def process_current_frontier(
     changed_files: list[str],
     current_pairs: list[CurrentPair],
+    graphs: DependencyGraphs,
     *,
     command_name: str,
-    jobs: int,
+    agent_jobs: int,
 ) -> ExitCode:
+    selection = select_frontier(graphs, current_pairs)
+    selected_files = frontier_files(selection)
+    frontier_pairs = ordered_frontier_pairs(selection, current_pairs)
+    unchecked_job_count = sum(
+        normalized_check_status(current_pair.record) == "unchecked" for current_pair in frontier_pairs
+    )
+    log_project_journal(
+        "step",
+        f"{command_name} selected frontier artifacts: {', '.join(selected_files) or '(none)'}",
+    )
+    log_project_journal("step", f"{command_name} frontier pair-job count:{unchecked_job_count}")
+    log_project_journal(
+        "step",
+        f"{command_name} deferred non-frontier inconsistencies:{selection.deferred_inconsistencies}",
+    )
+
+    inconsistent_pair = first_frontier_pair_with_status(frontier_pairs, "inconsistent")
+
+    if inconsistent_pair is not None:
+        print_inconsistent_pair(inconsistent_pair)
+        log_project_journal("step", f"{command_name} outcome: current frontier inconsistency found")
+        return ExitCode.INCONSISTENCY_FOUND
+
+    if not selection.frontier_components:
+        print_frontier_summary(changed_files, current_pairs, selection, fresh_cycle_required=False)
+        log_project_journal("step", f"{command_name} outcome: success after fresh no-work cycle")
+        return ExitCode.SUCCESS
+
     running: dict[str, RunningChildCheck] = {}
     inconsistency_found = False
-    log_project_journal("step", f"{command_name} processing with jobs:{jobs}")
+    stale_found = False
+    launched_child = False
+    log_project_journal("step", f"{command_name} processing with agent-jobs:{agent_jobs}")
 
     try:
         while True:
-            inconsistent_pair = first_inconsistent_pair(current_pairs)
-
-            if inconsistent_pair is not None:
-                inconsistency_found = True
-
-                if not running:
-                    print_inconsistent_pair(inconsistent_pair)
-                    log_project_journal("step", f"{command_name} outcome: current inconsistency found")
-                    return ExitCode.INCONSISTENCY_FOUND
-
-            while not inconsistency_found and len(running) < jobs:
-                unchecked_pair = first_unchecked_pair(current_pairs, set(running))
+            while True:
+                unchecked_pair = next_frontier_candidate(
+                    frontier_pairs,
+                    set(running),
+                    agent_jobs=agent_jobs,
+                    stop_launching=inconsistency_found or stale_found,
+                )
 
                 if unchecked_pair is None:
                     break
@@ -1847,7 +2491,16 @@ def process_current_pairs(
 
                 if normalized_check_status(checked_pair.record) == "outdated":
                     current_pairs = replace_current_pair(current_pairs, checked_pair)
-                    continue
+                    frontier_pairs = replace_current_pair(frontier_pairs, checked_pair)
+                    stale_found = True
+                    log_project_journal(
+                        "step",
+                        (
+                            f"{command_name} stale frontier detected before launch: "
+                            f"{pair_journal_subject(checked_pair.identity)}"
+                        ),
+                    )
+                    break
 
                 try:
                     prepared = prepare_child_check(checked_pair)
@@ -1860,35 +2513,89 @@ def process_current_pairs(
                         current_pairs,
                         CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
                     )
-                    continue
+                    frontier_pairs = replace_current_pair(
+                        frontier_pairs,
+                        CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                    )
+                    stale_found = True
+                    log_project_journal("step", f"{command_name} stale frontier detected before launch")
+                    break
                 except OutdatedPairError as error:
                     updated_record = mark_record_outdated_during_processing(checked_pair.record, error.reason)
                     current_pairs = replace_current_pair(
                         current_pairs,
                         CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
                     )
-                    continue
+                    frontier_pairs = replace_current_pair(
+                        frontier_pairs,
+                        CurrentPair(pair=checked_pair.pair, identity=checked_pair.identity, record=updated_record),
+                    )
+                    stale_found = True
+                    log_project_journal("step", f"{command_name} stale frontier detected before launch")
+                    break
 
                 running[checked_pair.identity.pair_key] = start_child_checker(prepared)
+                launched_child = True
 
             if not running:
-                inconsistent_pair = first_inconsistent_pair(current_pairs)
+                outcome = completed_frontier_exit_code(
+                    frontier_pairs,
+                    launched_child=launched_child,
+                    stale_found=stale_found,
+                )
 
-                if inconsistent_pair is not None:
+                if outcome == ExitCode.CONTINUE_CYCLE and stale_found:
+                    current_selection = select_frontier(graphs, current_pairs)
+                    print_frontier_summary(changed_files, current_pairs, current_selection, fresh_cycle_required=True)
+                    log_project_journal("step", f"{command_name} outcome: stale frontier requires rediscovery")
+                    return outcome
+
+                if outcome == ExitCode.INCONSISTENCY_FOUND:
+                    inconsistent_pair = first_frontier_pair_with_status(frontier_pairs, "inconsistent")
+
+                    if inconsistent_pair is None:
+                        raise CheckerFailureError("frontier inconsistency outcome has no inconsistent pair")
+
                     print_inconsistent_pair(inconsistent_pair)
-                    log_project_journal("step", f"{command_name} outcome: child found inconsistency")
-                    return ExitCode.INCONSISTENCY_FOUND
+                    log_project_journal("step", f"{command_name} outcome: frontier child found inconsistency")
+                    return outcome
 
-                print_summary(changed_files, current_pairs)
-                log_project_journal("step", f"{command_name} outcome: success")
-                return ExitCode.SUCCESS
+                if outcome == ExitCode.CONTINUE_CYCLE:
+                    current_selection = select_frontier(graphs, current_pairs)
+                    print_frontier_summary(changed_files, current_pairs, current_selection, fresh_cycle_required=True)
+                    log_project_journal("step", f"{command_name} frontier completed; fresh cycle required")
+                    log_project_journal("step", f"{command_name} outcome: continue after successful frontier")
+                    return outcome
+
+                raise CheckerFailureError(f"{command_name} produced unsupported frontier outcome: {outcome}")
 
             for finished_child in wait_for_finished_children(running):
                 pair_key = finished_child.prepared.current_pair.identity.pair_key
                 running.pop(pair_key)
                 child_output = finish_child_checker(finished_child)
-                updated_pair = update_record_from_child_output(finished_child.prepared.current_pair, child_output)
+                finished_pair = finished_child.prepared.current_pair
+                stale_reason = record_outdated_reason(finished_pair.record)
+
+                if stale_reason is not None:
+                    updated_record = mark_record_outdated_during_processing(finished_pair.record, stale_reason)
+                    updated_pair = CurrentPair(
+                        pair=finished_pair.pair,
+                        identity=finished_pair.identity,
+                        record=updated_record,
+                    )
+                    stale_found = True
+                    log_project_journal(
+                        "step",
+                        (
+                            f"{command_name} stale frontier detected after child completion: "
+                            f"{pair_journal_subject(finished_pair.identity)}"
+                        ),
+                    )
+                else:
+                    updated_pair = update_record_from_child_output(finished_pair, child_output)
+
                 current_pairs = replace_current_pair(current_pairs, updated_pair)
+                frontier_pairs = replace_current_pair(frontier_pairs, updated_pair)
 
                 if normalized_check_status(updated_pair.record) == "inconsistent":
                     inconsistency_found = True
@@ -1897,19 +2604,30 @@ def process_current_pairs(
         raise
 
 
-def effective_jobs(args: argparse.Namespace) -> int:
-    jobs = args.jobs if getattr(args, "jobs", None) is not None else get_config().jobs
+def effective_agent_jobs(args: argparse.Namespace) -> int:
+    agent_jobs = (
+        args.agent_jobs
+        if getattr(args, "agent_jobs", None) is not None
+        else get_config().agent_jobs
+    )
 
-    if jobs <= 0:
-        raise CheckerFailureError("jobs must be positive")
+    if agent_jobs <= 0:
+        raise CheckerFailureError("agent_jobs must be positive")
 
-    return jobs
+    return agent_jobs
 
 
-def reconcile_changed_files() -> tuple[list[str], list[CurrentPair]]:
+def reconcile_changed_files() -> tuple[list[str], list[CurrentPair], DependencyGraphs]:
     changed_files = discover_changed_files()
-    relation_pairs = query_depmesh_pairs(changed_files)
-    current_pairs = reconcile_queue(relation_pairs)
+    dependency_state = discover_dependency_state(changed_files)
+    current_pairs = reconcile_queue(list(dependency_state.direct_pairs))
+
+    return changed_files, current_pairs, dependency_state.graphs
+
+
+def reconcile_direct_changed_files() -> tuple[list[str], list[CurrentPair]]:
+    changed_files = discover_changed_files()
+    current_pairs = reconcile_queue(query_depmesh_pairs(changed_files))
 
     return changed_files, current_pairs
 
@@ -2034,7 +2752,7 @@ def sync_queue() -> ExitCode:
 def enqueue_changed() -> ExitCode:
     ensure_runtime_state()
     log_project_journal("step", "enqueue-changed command started")
-    changed_files, current_pairs = reconcile_changed_files()
+    changed_files, current_pairs = reconcile_direct_changed_files()
     print_summary(changed_files, current_pairs)
     log_project_journal("step", "enqueue-changed outcome: queue reconciled without processing")
 
@@ -2044,9 +2762,33 @@ def enqueue_changed() -> ExitCode:
 def run_cycle(args: argparse.Namespace) -> ExitCode:
     ensure_runtime_state()
     log_project_journal("step", "run-cycle command started")
-    changed_files, current_pairs = reconcile_changed_files()
+    changed_files, current_pairs, graphs = reconcile_changed_files()
 
-    return process_current_pairs(changed_files, current_pairs, command_name="run-cycle", jobs=effective_jobs(args))
+    return process_current_frontier(
+        changed_files,
+        current_pairs,
+        graphs,
+        command_name="run-cycle",
+        agent_jobs=effective_agent_jobs(args),
+    )
+
+
+def show_frontier() -> ExitCode:
+    log_project_journal("step", "frontier diagnostic command started")
+    changed_files = discover_changed_files()
+    dependency_state = discover_dependency_state(changed_files)
+    current_pairs = current_pairs_read_only(
+        dependency_state.direct_pairs,
+        load_allowed_check_records_read_only(),
+    )
+    selection = select_frontier(dependency_state.graphs, current_pairs)
+    selected_files = frontier_files(selection)
+    print(build_frontier_report(changed_files, selection))
+
+    log_project_journal("step", f"frontier diagnostic selected-file count:{len(selected_files)}")
+    log_project_journal("step", "frontier diagnostic outcome: success")
+
+    return ExitCode.SUCCESS
 
 
 def record_to_current_pair(record: CheckRecord, relation_descriptions: dict[str, str]) -> CurrentPair:
@@ -2080,10 +2822,15 @@ def load_queued_current_pairs() -> list[CurrentPair]:
 def process_queue(args: argparse.Namespace) -> ExitCode:
     ensure_runtime_state()
     log_project_journal("step", "process-queue command started")
-    current_pairs = load_queued_current_pairs()
-    changed_files = sorted({current_pair.pair.changed_path for current_pair in current_pairs})
+    changed_files, current_pairs, graphs = reconcile_changed_files()
 
-    return process_current_pairs(changed_files, current_pairs, command_name="process-queue", jobs=effective_jobs(args))
+    return process_current_frontier(
+        changed_files,
+        current_pairs,
+        graphs,
+        command_name="process-queue",
+        agent_jobs=effective_agent_jobs(args),
+    )
 
 
 def mark_outdated_records() -> tuple[int, int]:
@@ -2433,6 +3180,404 @@ def self_check_child_output(check_status: str, report: str) -> str:
     return json.dumps(payload)
 
 
+def synthetic_current_pair(
+    changed_path: str,
+    *,
+    status: str,
+    relation: str = "synthetic-relation",
+    related_path: str | None = None,
+) -> CurrentPair:
+    related_path = related_path or f"@/validation/{changed_path.removeprefix('@/')}"
+    checksum_changed = f"checksum:{changed_path}"
+    checksum_related = f"checksum:{related_path}"
+    file_pair = f"<{changed_path}|{checksum_changed}>:<{related_path}|{checksum_related}>"
+    identity = PairIdentity(
+        pair_key=f"{relation}|{file_pair}",
+        file_pair=file_pair,
+        changed_path=changed_path,
+        related_path=related_path,
+        relation=relation,
+        checksum_changed=checksum_changed,
+        checksum_related=checksum_related,
+    )
+    pair = RelationPair(
+        changed_path=changed_path,
+        related_path=related_path,
+        relation=relation,
+        relation_description="Synthetic self-check relation",
+    )
+    record = CheckRecord(
+        uuid="synthetic",
+        pair_key=identity.pair_key,
+        file_pair=file_pair,
+        changed_path=changed_path,
+        related_path=related_path,
+        relation=relation,
+        checksum_changed=checksum_changed,
+        checksum_related=checksum_related,
+        check_status=status,
+        report="## Synthetic inconsistency" if status == "inconsistent" else "",
+        checked_at="",
+    )
+
+    return CurrentPair(pair=pair, identity=identity, record=record)
+
+
+def run_dependency_scheduler_self_checks() -> None:
+    root = "@/changed/root"
+    middle = "@/changed/middle"
+    leaf = "@/changed/leaf"
+    chain_graph = build_dependency_graphs(
+        [leaf, root, middle],
+        {leaf: [middle], root: [], middle: [root]},
+    )
+    chain_pairs = [
+        synthetic_current_pair(path, status="unchecked")
+        for path in [leaf, root, middle]
+    ]
+    chain_selection = select_frontier(chain_graph, chain_pairs)
+    assert_self_check(frontier_files(chain_selection) == (root,), "simple chain must select only its root")
+
+    advanced_pairs = [
+        synthetic_current_pair(root, status="consistent"),
+        synthetic_current_pair(middle, status="unchecked"),
+        synthetic_current_pair(leaf, status="unchecked"),
+    ]
+    assert_self_check(
+        frontier_files(select_frontier(chain_graph, advanced_pairs)) == (middle,),
+        "a resolved root must advance the next cycle to the middle",
+    )
+
+    independent = "@/changed/independent"
+    independent_graph = build_dependency_graphs([root, independent], {root: [], independent: []})
+    independent_pairs = [
+        synthetic_current_pair(root, status="unchecked"),
+        synthetic_current_pair(independent, status="unchecked"),
+    ]
+    assert_self_check(
+        frontier_files(select_frontier(independent_graph, independent_pairs)) == tuple(sorted((root, independent))),
+        "independent roots must share a frontier",
+    )
+
+    left = "@/changed/left"
+    right = "@/changed/right"
+    descendant = "@/changed/descendant"
+    diamond_graph = build_dependency_graphs(
+        [descendant, left, right],
+        {descendant: [right, left], left: [], right: []},
+    )
+    diamond_pairs = [
+        synthetic_current_pair(left, status="consistent"),
+        synthetic_current_pair(right, status="unchecked"),
+        synthetic_current_pair(descendant, status="unchecked"),
+    ]
+    assert_self_check(
+        frontier_files(select_frontier(diamond_graph, diamond_pairs)) == (right,),
+        "a diamond descendant must wait for both parents",
+    )
+
+    intermediary = "@/unchanged/intermediary"
+    intermediary_graph = build_dependency_graphs(
+        [root, leaf],
+        {root: [], intermediary: [root], leaf: [intermediary]},
+    )
+    assert_self_check(
+        intermediary_graph.scheduling_edges == (((root,), (leaf,)),),
+        "unchanged intermediaries must contract into derived scheduling edges",
+    )
+    assert_self_check(
+        intermediary not in {path for component in intermediary_graph.scheduling_components for path in component},
+        "unchanged intermediaries must not become scheduling work",
+    )
+
+    unchanged_upstream_graph = build_dependency_graphs(
+        [leaf],
+        {intermediary: [], leaf: [intermediary]},
+    )
+    assert_self_check(
+        frontier_files(
+            select_frontier(
+                unchanged_upstream_graph,
+                [synthetic_current_pair(leaf, status="unchecked")],
+            )
+        )
+        == (leaf,),
+        "an unchanged upstream dependency must not block the first changed descendant",
+    )
+
+    self_edge_graph = build_dependency_graphs([root], {root: [root]})
+    assert_self_check(self_edge_graph.ignored_self_edges == 1, "self-edges must be counted and ignored")
+    assert_self_check(
+        frontier_files(select_frontier(self_edge_graph, [synthetic_current_pair(root, status="unchecked")]))
+        == (root,),
+        "a self-edge must not deadlock frontier selection",
+    )
+
+    cycle_a = "@/changed/cycle-a"
+    cycle_b = "@/changed/cycle-b"
+    cycle_graph = build_dependency_graphs(
+        [cycle_b, cycle_a],
+        {cycle_a: [cycle_b], cycle_b: [cycle_a]},
+    )
+    cycle_selection = select_frontier(
+        cycle_graph,
+        [
+            synthetic_current_pair(cycle_b, status="unchecked"),
+            synthetic_current_pair(cycle_a, status="unchecked"),
+        ],
+    )
+    assert_self_check(
+        cycle_graph.scheduling_components == ((cycle_a, cycle_b),),
+        "changed cycle members must collapse into one scheduling component",
+    )
+    assert_self_check(
+        frontier_files(cycle_selection) == (cycle_a, cycle_b),
+        "cycle members must be scheduled atomically and reported lexically",
+    )
+    cycle_report = build_frontier_report([cycle_b, cycle_a], cycle_selection)
+    assert_self_check(
+        cycle_report.splitlines()[-2:] == [f"- {cycle_a}", f"- {cycle_b}"],
+        "frontier output must flatten cycle members into unique lexical paths",
+    )
+
+    deferred_pairs = [
+        synthetic_current_pair(root, status="unchecked"),
+        synthetic_current_pair(middle, status="consistent"),
+        synthetic_current_pair(leaf, status="inconsistent"),
+    ]
+    deferred_selection = select_frontier(chain_graph, deferred_pairs)
+    assert_self_check(
+        frontier_files(deferred_selection) == (root,) and deferred_selection.deferred_inconsistencies == 1,
+        (
+            "a descendant inconsistency must be deferred behind its pending predecessor "
+            f"frontier={frontier_files(deferred_selection)} "
+            f"deferred={deferred_selection.deferred_inconsistencies}"
+        ),
+    )
+
+    frontier_inconsistent_pairs = [
+        synthetic_current_pair(root, status="inconsistent"),
+        synthetic_current_pair(middle, status="unchecked"),
+        synthetic_current_pair(leaf, status="unchecked"),
+    ]
+    frontier_inconsistent_selection = select_frontier(chain_graph, frontier_inconsistent_pairs)
+    frontier_pair_set = [
+        pair
+        for pair in frontier_inconsistent_pairs
+        if pair.pair.changed_path in set(frontier_files(frontier_inconsistent_selection))
+    ]
+    assert_self_check(
+        first_inconsistent_pair(frontier_pair_set) is not None,
+        "an existing frontier inconsistency must be found before a child launch",
+    )
+
+    cycle_order_a = "@/changed/a-cycle"
+    cycle_order_z = "@/changed/z-cycle"
+    independent_order_b = "@/changed/b-independent"
+    component_order_graph = build_dependency_graphs(
+        [cycle_order_a, cycle_order_z, independent_order_b],
+        {
+            cycle_order_a: [cycle_order_z],
+            cycle_order_z: [cycle_order_a],
+            independent_order_b: [],
+        },
+    )
+    component_order_pairs = [
+        synthetic_current_pair(cycle_order_a, status="consistent"),
+        synthetic_current_pair(cycle_order_z, status="inconsistent"),
+        synthetic_current_pair(independent_order_b, status="inconsistent"),
+    ]
+    component_order_selection = select_frontier(component_order_graph, component_order_pairs)
+    ordered_pairs = ordered_frontier_pairs(component_order_selection, component_order_pairs)
+    first_component_inconsistency = first_frontier_pair_with_status(ordered_pairs, "inconsistent")
+    assert_self_check(
+        first_component_inconsistency is not None
+        and first_component_inconsistency.pair.changed_path == cycle_order_z,
+        "frontier inconsistency order must prioritize component order before artifact path",
+    )
+
+    concurrency_candidates = sorted(independent_pairs, key=current_pair_sort_key)
+    first_batch = concurrency_candidates[: get_config().agent_jobs]
+    assert_self_check(
+        len(first_batch) <= get_config().agent_jobs,
+        "frontier concurrency must not exceed the resolved agent_jobs value",
+    )
+    assert_self_check(
+        next_frontier_candidate(
+            concurrency_candidates,
+            {concurrency_candidates[0].identity.pair_key},
+            agent_jobs=1,
+            stop_launching=False,
+        )
+        is None,
+        "the scheduler must not launch above its resolved concurrency limit",
+    )
+    assert_self_check(
+        next_frontier_candidate(
+            concurrency_candidates,
+            set(),
+            agent_jobs=get_config().agent_jobs,
+            stop_launching=True,
+        )
+        is None,
+        "an inconsistency or stale result must stop later frontier launches",
+    )
+    assert_self_check(
+        root in frontier_files(chain_selection) and middle not in frontier_files(chain_selection),
+        "a descendant must not cross the invocation frontier boundary",
+    )
+
+    no_pair_graph = build_dependency_graphs([root, leaf], {root: [], leaf: [root]})
+    no_pair_selection = select_frontier(
+        no_pair_graph,
+        [synthetic_current_pair(leaf, status="unchecked")],
+    )
+    assert_self_check(
+        frontier_files(no_pair_selection) == (leaf,),
+        "a changed artifact without validation pairs must be resolved for scheduling",
+    )
+    all_resolved_selection = select_frontier(
+        chain_graph,
+        [synthetic_current_pair(path, status="consistent") for path in [leaf, middle, root]],
+    )
+    assert_self_check(
+        not frontier_files(all_resolved_selection),
+        "a fresh all-resolved pass must have no frontier",
+    )
+    assert_self_check(
+        build_frontier_report([leaf, middle, root], all_resolved_selection).endswith("frontier files: 0"),
+        "an empty frontier report must succeed without path entries",
+    )
+    deferred_report = build_frontier_report([leaf, middle, root], deferred_selection)
+    assert_self_check(
+        f"- {leaf}" not in deferred_report,
+        "frontier output must omit blocked descendants",
+    )
+    completed_pairs = [synthetic_current_pair(root, status="consistent")]
+    assert_self_check(
+        completed_frontier_exit_code(completed_pairs, launched_child=True, stale_found=False)
+        == ExitCode.CONTINUE_CYCLE,
+        "a successful frontier must require one fresh cycle",
+    )
+    assert_self_check(
+        completed_frontier_exit_code(
+            [synthetic_current_pair(root, status="inconsistent")],
+            launched_child=True,
+            stale_found=False,
+        )
+        == ExitCode.INCONSISTENCY_FOUND,
+        "a valid frontier inconsistency must return the repair exit code",
+    )
+    assert_self_check(
+        completed_frontier_exit_code(
+            [synthetic_current_pair(root, status="inconsistent")],
+            launched_child=True,
+            stale_found=True,
+        )
+        == ExitCode.CONTINUE_CYCLE,
+        "stale frontier work must force rediscovery before reporting a concurrent inconsistency",
+    )
+
+    shuffled_graph = build_dependency_graphs(
+        [middle, leaf, root],
+        {middle: [root], leaf: [middle], root: []},
+    )
+    shuffled_pairs = list(reversed(chain_pairs))
+    assert_self_check(shuffled_graph == chain_graph, "shuffled graph inputs must be deterministic")
+    assert_self_check(
+        frontier_files(select_frontier(shuffled_graph, shuffled_pairs)) == frontier_files(chain_selection),
+        "shuffled queue inputs must select the same frontier",
+    )
+
+    configured_relation_ids = get_config().allowed_file_relations
+    assert_self_check(configured_relation_ids, "the resolved allowed relation list must not be empty")
+    assert_self_check(
+        all(relation_id in get_config().relations for relation_id in configured_relation_ids),
+        "every mode-resolved allowed relation must have config-defined criteria",
+    )
+    synthetic_relations = ["synthetic-alpha", "synthetic-beta"]
+    synthetic_relation_pairs = [
+        synthetic_current_pair(root, status="unchecked", relation=relation_id, related_path=intermediary)
+        for relation_id in synthetic_relations
+    ]
+    synthetic_adjacency = {
+        root: sorted({pair.pair.related_path for pair in synthetic_relation_pairs}),
+        intermediary: [],
+    }
+    assert_self_check(
+        build_dependency_graphs([root], synthetic_adjacency).traversal_edges == ((intermediary, root),),
+        "synthetic configured relation ids must contribute uniformly to one deduplicated graph edge",
+    )
+
+    discovery_relation = DepmeshRelation(
+        relation_id="synthetic-discovery",
+        description="Synthetic parallel discovery relation",
+    )
+    discovery_paths = ("@/discovery/a", "@/discovery/b")
+    discovery_barrier = Barrier(len(discovery_paths))
+    discovery_lock = Lock()
+    active_discovery_queries = 0
+    maximum_discovery_queries = 0
+
+    def synthetic_discovery_query(
+        changed_path: str,
+        relation: DepmeshRelation,
+    ) -> list[dict[str, Any]]:
+        nonlocal active_discovery_queries, maximum_discovery_queries
+
+        with discovery_lock:
+            active_discovery_queries += 1
+            maximum_discovery_queries = max(maximum_discovery_queries, active_discovery_queries)
+
+        try:
+            discovery_barrier.wait(timeout=2)
+        finally:
+            with discovery_lock:
+                active_discovery_queries -= 1
+
+        return [
+            {
+                "type": "dependency",
+                "relation": relation.relation_id,
+                "dependency": f"@/dependency/{changed_path.removeprefix('@/').replace('/', '-')}",
+            }
+        ]
+
+    parallel_discovery_pairs = query_artifacts_pairs(
+        reversed(discovery_paths),
+        [discovery_relation],
+        discovery_jobs=len(discovery_paths),
+        query_records=synthetic_discovery_query,
+    )
+    assert_self_check(
+        maximum_discovery_queries == len(discovery_paths),
+        "depmesh discovery must execute concurrently up to discovery_jobs",
+    )
+
+    def deterministic_discovery_query(
+        changed_path: str,
+        relation: DepmeshRelation,
+    ) -> list[dict[str, Any]]:
+        return [
+            {
+                "type": "dependency",
+                "relation": relation.relation_id,
+                "dependency": f"@/dependency/{changed_path.removeprefix('@/').replace('/', '-')}",
+            }
+        ]
+
+    sequential_discovery_pairs = query_artifacts_pairs(
+        discovery_paths,
+        [discovery_relation],
+        discovery_jobs=1,
+        query_records=deterministic_discovery_query,
+    )
+    assert_self_check(
+        parallel_discovery_pairs == sequential_discovery_pairs,
+        "parallel depmesh discovery must preserve deterministic pair results",
+    )
+
+
 def run_self_check() -> ExitCode:
     ensure_runtime_state()
     log_project_journal("step", "self-check command started")
@@ -2443,19 +3588,21 @@ def run_self_check() -> ExitCode:
 
     active_config = get_config()
     assert_self_check(
-        active_config.allowed_file_relations == ("governed_by",),
-        "allowed relations must load from config",
+        bool(active_config.allowed_file_relations),
+        "allowed relations must load from config without a source-code relation allowlist",
     )
-    assert_self_check(active_config.jobs > 0, "jobs must load from config")
+    assert_self_check(active_config.agent_jobs > 0, "agent_jobs must load from config")
+    assert_self_check(active_config.discovery_jobs > 0, "discovery_jobs must load from config")
+    allowed_relation = active_config.allowed_file_relations[0]
     assert_self_check(
-        relation_specific_criteria("governed_by")[0].startswith("The implementation"),
-        "relation criteria must load from config",
+        bool(relation_specific_criteria(allowed_relation)),
+        "configured relation criteria must load from config",
     )
+    run_dependency_scheduler_self_checks()
     changed_files = discover_changed_files()
     assert_self_check(all(path.startswith("@/") for path in changed_files), "changed files must be artifact ids")
 
     paths = runtime_paths()
-    allowed_relation = get_config().allowed_file_relations[0]
     changed_path = runtime_artifact_path("self-check", "changed.txt")
     related_path = runtime_artifact_path("self-check", "related.txt")
     second_related_path = runtime_artifact_path("self-check", "second-related.txt")
@@ -2500,6 +3647,43 @@ def run_self_check() -> ExitCode:
     assert_self_check(
         all(current_pair.record.check_status == "unchecked" for current_pair in current_pairs),
         "new current pairs must be unchecked",
+    )
+    records_before_read_only = load_taskwarrior_records()
+    child_runtime_files_before = tuple(
+        sorted(
+            path.relative_to(paths.runtime_dir).as_posix()
+            for directory in [paths.agent_output_dir, paths.prompt_dir, paths.schema_dir]
+            for path in directory.rglob("*")
+            if path.is_file()
+        )
+    )
+    read_only_pairs = current_pairs_read_only([pair, second_pair], [current_pairs[0].record])
+    records_after_read_only = load_taskwarrior_records()
+    child_runtime_files_after = tuple(
+        sorted(
+            path.relative_to(paths.runtime_dir).as_posix()
+            for directory in [paths.agent_output_dir, paths.prompt_dir, paths.schema_dir]
+            for path in directory.rglob("*")
+            if path.is_file()
+        )
+    )
+    virtual_pair = next(item for item in read_only_pairs if item.identity.pair_key == second_identity.pair_key)
+    assert_self_check(
+        virtual_pair.record.check_status == "unchecked" and not virtual_pair.record.uuid,
+        "a current pair missing from the queue must be virtual unchecked",
+    )
+    assert_self_check(
+        records_before_read_only == records_after_read_only,
+        "read-only current-pair derivation must not mutate queue records",
+    )
+    assert_self_check(
+        child_runtime_files_before == child_runtime_files_after,
+        "read-only frontier derivation must not create child-runtime artifacts",
+    )
+    read_only_graph = build_dependency_graphs([changed_path], {changed_path: []})
+    assert_self_check(
+        frontier_files(select_frontier(read_only_graph, read_only_pairs)) == (changed_path,),
+        "read-only frontier selection must match reconciled unchecked status",
     )
     prepared_self_check = prepare_child_check(current_pairs[0])
     serialized_schema = json.loads(prepared_self_check.schema_path.read_text(encoding="utf-8"))
@@ -2560,6 +3744,10 @@ def run_self_check() -> ExitCode:
         "malformed output must produce a markdown issue section",
     )
     changed_file.write_text("changed self-check content v2\n", encoding="utf-8")
+    assert_self_check(
+        record_outdated_reason(current_pairs[0].record) is not None,
+        "a checksum change after a child snapshot must make its result stale",
+    )
     checked_count, marked_count = mark_outdated_records()
     outdated_raw_record = find_raw_record_by_pair_key(load_taskwarrior_records(), identity.pair_key)
     assert_self_check(outdated_raw_record is not None, "outdated source pair record must still exist")
@@ -2694,8 +3882,9 @@ def run_self_check() -> ExitCode:
         "pair record must not be written to project journal DB",
     )
     assert_self_check(
-        any(record.get("description") == "self-check command started" for record in project_journal),
-        "script operations must log to the project journal",
+        active_config.journal_cmd is None
+        or any(record.get("description") == "self-check command started" for record in project_journal),
+        "script operations must log to the project journal when journaling is configured",
     )
     assert_self_check(
         all("journal" not in record.get("tags", []) for record in pair_records if record.get("pair_key")),
@@ -2739,11 +3928,13 @@ def add_pair_status_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def add_jobs_argument(parser: argparse.ArgumentParser) -> None:
+def add_agent_jobs_argument(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
+        "--agent-jobs",
         "--jobs",
+        dest="agent_jobs",
         type=int,
-        help="number of child agent checks to keep running; defaults to consistency.toml jobs",
+        help="number of child agent checks to keep running; defaults to consistency.toml agent_jobs",
     )
 
 
@@ -2767,15 +3958,20 @@ def parse_args() -> argparse.Namespace:
 
     run_cycle_parser = subparsers.add_parser(
         "run-cycle",
-        help="reconcile and check relation pairs until completion or inconsistency",
+        help="reconcile and process one dependency-ready frontier",
     )
-    add_jobs_argument(run_cycle_parser)
+    add_agent_jobs_argument(run_cycle_parser)
 
     process_queue_parser = subparsers.add_parser(
         "process-queue",
-        help="process queued relation pairs until completion or inconsistency",
+        help="rediscover, reconcile, and process one dependency-ready frontier",
     )
-    add_jobs_argument(process_queue_parser)
+    add_agent_jobs_argument(process_queue_parser)
+
+    subparsers.add_parser(
+        "frontier",
+        help="show the current dependency-ready changed files without reconciling the queue",
+    )
 
     enqueue_parser = subparsers.add_parser("enqueue", help="manually enqueue one file's depmesh relation pairs")
     enqueue_parser.add_argument("files", nargs="*", help="project paths or root-anchored artifact ids")
@@ -2862,6 +4058,9 @@ def main() -> int:
 
         if args.command == "process-queue":
             return int(process_queue(args))
+
+        if args.command == "frontier":
+            return int(show_frontier())
 
         if args.command == "enqueue":
             return int(enqueue_files(parse_enqueue_files(args)))
