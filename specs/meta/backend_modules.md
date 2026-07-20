@@ -90,6 +90,10 @@ A module specification SHOULD include a `Domain interface` section when another 
 
 The section MUST describe public behavior through `ffun.<module>.domain`. It MAY define stable operation names, arguments, return values, transaction participation, and failure behavior when those details are part of the cross-module contract.
 
+The section SHOULD specify supported import paths, public names, call shapes, accepted values, yielded or returned values, errors, transaction behavior, and observable lifecycle semantics when those details form the stable contract.
+
+The section MUST describe callable interfaces by their observable protocol. It MUST NOT require that a public callable is implemented as a class, function, decorated generator, or callable object unless callers depend on that distinction through type identity, inheritance, instance reuse, introspection, or another explicitly documented contract.
+
 The section MUST NOT specify private helpers or expose the module's `operations` boundary to callers.
 
 ### `Audit records`

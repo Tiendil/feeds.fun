@@ -25,9 +25,16 @@ CREATE TABLE a_records (
 """
 
 
+sql_create_audit_records_subject_index = """
+CREATE INDEX a_records_subject_kind_subject_id_created_at_id_idx
+ON a_records (subject_kind, subject_id, created_at, id)
+"""
+
+
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
     cursor.execute(sql_create_audit_records)
+    cursor.execute(sql_create_audit_records_subject_index)
 
 
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:

@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import uuid
 from typing import cast
@@ -109,6 +110,7 @@ class TestRecord:
             pass
 
         record_id = None
+        subject_id = SerializedId(f"user-{uuid.uuid4()}")
 
         async with TableSizeNotChanged("a_records"):
             with pytest.raises(RollbackTransaction):
@@ -119,13 +121,80 @@ class TestRecord:
                         actor_kind=AuditEntityKind.admin,
                         actor_id=SerializedId("admin-1"),
                         subject_kind=AuditEntityKind.user,
-                        subject_id=SerializedId("user-1"),
+                        subject_id=subject_id,
                     )
                     raise RollbackTransaction()
 
         assert record_id is not None
-        rows = cast(
-            list[dict[str, object]],
-            await execute("SELECT id FROM a_records WHERE id = %(id)s", {"id": record_id}),  # type: ignore[misc]
+        records = await operations.load_records_for_subject(
+            execute,
+            subject_kind=AuditEntityKind.user,
+            subject_id=subject_id,
         )
-        assert rows == []
+        assert records == []
+
+
+class TestLoadRecordsForSubject:
+    @pytest.mark.asyncio
+    async def test_missing(self) -> None:
+        assert (
+            await operations.load_records_for_subject(
+                execute,
+                subject_kind=AuditEntityKind.user,
+                subject_id=SerializedId("missing"),
+            )
+            == []
+        )
+
+    @pytest.mark.asyncio
+    async def test_filters_by_subject_and_orders_oldest_first(self) -> None:
+        subject_id = SerializedId(f"user-{uuid.uuid4()}")
+
+        async with TableSizeDelta("a_records", delta=4):
+            first_id = await operations.record(
+                execute,
+                event=AuditEventName("first_event"),
+                actor_kind=AuditEntityKind.system,
+                actor_id=SerializedId("system"),
+                subject_kind=AuditEntityKind.user,
+                subject_id=subject_id,
+            )
+
+            await operations.record(
+                execute,
+                event=AuditEventName("different_subject_kind"),
+                actor_kind=AuditEntityKind.system,
+                actor_id=SerializedId("system"),
+                subject_kind=AuditEntityKind.system,
+                subject_id=subject_id,
+            )
+            await operations.record(
+                execute,
+                event=AuditEventName("different_subject_id"),
+                actor_kind=AuditEntityKind.system,
+                actor_id=SerializedId("system"),
+                subject_kind=AuditEntityKind.user,
+                subject_id=SerializedId(f"user-{uuid.uuid4()}"),
+            )
+
+            await asyncio.sleep(0.001)
+
+            second_id = await operations.record(
+                execute,
+                event=AuditEventName("second_event"),
+                actor_kind=AuditEntityKind.admin,
+                actor_id=SerializedId("admin"),
+                subject_kind=AuditEntityKind.user,
+                subject_id=subject_id,
+                attributes={"sequence": 2},
+            )
+
+        records = await operations.load_records_for_subject(
+            execute,
+            subject_kind=AuditEntityKind.user,
+            subject_id=subject_id,
+        )
+
+        assert [record.id for record in records] == [first_id, second_id]
+        assert [record.event for record in records] == ["first_event", "second_event"]
+        assert records[1].attributes == {"sequence": 2}

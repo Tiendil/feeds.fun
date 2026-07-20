@@ -13,7 +13,7 @@ Detailed requirements for individual specifications are out of scope except for 
 ## Specification directories
 
 - `specs/` contains all project specifications used by depmesh governance rules.
-- `specs/backend_architecture/` contains specifications related to backend architecture, database access, entities, tests, and errors.
+- `specs/backend_architecture/` contains specifications related to backend architecture, Python conventions, database access, entities, tests, and errors.
 - `specs/backend_architecture/modules/` contains specifications for individual backend modules.
 - `specs/behavior/` contains specifications for externally visible application behavior.
 - `specs/behavior/cli/` contains specifications for individual backend CLI command families.
@@ -29,12 +29,14 @@ Detailed requirements for individual specifications are out of scope except for 
 - `specs/meta/general.md` defines general rules for project specification documents.
 - `specs/meta/backend_modules.md` defines the common structure and dependency metadata requirements for backend module specifications.
 - `specs/backend_architecture/modules_layout.md` describes backend package layout and ownership boundaries.
+- `specs/backend_architecture/python.md` describes language-level implementation conventions for backend Python code.
 - `specs/backend_architecture/db.md` describes backend database access, transactions, migrations, and database-focused testing practices.
 - `specs/backend_architecture/entities.md` describes backend entity and data structure architecture.
 - `specs/backend_architecture/errors.md` describes backend error and warning architecture.
 - `specs/backend_architecture/tests.md` describes backend pytest test placement.
 - `specs/backend_architecture/modules/audit.md` describes append-only audit persistence and its transactional domain interface.
 - `specs/backend_architecture/modules/entitlements.md` describes entitlement source ownership, merging, persistence, audit history, and business events.
+- `specs/backend_architecture/modules/locks.md` describes collision-free, transaction-scoped logical mutexes backed by PostgreSQL.
 - `specs/behavior/cli.md` describes behavior shared by the backend CLI command families.
 - `specs/behavior/cli/entitlements.md` describes the CLI command family for managing and inspecting entitlements.
 - `specs/frontend_architecture/modules_layout.md` describes frontend source layout and ownership boundaries.

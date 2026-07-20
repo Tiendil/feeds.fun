@@ -103,6 +103,7 @@ changy = "0.*"
 pytest = "8.4.*"
 pytest-asyncio = "1.0.*"
 pytest-mock = "3.14.*"
+pyleak = "0.2.*"
 
 py-spy = "0.4.*"
 
@@ -210,9 +211,10 @@ module = [
 disallow_any_expr = false
 
 [tool.pytest.ini_options]
-# possibly it is not good option value, because we'll lose detecting of lost coroutines
-# but for now it is required for some session-scoped fixtures
+# Keep session-scoped fixtures and async tests in the same event loop so the PostgreSQL pool
+# and other session-lived async entities remain fully accessible from tests.
 asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 
 addopts = """-x -vv --strict-markers -p no:cacheprovider"""
 

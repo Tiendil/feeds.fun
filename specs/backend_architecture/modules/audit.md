@@ -6,9 +6,9 @@ This document describes how the `ffun.audit` backend module stores durable audit
 
 ## Scope
 
-This specification covers audit entity references, the append-only audit table, record creation, and the transactional interface exposed by `ffun.audit.domain`.
+This specification covers audit entity references, the append-only audit table, record creation, subject-based record loading, and the transactional interface exposed by `ffun.audit.domain`.
 
-Audit querying APIs, retention and archival policy, administrative presentation, business-event definitions owned by calling modules, and event sourcing are out of scope.
+General audit search, pagination, retention and archival policy, administrative presentation, business-event definitions owned by calling modules, and event sourcing are out of scope.
 
 ## Dictionary
 
@@ -19,9 +19,9 @@ Audit querying APIs, retention and archival policy, administrative presentation,
 
 ## Module responsibility
 
-`ffun.audit` MUST be a domain-level module that owns the common audit record entity, audit event-name type, audit entity kinds, and append-only audit persistence.
+`ffun.audit` MUST be a shared-service module that owns the common audit record entity, audit event-name type, audit entity kinds, append-only audit persistence, and subject-based record loading.
 
-The module MUST provide append-only persistence and common audit types only. The calling module owns input validation, the decision to create an audit record, the event name, and the event-specific attributes.
+The module MUST provide append-only persistence, subject-based record loading, and common audit types only. The calling module owns input validation, the decision to create an audit record, the event name, and the event-specific attributes.
 
 Audit records MUST be durable database state. Business events and ordinary logs MUST NOT be treated as substitutes for required audit records.
 
@@ -80,6 +80,12 @@ Audit record creation MUST NOT use upsert or conflict handling that can replace 
 
 Retention or legally required deletion, if introduced, MUST be an explicit administrative policy outside normal record creation and is not defined by this specification.
 
+### Subject-based record loading
+
+The module MUST allow callers to load audit records for one exact subject entity kind and id pair. The query MUST return every matching record ordered by `created_at` and then `id`, both ascending, and MUST return an empty list when no records match.
+
+Loading records MUST be read-only and MUST NOT generate audit records, business events, or ordinary business logs.
+
 ## Database schema
 
 ### `a_records`
@@ -98,23 +104,27 @@ CREATE TABLE a_records (
     subject_id TEXT NOT NULL, -- Canonical string id of the subject entity.
     attributes JSONB NOT NULL -- Event-specific structured data supplied by Python.
 );
+
+CREATE INDEX a_records_subject_kind_subject_id_created_at_id_idx ON a_records (subject_kind, subject_id, created_at, id); -- Supports deterministic loading of one subject's audit history.
 ```
 
-The `actor_kind` and `subject_kind` columns MUST use PostgreSQL `SMALLINT`. Calling modules MUST pass values typed as `AuditEntityKind`; the database MUST NOT constrain the set of allowed kind ids.
+The `actor_kind` and `subject_kind` columns MUST use `SMALLINT`. Calling modules MUST pass values typed as `AuditEntityKind`; the database MUST NOT constrain the set of allowed kind ids.
 
 Calling modules MUST validate the structure of `attributes`; the database MUST NOT constrain its JSON shape.
 
 The audit record id MUST be generated in Python and supplied explicitly to the insert. The database MUST NOT define a default for `id`.
 
+`a_records` intentionally omits `updated_at`. Audit records are immutable and append-only, so `created_at` completely describes their persistence lifecycle and no row update time exists.
+
 Entity ids MUST NOT use foreign keys because their referenced tables and native types depend on the corresponding kind.
 
 No additional audit tables, materialized current-state tables, or generic entity registry are permitted by this specification.
 
-Module does not require secondary indexes because this specification defines no audit query API or query shape.
+The subject index supports filtering by the complete subject identity and returning records in the required deterministic order.
 
 ## Domain interface
 
-`ffun.audit.domain` MUST expose one record-creation operation named `record`.
+`ffun.audit.domain` MUST expose one record-creation operation named `record` and one subject query named `load_records_for_subject`.
 
 `ffun.audit.domain` MUST expose `new_audit_record_id`, which generates and returns a new `AuditRecordId` in the same style as the id factories in `ffun.domain.domain`.
 
@@ -144,9 +154,11 @@ The operation MUST NOT open or commit a transaction. A calling module that requi
 
 Failure to insert a required audit record MUST propagate to the caller and cause the caller-owned transaction to roll back. A rolled-back transaction MUST NOT leave an audit record.
 
-Calling modules MUST NOT import `ffun.audit.operations` directly.
-
 Calling modules SHOULD create audit records only for state changes that actually occurred. Idempotent no-op requests SHOULD NOT create duplicate audit records unless the calling module explicitly defines the request itself as an auditable event.
+
+`load_records_for_subject` MUST accept the caller's `ffun.core.postgresql.ExecuteType` as its first argument and keyword-only `subject_kind` and `subject_id` arguments typed as `AuditEntityKind` and `SerializedId`. It MUST return a list of validated `AuditRecord` entities in the order defined by the subject-based record loading behavior.
+
+`load_records_for_subject` MUST use the provided execute callable and MUST NOT open or commit a transaction. Callers MAY pass a transaction-bound execute callable when records written within that transaction must be visible to the query.
 
 ## Audit records
 

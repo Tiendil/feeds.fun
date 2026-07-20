@@ -1,10 +1,11 @@
 import types
 import uuid
 from collections.abc import Mapping
+from typing import cast
 
 from psycopg.types.json import Jsonb
 
-from ffun.audit.entities import AuditEntityKind, AuditEventName, AuditRecordId
+from ffun.audit.entities import AuditEntityKind, AuditEventName, AuditRecord, AuditRecordId
 from ffun.core.postgresql import ExecuteType
 from ffun.domain.entities import SerializedId
 
@@ -62,3 +63,31 @@ async def record(  # noqa: CFQ002
     )
 
     return record_id
+
+
+async def load_records_for_subject(
+    execute: ExecuteType,
+    *,
+    subject_kind: AuditEntityKind,
+    subject_id: SerializedId,
+) -> list[AuditRecord]:
+    sql = """
+    SELECT *
+    FROM a_records
+    WHERE subject_kind = %(subject_kind)s
+      AND subject_id = %(subject_id)s
+    ORDER BY created_at, id
+    """
+
+    rows = cast(
+        list[dict[str, object]],
+        await execute(
+            sql,
+            {
+                "subject_kind": int(subject_kind),
+                "subject_id": subject_id,
+            },
+        ),
+    )
+
+    return [AuditRecord.model_validate(row) for row in rows]

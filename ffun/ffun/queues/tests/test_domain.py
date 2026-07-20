@@ -64,3 +64,13 @@ class TestQueuesStats:
         await operations.push(QueueKind.test_queue_1, [make.fake_queue_item(), make.fake_queue_item()])
 
         assert await domain.queues_stats() == {(QueueKind.test_queue_1.value, 1): 2}
+
+
+class TestTechGetQueueRecords:
+    def test_reexports_operation(self) -> None:
+        assert domain.tech_get_queue_records is operations.tech_get_queue_records
+
+
+class TestTechClearQueue:
+    def test_reexports_operation(self) -> None:
+        assert domain.tech_clear_queue is operations.tech_clear_queue

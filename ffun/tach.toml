@@ -27,6 +27,7 @@ layers = [
     "tags",
     "feeds",
     "users",
+    "shared_services",
     "foundation",
 ]
 
@@ -300,13 +301,19 @@ layer = "users"
 path = "ffun.queues"
 depends_on = [
 ]
-layer = "foundation"
+layer = "shared_services"
 
 [[modules]]
 path = "ffun.audit"
 depends_on = [
 ]
-layer = "foundation"
+layer = "shared_services"
+
+[[modules]]
+path = "ffun.locks"
+depends_on = [
+]
+layer = "shared_services"
 
 [[modules]]
 path = "ffun.core"
