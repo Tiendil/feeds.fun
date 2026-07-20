@@ -13,6 +13,7 @@ Module ownership, domain behavior, entity modeling, error behavior, test organiz
 ## Dictionary
 
 - `project-controlled class` — a class whose instance layout is defined by Feeds Fun code rather than generated or prescribed by a framework, library, standard-library protocol, metaclass, or inherited implementation contract.
+- `test class` — a class used by the test framework to group test methods.
 - `instance dictionary` — the per-instance `__dict__` used to store dynamically named attributes.
 
 ## Runtime type validation
@@ -25,11 +26,11 @@ Code MUST still validate semantic constraints that type annotations cannot expre
 
 ## Class instance layout
 
-New or substantially changed project-controlled classes MUST define `__slots__` explicitly.
+New or substantially changed project-controlled classes other than test classes MUST define `__slots__` explicitly. Test classes are excluded from this convention and MAY omit `__slots__` without an explanatory comment.
 
 A class that introduces instance attributes MUST list every attribute it introduces in `__slots__`. A class that introduces no instance attributes MUST use `__slots__ = ()`.
 
-Every project-controlled subclass MUST define its own `__slots__`, including an empty declaration when it introduces no attributes. A subclass MUST NOT repeat slot names owned by a base class.
+Every project-controlled subclass covered by this convention MUST define its own `__slots__`, including an empty declaration when it introduces no attributes. A subclass MUST NOT repeat slot names owned by a base class.
 
 Classes MUST NOT include `__dict__` in `__slots__` unless dynamically named instance attributes are an intentional part of the class contract. Classes MUST include `__weakref__` only when instances need weak-reference support and no base class already provides it.
 
