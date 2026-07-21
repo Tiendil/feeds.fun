@@ -116,6 +116,14 @@ An existing term MUST be preserved when a change extends the concept's behavior 
 
 When only one variant needs distinction, specifications SHOULD qualify that variant locally instead of renaming the broader concept throughout the specification.
 
+### Extensible definitions
+
+Specifications SHOULD define extensible concepts through their invariants, responsibilities, and membership criteria rather than by enumerating their current instances.
+
+Specifications MUST use an exhaustive enumeration only when the set is intentionally closed and its completeness is part of a stable contract. Examples of members in an extensible set MUST be identified as non-exhaustive.
+
+Adding, changing, or removing an instance of an extensible concept SHOULD NOT require changing the concept's definition unless its invariants or membership criteria change.
+
 ## Implementation neutrality
 
 Specifications MUST define required behavior and stable observable contracts without prescribing an implementation mechanism when multiple implementations can satisfy the contract.
