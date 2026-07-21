@@ -2,16 +2,44 @@ import asyncio
 import datetime
 import json
 import uuid
+from collections.abc import Coroutine
 
 import typer
 
 from ffun.application.application import with_app
 from ffun.audit.entities import AuditEntityKind
+from ffun.core import errors as core_errors
+from ffun.core.entities import BaseEntity
 from ffun.domain.entities import SerializedId, UserId
 from ffun.entitlements import domain as e_domain
 from ffun.entitlements.entities import EffectiveEntitlementInterval, EntitlementKindId, EntitlementSourceId
 
 cli_app = typer.Typer()
+
+
+class SourceChangeCommand(BaseEntity):
+    source: EntitlementSourceId
+    user_id: UserId
+    kind_id: EntitlementKindId
+    granted: bool
+    value: int | None
+    starts_at: datetime.datetime
+    expires_at: datetime.datetime
+    actor_kind: AuditEntityKind
+    actor_id: SerializedId
+
+
+class ListEntitlementsCommand(BaseEntity):
+    user_ids: list[UserId]
+    kind_ids: list[EntitlementKindId]
+
+
+def run_async_command(command: Coroutine[object, object, None]) -> None:
+    try:
+        asyncio.run(command)
+    except core_errors.Error as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=1) from error
 
 
 def entitlement_kind_from_name(raw_kind: str) -> EntitlementKindId:
@@ -56,29 +84,18 @@ def resolve_timestamps(
     )
 
 
-async def run_source_change(  # noqa: CFQ002
-    *,
-    source: EntitlementSourceId,
-    user_id: UserId,
-    kind_id: EntitlementKindId,
-    granted: bool,
-    value: int | None,
-    starts_at: datetime.datetime,
-    expires_at: datetime.datetime,
-    actor_kind: AuditEntityKind,
-    actor_id: SerializedId,
-) -> None:
+async def run_source_change(command: SourceChangeCommand) -> None:
     async with with_app():
         await e_domain.change_source_entitlement(
-            source=source,
-            user_id=user_id,
-            kind_id=kind_id,
-            granted=granted,
-            value=value,
-            starts_at=starts_at,
-            expires_at=expires_at,
-            actor_kind=actor_kind,
-            actor_id=actor_id,
+            source=command.source,
+            user_id=command.user_id,
+            kind_id=command.kind_id,
+            granted=command.granted,
+            value=command.value,
+            starts_at=command.starts_at,
+            expires_at=command.expires_at,
+            actor_kind=command.actor_kind,
+            actor_id=command.actor_id,
         )
 
 
@@ -100,17 +117,19 @@ def change_source_entitlement(  # noqa: CFQ002
         timestamp_from_string(expires_at, option_name="--expires-at"),
         captured_at,
     )
-    asyncio.run(
+    run_async_command(
         run_source_change(
-            source=EntitlementSourceId(source),
-            user_id=UserId(user_id),
-            kind_id=entitlement_kind_from_name(kind),
-            granted=granted,
-            value=value,
-            starts_at=resolved_starts_at,
-            expires_at=resolved_expires_at,
-            actor_kind=actor_kind_from_name(actor_kind),
-            actor_id=SerializedId(actor_id),
+            SourceChangeCommand(
+                source=EntitlementSourceId(source),
+                user_id=UserId(user_id),
+                kind_id=entitlement_kind_from_name(kind),
+                granted=granted,
+                value=value,
+                starts_at=resolved_starts_at,
+                expires_at=resolved_expires_at,
+                actor_kind=actor_kind_from_name(actor_kind),
+                actor_id=SerializedId(actor_id),
+            )
         )
     )
 
@@ -178,9 +197,9 @@ def entitlement_record(
     }
 
 
-async def run_list(user_ids: list[UserId], kind_ids: list[EntitlementKindId]) -> None:
+async def run_list(command: ListEntitlementsCommand) -> None:
     async with with_app():
-        result = await e_domain.get_entitlements(user_ids, kind_ids)
+        result = await e_domain.get_entitlements(command.user_ids, command.kind_ids)
 
     for user_id, entitlements in result.items():
         for kind_id, interval in entitlements.items():
@@ -192,9 +211,11 @@ def list_entitlements(
     user_ids: list[uuid.UUID] = typer.Option(..., "--user-id"),
     kinds: list[str] | None = typer.Option(None, "--kind"),
 ) -> None:
-    asyncio.run(
+    run_async_command(
         run_list(
-            [UserId(user_id) for user_id in user_ids],
-            [entitlement_kind_from_name(kind) for kind in kinds or []],
+            ListEntitlementsCommand(
+                user_ids=[UserId(user_id) for user_id in user_ids],
+                kind_ids=[entitlement_kind_from_name(kind) for kind in kinds or []],
+            )
         )
     )

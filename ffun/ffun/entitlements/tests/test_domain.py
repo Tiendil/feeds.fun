@@ -64,6 +64,25 @@ class TestValidateSourceChange:
 
         assert kind.id == _DAY_TOKENS
 
+    def test_unconfigured_kind(self, mocker: MockerFixture) -> None:
+        now = datetime.datetime.now(tz=datetime.UTC)
+        mocker.patch.object(
+            entitlement_entities,
+            "ENTITLEMENT_KINDS",
+            (entitlement_entities.ENTITLEMENT_KINDS[0],),
+        )
+
+        with pytest.raises(errors.UnknownEntitlementKind):
+            domain.validate_source_change(
+                source=EntitlementSourceId("test"),
+                kind_id=_MONTH_TOKENS,
+                granted=True,
+                value=10,
+                starts_at=now,
+                expires_at=now + datetime.timedelta(days=1),
+                actor_id=_ACTOR_ID,
+            )
+
     def test_empty_source(self) -> None:
         now = datetime.datetime.now(tz=datetime.UTC)
 
