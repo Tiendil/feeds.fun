@@ -2,6 +2,8 @@ import decimal
 import uuid
 from typing import NewType
 
+SerializedId = NewType("SerializedId", str)
+
 UserId = NewType("UserId", uuid.UUID)
 EntryId = NewType("EntryId", uuid.UUID)
 FeedId = NewType("FeedId", uuid.UUID)

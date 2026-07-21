@@ -1,0 +1,169 @@
+# Audit module
+
+## Goal of the document
+
+This document describes how the `ffun.audit` backend module stores durable audit records and lets other modules append those records inside their own database transactions.
+
+## Scope
+
+This specification covers audit entity references, the append-only audit table, record creation, subject-based record loading, and the transactional interface exposed by `ffun.audit.domain`.
+
+General audit search, pagination, retention and archival policy, administrative presentation, business-event definitions owned by calling modules, and event sourcing are out of scope.
+
+## Dictionary
+
+- `actor entity` - the entity that caused or initiated the audited event.
+- `subject entity` - the primary entity affected by or described by the audited event.
+- `related entity` - an additional entity associated with the event but not acting as its actor or primary subject.
+- `audit entity kind` - an integer enum value that identifies how an audit entity id must be interpreted.
+
+## Module responsibility
+
+`ffun.audit` MUST be a shared-service module that owns the common audit record entity, audit event-name type, audit entity kinds, append-only audit persistence, and subject-based record loading.
+
+The module MUST provide append-only persistence, subject-based record loading, and common audit types only. The calling module owns input validation, the decision to create an audit record, the event name, and the event-specific attributes.
+
+Audit records MUST be durable database state. Business events and ordinary logs MUST NOT be treated as substitutes for required audit records.
+
+Audit records describe committed business facts but MUST NOT be used as the source of truth for rebuilding application state.
+
+## Domain behavior
+
+### Entity references
+
+Actor and subject entities can belong to different domains and can use different native id types. Every audit record MUST contain exactly one actor and one subject. Each reference MUST contain both:
+
+- `kind` - the integer audit entity kind id.
+- `id` - the entity's id in a stable string representation.
+
+`ffun.audit.entities` MUST define a dedicated `AuditEntityKind` based on `enum.IntEnum`. Its initial values MUST be:
+
+- `user = 1` - a regular application user.
+- `admin = 2` - an administrator acting in an administrative capacity.
+- `psp = 3` - a payment service provider.
+- `system = 4` - an internal automated component.
+
+New kinds MUST be added explicitly to `AuditEntityKind` before they are used. Numeric kind ids are stable database values and MUST NOT be changed or reused after records use them.
+
+Calling modules MUST normalize UUID, integer, and string ids to their canonical `ffun.domain.entities.SerializedId` string form before calling `ffun.audit.domain.record`. Calling modules MUST reject empty ids.
+
+The actor and subject MAY have the same kind or id. Their roles remain distinct.
+
+Actor and subject entity references MUST be stored in their dedicated columns. They MUST NOT be stored only inside record attributes.
+
+Additional related entities MAY be stored in `attributes`. Each related entity MUST be represented as an object with `kind` and `id` fields and MAY include a `role` field. The table MUST NOT add fixed columns for third or subsequent entity references.
+
+### Audit record
+
+An audit record MUST contain:
+
+- a unique audit record id.
+- the database-generated creation time.
+- a stable event name.
+- the actor entity kind and id.
+- the subject entity kind and id.
+- event-specific structured attributes.
+
+Event names MUST be non-empty `snake_case` values. They SHOULD name the business change rather than the function or HTTP endpoint that produced it. The module that owns an event MUST keep its meaning and attributes stable.
+
+`ffun.audit.entities` MUST define `AuditEventName` as the semantic string type used for audit event names. Calling modules retain ownership of each event's meaning and MUST pass event names typed as `AuditEventName` to `ffun.audit.domain.record`.
+
+Attributes MUST be a JSON object. They SHOULD contain only data needed to understand the audited change, such as previous and new values, provider references, or related entities. The actor and subject entity pairs remain the primary entity references.
+
+### Append-only behavior
+
+Normal runtime behavior MUST only insert audit records. `ffun.audit` MUST NOT expose operations that update or delete individual records.
+
+An existing audit record MUST NOT be changed to correct or reinterpret it. A correction MUST be represented by a new audit record whose event and attributes explain the correction according to the calling module's contract.
+
+Audit record creation MUST NOT use upsert or conflict handling that can replace an existing record.
+
+Retention or legally required deletion, if introduced, MUST be an explicit administrative policy outside normal record creation and is not defined by this specification.
+
+### Subject-based record loading
+
+The module MUST allow callers to load audit records for one exact subject entity kind and id pair. The query MUST return every matching record ordered by `created_at` and then `id`, both ascending, and MUST return an empty list when no records match.
+
+Loading records MUST be read-only and MUST NOT generate audit records, business events, or ordinary business logs.
+
+## Database schema
+
+### `a_records`
+
+The module MUST own exactly one table, `a_records`.
+
+```sql
+-- Append-only durable records of audited business changes and events.
+CREATE TABLE a_records (
+    id UUID PRIMARY KEY, -- Unique audit record id generated by Python before insertion.
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Time at which PostgreSQL inserts the record.
+    event TEXT NOT NULL, -- Stable event name owned by the calling module.
+    actor_kind SMALLINT NOT NULL, -- AuditEntityKind id of the entity that initiated the event.
+    actor_id TEXT NOT NULL, -- Canonical string id of the actor entity.
+    subject_kind SMALLINT NOT NULL, -- AuditEntityKind id of the primary entity affected by the event.
+    subject_id TEXT NOT NULL, -- Canonical string id of the subject entity.
+    attributes JSONB NOT NULL -- Event-specific structured data supplied by Python.
+);
+
+CREATE INDEX a_records_subject_kind_subject_id_created_at_id_idx ON a_records (subject_kind, subject_id, created_at, id); -- Supports deterministic loading of one subject's audit history.
+```
+
+The `actor_kind` and `subject_kind` columns MUST use `SMALLINT`. Calling modules MUST pass values typed as `AuditEntityKind`; the database MUST NOT constrain the set of allowed kind ids.
+
+Calling modules MUST validate the structure of `attributes`; the database MUST NOT constrain its JSON shape.
+
+The audit record id MUST be generated in Python and supplied explicitly to the insert. The database MUST NOT define a default for `id`.
+
+`a_records` intentionally omits `updated_at`. Audit records are immutable and append-only, so `created_at` completely describes their persistence lifecycle and no row update time exists.
+
+Entity ids MUST NOT use foreign keys because their referenced tables and native types depend on the corresponding kind.
+
+No additional audit tables, materialized current-state tables, or generic entity registry are permitted by this specification.
+
+The subject index supports filtering by the complete subject identity and returning records in the required deterministic order.
+
+## Domain interface
+
+`ffun.audit.domain` MUST expose one record-creation operation named `record` and one subject query named `load_records_for_subject`.
+
+`ffun.audit.domain` MUST expose `new_audit_record_id`, which generates and returns a new `AuditRecordId` in the same style as the id factories in `ffun.domain.domain`.
+
+The operation MUST accept:
+
+- the caller's `ffun.core.postgresql.ExecuteType` as its first argument.
+- keyword-only `event`, `actor_kind`, `actor_id`, `subject_kind`, and `subject_id` arguments, with the event typed as `AuditEventName`, kinds typed as `AuditEntityKind`, and ids typed as `SerializedId`.
+- an optional keyword-only `attributes` mapping that defaults to an empty mapping.
+
+The interface SHOULD be used in this form:
+
+```python
+audit_record_id = await audit.domain.record(
+    execute,
+    event=AuditEventName("source_entitlement_changed"),
+    actor_kind=AuditEntityKind.psp,
+    actor_id=SerializedId(str(psp_id)),
+    subject_kind=AuditEntityKind.user,
+    subject_id=SerializedId(str(user_id)),
+    attributes={"kind_id": kind_id, "granted": True, "value": 10},
+)
+```
+
+The calling module MUST pass already validated arguments. The operation MUST NOT normalize native ids or accept raw integer kind ids. It MUST generate the audit record id, insert exactly one row through the provided execute callable, and return the created audit record id.
+
+The operation MUST NOT open or commit a transaction. A calling module that requires an audit record for a state change MUST call `record` with the same execute callable used for that state change before committing its transaction.
+
+Failure to insert a required audit record MUST propagate to the caller and cause the caller-owned transaction to roll back. A rolled-back transaction MUST NOT leave an audit record.
+
+Calling modules SHOULD create audit records only for state changes that actually occurred. Idempotent no-op requests SHOULD NOT create duplicate audit records unless the calling module explicitly defines the request itself as an auditable event.
+
+`load_records_for_subject` MUST accept the caller's `ffun.core.postgresql.ExecuteType` as its first argument and keyword-only `subject_kind` and `subject_id` arguments typed as `AuditEntityKind` and `SerializedId`. It MUST return a list of validated `AuditRecord` entities in the order defined by the subject-based record loading behavior.
+
+`load_records_for_subject` MUST use the provided execute callable and MUST NOT open or commit a transaction. Callers MAY pass a transaction-bound execute callable when records written within that transaction must be visible to the query.
+
+## Audit records
+
+Module does not define concrete audit events because it provides generic audit storage.
+
+## Business events
+
+Audit record creation MUST NOT generate a business event. The calling module owns any business event corresponding to the audited change. `ffun.audit` MAY generate technical logs or metrics, but MUST NOT classify them as business events.

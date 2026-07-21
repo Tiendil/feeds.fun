@@ -18,6 +18,7 @@ Detailed behavior, implementation requirements, and configuration schemas are ou
 - `rule` - user-defined score expression based on tags.
 - `collection` - curated feed collection configuration.
 - `integration` - external source-specific behavior, such as YouTube or Reddit support.
+- `audit record` - append-only durable record of a business change or event, including its actor and subject entities.
 - `backend` - Python application in `ffun/ffun`.
 - `frontend` - Vue application in `site/src`.
 - `development helper` - Docker-backed command in `bin`.

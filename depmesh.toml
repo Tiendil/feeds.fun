@@ -118,6 +118,54 @@ output = { type = "union", items = [
   { type = "files", pattern = "@/specs/**/*.md" },
 ] }
 
+# CLI command-family specifications are governed by shared CLI behavior.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/specs/behavior/cli/*.md" }
+output = { type = "list", artifacts = ["@/specs/behavior/cli.md"] }
+
+# Shared CLI behavior governs every command-family specification.
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/behavior/cli.md"] }
+output = { type = "files", pattern = "@/specs/behavior/cli/*.md" }
+
+# CLI command-family specifications are governed by matching backend module specifications when they exist.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/specs/behavior/cli/{*module}.md" }
+output = { type = "files", pattern = "@/specs/backend_architecture/modules/{module}.md" }
+
+# Backend module specifications govern matching CLI command-family specifications when they exist.
+[[rules]]
+relation = "governs"
+input = { type = "glob", pattern = "@/specs/backend_architecture/modules/{*module}.md" }
+output = { type = "files", pattern = "@/specs/behavior/cli/{module}.md" }
+
+# Backend module specifications are additionally governed by their common structure requirements.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/specs/backend_architecture/modules/*.md" }
+output = { type = "list", artifacts = ["@/specs/meta/backend_modules.md"] }
+
+# The backend module specification requirements govern every backend module specification.
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/meta/backend_modules.md"] }
+output = { type = "files", pattern = "@/specs/backend_architecture/modules/*.md" }
+
+# Backend module specifications are additionally governed by the backend database architecture.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/specs/backend_architecture/modules/*.md" }
+output = { type = "list", artifacts = ["@/specs/backend_architecture/db.md"] }
+
+# The backend database architecture governs every backend module specification.
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/backend_architecture/db.md"] }
+output = { type = "files", pattern = "@/specs/backend_architecture/modules/*.md" }
+
 # Backend Python files are governed by all backend architecture specs.
 [[rules]]
 relation = "governed_by"
@@ -129,6 +177,54 @@ output = { type = "files", pattern = "@/specs/backend_architecture/*.md" }
 relation = "governs"
 input = { type = "glob", pattern = "@/specs/backend_architecture/*.md" }
 output = { type = "files", pattern = "@/ffun/ffun/**/*.py" }
+
+# Backend CLI Python files are additionally governed by shared CLI behavior.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/ffun/ffun/cli/**/*.py" }
+output = { type = "list", artifacts = ["@/specs/behavior/cli.md"] }
+
+# Shared CLI behavior governs all backend CLI Python files.
+[[rules]]
+relation = "governs"
+input = { type = "one_of", artifacts = ["@/specs/behavior/cli.md"] }
+output = { type = "files", pattern = "@/ffun/ffun/cli/**/*.py" }
+
+# CLI command modules are additionally governed by matching command-family specifications when they exist.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/ffun/ffun/cli/commands/{*command}.py" }
+output = { type = "files", pattern = "@/specs/behavior/cli/{command}.md" }
+
+# CLI command-family specifications govern matching command modules when they exist.
+[[rules]]
+relation = "governs"
+input = { type = "glob", pattern = "@/specs/behavior/cli/{*command}.md" }
+output = { type = "files", pattern = "@/ffun/ffun/cli/commands/{command}.py" }
+
+# CLI command tests are additionally governed by matching command-family specifications when they exist.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/ffun/ffun/cli/commands/tests/test_{*command}.py" }
+output = { type = "files", pattern = "@/specs/behavior/cli/{command}.md" }
+
+# CLI command-family specifications govern matching command tests when they exist.
+[[rules]]
+relation = "governs"
+input = { type = "glob", pattern = "@/specs/behavior/cli/{*command}.md" }
+output = { type = "files", pattern = "@/ffun/ffun/cli/commands/tests/test_{command}.py" }
+
+# Backend module Python files are additionally governed by a matching module spec when one exists.
+[[rules]]
+relation = "governed_by"
+input = { type = "glob", pattern = "@/ffun/ffun/{*module}/**/*.py" }
+output = { type = "files", pattern = "@/specs/backend_architecture/modules/{module}.md" }
+
+# A backend module spec governs all Python files in the matching module.
+[[rules]]
+relation = "governs"
+input = { type = "glob", pattern = "@/specs/backend_architecture/modules/{*module}.md" }
+output = { type = "files", pattern = "@/ffun/ffun/{module}/**/*.py" }
 
 # Frontend source files are governed by all frontend architecture specs.
 [[rules]]

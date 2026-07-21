@@ -16,6 +16,7 @@ fsm_mode = "start"
 save_stdout_to = "backend_tests_output"
 goto_on_success = "run_frontend_tests"
 goto_on_failure = "fix_broken_test"
+timeout = 300
 ```
 
 ```bash donna script

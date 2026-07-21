@@ -5,14 +5,58 @@ mode = "incremental"
 runtime_dir = ".session/inconsistency-check"
 comparison_base_refs = ["main", "origin/main"]
 allowed_file_relations = ["governed_by"]
-jobs = 10
+# Maximum concurrent child Codex consistency checks.
+agent_jobs = 20
+# Maximum concurrent depmesh subprocesses in one dependency-discovery wave.
+discovery_jobs = 20
 
 [journal]
-cmd = ["./bin/taskwarior.sh", "log", "+journal", "+consistency", "kind:{kind}", "{message}"]
+# Disabled because recursive dependency traversal can produce hundreds of subprocess-backed journal writes.
+# Uncomment to restore detailed consistency-check journaling.
+# cmd = ["./bin/taskwarior.sh", "log", "+journal", "+consistency", "kind:{kind}", "{message}"]
 
+# Child-model options, ordered by estimated consistency-check quality.
+# Estimates are specific to this project's diff-to-specification workload. Relative cost uses
+# gpt-5.6-terra with high reasoning as the 1x baseline; actual speed and cost depend on input size,
+# tool use, reasoning tokens, rate limits, and the configured job concurrency.
+#
+# | Rank | Configuration | Estimated quality | Estimated speed | Estimated cost | Relative cost | Best use |
+# | ---: | --- | --- | --- | --- | ---: | --- |
+# | 1 | gpt-5.6-sol + xhigh | Maximum, ~5/5 | Very slow | Extreme | ~2.5-4x | Exceptional quality-first audits |
+# | 2 | gpt-5.6-sol + high | Very high, ~4.8/5 | Slow | Very high | ~2x | Critical concurrency, transaction, or migration work |
+# | 3 | gpt-5.6-terra + high (RECOMMENDED) | High, ~4.4/5 | Moderate | High | 1x | Regular project-wide consistency checking |
+# | 4 | gpt-5.6-terra + medium | Good-high, ~4/5 | Fast | Medium | ~0.6-0.8x | Routine changes after validating checker recall |
+# | 5 | gpt-5.6-luna + high | Good, ~3.7/5 | Fast to very fast | Low | ~0.35-0.5x | Large cost-sensitive runs with accepted extra risk |
+#
+# Current model positioning and API-price proxy: https://developers.openai.com/api/docs/models/compare
+#
+# Child command argument reference:
+# - `codex exec` runs Codex non-interactively for one relation-pair check.
+# - `--strict-config` rejects configuration keys unknown to the installed Codex version.
+# - `--model gpt-5.6-terra` pins the balanced model instead of inheriting a user default.
+# - `-c model_reasoning_effort="high"` gives the checker enough depth for semantic diff attribution,
+#   transactions, concurrency, temporal behavior, and cross-artifact contracts.
+# - `-c model_verbosity="low"` keeps the schema-constrained final JSON concise.
+# - `-c model_reasoning_summary="none"` suppresses reasoning summaries that this script does not consume.
+# - `-c personality="none"` removes conversational style from the machine-oriented checker response.
+# - `-c web_search="disabled"` keeps checks deterministic and local to repository evidence.
+# - `--cd {project_root}` makes the repository root the child's working directory.
+# - `--sandbox read-only` permits repository inspection but prevents child-agent edits.
+# - `-c approval_policy="never"` prevents an unattended child from waiting for interactive approval.
+# - `--ephemeral` avoids persisting a reusable Codex session for each relation pair.
+# - `--output-schema {schema_path}` constrains the final response to the generated checker JSON schema.
+# - `--output-last-message {output_path}` writes the final structured response where the script expects it.
+# - `-` reads the generated checker prompt from standard input and therefore must remain the last argument.
 [agent]
 cmd = [
   "codex", "exec",
+  "--strict-config",
+  "--model", "gpt-5.6-terra",
+  "-c", "model_reasoning_effort=\"high\"",
+  "-c", "model_verbosity=\"low\"",
+  "-c", "model_reasoning_summary=\"none\"",
+  "-c", "personality=\"none\"",
+  "-c", "web_search=\"disabled\"",
   "--cd", "{project_root}",
   "--sandbox", "read-only",
   "-c", "approval_policy=\"never\"",
@@ -21,6 +65,7 @@ cmd = [
   "--output-last-message", "{output_path}",
   "-"
 ]
+# Maximum wall-clock time for one child process; this is enforced by the checker script, not Codex.
 timeout_seconds = 3600
 
 [prompt]

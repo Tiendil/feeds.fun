@@ -107,3 +107,11 @@ When a requirement can be expressed either as an implementation detail or as a g
 For example, a specification SHOULD require closed sets of named values to use enums instead of raw strings. It SHOULD NOT require a specific enum class name or file location unless that class name or location is itself a stable architectural boundary.
 
 Examples in specifications SHOULD illustrate behavior or ownership. Examples SHOULD NOT be treated as a place to enumerate every current implementation file or symbol.
+
+## Implementation neutrality
+
+Specifications MUST define required behavior and stable observable contracts without prescribing an implementation mechanism when multiple implementations can satisfy the contract.
+
+A specification MAY require a concrete mechanism, such as a class, function, decorator, inheritance hierarchy, or specific helper, only when that mechanism is itself an architectural requirement or an observable caller contract. The specification MUST state why the mechanism matters or which required property an alternative implementation would violate.
+
+Specifications MUST NOT resolve an implementation choice merely to make a requirement or example more concrete. When the implementation choice does not affect the required behavior or stable contract, the specification MUST omit that choice.

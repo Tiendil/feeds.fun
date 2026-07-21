@@ -5,7 +5,9 @@ kind = "donna.lib.workflow"
 start_operation_id = "run_consistency_cycle"
 ```
 
-Repeatedly check files changed relative to `main` against their `depmesh`-related artifacts, pausing for the primary agent to repair the first current inconsistency.
+Repeatedly discover dependency-ready frontiers among files changed relative to `main`, check one frontier per cycle,
+and pause for the primary agent to repair the first current inconsistency in that frontier. Exit code `20` rebuilds the
+graph for the next frontier; a fresh cycle with no pending work exits successfully.
 
 ## Run Consistency Cycle
 
@@ -37,7 +39,7 @@ id = "fix_first_inconsistency"
 kind = "donna.lib.request_action"
 ```
 
-The consistency checker found the first current inconsistent relation pair.
+The consistency checker found the first current inconsistent relation pair in the active dependency-ready frontier.
 
 Stdout:
 

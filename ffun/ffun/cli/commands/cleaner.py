@@ -5,6 +5,7 @@ import typer
 from ffun.application.application import with_app
 from ffun.core import logging
 from ffun.domain.entities import TagId
+from ffun.entitlements import domain as e_domain
 from ffun.feeds import domain as f_domain
 from ffun.library import domain as l_domain
 from ffun.meta import domain as m_domain
@@ -38,6 +39,12 @@ async def run_clean(chunk: int) -> None:
             pass
 
         logger.info("cleaning_orphaned_tags_finished")
+
+        logger.info("cleaning_expired_entitlements_started")
+
+        deleted = await e_domain.cleanup_expired_entitlements()
+
+        logger.info("cleaning_expired_entitlements_finished", deleted=deleted)
 
         logger.info("cleaning_finished")
 

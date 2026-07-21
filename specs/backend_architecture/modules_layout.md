@@ -29,12 +29,14 @@ Product-specific choices that configure those reusable modules for Feeds Fun SHO
 - `ffun.api` owns HTTP API endpoint wiring.
 - `ffun.api.spa` owns API endpoints used by the frontend.
 - `ffun.application` owns application construction and application-wide settings.
+- `ffun.audit` owns append-only audit records created transactionally by backend modules.
 - `ffun.auth` owns authentication and authorization logic.
 - `ffun.cli` owns command-line commands for managing the application.
 - `ffun.core` owns framework-level base classes, utilities, logging, metrics, PostgreSQL helpers, plugins, and shared infrastructure.
 - `ffun.data_protection` owns data protection and privacy-related behavior.
 - `ffun.dispatcher` owns dispatching entries to tag processor queues and tracking per-processor entry processing status.
 - `ffun.domain` owns cross-domain entities and domain utilities.
+- `ffun.entitlements` owns source-specific user entitlement state and merged effective entitlements.
 - `ffun.feeds` owns feed storage and feed management.
 - `ffun.feeds_collections` owns curated feed collection configuration and behavior.
 - `ffun.feeds_discoverer` owns discovery of feeds for external sites.
@@ -43,6 +45,7 @@ Product-specific choices that configure those reusable modules for Feeds Fun SHO
 - `ffun.integrations` owns source-specific integration plugins.
 - `ffun.librarian` owns tag processor orchestration and processor implementations.
 - `ffun.library` owns storage and management of news entries.
+- `ffun.locks` owns collision-free, transaction-scoped logical mutexes backed by PostgreSQL.
 - `ffun.llms_framework` owns provider-neutral LLM framework logic.
 - `ffun.loader` owns loading news entries from feeds.
 - `ffun.markers` owns read/unread and similar entry markers.
@@ -134,9 +137,13 @@ Domain functions SHOULD hide low-level communication details from callers. Calle
 
 Top/input layers such as `ffun.api`, `ffun.api.spa`, and `ffun.cli` SHOULD call domain boundaries instead of operations when invoking business behavior.
 
-When a domain-level function only exposes an operation function without adding behavior, `domain.py` SHOULD prefer a direct assignment alias, such as `save_feed = operations.save_feed`, instead of a trivial wrapper.
+When a domain-level function only exposes an operation function without adding real domain behavior, such as a business decision, orchestration, validation, or result transformation, `domain.py` MUST re-export the operation instead of introducing a trivial wrapper. A direct re-export preserves one callable contract and keeps its signature and error behavior identical at both boundaries by construction; a wrapper creates a second contract that can drift without adding domain semantics. A direct assignment alias, such as `save_feed = operations.save_feed`, is the conventional form.
+
+Generating persistence ids, applying storage defaults, and returning identifiers for inserted records are operation-level mechanics. They MUST NOT be treated as domain behavior that justifies a domain wrapper.
 
 Domain wrappers SHOULD be used when they add real behavior, such as orchestration, validation, transaction ownership, fallback logic, caching, error conversion, or result shaping.
+
+A module MAY expose a coherent module-owned capability through its public domain boundary before production callers exist when a plausible future use is anticipated. The absence of a current runtime caller is not, by itself, a reason to keep that capability private or test-only. Such an interface MUST still have a defined contract and direct tests.
 
 ### `settings.py`
 
@@ -198,21 +205,33 @@ Production modules MUST NOT import `tests.helpers`.
 
 Backend modules have different dependency roles.
 
+Production database schemas and runtime database access in one top-level module MUST NOT reference tables owned by another top-level module. Cross-module persistence behavior MUST go through the owning modules' public domain boundaries instead of bypassing those boundaries with SQL.
+
+Tests MAY reference tables owned by other top-level modules when direct database access is useful for test setup, assertions, or cleanup. This exception MUST NOT introduce cross-module references in production schemas, migrations, or runtime database operations.
+
 ### Foundational modules
 
-`ffun.core`, `ffun.domain`, and `ffun.product` are foundational modules. They own shared technical primitives, cross-domain value types and utilities, and product-wide definitions that bind reusable domain mechanisms to Feeds Fun product choices. Other backend modules MAY import any submodule of a foundational module when they need functionality owned by that submodule. Foundational modules SHOULD avoid depending on domain-level or edge-layer modules, so shared primitives do not acquire feature or interface dependencies.
+`ffun.core`, `ffun.domain`, and `ffun.product` are foundational modules. They own shared technical primitives, cross-domain value types and utilities, and product-wide definitions that bind reusable domain mechanisms to Feeds Fun product choices. Other backend modules MAY import any submodule of a foundational module when they need functionality owned by that submodule. Foundational modules MUST NOT depend on shared-service, domain-level, or edge-layer modules, so shared primitives do not acquire higher-level dependencies.
+
+### Shared-service modules
+
+`ffun.audit`, `ffun.locks`, and `ffun.queues` are shared-service modules. They provide common capabilities that are always available to more specialized domain-level and edge-layer modules while remaining outside the foundational core.
+
+Shared-service modules MAY depend on foundational modules and on the public `domain`, `entities`, or `errors` boundaries of other shared-service modules. They MUST NOT depend on domain-level or edge-layer modules.
+
+Production callers MUST use a shared-service module through its `domain`, `entities`, or `errors` boundary. They MUST NOT import a shared-service module's implementation submodules, including `operations`.
 
 ### Domain-level modules
 
 Most backend modules are domain-level modules. They own reusable business capabilities for one domain area and SHOULD keep product-specific choices and application/interface wiring outside their implementation. Product-specific choices SHOULD live in `ffun.product`; external interface concerns SHOULD live in edge-layer modules.
 
-Production code in one domain-level module that needs types, values, behavior, or errors from another domain-level module MUST use only that module's `domain`, `entities`, or `errors` submodules. Domain-level modules SHOULD expose cross-module production API through those submodules when such API is needed.
+Production code in one domain-level module that needs types, values, behavior, or errors from another domain-level or shared-service module MUST use only that module's `domain`, `entities`, or `errors` submodules. Domain-level and shared-service modules SHOULD expose cross-module production API through those submodules when such API is needed.
 
 A supported domain API MAY return or accept objects whose concrete classes are defined in the module's implementation submodules. The cross-module dependency rule constrains the import path used by callers; it does not require every object reachable through a public API to be defined in `domain`, `entities`, or `errors`. Callers MUST still import and call the supported API through the allowed submodules, and MUST NOT import implementation submodules only to access the same objects directly.
 
 Tests MAY additionally import another domain-level module's `tests.make` and `tests.helpers` submodules for reusable test data construction and setup helpers. Production code MUST NOT import another module's `tests`, `tests.make`, or `tests.helpers` submodules.
 
-Domain-level modules MUST NOT import implementation submodules from another domain-level module. Domain-level modules MUST NOT import another domain-level module's `operations` submodule.
+Domain-level modules MUST NOT import implementation submodules from another domain-level or shared-service module. Domain-level modules MUST NOT import another module's `operations` submodule.
 
 ### Edge-layer modules
 

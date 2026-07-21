@@ -398,6 +398,14 @@ Tests that change the current working directory MUST restore it before the test 
 
 Tests SHOULD assert structured values before rendered text when structured values are available.
 
+Persistence operation tests MUST verify the expected persisted effects when the behavior under test inserts or deletes rows, including the number of affected records when cardinality is part of the contract.
+
+Tests for rejected writes, idempotent no-ops, or other paths whose contract includes unchanged persisted state MUST verify that invariant.
+
+Assertions about persisted effects MUST isolate the operations responsible for those effects. They MUST supplement, not replace, structured assertions about persisted content when record contents are part of the behavior under test.
+
+Tests whose subject is a public count operation MAY verify affected-record cardinality through that operation.
+
 Rendered output tests SHOULD assert exact output only for stable API, CLI, or persisted-state contracts.
 
 Rendered output tests MAY assert selected lines, fields, or records when exact text is intentionally outside the relevant specification.

@@ -63,7 +63,7 @@ Depmesh is configured to log significant operation steps via `task` tool.
 
 Special workflows to use:
 
-- `@/workflows/polish.donna.md` — format, fix architecture, lint, and test errors. Run it after making changes to the codebase at the moments when the project is expected to be in a working state: between significant implementation steps, before reporting completion of a task, etc. Run this workflow instead of running individual operations, unless you are explicitly needed to run a specific operation for some reason.
+- `@/workflows/polish.donna.md` — format, fix architecture, lint, and test errors. Run it after making changes to the codebase at the moments when the project is expected to be in a working state: between significant implementation steps, before reporting completion of a task, etc. Do not run it when all changes made for the current task are confined to files under `specs/`; review `depmesh` dependencies and perform targeted specification checks instead. Run this workflow instead of running individual operations, unless you are explicitly needed to run a specific operation for some reason.
 
 Do not run `donna -p llm new-session` unless the developer explicitly asks to reset or start a fresh Donna session.
 
@@ -90,6 +90,7 @@ The queue is an isolated Taskwarrior database of relation-pair checks. Each queu
 `depmesh` relation from a changed or manually selected file to one related artifact, plus the current SHA-256 checksums
 of both files, the relation id, the check status, and an optional markdown report. Pair keys include the relation and
 both file checksums, so old records remain as history while changed file content creates a fresh unchecked pair.
+Reconciliation immediately marks older checksum versions of the same oriented relation pair as `outdated`.
 
 The checker loop is the `run-cycle` command. It discovers files changed relative to `main`, queries all configured
 `depmesh` relations for those files, reconciles the current relation pairs into the queue, then handles at most one
@@ -97,10 +98,24 @@ unchecked pair. If a current pair is already marked `inconsistent`, the loop pri
 child checker. Otherwise it runs one read-only child Codex checker for the first unchecked pair, stores the result, and
 exits with a code that tells the Donna workflow whether to stop for a fix, continue the loop, or finish successfully.
 
+The `enqueue-changed` command performs the changed-file discovery, `depmesh` queries, and queue reconciliation portion
+of `run-cycle`, then exits successfully without processing unchecked pairs or spawning child Codex checkers.
+
+The `sync-queue` command discovers Git-changed files and non-outdated manually tracked changed-side files, reconciles
+their current `depmesh` relations, and marks stale checksum versions or relations no longer returned by `depmesh` as
+`outdated`. It does not process unchecked pairs or spawn child Codex checkers.
+
+`list-pairs` shows queue history by default. Pass `--current` to show only records whose stored checksums match the
+current files and whose oriented relation is still returned by `depmesh`; this current-only view does not mutate the
+queue.
+
 Main commands:
 
 - `python ./bin/inconsistency-check.py enqueue @/path/to/file` — manually add one file and all configured depmesh relation pairs for that file to the isolated queue.
 - `python ./bin/inconsistency-check.py enqueue @/first @/second` — enqueue multiple files.
+- `python ./bin/inconsistency-check.py enqueue-changed` — enqueue all relation pairs for files changed relative to `main` without processing unchecked pairs or spawning child checkers.
+- `python ./bin/inconsistency-check.py sync-queue` — reconcile Git-changed and manually tracked files, then mark stale checksums and removed relations outdated without processing unchecked pairs.
+- `python ./bin/inconsistency-check.py list-pairs --current` — show only current-checksum records for relations still returned by `depmesh`.
 - `python ./bin/inconsistency-check.py progress --file @/path/to/file` — show queued records where the file is either the changed side or the related side.
 - `python ./bin/inconsistency-check.py mark-consistent --changed @/changed --related @/related --relation <relation>` — explicitly mark the current-checksum relation pair as consistent.
 - `python ./bin/inconsistency-check.py mark-inconsistent --changed @/changed --related @/related --relation <relation> --report "<markdown>"` — explicitly mark the current-checksum relation pair as inconsistent.
@@ -132,6 +147,12 @@ You MUST NOT use it for:
 Use `rg` for text and file searches unless a structural code query is needed.
 
 `ast-grep` has a higher priority than `rg` whenever a structural code query is needed.
+
+### Specification reading
+
+Grep-like tools, including `rg`, MAY be used to discover relevant specification files. Search results MUST be treated only as discovery hints.
+
+Before relying on, interpreting, reviewing, or changing a specification file, an agent MUST read that file in full from beginning to end. Agents MUST NOT use `sed`, `head`, `tail`, line-range readers, grep context output, or any other partial-file reading method to read specification content. If a whole-file read is truncated, the agent MUST repeat it with sufficient output capacity and MUST NOT proceed until the complete file has been read.
 
 ### `taskwarrior`
 

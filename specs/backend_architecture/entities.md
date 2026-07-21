@@ -24,6 +24,7 @@ The following topics are out of scope:
 - `value entity` - an entity whose equality is based on its data rather than object identity.
 - `boundary entity` - an entity that is passed between modules with different responsibilities.
 - `serialized representation` - a plain data representation prepared for an external protocol such as JSON, HTTP response data, logs, or persistent storage.
+- `serialized id` - the canonical string representation of an entity identifier used by a shared boundary that accepts identifiers from multiple domain modules.
 
 ## General principles
 
@@ -112,6 +113,8 @@ Semantic primitive types SHOULD be owned by the module that owns the correspondi
 Shared semantic primitive types SHOULD belong to the domain module.
 
 Module-specific semantic primitive types SHOULD belong to the owning module.
+
+`ffun.domain.entities.SerializedId` MUST represent the canonical string form of an entity identifier at shared boundaries that accept identifiers owned by different domain modules. It is a universal domain primitive rather than an identifier owned by any one subsystem. Code within an owning module SHOULD retain the identifier's more specific semantic type until it reaches such a boundary.
 
 ## Entity ownership
 

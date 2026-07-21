@@ -11,11 +11,17 @@ from structlog import _config as structlog_config
 from structlog import contextvars as structlog_contextvars
 from structlog.testing import LogCapture
 
+from ffun.core import postgresql
 from ffun.core.postgresql import execute
 from ffun.domain.entities import UserId
 
 PRODUCER = Callable[[], object]
 LOG_RECORDS = list[MutableMapping[str, object]]
+
+
+def assert_pool_capacity_at_least(required_size: int) -> None:
+    assert postgresql.POOL is not None
+    assert postgresql.POOL.max_size >= required_size
 
 
 class Comparator:
