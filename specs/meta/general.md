@@ -108,6 +108,14 @@ For example, a specification SHOULD require closed sets of named values to use e
 
 Examples in specifications SHOULD illustrate behavior or ownership. Examples SHOULD NOT be treated as a place to enumerate every current implementation file or symbol.
 
+### Terminology stability
+
+Names in specifications MUST describe durable domain concepts rather than current implementation, storage, or workflow structure. New names SHOULD remain accurate across reasonable architectural changes.
+
+An existing term MUST be preserved when a change extends the concept's behavior or representation and the term remains accurate. A term MAY be renamed only when it has become incorrect, ambiguous, or inconsistent with established project terminology. A rename MUST NOT be made only to mirror an internal architecture, persistence, or lifecycle change.
+
+When only one variant needs distinction, specifications SHOULD qualify that variant locally instead of renaming the broader concept throughout the specification.
+
 ## Implementation neutrality
 
 Specifications MUST define required behavior and stable observable contracts without prescribing an implementation mechanism when multiple implementations can satisfy the contract.
