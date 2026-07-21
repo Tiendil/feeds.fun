@@ -69,6 +69,9 @@ The `Dictionary` section SHOULD be placed immediately after the `Scope` section.
 - Specifications MUST NOT break long lines to fit within 80 characters or any other number; they MUST use as many characters as needed to express the idea clearly.
 - Long enumerations SHOULD be organized as Markdown lists when possible.
 
+Each sentence in a prose paragraph MUST be written on a separate Markdown source line.
+Consecutive sentence lines MUST NOT be separated by a blank line when they belong to the same paragraph.
+
 ## Abstraction level
 
 Specifications MUST describe project behavior, architecture, constraints, terminology, and compatibility contracts at the highest level that is still precise enough to guide implementation.

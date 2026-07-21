@@ -2,23 +2,23 @@
 
 ## Goal of the document
 
-This document describes how recurring and persistent internal SaaS tokens should authorize backend LLM tag processing, how one token per user-entry should be reserved and consumed, and how this access path should coexist with the current user API-key and LLM-usage tracking path.
+This document describes how recurring and lifetime SaaS tokens should authorize backend LLM tag processing, how one token per user-entry should be reserved and consumed, and how this access path should coexist with the current user API-key and LLM-usage tracking path.
 
 ## Scope
 
 This design covers LLM-backed entry tag processing for user-linked feeds, three new resource kinds, per-user authorization, token-pool precedence, concurrency, accounting, route configuration, failures, observability, and required tests.
 
-The design does not define product prices, payment-provider protocols, the UI for buying persistent tokens, or a complete billing ledger. It does identify the persistent-token contract that those systems must provide.
+The design does not define product prices, payment-provider protocols, the UI for buying lifetime tokens, or a complete billing ledger. It does identify the lifetime-token contract that those systems must provide.
 
 ## Dictionary
 
 - `SaaS token` — an internal Feeds Fun access unit. In the first implementation, one SaaS token authorizes one user to access the processed tags for one entry.
 - `LLM token` — a provider-reported input or output token used for API-key cost and usage tracking. It has no conversion to or effect on SaaS tokens.
 - `recurring quota` — a SaaS-token allowance supplied by an active entitlement whose usage resets at a calendar boundary.
-- `persistent token` — a spendable SaaS token that does not reset at a day or month boundary and remains available until consumed or explicitly adjusted.
-- `token pool` — one ordered source of SaaS capacity: daily quota, monthly overflow quota, or persistent tokens.
+- `lifetime token` — a spendable SaaS token that does not reset at a day or month boundary and remains available until consumed or explicitly adjusted.
+- `token pool` — one ordered source of SaaS capacity: daily quota, monthly overflow quota, or lifetime tokens.
 - `API-key sponsor` — the one linked user whose API key is selected by the existing key-rotation logic to execute a shared entry-processing call.
-- `entitlement-funded user` — a linked user whose own recurring quota or persistent tokens are charged for access to the tags produced by a shared entry-processing call.
+- `entitlement-funded user` — a linked user whose own recurring quota or lifetime tokens are charged for access to the tags produced by a shared entry-processing call.
 - `authorized user` — a linked user who may see the produced tags because the user is covered by the API-key path or has a successful token reservation and settlement.
 - `reservation` — the configured per-user-entry SaaS-token amount held before processing or access authorization so concurrent workers cannot overspend it.
 - `settlement` — conversion of the reservation's recorded amount into usage, or its release without usage.
@@ -59,7 +59,7 @@ available = max(allowance - used - reserved, 0)
 
 - daily allowance: the active `day_tokens` entitlement value;
 - monthly overflow allowance: the active `month_tokens` entitlement value;
-- persistent allowance: the effective `persistent_tokens` entitlement value, summed across active sources.
+- lifetime allowance: the effective `lifetime_tokens` entitlement value, summed across active sources.
 
 This convention fits the current resources table, provides consistent reservation and settlement operations, keeps historical usage visible, and handles an entitlement increase or decrease without rewriting consumption. If a limit decreases below already-used capacity, the remaining capacity becomes zero; recorded usage must not be erased or clamped.
 
@@ -73,24 +73,24 @@ Three stable resource kinds should be added. Names should describe what the reso
 | --- | ---: | --- | --- |
 | `day_token_usage` | 3 | active `day_tokens` entitlement | start of the current calendar day |
 | `month_token_usage` | 4 | active `month_tokens` entitlement | start of the current calendar month |
-| `persistent_token_usage` | 5 | active `persistent_tokens` entitlement | one non-rotating lifetime interval |
+| `lifetime_token_usage` | 5 | active `lifetime_tokens` entitlement | one non-rotating lifetime interval |
 
 Value `1` should not be reused because it belonged to historical OpenAI-token tracking; the existing `tokens_cost = 2` must retain its stable value. Adding the enum values does not by itself require a database migration because `r_resources.kind` is an integer without a database registry. A migration is still required for durable per-user-entry authorization.
 
 All users and operations use UTC calendar boundaries. A daily interval starts at 00:00 UTC each day, and a monthly interval starts at 00:00 UTC on the first day of each month. One timestamp must be captured at authorization time and used to derive both interval starts. A call crossing midnight or a month boundary settles against the rows reserved at authorization time; it must not move usage into a newer interval during settlement.
 
-## Proposed persistent-token solution
+## Proposed lifetime-token solution
 
-### Model persistent tokens as an entitlement
+### Model lifetime tokens as an entitlement
 
-Add `persistent_tokens` as an effectively infinite entitlement. “Infinite” is represented by one stable future expiration constant, such as `PERSISTENT_ENTITLEMENT_EXPIRES_AT`, set approximately 100 years in the future. Every persistent-token entitlement uses that fixed value; grant operations must not recompute `now + 100 years` and silently move the boundary.
+Add `lifetime_tokens` as an effectively infinite entitlement. “Infinite” is represented by one stable future expiration constant, such as `LIFETIME_ENTITLEMENT_EXPIRES_AT`, set approximately 100 years in the future. Every lifetime-token entitlement uses that fixed value; grant operations must not recompute `now + 100 years` and silently move the boundary.
 
-The entitlement value is a cumulative maximum allowed usage, not a remaining balance. `persistent_tokens` uses the `sum` merge policy so active sources contribute additively. Consumption never modifies entitlement state: `persistent_token_usage` tracks `used` and `reserved` in one stable lifetime resource interval, exactly as day and month consumption are tracked in their respective resource intervals.
+The entitlement value is a cumulative maximum allowed usage, not a remaining balance. `lifetime_tokens` uses the `sum` merge policy so active sources contribute additively. Consumption never modifies entitlement state: `lifetime_token_usage` tracks `used` and `reserved` in one stable lifetime resource interval, exactly as day and month consumption are tracked in their respective resource intervals.
 
 The resulting calculation is:
 
 ```text
-persistent available = max(effective persistent_tokens - used - reserved, 0)
+lifetime available = max(effective lifetime_tokens - used - reserved, 0)
 ```
 
 Reducing or revoking entitlement allowance does not rewrite historical usage and is allowed to reduce the effective maximum below `used + reserved`; availability then remains zero. A later grant provides capacity only after the summed entitlement maximum exceeds lifetime `used + reserved`. For example, after 80 tokens have been used, revoking the allowance and later granting 50 tokens still leaves zero available. This is the intended behavior.
@@ -110,7 +110,7 @@ Cons:
 - a future purchase system still needs its own immutable financial transaction history and external idempotency ids, even though its effective allowance is represented by entitlements;
 - the effectively infinite expiration remains an operational convention and must be centralized and monitored.
 
-This is the proposed model for the first implementation. Granting and revoking persistent capacity must use the public entitlements domain, while consumption, reservation, and release must use the resources domain.
+This is the proposed model for the first implementation. Granting and revoking lifetime capacity must use the public entitlements domain, while consumption, reservation, and release must use the resources domain.
 
 ## Funding and processing workflow
 
@@ -119,18 +119,18 @@ This is the proposed model for the first implementation. Granting and revoking p
 For a user-feed route, funding and access must be evaluated in this order:
 
 1. Evaluate linked users with the existing API-key eligibility rules. Mark every passing user as API-key-covered, select at most one as sponsor using the existing rotation logic, and reserve only that sponsor's legacy `tokens_cost` resource.
-2. For every remaining linked user, independently attempt to reserve `SAAS_TOKENS_PER_USER_ENTRY` from that user's daily, monthly, then persistent pool.
+2. For every remaining linked user, independently attempt to reserve `SAAS_TOKENS_PER_USER_ENTRY` from that user's daily, monthly, then lifetime pool.
 3. If an API-key sponsor exists, use that user's key for the shared provider call. Otherwise, if at least one user has a successful token reservation, use the configured Feeds Fun API key.
 4. If neither authorization path has a user, skip the entry with a funding-specific reason.
 5. After successful entry processing, settle every entitlement-funded user's recorded reservation amount as used and grant visibility only to successfully authorized users.
 
-API-key precedence is applied per user for entitlement charging and once per call for credential selection. A user covered by the API-key path must not spend daily, monthly, or persistent resources for that entry. Other linked users without API-key coverage must still be charged individually even when the shared provider call uses the sponsor's personal key.
+API-key precedence is applied per user for entitlement charging and once per call for credential selection. A user covered by the API-key path must not spend daily, monthly, or lifetime resources for that entry. Other linked users without API-key coverage must still be charged individually even when the shared provider call uses the sponsor's personal key.
 
 A provider failure after a user key has been selected must not automatically fall back to a configured key in the same attempt, because doing so could issue duplicate LLM requests. It follows the common settlement policy for every entitlement-funded user whose reservation accompanied that attempt.
 
-The existing filters on user keys—working-key status, entry-age preference, and legacy monthly cost protection—remain part of the old path. A user whose personal key is broken, over its provider quota, or over the legacy cost guard did not obtain usable API-key coverage and must be allowed to fall back to daily, monthly, or persistent SaaS tokens.
+The existing filters on user keys—working-key status, entry-age preference, and legacy monthly cost protection—remain part of the old path. A user whose personal key is broken, over its provider quota, or over the legacy cost guard did not obtain usable API-key coverage and must be allowed to fall back to daily, monthly, or lifetime SaaS tokens.
 
-Collection routes must keep their current guarantee: use a configured key without selecting or charging a user. Entitlement and persistent-token funding applies only to user-feed routes.
+Collection routes must keep their current guarantee: use a configured key without selecting or charging a user. Entitlement and lifetime-token funding applies only to user-feed routes.
 
 ### Route configuration
 
@@ -171,8 +171,8 @@ The entitlement path should perform these steps with one captured authorization 
 1. Resolve the unique users linked to all non-collection feeds for the entry.
 2. Evaluate API-key coverage first and remove covered users from entitlement charging.
 3. Apply user-level eligibility to every remaining user, especially the “process entries not older than” preference, unless product requirements deliberately remove it for entitlement-funded access.
-4. Batch-load active `day_tokens`, `month_tokens`, and `persistent_tokens` entitlements for all remaining user ids through `ffun.entitlements.domain`.
-5. Batch-load existing daily, monthly, and persistent usage without creating rows for every user. Missing usage rows mean zero.
+4. Batch-load active `day_tokens`, `month_tokens`, and `lifetime_tokens` entitlements for all remaining user ids through `ffun.entitlements.domain`.
+5. Batch-load existing daily, monthly, and lifetime usage without creating rows for every user. Missing usage rows mean zero.
 6. For every user with at least `SAAS_TOKENS_PER_USER_ENTRY` available in one pool, atomically reserve that amount from the first available pool in priority order.
 7. Treat each reservation result independently: a race or lack of capacity excludes only that user and must not prevent reservations for other users.
 
@@ -196,7 +196,7 @@ Select the first pool with at least `SAAS_TOKENS_PER_USER_ENTRY` available units
 
 1. daily quota;
 2. monthly overflow quota;
-3. persistent tokens.
+3. lifetime tokens.
 
 The selection rule is:
 
@@ -205,7 +205,7 @@ required = SAAS_TOKENS_PER_USER_ENTRY
 
 if daily available >= required: reserve required daily tokens
 else if monthly available >= required: reserve required monthly tokens
-else if persistent available >= required: reserve required persistent tokens
+else if lifetime available >= required: reserve required lifetime tokens
 else: user is not authorized
 ```
 
@@ -267,11 +267,11 @@ No fairness or ranking policy is needed for entitlement users because the system
 ### Entitlements
 
 - Keep `day_tokens` and `month_tokens` as limit entitlements with their current `max` merge policy.
-- Add `persistent_tokens` as a limit entitlement with the `sum` merge policy and the shared `PERSISTENT_ENTITLEMENT_EXPIRES_AT` future expiration constant.
+- Add `lifetime_tokens` as a limit entitlement with the `sum` merge policy and the shared `LIFETIME_ENTITLEMENT_EXPIRES_AT` future expiration constant.
 - Use the public batch effective-entitlement query; processing code must not read entitlement tables or merge source entitlements itself.
-- Grant and revoke persistent capacity through the public entitlements domain and its audit path.
+- Grant and revoke lifetime capacity through the public entitlements domain and its audit path.
 - Do not write any entitlement state during usage; token consumption belongs exclusively to resources.
-- When purchases are introduced, keep immutable financial transactions with external idempotency ids and project their effects into `persistent_tokens` entitlements.
+- When purchases are introduced, keep immutable financial transactions with external idempotency ids and project their effects into `lifetime_tokens` entitlements.
 
 ### Resources
 
@@ -280,7 +280,7 @@ No fairness or ranking policy is needed for entitlement users because the system
 - Add one public atomic operation that reserves `SAAS_TOKENS_PER_USER_ENTRY` from the first available pool for one user, plus an efficient way to invoke it for every eligible user and receive per-user results.
 - Add idempotent settlement and release behavior using every reservation's recorded amount.
 - Capture one authorization timestamp and return the exact interval identifiers in the reservation so later settlement cannot recompute them differently.
-- Use one canonical lifetime interval identifier for every `persistent_token_usage` row; it must not be derived from an individual entitlement's start or expiration.
+- Use one canonical lifetime interval identifier for every `lifetime_token_usage` row; it must not be derived from an individual entitlement's start or expiration.
 - Add durable per-user-entry authorization persistence, stale-reservation cleanup, and an index supporting cleanup.
 
 ### LLM framework and tag processor
@@ -310,17 +310,17 @@ Automatically authorizing previously hidden tags, redispatching globally skipped
 
 ## Concurrency, correctness, and idempotency
 
-- Entitlement and persistent-token allowances must be evaluated together with current usage at one logical authorization time.
+- Entitlement and lifetime-token allowances must be evaluated together with current usage at one logical authorization time.
 - The database, not the Python prefilter, is authoritative for the final availability check.
 - Each user's ordered reservation of `SAAS_TOKENS_PER_USER_ENTRY` and any resource-row initialization must be atomic. Different users' outcomes are independent.
-- Pool attempts must preserve daily, monthly, persistent order and, when multiple users share a transaction, deterministic user-id order.
+- Pool attempts must preserve daily, monthly, lifetime order and, when multiple users share a transaction, deterministic user-id order.
 - Settling or releasing the same durable reservation more than once must be a no-op or return its previous outcome, never double-spend or double-release.
 - A reservation may be settled after its entitlement expires because authorization occurred while the entitlement was active; it must use the originally reserved rows and limits.
 - Unlinking a user or feed after reservation does not invalidate work already authorized.
 - A user linked through more than one feed or processed by more than one processor must still have at most one reservation and one SaaS-token charge for the same entry.
 - Retrying an entry must reuse or resolve the previous per-user authorization identity before creating another charge.
-- Persistent-token grant operations must be concurrency-safe; future payment notifications require external idempotency keys.
-- A persistent allowance reduction may leave `used + reserved` above the effective entitlement. Availability is clamped to zero, and existing resource counters are not changed.
+- Lifetime-token grant operations must be concurrency-safe; future payment notifications require external idempotency keys.
+- A lifetime allowance reduction may leave `used + reserved` above the effective entitlement. Availability is clamped to zero, and existing resource counters are not changed.
 - Usage counters must not be reset when entitlements change.
 
 ## Audit, events, metrics, and privacy
@@ -329,14 +329,14 @@ The accounting path should emit a structured business event after settlement, wi
 
 - charged user id and optional API-key sponsor id;
 - entry id and diagnostic processor id;
-- selected SaaS pool (`day_tokens`, `month_tokens`, or `persistent_tokens`);
+- selected SaaS pool (`day_tokens`, `month_tokens`, or `lifetime_tokens`);
 - reserved SaaS tokens (the reservation's recorded amount, initially `1`);
 - used SaaS tokens (the recorded amount for successful processing, otherwise `0`);
 - settlement outcome and failure category.
 
 The event should be emitted once per entitlement-funded user so per-user access and accounting can be reconstructed. The shared call may additionally emit one aggregate event with the number of API-key-covered, entitlement-funded, and unauthorized users.
 
-Persistent-token entitlement grants and adjustments should produce durable entitlement audit records containing actor, subject user, signed amount, and reason/source. When purchases are introduced, their separate immutable financial records must additionally contain the external transaction id. Routine resource reservations need not become entitlement audit events.
+Lifetime-token entitlement grants and adjustments should produce durable entitlement audit records containing actor, subject user, signed amount, and reason/source. When purchases are introduced, their separate immutable financial records must additionally contain the external transaction id. Routine resource reservations need not become entitlement audit events.
 
 Metrics must keep SaaS-token consumption separate from LLM usage. They should count per-user authorization outcomes, selected SaaS pools, recorded reservation amounts, reservation races, failed settlements, and stale reservations. Existing API-key metrics/events should continue to report provider/model usage and cost. API-key values must never appear in logs, events, reservation rows, or error messages beyond the existing protected configuration/settings storage.
 
@@ -349,8 +349,8 @@ At minimum, automated backend tests should cover:
 3. Varying input tokens, output tokens, model cost, request count, or actual provider usage never changes the one-unit SaaS charge.
 4. With entitlement enforcement enabled, users whose personal keys are absent, broken, over provider quota, or over the legacy cost guard may fall back to SaaS tokens; when at least one has daily capacity, `route.api_key` executes the call and every such user is charged independently.
 5. A user with daily capacity consumes the daily pool and no other pool.
-6. A user with absent, zero, or exhausted daily capacity consumes one monthly token and no persistent token.
-7. A user with exhausted daily and monthly capacity consumes one persistent token.
+6. A user with absent, zero, or exhausted daily capacity consumes one monthly token and no lifetime token.
+7. A user with exhausted daily and monthly capacity consumes one lifetime token.
 8. A user with no available pool is excluded from visibility without preventing other authorized users from processing.
 9. When no linked user is covered by an API key or has a SaaS token, the entry is skipped and no reservation leaks.
 10. Provider, normalization, or tag-persistence failure releases every SaaS reservation without increasing SaaS usage.
@@ -363,16 +363,16 @@ At minimum, automated backend tests should cover:
 17. A pool race affects only that user; other user authorizations continue.
 18. Daily intervals start at 00:00 UTC, monthly intervals start at 00:00 UTC on the first day of the month, and a call crossing either boundary settles the interval captured at authorization.
 19. Entitlement increase, decrease, expiration, and revocation do not rewrite existing usage.
-20. Duplicate settlement, release, visibility grant, and persistent-token grant ids are idempotent.
+20. Duplicate settlement, release, visibility grant, and lifetime-token grant ids are idempotent.
 21. Crash recovery releases or resolves stale durable per-user-entry reservations.
 22. Tags are visible to API-key-covered and successfully settled entitlement-funded users, but not to unauthorized or unsettled users.
 23. Tags are not made globally visible for user-feed processing before per-user authorization.
 24. With entitlement enforcement disabled and `route.api_key` present, configured-key processing remains unrestricted, all linked users may see tags, and no SaaS-token accounting runs.
 25. With entitlement enforcement disabled and `route.api_key` absent, the existing user-key-only behavior is preserved.
 26. Provider-reported input and output tokens from every request executed with a user API-key sponsor continue to feed that sponsor's existing LLM usage tracking only.
-27. Active `persistent_tokens` sources are combined with the `sum` policy, while consumption is recorded only in `persistent_token_usage`.
-28. Every persistent-token entitlement uses the shared stable future expiration constant, and updating a grant does not move that expiration.
-29. Reducing persistent allowance below lifetime usage leaves usage unchanged and availability at zero; a later grant smaller than that historical usage does not restore capacity.
+27. Active `lifetime_tokens` sources are combined with the `sum` policy, while consumption is recorded only in `lifetime_token_usage`.
+28. Every lifetime-token entitlement uses the shared stable future expiration constant, and updating a grant does not move that expiration.
+29. Reducing lifetime allowance below lifetime usage leaves usage unchanged and availability at zero; a later grant smaller than that historical usage does not restore capacity.
 30. With entitlement enforcement enabled and both a personal-key sponsor and `route.api_key` available, the sponsor's key executes the call and `route.api_key` is not used.
 31. With entitlement enforcement enabled and no personal-key sponsor, `route.api_key` executes the call only when at least one user has a successful SaaS-token reservation.
 32. Enabling entitlement enforcement when any route with `allowed_for_users = true` has an empty `api_key` fails validation at startup.
@@ -385,9 +385,9 @@ All development checks and tests must run through the project's Docker-backed sc
 ## Rollout considerations
 
 - Additive resource kinds require no usage backfill; missing rows start at zero.
-- Entitlement enforcement remains disabled by default and should be enabled per deployment only after route fallback credentials, the `persistent_tokens` entitlement, visibility enforcement, and observability are deployed.
+- Entitlement enforcement remains disabled by default and should be enabled per deployment only after route fallback credentials, the `lifetime_tokens` entitlement, visibility enforcement, and observability are deployed.
 - Keep the legacy `tokens_cost` resource and user-key guard unchanged during coexistence.
-- Deploy `persistent_tokens` entitlement support, its stable future expiration constant, durable per-user-entry reservations, and non-empty `api_key` values on every route with `allowed_for_users = true` before enabling entitlement enforcement.
+- Deploy `lifetime_tokens` entitlement support, its stable future expiration constant, durable per-user-entry reservations, and non-empty `api_key` values on every route with `allowed_for_users = true` before enabling entitlement enforcement.
 - Replace the temporary global visibility marker for user-feed entries with per-user authorization before enabling token charging.
 - The deployment-level `tag_processors.enforce_entitlements` setting provides rollback without deleting accounting data; disabling it restores unrestricted legacy behavior and must therefore be treated as a security- and billing-sensitive operation in production.
 - Before removal of user API keys, reevaluate configured-key capacity, API-key-covered access rules, and the legacy `tokens_cost` cleanup plan.
@@ -396,5 +396,5 @@ All development checks and tests must run through the project's Docker-backed sc
 
 The following decisions affect data contracts or user-visible charging and should be resolved first:
 
-1. **Repeated grants from one source:** Because entitlements currently keep one replaceable state per source, should a repeated persistent-token grant atomically add to that source's existing cumulative maximum, use a distinct source instance, or be projected from an external transaction aggregate? The operation must define retry and concurrent-update behavior.
-2. **Pooled usage attribution:** `persistent_token_usage` is shared across all grants and cannot identify which purchase or grant funded a user-entry. Is aggregate accounting sufficient, or will refunds, chargebacks, support corrections, or reporting require an attribution policy?
+1. **Repeated grants from one source:** Because entitlements currently keep one replaceable state per source, should a repeated lifetime-token grant atomically add to that source's existing cumulative maximum, use a distinct source instance, or be projected from an external transaction aggregate? The operation must define retry and concurrent-update behavior.
+2. **Pooled usage attribution:** `lifetime_token_usage` is shared across all grants and cannot identify which purchase or grant funded a user-entry. Is aggregate accounting sufficient, or will refunds, chargebacks, support corrections, or reporting require an attribution policy?
