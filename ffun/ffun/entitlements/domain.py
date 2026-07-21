@@ -320,7 +320,7 @@ async def change_source_entitlement(  # noqa: CFQ002
 
 async def get_entitlements(
     user_ids: list[UserId], kind_ids: list[EntitlementKindId]
-) -> Mapping[UserId, Mapping[EntitlementKindId, bool]]:
+) -> Mapping[UserId, Mapping[EntitlementKindId, EffectiveEntitlementInterval | None]]:
     selected_user_ids = list({user_id: None for user_id in user_ids})
     selected_kind_ids = (
         list({kind_id: None for kind_id in kind_ids})
@@ -331,8 +331,8 @@ async def get_entitlements(
     for kind_id in selected_kind_ids:
         get_entitlement_kind(kind_id)
 
-    result: dict[UserId, dict[EntitlementKindId, bool]] = {
-        user_id: {kind_id: False for kind_id in selected_kind_ids} for user_id in selected_user_ids
+    result: dict[UserId, dict[EntitlementKindId, EffectiveEntitlementInterval | None]] = {
+        user_id: {kind_id: None for kind_id in selected_kind_ids} for user_id in selected_user_ids
     }
 
     if not selected_user_ids or not selected_kind_ids:
@@ -347,7 +347,7 @@ async def get_entitlements(
     )
 
     for interval in active_intervals:
-        result[interval.user_id][interval.kind_id] = True
+        result[interval.user_id][interval.kind_id] = interval
 
     return result
 

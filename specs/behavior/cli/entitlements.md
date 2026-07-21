@@ -8,13 +8,13 @@ This document describes the Feeds Fun CLI command family for managing and inspec
 
 This specification covers the public `ffun entitlements` command family and the entitlement capabilities it exposes.
 
-Entitlement domain rules, persistence, audit records, business events, and other CLI command families are out of scope. Exact output formats are not yet specified.
+Entitlement domain rules, persistence, audit records, business events, and other CLI command families are out of scope. Output formats for `grant` and `revoke` are not yet specified.
 
 ## Command group
 
 The root CLI MUST expose `entitlements` as a command group.
 
-The command group MUST provide CLI access to source entitlement changes, batch effective-entitlement checks, and expired effective-interval cleanup.
+The command group MUST provide CLI access to source entitlement changes and batch effective-entitlement listings.
 
 ## Commands
 
@@ -51,20 +51,26 @@ Parameters:
 - `--actor-kind {user|admin|psp|system}` — kind of the actor initiating the change; defaults to `admin`.
 - `--actor-id ID` — stable id of the actor initiating the change; defaults to `admin`.
 
-### `ffun entitlements check`
+### `ffun entitlements list`
 
-Checks effective entitlements at one evaluation time and prints a boolean result for every requested user and selected entitlement kind, including pairs whose result is false.
+Lists effective entitlements at one evaluation time and prints one JSON object on its own line for every requested user and selected entitlement kind, including pairs whose entitlement is not granted.
 
 Parameters:
 
 - `--user-id UUID` — required affected-user filter; MAY be supplied multiple times.
 - `--kind NAME` — optional entitlement-kind filter; MAY be supplied multiple times. When omitted, the command returns all registered entitlement kinds for every requested user.
 
-### `ffun entitlements cleanup`
+Every output object MUST contain these fields:
 
-Invokes the entitlement domain cleanup operation to delete expired effective entitlement intervals. It MUST NOT delete source entitlement rows.
+- `user_id` — requested user id serialized as a UUID string.
+- `kind` — entitlement kind enum member name.
+- `kind_id` — stable integer value of the entitlement kind enum member.
+- `granted` — whether an effective interval covers the command's evaluation time.
+- `value` — effective integer value when granted, otherwise `null`.
+- `starts_at` — inclusive start of the active effective interval as an ISO 8601 timestamp with an explicit UTC offset when granted, otherwise `null`.
+- `expires_at` — exclusive end of the active effective interval as an ISO 8601 timestamp with an explicit UTC offset when granted, otherwise `null`.
 
-The command has no parameters.
+All fields MUST be present in every output object. Records MUST preserve the first occurrence order of requested users. Kind records MUST preserve the first occurrence order of explicit kind filters, or entitlement registry order when the kind filter is omitted.
 
 ## Integration boundary
 

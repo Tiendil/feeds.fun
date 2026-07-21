@@ -72,7 +72,7 @@ Intervals are half-open: `starts_at` is inclusive and `expires_at` is exclusive.
 3. Apply the kind's merge policy to the active values and materialize the result.
 4. Coalesce adjacent intervals with the same value.
 
-For domain results and business event payloads, the effective state at an evaluation time is `(true, value)` when a materialized interval covers that time and `(false, null)` otherwise.
+For source-change domain results and business event payloads, the effective state at an evaluation time is `(true, value)` when a materialized interval covers that time and `(false, null)` otherwise.
 
 ### Effective entitlement queries and cleanup
 
@@ -141,9 +141,9 @@ CREATE INDEX en_entitlements_expires_at_idx ON en_entitlements (expires_at); -- 
 
 ## Domain interface
 
-`ffun.entitlements.domain` MUST provide source changes, interval cleanup, and a batch entitlement-check function. Operation names are not specified.
+`ffun.entitlements.domain` MUST provide source changes, interval cleanup, and a batch effective-entitlement listing function. Operation names are not specified.
 
-The batch function MUST accept lists of user ids and entitlement kind ids, use one evaluation time for the whole request, and return `Mapping[UserId, Mapping[EntitlementKindId, bool]]`. An empty entitlement kind id list MUST select every registered entitlement kind. Every requested user and selected kind MUST be present in the result; a value is `true` exactly when an effective interval covers the evaluation time and `false` otherwise.
+The batch function MUST accept lists of user ids and entitlement kind ids, use one evaluation time for the whole request, and return `Mapping[UserId, Mapping[EntitlementKindId, EffectiveEntitlementInterval | None]]`. An empty entitlement kind id list MUST select every registered entitlement kind. Every requested user and selected kind MUST be present in the result. A value MUST be the complete effective interval that covers the evaluation time when the entitlement is granted, and `None` otherwise.
 
 ## Audit records
 

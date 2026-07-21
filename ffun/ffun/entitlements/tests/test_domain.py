@@ -771,21 +771,30 @@ class TestGetEntitlements:
             actor_id=_ACTOR_ID,
         )
 
-        checked = await domain.get_entitlements(
+        listed = await domain.get_entitlements(
             [entitled_user, other_user],
             [_DAY_TOKENS, _MONTH_TOKENS],
         )
 
-        assert checked == {
-            entitled_user: {_DAY_TOKENS: True, _MONTH_TOKENS: False},
-            other_user: {_DAY_TOKENS: False, _MONTH_TOKENS: False},
+        assert listed == {
+            entitled_user: {
+                _DAY_TOKENS: make_effective_entitlement_interval(
+                    user_id=entitled_user,
+                    kind_id=_DAY_TOKENS,
+                    value=10,
+                    starts_at=starts_at,
+                    expires_at=expires_at,
+                ),
+                _MONTH_TOKENS: None,
+            },
+            other_user: {_DAY_TOKENS: None, _MONTH_TOKENS: None},
         }
 
     @pytest.mark.asyncio
     async def test_empty_kind_list_selects_all_configured_kinds(self) -> None:
         user_id = new_user_id()
 
-        assert await domain.get_entitlements([user_id], []) == {user_id: {_DAY_TOKENS: False, _MONTH_TOKENS: False}}
+        assert await domain.get_entitlements([user_id], []) == {user_id: {_DAY_TOKENS: None, _MONTH_TOKENS: None}}
 
     @pytest.mark.asyncio
     async def test_empty_user_list(self) -> None:
@@ -795,13 +804,13 @@ class TestGetEntitlements:
     async def test_duplicate_user_ids(self) -> None:
         user_id = new_user_id()
 
-        assert await domain.get_entitlements([user_id, user_id], [_DAY_TOKENS]) == {user_id: {_DAY_TOKENS: False}}
+        assert await domain.get_entitlements([user_id, user_id], [_DAY_TOKENS]) == {user_id: {_DAY_TOKENS: None}}
 
     @pytest.mark.asyncio
     async def test_duplicate_kind_ids(self) -> None:
         user_id = new_user_id()
 
-        assert await domain.get_entitlements([user_id], [_DAY_TOKENS, _DAY_TOKENS]) == {user_id: {_DAY_TOKENS: False}}
+        assert await domain.get_entitlements([user_id], [_DAY_TOKENS, _DAY_TOKENS]) == {user_id: {_DAY_TOKENS: None}}
 
     @pytest.mark.asyncio
     async def test_unconfigured_kind(self, mocker: MockerFixture) -> None:
@@ -830,6 +839,6 @@ class TestGetEntitlements:
             await operations.replace_effective_intervals(transaction_execute, user_id, _DAY_TOKENS, [expired])
 
         async with TableSizeNotChanged("en_entitlements"):
-            checked = await domain.get_entitlements([user_id], [_DAY_TOKENS])
+            listed = await domain.get_entitlements([user_id], [_DAY_TOKENS])
 
-        assert checked == {user_id: {_DAY_TOKENS: False}}
+        assert listed == {user_id: {_DAY_TOKENS: None}}
