@@ -3,10 +3,12 @@
 ## Goal of the document
 
 This document describes how the `ffun.resources` backend module stores interval-scoped per-user resource counters and atomically reserves and accounts resource usage against caller-supplied limits.
+It also describes how the module tries caller-supplied resource options in priority order for multiple users.
 
 ## Scope
 
 This specification covers resource identity, counter semantics, lazy initialization, reservation and conversion behavior, history and aggregate queries, the `r_resources` table, and the public interface exposed by `ffun.resources.domain`.
+It also covers ordered multi-user reservation.
 
 The concrete resource-kind registry, resource units and conversions, selection of accounting intervals, user-configured limits, billing, and presentation of resource history are out of scope.
 
@@ -18,10 +20,13 @@ The concrete resource-kind registry, resource units and conversions, selection o
 - `reserved amount` - resource capacity provisionally claimed before final usage is known.
 - `used amount` - finalized resource consumption accumulated for a resource record.
 - `resource limit` - a caller-supplied upper bound applied to one reservation attempt.
+- `reservation option` - one caller-supplied resource kind and interval together with the limits applicable to candidate users; its position among other options defines its priority.
+- `reservation result` - the user, resource kind, interval start, and amount captured by one successful reservation.
 
 ## Module responsibility
 
 `ffun.resources` MUST be a domain-level module that owns generic per-user resource accounting, persistence of used and reserved counters, atomic limit-checked reservations, conversion of reservations into finalized usage, and resource history and aggregate queries.
+It MUST also own ordered reservation across caller-supplied resource options.
 
 The module MUST treat resource kinds, counter units, interval start timestamps, and limits as caller-owned inputs.
 It MUST NOT own a resource-kind registry, derive interval boundaries, convert between business units and stored counter units, or persist resource limits.
@@ -53,6 +58,10 @@ A resource entity MUST expose `user_id`, `kind`, `interval_started_at`, `used`, 
 It MUST expose `total` as the sum of `used` and `reserved`.
 Persistence timestamps MUST NOT be part of the resource entity returned to callers.
 
+`ffun.resources.entities` MUST define `ResourceReservationOption` with `kind`, `interval_started_at`, and a `limits` mapping keyed by `UserId`.
+It MUST define `ResourceReservation` with `user_id`, `kind`, `interval_started_at`, and `amount`.
+Reservation results MUST contain the values captured by the successful attempt and MUST NOT recompute them during later conversion or release.
+
 The `used` and `reserved` counters MUST be stored as opaque integers.
 For one resource record, reservation amounts, finalized used amounts, released reserved amounts, and limits MUST use the same caller-defined unit.
 
@@ -81,6 +90,30 @@ It MUST NOT be persisted, and reducing a later call's limit MUST NOT rewrite cou
 
 A zero reservation amount MUST be allowed and MUST succeed only when the record's current total does not exceed the supplied limit.
 A rejected reservation MUST leave `used` and `reserved` unchanged, but it MAY leave behind the zero-valued resource record created by lazy initialization.
+
+### Ordered reservation for multiple users
+
+The domain MUST provide an operation that accepts a finite ordered collection of user ids, a non-negative amount, and a finite ordered collection of reservation options.
+Each reservation option MUST supply a resource kind, an interval start timestamp, and a mapping of applicable user ids to non-negative limits.
+A user absent from an option's limit mapping is not eligible for that option and MUST be skipped for it.
+
+The operation MUST process reservation options in their supplied order.
+For the first option, it MUST attempt all eligible users through the existing `try_to_reserve` operation.
+For every later option, it MUST attempt only users that have not already reserved from an earlier option.
+A user MUST therefore receive at most one successful reservation from one invocation.
+
+Ordered reservation MUST be domain-level orchestration over `try_to_reserve` and MUST NOT introduce separate persistence, resource-initialization, limit-checking, or counter-update logic.
+
+Repeated user ids MUST be deduplicated while preserving their first-occurrence order.
+Processing of each option MUST finish before processing starts for the next option.
+
+Every successful user reservation MUST be returned as a reservation result containing the user id, selected kind, selected interval start, and captured amount.
+Users for whom every applicable option rejects the reservation MUST be absent from the result.
+An empty user collection or empty option collection MUST return an empty result.
+
+Each individual attempt retains the existing independently committed atomicity guarantee.
+Successes for earlier users or options MUST NOT be rolled back when a later attempt is rejected.
+The overall operation does not provide idempotency across invocations, and concurrent invocations may reserve different options for the same user while each individual resource limit remains enforced.
 
 ### Conversion of reserved capacity to used capacity
 
@@ -111,6 +144,7 @@ It MUST return entries only for users that have records of that kind.
 
 Initialization, reservation, conversion, and queries use the module's independently committed database operations and do not participate in a caller-owned transaction.
 A reservation's lazy initialization and conditional counter update are separate database operations; therefore a failed or rejected reservation can still commit initialization of an empty record.
+Ordered reservation composes those operations and does not add a transaction spanning users or resource options.
 
 Every successful reservation or conversion, including a successful zero-value update, MUST set `updated_at` to the database's current timestamp.
 Initialization MUST set `created_at` and `updated_at` from database time.
@@ -152,12 +186,14 @@ They MUST NOT import `ffun.resources.operations` or access `r_resources` directl
 - `load_resources(user_ids, kind, interval_started_at)` returns the lazily initialized current-resource mapping described above.
 - `load_resource(user_id, kind, interval_started_at)` returns one lazily initialized resource entity.
 - `try_to_reserve(user_id, kind, interval_started_at, amount, limit)` performs the conditional reservation and returns whether it succeeded.
+- `try_to_reserve_in_order(user_ids, amount, options)` accepts `ResourceReservationOption` values, tries them for unresolved users in order, and returns a mapping from successfully reserved user ids to `ResourceReservation` values.
 - `convert_reserved_to_used(user_id, kind, interval_started_at, used, reserved)` finalizes usage and releases reserved capacity or raises `CanNotConvertReservedToUsed`.
 - `load_resource_history(user_id, kind)` returns the ordered resource history.
 - `count_total_resources_per_user(kind)` returns used-only totals grouped by user.
 
 The batch loader MUST accept a finite iterable of user ids.
 The interface MUST return resource mappings keyed by the semantic `UserId` values supplied by callers.
+The ordered reservation operation MUST accept a finite iterable of user ids and return results keyed by the semantic `UserId` values supplied by callers.
 
 The domain interface MUST NOT accept an execute callable or expose transaction ownership to callers.
 

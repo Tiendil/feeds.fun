@@ -77,6 +77,10 @@ Terms that are used by multiple specifications SHOULD be defined in `./specs/dic
 Each sentence in a prose paragraph MUST be written on a separate Markdown source line.
 Consecutive sentence lines MUST NOT be separated by a blank line when they belong to the same paragraph.
 
+Changes to an existing specification SHOULD preserve its wording and structure wherever they remain accurate.
+An edit SHOULD change only the smallest portion necessary to express the intended requirement.
+A broader rewrite MAY be used when a targeted edit would leave the specification ambiguous, contradictory, or materially harder to understand.
+
 ## Abstraction level
 
 Specifications MUST describe project behavior, architecture, constraints, terminology, and compatibility contracts at the highest level that is still precise enough to guide implementation.
