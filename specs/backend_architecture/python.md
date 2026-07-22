@@ -24,17 +24,22 @@ Runtime validation remains appropriate at untyped or external boundaries, includ
 
 Code MUST still validate semantic constraints that type annotations cannot express, such as non-empty identifiers, timezone awareness, numeric ranges, configured values, and valid cross-field combinations.
 
-Code that constructs a semantically specific typed value from raw or untyped data MUST validate the semantic invariants of that type at the construction boundary. Functions and methods that receive the constructed typed value MUST assume those invariants hold and MUST NOT repeat their validation.
+Code that constructs a semantically specific typed value from raw or untyped data MUST validate the semantic invariants of that type at the construction boundary.
+Functions and methods that receive the constructed typed value MUST assume those invariants hold and MUST NOT repeat their validation.
 
 ## Validation and resolution
 
-Validation functions and methods MUST only verify invariants. They MUST return `None` on success and raise an appropriate exception on failure.
+Validation functions and methods MUST only verify invariants.
+They MUST return `None` on success and raise an appropriate exception on failure.
 
-Validation functions and methods MUST NOT return information merely retrieved, resolved, transformed, or extracted as a by-product of validation. They MAY perform such operations internally when required to verify invariants. Callers that need the resulting information MUST obtain it separately, unless the operation explicitly acts as a validating constructor.
+Validation functions and methods MUST NOT return information merely retrieved, resolved, transformed, or extracted as a by-product of validation.
+They MAY perform such operations internally when required to verify invariants.
+Callers that need the resulting information MUST obtain it separately, unless the operation explicitly acts as a validating constructor.
 
 Predicates named `is_*`, `has_*`, or `can_*` SHOULD return `bool` and MUST NOT raise an exception for an ordinary negative result.
 
-A validation function or method MAY return a constructed object when it intentionally serves as a constructor paired with validation. Constructing and returning that object MUST be part of the operation's explicit contract; this exception does not permit returning dependencies resolved or information incidentally extracted during validation.
+A validation function or method MAY return a constructed object when it intentionally serves as a constructor paired with validation.
+Constructing and returning that object MUST be part of the operation's explicit contract; this exception does not permit returning dependencies resolved or information incidentally extracted during validation.
 
 Framework validator hooks whose protocols require returning the validated value or instance, such as Pydantic validators, are exempt from the `None` return requirement.
 

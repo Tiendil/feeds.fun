@@ -35,7 +35,7 @@ They SHOULD NOT reproduce merge behavior or derive access directly from the sour
 `ffun.entitlements.entities` MUST define `EntitlementKindId` as an integer enum.
 Every member and its stable value MUST be defined by this specification and MUST NOT be changed or reused.
 
-The module MUST maintain an immutable code-owned collection containing exactly one `EntitlementKind` for every `EntitlementKindId` member.
+The module MUST maintain an immutable code-owned collection containing exactly one entry for every `EntitlementKindId` member.
 Each entry MUST pair the id with its merge policy and `is_lifetime` boolean.
 This collection is the entitlement kind registry and source of truth for kind metadata; entitlement kinds MUST NOT be stored in a database registry table or runtime settings.
 
@@ -61,7 +61,8 @@ Lifetime grants MUST use the module-owned stable expiration timestamp `9999-12-3
 ### Source entitlement state
 
 All sources MUST store their grants in `en_source_entitlements`, with at most one row per `(user_id, kind_id, source, transaction_id)`.
-Source ids and transaction ids MUST use semantic Python types and MUST be non-empty. Their semantic invariants MUST be validated when the typed values are constructed from raw input; consumers of the typed values MUST assume the invariants hold.
+Source ids and transaction ids MUST use semantic Python types and MUST be non-empty.
+Their semantic invariants MUST be validated when the typed values are constructed from raw input; consumers of the typed values MUST assume the invariants hold.
 
 Every source entitlement MUST have an integer value and finite activation and expiration timestamps, and its activation timestamp MUST be earlier than its expiration timestamp.
 It is inactive before its activation timestamp, at or after its expiration timestamp, and at or after a non-null `revoked_at`.

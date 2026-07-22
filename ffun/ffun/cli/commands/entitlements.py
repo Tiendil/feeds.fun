@@ -4,6 +4,7 @@ import json
 import uuid
 from collections.abc import Coroutine
 
+import pydantic
 import typer
 
 from ffun.application.application import with_app
@@ -154,12 +155,17 @@ def grant_source_entitlement(  # noqa: CFQ002
         "starts_at": resolved_starts_at,
         "expires_at": resolved_expires_at,
     }
-    command_data: dict[str, object] = {
-        "source_entitlement": SourceEntitlement.model_validate(source_entitlement_data),
-        "actor_kind": actor_kind_from_name(actor_kind),
-        "actor_id": actor_id,
-    }
-    run_async_command(run_grant(GrantCommand.model_validate(command_data)))
+    try:
+        command_data: dict[str, object] = {
+            "source_entitlement": SourceEntitlement.model_validate(source_entitlement_data),
+            "actor_kind": actor_kind_from_name(actor_kind),
+            "actor_id": actor_id,
+        }
+        command = GrantCommand.model_validate(command_data)
+    except pydantic.ValidationError as error:
+        raise typer.BadParameter("invalid grant parameters") from error
+
+    run_async_command(run_grant(command))
 
 
 @cli_app.command()  # type: ignore
@@ -196,15 +202,20 @@ def revoke(  # noqa: CFQ002
     actor_kind: str = typer.Option("admin", "--actor-kind"),
     actor_id: str = typer.Option("admin", "--actor-id"),
 ) -> None:
-    command_data: dict[str, object] = {
-        "source": source,
-        "transaction_id": transaction_id,
-        "user_id": user_id,
-        "kind_id": entitlement_kind_from_name(kind),
-        "actor_kind": actor_kind_from_name(actor_kind),
-        "actor_id": actor_id,
-    }
-    run_async_command(run_revoke(RevokeCommand.model_validate(command_data)))
+    try:
+        command_data: dict[str, object] = {
+            "source": source,
+            "transaction_id": transaction_id,
+            "user_id": user_id,
+            "kind_id": entitlement_kind_from_name(kind),
+            "actor_kind": actor_kind_from_name(actor_kind),
+            "actor_id": actor_id,
+        }
+        command = RevokeCommand.model_validate(command_data)
+    except pydantic.ValidationError as error:
+        raise typer.BadParameter("invalid revoke parameters") from error
+
+    run_async_command(run_revoke(command))
 
 
 def entitlement_record(

@@ -7,12 +7,12 @@ from ffun.core import utils
 
 class TestHasTimezone:
     def test_timestamp_with_timezone(self) -> None:
-        timestamp = datetime.datetime(2026, 7, 22, tzinfo=datetime.UTC)
+        timestamp = datetime.datetime.now(tz=datetime.UTC)
 
         assert utils.has_timezone(timestamp)
 
     def test_timestamp_without_timezone(self) -> None:
-        timestamp = datetime.datetime(2026, 7, 22)
+        timestamp = datetime.datetime.now()
 
         assert not utils.has_timezone(timestamp)
 
