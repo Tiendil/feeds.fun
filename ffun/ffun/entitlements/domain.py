@@ -16,6 +16,7 @@ from ffun.entitlements.entities import (
     EntitlementKind,
     EntitlementKindId,
     EntitlementSourceId,
+    EntitlementTransactionId,
     MergePolicy,
     SourceEntitlement,
 )
@@ -26,7 +27,7 @@ logger = logging.get_module_logger()
 
 
 class _SourceChangeOutcome:
-    __slots__ = ("changed", "effective_state", "effective_intervals")
+    __slots__ = ("changed", "effective_state", "effective_intervals", "source_state")
 
     def __init__(
         self,
@@ -34,10 +35,12 @@ class _SourceChangeOutcome:
         changed: bool,
         effective_state: EffectiveEntitlementState,
         effective_intervals: list[EffectiveEntitlementInterval],
+        source_state: SourceEntitlement,
     ) -> None:
         self.changed = changed
         self.effective_state = effective_state
         self.effective_intervals = effective_intervals
+        self.source_state = source_state
 
 
 def get_entitlement_kind(kind_id: EntitlementKindId) -> EntitlementKind:
@@ -46,44 +49,6 @@ def get_entitlement_kind(kind_id: EntitlementKindId) -> EntitlementKind:
             return kind
 
     raise errors.UnknownEntitlementKind(kind_id=kind_id)
-
-
-def validate_source_change(  # noqa: CFQ002, CCR001
-    *,
-    source: EntitlementSourceId,
-    kind_id: EntitlementKindId,
-    granted: bool,
-    value: int | None,
-    starts_at: datetime.datetime,
-    expires_at: datetime.datetime,
-    actor_id: SerializedId,
-) -> EntitlementKind:
-    kind = get_entitlement_kind(kind_id)
-
-    if not source:
-        raise errors.InvalidSourceEntitlement(reason="Entitlement source must not be empty")
-
-    if granted and value is None:
-        raise errors.InvalidSourceEntitlement(reason="A granted entitlement must have an integer value")
-
-    if not granted and value is not None:
-        raise errors.InvalidSourceEntitlement(reason="A revoked entitlement must not have a value")
-
-    if starts_at.tzinfo is None or starts_at.utcoffset() is None:
-        raise errors.InvalidSourceEntitlement(reason="Entitlement activation timestamp must have a UTC offset")
-
-    if expires_at.tzinfo is None or expires_at.utcoffset() is None:
-        raise errors.InvalidSourceEntitlement(reason="Entitlement expiration timestamp must have a UTC offset")
-
-    if starts_at >= expires_at:
-        raise errors.InvalidSourceEntitlement(
-            reason="Entitlement activation timestamp must be earlier than expiration"
-        )
-
-    if not actor_id or not actor_id.strip():
-        raise errors.InvalidActorId(reason="Audit actor id must not be empty")
-
-    return kind
 
 
 def merge_values(policy: MergePolicy, values: Sequence[int]) -> int:
@@ -110,12 +75,12 @@ def build_effective_timeline(  # noqa: CCR001
     source_entitlements: Sequence[SourceEntitlement],
     evaluation_time: datetime.datetime,
 ) -> list[EffectiveEntitlementInterval]:
-    granted_entitlements = [entitlement for entitlement in source_entitlements if entitlement.granted]
     boundaries = sorted(
         {
             boundary
-            for entitlement in granted_entitlements
-            for boundary in (entitlement.starts_at, entitlement.expires_at)
+            for entitlement in source_entitlements
+            for boundary in (entitlement.starts_at, entitlement.expires_at, entitlement.revoked_at)
+            if boundary is not None
         }
     )
     intervals: list[EffectiveEntitlementInterval] = []
@@ -126,13 +91,16 @@ def build_effective_timeline(  # noqa: CCR001
 
         values = [
             entitlement.value
-            for entitlement in granted_entitlements
-            if entitlement.starts_at <= starts_at and expires_at <= entitlement.expires_at
+            for entitlement in source_entitlements
+            if entitlement.starts_at <= starts_at
+            and expires_at <= entitlement.expires_at
+            and (entitlement.revoked_at is None or expires_at <= entitlement.revoked_at)
         ]
-        merged_value = merge_values(merge_policy, [value for value in values if value is not None]) if values else None
 
-        if merged_value is None:
+        if not values:
             continue
+
+        merged_value = merge_values(merge_policy, values)
 
         if intervals and intervals[-1].value == merged_value and intervals[-1].expires_at == starts_at:
             intervals[-1] = intervals[-1].replace(expires_at=expires_at)
@@ -161,36 +129,17 @@ def effective_state_at(
     return (False, None)
 
 
-async def _apply_source_change(
+async def _rebuild_after_source_change(  # noqa: CFQ002
     execute: ExecuteType,
     *,
     kind: EntitlementKind,
+    previous_source_state: SourceEntitlement | None,
     new_source_state: SourceEntitlement,
+    previous_effective_intervals: list[EffectiveEntitlementInterval],
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> _SourceChangeOutcome:
-    previous_source_state = await operations.load_source_entitlement(
-        execute,
-        new_source_state.user_id,
-        new_source_state.kind_id,
-        new_source_state.source,
-    )
-    previous_effective_intervals = await operations.load_effective_intervals(
-        execute,
-        new_source_state.user_id,
-        new_source_state.kind_id,
-        ending_after=evaluation_time,
-    )
-
-    if previous_source_state == new_source_state:
-        return _SourceChangeOutcome(
-            changed=False,
-            effective_state=effective_state_at(previous_effective_intervals, evaluation_time),
-            effective_intervals=previous_effective_intervals,
-        )
-
-    await operations.upsert_source_entitlement(execute, new_source_state)
     source_entitlements = await operations.load_source_entitlements(
         execute,
         new_source_state.user_id,
@@ -219,6 +168,7 @@ async def _apply_source_change(
         subject_id=SerializedId(str(new_source_state.user_id)),
         attributes={
             "source": new_source_state.source,
+            "transaction_id": new_source_state.transaction_id,
             "kind_id": new_source_state.kind_id,
             "previous_source_state": (
                 cast(dict[str, object], previous_source_state.model_dump(mode="json"))
@@ -239,19 +189,133 @@ async def _apply_source_change(
         changed=True,
         effective_state=effective_state,
         effective_intervals=new_effective_intervals,
+        source_state=new_source_state,
     )
 
 
-def _emit_business_events(source_state: SourceEntitlement, outcome: _SourceChangeOutcome) -> None:
+def _unchanged_outcome(
+    source_state: SourceEntitlement,
+    effective_intervals: list[EffectiveEntitlementInterval],
+    evaluation_time: datetime.datetime,
+) -> _SourceChangeOutcome:
+    return _SourceChangeOutcome(
+        changed=False,
+        effective_state=effective_state_at(effective_intervals, evaluation_time),
+        effective_intervals=effective_intervals,
+        source_state=source_state,
+    )
+
+
+async def _apply_source_grant(
+    execute: ExecuteType,
+    *,
+    kind: EntitlementKind,
+    source_state: SourceEntitlement,
+    evaluation_time: datetime.datetime,
+    actor_kind: AuditEntityKind,
+    actor_id: SerializedId,
+) -> _SourceChangeOutcome:
+    previous_source_state = await operations.load_source_entitlement(
+        execute,
+        source_state.user_id,
+        source_state.kind_id,
+        source_state.source,
+        source_state.transaction_id,
+    )
+    previous_effective_intervals = await operations.load_effective_intervals(
+        execute,
+        source_state.user_id,
+        source_state.kind_id,
+        ending_after=evaluation_time,
+    )
+
+    if previous_source_state is not None:
+        if previous_source_state.has_same_grant_as(source_state):
+            return _unchanged_outcome(previous_source_state, previous_effective_intervals, evaluation_time)
+
+        raise errors.SourceEntitlementConflict(
+            user_id=str(source_state.user_id),
+            kind_id=source_state.kind_id,
+            source=source_state.source,
+            transaction_id=source_state.transaction_id,
+        )
+
+    await operations.insert_source_entitlement(execute, source_state)
+    return await _rebuild_after_source_change(
+        execute,
+        kind=kind,
+        previous_source_state=None,
+        new_source_state=source_state,
+        previous_effective_intervals=previous_effective_intervals,
+        evaluation_time=evaluation_time,
+        actor_kind=actor_kind,
+        actor_id=actor_id,
+    )
+
+
+async def _apply_source_revocation(  # noqa: CFQ002
+    execute: ExecuteType,
+    *,
+    kind: EntitlementKind,
+    source: EntitlementSourceId,
+    transaction_id: EntitlementTransactionId,
+    user_id: UserId,
+    evaluation_time: datetime.datetime,
+    actor_kind: AuditEntityKind,
+    actor_id: SerializedId,
+) -> _SourceChangeOutcome:
+    previous_source_state = await operations.load_source_entitlement(
+        execute,
+        user_id,
+        kind.id,
+        source,
+        transaction_id,
+    )
+    previous_effective_intervals = await operations.load_effective_intervals(
+        execute,
+        user_id,
+        kind.id,
+        ending_after=evaluation_time,
+    )
+
+    if previous_source_state is None:
+        raise errors.SourceEntitlementNotFound(
+            user_id=str(user_id),
+            kind_id=kind.id,
+            source=source,
+            transaction_id=transaction_id,
+        )
+
+    if previous_source_state.revoked_at is not None:
+        return _unchanged_outcome(previous_source_state, previous_effective_intervals, evaluation_time)
+
+    new_source_state = previous_source_state.to_revoked(revoked_at=evaluation_time)
+    await operations.revoke_source_entitlement(execute, previous_source_state, revoked_at=evaluation_time)
+    return await _rebuild_after_source_change(
+        execute,
+        kind=kind,
+        previous_source_state=previous_source_state,
+        new_source_state=new_source_state,
+        previous_effective_intervals=previous_effective_intervals,
+        evaluation_time=evaluation_time,
+        actor_kind=actor_kind,
+        actor_id=actor_id,
+    )
+
+
+def _emit_business_events(outcome: _SourceChangeOutcome) -> None:
+    source_state = outcome.source_state
     logger.business_event(
         "source_entitlement_changed",
         user_id=source_state.user_id,
         source=source_state.source,
+        transaction_id=source_state.transaction_id,
         kind_id=source_state.kind_id,
         granted=source_state.granted,
         value=source_state.value,
         starts_at=source_state.starts_at.isoformat(),
         expires_at=source_state.expires_at.isoformat(),
+        revoked_at=source_state.revoked_at.isoformat() if source_state.revoked_at is not None else None,
     )
     logger.business_event(
         "entitlement_changed",
@@ -270,50 +334,65 @@ def _emit_business_events(source_state: SourceEntitlement, outcome: _SourceChang
     )
 
 
-async def change_source_entitlement(  # noqa: CFQ002
+async def grant_source_entitlement(
+    source_entitlement: SourceEntitlement,
     *,
-    source: EntitlementSourceId,
-    user_id: UserId,
-    kind_id: EntitlementKindId,
-    granted: bool,
-    value: int | None,
-    starts_at: datetime.datetime,
-    expires_at: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> EffectiveEntitlementState:
-    kind = validate_source_change(
-        source=source,
-        kind_id=kind_id,
-        granted=granted,
-        value=value,
-        starts_at=starts_at,
-        expires_at=expires_at,
-        actor_id=actor_id,
-    )
-    evaluation_time = datetime.datetime.now(tz=datetime.UTC)
-    new_source_state = SourceEntitlement(
-        source=source,
-        user_id=user_id,
-        kind_id=kind_id,
-        granted=granted,
-        value=value,
-        starts_at=starts_at,
-        expires_at=expires_at,
-    )
+    kind = get_entitlement_kind(source_entitlement.kind_id)
 
-    async with locked_transaction(LockKind("entitlements_user_kind"), user_id, kind_id) as transaction_execute:
-        outcome = await _apply_source_change(
+    try:
+        source_entitlement.validate_grant(kind)
+    except ValueError as error:
+        raise errors.InvalidSourceEntitlement(reason=str(error)) from error
+
+    evaluation_time = datetime.datetime.now(tz=datetime.UTC)
+
+    async with locked_transaction(
+        LockKind("entitlements_user_kind"), source_entitlement.user_id, source_entitlement.kind_id
+    ) as transaction_execute:
+        outcome = await _apply_source_grant(
             transaction_execute,
             kind=kind,
-            new_source_state=new_source_state,
+            source_state=source_entitlement,
             evaluation_time=evaluation_time,
             actor_kind=actor_kind,
             actor_id=actor_id,
         )
 
     if outcome.changed:
-        _emit_business_events(new_source_state, outcome)
+        _emit_business_events(outcome)
+
+    return outcome.effective_state
+
+
+async def revoke_source_entitlement(
+    *,
+    source: EntitlementSourceId,
+    transaction_id: EntitlementTransactionId,
+    user_id: UserId,
+    kind_id: EntitlementKindId,
+    actor_kind: AuditEntityKind,
+    actor_id: SerializedId,
+) -> EffectiveEntitlementState:
+    kind = get_entitlement_kind(kind_id)
+    evaluation_time = datetime.datetime.now(tz=datetime.UTC)
+
+    async with locked_transaction(LockKind("entitlements_user_kind"), user_id, kind_id) as transaction_execute:
+        outcome = await _apply_source_revocation(
+            transaction_execute,
+            kind=kind,
+            source=source,
+            transaction_id=transaction_id,
+            user_id=user_id,
+            evaluation_time=evaluation_time,
+            actor_kind=actor_kind,
+            actor_id=actor_id,
+        )
+
+    if outcome.changed:
+        _emit_business_events(outcome)
 
     return outcome.effective_state
 

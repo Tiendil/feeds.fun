@@ -58,9 +58,14 @@ The `Goal of the document` section MUST NOT define requirements for the document
 - MUST list something.
 - MUST describe something.
 
-The `Scope` section MUST describe the boundaries of the specification. It SHOULD be descriptive rather than normative when it explains what the document covers. It SHOULD explicitly mention important topics that are out of scope when those boundaries are useful for readers or future authors. It MUST NOT explain where to find requirements that belong to other specifications.
+The `Scope` section MUST describe the boundaries of the specification.
+It SHOULD be descriptive rather than normative when it explains what the document covers.
+It SHOULD explicitly mention important topics that are out of scope when those boundaries are useful for readers or future authors.
+It MUST NOT explain where to find requirements that belong to other specifications.
 
-The `Dictionary` section SHOULD be placed immediately after the `Scope` section. It SHOULD contain only terms that are specific to the specification. Terms that are used by multiple specifications SHOULD be defined in `./specs/dictionary.md`.
+The `Dictionary` section SHOULD be placed immediately after the `Scope` section.
+It SHOULD contain only terms that are specific to the specification.
+Terms that are used by multiple specifications SHOULD be defined in `./specs/dictionary.md`.
 
 ## Style
 
@@ -107,15 +112,20 @@ Stable contracts include:
 
 When a requirement can be expressed either as an implementation detail or as a general architectural rule, the specification MUST prefer the general rule.
 
-For example, a specification SHOULD require closed sets of named values to use enums instead of raw strings. It SHOULD NOT require a specific enum class name or file location unless that class name or location is itself a stable architectural boundary.
+For example, a specification SHOULD require closed sets of named values to use enums instead of raw strings.
+It SHOULD NOT require a specific enum class name or file location unless that class name or location is itself a stable architectural boundary.
 
-Examples in specifications SHOULD illustrate behavior or ownership. Examples SHOULD NOT be treated as a place to enumerate every current implementation file or symbol.
+Examples in specifications SHOULD illustrate behavior or ownership.
+Examples SHOULD NOT be treated as a place to enumerate every current implementation file or symbol.
 
 ### Terminology stability
 
-Names in specifications MUST describe durable domain concepts rather than current implementation, storage, or workflow structure. New names SHOULD remain accurate across reasonable architectural changes.
+Names in specifications MUST describe durable domain concepts rather than current implementation, storage, or workflow structure.
+New names SHOULD remain accurate across reasonable architectural changes.
 
-An existing term MUST be preserved when a change extends the concept's behavior or representation and the term remains accurate. A term MAY be renamed only when it has become incorrect, ambiguous, or inconsistent with established project terminology. A rename MUST NOT be made only to mirror an internal architecture, persistence, or lifecycle change.
+An existing term MUST be preserved when a change extends the concept's behavior or representation and the term remains accurate.
+A term MAY be renamed only when it has become incorrect, ambiguous, or inconsistent with established project terminology.
+A rename MUST NOT be made only to mirror an internal architecture, persistence, or lifecycle change.
 
 When only one variant needs distinction, specifications SHOULD qualify that variant locally instead of renaming the broader concept throughout the specification.
 
@@ -123,7 +133,8 @@ When only one variant needs distinction, specifications SHOULD qualify that vari
 
 Specifications SHOULD define extensible concepts through their invariants, responsibilities, and membership criteria rather than by enumerating their current instances.
 
-Specifications MUST use an exhaustive enumeration only when the set is intentionally closed and its completeness is part of a stable contract. Examples of members in an extensible set MUST be identified as non-exhaustive.
+Specifications MUST use an exhaustive enumeration only when the set is intentionally closed and its completeness is part of a stable contract.
+Examples of members in an extensible set MUST be identified as non-exhaustive.
 
 Adding, changing, or removing an instance of an extensible concept SHOULD NOT require changing the concept's definition unless its invariants or membership criteria change.
 
@@ -131,6 +142,8 @@ Adding, changing, or removing an instance of an extensible concept SHOULD NOT re
 
 Specifications MUST define required behavior and stable observable contracts without prescribing an implementation mechanism when multiple implementations can satisfy the contract.
 
-A specification MAY require a concrete mechanism, such as a class, function, decorator, inheritance hierarchy, or specific helper, only when that mechanism is itself an architectural requirement or an observable caller contract. The specification MUST state why the mechanism matters or which required property an alternative implementation would violate.
+A specification MAY require a concrete mechanism, such as a class, function, decorator, inheritance hierarchy, or specific helper, only when that mechanism is itself an architectural requirement or an observable caller contract.
+The specification MUST state why the mechanism matters or which required property an alternative implementation would violate.
 
-Specifications MUST NOT resolve an implementation choice merely to make a requirement or example more concrete. When the implementation choice does not affect the required behavior or stable contract, the specification MUST omit that choice.
+Specifications MUST NOT resolve an implementation choice merely to make a requirement or example more concrete.
+When the implementation choice does not affect the required behavior or stable contract, the specification MUST omit that choice.

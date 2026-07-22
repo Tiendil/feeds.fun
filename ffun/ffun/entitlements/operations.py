@@ -2,6 +2,7 @@ import datetime
 from collections.abc import Mapping
 from typing import Any
 
+import psycopg
 from pydantic import ValidationError
 from pypika import Parameter, PostgreSQLQuery
 
@@ -12,6 +13,7 @@ from ffun.entitlements.entities import (
     EffectiveEntitlementInterval,
     EntitlementKindId,
     EntitlementSourceId,
+    EntitlementTransactionId,
     SourceEntitlement,
 )
 
@@ -35,16 +37,26 @@ async def load_source_entitlement(
     user_id: UserId,
     kind_id: EntitlementKindId,
     source: EntitlementSourceId,
+    transaction_id: EntitlementTransactionId,
 ) -> SourceEntitlement | None:
     sql = """
-    SELECT source_id AS source, user_id, kind_id, granted, value, starts_at, expires_at
+    SELECT source_id AS source, transaction_id, user_id, kind_id, value, starts_at, expires_at, revoked_at
     FROM en_source_entitlements
     WHERE user_id = %(user_id)s
       AND kind_id = %(kind_id)s
       AND source_id = %(source)s
+      AND transaction_id = %(transaction_id)s
     """
 
-    rows = await execute(sql, {"user_id": user_id, "kind_id": kind_id, "source": source})
+    rows = await execute(
+        sql,
+        {
+            "user_id": user_id,
+            "kind_id": kind_id,
+            "source": source,
+            "transaction_id": transaction_id,
+        },
+    )
 
     if not rows:
         return None
@@ -52,44 +64,78 @@ async def load_source_entitlement(
     return row_to_source_entitlement(rows[0])
 
 
-async def upsert_source_entitlement(execute: ExecuteType, entitlement: SourceEntitlement) -> None:
+async def insert_source_entitlement(execute: ExecuteType, entitlement: SourceEntitlement) -> None:
     sql = """
     INSERT INTO en_source_entitlements (
         source_id,
+        transaction_id,
         user_id,
         kind_id,
-        granted,
         value,
         starts_at,
-        expires_at
+        expires_at,
+        revoked_at
     )
     VALUES (
         %(source)s,
+        %(transaction_id)s,
         %(user_id)s,
         %(kind_id)s,
-        %(granted)s,
         %(value)s,
         %(starts_at)s,
-        %(expires_at)s
+        %(expires_at)s,
+        %(revoked_at)s
     )
-    ON CONFLICT (user_id, kind_id, source_id) DO UPDATE
-    SET granted = EXCLUDED.granted,
-        value = EXCLUDED.value,
-        starts_at = EXCLUDED.starts_at,
-        expires_at = EXCLUDED.expires_at,
+    """
+
+    try:
+        await execute(
+            sql,
+            {
+                "source": entitlement.source,
+                "transaction_id": entitlement.transaction_id,
+                "user_id": entitlement.user_id,
+                "kind_id": entitlement.kind_id,
+                "value": entitlement.value,
+                "starts_at": entitlement.starts_at,
+                "expires_at": entitlement.expires_at,
+                "revoked_at": entitlement.revoked_at,
+            },
+        )
+    except psycopg.errors.UniqueViolation as exception:
+        raise errors.SourceEntitlementConflict(
+            user_id=str(entitlement.user_id),
+            kind_id=entitlement.kind_id,
+            source=entitlement.source,
+            transaction_id=entitlement.transaction_id,
+        ) from exception
+
+
+async def revoke_source_entitlement(
+    execute: ExecuteType,
+    entitlement: SourceEntitlement,
+    *,
+    revoked_at: datetime.datetime,
+) -> None:
+    sql = """
+    UPDATE en_source_entitlements
+    SET revoked_at = %(revoked_at)s,
         updated_at = CURRENT_TIMESTAMP
+    WHERE user_id = %(user_id)s
+      AND kind_id = %(kind_id)s
+      AND source_id = %(source)s
+      AND transaction_id = %(transaction_id)s
+      AND revoked_at IS NULL
     """
 
     await execute(
         sql,
         {
-            "source": entitlement.source,
             "user_id": entitlement.user_id,
             "kind_id": entitlement.kind_id,
-            "granted": entitlement.granted,
-            "value": entitlement.value,
-            "starts_at": entitlement.starts_at,
-            "expires_at": entitlement.expires_at,
+            "source": entitlement.source,
+            "transaction_id": entitlement.transaction_id,
+            "revoked_at": revoked_at,
         },
     )
 
@@ -98,11 +144,11 @@ async def load_source_entitlements(
     execute: ExecuteType, user_id: UserId, kind_id: EntitlementKindId
 ) -> list[SourceEntitlement]:
     sql = """
-    SELECT source_id AS source, user_id, kind_id, granted, value, starts_at, expires_at
+    SELECT source_id AS source, transaction_id, user_id, kind_id, value, starts_at, expires_at, revoked_at
     FROM en_source_entitlements
     WHERE user_id = %(user_id)s
       AND kind_id = %(kind_id)s
-    ORDER BY starts_at, expires_at, source_id
+    ORDER BY starts_at, expires_at, source_id, transaction_id
     """
 
     rows = await execute(sql, {"user_id": user_id, "kind_id": kind_id})

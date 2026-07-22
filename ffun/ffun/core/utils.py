@@ -15,6 +15,10 @@ def zero_timestamp() -> datetime.datetime:
     return datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
 
 
+def has_timezone(timestamp: datetime.datetime) -> bool:
+    return timestamp.tzinfo is not None and timestamp.utcoffset() is not None
+
+
 def package_root() -> pathlib.Path:
     return pathlib.Path(str(resources.files("ffun")))
 

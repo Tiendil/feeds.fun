@@ -2,17 +2,17 @@
 
 ```toml donna
 kind = "donna.lib.workflow"
-start_operation_id = "run_backend_tests"
+start_operation_id = "run_backend_format_autoflake"
 ```
 
 Polish the repository by formatting code, running semantic validations, and running runtime checks in the required order.
+Successful completion guarantees that formatting, semantic validations, spelling checks, runtime checks, and backend and frontend tests all pass against the final repository state.
 
 ## Run backend tests
 
 ```toml donna
 id = "run_backend_tests"
 kind = "donna.lib.run_script"
-fsm_mode = "start"
 save_stdout_to = "backend_tests_output"
 goto_on_success = "run_frontend_tests"
 goto_on_failure = "fix_broken_test"
@@ -38,9 +38,9 @@ kind = "donna.lib.request_action"
 {{ donna.lib.task_variable("backend_tests_output") }}
 ```
 
-1. If the test in broken because of `FFUN_LIBRARIAN_TAG_PROCESSORS_CONFIG` or `FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS`, teel the developer about the proble and `{{ donna.lib.goto("finish") }}`.
+1. If the test is broken because of `FFUN_LIBRARIAN_TAG_PROCESSORS_CONFIG` or `FFUN_FEEDS_COLLECTIONS_COLLECTION_CONFIGS`, tell the developer about the problem and wait for it to be fixed; do not complete this action request.
 2. Fix the broken backend test reported above.
-3. `{{ donna.lib.goto("run_backend_tests") }}`
+3. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
 
 ## Run frontend tests
 
@@ -48,7 +48,7 @@ kind = "donna.lib.request_action"
 id = "run_frontend_tests"
 kind = "donna.lib.run_script"
 save_stdout_to = "frontend_tests_output"
-goto_on_success = "run_backend_format_autoflake"
+goto_on_success = "finish"
 goto_on_failure = "fix_frontend_tests"
 ```
 
@@ -72,13 +72,14 @@ kind = "donna.lib.request_action"
 ```
 
 1. Fix frontend test issues reported above.
-2. `{{ donna.lib.goto("run_backend_tests") }}`
+2. `{{ donna.lib.goto("run_backend_format_autoflake") }}`
 
 ## Run backend formatting: autoflake
 
 ```toml donna
 id = "run_backend_format_autoflake"
 kind = "donna.lib.run_script"
+fsm_mode = "start"
 save_stdout_to = "backend_format_autoflake_output"
 goto_on_success = "run_backend_format_isort"
 goto_on_failure = "fix_backend_format_autoflake"
@@ -522,7 +523,7 @@ kind = "donna.lib.request_action"
 id = "run_runtime_checks_print_configs"
 kind = "donna.lib.run_script"
 save_stdout_to = "runtime_checks_print_configs_output"
-goto_on_success = "finish"
+goto_on_success = "run_backend_tests"
 goto_on_failure = "fix_runtime_checks_print_configs"
 ```
 

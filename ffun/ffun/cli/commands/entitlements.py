@@ -9,22 +9,33 @@ import typer
 from ffun.application.application import with_app
 from ffun.audit.entities import AuditEntityKind
 from ffun.core import errors as core_errors
+from ffun.core import utils
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import SerializedId, UserId
 from ffun.entitlements import domain as e_domain
-from ffun.entitlements.entities import EffectiveEntitlementInterval, EntitlementKindId, EntitlementSourceId
+from ffun.entitlements.entities import (
+    LIFETIME_ENTITLEMENT_EXPIRES_AT,
+    EffectiveEntitlementInterval,
+    EntitlementKindId,
+    EntitlementSourceId,
+    EntitlementTransactionId,
+    SourceEntitlement,
+)
 
 cli_app = typer.Typer()
 
 
-class SourceChangeCommand(BaseEntity):
+class GrantCommand(BaseEntity):
+    source_entitlement: SourceEntitlement
+    actor_kind: AuditEntityKind
+    actor_id: SerializedId
+
+
+class RevokeCommand(BaseEntity):
     source: EntitlementSourceId
+    transaction_id: EntitlementTransactionId
     user_id: UserId
     kind_id: EntitlementKindId
-    granted: bool
-    value: int | None
-    starts_at: datetime.datetime
-    expires_at: datetime.datetime
     actor_kind: AuditEntityKind
     actor_id: SerializedId
 
@@ -67,71 +78,88 @@ def timestamp_from_string(raw_timestamp: str | None, *, option_name: str) -> dat
     except ValueError as error:
         raise typer.BadParameter("expected an ISO 8601 timestamp", param_hint=option_name) from error
 
-    if timestamp.tzinfo is None or timestamp.utcoffset() is None:
+    if not utils.has_timezone(timestamp):
         raise typer.BadParameter("timestamp must include an explicit UTC offset", param_hint=option_name)
 
     return timestamp
 
 
 def resolve_timestamps(
+    kind_id: EntitlementKindId,
     starts_at: datetime.datetime | None,
     expires_at: datetime.datetime | None,
     captured_at: datetime.datetime,
 ) -> tuple[datetime.datetime, datetime.datetime]:
     return (
         starts_at if starts_at is not None else captured_at,
-        expires_at if expires_at is not None else captured_at + datetime.timedelta(days=31),
+        (
+            expires_at
+            if expires_at is not None
+            else (
+                LIFETIME_ENTITLEMENT_EXPIRES_AT
+                if e_domain.get_entitlement_kind(kind_id).is_lifetime
+                else captured_at + datetime.timedelta(days=31)
+            )
+        ),
     )
 
 
-async def run_source_change(command: SourceChangeCommand) -> None:
+async def run_grant(command: GrantCommand) -> None:
     async with with_app():
-        await e_domain.change_source_entitlement(
-            source=command.source,
-            user_id=command.user_id,
-            kind_id=command.kind_id,
-            granted=command.granted,
-            value=command.value,
-            starts_at=command.starts_at,
-            expires_at=command.expires_at,
+        await e_domain.grant_source_entitlement(
+            command.source_entitlement,
             actor_kind=command.actor_kind,
             actor_id=command.actor_id,
         )
 
 
-def change_source_entitlement(  # noqa: CFQ002
+async def run_revoke(command: RevokeCommand) -> None:
+    async with with_app():
+        await e_domain.revoke_source_entitlement(
+            source=command.source,
+            transaction_id=command.transaction_id,
+            user_id=command.user_id,
+            kind_id=command.kind_id,
+            actor_kind=command.actor_kind,
+            actor_id=command.actor_id,
+        )
+
+
+def grant_source_entitlement(  # noqa: CFQ002
     *,
     user_id: uuid.UUID,
     kind: str,
     source: str,
-    granted: bool,
-    value: int | None,
+    transaction_id: str,
+    value: int,
     starts_at: str | None,
     expires_at: str | None,
     actor_kind: str,
     actor_id: str,
 ) -> None:
     captured_at = datetime.datetime.now(tz=datetime.UTC)
+    kind_id = entitlement_kind_from_name(kind)
     resolved_starts_at, resolved_expires_at = resolve_timestamps(
+        kind_id,
         timestamp_from_string(starts_at, option_name="--starts-at"),
         timestamp_from_string(expires_at, option_name="--expires-at"),
         captured_at,
     )
-    run_async_command(
-        run_source_change(
-            SourceChangeCommand(
-                source=EntitlementSourceId(source),
-                user_id=UserId(user_id),
-                kind_id=entitlement_kind_from_name(kind),
-                granted=granted,
-                value=value,
-                starts_at=resolved_starts_at,
-                expires_at=resolved_expires_at,
-                actor_kind=actor_kind_from_name(actor_kind),
-                actor_id=SerializedId(actor_id),
-            )
-        )
-    )
+    source_entitlement_data: dict[str, object] = {
+        "source": source,
+        "transaction_id": transaction_id,
+        "user_id": user_id,
+        "kind_id": kind_id,
+        "value": value,
+        "starts_at": resolved_starts_at,
+        "expires_at": resolved_expires_at,
+    }
+    command_data: dict[str, object] = {
+        "source_entitlement": SourceEntitlement.model_validate(source_entitlement_data),
+        "actor_kind": actor_kind_from_name(actor_kind),
+        "actor_id": actor_id,
+    }
+    run_async_command(run_grant(GrantCommand.model_validate(command_data)))
 
 
 @cli_app.command()  # type: ignore
@@ -139,17 +167,18 @@ def grant(  # noqa: CFQ002
     user_id: uuid.UUID = typer.Option(..., "--user-id"),
     kind: str = typer.Option(..., "--kind"),
     source: str = typer.Option("system", "--source"),
+    transaction_id: str = typer.Option(..., "--transaction-id"),
     value: int = typer.Option(..., "--value"),
     starts_at: str | None = typer.Option(None, "--starts-at"),
     expires_at: str | None = typer.Option(None, "--expires-at"),
     actor_kind: str = typer.Option("admin", "--actor-kind"),
     actor_id: str = typer.Option("admin", "--actor-id"),
 ) -> None:
-    change_source_entitlement(
+    grant_source_entitlement(
         user_id=user_id,
         kind=kind,
         source=source,
-        granted=True,
+        transaction_id=transaction_id,
         value=value,
         starts_at=starts_at,
         expires_at=expires_at,
@@ -163,22 +192,19 @@ def revoke(  # noqa: CFQ002
     user_id: uuid.UUID = typer.Option(..., "--user-id"),
     kind: str = typer.Option(..., "--kind"),
     source: str = typer.Option("system", "--source"),
-    starts_at: str | None = typer.Option(None, "--starts-at"),
-    expires_at: str | None = typer.Option(None, "--expires-at"),
+    transaction_id: str = typer.Option(..., "--transaction-id"),
     actor_kind: str = typer.Option("admin", "--actor-kind"),
     actor_id: str = typer.Option("admin", "--actor-id"),
 ) -> None:
-    change_source_entitlement(
-        user_id=user_id,
-        kind=kind,
-        source=source,
-        granted=False,
-        value=None,
-        starts_at=starts_at,
-        expires_at=expires_at,
-        actor_kind=actor_kind,
-        actor_id=actor_id,
-    )
+    command_data: dict[str, object] = {
+        "source": source,
+        "transaction_id": transaction_id,
+        "user_id": user_id,
+        "kind_id": entitlement_kind_from_name(kind),
+        "actor_kind": actor_kind_from_name(actor_kind),
+        "actor_id": actor_id,
+    }
+    run_async_command(run_revoke(RevokeCommand.model_validate(command_data)))
 
 
 def entitlement_record(
