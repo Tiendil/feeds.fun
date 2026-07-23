@@ -35,7 +35,6 @@ class ProcessorDispatchRoute(BaseEntity):
     id: ProcessorRouteId
     allowed_for_collections: bool
     allowed_for_users: bool
-    enforce_entitlements: bool = False
 
 
 class ProcessorDispatchInfo(BaseEntity):

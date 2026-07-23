@@ -95,7 +95,6 @@ class UpperCaseTitleProcessor(BaseProcessor):
 
 class LLMGeneralProcessorRoute(ProcessorRoute):
     api_key: LLMApiKey | None = None
-    enforce_entitlements: bool = False
 
     @pydantic.model_validator(mode="before")
     @classmethod
@@ -116,24 +115,6 @@ class LLMGeneralProcessorRoute(ProcessorRoute):
             )
 
         return self
-
-    @pydantic.model_validator(mode="after")
-    def require_api_key_if_entitlements_are_enforced(self) -> "LLMGeneralProcessorRoute":
-        if self.allowed_for_users and self.enforce_entitlements and self.api_key is None:
-            raise PydanticCustomError(
-                "api_key_required_for_entitlement_enforcement",
-                "API key must be set on user routes that enforce entitlements.",
-            )
-
-        return self
-
-    def dispatch_route(self) -> ProcessorDispatchRoute:
-        return ProcessorDispatchRoute(
-            id=self.id,
-            allowed_for_collections=self.allowed_for_collections,
-            allowed_for_users=self.allowed_for_users,
-            enforce_entitlements=self.enforce_entitlements,
-        )
 
 
 if TYPE_CHECKING:

@@ -1,6 +1,7 @@
 from typing import Any, Sequence
 
 from ffun.core import logging
+from ffun.dispatcher import domain as d_domain
 from ffun.domain.entities import LLMTokens
 from ffun.librarian import errors
 from ffun.librarian.entities import LLMGeneralProcessorRoute, TagsExtractor, TextCleaner
@@ -73,6 +74,8 @@ class Processor(base.Processor):
 
         return cut_text
 
+    # TODO: after removing old api key usage logic, this method should be narrowed to return only configured_api_key_usage(route.api_key)
+    #       or even removed.
     async def _api_key_usage(
         self, entry: Entry, requests: Sequence[ChatRequest], context: base.ProcessorContext
     ) -> APIKeyUsage | None:
@@ -81,7 +84,13 @@ class Processor(base.Processor):
         if route is None:
             raise errors.UnknownProcessorRoute(route_id=context.route_id)
 
-        if route.api_key is not None:
+        # Temporary solution until collection access handling moves fully to the dispatcher.
+        entries_in_collections = await d_domain._entries_in_collections([entry.id])  # noqa: SLF001
+        entry_is_from_collection = entries_in_collections[entry.id]
+
+        if entry_is_from_collection:
+            assert route.api_key is not None
+
             return configured_api_key_usage(
                 llm=self.llm_provider,
                 llm_config=self.llm_config,
@@ -89,10 +98,23 @@ class Processor(base.Processor):
                 requests=requests,
             )
 
-        return await search_for_user_api_key(
+        api_key_usage = await search_for_user_api_key(
             llm=self.llm_provider,
             llm_config=self.llm_config,
             entry=entry,
+            requests=requests,
+        )
+
+        if api_key_usage is not None:
+            return api_key_usage
+
+        if route.api_key is None:
+            return None
+
+        return configured_api_key_usage(
+            llm=self.llm_provider,
+            llm_config=self.llm_config,
+            api_key=route.api_key,
             requests=requests,
         )
 

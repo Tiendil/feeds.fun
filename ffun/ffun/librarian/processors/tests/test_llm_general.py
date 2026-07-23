@@ -1,7 +1,9 @@
 import pytest
 
 from ffun.dispatcher.entities import ProcessorRouteId
-from ffun.domain.entities import FeedId
+from ffun.domain.entities import CollectionId, FeedId
+from ffun.feeds.entities import Feed
+from ffun.feeds_collections.collections import collections
 from ffun.feeds_links import domain as fl_domain
 from ffun.librarian import errors
 from ffun.librarian.entities import LLMGeneralProcessorRoute
@@ -10,6 +12,7 @@ from ffun.librarian.processors.llm_general import Processor
 from ffun.librarian.tag_extractors import dog_tags_extractor
 from ffun.librarian.text_cleaners import clear_nothing
 from ffun.library.entities import Entry
+from ffun.library.tests import make as l_make
 from ffun.llms_framework.entities import (
     ChatRequest,
     LLMApiKey,
@@ -23,6 +26,7 @@ from ffun.ontology.entities import RawTag
 from ffun.tags.entities import TagCategory
 
 CONFIGURED_KEY_ROUTE_ID = ProcessorRouteId("configured-key-route")
+FALLBACK_KEY_ROUTE_ID = ProcessorRouteId("fallback-key-route")
 USER_KEY_ROUTE_ID = ProcessorRouteId("user-key-route")
 UNKNOWN_ROUTE_ID = ProcessorRouteId("unknown-route")
 
@@ -61,6 +65,12 @@ class TestProcessor:
                     id=CONFIGURED_KEY_ROUTE_ID,
                     allowed_for_collections=True,
                     allowed_for_users=False,
+                    api_key=fake_llm_api_key,
+                ),
+                LLMGeneralProcessorRoute(
+                    id=FALLBACK_KEY_ROUTE_ID,
+                    allowed_for_collections=False,
+                    allowed_for_users=True,
                     api_key=fake_llm_api_key,
                 ),
             ),
@@ -108,11 +118,36 @@ class TestProcessor:
         )
 
     @pytest.mark.asyncio
-    async def test__api_key_usage__configured_key_found(
+    async def test__api_key_usage__configured_key_fallback(
         self, llm_processor: Processor, cataloged_entry: Entry, fake_llm_api_key: LLMApiKey
     ) -> None:
         api_key_usage = await llm_processor._api_key_usage(
             entry=cataloged_entry,
+            requests=self._requests(llm_processor, "some text"),
+            context=ProcessorContext(route_id=FALLBACK_KEY_ROUTE_ID),
+        )
+
+        assert api_key_usage is not None
+        assert api_key_usage.api_key == fake_llm_api_key
+        assert api_key_usage.user_id is None
+
+    @pytest.mark.asyncio
+    async def test__api_key_usage__collection_uses_configured_key(
+        self,
+        llm_processor: Processor,
+        another_loaded_feed: Feed,
+        collection_id_for_test_feeds: CollectionId,
+        fake_llm_api_key: LLMApiKey,
+        user_key_info: UserKeyInfo,
+    ) -> None:
+        entries = await l_make.n_entries(another_loaded_feed, 1)
+        entry = next(iter(entries.values()))
+
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
+        await fl_domain.add_link(user_key_info.user_id, another_loaded_feed.id)
+
+        api_key_usage = await llm_processor._api_key_usage(
+            entry=entry,
             requests=self._requests(llm_processor, "some text"),
             context=ProcessorContext(route_id=CONFIGURED_KEY_ROUTE_ID),
         )
@@ -145,7 +180,7 @@ class TestProcessor:
         api_key_usage = await llm_processor._api_key_usage(
             entry=cataloged_entry,
             requests=self._requests(llm_processor, "some text"),
-            context=ProcessorContext(route_id=USER_KEY_ROUTE_ID),
+            context=ProcessorContext(route_id=FALLBACK_KEY_ROUTE_ID),
         )
 
         assert api_key_usage is not None
@@ -173,7 +208,7 @@ class TestProcessor:
 
         entry = cataloged_entry.replace(title="@tag-1 @tag-2", body="@tag-3 @tag-2")
 
-        tags = await llm_processor.process(entry, context=ProcessorContext(route_id=CONFIGURED_KEY_ROUTE_ID))
+        tags = await llm_processor.process(entry, context=ProcessorContext(route_id=FALLBACK_KEY_ROUTE_ID))
 
         tags.sort(key=lambda x: x.raw_uid)
 
@@ -189,4 +224,4 @@ class TestProcessor:
         entry = cataloged_entry.replace(title="@tag-1 @tag-2", body="raise TemporaryError")
 
         with pytest.raises(errors.TemporaryErrorInProcessor):
-            await llm_processor.process(entry, context=ProcessorContext(route_id=CONFIGURED_KEY_ROUTE_ID))
+            await llm_processor.process(entry, context=ProcessorContext(route_id=FALLBACK_KEY_ROUTE_ID))
