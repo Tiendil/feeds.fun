@@ -136,14 +136,18 @@ Collection routes must keep their current guarantee: use a configured key withou
 
 ### Route configuration
 
-Entitlement enforcement should be a deployment-level tag-processing setting, disabled by default for backward compatibility:
+Entitlement enforcement should be configured independently on each processor route and disabled by default for
+backward compatibility:
 
 ```toml
-[tag_processors]
+[[tag_processors.routes]]
+id = "user-api-key"
+allowed_for_users = true
+api_key = ""
 enforce_entitlements = false
 ```
 
-When `enforce_entitlements` is `false`:
+When a user-feed route has `enforce_entitlements = false`:
 
 - a user-feed route with a non-empty `route.api_key` retains the current configured-key-only behavior: the configured key processes the entry, all linked users may see its tags, and no SaaS-token entitlement, restriction, reservation, or usage tracking runs;
 - a user-feed route with an empty `route.api_key` retains the current user-key-only behavior;
@@ -151,7 +155,8 @@ When `enforce_entitlements` is `false`:
 
 This default preserves existing self-hosted deployments, where `route.api_key` commonly supplies the deployment's shared key and all users are expected to see processed tags.
 
-When `enforce_entitlements` is `true`, every route with `allowed_for_users = true` must define a non-empty `api_key`; startup validation must reject the configuration otherwise. Each such route follows the entitlement-aware workflow:
+When a user-feed route has `enforce_entitlements = true`, that route must define a non-empty `api_key`; startup
+validation must reject the route configuration otherwise. The route follows the entitlement-aware workflow:
 
 1. Evaluate eligible personal user API keys first and identify all API-key-covered users.
 2. Select at most one covered user as the API-key sponsor with the existing rotation logic.
@@ -162,7 +167,10 @@ When `enforce_entitlements` is `true`, every route with `allowed_for_users = tru
 
 In enabled mode, `route.api_key` supplies credentials only. Its presence does not authorize users, bypass entitlement checks, make tags globally visible, or consume a SaaS token on anyone's behalf. Collection processing remains outside entitlement enforcement and keeps its existing configured-key semantics.
 
-Production must explicitly set `enforce_entitlements = true`. Because the backward-compatible default is fail-open, startup should emit a prominent structured warning and a metric when it is disabled. Production deployment validation or health checks should assert that it is enabled.
+Production must explicitly set `enforce_entitlements = true` on every user-feed route that should enforce access.
+Because the backward-compatible route default is fail-open, startup should emit a prominent structured warning and a
+metric for each user-feed route where it is disabled. Production deployment validation or health checks should assert
+that it is enabled on every production user-feed route.
 
 The LLM call context should represent the credential independently from per-user access authorizations. It should contain an explicit credential source and a collection of per-user authorizations; a collection call has no user authorizations.
 
@@ -299,12 +307,13 @@ No fairness or ranking policy is needed for entitlement users because the system
 
 ### Processor routes and configuration
 
-- Add the deployment-level `tag_processors.enforce_entitlements` setting with a backward-compatible default of `false`.
+- Add `enforce_entitlements` to processor-route configuration with a backward-compatible default of `false`.
 - Preserve existing configured-key-only and user-key-only behavior when entitlement enforcement is disabled.
 - When enforcement is enabled, always evaluate personal user keys first and reinterpret `route.api_key` on user-feed routes as the fallback credential for entitlement-funded execution.
-- Reject enabled configurations when any route with `allowed_for_users = true` has an empty `api_key`.
+- Reject a route configuration when `allowed_for_users = true`, `enforce_entitlements = true`, and `api_key` is empty.
 - Keep collection-route credential and visibility behavior independent of entitlement enforcement.
-- Emit an observable warning and metric when entitlement enforcement is disabled so production can detect fail-open configuration.
+- Emit an observable warning and metric for each user-feed route where entitlement enforcement is disabled so
+  production can detect fail-open route configuration.
 - Update fixture configurations, example configurations, and the configuration/change note for operators.
 
 ### Retroactive authorization and reprocessing
@@ -378,7 +387,8 @@ At minimum, automated backend tests should cover:
 29. Reducing lifetime allowance below lifetime usage leaves usage unchanged and availability at zero; a later grant smaller than that historical usage does not restore capacity.
 30. With entitlement enforcement enabled and both a personal-key sponsor and `route.api_key` available, the sponsor's key executes the call and `route.api_key` is not used.
 31. With entitlement enforcement enabled and no personal-key sponsor, `route.api_key` executes the call only when at least one user has a successful SaaS-token reservation.
-32. Enabling entitlement enforcement when any route with `allowed_for_users = true` has an empty `api_key` fails validation at startup.
+32. A route with `allowed_for_users = true`, `enforce_entitlements = true`, and an empty `api_key` fails validation at
+    startup.
 33. Collection routes keep their configured-key and global-visibility behavior whether entitlement enforcement is enabled or disabled.
 34. Availability checks, reservation, settlement, audit, and metrics all derive the new-reservation amount from `SAAS_TOKENS_PER_USER_ENTRY`, whose initial value is `1`.
 35. Settlement and release use the amount captured in the in-memory reservation object rather than rereading `SAAS_TOKENS_PER_USER_ENTRY` during the same worker attempt.
@@ -388,12 +398,17 @@ All development checks and tests must run through the project's Docker-backed sc
 ## Rollout considerations
 
 - Additive resource kinds require no usage backfill; missing rows start at zero.
-- Entitlement enforcement remains disabled by default and should be enabled per deployment only after route fallback credentials, the `lifetime_tokens` entitlement, visibility enforcement, and observability are deployed.
+- Entitlement enforcement remains disabled by default on each route and should be enabled on production user-feed
+  routes only after route fallback credentials, the `lifetime_tokens` entitlement, visibility enforcement, and
+  observability are deployed.
 - Keep the legacy `tokens_cost` resource and user-key guard unchanged during coexistence.
-- Deploy `lifetime_tokens` entitlement support, its stable future expiration constant, and non-empty `api_key` values on every route with `allowed_for_users = true` before enabling entitlement enforcement.
+- Deploy `lifetime_tokens` entitlement support and its stable future expiration constant, and configure a non-empty
+  `api_key` on each user-feed route before setting that route's `enforce_entitlements = true`.
 - Treat leaked aggregate reservations after abrupt worker termination as the same accepted operational limitation as legacy API-key accounting; remediation is manual until a separate recovery design is introduced.
 - Replace the temporary global visibility marker for user-feed entries with per-user authorization before enabling token charging.
-- The deployment-level `tag_processors.enforce_entitlements` setting provides rollback without deleting accounting data; disabling it restores unrestricted legacy behavior and must therefore be treated as a security- and billing-sensitive operation in production.
+- The per-route `enforce_entitlements` setting provides rollback without deleting accounting data; disabling it on a
+  user-feed route restores unrestricted legacy behavior for that route and must therefore be treated as a security-
+  and billing-sensitive operation in production.
 - Before removal of user API keys, reevaluate configured-key capacity, API-key-covered access rules, and the legacy `tokens_cost` cleanup plan.
 
 ## Open question before implementation
