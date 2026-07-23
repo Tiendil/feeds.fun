@@ -168,9 +168,9 @@ validation must reject the route configuration otherwise. The route follows the 
 In enabled mode, `route.api_key` supplies credentials only. Its presence does not authorize users, bypass entitlement checks, make tags globally visible, or consume a SaaS token on anyone's behalf. Collection processing remains outside entitlement enforcement and keeps its existing configured-key semantics.
 
 Production must explicitly set `enforce_entitlements = true` on every user-feed route that should enforce access.
-Because the backward-compatible route default is fail-open, startup should emit a prominent structured warning and a
-metric for each user-feed route where it is disabled. Production deployment validation or health checks should assert
-that it is enabled on every production user-feed route.
+Because the backward-compatible route default is fail-open, startup should emit a prominent structured warning for
+each user-feed route where it is disabled. Production deployment validation or health checks should assert that it is
+enabled on every production user-feed route.
 
 The LLM call context should represent the credential independently from per-user access authorizations. It should contain an explicit credential source and a collection of per-user authorizations; a collection call has no user authorizations.
 
@@ -312,8 +312,8 @@ No fairness or ranking policy is needed for entitlement users because the system
 - When enforcement is enabled, always evaluate personal user keys first and reinterpret `route.api_key` on user-feed routes as the fallback credential for entitlement-funded execution.
 - Reject a route configuration when `allowed_for_users = true`, `enforce_entitlements = true`, and `api_key` is empty.
 - Keep collection-route credential and visibility behavior independent of entitlement enforcement.
-- Emit an observable warning and metric for each user-feed route where entitlement enforcement is disabled so
-  production can detect fail-open route configuration.
+- Emit a structured warning for each user-feed route where entitlement enforcement is disabled so production can
+  detect fail-open route configuration.
 - Update fixture configurations, example configurations, and the configuration/change note for operators.
 
 ### Retroactive authorization and reprocessing
