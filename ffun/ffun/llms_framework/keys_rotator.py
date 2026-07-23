@@ -22,6 +22,7 @@ from ffun.llms_framework.entities import (
 )
 from ffun.llms_framework.provider_interface import ProviderInterface
 from ffun.resources import domain as r_domain
+from ffun.resources import entities as r_entities
 from ffun.user_settings import domain as us_domain
 from ffun.user_settings import entities as us_entities
 
@@ -97,14 +98,23 @@ async def _choose_user(
     from ffun.product.entities import Resource as AppResource
 
     for info in infos:
+        reservations = await r_domain.try_to_reserve_in_order(
+            specifications=[
+                r_entities.ResourceReservationSpecification(
+                    user_id=info.user_id,
+                    amount=_cost_points.to_points(reserved_cost),
+                    options=(
+                        r_entities.ResourceReservationOption(
+                            kind=AppResource.tokens_cost,
+                            interval_started_at=interval_started_at,
+                            limit=_cost_points.to_points(info.max_tokens_cost_in_month),
+                        ),
+                    ),
+                )
+            ],
+        )
 
-        if await r_domain.try_to_reserve(
-            user_id=info.user_id,
-            kind=AppResource.tokens_cost,
-            interval_started_at=interval_started_at,
-            amount=_cost_points.to_points(reserved_cost),
-            limit=_cost_points.to_points(info.max_tokens_cost_in_month),
-        ):
+        if reservations:
             return info
 
     return None

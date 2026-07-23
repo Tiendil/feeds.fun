@@ -12,6 +12,7 @@ from ffun.llms_framework.keys_rotator import _cost_points, _get_user_key_infos
 from ffun.llms_framework.keys_statuses import Statuses
 from ffun.llms_framework.provider_interface import ProviderTest
 from ffun.resources import domain as r_domain
+from ffun.resources import entities as r_entities
 from ffun.user_settings import domain as us_domain
 from ffun.user_settings.entities import SettingKind
 
@@ -35,13 +36,22 @@ async def _save_user_key_info_settings(user_id: UserId, interval_started_at: dat
         user_id=user_id, kind=SettingKind(int(UserSetting.process_entries_not_older_than)), value=3
     )
 
-    await r_domain.try_to_reserve(
-        user_id=user_id,
-        kind=AppResource.tokens_cost,
-        interval_started_at=interval_started_at,
-        amount=_cost_points.to_points(used_cost),
-        limit=_cost_points.to_points(max_tokens_cost_in_month),
+    reservations = await r_domain.try_to_reserve_in_order(
+        specifications=[
+            r_entities.ResourceReservationSpecification(
+                user_id=user_id,
+                amount=_cost_points.to_points(used_cost),
+                options=(
+                    r_entities.ResourceReservationOption(
+                        kind=AppResource.tokens_cost,
+                        interval_started_at=interval_started_at,
+                        limit=_cost_points.to_points(max_tokens_cost_in_month),
+                    ),
+                ),
+            )
+        ],
     )
+    assert [reservation.user_id for reservation in reservations] == [user_id]
 
     await r_domain.convert_reserved_to_used(
         user_id=user_id,

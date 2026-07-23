@@ -56,6 +56,25 @@ _llm_config = LLMConfiguration(
 )
 
 
+async def _reserve_resource(user_id: UserId, interval_started_at: datetime.datetime, amount: int, limit: int) -> None:
+    reservations = await r_domain.try_to_reserve_in_order(
+        specifications=[
+            r_entities.ResourceReservationSpecification(
+                user_id=user_id,
+                amount=amount,
+                options=(
+                    r_entities.ResourceReservationOption(
+                        kind=AppResource.tokens_cost,
+                        interval_started_at=interval_started_at,
+                        limit=limit,
+                    ),
+                ),
+            )
+        ],
+    )
+    assert [reservation.user_id for reservation in reservations] == [user_id]
+
+
 class TestAPIKeyIsWorking:
     @pytest.mark.asyncio
     async def test_is_working(self, fake_llm_provider: ProviderTest, fake_llm_api_key: LLMApiKey) -> None:
@@ -233,9 +252,8 @@ class TestGetUserKeyInfos:
                 user_id=user_id, kind=setting_kind(UserSetting.process_entries_not_older_than), value=days[i]
             )
 
-            await r_domain.try_to_reserve(
+            await _reserve_resource(
                 user_id=user_id,
-                kind=AppResource.tokens_cost,
                 interval_started_at=interval_started_at,
                 amount=_cost_points.to_points(reserved_costs[i]),
                 limit=_cost_points.to_points(max_tokens_cost_in_month[i]),
@@ -496,9 +514,8 @@ class TestUseApiKey:
 
         reserved_cost = USDCost(Decimal(567))
 
-        await r_domain.try_to_reserve(
+        await _reserve_resource(
             user_id=internal_user_id,
-            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(1000))),
@@ -552,9 +569,8 @@ class TestUseApiKey:
 
         reserved_cost = USDCost(Decimal(567))
 
-        await r_domain.try_to_reserve(
+        await _reserve_resource(
             user_id=internal_user_id,
-            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(1000))),
@@ -610,10 +626,9 @@ class TestUseApiKey:
 
         reserved_cost = USDCost(Decimal(567))
 
-        await r_domain.try_to_reserve(
+        # TODO: differentiate tokens in all places
+        await _reserve_resource(
             user_id=internal_user_id,
-            # TODO: differentiate tokens in all places
-            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(1000))),
