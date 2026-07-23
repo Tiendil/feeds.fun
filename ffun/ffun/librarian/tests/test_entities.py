@@ -102,6 +102,24 @@ class TestBaseProcessor:
 
 
 class TestLLMGeneralProcessorRoute:
+    def test_enforce_entitlements__disabled_by_default(self) -> None:
+        route = LLMGeneralProcessorRoute(
+            id=ProcessorRouteId("user-route"),
+            allowed_for_users=True,
+        )
+
+        assert not route.enforce_entitlements
+
+    def test_enforce_entitlements__requires_api_key_for_user_route(self) -> None:
+        with pytest.raises(pydantic.ValidationError) as exc_info:
+            LLMGeneralProcessorRoute(
+                id=ProcessorRouteId("user-route"),
+                allowed_for_users=True,
+                enforce_entitlements=True,
+            )
+
+        assert exc_info.value.errors()[0]["type"] == "api_key_required_for_entitlement_enforcement"  # type: ignore
+
     def test_api_key_is_required_if_collections_enabled(self) -> None:
         with pytest.raises(pydantic.ValidationError) as exc_info:
             LLMGeneralProcessorRoute(
@@ -175,6 +193,7 @@ class TestLLMGeneralProcessor:
                     allowed_for_users=True,
                     allowed_for_quality_tests=True,
                     api_key=LLMApiKey("general-key"),
+                    enforce_entitlements=True,
                 ),
                 LLMGeneralProcessorRoute(
                     id=ProcessorRouteId("user-route"),
@@ -195,6 +214,7 @@ class TestLLMGeneralProcessor:
                 id=ProcessorRouteId("configured-user-route"),
                 allowed_for_collections=True,
                 allowed_for_users=True,
+                enforce_entitlements=True,
             ),
             ProcessorDispatchRoute(
                 id=ProcessorRouteId("user-route"),
