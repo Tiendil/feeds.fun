@@ -56,7 +56,9 @@ The Python representations of entitlement kind ids and merge policies MUST use t
 
 `is_lifetime` MUST distinguish only expiration validation.
 Non-lifetime grants MUST have source-supplied finite expiration timestamps.
-Lifetime grants MUST use the module-owned stable expiration timestamp `9999-12-31T23:59:59.999999+00:00` rather than a creation-relative expiration.
+Lifetime grants MUST use the shared `LIFETIME_INTERVAL_END_MARKER` representation timestamp
+`9999-12-31T23:59:59.999999+00:00` rather than a creation-relative expiration.
+The marker is a persistence representation for an unbounded interval, not a semantic lifetime expiration.
 
 ### Source entitlement state
 

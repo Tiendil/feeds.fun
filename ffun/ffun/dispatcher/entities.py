@@ -4,6 +4,7 @@ from typing import NewType
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import EntryId, ProcessorId
 from ffun.queues.entities import BaseQueueItem
+from ffun.resources.entities import ResourceReservation
 
 ProcessorRouteId = NewType("ProcessorRouteId", str)
 
@@ -29,6 +30,12 @@ class EntryToTag(BaseQueueItem):
 
 class DispatchDecision(BaseEntity):
     route_id: ProcessorRouteId
+
+
+class EntryAuthorization(BaseEntity):
+    entry_id: EntryId
+    globally_visible: bool
+    reservations: tuple[ResourceReservation, ...]
 
 
 class ProcessorDispatchRoute(BaseEntity):

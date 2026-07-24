@@ -317,3 +317,75 @@ class TestTryToReserveInOrder:
 
         assert reservations == []
         assert history == []
+
+
+class TestConvertReservationsToUsed:
+    async def reserve(
+        self,
+        user_ids: list[UserId],
+        kind: int,
+        interval_started_at: datetime.datetime,
+        amount: int,
+    ) -> list[ResourceReservation]:
+        return await domain.try_to_reserve_in_order(
+            specifications=[
+                ResourceReservationSpecification(
+                    user_id=user_id,
+                    amount=amount,
+                    options=(
+                        ResourceReservationOption(
+                            kind=kind,
+                            interval_started_at=interval_started_at,
+                            limit=amount,
+                        ),
+                    ),
+                )
+                for user_id in user_ids
+            ],
+        )
+
+    @pytest.mark.asyncio
+    async def test_consumes_all_reservations(
+        self,
+        internal_user_id: UserId,
+        another_internal_user_id: UserId,
+        kind: int,
+    ) -> None:
+        user_ids = [internal_user_id, another_internal_user_id]
+        amount = 20
+        interval_started_at = month_interval_start()
+        reservations = await self.reserve(user_ids, kind, interval_started_at, amount)
+
+        await domain.convert_reservations_to_used(reservations, consume=True)
+
+        for user_id in user_ids:
+            resource = await domain.load_resource(
+                user_id=user_id,
+                kind=kind,
+                interval_started_at=interval_started_at,
+            )
+            assert resource.used == amount
+            assert resource.reserved == 0
+
+    @pytest.mark.asyncio
+    async def test_releases_all_reservations(
+        self,
+        internal_user_id: UserId,
+        another_internal_user_id: UserId,
+        kind: int,
+    ) -> None:
+        user_ids = [internal_user_id, another_internal_user_id]
+        amount = 20
+        interval_started_at = month_interval_start()
+        reservations = await self.reserve(user_ids, kind, interval_started_at, amount)
+
+        await domain.convert_reservations_to_used(reservations, consume=False)
+
+        for user_id in user_ids:
+            resource = await domain.load_resource(
+                user_id=user_id,
+                kind=kind,
+                interval_started_at=interval_started_at,
+            )
+            assert resource.used == 0
+            assert resource.reserved == 0

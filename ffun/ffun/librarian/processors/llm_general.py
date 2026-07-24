@@ -74,8 +74,8 @@ class Processor(base.Processor):
 
         return cut_text
 
-    # TODO: after removing old api key usage logic, this method should be narrowed to return only configured_api_key_usage(route.api_key)
-    #       or even removed.
+    # TODO: after removing old api key usage logic, narrow this method to return only
+    #       configured_api_key_usage(route.api_key), or remove it.
     async def _api_key_usage(
         self, entry: Entry, requests: Sequence[ChatRequest], context: base.ProcessorContext
     ) -> APIKeyUsage | None:

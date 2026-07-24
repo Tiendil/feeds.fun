@@ -6,6 +6,7 @@ import pydantic
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity, NonEmptyString
+from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.entities import UserId
 
 
@@ -18,16 +19,6 @@ class EntitlementTransactionId(NonEmptyString):
 
 
 EffectiveEntitlementState: TypeAlias = tuple[bool, int | None]
-LIFETIME_ENTITLEMENT_EXPIRES_AT = datetime.datetime(
-    year=9999,
-    month=12,
-    day=31,
-    hour=23,
-    minute=59,
-    second=59,
-    microsecond=999999,
-    tzinfo=datetime.UTC,
-)
 
 
 class EntitlementKindId(enum.IntEnum):
@@ -92,10 +83,10 @@ class SourceEntitlement(BaseEntity):
         if not self.granted:
             raise ValueError("A source entitlement grant must not be revoked")
 
-        if kind.is_lifetime and self.expires_at != LIFETIME_ENTITLEMENT_EXPIRES_AT:
+        if kind.is_lifetime and self.expires_at != LIFETIME_INTERVAL_END_MARKER:
             raise ValueError("A lifetime entitlement must use the stable lifetime expiration timestamp")
 
-        if not kind.is_lifetime and self.expires_at == LIFETIME_ENTITLEMENT_EXPIRES_AT:
+        if not kind.is_lifetime and self.expires_at == LIFETIME_INTERVAL_END_MARKER:
             raise ValueError("A non-lifetime entitlement must use a source-supplied expiration timestamp")
 
     def has_same_grant_as(self, other: "SourceEntitlement") -> bool:

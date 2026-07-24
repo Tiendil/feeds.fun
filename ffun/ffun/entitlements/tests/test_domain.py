@@ -14,13 +14,13 @@ from ffun.core.tests.helpers import (
     assert_logs_has_no_business_event,
     capture_logs,
 )
+from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.domain import new_user_id
 from ffun.domain.entities import SerializedId
 from ffun.entitlements import domain
 from ffun.entitlements import entities as entitlement_entities
 from ffun.entitlements import errors, operations
 from ffun.entitlements.entities import (
-    LIFETIME_ENTITLEMENT_EXPIRES_AT,
     EntitlementKindId,
     EntitlementSourceId,
     EntitlementTransactionId,
@@ -164,7 +164,7 @@ class TestBuildEffectiveTimeline:
             kind_id=_LIFETIME_TOKENS,
             value=10,
             starts_at=now,
-            expires_at=LIFETIME_ENTITLEMENT_EXPIRES_AT,
+            expires_at=LIFETIME_INTERVAL_END_MARKER,
         )
         second = first.replace(transaction_id=EntitlementTransactionId("second"), value=20)
 
@@ -177,7 +177,7 @@ class TestBuildEffectiveTimeline:
         )
 
         assert [(interval.value, interval.starts_at, interval.expires_at) for interval in intervals] == [
-            (30, now, LIFETIME_ENTITLEMENT_EXPIRES_AT)
+            (30, now, LIFETIME_INTERVAL_END_MARKER)
         ]
 
     def test_skips_intervals_ending_at_evaluation_time(self) -> None:
@@ -740,7 +740,7 @@ class TestGrantSourceEntitlement:
                 kind_id=_LIFETIME_TOKENS,
                 value=10,
                 starts_at=starts_at,
-                expires_at=LIFETIME_ENTITLEMENT_EXPIRES_AT,
+                expires_at=LIFETIME_INTERVAL_END_MARKER,
             ),
             actor_kind=_ACTOR_KIND,
             actor_id=_ACTOR_ID,
@@ -753,7 +753,7 @@ class TestGrantSourceEntitlement:
                 kind_id=_LIFETIME_TOKENS,
                 value=20,
                 starts_at=starts_at,
-                expires_at=LIFETIME_ENTITLEMENT_EXPIRES_AT,
+                expires_at=LIFETIME_INTERVAL_END_MARKER,
             ),
             actor_kind=_ACTOR_KIND,
             actor_id=_ACTOR_ID,

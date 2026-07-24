@@ -11,10 +11,10 @@ from pytest_mock import MockerFixture
 from ffun.audit.entities import AuditEntityKind
 from ffun.cli.commands import entitlements
 from ffun.core import errors as core_errors
+from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.domain import new_user_id
 from ffun.domain.entities import SerializedId, UserId
 from ffun.entitlements.entities import (
-    LIFETIME_ENTITLEMENT_EXPIRES_AT,
     EffectiveEntitlementInterval,
     EntitlementKindId,
     EntitlementSourceId,
@@ -93,7 +93,7 @@ class TestResolveTimestamps:
         )
 
         assert starts_at == captured_at
-        assert expires_at == LIFETIME_ENTITLEMENT_EXPIRES_AT
+        assert expires_at == LIFETIME_INTERVAL_END_MARKER
 
     def test_missing_starts_at_defaults_to_captured_timestamp(self) -> None:
         captured_at = datetime.datetime.now(tz=datetime.UTC)

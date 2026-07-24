@@ -49,3 +49,18 @@ async def try_to_reserve_in_order(  # noqa: CCR001
             break
 
     return reservations
+
+
+async def convert_reservations_to_used(
+    reservations: Iterable[ResourceReservation],
+    *,
+    consume: bool,
+) -> None:
+    for reservation in reservations:
+        await convert_reserved_to_used(
+            user_id=reservation.user_id,
+            kind=reservation.kind,
+            interval_started_at=reservation.interval_started_at,
+            used=reservation.amount if consume else 0,
+            reserved=reservation.amount,
+        )

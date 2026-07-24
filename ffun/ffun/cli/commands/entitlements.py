@@ -12,10 +12,10 @@ from ffun.audit.entities import AuditEntityKind
 from ffun.core import errors as core_errors
 from ffun.core import utils
 from ffun.core.entities import BaseEntity
+from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.entities import SerializedId, UserId
 from ffun.entitlements import domain as e_domain
 from ffun.entitlements.entities import (
-    LIFETIME_ENTITLEMENT_EXPIRES_AT,
     EffectiveEntitlementInterval,
     EntitlementKindId,
     EntitlementSourceId,
@@ -97,7 +97,7 @@ def resolve_timestamps(
             expires_at
             if expires_at is not None
             else (
-                LIFETIME_ENTITLEMENT_EXPIRES_AT
+                LIFETIME_INTERVAL_END_MARKER
                 if e_domain.get_entitlement_kind(kind_id).is_lifetime
                 else captured_at + datetime.timedelta(days=31)
             )

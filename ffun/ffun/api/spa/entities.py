@@ -304,6 +304,9 @@ class UserSetting(BaseEntity):
 
 class ResourceKind(enum.StrEnum):
     tokens_cost = "tokens_cost"
+    day_token_usage = "day_token_usage"  # noqa: S105
+    month_token_usage = "month_token_usage"  # noqa: S105
+    lifetime_token_usage = "lifetime_token_usage"  # noqa: S105
 
     @classmethod
     def from_internal(cls, kind: int) -> "ResourceKind":

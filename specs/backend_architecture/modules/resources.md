@@ -132,6 +132,14 @@ The finalized used amount MAY differ from the released reserved amount.
 Consequently, conversion MAY increase or decrease the record's total relative to its total before conversion and MUST NOT reapply the reservation limit.
 A caller MAY release a reservation without recording usage by converting it with a zero used amount.
 
+The domain MUST also provide bulk conversion for a finite ordered collection of reservation results.
+Bulk conversion MUST process reservations in their supplied order through the single-resource conversion operation.
+When `consume` is true, it MUST add each reservation's captured amount to used and release the same amount from reserved.
+When `consume` is false, it MUST add zero to used and release each reservation's captured amount from reserved.
+An empty reservation collection MUST be a no-op.
+If a conversion raises `CanNotConvertReservedToUsed`, bulk conversion MUST propagate the error immediately.
+Successful earlier conversions MUST remain committed, and later reservations MUST remain unprocessed.
+
 ### Queries
 
 The batch current-resource query MUST return a mapping from every requested user id to the resource entity for the requested kind and interval, lazily initializing missing records.
@@ -151,6 +159,7 @@ It MUST return entries only for users that have records of that kind.
 Initialization, reservation, conversion, and queries use the module's independently committed database operations and do not participate in a caller-owned transaction.
 A reservation's lazy initialization and conditional counter update are separate database operations; therefore a failed or rejected reservation can still commit initialization of an empty record.
 Ordered reservation composes those operations and does not add a transaction spanning users or resource options.
+Bulk conversion also composes independently committed conversion operations and does not add a transaction spanning reservation results.
 
 Every successful reservation or conversion, including a successful zero-value update, MUST set `updated_at` to the database's current timestamp.
 Initialization MUST set `created_at` and `updated_at` from database time.
@@ -193,6 +202,7 @@ They MUST NOT import `ffun.resources.operations` or access `r_resources` directl
 - `load_resource(user_id, kind, interval_started_at)` returns one lazily initialized resource entity.
 - `try_to_reserve_in_order(specifications)` accepts `ResourceReservationSpecification` values, tries each user's options in order, and returns successful `ResourceReservation` values in specification order.
 - `convert_reserved_to_used(user_id, kind, interval_started_at, used, reserved)` finalizes usage and releases reserved capacity or raises `CanNotConvertReservedToUsed`.
+- `convert_reservations_to_used(reservations, *, consume)` converts captured `ResourceReservation` values in order, either consuming or releasing their complete amounts.
 - `load_resource_history(user_id, kind)` returns the ordered resource history.
 - `count_total_resources_per_user(kind)` returns used-only totals grouped by user.
 
@@ -200,6 +210,7 @@ The batch loader MUST accept a finite iterable of user ids.
 The interface MUST return resource mappings keyed by the semantic `UserId` values supplied by callers.
 The ordered reservation operation MUST accept a finite iterable of reservation specifications and return a list ordered by the corresponding specifications.
 Cross-module callers MUST use `try_to_reserve_in_order` for reservations, including reservations with one specification and one option.
+The bulk conversion operation MUST accept a finite iterable of reservation results and MUST NOT recompute their captured identities or amounts.
 
 The domain interface MUST NOT accept an execute callable or expose transaction ownership to callers.
 

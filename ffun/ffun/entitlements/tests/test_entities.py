@@ -4,9 +4,9 @@ from typing import cast
 import pydantic
 import pytest
 
+from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.entitlements.entities import (
     ENTITLEMENT_KINDS,
-    LIFETIME_ENTITLEMENT_EXPIRES_AT,
     EntitlementKindId,
     EntitlementSourceId,
     EntitlementTransactionId,
@@ -25,18 +25,6 @@ class TestEntitlementKinds:
             MergePolicy.sum,
         ]
         assert [kind.is_lifetime for kind in ENTITLEMENT_KINDS] == [False, False, True]
-
-    def test_lifetime_expiration_is_stable_aware_future_timestamp(self) -> None:
-        assert LIFETIME_ENTITLEMENT_EXPIRES_AT == datetime.datetime(
-            year=9999,
-            month=12,
-            day=31,
-            hour=23,
-            minute=59,
-            second=59,
-            microsecond=999999,
-            tzinfo=datetime.UTC,
-        )
 
 
 class TestSourceEntitlement:
@@ -93,7 +81,7 @@ class TestSourceEntitlement:
     def test_validate_grant__lifetime(self) -> None:
         entitlement = make_source_entitlement(
             kind_id=EntitlementKindId.lifetime_tokens,
-            expires_at=LIFETIME_ENTITLEMENT_EXPIRES_AT,
+            expires_at=LIFETIME_INTERVAL_END_MARKER,
         )
 
         entitlement.validate_grant(ENTITLEMENT_KINDS[2])
@@ -124,7 +112,7 @@ class TestSourceEntitlement:
     def test_validate_grant__recurring_rejects_lifetime_expiration(self) -> None:
         entitlement = make_source_entitlement(
             kind_id=EntitlementKindId.day_tokens,
-            expires_at=LIFETIME_ENTITLEMENT_EXPIRES_AT,
+            expires_at=LIFETIME_INTERVAL_END_MARKER,
         )
 
         with pytest.raises(ValueError, match="source-supplied"):

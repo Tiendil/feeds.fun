@@ -1,0 +1,273 @@
+import uuid
+
+import pytest
+from pytest_mock import MockerFixture
+
+from ffun.dispatcher import entries_cache
+from ffun.dispatcher.entities import EntryProcessingStatus, EntryToProcess
+from ffun.dispatcher.tests import make
+from ffun.domain.domain import new_entry_id, new_feed_id, new_user_id
+from ffun.domain.entities import EntryId, FeedId, ProcessorId, UserId
+from ffun.feeds.entities import Feed
+from ffun.feeds_collections.collections import collections
+from ffun.feeds_collections.entities import CollectionId
+from ffun.library import domain as l_domain
+from ffun.library.tests import make as l_make
+from ffun.product.entities import UserSetting
+from ffun.user_settings import domain as us_domain
+from ffun.user_settings.entities import SettingKind
+
+
+class TestEntriesInCollections:
+    @pytest.mark.asyncio
+    async def test_no_entries(self) -> None:
+        assert await entries_cache.entries_in_collections([]) == {}
+
+    @pytest.mark.asyncio
+    async def test_returns_collection_membership(
+        self,
+        loaded_feed: Feed,
+        another_loaded_feed: Feed,
+        collection_id_for_test_feeds: CollectionId,
+    ) -> None:
+        user_entries = await l_make.n_entries(loaded_feed, 2)
+        collection_entries = await l_make.n_entries(another_loaded_feed, 3)
+
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
+
+        entries_in_collections = await entries_cache.entries_in_collections(
+            list(user_entries) + list(collection_entries)
+        )
+
+        assert entries_in_collections == {
+            **{entry_id: False for entry_id in user_entries},
+            **{entry_id: True for entry_id in collection_entries},
+        }
+
+    @pytest.mark.asyncio
+    async def test_returns_collection_membership_for_entries_linked_to_multiple_feeds(
+        self,
+        loaded_feed: Feed,
+        another_loaded_feed: Feed,
+        collection_id_for_test_feeds: CollectionId,
+    ) -> None:
+        entries = await l_make.n_entries_list(loaded_feed, 3)
+
+        await l_domain.catalog_entries(
+            another_loaded_feed.id,
+            [entry.collected_entry() for entry in entries[:2]],
+        )
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
+
+        entries_in_collections = await entries_cache.entries_in_collections([entry.id for entry in entries])
+
+        assert entries_in_collections == {
+            entries[0].id: True,
+            entries[1].id: True,
+            entries[2].id: False,
+        }
+
+    @pytest.mark.asyncio
+    async def test_skips_entries_without_feed_links(self) -> None:
+        entry_id = new_entry_id()
+
+        assert await entries_cache.entries_in_collections([entry_id]) == {}
+
+
+class TestUsersWithApiKeys:
+    @pytest.mark.asyncio
+    async def test_no_users(self) -> None:
+        assert await entries_cache._users_with_api_keys([]) == set()  # noqa: SLF001
+
+    @pytest.mark.asyncio
+    async def test_detects_all_supported_api_key_settings(self) -> None:
+        user_ids = [new_user_id() for _ in range(4)]
+        api_key_settings = (
+            UserSetting.openai_api_key,
+            UserSetting.gemini_api_key,
+            UserSetting.test_api_key,
+        )
+
+        for user_id, setting in zip(user_ids, api_key_settings, strict=False):
+            await us_domain.save_setting(
+                user_id=user_id,
+                kind=SettingKind(int(setting)),
+                value=uuid.uuid4().hex,
+            )
+
+        await us_domain.save_setting(
+            user_id=user_ids[3],
+            kind=SettingKind(int(UserSetting.test_api_key)),
+            value="",
+        )
+
+        assert await entries_cache._users_with_api_keys(user_ids) == set(user_ids[:3])  # noqa: SLF001
+
+
+class TestEntriesCache:
+    def test_entry_collection_membership_and_defaults(self) -> None:
+        collection_entry_id = new_entry_id()
+        user_entry_id = new_entry_id()
+        missing_entry_id = new_entry_id()
+        cache = entries_cache.EntriesCache(
+            entries_in_collections={
+                collection_entry_id: True,
+                user_entry_id: False,
+            },
+            feed_ids_by_entry={},
+            user_ids_by_feed={},
+            users_with_api_keys=set(),
+            processing_statuses={},
+        )
+
+        assert cache.entry_in_collection(collection_entry_id)
+        assert not cache.entry_in_collection(user_entry_id)
+        assert not cache.entry_in_collection(missing_entry_id)
+
+    def test_entry_users_are_merged_and_deduplicated_across_feeds(self) -> None:
+        entry_id = new_entry_id()
+        missing_entry_id = new_entry_id()
+        first_feed_id = new_feed_id()
+        second_feed_id = new_feed_id()
+        first_user_id = new_user_id()
+        shared_user_id = new_user_id()
+        second_user_id = new_user_id()
+        cache = entries_cache.EntriesCache(
+            entries_in_collections={},
+            feed_ids_by_entry={entry_id: {first_feed_id, second_feed_id}},
+            user_ids_by_feed={
+                first_feed_id: {first_user_id, shared_user_id},
+                second_feed_id: {shared_user_id, second_user_id},
+            },
+            users_with_api_keys=set(),
+            processing_statuses={},
+        )
+
+        assert cache.entry_user_ids(entry_id) == {
+            first_user_id,
+            shared_user_id,
+            second_user_id,
+        }
+        assert cache.entry_user_ids(missing_entry_id) == set()
+
+    def test_detects_api_keys_only_for_selected_users(self) -> None:
+        api_key_user_id = new_user_id()
+        another_user_id = new_user_id()
+        cache = entries_cache.EntriesCache(
+            entries_in_collections={},
+            feed_ids_by_entry={},
+            user_ids_by_feed={},
+            users_with_api_keys={api_key_user_id},
+            processing_statuses={},
+        )
+
+        assert cache.users_have_api_keys([another_user_id, api_key_user_id])
+        assert not cache.users_have_api_keys([another_user_id])
+        assert not cache.users_have_api_keys([])
+
+    def test_returns_processing_status_and_defaults(self) -> None:
+        processor_id = ProcessorId(101)
+        another_processor_id = ProcessorId(102)
+        entry_id = new_entry_id()
+        missing_entry_id = new_entry_id()
+        cache = entries_cache.EntriesCache(
+            entries_in_collections={},
+            feed_ids_by_entry={},
+            user_ids_by_feed={},
+            users_with_api_keys=set(),
+            processing_statuses={
+                processor_id: {
+                    entry_id: EntryProcessingStatus.processed,
+                }
+            },
+        )
+
+        assert cache.entry_processing_status(processor_id, entry_id) == EntryProcessingStatus.processed
+        assert cache.entry_processing_status(processor_id, missing_entry_id) is None
+        assert cache.entry_processing_status(another_processor_id, entry_id) is None
+
+
+class TestCreateEntriesCache:
+    @pytest.mark.asyncio
+    async def test_bulk_loads_and_connects_cached_values(
+        self,
+        fake_processor_id: ProcessorId,
+        another_fake_processor_id: ProcessorId,
+        mocker: MockerFixture,
+    ) -> None:
+        collection_entry_id = new_entry_id()
+        user_entry_id = new_entry_id()
+        collection_feed_id = new_feed_id()
+        user_feed_id = new_feed_id()
+        api_key_user_id = new_user_id()
+        another_user_id = new_user_id()
+        items = [
+            EntryToProcess(entry_id=collection_entry_id),
+            EntryToProcess(entry_id=user_entry_id),
+            EntryToProcess(entry_id=collection_entry_id),
+        ]
+        processors = [
+            make.processor_dispatch_info(fake_processor_id),
+            make.processor_dispatch_info(another_fake_processor_id),
+        ]
+        statuses = {
+            fake_processor_id: {
+                user_entry_id: EntryProcessingStatus.failed,
+            },
+            another_fake_processor_id: {},
+        }
+        feed_ids_by_entry: dict[EntryId, set[FeedId]] = {
+            collection_entry_id: {collection_feed_id},
+            user_entry_id: {user_feed_id},
+        }
+        user_ids_by_feed: dict[FeedId, set[UserId]] = {
+            collection_feed_id: {api_key_user_id},
+            user_feed_id: {api_key_user_id, another_user_id},
+        }
+        users_with_api_keys: set[UserId] = {api_key_user_id}
+        entries_in_collections: dict[EntryId, bool] = {
+            collection_entry_id: True,
+            user_entry_id: False,
+        }
+        feed_ids = {collection_feed_id, user_feed_id}
+        user_ids = {api_key_user_id, another_user_id}
+        entry_feed_ids_mock = mocker.patch.object(
+            entries_cache,
+            "_entry_feed_ids",
+            return_value=feed_ids_by_entry,
+        )
+        statuses_mock = mocker.patch.object(
+            entries_cache.operations,
+            "get_entries_processing_statuses",
+            return_value=statuses,
+        )
+        linked_users_mock = mocker.patch.object(
+            entries_cache.fl_domain,
+            "get_linked_users",
+            return_value=user_ids_by_feed,
+        )
+        api_key_users_mock = mocker.patch.object(
+            entries_cache,
+            "_users_with_api_keys",
+            return_value=users_with_api_keys,
+        )
+        collections_by_entry_mock = mocker.patch.object(
+            entries_cache,
+            "_collections_by_entry",
+            return_value=entries_in_collections,
+        )
+
+        cache = await entries_cache.create_entries_cache(items, processors)
+
+        entry_ids = [collection_entry_id, user_entry_id]
+        processor_ids = [fake_processor_id, another_fake_processor_id]
+        entry_feed_ids_mock.assert_awaited_once_with(entry_ids)
+        statuses_mock.assert_awaited_once_with(processor_ids, entry_ids)
+        collections_by_entry_mock.assert_called_once_with(feed_ids_by_entry)
+        linked_users_mock.assert_awaited_once_with(feed_ids)
+        api_key_users_mock.assert_awaited_once_with(user_ids)
+        assert cache.entry_in_collection(collection_entry_id)
+        assert not cache.entry_in_collection(user_entry_id)
+        assert cache.entry_user_ids(user_entry_id) == {api_key_user_id, another_user_id}
+        assert cache.users_have_api_keys(cache.entry_user_ids(user_entry_id))
+        assert cache.entry_processing_status(fake_processor_id, user_entry_id) == EntryProcessingStatus.failed

@@ -1,35 +1,107 @@
-from collections.abc import Sequence
+import datetime
+import uuid
+from collections.abc import Mapping, Sequence
 
 import pytest
 import pytest_asyncio
+from pytest_mock import MockerFixture
 
+from ffun.audit.entities import AuditEntityKind
 from ffun.core.tests.helpers import TableSizeNotChanged
-from ffun.dispatcher import domain, errors, operations
+from ffun.dispatcher import domain, entries_cache, errors, operations
 from ffun.dispatcher.entities import (
     DispatchDecision,
+    EntryAuthorization,
     EntryProcessingStatus,
     EntryToProcess,
     EntryToTag,
+    ProcessorDispatchInfo,
     ProcessorDispatchRoute,
     ProcessorRouteId,
 )
 from ffun.dispatcher.tests import make
 from ffun.dispatcher.tests.helpers import assert_processing_status
-from ffun.domain.domain import new_entry_id
-from ffun.domain.entities import EntryId, ProcessorId
+from ffun.domain.datetime_intervals import (
+    LIFETIME_INTERVAL_END_MARKER,
+    LIFETIME_INTERVAL_START_MARKER,
+    day_interval_start,
+    month_interval_start,
+)
+from ffun.domain.domain import new_entry_id, new_user_id
+from ffun.domain.entities import EntryId, ProcessorId, SerializedId, UserId
+from ffun.entitlements import domain as e_domain
+from ffun.entitlements.entities import EntitlementKindId, EntitlementTransactionId
+from ffun.entitlements.tests import make as e_make
 from ffun.feeds.entities import Feed
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import CollectionId
+from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
+from ffun.llms_framework.entities import LLMApiKey
 from ffun.markers import domain as m_domain
 from ffun.markers.entities import Marker
+from ffun.product.entities import SAAS_TOKENS_PER_USER_ENTRY, Resource, UserSetting
 from ffun.queues import operations as q_operations
 from ffun.queues.entities import QueueKind, QueueRecord
+from ffun.resources import domain as r_domain
+from ffun.resources.entities import Resource as ResourceRecord
+from ffun.resources.entities import ResourceReservationOption, ResourceReservationSpecification
+from ffun.user_settings import domain as us_domain
+from ffun.user_settings.entities import SettingKind
 
 
 def record_entry_ids(records: Sequence[QueueRecord[EntryToProcess] | QueueRecord[EntryToTag]]) -> set[EntryId]:
     return {record.item.entry_id for record in records}
+
+
+async def save_user_api_key(user_id: UserId) -> None:
+    await us_domain.save_setting(
+        user_id=user_id,
+        kind=SettingKind(int(UserSetting.test_api_key)),
+        value=LLMApiKey(uuid.uuid4().hex),
+    )
+
+
+async def grant_tokens(
+    user_id: UserId,
+    kind_id: EntitlementKindId,
+    *,
+    value: int = 10,
+) -> None:
+    await e_domain.grant_source_entitlement(
+        e_make.make_source_entitlement(
+            user_id=user_id,
+            kind_id=kind_id,
+            value=value,
+            transaction_id=EntitlementTransactionId(uuid.uuid4().hex),
+            expires_at=(LIFETIME_INTERVAL_END_MARKER if kind_id == EntitlementKindId.lifetime_tokens else None),
+        ),
+        actor_kind=AuditEntityKind.admin,
+        actor_id=SerializedId("dispatcher-tests"),
+    )
+
+
+async def get_resource(user_id: UserId, kind: Resource, interval_started_at: datetime.datetime) -> ResourceRecord:
+    return await r_domain.load_resource(
+        user_id=user_id,
+        kind=kind,
+        interval_started_at=interval_started_at,
+    )
+
+
+def make_entries_cache(
+    *,
+    entries_in_collections: Mapping[EntryId, bool] | None = None,
+    processing_statuses: Mapping[ProcessorId, Mapping[EntryId, EntryProcessingStatus]] | None = None,
+) -> entries_cache.EntriesCache:
+    return entries_cache.EntriesCache(
+        entries_in_collections=entries_in_collections or {},
+        feed_ids_by_entry={},
+        user_ids_by_feed={},
+        users_with_api_keys=set(),
+        processing_statuses=processing_statuses or {},
+    )
 
 
 class TestPushEntriesToProcess:
@@ -291,112 +363,208 @@ class TestMoveFailedEntriesToProcessorQueue:
         )
 
 
-class TestEntriesInCollections:
-    @pytest.mark.asyncio
-    async def test_no_entries(self) -> None:
-        assert await domain._entries_in_collections([]) == {}
-
-    @pytest.mark.asyncio
-    async def test_returns_collection_membership(
-        self,
-        loaded_feed: Feed,
-        another_loaded_feed: Feed,
-        collection_id_for_test_feeds: CollectionId,
-    ) -> None:
-        user_entries = await l_make.n_entries(loaded_feed, 2)
-        collection_entries = await l_make.n_entries(another_loaded_feed, 3)
-
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
-
-        entries_in_collections = await domain._entries_in_collections(list(user_entries) + list(collection_entries))
-
-        assert entries_in_collections == {
-            **{entry_id: False for entry_id in user_entries},
-            **{entry_id: True for entry_id in collection_entries},
+class TestTokenReservationSpecification:
+    def test_builds_ordered_options(self) -> None:
+        user_id = new_user_id()
+        authorization_time = datetime.datetime(2026, 7, 24, 12, 13, 14, tzinfo=datetime.UTC)
+        entitlements = {
+            kind_id: e_make.make_effective_entitlement_interval(
+                user_id=user_id,
+                kind_id=kind_id,
+                value=index,
+            )
+            for index, kind_id in enumerate(EntitlementKindId, start=10)
         }
 
-    @pytest.mark.asyncio
-    async def test_returns_collection_membership_for_entries_linked_to_multiple_feeds(
-        self,
-        loaded_feed: Feed,
-        another_loaded_feed: Feed,
-        collection_id_for_test_feeds: CollectionId,
-    ) -> None:
-        entries = await l_make.n_entries_list(loaded_feed, 3)
-
-        await l_domain.catalog_entries(
-            another_loaded_feed.id,
-            [entry.collected_entry() for entry in entries[:2]],
+        specification = domain._token_reservation_specification(
+            user_id,
+            entitlements,
+            authorization_time,
         )
+
+        assert specification == ResourceReservationSpecification(
+            user_id=user_id,
+            amount=SAAS_TOKENS_PER_USER_ENTRY,
+            options=(
+                ResourceReservationOption(
+                    kind=Resource.day_token_usage,
+                    interval_started_at=day_interval_start(authorization_time),
+                    limit=10,
+                ),
+                ResourceReservationOption(
+                    kind=Resource.month_token_usage,
+                    interval_started_at=month_interval_start(authorization_time),
+                    limit=11,
+                ),
+                ResourceReservationOption(
+                    kind=Resource.lifetime_token_usage,
+                    interval_started_at=LIFETIME_INTERVAL_START_MARKER,
+                    limit=12,
+                ),
+            ),
+        )
+
+    def test_skips_missing_entitlements(self) -> None:
+        user_id = new_user_id()
+
+        specification = domain._token_reservation_specification(
+            user_id,
+            {kind_id: None for kind_id in EntitlementKindId},
+            datetime.datetime.now(tz=datetime.UTC),
+        )
+
+        assert specification.options == ()
+
+
+class TestAuthorizeEntry:
+    @pytest.mark.asyncio
+    async def test_collection_entry(
+        self,
+        another_loaded_feed: Feed,
+        collection_id_for_test_feeds: CollectionId,
+    ) -> None:
+        user_id = new_user_id()
+        entry = next(iter((await l_make.n_entries(another_loaded_feed, 1)).values()))
         await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
+        await fl_domain.add_link(user_id, another_loaded_feed.id)
+        await grant_tokens(user_id, EntitlementKindId.day_tokens)
+        item = EntryToProcess(entry_id=entry.id)
+        cache = await entries_cache.create_entries_cache([item], [])
 
-        entries_in_collections = await domain._entries_in_collections([entry.id for entry in entries])
+        authorization = await domain._authorize_entry(item, cache)
 
-        assert entries_in_collections == {
-            entries[0].id: True,
-            entries[1].id: True,
-            entries[2].id: False,
+        assert authorization == EntryAuthorization(
+            entry_id=entry.id,
+            globally_visible=True,
+            reservations=(),
+        )
+
+    @pytest.mark.asyncio
+    async def test_linked_user_with_api_key(self, loaded_feed: Feed) -> None:
+        user_id = new_user_id()
+        entry = next(iter((await l_make.n_entries(loaded_feed, 1)).values()))
+        await fl_domain.add_link(user_id, loaded_feed.id)
+        await save_user_api_key(user_id)
+        item = EntryToProcess(entry_id=entry.id)
+        cache = await entries_cache.create_entries_cache([item], [])
+
+        authorization = await domain._authorize_entry(item, cache)
+
+        assert authorization == EntryAuthorization(
+            entry_id=entry.id,
+            globally_visible=True,
+            reservations=(),
+        )
+
+    @pytest.mark.asyncio
+    async def test_reserves_each_entitled_user(self, loaded_feed: Feed) -> None:
+        user_ids = [new_user_id() for _ in range(3)]
+        entry = next(iter((await l_make.n_entries(loaded_feed, 1)).values()))
+
+        for user_id in user_ids:
+            await fl_domain.add_link(user_id, loaded_feed.id)
+
+        await grant_tokens(user_ids[0], EntitlementKindId.day_tokens)
+        await grant_tokens(user_ids[1], EntitlementKindId.month_tokens)
+        item = EntryToProcess(entry_id=entry.id)
+        cache = await entries_cache.create_entries_cache([item], [])
+
+        authorization = await domain._authorize_entry(item, cache)
+
+        assert not authorization.globally_visible
+        assert {(reservation.user_id, reservation.kind) for reservation in authorization.reservations} == {
+            (user_ids[0], Resource.day_token_usage),
+            (user_ids[1], Resource.month_token_usage),
         }
 
     @pytest.mark.asyncio
-    async def test_skips_entries_without_feed_links(self) -> None:
-        entry_id = new_entry_id()
+    async def test_reserves_each_entry_from_the_first_available_pool(self, loaded_feed: Feed) -> None:
+        user_id = new_user_id()
+        entries = list((await l_make.n_entries(loaded_feed, 2)).values())
+        await fl_domain.add_link(user_id, loaded_feed.id)
+        await grant_tokens(user_id, EntitlementKindId.day_tokens, value=1)
+        await grant_tokens(user_id, EntitlementKindId.month_tokens, value=2)
+        items = [EntryToProcess(entry_id=entry.id) for entry in entries]
+        cache = await entries_cache.create_entries_cache(items, [])
 
-        assert await domain._entries_in_collections([entry_id]) == {}
+        authorizations = [await domain._authorize_entry(item, cache) for item in items]
+
+        assert [authorization.reservations[0].kind for authorization in authorizations] == [
+            Resource.day_token_usage,
+            Resource.month_token_usage,
+        ]
+
+        await r_domain.convert_reservations_to_used(
+            [reservation for authorization in authorizations for reservation in authorization.reservations],
+            consume=False,
+        )
+
+    @pytest.mark.asyncio
+    async def test_deduplicates_user_linked_through_multiple_feeds(
+        self,
+        loaded_feed: Feed,
+        another_loaded_feed: Feed,
+    ) -> None:
+        user_id = new_user_id()
+        entry = next(iter((await l_make.n_entries(loaded_feed, 1)).values()))
+        await l_domain.catalog_entries(another_loaded_feed.id, [entry.collected_entry()])
+        await fl_domain.add_link(user_id, loaded_feed.id)
+        await fl_domain.add_link(user_id, another_loaded_feed.id)
+        await grant_tokens(user_id, EntitlementKindId.lifetime_tokens)
+        item = EntryToProcess(entry_id=entry.id)
+        cache = await entries_cache.create_entries_cache([item], [])
+
+        authorization = await domain._authorize_entry(item, cache)
+
+        assert [reservation.user_id for reservation in authorization.reservations] == [user_id]
+
+    @pytest.mark.asyncio
+    async def test_entry_without_linked_users(self, loaded_feed: Feed) -> None:
+        entry = next(iter((await l_make.n_entries(loaded_feed, 1)).values()))
+        item = EntryToProcess(entry_id=entry.id)
+        cache = await entries_cache.create_entries_cache([item], [])
+
+        authorization = await domain._authorize_entry(item, cache)
+
+        assert authorization == EntryAuthorization(
+            entry_id=entry.id,
+            globally_visible=False,
+            reservations=(),
+        )
 
 
 class TestMarkEntryTagsVisible:
     @pytest.mark.asyncio
-    async def test_collection_entry(self) -> None:
+    async def test_global_visibility(self) -> None:
         entry_id = new_entry_id()
-        item = EntryToProcess(entry_id=entry_id)
+        authorization = EntryAuthorization(entry_id=entry_id, globally_visible=True, reservations=())
 
-        await domain._mark_entry_tags_visible(item, in_collection=True)
+        await domain._mark_entry_tags_visible(authorization, [])
 
         assert await m_domain.get_markers(user_id=None, entries_ids=[entry_id]) == {entry_id: {Marker.can_see_tags}}
 
     @pytest.mark.asyncio
-    async def test_user_entry_temporary_global_marker(self) -> None:
+    async def test_user_visibility(self) -> None:
         entry_id = new_entry_id()
-        item = EntryToProcess(entry_id=entry_id)
+        user_ids = {new_user_id(), new_user_id()}
+        authorization = EntryAuthorization(entry_id=entry_id, globally_visible=False, reservations=())
 
-        await domain._mark_entry_tags_visible(item, in_collection=False)
+        await domain._mark_entry_tags_visible(authorization, user_ids)
 
-        assert await m_domain.get_markers(user_id=None, entries_ids=[entry_id]) == {entry_id: {Marker.can_see_tags}}
+        assert await m_domain.get_markers(user_id=None, entries_ids=[entry_id]) == {}
 
+        for user_id in user_ids:
+            assert await m_domain.get_markers(user_id=user_id, entries_ids=[entry_id]) == {
+                entry_id: {Marker.can_see_tags}
+            }
 
-class TestMarkEntriesTagsVisible:
     @pytest.mark.asyncio
-    async def test_no_items(self) -> None:
+    async def test_no_authorized_users(self) -> None:
+        entry_id = new_entry_id()
+        authorization = EntryAuthorization(entry_id=entry_id, globally_visible=False, reservations=())
+
         async with TableSizeNotChanged("m_markers"):
-            await domain._mark_entries_tags_visible([], {})
-
-    @pytest.mark.asyncio
-    async def test_marks_items_with_explicit_and_default_collection_flags(self) -> None:
-        first_entry_id = new_entry_id()
-        second_entry_id = new_entry_id()
-        third_entry_id = new_entry_id()
-        items = [
-            EntryToProcess(entry_id=first_entry_id),
-            EntryToProcess(entry_id=second_entry_id),
-            EntryToProcess(entry_id=third_entry_id),
-        ]
-
-        await domain._mark_entries_tags_visible(
-            items,
-            {
-                first_entry_id: True,
-                second_entry_id: False,
-            },
-        )
-
-        assert await m_domain.get_markers(
-            user_id=None, entries_ids=[first_entry_id, second_entry_id, third_entry_id]
-        ) == {
-            first_entry_id: {Marker.can_see_tags},
-            second_entry_id: {Marker.can_see_tags},
-            third_entry_id: {Marker.can_see_tags},
-        }
+            await domain._mark_entry_tags_visible(authorization, [])
 
 
 class TestProcessorDispatchRoute:
@@ -627,12 +795,14 @@ class TestProcessorItemsToTag:
             EntryToProcess(entry_id=second_entry_id),
             EntryToProcess(entry_id=third_entry_id),
         ]
-        entries_in_collections = {
-            first_entry_id: False,
-            second_entry_id: True,
-        }
+        cache = make_entries_cache(
+            entries_in_collections={
+                first_entry_id: False,
+                second_entry_id: True,
+            }
+        )
 
-        items_to_tag, skipped_entry_ids = domain._processor_items_to_tag(processor, items, entries_in_collections)
+        items_to_tag, skipped_entry_ids = domain._processor_items_to_tag(processor, items, cache)
 
         assert items_to_tag == [
             EntryToTag(entry_id=first_entry_id, route_id=ProcessorRouteId("user-route")),
@@ -684,14 +854,17 @@ class TestProcessorItemsAllowedByStatus:
 
         assert set(EntryProcessingStatus) == allowed_statuses | blocked_statuses
 
-    def test_no_items(self) -> None:
-        assert domain._processor_items_allowed_by_status([], {}) == []
+    def test_no_items(self, fake_processor_id: ProcessorId) -> None:
+        processor = make.processor_dispatch_info(fake_processor_id)
 
-    def test_allows_items_without_status(self) -> None:
+        assert domain._processor_items_allowed_by_status(processor, [], make_entries_cache()) == []
+
+    def test_allows_items_without_status(self, fake_processor_id: ProcessorId) -> None:
         entry_id = new_entry_id()
         item = EntryToProcess(entry_id=entry_id)
+        processor = make.processor_dispatch_info(fake_processor_id)
 
-        assert domain._processor_items_allowed_by_status([item], {}) == [item]
+        assert domain._processor_items_allowed_by_status(processor, [item], make_entries_cache()) == [item]
 
     @pytest.mark.parametrize(
         "status",
@@ -701,18 +874,29 @@ class TestProcessorItemsAllowedByStatus:
             EntryProcessingStatus.retry_requested,
         ],
     )
-    def test_allows_items_with_status_that_requires_redispatch(self, status: EntryProcessingStatus) -> None:
+    def test_allows_items_with_status_that_requires_redispatch(
+        self,
+        status: EntryProcessingStatus,
+        fake_processor_id: ProcessorId,
+    ) -> None:
         entry_id = new_entry_id()
         blocked_entry_id = new_entry_id()
         item = EntryToProcess(entry_id=entry_id)
         blocked_item = EntryToProcess(entry_id=blocked_entry_id)
+        processor = make.processor_dispatch_info(fake_processor_id)
+        cache = make_entries_cache(
+            processing_statuses={
+                processor.processor_id: {
+                    entry_id: status,
+                    blocked_entry_id: EntryProcessingStatus.dispatched,
+                }
+            }
+        )
 
         assert domain._processor_items_allowed_by_status(
+            processor,
             [item, blocked_item],
-            {
-                entry_id: status,
-                blocked_entry_id: EntryProcessingStatus.dispatched,
-            },
+            cache,
         ) == [item]
 
     @pytest.mark.parametrize(
@@ -723,11 +907,19 @@ class TestProcessorItemsAllowedByStatus:
             EntryProcessingStatus.failed,
         ],
     )
-    def test_skips_items_with_final_or_in_progress_status(self, status: EntryProcessingStatus) -> None:
+    def test_skips_items_with_final_or_in_progress_status(
+        self,
+        status: EntryProcessingStatus,
+        fake_processor_id: ProcessorId,
+    ) -> None:
         entry_id = new_entry_id()
         item = EntryToProcess(entry_id=entry_id)
+        processor = make.processor_dispatch_info(fake_processor_id)
+        cache = make_entries_cache(
+            processing_statuses={processor.processor_id: {entry_id: status}},
+        )
 
-        assert domain._processor_items_allowed_by_status([item], {entry_id: status}) == []
+        assert domain._processor_items_allowed_by_status(processor, [item], cache) == []
 
 
 class TestDispatchEntriesToProcessor:
@@ -744,8 +936,7 @@ class TestDispatchEntriesToProcessor:
         await domain._dispatch_entries_to_processor(
             processor=processor,
             items=[],
-            entries_in_collections={},
-            statuses={},
+            cache=make_entries_cache(),
         )
 
         assert (
@@ -781,8 +972,7 @@ class TestDispatchEntriesToProcessor:
         await domain._dispatch_entries_to_processor(
             processor=processor,
             items=[EntryToProcess(entry_id=entry_id) for entry_id in entry_ids],
-            entries_in_collections={},
-            statuses={},
+            cache=make_entries_cache(),
         )
 
         assert (
@@ -819,8 +1009,7 @@ class TestDispatchEntriesToProcessor:
         await domain._dispatch_entries_to_processor(
             processor=processor,
             items=[EntryToProcess(entry_id=entry_id)],
-            entries_in_collections={},
-            statuses={},
+            cache=make_entries_cache(),
         )
 
         assert (
@@ -849,8 +1038,7 @@ class TestDispatchEntriesToProcessor:
                 EntryToProcess(entry_id=common_entry_id),
                 EntryToProcess(entry_id=other_processor_entry_id, processor_id=another_fake_processor_id),
             ],
-            entries_in_collections={},
-            statuses={},
+            cache=make_entries_cache(),
         )
 
         records = await q_operations.tech_get_queue_records(
@@ -876,9 +1064,13 @@ class TestDispatchEntriesToProcessor:
         allowed_entry_id = new_entry_id()
         failed_entry_id = new_entry_id()
         processor = make.processor_dispatch_info(fake_processor_id)
-        statuses = {
-            failed_entry_id: EntryProcessingStatus.failed,
-        }
+        cache = make_entries_cache(
+            processing_statuses={
+                processor.processor_id: {
+                    failed_entry_id: EntryProcessingStatus.failed,
+                }
+            }
+        )
 
         await domain.set_entry_processing_statuses(
             processor.processor_id, [failed_entry_id], EntryProcessingStatus.failed
@@ -890,8 +1082,7 @@ class TestDispatchEntriesToProcessor:
                 EntryToProcess(entry_id=allowed_entry_id),
                 EntryToProcess(entry_id=failed_entry_id),
             ],
-            entries_in_collections={},
-            statuses=statuses,
+            cache=cache,
         )
 
         records = await q_operations.tech_get_queue_records(
@@ -928,13 +1119,19 @@ class TestDispatchEntries:
 
     @pytest.mark.asyncio
     async def test_dispatch_to_each_processor_subqueue(
-        self, fake_processor_id: ProcessorId, another_fake_processor_id: ProcessorId
+        self,
+        loaded_feed: Feed,
+        fake_processor_id: ProcessorId,
+        another_fake_processor_id: ProcessorId,
     ) -> None:
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
 
-        entry_ids = [new_entry_id(), new_entry_id()]
+        user_id = new_user_id()
+        entry_ids = list(await l_make.n_entries(loaded_feed, 2))
         processor_ids = [fake_processor_id, another_fake_processor_id]
+        await fl_domain.add_link(user_id, loaded_feed.id)
+        await save_user_api_key(user_id)
 
         await domain.push_entries_to_process(entry_ids)
 
@@ -965,6 +1162,9 @@ class TestDispatchEntries:
         user_entry_ids = await l_make.n_entries(loaded_feed, 2)
         collection_entry_ids = await l_make.n_entries(another_loaded_feed, 2)
         await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
+        user_id = new_user_id()
+        await fl_domain.add_link(user_id, loaded_feed.id)
+        await save_user_api_key(user_id)
 
         entry_ids = [*user_entry_ids, *collection_entry_ids]
 
@@ -978,6 +1178,277 @@ class TestDispatchEntries:
         assert await m_domain.get_markers(user_id=None, entries_ids=entry_ids) == {
             entry_id: {Marker.can_see_tags} for entry_id in entry_ids
         }
+
+    @pytest.mark.asyncio
+    async def test_skips_entry_without_authorized_users(
+        self,
+        loaded_feed: Feed,
+        fake_processor_id: ProcessorId,
+    ) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        entry_id = next(iter(await l_make.n_entries(loaded_feed, 1)))
+
+        await domain.push_entries_to_process([entry_id])
+
+        dispatched = await domain.dispatch_entries(
+            processors=[make.processor_dispatch_info(fake_processor_id)],
+            limit=10,
+        )
+
+        assert dispatched == 1
+        assert (
+            await q_operations.tech_get_queue_records(
+                QueueKind.entries_to_process,
+                EntryToProcess,
+            )
+            == []
+        )
+        assert (
+            await q_operations.tech_get_queue_records(
+                QueueKind.entries_to_tag,
+                EntryToTag,
+                secondary_id=fake_processor_id,
+            )
+            == []
+        )
+        await assert_processing_status(
+            fake_processor_id,
+            entry_id,
+            EntryProcessingStatus.skipped_by_dispatcher,
+        )
+        assert await m_domain.get_markers(user_id=None, entries_ids=[entry_id]) == {}
+
+    @pytest.mark.asyncio
+    async def test_consumes_entitlement_and_grants_user_visibility(
+        self,
+        loaded_feed: Feed,
+        fake_processor_id: ProcessorId,
+    ) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        user_id = new_user_id()
+        entry_id = next(iter(await l_make.n_entries(loaded_feed, 1)))
+        await fl_domain.add_link(user_id, loaded_feed.id)
+        await grant_tokens(user_id, EntitlementKindId.day_tokens)
+        await domain.push_entries_to_process([entry_id])
+
+        dispatched = await domain.dispatch_entries(
+            processors=[make.processor_dispatch_info(fake_processor_id)],
+            limit=10,
+        )
+
+        assert dispatched == 1
+        assert record_entry_ids(
+            await q_operations.tech_get_queue_records(
+                QueueKind.entries_to_tag,
+                EntryToTag,
+                secondary_id=fake_processor_id,
+            )
+        ) == {entry_id}
+        assert await m_domain.get_markers(user_id=None, entries_ids=[entry_id]) == {}
+        assert await m_domain.get_markers(user_id=user_id, entries_ids=[entry_id]) == {entry_id: {Marker.can_see_tags}}
+        resource = await get_resource(user_id, Resource.day_token_usage, day_interval_start())
+        assert resource.used == SAAS_TOKENS_PER_USER_ENTRY
+        assert resource.reserved == 0
+
+    @pytest.mark.asyncio
+    async def test_api_key_user_grants_global_visibility_without_consuming_entitlements(
+        self,
+        loaded_feed: Feed,
+        fake_processor_id: ProcessorId,
+    ) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        api_key_user_id = new_user_id()
+        entitled_user_id = new_user_id()
+        entry_id = next(iter(await l_make.n_entries(loaded_feed, 1)))
+        await fl_domain.add_link(api_key_user_id, loaded_feed.id)
+        await fl_domain.add_link(entitled_user_id, loaded_feed.id)
+        await save_user_api_key(api_key_user_id)
+        await grant_tokens(entitled_user_id, EntitlementKindId.day_tokens)
+        await domain.push_entries_to_process([entry_id])
+
+        await domain.dispatch_entries(
+            processors=[make.processor_dispatch_info(fake_processor_id)],
+            limit=10,
+        )
+
+        assert await m_domain.get_markers(user_id=None, entries_ids=[entry_id]) == {entry_id: {Marker.can_see_tags}}
+        resource = await get_resource(
+            entitled_user_id,
+            Resource.day_token_usage,
+            day_interval_start(),
+        )
+        assert resource.used == 0
+        assert resource.reserved == 0
+
+    @pytest.mark.asyncio
+    async def test_consumes_once_when_dispatching_to_multiple_processors(
+        self,
+        loaded_feed: Feed,
+        fake_processor_id: ProcessorId,
+        another_fake_processor_id: ProcessorId,
+    ) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        user_id = new_user_id()
+        entry_id = next(iter(await l_make.n_entries(loaded_feed, 1)))
+        await fl_domain.add_link(user_id, loaded_feed.id)
+        await grant_tokens(user_id, EntitlementKindId.day_tokens)
+        await domain.push_entries_to_process([entry_id])
+        processors = [
+            make.processor_dispatch_info(fake_processor_id),
+            make.processor_dispatch_info(another_fake_processor_id),
+        ]
+
+        await domain.dispatch_entries(processors=processors, limit=10)
+
+        for processor in processors:
+            assert record_entry_ids(
+                await q_operations.tech_get_queue_records(
+                    QueueKind.entries_to_tag,
+                    EntryToTag,
+                    secondary_id=processor.subqueue_id,
+                )
+            ) == {entry_id}
+
+        resource = await get_resource(user_id, Resource.day_token_usage, day_interval_start())
+        assert resource.used == SAAS_TOKENS_PER_USER_ENTRY
+        assert resource.reserved == 0
+
+    @pytest.mark.asyncio
+    async def test_processor_filtering_does_not_change_consumption(
+        self,
+        loaded_feed: Feed,
+        fake_processor_id: ProcessorId,
+    ) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        user_id = new_user_id()
+        entry_id = next(iter(await l_make.n_entries(loaded_feed, 1)))
+        await fl_domain.add_link(user_id, loaded_feed.id)
+        await grant_tokens(user_id, EntitlementKindId.day_tokens)
+        await domain.set_entry_processing_statuses(
+            fake_processor_id,
+            [entry_id],
+            EntryProcessingStatus.processed,
+        )
+        await domain.push_entries_to_process([entry_id])
+
+        await domain.dispatch_entries(
+            processors=[make.processor_dispatch_info(fake_processor_id)],
+            limit=10,
+        )
+
+        assert (
+            await q_operations.tech_get_queue_records(
+                QueueKind.entries_to_tag,
+                EntryToTag,
+                secondary_id=fake_processor_id,
+            )
+            == []
+        )
+        resource = await get_resource(user_id, Resource.day_token_usage, day_interval_start())
+        assert resource.used == SAAS_TOKENS_PER_USER_ENTRY
+        assert resource.reserved == 0
+        assert await m_domain.get_markers(user_id=user_id, entries_ids=[entry_id]) == {entry_id: {Marker.can_see_tags}}
+
+    @pytest.mark.asyncio
+    async def test_releases_entitlement_when_processor_fanout_fails(
+        self,
+        loaded_feed: Feed,
+        fake_processor_id: ProcessorId,
+        mocker: MockerFixture,
+    ) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        user_id = new_user_id()
+        entry_id = next(iter(await l_make.n_entries(loaded_feed, 1)))
+        await fl_domain.add_link(user_id, loaded_feed.id)
+        await grant_tokens(user_id, EntitlementKindId.day_tokens)
+        await domain.push_entries_to_process([entry_id])
+        mocker.patch.object(
+            domain,
+            "_dispatch_entries_to_processor",
+            side_effect=RuntimeError("processor fanout failed"),
+        )
+
+        dispatched = await domain.dispatch_entries(
+            processors=[make.processor_dispatch_info(fake_processor_id)],
+            limit=10,
+        )
+
+        assert dispatched == 0
+        resource = await get_resource(user_id, Resource.day_token_usage, day_interval_start())
+        assert resource.used == 0
+        assert resource.reserved == 0
+        assert await m_domain.get_markers(user_id=user_id, entries_ids=[entry_id]) == {}
+        assert record_entry_ids(
+            await q_operations.tech_get_queue_records(
+                QueueKind.entries_to_process,
+                EntryToProcess,
+            )
+        ) == {entry_id}
+
+    @pytest.mark.asyncio
+    async def test_entry_failure_does_not_interrupt_siblings(
+        self,
+        loaded_feed: Feed,
+        fake_processor_id: ProcessorId,
+        mocker: MockerFixture,
+    ) -> None:
+        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        user_id = new_user_id()
+        failed_entry_id, dispatched_entry_id = list(await l_make.n_entries(loaded_feed, 2))
+        await fl_domain.add_link(user_id, loaded_feed.id)
+        await save_user_api_key(user_id)
+        await domain.push_entries_to_process([failed_entry_id, dispatched_entry_id])
+        original_dispatch = domain._dispatch_entries_to_processor
+
+        async def dispatch_to_processor(
+            processor: ProcessorDispatchInfo,
+            items: Sequence[EntryToProcess],
+            cache: entries_cache.EntriesCache,
+            *,
+            dispatch_allowed: bool = True,
+        ) -> None:
+            if items[0].entry_id == failed_entry_id:
+                raise RuntimeError("processor fanout failed")
+
+            await original_dispatch(
+                processor,
+                items,
+                cache,
+                dispatch_allowed=dispatch_allowed,
+            )
+
+        mocker.patch.object(domain, "_dispatch_entries_to_processor", new=dispatch_to_processor)
+
+        dispatched = await domain.dispatch_entries(
+            processors=[make.processor_dispatch_info(fake_processor_id)],
+            limit=10,
+        )
+
+        assert dispatched == 1
+        assert record_entry_ids(
+            await q_operations.tech_get_queue_records(
+                QueueKind.entries_to_process,
+                EntryToProcess,
+            )
+        ) == {failed_entry_id}
+        assert record_entry_ids(
+            await q_operations.tech_get_queue_records(
+                QueueKind.entries_to_tag,
+                EntryToTag,
+                secondary_id=fake_processor_id,
+            )
+        ) == {dispatched_entry_id}
+        assert await m_domain.get_markers(
+            user_id=None,
+            entries_ids=[failed_entry_id, dispatched_entry_id],
+        ) == {dispatched_entry_id: {Marker.can_see_tags}}
 
     @pytest.mark.asyncio
     async def test_no_processors(self) -> None:
@@ -1012,11 +1483,14 @@ class TestDispatchEntries:
         assert record_entry_ids(records) == set(entry_ids)
 
     @pytest.mark.asyncio
-    async def test_limit(self, fake_processor_id: ProcessorId) -> None:
+    async def test_limit(self, loaded_feed: Feed, fake_processor_id: ProcessorId) -> None:
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
 
-        entry_ids = [new_entry_id(), new_entry_id(), new_entry_id()]
+        user_id = new_user_id()
+        entry_ids = list(await l_make.n_entries(loaded_feed, 3))
+        await fl_domain.add_link(user_id, loaded_feed.id)
+        await save_user_api_key(user_id)
 
         await domain.push_entries_to_process(entry_ids)
 

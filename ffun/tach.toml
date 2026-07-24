@@ -205,10 +205,16 @@ layer = "feeds_workflow"
 [[modules]]
 path = "ffun.dispatcher"
 depends_on = [
+    "ffun.entitlements",
     "ffun.feeds_collections",
+    "ffun.feeds_links",
     "ffun.library",
     "ffun.markers",
     "ffun.queues",
+    "ffun.resources",
+    # TODO: temporary dependency for the legacy user API-key visibility bypass.
+    #       Remove together with the old API-key consumption logic.
+    "ffun.user_settings",
 ]
 layer = "feeds_workflow"
 
