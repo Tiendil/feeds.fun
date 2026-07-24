@@ -18,6 +18,56 @@ from ffun.user_settings import domain as us_domain
 from ffun.user_settings.entities import SettingKind
 
 
+class TestEntryFeedIds:
+    @pytest.mark.asyncio
+    async def test_returns_all_feed_links_and_skips_unlinked_entries(
+        self,
+        loaded_feed: Feed,
+        another_loaded_feed: Feed,
+    ) -> None:
+        entries = await l_make.n_entries_list(loaded_feed, 2)
+        unlinked_entry_id = new_entry_id()
+
+        await l_domain.catalog_entries(
+            another_loaded_feed.id,
+            [entries[0].collected_entry()],
+        )
+
+        assert await entries_cache._entry_feed_ids(  # noqa: SLF001
+            [entries[0].id, entries[1].id, unlinked_entry_id]
+        ) == {
+            entries[0].id: {loaded_feed.id, another_loaded_feed.id},
+            entries[1].id: {loaded_feed.id},
+        }
+
+
+class TestCollectionsByEntry:
+    @pytest.mark.asyncio
+    async def test_maps_collection_membership(
+        self,
+        loaded_feed: Feed,
+        another_loaded_feed: Feed,
+        collection_id_for_test_feeds: CollectionId,
+    ) -> None:
+        collection_entry_id = new_entry_id()
+        user_entry_id = new_entry_id()
+        entry_without_feeds_id = new_entry_id()
+
+        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
+
+        assert entries_cache._collections_by_entry(  # noqa: SLF001
+            {
+                collection_entry_id: {another_loaded_feed.id},
+                user_entry_id: {loaded_feed.id},
+                entry_without_feeds_id: set(),
+            }
+        ) == {
+            collection_entry_id: True,
+            user_entry_id: False,
+            entry_without_feeds_id: False,
+        }
+
+
 class TestEntriesInCollections:
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
@@ -105,7 +155,7 @@ class TestUsersWithApiKeys:
 
 
 class TestEntriesCache:
-    def test_entry_collection_membership_and_defaults(self) -> None:
+    def test_entry_in_collection__membership_and_defaults(self) -> None:
         collection_entry_id = new_entry_id()
         user_entry_id = new_entry_id()
         missing_entry_id = new_entry_id()
@@ -124,7 +174,7 @@ class TestEntriesCache:
         assert not cache.entry_in_collection(user_entry_id)
         assert not cache.entry_in_collection(missing_entry_id)
 
-    def test_entry_users_are_merged_and_deduplicated_across_feeds(self) -> None:
+    def test_entry_user_ids__merges_and_deduplicates_across_feeds(self) -> None:
         entry_id = new_entry_id()
         missing_entry_id = new_entry_id()
         first_feed_id = new_feed_id()
@@ -150,7 +200,7 @@ class TestEntriesCache:
         }
         assert cache.entry_user_ids(missing_entry_id) == set()
 
-    def test_detects_api_keys_only_for_selected_users(self) -> None:
+    def test_users_have_api_keys__only_for_selected_users(self) -> None:
         api_key_user_id = new_user_id()
         another_user_id = new_user_id()
         cache = entries_cache.EntriesCache(
@@ -165,7 +215,7 @@ class TestEntriesCache:
         assert not cache.users_have_api_keys([another_user_id])
         assert not cache.users_have_api_keys([])
 
-    def test_returns_processing_status_and_defaults(self) -> None:
+    def test_entry_processing_status__returns_status_and_defaults(self) -> None:
         processor_id = ProcessorId(101)
         another_processor_id = ProcessorId(102)
         entry_id = new_entry_id()

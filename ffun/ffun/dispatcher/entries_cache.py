@@ -4,7 +4,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from ffun.dispatcher import operations
 from ffun.dispatcher.entities import EntryProcessingStatus, EntryToProcess, ProcessorDispatchInfo
 from ffun.domain.entities import EntryId, FeedId, ProcessorId, UserId
-from ffun.feeds_collections.collections import collections
+from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.product.entities import UserSetting
@@ -29,7 +29,7 @@ async def _entry_feed_ids(entries_ids: Iterable[EntryId]) -> dict[EntryId, set[F
 
 def _collections_by_entry(feed_ids_by_entry: Mapping[EntryId, set[FeedId]]) -> dict[EntryId, bool]:
     return {
-        entry_id: any(collections.has_feed(feed_id) for feed_id in feed_ids)
+        entry_id: any(fc_domain.collections_for_feed(feed_id) for feed_id in feed_ids)
         for entry_id, feed_ids in feed_ids_by_entry.items()
     }
 
