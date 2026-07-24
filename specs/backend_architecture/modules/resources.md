@@ -103,11 +103,11 @@ Each reservation specification MUST supply one user id, a non-negative amount, a
 Each reservation option MUST supply a resource kind, an interval start timestamp, and a non-negative limit for that specification's user.
 
 The operation MUST process reservation specifications in their supplied order.
-For each specification, it MUST attempt options in their supplied order through the internal `try_to_reserve` operation until one succeeds or all options reject the reservation.
+For each specification, it MUST attempt options in their supplied order through the internal atomic single-user reservation primitive until one succeeds or all options reject the reservation.
 It MUST stop processing a specification's options after its first success.
 A user MUST therefore receive at most one successful reservation from one invocation.
 
-Ordered reservation MUST be domain-level orchestration over the internal `try_to_reserve` operation and MUST NOT introduce separate persistence, resource-initialization, limit-checking, or counter-update logic.
+Ordered reservation MUST be domain-level orchestration over that internal primitive and MUST NOT introduce separate persistence, resource-initialization, limit-checking, or counter-update logic.
 
 Repeated specifications for the same user MUST be deduplicated while preserving the first specification and its position.
 Processing of each specification MUST finish before processing starts for the next specification.

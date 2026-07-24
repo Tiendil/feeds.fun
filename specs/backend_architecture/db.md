@@ -54,7 +54,12 @@ Domain modules SHOULD compose operation-module functions into business workflows
 
 Domain modules MUST own transaction boundaries for new or significantly changed business workflows.
 
-When a workflow changes multiple database records that must stay consistent, the domain module MUST handle the transaction boundary and pass the transaction execute callable into operation-module helpers.
+When a workflow changes multiple database records owned by the same top-level backend module that must stay consistent, the domain module MUST handle the transaction boundary and pass the transaction execute callable into operation-module helpers.
+
+By default, a transaction owned by one top-level backend module MUST NOT execute database operations owned by another top-level backend module or pass its execute callable through another top-level module's domain boundary.
+An exception MAY exist only when the specification for the transaction-owning module identifies the particular workflow, names the other participating top-level modules, and explicitly requires them to share one database transaction.
+A general atomicity requirement, a generic cross-module domain API, or the ability of a function to accept an execute callable MUST NOT be interpreted as permission for a cross-module transaction.
+Such an exception permits only the specified transaction sharing; cross-module calls MUST still use the participating module's public domain boundary and MUST NOT import its operation module.
 
 Existing operation-module transaction blocks MAY remain in old code until the surrounding workflow is substantially changed. New code SHOULD NOT add transaction ownership to operation modules unless the operation module function is intentionally a low-level atomic primitive and no domain workflow boundary exists.
 
