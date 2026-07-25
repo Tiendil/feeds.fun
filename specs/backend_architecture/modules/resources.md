@@ -179,8 +179,8 @@ CREATE TABLE r_resources (
     interval_started_at TIMESTAMP WITH TIME ZONE NOT NULL, -- Exact caller-supplied start of the accounting interval.
     used BIGINT NOT NULL DEFAULT 0, -- Finalized resource consumption in the caller-defined unit.
     reserved BIGINT NOT NULL DEFAULT 0, -- Provisionally claimed resource capacity in the same unit.
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), -- Database time at which this resource record was initialized.
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), -- Database time of the latest successful counter update.
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Database time at which this resource record was initialized.
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Database time of the latest successful counter update.
     PRIMARY KEY (kind, user_id, interval_started_at) -- Ensures one resource record per resource identity and supports kind-prefixed queries.
 );
 ```

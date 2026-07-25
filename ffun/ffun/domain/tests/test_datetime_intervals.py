@@ -11,12 +11,12 @@ from ffun.domain.datetime_intervals import (
 )
 
 
-class TestLifetimeIntervalMarkers:
-    def test_start_marker(self) -> None:
-        assert LIFETIME_INTERVAL_START_MARKER == datetime.datetime(1970, 1, 1, tzinfo=datetime.UTC)
+def test_lifetime_interval_start_marker() -> None:
+    assert LIFETIME_INTERVAL_START_MARKER == datetime.datetime(1970, 1, 1, tzinfo=datetime.UTC)
 
-    def test_end_marker(self) -> None:
-        assert LIFETIME_INTERVAL_END_MARKER == datetime.datetime.max.replace(tzinfo=datetime.UTC)
+
+def test_lifetime_interval_end_marker() -> None:
+    assert LIFETIME_INTERVAL_END_MARKER == datetime.datetime.max.replace(tzinfo=datetime.UTC)
 
 
 class TestDayIntervalStart:
@@ -42,10 +42,10 @@ class TestDayIntervalStart:
         assert day_interval_start(midnight) == midnight
 
     def test_default_value(self, mocker: MockerFixture) -> None:
-        now = datetime.datetime(2026, 7, 25, 14, 30, 45, 123456, tzinfo=datetime.UTC)
+        now = datetime.datetime.now(tz=datetime.UTC)
         mocker.patch("ffun.domain.datetime_intervals.utils.now", return_value=now)
 
-        assert day_interval_start() == datetime.datetime(2026, 7, 25, tzinfo=datetime.UTC)
+        assert day_interval_start() == now.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 class TestMonthIntervalStart:
@@ -66,7 +66,7 @@ class TestMonthIntervalStart:
         )
 
     def test_default_value(self, mocker: MockerFixture) -> None:
-        now = datetime.datetime(2026, 7, 25, 14, 30, 45, 123456, tzinfo=datetime.UTC)
+        now = datetime.datetime.now(tz=datetime.UTC)
         mocker.patch("ffun.domain.datetime_intervals.utils.now", return_value=now)
 
-        assert month_interval_start() == datetime.datetime(2026, 7, 1, tzinfo=datetime.UTC)
+        assert month_interval_start() == now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
