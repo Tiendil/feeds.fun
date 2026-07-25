@@ -3,7 +3,7 @@ import pytest
 from ffun.dispatcher.entities import ProcessorRouteId
 from ffun.domain.entities import CollectionId, FeedId
 from ffun.feeds.entities import Feed
-from ffun.feeds_collections.collections import collections
+from ffun.feeds_collections.tests import helpers as fc_helpers
 from ffun.feeds_links import domain as fl_domain
 from ffun.librarian import errors
 from ffun.librarian.entities import LLMGeneralProcessorRoute
@@ -143,7 +143,7 @@ class TestProcessor:
         entries = await l_make.n_entries(another_loaded_feed, 1)
         entry = next(iter(entries.values()))
 
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
+        await fc_helpers.add_feed_to_collection(collection_id_for_test_feeds, another_loaded_feed.id)
         await fl_domain.add_link(user_key_info.user_id, another_loaded_feed.id)
 
         api_key_usage = await llm_processor._api_key_usage(

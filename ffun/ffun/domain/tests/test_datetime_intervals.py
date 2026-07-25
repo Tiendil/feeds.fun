@@ -1,6 +1,7 @@
 import datetime
 
 import pytest
+from pytest_mock import MockerFixture
 
 from ffun.domain.datetime_intervals import (
     LIFETIME_INTERVAL_END_MARKER,
@@ -35,6 +36,12 @@ class TestDayIntervalStart:
             tzinfo=now.tzinfo,
         )
 
+    def test_default_value(self, mocker: MockerFixture) -> None:
+        now = datetime.datetime(2026, 7, 25, 14, 30, 45, 123456, tzinfo=datetime.UTC)
+        mocker.patch("ffun.domain.datetime_intervals.utils.now", return_value=now)
+
+        assert day_interval_start() == datetime.datetime(2026, 7, 25, tzinfo=datetime.UTC)
+
 
 class TestMonthIntervalStart:
 
@@ -52,3 +59,9 @@ class TestMonthIntervalStart:
             microsecond=0,
             tzinfo=now.tzinfo,
         )
+
+    def test_default_value(self, mocker: MockerFixture) -> None:
+        now = datetime.datetime(2026, 7, 25, 14, 30, 45, 123456, tzinfo=datetime.UTC)
+        mocker.patch("ffun.domain.datetime_intervals.utils.now", return_value=now)
+
+        assert month_interval_start() == datetime.datetime(2026, 7, 1, tzinfo=datetime.UTC)
