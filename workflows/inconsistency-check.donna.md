@@ -5,9 +5,8 @@ kind = "donna.lib.workflow"
 start_operation_id = "run_consistency_cycle"
 ```
 
-Repeatedly discover dependency-ready frontiers among files changed relative to `main`, check one frontier per cycle,
-and pause for the primary agent to repair the first current inconsistency in that frontier. Exit code `20` rebuilds the
-graph for the next frontier; a fresh cycle with no pending work exits successfully.
+Check project artifacts affected by the current work. Continue automatically while no action is required, and pause
+when an unresolved consistency issue or checker failure needs agent judgment.
 
 ## Run Consistency Cycle
 
@@ -32,14 +31,16 @@ timeout = 3600
 python ./bin/inconsistency-check.py run-cycle
 ```
 
-## Fix First Inconsistency
+## Resolve Reported Issue
 
 ```toml donna
 id = "fix_first_inconsistency"
 kind = "donna.lib.request_action"
 ```
 
-The consistency checker found the first current inconsistent relation pair in the active dependency-ready frontier.
+The consistency checker reported an unresolved issue in the current work. Its output identifies the affected
+artifacts, their relationship, and the evidence for the report. Treat that report as evidence to verify, not as an
+instruction to apply a particular refactoring.
 
 Stdout:
 
@@ -53,12 +54,17 @@ Stderr:
 {{ donna.lib.task_variable("consistency_check_stderr") }}
 ~~~
 
-1. Read the two files reported for the inconsistent pair.
-2. Fix the inconsistency with the smallest coherent source change.
-3. Use `depmesh` for supported dependency checks if the fix touches project artifacts.
-4. If the report is a false positive, do not make unrelated source changes; repair the checker state or tooling with a clear rationale so the same false positive does not block the next cycle.
-5. Verify with existing Docker-backed project scripts or `@/workflows/polish.donna.md` when the codebase is expected to work.
-6. After the fix or false-positive handling is complete, `{{ donna.lib.goto("run_consistency_cycle") }}`.
+1. Read the checker output, inspect the referenced artifacts, and review the relevant current diff.
+2. Verify that the stated contradiction is real and actionable in the current scope. Consider the full design,
+   including natural ownership, dependency direction, duplication, and whether the implied change would improve the
+   project rather than merely rearrange it.
+3. If the issue is valid, fix it with the smallest coherent change.
+4. Use `depmesh` for supported dependency checks when changing project artifacts.
+5. If the report is incorrect or not actionable, do not change source files to satisfy it. Journal the rationale and
+   mark the exact reported check as consistent using the documented `mark-consistent` command and the identifiers
+   printed in stdout.
+6. Verify source changes with the existing Docker-backed project scripts or `@/workflows/polish.donna.md`.
+7. After resolving or dismissing the report, `{{ donna.lib.goto("run_consistency_cycle") }}`.
 
 ## Handle Checker Failure
 
@@ -67,7 +73,8 @@ id = "handle_checker_failure"
 kind = "donna.lib.request_action"
 ```
 
-The consistency checker failed before it could produce a normal workflow outcome.
+The consistency check could not complete. Treat this as a tooling or environment failure, not as evidence that project
+source is inconsistent.
 
 Stdout:
 
@@ -81,10 +88,12 @@ Stderr:
 {{ donna.lib.task_variable("consistency_check_stderr") }}
 ~~~
 
-1. Repair the checker workflow, script, runtime state, or environment issue reported above.
-2. If the failure cannot be repaired within the project constraints, document the blocker.
-3. If repaired, `{{ donna.lib.goto("run_consistency_cycle") }}`.
-4. If blocked, `{{ donna.lib.goto("finish_blocked") }}`.
+1. Read stdout and stderr and identify the direct cause.
+2. Repair only the evidenced tooling, configuration, runtime-state, or environment problem. Do not change unrelated
+   project source merely to make the checker proceed.
+3. If the failure cannot be repaired within the project constraints, document the blocker.
+4. If repaired, `{{ donna.lib.goto("run_consistency_cycle") }}`.
+5. If blocked, `{{ donna.lib.goto("finish_blocked") }}`.
 
 ## Finish Success
 
@@ -93,7 +102,7 @@ id = "finish_success"
 kind = "donna.lib.finish"
 ```
 
-The consistency checker completed without current inconsistencies.
+The consistency checker completed without unresolved issues in the current work.
 
 Checker summary:
 
