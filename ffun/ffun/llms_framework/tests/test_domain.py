@@ -1,4 +1,3 @@
-import datetime
 from decimal import Decimal
 
 import pytest
@@ -30,30 +29,12 @@ from ffun.llms_framework.entities import (
 )
 from ffun.llms_framework.keys_rotator import _cost_points
 from ffun.llms_framework.provider_interface import ChatRequestTest, ChatResponseTest, ProviderTest
+from ffun.llms_framework.tests.helpers import reserve_resource
 from ffun.product.entities import Resource as AppResource
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
 
 _text_parts_intersection = 100
-
-
-async def _reserve_resource(user_id: UserId, interval_started_at: datetime.datetime, amount: int, limit: int) -> None:
-    reservations = await r_domain.try_to_reserve_in_order(
-        specifications=[
-            r_entities.ResourceReservationSpecification(
-                user_id=user_id,
-                amount=amount,
-                options=(
-                    r_entities.ResourceReservationOption(
-                        kind=AppResource.tokens_cost,
-                        interval_started_at=interval_started_at,
-                        limit=limit,
-                    ),
-                ),
-            )
-        ],
-    )
-    assert [reservation.user_id for reservation in reservations] == [user_id]
 
 
 class TestCostPointsToUsdCost:
@@ -420,7 +401,7 @@ class TestCallLLM:
             interval_started_at=interval_started_at,
         )
 
-        await _reserve_resource(
+        await reserve_resource(
             user_id=internal_user_id,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(key_usage.reserved_cost),
@@ -485,7 +466,7 @@ class TestCallLLM:
             interval_started_at=interval_started_at,
         )
 
-        await _reserve_resource(
+        await reserve_resource(
             user_id=internal_user_id,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(key_usage.reserved_cost),
@@ -531,7 +512,7 @@ class TestCallLLM:
             interval_started_at=interval_started_at,
         )
 
-        await _reserve_resource(
+        await reserve_resource(
             user_id=internal_user_id,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(key_usage.reserved_cost),

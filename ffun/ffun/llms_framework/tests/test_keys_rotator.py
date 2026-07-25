@@ -41,6 +41,7 @@ from ffun.llms_framework.keys_rotator import (
 )
 from ffun.llms_framework.provider_interface import ProviderTest
 from ffun.llms_framework.providers import llm_providers
+from ffun.llms_framework.tests.helpers import reserve_resource
 from ffun.product.entities import Resource as AppResource
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
@@ -54,25 +55,6 @@ _llm_config = LLMConfiguration(
     temperature=0.3,
     top_p=0.9,
 )
-
-
-async def _reserve_resource(user_id: UserId, interval_started_at: datetime.datetime, amount: int, limit: int) -> None:
-    reservations = await r_domain.try_to_reserve_in_order(
-        specifications=[
-            r_entities.ResourceReservationSpecification(
-                user_id=user_id,
-                amount=amount,
-                options=(
-                    r_entities.ResourceReservationOption(
-                        kind=AppResource.tokens_cost,
-                        interval_started_at=interval_started_at,
-                        limit=limit,
-                    ),
-                ),
-            )
-        ],
-    )
-    assert [reservation.user_id for reservation in reservations] == [user_id]
 
 
 class TestAPIKeyIsWorking:
@@ -252,7 +234,7 @@ class TestGetUserKeyInfos:
                 user_id=user_id, kind=setting_kind(UserSetting.process_entries_not_older_than), value=days[i]
             )
 
-            await _reserve_resource(
+            await reserve_resource(
                 user_id=user_id,
                 interval_started_at=interval_started_at,
                 amount=_cost_points.to_points(reserved_costs[i]),
@@ -514,7 +496,7 @@ class TestUseApiKey:
 
         reserved_cost = USDCost(Decimal(567))
 
-        await _reserve_resource(
+        await reserve_resource(
             user_id=internal_user_id,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
@@ -569,7 +551,7 @@ class TestUseApiKey:
 
         reserved_cost = USDCost(Decimal(567))
 
-        await _reserve_resource(
+        await reserve_resource(
             user_id=internal_user_id,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
@@ -627,7 +609,7 @@ class TestUseApiKey:
         reserved_cost = USDCost(Decimal(567))
 
         # TODO: differentiate tokens in all places
-        await _reserve_resource(
+        await reserve_resource(
             user_id=internal_user_id,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
