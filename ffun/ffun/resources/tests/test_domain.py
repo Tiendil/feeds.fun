@@ -1,6 +1,7 @@
 import datetime
 
 import pytest
+from pytest_mock import MockerFixture
 
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.domain.entities import UserId
@@ -345,8 +346,12 @@ class TestConvertReservationsToUsed:
         )
 
     @pytest.mark.asyncio
-    async def test_empty_reservations(self) -> None:
-        assert await domain.convert_reservations_to_used([], consume=True) is None
+    async def test_empty_reservations(self, mocker: MockerFixture) -> None:
+        convert_reserved_to_used = mocker.patch.object(domain, "convert_reserved_to_used")
+
+        await domain.convert_reservations_to_used([], consume=True)
+
+        convert_reserved_to_used.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_consumes_all_reservations(

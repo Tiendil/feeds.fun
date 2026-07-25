@@ -32,7 +32,6 @@ from ffun.llms_framework.provider_interface import ChatRequestTest, ChatResponse
 from ffun.llms_framework.tests.helpers import reserve_resource
 from ffun.product.entities import Resource as AppResource
 from ffun.resources import domain as r_domain
-from ffun.resources import entities as r_entities
 
 _text_parts_intersection = 100
 
