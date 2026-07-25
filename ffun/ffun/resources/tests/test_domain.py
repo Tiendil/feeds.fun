@@ -345,6 +345,10 @@ class TestConvertReservationsToUsed:
         )
 
     @pytest.mark.asyncio
+    async def test_empty_reservations(self) -> None:
+        assert await domain.convert_reservations_to_used([], consume=True) is None
+
+    @pytest.mark.asyncio
     async def test_consumes_all_reservations(
         self,
         internal_user_id: UserId,
