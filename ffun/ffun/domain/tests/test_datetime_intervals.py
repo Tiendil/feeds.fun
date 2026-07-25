@@ -22,7 +22,7 @@ class TestLifetimeIntervalMarkers:
 class TestDayIntervalStart:
 
     @pytest.mark.asyncio
-    async def test_day_interval_start(self) -> None:
+    async def test_explicit_value_truncated_to_midnight(self) -> None:
         now = datetime.datetime.now()
 
         assert day_interval_start(now) == datetime.datetime(
