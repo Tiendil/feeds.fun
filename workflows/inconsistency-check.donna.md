@@ -59,12 +59,15 @@ Stderr:
    including natural ownership, dependency direction, duplication, and whether the implied change would improve the
    project rather than merely rearrange it.
 3. If the issue is valid, fix it with the smallest coherent change.
-4. Use `depmesh` for supported dependency checks when changing project artifacts.
-5. If the report is incorrect or not actionable, do not change source files to satisfy it. Journal the rationale and
+4. After fixing a valid issue, do not mark the pair consistent; the child checker owns the consistency decision.
+   Always reset the exact current pair with the documented `mark-unchecked` command so a child checker reevaluates the
+   updated workspace. If the pair no longer exists, do nothing for that pair.
+5. Use `depmesh` for supported dependency checks when changing project artifacts.
+6. If the report is incorrect or not actionable, do not change source files to satisfy it. Journal the rationale and
    mark the exact reported check as consistent using the documented `mark-consistent` command and the identifiers
    printed in stdout.
-6. Verify source changes with the existing Docker-backed project scripts or `@/workflows/polish.donna.md`.
-7. After resolving or dismissing the report, `{{ donna.lib.goto("run_consistency_cycle") }}`.
+7. Verify source changes with the existing Docker-backed project scripts or `@/workflows/polish.donna.md`.
+8. After resolving or dismissing the report, `{{ donna.lib.goto("run_consistency_cycle") }}`.
 
 ## Handle Checker Failure
 

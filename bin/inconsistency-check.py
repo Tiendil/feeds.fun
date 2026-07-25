@@ -1787,16 +1787,18 @@ def set_relation_pair_check_status(
     check_status: str,
     report: str | None,
 ) -> CurrentPair:
-    if check_status not in {"consistent", "inconsistent"}:
+    if check_status not in {"unchecked", "consistent", "inconsistent"}:
         raise CheckerFailureError(f"unsupported explicit check status: {check_status}")
 
     identity = build_pair_identity(pair)
     upsert_unchecked_record(identity)
+    normalized_report = "" if check_status == "unchecked" else normalize_explicit_report(check_status, report)
+    checked_at = "" if check_status == "unchecked" else utc_timestamp()
     record = update_check_record(
         identity,
         check_status=check_status,
-        report=normalize_explicit_report(check_status, report),
-        checked_at=utc_timestamp(),
+        report=normalized_report,
+        checked_at=checked_at,
     )
     log_project_journal(
         "step",
@@ -3299,7 +3301,7 @@ def mark_pair_status(args: argparse.Namespace, *, check_status: str) -> ExitCode
     current_pair = set_relation_pair_check_status(
         pair,
         check_status=check_status,
-        report=args.report,
+        report=getattr(args, "report", None),
     )
     print_status_update(current_pair)
 
@@ -4123,6 +4125,19 @@ def run_self_check() -> ExitCode:
         explicitly_consistent_pair.record.check_status == "consistent",
         "explicit status command helper must set consistent",
     )
+    explicitly_unchecked_pair = set_relation_pair_check_status(
+        pair,
+        check_status="unchecked",
+        report=None,
+    )
+    assert_self_check(
+        explicitly_unchecked_pair.record.check_status == "unchecked",
+        "explicit status command helper must reset a pair to unchecked",
+    )
+    assert_self_check(
+        not explicitly_unchecked_pair.record.report and not explicitly_unchecked_pair.record.checked_at,
+        "resetting a pair to unchecked must clear the previous reviewer result",
+    )
     explicitly_inconsistent_pair = set_relation_pair_check_status(
         pair,
         check_status="inconsistent",
@@ -4246,7 +4261,7 @@ def parse_enqueue_files(args: argparse.Namespace) -> list[str]:
     return sorted(dict.fromkeys(paths))
 
 
-def add_pair_status_arguments(parser: argparse.ArgumentParser) -> None:
+def add_pair_status_arguments(parser: argparse.ArgumentParser, *, include_report: bool = True) -> None:
     parser.add_argument(
         "--changed",
         required=True,
@@ -4262,10 +4277,11 @@ def add_pair_status_arguments(parser: argparse.ArgumentParser) -> None:
         required=True,
         help="depmesh relation id for this oriented file pair",
     )
-    parser.add_argument(
-        "--report",
-        help="optional markdown report to store with the explicit status",
-    )
+    if include_report:
+        parser.add_argument(
+            "--report",
+            help="optional markdown report to store with the explicit status",
+        )
 
 
 def add_agent_jobs_argument(parser: argparse.ArgumentParser) -> None:
@@ -4364,6 +4380,12 @@ def parse_args() -> argparse.Namespace:
     )
     add_pair_status_arguments(mark_consistent_parser)
 
+    mark_unchecked_parser = subparsers.add_parser(
+        "mark-unchecked",
+        help="reset one current-checksum relation pair to unchecked for reviewer reevaluation",
+    )
+    add_pair_status_arguments(mark_unchecked_parser, include_report=False)
+
     mark_inconsistent_parser = subparsers.add_parser(
         "mark-inconsistent",
         help="explicitly mark one current-checksum relation pair as inconsistent",
@@ -4413,6 +4435,9 @@ def main() -> int:
 
         if args.command == "mark-consistent":
             return int(mark_pair_status(args, check_status="consistent"))
+
+        if args.command == "mark-unchecked":
+            return int(mark_pair_status(args, check_status="unchecked"))
 
         if args.command == "mark-inconsistent":
             return int(mark_pair_status(args, check_status="inconsistent"))

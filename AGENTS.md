@@ -98,6 +98,11 @@ unchecked pair. If a current pair is already marked `inconsistent`, the loop pri
 child checker. Otherwise it runs one read-only child Codex checker for the first unchecked pair, stores the result, and
 exits with a code that tells the Donna workflow whether to stop for a fix, continue the loop, or finish successfully.
 
+Consistency decisions after a valid fix belong to the child checker.
+Primary agents MUST NOT mark a valid report consistent after applying a fix.
+After every valid fix, the primary agent MUST reset the exact current relation pair with `mark-unchecked` before continuing so a child checker reevaluates the updated workspace.
+If the pair no longer exists, the primary agent MUST do nothing for that pair.
+
 The `enqueue-changed` command performs the changed-file discovery, `depmesh` queries, and queue reconciliation portion
 of `run-cycle`, then exits successfully without processing unchecked pairs or spawning child Codex checkers.
 
@@ -118,6 +123,7 @@ Main commands:
 - `python ./bin/inconsistency-check.py list-pairs --current` — show only current-checksum records for relations still returned by `depmesh`.
 - `python ./bin/inconsistency-check.py progress --file @/path/to/file` — show queued records where the file is either the changed side or the related side.
 - `python ./bin/inconsistency-check.py mark-consistent --changed @/changed --related @/related --relation <relation>` — explicitly mark the current-checksum relation pair as consistent.
+- `python ./bin/inconsistency-check.py mark-unchecked --changed @/changed --related @/related --relation <relation>` — reset the current-checksum relation pair to unchecked, clear its previous reviewer result, and require checker reevaluation.
 - `python ./bin/inconsistency-check.py mark-inconsistent --changed @/changed --related @/related --relation <relation> --report "<markdown>"` — explicitly mark the current-checksum relation pair as inconsistent.
 - `python ./bin/inconsistency-check.py clear-queue` — delete all records from the isolated relation-pair queue.
 - `python ./bin/inconsistency-check.py run-cycle` — run one checker cycle: discover changed files relative to `main`, reconcile relation pairs, and process at most one unchecked pair.
