@@ -55,6 +55,14 @@ class RelationConfig:
 
 
 @dataclass(frozen=True)
+class AgentConfig:
+    cmd: tuple[str, ...]
+    timeout_seconds: int
+    prompt_template: str
+    output_schema: dict[str, Any]
+
+
+@dataclass(frozen=True)
 class ConsistencyConfig:
     mode: str
     runtime_dir: Path
@@ -63,10 +71,8 @@ class ConsistencyConfig:
     agent_jobs: int
     discovery_jobs: int
     journal_cmd: tuple[str, ...] | None
-    agent_cmd: tuple[str, ...]
-    agent_timeout_seconds: int
-    prompt_template: str
-    output_schema: dict[str, Any]
+    agent_validator: AgentConfig
+    agent_reviewer: AgentConfig
     common_criteria: tuple[str, ...]
     relations: dict[str, RelationConfig]
 
@@ -207,6 +213,8 @@ class PairSelection:
 @dataclass(frozen=True)
 class PreparedChildCheck:
     current_pair: CurrentPair
+    agent_name: str
+    agent_config: AgentConfig
     prompt_path: Path
     schema_path: Path
     output_path: Path
@@ -316,6 +324,20 @@ def normalize_runtime_dir(path: str) -> Path:
     return Path(*normalized.parts)
 
 
+def merge_config_tables(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    merged = copy.deepcopy(base)
+
+    for key, value in override.items():
+        existing = merged.get(key)
+
+        if isinstance(existing, dict) and isinstance(value, dict):
+            merged[key] = merge_config_tables(existing, value)
+        else:
+            merged[key] = copy.deepcopy(value)
+
+    return merged
+
+
 def resolve_mode_config(raw_config: dict[str, Any], mode_id: str | None) -> tuple[str, dict[str, Any]]:
     selected_mode = mode_id or str(raw_config.get("mode") or "default")
 
@@ -339,38 +361,95 @@ def resolve_mode_config(raw_config: dict[str, Any], mode_id: str | None) -> tupl
             valid_modes = ", ".join(["default", *sorted(str(key) for key in modes)]) or "default"
             raise CheckerFailureError(f"consistency.toml: unknown mode {selected_mode!r}; valid modes: {valid_modes}")
 
-        for key, value in mode_config.items():
-            if key == "modes":
-                raise CheckerFailureError("consistency.toml: mode override may not replace modes")
+        if "modes" in mode_config:
+            raise CheckerFailureError("consistency.toml: mode override may not replace modes")
 
-            resolved[key] = copy.deepcopy(value)
+        resolved = merge_config_tables(resolved, mode_config)
 
     return selected_mode, resolved
 
 
-def validate_output_schema(schema: dict[str, Any]) -> None:
+def validate_output_schema(
+    schema: dict[str, Any],
+    *,
+    context: str,
+    status_property: str,
+    allowed_statuses: set[str],
+) -> None:
     if schema.get("type") != "object":
-        raise CheckerFailureError("consistency.toml: output_schema.type must be object")
+        raise CheckerFailureError(f"{context}.type must be object")
 
     required = schema.get("required")
     properties = schema.get("properties")
 
     if not isinstance(required, list) or any(not isinstance(item, str) for item in required):
-        raise CheckerFailureError("consistency.toml: output_schema.required must be a list of strings")
+        raise CheckerFailureError(f"{context}.required must be a list of strings")
 
     if not isinstance(properties, dict):
-        raise CheckerFailureError("consistency.toml: output_schema.properties must be a table")
+        raise CheckerFailureError(f"{context}.properties must be a table")
 
-    for key in ("check_status", "report"):
+    for key in (status_property, "report"):
         if key not in required or key not in properties:
-            raise CheckerFailureError(f"consistency.toml: output_schema must require property {key!r}")
+            raise CheckerFailureError(f"{context} must require property {key!r}")
+
+    status_schema = properties[status_property]
+    report_schema = properties["report"]
+
+    if not isinstance(status_schema, dict) or status_schema.get("type") != "string":
+        raise CheckerFailureError(f"{context}.properties.{status_property}.type must be string")
+
+    status_values = status_schema.get("enum")
+
+    if (
+        not isinstance(status_values, list)
+        or any(not isinstance(value, str) for value in status_values)
+        or set(status_values) != allowed_statuses
+    ):
+        expected = ", ".join(sorted(allowed_statuses))
+        raise CheckerFailureError(f"{context}.properties.{status_property}.enum must contain: {expected}")
+
+    if not isinstance(report_schema, dict) or report_schema.get("type") != "string":
+        raise CheckerFailureError(f"{context}.properties.report.type must be string")
+
+
+def validate_agent_config(
+    config: dict[str, Any],
+    *,
+    key: str,
+    status_property: str,
+    allowed_statuses: set[str],
+) -> AgentConfig:
+    context = f"consistency.toml {key}"
+    agent = require_table(config, key, context="consistency.toml")
+    cmd = require_string_list(agent, "cmd", context=context)
+    timeout_seconds = require_int(agent, "timeout_seconds", context=context)
+
+    if timeout_seconds <= 0:
+        raise CheckerFailureError(f"{context}.timeout_seconds must be positive")
+
+    prompt = require_table(agent, "prompt", context=context)
+    prompt_template = require_string(prompt, "template", context=f"{context} prompt")
+    output_schema = copy.deepcopy(require_table(agent, "output_schema", context=context))
+    validate_output_schema(
+        output_schema,
+        context=f"{context}.output_schema",
+        status_property=status_property,
+        allowed_statuses=allowed_statuses,
+    )
+
+    return AgentConfig(
+        cmd=cmd,
+        timeout_seconds=timeout_seconds,
+        prompt_template=prompt_template,
+        output_schema=output_schema,
+    )
 
 
 def validate_config(config: dict[str, Any], *, mode: str) -> ConsistencyConfig:
     version = config.get("version")
 
-    if version != 1:
-        raise CheckerFailureError("consistency.toml: version must be 1")
+    if version != 2:
+        raise CheckerFailureError("consistency.toml: version must be 2")
 
     runtime_dir = normalize_runtime_dir(require_string(config, "runtime_dir", context="consistency.toml"))
     comparison_base_refs = require_string_list(config, "comparison_base_refs", context="consistency.toml")
@@ -390,17 +469,18 @@ def validate_config(config: dict[str, Any], *, mode: str) -> ConsistencyConfig:
         if journal.get("cmd") is None
         else require_string_list(journal, "cmd", context="consistency.toml journal")
     )
-    agent = require_table(config, "agent", context="consistency.toml")
-    agent_cmd = require_string_list(agent, "cmd", context="consistency.toml agent")
-    agent_timeout_seconds = require_int(agent, "timeout_seconds", context="consistency.toml agent")
-
-    if agent_timeout_seconds <= 0:
-        raise CheckerFailureError("consistency.toml: agent.timeout_seconds must be positive")
-
-    prompt = require_table(config, "prompt", context="consistency.toml")
-    prompt_template = require_string(prompt, "template", context="consistency.toml prompt")
-    output_schema = copy.deepcopy(require_table(config, "output_schema", context="consistency.toml"))
-    validate_output_schema(output_schema)
+    agent_validator = validate_agent_config(
+        config,
+        key="agent_validator",
+        status_property="check_status",
+        allowed_statuses={"consistent", "inconsistent"},
+    )
+    agent_reviewer = validate_agent_config(
+        config,
+        key="agent_reviewer",
+        status_property="review_status",
+        allowed_statuses={"confirmed", "rejected"},
+    )
 
     criteria = require_table(config, "criteria", context="consistency.toml")
     common_criteria = require_string_list(criteria, "common", context="consistency.toml criteria")
@@ -443,10 +523,8 @@ def validate_config(config: dict[str, Any], *, mode: str) -> ConsistencyConfig:
         agent_jobs=agent_jobs,
         discovery_jobs=discovery_jobs,
         journal_cmd=journal_cmd,
-        agent_cmd=agent_cmd,
-        agent_timeout_seconds=agent_timeout_seconds,
-        prompt_template=prompt_template,
-        output_schema=output_schema,
+        agent_validator=agent_validator,
+        agent_reviewer=agent_reviewer,
         common_criteria=common_criteria,
         relations=relations,
     )
@@ -2139,7 +2217,12 @@ def validate_prompt_snapshots(current_pair: CurrentPair) -> tuple[FileSnapshot, 
     return changed, related
 
 
-def build_child_prompt(current_pair: CurrentPair) -> str:
+def build_child_prompt(
+    current_pair: CurrentPair,
+    agent_config: AgentConfig,
+    *,
+    validator_report: str = "",
+) -> str:
     changed, related = validate_prompt_snapshots(current_pair)
     base_ref = resolve_comparison_base()
     merge_base = merge_base_with_head(base_ref)
@@ -2164,28 +2247,42 @@ def build_child_prompt(current_pair: CurrentPair) -> str:
             text=related.text,
         ),
         "git": SimpleNamespace(merge_base=merge_base),
+        "mode": get_config().mode,
+        "validation": SimpleNamespace(report=validator_report),
         "criteria": criteria,
         "fenced_content": fenced_content,
         "sha256_file": sha256_file,
     }
 
-    return render_expression_template(get_config().prompt_template, context)
+    return render_expression_template(agent_config.prompt_template, context)
 
 
-def prepare_child_check(current_pair: CurrentPair) -> PreparedChildCheck:
+def prepare_child_check(
+    current_pair: CurrentPair,
+    *,
+    agent_name: str,
+    agent_config: AgentConfig,
+    validator_report: str = "",
+) -> PreparedChildCheck:
     ensure_runtime_state()
     paths = runtime_paths()
     key_hash = identity_hash(current_pair.identity)
-    prompt_path = paths.prompt_dir / f"{key_hash}.md"
-    schema_path = paths.schema_dir / f"{key_hash}.schema.json"
-    output_path = paths.agent_output_dir / f"{key_hash}.json"
-    prompt = build_child_prompt(current_pair)
+    prompt_path = paths.prompt_dir / f"{key_hash}.{agent_name}.md"
+    schema_path = paths.schema_dir / f"{key_hash}.{agent_name}.schema.json"
+    output_path = paths.agent_output_dir / f"{key_hash}.{agent_name}.json"
+    prompt = build_child_prompt(
+        current_pair,
+        agent_config,
+        validator_report=validator_report,
+    )
     output_path.unlink(missing_ok=True)
     prompt_path.write_text(prompt, encoding="utf-8")
-    schema_path.write_text(json.dumps(get_config().output_schema, indent=2, sort_keys=True), encoding="utf-8")
+    schema_path.write_text(json.dumps(agent_config.output_schema, indent=2, sort_keys=True), encoding="utf-8")
 
     return PreparedChildCheck(
         current_pair=current_pair,
+        agent_name=agent_name,
+        agent_config=agent_config,
         prompt_path=prompt_path,
         schema_path=schema_path,
         output_path=output_path,
@@ -2200,9 +2297,9 @@ def run_child_checker(prepared: PreparedChildCheck) -> str:
         if child_checker_timed_out(running):
             kill_running_child(running)
             raise CheckerFailureError(
-                "running child Codex checker for "
+                f"running {prepared.agent_name} child Codex checker for "
                 f"{pair_journal_subject(prepared.current_pair.identity)}: "
-                f"timed out after {get_config().agent_timeout_seconds} seconds: "
+                f"timed out after {prepared.agent_config.timeout_seconds} seconds: "
                 f"{format_argv(running.argv)}"
             )
 
@@ -2213,9 +2310,9 @@ def run_child_checker(prepared: PreparedChildCheck) -> str:
 
 def start_child_checker(prepared: PreparedChildCheck) -> RunningChildCheck:
     pair_subject = pair_journal_subject(prepared.current_pair.identity)
-    log_project_journal("step", f"child checker start for {pair_subject}")
+    log_project_journal("step", f"{prepared.agent_name} child checker start for {pair_subject}")
     command = render_command_argv(
-        get_config().agent_cmd,
+        prepared.agent_config.cmd,
         {
             "project_root": str(PROJECT_ROOT),
             "prompt_path": str(prepared.prompt_path),
@@ -2242,7 +2339,8 @@ def start_child_checker(prepared: PreparedChildCheck) -> RunningChildCheck:
             )
     except OSError as error:
         raise CheckerFailureError(
-            f"running child Codex checker for {pair_subject}: {format_argv(command)}: {error}"
+            f"running {prepared.agent_name} child Codex checker for "
+            f"{pair_subject}: {format_argv(command)}: {error}"
         ) from error
 
     if process.stdin is None:
@@ -2256,7 +2354,9 @@ def start_child_checker(prepared: PreparedChildCheck) -> RunningChildCheck:
                 started_at=time.monotonic(),
             )
         )
-        raise CheckerFailureError(f"child Codex checker stdin was unavailable for {pair_subject}")
+        raise CheckerFailureError(
+            f"{prepared.agent_name} child Codex checker stdin was unavailable for {pair_subject}"
+        )
 
     try:
         process.stdin.write(prepared.prompt)
@@ -2272,7 +2372,9 @@ def start_child_checker(prepared: PreparedChildCheck) -> RunningChildCheck:
                 started_at=time.monotonic(),
             )
         )
-        raise CheckerFailureError(f"writing child Codex checker prompt failed for {pair_subject}: {error}") from error
+        raise CheckerFailureError(
+            f"writing {prepared.agent_name} child Codex checker prompt failed for {pair_subject}: {error}"
+        ) from error
 
     return RunningChildCheck(
         prepared=prepared,
@@ -2285,7 +2387,7 @@ def start_child_checker(prepared: PreparedChildCheck) -> RunningChildCheck:
 
 
 def child_checker_timed_out(running: RunningChildCheck) -> bool:
-    return time.monotonic() - running.started_at > get_config().agent_timeout_seconds
+    return time.monotonic() - running.started_at > running.prepared.agent_config.timeout_seconds
 
 
 def kill_running_child(running: RunningChildCheck) -> None:
@@ -2304,13 +2406,21 @@ def finish_child_checker(running: RunningChildCheck) -> str:
     result = CommandResult(argv=running.argv, returncode=returncode, stdout=stdout, stderr=stderr)
 
     if result.returncode != 0:
-        raise CheckerFailureError(build_command_failure("child Codex checker failed", result))
+        raise CheckerFailureError(
+            build_command_failure(f"{running.prepared.agent_name} child Codex checker failed", result)
+        )
 
     if not running.prepared.output_path.exists():
-        raise CheckerFailureError(f"child Codex checker did not write output file: {running.prepared.output_path}")
+        raise CheckerFailureError(
+            f"{running.prepared.agent_name} child Codex checker did not write output file: "
+            f"{running.prepared.output_path}"
+        )
 
     output = running.prepared.output_path.read_text(encoding="utf-8")
-    log_project_journal("step", f"child checker completed for {pair_subject}")
+    log_project_journal(
+        "step",
+        f"{running.prepared.agent_name} child checker completed for {pair_subject}",
+    )
 
     return output
 
@@ -2319,38 +2429,47 @@ def utc_timestamp() -> str:
     return datetime.now(UTC).isoformat()
 
 
-def malformed_child_report(reason: str, output: str) -> str:
-    return "\n\n".join(
+def malformed_child_error(agent_name: str, reason: str, output: str) -> CheckerFailureError:
+    details = "\n\n".join(
         [
-            "## Checker output was malformed",
-            f"Reason: {reason}",
+            f"{agent_name} child checker output was malformed: {reason}",
             fenced_content("Raw child checker output", output),
         ]
     )
 
+    return CheckerFailureError(details)
 
-def validate_child_result(output: str) -> tuple[str, str]:
+
+def validate_child_result(
+    output: str,
+    *,
+    agent_name: str,
+    agent_config: AgentConfig,
+    status_property: str,
+    allowed_statuses: set[str],
+    heading_required_statuses: set[str],
+) -> tuple[str, str]:
     try:
         result = json.loads(output)
     except json.JSONDecodeError as error:
-        return "inconsistent", malformed_child_report(str(error), output)
+        raise malformed_child_error(agent_name, str(error), output) from error
 
     if not isinstance(result, dict):
-        return "inconsistent", malformed_child_report("output JSON is not an object", output)
+        raise malformed_child_error(agent_name, "output JSON is not an object", output)
 
-    output_schema = get_config().output_schema
+    output_schema = agent_config.output_schema
     properties = output_schema.get("properties", {})
-    allowed_keys = set(properties) if isinstance(properties, dict) else {"check_status", "report"}
+    allowed_keys = set(properties) if isinstance(properties, dict) else {status_property, "report"}
     extra_keys = sorted(set(result) - allowed_keys)
 
     if output_schema.get("additionalProperties") is False and extra_keys:
-        return "inconsistent", malformed_child_report(f"unexpected keys: {', '.join(extra_keys)}", output)
+        raise malformed_child_error(agent_name, f"unexpected keys: {', '.join(extra_keys)}", output)
 
     required = output_schema.get("required", [])
     missing_keys = sorted(key for key in required if isinstance(key, str) and key not in result)
 
     if missing_keys:
-        return "inconsistent", malformed_child_report(f"missing required keys: {', '.join(missing_keys)}", output)
+        raise malformed_child_error(agent_name, f"missing required keys: {', '.join(missing_keys)}", output)
 
     if isinstance(properties, dict):
         for key, property_schema in properties.items():
@@ -2358,36 +2477,44 @@ def validate_child_result(output: str) -> tuple[str, str]:
                 continue
 
             if property_schema.get("type") == "string" and not isinstance(result[key], str):
-                return "inconsistent", malformed_child_report(f"{key} must be a string", output)
+                raise malformed_child_error(agent_name, f"{key} must be a string", output)
 
             allowed_values = property_schema.get("enum")
 
             if isinstance(allowed_values, list) and result[key] not in allowed_values:
-                return "inconsistent", malformed_child_report(
+                raise malformed_child_error(
+                    agent_name,
                     f"{key} must be one of: {', '.join(str(value) for value in allowed_values)}",
                     output,
                 )
 
-    check_status = result.get("check_status")
+    status = result.get(status_property)
     report = result.get("report")
 
-    if check_status not in {"consistent", "inconsistent"}:
-        return "inconsistent", malformed_child_report("check_status must be consistent or inconsistent", output)
+    if status not in allowed_statuses:
+        expected = " or ".join(sorted(allowed_statuses))
+        raise malformed_child_error(agent_name, f"{status_property} must be {expected}", output)
 
     if not isinstance(report, str):
-        return "inconsistent", malformed_child_report("report must be a string", output)
+        raise malformed_child_error(agent_name, "report must be a string", output)
 
-    if check_status == "inconsistent" and not any(line.startswith("## ") for line in report.splitlines()):
-        return "inconsistent", malformed_child_report(
-            "inconsistent reports must contain at least one ## section",
+    if status in heading_required_statuses and not any(line.startswith("## ") for line in report.splitlines()):
+        raise malformed_child_error(
+            agent_name,
+            f"{status_property}={status!r} reports must contain at least one ## section",
             output,
         )
 
-    return check_status, report
+    return status, report
 
 
-def update_record_from_child_output(current_pair: CurrentPair, output: str) -> CurrentPair:
-    check_status, report = validate_child_result(output)
+def update_record_from_decision(
+    current_pair: CurrentPair,
+    *,
+    check_status: str,
+    report: str,
+    decision_source: str,
+) -> CurrentPair:
     record = update_check_record(
         current_pair.identity,
         check_status=check_status,
@@ -2396,10 +2523,102 @@ def update_record_from_child_output(current_pair: CurrentPair, output: str) -> C
     )
     log_project_journal(
         "step",
-        f"pair status update for {pair_journal_subject(current_pair.identity)}: {check_status}",
+        (
+            f"pair status update from {decision_source} for "
+            f"{pair_journal_subject(current_pair.identity)}: {check_status}"
+        ),
     )
 
     return CurrentPair(pair=current_pair.pair, identity=current_pair.identity, record=record)
+
+
+def reviewed_report(
+    *,
+    review_status: str,
+    validator_report: str,
+    reviewer_report: str,
+) -> str:
+    decision = "confirmed" if review_status == "confirmed" else "rejected"
+
+    return "\n\n".join(
+        [
+            f"## Reviewer {decision} the validator candidate",
+            reviewer_report.strip(),
+            "## Validator candidate report",
+            validator_report.strip(),
+        ]
+    ).strip()
+
+
+def update_record_from_reviewer_output(
+    current_pair: CurrentPair,
+    *,
+    validator_report: str,
+    reviewer_output: str,
+) -> CurrentPair:
+    config = get_config()
+    review_status, reviewer_report = validate_child_result(
+        reviewer_output,
+        agent_name="reviewer",
+        agent_config=config.agent_reviewer,
+        status_property="review_status",
+        allowed_statuses={"confirmed", "rejected"},
+        heading_required_statuses={"confirmed", "rejected"},
+    )
+    check_status = "inconsistent" if review_status == "confirmed" else "consistent"
+
+    return update_record_from_decision(
+        current_pair,
+        check_status=check_status,
+        report=reviewed_report(
+            review_status=review_status,
+            validator_report=validator_report,
+            reviewer_report=reviewer_report,
+        ),
+        decision_source="reviewer",
+    )
+
+
+def update_record_from_validator_output(current_pair: CurrentPair, output: str) -> CurrentPair:
+    config = get_config()
+    check_status, validator_report = validate_child_result(
+        output,
+        agent_name="validator",
+        agent_config=config.agent_validator,
+        status_property="check_status",
+        allowed_statuses={"consistent", "inconsistent"},
+        heading_required_statuses={"inconsistent"},
+    )
+
+    if check_status == "consistent":
+        return update_record_from_decision(
+            current_pair,
+            check_status="consistent",
+            report=validator_report,
+            decision_source="validator",
+        )
+
+    prepared_reviewer = prepare_child_check(
+        current_pair,
+        agent_name="reviewer",
+        agent_config=config.agent_reviewer,
+        validator_report=validator_report,
+    )
+    reviewer_output = run_child_checker(prepared_reviewer)
+    stale_reason = record_outdated_reason(current_pair.record)
+
+    if stale_reason is not None:
+        record = mark_record_outdated_during_processing(
+            current_pair.record,
+            f"pair changed during reviewer adjudication: {stale_reason}",
+        )
+        return CurrentPair(pair=current_pair.pair, identity=current_pair.identity, record=record)
+
+    return update_record_from_reviewer_output(
+        current_pair,
+        validator_report=validator_report,
+        reviewer_output=reviewer_output,
+    )
 
 
 def wait_for_finished_children(running: dict[str, RunningChildCheck]) -> list[RunningChildCheck]:
@@ -2418,9 +2637,9 @@ def wait_for_finished_children(running: dict[str, RunningChildCheck]) -> list[Ru
             )[0]
             kill_running_child(timed_out_child)
             raise CheckerFailureError(
-                "running child Codex checker for "
+                f"running {timed_out_child.prepared.agent_name} child Codex checker for "
                 f"{pair_journal_subject(timed_out_child.prepared.current_pair.identity)}: "
-                f"timed out after {get_config().agent_timeout_seconds} seconds: "
+                f"timed out after {timed_out_child.prepared.agent_config.timeout_seconds} seconds: "
                 f"{format_argv(timed_out_child.argv)}"
             )
 
@@ -2503,7 +2722,11 @@ def process_current_frontier(
                     break
 
                 try:
-                    prepared = prepare_child_check(checked_pair)
+                    prepared = prepare_child_check(
+                        checked_pair,
+                        agent_name="validator",
+                        agent_config=get_config().agent_validator,
+                    )
                 except MissingArtifactError as error:
                     updated_record = mark_record_outdated_during_processing(
                         checked_pair.record,
@@ -2592,13 +2815,17 @@ def process_current_frontier(
                         ),
                     )
                 else:
-                    updated_pair = update_record_from_child_output(finished_pair, child_output)
+                    updated_pair = update_record_from_validator_output(finished_pair, child_output)
 
                 current_pairs = replace_current_pair(current_pairs, updated_pair)
                 frontier_pairs = replace_current_pair(frontier_pairs, updated_pair)
 
-                if normalized_check_status(updated_pair.record) == "inconsistent":
+                updated_status = normalized_check_status(updated_pair.record)
+
+                if updated_status == "inconsistent":
                     inconsistency_found = True
+                elif updated_status == "outdated":
+                    stale_found = True
     except CheckerFailureError:
         terminate_running_children(running)
         raise
@@ -3156,12 +3383,18 @@ def runtime_artifact_path(*parts: str) -> str:
     return f"@/{(get_config().runtime_dir / Path(*parts)).as_posix()}"
 
 
-def self_check_child_output(check_status: str, report: str) -> str:
+def self_check_child_output(
+    agent_config: AgentConfig,
+    *,
+    status_property: str,
+    status: str,
+    report: str,
+) -> str:
     payload: dict[str, Any] = {
-        "check_status": check_status,
+        status_property: status,
         "report": report,
     }
-    output_schema = get_config().output_schema
+    output_schema = agent_config.output_schema
     properties = output_schema.get("properties", {})
 
     if isinstance(properties, dict):
@@ -3585,6 +3818,14 @@ def run_self_check() -> ExitCode:
     for mode_id in load_configured_mode_ids():
         mode_config = load_consistency_config(mode=mode_id)
         assert_self_check(mode_config.mode == mode_id, f"configured mode {mode_id!r} must load")
+        assert_self_check(
+            bool(mode_config.agent_validator.cmd),
+            f"configured mode {mode_id!r} must inherit the validator command",
+        )
+        assert_self_check(
+            bool(mode_config.agent_reviewer.cmd),
+            f"configured mode {mode_id!r} must inherit the reviewer command",
+        )
 
     active_config = get_config()
     assert_self_check(
@@ -3593,6 +3834,14 @@ def run_self_check() -> ExitCode:
     )
     assert_self_check(active_config.agent_jobs > 0, "agent_jobs must load from config")
     assert_self_check(active_config.discovery_jobs > 0, "discovery_jobs must load from config")
+    assert_self_check(
+        active_config.agent_validator.timeout_seconds > 0,
+        "validator timeout must load from config",
+    )
+    assert_self_check(
+        active_config.agent_reviewer.timeout_seconds > 0,
+        "reviewer timeout must load from config",
+    )
     allowed_relation = active_config.allowed_file_relations[0]
     assert_self_check(
         bool(relation_specific_criteria(allowed_relation)),
@@ -3685,15 +3934,26 @@ def run_self_check() -> ExitCode:
         frontier_files(select_frontier(read_only_graph, read_only_pairs)) == (changed_path,),
         "read-only frontier selection must match reconciled unchecked status",
     )
-    prepared_self_check = prepare_child_check(current_pairs[0])
-    serialized_schema = json.loads(prepared_self_check.schema_path.read_text(encoding="utf-8"))
+    prepared_validator = prepare_child_check(
+        current_pairs[0],
+        agent_name="validator",
+        agent_config=active_config.agent_validator,
+    )
+    validator_report = "## Candidate inconsistency\n\nSynthetic validator finding."
+    prepared_reviewer = prepare_child_check(
+        current_pairs[0],
+        agent_name="reviewer",
+        agent_config=active_config.agent_reviewer,
+        validator_report=validator_report,
+    )
+    serialized_schema = json.loads(prepared_validator.schema_path.read_text(encoding="utf-8"))
     rendered_agent_cmd = render_command_argv(
-        get_config().agent_cmd,
+        active_config.agent_validator.cmd,
         {
             "project_root": str(PROJECT_ROOT),
-            "prompt_path": str(prepared_self_check.prompt_path),
-            "schema_path": str(prepared_self_check.schema_path),
-            "output_path": str(prepared_self_check.output_path),
+            "prompt_path": str(prepared_validator.prompt_path),
+            "schema_path": str(prepared_validator.schema_path),
+            "output_path": str(prepared_validator.output_path),
         },
     )
     changed_snapshot, _related_snapshot = read_pair_snapshots(pair)
@@ -3701,21 +3961,44 @@ def run_self_check() -> ExitCode:
         "{fenced_content('Self-check file', changed.text)}",
         {"fenced_content": fenced_content, "changed": SimpleNamespace(text=changed_snapshot.text)},
     )
-    assert_self_check(serialized_schema == get_config().output_schema, "output schema must serialize from config")
-    assert_self_check(str(prepared_self_check.schema_path) in rendered_agent_cmd, "agent schema path must render")
+    assert_self_check(
+        serialized_schema == active_config.agent_validator.output_schema,
+        "validator output schema must serialize from config",
+    )
+    assert_self_check(
+        str(prepared_validator.schema_path) in rendered_agent_cmd,
+        "validator schema path must render",
+    )
+    assert_self_check(
+        prepared_validator.output_path != prepared_reviewer.output_path,
+        "validator and reviewer runtime artifacts must not collide",
+    )
+    assert_self_check(
+        validator_report in prepared_reviewer.prompt,
+        "reviewer prompt must contain the validator candidate report",
+    )
     assert_self_check("Self-check file" in advanced_render, "prompt renderer must support function calls")
     assert_self_check(
-        "changed self-check content" not in prepared_self_check.prompt,
-        "default prompt must not embed full file contents",
+        "changed self-check content" not in prepared_validator.prompt,
+        "validator prompt must not embed full file contents",
+    )
+    assert_self_check(
+        "changed self-check content" not in prepared_reviewer.prompt,
+        "reviewer prompt must not embed full file contents",
     )
     missing_pairs = reconcile_queue([missing_pair])
     assert_self_check(not missing_pairs, "missing-file pairs must be skipped")
     selection = select_current_pair(current_pairs)
     assert_self_check(selection.unchecked is not None, "one unchecked pair must be selected")
     assert_self_check(selection.inconsistent is None, "unchecked selection must not report inconsistency")
-    consistent_pair = update_record_from_child_output(
+    consistent_pair = update_record_from_validator_output(
         selection.unchecked,
-        self_check_child_output("consistent", ""),
+        self_check_child_output(
+            active_config.agent_validator,
+            status_property="check_status",
+            status="consistent",
+            report="",
+        ),
     )
     current_pairs = replace_current_pair(current_pairs, consistent_pair)
     assert_self_check(
@@ -3727,9 +4010,15 @@ def run_self_check() -> ExitCode:
         item.record for item in preserved_pairs if item.identity.pair_key == consistent_pair.identity.pair_key
     )
     assert_self_check(preserved_record.check_status == "consistent", "unchanged pair key must preserve cached status")
-    inconsistent_pair = update_record_from_child_output(
+    inconsistent_pair = update_record_from_reviewer_output(
         consistent_pair,
-        self_check_child_output("inconsistent", "## Self-check inconsistency\n\nSynthetic issue."),
+        validator_report=validator_report,
+        reviewer_output=self_check_child_output(
+            active_config.agent_reviewer,
+            status_property="review_status",
+            status="confirmed",
+            report="## Review rationale\n\nThe candidate is valid.",
+        ),
     )
     current_pairs = replace_current_pair(preserved_pairs, inconsistent_pair)
     inconsistent_selection = select_current_pair(current_pairs)
@@ -3737,11 +4026,62 @@ def run_self_check() -> ExitCode:
         inconsistent_selection.inconsistent is not None,
         "current inconsistency must be selected before any child check",
     )
-    malformed_pair = update_record_from_child_output(current_pairs[1], "{not json")
-    assert_self_check(malformed_pair.record.check_status == "inconsistent", "malformed output must be inconsistent")
     assert_self_check(
-        "## Checker output was malformed" in malformed_pair.record.report,
-        "malformed output must produce a markdown issue section",
+        validator_report in inconsistent_pair.record.report,
+        "confirmed reviewer result must retain the validator report",
+    )
+    rejected_pair = update_record_from_reviewer_output(
+        current_pairs[1],
+        validator_report=validator_report,
+        reviewer_output=self_check_child_output(
+            active_config.agent_reviewer,
+            status_property="review_status",
+            status="rejected",
+            report="## Review rationale\n\nThe candidate is a false positive.",
+        ),
+    )
+    assert_self_check(
+        rejected_pair.record.check_status == "consistent",
+        "a rejected validator candidate must be stored as consistent",
+    )
+    assert_self_check(
+        validator_report in rejected_pair.record.report,
+        "rejected reviewer result must retain the validator report",
+    )
+
+    try:
+        validate_child_result(
+            "{not json",
+            agent_name="validator",
+            agent_config=active_config.agent_validator,
+            status_property="check_status",
+            allowed_statuses={"consistent", "inconsistent"},
+            heading_required_statuses={"inconsistent"},
+        )
+    except CheckerFailureError as error:
+        malformed_error = str(error)
+    else:
+        raise CheckerFailureError("self-check failed: malformed validator output must fail the checker")
+
+    assert_self_check(
+        "validator child checker output was malformed" in malformed_error,
+        "malformed validator output must identify a checker failure",
+    )
+
+    try:
+        update_record_from_reviewer_output(
+            current_pairs[1],
+            validator_report=validator_report,
+            reviewer_output='{"review_status":"maybe","report":"## Unclear"}',
+        )
+    except CheckerFailureError as error:
+        malformed_reviewer_error = str(error)
+    else:
+        raise CheckerFailureError("self-check failed: malformed reviewer output must fail the checker")
+
+    assert_self_check(
+        "reviewer child checker output was malformed" in malformed_reviewer_error,
+        "malformed reviewer output must identify a checker failure",
     )
     changed_file.write_text("changed self-check content v2\n", encoding="utf-8")
     assert_self_check(
