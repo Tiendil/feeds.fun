@@ -68,6 +68,18 @@ For example, `ffun.user_settings` owns the generic user settings machinery, whil
 - `ffun.users` owns user storage and management.
 - `ffun.user_settings` owns user-specific settings storage and behavior.
 
+### Product resource kinds
+
+`ffun.product` MUST own the shared product resource-kind registry as a closed set of stable integer identifiers.
+The registry MUST define these mappings:
+
+- `tokens_cost = 2`.
+- `day_token_usage = 3`.
+- `month_token_usage = 4`.
+- `lifetime_token_usage = 5`.
+
+Assigned product resource-kind identifiers MUST NOT be changed or reused.
+
 ## Submodules
 
 Backend modules can have submodules that are responsible for more specific parts of the parent module's functionality.

@@ -34,9 +34,7 @@ Parameters:
 - `--transaction-id ID` — required stable source-supplied id of the grant.
 - `--value INTEGER` — required entitlement value.
 - `--starts-at TIMESTAMP` — inclusive activation time in ISO 8601 format with an explicit UTC offset; defaults to the captured current timestamp.
-- `--expires-at TIMESTAMP` — exclusive expiration time in ISO 8601 format with an explicit UTC offset; defaults to the
-  shared lifetime interval end marker for a lifetime kind and to the captured current timestamp plus 31 days for every
-  other kind.
+- `--expires-at TIMESTAMP` — exclusive expiration time in ISO 8601 format with an explicit UTC offset; defaults to the shared lifetime interval end marker for a lifetime kind and to the captured current timestamp plus 31 days for every other kind.
 - `--actor-kind {user|admin|psp|system}` — kind of the actor initiating the change; defaults to `admin`.
 - `--actor-id ID` — stable id of the actor initiating the change; defaults to `admin`.
 
