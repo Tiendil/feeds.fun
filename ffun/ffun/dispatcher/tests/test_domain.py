@@ -41,7 +41,7 @@ from ffun.library.tests import make as l_make
 from ffun.llms_framework.entities import LLMApiKey
 from ffun.markers import domain as m_domain
 from ffun.markers.entities import Marker
-from ffun.product.entities import SAAS_TOKENS_PER_USER_ENTRY, Resource, UserSetting
+from ffun.product.entities import Resource, UserSetting
 from ffun.queues import operations as q_operations
 from ffun.queues.entities import QueueKind, QueueRecord, QueueRecordId
 from ffun.resources import domain as r_domain
@@ -397,7 +397,7 @@ class TestTokenReservationSpecification:
 
         assert specification == ResourceReservationSpecification(
             user_id=user_id,
-            amount=SAAS_TOKENS_PER_USER_ENTRY,
+            amount=domain.SAAS_TOKENS_PER_USER_ENTRY,
             options=(
                 ResourceReservationOption(
                     kind=Resource.day_token_usage,
@@ -1377,7 +1377,7 @@ class TestDispatchEntries:
         assert await m_domain.get_markers(user_id=None, entries_ids=[entry_id]) == {}
         assert await m_domain.get_markers(user_id=user_id, entries_ids=[entry_id]) == {entry_id: {Marker.can_see_tags}}
         resource = await get_resource(user_id, Resource.day_token_usage, day_interval_start())
-        assert resource.used == SAAS_TOKENS_PER_USER_ENTRY
+        assert resource.used == domain.SAAS_TOKENS_PER_USER_ENTRY
         assert resource.reserved == 0
 
     @pytest.mark.asyncio
@@ -1442,7 +1442,7 @@ class TestDispatchEntries:
             ) == {entry_id}
 
         resource = await get_resource(user_id, Resource.day_token_usage, day_interval_start())
-        assert resource.used == SAAS_TOKENS_PER_USER_ENTRY
+        assert resource.used == domain.SAAS_TOKENS_PER_USER_ENTRY
         assert resource.reserved == 0
 
     @pytest.mark.asyncio
@@ -1478,7 +1478,7 @@ class TestDispatchEntries:
             == []
         )
         resource = await get_resource(user_id, Resource.day_token_usage, day_interval_start())
-        assert resource.used == SAAS_TOKENS_PER_USER_ENTRY
+        assert resource.used == domain.SAAS_TOKENS_PER_USER_ENTRY
         assert resource.reserved == 0
         assert await m_domain.get_markers(user_id=user_id, entries_ids=[entry_id]) == {entry_id: {Marker.can_see_tags}}
 

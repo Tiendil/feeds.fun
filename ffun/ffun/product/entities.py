@@ -1,7 +1,5 @@
 import enum
 
-SAAS_TOKENS_PER_USER_ENTRY = 1
-
 
 class UserSetting(enum.IntEnum):
     openai_api_key = 1

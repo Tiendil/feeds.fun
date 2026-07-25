@@ -25,11 +25,13 @@ from ffun.entitlements import domain as e_domain
 from ffun.entitlements.entities import EffectiveEntitlementInterval, EntitlementKindId
 from ffun.markers import domain as m_domain
 from ffun.markers.entities import Marker
-from ffun.product.entities import SAAS_TOKENS_PER_USER_ENTRY, Resource
+from ffun.product.entities import Resource
 from ffun.queues import domain as q_domain
 from ffun.queues.entities import QueueKind, QueueRecord, QueueRecordId
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
+
+SAAS_TOKENS_PER_USER_ENTRY = 1
 
 logger = logging.get_module_logger()
 
