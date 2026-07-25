@@ -43,6 +43,12 @@ Constructing and returning that object MUST be part of the operation's explicit 
 
 Framework validator hooks whose protocols require returning the validated value or instance, such as Pydantic validators, are exempt from the `None` return requirement.
 
+## Function extraction
+
+A trivial update to a list, set, mapping, or similar data structure that is used at only one call site MUST remain inline at that call site and MUST NOT be extracted into a separate function merely to isolate the mutation.
+An update is trivial for this rule when its intent is clear from the data-structure operations and it does not enforce a separate invariant or contain non-obvious control flow.
+A separate function MAY be introduced when it represents a meaningful domain operation, centralizes an invariant, supports reuse, or materially simplifies non-trivial control flow.
+
 ## Class instance layout
 
 Explicit instance layouts prevent unintended instance dictionaries and dynamically named state, and they keep attribute ownership predictable across inheritance. `__slots__` is required for covered classes because it enforces this layout constraint at the Python class boundary.
