@@ -5,6 +5,7 @@ mode = "incremental"
 runtime_dir = ".session/inconsistency-check"
 comparison_base_refs = ["main", "origin/main"]
 allowed_file_relations = ["governed_by"]
+requires_branch_change = false
 # Maximum concurrent validator processes. Reviewers run only for validator-reported candidates.
 agent_jobs = 20
 # Maximum concurrent depmesh subprocesses in one dependency-discovery wave.
@@ -243,6 +244,7 @@ criteria = [
 
 [modes.strict]
 allowed_file_relations = ["governed_by"]
+requires_branch_change = false
 
 [modes.strict.agent_validator.prompt]
 template = """
@@ -270,6 +272,7 @@ Consistency criteria:
 
 [modes.incremental]
 allowed_file_relations = ["governed_by"]
+requires_branch_change = true
 
 [modes.incremental.agent_validator.prompt]
 template = """

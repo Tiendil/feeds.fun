@@ -68,6 +68,7 @@ class ConsistencyConfig:
     runtime_dir: Path
     comparison_base_refs: tuple[str, ...]
     allowed_file_relations: tuple[str, ...]
+    requires_branch_change: bool
     agent_jobs: int
     discovery_jobs: int
     journal_cmd: tuple[str, ...] | None
@@ -170,6 +171,7 @@ class CurrentPair:
 class QueueSyncResult:
     tracked_files: tuple[str, ...]
     current_pairs: tuple[CurrentPair, ...]
+    graphs: DependencyGraphs
     checked_records: int
     marked_outdated_records: int
 
@@ -454,6 +456,7 @@ def validate_config(config: dict[str, Any], *, mode: str) -> ConsistencyConfig:
     runtime_dir = normalize_runtime_dir(require_string(config, "runtime_dir", context="consistency.toml"))
     comparison_base_refs = require_string_list(config, "comparison_base_refs", context="consistency.toml")
     allowed_file_relations = require_string_list(config, "allowed_file_relations", context="consistency.toml")
+    requires_branch_change = require_bool(config, "requires_branch_change", context="consistency.toml")
     agent_jobs = require_int(config, "agent_jobs", context="consistency.toml")
     discovery_jobs = require_int(config, "discovery_jobs", context="consistency.toml")
 
@@ -520,6 +523,7 @@ def validate_config(config: dict[str, Any], *, mode: str) -> ConsistencyConfig:
         runtime_dir=runtime_dir,
         comparison_base_refs=comparison_base_refs,
         allowed_file_relations=allowed_file_relations,
+        requires_branch_change=requires_branch_change,
         agent_jobs=agent_jobs,
         discovery_jobs=discovery_jobs,
         journal_cmd=journal_cmd,
@@ -2126,7 +2130,7 @@ def completed_frontier_exit_code(
 
 
 def print_frontier_summary(
-    changed_files: Iterable[str],
+    tracked_files: Iterable[str],
     current_pairs: list[CurrentPair],
     selection: FrontierSelection,
     *,
@@ -2134,7 +2138,7 @@ def print_frontier_summary(
 ) -> None:
     counts = status_counts(current_pairs)
     print("Consistency frontier summary")
-    print(f"changed artifacts: {len(tuple(changed_files))}")
+    print(f"tracked artifacts: {len(tuple(tracked_files))}")
     print(f"resolved artifacts: {len(selection.resolved_files)}")
     print(f"pending artifacts: {len(selection.pending_files)}")
     print(f"blocked artifacts: {len(selection.blocked_files)}")
@@ -2654,7 +2658,7 @@ def terminate_running_children(running: dict[str, RunningChildCheck]) -> None:
 
 
 def process_current_frontier(
-    changed_files: list[str],
+    tracked_files: list[str],
     current_pairs: list[CurrentPair],
     graphs: DependencyGraphs,
     *,
@@ -2685,7 +2689,7 @@ def process_current_frontier(
         return ExitCode.INCONSISTENCY_FOUND
 
     if not selection.frontier_components:
-        print_frontier_summary(changed_files, current_pairs, selection, fresh_cycle_required=False)
+        print_frontier_summary(tracked_files, current_pairs, selection, fresh_cycle_required=False)
         log_project_journal("step", f"{command_name} outcome: success after fresh no-work cycle")
         return ExitCode.SUCCESS
 
@@ -2771,7 +2775,7 @@ def process_current_frontier(
 
                 if outcome == ExitCode.CONTINUE_CYCLE and stale_found:
                     current_selection = select_frontier(graphs, current_pairs)
-                    print_frontier_summary(changed_files, current_pairs, current_selection, fresh_cycle_required=True)
+                    print_frontier_summary(tracked_files, current_pairs, current_selection, fresh_cycle_required=True)
                     log_project_journal("step", f"{command_name} outcome: stale frontier requires rediscovery")
                     return outcome
 
@@ -2787,7 +2791,7 @@ def process_current_frontier(
 
                 if outcome == ExitCode.CONTINUE_CYCLE:
                     current_selection = select_frontier(graphs, current_pairs)
-                    print_frontier_summary(changed_files, current_pairs, current_selection, fresh_cycle_required=True)
+                    print_frontier_summary(tracked_files, current_pairs, current_selection, fresh_cycle_required=True)
                     log_project_journal("step", f"{command_name} frontier completed; fresh cycle required")
                     log_project_journal("step", f"{command_name} outcome: continue after successful frontier")
                     return outcome
@@ -2846,14 +2850,6 @@ def effective_agent_jobs(args: argparse.Namespace) -> int:
     return agent_jobs
 
 
-def reconcile_changed_files() -> tuple[list[str], list[CurrentPair], DependencyGraphs]:
-    changed_files = discover_changed_files()
-    dependency_state = discover_dependency_state(changed_files)
-    current_pairs = reconcile_queue(list(dependency_state.direct_pairs))
-
-    return changed_files, current_pairs, dependency_state.graphs
-
-
 def reconcile_direct_changed_files() -> tuple[list[str], list[CurrentPair]]:
     changed_files = discover_changed_files()
     current_pairs = reconcile_queue(query_depmesh_pairs(changed_files))
@@ -2867,6 +2863,24 @@ def existing_file_artifacts(paths: Iterable[str]) -> list[str]:
         for path in set(paths)
         if artifact_to_filesystem_path(path).is_file()
     )
+
+
+def tracked_artifacts_for_mode(
+    changed_files: Iterable[str],
+    records: Iterable[CheckRecord],
+    *,
+    requires_branch_change: bool,
+) -> tuple[str, ...]:
+    tracked_files = set(changed_files)
+
+    if not requires_branch_change:
+        tracked_files.update(
+            record.changed_path
+            for record in records
+            if normalized_check_status(record) != "outdated"
+        )
+
+    return tuple(sorted(tracked_files))
 
 
 def current_pair_keys_for_records(records: Iterable[CheckRecord]) -> set[str]:
@@ -2895,6 +2909,8 @@ def filter_current_records(records: Iterable[CheckRecord], current_pair_keys: se
 def mark_records_outside_current_pairs(
     records: Iterable[CheckRecord],
     current_pair_keys: set[str],
+    *,
+    branch_changed_paths: set[str] | None = None,
 ) -> tuple[int, int]:
     checked_count = 0
     marked_count = 0
@@ -2908,7 +2924,17 @@ def mark_records_outside_current_pairs(
         if record.pair_key in current_pair_keys:
             continue
 
-        reason = record_outdated_reason(record)
+        reason = (
+            (
+                f"changed file is outside the branch diff required by mode {get_config().mode!r}"
+            )
+            if (
+                get_config().requires_branch_change
+                and branch_changed_paths is not None
+                and record.changed_path not in branch_changed_paths
+            )
+            else record_outdated_reason(record)
+        )
 
         if reason is None:
             reason = "relation pair is no longer returned by current depmesh relations"
@@ -2922,23 +2948,26 @@ def mark_records_outside_current_pairs(
 def synchronize_queue_state() -> QueueSyncResult:
     changed_files = discover_changed_files()
     queued_records = load_allowed_check_records()
-    active_queued_paths = {
-        record.changed_path
-        for record in queued_records
-        if normalized_check_status(record) != "outdated"
-    }
-    tracked_files = existing_file_artifacts([*changed_files, *active_queued_paths])
-    relation_pairs = query_depmesh_pairs(tracked_files) if tracked_files else []
-    current_pairs = reconcile_queue(relation_pairs)
+    tracked_files = existing_file_artifacts(
+        tracked_artifacts_for_mode(
+            changed_files,
+            queued_records,
+            requires_branch_change=get_config().requires_branch_change,
+        )
+    )
+    dependency_state = discover_dependency_state(tracked_files)
+    current_pairs = reconcile_queue(list(dependency_state.direct_pairs))
     current_pair_keys = {current_pair.identity.pair_key for current_pair in current_pairs}
     checked_records, marked_outdated_records = mark_records_outside_current_pairs(
         load_allowed_check_records(),
         current_pair_keys,
+        branch_changed_paths=set(changed_files),
     )
 
     return QueueSyncResult(
         tracked_files=tuple(tracked_files),
         current_pairs=tuple(current_pairs),
+        graphs=dependency_state.graphs,
         checked_records=checked_records,
         marked_outdated_records=marked_outdated_records,
     )
@@ -2991,12 +3020,12 @@ def enqueue_changed() -> ExitCode:
 def run_cycle(args: argparse.Namespace) -> ExitCode:
     ensure_runtime_state()
     log_project_journal("step", "run-cycle command started")
-    changed_files, current_pairs, graphs = reconcile_changed_files()
+    result = synchronize_queue_state()
 
     return process_current_frontier(
-        changed_files,
-        current_pairs,
-        graphs,
+        list(result.tracked_files),
+        list(result.current_pairs),
+        result.graphs,
         command_name="run-cycle",
         agent_jobs=effective_agent_jobs(args),
     )
@@ -3005,10 +3034,18 @@ def run_cycle(args: argparse.Namespace) -> ExitCode:
 def show_frontier() -> ExitCode:
     log_project_journal("step", "frontier diagnostic command started")
     changed_files = discover_changed_files()
-    dependency_state = discover_dependency_state(changed_files)
+    queued_records = load_allowed_check_records_read_only()
+    tracked_files = existing_file_artifacts(
+        tracked_artifacts_for_mode(
+            changed_files,
+            queued_records,
+            requires_branch_change=get_config().requires_branch_change,
+        )
+    )
+    dependency_state = discover_dependency_state(tracked_files)
     current_pairs = current_pairs_read_only(
         dependency_state.direct_pairs,
-        load_allowed_check_records_read_only(),
+        queued_records,
     )
     selection = select_frontier(dependency_state.graphs, current_pairs)
     selected_files = frontier_files(selection)
@@ -3051,12 +3088,12 @@ def load_queued_current_pairs() -> list[CurrentPair]:
 def process_queue(args: argparse.Namespace) -> ExitCode:
     ensure_runtime_state()
     log_project_journal("step", "process-queue command started")
-    changed_files, current_pairs, graphs = reconcile_changed_files()
+    result = synchronize_queue_state()
 
     return process_current_frontier(
-        changed_files,
-        current_pairs,
-        graphs,
+        list(result.tracked_files),
+        list(result.current_pairs),
+        result.graphs,
         command_name="process-queue",
         agent_jobs=effective_agent_jobs(args),
     )
@@ -3817,8 +3854,11 @@ def run_self_check() -> ExitCode:
     ensure_runtime_state()
     log_project_journal("step", "self-check command started")
 
+    mode_configs: dict[str, ConsistencyConfig] = {}
+
     for mode_id in load_configured_mode_ids():
         mode_config = load_consistency_config(mode=mode_id)
+        mode_configs[mode_id] = mode_config
         assert_self_check(mode_config.mode == mode_id, f"configured mode {mode_id!r} must load")
         assert_self_check(
             bool(mode_config.agent_validator.cmd),
@@ -3828,6 +3868,15 @@ def run_self_check() -> ExitCode:
             bool(mode_config.agent_reviewer.cmd),
             f"configured mode {mode_id!r} must inherit the reviewer command",
         )
+
+    assert_self_check(
+        mode_configs["incremental"].requires_branch_change,
+        "incremental mode must require the pair's changed file to be changed in the branch",
+    )
+    assert_self_check(
+        not mode_configs["strict"].requires_branch_change,
+        "strict mode must retain queued pairs whose changed file is outside the branch diff",
+    )
 
     active_config = get_config()
     assert_self_check(
@@ -3848,6 +3897,29 @@ def run_self_check() -> ExitCode:
     assert_self_check(
         bool(relation_specific_criteria(allowed_relation)),
         "configured relation criteria must load from config",
+    )
+    branch_changed_path = "@/self-check/branch-changed.py"
+    queued_path = "@/self-check/queued.py"
+    outdated_path = "@/self-check/outdated.py"
+    queued_record = synthetic_current_pair(queued_path, status="unchecked").record
+    outdated_record = synthetic_current_pair(outdated_path, status="outdated").record
+    assert_self_check(
+        tracked_artifacts_for_mode(
+            [branch_changed_path],
+            [queued_record, outdated_record],
+            requires_branch_change=True,
+        )
+        == (branch_changed_path,),
+        "branch-scoped modes must exclude queued pairs whose changed file is outside the branch diff",
+    )
+    assert_self_check(
+        tracked_artifacts_for_mode(
+            [branch_changed_path],
+            [queued_record, outdated_record],
+            requires_branch_change=False,
+        )
+        == tuple(sorted((branch_changed_path, queued_path))),
+        "non-branch-scoped modes must process every non-outdated queued pair",
     )
     run_dependency_scheduler_self_checks()
     changed_files = discover_changed_files()
@@ -3899,7 +3971,7 @@ def run_self_check() -> ExitCode:
         all(current_pair.record.check_status == "unchecked" for current_pair in current_pairs),
         "new current pairs must be unchecked",
     )
-    records_before_read_only = load_taskwarrior_records()
+    records_before_read_only = load_allowed_check_records_read_only()
     child_runtime_files_before = tuple(
         sorted(
             path.relative_to(paths.runtime_dir).as_posix()
@@ -3909,7 +3981,7 @@ def run_self_check() -> ExitCode:
         )
     )
     read_only_pairs = current_pairs_read_only([pair, second_pair], [current_pairs[0].record])
-    records_after_read_only = load_taskwarrior_records()
+    records_after_read_only = load_allowed_check_records_read_only()
     child_runtime_files_after = tuple(
         sorted(
             path.relative_to(paths.runtime_dir).as_posix()
