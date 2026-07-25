@@ -5,8 +5,9 @@ kind = "donna.lib.workflow"
 start_operation_id = "run_consistency_cycle"
 ```
 
-Check project artifacts affected by the current work. Continue automatically while no action is required, and pause
-when an unresolved consistency issue or checker failure needs agent judgment.
+Validate project consistency for artifacts affected by the current work, fixing discovered inconsistencies until every
+checked artifact is consistent. Continue automatically while no action is required, and pause when an unresolved
+consistency issue or checker failure needs agent judgment.
 
 ## Run Consistency Cycle
 

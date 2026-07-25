@@ -61,9 +61,7 @@ Use Donna's `llm` protocol for agent-facing commands unless a human explicitly a
 
 Depmesh is configured to log significant operation steps via `task` tool.
 
-Special workflows to use:
-
-- `@/workflows/polish.donna.md` — format, fix architecture, lint, and test errors. Run it after making changes to the codebase at the moments when the project is expected to be in a working state: between significant implementation steps, before reporting completion of a task, etc. Do not run it when all changes made for the current task are confined to files under `specs/`; review `depmesh` dependencies and perform targeted specification checks instead. Run this workflow instead of running individual operations, unless you are explicitly needed to run a specific operation for some reason.
+When choosing a workflow, first list the available workflows with `donna -p llm list`.
 
 Do not run `donna -p llm new-session` unless the developer explicitly asks to reset or start a fresh Donna session.
 
