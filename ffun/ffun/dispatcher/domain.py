@@ -47,7 +47,7 @@ get_entries_by_processing_status = operations.get_entries_by_processing_status
 count_entries_by_processing_status = operations.count_entries_by_processing_status
 set_entry_processing_statuses = operations.set_entry_processing_statuses
 remove_entry_processing_statuses = operations.remove_entry_processing_statuses
-_entries_in_collections = entries_cache.entries_in_collections
+entries_in_collections = entries_cache.entries_in_collections
 
 
 async def push_entries_to_process(entry_ids: Iterable[EntryId], processor_id: ProcessorId | None = None) -> None:

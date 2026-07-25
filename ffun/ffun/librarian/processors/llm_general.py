@@ -85,7 +85,7 @@ class Processor(base.Processor):
             raise errors.UnknownProcessorRoute(route_id=context.route_id)
 
         # Temporary solution until collection access handling moves fully to the dispatcher.
-        entries_in_collections = await d_domain._entries_in_collections([entry.id])  # noqa: SLF001
+        entries_in_collections = await d_domain.entries_in_collections([entry.id])
         entry_is_from_collection = entries_in_collections[entry.id]
 
         if entry_is_from_collection:

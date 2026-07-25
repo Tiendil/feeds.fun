@@ -243,6 +243,11 @@ class TestRemoveEntryProcessingStatuses:
         assert domain.remove_entry_processing_statuses is operations.remove_entry_processing_statuses
 
 
+class TestEntriesInCollections:
+    def test_reexports_entries_cache(self) -> None:
+        assert domain.entries_in_collections is entries_cache.entries_in_collections
+
+
 class TestAcknowledge:
     @pytest.mark.asyncio
     async def test_no_records(self) -> None:
