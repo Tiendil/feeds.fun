@@ -59,6 +59,10 @@ At the start of working session run `donna -p llm list` to list all available wo
 
 Do not run `donna -p llm new-session` unless the developer explicitly asks to reset or start a fresh Donna session.
 
+Special instructions:
+
+- Use donna polish workflow to groom the code after you've introduced changes (instead of running linters, formatters and while tests manually).
+
 ### `depmesh`
 
 `depmesh` — a tool for discovering dependencies between project artifacts.
