@@ -13,17 +13,17 @@ async def reserve_resource(
     limit: int,
 ) -> None:
     reservations = await r_domain.try_to_reserve_in_order(
+        amount=amount,
+        options=(
+            r_entities.ResourceReservationOption(
+                kind=AppResource.tokens_cost,
+                interval_started_at=interval_started_at,
+            ),
+        ),
         specifications=[
             r_entities.ResourceReservationSpecification(
                 user_id=user_id,
-                amount=amount,
-                options=(
-                    r_entities.ResourceReservationOption(
-                        kind=AppResource.tokens_cost,
-                        interval_started_at=interval_started_at,
-                        limit=limit,
-                    ),
-                ),
+                limits=(limit,),
             )
         ],
     )

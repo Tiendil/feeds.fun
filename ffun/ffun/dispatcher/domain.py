@@ -85,38 +85,32 @@ async def acknowledge(record_ids: Sequence[QueueRecordId]) -> int:
 def _token_reservation_specification(
     user_id: UserId,
     entitlements: Mapping[EntitlementKindId, EffectiveEntitlementInterval | None],
-    authorization_time: datetime.datetime,
 ) -> r_entities.ResourceReservationSpecification:
-    options: list[r_entities.ResourceReservationOption] = []
-
-    option_definitions = (
-        (EntitlementKindId.day_tokens, Resource.day_token_usage, day_interval_start(authorization_time)),
-        (EntitlementKindId.month_tokens, Resource.month_token_usage, month_interval_start(authorization_time)),
-        (
-            EntitlementKindId.lifetime_tokens,
-            Resource.lifetime_token_usage,
-            LIFETIME_INTERVAL_START_MARKER,
+    return r_entities.ResourceReservationSpecification(
+        user_id=user_id,
+        limits=tuple(
+            entitlement.value if entitlement is not None else None
+            for entitlement in (entitlements.get(kind) for kind in _TOKEN_ENTITLEMENT_KINDS)
         ),
     )
 
-    for entitlement_kind, resource_kind, interval_started_at in option_definitions:
-        entitlement = entitlements.get(entitlement_kind)
 
-        if entitlement is None:
-            continue
-
-        options.append(
-            r_entities.ResourceReservationOption(
-                kind=resource_kind,
-                interval_started_at=interval_started_at,
-                limit=entitlement.value,
-            )
-        )
-
-    return r_entities.ResourceReservationSpecification(
-        user_id=user_id,
-        amount=SAAS_TOKENS_PER_USER_ENTRY,
-        options=tuple(options),
+def _token_reservation_options(
+    authorization_time: datetime.datetime,
+) -> tuple[r_entities.ResourceReservationOption, ...]:
+    return (
+        r_entities.ResourceReservationOption(
+            kind=Resource.day_token_usage,
+            interval_started_at=day_interval_start(authorization_time),
+        ),
+        r_entities.ResourceReservationOption(
+            kind=Resource.month_token_usage,
+            interval_started_at=month_interval_start(authorization_time),
+        ),
+        r_entities.ResourceReservationOption(
+            kind=Resource.lifetime_token_usage,
+            interval_started_at=LIFETIME_INTERVAL_START_MARKER,
+        ),
     )
 
 
@@ -137,10 +131,13 @@ async def _authorize_entry(item: EntryToProcess, cache: entries_cache.EntriesCac
         list(_TOKEN_ENTITLEMENT_KINDS),
     )
     specifications = [
-        _token_reservation_specification(user_id, entitlements[user_id], authorization_time)
-        for user_id in sorted(user_ids, key=str)
+        _token_reservation_specification(user_id, entitlements[user_id]) for user_id in sorted(user_ids, key=str)
     ]
-    reservations = await r_domain.try_to_reserve_in_order(specifications)
+    reservations = await r_domain.try_to_reserve_in_order(
+        amount=SAAS_TOKENS_PER_USER_ENTRY,
+        options=_token_reservation_options(authorization_time),
+        specifications=specifications,
+    )
 
     return EntryAuthorization(
         entry_id=item.entry_id,
@@ -159,10 +156,13 @@ async def _entry_authorization(
     try:
         yield authorization
     except BaseException:
-        await r_domain.convert_reservations_to_used(authorization.reservations, consume=False)
+        await r_domain.convert_reserved_to_used(list(authorization.reservations), used=0)
         raise
     else:
-        await r_domain.convert_reservations_to_used(authorization.reservations, consume=True)
+        await r_domain.convert_reserved_to_used(
+            list(authorization.reservations),
+            used=SAAS_TOKENS_PER_USER_ENTRY,
+        )
 
 
 def _processor_dispatch_decision(

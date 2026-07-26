@@ -5,7 +5,7 @@ from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.domain.entities import UserId
 from ffun.resources import errors
-from ffun.resources.entities import Resource
+from ffun.resources.entities import Resource, ResourceReservation
 
 logger = logging.get_module_logger()
 
@@ -55,66 +55,106 @@ async def load_resources(
 
 async def try_to_reserve(
     execute: ExecuteType,
-    user_id: UserId,
+    user_limits: list[tuple[UserId, int]],
     kind: int,
     interval_started_at: datetime.datetime,
     amount: int,
-    limit: int,
-) -> bool:
-    await initialize_resources(execute, [user_id], kind, interval_started_at)
+) -> list[ResourceReservation]:
+    if not user_limits:
+        return []
+
+    unpacked_user_ids, unpacked_limits = zip(*user_limits, strict=True)
+    user_ids: list[UserId] = list(unpacked_user_ids)
+    limits: list[int] = list(unpacked_limits)
+
+    if len(user_ids) != len(set(user_ids)):
+        raise errors.DuplicateReservationUserIds()
+
+    await initialize_resources(execute, user_ids, kind, interval_started_at)
 
     sql = """
-        UPDATE r_resources
-        SET reserved = reserved + %(amount)s,
+        UPDATE r_resources AS resources
+        SET reserved = resources.reserved + %(amount)s,
             updated_at = NOW()
-        WHERE user_id = %(user_id)s AND
-              kind = %(kind)s AND
-              interval_started_at = %(interval_started_at)s AND
-              used + reserved + %(amount)s <= %(limit)s
-        RETURNING *
+        FROM UNNEST(%(user_ids)s::uuid[], %(limits)s::bigint[]) AS requested(user_id, resource_limit)
+        WHERE resources.user_id = requested.user_id AND
+              resources.kind = %(kind)s AND
+              resources.interval_started_at = %(interval_started_at)s AND
+              resources.used + resources.reserved + %(amount)s <= requested.resource_limit
+        RETURNING resources.user_id
     """
 
     results = await execute(
         sql,
         {
-            "user_id": user_id,
+            "user_ids": user_ids,
+            "limits": limits,
             "kind": kind,
             "interval_started_at": interval_started_at,
             "amount": amount,
-            "limit": limit,
         },
     )
 
-    return len(results) > 0
+    reserved_user_ids = {row["user_id"] for row in results}
+
+    return [
+        ResourceReservation(
+            user_id=user_id,
+            kind=kind,
+            interval_started_at=interval_started_at,
+            amount=amount,
+        )
+        for user_id, _ in user_limits
+        if user_id in reserved_user_ids
+    ]
 
 
 async def convert_reserved_to_used(
-    user_id: UserId, kind: int, interval_started_at: datetime.datetime, used: int, reserved: int
+    execute: ExecuteType,
+    reservations: list[ResourceReservation],
+    *,
+    used: int,
 ) -> None:
+    if not reservations:
+        return
+
+    user_ids = [reservation.user_id for reservation in reservations]
+
+    if len(user_ids) != len(set(user_ids)):
+        raise errors.DuplicateReservationUserIds()
+
     sql = """
-        UPDATE r_resources
-        SET used = used + %(used)s,
-            reserved = reserved - %(reserved)s,
+        UPDATE r_resources AS resources
+        SET used = resources.used + %(used)s,
+            reserved = resources.reserved - requested.amount,
             updated_at = NOW()
-        WHERE user_id = %(user_id)s AND
-              kind = %(kind)s AND
-              interval_started_at = %(interval_started_at)s AND
-              reserved >= %(reserved)s
-        RETURNING *
+        FROM UNNEST(
+            %(user_ids)s::uuid[],
+            %(kinds)s::integer[],
+            %(interval_started_ats)s::timestamptz[],
+            %(amounts)s::bigint[]
+        ) AS requested(user_id, kind, interval_started_at, amount)
+        WHERE resources.user_id = requested.user_id AND
+              resources.kind = requested.kind AND
+              resources.interval_started_at = requested.interval_started_at AND
+              resources.reserved >= requested.amount
+        RETURNING resources.user_id
     """
 
-    result = await execute(
+    results = await execute(
         sql,
         {
-            "user_id": user_id,
-            "kind": kind,
-            "interval_started_at": interval_started_at,
+            "user_ids": [reservation.user_id for reservation in reservations],
+            "kinds": [reservation.kind for reservation in reservations],
+            "interval_started_ats": [reservation.interval_started_at for reservation in reservations],
+            "amounts": [reservation.amount for reservation in reservations],
             "used": used,
-            "reserved": reserved,
         },
     )
 
-    if not result:
+    converted_user_ids = {row["user_id"] for row in results}
+
+    if converted_user_ids != set(user_ids):
         raise errors.CanNotConvertReservedToUsed()
 
 

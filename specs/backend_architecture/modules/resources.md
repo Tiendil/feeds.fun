@@ -3,12 +3,12 @@
 ## Goal of the document
 
 This document describes how the `ffun.resources` backend module stores interval-scoped per-user resource counters and atomically reserves and accounts resource usage against caller-supplied limits.
-It also describes how the module tries each caller-supplied user's resource options in priority order.
+It also describes how the module tries caller-supplied shared resource options for each user in priority order.
 
 ## Scope
 
 This specification covers resource identity, counter semantics, lazy initialization, reservation and conversion behavior, history and aggregate queries, the `r_resources` table, and the public interface exposed by `ffun.resources.domain`.
-It also covers ordered reservation from per-user specifications.
+It also covers ordered reservation from shared options and per-user limit specifications.
 
 The concrete resource-kind registry, resource units and conversions, selection of accounting intervals, user-configured limits, billing, and presentation of resource history are out of scope.
 
@@ -20,8 +20,8 @@ The concrete resource-kind registry, resource units and conversions, selection o
 - `reserved amount` - resource capacity provisionally claimed before final usage is known.
 - `used amount` - finalized resource consumption accumulated for a resource record.
 - `resource limit` - a caller-supplied upper bound applied to one reservation attempt.
-- `reservation option` - one caller-supplied resource kind, interval, and limit; its position in one user's reservation specification defines its priority.
-- `reservation specification` - one caller-supplied user, amount, and ordered collection of reservation options.
+- `reservation option` - one caller-supplied resource kind and interval; its position in the operation-wide option collection defines its priority for every user.
+- `reservation specification` - one caller-supplied user and an ordered collection of limits aligned with the operation-wide reservation options.
 - `reservation result` - the user, resource kind, interval start, and amount captured by one successful reservation.
 
 ## Module responsibility
@@ -59,8 +59,8 @@ A resource entity MUST expose `user_id`, `kind`, `interval_started_at`, `used`, 
 It MUST expose `total` as the sum of `used` and `reserved`.
 Persistence timestamps MUST NOT be part of the resource entity returned to callers.
 
-`ffun.resources.entities` MUST define `ResourceReservationOption` with `kind`, `interval_started_at`, and `limit`.
-It MUST define `ResourceReservationSpecification` with `user_id`, `amount`, and an ordered collection of reservation options.
+`ffun.resources.entities` MUST define `ResourceReservationOption` with `kind` and `interval_started_at`.
+It MUST define `ResourceReservationSpecification` with `user_id` and an ordered collection of optional limits.
 It MUST define `ResourceReservation` with `user_id`, `kind`, `interval_started_at`, and `amount`.
 Reservation results MUST contain the values captured by the successful attempt and MUST NOT recompute them during later conversion or release.
 
@@ -82,14 +82,21 @@ Loading resource history and aggregate usage MUST NOT initialize missing records
 
 ### Reservation
 
-A reservation attempt MUST first ensure that its resource record exists and then atomically add `amount` to `reserved` only when `used + reserved + amount <= limit` for the current stored row.
-Lazy initialization and the conditional counter update MUST execute within one database transaction for each reservation attempt.
+A reservation attempt MUST accept a finite ordered collection of user-id and limit pairs plus one resource kind, interval start, and amount shared by every pair.
+Repeated user ids MUST raise `ffun.resources.errors.DuplicateReservationUserIds` before any resource records are initialized.
+An empty pair collection MUST return an empty list without initializing resource records.
+
+The attempt MUST first ensure that every requested user's resource record exists and then atomically add the shared `amount` to `reserved` for each row only when `used + reserved + amount <= limit` for that user's paired limit.
+Lazy initialization and all conditional counter updates in one attempt MUST execute within one database transaction.
 An error during either step MUST roll back both steps.
 
-The atomic single-user reservation primitive MUST remain internal to `ffun.resources`.
+The atomic bulk reservation primitive MUST remain internal to `ffun.resources`.
 It MUST NOT be exposed through `ffun.resources.domain` or called by other top-level modules.
 
-The operation MUST return `true` when the conditional update succeeds and `false` when the current counters and supplied limit reject the reservation.
+The operation MUST return a list of reservation results for the user ids whose conditional updates succeeded.
+Each result MUST capture the successful user's id together with the shared resource kind, interval start, and amount.
+Results MUST preserve the relative order of their corresponding input pairs.
+Users whose current counters and supplied limits reject the reservation MUST be absent from the result.
 Concurrent reservation attempts for the same resource identity MUST evaluate the limit against serialized row updates so their combined successful reservations cannot exceed the supplied limit when callers use the same limit.
 
 The supplied limit applies only to that reservation attempt.
@@ -98,49 +105,51 @@ It MUST NOT be persisted, and reducing a later call's limit MUST NOT rewrite cou
 A zero reservation amount MUST be allowed and MUST succeed only when the record's current total does not exceed the supplied limit.
 A rejected reservation MUST leave `used` and `reserved` unchanged, but it MAY leave behind the zero-valued resource record created by lazy initialization.
 
-### Ordered reservation from per-user specifications
+### Ordered reservation from shared options and per-user specifications
 
-The domain MUST provide an operation that accepts a finite ordered collection of reservation specifications.
-Each reservation specification MUST supply one user id, a non-negative amount, and a finite ordered collection of reservation options.
-Each reservation option MUST supply a resource kind, an interval start timestamp, and a non-negative limit for that specification's user.
+The domain MUST provide an operation that accepts one non-negative amount, a finite ordered collection of reservation options, and a finite ordered collection of reservation specifications.
+Each reservation option MUST supply one resource kind and interval start timestamp shared by every specification in the operation.
+Each reservation specification MUST supply one user id and exactly one optional limit for each reservation option.
+The position of each limit MUST correspond to the reservation option at the same position.
+A non-`None` limit MUST be non-negative and MUST apply only to that specification's user and the corresponding reservation option.
+A `None` limit MUST make the corresponding reservation option unavailable to that specification's user.
+The operation MUST raise `ffun.resources.errors.ReservationOptionsAndLimitsMismatch` before attempting any reservation when any specification has a different number of limits than the operation has reservation options.
 
-The operation MUST process reservation specifications in their supplied order.
-For each specification, it MUST attempt options in their supplied order through the internal atomic single-user reservation primitive until one succeeds or all options reject the reservation.
-It MUST stop processing a specification's options after its first success.
+Repeated user ids in reservation specifications MUST raise `ffun.resources.errors.DuplicateReservationSpecifications` before any reservation is attempted.
+It MUST process the shared reservation options in their supplied order.
+For each option, it MUST submit every not-yet-reserved user whose corresponding limit is not `None` as one call to the internal atomic bulk reservation primitive.
+It MUST exclude successful users from later option attempts.
 A user MUST therefore receive at most one successful reservation from one invocation.
 
 Ordered reservation MUST be domain-level orchestration over that internal primitive and MUST NOT introduce separate persistence, resource-initialization, limit-checking, or counter-update logic.
 
-Repeated specifications for the same user MUST be deduplicated while preserving the first specification and its position.
-Processing of each specification MUST finish before processing starts for the next specification.
-
-Every successful user reservation MUST be returned as a reservation result containing the user id, selected kind, selected interval start, and captured amount.
-Users whose specifications have no options or whose every option rejects the reservation MUST be absent from the result.
+Every successful user reservation MUST be returned as a reservation result containing the user id, selected kind, selected interval start, and the operation-wide captured amount.
+Users for whom every option is unavailable or rejects the reservation, and all users when the shared option collection is empty, MUST be absent from the result.
 Reservation results MUST be returned as a list in the relative order of their first-occurrence specifications.
 An empty specification collection MUST return an empty list.
 
-Each individual attempt retains its own transaction and commit guarantee.
-Successes for earlier users or options MUST NOT be rolled back when a later attempt is rejected.
+Each option's bulk attempt retains its own transaction and commit guarantee.
+Successes for earlier options MUST NOT be rolled back when a later attempt is rejected.
 The overall operation does not provide idempotency across invocations, and concurrent invocations may reserve different options for the same user while each individual resource limit remains enforced.
 
 ### Conversion of reserved capacity to used capacity
 
-Conversion MUST atomically add the caller-supplied `used` amount to the stored used counter and subtract the caller-supplied `reserved` amount from the stored reserved counter.
-
-The conversion MUST succeed only when the addressed resource record exists and its stored reserved counter is at least the reserved amount being released.
-If the record is missing or has insufficient reserved capacity, the operation MUST raise `ffun.resources.errors.CanNotConvertReservedToUsed` and MUST leave the counters unchanged.
-
-The finalized used amount MAY differ from the released reserved amount.
-Consequently, conversion MAY increase or decrease the record's total relative to its total before conversion and MUST NOT reapply the reservation limit.
-A caller MAY release a reservation without recording usage by converting it with a zero used amount.
-
-The domain MUST also provide bulk conversion for a finite ordered collection of reservation results.
-Bulk conversion MUST process reservations in their supplied order through the single-resource conversion operation.
-When `consume` is true, it MUST add each reservation's captured amount to used and release the same amount from reserved.
-When `consume` is false, it MUST add zero to used and release each reservation's captured amount from reserved.
+Bulk conversion MUST accept a finite ordered list of reservation results plus one non-negative used amount shared by every reservation.
+It MUST submit all reservation identities and captured amounts through one heterogeneous database update rather than grouping them by common values.
+Each user MAY occur at most once in the reservation list, regardless of resource kind or interval start.
+Repeated user ids MUST raise `ffun.resources.errors.DuplicateReservationUserIds` before any counters are changed.
 An empty reservation collection MUST be a no-op.
-If a conversion raises `CanNotConvertReservedToUsed`, bulk conversion MUST propagate the error immediately.
-Successful earlier conversions MUST remain committed, and later reservations MUST remain unprocessed.
+
+Bulk conversion MUST add the shared used amount to every addressed stored used counter and release each reservation's captured amount from its addressed reserved counter.
+Bulk conversion MUST succeed only when every addressed resource record exists and every stored reserved counter is at least the corresponding reservation's captured amount.
+The heterogeneous update MUST still address rows by full resource identity, but conversion completeness MUST be verified by comparing the set of user ids returned by the update with the set of requested user ids.
+The operation-wide user-id uniqueness invariant makes this comparison sufficient without separately comparing returned resource kinds or interval starts.
+If any reservation cannot be converted, the operation MUST raise `ffun.resources.errors.CanNotConvertReservedToUsed` and leave every addressed counter unchanged.
+All validation of the database update result MUST occur inside the transaction that owns the heterogeneous update.
+
+The shared finalized used amount MAY differ from each released reservation amount.
+Consequently, conversion MAY increase or decrease each record's total relative to its total before conversion and MUST NOT reapply the reservation limit.
+A caller MAY release reservations without recording usage by supplying a zero used amount.
 
 ### Queries
 
@@ -158,11 +167,11 @@ It MUST return entries only for users that have records of that kind.
 
 ### Atomicity and timestamps
 
-Standalone initialization, conversion, and queries use the module's independently committed database operations and do not participate in a caller-owned transaction.
-Each reservation attempt owns a database transaction that covers its lazy initialization and conditional counter update.
+Standalone initialization and queries use the module's independently committed database operations and do not participate in a caller-owned transaction.
+Each bulk reservation attempt owns a database transaction that covers its lazy initialization and conditional counter updates.
 A rejected reservation MAY commit initialization of an empty record, while an error during the attempt MUST roll back that initialization.
-Ordered reservation composes those operations and does not add a transaction spanning users or resource options.
-Bulk conversion also composes independently committed conversion operations and does not add a transaction spanning reservation results.
+Ordered reservation composes those operations and does not add a transaction spanning resource options.
+One bulk conversion owns one database transaction that covers every heterogeneous reservation in the operation.
 
 Every successful reservation or conversion, including a successful zero-value update, MUST set `updated_at` to the database's current timestamp.
 Initialization MUST set `created_at` and `updated_at` from database time.
@@ -203,17 +212,16 @@ They MUST NOT import `ffun.resources.operations` or access `r_resources` directl
 
 - `load_resources(user_ids, kind, interval_started_at)` returns the lazily initialized current-resource mapping described above.
 - `load_resource(user_id, kind, interval_started_at)` returns one lazily initialized resource entity.
-- `try_to_reserve_in_order(specifications)` accepts `ResourceReservationSpecification` values, tries each user's options in order, and returns successful `ResourceReservation` values in specification order.
-- `convert_reserved_to_used(user_id, kind, interval_started_at, used, reserved)` finalizes usage and releases reserved capacity or raises `CanNotConvertReservedToUsed`.
-- `convert_reservations_to_used(reservations, *, consume)` converts captured `ResourceReservation` values in order, either consuming or releasing their complete amounts.
+- `try_to_reserve_in_order(*, amount, options, specifications)` accepts one shared amount, ordered `ResourceReservationOption` values, and ordered `ResourceReservationSpecification` values; it tries the shared options for each user in order and returns successful `ResourceReservation` values in specification order.
+- `convert_reserved_to_used(reservations, *, used)` adds one shared finalized used amount and releases all captured `ResourceReservation` values in one heterogeneous atomic operation.
 - `load_resource_history(user_id, kind)` returns the ordered resource history.
 - `count_total_resources_per_user(kind)` returns used-only totals grouped by user.
 
 The batch loader MUST accept a finite iterable of user ids.
 The interface MUST return resource mappings keyed by the semantic `UserId` values supplied by callers.
-The ordered reservation operation MUST accept a finite iterable of reservation specifications and return a list ordered by the corresponding specifications.
+The ordered reservation operation MUST accept finite ordered collections of options and reservation specifications and return a list ordered by the corresponding specifications.
 Cross-module callers MUST use `try_to_reserve_in_order` for reservations, including reservations with one specification and one option.
-The bulk conversion operation MUST accept a finite iterable of reservation results and MUST NOT recompute their captured identities or amounts.
+The bulk conversion operation MUST accept a finite list of reservation results and MUST NOT recompute their captured identities or amounts.
 
 The domain interface MUST NOT accept an execute callable or expose transaction ownership to callers.
 
