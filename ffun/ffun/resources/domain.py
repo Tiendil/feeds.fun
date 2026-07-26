@@ -1,6 +1,7 @@
 import datetime
 from typing import Iterable
 
+from ffun.core.postgresql import transaction
 from ffun.domain.entities import UserId
 from ffun.resources import operations
 from ffun.resources.entities import Resource, ResourceReservation, ResourceReservationSpecification
@@ -29,13 +30,17 @@ async def try_to_reserve_in_order(  # noqa: CCR001
         seen_user_ids.add(specification.user_id)
 
         for option in specification.options:
-            if not await operations.try_to_reserve(
-                user_id=specification.user_id,
-                kind=option.kind,
-                interval_started_at=option.interval_started_at,
-                amount=specification.amount,
-                limit=option.limit,
-            ):
+            async with transaction() as execute:
+                was_reserved = await operations.try_to_reserve(
+                    execute,
+                    user_id=specification.user_id,
+                    kind=option.kind,
+                    interval_started_at=option.interval_started_at,
+                    amount=specification.amount,
+                    limit=option.limit,
+                )
+
+            if not was_reserved:
                 continue
 
             reservations.append(

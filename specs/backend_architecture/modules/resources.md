@@ -83,6 +83,8 @@ Loading resource history and aggregate usage MUST NOT initialize missing records
 ### Reservation
 
 A reservation attempt MUST first ensure that its resource record exists and then atomically add `amount` to `reserved` only when `used + reserved + amount <= limit` for the current stored row.
+Lazy initialization and the conditional counter update MUST execute within one database transaction for each reservation attempt.
+An error during either step MUST roll back both steps.
 
 The atomic single-user reservation primitive MUST remain internal to `ffun.resources`.
 It MUST NOT be exposed through `ffun.resources.domain` or called by other top-level modules.
@@ -117,7 +119,7 @@ Users whose specifications have no options or whose every option rejects the res
 Reservation results MUST be returned as a list in the relative order of their first-occurrence specifications.
 An empty specification collection MUST return an empty list.
 
-Each individual attempt retains the existing independently committed atomicity guarantee.
+Each individual attempt retains its own transaction and commit guarantee.
 Successes for earlier users or options MUST NOT be rolled back when a later attempt is rejected.
 The overall operation does not provide idempotency across invocations, and concurrent invocations may reserve different options for the same user while each individual resource limit remains enforced.
 
@@ -156,8 +158,9 @@ It MUST return entries only for users that have records of that kind.
 
 ### Atomicity and timestamps
 
-Initialization, reservation, conversion, and queries use the module's independently committed database operations and do not participate in a caller-owned transaction.
-A reservation's lazy initialization and conditional counter update are separate database operations; therefore a failed or rejected reservation can still commit initialization of an empty record.
+Standalone initialization, conversion, and queries use the module's independently committed database operations and do not participate in a caller-owned transaction.
+Each reservation attempt owns a database transaction that covers its lazy initialization and conditional counter update.
+A rejected reservation MAY commit initialization of an empty record, while an error during the attempt MUST roll back that initialization.
 Ordered reservation composes those operations and does not add a transaction spanning users or resource options.
 Bulk conversion also composes independently committed conversion operations and does not add a transaction spanning reservation results.
 

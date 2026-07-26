@@ -2,7 +2,7 @@ import datetime
 from typing import Any, Iterable
 
 from ffun.core import logging
-from ffun.core.postgresql import execute
+from ffun.core.postgresql import ExecuteType, execute
 from ffun.domain.entities import UserId
 from ffun.resources import errors
 from ffun.resources.entities import Resource
@@ -20,53 +20,48 @@ def row_to_entry(row: dict[str, Any]) -> Resource:
     )
 
 
-async def initialize_resource(user_id: UserId, kind: int, interval_started_at: datetime.datetime) -> Resource:
+async def initialize_resources(
+    execute: ExecuteType, user_ids: list[UserId], kind: int, interval_started_at: datetime.datetime
+) -> None:
+    if not user_ids:
+        return
+
     sql = """
         INSERT INTO r_resources (user_id, kind, interval_started_at)
-        VALUES (%(user_id)s, %(kind)s, %(interval_started_at)s)
+        SELECT requested.user_id, %(kind)s, %(interval_started_at)s
+        FROM UNNEST(%(user_ids)s::uuid[]) AS requested(user_id)
         ON CONFLICT (user_id, kind, interval_started_at) DO NOTHING
     """
 
-    await execute(sql, {"user_id": user_id, "kind": kind, "interval_started_at": interval_started_at})
-
-    sql = """
-    SELECT * FROM r_resources
-    WHERE user_id = %(user_id)s AND kind = %(kind)s AND interval_started_at = %(interval_started_at)s
-    """
-
-    results = await execute(sql, {"user_id": user_id, "kind": kind, "interval_started_at": interval_started_at})
-
-    return row_to_entry(results[0])
+    await execute(sql, {"user_ids": user_ids, "kind": kind, "interval_started_at": interval_started_at})
 
 
 async def load_resources(
     user_ids: Iterable[UserId], kind: int, interval_started_at: datetime.datetime
 ) -> dict[UserId, Resource]:
+    user_ids = list(dict.fromkeys(user_ids))
+
+    await initialize_resources(execute, user_ids, kind, interval_started_at)
+
     sql = """
         SELECT * FROM r_resources
         WHERE user_id = ANY(%(user_ids)s) AND kind = %(kind)s AND interval_started_at = %(interval_started_at)s
     """
 
-    results = await execute(
-        sql, {"user_ids": list(user_ids), "kind": kind, "interval_started_at": interval_started_at}
-    )
+    results = await execute(sql, {"user_ids": user_ids, "kind": kind, "interval_started_at": interval_started_at})
 
-    resources = {}
-
-    for row in results:
-        resources[row["user_id"]] = row_to_entry(row)
-
-    for user_id in user_ids:
-        if user_id not in resources:
-            resources[user_id] = await initialize_resource(user_id, kind, interval_started_at)
-
-    return resources
+    return {row["user_id"]: row_to_entry(row) for row in results}
 
 
 async def try_to_reserve(
-    user_id: UserId, kind: int, interval_started_at: datetime.datetime, amount: int, limit: int
+    execute: ExecuteType,
+    user_id: UserId,
+    kind: int,
+    interval_started_at: datetime.datetime,
+    amount: int,
+    limit: int,
 ) -> bool:
-    await initialize_resource(user_id, kind, interval_started_at)
+    await initialize_resources(execute, [user_id], kind, interval_started_at)
 
     sql = """
         UPDATE r_resources

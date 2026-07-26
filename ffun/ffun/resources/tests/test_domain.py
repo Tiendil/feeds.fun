@@ -1,8 +1,10 @@
 import datetime
 
+import psycopg
 import pytest
 from pytest_mock import MockerFixture
 
+from ffun.core.postgresql import execute
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.domain.entities import UserId
 from ffun.resources import domain
@@ -12,7 +14,7 @@ from ffun.resources.entities import (
     ResourceReservationOption,
     ResourceReservationSpecification,
 )
-from ffun.resources.operations import initialize_resource, try_to_reserve
+from ffun.resources.operations import initialize_resources, try_to_reserve
 
 
 @pytest.fixture  # type: ignore
@@ -30,10 +32,12 @@ class TestLoadResource:
     async def test_initialized(self, internal_user_id: UserId, kind: int) -> None:
         interval_started_at = month_interval_start()
 
-        await initialize_resource(user_id=internal_user_id, kind=kind, interval_started_at=interval_started_at)
+        await initialize_resources(
+            execute, user_ids=[internal_user_id], kind=kind, interval_started_at=interval_started_at
+        )
 
         await try_to_reserve(
-            user_id=internal_user_id, kind=kind, interval_started_at=interval_started_at, amount=13, limit=100
+            execute, user_id=internal_user_id, kind=kind, interval_started_at=interval_started_at, amount=13, limit=100
         )
 
         resource = await load_resource(user_id=internal_user_id, kind=kind, interval_started_at=interval_started_at)
@@ -211,6 +215,32 @@ class TestTryToReserveInOrder:
 
         assert reservations == []
         assert resource.reserved == 0
+
+    @pytest.mark.asyncio
+    async def test_update_failure_rolls_back_initialization(self, internal_user_id: UserId, kind: int) -> None:
+        too_large_amount = 2**63
+        interval_started_at = month_interval_start()
+
+        with pytest.raises(psycopg.errors.NumericValueOutOfRange):  # type: ignore[misc]
+            await domain.try_to_reserve_in_order(
+                specifications=[
+                    ResourceReservationSpecification(
+                        user_id=internal_user_id,
+                        amount=too_large_amount,
+                        options=(
+                            ResourceReservationOption(
+                                kind=kind,
+                                interval_started_at=interval_started_at,
+                                limit=too_large_amount,
+                            ),
+                        ),
+                    )
+                ]
+            )
+
+        history = await domain.load_resource_history(user_id=internal_user_id, kind=kind)
+
+        assert history == []
 
     @pytest.mark.asyncio
     async def test_deduplicates_user_specifications(

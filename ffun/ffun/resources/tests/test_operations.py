@@ -2,6 +2,7 @@ import datetime
 
 import pytest
 
+from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.domain.entities import UserId
@@ -10,7 +11,7 @@ from ffun.resources.domain import load_resource
 from ffun.resources.operations import (
     convert_reserved_to_used,
     count_total_resources_per_user,
-    initialize_resource,
+    initialize_resources,
     load_resource_history,
     load_resources,
     try_to_reserve,
@@ -26,49 +27,96 @@ _kind = 214
 _another_kind = 215
 
 
-class TestInitializeResource:
+class TestInitializeResources:
     @pytest.mark.asyncio
-    async def test_new_record(self, internal_user_id: UserId, interval_started_at: datetime.datetime) -> None:
-        async with TableSizeDelta("r_resources", delta=1):
-            resource = await initialize_resource(
-                user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at
-            )
+    async def test_new_records(
+        self, internal_user_id: UserId, another_internal_user_id: UserId, interval_started_at: datetime.datetime
+    ) -> None:
+        user_ids = [internal_user_id, another_internal_user_id]
 
-        assert resource.user_id == internal_user_id
-        assert resource.kind == _kind
-        assert resource.interval_started_at == interval_started_at
-        assert resource.used == 0
-        assert resource.reserved == 0
+        async with TableSizeDelta("r_resources", delta=2):
+            await initialize_resources(execute, user_ids=user_ids, kind=_kind, interval_started_at=interval_started_at)
 
         async with TableSizeNotChanged("r_resources"):
-            loaded_resource = await load_resource(
-                user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at
+            resources = await load_resources(user_ids=user_ids, kind=_kind, interval_started_at=interval_started_at)
+
+        assert set(resources) == set(user_ids)
+
+        for user_id, resource in resources.items():
+            assert resource.user_id == user_id
+            assert resource.kind == _kind
+            assert resource.interval_started_at == interval_started_at
+            assert resource.used == 0
+            assert resource.reserved == 0
+
+    @pytest.mark.asyncio
+    async def test_empty_user_ids(self, interval_started_at: datetime.datetime) -> None:
+        async with TableSizeNotChanged("r_resources"):
+            await initialize_resources(execute, user_ids=[], kind=_kind, interval_started_at=interval_started_at)
+
+    @pytest.mark.asyncio
+    async def test_duplicate_user_ids(self, internal_user_id: UserId, interval_started_at: datetime.datetime) -> None:
+        async with TableSizeDelta("r_resources", delta=1):
+            await initialize_resources(
+                execute,
+                user_ids=[internal_user_id, internal_user_id],
+                kind=_kind,
+                interval_started_at=interval_started_at,
             )
 
-        assert loaded_resource == resource
+    @pytest.mark.asyncio
+    async def test_new_and_existing_user_ids(
+        self, internal_user_id: UserId, another_internal_user_id: UserId, interval_started_at: datetime.datetime
+    ) -> None:
+        await initialize_resources(
+            execute, user_ids=[internal_user_id], kind=_kind, interval_started_at=interval_started_at
+        )
+        await try_to_reserve(
+            execute,
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=interval_started_at,
+            amount=1,
+            limit=100,
+        )
+
+        async with TableSizeDelta("r_resources", delta=1):
+            await initialize_resources(
+                execute,
+                user_ids=[internal_user_id, another_internal_user_id],
+                kind=_kind,
+                interval_started_at=interval_started_at,
+            )
+
+        resources = await load_resources(
+            user_ids=[internal_user_id, another_internal_user_id],
+            kind=_kind,
+            interval_started_at=interval_started_at,
+        )
+
+        assert resources[internal_user_id].reserved == 1
+        assert resources[another_internal_user_id].reserved == 0
 
     @pytest.mark.asyncio
     async def test_do_not_reinitialized_if_exists(
         self, internal_user_id: UserId, interval_started_at: datetime.datetime
     ) -> None:
-        await initialize_resource(user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at)
+        await initialize_resources(
+            execute, user_ids=[internal_user_id], kind=_kind, interval_started_at=interval_started_at
+        )
 
         await try_to_reserve(
-            user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at, amount=1, limit=100
+            execute, user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at, amount=1, limit=100
         )
 
         async with TableSizeNotChanged("r_resources"):
-            resource = await initialize_resource(
-                user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at
+            await initialize_resources(
+                execute, user_ids=[internal_user_id], kind=_kind, interval_started_at=interval_started_at
             )
 
+        resource = await load_resource(user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at)
+
         assert resource.reserved == 1
-
-        loaded_resource = await load_resource(
-            user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at
-        )
-
-        assert loaded_resource == resource
 
 
 class TestLoadResources:
@@ -78,10 +126,17 @@ class TestLoadResources:
     async def test_initialize_if_not_found(
         self, internal_user_id: UserId, another_internal_user_id: UserId, interval_started_at: datetime.datetime
     ) -> None:
-        await initialize_resource(user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at)
+        await initialize_resources(
+            execute, user_ids=[internal_user_id], kind=_kind, interval_started_at=interval_started_at
+        )
 
         await try_to_reserve(
-            user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at, amount=13, limit=100
+            execute,
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=interval_started_at,
+            amount=13,
+            limit=100,
         )
 
         async with TableSizeDelta("r_resources", delta=1):
@@ -117,7 +172,12 @@ class TestTryToReserve:
         self, amount: int, internal_user_id: UserId, interval_started_at: datetime.datetime
     ) -> None:
         result = await try_to_reserve(
-            user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at, amount=amount, limit=100
+            execute,
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=interval_started_at,
+            amount=amount,
+            limit=100,
         )
 
         assert result
@@ -132,11 +192,16 @@ class TestTryToReserve:
         self, internal_user_id: UserId, interval_started_at: datetime.datetime
     ) -> None:
         result = await try_to_reserve(
-            user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at, amount=1, limit=100
+            execute, user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at, amount=1, limit=100
         )
 
         result = await try_to_reserve(
-            user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at, amount=13, limit=100
+            execute,
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=interval_started_at,
+            amount=13,
+            limit=100,
         )
 
         assert result
@@ -149,7 +214,12 @@ class TestTryToReserve:
     @pytest.mark.asyncio
     async def test_not_enough(self, internal_user_id: UserId, interval_started_at: datetime.datetime) -> None:
         result = await try_to_reserve(
-            user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at, amount=101, limit=100
+            execute,
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=interval_started_at,
+            amount=101,
+            limit=100,
         )
 
         assert not result
@@ -172,7 +242,12 @@ class TestConvertReservedToUsed:
         expected_used: int,
     ) -> None:
         await try_to_reserve(
-            user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at, amount=reserved, limit=100
+            execute,
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=interval_started_at,
+            amount=reserved,
+            limit=100,
         )
 
         await convert_reserved_to_used(
@@ -191,7 +266,12 @@ class TestConvertReservedToUsed:
     @pytest.mark.asyncio
     async def test_not_enough(self, internal_user_id: UserId, interval_started_at: datetime.datetime) -> None:
         await try_to_reserve(
-            user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at, amount=13, limit=100
+            execute,
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=interval_started_at,
+            amount=13,
+            limit=100,
         )
 
         with pytest.raises(errors.CanNotConvertReservedToUsed):
@@ -221,19 +301,19 @@ class TestLoadResourceHistory:
         internal_3 = datetime.datetime(2020, 3, 1, 0, 0, 0, tzinfo=datetime.timezone.utc)
 
         await try_to_reserve(
-            user_id=internal_user_id, kind=_kind, interval_started_at=internal_1, amount=13, limit=100
+            execute, user_id=internal_user_id, kind=_kind, interval_started_at=internal_1, amount=13, limit=100
         )
 
         await try_to_reserve(
-            user_id=internal_user_id, kind=_kind, interval_started_at=internal_3, amount=14, limit=100
+            execute, user_id=internal_user_id, kind=_kind, interval_started_at=internal_3, amount=14, limit=100
         )
 
         await try_to_reserve(
-            user_id=another_internal_user_id, kind=_kind, interval_started_at=internal_2, amount=15, limit=100
+            execute, user_id=another_internal_user_id, kind=_kind, interval_started_at=internal_2, amount=15, limit=100
         )
 
         await try_to_reserve(
-            user_id=internal_user_id, kind=_another_kind, interval_started_at=internal_3, amount=16, limit=100
+            execute, user_id=internal_user_id, kind=_another_kind, interval_started_at=internal_3, amount=16, limit=100
         )
 
         history = await load_resource_history(user_id=internal_user_id, kind=_kind)
@@ -262,6 +342,7 @@ class TestCountTotalResourcesPerUser:
     @pytest.mark.asyncio
     async def test(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
         await try_to_reserve(
+            execute,
             user_id=internal_user_id,
             kind=_kind,
             interval_started_at=datetime.datetime(2020, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
@@ -277,6 +358,7 @@ class TestCountTotalResourcesPerUser:
         )
 
         await try_to_reserve(
+            execute,
             user_id=internal_user_id,
             kind=_kind,
             interval_started_at=datetime.datetime(2020, 3, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
@@ -292,6 +374,7 @@ class TestCountTotalResourcesPerUser:
         )
 
         await try_to_reserve(
+            execute,
             user_id=internal_user_id,
             kind=_another_kind,
             interval_started_at=datetime.datetime(2020, 3, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
@@ -307,6 +390,7 @@ class TestCountTotalResourcesPerUser:
         )
 
         await try_to_reserve(
+            execute,
             user_id=another_internal_user_id,
             kind=_kind,
             interval_started_at=datetime.datetime(2020, 2, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
@@ -322,6 +406,7 @@ class TestCountTotalResourcesPerUser:
         )
 
         await try_to_reserve(
+            execute,
             user_id=another_internal_user_id,
             kind=_another_kind,
             interval_started_at=datetime.datetime(2020, 2, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
