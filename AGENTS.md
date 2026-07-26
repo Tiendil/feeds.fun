@@ -14,14 +14,8 @@ Most important commands have script shortcuts in `./bin` directory.
 
 Command you are allowed to use:
 
-- `./bin/backend-tests.sh` — run ALL backend tests via pytest.
-- `./bin/backend-utils.sh` — run utils in the backend environment, for example `/bin/backend-utils.sh poetry run pytest ffun/parsers/tests/test_feed.py`
+- `./bin/backend-utils.sh` — run utils in the backend environment, for example `/bin/backend-utils.sh poetry run <your command>`
 - `./bin/build-dev-containers.sh` — build base Docker images for development. Call this command after making changes to Docker configs or dependencies.
-- `./bin/check-code-spelling.sh` — check code spelling with `codespell` tool. Both for frontend and backend code.
-- `./bin/dev-check-formatting.sh` — check code formatting. Both for frontend and backend code.
-- `./bin/dev-check-runtime.sh` — check if code starts without errors — very basic smoke tests.
-- `./bin/dev-check-semantics.sh` — check code semantics (types, linting, etc.). Both for frontend and backend code.
-- `./bin/frontend-tests.sh` — run ALL frontend tests.
 - `./bin/frontend-utils.sh` — run utils in the frontend environment.
 - `./bin/taskwarior.sh` — run Taskwarrior commands related to project journaling.
 
@@ -61,7 +55,7 @@ Use Donna's `llm` protocol for agent-facing commands unless a human explicitly a
 
 Depmesh is configured to log significant operation steps via `task` tool.
 
-When choosing a workflow, first list the available workflows with `donna -p llm list`.
+At the start of working session run `donna -p llm list` to list all available workflows.
 
 Do not run `donna -p llm new-session` unless the developer explicitly asks to reset or start a fresh Donna session.
 
