@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import uuid
 from collections.abc import Mapping, Sequence
@@ -1256,10 +1257,56 @@ class TestDispatchEntries:
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
 
         dispatched = await domain.dispatch_entries(
-            processors=[make.processor_dispatch_info(fake_processor_id)], limit=10
+            processors=[make.processor_dispatch_info(fake_processor_id)],
+            batch_size=10,
+            concurrency=10,
         )
 
         assert dispatched == 0
+
+    @pytest.mark.asyncio
+    async def test_concurrency(self, fake_processor_id: ProcessorId, mocker: MockerFixture) -> None:
+        records = [make_entry_record(new_entry_id()) for _ in range(5)]
+        cache = make_entries_cache()
+        mocker.patch.object(domain.q_domain, "pull", return_value=records)
+        mocker.patch.object(domain.entries_cache, "create_entries_cache", return_value=cache)
+
+        active_tasks = 0
+        max_active_tasks = 0
+
+        async def process_entry(
+            _record: QueueRecord[EntryToProcess],
+            _processors: Sequence[ProcessorDispatchInfo],
+            _cache: entries_cache.EntriesCache,
+        ) -> bool:
+            nonlocal active_tasks, max_active_tasks
+
+            active_tasks += 1
+            max_active_tasks = max(max_active_tasks, active_tasks)
+            await asyncio.sleep(0)
+            active_tasks -= 1
+
+            return True
+
+        mocker.patch.object(domain, "_process_entry", new=process_entry)
+
+        dispatched = await domain.dispatch_entries(
+            processors=[make.processor_dispatch_info(fake_processor_id)],
+            batch_size=len(records),
+            concurrency=2,
+        )
+
+        assert dispatched == len(records)
+        assert max_active_tasks == 2
+
+    @pytest.mark.asyncio
+    async def test_non_positive_concurrency(self, fake_processor_id: ProcessorId) -> None:
+        with pytest.raises(errors.InvalidConcurrency):
+            await domain.dispatch_entries(
+                processors=[make.processor_dispatch_info(fake_processor_id)],
+                batch_size=10,
+                concurrency=0,
+            )
 
     @pytest.mark.asyncio
     async def test_dispatch_to_each_processor_subqueue(
@@ -1280,7 +1327,7 @@ class TestDispatchEntries:
         await domain.push_entries_to_process(entry_ids)
 
         processors = [make.processor_dispatch_info(processor_id) for processor_id in processor_ids]
-        dispatched = await domain.dispatch_entries(processors=processors, limit=10)
+        dispatched = await domain.dispatch_entries(processors=processors, batch_size=10, concurrency=10)
 
         assert dispatched == len(entry_ids)
         assert await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess) == []
@@ -1315,7 +1362,9 @@ class TestDispatchEntries:
         await domain.push_entries_to_process(entry_ids)
 
         dispatched = await domain.dispatch_entries(
-            processors=[make.processor_dispatch_info(fake_processor_id)], limit=10
+            processors=[make.processor_dispatch_info(fake_processor_id)],
+            batch_size=10,
+            concurrency=10,
         )
 
         assert dispatched == len(entry_ids)
@@ -1337,7 +1386,8 @@ class TestDispatchEntries:
 
         dispatched = await domain.dispatch_entries(
             processors=[make.processor_dispatch_info(fake_processor_id)],
-            limit=10,
+            batch_size=10,
+            concurrency=10,
         )
 
         assert dispatched == 1
@@ -1379,7 +1429,8 @@ class TestDispatchEntries:
 
         dispatched = await domain.dispatch_entries(
             processors=[make.processor_dispatch_info(fake_processor_id)],
-            limit=10,
+            batch_size=10,
+            concurrency=10,
         )
 
         assert dispatched == 1
@@ -1415,7 +1466,8 @@ class TestDispatchEntries:
 
         await domain.dispatch_entries(
             processors=[make.processor_dispatch_info(fake_processor_id)],
-            limit=10,
+            batch_size=10,
+            concurrency=10,
         )
 
         assert await m_domain.get_markers(user_id=None, entries_ids=[entry_id]) == {entry_id: {Marker.can_see_tags}}
@@ -1446,7 +1498,7 @@ class TestDispatchEntries:
             make.processor_dispatch_info(another_fake_processor_id),
         ]
 
-        await domain.dispatch_entries(processors=processors, limit=10)
+        await domain.dispatch_entries(processors=processors, batch_size=10, concurrency=10)
 
         for processor in processors:
             assert record_entry_ids(
@@ -1482,7 +1534,8 @@ class TestDispatchEntries:
 
         await domain.dispatch_entries(
             processors=[make.processor_dispatch_info(fake_processor_id)],
-            limit=10,
+            batch_size=10,
+            concurrency=10,
         )
 
         assert (
@@ -1520,7 +1573,8 @@ class TestDispatchEntries:
 
         dispatched = await domain.dispatch_entries(
             processors=[make.processor_dispatch_info(fake_processor_id)],
-            limit=10,
+            batch_size=10,
+            concurrency=10,
         )
 
         assert dispatched == 0
@@ -1572,7 +1626,8 @@ class TestDispatchEntries:
 
         dispatched = await domain.dispatch_entries(
             processors=[make.processor_dispatch_info(fake_processor_id)],
-            limit=10,
+            batch_size=10,
+            concurrency=10,
         )
 
         assert dispatched == 1
@@ -1602,7 +1657,7 @@ class TestDispatchEntries:
 
         await domain.push_entries_to_process(entry_ids)
 
-        dispatched = await domain.dispatch_entries(processors=[], limit=10)
+        dispatched = await domain.dispatch_entries(processors=[], batch_size=10, concurrency=10)
 
         assert dispatched == 0
 
@@ -1620,14 +1675,18 @@ class TestDispatchEntries:
         await domain.push_entries_to_process(entry_ids)
 
         with pytest.raises(errors.DuplicatedProcessors):
-            await domain.dispatch_entries(processors=[processor, processor], limit=10)
+            await domain.dispatch_entries(
+                processors=[processor, processor],
+                batch_size=10,
+                concurrency=10,
+            )
 
         records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
 
         assert record_entry_ids(records) == set(entry_ids)
 
     @pytest.mark.asyncio
-    async def test_limit(self, loaded_feed: Feed, fake_processor_id: ProcessorId) -> None:
+    async def test_batch_size(self, loaded_feed: Feed, fake_processor_id: ProcessorId) -> None:
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
 
@@ -1639,7 +1698,9 @@ class TestDispatchEntries:
         await domain.push_entries_to_process(entry_ids)
 
         dispatched = await domain.dispatch_entries(
-            processors=[make.processor_dispatch_info(fake_processor_id)], limit=2
+            processors=[make.processor_dispatch_info(fake_processor_id)],
+            batch_size=2,
+            concurrency=10,
         )
 
         assert dispatched == 2

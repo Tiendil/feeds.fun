@@ -7,3 +7,7 @@ class Error(errors.Error):
 
 class DuplicatedProcessors(Error):
     pass
+
+
+class InvalidConcurrency(Error):
+    pass

@@ -1,9 +1,9 @@
-import asyncio
 import contextlib
 import datetime
 from collections.abc import AsyncIterator, Iterable, Mapping, Sequence
 
 from ffun.core import logging, utils
+from ffun.core.concurrency import ConcurrentMapper
 from ffun.dispatcher import entries_cache, errors, operations
 from ffun.dispatcher.entities import (
     DispatchDecision,
@@ -326,7 +326,11 @@ async def _process_entry(
     return True
 
 
-async def dispatch_entries(processors: Sequence[ProcessorDispatchInfo], limit: int) -> int:
+async def dispatch_entries(
+    processors: Sequence[ProcessorDispatchInfo],
+    batch_size: int,
+    concurrency: int,
+) -> int:
     if not processors:
         logger.info("no_processors_to_dispatch_entries")
         return 0
@@ -336,7 +340,10 @@ async def dispatch_entries(processors: Sequence[ProcessorDispatchInfo], limit: i
     if len(processor_ids) != len(set(processor_ids)):
         raise errors.DuplicatedProcessors()
 
-    records = await q_domain.pull(QueueKind.entries_to_process, EntryToProcess, limit=limit)
+    if concurrency <= 0:
+        raise errors.InvalidConcurrency()
+
+    records = await q_domain.pull(QueueKind.entries_to_process, EntryToProcess, limit=batch_size)
 
     if not records:
         logger.info("no_entries_to_dispatch")
@@ -346,10 +353,16 @@ async def dispatch_entries(processors: Sequence[ProcessorDispatchInfo], limit: i
         items=[record.item for record in records],
         processors=processors,
     )
-    results = await asyncio.gather(
-        *(_process_entry(record, processors, cache) for record in records),
-        return_exceptions=True,
-    )
+
+    async def process_record(record: QueueRecord[EntryToProcess]) -> bool:
+        return await _process_entry(record, processors, cache)
+
+    results = await ConcurrentMapper(
+        items=records,
+        handler=process_record,
+        concurrency=concurrency,
+    )()
+
     entries_processed = results.count(True)
 
     logger.info(
