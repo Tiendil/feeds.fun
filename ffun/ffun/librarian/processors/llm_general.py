@@ -86,7 +86,7 @@ class Processor(base.Processor):
 
         # Temporary solution until collection access handling moves fully to the dispatcher.
         entries_in_collections = await d_domain.entries_in_collections([entry.id])
-        entry_is_from_collection = entries_in_collections[entry.id]
+        entry_is_from_collection = entry.id in entries_in_collections
 
         if entry_is_from_collection:
             assert route.api_key is not None

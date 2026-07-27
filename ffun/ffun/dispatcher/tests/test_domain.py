@@ -93,11 +93,11 @@ async def get_resource(user_id: UserId, kind: Resource, interval_started_at: dat
 
 def make_entries_cache(
     *,
-    entries_in_collections: Mapping[EntryId, bool] | None = None,
+    entries_in_collections: set[EntryId] | None = None,
     processing_statuses: Mapping[ProcessorId, Mapping[EntryId, EntryProcessingStatus]] | None = None,
 ) -> entries_cache.EntriesCache:
     return entries_cache.EntriesCache(
-        entries_in_collections=entries_in_collections or {},
+        entries_in_collections=entries_in_collections or set(),
         feed_ids_by_entry={},
         user_ids_by_feed={},
         users_with_api_keys=set(),
@@ -845,12 +845,7 @@ class TestProcessorItemsToTag:
             EntryToProcess(entry_id=second_entry_id),
             EntryToProcess(entry_id=third_entry_id),
         ]
-        cache = make_entries_cache(
-            entries_in_collections={
-                first_entry_id: False,
-                second_entry_id: True,
-            }
-        )
+        cache = make_entries_cache(entries_in_collections={second_entry_id})
 
         items_to_tag, skipped_entry_ids = domain._processor_items_to_tag(processor, items, cache)
 

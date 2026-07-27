@@ -41,7 +41,7 @@ class TestEntryFeedIds:
         }
 
 
-class TestCollectionsByEntry:
+class TestEntryIdsInCollections:
     @pytest.mark.asyncio
     async def test_maps_collection_membership(
         self,
@@ -55,23 +55,19 @@ class TestCollectionsByEntry:
 
         await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
 
-        assert entries_cache._collections_by_entry(  # noqa: SLF001
+        assert entries_cache._entry_ids_in_collections(  # noqa: SLF001
             {
                 collection_entry_id: {another_loaded_feed.id},
                 user_entry_id: {loaded_feed.id},
                 entry_without_feeds_id: set(),
             }
-        ) == {
-            collection_entry_id: True,
-            user_entry_id: False,
-            entry_without_feeds_id: False,
-        }
+        ) == {collection_entry_id}
 
 
 class TestEntriesInCollections:
     @pytest.mark.asyncio
     async def test_no_entries(self) -> None:
-        assert await entries_cache.entries_in_collections([]) == {}
+        assert await entries_cache.entries_in_collections([]) == set()
 
     @pytest.mark.asyncio
     async def test_returns_collection_membership(
@@ -89,10 +85,7 @@ class TestEntriesInCollections:
             list(user_entries) + list(collection_entries)
         )
 
-        assert entries_in_collections == {
-            **{entry_id: False for entry_id in user_entries},
-            **{entry_id: True for entry_id in collection_entries},
-        }
+        assert entries_in_collections == set(collection_entries)
 
     @pytest.mark.asyncio
     async def test_returns_collection_membership_for_entries_linked_to_multiple_feeds(
@@ -111,17 +104,13 @@ class TestEntriesInCollections:
 
         entries_in_collections = await entries_cache.entries_in_collections([entry.id for entry in entries])
 
-        assert entries_in_collections == {
-            entries[0].id: True,
-            entries[1].id: True,
-            entries[2].id: False,
-        }
+        assert entries_in_collections == {entries[0].id, entries[1].id}
 
     @pytest.mark.asyncio
     async def test_skips_entries_without_feed_links(self) -> None:
         entry_id = new_entry_id()
 
-        assert await entries_cache.entries_in_collections([entry_id]) == {}
+        assert await entries_cache.entries_in_collections([entry_id]) == set()
 
 
 class TestUsersWithApiKeys:
@@ -160,10 +149,7 @@ class TestEntriesCache:
         user_entry_id = new_entry_id()
         missing_entry_id = new_entry_id()
         cache = entries_cache.EntriesCache(
-            entries_in_collections={
-                collection_entry_id: True,
-                user_entry_id: False,
-            },
+            entries_in_collections={collection_entry_id},
             feed_ids_by_entry={},
             user_ids_by_feed={},
             users_with_api_keys=set(),
@@ -183,7 +169,7 @@ class TestEntriesCache:
         shared_user_id = new_user_id()
         second_user_id = new_user_id()
         cache = entries_cache.EntriesCache(
-            entries_in_collections={},
+            entries_in_collections=set(),
             feed_ids_by_entry={entry_id: {first_feed_id, second_feed_id}},
             user_ids_by_feed={
                 first_feed_id: {first_user_id, shared_user_id},
@@ -204,7 +190,7 @@ class TestEntriesCache:
         api_key_user_id = new_user_id()
         another_user_id = new_user_id()
         cache = entries_cache.EntriesCache(
-            entries_in_collections={},
+            entries_in_collections=set(),
             feed_ids_by_entry={},
             user_ids_by_feed={},
             users_with_api_keys={api_key_user_id},
@@ -221,7 +207,7 @@ class TestEntriesCache:
         entry_id = new_entry_id()
         missing_entry_id = new_entry_id()
         cache = entries_cache.EntriesCache(
-            entries_in_collections={},
+            entries_in_collections=set(),
             feed_ids_by_entry={},
             user_ids_by_feed={},
             users_with_api_keys=set(),
@@ -275,10 +261,7 @@ class TestCreateEntriesCache:
             user_feed_id: {api_key_user_id, another_user_id},
         }
         users_with_api_keys: set[UserId] = {api_key_user_id}
-        entries_in_collections: dict[EntryId, bool] = {
-            collection_entry_id: True,
-            user_entry_id: False,
-        }
+        entries_in_collections = {collection_entry_id}
         feed_ids = {collection_feed_id, user_feed_id}
         user_ids = {api_key_user_id, another_user_id}
         entry_feed_ids_mock = mocker.patch.object(
@@ -301,19 +284,19 @@ class TestCreateEntriesCache:
             "_users_with_api_keys",
             return_value=users_with_api_keys,
         )
-        collections_by_entry_mock = mocker.patch.object(
+        entry_ids_in_collections_mock = mocker.patch.object(
             entries_cache,
-            "_collections_by_entry",
+            "_entry_ids_in_collections",
             return_value=entries_in_collections,
         )
 
         cache = await entries_cache.create_entries_cache(items, processors)
 
-        entry_ids = [collection_entry_id, user_entry_id]
+        entry_ids = {collection_entry_id, user_entry_id}
         processor_ids = [fake_processor_id, another_fake_processor_id]
         entry_feed_ids_mock.assert_awaited_once_with(entry_ids)
         statuses_mock.assert_awaited_once_with(processor_ids, entry_ids)
-        collections_by_entry_mock.assert_called_once_with(feed_ids_by_entry)
+        entry_ids_in_collections_mock.assert_called_once_with(feed_ids_by_entry)
         linked_users_mock.assert_awaited_once_with(feed_ids)
         api_key_users_mock.assert_awaited_once_with(user_ids)
         assert cache.entry_in_collection(collection_entry_id)

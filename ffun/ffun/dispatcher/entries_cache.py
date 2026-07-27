@@ -27,17 +27,18 @@ async def _entry_feed_ids(entries_ids: Iterable[EntryId]) -> dict[EntryId, set[F
     return {entry_id: {link.feed_id for link in links} for entry_id, links in feed_links.items()}
 
 
-def _collections_by_entry(feed_ids_by_entry: Mapping[EntryId, set[FeedId]]) -> dict[EntryId, bool]:
+def _entry_ids_in_collections(feed_ids_by_entry: Mapping[EntryId, set[FeedId]]) -> set[EntryId]:
     return {
-        entry_id: any(fc_domain.collections_for_feed(feed_id) for feed_id in feed_ids)
+        entry_id
         for entry_id, feed_ids in feed_ids_by_entry.items()
+        if any(fc_domain.collections_for_feed(feed_id) for feed_id in feed_ids)
     }
 
 
-async def entries_in_collections(entries_ids: Iterable[EntryId]) -> dict[EntryId, bool]:
+async def entries_in_collections(entries_ids: Iterable[EntryId]) -> set[EntryId]:
     feed_ids_by_entry = await _entry_feed_ids(entries_ids)
 
-    return _collections_by_entry(feed_ids_by_entry)
+    return _entry_ids_in_collections(feed_ids_by_entry)
 
 
 class EntriesCache:
@@ -51,7 +52,7 @@ class EntriesCache:
 
     def __init__(
         self,
-        entries_in_collections: Mapping[EntryId, bool],
+        entries_in_collections: set[EntryId],
         feed_ids_by_entry: Mapping[EntryId, set[FeedId]],
         user_ids_by_feed: Mapping[FeedId, set[UserId]],
         users_with_api_keys: set[UserId],
@@ -64,7 +65,7 @@ class EntriesCache:
         self._processing_statuses = processing_statuses
 
     def entry_in_collection(self, entry_id: EntryId) -> bool:
-        return self._entries_in_collections.get(entry_id, False)
+        return entry_id in self._entries_in_collections
 
     def entry_user_ids(self, entry_id: EntryId) -> set[UserId]:
         user_ids: set[UserId] = set()
@@ -103,13 +104,13 @@ async def create_entries_cache(
     items: Sequence[EntryToProcess],
     processors: Sequence[ProcessorDispatchInfo],
 ) -> EntriesCache:
-    entry_ids = list({item.entry_id: None for item in items})
+    entry_ids = {item.entry_id for item in items}
     processor_ids = [processor.processor_id for processor in processors]
     feed_ids_by_entry, processing_statuses = await asyncio.gather(
         _entry_feed_ids(entry_ids),
         operations.get_entries_processing_statuses(processor_ids, entry_ids),
     )
-    entries_in_collections = _collections_by_entry(feed_ids_by_entry)
+    entries_in_collections = _entry_ids_in_collections(feed_ids_by_entry)
     feed_ids = {feed_id for entry_feed_ids in feed_ids_by_entry.values() for feed_id in entry_feed_ids}
     user_ids_by_feed = await fl_domain.get_linked_users(feed_ids)
     user_ids = {user_id for feed_user_ids in user_ids_by_feed.values() for user_id in feed_user_ids}
