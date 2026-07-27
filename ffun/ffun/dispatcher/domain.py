@@ -354,6 +354,8 @@ async def dispatch_entries(
         processors=processors,
     )
 
+    # Process entries separately to simplify error handling; batching would require
+    # complex mapping between entries and users.
     async def process_record(record: QueueRecord[EntryToProcess]) -> bool:
         return await _process_entry(record, processors, cache)
 
