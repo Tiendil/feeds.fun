@@ -5,7 +5,7 @@ from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.domain.entities import UserId
 from ffun.resources import errors
-from ffun.resources.entities import Resource, ResourceReservation
+from ffun.resources.entities import Resource, ResourceReservation, ResourceReservationLimit
 
 logger = logging.get_module_logger()
 
@@ -55,7 +55,7 @@ async def load_resources(
 
 async def try_to_reserve(
     execute: ExecuteType,
-    user_limits: list[tuple[UserId, int]],
+    user_limits: list[ResourceReservationLimit],
     kind: int,
     interval_started_at: datetime.datetime,
     amount: int,
@@ -63,9 +63,8 @@ async def try_to_reserve(
     if not user_limits:
         return []
 
-    unpacked_user_ids, unpacked_limits = zip(*user_limits, strict=True)
-    user_ids: list[UserId] = list(unpacked_user_ids)
-    limits: list[int] = list(unpacked_limits)
+    user_ids = [user_limit.user_id for user_limit in user_limits]
+    limits = [user_limit.limit for user_limit in user_limits]
 
     if len(user_ids) != len(set(user_ids)):
         raise errors.DuplicateReservationUserIds()
@@ -99,13 +98,13 @@ async def try_to_reserve(
 
     return [
         ResourceReservation(
-            user_id=user_id,
+            user_id=user_limit.user_id,
             kind=kind,
             interval_started_at=interval_started_at,
             amount=amount,
         )
-        for user_id, _ in user_limits
-        if user_id in reserved_user_ids
+        for user_limit in user_limits
+        if user_limit.user_id in reserved_user_ids
     ]
 
 

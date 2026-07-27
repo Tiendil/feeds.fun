@@ -2,15 +2,16 @@ import datetime
 
 import psycopg
 import pytest
-from pytest_mock import MockerFixture
 
 from ffun.core.postgresql import execute
+from ffun.core.tests.helpers import TableSizeNotChanged
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.domain.entities import UserId
-from ffun.resources import domain
+from ffun.resources import domain, errors
 from ffun.resources.domain import load_resource
 from ffun.resources.entities import (
     ResourceReservation,
+    ResourceReservationLimit,
     ResourceReservationOption,
     ResourceReservationSpecification,
 )
@@ -37,7 +38,11 @@ class TestLoadResource:
         )
 
         await try_to_reserve(
-            execute, user_id=internal_user_id, kind=kind, interval_started_at=interval_started_at, amount=13, limit=100
+            execute,
+            user_limits=[ResourceReservationLimit(user_id=internal_user_id, limit=100)],
+            kind=kind,
+            interval_started_at=interval_started_at,
+            amount=13,
         )
 
         resource = await load_resource(user_id=internal_user_id, kind=kind, interval_started_at=interval_started_at)
@@ -61,6 +66,36 @@ class TestLoadResource:
         assert resource.reserved == 0
 
 
+class TestBuildUserLimits:
+    def test_filters_reserved_users(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
+        specifications = [
+            ResourceReservationSpecification(user_id=internal_user_id, limits=(10,)),
+            ResourceReservationSpecification(user_id=another_internal_user_id, limits=(20,)),
+        ]
+
+        user_limits = domain._build_user_limits(
+            specifications,
+            option_index=0,
+            reserved_user_ids={internal_user_id},
+        )
+
+        assert user_limits == [ResourceReservationLimit(user_id=another_internal_user_id, limit=20)]
+
+    def test_filters_unavailable_options(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
+        specifications = [
+            ResourceReservationSpecification(user_id=internal_user_id, limits=(None,)),
+            ResourceReservationSpecification(user_id=another_internal_user_id, limits=(20,)),
+        ]
+
+        user_limits = domain._build_user_limits(
+            specifications,
+            option_index=0,
+            reserved_user_ids=set(),
+        )
+
+        assert user_limits == [ResourceReservationLimit(user_id=another_internal_user_id, limit=20)]
+
+
 class TestTryToReserveInOrder:
     @pytest.mark.asyncio
     async def test_one_user_with_one_option(self, internal_user_id: UserId, kind: int) -> None:
@@ -68,19 +103,19 @@ class TestTryToReserveInOrder:
         interval_started_at = month_interval_start()
 
         reservations = await domain.try_to_reserve_in_order(
+            amount=amount,
+            options=(
+                ResourceReservationOption(
+                    kind=kind,
+                    interval_started_at=interval_started_at,
+                ),
+            ),
             specifications=[
                 ResourceReservationSpecification(
                     user_id=internal_user_id,
-                    amount=amount,
-                    options=(
-                        ResourceReservationOption(
-                            kind=kind,
-                            interval_started_at=interval_started_at,
-                            limit=amount,
-                        ),
-                    ),
+                    limits=(amount,),
                 )
-            ]
+            ],
         )
 
         resource = await domain.load_resource(
@@ -107,44 +142,30 @@ class TestTryToReserveInOrder:
         kind: int,
         another_kind: int,
     ) -> None:
-        first_amount = 20
-        second_amount = 30
+        amount = 20
         first_interval_started_at = month_interval_start()
         second_interval_started_at = first_interval_started_at + datetime.timedelta(days=1)
 
         reservations = await domain.try_to_reserve_in_order(
+            amount=amount,
+            options=(
+                ResourceReservationOption(
+                    kind=kind,
+                    interval_started_at=first_interval_started_at,
+                ),
+                ResourceReservationOption(
+                    kind=another_kind,
+                    interval_started_at=second_interval_started_at,
+                ),
+            ),
             specifications=[
                 ResourceReservationSpecification(
                     user_id=internal_user_id,
-                    amount=first_amount,
-                    options=(
-                        ResourceReservationOption(
-                            kind=kind,
-                            interval_started_at=first_interval_started_at,
-                            limit=first_amount,
-                        ),
-                        ResourceReservationOption(
-                            kind=another_kind,
-                            interval_started_at=second_interval_started_at,
-                            limit=first_amount,
-                        ),
-                    ),
+                    limits=(amount, amount),
                 ),
                 ResourceReservationSpecification(
                     user_id=another_internal_user_id,
-                    amount=second_amount,
-                    options=(
-                        ResourceReservationOption(
-                            kind=kind,
-                            interval_started_at=first_interval_started_at,
-                            limit=second_amount - 1,
-                        ),
-                        ResourceReservationOption(
-                            kind=another_kind,
-                            interval_started_at=second_interval_started_at,
-                            limit=second_amount,
-                        ),
-                    ),
+                    limits=(amount - 1, amount),
                 ),
             ],
         )
@@ -154,13 +175,13 @@ class TestTryToReserveInOrder:
                 user_id=internal_user_id,
                 kind=kind,
                 interval_started_at=first_interval_started_at,
-                amount=first_amount,
+                amount=amount,
             ),
             ResourceReservation(
                 user_id=another_internal_user_id,
                 kind=another_kind,
                 interval_started_at=second_interval_started_at,
-                amount=second_amount,
+                amount=amount,
             ),
         ]
 
@@ -181,9 +202,9 @@ class TestTryToReserveInOrder:
         )
         skipped_history = await domain.load_resource_history(user_id=internal_user_id, kind=another_kind)
 
-        assert first_resource.reserved == first_amount
+        assert first_resource.reserved == amount
         assert rejected_resource.reserved == 0
-        assert second_resource.reserved == second_amount
+        assert second_resource.reserved == amount
         assert skipped_history == []
 
     @pytest.mark.asyncio
@@ -192,17 +213,17 @@ class TestTryToReserveInOrder:
         interval_started_at = month_interval_start()
 
         reservations = await domain.try_to_reserve_in_order(
+            amount=amount,
+            options=(
+                ResourceReservationOption(
+                    kind=kind,
+                    interval_started_at=interval_started_at,
+                ),
+            ),
             specifications=[
                 ResourceReservationSpecification(
                     user_id=internal_user_id,
-                    amount=amount,
-                    options=(
-                        ResourceReservationOption(
-                            kind=kind,
-                            interval_started_at=interval_started_at,
-                            limit=amount - 1,
-                        ),
-                    ),
+                    limits=(amount - 1,),
                 )
             ],
         )
@@ -223,19 +244,19 @@ class TestTryToReserveInOrder:
 
         with pytest.raises(psycopg.errors.NumericValueOutOfRange):  # type: ignore[misc]
             await domain.try_to_reserve_in_order(
+                amount=too_large_amount,
+                options=(
+                    ResourceReservationOption(
+                        kind=kind,
+                        interval_started_at=interval_started_at,
+                    ),
+                ),
                 specifications=[
                     ResourceReservationSpecification(
                         user_id=internal_user_id,
-                        amount=too_large_amount,
-                        options=(
-                            ResourceReservationOption(
-                                kind=kind,
-                                interval_started_at=interval_started_at,
-                                limit=too_large_amount,
-                            ),
-                        ),
+                        limits=(too_large_amount,),
                     )
-                ]
+                ],
             )
 
         history = await domain.load_resource_history(user_id=internal_user_id, kind=kind)
@@ -243,76 +264,132 @@ class TestTryToReserveInOrder:
         assert history == []
 
     @pytest.mark.asyncio
-    async def test_deduplicates_user_specifications(
+    async def test_duplicate_user_specifications_raise_error(
         self, internal_user_id: UserId, kind: int, another_kind: int
     ) -> None:
         first_interval_started_at = month_interval_start()
         second_interval_started_at = first_interval_started_at + datetime.timedelta(days=1)
 
+        with pytest.raises(errors.DuplicateReservationSpecifications):
+            await domain.try_to_reserve_in_order(
+                amount=20,
+                options=(
+                    ResourceReservationOption(
+                        kind=kind,
+                        interval_started_at=first_interval_started_at,
+                    ),
+                    ResourceReservationOption(
+                        kind=another_kind,
+                        interval_started_at=second_interval_started_at,
+                    ),
+                ),
+                specifications=[
+                    ResourceReservationSpecification(
+                        user_id=internal_user_id,
+                        limits=(20, None),
+                    ),
+                    ResourceReservationSpecification(
+                        user_id=internal_user_id,
+                        limits=(None, 20),
+                    ),
+                ],
+            )
+
+        first_history = await domain.load_resource_history(user_id=internal_user_id, kind=kind)
+        duplicate_history = await domain.load_resource_history(user_id=internal_user_id, kind=another_kind)
+
+        assert first_history == []
+        assert duplicate_history == []
+
+    @pytest.mark.asyncio
+    async def test_skips_unavailable_options(self, internal_user_id: UserId, kind: int, another_kind: int) -> None:
+        amount = 20
+        first_interval_started_at = month_interval_start()
+        second_interval_started_at = first_interval_started_at + datetime.timedelta(days=1)
+
         reservations = await domain.try_to_reserve_in_order(
-            specifications=(
-                specification
-                for specification in [
-                    ResourceReservationSpecification(
-                        user_id=internal_user_id,
-                        amount=20,
-                        options=(
-                            ResourceReservationOption(
-                                kind=kind,
-                                interval_started_at=first_interval_started_at,
-                                limit=20,
-                            ),
-                        ),
-                    ),
-                    ResourceReservationSpecification(
-                        user_id=internal_user_id,
-                        amount=30,
-                        options=(
-                            ResourceReservationOption(
-                                kind=another_kind,
-                                interval_started_at=second_interval_started_at,
-                                limit=30,
-                            ),
-                        ),
-                    ),
-                ]
+            amount=amount,
+            options=(
+                ResourceReservationOption(
+                    kind=kind,
+                    interval_started_at=first_interval_started_at,
+                ),
+                ResourceReservationOption(
+                    kind=another_kind,
+                    interval_started_at=second_interval_started_at,
+                ),
             ),
+            specifications=[
+                ResourceReservationSpecification(
+                    user_id=internal_user_id,
+                    limits=(None, amount),
+                ),
+            ],
         )
 
-        resource = await domain.load_resource(
-            user_id=internal_user_id,
-            kind=kind,
-            interval_started_at=first_interval_started_at,
-        )
-        duplicate_history = await domain.load_resource_history(user_id=internal_user_id, kind=another_kind)
+        unavailable_history = await domain.load_resource_history(user_id=internal_user_id, kind=kind)
 
         assert reservations == [
             ResourceReservation(
                 user_id=internal_user_id,
-                kind=kind,
-                interval_started_at=first_interval_started_at,
-                amount=20,
+                kind=another_kind,
+                interval_started_at=second_interval_started_at,
+                amount=amount,
             )
         ]
-        assert resource.reserved == 20
-        assert duplicate_history == []
+        assert unavailable_history == []
+
+    @pytest.mark.asyncio
+    async def test_rejects_misaligned_limits_before_reserving(
+        self,
+        internal_user_id: UserId,
+        another_internal_user_id: UserId,
+        kind: int,
+    ) -> None:
+        amount = 20
+        interval_started_at = month_interval_start()
+
+        with pytest.raises(errors.ReservationOptionsAndLimitsMismatch):
+            await domain.try_to_reserve_in_order(
+                amount=amount,
+                options=(
+                    ResourceReservationOption(
+                        kind=kind,
+                        interval_started_at=interval_started_at,
+                    ),
+                ),
+                specifications=[
+                    ResourceReservationSpecification(
+                        user_id=internal_user_id,
+                        limits=(amount,),
+                    ),
+                    ResourceReservationSpecification(
+                        user_id=another_internal_user_id,
+                        limits=(),
+                    ),
+                ],
+            )
+
+        history = await domain.load_resource_history(user_id=internal_user_id, kind=kind)
+
+        assert history == []
 
     @pytest.mark.asyncio
     async def test_zero_amount(self, internal_user_id: UserId, kind: int) -> None:
         interval_started_at = month_interval_start()
 
         reservations = await domain.try_to_reserve_in_order(
+            amount=0,
+            options=(
+                ResourceReservationOption(
+                    kind=kind,
+                    interval_started_at=interval_started_at,
+                ),
+            ),
             specifications=[
                 ResourceReservationSpecification(
                     user_id=internal_user_id,
-                    amount=0,
-                    options=(
-                        ResourceReservationOption(
-                            kind=kind,
-                            interval_started_at=interval_started_at,
-                            limit=0,
-                        ),
-                    ),
+                    limits=(0,),
                 )
             ],
         )
@@ -327,19 +404,29 @@ class TestTryToReserveInOrder:
         ]
 
     @pytest.mark.asyncio
-    async def test_empty_specifications(self) -> None:
-        reservations = await domain.try_to_reserve_in_order(specifications=[])
+    async def test_empty_specifications(self, kind: int) -> None:
+        reservations = await domain.try_to_reserve_in_order(
+            amount=20,
+            options=(
+                ResourceReservationOption(
+                    kind=kind,
+                    interval_started_at=month_interval_start(),
+                ),
+            ),
+            specifications=[],
+        )
 
         assert reservations == []
 
     @pytest.mark.asyncio
     async def test_empty_options(self, internal_user_id: UserId, kind: int) -> None:
         reservations = await domain.try_to_reserve_in_order(
+            amount=20,
+            options=(),
             specifications=[
                 ResourceReservationSpecification(
                     user_id=internal_user_id,
-                    amount=20,
-                    options=(),
+                    limits=(),
                 )
             ],
         )
@@ -350,7 +437,7 @@ class TestTryToReserveInOrder:
         assert history == []
 
 
-class TestConvertReservationsToUsed:
+class TestConvertReservedToUsed:
     async def reserve(
         self,
         user_ids: list[UserId],
@@ -359,29 +446,26 @@ class TestConvertReservationsToUsed:
         amount: int,
     ) -> list[ResourceReservation]:
         return await domain.try_to_reserve_in_order(
+            amount=amount,
+            options=(
+                ResourceReservationOption(
+                    kind=kind,
+                    interval_started_at=interval_started_at,
+                ),
+            ),
             specifications=[
                 ResourceReservationSpecification(
                     user_id=user_id,
-                    amount=amount,
-                    options=(
-                        ResourceReservationOption(
-                            kind=kind,
-                            interval_started_at=interval_started_at,
-                            limit=amount,
-                        ),
-                    ),
+                    limits=(amount,),
                 )
                 for user_id in user_ids
             ],
         )
 
     @pytest.mark.asyncio
-    async def test_empty_reservations(self, mocker: MockerFixture) -> None:
-        convert_reserved_to_used = mocker.patch.object(domain, "convert_reserved_to_used")
-
-        await domain.convert_reservations_to_used([], consume=True)
-
-        convert_reserved_to_used.assert_not_awaited()
+    async def test_empty_reservations(self) -> None:
+        async with TableSizeNotChanged("r_resources"):
+            await domain.convert_reserved_to_used([], used=20)
 
     @pytest.mark.asyncio
     async def test_consumes_all_reservations(
@@ -395,7 +479,7 @@ class TestConvertReservationsToUsed:
         interval_started_at = month_interval_start()
         reservations = await self.reserve(user_ids, kind, interval_started_at, amount)
 
-        await domain.convert_reservations_to_used(reservations, consume=True)
+        await domain.convert_reserved_to_used(reservations, used=amount)
 
         for user_id in user_ids:
             resource = await domain.load_resource(
@@ -418,7 +502,7 @@ class TestConvertReservationsToUsed:
         interval_started_at = month_interval_start()
         reservations = await self.reserve(user_ids, kind, interval_started_at, amount)
 
-        await domain.convert_reservations_to_used(reservations, consume=False)
+        await domain.convert_reserved_to_used(reservations, used=0)
 
         for user_id in user_ids:
             resource = await domain.load_resource(

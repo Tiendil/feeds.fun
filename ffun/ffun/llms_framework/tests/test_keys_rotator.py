@@ -242,11 +242,15 @@ class TestGetUserKeyInfos:
             )
 
             await r_domain.convert_reserved_to_used(
-                user_id=user_id,
-                kind=AppResource.tokens_cost,
-                interval_started_at=interval_started_at,
+                [
+                    r_entities.ResourceReservation(
+                        user_id=user_id,
+                        kind=AppResource.tokens_cost,
+                        interval_started_at=interval_started_at,
+                        amount=0,
+                    )
+                ],
                 used=_cost_points.to_points(used_costs[i]),
-                reserved=0,
             )
 
         infos = await _get_user_key_infos(LLMProvider.openai, five_internal_user_ids, interval_started_at)
@@ -404,11 +408,15 @@ class TestFindBestUserWithKey:
             chosen_users.add(info.user_id)
 
             await r_domain.convert_reserved_to_used(
-                user_id=info.user_id,
-                kind=AppResource.tokens_cost,
-                interval_started_at=interval_started_at,
+                [
+                    r_entities.ResourceReservation(
+                        user_id=info.user_id,
+                        kind=AppResource.tokens_cost,
+                        interval_started_at=interval_started_at,
+                        amount=_cost_points.to_points(used_cost),
+                    )
+                ],
                 used=_cost_points.to_points(used_cost),
-                reserved=_cost_points.to_points(used_cost),
             )
 
         assert chosen_users == {info.user_id for info in five_user_key_infos}

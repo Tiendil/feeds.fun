@@ -46,7 +46,7 @@ from ffun.queues import operations as q_operations
 from ffun.queues.entities import QueueKind, QueueRecord, QueueRecordId
 from ffun.resources import domain as r_domain
 from ffun.resources.entities import Resource as ResourceRecord
-from ffun.resources.entities import ResourceReservationOption, ResourceReservationSpecification
+from ffun.resources.entities import ResourceReservation, ResourceReservationOption, ResourceReservationSpecification
 from ffun.user_settings import domain as us_domain
 from ffun.user_settings.entities import SettingKind
 
@@ -382,9 +382,8 @@ class TestMoveFailedEntriesToProcessorQueue:
 
 
 class TestTokenReservationSpecification:
-    def test_builds_ordered_options(self) -> None:
+    def test_builds_ordered_limits(self) -> None:
         user_id = new_user_id()
-        authorization_time = datetime.datetime.now(tz=datetime.UTC)
         entitlements = {
             kind_id: e_make.make_effective_entitlement_interval(
                 user_id=user_id,
@@ -397,41 +396,44 @@ class TestTokenReservationSpecification:
         specification = domain._token_reservation_specification(
             user_id,
             entitlements,
-            authorization_time,
         )
 
         assert specification == ResourceReservationSpecification(
             user_id=user_id,
-            amount=domain.SAAS_TOKENS_PER_USER_ENTRY,
-            options=(
-                ResourceReservationOption(
-                    kind=Resource.day_token_usage,
-                    interval_started_at=day_interval_start(authorization_time),
-                    limit=10,
-                ),
-                ResourceReservationOption(
-                    kind=Resource.month_token_usage,
-                    interval_started_at=month_interval_start(authorization_time),
-                    limit=11,
-                ),
-                ResourceReservationOption(
-                    kind=Resource.lifetime_token_usage,
-                    interval_started_at=LIFETIME_INTERVAL_START_MARKER,
-                    limit=12,
-                ),
-            ),
+            limits=(10, 11, 12),
         )
 
-    def test_skips_missing_entitlements(self) -> None:
+    def test_marks_missing_entitlements_unavailable(self) -> None:
         user_id = new_user_id()
 
         specification = domain._token_reservation_specification(
             user_id,
             {kind_id: None for kind_id in EntitlementKindId},
-            datetime.datetime.now(tz=datetime.UTC),
         )
 
-        assert specification.options == ()
+        assert specification.limits == (None, None, None)
+
+
+class TestTokenReservationOptions:
+    def test_builds_ordered_options(self) -> None:
+        authorization_time = datetime.datetime.now(tz=datetime.UTC)
+
+        options = domain._token_reservation_options(authorization_time)
+
+        assert options == (
+            ResourceReservationOption(
+                kind=Resource.day_token_usage,
+                interval_started_at=day_interval_start(authorization_time),
+            ),
+            ResourceReservationOption(
+                kind=Resource.month_token_usage,
+                interval_started_at=month_interval_start(authorization_time),
+            ),
+            ResourceReservationOption(
+                kind=Resource.lifetime_token_usage,
+                interval_started_at=LIFETIME_INTERVAL_START_MARKER,
+            ),
+        )
 
 
 class TestAuthorizeEntry:
@@ -553,13 +555,16 @@ class TestEntryAuthorization:
         cache = make_entries_cache()
         authorization = EntryAuthorization(entry_id=item.entry_id, globally_visible=False, reservations=())
         authorize_entry = mocker.patch.object(domain, "_authorize_entry", return_value=authorization)
-        convert_reservations = mocker.patch.object(r_domain, "convert_reservations_to_used")
+        convert_reservations = mocker.patch.object(r_domain, "convert_reserved_to_used")
 
         async with domain._entry_authorization(item, cache) as yielded_authorization:
             assert yielded_authorization == authorization
 
         authorize_entry.assert_awaited_once_with(item, cache)
-        convert_reservations.assert_awaited_once_with((), consume=True)
+        convert_reservations.assert_awaited_once_with(
+            list[ResourceReservation](),
+            used=domain.SAAS_TOKENS_PER_USER_ENTRY,
+        )
 
     @pytest.mark.asyncio
     async def test_releases_reservations_on_failure(self, mocker: MockerFixture) -> None:
@@ -567,14 +572,14 @@ class TestEntryAuthorization:
         cache = make_entries_cache()
         authorization = EntryAuthorization(entry_id=item.entry_id, globally_visible=False, reservations=())
         authorize_entry = mocker.patch.object(domain, "_authorize_entry", return_value=authorization)
-        convert_reservations = mocker.patch.object(r_domain, "convert_reservations_to_used")
+        convert_reservations = mocker.patch.object(r_domain, "convert_reserved_to_used")
 
         with pytest.raises(RuntimeError, match="dispatch failed"):
             async with domain._entry_authorization(item, cache):
                 raise RuntimeError("dispatch failed")
 
         authorize_entry.assert_awaited_once_with(item, cache)
-        convert_reservations.assert_awaited_once_with((), consume=False)
+        convert_reservations.assert_awaited_once_with(list[ResourceReservation](), used=0)
 
 
 class TestMarkEntryTagsVisible:
@@ -1160,7 +1165,7 @@ class TestProcessEntry:
         authorization = EntryAuthorization(entry_id=item.entry_id, globally_visible=True, reservations=())
         settled_user_ids: set[UserId] = set()
         mocker.patch.object(domain, "_authorize_entry", return_value=authorization)
-        convert_reservations = mocker.patch.object(r_domain, "convert_reservations_to_used")
+        convert_reservations = mocker.patch.object(r_domain, "convert_reserved_to_used")
         dispatch_to_processor = mocker.patch.object(domain, "_dispatch_entries_to_processor")
         mark_tags_visible = mocker.patch.object(domain, "_mark_entry_tags_visible")
         acknowledge = mocker.patch.object(domain, "acknowledge")
@@ -1175,7 +1180,10 @@ class TestProcessEntry:
             dispatch_allowed=True,
         )
         mark_tags_visible.assert_awaited_once_with(authorization, settled_user_ids)
-        convert_reservations.assert_awaited_once_with((), consume=True)
+        convert_reservations.assert_awaited_once_with(
+            list[ResourceReservation](),
+            used=domain.SAAS_TOKENS_PER_USER_ENTRY,
+        )
         acknowledge.assert_awaited_once_with(record_ids)
 
     @pytest.mark.asyncio
@@ -1190,7 +1198,7 @@ class TestProcessEntry:
         processor = make.processor_dispatch_info(fake_processor_id)
         authorization = EntryAuthorization(entry_id=item.entry_id, globally_visible=False, reservations=())
         mocker.patch.object(domain, "_authorize_entry", return_value=authorization)
-        convert_reservations = mocker.patch.object(r_domain, "convert_reservations_to_used")
+        convert_reservations = mocker.patch.object(r_domain, "convert_reserved_to_used")
         dispatch_to_processor = mocker.patch.object(domain, "_dispatch_entries_to_processor")
         mark_tags_visible = mocker.patch.object(domain, "_mark_entry_tags_visible")
         acknowledge = mocker.patch.object(domain, "acknowledge")
@@ -1205,7 +1213,10 @@ class TestProcessEntry:
             dispatch_allowed=False,
         )
         mark_tags_visible.assert_not_awaited()
-        convert_reservations.assert_awaited_once_with((), consume=True)
+        convert_reservations.assert_awaited_once_with(
+            list[ResourceReservation](),
+            used=domain.SAAS_TOKENS_PER_USER_ENTRY,
+        )
         acknowledge.assert_awaited_once_with(record_ids)
 
     @pytest.mark.asyncio
@@ -1216,7 +1227,7 @@ class TestProcessEntry:
         processor = make.processor_dispatch_info(fake_processor_id)
         authorization = EntryAuthorization(entry_id=item.entry_id, globally_visible=True, reservations=())
         mocker.patch.object(domain, "_authorize_entry", return_value=authorization)
-        convert_reservations = mocker.patch.object(r_domain, "convert_reservations_to_used")
+        convert_reservations = mocker.patch.object(r_domain, "convert_reserved_to_used")
         mocker.patch.object(
             domain,
             "_dispatch_entries_to_processor",
@@ -1230,7 +1241,7 @@ class TestProcessEntry:
 
         assert not processed
         mark_tags_visible.assert_not_awaited()
-        convert_reservations.assert_awaited_once_with((), consume=False)
+        convert_reservations.assert_awaited_once_with(list[ResourceReservation](), used=0)
         acknowledge.assert_not_awaited()
         log_exception.assert_called_once_with("entry_dispatch_failed", entry_id=item.entry_id)
 

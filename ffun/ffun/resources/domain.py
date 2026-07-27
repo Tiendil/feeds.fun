@@ -7,6 +7,7 @@ from ffun.resources import errors, operations
 from ffun.resources.entities import (
     Resource,
     ResourceReservation,
+    ResourceReservationLimit,
     ResourceReservationOption,
     ResourceReservationSpecification,
 )
@@ -26,8 +27,8 @@ def _build_user_limits(
     specifications: Sequence[ResourceReservationSpecification],
     option_index: int,
     reserved_user_ids: Collection[UserId],
-) -> list[tuple[UserId, int]]:
-    user_limits: list[tuple[UserId, int]] = []
+) -> list[ResourceReservationLimit]:
+    user_limits: list[ResourceReservationLimit] = []
 
     for specification in specifications:
         if specification.user_id in reserved_user_ids:
@@ -38,7 +39,7 @@ def _build_user_limits(
         if limit is None:
             continue
 
-        user_limits.append((specification.user_id, limit))
+        user_limits.append(ResourceReservationLimit(user_id=specification.user_id, limit=limit))
 
     return user_limits
 

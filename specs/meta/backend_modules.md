@@ -2,18 +2,38 @@
 
 ## Goal of the document
 
-This document describes the common location, naming, structure, and content conventions for specifications of individual Feeds Fun backend modules.
+This document describes the common location, naming, structure, abstraction level, and content conventions for specifications of individual Feeds Fun backend modules.
 
 ## Scope
 
 This specification applies to module specifications under `specs/backend_architecture/modules/`.
 
-General specification style, backend-wide architecture, implementation package layout, and requirements that apply uniformly to all backend modules are out of scope.
+Module specifications cover module responsibilities, public interfaces, observable behavior, and externally relevant effects.
+
+General specification style, backend-wide architecture, implementation package layout, persistence schemas, internal algorithms, framework choices, and requirements that apply uniformly to all backend modules are out of scope.
 
 ## Dictionary
 
 - `module specification` - a specification dedicated to the responsibilities and behavior of one top-level `ffun` backend module.
 - `module-specific section` - a section that describes concepts or behavior unique to the module being specified.
+- `public interface` - the module capabilities and semantic contracts available to other top-level backend modules.
+
+## Abstraction boundary
+
+A module specification MUST describe the module at the boundary visible to callers and other project components.
+It MUST define module responsibilities, public capabilities, semantic inputs and results, failure conditions, behavioral invariants, state transitions, and observable effects at the highest level that remains precise and testable.
+
+A module specification MUST NOT prescribe internal representations, orchestration, algorithms, persistence mechanisms, or framework-specific structures.
+It MUST NOT name concrete entity, model, data-transfer-object, exception, or helper types, or the files and internal submodules that define them.
+Public data contracts MUST instead be described through their semantic fields, invariants, and observable meaning.
+
+Persistence requirements MAY specify observable properties such as durability, uniqueness, atomicity, isolation, and ordering.
+They MUST NOT specify table, column, index, constraint, or migration names; SQL or DDL; query shapes; or the number and sequence of persistence operations.
+
+A workflow sequence MUST be specified only when callers can observe the sequence or when its ordering is itself a required behavior.
+Internal processing steps MUST otherwise be expressed as required outcomes and invariants.
+
+Concrete public operation, audit-event, and business-event names MAY be specified when the name itself is an intentional stable contract.
 
 ## Location and identity
 
@@ -41,12 +61,11 @@ Standardized top-level sections MUST appear in this order:
 3. `Dictionary` [can be empty].
 4. `Module responsibility`.
 5. `Domain behavior`.
-6. `Database schema` [can be empty].
-7. `Domain interface` [can be empty].
-8. `Audit records` [can be empty].
-9. `Business events` [can be empty].
+6. `Public interface` [can be empty].
+7. `Audit records` [can be empty].
+8. `Business events` [can be empty].
 
-A section marked `[can be empty]` MAY contain no module requirements. In that case, the section MUST contain one plain-text sentence explaining why, such as `Module does not require persistent storage.`
+A section marked `[can be empty]` MAY contain no module requirements. In that case, the section MUST contain one plain-text sentence explaining why, such as `Module does not produce business events.`
 
 Module-specific sections SHOULD be nested under `Domain behavior`. A module specification MAY use an additional top-level section when the concern is substantial, stable, and does not fit a standardized section.
 
@@ -54,7 +73,7 @@ Module-specific sections SHOULD be nested under `Domain behavior`. A module spec
 
 ### `Module responsibility`
 
-The `Module responsibility` section MUST identify the module's architectural role and the behavior, entities, storage, or integration boundaries it owns.
+The `Module responsibility` section MUST identify the module's architectural role and the behavior, state, or integration boundaries it owns.
 
 The section SHOULD identify important behavior that callers must access through the module boundary. It SHOULD NOT enumerate implementation files or private helpers.
 
@@ -64,37 +83,21 @@ The `Domain behavior` section MUST describe the module-specific concepts, invari
 
 Distinct concepts or workflows SHOULD use nested sections. Transaction and concurrency requirements SHOULD stay with the workflow they constrain.
 
-### `Database schema`
+The section MUST specify behavior through observable outcomes and MUST NOT prescribe internal algorithms, intermediate representations, helper operations, or persistence steps.
 
-A module specification that defines persistent module-owned state MUST include a `Database schema` section.
+### `Public interface`
 
-The section MUST identify each owned table and its columns, types, nullability, primary keys, foreign keys, uniqueness rules, and required indexes. It MUST distinguish source-of-truth state from derived or historical state when the module owns more than one form.
+A module specification SHOULD define a public interface when another module needs a stable call contract that is not sufficiently described by the responsibility and behavior sections.
 
-Each table SHOULD use a nested section named after the table.
+The section MUST describe public behavior through caller-visible capabilities and semantic contracts.
+It MAY define stable operation names, inputs, results, transaction participation, and failure behavior when those details are part of the cross-module contract.
 
-Each table schema MUST be expressed as PostgreSQL DDL in a fenced `sql` code block. Markdown tables MUST NOT be used to define database schemas.
-
-The SQL MUST include all specified columns, types, nullability, defaults, keys, foreign keys, uniqueness rules, and indexes. Each column MUST have an adjacent SQL comment that describes its domain meaning. Comments MUST also explain intentionally templated identifiers and structural database constraints whose purpose is not clear from their names.
-
-Database schemas MUST limit database-enforced constraints to structural storage integrity, such as nullability, primary keys, foreign keys, and uniqueness. Business invariants, including allowed values, cross-column value combinations, and state-transition rules, MUST be defined under `Domain behavior` and enforced by the module's domain or service logic before persistence. Table DDL MUST NOT use `CHECK` constraints or other schema-level validation to enforce business invariants.
-
-Every `Database schema` section MUST explicitly address secondary indexes. Required secondary indexes MUST be expressed as `CREATE INDEX` or `CREATE UNIQUE INDEX` statements in the corresponding table subsection, next to the table DDL. Each index statement MUST have an adjacent SQL comment that explains the query or invariant it supports.
-
-When a module requires no secondary indexes, the `Database schema` section MUST contain one plain-text sentence that states this and explains why.
-
-Prose MAY accompany the SQL to explain ownership, derived-state behavior, or other requirements that cannot be expressed by DDL alone.
-
-### `Domain interface`
-
-A module specification SHOULD include a `Domain interface` section when another module needs a stable call contract that is not sufficiently described by the responsibility and behavior sections.
-
-The section MUST describe public behavior through `ffun.<module>.domain`. It MAY define stable operation names, arguments, return values, transaction participation, and failure behavior when those details are part of the cross-module contract.
-
-The section SHOULD specify supported import paths, public names, call shapes, accepted values, yielded or returned values, errors, transaction behavior, and observable lifecycle semantics when those details form the stable contract.
+The section SHOULD specify accepted values, semantic result fields, failure conditions, transaction behavior, and observable lifecycle semantics when those details form the stable contract.
+It MUST NOT require concrete entity, model, data-transfer-object, or exception type names.
 
 The section MUST describe callable interfaces by their observable protocol. It MUST NOT require that a public callable is implemented as a class, function, decorated generator, or callable object unless callers depend on that distinction through type identity, inheritance, instance reuse, introspection, or another explicitly documented contract.
 
-The section MUST NOT specify private helpers or expose the module's `operations` boundary to callers.
+The section MUST NOT specify private helpers, internal submodules, or implementation-only operations.
 
 ### `Audit records`
 

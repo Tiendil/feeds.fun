@@ -17,6 +17,11 @@ class ResourceReservationSpecification(BaseEntity):
     limits: tuple[int | None, ...]
 
 
+class ResourceReservationLimit(BaseEntity):
+    user_id: UserId
+    limit: int
+
+
 class ResourceReservation(BaseEntity):
     user_id: UserId
     kind: int
