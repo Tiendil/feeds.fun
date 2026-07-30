@@ -19,6 +19,12 @@ class EntryProcessingStatus(enum.IntEnum):
     skipped_by_dispatcher = 6
 
 
+class EntryProcessingStatusUpdate(BaseEntity):
+    processor_id: ProcessorId
+    entry_id: EntryId
+    status: EntryProcessingStatus
+
+
 class EntryToProcess(BaseQueueItem):
     entry_id: EntryId
     processor_id: ProcessorId | None = None

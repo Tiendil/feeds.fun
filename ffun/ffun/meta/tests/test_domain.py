@@ -10,7 +10,7 @@ from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
 from ffun.dispatcher import domain as d_domain
-from ffun.dispatcher.entities import EntryProcessingStatus
+from ffun.dispatcher.entities import EntryProcessingStatus, EntryProcessingStatusUpdate
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import ProcessorId, TagId, TagUid, UserId
 from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_source_uid, url_to_uid
@@ -81,14 +81,24 @@ class TestRemoveEntries:
             entry_id=another_entries[2].id, processor_id=another_fake_processor_id, tags=[tag_c]
         )
         await d_domain.set_entry_processing_statuses(
-            [fake_processor_id],
-            [entries[0].id, entries[1].id, another_entries[1].id],
-            EntryProcessingStatus.dispatched,
-        )
-        await d_domain.set_entry_processing_statuses(
-            [another_fake_processor_id],
-            [another_entries[1].id, another_entries[2].id],
-            EntryProcessingStatus.processed,
+            [
+                *[
+                    EntryProcessingStatusUpdate(
+                        processor_id=fake_processor_id,
+                        entry_id=entry_id,
+                        status=EntryProcessingStatus.dispatched,
+                    )
+                    for entry_id in [entries[0].id, entries[1].id, another_entries[1].id]
+                ],
+                *[
+                    EntryProcessingStatusUpdate(
+                        processor_id=another_fake_processor_id,
+                        entry_id=entry_id,
+                        status=EntryProcessingStatus.processed,
+                    )
+                    for entry_id in [another_entries[1].id, another_entries[2].id]
+                ],
+            ]
         )
 
         assert await remove_entries([entries[0].id, another_entries[1].id, entries[2].id])

@@ -1,7 +1,8 @@
 from collections.abc import Iterable
 
 from ffun.core.postgresql import execute
-from ffun.dispatcher.entities import EntryProcessingStatus
+from ffun.dispatcher import errors
+from ffun.dispatcher.entities import EntryProcessingStatus, EntryProcessingStatusUpdate
 from ffun.domain.entities import EntryId, ProcessorId
 
 
@@ -104,26 +105,23 @@ async def count_entries_by_processing_status(status: EntryProcessingStatus) -> d
     return {ProcessorId(row["processor_id"]): row["count"] for row in rows}
 
 
-async def set_entry_processing_statuses(
-    processor_ids: list[ProcessorId], entry_ids: Iterable[EntryId], status: EntryProcessingStatus
-) -> None:
-    unique_processor_ids = list(set(processor_ids))
-    ids = list(dict.fromkeys(entry_ids))
-
-    if not unique_processor_ids or not ids:
+async def set_entry_processing_statuses(updates: list[EntryProcessingStatusUpdate]) -> None:
+    if not updates:
         return
 
+    keys = [(update.processor_id, update.entry_id) for update in updates]
+
+    if len(keys) != len(set(keys)):
+        raise errors.DuplicateEntryProcessingStatusUpdates()
+
     sql = """
-    WITH entry_ids AS (
-        SELECT unnest(%(entry_ids)s::uuid[]) AS entry_id
-    ),
-    processor_ids AS (
-        SELECT unnest(%(processor_ids)s::smallint[]) AS processor_id
-    )
     INSERT INTO d_entry_processing_status (entry_id, processor_id, status)
-    SELECT entry_id, processor_id, %(status)s
-    FROM entry_ids
-    CROSS JOIN processor_ids
+    SELECT entry_id, processor_id, status
+    FROM UNNEST(
+        %(processor_ids)s::integer[],
+        %(entry_ids)s::uuid[],
+        %(statuses)s::integer[]
+    ) AS updates(processor_id, entry_id, status)
     ON CONFLICT (entry_id, processor_id) DO UPDATE SET
         status = EXCLUDED.status,
         updated_at = CURRENT_TIMESTAMP
@@ -132,9 +130,9 @@ async def set_entry_processing_statuses(
     await execute(
         sql,
         {
-            "processor_ids": unique_processor_ids,
-            "entry_ids": ids,
-            "status": int(status),
+            "processor_ids": [update.processor_id for update in updates],
+            "entry_ids": [update.entry_id for update in updates],
+            "statuses": [int(update.status) for update in updates],
         },
     )
 

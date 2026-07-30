@@ -15,6 +15,7 @@ from ffun.dispatcher.entities import (
     DispatchDecision,
     EntryAuthorization,
     EntryProcessingStatus,
+    EntryProcessingStatusUpdate,
     EntryToProcess,
     EntryToTag,
     ProcessorDispatchInfo,
@@ -120,6 +121,21 @@ def make_entry_record(entry_id: EntryId) -> QueueRecord[EntryToProcess]:
     )
 
 
+def make_status_updates(
+    processor_id: ProcessorId,
+    entry_ids: Sequence[EntryId],
+    status: EntryProcessingStatus,
+) -> list[EntryProcessingStatusUpdate]:
+    return [
+        EntryProcessingStatusUpdate(
+            processor_id=processor_id,
+            entry_id=entry_id,
+            status=status,
+        )
+        for entry_id in entry_ids
+    ]
+
+
 async def enqueue_entries_to_process(entry_ids: Sequence[EntryId]) -> None:
     await q_operations.push(
         QueueKind.entries_to_process,
@@ -178,7 +194,7 @@ class TestMoveFailedEntriesToProcessorQueue:
         entry_id = new_entry_id()
 
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await domain.set_entry_processing_statuses([fake_processor_id], [entry_id], status)
+        await domain.set_entry_processing_statuses(make_status_updates(fake_processor_id, [entry_id], status))
 
         await domain.move_failed_entries_to_processor_queue(fake_processor_id, limit=100500)
 
@@ -198,14 +214,18 @@ class TestMoveFailedEntriesToProcessorQueue:
 
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
         await domain.set_entry_processing_statuses(
-            [fake_processor_id],
-            [failed_entry_id],
-            EntryProcessingStatus.failed,
+            make_status_updates(
+                fake_processor_id,
+                [failed_entry_id],
+                EntryProcessingStatus.failed,
+            )
         )
         await domain.set_entry_processing_statuses(
-            [fake_processor_id],
-            [processed_entry_id],
-            EntryProcessingStatus.processed,
+            make_status_updates(
+                fake_processor_id,
+                [processed_entry_id],
+                EntryProcessingStatus.processed,
+            )
         )
 
         await domain.move_failed_entries_to_processor_queue(fake_processor_id, limit=100500)
@@ -226,9 +246,11 @@ class TestMoveFailedEntriesToProcessorQueue:
 
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
         await domain.set_entry_processing_statuses(
-            [fake_processor_id],
-            entry_ids,
-            EntryProcessingStatus.failed,
+            make_status_updates(
+                fake_processor_id,
+                entry_ids,
+                EntryProcessingStatus.failed,
+            )
         )
 
         await domain.move_failed_entries_to_processor_queue(fake_processor_id, limit=2)
@@ -956,8 +978,11 @@ class TestProcessEntry:
         cache = make_entries_cache()
         processor = make.processor_dispatch_info(fake_processor_id)
         processors: list[ProcessorDispatchInfo] = [processor]
-        processor_ids: list[ProcessorId] = [processor.processor_id]
-        entry_ids: list[EntryId] = [item.entry_id]
+        status_updates = make_status_updates(
+            processor.processor_id,
+            [item.entry_id],
+            EntryProcessingStatus.skipped_by_dispatcher,
+        )
         authorization = EntryAuthorization(entry_id=item.entry_id, globally_visible=False, reservations=())
         mocker.patch.object(domain, "_authorize_entry", return_value=authorization)
         convert_reservations = mocker.patch.object(r_domain, "convert_reserved_to_used")
@@ -969,11 +994,7 @@ class TestProcessEntry:
         await domain._process_entry(record, processors, cache)
 
         dispatch_to_processors.assert_not_awaited()
-        set_processing_statuses.assert_awaited_once_with(
-            processor_ids,
-            entry_ids,
-            EntryProcessingStatus.skipped_by_dispatcher,
-        )
+        set_processing_statuses.assert_awaited_once_with(status_updates)
         mark_tags_visible.assert_not_awaited()
         convert_reservations.assert_awaited_once_with(
             list[ResourceReservation](),
@@ -1383,9 +1404,11 @@ class TestDispatchEntries:
         assert first_dispatch_count == 1
         await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
         await domain.set_entry_processing_statuses(
-            [fake_processor_id],
-            [entry_id],
-            EntryProcessingStatus.failed,
+            make_status_updates(
+                fake_processor_id,
+                [entry_id],
+                EntryProcessingStatus.failed,
+            )
         )
         await domain.move_failed_entries_to_processor_queue(fake_processor_id, limit=10)
 
@@ -1455,9 +1478,11 @@ class TestDispatchEntries:
         await fl_domain.add_link(user_id, loaded_feed.id)
         await grant_tokens(user_id, EntitlementKindId.day_tokens)
         await domain.set_entry_processing_statuses(
-            [fake_processor_id],
-            [entry_id],
-            EntryProcessingStatus.processed,
+            make_status_updates(
+                fake_processor_id,
+                [entry_id],
+                EntryProcessingStatus.processed,
+            )
         )
         await enqueue_entries_to_process([entry_id])
 

@@ -9,6 +9,7 @@ from ffun.dispatcher.entities import (
     DispatchDecision,
     EntryAuthorization,
     EntryProcessingStatus,
+    EntryProcessingStatusUpdate,
     EntryToProcess,
     EntryToTag,
     ProcessorDispatchInfo,
@@ -61,7 +62,16 @@ async def move_failed_entries_to_processor_queue(processor_id: ProcessorId, limi
     if not failed_entries:
         return
 
-    await set_entry_processing_statuses([processor_id], failed_entries, EntryProcessingStatus.retry_requested)
+    await set_entry_processing_statuses(
+        [
+            EntryProcessingStatusUpdate(
+                processor_id=processor_id,
+                entry_id=entry_id,
+                status=EntryProcessingStatus.retry_requested,
+            )
+            for entry_id in failed_entries
+        ]
+    )
     await q_domain.push(
         QueueKind.entries_to_process,
         [
@@ -229,18 +239,29 @@ async def _dispatch_entry_to_processors(
     cache: entries_cache.EntriesCache,
 ) -> None:
     items_to_push = []
-    skipped_processor_ids = []
-    dispatched_processor_ids = []
+    status_updates = []
     in_collection = cache.entry_in_collection(item.entry_id)
 
     for processor in processors:
         decision = _processor_dispatch_decision(processor, item, in_collection=in_collection)
 
         if decision is None:
-            skipped_processor_ids.append(processor.processor_id)
+            status_updates.append(
+                EntryProcessingStatusUpdate(
+                    processor_id=processor.processor_id,
+                    entry_id=item.entry_id,
+                    status=EntryProcessingStatus.skipped_by_dispatcher,
+                )
+            )
             continue
 
-        dispatched_processor_ids.append(processor.processor_id)
+        status_updates.append(
+            EntryProcessingStatusUpdate(
+                processor_id=processor.processor_id,
+                entry_id=item.entry_id,
+                status=EntryProcessingStatus.dispatched,
+            )
+        )
         items_to_push.append(
             QueueItemToPush(
                 item=EntryToTag(entry_id=item.entry_id, route_id=decision.route_id),
@@ -248,19 +269,9 @@ async def _dispatch_entry_to_processors(
             )
         )
 
-    await set_entry_processing_statuses(
-        skipped_processor_ids,
-        [item.entry_id],
-        EntryProcessingStatus.skipped_by_dispatcher,
-    )
-
     # Set status before pushing to queue, because in case of a persistent error on pushing it is better
     # to not push unprocessed entries, than infinitely push already processed entries causing money loses.
-    await set_entry_processing_statuses(
-        dispatched_processor_ids,
-        [item.entry_id],
-        EntryProcessingStatus.dispatched,
-    )
+    await set_entry_processing_statuses(status_updates)
 
     await q_domain.push(QueueKind.entries_to_tag, items_to_push)
 
@@ -276,9 +287,14 @@ async def _process_entry(
     async with _entry_authorization(item, cache) as authorization:
         if not authorization.dispatch_allowed:
             await set_entry_processing_statuses(
-                [processor.processor_id for processor in item_processors],
-                [item.entry_id],
-                EntryProcessingStatus.skipped_by_dispatcher,
+                [
+                    EntryProcessingStatusUpdate(
+                        processor_id=processor.processor_id,
+                        entry_id=item.entry_id,
+                        status=EntryProcessingStatus.skipped_by_dispatcher,
+                    )
+                    for processor in item_processors
+                ]
             )
 
             return
