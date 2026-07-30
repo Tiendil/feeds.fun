@@ -49,6 +49,8 @@ _ALLOWED_PROCESSING_STATUSES = {
 }
 
 
+get_entries_dispatching_statuses = operations.get_entries_dispatching_statuses
+set_entry_dispatching_statuses = operations.set_entry_dispatching_statuses
 get_entries_processing_statuses = operations.get_entries_processing_statuses
 get_entries_by_processing_status = operations.get_entries_by_processing_status
 count_entries_by_processing_status = operations.count_entries_by_processing_status

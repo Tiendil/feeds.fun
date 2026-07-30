@@ -118,6 +118,17 @@ class TestRemoveEntryDispatchingStatuses:
         ) == {third_entry_id: False}
 
 
+class TestTechTruncateEntryDispatchingStatuses:
+    @pytest.mark.asyncio
+    async def test_removes_all_statuses(self) -> None:
+        entry_ids = [new_entry_id(), new_entry_id()]
+        await operations.set_entry_dispatching_statuses(entry_ids, resources_consumed=True)
+
+        await operations.tech_truncate_entry_dispatching_statuses()
+
+        assert await operations.get_entries_dispatching_statuses(entry_ids) == {}
+
+
 class TestGetEntriesProcessingStatuses:
     @pytest.mark.asyncio
     async def test_empty_entries_or_processors(self, fake_processor_id: ProcessorId) -> None:

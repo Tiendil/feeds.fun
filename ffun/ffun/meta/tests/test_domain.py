@@ -10,7 +10,6 @@ from ffun.core import utils
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import assert_logs
 from ffun.dispatcher import domain as d_domain
-from ffun.dispatcher import operations as d_operations
 from ffun.dispatcher.entities import EntryProcessingStatus, EntryProcessingStatusUpdate
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import ProcessorId, TagId, TagUid, UserId
@@ -101,11 +100,11 @@ class TestRemoveEntries:
                 ],
             ]
         )
-        await d_operations.set_entry_dispatching_statuses(
+        await d_domain.set_entry_dispatching_statuses(
             [entries[0].id, entries[1].id, another_entries[1].id],
             resources_consumed=True,
         )
-        await d_operations.set_entry_dispatching_statuses(
+        await d_domain.set_entry_dispatching_statuses(
             [another_entries[2].id],
             resources_consumed=False,
         )
@@ -133,7 +132,7 @@ class TestRemoveEntries:
         assert processing_statuses.get(another_fake_processor_id, {}) == {
             another_entries[2].id: EntryProcessingStatus.processed
         }
-        assert await d_operations.get_entries_dispatching_statuses(
+        assert await d_domain.get_entries_dispatching_statuses(
             [entry.id for entry in entries] + [entry.id for entry in another_entries]
         ) == {
             entries[1].id: True,

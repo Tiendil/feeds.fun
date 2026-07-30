@@ -143,6 +143,16 @@ async def enqueue_entries_to_process(entry_ids: Sequence[EntryId]) -> None:
     )
 
 
+class TestGetEntriesDispatchingStatuses:
+    def test_reexports_operation(self) -> None:
+        assert domain.get_entries_dispatching_statuses is operations.get_entries_dispatching_statuses
+
+
+class TestSetEntryDispatchingStatuses:
+    def test_reexports_operation(self) -> None:
+        assert domain.set_entry_dispatching_statuses is operations.set_entry_dispatching_statuses
+
+
 class TestGetEntriesProcessingStatuses:
     def test_reexports_operation(self) -> None:
         assert domain.get_entries_processing_statuses is operations.get_entries_processing_statuses

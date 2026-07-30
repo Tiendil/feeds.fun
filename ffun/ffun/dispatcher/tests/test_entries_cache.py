@@ -11,8 +11,8 @@ from ffun.domain.entities import EntryId, FeedId, ProcessorId, UserId
 from ffun.entitlements.entities import EntitlementKindId
 from ffun.entitlements.tests import make as e_make
 from ffun.feeds.entities import Feed
-from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import CollectionId
+from ffun.feeds_collections.tests import helpers as fc_helpers
 from ffun.library import domain as l_domain
 from ffun.library.tests import make as l_make
 from ffun.product.entities import UserSetting
@@ -63,7 +63,7 @@ class TestEntryIdsInCollections:
         user_entry_id = new_entry_id()
         entry_without_feeds_id = new_entry_id()
 
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
+        await fc_helpers.add_feed_to_collection(collection_id_for_test_feeds, another_loaded_feed.id)
 
         assert entries_cache._entry_ids_in_collections(  # noqa: SLF001
             {
@@ -89,7 +89,7 @@ class TestEntriesInCollections:
         user_entries = await l_make.n_entries(loaded_feed, 2)
         collection_entries = await l_make.n_entries(another_loaded_feed, 3)
 
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
+        await fc_helpers.add_feed_to_collection(collection_id_for_test_feeds, another_loaded_feed.id)
 
         entries_in_collections = await entries_cache.entries_in_collections(
             list(user_entries) + list(collection_entries)
@@ -110,7 +110,7 @@ class TestEntriesInCollections:
             another_loaded_feed.id,
             [entry.collected_entry() for entry in entries[:2]],
         )
-        await collections.add_test_feed_to_collections(collection_id_for_test_feeds, another_loaded_feed.id)
+        await fc_helpers.add_feed_to_collection(collection_id_for_test_feeds, another_loaded_feed.id)
 
         entries_in_collections = await entries_cache.entries_in_collections([entry.id for entry in entries])
 
