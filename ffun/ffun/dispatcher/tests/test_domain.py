@@ -45,7 +45,7 @@ from ffun.llms_framework.entities import LLMApiKey
 from ffun.markers import domain as m_domain
 from ffun.markers.entities import Marker
 from ffun.product.entities import Resource, UserSetting
-from ffun.queues import operations as q_operations
+from ffun.queues import domain as q_domain
 from ffun.queues.entities import QueueItemToPush, QueueKind, QueueRecord, QueueRecordId, QueueSecondaryId
 from ffun.resources import domain as r_domain
 from ffun.resources.entities import Resource as ResourceRecord
@@ -137,7 +137,7 @@ def make_status_updates(
 
 
 async def enqueue_entries_to_process(entry_ids: Sequence[EntryId]) -> None:
-    await q_operations.push(
+    await q_domain.push(
         QueueKind.entries_to_process,
         [QueueItemToPush(item=EntryToProcess(entry_id=entry_id)) for entry_id in entry_ids],
     )
@@ -184,7 +184,7 @@ class TestMoveFailedEntriesToProcessorQueue:
         await operations.tech_truncate_entry_processing_statuses()
 
     async def get_entries_to_process(self, processor_id: ProcessorId) -> set[EntryId]:
-        records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
+        records = await q_domain.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
 
         processor_records = [record for record in records if record.item.processor_id == processor_id]
 
@@ -198,7 +198,7 @@ class TestMoveFailedEntriesToProcessorQueue:
     async def test_no_failed_entries(self, fake_processor_id: ProcessorId, status: EntryProcessingStatus) -> None:
         entry_id = new_entry_id()
 
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
         await domain.set_entry_processing_statuses(make_status_updates(fake_processor_id, [entry_id], status))
 
         await domain.move_failed_entries_to_processor_queue(fake_processor_id, limit=100500)
@@ -217,7 +217,7 @@ class TestMoveFailedEntriesToProcessorQueue:
         failed_entry_id = new_entry_id()
         processed_entry_id = new_entry_id()
 
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
         await domain.set_entry_processing_statuses(
             make_status_updates(
                 fake_processor_id,
@@ -249,7 +249,7 @@ class TestMoveFailedEntriesToProcessorQueue:
     async def test_limit(self, fake_processor_id: ProcessorId) -> None:
         entry_ids = [new_entry_id(), new_entry_id(), new_entry_id(), new_entry_id()]
 
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
         await domain.set_entry_processing_statuses(
             make_status_updates(
                 fake_processor_id,
@@ -863,7 +863,7 @@ class TestDispatchEntryToProcessors:
         another_fake_processor_id: ProcessorId,
         mocker: MockerFixture,
     ) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_tag)
         push = mocker.spy(domain.q_domain, "push")
 
         entry_id = new_entry_id()
@@ -899,7 +899,7 @@ class TestDispatchEntryToProcessors:
         )
 
         for processor in processors:
-            records = await q_operations.tech_get_queue_records(
+            records = await q_domain.tech_get_queue_records(
                 QueueKind.entries_to_tag,
                 EntryToTag,
                 secondary_id=processor.subqueue_id,
@@ -920,7 +920,7 @@ class TestDispatchEntryToProcessors:
     async def test_marks_entries_without_allowed_route_as_skipped_by_dispatcher(
         self, fake_processor_id: ProcessorId
     ) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_tag)
 
         entry_id = new_entry_id()
         processor = make.processor_dispatch_info(
@@ -934,7 +934,7 @@ class TestDispatchEntryToProcessors:
         )
 
         assert (
-            await q_operations.tech_get_queue_records(
+            await q_domain.tech_get_queue_records(
                 QueueKind.entries_to_tag, EntryToTag, secondary_id=processor.subqueue_id
             )
             == []
@@ -1194,7 +1194,7 @@ class TestDispatchEntries:
 
     @pytest.mark.asyncio
     async def test_no_entries(self, fake_processor_id: ProcessorId) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
 
         dispatched = await domain.dispatch_entries(
             processors=[make.processor_dispatch_info(fake_processor_id)],
@@ -1302,8 +1302,8 @@ class TestDispatchEntries:
         fake_processor_id: ProcessorId,
         another_fake_processor_id: ProcessorId,
     ) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_tag)
 
         user_id = new_user_id()
         entry_ids = list(await l_make.n_entries(loaded_feed, 2))
@@ -1317,10 +1317,10 @@ class TestDispatchEntries:
         dispatched = await domain.dispatch_entries(processors=processors, batch_size=10, concurrency=10)
 
         assert dispatched == len(entry_ids)
-        assert await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess) == []
+        assert await q_domain.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess) == []
 
         for processor_id in processor_ids:
-            records = await q_operations.tech_get_queue_records(
+            records = await q_domain.tech_get_queue_records(
                 QueueKind.entries_to_tag, EntryToTag, secondary_id=QueueSecondaryId(processor_id)
             )
 
@@ -1334,8 +1334,8 @@ class TestDispatchEntries:
         collection_id_for_test_feeds: CollectionId,
         fake_processor_id: ProcessorId,
     ) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_tag)
 
         user_entry_ids = await l_make.n_entries(loaded_feed, 2)
         collection_entry_ids = await l_make.n_entries(another_loaded_feed, 2)
@@ -1365,8 +1365,8 @@ class TestDispatchEntries:
         loaded_feed: Feed,
         fake_processor_id: ProcessorId,
     ) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_tag)
         entry_id = next(iter(await l_make.n_entries(loaded_feed, 1)))
 
         await enqueue_entries_to_process([entry_id])
@@ -1379,14 +1379,14 @@ class TestDispatchEntries:
 
         assert dispatched == 1
         assert (
-            await q_operations.tech_get_queue_records(
+            await q_domain.tech_get_queue_records(
                 QueueKind.entries_to_process,
                 EntryToProcess,
             )
             == []
         )
         assert (
-            await q_operations.tech_get_queue_records(
+            await q_domain.tech_get_queue_records(
                 QueueKind.entries_to_tag,
                 EntryToTag,
                 secondary_id=QueueSecondaryId(fake_processor_id),
@@ -1407,8 +1407,8 @@ class TestDispatchEntries:
         loaded_feed: Feed,
         fake_processor_id: ProcessorId,
     ) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_tag)
         user_id = new_user_id()
         entry_id = next(iter(await l_make.n_entries(loaded_feed, 1)))
         await fl_domain.add_link(user_id, loaded_feed.id)
@@ -1423,7 +1423,7 @@ class TestDispatchEntries:
 
         assert dispatched == 1
         assert record_entry_ids(
-            await q_operations.tech_get_queue_records(
+            await q_domain.tech_get_queue_records(
                 QueueKind.entries_to_tag,
                 EntryToTag,
                 secondary_id=QueueSecondaryId(fake_processor_id),
@@ -1442,8 +1442,8 @@ class TestDispatchEntries:
         loaded_feed: Feed,
         fake_processor_id: ProcessorId,
     ) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_tag)
         api_key_user_id = new_user_id()
         entitled_user_id = new_user_id()
         entry_id = next(iter(await l_make.n_entries(loaded_feed, 1)))
@@ -1475,8 +1475,8 @@ class TestDispatchEntries:
         loaded_feed: Feed,
         fake_processor_id: ProcessorId,
     ) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_tag)
         user_id = new_user_id()
         entry_id = next(iter(await l_make.n_entries(loaded_feed, 1)))
         await fl_domain.add_link(user_id, loaded_feed.id)
@@ -1491,7 +1491,7 @@ class TestDispatchEntries:
         )
 
         assert first_dispatch_count == 1
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_tag)
         await domain.set_entry_processing_statuses(
             make_status_updates(
                 fake_processor_id,
@@ -1509,7 +1509,7 @@ class TestDispatchEntries:
 
         assert retry_dispatch_count == 1
         assert record_entry_ids(
-            await q_operations.tech_get_queue_records(
+            await q_domain.tech_get_queue_records(
                 QueueKind.entries_to_tag,
                 EntryToTag,
                 secondary_id=QueueSecondaryId(fake_processor_id),
@@ -1527,8 +1527,8 @@ class TestDispatchEntries:
         fake_processor_id: ProcessorId,
         another_fake_processor_id: ProcessorId,
     ) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_tag)
         user_id = new_user_id()
         entry_id = next(iter(await l_make.n_entries(loaded_feed, 1)))
         await fl_domain.add_link(user_id, loaded_feed.id)
@@ -1543,7 +1543,7 @@ class TestDispatchEntries:
 
         for processor in processors:
             assert record_entry_ids(
-                await q_operations.tech_get_queue_records(
+                await q_domain.tech_get_queue_records(
                     QueueKind.entries_to_tag,
                     EntryToTag,
                     secondary_id=processor.subqueue_id,
@@ -1560,8 +1560,8 @@ class TestDispatchEntries:
         loaded_feed: Feed,
         fake_processor_id: ProcessorId,
     ) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_tag)
         user_id = new_user_id()
         entry_id = next(iter(await l_make.n_entries(loaded_feed, 1)))
         await fl_domain.add_link(user_id, loaded_feed.id)
@@ -1582,7 +1582,7 @@ class TestDispatchEntries:
         )
 
         assert (
-            await q_operations.tech_get_queue_records(
+            await q_domain.tech_get_queue_records(
                 QueueKind.entries_to_tag,
                 EntryToTag,
                 secondary_id=QueueSecondaryId(fake_processor_id),
@@ -1601,8 +1601,8 @@ class TestDispatchEntries:
         fake_processor_id: ProcessorId,
         mocker: MockerFixture,
     ) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_tag)
         user_id = new_user_id()
         entry_id = next(iter(await l_make.n_entries(loaded_feed, 1)))
         await fl_domain.add_link(user_id, loaded_feed.id)
@@ -1628,7 +1628,7 @@ class TestDispatchEntries:
         assert resource.reserved == 0
         assert await m_domain.get_markers(user_id=user_id, entries_ids=[entry_id]) == {}
         assert (
-            await q_operations.tech_get_queue_records(
+            await q_domain.tech_get_queue_records(
                 QueueKind.entries_to_process,
                 EntryToProcess,
             )
@@ -1642,8 +1642,8 @@ class TestDispatchEntries:
         fake_processor_id: ProcessorId,
         mocker: MockerFixture,
     ) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_tag)
         user_id = new_user_id()
         failed_entry_id, dispatched_entry_id = list(await l_make.n_entries(loaded_feed, 2))
         await fl_domain.add_link(user_id, loaded_feed.id)
@@ -1675,14 +1675,14 @@ class TestDispatchEntries:
 
         assert dispatched == 1
         assert (
-            await q_operations.tech_get_queue_records(
+            await q_domain.tech_get_queue_records(
                 QueueKind.entries_to_process,
                 EntryToProcess,
             )
             == []
         )
         assert record_entry_ids(
-            await q_operations.tech_get_queue_records(
+            await q_domain.tech_get_queue_records(
                 QueueKind.entries_to_tag,
                 EntryToTag,
                 secondary_id=QueueSecondaryId(fake_processor_id),
@@ -1695,7 +1695,7 @@ class TestDispatchEntries:
 
     @pytest.mark.asyncio
     async def test_no_processors(self) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
 
         entry_ids = [new_entry_id()]
 
@@ -1705,13 +1705,13 @@ class TestDispatchEntries:
 
         assert dispatched == 0
 
-        records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
+        records = await q_domain.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
 
         assert record_entry_ids(records) == set(entry_ids)
 
     @pytest.mark.asyncio
     async def test_duplicated_processors(self, fake_processor_id: ProcessorId) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
 
         entry_ids = [new_entry_id()]
         processor = make.processor_dispatch_info(fake_processor_id)
@@ -1725,14 +1725,14 @@ class TestDispatchEntries:
                 concurrency=10,
             )
 
-        records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
+        records = await q_domain.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
 
         assert record_entry_ids(records) == set(entry_ids)
 
     @pytest.mark.asyncio
     async def test_batch_size(self, loaded_feed: Feed, fake_processor_id: ProcessorId) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_process)
+        await q_domain.tech_clear_queue(QueueKind.entries_to_tag)
 
         user_id = new_user_id()
         entry_ids = list(await l_make.n_entries(loaded_feed, 3))
@@ -1749,10 +1749,10 @@ class TestDispatchEntries:
 
         assert dispatched == 2
 
-        dispatched_records = await q_operations.tech_get_queue_records(
+        dispatched_records = await q_domain.tech_get_queue_records(
             QueueKind.entries_to_tag, EntryToTag, secondary_id=QueueSecondaryId(fake_processor_id)
         )
-        remaining_records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
+        remaining_records = await q_domain.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
 
         assert len(dispatched_records) == 2
         assert len(remaining_records) == 1
