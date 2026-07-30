@@ -1,5 +1,6 @@
 import contextlib
 import datetime
+import functools
 from collections.abc import AsyncIterator, Iterable, Mapping, Sequence
 
 from ffun.core import logging, utils
@@ -20,7 +21,7 @@ from ffun.domain.datetime_intervals import (
     day_interval_start,
     month_interval_start,
 )
-from ffun.domain.entities import ProcessorId, UserId
+from ffun.domain.entities import EntryId, ProcessorId, UserId
 from ffun.entitlements.entities import EffectiveEntitlementInterval, EntitlementKindId
 from ffun.markers import domain as m_domain
 from ffun.markers.entities import Marker
@@ -330,8 +331,37 @@ async def _process_retry_entry(
     )
 
 
+def _validate_dispatch_entries(processors: Sequence[ProcessorDispatchInfo], concurrency: int) -> None:
+    processor_ids = [processor.processor_id for processor in processors]
+
+    if len(processor_ids) != len(set(processor_ids)):
+        raise errors.DuplicatedProcessors()
+
+    if concurrency <= 0:
+        raise errors.InvalidConcurrency()
+
+
+async def _dispatch_record(
+    record: QueueRecord[EntryToProcess],
+    *,
+    processors: Sequence[ProcessorDispatchInfo],
+    cache: entries_cache.EntriesCache,
+    dispatching_statuses: Mapping[EntryId, bool],
+) -> bool:
+    try:
+        if record.item.entry_id in dispatching_statuses:
+            await _process_retry_entry(record, processors, cache)
+        else:
+            await _process_entry(record, processors, cache)
+    except Exception:
+        logger.exception("entry_dispatch_failed", entry_id=record.item.entry_id)
+        return False
+
+    return True
+
+
 @logging.measure_block_time(logger, "dispatch_entries_time")
-async def dispatch_entries(  # noqa: CCR001  # pylint: disable=too-many-locals
+async def dispatch_entries(
     processors: Sequence[ProcessorDispatchInfo],
     batch_size: int,
     concurrency: int,
@@ -340,13 +370,7 @@ async def dispatch_entries(  # noqa: CCR001  # pylint: disable=too-many-locals
         logger.info("no_processors_to_dispatch_entries")
         return 0
 
-    processor_ids = [processor.processor_id for processor in processors]
-
-    if len(processor_ids) != len(set(processor_ids)):
-        raise errors.DuplicatedProcessors()
-
-    if concurrency <= 0:
-        raise errors.InvalidConcurrency()
+    _validate_dispatch_entries(processors, concurrency)
 
     records = await q_domain.pull(QueueKind.entries_to_process, EntryToProcess, limit=batch_size)
 
@@ -357,8 +381,6 @@ async def dispatch_entries(  # noqa: CCR001  # pylint: disable=too-many-locals
     dispatching_statuses = await operations.get_entries_dispatching_statuses(
         [record.item.entry_id for record in records]
     )
-    retry_records = [record for record in records if record.item.entry_id in dispatching_statuses]
-    first_time_records = [record for record in records if record.item.entry_id not in dispatching_statuses]
 
     cache = await entries_cache.create_entries_cache(
         items=[record.item for record in records],
@@ -366,41 +388,27 @@ async def dispatch_entries(  # noqa: CCR001  # pylint: disable=too-many-locals
         entitlement_kind_ids=_TOKEN_ENTITLEMENT_KINDS,
     )
 
-    # Process entries separately to simplify error handling; batching would require
-    # complex mapping between entries and users.
-    async def process_record(record: QueueRecord[EntryToProcess]) -> bool:
-        try:
-            if record.item.entry_id in dispatching_statuses:
-                await _process_retry_entry(record, processors, cache)
-            else:
-                await _process_entry(record, processors, cache)
-        except Exception:
-            logger.exception("entry_dispatch_failed", entry_id=record.item.entry_id)
-            return False
-
-        return True
-
-    records_to_process = [*retry_records, *first_time_records]
-
     results = await ConcurrentMapper(
-        items=records_to_process,
-        handler=process_record,
+        items=records,
+        handler=functools.partial(
+            _dispatch_record,
+            processors=processors,
+            cache=cache,
+            dispatching_statuses=dispatching_statuses,
+        ),
         concurrency=concurrency,
     )()
 
-    processed_record_ids: list[QueueRecordId] = []
+    record_ids: list[QueueRecordId] = []
 
-    for record, processed in zip(records_to_process, results, strict=True):
-        if not processed:
-            continue
-
+    for record in records:
         assert record.id is not None
-        processed_record_ids.append(record.id)
+        record_ids.append(record.id)
 
-    if processed_record_ids:
-        await q_domain.acknowledge(processed_record_ids)
+    # TODO: Consider moving failed records to a dedicated queue before acknowledging the batch.
+    await q_domain.acknowledge(record_ids)
 
-    entries_processed = len(processed_record_ids)
+    entries_processed = sum(results)
 
     logger.info(
         "entries_dispatched",

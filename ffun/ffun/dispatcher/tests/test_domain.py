@@ -1102,6 +1102,91 @@ class TestProcessRetryEntry:
             await domain._process_retry_entry(record, [processor], cache)
 
 
+class TestValidateDispatchEntries:
+    def test_success(
+        self,
+        fake_processor_id: ProcessorId,
+        another_fake_processor_id: ProcessorId,
+    ) -> None:
+        domain._validate_dispatch_entries(
+            [
+                make.processor_dispatch_info(fake_processor_id),
+                make.processor_dispatch_info(another_fake_processor_id),
+            ],
+            concurrency=1,
+        )
+
+    def test_duplicated_processors(self, fake_processor_id: ProcessorId) -> None:
+        processor = make.processor_dispatch_info(fake_processor_id)
+
+        with pytest.raises(errors.DuplicatedProcessors):
+            domain._validate_dispatch_entries([processor, processor], concurrency=1)
+
+    def test_non_positive_concurrency(self, fake_processor_id: ProcessorId) -> None:
+        with pytest.raises(errors.InvalidConcurrency):
+            domain._validate_dispatch_entries(
+                [make.processor_dispatch_info(fake_processor_id)],
+                concurrency=0,
+            )
+
+
+class TestDispatchRecord:
+    @pytest.mark.asyncio
+    async def test_first_time_entry(self, fake_processor_id: ProcessorId, mocker: MockerFixture) -> None:
+        record = make_entry_record(new_entry_id())
+        processors = [make.processor_dispatch_info(fake_processor_id)]
+        cache = make_entries_cache()
+        process_entry = mocker.patch.object(domain, "_process_entry")
+        process_retry_entry = mocker.patch.object(domain, "_process_retry_entry")
+
+        dispatched = await domain._dispatch_record(
+            record,
+            processors=processors,
+            cache=cache,
+            dispatching_statuses={},
+        )
+
+        assert dispatched
+        process_entry.assert_awaited_once_with(record, processors, cache)
+        process_retry_entry.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_retry_entry(self, fake_processor_id: ProcessorId, mocker: MockerFixture) -> None:
+        record = make_entry_record(new_entry_id())
+        processors = [make.processor_dispatch_info(fake_processor_id)]
+        cache = make_entries_cache()
+        process_entry = mocker.patch.object(domain, "_process_entry")
+        process_retry_entry = mocker.patch.object(domain, "_process_retry_entry")
+
+        dispatched = await domain._dispatch_record(
+            record,
+            processors=processors,
+            cache=cache,
+            dispatching_statuses={record.item.entry_id: False},
+        )
+
+        assert dispatched
+        process_entry.assert_not_awaited()
+        process_retry_entry.assert_awaited_once_with(record, processors, cache)
+
+    @pytest.mark.asyncio
+    async def test_failure(self, fake_processor_id: ProcessorId, mocker: MockerFixture) -> None:
+        record = make_entry_record(new_entry_id())
+        cache = make_entries_cache()
+        mocker.patch.object(domain, "_process_entry", side_effect=RuntimeError("dispatch failed"))
+        log_exception = mocker.patch.object(domain.logger, "exception")
+
+        dispatched = await domain._dispatch_record(
+            record,
+            processors=[make.processor_dispatch_info(fake_processor_id)],
+            cache=cache,
+            dispatching_statuses={},
+        )
+
+        assert not dispatched
+        log_exception.assert_called_once_with("entry_dispatch_failed", entry_id=record.item.entry_id)
+
+
 class TestDispatchEntries:
     @pytest_asyncio.fixture(autouse=True)  # type: ignore
     async def prepare_processing_statuses(self) -> None:
@@ -1153,7 +1238,7 @@ class TestDispatchEntries:
         assert max_active_tasks == 2
 
     @pytest.mark.asyncio
-    async def test_splits_first_time_and_retry_entries(
+    async def test_processes_first_time_and_retry_entries(
         self,
         fake_processor_id: ProcessorId,
         mocker: MockerFixture,
@@ -1193,14 +1278,13 @@ class TestDispatchEntries:
         assert cast(int, process_retry_entry.await_count) == 2
         process_retry_entry.assert_any_await(consumed_retry_record, processors, cache)
         process_retry_entry.assert_any_await(free_retry_record, processors, cache)
-        records_to_process = [consumed_retry_record, free_retry_record, first_time_record]
-        processed_record_ids: list[QueueRecordId] = []
+        record_ids: list[QueueRecordId] = []
 
-        for record in records_to_process:
+        for record in records:
             assert record.id is not None
-            processed_record_ids.append(record.id)
+            record_ids.append(record.id)
 
-        acknowledge.assert_awaited_once_with(processed_record_ids)
+        acknowledge.assert_awaited_once_with(record_ids)
 
     @pytest.mark.asyncio
     async def test_non_positive_concurrency(self, fake_processor_id: ProcessorId) -> None:
@@ -1543,12 +1627,13 @@ class TestDispatchEntries:
         assert resource.used == 0
         assert resource.reserved == 0
         assert await m_domain.get_markers(user_id=user_id, entries_ids=[entry_id]) == {}
-        assert record_entry_ids(
+        assert (
             await q_operations.tech_get_queue_records(
                 QueueKind.entries_to_process,
                 EntryToProcess,
             )
-        ) == {entry_id}
+            == []
+        )
 
     @pytest.mark.asyncio
     async def test_entry_failure_does_not_interrupt_siblings(
@@ -1589,12 +1674,13 @@ class TestDispatchEntries:
         )
 
         assert dispatched == 1
-        assert record_entry_ids(
+        assert (
             await q_operations.tech_get_queue_records(
                 QueueKind.entries_to_process,
                 EntryToProcess,
             )
-        ) == {failed_entry_id}
+            == []
+        )
         assert record_entry_ids(
             await q_operations.tech_get_queue_records(
                 QueueKind.entries_to_tag,
