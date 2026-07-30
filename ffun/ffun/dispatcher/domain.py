@@ -194,11 +194,14 @@ def _processor_dispatch_route(
 
 async def _mark_entry_tags_visible(authorization: EntryAuthorization, settled_user_ids: Iterable[UserId]) -> None:
     if authorization.globally_visible:
-        await m_domain.set_marker(user_id=None, marker=Marker.can_see_tags, entry_id=authorization.entry_id)
+        await m_domain.set_marker(user_ids=[None], marker=Marker.can_see_tags, entry_id=authorization.entry_id)
         return
 
-    for user_id in sorted(settled_user_ids, key=str):
-        await m_domain.set_marker(user_id=user_id, marker=Marker.can_see_tags, entry_id=authorization.entry_id)
+    await m_domain.set_marker(
+        user_ids=settled_user_ids,
+        marker=Marker.can_see_tags,
+        entry_id=authorization.entry_id,
+    )
 
 
 def _processors_for_item(

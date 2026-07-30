@@ -17,26 +17,32 @@ def log_business_event(event: str, user_id: UserId | None, marker: Marker, entry
     logger.business_event(event, user_id=user_id, marker=marker, entry_id=entry_id)
 
 
-async def set_marker(user_id: UserId | None, marker: Marker, entry_id: EntryId) -> None:
-    if user_id is None:
-        sql = """
-            INSERT INTO m_markers (id, user_id, marker, entry_id)
-            VALUES (%(id)s, %(user_id)s, %(marker)s, %(entry_id)s)
-            ON CONFLICT (entry_id, marker) WHERE user_id IS NULL DO NOTHING
-            RETURNING id
-        """
-    else:
-        sql = """
-            INSERT INTO m_markers (id, user_id, marker, entry_id)
-            VALUES (%(id)s, %(user_id)s, %(marker)s, %(entry_id)s)
-            ON CONFLICT (user_id, entry_id, marker) WHERE user_id IS NOT NULL DO NOTHING
-            RETURNING id
-        """
+async def set_marker(user_ids: Iterable[UserId | None], marker: Marker, entry_id: EntryId) -> None:
+    user_ids = list(user_ids)
 
-    results = await execute(sql, {"id": uuid.uuid4(), "user_id": user_id, "marker": marker, "entry_id": entry_id})
+    if not user_ids:
+        return
 
-    if results:
-        log_business_event("marker_set", user_id=user_id, marker=marker, entry_id=entry_id)
+    sql = """
+        INSERT INTO m_markers (id, user_id, marker, entry_id)
+        SELECT requested.id, requested.user_id, %(marker)s, %(entry_id)s
+        FROM UNNEST(%(ids)s::uuid[], %(user_ids)s::uuid[]) AS requested(id, user_id)
+        ON CONFLICT DO NOTHING
+        RETURNING user_id
+    """
+
+    results = await execute(
+        sql,
+        {
+            "ids": [uuid.uuid4() for _ in user_ids],
+            "user_ids": user_ids,
+            "marker": marker,
+            "entry_id": entry_id,
+        },
+    )
+
+    for row in results:
+        log_business_event("marker_set", user_id=row["user_id"], marker=marker, entry_id=entry_id)
 
 
 async def remove_marker(user_id: UserId | None, marker: Marker, entry_id: EntryId) -> None:
