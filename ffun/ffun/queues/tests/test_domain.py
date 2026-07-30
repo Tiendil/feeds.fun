@@ -1,7 +1,7 @@
 import pytest
 
 from ffun.queues import domain, operations
-from ffun.queues.entities import QueueKind
+from ffun.queues.entities import QueueItemToPush, QueueKind
 from ffun.queues.tests import make
 from ffun.queues.tests.entities import FakeQueueItem
 
@@ -13,7 +13,7 @@ class TestPush:
 
         item = make.fake_queue_item()
 
-        await domain.push(QueueKind.test_queue_1, [item])
+        await domain.push(QueueKind.test_queue_1, [QueueItemToPush(item=item)])
 
         records = await operations.tech_get_queue_records(QueueKind.test_queue_1, FakeQueueItem)
 
@@ -28,7 +28,7 @@ class TestPull:
 
         item = make.fake_queue_item()
 
-        await operations.push(QueueKind.test_queue_1, [item])
+        await operations.push(QueueKind.test_queue_1, [QueueItemToPush(item=item)])
 
         records = await domain.pull(QueueKind.test_queue_1, FakeQueueItem, limit=1)
 
@@ -43,7 +43,7 @@ class TestAcknowledge:
 
         item = make.fake_queue_item()
 
-        await operations.push(QueueKind.test_queue_1, [item])
+        await operations.push(QueueKind.test_queue_1, [QueueItemToPush(item=item)])
         records = await operations.tech_get_queue_records(QueueKind.test_queue_1, FakeQueueItem)
 
         record_id = records[0].id
@@ -61,7 +61,13 @@ class TestQueuesStats:
         for queue_kind in QueueKind:
             await operations.tech_clear_queue(queue_kind)
 
-        await operations.push(QueueKind.test_queue_1, [make.fake_queue_item(), make.fake_queue_item()])
+        await operations.push(
+            QueueKind.test_queue_1,
+            [
+                QueueItemToPush(item=make.fake_queue_item()),
+                QueueItemToPush(item=make.fake_queue_item()),
+            ],
+        )
 
         assert await domain.queues_stats() == {(QueueKind.test_queue_1.value, 1): 2}
 

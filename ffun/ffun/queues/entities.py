@@ -6,9 +6,10 @@ from typing import Generic, NewType, TypeVar
 from ffun.core.entities import BaseEntity
 
 QueueRecordId = NewType("QueueRecordId", uuid.UUID)
+QueueSecondaryId = NewType("QueueSecondaryId", int)
 QueueItemT = TypeVar("QueueItemT", bound="BaseQueueItem")
 
-DEFAULT_SECONDARY_ID = 1
+DEFAULT_SECONDARY_ID = QueueSecondaryId(1)
 
 
 class QueueKind(enum.IntEnum):
@@ -27,10 +28,15 @@ class BaseQueueItem(BaseEntity):
         return self.model_dump(mode="json")  # type: ignore[misc]
 
 
+class QueueItemToPush(BaseEntity, Generic[QueueItemT]):
+    item: QueueItemT
+    secondary_id: QueueSecondaryId = DEFAULT_SECONDARY_ID
+
+
 class QueueRecord(BaseEntity, Generic[QueueItemT]):
     id: QueueRecordId | None = None
     primary_id: QueueKind
-    secondary_id: int = DEFAULT_SECONDARY_ID
+    secondary_id: QueueSecondaryId = DEFAULT_SECONDARY_ID
     priority: int
     freezed_till: datetime.datetime
     created_at: datetime.datetime

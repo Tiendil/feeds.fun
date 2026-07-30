@@ -1,5 +1,5 @@
 import uuid
-from collections.abc import Iterable
+from collections.abc import Sequence
 
 import pytest
 from pytest_mock import MockerFixture
@@ -11,6 +11,7 @@ from ffun.core.tests.helpers import (
     assert_logs_has_no_business_event,
     assert_logs_has_record,
 )
+from ffun.dispatcher.entities import EntryToProcess
 from ffun.domain.entities import EntryId, UserId
 from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_uid
 from ffun.feeds import domain as f_domain
@@ -32,6 +33,7 @@ from ffun.loader.domain import (
 from ffun.loader.settings import Proxy, settings
 from ffun.parsers import entities as p_entities
 from ffun.parsers.tests import make as p_make
+from ffun.queues.entities import QueueItemToPush, QueueKind
 
 
 def assert_entry_fields_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entities.Entry) -> None:
@@ -51,10 +53,16 @@ def assert_entriy_equal_to_info(entry_info: p_entities.EntryInfo, entry: l_entit
 def pushed_entries_to_process(mocker: MockerFixture) -> set[EntryId]:
     pushed_entries: set[EntryId] = set()
 
-    async def fake_push_entries_to_process(entry_ids: Iterable[EntryId]) -> None:
-        pushed_entries.update(entry_ids)
+    async def fake_push(
+        primary_id: QueueKind,
+        items: Sequence[QueueItemToPush[EntryToProcess]],
+        priority: int | None = None,
+    ) -> None:
+        assert primary_id == QueueKind.entries_to_process
+        assert priority is None
+        pushed_entries.update(item.item.entry_id for item in items)
 
-    mocker.patch("ffun.loader.domain.d_domain.push_entries_to_process", side_effect=fake_push_entries_to_process)
+    mocker.patch("ffun.loader.domain.q_domain.push", side_effect=fake_push)
 
     return pushed_entries
 

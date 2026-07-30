@@ -20,6 +20,14 @@ from ffun.user_settings.entities import SettingKind
 
 class TestEntryFeedIds:
     @pytest.mark.asyncio
+    async def test_duplicate_entries(self, loaded_feed: Feed) -> None:
+        entry = (await l_make.n_entries_list(loaded_feed, 1))[0]
+
+        assert await entries_cache._entry_feed_ids([entry.id, entry.id]) == {  # noqa: SLF001
+            entry.id: {loaded_feed.id}
+        }
+
+    @pytest.mark.asyncio
     async def test_returns_all_feed_links_and_skips_unlinked_entries(
         self,
         loaded_feed: Feed,
@@ -117,6 +125,17 @@ class TestUsersWithApiKeys:
     @pytest.mark.asyncio
     async def test_no_users(self) -> None:
         assert await entries_cache._users_with_api_keys([]) == set()  # noqa: SLF001
+
+    @pytest.mark.asyncio
+    async def test_duplicate_users(self) -> None:
+        user_id = new_user_id()
+        await us_domain.save_setting(
+            user_id=user_id,
+            kind=SettingKind(int(UserSetting.test_api_key)),
+            value=uuid.uuid4().hex,
+        )
+
+        assert await entries_cache._users_with_api_keys([user_id, user_id]) == {user_id}  # noqa: SLF001
 
     @pytest.mark.asyncio
     async def test_detects_all_supported_api_key_settings(self) -> None:
@@ -224,6 +243,17 @@ class TestEntriesCache:
 
 
 class TestCreateEntriesCache:
+    @pytest.mark.asyncio
+    async def test_no_items_and_processors(self) -> None:
+        cache = await entries_cache.create_entries_cache([], [])
+        entry_id = new_entry_id()
+        processor_id = ProcessorId(101)
+
+        assert not cache.entry_in_collection(entry_id)
+        assert cache.entry_user_ids(entry_id) == set()
+        assert not cache.users_have_api_keys([new_user_id()])
+        assert cache.entry_processing_status(processor_id, entry_id) is None
+
     @pytest.mark.asyncio
     async def test_bulk_loads_and_connects_cached_values(
         self,

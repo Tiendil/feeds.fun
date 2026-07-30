@@ -121,6 +121,7 @@ depends_on = [
     "ffun.library",
     "ffun.llms_framework",
     "ffun.ontology",
+    "ffun.queues",
     "ffun.tags",
 ]
 layer = "tags_workflow"
@@ -152,6 +153,7 @@ depends_on = [
     "ffun.feeds_links",
     "ffun.library",
     "ffun.parsers",
+    "ffun.queues",
 ]
 layer = "feeds_workflow"
 

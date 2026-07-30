@@ -5,6 +5,44 @@ from ffun.dispatcher.entities import EntryProcessingStatus
 from ffun.domain.entities import EntryId, ProcessorId
 
 
+async def get_entries_dispatching_statuses(entry_ids: Iterable[EntryId]) -> dict[EntryId, bool]:
+    ids = list(set(entry_ids))
+
+    if not ids:
+        return {}
+
+    sql = """
+    SELECT entry_id, resources_consumed
+    FROM d_entry_dispatching_status
+    WHERE entry_id = ANY(%(entry_ids)s)
+    """
+
+    rows = await execute(sql, {"entry_ids": ids})
+
+    return {row["entry_id"]: row["resources_consumed"] for row in rows}
+
+
+async def set_entry_dispatching_statuses(entry_ids: Iterable[EntryId], resources_consumed: bool) -> None:
+    ids = list(set(entry_ids))
+
+    if not ids:
+        return
+
+    sql = """
+    WITH entry_ids AS (
+        SELECT unnest(%(entry_ids)s::uuid[]) AS entry_id
+    )
+    INSERT INTO d_entry_dispatching_status (entry_id, resources_consumed)
+    SELECT entry_id, %(resources_consumed)s
+    FROM entry_ids
+    ON CONFLICT (entry_id) DO UPDATE SET
+        resources_consumed = EXCLUDED.resources_consumed,
+        updated_at = CURRENT_TIMESTAMP
+    """
+
+    await execute(sql, {"entry_ids": ids, "resources_consumed": resources_consumed})
+
+
 async def get_entries_processing_statuses(
     processor_ids: Iterable[ProcessorId], entry_ids: Iterable[EntryId]
 ) -> dict[ProcessorId, dict[EntryId, EntryProcessingStatus]]:
@@ -67,26 +105,38 @@ async def count_entries_by_processing_status(status: EntryProcessingStatus) -> d
 
 
 async def set_entry_processing_statuses(
-    processor_id: ProcessorId, entry_ids: Iterable[EntryId], status: EntryProcessingStatus
+    processor_ids: list[ProcessorId], entry_ids: Iterable[EntryId], status: EntryProcessingStatus
 ) -> None:
+    unique_processor_ids = list(set(processor_ids))
     ids = list(dict.fromkeys(entry_ids))
 
-    if not ids:
+    if not unique_processor_ids or not ids:
         return
 
     sql = """
     WITH entry_ids AS (
         SELECT unnest(%(entry_ids)s::uuid[]) AS entry_id
+    ),
+    processor_ids AS (
+        SELECT unnest(%(processor_ids)s::smallint[]) AS processor_id
     )
     INSERT INTO d_entry_processing_status (entry_id, processor_id, status)
-    SELECT entry_id, %(processor_id)s, %(status)s
+    SELECT entry_id, processor_id, %(status)s
     FROM entry_ids
+    CROSS JOIN processor_ids
     ON CONFLICT (entry_id, processor_id) DO UPDATE SET
         status = EXCLUDED.status,
         updated_at = CURRENT_TIMESTAMP
     """
 
-    await execute(sql, {"processor_id": processor_id, "entry_ids": ids, "status": int(status)})
+    await execute(
+        sql,
+        {
+            "processor_ids": unique_processor_ids,
+            "entry_ids": ids,
+            "status": int(status),
+        },
+    )
 
 
 async def remove_entry_processing_statuses(entry_ids: Iterable[EntryId]) -> None:

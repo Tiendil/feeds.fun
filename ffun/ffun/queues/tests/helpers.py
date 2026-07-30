@@ -2,7 +2,7 @@ import datetime
 
 from ffun.core.postgresql import execute
 from ffun.queues import operations
-from ffun.queues.entities import QueueKind, QueueRecord, QueueRecordId
+from ffun.queues.entities import QueueItemToPush, QueueKind, QueueRecord, QueueRecordId, QueueSecondaryId
 from ffun.queues.tests import make
 from ffun.queues.tests.entities import FakeQueueItem
 
@@ -14,18 +14,18 @@ async def push_item(
     priority: int | None = None,
 ) -> QueueRecord[FakeQueueItem]:
     item = item or make.fake_queue_item()
+    queue_secondary_id = QueueSecondaryId(secondary_id)
 
     await operations.push(
         queue_kind,
-        [item],
-        secondary_id=secondary_id,
+        [QueueItemToPush(item=item, secondary_id=queue_secondary_id)],
         priority=priority,
     )
 
     records = await operations.tech_get_queue_records(
         queue_kind,
         FakeQueueItem,
-        secondary_id=secondary_id,
+        secondary_id=queue_secondary_id,
     )
 
     found_records = [record for record in records if record.item.value == item.value]

@@ -5,7 +5,7 @@ import typer
 from ffun.application.application import with_app
 from ffun.core import logging
 from ffun.queues import domain as q_domain
-from ffun.queues.entities import QueueKind
+from ffun.queues.entities import QueueKind, QueueSecondaryId
 
 logger = logging.get_module_logger()
 
@@ -54,7 +54,10 @@ async def cleanup_queues(clean_all: bool, queue: str | None, subqueue: int | Non
 
     logger.info("queue_cleanup_started", queue=queue_kind.name, primary_id=queue_kind.value, secondary_id=subqueue)
 
-    await q_domain.tech_clear_queue(queue_kind, secondary_id=subqueue)
+    await q_domain.tech_clear_queue(
+        queue_kind,
+        secondary_id=None if subqueue is None else QueueSecondaryId(subqueue),
+    )
 
     logger.info("queue_cleanup_finished", queue=queue_kind.name, primary_id=queue_kind.value, secondary_id=subqueue)
 

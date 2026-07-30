@@ -1,9 +1,10 @@
 import enum
+from functools import cached_property
 from typing import NewType
 
 from ffun.core.entities import BaseEntity
 from ffun.domain.entities import EntryId, ProcessorId
-from ffun.queues.entities import BaseQueueItem
+from ffun.queues.entities import BaseQueueItem, QueueSecondaryId
 from ffun.resources.entities import ResourceReservation
 
 ProcessorRouteId = NewType("ProcessorRouteId", str)
@@ -37,6 +38,10 @@ class EntryAuthorization(BaseEntity):
     globally_visible: bool
     reservations: tuple[ResourceReservation, ...]
 
+    @cached_property
+    def dispatch_allowed(self) -> bool:
+        return self.globally_visible or bool(self.reservations)
+
 
 class ProcessorDispatchRoute(BaseEntity):
     id: ProcessorRouteId
@@ -46,5 +51,5 @@ class ProcessorDispatchRoute(BaseEntity):
 
 class ProcessorDispatchInfo(BaseEntity):
     processor_id: ProcessorId
-    subqueue_id: ProcessorId
+    subqueue_id: QueueSecondaryId
     routes: tuple[ProcessorDispatchRoute, ...]

@@ -3,7 +3,7 @@ from typing import Mapping
 import httpx
 
 from ffun.core import logging
-from ffun.dispatcher import domain as d_domain
+from ffun.dispatcher.entities import EntryToProcess
 from ffun.domain.domain import new_entry_id
 from ffun.domain.entities import AbsoluteUrl, FeedUrl
 from ffun.domain.urls import construct_f_url, url_to_source_uid
@@ -16,6 +16,8 @@ from ffun.loader import errors, operations
 from ffun.loader.entities import ProxyState
 from ffun.loader.settings import settings
 from ffun.parsers import entities as p_entities
+from ffun.queues import domain as q_domain
+from ffun.queues.entities import QueueItemToPush, QueueKind
 
 logger = logging.get_module_logger()
 
@@ -175,7 +177,10 @@ async def store_entries(feed: Feed, entries: list[p_entities.EntryInfo]) -> None
     logger.info("entries_stored", entries_cataloged=entries_cataloged, entries_skipped=entries_skipped)
 
     if entries_cataloged > 0:
-        await d_domain.push_entries_to_process(linked_entry_ids)
+        await q_domain.push(
+            QueueKind.entries_to_process,
+            [QueueItemToPush(item=EntryToProcess(entry_id=entry_id)) for entry_id in linked_entry_ids],
+        )
         logger.business_event("news_entries_stored", user_id=None, feed_id=feed.id, entries_number=entries_cataloged)
 
 

@@ -81,12 +81,12 @@ class TestRemoveEntries:
             entry_id=another_entries[2].id, processor_id=another_fake_processor_id, tags=[tag_c]
         )
         await d_domain.set_entry_processing_statuses(
-            fake_processor_id,
+            [fake_processor_id],
             [entries[0].id, entries[1].id, another_entries[1].id],
             EntryProcessingStatus.dispatched,
         )
         await d_domain.set_entry_processing_statuses(
-            another_fake_processor_id,
+            [another_fake_processor_id],
             [another_entries[1].id, another_entries[2].id],
             EntryProcessingStatus.processed,
         )

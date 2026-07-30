@@ -12,6 +12,72 @@ async def prepare_processing_statuses() -> None:
     await operations.tech_truncate_entry_processing_statuses()
 
 
+class TestGetEntriesDispatchingStatuses:
+    @pytest.mark.asyncio
+    async def test_empty_entries(self) -> None:
+        assert await operations.get_entries_dispatching_statuses([]) == {}
+
+    @pytest.mark.asyncio
+    async def test_duplicate_entries(self) -> None:
+        entry_id = new_entry_id()
+        await operations.set_entry_dispatching_statuses([entry_id], resources_consumed=True)
+
+        assert await operations.get_entries_dispatching_statuses([entry_id, entry_id]) == {entry_id: True}
+
+    @pytest.mark.asyncio
+    async def test_returns_statuses_only_for_requested_entries(self) -> None:
+        consumed_entry_id = new_entry_id()
+        not_consumed_entry_id = new_entry_id()
+        another_entry_id = new_entry_id()
+        missing_entry_id = new_entry_id()
+
+        await operations.set_entry_dispatching_statuses([consumed_entry_id], resources_consumed=True)
+        await operations.set_entry_dispatching_statuses([not_consumed_entry_id], resources_consumed=False)
+        await operations.set_entry_dispatching_statuses([another_entry_id], resources_consumed=True)
+
+        assert await operations.get_entries_dispatching_statuses(
+            [consumed_entry_id, not_consumed_entry_id, missing_entry_id]
+        ) == {
+            consumed_entry_id: True,
+            not_consumed_entry_id: False,
+        }
+
+
+class TestSetEntryDispatchingStatuses:
+    @pytest.mark.asyncio
+    async def test_empty_entries(self) -> None:
+        entry_id = new_entry_id()
+        await operations.set_entry_dispatching_statuses([entry_id], resources_consumed=False)
+
+        await operations.set_entry_dispatching_statuses([], resources_consumed=True)
+
+        assert await operations.get_entries_dispatching_statuses([entry_id]) == {entry_id: False}
+
+    @pytest.mark.asyncio
+    async def test_duplicate_entries(self) -> None:
+        entry_id = new_entry_id()
+
+        await operations.set_entry_dispatching_statuses([entry_id, entry_id], resources_consumed=True)
+
+        assert await operations.get_entries_dispatching_statuses([entry_id]) == {entry_id: True}
+
+    @pytest.mark.asyncio
+    async def test_updates_existing_statuses(self) -> None:
+        first_entry_id = new_entry_id()
+        second_entry_id = new_entry_id()
+
+        await operations.set_entry_dispatching_statuses(
+            [first_entry_id, second_entry_id],
+            resources_consumed=False,
+        )
+        await operations.set_entry_dispatching_statuses([second_entry_id], resources_consumed=True)
+
+        assert await operations.get_entries_dispatching_statuses([first_entry_id, second_entry_id]) == {
+            first_entry_id: False,
+            second_entry_id: True,
+        }
+
+
 class TestGetEntriesProcessingStatuses:
     @pytest.mark.asyncio
     async def test_empty_entries_or_processors(self, fake_processor_id: ProcessorId) -> None:
@@ -37,10 +103,10 @@ class TestGetEntriesProcessingStatuses:
         second_entry_id = new_entry_id()
 
         await operations.set_entry_processing_statuses(
-            fake_processor_id, [first_entry_id, second_entry_id], EntryProcessingStatus.dispatched
+            [fake_processor_id], [first_entry_id, second_entry_id], EntryProcessingStatus.dispatched
         )
         await operations.set_entry_processing_statuses(
-            another_fake_processor_id, [first_entry_id], EntryProcessingStatus.failed
+            [another_fake_processor_id], [first_entry_id], EntryProcessingStatus.failed
         )
 
         assert await operations.get_entries_processing_statuses(
@@ -67,13 +133,13 @@ class TestGetEntriesByProcessingStatus:
         another_processor_entry_id = new_entry_id()
 
         await operations.set_entry_processing_statuses(
-            fake_processor_id, [first_entry_id, second_entry_id], EntryProcessingStatus.dispatched
+            [fake_processor_id], [first_entry_id, second_entry_id], EntryProcessingStatus.dispatched
         )
         await operations.set_entry_processing_statuses(
-            fake_processor_id, [processed_entry_id], EntryProcessingStatus.processed
+            [fake_processor_id], [processed_entry_id], EntryProcessingStatus.processed
         )
         await operations.set_entry_processing_statuses(
-            another_fake_processor_id, [another_processor_entry_id], EntryProcessingStatus.dispatched
+            [another_fake_processor_id], [another_processor_entry_id], EntryProcessingStatus.dispatched
         )
 
         dispatched_entries = await operations.get_entries_by_processing_status(
@@ -89,17 +155,19 @@ class TestGetEntriesByProcessingStatus:
         assert processed_entries == [processed_entry_id]
 
         await operations.set_entry_processing_statuses(
-            fake_processor_id, [first_entry_id, second_entry_id], EntryProcessingStatus.processed
+            [fake_processor_id], [first_entry_id, second_entry_id], EntryProcessingStatus.processed
         )
         await operations.set_entry_processing_statuses(
-            another_fake_processor_id, [another_processor_entry_id], EntryProcessingStatus.processed
+            [another_fake_processor_id], [another_processor_entry_id], EntryProcessingStatus.processed
         )
 
     @pytest.mark.asyncio
     async def test_limit(self, fake_processor_id: ProcessorId) -> None:
         entry_ids = [new_entry_id(), new_entry_id(), new_entry_id()]
 
-        await operations.set_entry_processing_statuses(fake_processor_id, entry_ids, EntryProcessingStatus.dispatched)
+        await operations.set_entry_processing_statuses(
+            [fake_processor_id], entry_ids, EntryProcessingStatus.dispatched
+        )
 
         dispatched_entries = await operations.get_entries_by_processing_status(
             fake_processor_id, EntryProcessingStatus.dispatched, limit=2
@@ -108,7 +176,7 @@ class TestGetEntriesByProcessingStatus:
         assert len(dispatched_entries) == 2
         assert set(dispatched_entries) <= set(entry_ids)
 
-        await operations.set_entry_processing_statuses(fake_processor_id, entry_ids, EntryProcessingStatus.processed)
+        await operations.set_entry_processing_statuses([fake_processor_id], entry_ids, EntryProcessingStatus.processed)
 
 
 class TestCountEntriesByProcessingStatus:
@@ -121,13 +189,13 @@ class TestCountEntriesByProcessingStatus:
         processed_entry_id = new_entry_id()
 
         await operations.set_entry_processing_statuses(
-            fake_processor_id, [first_entry_id, second_entry_id], EntryProcessingStatus.dispatched
+            [fake_processor_id], [first_entry_id, second_entry_id], EntryProcessingStatus.dispatched
         )
         await operations.set_entry_processing_statuses(
-            fake_processor_id, [processed_entry_id], EntryProcessingStatus.processed
+            [fake_processor_id], [processed_entry_id], EntryProcessingStatus.processed
         )
         await operations.set_entry_processing_statuses(
-            another_fake_processor_id, [first_entry_id], EntryProcessingStatus.dispatched
+            [another_fake_processor_id], [first_entry_id], EntryProcessingStatus.dispatched
         )
 
         counts = await operations.count_entries_by_processing_status(EntryProcessingStatus.dispatched)
@@ -136,24 +204,63 @@ class TestCountEntriesByProcessingStatus:
         assert counts[another_fake_processor_id] == 1
 
         await operations.set_entry_processing_statuses(
-            fake_processor_id, [first_entry_id, second_entry_id], EntryProcessingStatus.processed
+            [fake_processor_id], [first_entry_id, second_entry_id], EntryProcessingStatus.processed
         )
         await operations.set_entry_processing_statuses(
-            another_fake_processor_id, [first_entry_id], EntryProcessingStatus.processed
+            [another_fake_processor_id], [first_entry_id], EntryProcessingStatus.processed
         )
 
 
 class TestSetEntryProcessingStatuses:
     @pytest.mark.asyncio
     async def test_empty_entries(self, fake_processor_id: ProcessorId) -> None:
-        await operations.set_entry_processing_statuses(fake_processor_id, [], EntryProcessingStatus.dispatched)
+        await operations.set_entry_processing_statuses([fake_processor_id], [], EntryProcessingStatus.dispatched)
+
+    @pytest.mark.asyncio
+    async def test_empty_processors(self, fake_processor_id: ProcessorId) -> None:
+        entry_id = new_entry_id()
+        await operations.set_entry_processing_statuses(
+            [fake_processor_id], [entry_id], EntryProcessingStatus.dispatched
+        )
+
+        await operations.set_entry_processing_statuses([], [entry_id], EntryProcessingStatus.processed)
+
+        assert await operations.get_entries_processing_statuses([fake_processor_id], [entry_id]) == {
+            fake_processor_id: {entry_id: EntryProcessingStatus.dispatched}
+        }
+
+    @pytest.mark.asyncio
+    async def test_sets_status_for_each_processor_and_entry(
+        self,
+        fake_processor_id: ProcessorId,
+        another_fake_processor_id: ProcessorId,
+    ) -> None:
+        entry_ids = [new_entry_id(), new_entry_id()]
+
+        await operations.set_entry_processing_statuses(
+            [fake_processor_id, fake_processor_id, another_fake_processor_id],
+            entry_ids,
+            EntryProcessingStatus.dispatched,
+        )
+
+        assert await operations.get_entries_processing_statuses(
+            [fake_processor_id, another_fake_processor_id],
+            entry_ids,
+        ) == {
+            fake_processor_id: {entry_id: EntryProcessingStatus.dispatched for entry_id in entry_ids},
+            another_fake_processor_id: {entry_id: EntryProcessingStatus.dispatched for entry_id in entry_ids},
+        }
 
     @pytest.mark.asyncio
     async def test_updates_existing_statuses(self, fake_processor_id: ProcessorId) -> None:
         entry_id = new_entry_id()
 
-        await operations.set_entry_processing_statuses(fake_processor_id, [entry_id], EntryProcessingStatus.dispatched)
-        await operations.set_entry_processing_statuses(fake_processor_id, [entry_id], EntryProcessingStatus.processed)
+        await operations.set_entry_processing_statuses(
+            [fake_processor_id], [entry_id], EntryProcessingStatus.dispatched
+        )
+        await operations.set_entry_processing_statuses(
+            [fake_processor_id], [entry_id], EntryProcessingStatus.processed
+        )
 
         statuses = await operations.get_entries_processing_statuses([fake_processor_id], [entry_id])
 
@@ -168,13 +275,13 @@ class TestSetEntryProcessingStatuses:
         third_entry_id = new_entry_id()
 
         await operations.set_entry_processing_statuses(
-            fake_processor_id, [first_entry_id, second_entry_id], EntryProcessingStatus.dispatched
+            [fake_processor_id], [first_entry_id, second_entry_id], EntryProcessingStatus.dispatched
         )
         await operations.set_entry_processing_statuses(
-            another_fake_processor_id, [first_entry_id, second_entry_id], EntryProcessingStatus.failed
+            [another_fake_processor_id], [first_entry_id, second_entry_id], EntryProcessingStatus.failed
         )
         await operations.set_entry_processing_statuses(
-            fake_processor_id, [second_entry_id, third_entry_id], EntryProcessingStatus.processed
+            [fake_processor_id], [second_entry_id, third_entry_id], EntryProcessingStatus.processed
         )
 
         assert await operations.get_entries_processing_statuses(
@@ -207,10 +314,12 @@ class TestRemoveEntryProcessingStatuses:
         third_entry_id = new_entry_id()
 
         await operations.set_entry_processing_statuses(
-            fake_processor_id, [first_entry_id, second_entry_id, third_entry_id], EntryProcessingStatus.dispatched
+            [fake_processor_id],
+            [first_entry_id, second_entry_id, third_entry_id],
+            EntryProcessingStatus.dispatched,
         )
         await operations.set_entry_processing_statuses(
-            another_fake_processor_id, [first_entry_id, second_entry_id], EntryProcessingStatus.failed
+            [another_fake_processor_id], [first_entry_id, second_entry_id], EntryProcessingStatus.failed
         )
 
         await operations.remove_entry_processing_statuses([first_entry_id, second_entry_id])

@@ -3,6 +3,8 @@
 
 Run migrations `ffun migrate`.
 
+- If `FFUN_DISPATCHER_DISPATCH_CHUNK` is configured, replace it with `FFUN_DISPATCHER_DISPATCH_BATCH_SIZE`; configure `FFUN_DISPATCHER_DISPATCH_CONCURRENCY` as needed or use its default.
+
 ### Changes
 
 - ff-639 — Implemented `ffun.locks` module as a universal distributed lock manager for backend modules.

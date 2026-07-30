@@ -1,16 +1,18 @@
 import time
 from collections.abc import Sequence
+from typing import cast
 
 from psycopg.types.json import Jsonb
 
 from ffun.core.postgresql import execute
 from ffun.queues.entities import (
     DEFAULT_SECONDARY_ID,
-    BaseQueueItem,
     QueueItemT,
+    QueueItemToPush,
     QueueKind,
     QueueRecord,
     QueueRecordId,
+    QueueSecondaryId,
 )
 from ffun.queues.settings import settings
 
@@ -19,7 +21,7 @@ def row_to_queue_record(row: dict[str, object], item_type: type[QueueItemT]) -> 
     return QueueRecord(
         id=row["id"],  # type: ignore[arg-type]
         primary_id=QueueKind(row["primary_id"]),  # type: ignore[arg-type]
-        secondary_id=row["secondary_id"],  # type: ignore[arg-type]
+        secondary_id=QueueSecondaryId(cast(int, row["secondary_id"])),
         priority=row["priority"],  # type: ignore[arg-type]
         freezed_till=row["freezed_till"],  # type: ignore[arg-type]
         created_at=row["created_at"],  # type: ignore[arg-type]
@@ -29,8 +31,7 @@ def row_to_queue_record(row: dict[str, object], item_type: type[QueueItemT]) -> 
 
 async def push(
     primary_id: QueueKind,
-    items: Sequence[BaseQueueItem],
-    secondary_id: int = DEFAULT_SECONDARY_ID,
+    items: Sequence[QueueItemToPush[QueueItemT]],
     priority: int | None = None,
 ) -> None:
     if not items:
@@ -40,26 +41,25 @@ async def push(
         priority = time.time_ns()
 
     sql = """
-    WITH payloads AS (
-        SELECT payload
-        FROM jsonb_array_elements(%(payloads)s::jsonb) AS payload
-    )
     INSERT INTO q_items (primary_id, secondary_id, priority, payload)
     SELECT
         %(primary_id)s,
-        %(secondary_id)s,
+        queue_items.secondary_id,
         %(priority)s,
-        payload
-    FROM payloads
+        queue_items.payload
+    FROM unnest(
+        %(secondary_ids)s::integer[],
+        %(payloads)s::jsonb[]
+    ) AS queue_items(secondary_id, payload)
     """
 
     await execute(
         sql,
         {
             "primary_id": primary_id,
-            "secondary_id": secondary_id,
             "priority": priority,
-            "payloads": Jsonb([item.to_queue() for item in items]),
+            "secondary_ids": [item.secondary_id for item in items],
+            "payloads": [Jsonb(item.item.to_queue()) for item in items],
         },
     )
 
@@ -68,7 +68,7 @@ async def pull(
     primary_id: QueueKind,
     item_type: type[QueueItemT],
     limit: int,
-    secondary_id: int = DEFAULT_SECONDARY_ID,
+    secondary_id: QueueSecondaryId = DEFAULT_SECONDARY_ID,
 ) -> list[QueueRecord[QueueItemT]]:
     if limit <= 0:
         return []
@@ -122,7 +122,7 @@ async def acknowledge(record_ids: Sequence[QueueRecordId]) -> int:
     return len(rows)
 
 
-async def queues_stats() -> dict[tuple[int, int], int]:
+async def queues_stats() -> dict[tuple[QueueKind, QueueSecondaryId], int]:
     sql = """
     SELECT primary_id, secondary_id, COUNT(*) AS count
     FROM q_items
@@ -132,10 +132,12 @@ async def queues_stats() -> dict[tuple[int, int], int]:
 
     rows: list[dict[str, object]] = await execute(sql)
 
-    stats: dict[tuple[int, int], int] = {}
+    stats: dict[tuple[QueueKind, QueueSecondaryId], int] = {}
 
     for row in rows:
-        stats[(row["primary_id"], row["secondary_id"])] = row["count"]  # type: ignore
+        primary_id = QueueKind(cast(int, row["primary_id"]))
+        secondary_id = QueueSecondaryId(cast(int, row["secondary_id"]))
+        stats[(primary_id, secondary_id)] = cast(int, row["count"])
 
     return stats
 
@@ -143,7 +145,7 @@ async def queues_stats() -> dict[tuple[int, int], int]:
 async def tech_get_queue_records(
     primary_id: QueueKind,
     item_type: type[QueueItemT],
-    secondary_id: int = DEFAULT_SECONDARY_ID,
+    secondary_id: QueueSecondaryId = DEFAULT_SECONDARY_ID,
     limit: int = 1000,
 ) -> list[QueueRecord[QueueItemT]]:
     sql = """
@@ -160,7 +162,7 @@ async def tech_get_queue_records(
     return [row_to_queue_record(row, item_type) for row in rows]
 
 
-async def tech_clear_queue(primary_id: QueueKind, secondary_id: int | None = None) -> None:
+async def tech_clear_queue(primary_id: QueueKind, secondary_id: QueueSecondaryId | None = None) -> None:
     if secondary_id is None:
         sql = """
         DELETE FROM q_items
