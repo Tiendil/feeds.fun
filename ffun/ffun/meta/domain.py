@@ -42,6 +42,7 @@ async def remove_entries(entries_ids: Iterable[EntryId]) -> bool:
 
     await m_domain.remove_markers_for_entries(entries_to_remove)
     await o_domain.remove_relations_for_entries(entries_to_remove)
+    await d_domain.remove_entry_dispatching_statuses(entries_to_remove)
     await d_domain.remove_entry_processing_statuses(entries_to_remove)
 
     return True

@@ -163,6 +163,11 @@ class TestSetEntryProcessingStatuses:
         assert domain.set_entry_processing_statuses is operations.set_entry_processing_statuses
 
 
+class TestRemoveEntryDispatchingStatuses:
+    def test_reexports_operation(self) -> None:
+        assert domain.remove_entry_dispatching_statuses is operations.remove_entry_dispatching_statuses
+
+
 class TestRemoveEntryProcessingStatuses:
     def test_reexports_operation(self) -> None:
         assert domain.remove_entry_processing_statuses is operations.remove_entry_processing_statuses

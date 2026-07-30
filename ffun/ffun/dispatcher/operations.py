@@ -44,6 +44,24 @@ async def set_entry_dispatching_statuses(entry_ids: Iterable[EntryId], resources
     await execute(sql, {"entry_ids": ids, "resources_consumed": resources_consumed})
 
 
+async def remove_entry_dispatching_statuses(entry_ids: Iterable[EntryId]) -> None:
+    ids = list(dict.fromkeys(entry_ids))
+
+    if not ids:
+        return
+
+    sql = """
+    DELETE FROM d_entry_dispatching_status
+    WHERE entry_id = ANY(%(entry_ids)s)
+    """
+
+    await execute(sql, {"entry_ids": ids})
+
+
+async def tech_truncate_entry_dispatching_statuses() -> None:
+    await execute("TRUNCATE TABLE d_entry_dispatching_status")
+
+
 async def get_entries_processing_statuses(
     processor_ids: Iterable[ProcessorId], entry_ids: Iterable[EntryId]
 ) -> dict[ProcessorId, dict[EntryId, EntryProcessingStatus]]:

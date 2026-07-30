@@ -9,6 +9,7 @@ from ffun.domain.entities import EntryId, ProcessorId
 
 @pytest_asyncio.fixture(autouse=True)  # type: ignore
 async def prepare_processing_statuses() -> None:
+    await operations.tech_truncate_entry_dispatching_statuses()
     await operations.tech_truncate_entry_processing_statuses()
 
 
@@ -91,6 +92,30 @@ class TestSetEntryDispatchingStatuses:
             first_entry_id: False,
             second_entry_id: True,
         }
+
+
+class TestRemoveEntryDispatchingStatuses:
+    @pytest.mark.asyncio
+    async def test_empty_entries(self) -> None:
+        await operations.remove_entry_dispatching_statuses([])
+
+    @pytest.mark.asyncio
+    async def test_removes_only_requested_entries(self) -> None:
+        first_entry_id = new_entry_id()
+        second_entry_id = new_entry_id()
+        third_entry_id = new_entry_id()
+
+        await operations.set_entry_dispatching_statuses(
+            [first_entry_id, second_entry_id],
+            resources_consumed=True,
+        )
+        await operations.set_entry_dispatching_statuses([third_entry_id], resources_consumed=False)
+
+        await operations.remove_entry_dispatching_statuses([first_entry_id, second_entry_id, first_entry_id])
+
+        assert await operations.get_entries_dispatching_statuses(
+            [first_entry_id, second_entry_id, third_entry_id]
+        ) == {third_entry_id: False}
 
 
 class TestGetEntriesProcessingStatuses:
