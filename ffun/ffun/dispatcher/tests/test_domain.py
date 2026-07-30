@@ -103,6 +103,7 @@ def make_entries_cache(
         user_ids_by_feed={},
         users_with_api_keys=set(),
         processing_statuses=processing_statuses or {},
+        entitlements={},
     )
 
 
@@ -331,7 +332,11 @@ class TestAuthorizeEntry:
         await fl_domain.add_link(user_id, another_loaded_feed.id)
         await grant_tokens(user_id, EntitlementKindId.day_tokens)
         item = EntryToProcess(entry_id=entry.id)
-        cache = await entries_cache.create_entries_cache([item], [])
+        cache = await entries_cache.create_entries_cache(
+            [item],
+            [],
+            entitlement_kind_ids=list(EntitlementKindId),
+        )
 
         authorization = await domain._authorize_entry(item, cache)
 
@@ -348,7 +353,11 @@ class TestAuthorizeEntry:
         await fl_domain.add_link(user_id, loaded_feed.id)
         await save_user_api_key(user_id)
         item = EntryToProcess(entry_id=entry.id)
-        cache = await entries_cache.create_entries_cache([item], [])
+        cache = await entries_cache.create_entries_cache(
+            [item],
+            [],
+            entitlement_kind_ids=list(EntitlementKindId),
+        )
 
         authorization = await domain._authorize_entry(item, cache)
 
@@ -369,7 +378,11 @@ class TestAuthorizeEntry:
         await grant_tokens(user_ids[0], EntitlementKindId.day_tokens)
         await grant_tokens(user_ids[1], EntitlementKindId.month_tokens)
         item = EntryToProcess(entry_id=entry.id)
-        cache = await entries_cache.create_entries_cache([item], [])
+        cache = await entries_cache.create_entries_cache(
+            [item],
+            [],
+            entitlement_kind_ids=list(EntitlementKindId),
+        )
 
         authorization = await domain._authorize_entry(item, cache)
 
@@ -387,7 +400,11 @@ class TestAuthorizeEntry:
         await grant_tokens(user_id, EntitlementKindId.day_tokens, value=1)
         await grant_tokens(user_id, EntitlementKindId.month_tokens, value=2)
         items = [EntryToProcess(entry_id=entry.id) for entry in entries]
-        cache = await entries_cache.create_entries_cache(items, [])
+        cache = await entries_cache.create_entries_cache(
+            items,
+            [],
+            entitlement_kind_ids=list(EntitlementKindId),
+        )
 
         authorizations = [await domain._authorize_entry(item, cache) for item in items]
 
@@ -409,7 +426,11 @@ class TestAuthorizeEntry:
         await fl_domain.add_link(user_id, another_loaded_feed.id)
         await grant_tokens(user_id, EntitlementKindId.lifetime_tokens)
         item = EntryToProcess(entry_id=entry.id)
-        cache = await entries_cache.create_entries_cache([item], [])
+        cache = await entries_cache.create_entries_cache(
+            [item],
+            [],
+            entitlement_kind_ids=list(EntitlementKindId),
+        )
 
         authorization = await domain._authorize_entry(item, cache)
 
@@ -419,7 +440,11 @@ class TestAuthorizeEntry:
     async def test_entry_without_linked_users(self, loaded_feed: Feed) -> None:
         entry = next(iter((await l_make.n_entries(loaded_feed, 1)).values()))
         item = EntryToProcess(entry_id=entry.id)
-        cache = await entries_cache.create_entries_cache([item], [])
+        cache = await entries_cache.create_entries_cache(
+            [item],
+            [],
+            entitlement_kind_ids=list(EntitlementKindId),
+        )
 
         authorization = await domain._authorize_entry(item, cache)
 

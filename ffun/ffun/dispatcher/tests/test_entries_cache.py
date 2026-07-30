@@ -8,6 +8,8 @@ from ffun.dispatcher.entities import EntryProcessingStatus, EntryToProcess
 from ffun.dispatcher.tests import make
 from ffun.domain.domain import new_entry_id, new_feed_id, new_user_id
 from ffun.domain.entities import EntryId, FeedId, ProcessorId, UserId
+from ffun.entitlements.entities import EntitlementKindId
+from ffun.entitlements.tests import make as e_make
 from ffun.feeds.entities import Feed
 from ffun.feeds_collections.collections import collections
 from ffun.feeds_collections.entities import CollectionId
@@ -173,6 +175,7 @@ class TestEntriesCache:
             user_ids_by_feed={},
             users_with_api_keys=set(),
             processing_statuses={},
+            entitlements={},
         )
 
         assert cache.entry_in_collection(collection_entry_id)
@@ -196,6 +199,7 @@ class TestEntriesCache:
             },
             users_with_api_keys=set(),
             processing_statuses={},
+            entitlements={},
         )
 
         assert cache.entry_user_ids(entry_id) == {
@@ -214,11 +218,30 @@ class TestEntriesCache:
             user_ids_by_feed={},
             users_with_api_keys={api_key_user_id},
             processing_statuses={},
+            entitlements={},
         )
 
         assert cache.users_have_api_keys([another_user_id, api_key_user_id])
         assert not cache.users_have_api_keys([another_user_id])
         assert not cache.users_have_api_keys([])
+
+    def test_user_entitlements__returns_cached_entitlements(self) -> None:
+        user_id = new_user_id()
+        entitlement = e_make.make_effective_entitlement_interval(user_id=user_id)
+        user_entitlements = {
+            EntitlementKindId.day_tokens: entitlement,
+            EntitlementKindId.month_tokens: None,
+        }
+        cache = entries_cache.EntriesCache(
+            entries_in_collections=set(),
+            feed_ids_by_entry={},
+            user_ids_by_feed={},
+            users_with_api_keys=set(),
+            processing_statuses={},
+            entitlements={user_id: user_entitlements},
+        )
+
+        assert cache.user_entitlements(user_id) == user_entitlements
 
     def test_entry_processing_status__returns_status_and_defaults(self) -> None:
         processor_id = ProcessorId(101)
@@ -235,6 +258,7 @@ class TestEntriesCache:
                     entry_id: EntryProcessingStatus.processed,
                 }
             },
+            entitlements={},
         )
 
         assert cache.entry_processing_status(processor_id, entry_id) == EntryProcessingStatus.processed
@@ -245,7 +269,11 @@ class TestEntriesCache:
 class TestCreateEntriesCache:
     @pytest.mark.asyncio
     async def test_no_items_and_processors(self) -> None:
-        cache = await entries_cache.create_entries_cache([], [])
+        cache = await entries_cache.create_entries_cache(
+            [],
+            [],
+            entitlement_kind_ids=list(EntitlementKindId),
+        )
         entry_id = new_entry_id()
         processor_id = ProcessorId(101)
 
@@ -255,7 +283,7 @@ class TestCreateEntriesCache:
         assert cache.entry_processing_status(processor_id, entry_id) is None
 
     @pytest.mark.asyncio
-    async def test_bulk_loads_and_connects_cached_values(
+    async def test_bulk_loads_and_connects_cached_values(  # noqa: CFQ001
         self,
         fake_processor_id: ProcessorId,
         another_fake_processor_id: ProcessorId,
@@ -291,9 +319,24 @@ class TestCreateEntriesCache:
             user_feed_id: {api_key_user_id, another_user_id},
         }
         users_with_api_keys: set[UserId] = {api_key_user_id}
+        entitlement = e_make.make_effective_entitlement_interval(user_id=another_user_id)
+        entitlements = {
+            api_key_user_id: {
+                EntitlementKindId.day_tokens: None,
+                EntitlementKindId.month_tokens: None,
+            },
+            another_user_id: {
+                EntitlementKindId.day_tokens: entitlement,
+                EntitlementKindId.month_tokens: None,
+            },
+        }
+        entitlement_kind_ids = [
+            EntitlementKindId.day_tokens,
+            EntitlementKindId.month_tokens,
+        ]
         entries_in_collections = {collection_entry_id}
         feed_ids = {collection_feed_id, user_feed_id}
-        user_ids = {api_key_user_id, another_user_id}
+        user_ids: set[UserId] = {api_key_user_id, another_user_id}
         entry_feed_ids_mock = mocker.patch.object(
             entries_cache,
             "_entry_feed_ids",
@@ -314,13 +357,22 @@ class TestCreateEntriesCache:
             "_users_with_api_keys",
             return_value=users_with_api_keys,
         )
+        entitlements_mock = mocker.patch.object(
+            entries_cache.e_domain,
+            "get_entitlements",
+            return_value=entitlements,
+        )
         entry_ids_in_collections_mock = mocker.patch.object(
             entries_cache,
             "_entry_ids_in_collections",
             return_value=entries_in_collections,
         )
 
-        cache = await entries_cache.create_entries_cache(items, processors)
+        cache = await entries_cache.create_entries_cache(
+            items,
+            processors,
+            entitlement_kind_ids=entitlement_kind_ids,
+        )
 
         entry_ids = {collection_entry_id, user_entry_id}
         processor_ids = [fake_processor_id, another_fake_processor_id]
@@ -329,8 +381,10 @@ class TestCreateEntriesCache:
         entry_ids_in_collections_mock.assert_called_once_with(feed_ids_by_entry)
         linked_users_mock.assert_awaited_once_with(feed_ids)
         api_key_users_mock.assert_awaited_once_with(user_ids)
+        entitlements_mock.assert_awaited_once()
         assert cache.entry_in_collection(collection_entry_id)
         assert not cache.entry_in_collection(user_entry_id)
         assert cache.entry_user_ids(user_entry_id) == {api_key_user_id, another_user_id}
         assert cache.users_have_api_keys(cache.entry_user_ids(user_entry_id))
+        assert cache.user_entitlements(another_user_id) == entitlements[another_user_id]
         assert cache.entry_processing_status(fake_processor_id, user_entry_id) == EntryProcessingStatus.failed

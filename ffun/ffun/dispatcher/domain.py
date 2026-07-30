@@ -20,7 +20,6 @@ from ffun.domain.datetime_intervals import (
     month_interval_start,
 )
 from ffun.domain.entities import ProcessorId, UserId
-from ffun.entitlements import domain as e_domain
 from ffun.entitlements.entities import EffectiveEntitlementInterval, EntitlementKindId
 from ffun.markers import domain as m_domain
 from ffun.markers.entities import Marker
@@ -116,12 +115,9 @@ async def _authorize_entry(item: EntryToProcess, cache: entries_cache.EntriesCac
         return EntryAuthorization(entry_id=item.entry_id, globally_visible=True, reservations=())
 
     authorization_time = utils.now()
-    entitlements = await e_domain.get_entitlements(
-        sorted(user_ids, key=str),
-        list(_TOKEN_ENTITLEMENT_KINDS),
-    )
     specifications = [
-        _token_reservation_specification(user_id, entitlements[user_id]) for user_id in sorted(user_ids, key=str)
+        _token_reservation_specification(user_id, cache.user_entitlements(user_id))
+        for user_id in sorted(user_ids, key=str)
     ]
     reservations = await r_domain.try_to_reserve_in_order(
         amount=SAAS_TOKENS_PER_USER_ENTRY,
@@ -348,6 +344,7 @@ async def dispatch_entries(  # noqa: CCR001  # pylint: disable=too-many-locals
     cache = await entries_cache.create_entries_cache(
         items=[record.item for record in records],
         processors=processors,
+        entitlement_kind_ids=_TOKEN_ENTITLEMENT_KINDS,
     )
 
     # Process entries separately to simplify error handling; batching would require

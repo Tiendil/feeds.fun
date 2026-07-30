@@ -4,6 +4,8 @@ from collections.abc import Iterable, Mapping, Sequence
 from ffun.dispatcher import operations
 from ffun.dispatcher.entities import EntryProcessingStatus, EntryToProcess, ProcessorDispatchInfo
 from ffun.domain.entities import EntryId, FeedId, ProcessorId, UserId
+from ffun.entitlements import domain as e_domain
+from ffun.entitlements.entities import EffectiveEntitlementInterval, EntitlementKindId
 from ffun.feeds_collections import domain as fc_domain
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
@@ -44,25 +46,31 @@ async def entries_in_collections(entries_ids: Iterable[EntryId]) -> set[EntryId]
 class EntriesCache:
     __slots__ = (
         "_entries_in_collections",
+        "_entitlements",
         "_feed_ids_by_entry",
         "_processing_statuses",
         "_user_ids_by_feed",
         "_users_with_api_keys",
     )
 
-    def __init__(
+    def __init__(  # noqa: CFQ002
         self,
         entries_in_collections: set[EntryId],
         feed_ids_by_entry: Mapping[EntryId, set[FeedId]],
         user_ids_by_feed: Mapping[FeedId, set[UserId]],
         users_with_api_keys: set[UserId],
         processing_statuses: Mapping[ProcessorId, Mapping[EntryId, EntryProcessingStatus]],
+        entitlements: Mapping[
+            UserId,
+            Mapping[EntitlementKindId, EffectiveEntitlementInterval | None],
+        ],
     ) -> None:
         self._entries_in_collections = entries_in_collections
         self._feed_ids_by_entry = feed_ids_by_entry
         self._user_ids_by_feed = user_ids_by_feed
         self._users_with_api_keys = users_with_api_keys
         self._processing_statuses = processing_statuses
+        self._entitlements = entitlements
 
     def entry_in_collection(self, entry_id: EntryId) -> bool:
         return entry_id in self._entries_in_collections
@@ -77,6 +85,12 @@ class EntriesCache:
 
     def users_have_api_keys(self, user_ids: Iterable[UserId]) -> bool:
         return any(user_id in self._users_with_api_keys for user_id in user_ids)
+
+    def user_entitlements(
+        self,
+        user_id: UserId,
+    ) -> Mapping[EntitlementKindId, EffectiveEntitlementInterval | None]:
+        return self._entitlements[user_id]
 
     def entry_processing_status(
         self,
@@ -103,6 +117,7 @@ async def _users_with_api_keys(user_ids: Iterable[UserId]) -> set[UserId]:
 async def create_entries_cache(
     items: Sequence[EntryToProcess],
     processors: Sequence[ProcessorDispatchInfo],
+    entitlement_kind_ids: Sequence[EntitlementKindId],
 ) -> EntriesCache:
     entry_ids = {item.entry_id for item in items}
     processor_ids = [processor.processor_id for processor in processors]
@@ -114,7 +129,13 @@ async def create_entries_cache(
     feed_ids = {feed_id for entry_feed_ids in feed_ids_by_entry.values() for feed_id in entry_feed_ids}
     user_ids_by_feed = await fl_domain.get_linked_users(feed_ids)
     user_ids = {user_id for feed_user_ids in user_ids_by_feed.values() for user_id in feed_user_ids}
-    users_with_api_keys = await _users_with_api_keys(user_ids)
+    users_with_api_keys, entitlements = await asyncio.gather(
+        _users_with_api_keys(user_ids),
+        e_domain.get_entitlements(
+            list(user_ids),
+            list(entitlement_kind_ids),
+        ),
+    )
 
     return EntriesCache(
         entries_in_collections=entries_in_collections,
@@ -122,4 +143,5 @@ async def create_entries_cache(
         user_ids_by_feed=user_ids_by_feed,
         users_with_api_keys=users_with_api_keys,
         processing_statuses=processing_statuses,
+        entitlements=entitlements,
     )
