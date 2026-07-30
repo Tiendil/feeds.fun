@@ -10,7 +10,7 @@ import time
 import uuid
 from collections import abc
 from collections.abc import Awaitable, Callable
-from typing import ContextManager, Iterable, Iterator, ParamSpec, Protocol, TypeVar, cast
+from typing import ContextManager, Iterable, Iterator, ParamSpec, Protocol, TypeVar, cast, overload
 
 import pydantic_settings
 import structlog
@@ -329,6 +329,42 @@ class ArgumentConstructor(Constructor):
 
 P = ParamSpec("P")
 R = TypeVar("R")
+
+
+class _MeasureBlockTimeDecorator(Protocol):
+    @overload
+    def __call__(self, func: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:  # noqa: TAE002
+        pass
+
+    @overload
+    def __call__(self, func: Callable[P, R]) -> Callable[P, R]:
+        pass
+
+
+def measure_block_time(
+    logger: FFunBoundLogger,
+    event: str,
+    **labels: LabelValue,
+) -> _MeasureBlockTimeDecorator:
+    def decorator(func: Callable[P, object]) -> Callable[P, object]:
+        if inspect.iscoroutinefunction(cast(object, func)):
+            async_func = cast(Callable[P, Awaitable[object]], func)
+
+            @functools.wraps(func)
+            async def async_wrapped(*args: P.args, **kwargs: P.kwargs) -> object:
+                with logger.measure_block_time(event, **labels):
+                    return await async_func(*args, **kwargs)
+
+            return cast(Callable[P, Awaitable[object]], async_wrapped)
+
+        @functools.wraps(func)
+        def sync_wrapped(*args: P.args, **kwargs: P.kwargs) -> object:
+            with logger.measure_block_time(event, **labels):
+                return func(*args, **kwargs)
+
+        return sync_wrapped
+
+    return cast(_MeasureBlockTimeDecorator, decorator)
 
 
 def sync_args_to_log(*args: str) -> Callable[[Callable[P, R]], Callable[P, R]]:

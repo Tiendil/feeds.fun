@@ -276,6 +276,7 @@ async def _dispatch_entry_to_processors(
     await q_domain.push(QueueKind.entries_to_tag, items_to_push)
 
 
+@logging.measure_block_time(logger, "dispatch_entry_time")
 async def _process_entry(
     record: QueueRecord[EntryToProcess],
     processors: Sequence[ProcessorDispatchInfo],
@@ -328,6 +329,7 @@ async def _process_retry_entry(
     )
 
 
+@logging.measure_block_time(logger, "dispatch_entries_time")
 async def dispatch_entries(  # noqa: CCR001  # pylint: disable=too-many-locals
     processors: Sequence[ProcessorDispatchInfo],
     batch_size: int,
