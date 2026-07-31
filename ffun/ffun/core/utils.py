@@ -41,7 +41,7 @@ def discover_submodules(  # noqa: CCR001
     for module_path in parent_dir.glob("*.py"):
         module_name = module_path.stem
 
-        if skip_dev_dependencies and module_name == "conftest":
+        if skip_dev_dependencies and module_name in {"conftest", "pytest_plugin"}:
             continue
 
         candidates.append(f"{parent_module}.{module_name}")
