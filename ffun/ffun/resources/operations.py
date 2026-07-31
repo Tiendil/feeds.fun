@@ -10,6 +10,42 @@ from ffun.resources.entities import Resource, ResourceReservation, ResourceReser
 logger = logging.get_module_logger()
 
 
+async def _update_consumed_statistics(
+    execute: ExecuteType,
+    reservations: list[ResourceReservation],
+    *,
+    used: int,
+) -> None:
+    if not reservations or used == 0:
+        return
+
+    sql = """
+        INSERT INTO r_statistics (user_id, kind, date, consumed)
+        SELECT
+            changes.user_id,
+            changes.kind,
+            (statement_timestamp() AT TIME ZONE 'UTC')::date,
+            changes.consumed
+        FROM UNNEST(
+            %(user_ids)s::uuid[],
+            %(kinds)s::integer[],
+            %(consumed)s::bigint[]
+        ) AS changes(user_id, kind, consumed)
+        ON CONFLICT (user_id, kind, date) DO UPDATE
+        SET consumed = r_statistics.consumed + EXCLUDED.consumed,
+            updated_at = CURRENT_TIMESTAMP
+    """
+
+    await execute(
+        sql,
+        {
+            "user_ids": [reservation.user_id for reservation in reservations],
+            "kinds": [reservation.kind for reservation in reservations],
+            "consumed": [used] * len(reservations),
+        },
+    )
+
+
 def row_to_entry(row: dict[str, Any]) -> Resource:
     return Resource(
         user_id=row["user_id"],
@@ -155,6 +191,14 @@ async def convert_reserved_to_used(
 
     if converted_user_ids != set(user_ids):
         raise errors.CanNotConvertReservedToUsed()
+
+    # Statistics are currently attributed to the UTC date when this conversion is persisted, not to the date
+    # when the resource-consuming operation happened or its reservation was created. A delayed retry can therefore
+    # move consumption into a later day or month and make statistics diverge from the resource interval whose
+    # reservation authorized that usage. Fixing this requires carrying a durable logical consumption time, or a
+    # durable reservation/consumption record, through retries. The reservation's interval start cannot substitute
+    # for that time because month and lifetime resource intervals do not identify the actual consumption day.
+    await _update_consumed_statistics(execute, reservations, used=used)
 
 
 async def load_resource_history(user_id: UserId, kind: int) -> list[Resource]:

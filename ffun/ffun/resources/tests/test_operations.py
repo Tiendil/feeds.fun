@@ -1,20 +1,24 @@
 import datetime
+from typing import cast
 
+import psycopg
 import pytest
 
-from ffun.core.postgresql import execute, transaction
+from ffun.core.postgresql import ExecuteType, execute, transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.domain.entities import UserId
 from ffun.resources import errors
 from ffun.resources.domain import load_resource
-from ffun.resources.entities import ResourceReservation, ResourceReservationLimit
+from ffun.resources.entities import Resource, ResourceReservation, ResourceReservationLimit
 from ffun.resources.operations import (
+    _update_consumed_statistics,
     convert_reserved_to_used,
     count_total_resources_per_user,
     initialize_resources,
     load_resource_history,
     load_resources,
+    row_to_entry,
     try_to_reserve,
 )
 
@@ -26,6 +30,282 @@ def interval_started_at() -> datetime.datetime:
 
 _kind = 214
 _another_kind = 215
+
+
+async def load_statistics(run: ExecuteType, *, user_ids: list[UserId]) -> list[dict[str, object]]:
+    arguments: dict[str, list[UserId]] = {"user_ids": user_ids}
+
+    return cast(
+        list[dict[str, object]],
+        await run(
+            """
+            SELECT user_id, kind, date, consumed, created_at, updated_at
+            FROM r_statistics
+            WHERE user_id = ANY(%(user_ids)s)
+            ORDER BY user_id, kind, date
+            """,
+            arguments,
+        ),
+    )
+
+
+class TestUpdateConsumedStatistics:
+    @pytest.mark.asyncio
+    async def test_empty_reservations(self) -> None:
+        async with TableSizeNotChanged("r_statistics"):
+            await _update_consumed_statistics(execute, [], used=9)
+
+    @pytest.mark.asyncio
+    async def test_zero_used_preserves_existing_statistics(
+        self,
+        internal_user_id: UserId,
+        interval_started_at: datetime.datetime,
+    ) -> None:
+        statistics_date = datetime.date(2020, 1, 1)
+        recorded_at = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)
+        statistics_arguments: dict[str, UserId | int | datetime.date | datetime.datetime] = {
+            "user_id": internal_user_id,
+            "kind": _kind,
+            "date": statistics_date,
+            "consumed": 5,
+            "recorded_at": recorded_at,
+        }
+
+        await execute(
+            """
+            INSERT INTO r_statistics (user_id, kind, date, consumed, created_at, updated_at)
+            VALUES (%(user_id)s, %(kind)s, %(date)s, %(consumed)s, %(recorded_at)s, %(recorded_at)s)
+            """,
+            statistics_arguments,
+        )
+
+        before = await load_statistics(execute, user_ids=[internal_user_id])
+
+        await _update_consumed_statistics(
+            execute,
+            [
+                ResourceReservation(
+                    user_id=internal_user_id,
+                    kind=_kind,
+                    interval_started_at=interval_started_at,
+                    amount=13,
+                )
+            ],
+            used=0,
+        )
+
+        after = await load_statistics(execute, user_ids=[internal_user_id])
+
+        assert after == before
+
+    @pytest.mark.asyncio
+    async def test_bulk_users_use_database_utc_date(
+        self,
+        internal_user_id: UserId,
+        another_internal_user_id: UserId,
+        interval_started_at: datetime.datetime,
+    ) -> None:
+        reservations = [
+            ResourceReservation(
+                user_id=internal_user_id,
+                kind=_kind,
+                interval_started_at=interval_started_at,
+                amount=13,
+            ),
+            ResourceReservation(
+                user_id=another_internal_user_id,
+                kind=_kind,
+                interval_started_at=interval_started_at,
+                amount=21,
+            ),
+        ]
+
+        async with transaction() as transaction_execute:
+            utc_hour_result = cast(
+                list[dict[str, int]],
+                await transaction_execute(
+                    "SELECT EXTRACT(HOUR FROM statement_timestamp() AT TIME ZONE 'UTC')::integer AS hour"
+                ),
+            )
+            timezone = "Etc/GMT+12" if utc_hour_result[0]["hour"] < 10 else "Etc/GMT-14"
+            timezone_arguments: dict[str, str] = {"timezone": timezone}
+            statistics_arguments: dict[str, list[UserId]] = {"user_ids": [internal_user_id, another_internal_user_id]}
+
+            await transaction_execute(
+                "SELECT set_config('TimeZone', %(timezone)s, true)",
+                timezone_arguments,
+            )
+            await _update_consumed_statistics(transaction_execute, reservations, used=9)
+
+            statistics = cast(
+                list[dict[str, UserId | bool | int]],
+                await transaction_execute(
+                    """
+                    SELECT
+                        user_id,
+                        kind,
+                        consumed,
+                        date = (statement_timestamp() AT TIME ZONE 'UTC')::date AS uses_utc_date,
+                        date = statement_timestamp()::date AS uses_session_date
+                    FROM r_statistics
+                    WHERE user_id = ANY(%(user_ids)s)
+                    ORDER BY user_id
+                    """,
+                    statistics_arguments,
+                ),
+            )
+
+        assert len(statistics) == 2
+
+        for statistic in statistics:
+            assert statistic["kind"] == _kind
+            assert statistic["consumed"] == 9
+            assert statistic["uses_utc_date"]
+            assert not statistic["uses_session_date"]
+
+        assert {statistic["user_id"] for statistic in statistics} == {
+            internal_user_id,
+            another_internal_user_id,
+        }
+
+    @pytest.mark.asyncio
+    async def test_accumulates_existing_statistics(
+        self,
+        internal_user_id: UserId,
+        interval_started_at: datetime.datetime,
+    ) -> None:
+        recorded_at = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)
+        statistics_arguments: dict[str, UserId | int | datetime.datetime] = {
+            "user_id": internal_user_id,
+            "kind": _kind,
+            "consumed": 5,
+            "recorded_at": recorded_at,
+        }
+
+        await execute(
+            """
+            INSERT INTO r_statistics (user_id, kind, date, consumed, created_at, updated_at)
+            SELECT
+                %(user_id)s,
+                %(kind)s,
+                (statement_timestamp() AT TIME ZONE 'UTC')::date + requested.day_offset,
+                %(consumed)s,
+                %(recorded_at)s,
+                %(recorded_at)s
+            FROM UNNEST(ARRAY[0, 1]) AS requested(day_offset)
+            """,
+            statistics_arguments,
+        )
+
+        await _update_consumed_statistics(
+            execute,
+            [
+                ResourceReservation(
+                    user_id=internal_user_id,
+                    kind=_kind,
+                    interval_started_at=interval_started_at,
+                    amount=13,
+                )
+            ],
+            used=7,
+        )
+
+        statistics = await load_statistics(execute, user_ids=[internal_user_id])
+
+        assert len(statistics) == 2
+        assert {statistic["consumed"] for statistic in statistics} == {5, 12}
+        assert {statistic["created_at"] for statistic in statistics} == {recorded_at}
+        assert sorted(cast(datetime.datetime, statistic["updated_at"]) > recorded_at for statistic in statistics) == [
+            False,
+            True,
+        ]
+
+    @pytest.mark.asyncio
+    async def test_kinds_are_independent(
+        self,
+        internal_user_id: UserId,
+        interval_started_at: datetime.datetime,
+    ) -> None:
+        for kind, used in ((_kind, 5), (_another_kind, 7)):
+            await _update_consumed_statistics(
+                execute,
+                [
+                    ResourceReservation(
+                        user_id=internal_user_id,
+                        kind=kind,
+                        interval_started_at=interval_started_at,
+                        amount=13,
+                    )
+                ],
+                used=used,
+            )
+
+        statistics = await load_statistics(execute, user_ids=[internal_user_id])
+
+        assert {statistic["kind"]: statistic["consumed"] for statistic in statistics} == {
+            _kind: 5,
+            _another_kind: 7,
+        }
+
+    @pytest.mark.asyncio
+    async def test_dates_are_independent(
+        self,
+        internal_user_id: UserId,
+        interval_started_at: datetime.datetime,
+    ) -> None:
+        historical_date = datetime.date(2020, 1, 1)
+        statistics_arguments: dict[str, UserId | int | datetime.date] = {
+            "user_id": internal_user_id,
+            "kind": _kind,
+            "date": historical_date,
+            "consumed": 5,
+        }
+
+        await execute(
+            """
+            INSERT INTO r_statistics (user_id, kind, date, consumed)
+            VALUES (%(user_id)s, %(kind)s, %(date)s, %(consumed)s)
+            """,
+            statistics_arguments,
+        )
+
+        await _update_consumed_statistics(
+            execute,
+            [
+                ResourceReservation(
+                    user_id=internal_user_id,
+                    kind=_kind,
+                    interval_started_at=interval_started_at,
+                    amount=13,
+                )
+            ],
+            used=7,
+        )
+
+        statistics = await load_statistics(execute, user_ids=[internal_user_id])
+
+        assert len(statistics) == 2
+        assert {statistic["consumed"] for statistic in statistics} == {5, 7}
+        assert next(statistic for statistic in statistics if statistic["date"] == historical_date)["consumed"] == 5
+
+
+class TestRowToEntry:
+    def test_converts_row(self, internal_user_id: UserId, interval_started_at: datetime.datetime) -> None:
+        row = {
+            "user_id": internal_user_id,
+            "kind": _kind,
+            "interval_started_at": interval_started_at,
+            "used": 13,
+            "reserved": 7,
+        }
+
+        assert row_to_entry(row) == Resource(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=interval_started_at,
+            used=13,
+            reserved=7,
+        )
 
 
 class TestInitializeResources:
@@ -193,6 +473,46 @@ class TestTryToReserve:
 
         assert result == []
 
+    @pytest.mark.parametrize(("amount", "limit"), [(0, 0), (13, 13), (14, 13)])
+    @pytest.mark.asyncio
+    async def test_does_not_update_statistics(
+        self,
+        amount: int,
+        limit: int,
+        internal_user_id: UserId,
+        interval_started_at: datetime.datetime,
+    ) -> None:
+        recorded_at = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)
+        statistics_arguments: dict[str, UserId | int | datetime.date | datetime.datetime] = {
+            "user_id": internal_user_id,
+            "kind": _kind,
+            "date": datetime.date(2020, 1, 1),
+            "consumed": 5,
+            "recorded_at": recorded_at,
+        }
+
+        await execute(
+            """
+            INSERT INTO r_statistics (user_id, kind, date, consumed, created_at, updated_at)
+            VALUES (%(user_id)s, %(kind)s, %(date)s, %(consumed)s, %(recorded_at)s, %(recorded_at)s)
+            """,
+            statistics_arguments,
+        )
+
+        before = await load_statistics(execute, user_ids=[internal_user_id])
+
+        await try_to_reserve(
+            execute,
+            user_limits=[ResourceReservationLimit(user_id=internal_user_id, limit=limit)],
+            kind=_kind,
+            interval_started_at=interval_started_at,
+            amount=amount,
+        )
+
+        after = await load_statistics(execute, user_ids=[internal_user_id])
+
+        assert after == before
+
     @pytest.mark.parametrize("amount", [0, 1, 100])
     @pytest.mark.asyncio
     async def test_for_not_existed_resource(
@@ -358,7 +678,7 @@ class TestTryToReserve:
 class TestConvertReservedToUsed:
     @pytest.mark.asyncio
     async def test_empty_reservations(self) -> None:
-        async with TableSizeNotChanged("r_resources"):
+        async with TableSizeNotChanged("r_resources"), TableSizeNotChanged("r_statistics"):
             await convert_reserved_to_used(execute, [], used=9)
 
     @pytest.mark.asyncio
@@ -409,12 +729,76 @@ class TestConvertReservedToUsed:
         assert second_resource.used == 9
         assert second_resource.reserved == 0
 
+        statistics = await load_statistics(
+            execute,
+            user_ids=[internal_user_id, another_internal_user_id],
+        )
+
+        assert {(statistic["user_id"], statistic["kind"]): statistic["consumed"] for statistic in statistics} == {
+            (internal_user_id, _kind): 9,
+            (another_internal_user_id, _another_kind): 9,
+        }
+
+    @pytest.mark.asyncio
+    async def test_updates_daily_statistics(
+        self,
+        internal_user_id: UserId,
+        interval_started_at: datetime.datetime,
+    ) -> None:
+        another_interval_started_at = interval_started_at + datetime.timedelta(days=1)
+        statistics_arguments: dict[str, UserId | int] = {"user_id": internal_user_id, "kind": _kind}
+
+        first_reservations = await try_to_reserve(
+            execute,
+            user_limits=[ResourceReservationLimit(user_id=internal_user_id, limit=13)],
+            kind=_kind,
+            interval_started_at=interval_started_at,
+            amount=13,
+        )
+        second_reservations = await try_to_reserve(
+            execute,
+            user_limits=[ResourceReservationLimit(user_id=internal_user_id, limit=7)],
+            kind=_kind,
+            interval_started_at=another_interval_started_at,
+            amount=7,
+        )
+
+        async with transaction() as transaction_execute:
+            await convert_reserved_to_used(
+                transaction_execute,
+                first_reservations,
+                used=9,
+            )
+            await convert_reserved_to_used(
+                transaction_execute,
+                second_reservations,
+                used=7,
+            )
+
+            statistics = cast(
+                list[dict[str, bool | int]],
+                await transaction_execute(
+                    """
+                    SELECT
+                        date = (statement_timestamp() AT TIME ZONE 'UTC')::date AS is_today,
+                        consumed
+                    FROM r_statistics
+                    WHERE user_id = %(user_id)s AND kind = %(kind)s
+                    """,
+                    statistics_arguments,
+                ),
+            )
+
+        assert statistics == [{"is_today": True, "consumed": 16}]
+
     @pytest.mark.asyncio
     async def test_releases_reservations(
         self,
         internal_user_id: UserId,
         interval_started_at: datetime.datetime,
     ) -> None:
+        statistics_arguments: dict[str, UserId | int] = {"user_id": internal_user_id, "kind": _kind}
+
         reservations = await try_to_reserve(
             execute,
             user_limits=[ResourceReservationLimit(user_id=internal_user_id, limit=13)],
@@ -439,6 +823,16 @@ class TestConvertReservedToUsed:
         assert resource.used == 0
         assert resource.reserved == 0
 
+        statistics = cast(
+            list[dict[str, int]],
+            await execute(
+                "SELECT consumed FROM r_statistics WHERE user_id = %(user_id)s AND kind = %(kind)s",
+                statistics_arguments,
+            ),
+        )
+
+        assert statistics == []
+
     @pytest.mark.asyncio
     async def test_one_failure_rolls_back_all_conversions(
         self,
@@ -461,6 +855,25 @@ class TestConvertReservedToUsed:
                 amount=13,
             )
         )
+        statistics_arguments: dict[str, UserId | int | datetime.date] = {
+            "user_id": internal_user_id,
+            "kind": _kind,
+            "date": datetime.date(2020, 1, 1),
+            "consumed": 5,
+        }
+
+        await execute(
+            """
+            INSERT INTO r_statistics (user_id, kind, date, consumed)
+            VALUES (%(user_id)s, %(kind)s, %(date)s, %(consumed)s)
+            """,
+            statistics_arguments,
+        )
+
+        before_statistics = await load_statistics(
+            execute,
+            user_ids=[internal_user_id, another_internal_user_id],
+        )
 
         with pytest.raises(errors.CanNotConvertReservedToUsed):
             async with transaction() as transaction_execute:
@@ -478,6 +891,67 @@ class TestConvertReservedToUsed:
 
         assert resource.used == 0
         assert resource.reserved == 13
+
+        after_statistics = await load_statistics(
+            execute,
+            user_ids=[internal_user_id, another_internal_user_id],
+        )
+
+        assert after_statistics == before_statistics
+
+    @pytest.mark.asyncio
+    async def test_statistics_failure_rolls_back_resource_conversion(
+        self,
+        internal_user_id: UserId,
+        interval_started_at: datetime.datetime,
+    ) -> None:
+        reservations = await try_to_reserve(
+            execute,
+            user_limits=[ResourceReservationLimit(user_id=internal_user_id, limit=1)],
+            kind=_kind,
+            interval_started_at=interval_started_at,
+            amount=1,
+        )
+        maximum_bigint = 2**63 - 1
+        statistics_arguments: dict[str, UserId | int] = {
+            "user_id": internal_user_id,
+            "kind": _kind,
+            "consumed": maximum_bigint,
+        }
+
+        await execute(
+            """
+            INSERT INTO r_statistics (user_id, kind, date, consumed)
+            SELECT
+                %(user_id)s,
+                %(kind)s,
+                (statement_timestamp() AT TIME ZONE 'UTC')::date + requested.day_offset,
+                %(consumed)s
+            FROM UNNEST(ARRAY[0, 1]) AS requested(day_offset)
+            """,
+            statistics_arguments,
+        )
+
+        before_statistics = await load_statistics(execute, user_ids=[internal_user_id])
+
+        with pytest.raises(psycopg.errors.NumericValueOutOfRange):  # type: ignore[misc]
+            async with transaction() as transaction_execute:
+                await convert_reserved_to_used(
+                    transaction_execute,
+                    reservations,
+                    used=1,
+                )
+
+        resource = await load_resource(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=interval_started_at,
+        )
+        after_statistics = await load_statistics(execute, user_ids=[internal_user_id])
+
+        assert resource.used == 0
+        assert resource.reserved == 1
+        assert after_statistics == before_statistics
 
     @pytest.mark.asyncio
     async def test_duplicate_user_ids(self, internal_user_id: UserId, interval_started_at: datetime.datetime) -> None:

@@ -71,6 +71,12 @@ Module-specific sections SHOULD be nested under `Domain behavior`. A module spec
 
 ## Standard sections
 
+### `Scope`
+
+A module specification's `Scope` section MUST identify the top-level module and caller-visible responsibility boundary to which the specification applies.
+Because a module specification covers the module's complete caller-visible contract, the section MUST describe that general boundary rather than enumerate the module's current capabilities.
+The section SHOULD identify adjacent responsibilities that readers could reasonably mistake as belonging to the module.
+
 ### `Module responsibility`
 
 The `Module responsibility` section MUST identify the module's architectural role and the behavior, state, or integration boundaries it owns.

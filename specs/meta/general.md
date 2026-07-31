@@ -58,9 +58,14 @@ The `Goal of the document` section MUST NOT define requirements for the document
 - MUST list something.
 - MUST describe something.
 
-The `Scope` section MUST describe the boundaries of the specification.
+The `Scope` section MUST identify the class of artifacts, behavior, or concerns to which the specification applies.
+It MUST describe that boundary at a stable conceptual level.
 It SHOULD be descriptive rather than normative when it explains what the document covers.
-It SHOULD explicitly mention important topics that are out of scope when those boundaries are useful for readers or future authors.
+It MUST NOT serve as a table of contents or enumerate current features, operations, entities, workflows, requirements, or sections merely to summarize the document.
+It SHOULD remain accurate when requirements are added, changed, or removed without changing the specification's conceptual boundary.
+An in-scope enumeration MAY be used only when the enumerated set is intentionally closed and membership in that set defines the specification boundary.
+The section SHOULD explicitly mention important adjacent concerns that readers or future authors could reasonably mistake as covered.
+It SHOULD NOT attempt to enumerate every unrelated or excluded concern.
 It MUST NOT explain where to find requirements that belong to other specifications.
 
 The `Dictionary` section SHOULD be placed immediately after the `Scope` section.

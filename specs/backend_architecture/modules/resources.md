@@ -6,9 +6,9 @@ This document describes the public contract and observable behavior of the `ffun
 
 ## Scope
 
-This specification covers interval-scoped per-user resource counters, lazy initialization, limit-checked reservations, ordered reservation options, conversion of reserved capacity to usage, history, and aggregate queries.
+This specification applies to the complete caller-visible contract and observable behavior of generic per-user resource accounting owned by `ffun.resources`.
 
-Resource-kind registries, resource units and conversions, accounting-interval selection, user-configured limits, billing, and presentation of resource history are out of scope.
+Resource-kind registries, resource units and conversions, accounting-interval selection, user-configured limits, billing, and presentation of resource accounting data are out of scope.
 
 ## Dictionary
 
@@ -21,10 +21,11 @@ Resource-kind registries, resource units and conversions, accounting-interval se
 - `reservation option` - one caller-supplied resource kind and interval, whose position defines its priority.
 - `reservation specification` - one caller-supplied user and a collection of optional limits aligned with the reservation options.
 - `reservation result` - the user, kind, interval, and amount captured by one successful reservation.
+- `resource statistics record` - cumulative finalized consumption for one user, resource kind, and UTC calendar date.
 
 ## Module responsibility
 
-The module MUST own generic per-user resource accounting, durable used and reserved counters, atomic limit-checked reservation, reservation conversion and release, ordered reservation selection, history queries, and aggregate usage queries.
+The module MUST own generic per-user resource accounting, durable used and reserved counters, atomic limit-checked reservation, reservation conversion and release, daily consumption statistics, ordered reservation selection, history queries, and aggregate usage queries.
 
 The module MUST treat resource kinds, counter units, interval starts, and limits as caller-owned inputs.
 It MUST NOT own a resource-kind registry, derive interval boundaries, convert units, or persist resource limits.
@@ -121,6 +122,21 @@ If any reservation cannot be converted, the entire conversion MUST fail without 
 The finalized amount MAY differ from captured reservation amounts.
 Conversion MAY therefore increase or decrease each total and MUST NOT reapply reservation limits.
 A zero finalized amount MUST release reservations without recording usage.
+
+### Daily statistics
+
+One resource statistics record MUST be identified by the exact tuple of user id, resource kind, and UTC calendar date.
+The date MUST be selected from the database clock when the corresponding resource operation is persisted.
+
+The consumed statistics counter MUST be the cumulative finalized used amount from successful conversions on that date.
+Reservation attempts MUST NOT change statistics.
+A failed conversion MUST NOT change statistics.
+A zero finalized amount MUST leave statistics unchanged.
+
+Statistics changes MUST use the same transaction as the resource-counter change that produced them.
+Statistics for different users, kinds, or dates MUST be accounted independently even when they address the same resource interval or are changed by one bulk operation.
+
+The module is not required to expose statistics queries until a caller-facing read contract is specified.
 
 ### Current-resource queries
 
