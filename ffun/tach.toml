@@ -121,6 +121,7 @@ depends_on = [
     "ffun.library",
     "ffun.llms_framework",
     "ffun.ontology",
+    "ffun.queues",
     "ffun.tags",
 ]
 layer = "tags_workflow"
@@ -152,6 +153,7 @@ depends_on = [
     "ffun.feeds_links",
     "ffun.library",
     "ffun.parsers",
+    "ffun.queues",
 ]
 layer = "feeds_workflow"
 
@@ -205,10 +207,16 @@ layer = "feeds_workflow"
 [[modules]]
 path = "ffun.dispatcher"
 depends_on = [
+    "ffun.entitlements",
     "ffun.feeds_collections",
+    "ffun.feeds_links",
     "ffun.library",
     "ffun.markers",
     "ffun.queues",
+    "ffun.resources",
+    # TODO: temporary dependency for the legacy user API-key visibility bypass.
+    #       Remove together with the old API-key consumption logic.
+    "ffun.user_settings",
 ]
 layer = "feeds_workflow"
 

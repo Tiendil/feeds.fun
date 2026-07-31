@@ -54,7 +54,16 @@ Domain modules SHOULD compose operation-module functions into business workflows
 
 Domain modules MUST own transaction boundaries for new or significantly changed business workflows.
 
-When a workflow changes multiple database records that must stay consistent, the domain module MUST handle the transaction boundary and pass the transaction execute callable into operation-module helpers.
+When a workflow changes multiple database records owned by the same top-level backend module that must stay consistent, the domain module MUST handle the transaction boundary and pass the transaction execute callable into operation-module helpers.
+
+By default, a transaction owned by one top-level backend module MUST NOT execute database operations owned by another top-level backend module or pass its execute callable through another top-level module's domain boundary.
+Only a human developer MAY grant an exception to this rule, and the approval MUST be explicit.
+Every approved exception MUST be documented before implementation begins, either in the specification for the transaction-owning module or in a comment or docstring attached to the particular function that owns the cross-module transaction.
+These locations are required to keep the approval version-controlled and discoverable at either the module's architectural contract or the exact transaction boundary; a separate record would not reliably accompany reviews of the specification or transaction-owning function.
+The documentation MUST identify the particular workflow, name the other participating top-level modules, and explicitly require them to share one database transaction.
+If no approved exception is documented for a workflow, developers and agents MUST treat the default prohibition as unconditional for that workflow.
+An exception MUST NOT be inferred from a general atomicity requirement, a generic cross-module domain API, the ability of a function to accept an execute callable, or any other undocumented circumstance.
+Such an exception permits only the specified transaction sharing; cross-module calls MUST still use the participating module's public domain boundary and MUST NOT import its operation module.
 
 Existing operation-module transaction blocks MAY remain in old code until the surrounding workflow is substantially changed. New code SHOULD NOT add transaction ownership to operation modules unless the operation module function is intentionally a low-level atomic primitive and no domain workflow boundary exists.
 

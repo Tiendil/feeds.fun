@@ -56,7 +56,7 @@ class TestSetMarker:
     async def test_set_marker(self, internal_user_id: UserId, new_entry: Entry) -> None:
         with capture_logs() as logs:
             async with TableSizeDelta("m_markers", delta=1):
-                await set_marker(internal_user_id, Marker.read, new_entry.id)
+                await set_marker([internal_user_id], Marker.read, new_entry.id)
 
         assert_logs_has_business_event(
             logs,
@@ -67,12 +67,60 @@ class TestSetMarker:
         )
 
     @pytest.mark.asyncio
+    async def test_set_multiple_markers(self, new_entry: Entry) -> None:
+        user_a, user_b = await u_make.n_users(2)
+
+        with capture_logs() as logs:
+            async with TableSizeDelta("m_markers", delta=2):
+                await set_marker([user_a, user_b], Marker.read, new_entry.id)
+
+        assert_logs_has_business_event(
+            logs,
+            "marker_set",
+            user_id=user_a,
+            entry_id=str(new_entry.id),
+            marker=Marker.read,
+        )
+        assert_logs_has_business_event(
+            logs,
+            "marker_set",
+            user_id=user_b,
+            entry_id=str(new_entry.id),
+            marker=Marker.read,
+        )
+        assert await get_markers(user_a, [new_entry.id]) == {new_entry.id: {Marker.read}}
+        assert await get_markers(user_b, [new_entry.id]) == {new_entry.id: {Marker.read}}
+
+    @pytest.mark.asyncio
+    async def test_empty_user_ids(self, new_entry: Entry) -> None:
+        with capture_logs() as logs:
+            async with TableSizeNotChanged("m_markers"):
+                await set_marker([], Marker.read, new_entry.id)
+
+        assert_logs_has_no_business_event(logs, "marker_set")
+
+    @pytest.mark.asyncio
+    async def test_duplicate_user_ids(self, internal_user_id: UserId, new_entry: Entry) -> None:
+        with capture_logs() as logs:
+            async with TableSizeDelta("m_markers", delta=1):
+                await set_marker([internal_user_id, internal_user_id], Marker.read, new_entry.id)
+
+        assert_logs_has_business_event(
+            logs,
+            "marker_set",
+            user_id=internal_user_id,
+            entry_id=str(new_entry.id),
+            marker=Marker.read,
+        )
+        assert await get_markers(internal_user_id, [new_entry.id]) == {new_entry.id: {Marker.read}}
+
+    @pytest.mark.asyncio
     async def test_set_marker_twice(self, internal_user_id: UserId, new_entry: Entry) -> None:
-        await set_marker(internal_user_id, Marker.read, new_entry.id)
+        await set_marker([internal_user_id], Marker.read, new_entry.id)
 
         with capture_logs() as logs:
             async with TableSizeNotChanged("m_markers"):
-                await set_marker(internal_user_id, Marker.read, new_entry.id)
+                await set_marker([internal_user_id], Marker.read, new_entry.id)
 
         assert_logs_has_no_business_event(logs, "marker_set")
 
@@ -80,7 +128,7 @@ class TestSetMarker:
     async def test_set_global_marker(self, new_entry: Entry) -> None:
         with capture_logs() as logs:
             async with TableSizeDelta("m_markers", delta=1):
-                await set_marker(None, Marker.can_see_tags, new_entry.id)
+                await set_marker([None], Marker.can_see_tags, new_entry.id)
 
         assert_logs_has_business_event(
             logs,
@@ -92,21 +140,21 @@ class TestSetMarker:
 
     @pytest.mark.asyncio
     async def test_set_global_marker_twice(self, new_entry: Entry) -> None:
-        await set_marker(None, Marker.can_see_tags, new_entry.id)
+        await set_marker([None], Marker.can_see_tags, new_entry.id)
 
         with capture_logs() as logs:
             async with TableSizeNotChanged("m_markers"):
-                await set_marker(None, Marker.can_see_tags, new_entry.id)
+                await set_marker([None], Marker.can_see_tags, new_entry.id)
 
         assert_logs_has_no_business_event(logs, "marker_set")
 
     @pytest.mark.asyncio
     async def test_set_user_and_global_marker(self, internal_user_id: UserId, new_entry: Entry) -> None:
-        await set_marker(internal_user_id, Marker.can_see_tags, new_entry.id)
+        await set_marker([internal_user_id], Marker.can_see_tags, new_entry.id)
 
         with capture_logs() as logs:
             async with TableSizeDelta("m_markers", delta=1):
-                await set_marker(None, Marker.can_see_tags, new_entry.id)
+                await set_marker([None], Marker.can_see_tags, new_entry.id)
 
         assert_logs_has_business_event(
             logs,
@@ -123,7 +171,7 @@ class TestRemoveMarker:
 
     @pytest.mark.asyncio
     async def test_remove_marker(self, internal_user_id: UserId, new_entry: Entry) -> None:
-        await set_marker(internal_user_id, Marker.read, new_entry.id)
+        await set_marker([internal_user_id], Marker.read, new_entry.id)
 
         with capture_logs() as logs:
             async with TableSizeDelta("m_markers", delta=-1):
@@ -139,7 +187,7 @@ class TestRemoveMarker:
 
     @pytest.mark.asyncio
     async def test_remove_marker_twice(self, internal_user_id: UserId, new_entry: Entry) -> None:
-        await set_marker(internal_user_id, Marker.read, new_entry.id)
+        await set_marker([internal_user_id], Marker.read, new_entry.id)
         await remove_marker(internal_user_id, Marker.read, new_entry.id)
 
         with capture_logs() as logs:
@@ -150,7 +198,7 @@ class TestRemoveMarker:
 
     @pytest.mark.asyncio
     async def test_remove_global_marker(self, new_entry: Entry) -> None:
-        await set_marker(None, Marker.can_see_tags, new_entry.id)
+        await set_marker([None], Marker.can_see_tags, new_entry.id)
 
         with capture_logs() as logs:
             async with TableSizeDelta("m_markers", delta=-1):
@@ -166,7 +214,7 @@ class TestRemoveMarker:
 
     @pytest.mark.asyncio
     async def test_remove_global_marker_twice(self, new_entry: Entry) -> None:
-        await set_marker(None, Marker.can_see_tags, new_entry.id)
+        await set_marker([None], Marker.can_see_tags, new_entry.id)
         await remove_marker(None, Marker.can_see_tags, new_entry.id)
 
         with capture_logs() as logs:
@@ -179,8 +227,7 @@ class TestRemoveMarker:
     async def test_remove_user_marker_when_global_marker_exists(
         self, internal_user_id: UserId, new_entry: Entry
     ) -> None:
-        await set_marker(internal_user_id, Marker.can_see_tags, new_entry.id)
-        await set_marker(None, Marker.can_see_tags, new_entry.id)
+        await set_marker([internal_user_id, None], Marker.can_see_tags, new_entry.id)
 
         with capture_logs() as logs:
             async with TableSizeDelta("m_markers", delta=-1):
@@ -201,8 +248,7 @@ class TestRemoveMarker:
     async def test_remove_global_marker_when_user_marker_exists(
         self, internal_user_id: UserId, new_entry: Entry
     ) -> None:
-        await set_marker(internal_user_id, Marker.can_see_tags, new_entry.id)
-        await set_marker(None, Marker.can_see_tags, new_entry.id)
+        await set_marker([internal_user_id, None], Marker.can_see_tags, new_entry.id)
 
         with capture_logs() as logs:
             async with TableSizeDelta("m_markers", delta=-1):
@@ -226,27 +272,27 @@ class TestGetMarkers:
         entry = (await l_make.n_entries_list(loaded_feed, 1))[0]
         user_a, user_b = await u_make.n_users(2)
 
-        await set_marker(user_a, Marker.read, entry.id)
+        await set_marker([user_a], Marker.read, entry.id)
 
         assert await get_markers(user_a, [entry.id]) == {entry.id: {Marker.read}}
         assert await get_markers(user_b, [entry.id]) == {}
 
     @pytest.mark.asyncio
     async def test_returns_global_markers_for_user_scope(self, internal_user_id: UserId, new_entry: Entry) -> None:
-        await set_marker(None, Marker.can_see_tags, new_entry.id)
+        await set_marker([None], Marker.can_see_tags, new_entry.id)
 
         assert await get_markers(internal_user_id, [new_entry.id]) == {new_entry.id: {Marker.can_see_tags}}
 
     @pytest.mark.asyncio
     async def test_returns_global_markers_for_anonymous_scope(self, new_entry: Entry) -> None:
-        await set_marker(None, Marker.can_see_tags, new_entry.id)
+        await set_marker([None], Marker.can_see_tags, new_entry.id)
 
         assert await get_markers(None, [new_entry.id]) == {new_entry.id: {Marker.can_see_tags}}
 
     @pytest.mark.asyncio
     async def test_combines_user_and_global_markers(self, internal_user_id: UserId, new_entry: Entry) -> None:
-        await set_marker(internal_user_id, Marker.read, new_entry.id)
-        await set_marker(None, Marker.can_see_tags, new_entry.id)
+        await set_marker([internal_user_id], Marker.read, new_entry.id)
+        await set_marker([None], Marker.can_see_tags, new_entry.id)
 
         assert await get_markers(internal_user_id, [new_entry.id]) == {
             new_entry.id: {Marker.read, Marker.can_see_tags}
@@ -254,8 +300,7 @@ class TestGetMarkers:
 
     @pytest.mark.asyncio
     async def test_squashes_same_user_and_global_marker(self, internal_user_id: UserId, new_entry: Entry) -> None:
-        await set_marker(internal_user_id, Marker.can_see_tags, new_entry.id)
-        await set_marker(None, Marker.can_see_tags, new_entry.id)
+        await set_marker([internal_user_id, None], Marker.can_see_tags, new_entry.id)
 
         assert await get_markers(internal_user_id, [new_entry.id]) == {new_entry.id: {Marker.can_see_tags}}
 
@@ -274,12 +319,10 @@ class TestRemoveMarkersForEntries:
 
         user_a, user_b, user_c = await u_make.n_users(3)
 
-        await set_marker(user_a, Marker.read, entry_1.id)
+        await set_marker([user_a], Marker.read, entry_1.id)
 
-        await set_marker(user_b, Marker.read, entry_2.id)
-        await set_marker(user_b, Marker.read, entry_3.id)
-
-        await set_marker(user_c, Marker.read, entry_2.id)
+        await set_marker([user_b, user_c], Marker.read, entry_2.id)
+        await set_marker([user_b], Marker.read, entry_3.id)
 
         async with TableSizeDelta("m_markers", delta=-3):
             await remove_markers_for_entries([entry_1.id, entry_2.id])
@@ -296,9 +339,9 @@ class TestRemoveMarkersForEntries:
     async def test_remove_global_markers(self, loaded_feed: Feed) -> None:
         entry_1, entry_2, entry_3 = await l_make.n_entries_list(loaded_feed, 3)
 
-        await set_marker(None, Marker.can_see_tags, entry_1.id)
-        await set_marker(None, Marker.can_see_tags, entry_2.id)
-        await set_marker(None, Marker.can_see_tags, entry_3.id)
+        await set_marker([None], Marker.can_see_tags, entry_1.id)
+        await set_marker([None], Marker.can_see_tags, entry_2.id)
+        await set_marker([None], Marker.can_see_tags, entry_3.id)
 
         async with TableSizeDelta("m_markers", delta=-2):
             await remove_markers_for_entries([entry_1.id, entry_2.id])

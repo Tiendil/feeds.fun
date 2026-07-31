@@ -14,14 +14,8 @@ Most important commands have script shortcuts in `./bin` directory.
 
 Command you are allowed to use:
 
-- `./bin/backend-tests.sh` — run ALL backend tests via pytest.
-- `./bin/backend-utils.sh` — run utils in the backend environment, for example `/bin/backend-utils.sh poetry run pytest ffun/parsers/tests/test_feed.py`
+- `./bin/backend-utils.sh` — run utils in the backend environment, for example `/bin/backend-utils.sh poetry run <your command>`
 - `./bin/build-dev-containers.sh` — build base Docker images for development. Call this command after making changes to Docker configs or dependencies.
-- `./bin/check-code-spelling.sh` — check code spelling with `codespell` tool. Both for frontend and backend code.
-- `./bin/dev-check-formatting.sh` — check code formatting. Both for frontend and backend code.
-- `./bin/dev-check-runtime.sh` — check if code starts without errors — very basic smoke tests.
-- `./bin/dev-check-semantics.sh` — check code semantics (types, linting, etc.). Both for frontend and backend code.
-- `./bin/frontend-tests.sh` — run ALL frontend tests.
 - `./bin/frontend-utils.sh` — run utils in the frontend environment.
 - `./bin/taskwarior.sh` — run Taskwarrior commands related to project journaling.
 
@@ -61,11 +55,13 @@ Use Donna's `llm` protocol for agent-facing commands unless a human explicitly a
 
 Depmesh is configured to log significant operation steps via `task` tool.
 
-Special workflows to use:
-
-- `@/workflows/polish.donna.md` — format, fix architecture, lint, and test errors. Run it after making changes to the codebase at the moments when the project is expected to be in a working state: between significant implementation steps, before reporting completion of a task, etc. Do not run it when all changes made for the current task are confined to files under `specs/`; review `depmesh` dependencies and perform targeted specification checks instead. Run this workflow instead of running individual operations, unless you are explicitly needed to run a specific operation for some reason.
+At the start of working session run `donna -p llm list` to list all available workflows.
 
 Do not run `donna -p llm new-session` unless the developer explicitly asks to reset or start a fresh Donna session.
+
+Special instructions:
+
+- Use donna polish workflow to groom the code after you've introduced changes (instead of running linters, formatters and while tests manually).
 
 ### `depmesh`
 
@@ -83,8 +79,8 @@ depmesh skill usage
 
 `./bin/inconsistency-check.py` — a direct helper script for managing the depmesh-backed consistency-check queue.
 
-Use this script only when the developer explicitly asks you to run it, or when an active Donna workflow explicitly
-instructs you to run it. Do not run it opportunistically as a general dependency or consistency check.
+Use this script only when the developer explicitly asks you to run it, or when an active workflow explicitly instructs
+you to run it. Do not run it opportunistically as a general dependency or consistency check.
 
 The queue is an isolated Taskwarrior database of relation-pair checks. Each queued record represents one oriented
 `depmesh` relation from a changed or manually selected file to one related artifact, plus the current SHA-256 checksums
@@ -92,18 +88,20 @@ of both files, the relation id, the check status, and an optional markdown repor
 both file checksums, so old records remain as history while changed file content creates a fresh unchecked pair.
 Reconciliation immediately marks older checksum versions of the same oriented relation pair as `outdated`.
 
-The checker loop is the `run-cycle` command. It discovers files changed relative to `main`, queries all configured
-`depmesh` relations for those files, reconciles the current relation pairs into the queue, then handles at most one
-unchecked pair. If a current pair is already marked `inconsistent`, the loop prints it and exits before spawning any
-child checker. Otherwise it runs one read-only child Codex checker for the first unchecked pair, stores the result, and
-exits with a code that tells the Donna workflow whether to stop for a fix, continue the loop, or finish successfully.
+The `run-cycle` command reconciles all non-outdated queue pairs against current files, `depmesh` relations, and the
+active mode. A mode that requires branch changes marks a pair `outdated` when its changed-side file is outside the
+branch diff; other modes retain all current queued pairs. Each invocation processes the current dependency frontier.
+It returns success only after a fresh cycle confirms that no eligible unchecked or inconsistent pairs remain;
+otherwise its exit status tells the caller whether more processing or inconsistency resolution is required.
 
-The `enqueue-changed` command performs the changed-file discovery, `depmesh` queries, and queue reconciliation portion
-of `run-cycle`, then exits successfully without processing unchecked pairs or spawning child Codex checkers.
+Consistency decisions after a valid fix belong to the child checker.
+Primary agents MUST NOT mark a valid report consistent after applying a fix.
+After every valid fix, the primary agent MUST reset the exact current relation pair with `mark-unchecked` before continuing so a child checker reevaluates the updated workspace.
+If the pair no longer exists, the primary agent MUST do nothing for that pair.
 
-The `sync-queue` command discovers Git-changed files and non-outdated manually tracked changed-side files, reconciles
-their current `depmesh` relations, and marks stale checksum versions or relations no longer returned by `depmesh` as
-`outdated`. It does not process unchecked pairs or spawn child Codex checkers.
+The `enqueue-changed` command reconciles relation pairs for Git-changed files without processing them.
+
+The `sync-queue` command performs mode-aware queue reconciliation without processing pairs.
 
 `list-pairs` shows queue history by default. Pass `--current` to show only records whose stored checksums match the
 current files and whose oriented relation is still returned by `depmesh`; this current-only view does not mutate the
@@ -114,14 +112,15 @@ Main commands:
 - `python ./bin/inconsistency-check.py enqueue @/path/to/file` — manually add one file and all configured depmesh relation pairs for that file to the isolated queue.
 - `python ./bin/inconsistency-check.py enqueue @/first @/second` — enqueue multiple files.
 - `python ./bin/inconsistency-check.py enqueue-changed` — enqueue all relation pairs for files changed relative to `main` without processing unchecked pairs or spawning child checkers.
-- `python ./bin/inconsistency-check.py sync-queue` — reconcile Git-changed and manually tracked files, then mark stale checksums and removed relations outdated without processing unchecked pairs.
+- `python ./bin/inconsistency-check.py sync-queue` — reconcile the mode-eligible queue without processing pairs.
 - `python ./bin/inconsistency-check.py list-pairs --current` — show only current-checksum records for relations still returned by `depmesh`.
 - `python ./bin/inconsistency-check.py progress --file @/path/to/file` — show queued records where the file is either the changed side or the related side.
 - `python ./bin/inconsistency-check.py mark-consistent --changed @/changed --related @/related --relation <relation>` — explicitly mark the current-checksum relation pair as consistent.
+- `python ./bin/inconsistency-check.py mark-unchecked --changed @/changed --related @/related --relation <relation>` — reset the current-checksum relation pair to unchecked, clear its previous reviewer result, and require checker reevaluation.
 - `python ./bin/inconsistency-check.py mark-inconsistent --changed @/changed --related @/related --relation <relation> --report "<markdown>"` — explicitly mark the current-checksum relation pair as inconsistent.
 - `python ./bin/inconsistency-check.py clear-queue` — delete all records from the isolated relation-pair queue.
-- `python ./bin/inconsistency-check.py run-cycle` — run one checker cycle: discover changed files relative to `main`, reconcile relation pairs, and process at most one unchecked pair.
-- `python ./bin/inconsistency-check.py process-queue` — process already queued relation pairs until all are checked or the first inconsistency is found.
+- `python ./bin/inconsistency-check.py run-cycle` — reconcile the queue and process one mode-eligible dependency frontier.
+- `python ./bin/inconsistency-check.py process-queue` — process one mode-eligible dependency frontier.
 - `python ./bin/inconsistency-check.py self-check` — run deterministic script verification without spawning a child Codex checker.
 
 The script stores its relation-pair queue and runtime files only under `@/.session/inconsistency-check/`.

@@ -12,6 +12,8 @@ Detailed behavior, implementation requirements, and configuration schemas are ou
 
 ## Terms
 
+Terms defined in this section are stable project vocabulary. Project artifacts MUST use these terms when referring to the corresponding concepts and MUST preserve them across behavioral, architectural, implementation, and storage changes while their definitions remain accurate. A dictionary term MAY be renamed only when its existing name or definition has become incorrect or ambiguous.
+
 - `feed` - an RSS, Atom, or similar source of news entries.
 - `entry` - one news article or item loaded from a feed.
 - `tag` - semantic label assigned to an entry.

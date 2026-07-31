@@ -2,6 +2,7 @@ from collections.abc import Sequence
 
 from ffun.dispatcher.entities import ProcessorDispatchInfo, ProcessorDispatchRoute, ProcessorRouteId
 from ffun.domain.entities import ProcessorId
+from ffun.queues.entities import QueueSecondaryId
 
 
 def processor_dispatch_route(
@@ -47,7 +48,7 @@ def processor_dispatch_info(
 ) -> ProcessorDispatchInfo:
     return ProcessorDispatchInfo(
         processor_id=ProcessorId(processor_id),
-        subqueue_id=ProcessorId(processor_id if subqueue_id is None else subqueue_id),
+        subqueue_id=QueueSecondaryId(processor_id if subqueue_id is None else subqueue_id),
         routes=processor_dispatch_routes(
             allowed_for_collections=allowed_for_collections,
             allowed_for_users=allowed_for_users,

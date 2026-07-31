@@ -41,6 +41,7 @@ from ffun.llms_framework.keys_rotator import (
 )
 from ffun.llms_framework.provider_interface import ProviderTest
 from ffun.llms_framework.providers import llm_providers
+from ffun.llms_framework.tests.helpers import reserve_resource
 from ffun.product.entities import Resource as AppResource
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
@@ -233,20 +234,23 @@ class TestGetUserKeyInfos:
                 user_id=user_id, kind=setting_kind(UserSetting.process_entries_not_older_than), value=days[i]
             )
 
-            await r_domain.try_to_reserve(
+            await reserve_resource(
                 user_id=user_id,
-                kind=AppResource.tokens_cost,
                 interval_started_at=interval_started_at,
                 amount=_cost_points.to_points(reserved_costs[i]),
                 limit=_cost_points.to_points(max_tokens_cost_in_month[i]),
             )
 
             await r_domain.convert_reserved_to_used(
-                user_id=user_id,
-                kind=AppResource.tokens_cost,
-                interval_started_at=interval_started_at,
+                [
+                    r_entities.ResourceReservation(
+                        user_id=user_id,
+                        kind=AppResource.tokens_cost,
+                        interval_started_at=interval_started_at,
+                        amount=0,
+                    )
+                ],
                 used=_cost_points.to_points(used_costs[i]),
-                reserved=0,
             )
 
         infos = await _get_user_key_infos(LLMProvider.openai, five_internal_user_ids, interval_started_at)
@@ -404,11 +408,15 @@ class TestFindBestUserWithKey:
             chosen_users.add(info.user_id)
 
             await r_domain.convert_reserved_to_used(
-                user_id=info.user_id,
-                kind=AppResource.tokens_cost,
-                interval_started_at=interval_started_at,
+                [
+                    r_entities.ResourceReservation(
+                        user_id=info.user_id,
+                        kind=AppResource.tokens_cost,
+                        interval_started_at=interval_started_at,
+                        amount=_cost_points.to_points(used_cost),
+                    )
+                ],
                 used=_cost_points.to_points(used_cost),
-                reserved=_cost_points.to_points(used_cost),
             )
 
         assert chosen_users == {info.user_id for info in five_user_key_infos}
@@ -496,9 +504,8 @@ class TestUseApiKey:
 
         reserved_cost = USDCost(Decimal(567))
 
-        await r_domain.try_to_reserve(
+        await reserve_resource(
             user_id=internal_user_id,
-            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(1000))),
@@ -552,9 +559,8 @@ class TestUseApiKey:
 
         reserved_cost = USDCost(Decimal(567))
 
-        await r_domain.try_to_reserve(
+        await reserve_resource(
             user_id=internal_user_id,
-            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(1000))),
@@ -610,10 +616,9 @@ class TestUseApiKey:
 
         reserved_cost = USDCost(Decimal(567))
 
-        await r_domain.try_to_reserve(
+        # TODO: differentiate tokens in all places
+        await reserve_resource(
             user_id=internal_user_id,
-            # TODO: differentiate tokens in all places
-            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(1000))),

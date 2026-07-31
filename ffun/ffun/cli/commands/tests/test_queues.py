@@ -3,7 +3,7 @@ import typer
 
 from ffun.cli.commands import queues
 from ffun.queues import operations as q_operations
-from ffun.queues.entities import QueueKind
+from ffun.queues.entities import QueueKind, QueueSecondaryId
 from ffun.queues.tests import helpers as q_helpers
 from ffun.queues.tests.entities import FakeQueueItem
 
@@ -84,7 +84,12 @@ class TestCleanupQueues:
         await queues.cleanup_queues(clean_all=False, queue=str(QueueKind.test_queue_1.value), subqueue=2)
 
         assert await q_operations.tech_get_queue_records(QueueKind.test_queue_1, FakeQueueItem) == [left_record]
-        assert await q_operations.tech_get_queue_records(QueueKind.test_queue_1, FakeQueueItem, secondary_id=2) == []
+        assert (
+            await q_operations.tech_get_queue_records(
+                QueueKind.test_queue_1, FakeQueueItem, secondary_id=QueueSecondaryId(2)
+            )
+            == []
+        )
 
     @pytest.mark.asyncio
     async def test_requires_all_or_queue(self) -> None:

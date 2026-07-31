@@ -2,7 +2,12 @@ import decimal
 import uuid
 from typing import NewType
 
-SerializedId = NewType("SerializedId", str)
+from ffun.core.entities import NonEmptyString
+
+
+class SerializedId(NonEmptyString):
+    __slots__ = ()
+
 
 UserId = NewType("UserId", uuid.UUID)
 EntryId = NewType("EntryId", uuid.UUID)

@@ -1,6 +1,6 @@
 from ffun.core import logging, metrics
 from ffun.dispatcher import domain as d_domain
-from ffun.dispatcher.entities import EntryProcessingStatus
+from ffun.dispatcher.entities import EntryProcessingStatus, EntryProcessingStatusUpdate
 from ffun.domain.entities import ProcessorId
 from ffun.librarian import errors
 from ffun.librarian.processors.base import Processor, ProcessorContext
@@ -64,21 +64,51 @@ async def process_entry(
         normalized_tags_metric.measure(len(norm_tags))
 
         await o_domain.apply_tags_to_entry(entry.id, processor_id, norm_tags)
-        await d_domain.set_entry_processing_statuses(processor_id, [entry.id], EntryProcessingStatus.processed)
+        await d_domain.set_entry_processing_statuses(
+            [
+                EntryProcessingStatusUpdate(
+                    processor_id=processor_id,
+                    entry_id=entry.id,
+                    status=EntryProcessingStatus.processed,
+                )
+            ]
+        )
 
         logger.info("processor_successed")
     except errors.SkipEntryProcessing as e:
         logger.warning("processor_requested_to_skip_entry", error_info=str(e))
         await d_domain.set_entry_processing_statuses(
-            processor_id, [entry.id], EntryProcessingStatus.skipped_by_processor
+            [
+                EntryProcessingStatusUpdate(
+                    processor_id=processor_id,
+                    entry_id=entry.id,
+                    status=EntryProcessingStatus.skipped_by_processor,
+                )
+            ]
         )
     except errors.TemporaryErrorInProcessor as e:
         # Note: it is a general plug, for some custom cases we may want to add custom processing
         logger.info("processor_temporary_error", error_info=str(e))
-        await d_domain.set_entry_processing_statuses(processor_id, [entry.id], EntryProcessingStatus.failed)
+        await d_domain.set_entry_processing_statuses(
+            [
+                EntryProcessingStatusUpdate(
+                    processor_id=processor_id,
+                    entry_id=entry.id,
+                    status=EntryProcessingStatus.failed,
+                )
+            ]
+        )
     except Exception as e:
         logger.exception("processor_failed")
-        await d_domain.set_entry_processing_statuses(processor_id, [entry.id], EntryProcessingStatus.failed)
+        await d_domain.set_entry_processing_statuses(
+            [
+                EntryProcessingStatusUpdate(
+                    processor_id=processor_id,
+                    entry_id=entry.id,
+                    status=EntryProcessingStatus.failed,
+                )
+            ]
+        )
         raise errors.UnexpectedErrorInProcessor(processor_id=processor_id, entry_id=str(entry.id)) from e
     finally:
         raw_tags_metric.flush_if_time()

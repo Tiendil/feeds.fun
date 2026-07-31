@@ -13,7 +13,11 @@ class InvalidSourceEntitlement(Error):
     pass
 
 
-class InvalidActorId(Error):
+class SourceEntitlementConflict(Error):
+    pass
+
+
+class SourceEntitlementNotFound(Error):
     pass
 
 

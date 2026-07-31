@@ -7,7 +7,7 @@ from pytest_mock import MockerFixture
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.queues import operations
 from ffun.queues import settings as queues_settings
-from ffun.queues.entities import QueueKind, QueueRecord
+from ffun.queues.entities import QueueItemToPush, QueueKind, QueueRecord, QueueSecondaryId
 from ffun.queues.tests import helpers, make
 from ffun.queues.tests.entities import FakeQueueItem
 
@@ -35,7 +35,7 @@ class TestPush:
         before_priority = time.time_ns()
 
         async with TableSizeDelta("q_items", delta=1):
-            await operations.push(QueueKind.test_queue_1, [item])
+            await operations.push(QueueKind.test_queue_1, [QueueItemToPush(item=item)])
 
         after_priority = time.time_ns()
         saved_items = await operations.tech_get_queue_records(QueueKind.test_queue_1, FakeQueueItem)
@@ -69,12 +69,41 @@ class TestPush:
         items = [make.fake_queue_item(), make.fake_queue_item(), make.fake_queue_item()]
 
         async with TableSizeDelta("q_items", delta=3):
-            await operations.push(QueueKind.test_queue_1, items)
+            await operations.push(
+                QueueKind.test_queue_1,
+                [QueueItemToPush(item=item) for item in items],
+            )
 
         saved_items = await operations.tech_get_queue_records(QueueKind.test_queue_1, FakeQueueItem)
 
         assert len(saved_items) == 3
         assert {record_value(record) for record in saved_items} == {item.value for item in items}
+
+    @pytest.mark.asyncio
+    async def test_exact_item_secondary_id_pairs(self) -> None:
+        await operations.tech_clear_queue(QueueKind.test_queue_1)
+
+        first_item = make.fake_queue_item()
+        second_item = make.fake_queue_item()
+
+        async with TableSizeDelta("q_items", delta=3):
+            await operations.push(
+                QueueKind.test_queue_1,
+                [
+                    QueueItemToPush(item=first_item, secondary_id=QueueSecondaryId(2)),
+                    QueueItemToPush(item=first_item, secondary_id=QueueSecondaryId(3)),
+                    QueueItemToPush(item=second_item, secondary_id=QueueSecondaryId(5)),
+                ],
+            )
+
+        expected_items = {2: first_item, 3: first_item, 5: second_item}
+
+        for secondary_id, expected_item in expected_items.items():
+            saved_items = await operations.tech_get_queue_records(
+                QueueKind.test_queue_1, FakeQueueItem, secondary_id=QueueSecondaryId(secondary_id)
+            )
+
+            assert [record.item for record in saved_items] == [expected_item]
 
 
 class TestPull:
@@ -148,7 +177,9 @@ class TestPull:
         first_queue_item = await helpers.push_item(secondary_id=1)
         second_queue_item = await helpers.push_item(secondary_id=2)
 
-        pulled_items = await operations.pull(QueueKind.test_queue_1, FakeQueueItem, limit=2, secondary_id=2)
+        pulled_items = await operations.pull(
+            QueueKind.test_queue_1, FakeQueueItem, limit=2, secondary_id=QueueSecondaryId(2)
+        )
 
         assert len(pulled_items) == 1
         pulled_item = pulled_items[0]
@@ -188,22 +219,27 @@ class TestPull:
 
         for (queue_kind, secondary_id), records in records_by_queue.items():
             stored_records = await operations.tech_get_queue_records(
-                queue_kind, FakeQueueItem, secondary_id=secondary_id
+                queue_kind, FakeQueueItem, secondary_id=QueueSecondaryId(secondary_id)
             )
 
             assert [record.id for record in stored_records] == [record.id for record in records]
 
         target_records = records_by_queue[(QueueKind.test_queue_1, 2)]
-        pulled_target_records = await operations.pull(QueueKind.test_queue_1, FakeQueueItem, limit=10, secondary_id=2)
+        pulled_target_records = await operations.pull(
+            QueueKind.test_queue_1, FakeQueueItem, limit=10, secondary_id=QueueSecondaryId(2)
+        )
 
         assert [record.id for record in pulled_target_records] == [record.id for record in target_records]
-        assert await operations.pull(QueueKind.test_queue_1, FakeQueueItem, limit=10, secondary_id=2) == []
+        assert (
+            await operations.pull(QueueKind.test_queue_1, FakeQueueItem, limit=10, secondary_id=QueueSecondaryId(2))
+            == []
+        )
 
         pulled_same_kind_other_secondary = await operations.pull(
-            QueueKind.test_queue_1, FakeQueueItem, limit=10, secondary_id=1
+            QueueKind.test_queue_1, FakeQueueItem, limit=10, secondary_id=QueueSecondaryId(1)
         )
         pulled_other_kind_same_secondary = await operations.pull(
-            QueueKind.test_queue_2, FakeQueueItem, limit=10, secondary_id=2
+            QueueKind.test_queue_2, FakeQueueItem, limit=10, secondary_id=QueueSecondaryId(2)
         )
 
         assert [record.id for record in pulled_same_kind_other_secondary] == [
@@ -216,10 +252,15 @@ class TestPull:
         acknowledged = await operations.acknowledge([record.id for record in pulled_target_records if record.id])
 
         assert acknowledged == len(target_records)
-        assert await operations.tech_get_queue_records(QueueKind.test_queue_1, FakeQueueItem, secondary_id=2) == []
+        assert (
+            await operations.tech_get_queue_records(
+                QueueKind.test_queue_1, FakeQueueItem, secondary_id=QueueSecondaryId(2)
+            )
+            == []
+        )
 
         untouched_records = await operations.tech_get_queue_records(
-            QueueKind.test_queue_2, FakeQueueItem, secondary_id=1
+            QueueKind.test_queue_2, FakeQueueItem, secondary_id=QueueSecondaryId(1)
         )
 
         assert [record.id for record in untouched_records] == [
@@ -292,7 +333,11 @@ class TestAcknowledge:
 
         await operations.push(
             QueueKind.test_queue_1,
-            [make.fake_queue_item(), make.fake_queue_item(), make.fake_queue_item()],
+            [
+                QueueItemToPush(item=make.fake_queue_item()),
+                QueueItemToPush(item=make.fake_queue_item()),
+                QueueItemToPush(item=make.fake_queue_item()),
+            ],
         )
 
         saved_items = await operations.tech_get_queue_records(QueueKind.test_queue_1, FakeQueueItem)

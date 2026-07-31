@@ -37,3 +37,6 @@ class UserSetting(enum.IntEnum):
 class Resource(enum.IntEnum):
     # openai_tokens = 1  # noqa
     tokens_cost = 2
+    day_token_usage = 3
+    month_token_usage = 4
+    lifetime_token_usage = 5

@@ -4,4 +4,4 @@ set -e
 
 echo "run backend tests"
 
-./bin/backend-utils.sh poetry run pytest ffun
+./bin/backend-utils.sh poetry run pytest "$@" ffun

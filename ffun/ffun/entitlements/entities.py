@@ -1,19 +1,30 @@
 import datetime
 import enum
-from typing import NewType, TypeAlias
+from typing import TypeAlias
 
 import pydantic
 
-from ffun.core.entities import BaseEntity
+from ffun.core import utils
+from ffun.core.entities import BaseEntity, NonEmptyString
+from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
 from ffun.domain.entities import UserId
 
-EntitlementSourceId = NewType("EntitlementSourceId", str)
+
+class EntitlementSourceId(NonEmptyString):
+    __slots__ = ()
+
+
+class EntitlementTransactionId(NonEmptyString):
+    __slots__ = ()
+
+
 EffectiveEntitlementState: TypeAlias = tuple[bool, int | None]
 
 
 class EntitlementKindId(enum.IntEnum):
     day_tokens = 1
     month_tokens = 2
+    lifetime_tokens = 3
 
 
 class MergePolicy(enum.StrEnum):
@@ -25,73 +36,80 @@ class MergePolicy(enum.StrEnum):
 class EntitlementKind(BaseEntity):
     id: EntitlementKindId
     merge_policy: MergePolicy
+    is_lifetime: bool
 
 
 ENTITLEMENT_KINDS: tuple[EntitlementKind, ...] = (
-    EntitlementKind(id=EntitlementKindId.day_tokens, merge_policy=MergePolicy.max),
-    EntitlementKind(id=EntitlementKindId.month_tokens, merge_policy=MergePolicy.max),
+    EntitlementKind(id=EntitlementKindId.day_tokens, merge_policy=MergePolicy.max, is_lifetime=False),
+    EntitlementKind(id=EntitlementKindId.month_tokens, merge_policy=MergePolicy.max, is_lifetime=False),
+    EntitlementKind(id=EntitlementKindId.lifetime_tokens, merge_policy=MergePolicy.sum, is_lifetime=True),
 )
 
 
 class SourceEntitlement(BaseEntity):
     source: EntitlementSourceId
+    transaction_id: EntitlementTransactionId
     user_id: UserId
     kind_id: EntitlementKindId
-    granted: bool = pydantic.Field(strict=True)
-    value: int | None = pydantic.Field(strict=True)
+    value: int = pydantic.Field(strict=True)
     starts_at: datetime.datetime
     expires_at: datetime.datetime
+    revoked_at: datetime.datetime | None = None
 
     @pydantic.model_validator(mode="after")
     def validate_state(self) -> "SourceEntitlement":  # noqa: CCR001
-        if self.granted and self.value is None:
-            raise ValueError("A granted entitlement must have an integer value")
-
-        if not self.granted and self.value is not None:
-            raise ValueError("A revoked entitlement must not have a value")
-
-        if self.starts_at.tzinfo is None or self.starts_at.utcoffset() is None:
+        if not utils.has_timezone(self.starts_at):
             raise ValueError("Entitlement activation timestamp must have a UTC offset")
 
-        if self.expires_at.tzinfo is None or self.expires_at.utcoffset() is None:
+        if not utils.has_timezone(self.expires_at):
             raise ValueError("Entitlement expiration timestamp must have a UTC offset")
 
         if self.starts_at >= self.expires_at:
             raise ValueError("Entitlement activation timestamp must be earlier than expiration")
 
+        if self.revoked_at is not None and not utils.has_timezone(self.revoked_at):
+            raise ValueError("Entitlement revocation timestamp must have a UTC offset")
+
         return self
 
-    def to_revoked(
-        self,
-        *,
-        starts_at: datetime.datetime,
-        expires_at: datetime.datetime,
-    ) -> "SourceEntitlement":
-        return SourceEntitlement(
-            source=self.source,
-            user_id=self.user_id,
-            kind_id=self.kind_id,
-            granted=False,
-            value=None,
-            starts_at=starts_at,
-            expires_at=expires_at,
+    @property
+    def granted(self) -> bool:
+        return self.revoked_at is None
+
+    def validate_grant(self, kind: EntitlementKind) -> None:
+        if self.kind_id != kind.id:
+            raise ValueError("Source entitlement kind must match entitlement kind")
+
+        if not self.granted:
+            raise ValueError("A source entitlement grant must not be revoked")
+
+        if kind.is_lifetime and self.expires_at != LIFETIME_INTERVAL_END_MARKER:
+            raise ValueError("A lifetime entitlement must use the stable lifetime expiration timestamp")
+
+        if not kind.is_lifetime and self.expires_at == LIFETIME_INTERVAL_END_MARKER:
+            raise ValueError("A non-lifetime entitlement must use a source-supplied expiration timestamp")
+
+    def has_same_grant_as(self, other: "SourceEntitlement") -> bool:
+        return (
+            self.source == other.source
+            and self.transaction_id == other.transaction_id
+            and self.user_id == other.user_id
+            and self.kind_id == other.kind_id
+            and self.value == other.value
+            and self.starts_at == other.starts_at
+            and self.expires_at == other.expires_at
         )
 
-    def to_granted(
-        self,
-        *,
-        value: int,
-        starts_at: datetime.datetime,
-        expires_at: datetime.datetime,
-    ) -> "SourceEntitlement":
+    def to_revoked(self, *, revoked_at: datetime.datetime) -> "SourceEntitlement":
         return SourceEntitlement(
             source=self.source,
+            transaction_id=self.transaction_id,
             user_id=self.user_id,
             kind_id=self.kind_id,
-            granted=True,
-            value=value,
-            starts_at=starts_at,
-            expires_at=expires_at,
+            value=self.value,
+            starts_at=self.starts_at,
+            expires_at=self.expires_at,
+            revoked_at=revoked_at,
         )
 
 
@@ -104,10 +122,10 @@ class EffectiveEntitlementInterval(BaseEntity):
 
     @pydantic.model_validator(mode="after")
     def validate_interval(self) -> "EffectiveEntitlementInterval":
-        if self.starts_at.tzinfo is None or self.starts_at.utcoffset() is None:
+        if not utils.has_timezone(self.starts_at):
             raise ValueError("Effective entitlement activation timestamp must have a UTC offset")
 
-        if self.expires_at.tzinfo is None or self.expires_at.utcoffset() is None:
+        if not utils.has_timezone(self.expires_at):
             raise ValueError("Effective entitlement expiration timestamp must have a UTC offset")
 
         if self.starts_at >= self.expires_at:

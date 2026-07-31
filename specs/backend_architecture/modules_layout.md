@@ -22,7 +22,12 @@ Migration files SHOULD stay in module-local `migrations` packages for the domain
 
 Reusable domain modules SHOULD own generic behavior, storage, validation, and extension points for their domain area.
 
-Product-specific choices that configure those reusable modules for Feeds Fun SHOULD stay outside the reusable domain implementation. For example, `ffun.user_settings` owns the generic user settings machinery, while `ffun.product` owns the concrete product setting definitions registered in that machinery.
+Product-specific definitions that have no more specific domain owner and represent shared registries, defaults, policies, or application-wide registration glue SHOULD live in `ffun.product` when they are independently required by multiple production top-level modules.
+A product-specific choice used only to implement behavior owned by one top-level module SHOULD remain in that module, even when the implementation composes public entities, values, or domain interfaces from other top-level modules.
+Importing or using another top-level module's public `domain`, `entities`, or `errors` boundary is normal cross-module interaction and MUST NOT, by itself, cause imported definitions, consumer-specific policies, or integration logic to move to `ffun.product`.
+Definitions with a natural domain owner MUST remain with that owner regardless of how many modules consume them.
+An independent consumer MUST require the product-level choice itself for its own production behavior; tests, transitive dependencies, and modules that only pass through another module's definitions MUST NOT count as independent consumers.
+For example, `ffun.user_settings` owns the generic user settings machinery, while `ffun.product` owns the concrete product setting registry used by multiple production top-level modules.
 
 ## Module responsibilities
 
@@ -53,7 +58,7 @@ Product-specific choices that configure those reusable modules for Feeds Fun SHO
 - `ffun.ontology` owns stored tag ontology behavior.
 - `ffun.openai` owns OpenAI service integration.
 - `ffun.parsers` owns feed, entry, site, and OPML parsing logic.
-- `ffun.product` owns product-level configuration and registration glue that binds reusable domain modules to concrete product settings.
+- `ffun.product` owns shared product-level definitions, configuration, and registration glue that have no more specific domain owner and are independently required by multiple production top-level modules.
 - `ffun.processors_quality` owns quality validation for tagging processors.
 - `ffun.queues` owns persistent PostgreSQL-backed queue infrastructure.
 - `ffun.resources` owns per-user quotas and resource accounting.
@@ -62,6 +67,18 @@ Product-specific choices that configure those reusable modules for Feeds Fun SHO
 - `ffun.tags` owns tag normalization and validation logic that is not ontology storage.
 - `ffun.users` owns user storage and management.
 - `ffun.user_settings` owns user-specific settings storage and behavior.
+
+### Product resource kinds
+
+`ffun.product` MUST own the shared product resource-kind registry as a closed set of stable integer identifiers.
+The registry MUST define these mappings:
+
+- `tokens_cost = 2`.
+- `day_token_usage = 3`.
+- `month_token_usage = 4`.
+- `lifetime_token_usage = 5`.
+
+Assigned product resource-kind identifiers MUST NOT be changed or reused.
 
 ## Submodules
 
@@ -211,7 +228,10 @@ Tests MAY reference tables owned by other top-level modules when direct database
 
 ### Foundational modules
 
-`ffun.core`, `ffun.domain`, and `ffun.product` are foundational modules. They own shared technical primitives, cross-domain value types and utilities, and product-wide definitions that bind reusable domain mechanisms to Feeds Fun product choices. Other backend modules MAY import any submodule of a foundational module when they need functionality owned by that submodule. Foundational modules MUST NOT depend on shared-service, domain-level, or edge-layer modules, so shared primitives do not acquire higher-level dependencies.
+`ffun.core`, `ffun.domain`, and `ffun.product` are foundational modules.
+They own shared technical primitives, cross-domain value types and utilities, and product-wide definitions without a more specific domain owner that bind reusable domain mechanisms to Feeds Fun product choices.
+Other backend modules MAY import any submodule of a foundational module when they need functionality owned by that submodule.
+Foundational modules MUST NOT depend on shared-service, domain-level, or edge-layer modules, so shared primitives do not acquire higher-level dependencies.
 
 ### Shared-service modules
 
@@ -223,7 +243,10 @@ Production callers MUST use a shared-service module through its `domain`, `entit
 
 ### Domain-level modules
 
-Most backend modules are domain-level modules. They own reusable business capabilities for one domain area and SHOULD keep product-specific choices and application/interface wiring outside their implementation. Product-specific choices SHOULD live in `ffun.product`; external interface concerns SHOULD live in edge-layer modules.
+Most backend modules are domain-level modules.
+They own reusable business capabilities for one domain area and SHOULD also own product-specific choices used only to implement those capabilities.
+Shared product-level choices without a more specific domain owner SHOULD live in `ffun.product` according to the domain and product boundary rules above.
+External interface concerns SHOULD live in edge-layer modules.
 
 Production code in one domain-level module that needs types, values, behavior, or errors from another domain-level or shared-service module MUST use only that module's `domain`, `entities`, or `errors` submodules. Domain-level and shared-service modules SHOULD expose cross-module production API through those submodules when such API is needed.
 

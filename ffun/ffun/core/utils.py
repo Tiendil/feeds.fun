@@ -15,6 +15,10 @@ def zero_timestamp() -> datetime.datetime:
     return datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
 
 
+def has_timezone(timestamp: datetime.datetime) -> bool:
+    return timestamp.tzinfo is not None and timestamp.utcoffset() is not None
+
+
 def package_root() -> pathlib.Path:
     return pathlib.Path(str(resources.files("ffun")))
 
@@ -37,7 +41,7 @@ def discover_submodules(  # noqa: CCR001
     for module_path in parent_dir.glob("*.py"):
         module_name = module_path.stem
 
-        if skip_dev_dependencies and module_name == "conftest":
+        if skip_dev_dependencies and module_name in {"conftest", "pytest_plugin"}:
             continue
 
         candidates.append(f"{parent_module}.{module_name}")

@@ -216,7 +216,7 @@ disallow_any_expr = false
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 
-addopts = """-x -vv --strict-markers -p no:cacheprovider"""
+addopts = """-x -vv --strict-markers -p no:cacheprovider -p ffun.pytest_plugin"""
 
 filterwarnings = [
   "error",

@@ -475,7 +475,7 @@ async def api_get_score_details(
 
 @api_private.post("/set-marker")  # type: ignore
 async def api_set_marker(request: entities.SetMarkerRequest, user: User) -> entities.SetMarkerResponse:
-    await m_domain.set_marker(user_id=user.id, entry_id=request.entryId, marker=request.marker.to_internal())
+    await m_domain.set_marker(user_ids=[user.id], entry_id=request.entryId, marker=request.marker.to_internal())
 
     return entities.SetMarkerResponse()
 

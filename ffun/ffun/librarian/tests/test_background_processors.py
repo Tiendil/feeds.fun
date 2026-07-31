@@ -1,9 +1,10 @@
+from collections.abc import Sequence
+
 import pytest
 from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
 from ffun.core.tests.helpers import assert_logs
-from ffun.dispatcher import domain as d_domain
 from ffun.dispatcher.entities import (
     EntryToProcess,
     EntryToTag,
@@ -12,7 +13,7 @@ from ffun.dispatcher.entities import (
     ProcessorRouteId,
 )
 from ffun.domain.domain import new_entry_id
-from ffun.domain.entities import ProcessorId
+from ffun.domain.entities import EntryId, ProcessorId
 from ffun.feeds.entities import Feed
 from ffun.librarian import background_processors
 from ffun.librarian.background_processors import EntriesProcessor
@@ -23,7 +24,7 @@ from ffun.library.tests import helpers as l_helpers
 from ffun.library.tests import make as l_make
 from ffun.ontology import domain as o_domain
 from ffun.queues import operations as q_operations
-from ffun.queues.entities import QueueKind
+from ffun.queues.entities import QueueItemToPush, QueueKind, QueueRecord, QueueSecondaryId
 
 
 def _entry_sort_key(entry: Entry) -> tuple[object, object]:
@@ -32,6 +33,32 @@ def _entry_sort_key(entry: Entry) -> tuple[object, object]:
 
 def _feed_retention_sort_key(entry: Entry) -> tuple[object, object]:
     return (entry.published_at, entry.created_at)
+
+
+async def enqueue_entries_to_tag(
+    processor_id: ProcessorId,
+    entry_ids: Sequence[EntryId],
+    route_id: ProcessorRouteId,
+) -> None:
+    await q_operations.push(
+        QueueKind.entries_to_tag,
+        [
+            QueueItemToPush(
+                item=EntryToTag(entry_id=entry_id, route_id=route_id),
+                secondary_id=QueueSecondaryId(processor_id),
+            )
+            for entry_id in entry_ids
+        ],
+    )
+
+
+async def pull_entries_to_tag(processor_id: ProcessorId, limit: int) -> list[QueueRecord[EntryToTag]]:
+    return await q_operations.pull(
+        QueueKind.entries_to_tag,
+        EntryToTag,
+        secondary_id=QueueSecondaryId(processor_id),
+        limit=limit,
+    )
 
 
 class TestProcessorInfo:
@@ -80,7 +107,7 @@ class TestProcessorInfo:
 
         assert dispatch_info == ProcessorDispatchInfo(
             processor_id=ProcessorId(101),
-            subqueue_id=ProcessorId(101),
+            subqueue_id=QueueSecondaryId(101),
             routes=expected_routes,
         )
 
@@ -130,16 +157,16 @@ class TestEntriesProcessor:
         self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
+        await q_operations.tech_clear_queue(
+            QueueKind.entries_to_tag, secondary_id=QueueSecondaryId(fake_entries_processor.id)
+        )
 
         entries = await l_make.n_entries(loaded_feed, 2)
         entries_ids = list(entries)
 
-        await d_domain.push_entries_to_tag(
-            fake_entries_processor.id, entries_ids, route_id=ProcessorRouteId("default")
-        )
+        await enqueue_entries_to_tag(fake_entries_processor.id, entries_ids, route_id=ProcessorRouteId("default"))
 
-        records = await d_domain.get_entries_to_tag(processor_id=fake_entries_processor.id, limit=100)
+        records = await pull_entries_to_tag(processor_id=fake_entries_processor.id, limit=100)
 
         with capture_logs() as logs:  # type: ignore
             records_to_process = await fake_entries_processor.filter_records_with_known_routes(records)
@@ -151,14 +178,16 @@ class TestEntriesProcessor:
         assert {record.item.entry_id for record in records_to_process} == set(entries_ids)
         assert process_records == []
 
-        await d_domain.acknowledge([record.id for record in records if record.id is not None])
+        await q_operations.acknowledge([record.id for record in records if record.id is not None])
 
     @pytest.mark.asyncio
     async def test_filter_records_with_known_routes__mixed_routes_requeues_unknown_records(
         self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
+        await q_operations.tech_clear_queue(
+            QueueKind.entries_to_tag, secondary_id=QueueSecondaryId(fake_entries_processor.id)
+        )
 
         entries = await l_make.n_entries(loaded_feed, 4)
         entries_list = list(entries.values())
@@ -167,18 +196,18 @@ class TestEntriesProcessor:
         known_route_entries = entries_list[:2]
         unknown_route_entries = entries_list[2:]
 
-        await d_domain.push_entries_to_tag(
+        await enqueue_entries_to_tag(
             fake_entries_processor.id,
             [entry.id for entry in known_route_entries],
             route_id=ProcessorRouteId("default"),
         )
-        await d_domain.push_entries_to_tag(
+        await enqueue_entries_to_tag(
             fake_entries_processor.id,
             [entry.id for entry in unknown_route_entries],
             route_id=ProcessorRouteId("unknown-route"),
         )
 
-        records = await d_domain.get_entries_to_tag(processor_id=fake_entries_processor.id, limit=100)
+        records = await pull_entries_to_tag(processor_id=fake_entries_processor.id, limit=100)
 
         with capture_logs() as logs:  # type: ignore
             records_to_process = await fake_entries_processor.filter_records_with_known_routes(records)
@@ -191,11 +220,13 @@ class TestEntriesProcessor:
         assert {record.item.entry_id for record in process_records} == {entry.id for entry in unknown_route_entries}
         assert {record.item.processor_id for record in process_records} == {fake_entries_processor.id}
 
-        await d_domain.acknowledge([record.id for record in records if record.id is not None])
+        await q_operations.acknowledge([record.id for record in records if record.id is not None])
 
     @pytest.mark.asyncio
     async def test_single_run__no_entries_to_process(self, fake_entries_processor: EntriesProcessor) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
+        await q_operations.tech_clear_queue(
+            QueueKind.entries_to_tag, secondary_id=QueueSecondaryId(fake_entries_processor.id)
+        )
 
         with capture_logs() as logs:  # type: ignore
             await fake_entries_processor.single_run()
@@ -212,12 +243,14 @@ class TestEntriesProcessor:
         self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
         await q_operations.tech_clear_queue(QueueKind.entries_to_process)
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
+        await q_operations.tech_clear_queue(
+            QueueKind.entries_to_tag, secondary_id=QueueSecondaryId(fake_entries_processor.id)
+        )
 
         entries = await l_make.n_entries(loaded_feed, 1)
         entry = next(iter(entries.values()))
 
-        await d_domain.push_entries_to_tag(
+        await enqueue_entries_to_tag(
             fake_entries_processor.id,
             [entry.id],
             route_id=ProcessorRouteId("unknown-route"),
@@ -226,7 +259,7 @@ class TestEntriesProcessor:
         await fake_entries_processor.single_run()
 
         tagged_records = await q_operations.tech_get_queue_records(
-            QueueKind.entries_to_tag, EntryToTag, secondary_id=fake_entries_processor.id
+            QueueKind.entries_to_tag, EntryToTag, secondary_id=QueueSecondaryId(fake_entries_processor.id)
         )
         process_records = await q_operations.tech_get_queue_records(QueueKind.entries_to_process, EntryToProcess)
 
@@ -237,20 +270,22 @@ class TestEntriesProcessor:
     async def test_single_run__entries_more_than_concurrency(
         self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
+        await q_operations.tech_clear_queue(
+            QueueKind.entries_to_tag, secondary_id=QueueSecondaryId(fake_entries_processor.id)
+        )
 
         entries = await l_make.n_entries(loaded_feed, 9)
         entries_list = list(entries.values())
         entries_list.sort(key=_entry_sort_key)
 
-        await d_domain.push_entries_to_tag(
+        await enqueue_entries_to_tag(
             fake_entries_processor.id, [entry.id for entry in entries_list], route_id=ProcessorRouteId("default")
         )
 
         assert fake_entries_processor.concurrency <= len(entries)
 
         records = await q_operations.tech_get_queue_records(
-            QueueKind.entries_to_tag, EntryToTag, secondary_id=fake_entries_processor.id
+            QueueKind.entries_to_tag, EntryToTag, secondary_id=QueueSecondaryId(fake_entries_processor.id)
         )
         expected_processed_entries = {record.item.entry_id for record in records[: fake_entries_processor.concurrency]}
         expected_queued_entries = {record.item.entry_id for record in records[fake_entries_processor.concurrency :]}
@@ -275,23 +310,25 @@ class TestEntriesProcessor:
         for tagged_entry_ids in tags.values():
             assert tagged_entry_ids == set(expected_ids.values())
 
-        records = await d_domain.get_entries_to_tag(processor_id=fake_entries_processor.id, limit=100)
+        records = await pull_entries_to_tag(processor_id=fake_entries_processor.id, limit=100)
 
         assert {record.item.entry_id for record in records} == expected_queued_entries
 
-        await d_domain.acknowledge([record.id for record in records if record.id is not None])
+        await q_operations.acknowledge([record.id for record in records if record.id is not None])
 
     @pytest.mark.asyncio
     async def test_single_run__entries_less_than_concurrency(
         self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
+        await q_operations.tech_clear_queue(
+            QueueKind.entries_to_tag, secondary_id=QueueSecondaryId(fake_entries_processor.id)
+        )
 
         entries = await l_make.n_entries(loaded_feed, 2)
         entries_list = list(entries.values())
         entries_list.sort(key=_entry_sort_key)
 
-        await d_domain.push_entries_to_tag(
+        await enqueue_entries_to_tag(
             fake_entries_processor.id, [entry.id for entry in entries_list], route_id=ProcessorRouteId("default")
         )
 
@@ -318,7 +355,9 @@ class TestEntriesProcessor:
     async def test_single_run__unexisted_entries_in_queue(
         self, fake_entries_processor: EntriesProcessor, loaded_feed: Feed
     ) -> None:
-        await q_operations.tech_clear_queue(QueueKind.entries_to_tag, secondary_id=fake_entries_processor.id)
+        await q_operations.tech_clear_queue(
+            QueueKind.entries_to_tag, secondary_id=QueueSecondaryId(fake_entries_processor.id)
+        )
 
         entries = await l_make.n_entries(loaded_feed, 2)
         entries_list = list(entries.values())
@@ -326,7 +365,7 @@ class TestEntriesProcessor:
 
         fake_entries_ids = [new_entry_id() for _ in range(3)]
 
-        await d_domain.push_entries_to_tag(
+        await enqueue_entries_to_tag(
             fake_entries_processor.id,
             [entry.id for entry in entries_list] + fake_entries_ids,
             route_id=ProcessorRouteId("default"),
@@ -351,7 +390,7 @@ class TestEntriesProcessor:
         for entry in entries_list:
             assert tags[entry.id] == set(expected_ids.values())
 
-        records = await d_domain.get_entries_to_tag(processor_id=fake_entries_processor.id, limit=100)
+        records = await pull_entries_to_tag(processor_id=fake_entries_processor.id, limit=100)
 
         assert records == []
 

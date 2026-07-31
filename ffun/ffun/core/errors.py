@@ -36,3 +36,11 @@ class DuplicatedMeasureLabels(CoreError):
 
 class DuplicatedLogArguments(CoreError):
     pass
+
+
+class InvalidConcurrency(CoreError):
+    pass
+
+
+class ConcurrentMapperAlreadyCalled(CoreError):
+    pass

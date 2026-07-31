@@ -29,6 +29,7 @@ from ffun.llms_framework.entities import (
 )
 from ffun.llms_framework.keys_rotator import _cost_points
 from ffun.llms_framework.provider_interface import ChatRequestTest, ChatResponseTest, ProviderTest
+from ffun.llms_framework.tests.helpers import reserve_resource
 from ffun.product.entities import Resource as AppResource
 from ffun.resources import domain as r_domain
 
@@ -399,9 +400,8 @@ class TestCallLLM:
             interval_started_at=interval_started_at,
         )
 
-        await r_domain.try_to_reserve(
+        await reserve_resource(
             user_id=internal_user_id,
-            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(key_usage.reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(124512512))),
@@ -465,9 +465,8 @@ class TestCallLLM:
             interval_started_at=interval_started_at,
         )
 
-        await r_domain.try_to_reserve(
+        await reserve_resource(
             user_id=internal_user_id,
-            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(key_usage.reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(124512512))),
@@ -512,9 +511,8 @@ class TestCallLLM:
             interval_started_at=interval_started_at,
         )
 
-        await r_domain.try_to_reserve(
+        await reserve_resource(
             user_id=internal_user_id,
-            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(key_usage.reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(124512512))),

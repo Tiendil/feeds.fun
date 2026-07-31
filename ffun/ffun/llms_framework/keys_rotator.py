@@ -22,6 +22,7 @@ from ffun.llms_framework.entities import (
 )
 from ffun.llms_framework.provider_interface import ProviderInterface
 from ffun.resources import domain as r_domain
+from ffun.resources import entities as r_entities
 from ffun.user_settings import domain as us_domain
 from ffun.user_settings import entities as us_entities
 
@@ -97,14 +98,23 @@ async def _choose_user(
     from ffun.product.entities import Resource as AppResource
 
     for info in infos:
-
-        if await r_domain.try_to_reserve(
-            user_id=info.user_id,
-            kind=AppResource.tokens_cost,
-            interval_started_at=interval_started_at,
+        reservations = await r_domain.try_to_reserve_in_order(
             amount=_cost_points.to_points(reserved_cost),
-            limit=_cost_points.to_points(info.max_tokens_cost_in_month),
-        ):
+            options=(
+                r_entities.ResourceReservationOption(
+                    kind=AppResource.tokens_cost,
+                    interval_started_at=interval_started_at,
+                ),
+            ),
+            specifications=[
+                r_entities.ResourceReservationSpecification(
+                    user_id=info.user_id,
+                    limits=(_cost_points.to_points(info.max_tokens_cost_in_month),),
+                )
+            ],
+        )
+
+        if reservations:
             return info
 
     return None
@@ -293,11 +303,15 @@ async def use_api_key(key_usage: APIKeyUsage) -> AsyncGenerator[None, None]:
 
         if key_usage.user_id is not None:
             await r_domain.convert_reserved_to_used(
-                user_id=key_usage.user_id,
-                kind=AppResource.tokens_cost,
-                interval_started_at=key_usage.interval_started_at,
+                [
+                    r_entities.ResourceReservation(
+                        user_id=key_usage.user_id,
+                        kind=AppResource.tokens_cost,
+                        interval_started_at=key_usage.interval_started_at,
+                        amount=_cost_points.to_points(key_usage.reserved_cost),
+                    )
+                ],
                 used=_cost_points.to_points(key_usage.cost_to_register()),
-                reserved=_cost_points.to_points(key_usage.reserved_cost),
             )
 
         log.info("resources_converted")

@@ -1,8 +1,65 @@
 from collections.abc import Iterable
 
 from ffun.core.postgresql import execute
-from ffun.dispatcher.entities import EntryProcessingStatus
+from ffun.dispatcher import errors
+from ffun.dispatcher.entities import EntryProcessingStatus, EntryProcessingStatusUpdate
 from ffun.domain.entities import EntryId, ProcessorId
+
+
+async def get_entries_dispatching_statuses(entry_ids: Iterable[EntryId]) -> dict[EntryId, bool]:
+    ids = list(set(entry_ids))
+
+    if not ids:
+        return {}
+
+    sql = """
+    SELECT entry_id, resources_consumed
+    FROM d_entry_dispatching_status
+    WHERE entry_id = ANY(%(entry_ids)s)
+    """
+
+    rows = await execute(sql, {"entry_ids": ids})
+
+    return {row["entry_id"]: row["resources_consumed"] for row in rows}
+
+
+async def set_entry_dispatching_statuses(entry_ids: Iterable[EntryId], resources_consumed: bool) -> None:
+    ids = list(set(entry_ids))
+
+    if not ids:
+        return
+
+    sql = """
+    WITH entry_ids AS (
+        SELECT unnest(%(entry_ids)s::uuid[]) AS entry_id
+    )
+    INSERT INTO d_entry_dispatching_status (entry_id, resources_consumed)
+    SELECT entry_id, %(resources_consumed)s
+    FROM entry_ids
+    ON CONFLICT (entry_id) DO UPDATE SET
+        resources_consumed = EXCLUDED.resources_consumed,
+        updated_at = CURRENT_TIMESTAMP
+    """
+
+    await execute(sql, {"entry_ids": ids, "resources_consumed": resources_consumed})
+
+
+async def remove_entry_dispatching_statuses(entry_ids: Iterable[EntryId]) -> None:
+    ids = list(dict.fromkeys(entry_ids))
+
+    if not ids:
+        return
+
+    sql = """
+    DELETE FROM d_entry_dispatching_status
+    WHERE entry_id = ANY(%(entry_ids)s)
+    """
+
+    await execute(sql, {"entry_ids": ids})
+
+
+async def tech_truncate_entry_dispatching_statuses() -> None:
+    await execute("TRUNCATE TABLE d_entry_dispatching_status")
 
 
 async def get_entries_processing_statuses(
@@ -66,27 +123,36 @@ async def count_entries_by_processing_status(status: EntryProcessingStatus) -> d
     return {ProcessorId(row["processor_id"]): row["count"] for row in rows}
 
 
-async def set_entry_processing_statuses(
-    processor_id: ProcessorId, entry_ids: Iterable[EntryId], status: EntryProcessingStatus
-) -> None:
-    ids = list(dict.fromkeys(entry_ids))
-
-    if not ids:
+async def set_entry_processing_statuses(updates: list[EntryProcessingStatusUpdate]) -> None:
+    if not updates:
         return
 
+    keys = [(update.processor_id, update.entry_id) for update in updates]
+
+    if len(keys) != len(set(keys)):
+        raise errors.DuplicateEntryProcessingStatusUpdates()
+
     sql = """
-    WITH entry_ids AS (
-        SELECT unnest(%(entry_ids)s::uuid[]) AS entry_id
-    )
     INSERT INTO d_entry_processing_status (entry_id, processor_id, status)
-    SELECT entry_id, %(processor_id)s, %(status)s
-    FROM entry_ids
+    SELECT entry_id, processor_id, status
+    FROM UNNEST(
+        %(processor_ids)s::integer[],
+        %(entry_ids)s::uuid[],
+        %(statuses)s::integer[]
+    ) AS updates(processor_id, entry_id, status)
     ON CONFLICT (entry_id, processor_id) DO UPDATE SET
         status = EXCLUDED.status,
         updated_at = CURRENT_TIMESTAMP
     """
 
-    await execute(sql, {"processor_id": processor_id, "entry_ids": ids, "status": int(status)})
+    await execute(
+        sql,
+        {
+            "processor_ids": [update.processor_id for update in updates],
+            "entry_ids": [update.entry_id for update in updates],
+            "statuses": [int(update.status) for update in updates],
+        },
+    )
 
 
 async def remove_entry_processing_statuses(entry_ids: Iterable[EntryId]) -> None:

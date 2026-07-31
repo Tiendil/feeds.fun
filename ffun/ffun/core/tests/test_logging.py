@@ -11,6 +11,7 @@ from ffun.core.logging import (
     bound_log_args,
     bound_measure_labels,
     get_module_logger,
+    measure_block_time,
     sync_args_to_log,
 )
 from ffun.core.tests.helpers import assert_log_context_vars, assert_logs_has_business_event, capture_logs
@@ -121,6 +122,97 @@ class TestMeasuringBoundLoggerMixin:
                 "event": "my_event",
                 "log_level": "info",
                 "m_labels": {"x": "a", "y": 2, "z": 3},
+            }
+        ]
+
+
+class TestMeasureBlockTime:
+
+    def test_sync_success(self) -> None:
+
+        @measure_block_time(logger, "my_event", x="a", y=2)
+        def func(value: int) -> str:
+            assert_log_context_vars(m_labels={"x": "a", "y": 2})
+            return str(value)
+
+        with capture_logs() as logs:
+            result: str = func(42)
+
+        assert result == "42"
+        assert logs == [
+            {
+                "module": "ffun.core.tests.test_logging",
+                "m_kind": "measure",
+                "m_value": logs[0]["m_value"],
+                "event": "my_event",
+                "log_level": "info",
+                "m_labels": {"x": "a", "y": 2},
+            }
+        ]
+
+    def test_sync_error(self) -> None:
+
+        @measure_block_time(logger, "my_event")
+        def func() -> None:
+            raise RuntimeError("expected error")
+
+        with capture_logs() as logs:
+            with pytest.raises(RuntimeError, match="expected error"):
+                func()
+
+        assert logs == [
+            {
+                "module": "ffun.core.tests.test_logging",
+                "m_kind": "measure",
+                "m_value": logs[0]["m_value"],
+                "event": "my_event",
+                "log_level": "info",
+            }
+        ]
+
+    @pytest.mark.asyncio
+    async def test_async_success(self) -> None:
+
+        @measure_block_time(logger, "my_event", x="a", y=2)
+        async def func(value: int) -> str:
+            await asyncio.sleep(0)
+            assert_log_context_vars(m_labels={"x": "a", "y": 2})
+            return str(value)
+
+        with capture_logs() as logs:
+            result: str = await func(42)
+
+        assert result == "42"
+        assert logs == [
+            {
+                "module": "ffun.core.tests.test_logging",
+                "m_kind": "measure",
+                "m_value": logs[0]["m_value"],
+                "event": "my_event",
+                "log_level": "info",
+                "m_labels": {"x": "a", "y": 2},
+            }
+        ]
+
+    @pytest.mark.asyncio
+    async def test_async_error(self) -> None:
+
+        @measure_block_time(logger, "my_event")
+        async def func() -> None:
+            await asyncio.sleep(0)
+            raise RuntimeError("expected error")
+
+        with capture_logs() as logs:
+            with pytest.raises(RuntimeError, match="expected error"):
+                await func()
+
+        assert logs == [
+            {
+                "module": "ffun.core.tests.test_logging",
+                "m_kind": "measure",
+                "m_value": logs[0]["m_value"],
+                "event": "my_event",
+                "log_level": "info",
             }
         ]
 

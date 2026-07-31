@@ -2,9 +2,14 @@ import asyncio
 
 from ffun.core import logging
 from ffun.core.background_tasks import InfiniteTask
-from ffun.dispatcher import domain as d_domain
 from ffun.dispatcher.background_dispatcher import EntriesDispatcher
-from ffun.dispatcher.entities import EntryToTag, ProcessorDispatchInfo, ProcessorDispatchRoute, ProcessorRouteId
+from ffun.dispatcher.entities import (
+    EntryToProcess,
+    EntryToTag,
+    ProcessorDispatchInfo,
+    ProcessorDispatchRoute,
+    ProcessorRouteId,
+)
 from ffun.domain.entities import EntryId, ProcessorId
 from ffun.librarian import domain
 from ffun.librarian.entities import ProcessorType
@@ -16,6 +21,8 @@ from ffun.librarian.processors.upper_case_title import Processor as UpperCaseTit
 from ffun.librarian.settings import settings
 from ffun.library import domain as l_domain
 from ffun.library.entities import Entry
+from ffun.queues import domain as q_domain
+from ffun.queues.entities import QueueItemToPush, QueueKind, QueueRecord, QueueSecondaryId
 
 logger = logging.get_module_logger()
 
@@ -52,7 +59,7 @@ class ProcessorInfo:
     def disptach_info(self) -> ProcessorDispatchInfo:
         return ProcessorDispatchInfo(
             processor_id=self.id,
-            subqueue_id=self.id,
+            subqueue_id=QueueSecondaryId(self.id),
             routes=self.routes,
         )
 
@@ -154,8 +161,8 @@ class EntriesProcessor(InfiniteTask):
         return entries_to_process, entries_to_remove
 
     async def filter_records_with_known_routes(
-        self, records: list[d_domain.QueueRecord[EntryToTag]]
-    ) -> list[d_domain.QueueRecord[EntryToTag]]:
+        self, records: list[QueueRecord[EntryToTag]]
+    ) -> list[QueueRecord[EntryToTag]]:
         processor_id = self._processor_info.id
 
         records_to_requeue = [
@@ -172,8 +179,14 @@ class EntriesProcessor(InfiniteTask):
                     route_id=record.item.route_id,
                 )
 
-            await d_domain.push_entries_to_process(
-                [record.item.entry_id for record in records_to_requeue], processor_id=processor_id
+            await q_domain.push(
+                QueueKind.entries_to_process,
+                [
+                    QueueItemToPush(
+                        item=EntryToProcess(entry_id=record.item.entry_id, processor_id=processor_id),
+                    )
+                    for record in records_to_requeue
+                ],
             )
 
         return records_to_process
@@ -182,7 +195,12 @@ class EntriesProcessor(InfiniteTask):
         processor_id = self._processor_info.id
         concurrency = self._processor_info.concurrency
 
-        records = await d_domain.get_entries_to_tag(processor_id=processor_id, limit=concurrency)
+        records = await q_domain.pull(
+            QueueKind.entries_to_tag,
+            EntryToTag,
+            secondary_id=QueueSecondaryId(processor_id),
+            limit=concurrency,
+        )
 
         if not records:
             logger.info("no_entries_to_process", processor_id=processor_id)
@@ -210,7 +228,7 @@ class EntriesProcessor(InfiniteTask):
 
         await asyncio.gather(*tasks, return_exceptions=True)
 
-        await d_domain.acknowledge([record.id for record in records if record.id is not None])
+        await q_domain.acknowledge([record.id for record in records if record.id is not None])
 
 
 def create_background_processors() -> list[InfiniteTask]:

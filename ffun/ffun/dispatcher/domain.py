@@ -1,38 +1,63 @@
-from collections.abc import Iterable, Sequence
+import contextlib
+import datetime
+import functools
+from collections.abc import AsyncIterator, Iterable, Mapping, Sequence
 
-from ffun.core import logging
-from ffun.dispatcher import errors, operations
+from ffun.core import logging, utils
+from ffun.core.concurrency import ConcurrentMapper
+from ffun.dispatcher import entries_cache, errors, operations
 from ffun.dispatcher.entities import (
     DispatchDecision,
+    EntryAuthorization,
     EntryProcessingStatus,
+    EntryProcessingStatusUpdate,
     EntryToProcess,
     EntryToTag,
     ProcessorDispatchInfo,
     ProcessorDispatchRoute,
-    ProcessorRouteId,
 )
-from ffun.domain.entities import EntryId, ProcessorId
-from ffun.feeds_collections.collections import collections
-from ffun.library import domain as l_domain
+from ffun.domain.datetime_intervals import (
+    LIFETIME_INTERVAL_START_MARKER,
+    day_interval_start,
+    month_interval_start,
+)
+from ffun.domain.entities import EntryId, ProcessorId, UserId
+from ffun.entitlements.entities import EffectiveEntitlementInterval, EntitlementKindId
 from ffun.markers import domain as m_domain
 from ffun.markers.entities import Marker
+from ffun.product.entities import Resource
 from ffun.queues import domain as q_domain
-from ffun.queues.entities import QueueKind, QueueRecord, QueueRecordId
+from ffun.queues.entities import QueueItemToPush, QueueKind, QueueRecord, QueueRecordId
+from ffun.resources import domain as r_domain
+from ffun.resources import entities as r_entities
+
+SAAS_TOKENS_PER_USER_ENTRY = 1
 
 logger = logging.get_module_logger()
 
+_TOKEN_ENTITLEMENT_KINDS = (
+    EntitlementKindId.day_tokens,
+    EntitlementKindId.month_tokens,
+    EntitlementKindId.lifetime_tokens,
+)
 
+_ALLOWED_PROCESSING_STATUSES = {
+    None,  # first-time processing for this processor
+    EntryProcessingStatus.skipped_by_processor,  # reprocess because of a potential relinking of an entry
+    EntryProcessingStatus.skipped_by_dispatcher,  # reprocess because of a potential relinking of an entry
+    EntryProcessingStatus.retry_requested,  # explicit request to redispatch
+}
+
+
+get_entries_dispatching_statuses = operations.get_entries_dispatching_statuses
+set_entry_dispatching_statuses = operations.set_entry_dispatching_statuses
 get_entries_processing_statuses = operations.get_entries_processing_statuses
 get_entries_by_processing_status = operations.get_entries_by_processing_status
 count_entries_by_processing_status = operations.count_entries_by_processing_status
 set_entry_processing_statuses = operations.set_entry_processing_statuses
+remove_entry_dispatching_statuses = operations.remove_entry_dispatching_statuses
 remove_entry_processing_statuses = operations.remove_entry_processing_statuses
-
-
-async def push_entries_to_process(entry_ids: Iterable[EntryId], processor_id: ProcessorId | None = None) -> None:
-    items = [EntryToProcess(entry_id=entry_id, processor_id=processor_id) for entry_id in entry_ids]
-
-    await q_domain.push(QueueKind.entries_to_process, items)
+entries_in_collections = entries_cache.entries_in_collections
 
 
 async def move_failed_entries_to_processor_queue(processor_id: ProcessorId, limit: int) -> None:
@@ -41,32 +66,103 @@ async def move_failed_entries_to_processor_queue(processor_id: ProcessorId, limi
     if not failed_entries:
         return
 
-    await set_entry_processing_statuses(processor_id, failed_entries, EntryProcessingStatus.retry_requested)
-    await push_entries_to_process(failed_entries, processor_id=processor_id)
+    await set_entry_processing_statuses(
+        [
+            EntryProcessingStatusUpdate(
+                processor_id=processor_id,
+                entry_id=entry_id,
+                status=EntryProcessingStatus.retry_requested,
+            )
+            for entry_id in failed_entries
+        ]
+    )
+    await q_domain.push(
+        QueueKind.entries_to_process,
+        [
+            QueueItemToPush(item=EntryToProcess(entry_id=entry_id, processor_id=processor_id))
+            for entry_id in failed_entries
+        ],
+    )
 
 
-async def get_entries_to_tag(processor_id: ProcessorId, limit: int) -> list[QueueRecord[EntryToTag]]:
-    return await q_domain.pull(QueueKind.entries_to_tag, EntryToTag, secondary_id=processor_id, limit=limit)
+def _token_reservation_specification(
+    user_id: UserId,
+    entitlements: Mapping[EntitlementKindId, EffectiveEntitlementInterval | None],
+) -> r_entities.ResourceReservationSpecification:
+    return r_entities.ResourceReservationSpecification(
+        user_id=user_id,
+        limits=tuple(
+            entitlement.value if entitlement is not None else None
+            for entitlement in (entitlements.get(kind) for kind in _TOKEN_ENTITLEMENT_KINDS)
+        ),
+    )
 
 
-async def push_entries_to_tag(
-    processor_id: ProcessorId, entry_ids: Iterable[EntryId], route_id: ProcessorRouteId
-) -> None:
-    items = [EntryToTag(entry_id=entry_id, route_id=route_id) for entry_id in entry_ids]
+def _token_reservation_options(
+    authorization_time: datetime.datetime,
+) -> tuple[r_entities.ResourceReservationOption, ...]:
+    return (
+        r_entities.ResourceReservationOption(
+            kind=Resource.day_token_usage,
+            interval_started_at=day_interval_start(authorization_time),
+        ),
+        r_entities.ResourceReservationOption(
+            kind=Resource.month_token_usage,
+            interval_started_at=month_interval_start(authorization_time),
+        ),
+        r_entities.ResourceReservationOption(
+            kind=Resource.lifetime_token_usage,
+            interval_started_at=LIFETIME_INTERVAL_START_MARKER,
+        ),
+    )
 
-    await q_domain.push(QueueKind.entries_to_tag, items, secondary_id=processor_id)
+
+async def _authorize_entry(item: EntryToProcess, cache: entries_cache.EntriesCache) -> EntryAuthorization:
+    if cache.entry_in_collection(item.entry_id):
+        return EntryAuthorization(entry_id=item.entry_id, globally_visible=True, reservations=())
+
+    user_ids = cache.entry_user_ids(item.entry_id)
+
+    # TODO: temporary global authorization for entries linked to users with API keys.
+    #       Remove together with the legacy API-key consumption logic.
+    if cache.users_have_api_keys(user_ids):
+        return EntryAuthorization(entry_id=item.entry_id, globally_visible=True, reservations=())
+
+    authorization_time = utils.now()
+    specifications = [
+        _token_reservation_specification(user_id, cache.user_entitlements(user_id))
+        for user_id in sorted(user_ids, key=str)
+    ]
+    reservations = await r_domain.try_to_reserve_in_order(
+        amount=SAAS_TOKENS_PER_USER_ENTRY,
+        options=_token_reservation_options(authorization_time),
+        specifications=specifications,
+    )
+
+    return EntryAuthorization(
+        entry_id=item.entry_id,
+        globally_visible=False,
+        reservations=tuple(reservations),
+    )
 
 
-async def acknowledge(record_ids: Sequence[QueueRecordId]) -> int:
-    return await q_domain.acknowledge(record_ids)
+@contextlib.asynccontextmanager
+async def _entry_authorization(
+    item: EntryToProcess,
+    cache: entries_cache.EntriesCache,
+) -> AsyncIterator[EntryAuthorization]:
+    authorization = await _authorize_entry(item, cache)
 
-
-async def _entries_in_collections(entries_ids: Iterable[EntryId]) -> dict[EntryId, bool]:
-    feed_links = await l_domain.get_feed_links_for_entries(entries_ids)
-
-    return {
-        entry_id: any(collections.has_feed(link.feed_id) for link in links) for entry_id, links in feed_links.items()
-    }
+    try:
+        yield authorization
+    except BaseException:
+        await r_domain.convert_reserved_to_used(list(authorization.reservations), used=0)
+        raise
+    else:
+        await r_domain.convert_reserved_to_used(
+            list(authorization.reservations),
+            used=SAAS_TOKENS_PER_USER_ENTRY,
+        )
 
 
 def _processor_dispatch_decision(
@@ -106,129 +202,221 @@ def _processor_dispatch_route(
     return None
 
 
-async def _mark_entry_tags_visible(item: EntryToProcess, *, in_collection: bool) -> None:
-    if in_collection:
-        await m_domain.set_marker(user_id=None, marker=Marker.can_see_tags, entry_id=item.entry_id)
+async def _mark_entry_tags_visible(authorization: EntryAuthorization, settled_user_ids: Iterable[UserId]) -> None:
+    if authorization.globally_visible:
+        await m_domain.set_marker(user_ids=[None], marker=Marker.can_see_tags, entry_id=authorization.entry_id)
         return
 
-    # TODO: temporary global visibility for all entries.
-    #       Must be removed after removing processing entries with custom user API keys.
-    await m_domain.set_marker(user_id=None, marker=Marker.can_see_tags, entry_id=item.entry_id)
+    await m_domain.set_marker(
+        user_ids=settled_user_ids,
+        marker=Marker.can_see_tags,
+        entry_id=authorization.entry_id,
+    )
 
 
-async def _mark_entries_tags_visible(
-    items: Sequence[EntryToProcess], entries_in_collections: dict[EntryId, bool]
-) -> None:
-    for item in items:
-        await _mark_entry_tags_visible(item, in_collection=entries_in_collections.get(item.entry_id, False))
+def _processors_for_item(
+    item: EntryToProcess,
+    processors: Sequence[ProcessorDispatchInfo],
+    cache: entries_cache.EntriesCache,
+) -> list[ProcessorDispatchInfo]:
+    item_processors = []
 
+    for processor in processors:
+        targeted_to_processor = item.processor_id is None or item.processor_id == processor.processor_id
 
-def _processor_items_to_tag(
-    processor: ProcessorDispatchInfo, items: Sequence[EntryToProcess], entries_in_collections: dict[EntryId, bool]
-) -> tuple[list[EntryToTag], list[EntryId]]:
-    processor_items = []
-    skipped_entry_ids = []
-
-    for item in items:
-        decision = _processor_dispatch_decision(
-            processor, item, in_collection=entries_in_collections.get(item.entry_id, False)
-        )
-
-        if decision is None:
-            skipped_entry_ids.append(item.entry_id)
+        if not targeted_to_processor:
             continue
 
-        processor_items.append(EntryToTag(entry_id=item.entry_id, route_id=decision.route_id))
+        processing_status = cache.entry_processing_status(processor.processor_id, item.entry_id)
 
-    return processor_items, skipped_entry_ids
+        if processing_status not in _ALLOWED_PROCESSING_STATUSES:
+            continue
 
+        item_processors.append(processor)
 
-def _processor_items_targeted_to_processor(
-    processor: ProcessorDispatchInfo,
-    items: Sequence[EntryToProcess],
-) -> list[EntryToProcess]:
-    return [item for item in items if item.processor_id is None or item.processor_id == processor.processor_id]
+    return item_processors
 
 
-def _processor_items_allowed_by_status(
-    processor_items: Sequence[EntryToProcess],
-    statuses: dict[EntryId, EntryProcessingStatus],
-) -> list[EntryToProcess]:
-    allowed_statuses = {
-        None,  # first-time processing for this processor
-        EntryProcessingStatus.skipped_by_processor,  # reprocess because of a potential relinking of an entry
-        EntryProcessingStatus.skipped_by_dispatcher,  # reprocess because of a potential relinking of an entry
-        EntryProcessingStatus.retry_requested,  # explicit request to redispatch
-    }
-
-    return [item for item in processor_items if statuses.get(item.entry_id) in allowed_statuses]
-
-
-async def _dispatch_entries_to_processor(
-    processor: ProcessorDispatchInfo,
-    items: Sequence[EntryToProcess],
-    entries_in_collections: dict[EntryId, bool],
-    statuses: dict[EntryId, EntryProcessingStatus],
+async def _dispatch_entry_to_processors(
+    processors: Sequence[ProcessorDispatchInfo],
+    item: EntryToProcess,
+    cache: entries_cache.EntriesCache,
 ) -> None:
-    processor_items = _processor_items_allowed_by_status(items, statuses)
-    processor_items = _processor_items_targeted_to_processor(processor, processor_items)
-    processor_items_to_tag, skipped_entry_ids = _processor_items_to_tag(
-        processor, processor_items, entries_in_collections
-    )
+    items_to_push = []
+    status_updates = []
+    in_collection = cache.entry_in_collection(item.entry_id)
 
-    await set_entry_processing_statuses(
-        processor.processor_id,
-        skipped_entry_ids,
-        EntryProcessingStatus.skipped_by_dispatcher,
-    )
+    for processor in processors:
+        decision = _processor_dispatch_decision(processor, item, in_collection=in_collection)
+
+        if decision is None:
+            status_updates.append(
+                EntryProcessingStatusUpdate(
+                    processor_id=processor.processor_id,
+                    entry_id=item.entry_id,
+                    status=EntryProcessingStatus.skipped_by_dispatcher,
+                )
+            )
+            continue
+
+        status_updates.append(
+            EntryProcessingStatusUpdate(
+                processor_id=processor.processor_id,
+                entry_id=item.entry_id,
+                status=EntryProcessingStatus.dispatched,
+            )
+        )
+        items_to_push.append(
+            QueueItemToPush(
+                item=EntryToTag(entry_id=item.entry_id, route_id=decision.route_id),
+                secondary_id=processor.subqueue_id,
+            )
+        )
 
     # Set status before pushing to queue, because in case of a persistent error on pushing it is better
     # to not push unprocessed entries, than infinitely push already processed entries causing money loses.
-    await set_entry_processing_statuses(
-        processor.processor_id,
-        [item.entry_id for item in processor_items_to_tag],
-        EntryProcessingStatus.dispatched,
+    await set_entry_processing_statuses(status_updates)
+
+    await q_domain.push(QueueKind.entries_to_tag, items_to_push)
+
+
+@logging.measure_block_time(logger, "dispatch_entry_time")
+async def _process_entry(
+    record: QueueRecord[EntryToProcess],
+    processors: Sequence[ProcessorDispatchInfo],
+    cache: entries_cache.EntriesCache,
+) -> None:
+    item = record.item
+    item_processors = _processors_for_item(item, processors, cache)
+
+    async with _entry_authorization(item, cache) as authorization:
+        if not authorization.dispatch_allowed:
+            await set_entry_processing_statuses(
+                [
+                    EntryProcessingStatusUpdate(
+                        processor_id=processor.processor_id,
+                        entry_id=item.entry_id,
+                        status=EntryProcessingStatus.skipped_by_dispatcher,
+                    )
+                    for processor in item_processors
+                ]
+            )
+
+            return
+
+        await _dispatch_entry_to_processors(
+            item_processors,
+            item,
+            cache,
+        )
+
+        settled_user_ids = {reservation.user_id for reservation in authorization.reservations}
+        await _mark_entry_tags_visible(authorization, settled_user_ids)
+
+        await operations.set_entry_dispatching_statuses(
+            [item.entry_id],
+            resources_consumed=bool(authorization.reservations),
+        )
+
+
+async def _process_retry_entry(
+    record: QueueRecord[EntryToProcess],
+    processors: Sequence[ProcessorDispatchInfo],
+    cache: entries_cache.EntriesCache,
+) -> None:
+    item = record.item
+
+    await _dispatch_entry_to_processors(
+        _processors_for_item(item, processors, cache),
+        item,
+        cache,
     )
 
-    await q_domain.push(QueueKind.entries_to_tag, processor_items_to_tag, secondary_id=processor.subqueue_id)
 
-
-async def dispatch_entries(processors: Sequence[ProcessorDispatchInfo], limit: int) -> int:
-    if not processors:
-        logger.info("no_processors_to_dispatch_entries")
-        return 0
-
+def _validate_dispatch_entries(processors: Sequence[ProcessorDispatchInfo], concurrency: int) -> None:
     processor_ids = [processor.processor_id for processor in processors]
 
     if len(processor_ids) != len(set(processor_ids)):
         raise errors.DuplicatedProcessors()
 
-    records = await q_domain.pull(QueueKind.entries_to_process, EntryToProcess, limit=limit)
+    if concurrency <= 0:
+        raise errors.InvalidConcurrency()
+
+
+async def _dispatch_record(
+    record: QueueRecord[EntryToProcess],
+    *,
+    processors: Sequence[ProcessorDispatchInfo],
+    cache: entries_cache.EntriesCache,
+    dispatching_statuses: Mapping[EntryId, bool],
+) -> bool:
+    try:
+        if record.item.entry_id in dispatching_statuses:
+            await _process_retry_entry(record, processors, cache)
+        else:
+            await _process_entry(record, processors, cache)
+    except Exception:
+        logger.exception("entry_dispatch_failed", entry_id=record.item.entry_id)
+        return False
+
+    return True
+
+
+@logging.measure_block_time(logger, "dispatch_entries_time")
+async def dispatch_entries(
+    processors: Sequence[ProcessorDispatchInfo],
+    batch_size: int,
+    concurrency: int,
+) -> int:
+    if not processors:
+        logger.info("no_processors_to_dispatch_entries")
+        return 0
+
+    _validate_dispatch_entries(processors, concurrency)
+
+    records = await q_domain.pull(QueueKind.entries_to_process, EntryToProcess, limit=batch_size)
 
     if not records:
         logger.info("no_entries_to_dispatch")
         return 0
 
-    items = [record.item for record in records]
-    entries_in_collections = await _entries_in_collections(item.entry_id for item in items)
-
-    await _mark_entries_tags_visible(items, entries_in_collections)
-    statuses = await get_entries_processing_statuses(
-        [processor.processor_id for processor in processors], [item.entry_id for item in items]
+    dispatching_statuses = await operations.get_entries_dispatching_statuses(
+        [record.item.entry_id for record in records]
     )
 
-    for processor in processors:
-        await _dispatch_entries_to_processor(
-            processor,
-            items,
-            entries_in_collections,
-            statuses.get(processor.processor_id, {}),
-        )
+    cache = await entries_cache.create_entries_cache(
+        items=[record.item for record in records],
+        processors=processors,
+        entitlement_kind_ids=_TOKEN_ENTITLEMENT_KINDS,
+    )
 
-    record_ids = [record.id for record in records if record.id is not None]
+    results = await ConcurrentMapper(
+        items=records,
+        handler=functools.partial(
+            _dispatch_record,
+            processors=processors,
+            cache=cache,
+            dispatching_statuses=dispatching_statuses,
+        ),
+        concurrency=concurrency,
+    )()
 
-    await acknowledge(record_ids)
+    record_ids: list[QueueRecordId] = []
 
-    logger.info("entries_dispatched", entries_number=len(records), processors_number=len(processors))
+    for record in records:
+        assert record.id is not None
+        record_ids.append(record.id)
 
-    return len(records)
+    # TODO: Consider moving failed records to a dedicated queue before acknowledging the batch.
+    await q_domain.acknowledge(record_ids)
+
+    entries_processed = sum(results)
+
+    logger.info(
+        "entries_dispatched",
+        entries_number=entries_processed,
+        failed_entries_number=len(records) - entries_processed,
+        processors_number=len(processors),
+    )
+
+    return entries_processed
