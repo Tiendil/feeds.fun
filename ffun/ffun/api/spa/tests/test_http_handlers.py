@@ -17,30 +17,8 @@ from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library.entities import CollectedEntry
 from ffun.product.entities import Resource
-from ffun.resources import domain as r_domain
-from ffun.resources import entities as r_entities
+from ffun.resources.tests.helpers import consume_resource
 from ffun.users.entities import User
-
-
-async def consume_resource(*, user_id: UserId, kind: Resource, amount: int) -> None:
-    reservations = await r_domain.try_to_reserve_in_order(
-        amount=amount,
-        options=[
-            r_entities.ResourceReservationOption(
-                kind=kind,
-                interval_started_at=datetime.datetime.now(tz=datetime.UTC),
-            )
-        ],
-        specifications=[
-            r_entities.ResourceReservationSpecification(
-                user_id=user_id,
-                limits=(amount,),
-            )
-        ],
-    )
-
-    assert len(reservations) == 1
-    await r_domain.convert_reserved_to_used(reservations, used=amount)
 
 
 class TestApiGetFeeds:
@@ -152,10 +130,30 @@ class TestApiGetResourceStatistics:
         internal_user_id: UserId,
         another_internal_user_id: UserId,
     ) -> None:
-        await consume_resource(user_id=internal_user_id, kind=Resource.day_token_usage, amount=2)
-        await consume_resource(user_id=internal_user_id, kind=Resource.day_token_usage, amount=4)
-        await consume_resource(user_id=internal_user_id, kind=Resource.lifetime_token_usage, amount=5)
-        await consume_resource(user_id=another_internal_user_id, kind=Resource.day_token_usage, amount=99)
+        await consume_resource(
+            user_id=internal_user_id,
+            kind=Resource.day_token_usage,
+            interval_started_at=datetime.datetime.now(tz=datetime.UTC),
+            reserved=2,
+        )
+        await consume_resource(
+            user_id=internal_user_id,
+            kind=Resource.day_token_usage,
+            interval_started_at=datetime.datetime.now(tz=datetime.UTC),
+            reserved=4,
+        )
+        await consume_resource(
+            user_id=internal_user_id,
+            kind=Resource.lifetime_token_usage,
+            interval_started_at=datetime.datetime.now(tz=datetime.UTC),
+            reserved=5,
+        )
+        await consume_resource(
+            user_id=another_internal_user_id,
+            kind=Resource.day_token_usage,
+            interval_started_at=datetime.datetime.now(tz=datetime.UTC),
+            reserved=99,
+        )
 
         request = entities.GetResourceStatisticsRequest(
             kinds=[

@@ -8,7 +8,6 @@ from ffun.core.postgresql import ExecuteType, execute, transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.domain.entities import UserId
-from ffun.resources import domain as resources_domain
 from ffun.resources import errors
 from ffun.resources.domain import load_resource
 from ffun.resources.entities import (
@@ -16,8 +15,6 @@ from ffun.resources.entities import (
     ResourceKind,
     ResourceReservation,
     ResourceReservationLimit,
-    ResourceReservationOption,
-    ResourceReservationSpecification,
     ResourceStatisticsInterval,
     ResourceStatisticsSeries,
 )
@@ -32,6 +29,7 @@ from ffun.resources.operations import (
     row_to_entry,
     try_to_reserve,
 )
+from ffun.resources.tests.helpers import consume_resource
 
 
 @pytest.fixture  # type: ignore
@@ -1215,19 +1213,13 @@ async def reserve_and_convert(
     reserved: int,
     converted: int,
 ) -> None:
-    reservations = await resources_domain.try_to_reserve_in_order(
-        amount=reserved,
-        options=[ResourceReservationOption(kind=kind, interval_started_at=interval_started_at)],
-        specifications=[
-            ResourceReservationSpecification(
-                user_id=user_id,
-                limits=(reserved,),
-            )
-        ],
+    await consume_resource(
+        user_id=user_id,
+        kind=kind,
+        interval_started_at=interval_started_at,
+        reserved=reserved,
+        used=converted,
     )
-
-    assert len(reservations) == 1
-    await resources_domain.convert_reserved_to_used(reservations, used=converted)
 
 
 class TestCountTotalResourcesPerUser:

@@ -48,8 +48,8 @@ from ffun.product.entities import Resource, UserSetting
 from ffun.queues import domain as q_domain
 from ffun.queues.entities import QueueItemToPush, QueueKind, QueueRecord, QueueRecordId, QueueSecondaryId
 from ffun.resources import domain as r_domain
-from ffun.resources.entities import Resource as ResourceRecord
 from ffun.resources.entities import ResourceReservation, ResourceReservationOption, ResourceReservationSpecification
+from ffun.resources.tests.helpers import assert_no_resource_record, assert_resource_counters
 from ffun.user_settings import domain as us_domain
 from ffun.user_settings.entities import SettingKind
 
@@ -82,14 +82,6 @@ async def grant_tokens(
         ),
         actor_kind=AuditEntityKind.admin,
         actor_id=SerializedId("dispatcher-tests"),
-    )
-
-
-async def get_resource(user_id: UserId, kind: Resource, interval_started_at: datetime.datetime) -> ResourceRecord:
-    return await r_domain.load_resource(
-        user_id=user_id,
-        kind=kind,
-        interval_started_at=interval_started_at,
     )
 
 
@@ -1441,9 +1433,13 @@ class TestDispatchEntries:
         ) == {entry_id}
         assert await m_domain.get_markers(user_id=None, entries_ids=[entry_id]) == {}
         assert await m_domain.get_markers(user_id=user_id, entries_ids=[entry_id]) == {entry_id: {Marker.can_see_tags}}
-        resource = await get_resource(user_id, Resource.day_token_usage, day_interval_start())
-        assert resource.used == domain.SAAS_TOKENS_PER_USER_ENTRY
-        assert resource.reserved == 0
+        await assert_resource_counters(
+            user_id=user_id,
+            kind=Resource.day_token_usage,
+            interval_started_at=day_interval_start(),
+            used=domain.SAAS_TOKENS_PER_USER_ENTRY,
+            reserved=0,
+        )
         assert await operations.get_entries_dispatching_statuses([entry_id]) == {entry_id: True}
 
     @pytest.mark.asyncio
@@ -1470,13 +1466,11 @@ class TestDispatchEntries:
         )
 
         assert await m_domain.get_markers(user_id=None, entries_ids=[entry_id]) == {entry_id: {Marker.can_see_tags}}
-        resource = await get_resource(
-            entitled_user_id,
-            Resource.day_token_usage,
-            day_interval_start(),
+        await assert_no_resource_record(
+            user_id=entitled_user_id,
+            kind=Resource.day_token_usage,
+            interval_started_at=day_interval_start(),
         )
-        assert resource.used == 0
-        assert resource.reserved == 0
         assert await operations.get_entries_dispatching_statuses([entry_id]) == {entry_id: False}
 
     @pytest.mark.asyncio
@@ -1525,9 +1519,13 @@ class TestDispatchEntries:
                 secondary_id=QueueSecondaryId(fake_processor_id),
             )
         ) == {entry_id}
-        resource = await get_resource(user_id, Resource.day_token_usage, day_interval_start())
-        assert resource.used == domain.SAAS_TOKENS_PER_USER_ENTRY
-        assert resource.reserved == 0
+        await assert_resource_counters(
+            user_id=user_id,
+            kind=Resource.day_token_usage,
+            interval_started_at=day_interval_start(),
+            used=domain.SAAS_TOKENS_PER_USER_ENTRY,
+            reserved=0,
+        )
         assert await operations.get_entries_dispatching_statuses([entry_id]) == {entry_id: True}
 
     @pytest.mark.asyncio
@@ -1560,9 +1558,13 @@ class TestDispatchEntries:
                 )
             ) == {entry_id}
 
-        resource = await get_resource(user_id, Resource.day_token_usage, day_interval_start())
-        assert resource.used == domain.SAAS_TOKENS_PER_USER_ENTRY
-        assert resource.reserved == 0
+        await assert_resource_counters(
+            user_id=user_id,
+            kind=Resource.day_token_usage,
+            interval_started_at=day_interval_start(),
+            used=domain.SAAS_TOKENS_PER_USER_ENTRY,
+            reserved=0,
+        )
 
     @pytest.mark.asyncio
     async def test_processor_filtering_does_not_change_consumption(
@@ -1599,9 +1601,13 @@ class TestDispatchEntries:
             )
             == []
         )
-        resource = await get_resource(user_id, Resource.day_token_usage, day_interval_start())
-        assert resource.used == domain.SAAS_TOKENS_PER_USER_ENTRY
-        assert resource.reserved == 0
+        await assert_resource_counters(
+            user_id=user_id,
+            kind=Resource.day_token_usage,
+            interval_started_at=day_interval_start(),
+            used=domain.SAAS_TOKENS_PER_USER_ENTRY,
+            reserved=0,
+        )
         assert await m_domain.get_markers(user_id=user_id, entries_ids=[entry_id]) == {entry_id: {Marker.can_see_tags}}
 
     @pytest.mark.asyncio
@@ -1633,9 +1639,13 @@ class TestDispatchEntries:
 
         assert dispatched == 0
         log_exception.assert_called_once_with("entry_dispatch_failed", entry_id=entry_id)
-        resource = await get_resource(user_id, Resource.day_token_usage, day_interval_start())
-        assert resource.used == 0
-        assert resource.reserved == 0
+        await assert_resource_counters(
+            user_id=user_id,
+            kind=Resource.day_token_usage,
+            interval_started_at=day_interval_start(),
+            used=0,
+            reserved=0,
+        )
         assert await m_domain.get_markers(user_id=user_id, entries_ids=[entry_id]) == {}
         assert (
             await q_domain.tech_get_queue_records(

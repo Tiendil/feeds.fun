@@ -41,10 +41,10 @@ from ffun.llms_framework.keys_rotator import (
 )
 from ffun.llms_framework.provider_interface import ProviderTest
 from ffun.llms_framework.providers import llm_providers
-from ffun.llms_framework.tests.helpers import reserve_resource
 from ffun.product.entities import Resource as AppResource
 from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
+from ffun.resources.tests.helpers import reserve_resource
 from ffun.user_settings import domain as us_domain
 from ffun.user_settings.entities import SettingKind
 
@@ -236,6 +236,7 @@ class TestGetUserKeyInfos:
 
             await reserve_resource(
                 user_id=user_id,
+                kind=AppResource.tokens_cost,
                 interval_started_at=interval_started_at,
                 amount=_cost_points.to_points(reserved_costs[i]),
                 limit=_cost_points.to_points(max_tokens_cost_in_month[i]),
@@ -506,6 +507,7 @@ class TestUseApiKey:
 
         await reserve_resource(
             user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(1000))),
@@ -561,6 +563,7 @@ class TestUseApiKey:
 
         await reserve_resource(
             user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(1000))),
@@ -619,6 +622,7 @@ class TestUseApiKey:
         # TODO: differentiate tokens in all places
         await reserve_resource(
             user_id=internal_user_id,
+            kind=AppResource.tokens_cost,
             interval_started_at=interval_started_at,
             amount=_cost_points.to_points(reserved_cost),
             limit=_cost_points.to_points(USDCost(Decimal(1000))),
