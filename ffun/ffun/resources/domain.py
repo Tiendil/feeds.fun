@@ -15,6 +15,7 @@ from ffun.resources.entities import (
 load_resources = operations.load_resources
 convert_reserved_to_used = run_in_transaction(operations.convert_reserved_to_used)
 load_resource_history = operations.load_resource_history
+load_resource_statistics = operations.load_resource_statistics
 count_total_resources_per_user = operations.count_total_resources_per_user
 
 

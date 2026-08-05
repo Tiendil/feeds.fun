@@ -8,15 +8,26 @@ from ffun.core.postgresql import ExecuteType, execute, transaction
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.domain.entities import UserId
+from ffun.resources import domain as resources_domain
 from ffun.resources import errors
 from ffun.resources.domain import load_resource
-from ffun.resources.entities import Resource, ResourceReservation, ResourceReservationLimit
+from ffun.resources.entities import (
+    Resource,
+    ResourceKind,
+    ResourceReservation,
+    ResourceReservationLimit,
+    ResourceReservationOption,
+    ResourceReservationSpecification,
+    ResourceStatisticsInterval,
+    ResourceStatisticsSeries,
+)
 from ffun.resources.operations import (
     _update_consumed_statistics,
     convert_reserved_to_used,
     count_total_resources_per_user,
     initialize_resources,
     load_resource_history,
+    load_resource_statistics,
     load_resources,
     row_to_entry,
     try_to_reserve,
@@ -28,8 +39,8 @@ def interval_started_at() -> datetime.datetime:
     return month_interval_start()
 
 
-_kind = 214
-_another_kind = 215
+_kind = ResourceKind(214)
+_another_kind = ResourceKind(215)
 
 
 async def load_statistics(run: ExecuteType, *, user_ids: list[UserId]) -> list[dict[str, object]]:
@@ -1042,6 +1053,160 @@ class TestLoadResourceHistory:
         assert history[0].reserved == 15
 
 
+class TestLoadResourceStatistics:
+    @pytest.mark.asyncio
+    async def test_empty_kinds(self, internal_user_id: UserId) -> None:
+        statistics = await load_resource_statistics(
+            user_id=internal_user_id,
+            kinds=[],
+            interval=ResourceStatisticsInterval.day,
+        )
+
+        assert statistics == {}
+
+    @pytest.mark.asyncio
+    async def test_kind_without_history(self, internal_user_id: UserId) -> None:
+        statistics = await load_resource_statistics(
+            user_id=internal_user_id,
+            kinds=[_kind],
+            interval=ResourceStatisticsInterval.day,
+        )
+
+        assert statistics == {
+            _kind: ResourceStatisticsSeries(
+                first_date=datetime.datetime.now(tz=datetime.UTC).date(),
+                values=(0,),
+            )
+        }
+
+    @pytest.mark.asyncio
+    async def test_day_interval_filters_and_groups_results(
+        self, internal_user_id: UserId, another_internal_user_id: UserId
+    ) -> None:
+        await reserve_and_convert(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=datetime.datetime(2024, 1, 1, tzinfo=datetime.UTC),
+            reserved=2,
+            converted=2,
+        )
+        await reserve_and_convert(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=datetime.datetime(2024, 1, 3, tzinfo=datetime.UTC),
+            reserved=4,
+            converted=4,
+        )
+        await reserve_and_convert(
+            user_id=internal_user_id,
+            kind=_another_kind,
+            interval_started_at=datetime.datetime(2024, 1, 2, tzinfo=datetime.UTC),
+            reserved=5,
+            converted=5,
+        )
+        await reserve_and_convert(
+            user_id=another_internal_user_id,
+            kind=_kind,
+            interval_started_at=datetime.datetime(2024, 1, 1, tzinfo=datetime.UTC),
+            reserved=99,
+            converted=99,
+        )
+
+        statistics = await load_resource_statistics(
+            user_id=internal_user_id,
+            kinds=[_another_kind, _kind, _kind],
+            interval=ResourceStatisticsInterval.day,
+        )
+        current_date = datetime.datetime.now(tz=datetime.UTC).date()
+
+        assert statistics == {
+            _another_kind: ResourceStatisticsSeries(
+                first_date=current_date,
+                values=(5,),
+            ),
+            _kind: ResourceStatisticsSeries(
+                first_date=current_date,
+                values=(6,),
+            ),
+        }
+
+    @pytest.mark.asyncio
+    async def test_month_interval(self, internal_user_id: UserId) -> None:
+        await reserve_and_convert(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=datetime.datetime(2024, 1, 1, tzinfo=datetime.UTC),
+            reserved=2,
+            converted=2,
+        )
+        await reserve_and_convert(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=datetime.datetime(2024, 1, 31, tzinfo=datetime.UTC),
+            reserved=3,
+            converted=3,
+        )
+        await reserve_and_convert(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=datetime.datetime(2024, 2, 1, tzinfo=datetime.UTC),
+            reserved=4,
+            converted=4,
+        )
+
+        statistics = await load_resource_statistics(
+            user_id=internal_user_id,
+            kinds=[_kind],
+            interval=ResourceStatisticsInterval.month,
+        )
+        current_date = datetime.datetime.now(tz=datetime.UTC).date()
+
+        assert statistics == {
+            _kind: ResourceStatisticsSeries(
+                first_date=ResourceStatisticsInterval.month.start_date(current_date),
+                values=(9,),
+            )
+        }
+
+    @pytest.mark.asyncio
+    async def test_year_interval(self, internal_user_id: UserId) -> None:
+        await reserve_and_convert(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=datetime.datetime(2024, 1, 1, tzinfo=datetime.UTC),
+            reserved=2,
+            converted=2,
+        )
+        await reserve_and_convert(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=datetime.datetime(2024, 12, 31, tzinfo=datetime.UTC),
+            reserved=3,
+            converted=3,
+        )
+        await reserve_and_convert(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=datetime.datetime(2025, 1, 1, tzinfo=datetime.UTC),
+            reserved=4,
+            converted=4,
+        )
+
+        statistics = await load_resource_statistics(
+            user_id=internal_user_id,
+            kinds=[_kind],
+            interval=ResourceStatisticsInterval.year,
+        )
+        current_date = datetime.datetime.now(tz=datetime.UTC).date()
+
+        assert statistics == {
+            _kind: ResourceStatisticsSeries(
+                first_date=ResourceStatisticsInterval.year.start_date(current_date),
+                values=(9,),
+            )
+        }
+
+
 async def reserve_and_convert(
     *,
     user_id: UserId,
@@ -1050,27 +1215,19 @@ async def reserve_and_convert(
     reserved: int,
     converted: int,
 ) -> None:
-    await try_to_reserve(
-        execute,
-        user_limits=[ResourceReservationLimit(user_id=user_id, limit=100)],
-        kind=kind,
-        interval_started_at=interval_started_at,
+    reservations = await resources_domain.try_to_reserve_in_order(
         amount=reserved,
+        options=[ResourceReservationOption(kind=kind, interval_started_at=interval_started_at)],
+        specifications=[
+            ResourceReservationSpecification(
+                user_id=user_id,
+                limits=(reserved,),
+            )
+        ],
     )
 
-    async with transaction() as transaction_execute:
-        await convert_reserved_to_used(
-            transaction_execute,
-            [
-                ResourceReservation(
-                    user_id=user_id,
-                    kind=kind,
-                    interval_started_at=interval_started_at,
-                    amount=converted,
-                )
-            ],
-            used=converted,
-        )
+    assert len(reservations) == 1
+    await resources_domain.convert_reserved_to_used(reservations, used=converted)
 
 
 class TestCountTotalResourcesPerUser:

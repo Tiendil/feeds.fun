@@ -633,6 +633,32 @@ async def api_get_resource_history(
     )
 
 
+@api_private.post("/get-resource-statistics")  # type: ignore
+async def api_get_resource_statistics(
+    request: entities.GetResourceStatisticsRequest, user: User
+) -> entities.GetResourceStatisticsResponse:
+    statistics = await r_domain.load_resource_statistics(
+        user_id=user.id,
+        kinds=[kind.to_internal() for kind in request.kinds],
+        interval=request.interval.to_internal(),
+    )
+
+    external_statistics: dict[entities.ResourceKind, entities.ResourceStatisticsSeries] = {}
+
+    for internal_kind, series in statistics.items():
+        kind = entities.ResourceKind.from_internal(internal_kind)
+
+        external_statistics[kind] = entities.ResourceStatisticsSeries.from_internal(
+            kind=kind,
+            series=series,
+        )
+
+    return entities.GetResourceStatisticsResponse(
+        interval=request.interval,
+        statistics=external_statistics,
+    )
+
+
 @api_private.post("/get-user-settings")  # type: ignore
 async def api_get_user_settings(
     request: entities.GetUserSettingsRequest, user: User

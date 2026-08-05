@@ -22,6 +22,7 @@ Resource-kind registries, resource units and conversions, accounting-interval se
 - `reservation specification` - one caller-supplied user and a collection of optional limits aligned with the reservation options.
 - `reservation result` - the user, kind, interval, and amount captured by one successful reservation.
 - `resource statistics record` - cumulative finalized consumption for one user, resource kind, and UTC calendar date.
+- `resource statistics interval` - UTC calendar granularity used to group statistics records; one day, one month, or one year.
 
 ## Module responsibility
 
@@ -126,17 +127,34 @@ A zero finalized amount MUST release reservations without recording usage.
 ### Daily statistics
 
 One resource statistics record MUST be identified by the exact tuple of user id, resource kind, and UTC calendar date.
-The date MUST be selected from the database clock when the corresponding resource operation is persisted.
+The date MUST come from one authoritative UTC time source shared by all resource-accounting writes, so writer clock differences cannot split consumption across dates.
 
 The consumed statistics counter MUST be the cumulative finalized used amount from successful conversions on that date.
 Reservation attempts MUST NOT change statistics.
 A failed conversion MUST NOT change statistics.
 A zero finalized amount MUST leave statistics unchanged.
 
-Statistics changes MUST use the same transaction as the resource-counter change that produced them.
+Each statistics change and the resource-counter change that produced it MUST succeed or fail atomically.
 Statistics for different users, kinds, or dates MUST be accounted independently even when they address the same resource interval or are changed by one bulk operation.
 
-The module is not required to expose statistics queries until a caller-facing read contract is specified.
+### Statistics queries
+
+A statistics query MUST accept one user id, a collection of resource kinds, and a statistics interval of day, month, or year.
+It MUST return the complete recorded history for the requested user and kinds without initializing missing state.
+
+Daily results MUST preserve the UTC calendar date of each matching statistics record.
+Monthly results MUST sum matching daily records by UTC calendar month and identify each result by that month's first date.
+Yearly results MUST sum matching daily records by UTC calendar year and identify each result by that year's first date.
+
+The query result MUST be a mapping with one entry for every distinct requested resource kind.
+Each mapped series MUST contain its first interval start date and a consumed value for every consecutive interval from that date through the last recorded interval.
+Intervals without recorded consumption inside that range MUST have a zero value.
+When the requested kind has no matching records, the first interval start date MUST identify the current UTC interval and the value collection MUST contain one zero.
+The current interval start MUST be the current UTC date for a daily query, the current UTC month's first date for a monthly query, and the current UTC year's first date for a yearly query.
+This response-only zero MUST NOT initialize statistics state.
+
+Repeated requested resource kinds MUST produce one mapping entry.
+An empty resource-kind collection MUST return an empty mapping.
 
 ### Current-resource queries
 
@@ -164,6 +182,7 @@ The public interface MUST provide these operations:
 - `try_to_reserve_in_order` applies ordered options and per-user limits and returns successful reservations.
 - `convert_reserved_to_used` converts or releases captured reservations atomically.
 - `load_resource_history` loads one user's history for a kind.
+- `load_resource_statistics` loads one user's complete dense consumption series for multiple kinds at day, month, or year granularity.
 - `count_total_resources_per_user` returns used-only totals grouped by user for a kind.
 
 `load_resources` MUST return a mapping keyed by the semantic user identifiers supplied by callers.

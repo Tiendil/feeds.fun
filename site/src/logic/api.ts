@@ -522,6 +522,24 @@ export async function getResourceHistory({kind}: {kind: string}) {
   return history;
 }
 
+export async function getResourceStatistics({
+  kinds,
+  interval
+}: {
+  kinds: e.ResourceKind[];
+  interval: e.ResourceStatisticsInterval;
+}) {
+  const response = await postPrivate({
+    url: "/get-resource-statistics",
+    data: {kinds, interval}
+  });
+
+  return t.resourceStatisticsFromJSON({
+    interval: response.interval,
+    statistics: response.statistics
+  });
+}
+
 export async function removeUser() {
   await postPrivate({url: "/remove-user", data: {}});
 }

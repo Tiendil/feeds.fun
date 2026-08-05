@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest";
 
 import * as e from "@/logic/enums";
-import {entryFromJSON, feedFromJSON, type RawEntry, type RawFeed} from "@/logic/types";
+import {entryFromJSON, feedFromJSON, resourceStatisticsFromJSON, type RawEntry, type RawFeed} from "@/logic/types";
 
 function rawFeed(overrides: Partial<RawFeed> = {}): RawFeed {
   return {
@@ -105,5 +105,63 @@ describe("entryFromJSON", () => {
 
   it("rejects unknown integer markers", () => {
     expect(() => entryFromJSON(rawEntry([100]), {})).toThrow("Unknown marker: 100");
+  });
+});
+
+describe("resourceStatisticsFromJSON", () => {
+  it("translates an empty statistics record", () => {
+    expect(
+      resourceStatisticsFromJSON({
+        interval: e.ResourceStatisticsInterval.Day,
+        statistics: {}
+      })
+    ).toEqual({
+      interval: e.ResourceStatisticsInterval.Day,
+      statistics: {}
+    });
+  });
+
+  it("translates a resource series with no values", () => {
+    const statistics = resourceStatisticsFromJSON({
+      interval: e.ResourceStatisticsInterval.Month,
+      statistics: {
+        [e.ResourceKind.TokensCost]: {firstDate: "2025-01-01", values: []}
+      }
+    });
+
+    expect(statistics.statistics[e.ResourceKind.TokensCost]).toEqual({
+      firstDate: new Date("2025-01-01T00:00:00Z"),
+      values: []
+    });
+  });
+
+  it("translates all resource series and the year interval", () => {
+    const statistics = resourceStatisticsFromJSON({
+      interval: e.ResourceStatisticsInterval.Year,
+      statistics: {
+        [e.ResourceKind.TokensCost]: {firstDate: "2025-01-01", values: [0]},
+        [e.ResourceKind.DayTokenUsage]: {firstDate: "2023-01-01", values: [1, "2.5", 0]},
+        [e.ResourceKind.MonthTokenUsage]: {firstDate: "2025-01-01", values: [0]},
+        [e.ResourceKind.LifetimeTokenUsage]: {firstDate: "2024-01-01", values: ["7"]}
+      }
+    });
+
+    expect(statistics.interval).toBe(e.ResourceStatisticsInterval.Year);
+    expect(statistics.statistics[e.ResourceKind.TokensCost]).toEqual({
+      firstDate: new Date("2025-01-01T00:00:00Z"),
+      values: [0]
+    });
+    expect(statistics.statistics[e.ResourceKind.DayTokenUsage]).toEqual({
+      firstDate: new Date("2023-01-01T00:00:00Z"),
+      values: [1, 2.5, 0]
+    });
+    expect(statistics.statistics[e.ResourceKind.MonthTokenUsage]).toEqual({
+      firstDate: new Date("2025-01-01T00:00:00Z"),
+      values: [0]
+    });
+    expect(statistics.statistics[e.ResourceKind.LifetimeTokenUsage]).toEqual({
+      firstDate: new Date("2024-01-01T00:00:00Z"),
+      values: [7]
+    });
   });
 });

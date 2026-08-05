@@ -66,6 +66,11 @@ class TestLoadResource:
         assert resource.reserved == 0
 
 
+class TestLoadResourceStatistics:
+    def test_reexports_operation(self) -> None:
+        assert domain.load_resource_statistics is domain.operations.load_resource_statistics
+
+
 class TestBuildUserLimits:
     def test_filters_reserved_users(self, internal_user_id: UserId, another_internal_user_id: UserId) -> None:
         specifications = [

@@ -20,7 +20,6 @@ from ffun.domain.entities import (
     TagId,
     TagUid,
     UnknownUrl,
-    USDCost,
     UserId,
 )
 from ffun.feeds import entities as f_entities
@@ -313,10 +312,25 @@ class ResourceKind(enum.StrEnum):
         real_kind = product_entities.Resource(kind)
         return ResourceKind(real_kind.name)
 
-    def to_internal(self) -> int:
+    def to_internal(self) -> r_entities.ResourceKind:
         value: object = getattr(product_entities.Resource, self.name)
         assert isinstance(value, int)
-        return value
+        return r_entities.ResourceKind(value)
+
+    def amount_from_internal(self, amount: int) -> Decimal:
+        if self == ResourceKind.tokens_cost:
+            return Decimal(llms_domain.cost_points_to_usd_cost(LLMCostPoints(amount)))
+
+        return Decimal(amount)
+
+
+class ResourceStatisticsInterval(enum.StrEnum):
+    day = "day"
+    month = "month"
+    year = "year"
+
+    def to_internal(self) -> r_entities.ResourceStatisticsInterval:
+        return r_entities.ResourceStatisticsInterval(self.value)
 
 
 class ResourceHistoryRecord(pydantic.BaseModel):
@@ -326,20 +340,29 @@ class ResourceHistoryRecord(pydantic.BaseModel):
 
     @classmethod
     def from_internal(cls, record: r_entities.Resource) -> "ResourceHistoryRecord":
-        if record.kind == product_entities.Resource.tokens_cost:
-
-            def transformer(points: int) -> USDCost:
-                return llms_domain.cost_points_to_usd_cost(LLMCostPoints(points))
-
-        else:
-
-            def transformer(points: int) -> USDCost:
-                return USDCost(Decimal(points))
+        kind = ResourceKind.from_internal(record.kind)
 
         return cls(
             intervalStartedAt=record.interval_started_at,
-            used=transformer(record.used),
-            reserved=transformer(record.reserved),
+            used=kind.amount_from_internal(record.used),
+            reserved=kind.amount_from_internal(record.reserved),
+        )
+
+
+class ResourceStatisticsSeries(pydantic.BaseModel):
+    firstDate: datetime.date
+    values: list[Decimal]
+
+    @classmethod
+    def from_internal(
+        cls,
+        *,
+        kind: ResourceKind,
+        series: r_entities.ResourceStatisticsSeries,
+    ) -> "ResourceStatisticsSeries":
+        return cls(
+            firstDate=series.first_date,
+            values=[kind.amount_from_internal(value) for value in series.values],
         )
 
 
@@ -619,6 +642,16 @@ class GetResourceHistoryRequest(api.APIRequest):
 
 class GetResourceHistoryResponse(api.APISuccess):
     history: list[ResourceHistoryRecord]
+
+
+class GetResourceStatisticsRequest(api.APIRequest):
+    kinds: list[ResourceKind]
+    interval: ResourceStatisticsInterval
+
+
+class GetResourceStatisticsResponse(api.APISuccess):
+    interval: ResourceStatisticsInterval
+    statistics: dict[ResourceKind, ResourceStatisticsSeries]
 
 
 class GetInfoRequest(api.APIRequest):

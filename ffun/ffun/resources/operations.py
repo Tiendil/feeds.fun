@@ -1,11 +1,19 @@
 import datetime
-from typing import Any, Iterable
+import itertools
+from typing import Any, Iterable, cast
 
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.domain.entities import UserId
 from ffun.resources import errors
-from ffun.resources.entities import Resource, ResourceReservation, ResourceReservationLimit
+from ffun.resources.entities import (
+    Resource,
+    ResourceKind,
+    ResourceReservation,
+    ResourceReservationLimit,
+    ResourceStatisticsInterval,
+    ResourceStatisticsSeries,
+)
 
 logger = logging.get_module_logger()
 
@@ -211,6 +219,62 @@ async def load_resource_history(user_id: UserId, kind: int) -> list[Resource]:
     results = await execute(sql, {"user_id": user_id, "kind": kind})
 
     return [row_to_entry(row) for row in results]
+
+
+async def load_resource_statistics(
+    user_id: UserId,
+    kinds: Iterable[ResourceKind],
+    interval: ResourceStatisticsInterval,
+) -> dict[ResourceKind, ResourceStatisticsSeries]:
+    requested_kinds = list(dict.fromkeys(kinds))
+
+    if not requested_kinds:
+        return {}
+
+    sql = """
+        SELECT
+            kind,
+            DATE_TRUNC(%(interval)s, date::timestamp)::date AS interval_started_at,
+            SUM(consumed) AS consumed
+        FROM r_statistics
+        WHERE user_id = %(user_id)s AND kind = ANY(%(kinds)s)
+        GROUP BY kind, DATE_TRUNC(%(interval)s, date::timestamp)::date
+        ORDER BY kind ASC, interval_started_at ASC
+    """
+
+    results = await execute(
+        sql,
+        {
+            "user_id": user_id,
+            "kinds": requested_kinds,
+            "interval": interval.value,
+        },
+    )
+
+    current_date = datetime.datetime.now(tz=datetime.UTC).date()
+    statistics = {
+        kind: ResourceStatisticsSeries.from_sorted_values(
+            interval,
+            (),
+            current_date=current_date,
+        )
+        for kind in requested_kinds
+    }
+
+    for kind, rows in itertools.groupby(results, key=lambda row: ResourceKind(cast(int, row["kind"]))):
+        statistics[kind] = ResourceStatisticsSeries.from_sorted_values(
+            interval,
+            (
+                (
+                    cast(datetime.date, row["interval_started_at"]),
+                    cast(int, row["consumed"]),
+                )
+                for row in rows
+            ),
+            current_date=current_date,
+        )
+
+    return statistics
 
 
 async def count_total_resources_per_user(kind: int) -> dict[UserId, int]:

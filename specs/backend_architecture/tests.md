@@ -48,6 +48,14 @@ Tests SHOULD prefer a real current-time value as the baseline for time-related c
 
 Tests that require specific shared state MUST prepare that state at the start of the relevant test or with an autouse fixture at the test class or test module level.
 
+Tests MUST prepare and mutate application-owned state through the production code that owns the corresponding state transition and invariants.
+
+Tests MUST NOT bypass production logic by writing directly to databases, files, queues, caches, or other application-owned state unless the developer explicitly approves the exception.
+
+An approved exception MUST be documented next to the bypass and MUST explain why the required state cannot be produced through production code.
+
+Tests MAY inspect application-owned state directly to assert observable effects; this permission does not allow direct mutation.
+
 Tests MUST NOT clean up shared state after themselves unless the developer explicitly requests cleanup behavior.
 
 Tests SHOULD prefer end-to-end coverage through public boundaries when that is practical for the behavior under test.

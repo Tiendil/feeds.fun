@@ -189,6 +189,23 @@ export const ReferenceKindProperties = new Map<ReferenceKind, ReferenceKindPrope
   [ReferenceKind.Document, {title: "Document", icon: "file-text", priority: 60}]
 ]);
 
+///////////////////
+// Resource statistics
+///////////////////
+
+export enum ResourceKind {
+  TokensCost = "tokens_cost",
+  DayTokenUsage = "day_token_usage",
+  MonthTokenUsage = "month_token_usage",
+  LifetimeTokenUsage = "lifetime_token_usage"
+}
+
+export enum ResourceStatisticsInterval {
+  Day = "day",
+  Month = "month",
+  Year = "year"
+}
+
 //////////////
 // Feeds order
 //////////////

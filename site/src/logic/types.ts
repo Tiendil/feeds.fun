@@ -534,6 +534,40 @@ export function resourceHistoryRecordFromJSON({
   });
 }
 
+export type RawResourceStatisticsSeries = {
+  firstDate: string;
+  values: Array<number | string>;
+};
+
+export type ResourceStatisticsSeries = {
+  readonly firstDate: Date;
+  readonly values: number[];
+};
+
+export type ResourceStatistics = {
+  readonly interval: e.ResourceStatisticsInterval;
+  readonly statistics: Partial<Record<e.ResourceKind, ResourceStatisticsSeries>>;
+};
+
+export function resourceStatisticsFromJSON({
+  interval,
+  statistics
+}: {
+  interval: e.ResourceStatisticsInterval;
+  statistics: Partial<Record<e.ResourceKind, RawResourceStatisticsSeries>>;
+}): ResourceStatistics {
+  const parsedStatistics: Partial<Record<e.ResourceKind, ResourceStatisticsSeries>> = {};
+
+  for (const [kind, series] of Object.entries(statistics) as Array<[e.ResourceKind, RawResourceStatisticsSeries]>) {
+    parsedStatistics[kind] = {
+      firstDate: new Date(`${series.firstDate}T00:00:00Z`),
+      values: series.values.map((value) => parseFloat(value as string))
+    };
+  }
+
+  return {interval, statistics: parsedStatistics};
+}
+
 export class Collection {
   readonly id: CollectionId;
   readonly slug: CollectionSlug;
