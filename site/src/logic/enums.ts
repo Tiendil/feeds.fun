@@ -200,11 +200,42 @@ export enum ResourceKind {
   LifetimeTokenUsage = "lifetime_token_usage"
 }
 
-export enum ResourceStatisticsInterval {
+export type ResourceKindProperty = {
+  readonly text: string;
+  readonly plotColor?: string;
+};
+
+export const ResourceKindProperties = new Map<ResourceKind, ResourceKindProperty>([
+  [ResourceKind.TokensCost, {text: "tokens cost"}],
+  [ResourceKind.DayTokenUsage, {text: "daily tokens", plotColor: "day"}],
+  [ResourceKind.MonthTokenUsage, {text: "monthly tokens", plotColor: "month"}],
+  [ResourceKind.LifetimeTokenUsage, {text: "lifetime tokens", plotColor: "lifetime"}]
+]);
+
+export type ResourceStatisticsApiId = "day" | "month" | "year";
+
+export enum TimeGranularity {
   Day = "day",
   Month = "month",
   Year = "year"
 }
+
+export type TimeGranularityProperty = {
+  readonly text: string;
+  readonly resourceApiId: ResourceStatisticsApiId;
+};
+
+export const TimeGranularityProperties = new Map<TimeGranularity, TimeGranularityProperty>([
+  [TimeGranularity.Day, {text: "daily", resourceApiId: "day"}],
+  [TimeGranularity.Month, {text: "monthly", resourceApiId: "month"}],
+  [TimeGranularity.Year, {text: "yearly", resourceApiId: "year"}]
+]);
+
+export const windowSizes = new Map<TimeGranularity, number>([
+  [TimeGranularity.Day, 30],
+  [TimeGranularity.Month, 12],
+  [TimeGranularity.Year, 5]
+]);
 
 //////////////
 // Feeds order

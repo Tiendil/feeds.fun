@@ -545,7 +545,7 @@ export type ResourceStatisticsSeries = {
 };
 
 export type ResourceStatistics = {
-  readonly interval: e.ResourceStatisticsInterval;
+  readonly interval: e.ResourceStatisticsApiId;
   readonly statistics: Partial<Record<e.ResourceKind, ResourceStatisticsSeries>>;
 };
 
@@ -553,7 +553,7 @@ export function resourceStatisticsFromJSON({
   interval,
   statistics
 }: {
-  interval: e.ResourceStatisticsInterval;
+  interval: e.ResourceStatisticsApiId;
   statistics: Partial<Record<e.ResourceKind, RawResourceStatisticsSeries>>;
 }): ResourceStatistics {
   const parsedStatistics: Partial<Record<e.ResourceKind, ResourceStatisticsSeries>> = {};

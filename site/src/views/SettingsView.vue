@@ -117,6 +117,25 @@
       </tbody>
     </table>
 
+    <h3>Token usage history</h3>
+
+    <div class="ffun-info-common mb-4">
+      <p>
+        Tagging one news item for your account spends one token. Tokens are used in this order: daily, monthly, then
+        lifetime.
+      </p>
+
+      <ul class="list-disc list-inside">
+        <li><strong>Daily tokens</strong> — the allowance resets at 00:00 UTC each day.</li>
+        <li><strong>Monthly tokens</strong> — the allowance resets at 00:00 UTC on the first day of each month.</li>
+        <li><strong>Lifetime tokens</strong> — the balance does not reset.</li>
+      </ul>
+
+      <p> News from predefined collections does not use these tokens. The same news item is charged only once. </p>
+    </div>
+
+    <token-usage-statistics />
+
     <h3>Danger Zone</h3>
 
     <div class="ffun-info-bad">

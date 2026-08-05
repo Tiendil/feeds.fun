@@ -1,5 +1,6 @@
 import {createApp} from "vue";
 import {createPinia} from "pinia";
+import {Bar as ChartBar} from "vue-chartjs";
 
 import App from "./App.vue";
 import router from "./router";
@@ -7,6 +8,7 @@ import router from "./router";
 import "./style.css";
 
 import * as CookieConsent from "./plugins/CookieConsent";
+import {configurePlots} from "./logic/plots";
 
 import FeedsList from "./components/FeedsList.vue";
 import EntriesList from "./components/EntriesList.vue";
@@ -22,9 +24,13 @@ import FeedForList from "./components/FeedForList.vue";
 import SimplePagination from "./components/SimplePagination.vue";
 import UserSetting from "./components/UserSetting.vue";
 import TokensCost from "./components/TokensCost.vue";
+import TokenUsageStatistics from "./components/TokenUsageStatistics.vue";
 import FaviconElement from "./components/FaviconElement.vue";
 import RuleForList from "./components/RuleForList.vue";
 import UserSettingForNotification from "./components/UserSettingForNotification.vue";
+
+import FeedListColumns from "./components/feed_list/Columns.vue";
+import FeedEntriesPerDayChart from "./components/feed_list/FeedEntriesPerDayChart.vue";
 
 import TagBase from "./components/tags/Base.vue";
 import EntryTag from "./components/tags/EntryTag.vue";
@@ -87,6 +93,8 @@ import VueCountdown from "@chenfengyuan/vue-countdown";
 
 const app = createApp(App);
 
+configurePlots();
+
 app.component("FeedsList", FeedsList);
 app.component("EntriesList", EntriesList);
 app.component("RulesList", RulesList);
@@ -101,9 +109,13 @@ app.component("FeedForList", FeedForList);
 app.component("SimplePagination", SimplePagination);
 app.component("UserSetting", UserSetting);
 app.component("TokensCost", TokensCost);
+app.component("TokenUsageStatistics", TokenUsageStatistics);
 app.component("FaviconElement", FaviconElement);
 app.component("RuleForList", RuleForList);
 app.component("UserSettingForNotification", UserSettingForNotification);
+
+app.component("FeedListColumns", FeedListColumns);
+app.component("FeedEntriesPerDayChart", FeedEntriesPerDayChart);
 
 app.component("TagBase", TagBase);
 app.component("EntryTag", EntryTag);
@@ -162,7 +174,8 @@ app.component("SidePanelCollapseButton", SidePanelCollapseButton);
 app.component("WideLayout", WideLayout);
 app.component("SidePanelLayout", SidePanelLayout);
 
-app.component("vue-countdown", VueCountdown);
+app.component("ChartBar", ChartBar);
+app.component("VueCountdown", VueCountdown);
 
 app.use(createPinia());
 app.use(router);

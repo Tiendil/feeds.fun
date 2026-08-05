@@ -527,7 +527,7 @@ export async function getResourceStatistics({
   interval
 }: {
   kinds: e.ResourceKind[];
-  interval: e.ResourceStatisticsInterval;
+  interval: e.ResourceStatisticsApiId;
 }) {
   const response = await postPrivate({
     url: "/get-resource-statistics",

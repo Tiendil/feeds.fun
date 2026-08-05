@@ -33,7 +33,6 @@
 
 <script lang="ts" setup>
   import type * as t from "@/logic/types";
-  import FeedListColumns from "@/components/feed_list/Columns.vue";
 
   defineProps<{feeds: Array<t.Feed>}>();
 </script>

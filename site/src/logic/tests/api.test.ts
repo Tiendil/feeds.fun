@@ -31,7 +31,7 @@ describe("getResourceStatistics", () => {
     ];
     mocks.post.mockResolvedValue({
       data: {
-        interval: e.ResourceStatisticsInterval.Year,
+        interval: "year",
         statistics: {
           [e.ResourceKind.LifetimeTokenUsage]: {
             firstDate: "2024-01-01",
@@ -43,19 +43,19 @@ describe("getResourceStatistics", () => {
 
     const statistics = await getResourceStatistics({
       kinds,
-      interval: e.ResourceStatisticsInterval.Year
+      interval: "year"
     });
 
     expect(mocks.post).toHaveBeenCalledWith(
       "/get-resource-statistics",
       {
         kinds,
-        interval: e.ResourceStatisticsInterval.Year
+        interval: "year"
       },
       undefined
     );
     expect(statistics).toEqual({
-      interval: e.ResourceStatisticsInterval.Year,
+      interval: "year",
       statistics: {
         [e.ResourceKind.LifetimeTokenUsage]: {
           firstDate: new Date("2024-01-01T00:00:00Z"),

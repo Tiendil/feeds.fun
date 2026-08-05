@@ -112,18 +112,18 @@ describe("resourceStatisticsFromJSON", () => {
   it("translates an empty statistics record", () => {
     expect(
       resourceStatisticsFromJSON({
-        interval: e.ResourceStatisticsInterval.Day,
+        interval: "day",
         statistics: {}
       })
     ).toEqual({
-      interval: e.ResourceStatisticsInterval.Day,
+      interval: "day",
       statistics: {}
     });
   });
 
   it("translates a resource series with no values", () => {
     const statistics = resourceStatisticsFromJSON({
-      interval: e.ResourceStatisticsInterval.Month,
+      interval: "month",
       statistics: {
         [e.ResourceKind.TokensCost]: {firstDate: "2025-01-01", values: []}
       }
@@ -137,7 +137,7 @@ describe("resourceStatisticsFromJSON", () => {
 
   it("translates all resource series and the year interval", () => {
     const statistics = resourceStatisticsFromJSON({
-      interval: e.ResourceStatisticsInterval.Year,
+      interval: "year",
       statistics: {
         [e.ResourceKind.TokensCost]: {firstDate: "2025-01-01", values: [0]},
         [e.ResourceKind.DayTokenUsage]: {firstDate: "2023-01-01", values: [1, "2.5", 0]},
@@ -146,7 +146,7 @@ describe("resourceStatisticsFromJSON", () => {
       }
     });
 
-    expect(statistics.interval).toBe(e.ResourceStatisticsInterval.Year);
+    expect(statistics.interval).toBe("year");
     expect(statistics.statistics[e.ResourceKind.TokensCost]).toEqual({
       firstDate: new Date("2025-01-01T00:00:00Z"),
       values: [0]

@@ -56,6 +56,31 @@ relation = "tests"
 input = { type = "glob", pattern = "@/site/src/logic/tests/{*module}.test.ts" }
 output = { type = "list", artifacts = ["@/site/src/logic/{module}.ts"] }
 
+# Frontend application components and the global registry are verified by the component registration architecture test.
+[[rules]]
+relation = "tested_by"
+input = { type = "any", items = [
+  { type = "one_of", artifacts = ["@/site/src/main.ts"] },
+  { type = "all", items = [
+    { type = "glob", pattern = "@/site/src/**/*.vue" },
+    { type = "not", item = { type = "one_of", artifacts = ["@/site/src/App.vue"] } },
+    { type = "not", item = { type = "glob", pattern = "@/site/src/views/**/*.vue" } },
+  ] },
+] }
+output = { type = "list", artifacts = ["@/site/src/tests/componentRegistration.test.ts"] }
+
+# The component registration architecture test maps back to the global registry and every application component.
+[[rules]]
+relation = "tests"
+input = { type = "one_of", artifacts = ["@/site/src/tests/componentRegistration.test.ts"] }
+output = { type = "union", items = [
+  { type = "list", artifacts = ["@/site/src/main.ts"] },
+  { type = "difference", include = { type = "files", pattern = "@/site/src/**/*.vue" }, exclude = { type = "union", items = [
+    { type = "list", artifacts = ["@/site/src/App.vue"] },
+    { type = "files", pattern = "@/site/src/views/**/*.vue" },
+  ] } },
+] }
+
 #################################
 # Relation: imports / imported_by
 #################################
