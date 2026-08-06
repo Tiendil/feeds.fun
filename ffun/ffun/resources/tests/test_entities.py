@@ -14,7 +14,7 @@ class TestResourceStatisticsInterval:
             (ResourceStatisticsInterval.year, datetime.date(2024, 1, 1)),
         ],
     )
-    def test_start_date(
+    def test_start_date__normalizes_date(
         self,
         interval: ResourceStatisticsInterval,
         expected: datetime.date,
@@ -46,7 +46,7 @@ class TestResourceStatisticsInterval:
             ),
         ],
     )
-    def test_next_date(
+    def test_next_date__advances_interval(
         self,
         interval: ResourceStatisticsInterval,
         value: datetime.date,
@@ -56,6 +56,17 @@ class TestResourceStatisticsInterval:
 
 
 class TestResourceStatisticsSeries:
+    def test_from_sorted_values__singleton(self) -> None:
+        first_date = datetime.date(2024, 1, 1)
+
+        series = ResourceStatisticsSeries.from_sorted_values(
+            ResourceStatisticsInterval.day,
+            ((first_date, 2),),
+            current_date=datetime.date(2026, 1, 1),
+        )
+
+        assert series == ResourceStatisticsSeries(first_date=first_date, values=(2,))
+
     def test_from_sorted_values__keeps_consecutive_intervals(self) -> None:
         first_date = datetime.date(2024, 1, 1)
         next_date = datetime.date(2024, 1, 2)

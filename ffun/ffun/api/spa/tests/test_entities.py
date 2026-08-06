@@ -162,6 +162,10 @@ class TestResourceKind:
     def test_from_internal__resource_kind(self, kind: ResourceKind, internal_kind: Resource) -> None:
         assert ResourceKind.from_internal(internal_kind) == kind
 
+    def test_from_internal__unsupported_value(self) -> None:
+        with pytest.raises(ValueError):
+            ResourceKind.from_internal(0)
+
     def test_amount_from_internal__token_usage(self) -> None:
         assert ResourceKind.lifetime_token_usage.amount_from_internal(13) == Decimal(13)
 

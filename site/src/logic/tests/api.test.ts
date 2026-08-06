@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
 import * as e from "@/logic/enums";
 
@@ -18,7 +18,7 @@ vi.mock("axios", () => ({
 import {getResourceStatistics} from "@/logic/api";
 
 describe("getResourceStatistics", () => {
-  beforeEach(() => {
+  afterEach(() => {
     mocks.post.mockReset();
   });
 

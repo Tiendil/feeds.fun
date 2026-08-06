@@ -70,38 +70,17 @@ class TestUpdateConsumedStatistics:
         internal_user_id: UserId,
         interval_started_at: datetime.datetime,
     ) -> None:
-        statistics_date = datetime.date(2020, 1, 1)
-        recorded_at = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)
-        statistics_arguments: dict[str, UserId | int | datetime.date | datetime.datetime] = {
-            "user_id": internal_user_id,
-            "kind": _kind,
-            "date": statistics_date,
-            "consumed": 5,
-            "recorded_at": recorded_at,
-        }
-
-        await execute(
-            """
-            INSERT INTO r_statistics (user_id, kind, date, consumed, created_at, updated_at)
-            VALUES (%(user_id)s, %(kind)s, %(date)s, %(consumed)s, %(recorded_at)s, %(recorded_at)s)
-            """,
-            statistics_arguments,
+        reservation = ResourceReservation(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=interval_started_at,
+            amount=13,
         )
+        await _update_consumed_statistics(execute, [reservation], used=5)
 
         before = await load_statistics(execute, user_ids=[internal_user_id])
 
-        await _update_consumed_statistics(
-            execute,
-            [
-                ResourceReservation(
-                    user_id=internal_user_id,
-                    kind=_kind,
-                    interval_started_at=interval_started_at,
-                    amount=13,
-                )
-            ],
-            used=0,
-        )
+        await _update_consumed_statistics(execute, [reservation], used=0)
 
         after = await load_statistics(execute, user_ids=[internal_user_id])
 
@@ -183,51 +162,27 @@ class TestUpdateConsumedStatistics:
         internal_user_id: UserId,
         interval_started_at: datetime.datetime,
     ) -> None:
-        recorded_at = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)
-        statistics_arguments: dict[str, UserId | int | datetime.datetime] = {
-            "user_id": internal_user_id,
-            "kind": _kind,
-            "consumed": 5,
-            "recorded_at": recorded_at,
-        }
-
-        await execute(
-            """
-            INSERT INTO r_statistics (user_id, kind, date, consumed, created_at, updated_at)
-            SELECT
-                %(user_id)s,
-                %(kind)s,
-                (statement_timestamp() AT TIME ZONE 'UTC')::date + requested.day_offset,
-                %(consumed)s,
-                %(recorded_at)s,
-                %(recorded_at)s
-            FROM UNNEST(ARRAY[0, 1]) AS requested(day_offset)
-            """,
-            statistics_arguments,
+        reservation = ResourceReservation(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=interval_started_at,
+            amount=13,
         )
+        await _update_consumed_statistics(execute, [reservation], used=5)
 
-        await _update_consumed_statistics(
-            execute,
-            [
-                ResourceReservation(
-                    user_id=internal_user_id,
-                    kind=_kind,
-                    interval_started_at=interval_started_at,
-                    amount=13,
-                )
-            ],
-            used=7,
-        )
+        before = await load_statistics(execute, user_ids=[internal_user_id])
+
+        await _update_consumed_statistics(execute, [reservation], used=7)
 
         statistics = await load_statistics(execute, user_ids=[internal_user_id])
 
-        assert len(statistics) == 2
-        assert {statistic["consumed"] for statistic in statistics} == {5, 12}
-        assert {statistic["created_at"] for statistic in statistics} == {recorded_at}
-        assert sorted(cast(datetime.datetime, statistic["updated_at"]) > recorded_at for statistic in statistics) == [
-            False,
-            True,
-        ]
+        assert len(statistics) == 1
+        assert statistics[0]["consumed"] == 12
+        assert statistics[0]["created_at"] == before[0]["created_at"]
+        assert cast(datetime.datetime, statistics[0]["updated_at"]) > cast(
+            datetime.datetime,
+            before[0]["updated_at"],
+        )
 
     @pytest.mark.asyncio
     async def test_kinds_are_independent(
@@ -255,47 +210,6 @@ class TestUpdateConsumedStatistics:
             _kind: 5,
             _another_kind: 7,
         }
-
-    @pytest.mark.asyncio
-    async def test_dates_are_independent(
-        self,
-        internal_user_id: UserId,
-        interval_started_at: datetime.datetime,
-    ) -> None:
-        historical_date = datetime.date(2020, 1, 1)
-        statistics_arguments: dict[str, UserId | int | datetime.date] = {
-            "user_id": internal_user_id,
-            "kind": _kind,
-            "date": historical_date,
-            "consumed": 5,
-        }
-
-        await execute(
-            """
-            INSERT INTO r_statistics (user_id, kind, date, consumed)
-            VALUES (%(user_id)s, %(kind)s, %(date)s, %(consumed)s)
-            """,
-            statistics_arguments,
-        )
-
-        await _update_consumed_statistics(
-            execute,
-            [
-                ResourceReservation(
-                    user_id=internal_user_id,
-                    kind=_kind,
-                    interval_started_at=interval_started_at,
-                    amount=13,
-                )
-            ],
-            used=7,
-        )
-
-        statistics = await load_statistics(execute, user_ids=[internal_user_id])
-
-        assert len(statistics) == 2
-        assert {statistic["consumed"] for statistic in statistics} == {5, 7}
-        assert next(statistic for statistic in statistics if statistic["date"] == historical_date)["consumed"] == 5
 
 
 class TestRowToEntry:
@@ -491,21 +405,12 @@ class TestTryToReserve:
         internal_user_id: UserId,
         interval_started_at: datetime.datetime,
     ) -> None:
-        recorded_at = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)
-        statistics_arguments: dict[str, UserId | int | datetime.date | datetime.datetime] = {
-            "user_id": internal_user_id,
-            "kind": _kind,
-            "date": datetime.date(2020, 1, 1),
-            "consumed": 5,
-            "recorded_at": recorded_at,
-        }
-
-        await execute(
-            """
-            INSERT INTO r_statistics (user_id, kind, date, consumed, created_at, updated_at)
-            VALUES (%(user_id)s, %(kind)s, %(date)s, %(consumed)s, %(recorded_at)s, %(recorded_at)s)
-            """,
-            statistics_arguments,
+        await consume_resource(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=interval_started_at - datetime.timedelta(days=1),
+            reserved=5,
+            used=5,
         )
 
         before = await load_statistics(execute, user_ids=[internal_user_id])
@@ -864,19 +769,12 @@ class TestConvertReservedToUsed:
                 amount=13,
             )
         )
-        statistics_arguments: dict[str, UserId | int | datetime.date] = {
-            "user_id": internal_user_id,
-            "kind": _kind,
-            "date": datetime.date(2020, 1, 1),
-            "consumed": 5,
-        }
-
-        await execute(
-            """
-            INSERT INTO r_statistics (user_id, kind, date, consumed)
-            VALUES (%(user_id)s, %(kind)s, %(date)s, %(consumed)s)
-            """,
-            statistics_arguments,
+        await consume_resource(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=interval_started_at - datetime.timedelta(days=1),
+            reserved=5,
+            used=5,
         )
 
         before_statistics = await load_statistics(
@@ -922,23 +820,12 @@ class TestConvertReservedToUsed:
             amount=1,
         )
         maximum_bigint = 2**63 - 1
-        statistics_arguments: dict[str, UserId | int] = {
-            "user_id": internal_user_id,
-            "kind": _kind,
-            "consumed": maximum_bigint,
-        }
-
-        await execute(
-            """
-            INSERT INTO r_statistics (user_id, kind, date, consumed)
-            SELECT
-                %(user_id)s,
-                %(kind)s,
-                (statement_timestamp() AT TIME ZONE 'UTC')::date + requested.day_offset,
-                %(consumed)s
-            FROM UNNEST(ARRAY[0, 1]) AS requested(day_offset)
-            """,
-            statistics_arguments,
+        await consume_resource(
+            user_id=internal_user_id,
+            kind=_kind,
+            interval_started_at=interval_started_at - datetime.timedelta(days=1),
+            reserved=maximum_bigint,
+            used=maximum_bigint,
         )
 
         before_statistics = await load_statistics(execute, user_ids=[internal_user_id])

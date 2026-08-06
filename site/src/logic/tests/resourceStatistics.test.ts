@@ -28,7 +28,11 @@ function isoDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-describe("tokenUsageSlots", () => {
+describe("assertTokenUsageStatistics", () => {
+  it("accepts a response with all requested token series", () => {
+    expect(() => assertTokenUsageStatistics(statistics(e.TimeGranularity.Day))).not.toThrow();
+  });
+
   it("rejects a response that omits a requested token series", () => {
     const incompleteStatistics: t.ResourceStatistics = {
       interval: "day",
@@ -44,7 +48,9 @@ describe("tokenUsageSlots", () => {
       "Missing requested resource statistics series: month_token_usage"
     );
   });
+});
 
+describe("tokenUsageSlots", () => {
   it("aligns independent daily series and pads an explicit date range", () => {
     const slots = tokenUsageSlots({
       statistics: statistics(e.TimeGranularity.Day, {
