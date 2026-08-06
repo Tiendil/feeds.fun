@@ -45,6 +45,26 @@ export function periodStart(date: Date, granularity: TokenUsageTimeGranularity):
   return new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
 }
 
+export function emptyTokenUsageStatistics(
+  granularity: TokenUsageTimeGranularity,
+  date: Date
+): TokenUsageStatisticsData {
+  const firstDate = periodStart(date, granularity);
+  const emptySeries = () => ({
+    firstDate: new Date(firstDate.getTime()),
+    values: []
+  });
+
+  return {
+    interval: e.TimeGranularityProperties.get(granularity)!.resourceApiId,
+    statistics: {
+      [e.ResourceKind.DayTokenUsage]: emptySeries(),
+      [e.ResourceKind.MonthTokenUsage]: emptySeries(),
+      [e.ResourceKind.LifetimeTokenUsage]: emptySeries()
+    }
+  };
+}
+
 export function shiftDate(date: Date, offset: number, granularity: TokenUsageTimeGranularity): Date {
   if (granularity === e.TimeGranularity.Day) {
     return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + offset));

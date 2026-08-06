@@ -23,40 +23,62 @@
         <legend class="text-sm font-semibold mb-1">Token types</legend>
 
         <div class="flex flex-wrap gap-3">
-          <label
+          <button
             v-for="[kind, resource] of tokenUsageResources"
             :key="kind"
-            class="cursor-pointer">
-            <input
-              v-model="visibleKinds[kind]"
-              class="ffun-checkbox"
-              type="checkbox"
-              :data-resource-kind="kind" />
+            type="button"
+            class="cursor-pointer hover:underline focus-visible:underline"
+            :aria-pressed="visibleKinds[kind]"
+            :title="tokenTypeTooltip(kind, resource.text)"
+            @click="toggleTokenType(kind)">
             <span
-              class="inline-block w-3 h-3 rounded-sm mx-1"
-              :style="{backgroundColor: colorForResource(resource)}"></span>
-            {{ resource.text }}
-          </label>
+              class="inline-block w-3 h-3 rounded-sm mr-1"
+              :style="{backgroundColor: colorForResource(resource)}"
+              aria-hidden="true"></span>
+            <span :class="visibleKinds[kind] ? 'font-medium' : 'font-normal opacity-60'">
+              {{ resource.text }}
+            </span>
+          </button>
         </div>
       </fieldset>
 
-      <button
-        type="button"
-        class="ffun-form-button short"
-        :aria-pressed="showAllTime"
-        @click="showAllTime = !showAllTime">
-        {{ historyButtonLabel }}
-      </button>
+      <fieldset>
+        <legend class="text-sm font-semibold mb-1">Range</legend>
+
+        <div class="inline-flex overflow-hidden rounded-md border border-gray-300 text-sm">
+          <button
+            type="button"
+            class="cursor-pointer px-3 py-1 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
+            :class="
+              !showAllTime
+                ? 'bg-gray-100 font-medium text-gray-900'
+                : 'bg-white font-normal text-gray-600 hover:bg-gray-50'
+            "
+            :aria-pressed="!showAllTime"
+            :title="recentRangeTooltip"
+            @click="showAllTime = false">
+            Recent
+          </button>
+
+          <button
+            type="button"
+            class="cursor-pointer border-l border-gray-300 px-3 py-1 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
+            :class="
+              showAllTime
+                ? 'bg-gray-100 font-medium text-gray-900'
+                : 'bg-white font-normal text-gray-600 hover:bg-gray-50'
+            "
+            :aria-pressed="showAllTime"
+            title="Show all available history"
+            @click="showAllTime = true">
+            All time
+          </button>
+        </div>
+      </fieldset>
     </div>
 
-    <p
-      v-if="loading"
-      aria-live="polite">
-      Loading...
-    </p>
-
     <div
-      v-else-if="loadError"
+      v-if="loadError"
       class="ffun-info-bad"
       role="alert">
       <p>Unable to load token usage history. Please try again.</p>
@@ -68,23 +90,27 @@
       </button>
     </div>
 
-    <p v-else-if="visibleTokenUsageResources.length === 0">Select at least one token type to display.</p>
-
-    <template v-else-if="statistics !== null">
-      <div class="overflow-x-auto border border-gray-200 rounded-lg">
-        <div
-          class="h-64 p-2"
-          :style="{minWidth: chartMinWidth}">
-          <ChartBar
-            role="img"
-            :aria-label="rangeLabel"
-            :data="chartData"
-            :options="chartOptions" />
-        </div>
+    <div
+      class="relative border border-gray-200 rounded-lg"
+      :aria-busy="loading">
+      <div class="h-64 w-full p-2">
+        <ChartBar
+          role="img"
+          :aria-label="rangeLabel"
+          :data="chartData"
+          :options="chartOptions" />
       </div>
 
-      <p class="mt-1 text-xs text-gray-500">{{ rangeLabel }}</p>
-    </template>
+      <div
+        v-if="chartOverlayMessage !== null"
+        class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75"
+        role="status"
+        aria-live="polite">
+        {{ chartOverlayMessage }}
+      </div>
+    </div>
+
+    <p class="mt-1 text-xs text-gray-500">{{ rangeLabel }}</p>
   </div>
 </template>
 
@@ -97,6 +123,7 @@
   import {barPlotOptionFragments, getPlotColors} from "@/logic/plots";
   import {
     assertTokenUsageStatistics,
+    emptyTokenUsageStatistics,
     periodStart,
     shiftDate,
     tokenUsageResourceKinds,
@@ -112,29 +139,50 @@
     (kind) => [kind, e.ResourceKindProperties.get(kind)!] as const
   );
 
-  const selectedGranularity = ref<TokenUsageTimeGranularity>(e.TimeGranularity.Day);
+  type DisplayedStatistics = {
+    readonly granularity: TokenUsageTimeGranularity;
+    readonly data: TokenUsageStatisticsData;
+  };
+
+  const initialGranularity = e.TimeGranularity.Day;
+  const selectedGranularity = ref<TokenUsageTimeGranularity>(initialGranularity);
   const showAllTime = ref(false);
   const visibleKinds = reactive<Record<TokenUsageResourceKind, boolean>>({
     [e.ResourceKind.DayTokenUsage]: true,
     [e.ResourceKind.MonthTokenUsage]: true,
     [e.ResourceKind.LifetimeTokenUsage]: true
   });
-  const statistics = shallowRef<TokenUsageStatisticsData | null>(null);
+  const displayedStatistics = shallowRef<DisplayedStatistics>({
+    granularity: initialGranularity,
+    data: emptyTokenUsageStatistics(initialGranularity, new Date())
+  });
   const loading = ref(false);
   const loadError = ref(false);
   const statisticsCache = new Map<TokenUsageTimeGranularity, TokenUsageStatisticsData>();
   let activeRequest = 0;
 
   const visibleTokenUsageResources = computed(() => tokenUsageResources.filter(([kind]) => visibleKinds[kind]));
+  const chartOverlayMessage = computed(() => {
+    if (loading.value) {
+      return "Loading...";
+    }
+
+    if (visibleTokenUsageResources.value.length === 0) {
+      return "Select at least one token type to display.";
+    }
+
+    return null;
+  });
+  const displayedGranularity = computed(() => displayedStatistics.value.granularity);
 
   const dateRange = computed(() => {
-    const granularity = selectedGranularity.value;
+    const granularity = displayedGranularity.value;
     const lastDate = periodStart(new Date(), granularity);
     const windowSize = e.windowSizes.get(granularity)!;
     const recentFirstDate = shiftDate(lastDate, 1 - windowSize, granularity);
-    const loadedStatistics = statistics.value;
+    const loadedStatistics = displayedStatistics.value.data;
 
-    if (!showAllTime.value || loadedStatistics === null) {
+    if (!showAllTime.value) {
       return {firstDate: recentFirstDate, lastDate};
     }
 
@@ -150,18 +198,14 @@
     };
   });
 
-  const slots = computed(() => {
-    if (statistics.value === null) {
-      return [];
-    }
-
-    return tokenUsageSlots({
-      statistics: statistics.value,
-      granularity: selectedGranularity.value,
+  const slots = computed(() =>
+    tokenUsageSlots({
+      statistics: displayedStatistics.value.data,
+      granularity: displayedGranularity.value,
       firstDate: dateRange.value.firstDate,
       lastDate: dateRange.value.lastDate
-    });
-  });
+    })
+  );
 
   function formatPeriod(date: Date, granularity: TokenUsageTimeGranularity): string {
     const options: Intl.DateTimeFormatOptions = {
@@ -186,6 +230,18 @@
     }).format(value);
   }
 
+  function toggleTokenType(kind: TokenUsageResourceKind): void {
+    visibleKinds[kind] = !visibleKinds[kind];
+  }
+
+  function tokenTypeTooltip(kind: TokenUsageResourceKind, text: string): string {
+    if (visibleKinds[kind]) {
+      return `Hide ${text} from the plot`;
+    }
+
+    return `Show ${text} on the plot`;
+  }
+
   function colorForResource(resource: e.ResourceKindProperty): string {
     if (resource.plotColor === undefined || !(resource.plotColor in plotColors.tokenUsage)) {
       throw new Error("Resource kind does not define a plot color");
@@ -195,7 +251,7 @@
   }
 
   const chartData = computed<ChartData<"bar", number[], string>>(() => ({
-    labels: slots.value.map((slot) => formatPeriod(slot.date, selectedGranularity.value)),
+    labels: slots.value.map((slot) => formatPeriod(slot.date, displayedGranularity.value)),
     datasets: visibleTokenUsageResources.value.map(([kind, resource]) => {
       const color = colorForResource(resource);
 
@@ -229,7 +285,7 @@
           color: plotColors.text,
           maxRotation: 0,
           autoSkip: true,
-          maxTicksLimit: selectedGranularity.value === e.TimeGranularity.Day ? 10 : 12
+          maxTicksLimit: displayedGranularity.value === e.TimeGranularity.Day ? 10 : 12
         }
       },
       y: {
@@ -254,43 +310,34 @@
     }
   }));
 
-  const chartMinWidth = computed(() =>
-    showAllTime.value ? `max(100%, ${Math.max(640, slots.value.length * 14)}px)` : "100%"
-  );
-
   const rangeLabel = computed(() => {
     if (slots.value.length === 0) {
       return "Token usage history";
     }
 
-    const firstDate = formatPeriod(slots.value[0].date, selectedGranularity.value);
-    const lastDate = formatPeriod(slots.value[slots.value.length - 1].date, selectedGranularity.value);
-    const granularityText = e.TimeGranularityProperties.get(selectedGranularity.value)!.text;
+    const firstDate = formatPeriod(slots.value[0].date, displayedGranularity.value);
+    const lastDate = formatPeriod(slots.value[slots.value.length - 1].date, displayedGranularity.value);
+    const granularityText = e.TimeGranularityProperties.get(displayedGranularity.value)!.text;
     const granularityLabel = granularityText.charAt(0).toUpperCase() + granularityText.slice(1);
 
     return `${granularityLabel} token usage from ${firstDate} to ${lastDate}`;
   });
 
-  const historyButtonLabel = computed(() => {
-    if (!showAllTime.value) {
-      return "For the all time";
-    }
-
-    return `For the last ${e.windowSizes.get(selectedGranularity.value)!} ${selectedGranularity.value}s`;
-  });
+  const recentRangeTooltip = computed(
+    () => `Show the last ${e.windowSizes.get(displayedGranularity.value)!} ${displayedGranularity.value}s`
+  );
 
   async function loadStatistics(granularity: TokenUsageTimeGranularity): Promise<void> {
     const request = ++activeRequest;
     const cachedStatistics = statisticsCache.get(granularity);
 
     if (cachedStatistics !== undefined) {
-      statistics.value = cachedStatistics;
+      displayedStatistics.value = {granularity, data: cachedStatistics};
       loading.value = false;
       loadError.value = false;
       return;
     }
 
-    statistics.value = null;
     loading.value = true;
     loadError.value = false;
 
@@ -304,7 +351,7 @@
       statisticsCache.set(granularity, loadedStatistics);
 
       if (request === activeRequest && granularity === selectedGranularity.value) {
-        statistics.value = loadedStatistics;
+        displayedStatistics.value = {granularity, data: loadedStatistics};
       }
     } catch {
       if (request === activeRequest && granularity === selectedGranularity.value) {

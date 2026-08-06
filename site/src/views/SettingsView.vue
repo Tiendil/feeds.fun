@@ -117,7 +117,7 @@
       </tbody>
     </table>
 
-    <h3>Token usage history</h3>
+    <h3>Token usage</h3>
 
     <div class="ffun-info-common mb-4">
       <p>

@@ -1,7 +1,12 @@
 import {describe, expect, it} from "vitest";
 
 import * as e from "@/logic/enums";
-import {assertTokenUsageStatistics, tokenUsageSlots, type TokenUsageStatisticsData} from "@/logic/resourceStatistics";
+import {
+  assertTokenUsageStatistics,
+  emptyTokenUsageStatistics,
+  tokenUsageSlots,
+  type TokenUsageStatisticsData
+} from "@/logic/resourceStatistics";
 import type * as t from "@/logic/types";
 
 function statistics(
@@ -47,6 +52,35 @@ describe("assertTokenUsageStatistics", () => {
     expect(() => assertTokenUsageStatistics(incompleteStatistics)).toThrow(
       "Missing requested resource statistics series: month_token_usage"
     );
+  });
+});
+
+describe("emptyTokenUsageStatistics", () => {
+  it("creates empty series aligned to the requested interval", () => {
+    const result = emptyTokenUsageStatistics(e.TimeGranularity.Month, new Date("2026-08-20T08:30:00Z"));
+
+    expect(result.interval).toBe("month");
+
+    for (const kind of [
+      e.ResourceKind.DayTokenUsage,
+      e.ResourceKind.MonthTokenUsage,
+      e.ResourceKind.LifetimeTokenUsage
+    ]) {
+      expect(result.statistics[kind]).toEqual({
+        firstDate: new Date("2026-08-01T00:00:00Z"),
+        values: []
+      });
+    }
+
+    const slots = tokenUsageSlots({
+      statistics: result,
+      granularity: e.TimeGranularity.Month,
+      firstDate: new Date("2026-06-01T00:00:00Z"),
+      lastDate: new Date("2026-08-31T23:59:59Z")
+    });
+
+    expect(slots).toHaveLength(3);
+    expect(slots.every((slot) => Object.values(slot.values).every((value) => value === 0))).toBe(true);
   });
 });
 
