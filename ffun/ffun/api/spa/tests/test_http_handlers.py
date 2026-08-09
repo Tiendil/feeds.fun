@@ -1,17 +1,22 @@
 import datetime
 from decimal import Decimal
+from typing import cast
 
 import pytest
+from pytest_mock import MockerFixture
 
 from ffun.api.spa import entities
 from ffun.api.spa.http_handlers import (
     _external_feeds,
     api_get_feeds,
     api_get_feeds_by_ids,
+    api_get_product_state,
     api_get_resource_statistics,
 )
 from ffun.core import utils
+from ffun.core.errors import APIError
 from ffun.domain.entities import UserId
+from ffun.entitlements import errors as en_errors
 from ffun.feeds.entities import Feed
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
@@ -109,6 +114,55 @@ class TestApiGetFeedsByIds:
         )
 
         assert response.feeds == []
+
+
+class TestApiGetProductState:
+    @pytest.mark.asyncio
+    async def test_success(self, internal_user_id: UserId) -> None:
+        response = await api_get_product_state(entities.GetProductStateRequest(), User(id=internal_user_id))
+
+        assert response.subscriptions == []
+        assert response.entitlements == {
+            kind: entities.ProductStateEntitlement(
+                granted=False,
+                value=None,
+                startsAt=None,
+                expiresAt=None,
+            )
+            for kind in entities.EntitlementKind
+        }
+        assert {kind: (token.limit, token.balance) for kind, token in response.tokens.items()} == {
+            kind: (None, 0) for kind in entities.TokenKind
+        }
+
+        for kind in (entities.TokenKind.day, entities.TokenKind.month):
+            token = response.tokens[kind]
+            assert token.periodStartsAt is not None
+            assert token.periodEndsAt is not None
+            assert token.periodStartsAt < token.periodEndsAt
+
+        assert response.tokens[entities.TokenKind.lifetime].periodStartsAt is None
+        assert response.tokens[entities.TokenKind.lifetime].periodEndsAt is None
+
+    @pytest.mark.asyncio
+    async def test_invalid_stored_entitlement(self, internal_user_id: UserId, mocker: MockerFixture) -> None:
+        error = en_errors.InvalidStoredEntitlement(entity_kind="effective_entitlement_interval")
+        resources_by_identity: dict[object, object] = {}
+        mocker.patch(
+            "ffun.api.spa.http_handlers.en_domain.get_entitlements",
+            side_effect=error,
+        )
+        mocker.patch(
+            "ffun.api.spa.http_handlers.r_domain.load_resources",
+            return_value=resources_by_identity,
+        )
+
+        with pytest.raises(APIError) as exception_info:
+            await api_get_product_state(entities.GetProductStateRequest(), User(id=internal_user_id))
+
+        error_attributes = cast(dict[str, str | int | None], vars(exception_info.value))
+        assert error_attributes["code"] == "invalid_stored_entitlement"
+        assert error_attributes["message"] == "Stored entitlement data is invalid."
 
 
 class TestApiGetResourceStatistics:

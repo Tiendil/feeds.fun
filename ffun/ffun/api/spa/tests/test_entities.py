@@ -20,7 +20,7 @@ from ffun.api.spa.entities import (
     TokenKind,
 )
 from ffun.core import utils
-from ffun.domain.domain import new_entry_id
+from ffun.domain.domain import new_entry_id, new_user_id
 from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_uid
 from ffun.entitlements.entities import EntitlementKindId
 from ffun.entitlements.tests.make import make_effective_entitlement_interval
@@ -153,7 +153,7 @@ class TestEntitlementKind:
             (EntitlementKind.lifetime_tokens, EntitlementKindId.lifetime_tokens),
         ],
     )
-    def test_to_internal(self, kind: EntitlementKind, internal_kind: EntitlementKindId) -> None:
+    def test_to_internal__supported_kinds(self, kind: EntitlementKind, internal_kind: EntitlementKindId) -> None:
         assert kind.to_internal() == internal_kind
 
     @pytest.mark.parametrize(
@@ -164,7 +164,7 @@ class TestEntitlementKind:
             (EntitlementKind.lifetime_tokens, EntitlementKindId.lifetime_tokens),
         ],
     )
-    def test_from_internal(self, kind: EntitlementKind, internal_kind: EntitlementKindId) -> None:
+    def test_from_internal__supported_kinds(self, kind: EntitlementKind, internal_kind: EntitlementKindId) -> None:
         assert EntitlementKind.from_internal(internal_kind) == kind
 
 
@@ -199,6 +199,27 @@ class TestProductStateEntitlement:
 
 
 class TestProductStateToken:
+    def test_from_internal__no_entitlement(self) -> None:
+        resource = r_entities.Resource(
+            user_id=new_user_id(),
+            kind=Resource.day_token_usage,
+            interval_started_at=utils.now(),
+            used=3,
+            reserved=2,
+        )
+
+        assert ProductStateToken.from_internal(
+            entitlement=None,
+            resource=resource,
+            period_started_at=None,
+            period_ends_at=None,
+        ) == ProductStateToken(
+            limit=None,
+            balance=0,
+            periodStartsAt=None,
+            periodEndsAt=None,
+        )
+
     def test_from_internal__periodic(self) -> None:
         period_started_at = utils.now()
         period_ends_at = period_started_at + datetime.timedelta(days=1)
@@ -219,6 +240,30 @@ class TestProductStateToken:
         ) == ProductStateToken(
             limit=10,
             balance=5,
+            periodStartsAt=period_started_at,
+            periodEndsAt=period_ends_at,
+        )
+
+    def test_from_internal__over_consumed(self) -> None:
+        period_started_at = utils.now()
+        period_ends_at = period_started_at + datetime.timedelta(days=1)
+        entitlement = make_effective_entitlement_interval(kind_id=EntitlementKindId.day_tokens, value=10)
+        resource = r_entities.Resource(
+            user_id=entitlement.user_id,
+            kind=Resource.day_token_usage,
+            interval_started_at=period_started_at,
+            used=8,
+            reserved=3,
+        )
+
+        assert ProductStateToken.from_internal(
+            entitlement=entitlement,
+            resource=resource,
+            period_started_at=period_started_at,
+            period_ends_at=period_ends_at,
+        ) == ProductStateToken(
+            limit=10,
+            balance=0,
             periodStartsAt=period_started_at,
             periodEndsAt=period_ends_at,
         )
@@ -255,7 +300,7 @@ class TestTokenKind:
             (TokenKind.lifetime, Credit.lifetime),
         ],
     )
-    def test_from_internal(self, kind: TokenKind, internal_kind: Credit) -> None:
+    def test_from_internal__supported_kinds(self, kind: TokenKind, internal_kind: Credit) -> None:
         assert TokenKind.from_internal(internal_kind) == kind
 
 

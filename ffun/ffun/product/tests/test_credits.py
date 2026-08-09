@@ -39,28 +39,29 @@ def test_credit_definitions__reservation_priority() -> None:
     )
 
 
-def test_credit_usage_windows() -> None:
-    at = datetime.datetime(2025, 2, 15, 12, 30, tzinfo=datetime.UTC)
-    day_started_at = datetime.datetime(2025, 2, 15, tzinfo=datetime.UTC)
-    month_started_at = datetime.datetime(2025, 2, 1, tzinfo=datetime.UTC)
+class TestCreditUsageWindows:
+    def test_success(self) -> None:
+        at = datetime.datetime(2025, 2, 15, 12, 30, tzinfo=datetime.UTC)
+        day_started_at = datetime.datetime(2025, 2, 15, tzinfo=datetime.UTC)
+        month_started_at = datetime.datetime(2025, 2, 1, tzinfo=datetime.UTC)
 
-    assert credits.credit_usage_windows(at) == (
-        CreditUsageWindow(
-            definition=credits.CREDIT_DEFINITIONS[0],
-            resource_interval_started_at=day_started_at,
-            period_started_at=day_started_at,
-            period_ends_at=datetime.datetime(2025, 2, 16, tzinfo=datetime.UTC),
-        ),
-        CreditUsageWindow(
-            definition=credits.CREDIT_DEFINITIONS[1],
-            resource_interval_started_at=month_started_at,
-            period_started_at=month_started_at,
-            period_ends_at=datetime.datetime(2025, 3, 1, tzinfo=datetime.UTC),
-        ),
-        CreditUsageWindow(
-            definition=credits.CREDIT_DEFINITIONS[2],
-            resource_interval_started_at=LIFETIME_INTERVAL_START_MARKER,
-            period_started_at=None,
-            period_ends_at=None,
-        ),
-    )
+        assert credits.credit_usage_windows(at) == (
+            CreditUsageWindow(
+                definition=credits.CREDIT_DEFINITIONS[0],
+                resource_interval_started_at=day_started_at,
+                period_started_at=day_started_at,
+                period_ends_at=datetime.datetime(2025, 2, 16, tzinfo=datetime.UTC),
+            ),
+            CreditUsageWindow(
+                definition=credits.CREDIT_DEFINITIONS[1],
+                resource_interval_started_at=month_started_at,
+                period_started_at=month_started_at,
+                period_ends_at=datetime.datetime(2025, 3, 1, tzinfo=datetime.UTC),
+            ),
+            CreditUsageWindow(
+                definition=credits.CREDIT_DEFINITIONS[2],
+                resource_interval_started_at=LIFETIME_INTERVAL_START_MARKER,
+                period_started_at=None,
+                period_ends_at=None,
+            ),
+        )

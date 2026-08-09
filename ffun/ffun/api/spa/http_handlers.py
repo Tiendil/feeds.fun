@@ -20,6 +20,7 @@ from ffun.data_protection import domain as dp_domain
 from ffun.domain.entities import FeedId, TagId, TagUid, UserId
 from ffun.domain.urls import url_to_uid
 from ffun.entitlements import domain as en_domain
+from ffun.entitlements import errors as en_errors
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import domain as fc_domain
@@ -345,10 +346,16 @@ async def api_get_product_state(
         for window, resource_identity in zip(credit_windows, resource_identities, strict=True)
     }
 
-    entitlements_by_user, resources_by_identity = await asyncio.gather(
-        en_domain.get_entitlements([user.id], list(internal_entitlement_kinds.values())),
-        r_domain.load_resources(resource_identities),
-    )
+    try:
+        entitlements_by_user, resources_by_identity = await asyncio.gather(
+            en_domain.get_entitlements([user.id], list(internal_entitlement_kinds.values())),
+            r_domain.load_resources(resource_identities),
+        )
+    except en_errors.InvalidStoredEntitlement as error:
+        raise APIError(
+            code="invalid_stored_entitlement",
+            message="Stored entitlement data is invalid.",
+        ) from error
 
     internal_entitlements = entitlements_by_user[user.id]
     entitlements = {

@@ -63,6 +63,7 @@ depends_on = [
     "ffun.feeds_collections",
     "ffun.librarian",
     "ffun.loader",
+    "ffun.product",
 ]
 layer = "web_application"
 
@@ -72,6 +73,7 @@ depends_on = [
     "ffun.application",
     "ffun.auth",
     "ffun.data_protection",
+    "ffun.entitlements",
     "ffun.feeds",
     "ffun.feeds_collections",
     "ffun.feeds_discoverer",
@@ -83,6 +85,7 @@ depends_on = [
     "ffun.meta",
     "ffun.ontology",
     "ffun.parsers",
+    "ffun.product",
     "ffun.resources",
     "ffun.scores",
     "ffun.tags",
@@ -190,6 +193,7 @@ depends_on = [
     "ffun.google",
     "ffun.library",
     "ffun.openai",
+    "ffun.product",
     "ffun.resources",
     "ffun.user_settings",
 ]
@@ -214,6 +218,7 @@ depends_on = [
     "ffun.markers",
     "ffun.queues",
     "ffun.resources",
+    "ffun.product",
     # TODO: temporary dependency for the legacy user API-key visibility bypass.
     #       Remove together with the old API-key consumption logic.
     "ffun.user_settings",
@@ -295,12 +300,19 @@ layer = "users"
 
 [[modules]]
 path = "ffun.product"
-utility = true
 depends_on = [
     "ffun.entitlements",
     "ffun.user_settings",
 ]
 layer = "product"
+
+[[modules]]
+path = "ffun.entitlements"
+depends_on = [
+    "ffun.audit",
+    "ffun.locks",
+]
+layer = "users"
 
 [[modules]]
 path = "ffun.users"
