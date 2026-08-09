@@ -3,13 +3,19 @@ import datetime
 import pytest
 
 from ffun.domain.entities import UserId
-from ffun.resources.entities import ResourceIdentity, ResourceKey, ResourceStatisticsInterval, ResourceStatisticsSeries
+from ffun.resources.entities import (
+    ResourceIdentity,
+    ResourceKey,
+    ResourceKind,
+    ResourceStatisticsInterval,
+    ResourceStatisticsSeries,
+)
 
 
 class TestResourceIdentity:
     def test_single__constructs_identity(self, internal_user_id: UserId) -> None:
         resource_key = ResourceKey(
-            kind=1,
+            kind=ResourceKind(1),
             interval_started_at=datetime.datetime.now(tz=datetime.UTC),
         )
 
@@ -24,8 +30,11 @@ class TestResourceIdentity:
     def test_for_user__constructs_identities(self, internal_user_id: UserId) -> None:
         interval_started_at = datetime.datetime.now(tz=datetime.UTC)
         resource_keys = [
-            ResourceKey(kind=1, interval_started_at=interval_started_at),
-            ResourceKey(kind=2, interval_started_at=interval_started_at + datetime.timedelta(days=1)),
+            ResourceKey(kind=ResourceKind(1), interval_started_at=interval_started_at),
+            ResourceKey(
+                kind=ResourceKind(2),
+                interval_started_at=interval_started_at + datetime.timedelta(days=1),
+            ),
         ]
 
         assert ResourceIdentity.for_user(internal_user_id, resource_keys) == [
@@ -46,7 +55,7 @@ class TestResourceIdentity:
         another_internal_user_id: UserId,
     ) -> None:
         resource_key = ResourceKey(
-            kind=1,
+            kind=ResourceKind(1),
             interval_started_at=datetime.datetime.now(tz=datetime.UTC),
         )
         user_ids = [internal_user_id, another_internal_user_id]
@@ -62,7 +71,7 @@ class TestResourceIdentity:
 
     def test_for_resource__empty_user_ids(self) -> None:
         resource_key = ResourceKey(
-            kind=1,
+            kind=ResourceKind(1),
             interval_started_at=datetime.datetime.now(tz=datetime.UTC),
         )
 
@@ -76,8 +85,11 @@ class TestResourceIdentity:
         interval_started_at = datetime.datetime.now(tz=datetime.UTC)
         user_ids = [internal_user_id, another_internal_user_id]
         resource_keys = [
-            ResourceKey(kind=1, interval_started_at=interval_started_at),
-            ResourceKey(kind=2, interval_started_at=interval_started_at + datetime.timedelta(days=1)),
+            ResourceKey(kind=ResourceKind(1), interval_started_at=interval_started_at),
+            ResourceKey(
+                kind=ResourceKind(2),
+                interval_started_at=interval_started_at + datetime.timedelta(days=1),
+            ),
         ]
 
         assert ResourceIdentity.cartesian_product(user_ids, iter(resource_keys)) == [
@@ -92,7 +104,7 @@ class TestResourceIdentity:
 
     def test_cartesian_product__empty_user_ids(self) -> None:
         resource_key = ResourceKey(
-            kind=1,
+            kind=ResourceKind(1),
             interval_started_at=datetime.datetime.now(tz=datetime.UTC),
         )
 

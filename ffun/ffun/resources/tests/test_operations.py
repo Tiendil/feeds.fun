@@ -242,7 +242,10 @@ class TestInitializeResources:
             [internal_user_id, another_internal_user_id],
             [
                 ResourceKey(kind=_kind, interval_started_at=interval_started_at),
-                ResourceKey(kind=_kind + 1, interval_started_at=interval_started_at + datetime.timedelta(days=1)),
+                ResourceKey(
+                    kind=ResourceKind(_kind + 1),
+                    interval_started_at=interval_started_at + datetime.timedelta(days=1),
+                ),
             ],
         )
 
@@ -351,7 +354,7 @@ class TestLoadResources:
     ) -> None:
         first_resource_key = ResourceKey(kind=_kind, interval_started_at=interval_started_at)
         second_resource_key = ResourceKey(
-            kind=_kind + 1,
+            kind=ResourceKind(_kind + 1),
             interval_started_at=interval_started_at + datetime.timedelta(days=1),
         )
         first_resource_identity = ResourceIdentity.single(internal_user_id, first_resource_key)[0]

@@ -23,6 +23,7 @@ Terms defined in this section are stable project vocabulary. Project artifacts M
 - `audit record` - append-only durable record of a business change or event, including its actor and subject entities.
 - `backend` - Python application in `ffun/ffun`.
 - `frontend` - Vue application in `site/src`.
+- `architecture test` - a test that verifies cross-cutting structural rules or conventions defined by an architecture specification.
 - `development helper` - Docker-backed command in `bin`.
 - `Donna workflow` - workflow artifact under `.donna/project/work` or `.donna/session`.
 - `specification` - Markdown document under `spec` that describes expected project behavior, structure, terminology, or documentation rules.

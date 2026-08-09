@@ -22,7 +22,6 @@ The following topics are out of scope:
 
 - `unit test` - a test focused on one frontend module or one small group of closely related functions, components, or stores.
 - `integration test` - a test that checks multiple frontend modules through a public boundary such as component rendering, store behavior, router behavior, or API client behavior.
-- `architecture test` - a cross-cutting test that verifies structural rules spanning multiple frontend modules.
 - `fixture` - test data or setup used by one or more tests.
 - `DOM test` - a test that uses the Vitest `jsdom` environment to verify browser-facing behavior.
 - `component test` - a test that mounts or renders a Vue component to verify its behavior.

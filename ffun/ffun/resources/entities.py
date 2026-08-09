@@ -13,13 +13,13 @@ ResourceKind = NewType("ResourceKind", int)
 
 
 class ResourceKey(BaseEntity):
-    kind: int
+    kind: ResourceKind
     interval_started_at: datetime.datetime
 
 
 class ResourceIdentity(BaseEntity):
     user_id: UserId
-    kind: int
+    kind: ResourceKind
     interval_started_at: datetime.datetime
 
     @staticmethod

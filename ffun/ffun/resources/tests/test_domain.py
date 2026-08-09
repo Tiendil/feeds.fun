@@ -12,6 +12,7 @@ from ffun.resources.domain import load_resource
 from ffun.resources.entities import (
     ResourceIdentity,
     ResourceKey,
+    ResourceKind,
     ResourceReservation,
     ResourceReservationLimit,
     ResourceReservationOption,
@@ -28,7 +29,7 @@ class TestLoadResources:
 
 class TestLoadResource:
     @pytest.mark.asyncio
-    async def test_initialized(self, internal_user_id: UserId, resource_kind: int) -> None:
+    async def test_initialized(self, internal_user_id: UserId, resource_kind: ResourceKind) -> None:
         interval_started_at = month_interval_start()
 
         await initialize_resources(

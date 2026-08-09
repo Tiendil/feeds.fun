@@ -166,9 +166,6 @@ It MUST lazily initialize missing records.
 Repeated resource identities MUST correspond to one result entry.
 An empty resource-identity collection MUST return an empty mapping.
 
-The resource identity entity MUST provide constructors for one user and resource, one user and multiple resource keys,
-multiple users and one resource key, and the Cartesian product of users and resource keys.
-
 The single current-resource query MUST provide the same result as a one-resource-identity batch query.
 
 ### History and aggregate queries

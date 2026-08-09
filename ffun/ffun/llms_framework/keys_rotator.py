@@ -153,7 +153,7 @@ async def _get_user_key_infos(  # pylint: disable=R0914
     )
 
     resource_key = r_entities.ResourceKey(
-        kind=AppResource.tokens_cost,
+        kind=r_entities.ResourceKind(AppResource.tokens_cost),
         interval_started_at=interval_started_at,
     )
     resource_identities_by_user = {

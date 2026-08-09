@@ -160,7 +160,7 @@ async def try_to_reserve(
 
     resource_identities = ResourceIdentity.for_resource(
         user_ids,
-        ResourceKey(kind=kind, interval_started_at=interval_started_at),
+        ResourceKey(kind=ResourceKind(kind), interval_started_at=interval_started_at),
     )
     await initialize_resources(execute, resource_identities)
 

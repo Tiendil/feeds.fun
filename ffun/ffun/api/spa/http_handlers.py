@@ -335,7 +335,7 @@ async def api_get_product_state(
         user.id,
         [
             r_entities.ResourceKey(
-                kind=window.definition.resource_kind,
+                kind=r_entities.ResourceKind(window.definition.resource_kind),
                 interval_started_at=window.resource_interval_started_at,
             )
             for window in credit_windows

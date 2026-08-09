@@ -1,5 +1,5 @@
 source_roots = ["."]
-root_module = "ignore"
+root_module = "forbid"
 ignore_type_checking_imports = true
 # TODO: make forbid_circular_dependencies true and fix circular dependencies.
 forbid_circular_dependencies = false

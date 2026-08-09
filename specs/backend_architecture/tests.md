@@ -22,7 +22,6 @@ The following topics are out of scope:
 - `unit test` - a test focused on one backend module or one small group of closely related functions or entities.
 - `integration test` - a test that checks multiple backend modules through a public boundary such as API handler execution, application setup, parser execution, feed loading, or command execution.
 - `fixture` - test data or setup used by one or more tests.
-- `architecture test` - a test that verifies a backend-wide convention from an architecture specification.
 
 ## General principles
 

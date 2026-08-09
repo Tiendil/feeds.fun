@@ -8,6 +8,7 @@ from ffun.resources.entities import (
     Resource,
     ResourceIdentity,
     ResourceKey,
+    ResourceKind,
     ResourceReservation,
     ResourceReservationLimit,
     ResourceReservationOption,
@@ -22,7 +23,7 @@ count_total_resources_per_user = operations.count_total_resources_per_user
 
 
 async def load_resource(user_id: UserId, kind: int, interval_started_at: datetime.datetime) -> Resource:
-    resource_key = ResourceKey(kind=kind, interval_started_at=interval_started_at)
+    resource_key = ResourceKey(kind=ResourceKind(kind), interval_started_at=interval_started_at)
     resource_identities = ResourceIdentity.single(user_id, resource_key)
     resources = await load_resources(resource_identities)
     return resources[resource_identities[0]]

@@ -65,3 +65,15 @@ class TestCreditUsageWindows:
                 period_ends_at=None,
             ),
         )
+
+    def test_year_boundary(self) -> None:
+        at = datetime.datetime(2025, 12, 31, 23, 59, tzinfo=datetime.UTC)
+
+        windows = credits.credit_usage_windows(at)
+
+        assert windows[0].resource_interval_started_at == datetime.datetime(2025, 12, 31, tzinfo=datetime.UTC)
+        assert windows[0].period_started_at == datetime.datetime(2025, 12, 31, tzinfo=datetime.UTC)
+        assert windows[0].period_ends_at == datetime.datetime(2026, 1, 1, tzinfo=datetime.UTC)
+        assert windows[1].resource_interval_started_at == datetime.datetime(2025, 12, 1, tzinfo=datetime.UTC)
+        assert windows[1].period_started_at == datetime.datetime(2025, 12, 1, tzinfo=datetime.UTC)
+        assert windows[1].period_ends_at == datetime.datetime(2026, 1, 1, tzinfo=datetime.UTC)
