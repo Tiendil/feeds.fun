@@ -296,7 +296,10 @@ layer = "users"
 [[modules]]
 path = "ffun.product"
 utility = true
-depends_on = ["ffun.user_settings"]
+depends_on = [
+    "ffun.entitlements",
+    "ffun.user_settings",
+]
 layer = "product"
 
 [[modules]]

@@ -12,6 +12,8 @@ from ffun.resources import errors
 from ffun.resources.domain import load_resource
 from ffun.resources.entities import (
     Resource,
+    ResourceIdentity,
+    ResourceKey,
     ResourceKind,
     ResourceReservation,
     ResourceReservationLimit,
@@ -236,45 +238,55 @@ class TestInitializeResources:
     async def test_new_records(
         self, internal_user_id: UserId, another_internal_user_id: UserId, interval_started_at: datetime.datetime
     ) -> None:
-        user_ids = [internal_user_id, another_internal_user_id]
+        resource_identities = ResourceIdentity.cartesian_product(
+            [internal_user_id, another_internal_user_id],
+            [
+                ResourceKey(kind=_kind, interval_started_at=interval_started_at),
+                ResourceKey(kind=_kind + 1, interval_started_at=interval_started_at + datetime.timedelta(days=1)),
+            ],
+        )
 
-        async with TableSizeDelta("r_resources", delta=2):
-            await initialize_resources(execute, user_ids=user_ids, kind=_kind, interval_started_at=interval_started_at)
+        async with TableSizeDelta("r_resources", delta=4):
+            await initialize_resources(execute, resource_identities)
 
         async with TableSizeNotChanged("r_resources"):
-            resources = await load_resources(user_ids=user_ids, kind=_kind, interval_started_at=interval_started_at)
+            resources = await load_resources(resource_identities)
 
-        assert set(resources) == set(user_ids)
+        assert set(resources) == set(resource_identities)
 
-        for user_id, resource in resources.items():
-            assert resource.user_id == user_id
-            assert resource.kind == _kind
-            assert resource.interval_started_at == interval_started_at
+        for resource_identity, resource in resources.items():
+            assert resource.user_id == resource_identity.user_id
+            assert resource.kind == resource_identity.kind
+            assert resource.interval_started_at == resource_identity.interval_started_at
             assert resource.used == 0
             assert resource.reserved == 0
 
     @pytest.mark.asyncio
-    async def test_empty_user_ids(self, interval_started_at: datetime.datetime) -> None:
+    async def test_empty_resource_identities(self) -> None:
         async with TableSizeNotChanged("r_resources"):
-            await initialize_resources(execute, user_ids=[], kind=_kind, interval_started_at=interval_started_at)
+            await initialize_resources(execute, [])
 
     @pytest.mark.asyncio
-    async def test_duplicate_user_ids(self, internal_user_id: UserId, interval_started_at: datetime.datetime) -> None:
+    async def test_duplicate_resource_identities(
+        self, internal_user_id: UserId, interval_started_at: datetime.datetime
+    ) -> None:
+        resource_key = ResourceKey(kind=_kind, interval_started_at=interval_started_at)
+        resource_identity = ResourceIdentity.single(internal_user_id, resource_key)[0]
+
         async with TableSizeDelta("r_resources", delta=1):
-            await initialize_resources(
-                execute,
-                user_ids=[internal_user_id, internal_user_id],
-                kind=_kind,
-                interval_started_at=interval_started_at,
-            )
+            await initialize_resources(execute, [resource_identity, resource_identity])
 
     @pytest.mark.asyncio
-    async def test_new_and_existing_user_ids(
+    async def test_new_and_existing_resource_identities(
         self, internal_user_id: UserId, another_internal_user_id: UserId, interval_started_at: datetime.datetime
     ) -> None:
-        await initialize_resources(
-            execute, user_ids=[internal_user_id], kind=_kind, interval_started_at=interval_started_at
+        resource_key = ResourceKey(kind=_kind, interval_started_at=interval_started_at)
+        resource_identities = ResourceIdentity.for_resource(
+            [internal_user_id, another_internal_user_id],
+            resource_key,
         )
+
+        await initialize_resources(execute, [resource_identities[0]])
         await try_to_reserve(
             execute,
             user_limits=[ResourceReservationLimit(user_id=internal_user_id, limit=100)],
@@ -284,29 +296,21 @@ class TestInitializeResources:
         )
 
         async with TableSizeDelta("r_resources", delta=1):
-            await initialize_resources(
-                execute,
-                user_ids=[internal_user_id, another_internal_user_id],
-                kind=_kind,
-                interval_started_at=interval_started_at,
-            )
+            await initialize_resources(execute, resource_identities)
 
-        resources = await load_resources(
-            user_ids=[internal_user_id, another_internal_user_id],
-            kind=_kind,
-            interval_started_at=interval_started_at,
-        )
+        resources = await load_resources(resource_identities)
 
-        assert resources[internal_user_id].reserved == 1
-        assert resources[another_internal_user_id].reserved == 0
+        assert resources[resource_identities[0]].reserved == 1
+        assert resources[resource_identities[1]].reserved == 0
 
     @pytest.mark.asyncio
     async def test_do_not_reinitialized_if_exists(
         self, internal_user_id: UserId, interval_started_at: datetime.datetime
     ) -> None:
-        await initialize_resources(
-            execute, user_ids=[internal_user_id], kind=_kind, interval_started_at=interval_started_at
-        )
+        resource_key = ResourceKey(kind=_kind, interval_started_at=interval_started_at)
+        resource_identity = ResourceIdentity.single(internal_user_id, resource_key)[0]
+
+        await initialize_resources(execute, [resource_identity])
 
         await try_to_reserve(
             execute,
@@ -317,9 +321,7 @@ class TestInitializeResources:
         )
 
         async with TableSizeNotChanged("r_resources"):
-            await initialize_resources(
-                execute, user_ids=[internal_user_id], kind=_kind, interval_started_at=interval_started_at
-            )
+            await initialize_resources(execute, [resource_identity])
 
         resource = await load_resource(user_id=internal_user_id, kind=_kind, interval_started_at=interval_started_at)
 
@@ -327,26 +329,35 @@ class TestInitializeResources:
 
 
 class TestLoadResources:
-    """Most functionality are tested in other classes."""
+    @pytest.mark.asyncio
+    async def test_empty_resource_identities(self) -> None:
+        assert await load_resources([]) == {}
 
     @pytest.mark.asyncio
-    async def test_duplicate_user_ids(self, internal_user_id: UserId, interval_started_at: datetime.datetime) -> None:
+    async def test_duplicate_resource_identities(
+        self, internal_user_id: UserId, interval_started_at: datetime.datetime
+    ) -> None:
+        resource_key = ResourceKey(kind=_kind, interval_started_at=interval_started_at)
+        resource_identity = ResourceIdentity.single(internal_user_id, resource_key)[0]
+
         async with TableSizeDelta("r_resources", delta=1):
-            resources = await load_resources(
-                user_ids=[internal_user_id, internal_user_id],
-                kind=_kind,
-                interval_started_at=interval_started_at,
-            )
+            resources = await load_resources([resource_identity, resource_identity])
 
-        assert list(resources) == [internal_user_id]
+        assert list(resources) == [resource_identity]
 
     @pytest.mark.asyncio
-    async def test_initialize_if_not_found(
+    async def test_initialize_requested_identities_if_not_found(
         self, internal_user_id: UserId, another_internal_user_id: UserId, interval_started_at: datetime.datetime
     ) -> None:
-        await initialize_resources(
-            execute, user_ids=[internal_user_id], kind=_kind, interval_started_at=interval_started_at
+        first_resource_key = ResourceKey(kind=_kind, interval_started_at=interval_started_at)
+        second_resource_key = ResourceKey(
+            kind=_kind + 1,
+            interval_started_at=interval_started_at + datetime.timedelta(days=1),
         )
+        first_resource_identity = ResourceIdentity.single(internal_user_id, first_resource_key)[0]
+        second_resource_identity = ResourceIdentity.single(another_internal_user_id, second_resource_key)[0]
+
+        await initialize_resources(execute, [first_resource_identity])
 
         await try_to_reserve(
             execute,
@@ -357,15 +368,12 @@ class TestLoadResources:
         )
 
         async with TableSizeDelta("r_resources", delta=1):
-            resources = await load_resources(
-                user_ids=[internal_user_id, another_internal_user_id],
-                kind=_kind,
-                interval_started_at=interval_started_at,
-            )
+            resources = await load_resources([first_resource_identity, second_resource_identity])
 
         assert len(resources) == 2
+        assert set(resources) == {first_resource_identity, second_resource_identity}
 
-        resource_1 = resources[internal_user_id]
+        resource_1 = resources[first_resource_identity]
 
         assert resource_1.user_id == internal_user_id
         assert resource_1.kind == _kind
@@ -373,11 +381,11 @@ class TestLoadResources:
         assert resource_1.used == 0
         assert resource_1.reserved == 13
 
-        resource_2 = resources[another_internal_user_id]
+        resource_2 = resources[second_resource_identity]
 
         assert resource_2.user_id == another_internal_user_id
-        assert resource_2.kind == _kind
-        assert resource_2.interval_started_at == interval_started_at
+        assert resource_2.kind == second_resource_key.kind
+        assert resource_2.interval_started_at == second_resource_key.interval_started_at
         assert resource_2.used == 0
         assert resource_2.reserved == 0
 
@@ -518,11 +526,12 @@ class TestTryToReserve:
             amount=13,
         )
 
-        resources = await load_resources(
-            user_ids=[internal_user_id, another_internal_user_id],
-            kind=_kind,
-            interval_started_at=interval_started_at,
+        resource_key = ResourceKey(kind=_kind, interval_started_at=interval_started_at)
+        resource_identities = ResourceIdentity.for_resource(
+            [internal_user_id, another_internal_user_id],
+            resource_key,
         )
+        resources = await load_resources(resource_identities)
 
         assert result == [
             ResourceReservation(
@@ -532,8 +541,8 @@ class TestTryToReserve:
                 amount=13,
             )
         ]
-        assert resources[internal_user_id].reserved == 13
-        assert resources[another_internal_user_id].reserved == 0
+        assert resources[resource_identities[0]].reserved == 13
+        assert resources[resource_identities[1]].reserved == 0
 
     @pytest.mark.asyncio
     async def test_successful_reservations_preserve_input_order(

@@ -2,7 +2,104 @@ import datetime
 
 import pytest
 
-from ffun.resources.entities import ResourceStatisticsInterval, ResourceStatisticsSeries
+from ffun.domain.entities import UserId
+from ffun.resources.entities import ResourceIdentity, ResourceKey, ResourceStatisticsInterval, ResourceStatisticsSeries
+
+
+class TestResourceIdentity:
+    def test_single__constructs_identity(self, internal_user_id: UserId) -> None:
+        resource_key = ResourceKey(
+            kind=1,
+            interval_started_at=datetime.datetime.now(tz=datetime.UTC),
+        )
+
+        assert ResourceIdentity.single(internal_user_id, resource_key) == [
+            ResourceIdentity(
+                user_id=internal_user_id,
+                kind=resource_key.kind,
+                interval_started_at=resource_key.interval_started_at,
+            )
+        ]
+
+    def test_for_user__constructs_identities(self, internal_user_id: UserId) -> None:
+        interval_started_at = datetime.datetime.now(tz=datetime.UTC)
+        resource_keys = [
+            ResourceKey(kind=1, interval_started_at=interval_started_at),
+            ResourceKey(kind=2, interval_started_at=interval_started_at + datetime.timedelta(days=1)),
+        ]
+
+        assert ResourceIdentity.for_user(internal_user_id, resource_keys) == [
+            ResourceIdentity(
+                user_id=internal_user_id,
+                kind=resource_key.kind,
+                interval_started_at=resource_key.interval_started_at,
+            )
+            for resource_key in resource_keys
+        ]
+
+    def test_for_user__empty_resource_keys(self, internal_user_id: UserId) -> None:
+        assert ResourceIdentity.for_user(internal_user_id, []) == []
+
+    def test_for_resource__constructs_identities(
+        self,
+        internal_user_id: UserId,
+        another_internal_user_id: UserId,
+    ) -> None:
+        resource_key = ResourceKey(
+            kind=1,
+            interval_started_at=datetime.datetime.now(tz=datetime.UTC),
+        )
+        user_ids = [internal_user_id, another_internal_user_id]
+
+        assert ResourceIdentity.for_resource(user_ids, resource_key) == [
+            ResourceIdentity(
+                user_id=user_id,
+                kind=resource_key.kind,
+                interval_started_at=resource_key.interval_started_at,
+            )
+            for user_id in user_ids
+        ]
+
+    def test_for_resource__empty_user_ids(self) -> None:
+        resource_key = ResourceKey(
+            kind=1,
+            interval_started_at=datetime.datetime.now(tz=datetime.UTC),
+        )
+
+        assert ResourceIdentity.for_resource([], resource_key) == []
+
+    def test_cartesian_product__constructs_identities(
+        self,
+        internal_user_id: UserId,
+        another_internal_user_id: UserId,
+    ) -> None:
+        interval_started_at = datetime.datetime.now(tz=datetime.UTC)
+        user_ids = [internal_user_id, another_internal_user_id]
+        resource_keys = [
+            ResourceKey(kind=1, interval_started_at=interval_started_at),
+            ResourceKey(kind=2, interval_started_at=interval_started_at + datetime.timedelta(days=1)),
+        ]
+
+        assert ResourceIdentity.cartesian_product(user_ids, iter(resource_keys)) == [
+            ResourceIdentity(
+                user_id=user_id,
+                kind=resource_key.kind,
+                interval_started_at=resource_key.interval_started_at,
+            )
+            for user_id in user_ids
+            for resource_key in resource_keys
+        ]
+
+    def test_cartesian_product__empty_user_ids(self) -> None:
+        resource_key = ResourceKey(
+            kind=1,
+            interval_started_at=datetime.datetime.now(tz=datetime.UTC),
+        )
+
+        assert ResourceIdentity.cartesian_product([], [resource_key]) == []
+
+    def test_cartesian_product__empty_resource_keys(self, internal_user_id: UserId) -> None:
+        assert ResourceIdentity.cartesian_product([internal_user_id], []) == []
 
 
 class TestResourceStatisticsInterval:

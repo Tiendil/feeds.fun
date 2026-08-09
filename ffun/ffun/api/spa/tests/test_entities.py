@@ -1,26 +1,33 @@
+import datetime
 from decimal import Decimal
 
 import pydantic
 import pytest
 
 from ffun.api.spa.entities import (
+    EntitlementKind,
     Feed,
     FeedInfo,
     Marker,
     MutableMarker,
+    ProductStateEntitlement,
+    ProductStateToken,
     RemoveMarkerRequest,
     ResourceKind,
     ResourceStatisticsInterval,
     ResourceStatisticsSeries,
     SetMarkerRequest,
+    TokenKind,
 )
 from ffun.core import utils
 from ffun.domain.domain import new_entry_id
 from ffun.domain.urls import str_to_absolute_url, str_to_feed_url, url_to_uid
+from ffun.entitlements.entities import EntitlementKindId
+from ffun.entitlements.tests.make import make_effective_entitlement_interval
 from ffun.feeds.entities import Feed as InternalFeed
 from ffun.feeds.entities import FeedError
 from ffun.parsers import entities as p_entities
-from ffun.product.entities import Resource
+from ffun.product.entities import Credit, Resource
 from ffun.resources import entities as r_entities
 
 
@@ -135,6 +142,121 @@ class TestRemoveMarkerRequest:
 
         with pytest.raises(pydantic.ValidationError):
             RemoveMarkerRequest.model_validate(payload)
+
+
+class TestEntitlementKind:
+    @pytest.mark.parametrize(
+        "kind, internal_kind",
+        [
+            (EntitlementKind.day_tokens, EntitlementKindId.day_tokens),
+            (EntitlementKind.month_tokens, EntitlementKindId.month_tokens),
+            (EntitlementKind.lifetime_tokens, EntitlementKindId.lifetime_tokens),
+        ],
+    )
+    def test_to_internal(self, kind: EntitlementKind, internal_kind: EntitlementKindId) -> None:
+        assert kind.to_internal() == internal_kind
+
+    @pytest.mark.parametrize(
+        "kind, internal_kind",
+        [
+            (EntitlementKind.day_tokens, EntitlementKindId.day_tokens),
+            (EntitlementKind.month_tokens, EntitlementKindId.month_tokens),
+            (EntitlementKind.lifetime_tokens, EntitlementKindId.lifetime_tokens),
+        ],
+    )
+    def test_from_internal(self, kind: EntitlementKind, internal_kind: EntitlementKindId) -> None:
+        assert EntitlementKind.from_internal(internal_kind) == kind
+
+
+class TestProductStateEntitlement:
+    def test_from_internal__not_granted(self) -> None:
+        assert ProductStateEntitlement.from_internal(None) == ProductStateEntitlement(
+            granted=False,
+            value=None,
+            startsAt=None,
+            expiresAt=None,
+        )
+
+    def test_from_internal__periodic(self) -> None:
+        entitlement = make_effective_entitlement_interval(kind_id=EntitlementKindId.day_tokens)
+
+        assert ProductStateEntitlement.from_internal(entitlement) == ProductStateEntitlement(
+            granted=True,
+            value=entitlement.value,
+            startsAt=entitlement.starts_at,
+            expiresAt=entitlement.expires_at,
+        )
+
+    def test_from_internal__lifetime(self) -> None:
+        entitlement = make_effective_entitlement_interval(kind_id=EntitlementKindId.lifetime_tokens)
+
+        assert ProductStateEntitlement.from_internal(entitlement) == ProductStateEntitlement(
+            granted=True,
+            value=entitlement.value,
+            startsAt=entitlement.starts_at,
+            expiresAt=None,
+        )
+
+
+class TestProductStateToken:
+    def test_from_internal__periodic(self) -> None:
+        period_started_at = utils.now()
+        period_ends_at = period_started_at + datetime.timedelta(days=1)
+        entitlement = make_effective_entitlement_interval(kind_id=EntitlementKindId.day_tokens, value=10)
+        resource = r_entities.Resource(
+            user_id=entitlement.user_id,
+            kind=Resource.day_token_usage,
+            interval_started_at=period_started_at,
+            used=3,
+            reserved=2,
+        )
+
+        assert ProductStateToken.from_internal(
+            entitlement=entitlement,
+            resource=resource,
+            period_started_at=period_started_at,
+            period_ends_at=period_ends_at,
+        ) == ProductStateToken(
+            limit=10,
+            balance=5,
+            periodStartsAt=period_started_at,
+            periodEndsAt=period_ends_at,
+        )
+
+    def test_from_internal__lifetime(self) -> None:
+        entitlement = make_effective_entitlement_interval(kind_id=EntitlementKindId.lifetime_tokens, value=10)
+        resource = r_entities.Resource(
+            user_id=entitlement.user_id,
+            kind=Resource.lifetime_token_usage,
+            interval_started_at=utils.now(),
+            used=3,
+            reserved=2,
+        )
+
+        assert ProductStateToken.from_internal(
+            entitlement=entitlement,
+            resource=resource,
+            period_started_at=None,
+            period_ends_at=None,
+        ) == ProductStateToken(
+            limit=None,
+            balance=5,
+            periodStartsAt=None,
+            periodEndsAt=None,
+        )
+
+
+class TestTokenKind:
+    @pytest.mark.parametrize(
+        "kind, internal_kind",
+        [
+            (TokenKind.day, Credit.day),
+            (TokenKind.month, Credit.month),
+            (TokenKind.lifetime, Credit.lifetime),
+        ],
+    )
+    def test_from_internal(self, kind: TokenKind, internal_kind: Credit) -> None:
+        assert TokenKind.from_internal(internal_kind) == kind
 
 
 class TestResourceKind:

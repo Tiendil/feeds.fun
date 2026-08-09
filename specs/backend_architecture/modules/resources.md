@@ -14,6 +14,8 @@ Resource-kind registries, resource units and conversions, accounting-interval se
 
 - `resource kind` - a caller-owned stable integer identifier for one independently accounted category of resource.
 - `resource interval` - an accounting period identified by its caller-supplied start time.
+- `resource key` - one caller-supplied resource kind and interval start used to address resource records for requested users.
+- `resource identity` - one exact user id, resource kind, and interval start tuple used to address a resource record.
 - `resource record` - used and reserved counters for one user, resource kind, and resource interval.
 - `reserved amount` - resource capacity provisionally claimed before final usage is known.
 - `used amount` - finalized resource consumption accumulated for a resource record.
@@ -158,12 +160,16 @@ An empty resource-kind collection MUST return an empty mapping.
 
 ### Current-resource queries
 
-The batch current-resource query MUST return one record for every distinct requested user for the selected kind and interval.
+The batch current-resource query MUST accept a collection of resource identities.
+It MUST return one record for every distinct requested resource identity.
 It MUST lazily initialize missing records.
-Repeated user ids MUST correspond to one result entry.
-An empty user collection MUST return an empty mapping.
+Repeated resource identities MUST correspond to one result entry.
+An empty resource-identity collection MUST return an empty mapping.
 
-The single current-resource query MUST provide the same result as a one-user batch query.
+The resource identity entity MUST provide constructors for one user and resource, one user and multiple resource keys,
+multiple users and one resource key, and the Cartesian product of users and resource keys.
+
+The single current-resource query MUST provide the same result as a one-resource-identity batch query.
 
 ### History and aggregate queries
 
@@ -177,7 +183,7 @@ It MUST group results by user and include only users with records of that kind.
 
 The public interface MUST provide these operations:
 
-- `load_resources` loads current records for multiple users, one kind, and one interval.
+- `load_resources` loads current records selected by resource identities.
 - `load_resource` loads one current record.
 - `try_to_reserve_in_order` applies ordered options and per-user limits and returns successful reservations.
 - `convert_reserved_to_used` converts or releases captured reservations atomically.
@@ -185,7 +191,7 @@ The public interface MUST provide these operations:
 - `load_resource_statistics` loads one user's complete dense consumption series for multiple kinds at day, month, or year granularity.
 - `count_total_resources_per_user` returns used-only totals grouped by user for a kind.
 
-`load_resources` MUST return a mapping keyed by the semantic user identifiers supplied by callers.
+`load_resources` MUST return a mapping keyed by the resource identities supplied by callers.
 Each current-resource result MUST contain user id, kind, interval start, used, reserved, and derived total values.
 
 `try_to_reserve_in_order` MUST accept the semantic option and specification fields defined by the reservation contract and return the semantic reservation-result fields defined there.

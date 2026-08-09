@@ -22,6 +22,8 @@ from ffun.domain.entities import (
     UnknownUrl,
     UserId,
 )
+from ffun.entitlements import domain as en_domain
+from ffun.entitlements import entities as en_entities
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import entities as fc_entities
 from ffun.library import entities as l_entities
@@ -322,6 +324,75 @@ class ResourceKind(enum.StrEnum):
             return Decimal(llms_domain.cost_points_to_usd_cost(LLMCostPoints(amount)))
 
         return Decimal(amount)
+
+
+class EntitlementKind(enum.StrEnum):
+    day_tokens = "day_tokens"  # noqa: S105
+    month_tokens = "month_tokens"  # noqa: S105
+    lifetime_tokens = "lifetime_tokens"  # noqa: S105
+
+    @classmethod
+    def from_internal(cls, kind: en_entities.EntitlementKindId) -> "EntitlementKind":
+        return cls(kind.name)
+
+    def to_internal(self) -> en_entities.EntitlementKindId:
+        return en_entities.EntitlementKindId[self.name]
+
+
+class TokenKind(enum.StrEnum):
+    day = "day"
+    month = "month"
+    lifetime = "lifetime"
+
+    @classmethod
+    def from_internal(cls, kind: product_entities.Credit) -> "TokenKind":
+        return cls(kind.value)
+
+
+class ProductStateEntitlement(pydantic.BaseModel):
+    granted: bool
+    value: int | None
+    startsAt: datetime.datetime | None
+    expiresAt: datetime.datetime | None
+
+    @classmethod
+    def from_internal(
+        cls,
+        entitlement: en_entities.EffectiveEntitlementInterval | None,
+    ) -> "ProductStateEntitlement":
+        is_lifetime = entitlement is not None and en_domain.get_entitlement_kind(entitlement.kind_id).is_lifetime
+
+        return cls(
+            granted=entitlement is not None,
+            value=entitlement.value if entitlement is not None else None,
+            startsAt=entitlement.starts_at if entitlement is not None else None,
+            expiresAt=entitlement.expires_at if entitlement is not None and not is_lifetime else None,
+        )
+
+
+class ProductStateToken(pydantic.BaseModel):
+    limit: int | None
+    balance: int
+    periodStartsAt: datetime.datetime | None
+    periodEndsAt: datetime.datetime | None
+
+    @classmethod
+    def from_internal(
+        cls,
+        *,
+        entitlement: en_entities.EffectiveEntitlementInterval | None,
+        resource: r_entities.Resource,
+        period_started_at: datetime.datetime | None,
+        period_ends_at: datetime.datetime | None,
+    ) -> "ProductStateToken":
+        is_lifetime = entitlement is not None and en_domain.get_entitlement_kind(entitlement.kind_id).is_lifetime
+
+        return cls(
+            limit=entitlement.value if entitlement is not None and not is_lifetime else None,
+            balance=max(entitlement.value - resource.total, 0) if entitlement is not None else 0,
+            periodStartsAt=period_started_at,
+            periodEndsAt=period_ends_at,
+        )
 
 
 class ResourceStatisticsInterval(enum.StrEnum):
@@ -693,3 +764,13 @@ class GetUserRequest(api.APIRequest):
 
 class GetUserResponse(api.APISuccess):
     userId: UserId
+
+
+class GetProductStateRequest(api.APIRequest):
+    pass
+
+
+class GetProductStateResponse(api.APISuccess):
+    subscriptions: list[dict[str, object]]
+    entitlements: dict[EntitlementKind, ProductStateEntitlement]
+    tokens: dict[TokenKind, ProductStateToken]

@@ -6,6 +6,8 @@ from ffun.domain.entities import UserId
 from ffun.resources import errors, operations
 from ffun.resources.entities import (
     Resource,
+    ResourceIdentity,
+    ResourceKey,
     ResourceReservation,
     ResourceReservationLimit,
     ResourceReservationOption,
@@ -20,8 +22,10 @@ count_total_resources_per_user = operations.count_total_resources_per_user
 
 
 async def load_resource(user_id: UserId, kind: int, interval_started_at: datetime.datetime) -> Resource:
-    resources = await load_resources([user_id], kind, interval_started_at)
-    return resources[user_id]
+    resource_key = ResourceKey(kind=kind, interval_started_at=interval_started_at)
+    resource_identities = ResourceIdentity.single(user_id, resource_key)
+    resources = await load_resources(resource_identities)
+    return resources[resource_identities[0]]
 
 
 def _build_user_limits(

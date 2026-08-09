@@ -12,6 +12,65 @@ from ffun.domain.entities import UserId
 ResourceKind = NewType("ResourceKind", int)
 
 
+class ResourceKey(BaseEntity):
+    kind: int
+    interval_started_at: datetime.datetime
+
+
+class ResourceIdentity(BaseEntity):
+    user_id: UserId
+    kind: int
+    interval_started_at: datetime.datetime
+
+    @staticmethod
+    def single(user_id: UserId, resource_key: ResourceKey) -> list["ResourceIdentity"]:
+        return [
+            ResourceIdentity(
+                user_id=user_id,
+                kind=resource_key.kind,
+                interval_started_at=resource_key.interval_started_at,
+            )
+        ]
+
+    @staticmethod
+    def for_user(user_id: UserId, resource_keys: Iterable[ResourceKey]) -> list["ResourceIdentity"]:
+        return [
+            ResourceIdentity(
+                user_id=user_id,
+                kind=resource_key.kind,
+                interval_started_at=resource_key.interval_started_at,
+            )
+            for resource_key in resource_keys
+        ]
+
+    @staticmethod
+    def for_resource(user_ids: Iterable[UserId], resource_key: ResourceKey) -> list["ResourceIdentity"]:
+        return [
+            ResourceIdentity(
+                user_id=user_id,
+                kind=resource_key.kind,
+                interval_started_at=resource_key.interval_started_at,
+            )
+            for user_id in user_ids
+        ]
+
+    @staticmethod
+    def cartesian_product(
+        user_ids: Iterable[UserId], resource_keys: Iterable[ResourceKey]
+    ) -> list["ResourceIdentity"]:
+        resource_keys = list(resource_keys)
+
+        return [
+            ResourceIdentity(
+                user_id=user_id,
+                kind=resource_key.kind,
+                interval_started_at=resource_key.interval_started_at,
+            )
+            for user_id in user_ids
+            for resource_key in resource_keys
+        ]
+
+
 class ResourceReservationOption(BaseEntity):
     kind: int
     interval_started_at: datetime.datetime

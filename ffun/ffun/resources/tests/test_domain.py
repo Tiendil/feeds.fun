@@ -7,9 +7,11 @@ from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeNotChanged
 from ffun.domain.datetime_intervals import month_interval_start
 from ffun.domain.entities import UserId
-from ffun.resources import domain, errors
+from ffun.resources import domain, errors, operations
 from ffun.resources.domain import load_resource
 from ffun.resources.entities import (
+    ResourceIdentity,
+    ResourceKey,
     ResourceReservation,
     ResourceReservationLimit,
     ResourceReservationOption,
@@ -19,13 +21,22 @@ from ffun.resources.operations import initialize_resources, try_to_reserve
 from ffun.resources.tests.helpers import reserve_resources
 
 
+class TestLoadResources:
+    def test_reexports_operation(self) -> None:
+        assert domain.load_resources is operations.load_resources
+
+
 class TestLoadResource:
     @pytest.mark.asyncio
     async def test_initialized(self, internal_user_id: UserId, resource_kind: int) -> None:
         interval_started_at = month_interval_start()
 
         await initialize_resources(
-            execute, user_ids=[internal_user_id], kind=resource_kind, interval_started_at=interval_started_at
+            execute,
+            ResourceIdentity.single(
+                internal_user_id,
+                ResourceKey(kind=resource_kind, interval_started_at=interval_started_at),
+            ),
         )
 
         await try_to_reserve(

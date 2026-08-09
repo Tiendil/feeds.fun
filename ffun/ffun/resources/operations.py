@@ -8,6 +8,8 @@ from ffun.domain.entities import UserId
 from ffun.resources import errors
 from ffun.resources.entities import (
     Resource,
+    ResourceIdentity,
+    ResourceKey,
     ResourceKind,
     ResourceReservation,
     ResourceReservationLimit,
@@ -65,36 +67,79 @@ def row_to_entry(row: dict[str, Any]) -> Resource:
 
 
 async def initialize_resources(
-    execute: ExecuteType, user_ids: list[UserId], kind: int, interval_started_at: datetime.datetime
+    execute: ExecuteType,
+    resource_identities: Iterable[ResourceIdentity],
 ) -> None:
-    if not user_ids:
+    resource_identities = list(dict.fromkeys(resource_identities))
+
+    if not resource_identities:
         return
 
     sql = """
         INSERT INTO r_resources (user_id, kind, interval_started_at)
-        SELECT requested.user_id, %(kind)s, %(interval_started_at)s
-        FROM UNNEST(%(user_ids)s::uuid[]) AS requested(user_id)
+        SELECT requested.user_id, requested.kind, requested.interval_started_at
+        FROM UNNEST(
+            %(user_ids)s::uuid[],
+            %(kinds)s::integer[],
+            %(interval_started_ats)s::timestamptz[]
+        ) AS requested(user_id, kind, interval_started_at)
         ON CONFLICT (user_id, kind, interval_started_at) DO NOTHING
     """
 
-    await execute(sql, {"user_ids": user_ids, "kind": kind, "interval_started_at": interval_started_at})
+    await execute(
+        sql,
+        {
+            "user_ids": [resource_identity.user_id for resource_identity in resource_identities],
+            "kinds": [resource_identity.kind for resource_identity in resource_identities],
+            "interval_started_ats": [
+                resource_identity.interval_started_at for resource_identity in resource_identities
+            ],
+        },
+    )
 
 
 async def load_resources(
-    user_ids: Iterable[UserId], kind: int, interval_started_at: datetime.datetime
-) -> dict[UserId, Resource]:
-    user_ids = list(dict.fromkeys(user_ids))
+    resource_identities: Iterable[ResourceIdentity],
+) -> dict[ResourceIdentity, Resource]:
+    resource_identities = list(dict.fromkeys(resource_identities))
 
-    await initialize_resources(execute, user_ids, kind, interval_started_at)
+    if not resource_identities:
+        return {}
+
+    await initialize_resources(execute, resource_identities)
 
     sql = """
-        SELECT * FROM r_resources
-        WHERE user_id = ANY(%(user_ids)s) AND kind = %(kind)s AND interval_started_at = %(interval_started_at)s
+        SELECT resources.*
+        FROM r_resources AS resources
+        JOIN UNNEST(
+            %(user_ids)s::uuid[],
+            %(kinds)s::integer[],
+            %(interval_started_ats)s::timestamptz[]
+        ) AS requested(user_id, kind, interval_started_at)
+        ON resources.user_id = requested.user_id
+        AND resources.kind = requested.kind
+        AND resources.interval_started_at = requested.interval_started_at
     """
 
-    results = await execute(sql, {"user_ids": user_ids, "kind": kind, "interval_started_at": interval_started_at})
+    results = await execute(
+        sql,
+        {
+            "user_ids": [resource_identity.user_id for resource_identity in resource_identities],
+            "kinds": [resource_identity.kind for resource_identity in resource_identities],
+            "interval_started_ats": [
+                resource_identity.interval_started_at for resource_identity in resource_identities
+            ],
+        },
+    )
 
-    return {row["user_id"]: row_to_entry(row) for row in results}
+    return {
+        ResourceIdentity(
+            user_id=row["user_id"],
+            kind=row["kind"],
+            interval_started_at=row["interval_started_at"],
+        ): row_to_entry(row)
+        for row in results
+    }
 
 
 async def try_to_reserve(
@@ -113,7 +158,11 @@ async def try_to_reserve(
     if len(user_ids) != len(set(user_ids)):
         raise errors.DuplicateReservationUserIds()
 
-    await initialize_resources(execute, user_ids, kind, interval_started_at)
+    resource_identities = ResourceIdentity.for_resource(
+        user_ids,
+        ResourceKey(kind=kind, interval_started_at=interval_started_at),
+    )
+    await initialize_resources(execute, resource_identities)
 
     sql = """
         UPDATE r_resources AS resources
