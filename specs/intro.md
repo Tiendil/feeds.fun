@@ -38,6 +38,7 @@ Detailed requirements for individual specifications are out of scope except for 
 - `specs/backend_architecture/modules/entitlements.md` describes entitlement source ownership, merging, persistence, audit history, and business events.
 - `specs/backend_architecture/modules/locks.md` describes collision-free, transaction-scoped logical mutexes backed by PostgreSQL.
 - `specs/backend_architecture/modules/resources.md` describes interval-scoped per-user resource accounting, reservations, and finalized usage.
+- `specs/backend_architecture/modules/subscriptions.md` describes durable provider-neutral purchased-subscription state and lifecycle snapshots.
 - `specs/behavior/cli.md` describes behavior shared by the backend CLI command families.
 - `specs/behavior/cli/entitlements.md` describes the CLI command family for managing and inspecting entitlements.
 - `specs/frontend_architecture/modules_layout.md` describes frontend source layout and ownership boundaries.

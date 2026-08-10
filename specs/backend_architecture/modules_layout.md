@@ -66,6 +66,7 @@ For example, `ffun.user_settings` owns the generic user settings machinery, whil
 - `ffun.resources` owns per-user quotas and resource accounting.
 - `ffun.scores` owns score rules and score calculation.
 - `ffun.site` owns backend support for serving or integrating with the site when present.
+- `ffun.subscriptions` owns durable provider-neutral purchased-subscription state and lifecycle snapshots.
 - `ffun.tags` owns tag normalization and validation logic that is not ontology storage.
 - `ffun.users` owns user storage and management.
 - `ffun.user_settings` owns user-specific settings storage and behavior.
