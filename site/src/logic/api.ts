@@ -318,6 +318,12 @@ export function trackEvent(data: {[key: string]: string | number | null}) {
 // Private API
 //////////////
 
+export async function getProductState() {
+  const response = await postPrivate({url: "/get-product-state", data: {}});
+
+  return t.productStateFromJSON(response);
+}
+
 export async function getFeeds() {
   const response = await postPrivate({url: "/get-feeds", data: {}});
 

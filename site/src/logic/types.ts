@@ -568,6 +568,55 @@ export function resourceStatisticsFromJSON({
   return {interval, statistics: parsedStatistics};
 }
 
+export type RawProductStateToken = {
+  readonly limit: number | null;
+  readonly balance: number;
+  readonly periodStartsAt: string | null;
+  readonly periodEndsAt: string | null;
+};
+
+export type ProductStateToken = {
+  readonly limit: number | null;
+  readonly balance: number;
+  readonly periodStartsAt: Date | null;
+  readonly periodEndsAt: Date | null;
+};
+
+export type ProductState = {
+  readonly tokens: {
+    readonly [e.ResourceKind.DayTokenUsage]: ProductStateToken;
+    readonly [e.ResourceKind.MonthTokenUsage]: ProductStateToken;
+    readonly [e.ResourceKind.LifetimeTokenUsage]: ProductStateToken;
+  };
+};
+
+function productStateTokenFromJSON(token: RawProductStateToken): ProductStateToken {
+  return {
+    limit: token.limit,
+    balance: token.balance,
+    periodStartsAt: token.periodStartsAt === null ? null : new Date(token.periodStartsAt),
+    periodEndsAt: token.periodEndsAt === null ? null : new Date(token.periodEndsAt)
+  };
+}
+
+export function productStateFromJSON({
+  tokens
+}: {
+  tokens: {
+    readonly day: RawProductStateToken;
+    readonly month: RawProductStateToken;
+    readonly lifetime: RawProductStateToken;
+  };
+}): ProductState {
+  return {
+    tokens: {
+      [e.ResourceKind.DayTokenUsage]: productStateTokenFromJSON(tokens.day),
+      [e.ResourceKind.MonthTokenUsage]: productStateTokenFromJSON(tokens.month),
+      [e.ResourceKind.LifetimeTokenUsage]: productStateTokenFromJSON(tokens.lifetime)
+    }
+  };
+}
+
 export class Collection {
   readonly id: CollectionId;
   readonly slug: CollectionSlug;

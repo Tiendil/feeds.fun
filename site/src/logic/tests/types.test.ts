@@ -1,7 +1,14 @@
 import {describe, expect, it} from "vitest";
 
 import * as e from "@/logic/enums";
-import {entryFromJSON, feedFromJSON, resourceStatisticsFromJSON, type RawEntry, type RawFeed} from "@/logic/types";
+import {
+  entryFromJSON,
+  feedFromJSON,
+  productStateFromJSON,
+  resourceStatisticsFromJSON,
+  type RawEntry,
+  type RawFeed
+} from "@/logic/types";
 
 function rawFeed(overrides: Partial<RawFeed> = {}): RawFeed {
   return {
@@ -162,6 +169,54 @@ describe("resourceStatisticsFromJSON", () => {
     expect(statistics.statistics[e.ResourceKind.LifetimeTokenUsage]).toEqual({
       firstDate: new Date("2024-01-01T00:00:00Z"),
       values: [7]
+    });
+  });
+});
+
+describe("productStateFromJSON", () => {
+  it("parses recurring periods and preserves lifetime nulls", () => {
+    const productState = productStateFromJSON({
+      tokens: {
+        day: {
+          limit: 1000,
+          balance: 750,
+          periodStartsAt: "2026-08-10T00:00:00Z",
+          periodEndsAt: "2026-08-11T00:00:00Z"
+        },
+        month: {
+          limit: 10000,
+          balance: 8000,
+          periodStartsAt: "2026-08-01T00:00:00Z",
+          periodEndsAt: "2026-09-01T00:00:00Z"
+        },
+        lifetime: {
+          limit: null,
+          balance: 500,
+          periodStartsAt: null,
+          periodEndsAt: null
+        }
+      }
+    });
+
+    expect(productState.tokens).toEqual({
+      [e.ResourceKind.DayTokenUsage]: {
+        limit: 1000,
+        balance: 750,
+        periodStartsAt: new Date("2026-08-10T00:00:00Z"),
+        periodEndsAt: new Date("2026-08-11T00:00:00Z")
+      },
+      [e.ResourceKind.MonthTokenUsage]: {
+        limit: 10000,
+        balance: 8000,
+        periodStartsAt: new Date("2026-08-01T00:00:00Z"),
+        periodEndsAt: new Date("2026-09-01T00:00:00Z")
+      },
+      [e.ResourceKind.LifetimeTokenUsage]: {
+        limit: null,
+        balance: 500,
+        periodStartsAt: null,
+        periodEndsAt: null
+      }
     });
   });
 });

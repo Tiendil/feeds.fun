@@ -22,6 +22,27 @@ Components SHOULD expose data through typed properties and interactions through 
 Components SHOULD keep their public contract independent of the identity of their parent component.
 Reusable components MUST NOT depend on page-level views.
 
+## Screen-reader support
+
+Screen-reader compatibility is not currently a supported frontend target.
+Components SHOULD keep visible markup self-explanatory and MAY use native semantic HTML where it naturally matches the visible content.
+Components SHOULD NOT introduce screen-reader-only copy, hidden accessibility-only structure, or custom ARIA interaction behavior unless a governing specification explicitly requires it.
+Compact read-only displays SHOULD use the simplest markup that accurately represents their visible presentation.
+They SHOULD NOT use additional semantic structures solely to provide an alternative screen-reader representation.
+This limitation does not prohibit low-cost accessibility metadata, such as an accessible label for an otherwise unlabeled icon button.
+
+## Tooltips
+
+New application tooltip implementations MUST use the globally registered `AppTooltip` component.
+Native `title` attributes MUST NOT be introduced for new application tooltips.
+Existing `title`-based tooltips MAY remain unchanged until they are deliberately migrated.
+Semantic uses of a `title` attribute, such as naming an embedded document, are not application tooltips and MAY remain native attributes.
+`AppTooltip` MUST support concise plain-text content through its `text` property and structured content with intentional line breaks through its `content` slot.
+`AppTooltip` MUST receive exactly one rendered element in its default trigger slot.
+`AppTooltip` MUST display on pointer hover and keyboard focus, MUST be dismissible with the Escape key, and MUST support touch activation.
+`AppTooltip` MUST keep its rendered content within the viewport and MUST NOT change the layout of its trigger.
+Tooltip content MUST remain supplementary; information required to understand or complete an action MUST remain visible outside the tooltip.
+
 ## Global component registration
 
 `site/src/main.ts` MUST be the single global component registry.

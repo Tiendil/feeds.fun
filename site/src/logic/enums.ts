@@ -202,14 +202,15 @@ export enum ResourceKind {
 
 export type ResourceKindProperty = {
   readonly text: string;
+  readonly shortText?: string;
   readonly plotColor?: string;
 };
 
 export const ResourceKindProperties = new Map<ResourceKind, ResourceKindProperty>([
   [ResourceKind.TokensCost, {text: "tokens cost"}],
-  [ResourceKind.DayTokenUsage, {text: "daily tokens", plotColor: "day"}],
-  [ResourceKind.MonthTokenUsage, {text: "monthly tokens", plotColor: "month"}],
-  [ResourceKind.LifetimeTokenUsage, {text: "lifetime tokens", plotColor: "lifetime"}]
+  [ResourceKind.DayTokenUsage, {text: "daily tokens", shortText: "day", plotColor: "day"}],
+  [ResourceKind.MonthTokenUsage, {text: "monthly tokens", shortText: "month", plotColor: "month"}],
+  [ResourceKind.LifetimeTokenUsage, {text: "lifetime tokens", shortText: "lifetime", plotColor: "lifetime"}]
 ]);
 
 export type ResourceStatisticsApiId = "day" | "month" | "year";

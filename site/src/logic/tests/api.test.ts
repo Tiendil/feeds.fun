@@ -15,7 +15,56 @@ vi.mock("axios", () => ({
   }
 }));
 
-import {getResourceStatistics} from "@/logic/api";
+import {getProductState, getResourceStatistics} from "@/logic/api";
+
+describe("getProductState", () => {
+  afterEach(() => {
+    mocks.post.mockReset();
+  });
+
+  it("requests and parses the current token balances", async () => {
+    mocks.post.mockResolvedValue({
+      data: {
+        tokens: {
+          day: {
+            limit: 1000,
+            balance: 750,
+            periodStartsAt: "2026-08-10T00:00:00Z",
+            periodEndsAt: "2026-08-11T00:00:00Z"
+          },
+          month: {
+            limit: 10000,
+            balance: 8000,
+            periodStartsAt: "2026-08-01T00:00:00Z",
+            periodEndsAt: "2026-09-01T00:00:00Z"
+          },
+          lifetime: {
+            limit: null,
+            balance: 500,
+            periodStartsAt: null,
+            periodEndsAt: null
+          }
+        }
+      }
+    });
+
+    const productState = await getProductState();
+
+    expect(mocks.post).toHaveBeenCalledWith("/get-product-state", {}, undefined);
+    expect(productState.tokens[e.ResourceKind.DayTokenUsage]).toEqual({
+      limit: 1000,
+      balance: 750,
+      periodStartsAt: new Date("2026-08-10T00:00:00Z"),
+      periodEndsAt: new Date("2026-08-11T00:00:00Z")
+    });
+    expect(productState.tokens[e.ResourceKind.LifetimeTokenUsage]).toEqual({
+      limit: null,
+      balance: 500,
+      periodStartsAt: null,
+      periodEndsAt: null
+    });
+  });
+});
 
 describe("getResourceStatistics", () => {
   afterEach(() => {

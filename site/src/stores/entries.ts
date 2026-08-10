@@ -25,6 +25,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
   const requestedEntries = ref<{[key: t.EntryId]: boolean}>({});
   const displayedEntryId = ref<t.EntryId | null>(null);
   const readHistory = ref<t.EntryId[]>([]);
+  const entriesLoadRevision = ref(0);
 
   const canUndoMarkRead = computed(() => readHistory.value.length > 0);
 
@@ -154,6 +155,8 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     if (!readyToLoadNews.value) {
       return null;
     }
+
+    entriesLoadRevision.value += 1;
 
     const loadedEntries = await loadEntriesAccordingToMode();
 
@@ -332,6 +335,7 @@ export const useEntriesStore = defineStore("entriesStore", () => {
     canUndoMarkRead,
     setNewsMode,
     setPublicCollectionMode,
+    entriesLoadRevision,
     loading,
     visibleEntries,
     activeOrderProperties

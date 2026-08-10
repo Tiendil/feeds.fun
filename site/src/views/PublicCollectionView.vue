@@ -61,6 +61,8 @@
 
     <template #main-footer> </template>
 
+    <news-toolbar class="mb-2" />
+
     <!-- currently we have a "nuance" with tags user experience in this block -->
     <!-- The tags work as expected till the user selects their own tags from other places -->
     <!-- after that we can get a situation, when, after clicking on a tag in the block, there will be no news displayed -->

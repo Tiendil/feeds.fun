@@ -55,6 +55,8 @@
 
     <template #main-footer> </template>
 
+    <news-toolbar class="mb-2" />
+
     <notifications
       v-if="entriesStore.loadedEntriesReport !== null"
       :create-rule-help="hasEntries && !hasRules"
