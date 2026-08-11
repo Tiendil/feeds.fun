@@ -174,6 +174,27 @@ describe("resourceStatisticsFromJSON", () => {
 });
 
 describe("productStateFromJSON", () => {
+  const tokens = {
+    day: {
+      limit: 1000,
+      balance: 750,
+      periodStartsAt: "2026-08-10T00:00:00Z",
+      periodEndsAt: "2026-08-11T00:00:00Z"
+    },
+    month: {
+      limit: 10000,
+      balance: 8000,
+      periodStartsAt: "2026-08-01T00:00:00Z",
+      periodEndsAt: "2026-09-01T00:00:00Z"
+    },
+    lifetime: {
+      limit: null,
+      balance: 500,
+      periodStartsAt: null,
+      periodEndsAt: null
+    }
+  };
+
   it("parses recurring periods and preserves lifetime nulls", () => {
     const productState = productStateFromJSON({
       subscriptions: [
@@ -184,26 +205,7 @@ describe("productStateFromJSON", () => {
           endsAt: null
         }
       ],
-      tokens: {
-        day: {
-          limit: 1000,
-          balance: 750,
-          periodStartsAt: "2026-08-10T00:00:00Z",
-          periodEndsAt: "2026-08-11T00:00:00Z"
-        },
-        month: {
-          limit: 10000,
-          balance: 8000,
-          periodStartsAt: "2026-08-01T00:00:00Z",
-          periodEndsAt: "2026-09-01T00:00:00Z"
-        },
-        lifetime: {
-          limit: null,
-          balance: 500,
-          periodStartsAt: null,
-          periodEndsAt: null
-        }
-      }
+      tokens
     });
 
     expect(productState.subscriptions).toEqual([
@@ -234,5 +236,34 @@ describe("productStateFromJSON", () => {
         periodEndsAt: null
       }
     });
+  });
+
+  it("parses empty subscriptions", () => {
+    const productState = productStateFromJSON({subscriptions: [], tokens});
+
+    expect(productState.subscriptions).toEqual([]);
+  });
+
+  it("parses a missing renewal and a scheduled end", () => {
+    const productState = productStateFromJSON({
+      subscriptions: [
+        {
+          status: e.SubscriptionStatus.Paused,
+          startedAt: "2026-07-01T00:00:00Z",
+          renewsAt: null,
+          endsAt: "2026-09-01T00:00:00Z"
+        }
+      ],
+      tokens
+    });
+
+    expect(productState.subscriptions).toEqual([
+      {
+        status: e.SubscriptionStatus.Paused,
+        startedAt: new Date("2026-07-01T00:00:00Z"),
+        renewsAt: null,
+        endsAt: new Date("2026-09-01T00:00:00Z")
+      }
+    ]);
   });
 });

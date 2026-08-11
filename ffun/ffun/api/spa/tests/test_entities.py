@@ -238,6 +238,18 @@ class TestProductStateSubscription:
             "endsAt": ends_at,
         }
 
+    def test_from_internal__optional_fields_absent(self) -> None:
+        subscription = make_subscription(renews_at=None, ends_at=None)
+
+        serialized = cast(dict[str, object], ProductStateSubscription.from_internal(subscription).model_dump())
+
+        assert serialized == {
+            "status": SubscriptionStatus.active,
+            "startedAt": subscription.started_at,
+            "renewsAt": None,
+            "endsAt": None,
+        }
+
 
 class TestProductStateToken:
     def test_from_internal__no_entitlement(self) -> None:
