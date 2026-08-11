@@ -33,6 +33,7 @@ The root command MUST expose the following command groups:
 - `processors-quality` — Evaluates processor output and maintains processor quality reference data.
 - `profile` — Runs ad hoc backend profiling scenarios.
 - `queues` — Cleans all or selected processing queues.
+- [`subscriptions`](cli/subscriptions.md) — Manages and lists purchased-subscription snapshots.
 - `user-settings` — Performs maintenance of persisted user settings.
 - `users` — Performs user administration and identity-provider imports.
 

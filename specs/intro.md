@@ -41,6 +41,7 @@ Detailed requirements for individual specifications are out of scope except for 
 - `specs/backend_architecture/modules/subscriptions.md` describes durable provider-neutral purchased-subscription state and lifecycle snapshots.
 - `specs/behavior/cli.md` describes behavior shared by the backend CLI command families.
 - `specs/behavior/cli/entitlements.md` describes the CLI command family for managing and inspecting entitlements.
+- `specs/behavior/cli/subscriptions.md` describes the CLI command family for managing and inspecting purchased-subscription snapshots.
 - `specs/frontend_architecture/modules_layout.md` describes frontend source layout and ownership boundaries.
 - `specs/frontend_architecture/components.md` describes frontend component contracts, global registration, naming, and composition conventions.
 - `specs/frontend_architecture/tests.md` describes frontend Vitest test placement.
