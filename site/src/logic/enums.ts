@@ -238,6 +238,19 @@ export const windowSizes = new Map<TimeGranularity, number>([
   [TimeGranularity.Year, 5]
 ]);
 
+////////////////////////
+// Subscription status
+////////////////////////
+
+export enum SubscriptionStatus {
+  Pending = "pending",
+  Trialing = "trialing",
+  Active = "active",
+  PastDue = "past_due",
+  Paused = "paused",
+  Ended = "ended"
+}
+
 //////////////
 // Feeds order
 //////////////

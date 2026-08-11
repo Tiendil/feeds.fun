@@ -1,9 +1,7 @@
 import datetime
 from decimal import Decimal
-from typing import cast
 
 import pytest
-from pytest_mock import MockerFixture
 
 from ffun.api.spa import entities
 from ffun.api.spa.http_handlers import (
@@ -13,16 +11,18 @@ from ffun.api.spa.http_handlers import (
     api_get_product_state,
     api_get_resource_statistics,
 )
+from ffun.audit.entities import AuditEntityKind
 from ffun.core import utils
-from ffun.core.errors import APIError
-from ffun.domain.entities import UserId
-from ffun.entitlements import errors as en_errors
+from ffun.domain.entities import SerializedId, UserId
 from ffun.feeds.entities import Feed
 from ffun.feeds_links import domain as fl_domain
 from ffun.library import domain as l_domain
 from ffun.library.entities import CollectedEntry
 from ffun.product.entities import Resource
 from ffun.resources.tests.helpers import consume_resource
+from ffun.subscriptions import domain as sub_domain
+from ffun.subscriptions.entities import SubscriptionStatusId
+from ffun.subscriptions.tests.make import make_subscription
 from ffun.users.entities import User
 
 
@@ -145,24 +145,23 @@ class TestApiGetProductState:
         assert response.tokens[entities.TokenKind.lifetime].periodEndsAt is None
 
     @pytest.mark.asyncio
-    async def test_invalid_stored_entitlement(self, internal_user_id: UserId, mocker: MockerFixture) -> None:
-        error = en_errors.InvalidStoredEntitlement(entity_kind="effective_entitlement_interval")
-        resources_by_identity: dict[object, object] = {}
-        mocker.patch(
-            "ffun.api.spa.http_handlers.en_domain.get_entitlements",
-            side_effect=error,
+    async def test_returns_only_alive_subscriptions(self, internal_user_id: UserId) -> None:
+        alive_subscription = make_subscription(user_id=internal_user_id)
+        ended_subscription = make_subscription(
+            user_id=internal_user_id,
+            status=SubscriptionStatusId.ended,
+            ends_at=utils.now(),
         )
-        mocker.patch(
-            "ffun.api.spa.http_handlers.r_domain.load_resources",
-            return_value=resources_by_identity,
-        )
+        for subscription in (alive_subscription, ended_subscription):
+            await sub_domain.save_subscription(
+                subscription,
+                actor_kind=AuditEntityKind.system,
+                actor_id=SerializedId("spa-api-test"),
+            )
 
-        with pytest.raises(APIError) as exception_info:
-            await api_get_product_state(entities.GetProductStateRequest(), User(id=internal_user_id))
+        response = await api_get_product_state(entities.GetProductStateRequest(), User(id=internal_user_id))
 
-        error_attributes = cast(dict[str, str | int | None], vars(exception_info.value))
-        assert error_attributes["code"] == "invalid_stored_entitlement"
-        assert error_attributes["message"] == "Stored entitlement data is invalid."
+        assert response.subscriptions == [entities.ProductStateSubscription.from_internal(alive_subscription)]
 
 
 class TestApiGetResourceStatistics:

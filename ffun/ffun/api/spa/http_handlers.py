@@ -20,7 +20,6 @@ from ffun.data_protection import domain as dp_domain
 from ffun.domain.entities import FeedId, TagId, TagUid, UserId
 from ffun.domain.urls import url_to_uid
 from ffun.entitlements import domain as en_domain
-from ffun.entitlements import errors as en_errors
 from ffun.feeds import domain as f_domain
 from ffun.feeds import entities as f_entities
 from ffun.feeds_collections import domain as fc_domain
@@ -41,6 +40,7 @@ from ffun.resources import domain as r_domain
 from ffun.resources import entities as r_entities
 from ffun.scores import domain as s_domain
 from ffun.scores import entities as s_entities
+from ffun.subscriptions import domain as sub_domain
 from ffun.user_settings import domain as us_domain
 from ffun.user_settings import entities as us_entities
 
@@ -346,16 +346,11 @@ async def api_get_product_state(
         for window, resource_identity in zip(credit_windows, resource_identities, strict=True)
     }
 
-    try:
-        entitlements_by_user, resources_by_identity = await asyncio.gather(
-            en_domain.get_entitlements([user.id], list(internal_entitlement_kinds.values())),
-            r_domain.load_resources(resource_identities),
-        )
-    except en_errors.InvalidStoredEntitlement as error:
-        raise APIError(
-            code="invalid_stored_entitlement",
-            message="Stored entitlement data is invalid.",
-        ) from error
+    entitlements_by_user, resources_by_identity, internal_subscriptions = await asyncio.gather(
+        en_domain.get_entitlements([user.id], list(internal_entitlement_kinds.values())),
+        r_domain.load_resources(resource_identities),
+        sub_domain.get_alive_subscriptions_for_user(user.id),
+    )
 
     internal_entitlements = entitlements_by_user[user.id]
     entitlements = {
@@ -373,7 +368,9 @@ async def api_get_product_state(
     }
 
     return entities.GetProductStateResponse(
-        subscriptions=[],
+        subscriptions=[
+            entities.ProductStateSubscription.from_internal(subscription) for subscription in internal_subscriptions
+        ],
         entitlements=entitlements,
         tokens=tokens,
     )

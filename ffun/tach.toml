@@ -88,6 +88,7 @@ depends_on = [
     "ffun.product",
     "ffun.resources",
     "ffun.scores",
+    "ffun.subscriptions",
     "ffun.tags",
     "ffun.user_settings",
 ]

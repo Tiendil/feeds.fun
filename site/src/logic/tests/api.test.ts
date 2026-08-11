@@ -25,6 +25,14 @@ describe("getProductState", () => {
   it("requests and parses the current token balances", async () => {
     mocks.post.mockResolvedValue({
       data: {
+        subscriptions: [
+          {
+            status: e.SubscriptionStatus.Active,
+            startedAt: "2026-07-01T00:00:00Z",
+            renewsAt: "2026-09-01T00:00:00Z",
+            endsAt: null
+          }
+        ],
         tokens: {
           day: {
             limit: 1000,
@@ -51,6 +59,14 @@ describe("getProductState", () => {
     const productState = await getProductState();
 
     expect(mocks.post).toHaveBeenCalledWith("/get-product-state", {}, undefined);
+    expect(productState.subscriptions).toEqual([
+      {
+        status: e.SubscriptionStatus.Active,
+        startedAt: new Date("2026-07-01T00:00:00Z"),
+        renewsAt: new Date("2026-09-01T00:00:00Z"),
+        endsAt: null
+      }
+    ]);
     expect(productState.tokens[e.ResourceKind.DayTokenUsage]).toEqual({
       limit: 1000,
       balance: 750,

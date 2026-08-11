@@ -85,6 +85,10 @@ Operation modules SHOULD return domain entities, typed ids, primitives, or dicti
 
 Operation modules SHOULD provide small row mapper functions when database rows are converted into entities in more than one place.
 
+When persisted row data cannot be converted into a valid owning-domain entity, the operation boundary SHOULD raise a module-owned stored-state integrity exception and preserve the validation exception as its cause.
+A stored-row validation failure MUST NOT be interpreted as a missing record, filtered from query results, or replaced with a partially populated entity or fallback value.
+Normal write paths MUST prevent invalid persisted state; encountering it during a read indicates corrupted data, an incompatible migration, or a write that bypassed domain validation.
+
 Technical maintenance functions that directly mutate storage for cleanup, merge, repair, or tests SHOULD make that purpose clear in their name or containing boundary and SHOULD remain outside normal user-facing workflows unless explicitly intended.
 
 ## Execution Helpers

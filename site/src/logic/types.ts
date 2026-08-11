@@ -582,7 +582,22 @@ export type ProductStateToken = {
   readonly periodEndsAt: Date | null;
 };
 
+export type RawProductStateSubscription = {
+  readonly status: e.SubscriptionStatus;
+  readonly startedAt: string;
+  readonly renewsAt: string | null;
+  readonly endsAt: string | null;
+};
+
+export type ProductStateSubscription = {
+  readonly status: e.SubscriptionStatus;
+  readonly startedAt: Date;
+  readonly renewsAt: Date | null;
+  readonly endsAt: Date | null;
+};
+
 export type ProductState = {
+  readonly subscriptions: ProductStateSubscription[];
   readonly tokens: {
     readonly [e.ResourceKind.DayTokenUsage]: ProductStateToken;
     readonly [e.ResourceKind.MonthTokenUsage]: ProductStateToken;
@@ -599,9 +614,20 @@ function productStateTokenFromJSON(token: RawProductStateToken): ProductStateTok
   };
 }
 
+function productStateSubscriptionFromJSON(subscription: RawProductStateSubscription): ProductStateSubscription {
+  return {
+    status: subscription.status,
+    startedAt: new Date(subscription.startedAt),
+    renewsAt: subscription.renewsAt === null ? null : new Date(subscription.renewsAt),
+    endsAt: subscription.endsAt === null ? null : new Date(subscription.endsAt)
+  };
+}
+
 export function productStateFromJSON({
+  subscriptions,
   tokens
 }: {
+  subscriptions: RawProductStateSubscription[];
   tokens: {
     readonly day: RawProductStateToken;
     readonly month: RawProductStateToken;
@@ -609,6 +635,7 @@ export function productStateFromJSON({
   };
 }): ProductState {
   return {
+    subscriptions: subscriptions.map(productStateSubscriptionFromJSON),
     tokens: {
       [e.ResourceKind.DayTokenUsage]: productStateTokenFromJSON(tokens.day),
       [e.ResourceKind.MonthTokenUsage]: productStateTokenFromJSON(tokens.month),

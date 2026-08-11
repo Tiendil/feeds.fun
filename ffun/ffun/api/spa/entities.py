@@ -35,6 +35,7 @@ from ffun.parsers import entities as p_entities
 from ffun.product import entities as product_entities
 from ffun.resources import entities as r_entities
 from ffun.scores import entities as s_entities
+from ffun.subscriptions import entities as sub_entities
 from ffun.tags import entities as t_entities
 from ffun.user_settings import domain as us_domain
 from ffun.user_settings import entities as us_entities
@@ -392,6 +393,35 @@ class ProductStateToken(pydantic.BaseModel):
             balance=max(entitlement.value - resource.total, 0) if entitlement is not None else 0,
             periodStartsAt=period_started_at,
             periodEndsAt=period_ends_at,
+        )
+
+
+class SubscriptionStatus(enum.StrEnum):
+    pending = "pending"
+    trialing = "trialing"
+    active = "active"
+    past_due = "past_due"
+    paused = "paused"
+    ended = "ended"
+
+    @classmethod
+    def from_internal(cls, status: sub_entities.SubscriptionStatusId) -> "SubscriptionStatus":
+        return cls[status.name]
+
+
+class ProductStateSubscription(pydantic.BaseModel):
+    status: SubscriptionStatus
+    startedAt: datetime.datetime
+    renewsAt: datetime.datetime | None
+    endsAt: datetime.datetime | None
+
+    @classmethod
+    def from_internal(cls, subscription: sub_entities.Subscription) -> "ProductStateSubscription":
+        return cls(
+            status=SubscriptionStatus.from_internal(subscription.status),
+            startedAt=subscription.started_at,
+            renewsAt=subscription.renews_at,
+            endsAt=subscription.ends_at,
         )
 
 
@@ -771,6 +801,6 @@ class GetProductStateRequest(api.APIRequest):
 
 
 class GetProductStateResponse(api.APISuccess):
-    subscriptions: list[dict[str, object]]
+    subscriptions: list[ProductStateSubscription]
     entitlements: dict[EntitlementKind, ProductStateEntitlement]
     tokens: dict[TokenKind, ProductStateToken]

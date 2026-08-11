@@ -176,6 +176,14 @@ describe("resourceStatisticsFromJSON", () => {
 describe("productStateFromJSON", () => {
   it("parses recurring periods and preserves lifetime nulls", () => {
     const productState = productStateFromJSON({
+      subscriptions: [
+        {
+          status: e.SubscriptionStatus.Active,
+          startedAt: "2026-07-01T00:00:00Z",
+          renewsAt: "2026-09-01T00:00:00Z",
+          endsAt: null
+        }
+      ],
       tokens: {
         day: {
           limit: 1000,
@@ -198,6 +206,14 @@ describe("productStateFromJSON", () => {
       }
     });
 
+    expect(productState.subscriptions).toEqual([
+      {
+        status: e.SubscriptionStatus.Active,
+        startedAt: new Date("2026-07-01T00:00:00Z"),
+        renewsAt: new Date("2026-09-01T00:00:00Z"),
+        endsAt: null
+      }
+    ]);
     expect(productState.tokens).toEqual({
       [e.ResourceKind.DayTokenUsage]: {
         limit: 1000,

@@ -1,5 +1,6 @@
 import datetime
 from decimal import Decimal
+from typing import cast
 
 import pydantic
 import pytest
@@ -11,12 +12,14 @@ from ffun.api.spa.entities import (
     Marker,
     MutableMarker,
     ProductStateEntitlement,
+    ProductStateSubscription,
     ProductStateToken,
     RemoveMarkerRequest,
     ResourceKind,
     ResourceStatisticsInterval,
     ResourceStatisticsSeries,
     SetMarkerRequest,
+    SubscriptionStatus,
     TokenKind,
 )
 from ffun.core import utils
@@ -29,6 +32,8 @@ from ffun.feeds.entities import FeedError
 from ffun.parsers import entities as p_entities
 from ffun.product.entities import Credit, Resource
 from ffun.resources import entities as r_entities
+from ffun.subscriptions.entities import SubscriptionStatusId
+from ffun.subscriptions.tests.make import make_subscription
 
 
 class TestFeed:
@@ -196,6 +201,42 @@ class TestProductStateEntitlement:
             startsAt=entitlement.starts_at,
             expiresAt=None,
         )
+
+
+class TestSubscriptionStatus:
+    @pytest.mark.parametrize(
+        "status, internal_status",
+        [(SubscriptionStatus[status.name], status) for status in SubscriptionStatusId],
+    )
+    def test_from_internal__supported_statuses(
+        self,
+        status: SubscriptionStatus,
+        internal_status: SubscriptionStatusId,
+    ) -> None:
+        assert SubscriptionStatus.from_internal(internal_status) == status
+
+
+class TestProductStateSubscription:
+    def test_from_internal__user_facing_fields(self) -> None:
+        now = utils.now()
+        started_at = now - datetime.timedelta(days=30)
+        renews_at = now + datetime.timedelta(days=1)
+        ends_at = now + datetime.timedelta(days=31)
+        subscription = make_subscription(
+            status=SubscriptionStatusId.past_due,
+            started_at=started_at,
+            renews_at=renews_at,
+            ends_at=ends_at,
+        )
+
+        serialized = cast(dict[str, object], ProductStateSubscription.from_internal(subscription).model_dump())
+
+        assert serialized == {
+            "status": SubscriptionStatus.past_due,
+            "startedAt": started_at,
+            "renewsAt": renews_at,
+            "endsAt": ends_at,
+        }
 
 
 class TestProductStateToken:
