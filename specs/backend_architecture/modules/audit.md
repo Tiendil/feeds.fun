@@ -23,6 +23,10 @@ The module MUST own the common audit-record contract, stable audit entity kinds,
 
 Calling modules MUST own the decision to create an audit record, event-specific validation, event names, event attributes, and the business meaning of the actor and subject.
 
+`ffun.audit` is an approved transaction participant under the backend database architecture.
+Calling modules MAY use its public domain interface for audit persistence in their transactions without workflow-specific transaction-sharing approval.
+This participation MUST NOT transfer ownership of the calling workflow or its database operations to `ffun.audit`.
+
 Audit records MUST be durable business evidence.
 They MUST NOT be replaced by ordinary logs or business events, and they MUST NOT be used as the source of truth for rebuilding application state.
 

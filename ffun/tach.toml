@@ -315,6 +315,14 @@ depends_on = [
 layer = "users"
 
 [[modules]]
+path = "ffun.subscriptions"
+depends_on = [
+    "ffun.audit",
+    "ffun.locks",
+]
+layer = "users"
+
+[[modules]]
 path = "ffun.users"
 depends_on = [
 ]

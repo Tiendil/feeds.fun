@@ -17,6 +17,7 @@ This specification does not cover deployment-specific PostgreSQL administration,
 - `operation module` - a module-local `operations` submodule that owns persistence-backed commands and queries for the parent backend module.
 - `migration` - a yoyo migration file stored in a module-local `migrations` package.
 - `execute callable` - an object with the same contract as `ffun.core.postgresql.ExecuteType`, used to run SQL inside either a single-statement helper or an explicit transaction.
+- `approved transaction participant` - a cross-cutting technical module whose public domain interface MAY participate in another top-level module's transaction without workflow-specific approval.
 
 ## Storage Technology
 
@@ -57,6 +58,17 @@ Domain modules MUST own transaction boundaries for new or significantly changed 
 When a workflow changes multiple database records owned by the same top-level backend module that must stay consistent, the domain module MUST handle the transaction boundary and pass the transaction execute callable into operation-module helpers.
 
 By default, a transaction owned by one top-level backend module MUST NOT execute database operations owned by another top-level backend module or pass its execute callable through another top-level module's domain boundary.
+The following cross-cutting technical modules are approved transaction participants for every workflow:
+
+- `ffun.locks`, only for transaction-scoped lock acquisition, release, and holder-transaction lifecycle.
+- `ffun.audit`, only for appending and loading audit records through its public domain interface.
+
+A transaction-owning module MAY pass its execute callable through an approved transaction participant's public domain interface, or use an execute callable yielded by that interface, without workflow-specific approval.
+When `ffun.locks.locked_transaction` opens the holder transaction, the calling top-level module remains the transaction owner for business-architecture purposes; `ffun.locks` owns only the technical transaction lifecycle.
+Participation MUST remain limited to the approved responsibility above, MUST NOT transfer ownership of the calling workflow or its database operations, and MUST NOT permit importing the participant's operation module.
+No workflow-specific exception or approval documentation is required for an approved transaction participant.
+
+Transaction sharing with any other top-level backend module remains prohibited by default.
 Only a human developer MAY grant an exception to this rule, and the approval MUST be explicit.
 Every approved exception MUST be documented before implementation begins, either in the specification for the transaction-owning module or in a comment or docstring attached to the particular function that owns the cross-module transaction.
 These locations are required to keep the approval version-controlled and discoverable at either the module's architectural contract or the exact transaction boundary; a separate record would not reliably accompany reviews of the specification or transaction-owning function.
@@ -88,6 +100,9 @@ Functions that are designed to run inside a caller-owned transaction SHOULD acce
 Functions that accept an execute callable MUST use that callable for all SQL that belongs to the caller's transaction.
 
 Transactional functions MUST NOT call the top-level `execute` helper for statements that are expected to participate in the active transaction, because that opens a separate autocommitted execution path.
+
+Transaction boundaries MUST cover the complete defined persistence behavior of the workflows and operations they compose.
+Code MUST NOT omit or narrow a transaction boundary based on an operation's current number or order of SQL statements.
 
 The transaction decorator SHOULD be used when a public async function owns the whole transaction and has no setup code that must run outside the transaction.
 

@@ -27,6 +27,15 @@ Code MUST still validate semantic constraints that type annotations cannot expre
 Code that constructs a semantically specific typed value from raw or untyped data MUST validate the semantic invariants of that type at the construction boundary.
 Functions and methods that receive the constructed typed value MUST assume those invariants hold and MUST NOT repeat their validation.
 
+## Closed value sets
+
+Project-owned closed sets of named values SHOULD use enums instead of `typing.Literal`.
+`Literal` MAY be used when exact literal values are required by an external or framework-defined interface, as discriminators for typed unions, or when the values do not represent independently named project concepts.
+
+Project-owned enum members MUST use explicit values and MUST NOT use `enum.auto()`.
+Unless compatibility with an external protocol or an existing serialized contract requires another representation, project-owned enum values MUST be fixed integers.
+Integer enum values that participate in persistence, serialization, configuration, or another compatibility contract MUST NOT be changed or reused.
+
 ## Validation and resolution
 
 Validation functions and methods MUST only verify invariants.

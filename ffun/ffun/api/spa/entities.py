@@ -346,7 +346,7 @@ class TokenKind(enum.StrEnum):
 
     @classmethod
     def from_internal(cls, kind: product_entities.Credit) -> "TokenKind":
-        return cls(kind.value)
+        return cls[kind.name]
 
 
 class ProductStateEntitlement(pydantic.BaseModel):

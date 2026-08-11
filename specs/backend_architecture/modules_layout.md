@@ -155,6 +155,10 @@ Domain functions SHOULD compose operation functions and other module boundaries 
 
 Domain functions SHOULD hide low-level communication details from callers. Callers should not need to know whether a workflow uses PostgreSQL, HTTP, providers, local tools, or multiple operation calls.
 
+Domain logic MUST depend only on behavior defined as part of an operation's contract, including its accepted inputs, produced outputs, expected errors, effects, and transaction semantics.
+When that contract is not specified separately, domain code MAY inspect the operation's implementation to understand its behavior, but MUST treat implementation choices that are not required by callers as replaceable.
+Domain logic MUST NOT depend on incidental implementation details such as the current number or order of external-system requests, request structure, storage layout, or internal delegation.
+
 Top/input layers such as `ffun.api`, `ffun.api.spa`, and `ffun.cli` SHOULD call domain boundaries instead of operations when invoking business behavior.
 
 When a domain-level function only exposes an operation function without adding real domain behavior, such as a business decision, orchestration, validation, or result transformation, `domain.py` MUST re-export the operation instead of introducing a trivial wrapper. A direct re-export preserves one callable contract and keeps its signature and error behavior identical at both boundaries by construction; a wrapper creates a second contract that can drift without adding domain semantics. A direct assignment alias, such as `save_feed = operations.save_feed`, is the conventional form.

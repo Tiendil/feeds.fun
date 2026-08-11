@@ -46,10 +46,10 @@ class Resource(enum.IntEnum):
     lifetime_token_usage = 5
 
 
-class Credit(enum.StrEnum):
-    day = "day"
-    month = "month"
-    lifetime = "lifetime"
+class Credit(enum.IntEnum):
+    day = 1
+    month = 2
+    lifetime = 3
 
 
 class CreditDefinition(BaseEntity):

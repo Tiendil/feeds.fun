@@ -23,22 +23,24 @@
         <legend class="text-sm font-semibold mb-1">Token types</legend>
 
         <div class="flex flex-wrap gap-3">
-          <button
+          <app-tooltip
             v-for="[kind, resource] of tokenUsageResources"
             :key="kind"
-            type="button"
-            class="cursor-pointer hover:underline focus-visible:underline"
-            :aria-pressed="visibleKinds[kind]"
-            :title="tokenTypeTooltip(kind, resource.text)"
-            @click="toggleTokenType(kind)">
-            <span
-              class="inline-block w-3 h-3 rounded-sm mr-1"
-              :style="{backgroundColor: colorForResource(resource)}"
-              aria-hidden="true"></span>
-            <span :class="visibleKinds[kind] ? 'font-medium' : 'font-normal opacity-60'">
-              {{ resource.text }}
-            </span>
-          </button>
+            :text="tokenTypeTooltip(kind, resource.text)">
+            <button
+              type="button"
+              class="cursor-pointer hover:underline focus-visible:underline"
+              :aria-pressed="visibleKinds[kind]"
+              @click="toggleTokenType(kind)">
+              <span
+                class="inline-block w-3 h-3 rounded-sm mr-1"
+                :style="{backgroundColor: colorForResource(resource)}"
+                aria-hidden="true"></span>
+              <span :class="visibleKinds[kind] ? 'font-medium' : 'font-normal opacity-60'">
+                {{ resource.text }}
+              </span>
+            </button>
+          </app-tooltip>
         </div>
       </fieldset>
 
@@ -46,33 +48,35 @@
         <legend class="text-sm font-semibold mb-1">Range</legend>
 
         <div class="inline-flex overflow-hidden rounded-md border border-gray-300 text-sm">
-          <button
-            type="button"
-            class="cursor-pointer px-3 py-1 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
-            :class="
-              !showAllTime
-                ? 'bg-gray-100 font-medium text-gray-900'
-                : 'bg-white font-normal text-gray-600 hover:bg-gray-50'
-            "
-            :aria-pressed="!showAllTime"
-            :title="recentRangeTooltip"
-            @click="showAllTime = false">
-            Recent
-          </button>
+          <app-tooltip :text="recentRangeTooltip">
+            <button
+              type="button"
+              class="cursor-pointer px-3 py-1 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
+              :class="
+                !showAllTime
+                  ? 'bg-gray-100 font-medium text-gray-900'
+                  : 'bg-white font-normal text-gray-600 hover:bg-gray-50'
+              "
+              :aria-pressed="!showAllTime"
+              @click="showAllTime = false">
+              Recent
+            </button>
+          </app-tooltip>
 
-          <button
-            type="button"
-            class="cursor-pointer border-l border-gray-300 px-3 py-1 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
-            :class="
-              showAllTime
-                ? 'bg-gray-100 font-medium text-gray-900'
-                : 'bg-white font-normal text-gray-600 hover:bg-gray-50'
-            "
-            :aria-pressed="showAllTime"
-            title="Show all available history"
-            @click="showAllTime = true">
-            All time
-          </button>
+          <app-tooltip text="Show all available history">
+            <button
+              type="button"
+              class="cursor-pointer border-l border-gray-300 px-3 py-1 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
+              :class="
+                showAllTime
+                  ? 'bg-gray-100 font-medium text-gray-900'
+                  : 'bg-white font-normal text-gray-600 hover:bg-gray-50'
+              "
+              :aria-pressed="showAllTime"
+              @click="showAllTime = true">
+              All time
+            </button>
+          </app-tooltip>
         </div>
       </fieldset>
     </div>

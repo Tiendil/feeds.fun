@@ -26,6 +26,11 @@ Calling modules MUST own the business meaning of each lock kind, argument select
 
 The module MUST provide technical transaction coordination only.
 
+`ffun.locks` is an approved transaction participant under the backend database architecture.
+Calling modules MAY use either lock context for the module's technical responsibility without workflow-specific transaction-sharing approval.
+Using either lock context MUST NOT transfer ownership of the protected business workflow or its database operations to `ffun.locks`.
+For `locked_transaction`, opening and completing the holder transaction is technical lifecycle ownership; yielding its execute callable to the calling module's protected operations is intended usage.
+
 ## Domain behavior
 
 ### Lock identity
