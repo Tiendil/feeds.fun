@@ -219,10 +219,10 @@
         <div
           v-if="!globalState.isSingleUserMode"
           class="ffun-info-bad">
-          <button
+          <ui-button
+            variant="danger"
             @click.prevent="removeAccount()"
-            class="ffun-form-button bad short pl-0"
-            >Remove Account</button
+            >Remove account</ui-button
           >
 
           <label class="ml-1">Permanently remove your account and all your data.</label>
