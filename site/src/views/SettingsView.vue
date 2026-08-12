@@ -2,164 +2,234 @@
   <side-panel-layout :reload-button="false">
     <template #main-header> Settings </template>
 
-    <h3>General</h3>
+    <div class="w-full max-w-6xl">
+      <ui-page-section title="General">
+        <label class="mr-1">User id</label>
+        <input
+          class="ffun-input w-72 cursor-pointer"
+          disabled
+          :value="userId" />
+      </ui-page-section>
 
-    <label class="mr-1">User id</label>
-    <input
-      class="ffun-input w-72 cursor-pointer"
-      disabled
-      :value="userId" />
+      <ui-page-section title="Subscriptions">
+        <p
+          v-if="productState === null"
+          class="text-sm text-slate-500">
+          Loading...
+        </p>
 
-    <h3>Messages</h3>
+        <ui-empty-state v-else-if="productState.subscriptions.length === 0">
+          No current subscriptions.
+        </ui-empty-state>
 
-    <user-setting
-      v-for="kind of messagesSettings"
-      key="kind"
-      :kind="kind" />
+        <ul
+          v-else
+          class="m-0 list-none space-y-2 p-0">
+          <li
+            v-for="(subscription, index) of productState.subscriptions"
+            :key="`${subscription.startedAt.toISOString()}-${index}`"
+            class="rounded border border-slate-300 bg-white px-3 py-2.5">
+            <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <span
+                class="inline-block rounded px-2 py-0.5 text-sm font-semibold"
+                :class="subscriptionStatusProperties[subscription.status].class">
+                {{ subscriptionStatusProperties[subscription.status].text }}
+              </span>
 
-    <h3>Tagging</h3>
+              <dl class="m-0 flex flex-1 flex-wrap gap-x-6 gap-y-1 text-sm">
+                <div class="flex gap-1.5">
+                  <dt class="font-medium text-slate-500">Started</dt>
+                  <dd class="m-0 text-slate-800">{{ formatSubscriptionDate(subscription.startedAt) }}</dd>
+                </div>
 
-    <div class="ffun-info-common">
-      <p>
-        All feeds from
-        <a
-          href="#"
-          @click.prevent="goToCollections()"
-          >collections</a
-        >
-        are tagged for free.
-      </p>
+                <div class="flex gap-1.5">
+                  <dt class="font-medium text-slate-500">Renews</dt>
+                  <dd class="m-0 text-slate-800">{{ formatSubscriptionDate(subscription.renewsAt) }}</dd>
+                </div>
 
-      <p>
-        If you want to tag your own feeds, we kindly ask you to provide an
-        <external-url
-          url="https://platform.openai.com/docs/api-reference/introduction"
-          text="OpenAI" />
-        or
-        <external-url
-          url="https://ai.google.dev/gemini-api/docs/api-key"
-          text="Gemini" />
-        API key.
-      </p>
+                <div class="flex gap-1.5">
+                  <dt class="font-medium text-slate-500">Ends</dt>
+                  <dd class="m-0 text-slate-800">{{ formatSubscriptionDate(subscription.endsAt) }}</dd>
+                </div>
+              </dl>
+            </div>
+          </li>
+        </ul>
+      </ui-page-section>
 
-      <p><strong>Here is how we use your API key:</strong></p>
+      <ui-page-section title="Messages">
+        <user-setting
+          v-for="kind of messagesSettings"
+          :key="kind"
+          :kind="kind" />
+      </ui-page-section>
 
-      <ul>
-        <li>We use your key only for your feeds that are not part of predefined collections.</li>
-        <li>We stop using your key when its usage exceeds the monthly limit you set.</li>
-        <li
-          >If a feed has multiple subscribers with API keys, we'll use a key with the lowest usage in the current
-          month.</li
-        >
-        <li>We do not process old news until you tell us to.</li>
-      </ul>
+      <ui-page-section title="Tagging">
+        <template #description>
+          <p>
+            Feeds from
+            <a
+              href="#"
+              @click.prevent="goToCollections()"
+              >collections</a
+            >
+            are tagged automatically and do not use your tokens.
+          </p>
 
-      <p><strong>The more users set up an API key, the cheaper Feeds Fun becomes for everyone.</strong></p>
+          <p>
+            To tag your personal feeds, provide an
+            <external-url
+              url="https://platform.openai.com/docs/api-reference/introduction"
+              text="OpenAI" />
+            or
+            <external-url
+              url="https://ai.google.dev/gemini-api/docs/api-key"
+              text="Gemini" />
+            API key.
+          </p>
 
-      <p>API key usage statistics are available on this page.</p>
-    </div>
+          <details class="rounded border border-slate-300 bg-white px-3 py-2">
+            <summary class="cursor-pointer font-medium text-slate-800 hover:text-slate-900"
+              >How API keys are used</summary
+            >
 
-    <user-setting
-      kind="openai_api_key"
-      class="mt-4" />
-    <user-setting kind="gemini_api_key" />
-    <user-setting kind="max_tokens_cost_in_month" />
+            <div class="mt-2 space-y-2 border-t border-slate-200 pt-2 text-slate-700">
+              <ul class="list-disc pl-5">
+                <li>We use your key only for personal feeds that are not part of predefined collections.</li>
+                <li>We stop using your key when its usage exceeds the monthly limit you set.</li>
+                <li>
+                  If a feed has multiple subscribers with API keys, we use the key with the lowest usage in the current
+                  month.
+                </li>
+                <li>We do not process old news until you tell us to.</li>
+              </ul>
 
-    <user-setting kind="process_entries_not_older_than" />
+              <p class="font-medium text-slate-700">
+                The more users set up an API key, the cheaper Feeds Fun becomes for everyone.
+              </p>
 
-    <div class="ffun-info-common mb-4">
-      <p>
-        The age of a news item is calculated based on the time it was published (according to the data in the feed).
-      </p>
-    </div>
+              <p class="text-slate-600">API key usage statistics are available on this page.</p>
+            </div>
+          </details>
+        </template>
 
-    <h3>API usage</h3>
+        <user-setting kind="openai_api_key" />
+        <user-setting kind="gemini_api_key" />
+        <user-setting kind="max_tokens_cost_in_month" />
 
-    <div class="ffun-info-common mb-4">
-      <p>Estimated tokens cost for your API keys usage per month.</p>
+        <div class="mb-4">
+          <user-setting
+            kind="process_entries_not_older_than"
+            class="!mb-1" />
+          <ui-field-hint> A news item's age is based on the publication time reported by its feed. </ui-field-hint>
+        </div>
+      </ui-page-section>
 
-      <ul class="list-disc list-inside">
-        <li> <strong>Estimated Used USD</strong> — the estimated cost of tokens in processed requests. </li>
-        <li>
-          <strong>Estimated Reserved USD</strong> — the estimated cost of tokens reserved for requests that are
-          currently processing or were not processed correctly.
-        </li>
-        <li> <strong>Estimated Total USD</strong> — the estimated total cost of tokens used in the month. </li>
-      </ul>
-    </div>
+      <ui-page-section title="API usage">
+        <template #description>
+          <p>Estimated monthly token cost for requests made with your API keys.</p>
 
-    <p v-if="tokensCostData == null">Loading...</p>
+          <ul class="list-disc space-y-1 pl-5">
+            <li>
+              <strong class="font-medium text-slate-800">Estimated Used USD</strong>
+              — cost of tokens in processed requests.
+            </li>
+            <li>
+              <strong class="font-medium text-slate-800">Estimated Reserved USD</strong>
+              — cost reserved for active or incorrectly processed requests.
+            </li>
+            <li>
+              <strong class="font-medium text-slate-800">Estimated Total USD</strong>
+              — total estimated token cost for the month.
+            </li>
+          </ul>
+        </template>
 
-    <table
-      v-else
-      class="border border-gray-300 rounded-lg">
-      <thead class="bg-slate-200">
-        <tr>
-          <th class="w-32">Period</th>
-          <th class="w-48">Estimated Used USD </th>
-          <th class="w-48">Estimated Reserved USD</th>
-          <th class="w-48">Estimated Total USD</th>
-          <th class="w-48">% From Maximum</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tokens-cost
-          :usage="usage"
-          v-for="usage of tokensCostData" />
+        <p
+          v-if="tokensCostData == null"
+          class="text-sm text-slate-500">
+          Loading...
+        </p>
 
-        <tr v-if="tokensCostData.length == 0">
-          <td class="text-center">—</td>
-          <td class="text-center">—</td>
-          <td class="text-center">—</td>
-          <td class="text-center">—</td>
-          <td class="text-center">—</td>
-        </tr>
-      </tbody>
-    </table>
+        <div
+          v-else
+          class="overflow-x-auto">
+          <table class="min-w-[56rem] border border-slate-300 rounded-lg">
+            <thead class="bg-slate-100 text-slate-800">
+              <tr>
+                <th class="w-32">Period</th>
+                <th class="w-48">Estimated Used USD </th>
+                <th class="w-48">Estimated Reserved USD</th>
+                <th class="w-48">Estimated Total USD</th>
+                <th class="w-48">% From Maximum</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tokens-cost
+                v-for="usage of tokensCostData"
+                :key="usage.intervalStartedAt.toISOString()"
+                :usage="usage" />
 
-    <h3>Token usage</h3>
+              <tr v-if="tokensCostData.length == 0">
+                <td class="text-center">—</td>
+                <td class="text-center">—</td>
+                <td class="text-center">—</td>
+                <td class="text-center">—</td>
+                <td class="text-center">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ui-page-section>
 
-    <div class="ffun-info-common mb-4">
-      <p>
-        Tagging one news item for your account spends one token. Tokens are used in this order: daily, monthly, then
-        lifetime.
-      </p>
+      <ui-page-section title="Token usage">
+        <template #description>
+          <p> Tagging one news item uses one token. Tokens are spent in this order: daily, monthly, then lifetime. </p>
 
-      <ul class="list-disc list-inside">
-        <li><strong>Daily tokens</strong> — the allowance resets at 00:00 UTC each day.</li>
-        <li><strong>Monthly tokens</strong> — the allowance resets at 00:00 UTC on the first day of each month.</li>
-        <li><strong>Lifetime tokens</strong> — the balance does not reset.</li>
-      </ul>
+          <p>Your subscription tier sets the daily and monthly token limits.</p>
 
-      <p> News from predefined collections does not use these tokens. The same news item is charged only once. </p>
-    </div>
+          <ul class="list-disc space-y-1 pl-5">
+            <li>
+              <strong class="font-medium text-slate-800">Daily tokens</strong>
+              — refill daily at 00:00 UTC.
+            </li>
+            <li>
+              <strong class="font-medium text-slate-800">Monthly tokens</strong>
+              — refill on the first day of each month at 00:00 UTC.
+            </li>
+            <li>
+              <strong class="font-medium text-slate-800">Lifetime tokens</strong>
+              — bought separately as a one-time purchase and never reset.
+            </li>
+          </ul>
 
-    <token-usage-statistics />
+          <p>News from predefined collections does not use your tokens.</p>
+        </template>
 
-    <h3>Danger Zone</h3>
+        <token-usage-statistics />
+      </ui-page-section>
 
-    <div class="ffun-info-bad">
-      <p><strong>ATTENTION!</strong></p>
+      <ui-page-section title="Danger Zone">
+        <div class="ffun-info-bad">
+          <p><strong>ATTENTION!</strong></p>
 
-      <p> Operations in this section are irreversible and may lead to data loss and even account deletion. </p>
-    </div>
+          <p>Operations in this section are irreversible and may lead to data loss and even account deletion.</p>
+        </div>
 
-    <div
-      v-if="!globalState.isSingleUserMode"
-      class="ffun-info-bad">
-      <button
-        @click.prevent="removeAccount()"
-        class="ffun-form-button bad short pl-0"
-        >Remove Account</button
-      >
+        <div
+          v-if="!globalState.isSingleUserMode"
+          class="ffun-info-bad">
+          <button
+            @click.prevent="removeAccount()"
+            class="ffun-form-button bad short pl-0"
+            >Remove Account</button
+          >
 
-      <label class="ml-1"> Permanently remove your account and all your data. </label>
-    </div>
+          <label class="ml-1">Permanently remove your account and all your data.</label>
+        </div>
 
-    <div
-      v-else
-      class="ffun-info-common">
-      <p> Account removal in the single-user mode is not available. </p>
+        <ui-empty-state v-else> Account removal is not available in single-user mode. </ui-empty-state>
+      </ui-page-section>
     </div>
   </side-panel-layout>
 </template>
@@ -182,9 +252,31 @@
 
   globalSettings.mainPanelMode = e.MainPanelMode.Settings;
 
+  const productState = computedAsync(async () => {
+    return await api.getProductState();
+  }, null);
+
   const tokensCostData = computedAsync(async () => {
     return await api.getResourceHistory({kind: "tokens_cost"});
   }, null);
+
+  const subscriptionStatusProperties: Record<e.SubscriptionStatus, {text: string; class: string}> = {
+    [e.SubscriptionStatus.Pending]: {text: "Pending", class: "bg-blue-100 text-blue-900"},
+    [e.SubscriptionStatus.Trialing]: {text: "Trialing", class: "bg-blue-100 text-blue-900"},
+    [e.SubscriptionStatus.Active]: {text: "Active", class: "bg-green-100 text-green-900"},
+    [e.SubscriptionStatus.PastDue]: {text: "Past due", class: "bg-yellow-100 text-yellow-900"},
+    [e.SubscriptionStatus.Paused]: {text: "Paused", class: "bg-yellow-100 text-yellow-900"},
+    [e.SubscriptionStatus.Ended]: {text: "Ended", class: "bg-slate-200 text-slate-700"}
+  };
+
+  const subscriptionDateFormatter = new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
+
+  function formatSubscriptionDate(date: Date | null): string {
+    return date === null ? "—" : subscriptionDateFormatter.format(date);
+  }
 
   const userId = computed(() => {
     return globalState.userId == null ? "—" : globalState.userId;

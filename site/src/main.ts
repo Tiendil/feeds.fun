@@ -32,6 +32,10 @@ import FaviconElement from "./components/FaviconElement.vue";
 import RuleForList from "./components/RuleForList.vue";
 import UserSettingForNotification from "./components/UserSettingForNotification.vue";
 
+import UiPageSection from "./components/ui/PageSection.vue";
+import UiFieldHint from "./components/ui/FieldHint.vue";
+import UiEmptyState from "./components/ui/EmptyState.vue";
+
 import FeedListColumns from "./components/feed_list/Columns.vue";
 import FeedEntriesPerDayChart from "./components/feed_list/FeedEntriesPerDayChart.vue";
 
@@ -119,6 +123,10 @@ app.component("AppTooltip", AppTooltip);
 app.component("FaviconElement", FaviconElement);
 app.component("RuleForList", RuleForList);
 app.component("UserSettingForNotification", UserSettingForNotification);
+
+app.component("UiPageSection", UiPageSection);
+app.component("UiFieldHint", UiFieldHint);
+app.component("UiEmptyState", UiEmptyState);
 
 app.component("FeedListColumns", FeedListColumns);
 app.component("FeedEntriesPerDayChart", FeedEntriesPerDayChart);
