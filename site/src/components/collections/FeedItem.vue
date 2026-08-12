@@ -37,7 +37,8 @@
     :url="null"
     :title="null"
     :loading="false"
-    :text="purifiedDescription" />
+    :text="purifiedDescription"
+    :references="[]" />
 </template>
 
 <script lang="ts" setup>

@@ -81,18 +81,20 @@
       </fieldset>
     </div>
 
-    <div
+    <ui-notice
       v-if="loadError"
-      class="ffun-info-bad"
+      tone="danger"
       role="alert">
       <p>Unable to load token usage history. Please try again.</p>
-      <button
+      <ui-button
+        variant="primary"
+        size="compact"
         type="button"
-        class="ffun-form-button short mt-2"
+        class="mt-2"
         @click="retryLoading">
         Retry
-      </button>
-    </div>
+      </ui-button>
+    </ui-notice>
 
     <div
       class="relative border border-gray-200 rounded-lg"
@@ -119,12 +121,14 @@
 </template>
 
 <script lang="ts" setup>
-  import {computed, reactive, ref, shallowRef, watch} from "vue";
+  import {computed, reactive, ref} from "vue";
+  import {computedAsync} from "@vueuse/core";
   import type {ChartData, ChartOptions, TooltipItem} from "chart.js";
 
   import * as api from "@/logic/api";
   import * as e from "@/logic/enums";
   import {barPlotOptionFragments, getPlotColors} from "@/logic/plots";
+  import {useGlobalSettingsStore} from "@/stores/globalSettings";
   import {
     assertTokenUsageStatistics,
     emptyTokenUsageStatistics,
@@ -136,6 +140,8 @@
     type TokenUsageTimeGranularity,
     type TokenUsageResourceKind
   } from "@/logic/resourceStatistics";
+
+  const globalSettings = useGlobalSettingsStore();
 
   const plotColors = getPlotColors();
 
@@ -156,14 +162,51 @@
     [e.ResourceKind.MonthTokenUsage]: true,
     [e.ResourceKind.LifetimeTokenUsage]: true
   });
-  const displayedStatistics = shallowRef<DisplayedStatistics>({
+  const initialDisplayedStatistics: DisplayedStatistics = {
     granularity: initialGranularity,
     data: emptyTokenUsageStatistics(initialGranularity, new Date())
-  });
+  };
   const loading = ref(false);
   const loadError = ref(false);
-  const statisticsCache = new Map<TokenUsageTimeGranularity, TokenUsageStatisticsData>();
+  const retryVersion = ref(0);
+  let lastSuccessfulStatistics = initialDisplayedStatistics;
   let activeRequest = 0;
+
+  const displayedStatistics = computedAsync(
+    async (): Promise<DisplayedStatistics> => {
+      const granularity = selectedGranularity.value;
+
+      globalSettings.dataVersion;
+      retryVersion.value;
+
+      const request = ++activeRequest;
+      loadError.value = false;
+
+      try {
+        const loadedStatistics = await api.getResourceStatistics({
+          kinds: [...tokenUsageResourceKinds],
+          interval: e.TimeGranularityProperties.get(granularity)!.resourceApiId
+        });
+        assertTokenUsageStatistics(loadedStatistics);
+
+        const result = {granularity, data: loadedStatistics};
+
+        if (request === activeRequest) {
+          lastSuccessfulStatistics = result;
+        }
+
+        return result;
+      } catch {
+        if (request === activeRequest) {
+          loadError.value = true;
+        }
+
+        return lastSuccessfulStatistics;
+      }
+    },
+    initialDisplayedStatistics,
+    loading
+  );
 
   const visibleTokenUsageResources = computed(() => tokenUsageResources.filter(([kind]) => visibleKinds[kind]));
   const chartOverlayMessage = computed(() => {
@@ -331,52 +374,7 @@
     () => `Show the last ${e.windowSizes.get(displayedGranularity.value)!} ${displayedGranularity.value}s`
   );
 
-  async function loadStatistics(granularity: TokenUsageTimeGranularity): Promise<void> {
-    const request = ++activeRequest;
-    const cachedStatistics = statisticsCache.get(granularity);
-
-    if (cachedStatistics !== undefined) {
-      displayedStatistics.value = {granularity, data: cachedStatistics};
-      loading.value = false;
-      loadError.value = false;
-      return;
-    }
-
-    loading.value = true;
-    loadError.value = false;
-
-    try {
-      const loadedStatistics = await api.getResourceStatistics({
-        kinds: [...tokenUsageResourceKinds],
-        interval: e.TimeGranularityProperties.get(granularity)!.resourceApiId
-      });
-      assertTokenUsageStatistics(loadedStatistics);
-
-      statisticsCache.set(granularity, loadedStatistics);
-
-      if (request === activeRequest && granularity === selectedGranularity.value) {
-        displayedStatistics.value = {granularity, data: loadedStatistics};
-      }
-    } catch {
-      if (request === activeRequest && granularity === selectedGranularity.value) {
-        loadError.value = true;
-      }
-    } finally {
-      if (request === activeRequest && granularity === selectedGranularity.value) {
-        loading.value = false;
-      }
-    }
-  }
-
   function retryLoading(): void {
-    void loadStatistics(selectedGranularity.value);
+    retryVersion.value++;
   }
-
-  watch(
-    selectedGranularity,
-    (granularity) => {
-      void loadStatistics(granularity);
-    },
-    {immediate: true}
-  );
 </script>

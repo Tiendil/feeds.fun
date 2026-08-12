@@ -33,13 +33,15 @@
         on-text="yes"
         off-text="no" />
 
-      <button
-        class="ffun-form-button py-0 ml-1"
+      <ui-button
+        variant="secondary"
+        size="compact"
+        class="ml-1"
         title='Undo last "mark read" operation'
         :disabled="!entriesStore.canUndoMarkRead"
         @click="entriesStore.undoMarkRead()">
         ↶
-      </button>
+      </ui-button>
     </template>
 
     <template #side-footer>

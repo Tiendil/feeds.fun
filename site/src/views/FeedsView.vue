@@ -17,29 +17,31 @@
     </template>
 
     <template #side-menu-item-3>
-      <a
-        class="ffun-form-button p-1 my-1 block w-full text-center"
+      <ui-button-link
+        variant="secondary"
+        size="compact"
+        class="my-1 flex w-full"
         :href="api.downloadOPMLUrl"
         target="_blank"
         title="Download OPML file with all your feeds"
-        >Download OPML</a
+        >Download OPML</ui-button-link
       >
     </template>
 
     <template #main-header>
       Feeds
-      <span v-if="sortedFeeds"> [{{ sortedFeeds.length }}] </span>
+      <span v-if="feedsState !== FeedsViewState.Loading"> [{{ sortedFeeds?.length }}] </span>
     </template>
 
     <notifications
-      v-if="sortedFeeds !== null"
+      v-if="feedsState === FeedsViewState.Empty"
       :create-rule-help="false"
       :api-key="false"
-      :collections-notification_="sortedFeeds === null || sortedFeeds.length == 0"
+      :collections-notification_="true"
       :collections-warning_="false" />
 
     <feeds-list
-      v-if="sortedFeeds"
+      v-if="feedsState === FeedsViewState.Populated && sortedFeeds"
       :feeds="sortedFeeds" />
 
     <template #main-footer> </template>
@@ -61,6 +63,12 @@
   const globalState = useGlobalState();
 
   const feedsStore = useFeedsStore();
+
+  enum FeedsViewState {
+    Loading = "loading",
+    Empty = "empty",
+    Populated = "populated"
+  }
 
   provide("eventsViewName", "feeds");
 
@@ -137,5 +145,17 @@
     });
 
     return sorted;
+  });
+
+  const feedsState = computed(() => {
+    if (!readyToUseSettings.value || feedsStore.loadedFeedsReport === null) {
+      return FeedsViewState.Loading;
+    }
+
+    if (sortedFeeds.value?.length === 0) {
+      return FeedsViewState.Empty;
+    }
+
+    return FeedsViewState.Populated;
   });
 </script>

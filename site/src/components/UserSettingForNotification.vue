@@ -1,10 +1,10 @@
 <template>
-  <a
+  <ui-button
     v-if="setting"
-    href=""
+    variant="quiet"
+    size="compact"
     @click.prevent="updateFlag(true)"
-    class=""
-    >{{ text }}</a
+    >{{ text }}</ui-button
   >
 </template>
 

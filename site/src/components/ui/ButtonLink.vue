@@ -1,16 +1,16 @@
 <template>
-  <button
-    :type="type"
+  <a
+    :href="href"
+    :target="target"
     class="ui-button"
     :class="[buttonVariantClasses[properties.variant], buttonSizeClasses[properties.size]]">
     <slot />
-  </button>
+  </a>
 </template>
 
 <script lang="ts" setup>
   type ButtonVariant = "primary" | "tonal" | "secondary" | "quiet" | "danger";
   type ButtonSize = "regular" | "compact";
-  type ButtonType = "button" | "submit" | "reset";
 
   const buttonVariantClasses: Record<ButtonVariant, string> = {
     primary: "ui-button-primary",
@@ -27,10 +27,11 @@
 
   const properties = withDefaults(
     defineProps<{
+      href: string;
       variant: ButtonVariant;
       size?: ButtonSize;
-      type?: ButtonType;
+      target?: string;
     }>(),
-    {size: "regular", type: "button"}
+    {size: "regular"}
   );
 </script>

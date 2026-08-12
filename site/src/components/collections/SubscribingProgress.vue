@@ -1,20 +1,23 @@
 <template>
-  <div
+  <ui-notice
     v-if="loading"
-    class="ffun-info-waiting mt-4">
+    tone="info"
+    class="mt-4">
     <p>Subscribing…</p>
-  </div>
+  </ui-notice>
 
-  <div
+  <ui-notice
     v-if="loaded"
-    class="ffun-info-good mt-4"
+    tone="success"
+    class="mt-4"
     ><p>Feeds added!</p>
-  </div>
-  <div
+  </ui-notice>
+  <ui-notice
     v-if="error"
-    class="ffun-info-bad mt-4"
+    tone="danger"
+    class="mt-4"
     ><p>Unknown error occurred! Please, try later.</p>
-  </div>
+  </ui-notice>
 </template>
 
 <script lang="ts" setup>

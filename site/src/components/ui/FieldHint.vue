@@ -1,5 +1,5 @@
 <template>
-  <p class="mb-0 mt-1 max-w-prose text-sm leading-relaxed text-slate-600">
+  <p class="ui-field-hint">
     <slot />
   </p>
 </template>

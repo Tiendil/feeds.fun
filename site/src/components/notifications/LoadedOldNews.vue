@@ -3,11 +3,11 @@
   <!-- Currently, after changing the period, this message does not disappear -->
   <!-- until the backend returns a new response -->
   <!-- It confuses users because the period size is changing in the text at the beginning of the request. -->
-  <div
+  <ui-notice
     v-if="allEntriesAreOlderThanPeriod"
-    class="ffun-info-common">
+    tone="info">
     <p> We have not found any news that is newer than {{ period.text }}, so we loaded some older ones. </p>
-  </div>
+  </ui-notice>
 </template>
 
 <script lang="ts" setup>

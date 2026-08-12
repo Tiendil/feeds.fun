@@ -27,6 +27,7 @@
     <template v-else-if="!editing">
       <ui-button
         variant="quiet"
+        size="compact"
         class="ml-1"
         @click.prevent="startEditing()"
         >Change</ui-button
@@ -36,12 +37,14 @@
     <template v-else>
       <ui-button
         variant="primary"
+        size="compact"
         @click.prevent="save()"
         class="ml-1"
         >Save</ui-button
       >
       <ui-button
         variant="secondary"
+        size="compact"
         @click.prevent="cancel()"
         class="ml-1"
         >Cancel</ui-button

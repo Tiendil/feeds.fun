@@ -1,12 +1,12 @@
 <template>
-  <section class="border-t border-slate-200 py-5 first:border-t-0 first:pt-0">
-    <h2 class="mb-2 mt-0 text-xl font-semibold leading-relaxed text-slate-900">
+  <section class="ui-page-section">
+    <h2 class="ui-page-section-title">
       {{ title }}
     </h2>
 
     <div
       v-if="$slots.description"
-      class="mb-4 max-w-4xl space-y-2 text-base leading-relaxed text-slate-700">
+      class="ui-page-section-description">
       <slot name="description" />
     </div>
 

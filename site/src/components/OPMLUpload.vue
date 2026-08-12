@@ -1,38 +1,42 @@
 <template>
   <div>
-    <form @submit.prevent="submit">
-      <input
-        type="file"
-        class="ffun-file-button"
+    <form
+      class="ui-form-row"
+      @submit.prevent="submit">
+      <ui-file-input
+        class="ui-form-row-control"
         :disabled="loading"
         @change="uploadFile" />
 
-      <button
-        class="ffun-form-button"
+      <ui-button
+        variant="primary"
         type="submit"
         :disabled="loading"
         @click.prevent="submit"
-        >Submit</button
+        >Submit</ui-button
       >
     </form>
 
-    <p
+    <ui-notice
       v-if="loading"
-      class="ffun-info-waiting mt-2"
-      >Loading...</p
+      tone="info"
+      class="mt-2"
+      >Loading...</ui-notice
     >
 
-    <p
+    <ui-notice
       v-if="loaded"
-      class="ffun-info-good mt-4"
-      >Feeds added!</p
+      tone="success"
+      class="mt-4"
+      >Feeds added!</ui-notice
     >
 
-    <p
+    <ui-notice
       v-if="error"
-      class="ffun-info-bad mt-4">
+      tone="danger"
+      class="mt-4">
       {{ errorMessage }}
-    </p>
+    </ui-notice>
   </div>
 </template>
 

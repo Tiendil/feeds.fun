@@ -39,12 +39,12 @@
 
       <hr v-if="reloadButton" />
 
-      <a
-        class="ffun-side-panel-refresh-button short"
+      <ui-button
         v-if="reloadButton"
-        href="#"
+        variant="tonal"
+        class="my-1 flex w-full"
         @click="globalSettings.updateDataVersion()"
-        >Refresh</a
+        >Refresh</ui-button
       >
 
       <hr v-if="hasSideFooter" />

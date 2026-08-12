@@ -1,49 +1,122 @@
 @layer components {
-  .ffun-x-panel ul {
-    @apply list-disc list-inside;
+  .ui-content-rail {
+    @apply w-full max-w-5xl;
   }
 
-  .ffun-x-panel ol {
-    @apply list-decimal list-inside;
+  .ui-readable-copy {
+    @apply max-w-4xl text-base leading-relaxed text-slate-700;
   }
 
-  .ffun-x-panel code {
-    @apply bg-slate-800 px-1 rounded bg-opacity-10 text-sm;
+  .ui-reading-content {
+    @apply ui-readable-copy space-y-1;
   }
 
-  .ffun-x-panel a {
-    @apply text-red-600 hover:text-red-800;
+  .ui-guidance-panel {
+    @apply my-2 max-w-5xl rounded-md border px-4 py-3;
   }
 
-  .ffun-x-panel h4 {
-    @apply font-semibold text-lg mb-2;
+  .ui-guidance-panel-neutral {
+    @apply border-slate-200 bg-slate-50;
   }
 
-  .ffun-x-panel p:last-child {
-    @apply pb-0 mb-0;
+  .ui-guidance-panel-positive {
+    @apply border-emerald-200 bg-emerald-50 text-slate-800;
   }
 
-  .ffun-x-info {
-    @apply ffun-x-panel border p-4 rounded-md my-2;
+  .ui-positive-guidance-title {
+    @apply text-emerald-900;
   }
 
-  .ffun-info-settings {
-    @apply ffun-x-info;
+  .ui-action-panel {
+    @apply ui-guidance-panel text-slate-800;
   }
 
-  .ffun-info-common {
-    @apply ffun-x-info bg-blue-50 border-blue-200 text-blue-900;
+  .ui-advisory {
+    @apply ui-guidance-panel text-slate-700;
   }
 
-  .ffun-info-good {
-    @apply ffun-x-info bg-green-50 border-green-200 text-green-900;
+  .ui-compact-surface {
+    @apply max-w-5xl rounded border px-3 py-2 text-sm;
   }
 
-  .ffun-info-bad {
-    @apply ffun-x-info bg-red-50 border-red-200 text-red-900;
+  .ui-notice {
+    @apply ui-compact-surface my-2;
   }
 
-  .ffun-info-waiting {
-    @apply ffun-x-info bg-yellow-50 border-yellow-200 text-yellow-900;
+  .ui-notice-info {
+    @apply border-slate-200 bg-slate-50 text-slate-700;
+  }
+
+  .ui-notice-success {
+    @apply border-green-200 bg-green-50 text-green-900;
+  }
+
+  .ui-notice-warning {
+    @apply border-amber-200 bg-amber-50 text-amber-900;
+  }
+
+  .ui-notice-danger {
+    @apply border-red-200 bg-red-50 text-red-900;
+  }
+
+  .ui-empty-state {
+    @apply ui-compact-surface border-dashed border-slate-300 bg-slate-50 text-slate-700;
+  }
+
+  .ui-empty-state-action-row {
+    @apply ui-compact-surface flex flex-wrap items-center gap-x-3 gap-y-2;
+    @apply border-solid border-slate-200 bg-slate-50 text-base text-slate-700;
+  }
+
+  .ui-page-section {
+    @apply scroll-mt-4 border-t border-slate-200 py-5 first:border-t-0 first:pt-0;
+  }
+
+  .ui-page-section-title {
+    @apply mb-2 mt-0 text-xl font-semibold leading-relaxed text-slate-900;
+  }
+
+  .ui-page-section-description {
+    @apply ui-readable-copy mb-4 space-y-2;
+  }
+
+  .ui-field-hint {
+    @apply mb-0 mt-1 max-w-prose text-sm leading-relaxed text-slate-600;
+  }
+
+  .ui-disclosure {
+    @apply w-full rounded border border-slate-300 bg-white px-3 py-2;
+  }
+
+  .ui-disclosure-summary {
+    @apply cursor-pointer font-medium text-slate-800 hover:text-slate-900;
+  }
+
+  .ui-disclosure-body {
+    @apply mt-2 space-y-2 border-t border-slate-200 pt-2 text-slate-700;
+  }
+
+  .ui-rich-text ul {
+    @apply list-inside list-disc;
+  }
+
+  .ui-rich-text ol {
+    @apply list-inside list-decimal;
+  }
+
+  .ui-rich-text code {
+    @apply rounded bg-slate-800 bg-opacity-10 px-1 text-sm;
+  }
+
+  .ui-rich-text a {
+    @apply cursor-pointer text-blue-600 hover:text-blue-800;
+  }
+
+  .ui-rich-text h4 {
+    @apply mb-2 text-lg font-semibold;
+  }
+
+  .ui-rich-text p:last-child {
+    @apply mb-0 pb-0;
   }
 }

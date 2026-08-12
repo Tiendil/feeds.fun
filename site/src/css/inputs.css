@@ -1,4 +1,60 @@
 @layer components {
+  .ui-button {
+    @apply inline-flex cursor-pointer items-center justify-center rounded border text-sm font-medium leading-5;
+    @apply transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .ui-button-primary {
+    @apply border-blue-600 bg-blue-600 text-white;
+    @apply hover:border-blue-700 hover:bg-blue-700 focus-visible:ring-blue-500;
+  }
+
+  .ui-button-tonal {
+    @apply border-blue-200 bg-blue-50 text-blue-800;
+    @apply hover:border-blue-300 hover:bg-blue-100 focus-visible:ring-blue-400;
+  }
+
+  .ui-button-secondary {
+    @apply border-slate-300 bg-white text-slate-800;
+    @apply hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-slate-400;
+  }
+
+  .ui-button-quiet {
+    @apply border-transparent bg-transparent text-blue-700;
+    @apply hover:bg-slate-100 hover:text-blue-800 focus-visible:ring-blue-500;
+  }
+
+  .ui-button-danger {
+    @apply border-red-600 bg-red-600 text-white;
+    @apply hover:border-red-700 hover:bg-red-700 focus-visible:ring-red-500;
+  }
+
+  .ui-button-regular {
+    @apply h-9 px-3;
+  }
+
+  .ui-button-compact {
+    @apply h-7 px-2;
+  }
+
+  .ui-file-input {
+    @apply block h-9 max-w-full cursor-pointer text-sm leading-9 text-slate-600;
+    @apply file:mr-3 file:h-9 file:cursor-pointer file:rounded file:border file:border-solid;
+    @apply file:border-slate-300 file:bg-white file:px-3 file:text-sm file:font-medium file:leading-8 file:text-slate-800;
+    @apply hover:file:border-slate-400 hover:file:bg-slate-50;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .ui-form-row {
+    @apply flex max-w-xl flex-wrap items-center gap-2;
+  }
+
+  .ui-form-row-control {
+    @apply h-9 min-w-0 flex-1;
+  }
+
   .ffun-x-input-common {
     @apply border border-slate-300 rounded px-2 py-1;
     @apply bg-white text-slate-700;
@@ -41,32 +97,6 @@
     &.short {
       @apply p-1 px-2;
     }
-  }
-
-  .ffun-form-button {
-    @apply ffun-x-input-common font-semibold text-white;
-    @apply px-4 py-2;
-    @apply bg-blue-500 hover:bg-blue-600 focus:ring-0;
-    @apply disabled:bg-blue-300 disabled:text-slate-50;
-  }
-
-  .ffun-form-button.short {
-    @apply p-1 px-2;
-  }
-
-  .ffun-form-button.bad {
-    @apply bg-red-500 hover:bg-red-600;
-    @apply disabled:bg-red-300;
-  }
-
-  .ffun-file-button {
-    @apply text-slate-500;
-    @apply file:text-white file:font-semibold;
-    @apply file:border file:rounded file:px-4 file:py-2 file:shadow-none file:bg-blue-500 file:border-slate-300 file:border-solid file:outline-none;
-    @apply file:disabled:bg-blue-300 file:disabled:text-slate-400 file:disabled:cursor-not-allowed;
-    @apply file:enabled:hover:border-blue-400;
-    @apply file:focus:ring-0;
-    @apply file:cursor-pointer;
   }
 
   .ffun-config-flag {

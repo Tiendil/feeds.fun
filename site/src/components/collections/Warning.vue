@@ -1,5 +1,5 @@
 <template>
-  <div class="ffun-info-common">
+  <ui-advisory>
     <h4>Pay attention to your feed URLs</h4>
 
     <p>
@@ -53,7 +53,7 @@
       class=""
       kind="hide_message_check_your_feed_urls"
       button-text="Hide this message" />
-  </div>
+  </ui-advisory>
 </template>
 
 <script lang="ts" setup>

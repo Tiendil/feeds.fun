@@ -35,7 +35,12 @@ import UserSettingForNotification from "./components/UserSettingForNotification.
 import UiPageSection from "./components/ui/PageSection.vue";
 import UiFieldHint from "./components/ui/FieldHint.vue";
 import UiEmptyState from "./components/ui/EmptyState.vue";
+import UiActionPanel from "./components/ui/ActionPanel.vue";
+import UiAdvisory from "./components/ui/Advisory.vue";
 import UiButton from "./components/ui/Button.vue";
+import UiButtonLink from "./components/ui/ButtonLink.vue";
+import UiNotice from "./components/ui/Notice.vue";
+import UiFileInput from "./components/ui/FileInput.vue";
 
 import FeedListColumns from "./components/feed_list/Columns.vue";
 import FeedEntriesPerDayChart from "./components/feed_list/FeedEntriesPerDayChart.vue";
@@ -128,7 +133,12 @@ app.component("UserSettingForNotification", UserSettingForNotification);
 app.component("UiPageSection", UiPageSection);
 app.component("UiFieldHint", UiFieldHint);
 app.component("UiEmptyState", UiEmptyState);
+app.component("UiActionPanel", UiActionPanel);
+app.component("UiAdvisory", UiAdvisory);
 app.component("UiButton", UiButton);
+app.component("UiButtonLink", UiButtonLink);
+app.component("UiNotice", UiNotice);
+app.component("UiFileInput", UiFileInput);
 
 app.component("FeedListColumns", FeedListColumns);
 app.component("FeedEntriesPerDayChart", FeedEntriesPerDayChart);

@@ -1,9 +1,30 @@
 <template>
-  <side-panel-layout :reload-button="false">
+  <side-panel-layout :reload-button="true">
     <template #main-header> Settings </template>
 
-    <div class="w-full max-w-6xl">
-      <ui-page-section title="General">
+    <template #side-menu-item-1>
+      <nav>
+        <p class="ui-section-nav-title">On this page</p>
+
+        <ul class="ui-section-nav-list">
+          <li
+            v-for="section in settingsSections"
+            :key="section.id"
+            class="ui-section-nav-item">
+            <a
+              :href="`#${section.id}`"
+              class="ui-section-nav-link">
+              {{ section.title }}
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </template>
+
+    <div class="ui-content-rail">
+      <ui-page-section
+        id="settings-general"
+        title="General">
         <label class="mr-1">User id</label>
         <input
           class="ffun-input w-72 cursor-pointer"
@@ -11,7 +32,9 @@
           :value="userId" />
       </ui-page-section>
 
-      <ui-page-section title="Subscriptions">
+      <ui-page-section
+        id="settings-subscriptions"
+        title="Subscriptions">
         <p
           v-if="productState === null"
           class="text-sm text-slate-500">
@@ -57,14 +80,18 @@
         </ul>
       </ui-page-section>
 
-      <ui-page-section title="Messages">
+      <ui-page-section
+        id="settings-messages"
+        title="Messages">
         <user-setting
           v-for="kind of messagesSettings"
           :key="kind"
           :kind="kind" />
       </ui-page-section>
 
-      <ui-page-section title="Tagging">
+      <ui-page-section
+        id="settings-tagging"
+        title="Tagging">
         <template #description>
           <p>
             Feeds from
@@ -88,30 +115,29 @@
             API key.
           </p>
 
-          <details class="rounded border border-slate-300 bg-white px-3 py-2">
-            <summary class="cursor-pointer font-medium text-slate-800 hover:text-slate-900"
-              >How API keys are used</summary
-            >
-
-            <div class="mt-2 space-y-2 border-t border-slate-200 pt-2 text-slate-700">
-              <ul class="list-disc pl-5">
-                <li>We use your key only for personal feeds that are not part of predefined collections.</li>
-                <li>We stop using your key when its usage exceeds the monthly limit you set.</li>
-                <li>
-                  If a feed has multiple subscribers with API keys, we use the key with the lowest usage in the current
-                  month.
-                </li>
-                <li>We do not process old news until you tell us to.</li>
-              </ul>
-
-              <p class="font-medium text-slate-700">
-                The more users set up an API key, the cheaper Feeds Fun becomes for everyone.
-              </p>
-
-              <p class="text-slate-600">API key usage statistics are available on this page.</p>
-            </div>
-          </details>
         </template>
+
+        <details class="ui-disclosure mb-4">
+          <summary class="ui-disclosure-summary">How API keys are used</summary>
+
+          <div class="ui-disclosure-body">
+            <ul class="list-disc pl-5">
+              <li>We use your key only for personal feeds that are not part of predefined collections.</li>
+              <li>We stop using your key when its usage exceeds the monthly limit you set.</li>
+              <li>
+                If a feed has multiple subscribers with API keys, we use the key with the lowest usage in the current
+                month.
+              </li>
+              <li>We do not process old news until you tell us to.</li>
+            </ul>
+
+            <p class="font-medium text-slate-700">
+              The more users set up an API key, the cheaper Feeds Fun becomes for everyone.
+            </p>
+
+            <p class="text-slate-600">API key usage statistics are available on this page.</p>
+          </div>
+        </details>
 
         <user-setting kind="openai_api_key" />
         <user-setting kind="gemini_api_key" />
@@ -125,7 +151,9 @@
         </div>
       </ui-page-section>
 
-      <ui-page-section title="API usage">
+      <ui-page-section
+        id="settings-api-usage"
+        title="API usage">
         <template #description>
           <p>Estimated monthly token cost for requests made with your API keys.</p>
 
@@ -154,7 +182,7 @@
         <div
           v-else
           class="overflow-x-auto">
-          <table class="min-w-[56rem] border border-slate-300 rounded-lg">
+          <table class="w-full min-w-[56rem] rounded-lg border border-slate-300">
             <thead class="bg-slate-100 text-slate-800">
               <tr>
                 <th class="w-32">Period</th>
@@ -182,7 +210,9 @@
         </div>
       </ui-page-section>
 
-      <ui-page-section title="Token usage">
+      <ui-page-section
+        id="settings-token-usage"
+        title="Token usage">
         <template #description>
           <p> Tagging one news item uses one token. Tokens are spent in this order: daily, monthly, then lifetime. </p>
 
@@ -209,16 +239,18 @@
         <token-usage-statistics />
       </ui-page-section>
 
-      <ui-page-section title="Danger Zone">
-        <div class="ffun-info-bad">
+      <ui-page-section
+        id="settings-danger-zone"
+        title="Danger Zone">
+        <ui-notice tone="danger">
           <p><strong>ATTENTION!</strong></p>
 
           <p>Operations in this section are irreversible and may lead to data loss and even account deletion.</p>
-        </div>
+        </ui-notice>
 
-        <div
+        <ui-notice
           v-if="!globalState.isSingleUserMode"
-          class="ffun-info-bad">
+          tone="danger">
           <ui-button
             variant="danger"
             @click.prevent="removeAccount()"
@@ -226,7 +258,7 @@
           >
 
           <label class="ml-1">Permanently remove your account and all your data.</label>
-        </div>
+        </ui-notice>
 
         <ui-empty-state v-else> Account removal is not available in single-user mode. </ui-empty-state>
       </ui-page-section>
@@ -253,10 +285,14 @@
   globalSettings.mainPanelMode = e.MainPanelMode.Settings;
 
   const productState = computedAsync(async () => {
+    globalSettings.dataVersion;
+
     return await api.getProductState();
   }, null);
 
   const tokensCostData = computedAsync(async () => {
+    globalSettings.dataVersion;
+
     return await api.getResourceHistory({kind: "tokens_cost"});
   }, null);
 
@@ -287,6 +323,16 @@
     "hide_message_about_adding_collections",
     "hide_message_check_your_feed_urls"
   ];
+
+  const settingsSections = [
+    {id: "settings-general", title: "General"},
+    {id: "settings-subscriptions", title: "Subscriptions"},
+    {id: "settings-messages", title: "Messages"},
+    {id: "settings-tagging", title: "Tagging"},
+    {id: "settings-api-usage", title: "API usage"},
+    {id: "settings-token-usage", title: "Token usage"},
+    {id: "settings-danger-zone", title: "Danger zone"}
+  ] as const;
 
   const router = useRouter();
 
