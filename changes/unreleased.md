@@ -17,3 +17,5 @@ Run migrations `ffun migrate`.
   - tagging one news entry will take a one token;
   - tokens are spent per user; i.e. if multiple users want to see tags to the same entry, each of them will spend 1 token.
   - tokens are spent in order: `day_tokens` first, `month_tokens` if there are no `day_tokens`, and `lifetime_tokens` if there are no `month_tokens`.
+- ff-639 — Display token and subscription information in the frontend.
+- ff-639 — Improved styles of info panels and buttons in the frontend.
