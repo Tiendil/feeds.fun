@@ -1,4 +1,5 @@
 import datetime
+import uuid
 from typing import cast
 
 import pytest
@@ -7,9 +8,20 @@ from pydantic import ValidationError
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.domain import new_user_id
+from ffun.domain.entities import BenefitId, BenefitTransactionId
 from ffun.subscriptions import errors, operations
-from ffun.subscriptions.entities import ProviderCustomerId, ProviderSubscriptionId, SubscriptionStatusId
+from ffun.subscriptions.entities import SubscriptionId, SubscriptionStatusId
 from ffun.subscriptions.tests.make import make_subscription
+
+
+class TestNewSubscriptionId:
+    def test_returns_distinct_uuid_identifiers(self) -> None:
+        first = operations.new_subscription_id()
+        second = operations.new_subscription_id()
+
+        assert isinstance(first, uuid.UUID)
+        assert isinstance(second, uuid.UUID)
+        assert first != second
 
 
 class TestRowToSubscription:
@@ -43,39 +55,15 @@ class TestLoadSubscription:
     async def test_missing(self) -> None:
         subscription = make_subscription()
 
-        assert (
-            await operations.load_subscription(
-                execute,
-                provider_id=subscription.provider_id,
-                provider_merchant_id=subscription.provider_merchant_id,
-                provider_subscription_id=subscription.provider_subscription_id,
-            )
-            is None
-        )
+        assert await operations.load_subscription(execute, subscription.id) is None
 
     @pytest.mark.asyncio
     async def test_loads_complete_snapshot_for_exact_identity(self) -> None:
         subscription = make_subscription()
         await operations.upsert_subscription(execute, subscription)
 
-        assert (
-            await operations.load_subscription(
-                execute,
-                provider_id=subscription.provider_id,
-                provider_merchant_id=subscription.provider_merchant_id,
-                provider_subscription_id=subscription.provider_subscription_id,
-            )
-            == subscription
-        )
-        assert (
-            await operations.load_subscription(
-                execute,
-                provider_id=subscription.provider_id,
-                provider_merchant_id=subscription.provider_merchant_id,
-                provider_subscription_id=ProviderSubscriptionId("missing"),
-            )
-            is None
-        )
+        assert await operations.load_subscription(execute, subscription.id) == subscription
+        assert await operations.load_subscription(execute, operations.new_subscription_id()) is None
 
 
 class TestUpsertSubscription:
@@ -85,24 +73,18 @@ class TestUpsertSubscription:
             renews_at=datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(days=30)
         )
 
-        async with TableSizeDelta("sub_subscriptions", delta=1):
+        async with TableSizeDelta("sb_subscriptions", delta=1):
             await operations.upsert_subscription(execute, subscription)
 
-        assert (
-            await operations.load_subscription(
-                execute,
-                provider_id=subscription.provider_id,
-                provider_merchant_id=subscription.provider_merchant_id,
-                provider_subscription_id=subscription.provider_subscription_id,
-            )
-            == subscription
-        )
+        assert await operations.load_subscription(execute, subscription.id) == subscription
 
     @pytest.mark.asyncio
     async def test_updates_complete_mutable_snapshot(self) -> None:
         subscription = make_subscription()
         await operations.upsert_subscription(execute, subscription)
         replacement = subscription.replace(
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
+            benefit_id=BenefitId("replacement-benefit"),
             status=SubscriptionStatusId.ended,
             provider_status="canceled",
             started_at=subscription.started_at + datetime.timedelta(seconds=1),
@@ -110,39 +92,24 @@ class TestUpsertSubscription:
             provider_updated_at=subscription.provider_updated_at + datetime.timedelta(seconds=1),
         )
 
-        async with TableSizeNotChanged("sub_subscriptions"):
+        async with TableSizeNotChanged("sb_subscriptions"):
             await operations.upsert_subscription(execute, replacement)
 
-        assert (
-            await operations.load_subscription(
-                execute,
-                provider_id=subscription.provider_id,
-                provider_merchant_id=subscription.provider_merchant_id,
-                provider_subscription_id=subscription.provider_subscription_id,
-            )
-            == replacement
-        )
+        assert await operations.load_subscription(execute, subscription.id) == replacement
 
     @pytest.mark.asyncio
     async def test_updates_only_provider_time(self) -> None:
         subscription = make_subscription()
         await operations.upsert_subscription(execute, subscription)
         advanced = subscription.replace(
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
             provider_updated_at=subscription.provider_updated_at + datetime.timedelta(seconds=1)
         )
 
-        async with TableSizeNotChanged("sub_subscriptions"):
+        async with TableSizeNotChanged("sb_subscriptions"):
             await operations.upsert_subscription(execute, advanced)
 
-        assert (
-            await operations.load_subscription(
-                execute,
-                provider_id=subscription.provider_id,
-                provider_merchant_id=subscription.provider_merchant_id,
-                provider_subscription_id=subscription.provider_subscription_id,
-            )
-            == advanced
-        )
+        assert await operations.load_subscription(execute, subscription.id) == advanced
 
     @pytest.mark.asyncio
     async def test_does_not_update_immutable_ownership(self) -> None:
@@ -150,21 +117,15 @@ class TestUpsertSubscription:
         await operations.upsert_subscription(execute, subscription)
         incoming = subscription.replace(
             user_id=new_user_id(),
-            provider_customer_id=ProviderCustomerId("different-customer"),
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
             status=SubscriptionStatusId.ended,
         )
 
-        async with TableSizeNotChanged("sub_subscriptions"):
+        async with TableSizeNotChanged("sb_subscriptions"):
             await operations.upsert_subscription(execute, incoming)
 
-        assert await operations.load_subscription(
-            execute,
-            provider_id=subscription.provider_id,
-            provider_merchant_id=subscription.provider_merchant_id,
-            provider_subscription_id=subscription.provider_subscription_id,
-        ) == incoming.replace(
-            user_id=subscription.user_id,
-            provider_customer_id=subscription.provider_customer_id,
+        assert await operations.load_subscription(execute, subscription.id) == incoming.replace(
+            user_id=subscription.user_id
         )
 
 
@@ -178,11 +139,9 @@ class TestLoadSubscriptions:
         user_id = new_user_id()
         active = make_subscription(
             user_id=user_id,
-            provider_subscription_id=ProviderSubscriptionId("filter-active"),
         )
         ended = make_subscription(
             user_id=user_id,
-            provider_subscription_id=ProviderSubscriptionId("filter-ended"),
             status=SubscriptionStatusId.ended,
         )
         await operations.upsert_subscription(execute, active)
@@ -201,20 +160,20 @@ class TestLoadSubscriptions:
         other_user_id = new_user_id()
         now = datetime.datetime.now(tz=datetime.UTC)
         earlier = make_subscription(
+            subscription_id=SubscriptionId(uuid.UUID(int=3)),
             user_id=selected_user_id,
-            provider_subscription_id=ProviderSubscriptionId("ordered-earlier"),
             started_at=now - datetime.timedelta(days=2),
             status=SubscriptionStatusId.ended,
             ends_at=now - datetime.timedelta(days=1),
         )
         same_start_later_identity = make_subscription(
+            subscription_id=SubscriptionId(uuid.UUID(int=2)),
             user_id=selected_user_id,
-            provider_subscription_id=ProviderSubscriptionId("ordered-b"),
             started_at=now,
         )
         same_start_earlier_identity = make_subscription(
+            subscription_id=SubscriptionId(uuid.UUID(int=1)),
             user_id=selected_user_id,
-            provider_subscription_id=ProviderSubscriptionId("ordered-a"),
             started_at=now,
         )
         other = make_subscription(user_id=other_user_id)

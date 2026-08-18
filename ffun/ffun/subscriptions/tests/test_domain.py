@@ -1,13 +1,14 @@
 import asyncio
 import datetime
-from typing import cast
+import uuid
+from collections.abc import Callable
 
 import pytest
 from pytest_mock import MockerFixture
 
 from ffun.audit import domain as audit_domain
 from ffun.audit.entities import AuditEntityKind
-from ffun.core.postgresql import ExecuteType, execute
+from ffun.core.postgresql import ExecuteType, execute, transaction
 from ffun.core.tests.helpers import (
     TableSizeDelta,
     TableSizeNotChanged,
@@ -16,17 +17,15 @@ from ffun.core.tests.helpers import (
     capture_logs,
 )
 from ffun.domain.domain import new_user_id
-from ffun.domain.entities import SerializedId
+from ffun.domain.entities import BenefitId, BenefitTransactionId, SerializedId
 from ffun.locks.entities import LockKind
 from ffun.subscriptions import domain, errors, operations
 from ffun.subscriptions.entities import (
-    ProviderCustomerId,
-    ProviderId,
-    ProviderMerchantId,
     ProviderStatus,
-    ProviderSubscriptionId,
     SaveSubscriptionOutcome,
     Subscription,
+    SubscriptionId,
+    SubscriptionSaveResult,
     SubscriptionStatusId,
 )
 from ffun.subscriptions.tests.make import make_subscription
@@ -38,6 +37,27 @@ _ACTOR_ID = SerializedId("provider-hook")
 async def _current_transaction_id(transaction_execute: ExecuteType) -> int:
     rows = await transaction_execute("SELECT txid_current() AS transaction_id")
     return int(rows[0]["transaction_id"])
+
+
+async def _save_subscription(
+    subscription: Subscription,
+    *,
+    emit_event: bool = True,
+) -> tuple[SubscriptionSaveResult, Callable[[], None]]:
+    async with transaction() as transaction_execute:
+        result, callback = await domain.save_subscription(
+            transaction_execute,
+            subscription.id,
+            subscription.state_transaction_id,
+            subscription,
+            actor_kind=_ACTOR_KIND,
+            actor_id=_ACTOR_ID,
+        )
+
+    if emit_event:
+        callback()
+
+    return result, callback
 
 
 class TestDecideSubscriptionSave:
@@ -81,7 +101,7 @@ class TestDecideSubscriptionSave:
     def test_newer_business_state_is_updated(self) -> None:
         stored = make_subscription()
         incoming = stored.replace(
-            status=SubscriptionStatusId.ended,
+            benefit_id=BenefitId("replacement-benefit"),
             provider_updated_at=stored.provider_updated_at + datetime.timedelta(seconds=1),
         )
 
@@ -96,57 +116,85 @@ class TestDecideSubscriptionSave:
         with pytest.raises(errors.SubscriptionConflict):
             domain._decide_subscription_save(stored, stored.replace(status=SubscriptionStatusId.ended))
 
-    def test_different_ownership_is_conflict(self) -> None:
+    def test_different_user_is_conflict(self) -> None:
         stored = make_subscription()
 
         with pytest.raises(errors.SubscriptionConflict):
             domain._decide_subscription_save(stored, stored.replace(user_id=new_user_id()))
 
 
+class TestEmptyBusinessEventCallback:
+    def test_emits_no_business_event(self) -> None:
+        with capture_logs() as logs:
+            domain._empty_business_event_callback()
+
+        assert_logs_has_no_business_event(logs, "subscription_changed")
+
+
+class TestEmitSubscriptionChangeEvent:
+    def test_created_subscription_has_no_previous_status(self) -> None:
+        subscription = make_subscription()
+        result = SubscriptionSaveResult(
+            outcome=SaveSubscriptionOutcome.created,
+            current=subscription,
+        )
+
+        with capture_logs() as logs:
+            domain._emit_subscription_change_event(result)
+
+        assert_logs_has_business_event(
+            logs,
+            "subscription_changed",
+            user_id=subscription.user_id,
+            subscription_id=str(subscription.id),
+            state_transaction_id=str(subscription.state_transaction_id),
+            previous_status=None,
+            status=subscription.status.value,
+        )
+        assert sum(record.get("event") == "subscription_changed" for record in logs) == 1
+
+    def test_updated_subscription_has_previous_status(self) -> None:
+        previous = make_subscription(status=SubscriptionStatusId.active)
+        current = previous.replace(
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
+            status=SubscriptionStatusId.ended,
+            provider_status=ProviderStatus("canceled"),
+            provider_updated_at=previous.provider_updated_at + datetime.timedelta(seconds=1),
+        )
+        result = SubscriptionSaveResult(
+            outcome=SaveSubscriptionOutcome.updated,
+            current=current,
+            previous=previous,
+        )
+
+        with capture_logs() as logs:
+            domain._emit_subscription_change_event(result)
+
+        assert_logs_has_business_event(
+            logs,
+            "subscription_changed",
+            user_id=current.user_id,
+            subscription_id=str(current.id),
+            state_transaction_id=str(current.state_transaction_id),
+            previous_status=previous.status.value,
+            status=current.status.value,
+        )
+        assert sum(record.get("event") == "subscription_changed" for record in logs) == 1
+
+
 class TestSaveSubscription:
     @pytest.mark.asyncio
-    async def test_uses_stable_subscription_identity_lock(self, mocker: MockerFixture) -> None:
+    async def test_locks_internal_subscription_identity(self, mocker: MockerFixture) -> None:
         subscription = make_subscription()
-        locked_transaction_spy = mocker.spy(domain, "locked_transaction")
+        lock_factory = mocker.patch.object(domain, "Lock")
 
-        await domain.save_subscription(subscription, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
-        await domain.save_subscription(subscription, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
+        await _save_subscription(subscription, emit_event=False)
 
-        assert locked_transaction_spy.call_count == 2
-        first_call, second_call = locked_transaction_spy.call_args_list
-        first_arguments = cast(tuple[object, ...], first_call.args)
-        second_arguments = cast(tuple[object, ...], second_call.args)
-        assert first_arguments[0] == LockKind("subscription_identity")
-        assert second_arguments[0] == LockKind("subscription_identity")
-        assert first_arguments[1] == second_arguments[1]
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize(
-        ("identity_field", "different_value"),
-        [
-            ("provider_id", ProviderId("different-provider")),
-            ("provider_merchant_id", ProviderMerchantId("different-merchant")),
-            ("provider_subscription_id", ProviderSubscriptionId("different-subscription")),
-        ],
-    )
-    async def test_lock_argument_uses_complete_subscription_identity(
-        self,
-        mocker: MockerFixture,
-        identity_field: str,
-        different_value: object,
-    ) -> None:
-        subscription = make_subscription()
-        different_subscription = subscription.replace(**{identity_field: different_value})
-        locked_transaction_spy = mocker.spy(domain, "locked_transaction")
-
-        await domain.save_subscription(subscription, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
-        await domain.save_subscription(different_subscription, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
-
-        assert locked_transaction_spy.call_count == 2
-        first_call, second_call = locked_transaction_spy.call_args_list
-        first_arguments = cast(tuple[object, ...], first_call.args)
-        second_arguments = cast(tuple[object, ...], second_call.args)
-        assert first_arguments[1] != second_arguments[1]
+        lock_factory.assert_called_once_with(
+            mocker.ANY,
+            LockKind("subscription_state"),
+            subscription.id,
+        )
 
     @pytest.mark.asyncio
     async def test_same_identity_cannot_load_while_first_save_holds_lock(self, mocker: MockerFixture) -> None:
@@ -160,10 +208,7 @@ class TestSaveSubscription:
 
         async def tracked_load_subscription(
             transaction_execute: ExecuteType,
-            *,
-            provider_id: ProviderId,
-            provider_merchant_id: ProviderMerchantId,
-            provider_subscription_id: ProviderSubscriptionId,
+            subscription_id: SubscriptionId,
         ) -> Subscription | None:
             nonlocal load_call_count
             load_call_count += 1
@@ -174,24 +219,20 @@ class TestSaveSubscription:
             else:
                 second_load_entered.set()
 
-            return await original_load_subscription(
-                transaction_execute,
-                provider_id=provider_id,
-                provider_merchant_id=provider_merchant_id,
-                provider_subscription_id=provider_subscription_id,
-            )
+            return await original_load_subscription(transaction_execute, subscription_id)
 
-        async def save_second_snapshot() -> SaveSubscriptionOutcome:
-            second_save_attempting.set()
-            return await domain.save_subscription(subscription, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
+        async def save_once(*, announce: bool = False) -> SubscriptionSaveResult:
+            if announce:
+                second_save_attempting.set()
+
+            result, _ = await _save_subscription(subscription, emit_event=False)
+            return result
 
         mocker.patch.object(operations, "load_subscription", side_effect=tracked_load_subscription)
 
-        first_save = asyncio.create_task(
-            domain.save_subscription(subscription, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
-        )
+        first_save = asyncio.create_task(save_once())
         await first_load_entered.wait()
-        second_save = asyncio.create_task(save_second_snapshot())
+        second_save = asyncio.create_task(save_once(announce=True))
         await second_save_attempting.wait()
 
         try:
@@ -200,28 +241,67 @@ class TestSaveSubscription:
                     await second_load_entered.wait()
         finally:
             release_first_load.set()
-            first_outcome, second_outcome = await asyncio.gather(first_save, second_save)
+            first_result, second_result = await asyncio.gather(first_save, second_save)
 
         assert second_load_entered.is_set()
-        assert first_outcome == SaveSubscriptionOutcome.created
-        assert second_outcome == SaveSubscriptionOutcome.skipped
+        assert first_result.outcome == SaveSubscriptionOutcome.created
+        assert second_result.outcome == SaveSubscriptionOutcome.skipped
 
     @pytest.mark.asyncio
-    async def test_creation_persists_audit_and_emits_complete_business_event(self) -> None:
+    async def test_different_identities_do_not_share_lock(self, mocker: MockerFixture) -> None:
+        first_subscription = make_subscription()
+        second_subscription = make_subscription()
+        first_load_entered = asyncio.Event()
+        release_first_load = asyncio.Event()
+        second_load_entered = asyncio.Event()
+        original_load_subscription = operations.load_subscription
+
+        async def tracked_load_subscription(
+            transaction_execute: ExecuteType,
+            subscription_id: SubscriptionId,
+        ) -> Subscription | None:
+            if subscription_id == first_subscription.id:
+                first_load_entered.set()
+                await release_first_load.wait()
+            elif subscription_id == second_subscription.id:
+                second_load_entered.set()
+
+            return await original_load_subscription(transaction_execute, subscription_id)
+
+        mocker.patch.object(operations, "load_subscription", side_effect=tracked_load_subscription)
+
+        first_save = asyncio.create_task(_save_subscription(first_subscription, emit_event=False))
+        await first_load_entered.wait()
+        second_save = asyncio.create_task(_save_subscription(second_subscription, emit_event=False))
+
+        try:
+            async with asyncio.timeout(0.5):
+                await second_load_entered.wait()
+        finally:
+            release_first_load.set()
+            (first_result, _), (second_result, _) = await asyncio.gather(first_save, second_save)
+
+        assert first_result.outcome == SaveSubscriptionOutcome.created
+        assert second_result.outcome == SaveSubscriptionOutcome.created
+
+    @pytest.mark.asyncio
+    async def test_creation_persists_audit_and_returns_post_commit_business_event(self) -> None:
         subscription = make_subscription()
 
         with capture_logs() as logs:
             async with (
-                TableSizeDelta("sub_subscriptions", delta=1),
+                TableSizeDelta("sb_subscriptions", delta=1),
                 TableSizeDelta("a_records", delta=1),
             ):
-                outcome = await domain.save_subscription(
-                    subscription,
-                    actor_kind=_ACTOR_KIND,
-                    actor_id=_ACTOR_ID,
-                )
+                result, callback = await _save_subscription(subscription, emit_event=False)
 
-        assert outcome == SaveSubscriptionOutcome.created
+            assert_logs_has_no_business_event(logs, "subscription_changed")
+            callback()
+
+        assert result == SubscriptionSaveResult(
+            outcome=SaveSubscriptionOutcome.created,
+            current=subscription,
+        )
         records = await audit_domain.load_records_for_subject(
             execute,
             subject_kind=AuditEntityKind.user,
@@ -232,10 +312,8 @@ class TestSaveSubscription:
         assert record.actor_kind == _ACTOR_KIND
         assert record.actor_id == _ACTOR_ID
         assert record.attributes == {
-            "provider_id": subscription.provider_id,
-            "provider_merchant_id": subscription.provider_merchant_id,
-            "provider_subscription_id": subscription.provider_subscription_id,
-            "provider_customer_id": subscription.provider_customer_id,
+            "subscription_id": str(subscription.id),
+            "state_transaction_id": str(subscription.state_transaction_id),
             "previous_state": None,
             "new_state": subscription.audit_state(),
         }
@@ -243,93 +321,86 @@ class TestSaveSubscription:
             logs,
             "subscription_changed",
             user_id=subscription.user_id,
+            subscription_id=str(subscription.id),
+            state_transaction_id=str(subscription.state_transaction_id),
             previous_status=None,
             status=subscription.status.value,
         )
         assert sum(record.get("event") == "subscription_changed" for record in logs) == 1
 
     @pytest.mark.asyncio
-    async def test_stale_snapshot_is_no_op(self) -> None:
+    async def test_stale_snapshot_is_no_op_and_preserves_state_transaction(self) -> None:
         stored = make_subscription()
-        await domain.save_subscription(stored, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
+        await _save_subscription(stored)
         stale = stored.replace(
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
             status=SubscriptionStatusId.ended,
             provider_updated_at=stored.provider_updated_at - datetime.timedelta(seconds=1),
         )
 
         with capture_logs() as logs:
             async with (
-                TableSizeNotChanged("sub_subscriptions"),
+                TableSizeNotChanged("sb_subscriptions"),
                 TableSizeNotChanged("a_records"),
             ):
-                outcome = await domain.save_subscription(
-                    stale,
-                    actor_kind=_ACTOR_KIND,
-                    actor_id=_ACTOR_ID,
-                )
+                result, callback = await _save_subscription(stale, emit_event=False)
+            callback()
 
-        assert outcome == SaveSubscriptionOutcome.skipped
-        assert (
-            await domain.get_subscription(
-                provider_id=stored.provider_id,
-                provider_merchant_id=stored.provider_merchant_id,
-                provider_subscription_id=stored.provider_subscription_id,
-            )
-            == stored
+        assert result == SubscriptionSaveResult(
+            outcome=SaveSubscriptionOutcome.skipped,
+            current=stored,
         )
+        assert await domain.get_subscription(stored.id) == stored
         assert_logs_has_no_business_event(logs, "subscription_changed")
 
     @pytest.mark.asyncio
-    async def test_same_snapshot_is_idempotent_no_op(self) -> None:
-        subscription = make_subscription()
-        await domain.save_subscription(subscription, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
+    async def test_same_snapshot_is_idempotent_no_op_and_preserves_state_transaction(self) -> None:
+        stored = make_subscription()
+        await _save_subscription(stored)
+        retry = stored.replace(state_transaction_id=BenefitTransactionId(uuid.uuid4()))
 
         with capture_logs() as logs:
             async with (
-                TableSizeNotChanged("sub_subscriptions"),
+                TableSizeNotChanged("sb_subscriptions"),
                 TableSizeNotChanged("a_records"),
             ):
-                outcome = await domain.save_subscription(
-                    subscription,
-                    actor_kind=_ACTOR_KIND,
-                    actor_id=_ACTOR_ID,
-                )
+                result, callback = await _save_subscription(retry, emit_event=False)
+            callback()
 
-        assert outcome == SaveSubscriptionOutcome.skipped
+        assert result == SubscriptionSaveResult(
+            outcome=SaveSubscriptionOutcome.skipped,
+            current=stored,
+        )
+        assert await domain.get_subscription(stored.id) == stored
         assert_logs_has_no_business_event(logs, "subscription_changed")
 
     @pytest.mark.asyncio
     async def test_same_provider_time_with_different_state_is_conflict(self) -> None:
         subscription = make_subscription()
-        await domain.save_subscription(subscription, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
+        await _save_subscription(subscription)
+        conflicting = subscription.replace(
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
+            status=SubscriptionStatusId.ended,
+        )
 
         with capture_logs() as logs:
             async with (
-                TableSizeNotChanged("sub_subscriptions"),
+                TableSizeNotChanged("sb_subscriptions"),
                 TableSizeNotChanged("a_records"),
             ):
                 with pytest.raises(errors.SubscriptionConflict):
-                    await domain.save_subscription(
-                        subscription.replace(status=SubscriptionStatusId.ended),
-                        actor_kind=_ACTOR_KIND,
-                        actor_id=_ACTOR_ID,
-                    )
+                    await _save_subscription(conflicting)
 
-        assert (
-            await domain.get_subscription(
-                provider_id=subscription.provider_id,
-                provider_merchant_id=subscription.provider_merchant_id,
-                provider_subscription_id=subscription.provider_subscription_id,
-            )
-            == subscription
-        )
+        assert await domain.get_subscription(subscription.id) == subscription
         assert_logs_has_no_business_event(logs, "subscription_changed")
 
     @pytest.mark.asyncio
     async def test_newer_business_state_replaces_snapshot_and_records_change(self) -> None:
         subscription = make_subscription()
-        await domain.save_subscription(subscription, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
+        await _save_subscription(subscription)
         replacement = subscription.replace(
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
+            benefit_id=BenefitId("replacement-benefit"),
             status=SubscriptionStatusId.ended,
             provider_status=ProviderStatus("canceled"),
             ends_at=subscription.provider_updated_at,
@@ -338,137 +409,121 @@ class TestSaveSubscription:
 
         with capture_logs() as logs:
             async with (
-                TableSizeNotChanged("sub_subscriptions"),
+                TableSizeNotChanged("sb_subscriptions"),
                 TableSizeDelta("a_records", delta=1),
             ):
-                outcome = await domain.save_subscription(
-                    replacement,
-                    actor_kind=_ACTOR_KIND,
-                    actor_id=_ACTOR_ID,
-                )
+                result, callback = await _save_subscription(replacement, emit_event=False)
 
-        assert outcome == SaveSubscriptionOutcome.updated
-        assert (
-            await operations.load_subscription(
-                execute,
-                provider_id=subscription.provider_id,
-                provider_merchant_id=subscription.provider_merchant_id,
-                provider_subscription_id=subscription.provider_subscription_id,
-            )
-            == replacement
+            assert_logs_has_no_business_event(logs, "subscription_changed")
+            callback()
+
+        assert result == SubscriptionSaveResult(
+            outcome=SaveSubscriptionOutcome.updated,
+            current=replacement,
+            previous=subscription,
         )
+        assert await operations.load_subscription(execute, subscription.id) == replacement
         records = await audit_domain.load_records_for_subject(
             execute,
             subject_kind=AuditEntityKind.user,
             subject_id=SerializedId(str(subscription.user_id)),
         )
-        assert records[-1].attributes["previous_state"] == subscription.audit_state()
-        assert records[-1].attributes["new_state"] == replacement.audit_state()
+        assert records[-1].attributes == {
+            "subscription_id": str(subscription.id),
+            "state_transaction_id": str(replacement.state_transaction_id),
+            "previous_state": subscription.audit_state(),
+            "new_state": replacement.audit_state(),
+        }
         assert_logs_has_business_event(
             logs,
             "subscription_changed",
             user_id=subscription.user_id,
+            subscription_id=str(subscription.id),
+            state_transaction_id=str(replacement.state_transaction_id),
             previous_status=subscription.status.value,
             status=replacement.status.value,
         )
         assert sum(record.get("event") == "subscription_changed" for record in logs) == 1
 
     @pytest.mark.asyncio
-    async def test_newer_identical_business_state_advances_freshness_without_change_event(self) -> None:
+    async def test_newer_identical_business_state_advances_causality_without_change_event(self) -> None:
         subscription = make_subscription()
-        await domain.save_subscription(subscription, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
+        await _save_subscription(subscription)
         advanced = subscription.replace(
-            provider_updated_at=subscription.provider_updated_at + datetime.timedelta(seconds=1)
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
+            provider_updated_at=subscription.provider_updated_at + datetime.timedelta(seconds=1),
         )
 
         with capture_logs() as logs:
             async with (
-                TableSizeNotChanged("sub_subscriptions"),
+                TableSizeNotChanged("sb_subscriptions"),
                 TableSizeNotChanged("a_records"),
             ):
-                outcome = await domain.save_subscription(
-                    advanced,
-                    actor_kind=_ACTOR_KIND,
-                    actor_id=_ACTOR_ID,
-                )
+                result, callback = await _save_subscription(advanced, emit_event=False)
+            callback()
 
-        assert outcome == SaveSubscriptionOutcome.skipped
-        assert (
-            await operations.load_subscription(
-                execute,
-                provider_id=subscription.provider_id,
-                provider_merchant_id=subscription.provider_merchant_id,
-                provider_subscription_id=subscription.provider_subscription_id,
-            )
-            == advanced
+        assert result == SubscriptionSaveResult(
+            outcome=SaveSubscriptionOutcome.skipped,
+            current=advanced,
         )
+        assert await operations.load_subscription(execute, subscription.id) == advanced
         assert_logs_has_no_business_event(logs, "subscription_changed")
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("immutable_field", ["user_id", "provider_customer_id"])
-    async def test_reusing_identity_with_different_ownership_is_conflict(self, immutable_field: str) -> None:
+    async def test_reusing_identity_with_different_user_is_conflict(self) -> None:
         subscription = make_subscription()
-        await domain.save_subscription(subscription, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
-        changed_value = new_user_id() if immutable_field == "user_id" else ProviderCustomerId("different-customer")
+        await _save_subscription(subscription)
         conflicting = subscription.replace(
-            **{
-                immutable_field: changed_value,
-                "provider_updated_at": subscription.provider_updated_at + datetime.timedelta(seconds=1),
-            }
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
+            user_id=new_user_id(),
+            provider_updated_at=subscription.provider_updated_at + datetime.timedelta(seconds=1),
         )
 
         with capture_logs() as logs:
             async with (
-                TableSizeNotChanged("sub_subscriptions"),
+                TableSizeNotChanged("sb_subscriptions"),
                 TableSizeNotChanged("a_records"),
             ):
                 with pytest.raises(errors.SubscriptionConflict):
-                    await domain.save_subscription(
-                        conflicting,
-                        actor_kind=_ACTOR_KIND,
-                        actor_id=_ACTOR_ID,
-                    )
+                    await _save_subscription(conflicting)
 
+        assert await domain.get_subscription(subscription.id) == subscription
         assert_logs_has_no_business_event(logs, "subscription_changed")
 
     @pytest.mark.asyncio
-    async def test_audit_failure_rolls_back_subscription_and_event(self, mocker: MockerFixture) -> None:
+    async def test_audit_failure_rolls_back_replacement_and_event(self, mocker: MockerFixture) -> None:
         subscription = make_subscription()
+        await _save_subscription(subscription)
+        replacement = subscription.replace(
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
+            status=SubscriptionStatusId.ended,
+            provider_updated_at=subscription.provider_updated_at + datetime.timedelta(seconds=1),
+        )
         mocker.patch.object(audit_domain, "record", side_effect=RuntimeError("audit failed"))
 
         with capture_logs() as logs:
             async with (
-                TableSizeNotChanged("sub_subscriptions"),
+                TableSizeNotChanged("sb_subscriptions"),
                 TableSizeNotChanged("a_records"),
             ):
                 with pytest.raises(RuntimeError, match="audit failed"):
-                    await domain.save_subscription(
-                        subscription,
-                        actor_kind=_ACTOR_KIND,
-                        actor_id=_ACTOR_ID,
-                    )
+                    await _save_subscription(replacement)
 
-        assert (
-            await operations.load_subscription(
-                execute,
-                provider_id=subscription.provider_id,
-                provider_merchant_id=subscription.provider_merchant_id,
-                provider_subscription_id=subscription.provider_subscription_id,
-            )
-            is None
-        )
+        assert await operations.load_subscription(execute, subscription.id) == subscription
         assert_logs_has_no_business_event(logs, "subscription_changed")
 
     @pytest.mark.asyncio
     async def test_concurrent_replacements_cannot_leave_older_state(self) -> None:
         subscription = make_subscription()
-        await domain.save_subscription(subscription, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
+        await _save_subscription(subscription)
         older = subscription.replace(
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
             status=SubscriptionStatusId.paused,
             provider_status=ProviderStatus("paused"),
             provider_updated_at=subscription.provider_updated_at + datetime.timedelta(seconds=1),
         )
         newer = subscription.replace(
+            state_transaction_id=BenefitTransactionId(uuid.uuid4()),
             status=SubscriptionStatusId.ended,
             provider_status=ProviderStatus("canceled"),
             ends_at=subscription.provider_updated_at + datetime.timedelta(seconds=2),
@@ -476,43 +531,26 @@ class TestSaveSubscription:
         )
 
         await asyncio.gather(
-            domain.save_subscription(older, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID),
-            domain.save_subscription(newer, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID),
+            _save_subscription(older),
+            _save_subscription(newer),
         )
 
-        assert (
-            await operations.load_subscription(
-                execute,
-                provider_id=subscription.provider_id,
-                provider_merchant_id=subscription.provider_merchant_id,
-                provider_subscription_id=subscription.provider_subscription_id,
-            )
-            == newer
-        )
+        assert await operations.load_subscription(execute, subscription.id) == newer
+
+
+class TestNewSubscriptionId:
+    def test_reexports_operation(self) -> None:
+        assert domain.new_subscription_id is operations.new_subscription_id
 
 
 class TestGetSubscription:
     @pytest.mark.asyncio
     async def test_returns_exact_snapshot_or_none(self) -> None:
         subscription = make_subscription()
-        await domain.save_subscription(subscription, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
+        await _save_subscription(subscription)
 
-        assert (
-            await domain.get_subscription(
-                provider_id=subscription.provider_id,
-                provider_merchant_id=subscription.provider_merchant_id,
-                provider_subscription_id=subscription.provider_subscription_id,
-            )
-            == subscription
-        )
-        assert (
-            await domain.get_subscription(
-                provider_id=subscription.provider_id,
-                provider_merchant_id=subscription.provider_merchant_id,
-                provider_subscription_id=ProviderSubscriptionId("missing"),
-            )
-            is None
-        )
+        assert await domain.get_subscription(subscription.id) == subscription
+        assert await domain.get_subscription(domain.new_subscription_id()) is None
 
 
 class TestGetSubscriptionsForUser:
@@ -525,28 +563,26 @@ class TestGetSubscriptionsForUser:
     @pytest.mark.asyncio
     async def test_filters_by_statuses(self) -> None:
         user_id = new_user_id()
-        active = make_subscription(
-            user_id=user_id,
-            provider_subscription_id=ProviderSubscriptionId("domain-filter-active"),
-        )
+        active = make_subscription(user_id=user_id)
         ended = make_subscription(
             user_id=user_id,
-            provider_subscription_id=ProviderSubscriptionId("domain-filter-ended"),
             status=SubscriptionStatusId.ended,
         )
-        await domain.save_subscription(active, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
-        await domain.save_subscription(ended, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
+        await _save_subscription(active)
+        await _save_subscription(ended)
 
-        assert await domain.get_subscriptions_for_user(user_id, statuses=[SubscriptionStatusId.ended]) == [ended]
+        assert await domain.get_subscriptions_for_user(
+            user_id,
+            statuses=[SubscriptionStatusId.ended],
+        ) == [ended]
 
     @pytest.mark.asyncio
-    async def test_returns_all_statuses_in_order(self) -> None:
+    async def test_returns_all_statuses_in_order_without_side_effects(self) -> None:
         selected_user_id = new_user_id()
         other_user_id = new_user_id()
         now = datetime.datetime.now(tz=datetime.UTC)
         ended = make_subscription(
             user_id=selected_user_id,
-            provider_subscription_id=ProviderSubscriptionId("domain-ended"),
             status=SubscriptionStatusId.ended,
             provider_status=ProviderStatus("canceled"),
             started_at=now - datetime.timedelta(days=1),
@@ -554,20 +590,16 @@ class TestGetSubscriptionsForUser:
         )
         active = make_subscription(
             user_id=selected_user_id,
-            provider_subscription_id=ProviderSubscriptionId("domain-active"),
             started_at=now,
         )
-        other = make_subscription(
-            user_id=other_user_id,
-            provider_subscription_id=ProviderSubscriptionId("domain-other-user"),
-        )
-        await domain.save_subscription(ended, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
-        await domain.save_subscription(active, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
-        await domain.save_subscription(other, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
+        other = make_subscription(user_id=other_user_id)
+        await _save_subscription(ended)
+        await _save_subscription(active)
+        await _save_subscription(other)
 
         with capture_logs() as logs:
             async with (
-                TableSizeNotChanged("sub_subscriptions"),
+                TableSizeNotChanged("sb_subscriptions"),
                 TableSizeNotChanged("a_records"),
             ):
                 subscriptions = await domain.get_subscriptions_for_user(selected_user_id)
@@ -613,35 +645,30 @@ class TestGetAliveSubscriptionsForUser:
         now = datetime.datetime.now(tz=datetime.UTC)
         alive_without_end = make_subscription(
             user_id=user_id,
-            provider_subscription_id=ProviderSubscriptionId("domain-alive-without-end"),
             started_at=now,
         )
         alive_until_future = make_subscription(
             user_id=user_id,
-            provider_subscription_id=ProviderSubscriptionId("domain-alive-until-future"),
             started_at=now - datetime.timedelta(seconds=1),
             ends_at=now + datetime.timedelta(days=1),
         )
         expired = make_subscription(
             user_id=user_id,
-            provider_subscription_id=ProviderSubscriptionId("domain-expired"),
             started_at=now - datetime.timedelta(seconds=2),
             ends_at=now - datetime.timedelta(seconds=1),
         )
-        ending_at_request = make_subscription(
+        ending_at_evaluation = make_subscription(
             user_id=user_id,
-            provider_subscription_id=ProviderSubscriptionId("domain-ending-at-request"),
             started_at=now - datetime.timedelta(seconds=3),
             ends_at=now,
         )
         ended = make_subscription(
             user_id=user_id,
-            provider_subscription_id=ProviderSubscriptionId("domain-not-alive"),
             status=SubscriptionStatusId.ended,
             started_at=now - datetime.timedelta(seconds=4),
             ends_at=now + datetime.timedelta(days=1),
         )
-        for subscription in (alive_without_end, alive_until_future, expired, ending_at_request, ended):
-            await domain.save_subscription(subscription, actor_kind=_ACTOR_KIND, actor_id=_ACTOR_ID)
+        for subscription in (alive_without_end, alive_until_future, expired, ending_at_evaluation, ended):
+            await _save_subscription(subscription)
 
         assert await domain.get_alive_subscriptions_for_user(user_id) == [alive_without_end, alive_until_future]
