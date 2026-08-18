@@ -9,7 +9,12 @@ class SerializedId(NonEmptyString):
     __slots__ = ()
 
 
+class BenefitId(NonEmptyString):
+    __slots__ = ()
+
+
 UserId = NewType("UserId", uuid.UUID)
+BenefitTransactionId = NewType("BenefitTransactionId", uuid.UUID)
 EntryId = NewType("EntryId", uuid.UUID)
 FeedId = NewType("FeedId", uuid.UUID)
 CollectionId = NewType("CollectionId", uuid.UUID)

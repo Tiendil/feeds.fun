@@ -14,16 +14,17 @@ sql_create_source_entitlements = """
 -- Stores entitlement grants supplied by sources.
 CREATE TABLE en_source_entitlements (
     source_id TEXT NOT NULL,
-    transaction_id TEXT NOT NULL,
+    grant_transaction_id UUID NOT NULL,
     user_id UUID NOT NULL,
     kind_id SMALLINT NOT NULL,
     value BIGINT NOT NULL,
     starts_at TIMESTAMP WITH TIME ZONE NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     revoked_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    revoked_by_transaction_id UUID DEFAULT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, kind_id, source_id, transaction_id)
+    PRIMARY KEY (user_id, kind_id, source_id, grant_transaction_id)
 )
 """
 

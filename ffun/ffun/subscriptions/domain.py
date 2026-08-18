@@ -1,22 +1,27 @@
 import datetime
 import enum
-import hashlib
+from collections.abc import Callable
+from functools import partial
 
 from ffun.audit import domain as audit_domain
 from ffun.audit.entities import AuditEntityKind, AuditEventName
 from ffun.core import logging
-from ffun.core.postgresql import run_in_transaction, transaction
-from ffun.domain.entities import SerializedId, UserId
-from ffun.locks.domain import locked_transaction
+from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
+from ffun.domain.entities import BenefitTransactionId, SerializedId, UserId
+from ffun.locks.domain import Lock
 from ffun.locks.entities import LockKind
 from ffun.subscriptions import errors, operations
 from ffun.subscriptions.entities import (
     SaveSubscriptionOutcome,
     Subscription,
+    SubscriptionId,
+    SubscriptionSaveResult,
+    SubscriptionSnapshot,
     SubscriptionStatusId,
 )
 
 get_subscription = run_in_transaction(operations.load_subscription)
+new_subscription_id = operations.new_subscription_id
 
 logger = logging.get_module_logger()
 
@@ -34,30 +39,26 @@ class _SaveSubscriptionCommand(enum.IntEnum):
     upsert = 2
 
 
+def _empty_business_event_callback() -> None:
+    pass
+
+
 def _decide_subscription_save(
     stored: Subscription | None,
-    incoming: Subscription,
+    incoming: SubscriptionSnapshot,
 ) -> tuple[_SaveSubscriptionCommand, SaveSubscriptionOutcome]:
     if stored is None:
         return _SaveSubscriptionCommand.upsert, SaveSubscriptionOutcome.created
 
-    if not stored.has_same_ownership_as(incoming):
-        raise errors.SubscriptionConflict(
-            provider_id=incoming.provider_id,
-            provider_merchant_id=incoming.provider_merchant_id,
-            provider_subscription_id=incoming.provider_subscription_id,
-        )
+    if stored.user_id != incoming.user_id:
+        raise errors.SubscriptionConflict(subscription_id=str(stored.id))
 
     if incoming.provider_updated_at < stored.provider_updated_at:
         return _SaveSubscriptionCommand.ignore, SaveSubscriptionOutcome.skipped
 
     if incoming.provider_updated_at == stored.provider_updated_at:
         if not stored.has_same_business_state_as(incoming):
-            raise errors.SubscriptionConflict(
-                provider_id=incoming.provider_id,
-                provider_merchant_id=incoming.provider_merchant_id,
-                provider_subscription_id=incoming.provider_subscription_id,
-            )
+            raise errors.SubscriptionConflict(subscription_id=str(stored.id))
 
         return _SaveSubscriptionCommand.ignore, SaveSubscriptionOutcome.skipped
 
@@ -68,64 +69,67 @@ def _decide_subscription_save(
 
 
 async def save_subscription(  # noqa: CCR001
-    subscription: Subscription,
+    execute: ExecuteType,
+    subscription_id: SubscriptionId,
+    state_transaction_id: BenefitTransactionId,
+    snapshot: SubscriptionSnapshot,
     *,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
-) -> SaveSubscriptionOutcome:
-    identity_bytes = b"".join(
-        len(part.encode()).to_bytes(8, byteorder="big") + part.encode()
-        for part in (
-            subscription.provider_id,
-            subscription.provider_merchant_id,
-            subscription.provider_subscription_id,
-        )
+) -> tuple[SubscriptionSaveResult, Callable[[], None]]:
+    incoming = snapshot.with_identity(
+        subscription_id=subscription_id,
+        state_transaction_id=state_transaction_id,
     )
-    lock_argument = hashlib.sha256(identity_bytes, usedforsecurity=False).hexdigest()
-    previous: Subscription | None = None
 
-    async with locked_transaction(LockKind("subscription_identity"), lock_argument) as transaction_execute:
-        stored = await operations.load_subscription(
-            transaction_execute,
-            provider_id=subscription.provider_id,
-            provider_merchant_id=subscription.provider_merchant_id,
-            provider_subscription_id=subscription.provider_subscription_id,
-        )
-        command, outcome = _decide_subscription_save(stored, subscription)
+    async with Lock(execute, LockKind("subscription_state"), subscription_id):
+        stored = await operations.load_subscription(execute, subscription_id)
+        command, outcome = _decide_subscription_save(stored, snapshot)
 
         if command == _SaveSubscriptionCommand.upsert:
-            await operations.upsert_subscription(transaction_execute, subscription)
+            await operations.upsert_subscription(execute, incoming)
+            current = incoming
+        else:
+            assert stored is not None
+            current = stored
 
-        if outcome == SaveSubscriptionOutcome.updated:
-            previous = stored
+        previous = stored if outcome == SaveSubscriptionOutcome.updated else None
 
         if outcome in (SaveSubscriptionOutcome.created, SaveSubscriptionOutcome.updated):
             await audit_domain.record(
-                transaction_execute,
+                execute,
                 event=AuditEventName("subscription_changed"),
                 actor_kind=actor_kind,
                 actor_id=actor_id,
                 subject_kind=AuditEntityKind.user,
-                subject_id=SerializedId(str(subscription.user_id)),
+                subject_id=SerializedId(str(snapshot.user_id)),
                 attributes={
-                    "provider_id": subscription.provider_id,
-                    "provider_merchant_id": subscription.provider_merchant_id,
-                    "provider_subscription_id": subscription.provider_subscription_id,
-                    "provider_customer_id": subscription.provider_customer_id,
+                    "subscription_id": str(subscription_id),
+                    "state_transaction_id": str(state_transaction_id),
                     "previous_state": previous.audit_state() if previous is not None else None,
-                    "new_state": subscription.audit_state(),
+                    "new_state": incoming.audit_state(),
                 },
             )
 
-    if outcome in (SaveSubscriptionOutcome.created, SaveSubscriptionOutcome.updated):
-        logger.business_event(
-            "subscription_changed",
-            user_id=subscription.user_id,
-            previous_status=previous.status.value if previous is not None else None,
-            **subscription.business_event_attributes(),
-        )
+    result = SubscriptionSaveResult(outcome=outcome, current=current, previous=previous)
+    event_callback: Callable[[], None]
 
-    return outcome
+    if outcome in (SaveSubscriptionOutcome.created, SaveSubscriptionOutcome.updated):
+        event_callback = partial(_emit_subscription_change_event, result)
+    else:
+        event_callback = _empty_business_event_callback
+
+    return result, event_callback
+
+
+def _emit_subscription_change_event(result: SubscriptionSaveResult) -> None:
+    subscription = result.current
+    logger.business_event(
+        "subscription_changed",
+        user_id=subscription.user_id,
+        previous_status=result.previous.status.value if result.previous is not None else None,
+        **subscription.business_event_attributes(),
+    )
 
 
 async def get_subscriptions_for_user(

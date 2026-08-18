@@ -11,13 +11,12 @@ __depends__: set[str] = set()
 
 
 sql_create_subscriptions = """
--- Stores the latest accepted provider-neutral snapshot for each externally managed subscription.
-CREATE TABLE sub_subscriptions (
-    provider_id TEXT NOT NULL,
-    provider_merchant_id TEXT NOT NULL,
-    provider_subscription_id TEXT NOT NULL,
+-- Stores the latest accepted provider-neutral snapshot for each internal subscription.
+CREATE TABLE sb_subscriptions (
+    id UUID NOT NULL PRIMARY KEY,
+    state_transaction_id UUID NOT NULL,
     user_id UUID NOT NULL,
-    provider_customer_id TEXT NOT NULL,
+    benefit_id TEXT NOT NULL,
     status SMALLINT NOT NULL,
     provider_status TEXT NOT NULL,
     started_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -25,19 +24,16 @@ CREATE TABLE sub_subscriptions (
     ends_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     provider_updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (provider_id, provider_merchant_id, provider_subscription_id)
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
 """
 
 sql_create_subscriptions_user_idx = """
 -- Supports deterministic current-subscription listing for requested users.
-CREATE INDEX sub_subscriptions_user_idx ON sub_subscriptions (
+CREATE INDEX sb_subscriptions_user_started_at_id_idx ON sb_subscriptions (
     user_id,
     started_at DESC,
-    provider_id,
-    provider_merchant_id,
-    provider_subscription_id
+    id
 )
 """
 
@@ -50,7 +46,7 @@ def apply_step(conn: Connection[dict[str, Any]]) -> None:
 
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
-    cursor.execute("DROP TABLE sub_subscriptions")
+    cursor.execute("DROP TABLE sb_subscriptions")
 
 
 steps = [step(apply_step, rollback_step)]

@@ -1,28 +1,15 @@
 import datetime
 import enum
-from typing import cast
+import uuid
+from typing import NewType, cast
 
 import pydantic
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity, NonEmptyString
-from ffun.domain.entities import UserId
+from ffun.domain.entities import BenefitId, BenefitTransactionId, UserId
 
-
-class ProviderId(NonEmptyString):
-    __slots__ = ()
-
-
-class ProviderMerchantId(NonEmptyString):
-    __slots__ = ()
-
-
-class ProviderSubscriptionId(NonEmptyString):
-    __slots__ = ()
-
-
-class ProviderCustomerId(NonEmptyString):
-    __slots__ = ()
+SubscriptionId = NewType("SubscriptionId", uuid.UUID)
 
 
 class ProviderStatus(NonEmptyString):
@@ -45,12 +32,9 @@ class SaveSubscriptionOutcome(enum.IntEnum):
     skipped = 3
 
 
-class Subscription(BaseEntity):
-    provider_id: ProviderId
-    provider_merchant_id: ProviderMerchantId
-    provider_subscription_id: ProviderSubscriptionId
+class SubscriptionSnapshot(BaseEntity):
     user_id: UserId
-    provider_customer_id: ProviderCustomerId
+    benefit_id: BenefitId
     status: SubscriptionStatusId
     provider_status: ProviderStatus
     started_at: datetime.datetime
@@ -59,7 +43,7 @@ class Subscription(BaseEntity):
     provider_updated_at: datetime.datetime
 
     @pydantic.model_validator(mode="after")
-    def validate_timestamps(self) -> "Subscription":
+    def validate_timestamps(self) -> "SubscriptionSnapshot":
         for field_name, timestamp in (
             ("started_at", self.started_at),
             ("renews_at", self.renews_at),
@@ -71,35 +55,59 @@ class Subscription(BaseEntity):
 
         return self
 
-    def has_same_ownership_as(self, other: "Subscription") -> bool:
-        return (
-            self.provider_id == other.provider_id
-            and self.provider_merchant_id == other.provider_merchant_id
-            and self.provider_subscription_id == other.provider_subscription_id
-            and self.user_id == other.user_id
-            and (self.provider_customer_id == other.provider_customer_id)
-        )
+    def business_state(self) -> dict[str, object]:
+        fields = set(SubscriptionSnapshot.model_fields) - {"provider_updated_at"}
+        return cast(dict[str, object], self.model_dump(include=fields))
 
-    def has_same_business_state_as(self, other: "Subscription") -> bool:
-        return self.replace(provider_updated_at=other.provider_updated_at) == other
+    def has_same_business_state_as(self, other: "SubscriptionSnapshot") -> bool:
+        return self.business_state() == other.business_state()
 
     def audit_state(self) -> dict[str, object]:
         return cast(
             dict[str, object],
-            self.model_dump(
-                mode="json",
-                exclude={
-                    "provider_id",
-                    "provider_merchant_id",
-                    "provider_subscription_id",
-                    "user_id",
-                    "provider_customer_id",
-                },
-            ),
+            self.model_dump(mode="json", exclude={"user_id"}),
+        )
+
+    def with_identity(
+        self,
+        *,
+        subscription_id: SubscriptionId,
+        state_transaction_id: BenefitTransactionId,
+    ) -> "Subscription":
+        return Subscription(
+            id=subscription_id,
+            state_transaction_id=state_transaction_id,
+            user_id=self.user_id,
+            benefit_id=self.benefit_id,
+            status=self.status,
+            provider_status=self.provider_status,
+            started_at=self.started_at,
+            renews_at=self.renews_at,
+            ends_at=self.ends_at,
+            provider_updated_at=self.provider_updated_at,
+        )
+
+
+class Subscription(SubscriptionSnapshot):
+    id: SubscriptionId
+    state_transaction_id: BenefitTransactionId
+
+    def audit_state(self) -> dict[str, object]:
+        return cast(
+            dict[str, object],
+            self.model_dump(mode="json", exclude={"id", "state_transaction_id", "user_id"}),
         )
 
     def business_event_attributes(self) -> dict[str, object]:
-        return cast(
+        attributes = cast(
             dict[str, object],
-            self.model_dump(mode="json", exclude={"user_id"}),
+            self.model_dump(mode="json", exclude={"id", "user_id"}),
         )
+        attributes["subscription_id"] = str(self.id)
+        return attributes
+
+
+class SubscriptionSaveResult(BaseEntity):
+    outcome: SaveSubscriptionOutcome
+    current: Subscription
+    previous: Subscription | None = None

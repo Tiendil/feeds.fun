@@ -1,0 +1,169 @@
+# Benefits module
+
+## Goal of the document
+
+This document describes the public contract and observable behavior of the `ffun.benefits` backend module.
+
+## Scope
+
+This specification covers configured user-facing benefit packages, the immutable ledger of accepted benefit transactions, and the workflow that applies a benefit transaction to subscription and entitlement state.
+
+Payment-service-provider communication, product and price catalogs, checkout, invoices, and the persistence rules internal to subscriptions and entitlements are out of scope.
+Applying benefits to one-time purchases is also out of scope until a purchase-owning workflow exists, but benefit packages and benefit transactions MUST remain reusable by that future workflow.
+
+## Dictionary
+
+- `benefit identifier` - a stable local non-empty identifier that provider metadata or another trusted caller uses to select one configured package.
+- `provider subscription identity` - the provider identifier, provider account identifier, and provider subscription identifier tuple that identifies one external subscription.
+- `provider subscription reference` - the persistent mapping from one provider subscription identity to one internal subscription identifier.
+- `benefit package` - configured user-facing title and description together with the entitlement guarantees sold as one product benefit.
+- `entitlement guarantee` - one entitlement kind and integer value promised by a benefit package.
+- `benefit transaction` - one immutable, accepted business operation that may update a subscription, grant a package, or revoke an earlier grant.
+- `benefit transaction identifier` - the internally generated UUID that canonically identifies one benefit transaction.
+- `transaction source identity` - the `source_id` and `source_transaction_id` tuple that identifies one durable operation at its origin.
+- `internal subscription identifier` - the generated UUID that identifies one provider-independent subscription projection.
+- `reversed transaction` - the earlier benefit grant transaction targeted by a benefit revocation transaction.
+
+## Module responsibility
+
+The module MUST own benefit-package configuration, benefit lookup by stable local identifier, benefit-transaction persistence and idempotency, provider-subscription references, and atomic coordination of subscription state with explicitly requested entitlement effects.
+
+Provider adapters and other trusted callers MUST resolve a benefit identifier from authoritative metadata and explicitly classify each accepted operation as a subscription update, benefit grant, or benefit revocation.
+The module MUST NOT infer an entitlement effect from a subscription status.
+
+The module MUST NOT communicate with a provider or maintain a second mapping from provider product or price identifiers to benefits.
+It MUST NOT own provider prices, currencies, amounts, tax behavior, billing periods, or checkout configuration.
+
+The subscriptions module owns the persisted current benefit identifier but does not copy benefit details or provider provenance.
+The entitlements module owns source and effective entitlement state.
+Callers MUST use the benefits workflow instead of independently recording one causal transaction across those modules.
+
+## Domain behavior
+
+### Benefit packages
+
+Each benefit package MUST have one stable non-empty identifier, one non-empty user-facing title, one user-facing description, and zero or more entitlement guarantees.
+Package identifiers MUST be unique in configuration.
+Guarantee entitlement kinds MUST be unique within one package, and each guarantee value MUST be an integer.
+
+Benefit configuration MUST NOT contain a revision number and MUST be append-only until benefits become persisted backend entities.
+Once a benefit identifier may have been stored, its package MUST NOT be removed and its title, description, and guarantees MUST NOT change.
+A changed package MUST use a new benefit identifier.
+
+Looking up an unknown benefit identifier MUST fail without changing benefit-transaction, subscription, or entitlement state.
+
+### Provider subscription references
+
+A subscription application MUST require a non-empty benefit identifier on the supplied subscription snapshot.
+The workflow MAY accept a complete provider subscription identity to select an internal subscription.
+It MUST persist the mapping separately from benefit transactions.
+One provider subscription identity MUST map to at most one internal subscription identifier.
+Recreating the same mapping MUST be a no-op, while attempting to map the identity to another internal subscription MUST fail without changing the stored reference.
+
+Benefit transactions MUST NOT contain provider identifiers.
+Provider customer and product identifiers are inputs to provider-adapter decisions and MUST NOT be accepted or persisted by the benefits module.
+The source-owned operation record remains responsible for provider payloads and diagnostic provenance.
+
+The trusted caller MUST include the benefit identifier obtained from provider-owned product metadata.
+Configured titles, descriptions, and entitlement guarantees MUST remain locally authoritative and MUST NOT be accepted as provider-supplied display data.
+
+### Benefit transactions
+
+Each benefit transaction currently accepted by the module MUST have an internally generated UUID, one transaction source identity, one stable transaction kind, one user, one benefit identifier, one internal subscription identifier, and one effective time.
+The source identifier MUST be a stable `SMALLINT` identifying the source subsystem.
+The source transaction identifier MUST be a UUID identifying a durable source-owned operation, not an identifier generated independently for each retry or webhook delivery attempt.
+For example, a Stripe adapter may supply the UUID of its persisted webhook record while retaining the original Stripe event identifier and payload in that record.
+Local subscription identity MUST be represented directly by the internal subscription identifier and MUST NOT be encoded as a generic target kind and target identifier pair.
+A future purchase workflow MUST introduce a distinct purchase identifier rather than generalizing the subscription relationship.
+
+The supported benefit transaction kinds and stable values MUST be:
+
+- `subscription_update`, stable value `1`, which changes no entitlement state.
+- `grant`, stable value `2`, which grants every entitlement guarantee in one benefit package.
+- `revoke`, stable value `3`, which revokes the guarantees created by one earlier grant transaction.
+
+Assigned values MUST NOT be changed or reused.
+
+The exact `source_id` and `source_transaction_id` tuple MUST be unique.
+Trusted callers MUST guarantee that a source identity permanently identifies exactly one logical operation and MUST NOT reuse it for different transaction data.
+The first accepted transaction for a source identity MUST remain authoritative.
+Repeating a source identity MUST return the previously generated internal transaction identifier and MUST be a no-op regardless of the transaction data supplied by the repeated request.
+If overlapping first attempts both pass the initial source lookup, the unique-key loser MUST fail with a benefit transaction concurrency error rather than loading the winner inside the same attempt.
+Retrying after the winner commits MUST return the stored transaction normally.
+
+Benefit transactions MUST be append-only and MUST NOT be updated or deleted by normal workflows.
+
+### Grants
+
+A grant transaction MUST contain timezone-aware activation and expiration times with activation earlier than expiration.
+These times MUST come from the causal granting operation; subscription status and renewal fields MUST NOT be used to infer them.
+
+The workflow MUST resolve the package recorded by the grant transaction and create one source entitlement for every package guarantee.
+Every resulting source entitlement MUST use `benefits` as its semantic entitlement source and the internal benefit transaction UUID as its grant transaction identifier.
+The originating PSP, administrator, support tool, or system component MUST remain identifiable through the corresponding benefit transaction's source identity and source-owned operation record.
+
+All non-lifetime guarantees MUST use the grant transaction's explicit interval.
+Lifetime guarantees MUST use the grant activation and the project's stable lifetime interval-end marker.
+Guarantees created by different internal transactions MUST coexist as immutable grants, including consecutive subscription periods.
+
+### Revocations
+
+A revocation MUST be a new benefit transaction and MUST identify the internal benefit grant transaction it reverses.
+The reversed transaction MUST exist, MUST be a grant, and MUST belong to the same user and internal subscription.
+
+The workflow MUST resolve the package recorded on the original grant and revoke each corresponding source entitlement by the original grant transaction identifier at the revocation transaction's effective time.
+Each changed source entitlement MUST retain the original transaction as its grant transaction identifier and record the new revocation transaction as its revoking transaction identifier.
+The original grant transaction and its immutable entitlement grant values and interval MUST retain their identities.
+
+Revoking an already revoked grant MAY record another idempotent causal benefit transaction but MUST NOT change the preserved entitlement revocation time.
+Attempting to revoke a grant whose expected source entitlements are missing MUST fail and roll back the benefit transaction.
+
+### Subscription application
+
+Every transaction accepted by `apply_subscription_transaction` MUST be associated with one internal subscription identifier.
+The command MUST select the subscription by supplying an existing internal subscription identifier, supplying a complete provider subscription identity, or explicitly requesting a new subscription.
+For a revocation, the command MUST NOT request a new subscription, and the selected subscription MUST match the reversed grant transaction.
+For another transaction with a provider subscription identity, the workflow MUST resolve the internal subscription from the dedicated provider-subscription reference; when no reference exists, it MUST generate a new internal subscription identifier and persist the reference atomically.
+When the command explicitly requests a new subscription, the workflow MUST generate a new internal subscription identifier and MUST reuse it when the same source transaction is retried.
+One provider subscription identity MUST NOT resolve to multiple internal subscriptions.
+The source identity constraint MUST prevent concurrent retries from applying one operation more than once.
+The initial implementation MAY reject one of two different operations concurrently creating the same provider subscription reference; it need not serialize this unlikely race until provider-identity locking is required in practice.
+
+For each newly accepted benefit transaction, the workflow MUST apply the supplied subscription snapshot through the subscriptions domain boundary.
+A new grant or revocation transaction MUST apply its explicit entitlement effect even when the supplied subscription snapshot is stale, because subscription freshness and the causal entitlement operation are separate decisions.
+
+The benefit transaction, subscription snapshot, changed source entitlements, derived effective entitlement intervals, and all required audit records MUST commit or roll back as one unit.
+Changes for the same transaction source identity, internal subscription identity, and affected user and entitlement kind MUST retain the serialization guarantees of the participating modules.
+
+The `ffun.benefits.apply_subscription_transaction` workflow is explicitly approved as the owner of one database transaction that includes benefit-transaction persistence, subscription persistence, and entitlement grant or revocation persistence.
+Within that transaction, it MAY pass its execute callable to `ffun.subscriptions.save_subscription` and to `ffun.entitlements.grant_source_entitlement` or `ffun.entitlements.revoke_source_entitlement`.
+This exception applies only to this benefits subscription-application workflow.
+The workflow MUST call both modules through their public domain boundaries and MUST NOT import their operation modules or access their tables directly.
+
+Business events from participating modules MUST be emitted only after the shared transaction commits.
+The workflow MUST collect the callbacks returned by transaction-participating subscription and entitlement operations and invoke them after that commit.
+Any failure MUST leave the previous transaction ledger, subscription, source entitlements, effective entitlements, and audit history unchanged and MUST emit no events.
+
+## Public interface
+
+The public interface MUST provide these operations:
+
+- `get_benefit` returns one configured package for a benefit identifier and fails when the identifier is unknown.
+- `get_benefit_transaction` returns one benefit transaction for an internal transaction identifier, or no value when it is unknown.
+- `apply_subscription_transaction` atomically applies one subscription-related benefit transaction and one complete subscription snapshot.
+
+`apply_subscription_transaction` MUST accept one complete provider-neutral subscription snapshot, one benefit transaction command, and the audit actor.
+The command MUST contain the `source_id` and `source_transaction_id` transaction identity, subscription selection, stable transaction kind, effective time, and the operation-specific interval or reversed transaction identifier.
+
+The result MUST contain the internal benefit transaction identifier, the internal subscription identifier, and whether the transaction was newly created.
+An idempotent transaction retry MUST report that the transaction was not created because its original atomic effects already committed.
+
+## Audit records
+
+The module does not define an additional audit event.
+The immutable benefit transaction records the source-owned operation reference, while its application MUST cause subscriptions and entitlements to append their specified audit records inside the shared transaction for every corresponding non-no-op state change.
+
+## Business events
+
+The module does not define an additional business event.
+After commit, its subscription application MUST cause subscriptions and entitlements to emit their specified events for every corresponding non-no-op state change.

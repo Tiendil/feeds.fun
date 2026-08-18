@@ -1,3 +1,4 @@
+import uuid
 from collections.abc import Mapping
 
 from pydantic import ValidationError
@@ -5,13 +6,11 @@ from pydantic import ValidationError
 from ffun.core.postgresql import ExecuteType
 from ffun.domain.entities import UserId
 from ffun.subscriptions import errors
-from ffun.subscriptions.entities import (
-    ProviderId,
-    ProviderMerchantId,
-    ProviderSubscriptionId,
-    Subscription,
-    SubscriptionStatusId,
-)
+from ffun.subscriptions.entities import Subscription, SubscriptionId, SubscriptionStatusId
+
+
+def new_subscription_id() -> SubscriptionId:
+    return SubscriptionId(uuid.uuid4())
 
 
 def row_to_subscription(row: Mapping[str, object]) -> Subscription:
@@ -27,26 +26,14 @@ def row_to_subscription(row: Mapping[str, object]) -> Subscription:
 
 async def load_subscription(
     execute: ExecuteType,
-    *,
-    provider_id: ProviderId,
-    provider_merchant_id: ProviderMerchantId,
-    provider_subscription_id: ProviderSubscriptionId,
+    subscription_id: SubscriptionId,
 ) -> Subscription | None:
     sql = """
 SELECT *
-FROM sub_subscriptions AS subscriptions
-WHERE subscriptions.provider_id = %(provider_id)s
-  AND subscriptions.provider_merchant_id = %(provider_merchant_id)s
-  AND subscriptions.provider_subscription_id = %(provider_subscription_id)s
+FROM sb_subscriptions AS subscriptions
+WHERE subscriptions.id = %(subscription_id)s
 """
-    rows = await execute(
-        sql,
-        {
-            "provider_id": provider_id,
-            "provider_merchant_id": provider_merchant_id,
-            "provider_subscription_id": provider_subscription_id,
-        },
-    )
+    rows = await execute(sql, {"subscription_id": subscription_id})
 
     if not rows:
         return None
@@ -56,12 +43,11 @@ WHERE subscriptions.provider_id = %(provider_id)s
 
 async def upsert_subscription(execute: ExecuteType, subscription: Subscription) -> None:
     sql = """
-    INSERT INTO sub_subscriptions (
-        provider_id,
-        provider_merchant_id,
-        provider_subscription_id,
+    INSERT INTO sb_subscriptions (
+        id,
+        state_transaction_id,
         user_id,
-        provider_customer_id,
+        benefit_id,
         status,
         provider_status,
         started_at,
@@ -70,11 +56,10 @@ async def upsert_subscription(execute: ExecuteType, subscription: Subscription) 
         provider_updated_at
     )
     VALUES (
-        %(provider_id)s,
-        %(provider_merchant_id)s,
-        %(provider_subscription_id)s,
+        %(id)s,
+        %(state_transaction_id)s,
         %(user_id)s,
-        %(provider_customer_id)s,
+        %(benefit_id)s,
         %(status)s,
         %(provider_status)s,
         %(started_at)s,
@@ -82,12 +67,10 @@ async def upsert_subscription(execute: ExecuteType, subscription: Subscription) 
         %(ends_at)s,
         %(provider_updated_at)s
     )
-    ON CONFLICT (
-        provider_id,
-        provider_merchant_id,
-        provider_subscription_id
-    )
+    ON CONFLICT (id)
     DO UPDATE SET
+        state_transaction_id = EXCLUDED.state_transaction_id,
+        benefit_id = EXCLUDED.benefit_id,
         status = EXCLUDED.status,
         provider_status = EXCLUDED.provider_status,
         started_at = EXCLUDED.started_at,
@@ -110,7 +93,7 @@ async def load_subscriptions(
 
     sql = """
 SELECT *
-FROM sub_subscriptions AS subscriptions
+FROM sb_subscriptions AS subscriptions
 WHERE subscriptions.user_id = ANY(%(user_ids)s)
   AND (
       %(statuses)s::smallint[] IS NULL
@@ -119,9 +102,7 @@ WHERE subscriptions.user_id = ANY(%(user_ids)s)
 ORDER BY
     subscriptions.user_id,
     subscriptions.started_at DESC,
-    subscriptions.provider_id,
-    subscriptions.provider_merchant_id,
-    subscriptions.provider_subscription_id
+    subscriptions.id
 """
     rows = await execute(sql, {"user_ids": user_ids, "statuses": statuses})
     return [row_to_subscription(row) for row in rows]

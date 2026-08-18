@@ -7,14 +7,10 @@ import pydantic
 from ffun.core import utils
 from ffun.core.entities import BaseEntity, NonEmptyString
 from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
-from ffun.domain.entities import UserId
+from ffun.domain.entities import BenefitTransactionId, UserId
 
 
 class EntitlementSourceId(NonEmptyString):
-    __slots__ = ()
-
-
-class EntitlementTransactionId(NonEmptyString):
     __slots__ = ()
 
 
@@ -39,6 +35,11 @@ class EntitlementKind(BaseEntity):
     is_lifetime: bool
 
 
+class EntitlementGuarantee(BaseEntity):
+    kind_id: EntitlementKindId
+    value: int = pydantic.Field(strict=True)
+
+
 ENTITLEMENT_KINDS: tuple[EntitlementKind, ...] = (
     EntitlementKind(id=EntitlementKindId.day_tokens, merge_policy=MergePolicy.max, is_lifetime=False),
     EntitlementKind(id=EntitlementKindId.month_tokens, merge_policy=MergePolicy.max, is_lifetime=False),
@@ -47,14 +48,15 @@ ENTITLEMENT_KINDS: tuple[EntitlementKind, ...] = (
 
 
 class SourceEntitlement(BaseEntity):
-    source: EntitlementSourceId
-    transaction_id: EntitlementTransactionId
+    source_id: EntitlementSourceId
+    grant_transaction_id: BenefitTransactionId
     user_id: UserId
     kind_id: EntitlementKindId
     value: int = pydantic.Field(strict=True)
     starts_at: datetime.datetime
     expires_at: datetime.datetime
     revoked_at: datetime.datetime | None = None
+    revoked_by_transaction_id: BenefitTransactionId | None = None
 
     @pydantic.model_validator(mode="after")
     def validate_state(self) -> "SourceEntitlement":  # noqa: CCR001
@@ -69,6 +71,9 @@ class SourceEntitlement(BaseEntity):
 
         if self.revoked_at is not None and not utils.has_timezone(self.revoked_at):
             raise ValueError("Entitlement revocation timestamp must have a UTC offset")
+
+        if (self.revoked_at is None) != (self.revoked_by_transaction_id is None):
+            raise ValueError("Entitlement revocation time and transaction must be defined together")
 
         return self
 
@@ -91,27 +96,14 @@ class SourceEntitlement(BaseEntity):
 
     def has_same_grant_as(self, other: "SourceEntitlement") -> bool:
         return (
-            self.source == other.source
-            and self.transaction_id == other.transaction_id
+            self.source_id == other.source_id
+            and self.grant_transaction_id == other.grant_transaction_id
             and self.user_id == other.user_id
             and self.kind_id == other.kind_id
             and self.value == other.value
             and self.starts_at == other.starts_at
             and self.expires_at == other.expires_at
         )
-
-    def to_revoked(self, *, revoked_at: datetime.datetime) -> "SourceEntitlement":
-        return SourceEntitlement(
-            source=self.source,
-            transaction_id=self.transaction_id,
-            user_id=self.user_id,
-            kind_id=self.kind_id,
-            value=self.value,
-            starts_at=self.starts_at,
-            expires_at=self.expires_at,
-            revoked_at=revoked_at,
-        )
-
 
 class EffectiveEntitlementInterval(BaseEntity):
     user_id: UserId

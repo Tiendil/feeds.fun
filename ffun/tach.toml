@@ -95,6 +95,16 @@ depends_on = [
 layer = "web_application"
 
 [[modules]]
+path = "ffun.benefits"
+depends_on = [
+    "ffun.audit",
+    "ffun.entitlements",
+    "ffun.locks",
+    "ffun.subscriptions",
+]
+layer = "meta_workflow"
+
+[[modules]]
 path = "ffun.meta"
 depends_on = [
     "ffun.dispatcher",
