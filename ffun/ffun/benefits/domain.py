@@ -62,9 +62,7 @@ async def _resolve_external_subscription_target(
 ) -> SubscriptionId | None:
     return await operations.load_provider_subscription_reference(
         execute,
-        provider_id=target.provider_id,
-        provider_account_id=target.provider_account_id,
-        provider_subscription_id=target.provider_subscription_id,
+        target.provider_reference,
     )
 
 
@@ -79,13 +77,20 @@ async def _resolve_new_subscription_target(
 async def _resolve_regular_subscription_target(
     execute: ExecuteType,
     target: SubscriptionTarget,
-) -> tuple[SubscriptionId, ExternalSubscriptionTarget | None]:
+) -> SubscriptionId:
     subscription_id = await _resolve_subscription_target(target, execute)
 
-    if subscription_id is not None:
-        return subscription_id, None
+    if subscription_id is None:
+        subscription_id = subscription_domain.new_subscription_id()
 
-    return subscription_domain.new_subscription_id(), target.provider_reference
+    if target.provider_reference is not None:
+        await operations.insert_provider_subscription_reference(
+            execute,
+            target.provider_reference,
+            subscription_id=subscription_id,
+        )
+
+    return subscription_id
 
 
 async def _load_grant_to_revoke(
@@ -151,7 +156,6 @@ async def _accept_subscription_transaction(
     execute: ExecuteType,
     benefit_transaction: BenefitTransaction,
     subscription: SubscriptionSnapshot,
-    provider_reference: ExternalSubscriptionTarget | None,
     *,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
@@ -160,15 +164,6 @@ async def _accept_subscription_transaction(
         raise errors.ConcurrentBenefitTransaction(
             source_id=int(benefit_transaction.source_id),
             source_transaction_id=str(benefit_transaction.source_transaction_id),
-        )
-
-    if provider_reference is not None:
-        await operations.insert_provider_subscription_reference(
-            execute,
-            provider_id=provider_reference.provider_id,
-            provider_account_id=provider_reference.provider_account_id,
-            provider_subscription_id=provider_reference.provider_subscription_id,
-            subscription_id=benefit_transaction.subscription_id,
         )
 
     _, callback = await subscription_domain.save_subscription(
@@ -265,7 +260,7 @@ async def _apply_subscription_update_transaction(
     actor_id: SerializedId,
 ) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
     package = get_benefit(subscription.benefit_id)
-    subscription_id, provider_reference = await _resolve_regular_subscription_target(
+    subscription_id = await _resolve_regular_subscription_target(
         execute,
         command.subscription_target,
     )
@@ -283,7 +278,6 @@ async def _apply_subscription_update_transaction(
         execute,
         benefit_transaction,
         subscription,
-        provider_reference,
         actor_kind=actor_kind,
         actor_id=actor_id,
     )
@@ -302,7 +296,7 @@ async def _apply_grant_transaction(
     actor_id: SerializedId,
 ) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
     package = get_benefit(subscription.benefit_id)
-    subscription_id, provider_reference = await _resolve_regular_subscription_target(
+    subscription_id = await _resolve_regular_subscription_target(
         execute,
         command.subscription_target,
     )
@@ -322,7 +316,6 @@ async def _apply_grant_transaction(
         execute,
         benefit_transaction,
         subscription,
-        provider_reference,
         actor_kind=actor_kind,
         actor_id=actor_id,
     )
@@ -376,7 +369,6 @@ async def _apply_revoke_transaction(
         execute,
         benefit_transaction,
         subscription,
-        None,
         actor_kind=actor_kind,
         actor_id=actor_id,
     )

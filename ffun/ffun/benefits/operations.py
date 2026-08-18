@@ -9,9 +9,7 @@ from ffun.benefits.entities import (
     BenefitSourceId,
     BenefitSourceTransactionId,
     BenefitTransaction,
-    ProviderAccountId,
-    ProviderId,
-    ProviderSubscriptionId,
+    ProviderSubscriptionReference,
 )
 from ffun.core.postgresql import ExecuteType
 from ffun.domain.entities import BenefitTransactionId
@@ -113,10 +111,7 @@ async def load_benefit_transaction_by_source(
 
 async def load_provider_subscription_reference(
     execute: ExecuteType,
-    *,
-    provider_id: ProviderId,
-    provider_account_id: ProviderAccountId,
-    provider_subscription_id: ProviderSubscriptionId,
+    reference: ProviderSubscriptionReference,
 ) -> SubscriptionId | None:
     sql = """
     SELECT subscription_id
@@ -127,11 +122,7 @@ async def load_provider_subscription_reference(
     """
     rows = await execute(
         sql,
-        {
-            "provider_id": provider_id,
-            "provider_account_id": provider_account_id,
-            "provider_subscription_id": provider_subscription_id,
-        },
+        reference.model_dump(),
     )
 
     if not rows:
@@ -142,10 +133,8 @@ async def load_provider_subscription_reference(
 
 async def insert_provider_subscription_reference(
     execute: ExecuteType,
+    reference: ProviderSubscriptionReference,
     *,
-    provider_id: ProviderId,
-    provider_account_id: ProviderAccountId,
-    provider_subscription_id: ProviderSubscriptionId,
     subscription_id: SubscriptionId,
 ) -> None:
     sql = """
@@ -167,12 +156,7 @@ async def insert_provider_subscription_reference(
     """
     rows = await execute(
         sql,
-        {
-            "provider_id": provider_id,
-            "provider_account_id": provider_account_id,
-            "provider_subscription_id": provider_subscription_id,
-            "subscription_id": subscription_id,
-        },
+        {**reference.model_dump(), "subscription_id": subscription_id},
     )
 
     if rows:
@@ -180,9 +164,7 @@ async def insert_provider_subscription_reference(
 
     stored_subscription_id = await load_provider_subscription_reference(
         execute,
-        provider_id=provider_id,
-        provider_account_id=provider_account_id,
-        provider_subscription_id=provider_subscription_id,
+        reference,
     )
     assert stored_subscription_id is not None
 

@@ -28,6 +28,12 @@ class ProviderSubscriptionId(NonEmptyString):
     __slots__ = ()
 
 
+class ProviderSubscriptionReference(BaseEntity):
+    provider_id: ProviderId
+    provider_account_id: ProviderAccountId
+    provider_subscription_id: ProviderSubscriptionId
+
+
 class BenefitTransactionKind(enum.IntEnum):
     subscription_update = 1
     grant = 2
@@ -66,8 +72,12 @@ class ExternalSubscriptionTarget(BaseEntity):
     provider_subscription_id: ProviderSubscriptionId
 
     @property
-    def provider_reference(self) -> "ExternalSubscriptionTarget":
-        return self
+    def provider_reference(self) -> ProviderSubscriptionReference:
+        return ProviderSubscriptionReference(
+            provider_id=self.provider_id,
+            provider_account_id=self.provider_account_id,
+            provider_subscription_id=self.provider_subscription_id,
+        )
 
     @property
     def identity(self) -> tuple[ProviderId, ProviderAccountId, ProviderSubscriptionId]:
