@@ -1,7 +1,6 @@
 import datetime
 from collections.abc import Callable
 from functools import singledispatch
-from typing import assert_never
 
 from ffun.audit.entities import AuditEntityKind
 from ffun.benefits import errors, operations
@@ -40,30 +39,53 @@ def get_benefit(benefit_id: BenefitId) -> BenefitPackage:
     raise errors.UnknownBenefit(benefit_id=benefit_id)
 
 
+@singledispatch
+async def _resolve_subscription_target(
+    target: object,
+    execute: ExecuteType,
+) -> SubscriptionId | None:
+    raise NotImplementedError(f"Unsupported subscription target: {target!r}")
+
+
+@_resolve_subscription_target.register
+async def _resolve_internal_subscription_target(
+    target: InternalSubscriptionTarget,
+    _execute: ExecuteType,
+) -> SubscriptionId:
+    return target.subscription_id
+
+
+@_resolve_subscription_target.register
+async def _resolve_external_subscription_target(
+    target: ExternalSubscriptionTarget,
+    execute: ExecuteType,
+) -> SubscriptionId | None:
+    return await operations.load_provider_subscription_reference(
+        execute,
+        provider_id=target.provider_id,
+        provider_account_id=target.provider_account_id,
+        provider_subscription_id=target.provider_subscription_id,
+    )
+
+
+@_resolve_subscription_target.register
+async def _resolve_new_subscription_target(
+    _target: NewSubscriptionTarget,
+    _execute: ExecuteType,
+) -> None:
+    return None
+
+
 async def _resolve_regular_subscription_target(
     execute: ExecuteType,
     target: SubscriptionTarget,
 ) -> tuple[SubscriptionId, ExternalSubscriptionTarget | None]:
-    if isinstance(target, InternalSubscriptionTarget):
-        return target.subscription_id, None
+    subscription_id = await _resolve_subscription_target(target, execute)
 
-    if isinstance(target, ExternalSubscriptionTarget):
-        reference = await operations.load_provider_subscription_reference(
-            execute,
-            provider_id=target.provider_id,
-            provider_account_id=target.provider_account_id,
-            provider_subscription_id=target.provider_subscription_id,
-        )
+    if subscription_id is not None:
+        return subscription_id, None
 
-        if reference is not None:
-            return reference, None
-
-        return subscription_domain.new_subscription_id(), target
-
-    if isinstance(target, NewSubscriptionTarget):
-        return subscription_domain.new_subscription_id(), None
-
-    assert_never(target)
+    return subscription_domain.new_subscription_id(), target.provider_reference
 
 
 async def _load_grant_to_revoke(
@@ -98,39 +120,19 @@ async def _resolve_revoke_subscription_target(
     execute: ExecuteType,
     target: SubscriptionTarget,
     grant_transaction: BenefitTransaction,
-) -> tuple[SubscriptionId, ExternalSubscriptionTarget | None]:
-    if isinstance(target, InternalSubscriptionTarget):
-        subscription_id = target.subscription_id
-        provider_reference = None
+) -> SubscriptionId:
+    subscription_id = await _resolve_subscription_target(target, execute)
 
-    elif isinstance(target, ExternalSubscriptionTarget):
-        reference = await operations.load_provider_subscription_reference(
-            execute,
-            provider_id=target.provider_id,
-            provider_account_id=target.provider_account_id,
-            provider_subscription_id=target.provider_subscription_id,
-        )
-
-        if reference is None:
-            subscription_id = grant_transaction.subscription_id
-            provider_reference = target
-        else:
-            subscription_id = reference
-            provider_reference = None
-
-    elif isinstance(target, NewSubscriptionTarget):
+    if subscription_id is None:
         raise errors.InvalidBenefitRevocation(
             transaction_id=str(grant_transaction.id),
-            reason="A revocation cannot create a new subscription",
+            reason="A revocation must target an existing subscription",
         )
-
-    else:
-        assert_never(target)
 
     if subscription_id != grant_transaction.subscription_id:
         raise errors.InvalidBenefitSubscription(reason="The transaction targets another subscription")
 
-    return subscription_id, provider_reference
+    return subscription_id
 
 
 def _application_result(
@@ -354,7 +356,7 @@ async def _apply_revoke_transaction(
         if subscription_package.id == grant_transaction.benefit_id
         else get_benefit(grant_transaction.benefit_id)
     )
-    subscription_id, provider_reference = await _resolve_revoke_subscription_target(
+    subscription_id = await _resolve_revoke_subscription_target(
         execute,
         command.subscription_target,
         grant_transaction,
@@ -374,7 +376,7 @@ async def _apply_revoke_transaction(
         execute,
         benefit_transaction,
         subscription,
-        provider_reference,
+        None,
         actor_kind=actor_kind,
         actor_id=actor_id,
     )

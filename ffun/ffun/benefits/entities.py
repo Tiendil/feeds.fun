@@ -54,12 +54,20 @@ class InternalSubscriptionTarget(BaseEntity):
     kind: Literal["internal"] = "internal"
     subscription_id: SubscriptionId
 
+    @property
+    def provider_reference(self) -> None:
+        return None
+
 
 class ExternalSubscriptionTarget(BaseEntity):
     kind: Literal["external"] = "external"
     provider_id: ProviderId
     provider_account_id: ProviderAccountId
     provider_subscription_id: ProviderSubscriptionId
+
+    @property
+    def provider_reference(self) -> "ExternalSubscriptionTarget":
+        return self
 
     @property
     def identity(self) -> tuple[ProviderId, ProviderAccountId, ProviderSubscriptionId]:
@@ -72,6 +80,10 @@ class ExternalSubscriptionTarget(BaseEntity):
 
 class NewSubscriptionTarget(BaseEntity):
     kind: Literal["new"] = "new"
+
+    @property
+    def provider_reference(self) -> None:
+        return None
 
 
 SubscriptionTarget: TypeAlias = Annotated[
