@@ -13,8 +13,8 @@ async def load_source_entitlement_timestamps(
     arguments: dict[str, object] = {
         "user_id": entitlement.user_id,
         "kind_id": entitlement.kind_id,
-        "source_id": entitlement.source,
-        "transaction_id": entitlement.transaction_id,
+        "source_id": entitlement.source_id,
+        "grant_transaction_id": entitlement.grant_transaction_id,
     }
     rows = cast(
         list[dict[str, datetime.datetime]],
@@ -25,7 +25,7 @@ async def load_source_entitlement_timestamps(
             WHERE user_id = %(user_id)s
               AND kind_id = %(kind_id)s
               AND source_id = %(source_id)s
-              AND transaction_id = %(transaction_id)s
+              AND grant_transaction_id = %(grant_transaction_id)s
             """,
             arguments,
         ),

@@ -1,19 +1,40 @@
 import datetime
+import uuid
 from typing import cast
 
 import pydantic
 import pytest
 
 from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
+from ffun.domain.entities import BenefitTransactionId
 from ffun.entitlements.entities import (
     ENTITLEMENT_KINDS,
+    EntitlementGuarantee,
     EntitlementKindId,
     EntitlementSourceId,
-    EntitlementTransactionId,
     MergePolicy,
     SourceEntitlement,
 )
 from ffun.entitlements.tests.make import make_effective_entitlement_interval, make_source_entitlement
+from ffun.subscriptions.domain import new_subscription_id
+
+
+class TestEntitlementKindId:
+    def test_values_are_stable(self) -> None:
+        assert [(kind.name, kind.value) for kind in EntitlementKindId] == [
+            ("day_tokens", 1),
+            ("month_tokens", 2),
+            ("lifetime_tokens", 3),
+        ]
+
+
+class TestMergePolicy:
+    def test_values_are_stable(self) -> None:
+        assert [(policy.name, policy.value) for policy in MergePolicy] == [
+            ("max", "max"),
+            ("min", "min"),
+            ("sum", "sum"),
+        ]
 
 
 class TestEntitlementKinds:
@@ -27,45 +48,32 @@ class TestEntitlementKinds:
         assert [kind.is_lifetime for kind in ENTITLEMENT_KINDS] == [False, False, True]
 
 
+class TestEntitlementGuarantee:
+    @pytest.mark.parametrize("value", [None, True, 1.5, "1"])
+    def test_init__value_must_be_integer(self, value: object) -> None:
+        with pytest.raises(pydantic.ValidationError, match="integer"):
+            EntitlementGuarantee(kind_id=EntitlementKindId.day_tokens, value=cast(int, value))
+
+
 class TestSourceEntitlement:
-    @pytest.mark.parametrize("source", ["", " "])
-    def test_init__source_must_not_be_empty(self, source: str) -> None:
-        values = cast(dict[str, object], make_source_entitlement().model_dump())
-        values["source"] = source
-
-        with pytest.raises(pydantic.ValidationError, match="EntitlementSourceId must not be empty"):
-            SourceEntitlement.model_validate(values)
-
-    @pytest.mark.parametrize("transaction_id", ["", " "])
-    def test_init__transaction_id_must_not_be_empty(self, transaction_id: str) -> None:
-        values = cast(dict[str, object], make_source_entitlement().model_dump())
-        values["transaction_id"] = transaction_id
-
-        with pytest.raises(pydantic.ValidationError, match="EntitlementTransactionId must not be empty"):
-            SourceEntitlement.model_validate(values)
-
-    @pytest.mark.parametrize("value", [None, True])
+    @pytest.mark.parametrize("value", [None, True, 1.5, "1"])
     def test_init__grant_requires_integer_value(self, value: object) -> None:
         with pytest.raises(pydantic.ValidationError, match="integer"):
             make_source_entitlement(value=cast(int, value))
 
-    def test_init__activation_requires_utc_offset(self) -> None:
+    @pytest.mark.parametrize(
+        ("field_name", "message"),
+        [
+            ("starts_at", "activation timestamp must have a UTC offset"),
+            ("expires_at", "expiration timestamp must have a UTC offset"),
+            ("revoked_at", "revocation timestamp must have a UTC offset"),
+        ],
+    )
+    def test_init__timestamps_require_utc_offset(self, field_name: str, message: str) -> None:
         now = datetime.datetime.now(tz=datetime.UTC)
 
-        with pytest.raises(pydantic.ValidationError, match="activation timestamp must have a UTC offset"):
-            make_source_entitlement(starts_at=now.replace(tzinfo=None))
-
-    def test_init__expiration_requires_utc_offset(self) -> None:
-        now = datetime.datetime.now(tz=datetime.UTC)
-
-        with pytest.raises(pydantic.ValidationError, match="expiration timestamp must have a UTC offset"):
-            make_source_entitlement(expires_at=now.replace(tzinfo=None))
-
-    def test_init__revocation_requires_utc_offset(self) -> None:
-        now = datetime.datetime.now(tz=datetime.UTC)
-
-        with pytest.raises(pydantic.ValidationError, match="revocation timestamp must have a UTC offset"):
-            make_source_entitlement(revoked_at=now.replace(tzinfo=None))
+        with pytest.raises(pydantic.ValidationError, match=message):
+            make_source_entitlement(**{field_name: now.replace(tzinfo=None)})  # type: ignore[arg-type]
 
     def test_init__activation_must_be_before_expiration(self) -> None:
         now = datetime.datetime.now(tz=datetime.UTC)
@@ -73,18 +81,40 @@ class TestSourceEntitlement:
         with pytest.raises(pydantic.ValidationError, match="activation timestamp must be earlier than expiration"):
             make_source_entitlement(starts_at=now, expires_at=now)
 
-    def test_validate_grant__recurring(self) -> None:
-        entitlement = make_source_entitlement(kind_id=EntitlementKindId.day_tokens)
+    @pytest.mark.parametrize(
+        ("revoked_at", "revoked_by_transaction_id"),
+        [
+            (datetime.datetime.now(tz=datetime.UTC), None),
+            (None, BenefitTransactionId(uuid.uuid4())),
+        ],
+    )
+    def test_init__revocation_time_and_transaction_are_defined_together(
+        self,
+        revoked_at: datetime.datetime | None,
+        revoked_by_transaction_id: BenefitTransactionId | None,
+    ) -> None:
+        values = cast(dict[str, object], make_source_entitlement().model_dump())
+        values["revoked_at"] = revoked_at
+        values["revoked_by_transaction_id"] = revoked_by_transaction_id
 
-        entitlement.validate_grant(ENTITLEMENT_KINDS[0])
+        with pytest.raises(pydantic.ValidationError, match="revocation time and transaction"):
+            SourceEntitlement.model_validate(values)
+
+    def test_granted__reflects_revocation_state(self) -> None:
+        granted = make_source_entitlement()
+        revoked = make_source_entitlement(revoked_at=datetime.datetime.now(tz=datetime.UTC))
+
+        assert granted.granted
+        assert not revoked.granted
+
+    def test_validate_grant__recurring(self) -> None:
+        make_source_entitlement(kind_id=EntitlementKindId.day_tokens).validate_grant(ENTITLEMENT_KINDS[0])
 
     def test_validate_grant__lifetime(self) -> None:
-        entitlement = make_source_entitlement(
+        make_source_entitlement(
             kind_id=EntitlementKindId.lifetime_tokens,
             expires_at=LIFETIME_INTERVAL_END_MARKER,
-        )
-
-        entitlement.validate_grant(ENTITLEMENT_KINDS[2])
+        ).validate_grant(ENTITLEMENT_KINDS[2])
 
     def test_validate_grant__requires_matching_kind(self) -> None:
         entitlement = make_source_entitlement(kind_id=EntitlementKindId.day_tokens)
@@ -120,66 +150,55 @@ class TestSourceEntitlement:
 
     def test_has_same_grant_as__ignores_revocation_state(self) -> None:
         entitlement = make_source_entitlement()
-        revoked = entitlement.to_revoked(revoked_at=datetime.datetime.now(tz=datetime.UTC))
+        revoked = entitlement.replace(
+            revoked_at=datetime.datetime.now(tz=datetime.UTC),
+            revoked_by_transaction_id=BenefitTransactionId(uuid.uuid4()),
+        )
 
         assert entitlement.has_same_grant_as(revoked)
 
     @pytest.mark.parametrize(
-        "field",
-        ["source", "transaction_id", "user_id", "kind_id", "value", "starts_at", "expires_at"],
+        "field_name",
+        [
+            "source_id",
+            "grant_transaction_id",
+            "user_id",
+            "subscription_id",
+            "kind_id",
+            "value",
+            "starts_at",
+            "expires_at",
+        ],
     )
-    def test_has_same_grant_as__detects_changed_immutable_field(self, field: str) -> None:
+    def test_has_same_grant_as__detects_changed_immutable_field(self, field_name: str) -> None:
         entitlement = make_source_entitlement(value=10)
         changed_values: dict[str, object] = {
-            "source": EntitlementSourceId("changed-source"),
-            "transaction_id": EntitlementTransactionId("changed-transaction"),
+            "source_id": EntitlementSourceId("changed-source"),
+            "grant_transaction_id": BenefitTransactionId(uuid.uuid4()),
             "user_id": make_source_entitlement().user_id,
+            "subscription_id": new_subscription_id(),
             "kind_id": EntitlementKindId.month_tokens,
             "value": 20,
             "starts_at": entitlement.starts_at + datetime.timedelta(microseconds=1),
             "expires_at": entitlement.expires_at - datetime.timedelta(microseconds=1),
         }
 
-        assert not entitlement.has_same_grant_as(entitlement.replace(**{field: changed_values[field]}))
-
-    def test_to_revoked__changes_only_revocation(self) -> None:
-        entitlement = make_source_entitlement()
-        revoked_at = datetime.datetime.now(tz=datetime.UTC)
-
-        revoked = entitlement.to_revoked(revoked_at=revoked_at)
-
-        assert revoked == make_source_entitlement(
-            source=entitlement.source,
-            transaction_id=entitlement.transaction_id,
-            user_id=entitlement.user_id,
-            kind_id=entitlement.kind_id,
-            value=entitlement.value,
-            starts_at=entitlement.starts_at,
-            expires_at=entitlement.expires_at,
-            revoked_at=revoked_at,
-        )
-        assert entitlement.granted
-        assert not revoked.granted
-
-    def test_to_revoked__validates_timestamp(self) -> None:
-        entitlement = make_source_entitlement()
-
-        with pytest.raises(pydantic.ValidationError, match="revocation timestamp must have a UTC offset"):
-            entitlement.to_revoked(revoked_at=datetime.datetime.now())
+        assert not entitlement.has_same_grant_as(entitlement.replace(**{field_name: changed_values[field_name]}))
 
 
 class TestEffectiveEntitlementInterval:
-    def test_init__activation_requires_utc_offset(self) -> None:
+    @pytest.mark.parametrize(
+        ("field_name", "message"),
+        [
+            ("starts_at", "activation timestamp must have a UTC offset"),
+            ("expires_at", "expiration timestamp must have a UTC offset"),
+        ],
+    )
+    def test_init__timestamps_require_utc_offset(self, field_name: str, message: str) -> None:
         now = datetime.datetime.now(tz=datetime.UTC)
 
-        with pytest.raises(pydantic.ValidationError, match="activation timestamp must have a UTC offset"):
-            make_effective_entitlement_interval(starts_at=now.replace(tzinfo=None))
-
-    def test_init__expiration_requires_utc_offset(self) -> None:
-        now = datetime.datetime.now(tz=datetime.UTC)
-
-        with pytest.raises(pydantic.ValidationError, match="expiration timestamp must have a UTC offset"):
-            make_effective_entitlement_interval(expires_at=now.replace(tzinfo=None))
+        with pytest.raises(pydantic.ValidationError, match=message):
+            make_effective_entitlement_interval(**{field_name: now.replace(tzinfo=None)})  # type: ignore[arg-type]
 
     def test_init__activation_must_be_before_expiration(self) -> None:
         now = datetime.datetime.now(tz=datetime.UTC)
