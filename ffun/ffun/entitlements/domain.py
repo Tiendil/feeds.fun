@@ -433,7 +433,7 @@ async def revoke_source_entitlement(  # noqa: CFQ002
     return outcome, event_callback
 
 
-async def grant_source_entitlements(
+async def grant_source_entitlements(  # noqa: CFQ002
     execute: ExecuteType,
     *,
     source_id: EntitlementSourceId,
@@ -479,7 +479,7 @@ async def grant_source_entitlements(
     return outcomes, event_callbacks
 
 
-async def revoke_subscription_entitlements(
+async def revoke_subscription_entitlements(  # noqa: CFQ002
     execute: ExecuteType,
     *,
     subscription_id: SubscriptionId,
@@ -516,7 +516,7 @@ async def revoke_subscription_entitlements(
     return outcomes, event_callbacks
 
 
-async def revoke_source_entitlements(
+async def revoke_source_entitlements(  # noqa: CFQ002
     execute: ExecuteType,
     *,
     source_id: EntitlementSourceId,

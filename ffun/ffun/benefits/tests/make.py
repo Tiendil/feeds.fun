@@ -86,7 +86,7 @@ def make_revoke_effect(
     return RevokeBenefitEffect(revokes_transaction_id=revokes_transaction_id or BenefitTransactionId(uuid.uuid4()))
 
 
-def make_benefit_transaction(  # noqa: CFQ002
+def make_benefit_transaction(  # noqa: CCR001, CFQ002
     *,
     transaction_id: BenefitTransactionId | None = None,
     source_id: BenefitSourceId = BenefitSourceId(17),
@@ -140,7 +140,7 @@ def make_benefit_command(
     )
 
 
-def make_subscription_snapshot(
+def make_subscription_snapshot(  # noqa: CFQ002
     *,
     user_id: UserId | None = None,
     benefit_id: BenefitId = BenefitId("test-benefit"),

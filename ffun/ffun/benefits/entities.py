@@ -182,7 +182,7 @@ class BenefitTransaction(BaseEntity):
         return timestamp
 
     @pydantic.model_validator(mode="after")
-    def validate_shape(self) -> "BenefitTransaction":
+    def validate_shape(self) -> "BenefitTransaction":  # noqa: CCR001
         if self.kind == BenefitTransactionKind.grant:
             if self.starts_at is None or self.expires_at is None:
                 raise ValueError("A benefit grant transaction must define its entitlement interval")

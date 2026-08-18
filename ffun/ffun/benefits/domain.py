@@ -176,7 +176,7 @@ async def _accept_subscription_transaction(
     return callback
 
 
-async def _revoke_benefit(
+async def _revoke_benefit(  # noqa: CFQ002
     execute: ExecuteType,
     benefit_transaction: BenefitTransaction,
     grant_transaction: BenefitTransaction,
@@ -202,7 +202,7 @@ async def _revoke_benefit(
     return callbacks
 
 
-async def _replace_benefit(
+async def _replace_benefit(  # noqa: CFQ002
     execute: ExecuteType,
     benefit_transaction: BenefitTransaction,
     package: BenefitPackage,
@@ -241,7 +241,7 @@ async def _replace_benefit(
 
 
 @singledispatch
-async def _apply_effect_transaction(
+async def _apply_effect_transaction(  # noqa: CFQ002
     effect: object,
     execute: ExecuteType,
     subscription: SubscriptionSnapshot,
@@ -255,7 +255,7 @@ async def _apply_effect_transaction(
 
 
 @_apply_effect_transaction.register
-async def _apply_grant_transaction(
+async def _apply_grant_transaction(  # noqa: CFQ002
     effect: GrantBenefitEffect,
     execute: ExecuteType,
     subscription: SubscriptionSnapshot,
@@ -302,7 +302,7 @@ async def _apply_grant_transaction(
 
 
 @_apply_effect_transaction.register
-async def _apply_revoke_transaction(
+async def _apply_revoke_transaction(  # noqa: CFQ002
     effect: RevokeBenefitEffect,
     execute: ExecuteType,
     subscription: SubscriptionSnapshot,
