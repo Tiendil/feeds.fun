@@ -8,9 +8,9 @@ from pydantic import ValidationError
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
 from ffun.domain.domain import new_user_id
-from ffun.domain.entities import BenefitId, BenefitTransactionId
+from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId
 from ffun.subscriptions import errors, operations
-from ffun.subscriptions.entities import SubscriptionId, SubscriptionStatusId
+from ffun.subscriptions.entities import SubscriptionStatusId
 from ffun.subscriptions.tests.make import make_subscription
 
 
@@ -103,7 +103,7 @@ class TestUpsertSubscription:
         await operations.upsert_subscription(execute, subscription)
         advanced = subscription.replace(
             state_transaction_id=BenefitTransactionId(uuid.uuid4()),
-            provider_updated_at=subscription.provider_updated_at + datetime.timedelta(seconds=1)
+            provider_updated_at=subscription.provider_updated_at + datetime.timedelta(seconds=1),
         )
 
         async with TableSizeNotChanged("sb_subscriptions"):

@@ -12,8 +12,7 @@ from ffun.benefits.entities import (
     ProviderSubscriptionReference,
 )
 from ffun.core.postgresql import ExecuteType
-from ffun.domain.entities import BenefitTransactionId
-from ffun.subscriptions.entities import SubscriptionId
+from ffun.domain.entities import BenefitTransactionId, SubscriptionId
 
 
 def new_benefit_transaction_id() -> BenefitTransactionId:

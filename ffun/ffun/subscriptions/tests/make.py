@@ -2,11 +2,10 @@ import datetime
 import uuid
 
 from ffun.domain.domain import new_user_id
-from ffun.domain.entities import BenefitId, BenefitTransactionId, UserId
+from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId, UserId
 from ffun.subscriptions.entities import (
     ProviderStatus,
     Subscription,
-    SubscriptionId,
     SubscriptionStatusId,
 )
 

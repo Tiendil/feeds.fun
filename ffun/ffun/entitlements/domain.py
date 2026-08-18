@@ -9,7 +9,7 @@ from ffun.audit.entities import AuditEntityKind, AuditEventName
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, execute
 from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
-from ffun.domain.entities import BenefitTransactionId, SerializedId, UserId
+from ffun.domain.entities import BenefitTransactionId, SerializedId, SubscriptionId, UserId
 from ffun.entitlements import entities as entitlement_entities
 from ffun.entitlements import errors, operations
 from ffun.entitlements.entities import (
@@ -24,7 +24,6 @@ from ffun.entitlements.entities import (
 )
 from ffun.locks.domain import Lock
 from ffun.locks.entities import LockKind
-from ffun.subscriptions.entities import SubscriptionId
 
 logger = logging.get_module_logger()
 

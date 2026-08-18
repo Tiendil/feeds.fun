@@ -1,15 +1,12 @@
 import datetime
 import enum
-import uuid
-from typing import NewType, cast
+from typing import cast
 
 import pydantic
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity, NonEmptyString
-from ffun.domain.entities import BenefitId, BenefitTransactionId, UserId
-
-SubscriptionId = NewType("SubscriptionId", uuid.UUID)
+from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId, UserId
 
 
 class ProviderStatus(NonEmptyString):

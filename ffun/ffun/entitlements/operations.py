@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from pypika import Parameter, PostgreSQLQuery
 
 from ffun.core.postgresql import ExecuteType
-from ffun.domain.entities import BenefitTransactionId, UserId
+from ffun.domain.entities import BenefitTransactionId, SubscriptionId, UserId
 from ffun.entitlements import errors
 from ffun.entitlements.entities import (
     EffectiveEntitlementInterval,
@@ -15,7 +15,6 @@ from ffun.entitlements.entities import (
     EntitlementSourceId,
     SourceEntitlement,
 )
-from ffun.subscriptions.entities import SubscriptionId
 
 
 def row_to_source_entitlement(row: Mapping[str, object]) -> SourceEntitlement:

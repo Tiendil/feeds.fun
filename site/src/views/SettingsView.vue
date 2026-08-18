@@ -114,7 +114,6 @@
               text="Gemini" />
             API key.
           </p>
-
         </template>
 
         <details class="ui-disclosure mb-4">

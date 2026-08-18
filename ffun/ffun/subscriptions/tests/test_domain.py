@@ -17,14 +17,13 @@ from ffun.core.tests.helpers import (
     capture_logs,
 )
 from ffun.domain.domain import new_user_id
-from ffun.domain.entities import BenefitId, BenefitTransactionId, SerializedId
+from ffun.domain.entities import BenefitId, BenefitTransactionId, SerializedId, SubscriptionId
 from ffun.locks.entities import LockKind
 from ffun.subscriptions import domain, errors, operations
 from ffun.subscriptions.entities import (
     ProviderStatus,
     SaveSubscriptionOutcome,
     Subscription,
-    SubscriptionId,
     SubscriptionSaveResult,
     SubscriptionStatusId,
 )

@@ -2,14 +2,13 @@ import datetime
 import uuid
 
 from ffun.domain.domain import new_user_id
-from ffun.domain.entities import BenefitTransactionId, UserId
+from ffun.domain.entities import BenefitTransactionId, SubscriptionId, UserId
 from ffun.entitlements.entities import (
     EffectiveEntitlementInterval,
     EntitlementKindId,
     EntitlementSourceId,
     SourceEntitlement,
 )
-from ffun.subscriptions.entities import SubscriptionId
 
 
 def make_effective_entitlement_interval(

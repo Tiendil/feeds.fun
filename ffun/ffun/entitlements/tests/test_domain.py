@@ -967,9 +967,7 @@ class TestRevokeSourceEntitlement:
         assert records[-1].attributes["previous_source_state"] == cast(
             dict[str, object], source_entitlement.model_dump(mode="json")
         )
-        assert records[-1].attributes["new_source_state"] == cast(
-            dict[str, object], expected.model_dump(mode="json")
-        )
+        assert records[-1].attributes["new_source_state"] == cast(dict[str, object], expected.model_dump(mode="json"))
         assert records[-1].attributes["revoked_by_transaction_id"] == str(_REVOKING_TRANSACTION_ID)
         assert_logs_has_business_event(
             logs,
@@ -1328,9 +1326,7 @@ class TestGetEntitlements:
     async def test_duplicate_kind_ids(self) -> None:
         user_id = new_user_id()
 
-        assert await domain.get_entitlements([user_id], [_DAY_TOKENS, _DAY_TOKENS]) == {
-            user_id: {_DAY_TOKENS: None}
-        }
+        assert await domain.get_entitlements([user_id], [_DAY_TOKENS, _DAY_TOKENS]) == {user_id: {_DAY_TOKENS: None}}
 
     @pytest.mark.asyncio
     async def test_unconfigured_kind(self, mocker: MockerFixture) -> None:

@@ -19,12 +19,11 @@ from ffun.benefits.entities import (
     SubscriptionTarget,
 )
 from ffun.domain.domain import new_user_id
-from ffun.domain.entities import BenefitId, BenefitTransactionId, UserId
+from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId, UserId
 from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId
 from ffun.subscriptions.domain import new_subscription_id
 from ffun.subscriptions.entities import (
     ProviderStatus,
-    SubscriptionId,
     SubscriptionSnapshot,
     SubscriptionStatusId,
 )
@@ -84,9 +83,7 @@ def make_revoke_effect(
     *,
     revokes_transaction_id: BenefitTransactionId | None = None,
 ) -> RevokeBenefitEffect:
-    return RevokeBenefitEffect(
-        revokes_transaction_id=revokes_transaction_id or BenefitTransactionId(uuid.uuid4())
-    )
+    return RevokeBenefitEffect(revokes_transaction_id=revokes_transaction_id or BenefitTransactionId(uuid.uuid4()))
 
 
 def make_benefit_transaction(  # noqa: CFQ002

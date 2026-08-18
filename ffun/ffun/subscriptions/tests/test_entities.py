@@ -74,9 +74,7 @@ class TestSubscriptionSnapshot:
 
     def test_audit_state__serializes_complete_snapshot_without_user(self) -> None:
         subscription = make_subscription()
-        snapshot = SubscriptionSnapshot.model_validate(
-            subscription.model_dump(exclude={"id", "state_transaction_id"})
-        )
+        snapshot = SubscriptionSnapshot.model_validate(subscription.model_dump(exclude={"id", "state_transaction_id"}))
 
         state = snapshot.audit_state()
 
@@ -88,9 +86,7 @@ class TestSubscriptionSnapshot:
 
     def test_with_identity__creates_complete_subscription(self) -> None:
         subscription = make_subscription()
-        snapshot = SubscriptionSnapshot.model_validate(
-            subscription.model_dump(exclude={"id", "state_transaction_id"})
-        )
+        snapshot = SubscriptionSnapshot.model_validate(subscription.model_dump(exclude={"id", "state_transaction_id"}))
         subscription_id = new_subscription_id()
         state_transaction_id = BenefitTransactionId(subscription.state_transaction_id)
 

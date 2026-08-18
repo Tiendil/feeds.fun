@@ -19,11 +19,11 @@ from ffun.benefits.entities import (
 )
 from ffun.benefits.settings import settings
 from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
-from ffun.domain.entities import BenefitId, SerializedId
+from ffun.domain.entities import BenefitId, SerializedId, SubscriptionId
 from ffun.entitlements import domain as entitlement_domain
 from ffun.entitlements.entities import EntitlementSourceId
 from ffun.subscriptions import domain as subscription_domain
-from ffun.subscriptions.entities import SubscriptionId, SubscriptionSnapshot
+from ffun.subscriptions.entities import SubscriptionSnapshot
 
 BENEFITS_ENTITLEMENT_SOURCE_ID = EntitlementSourceId("benefits")
 

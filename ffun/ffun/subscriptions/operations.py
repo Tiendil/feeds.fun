@@ -4,9 +4,9 @@ from collections.abc import Mapping
 from pydantic import ValidationError
 
 from ffun.core.postgresql import ExecuteType
-from ffun.domain.entities import UserId
+from ffun.domain.entities import SubscriptionId, UserId
 from ffun.subscriptions import errors
-from ffun.subscriptions.entities import Subscription, SubscriptionId, SubscriptionStatusId
+from ffun.subscriptions.entities import Subscription, SubscriptionStatusId
 
 
 def new_subscription_id() -> SubscriptionId:

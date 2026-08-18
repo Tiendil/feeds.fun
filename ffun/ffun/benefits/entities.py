@@ -7,10 +7,8 @@ import pydantic
 
 from ffun.core import utils
 from ffun.core.entities import BaseEntity, NonEmptyString
-from ffun.domain.entities import BenefitId, BenefitTransactionId, UserId
+from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId, UserId
 from ffun.entitlements.entities import EntitlementGuarantee
-from ffun.subscriptions.entities import SubscriptionId
-
 
 BenefitSourceId = NewType("BenefitSourceId", int)
 BenefitSourceTransactionId = NewType("BenefitSourceTransactionId", uuid.UUID)

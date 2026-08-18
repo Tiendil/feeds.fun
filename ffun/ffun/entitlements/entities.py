@@ -7,8 +7,7 @@ import pydantic
 from ffun.core import utils
 from ffun.core.entities import BaseEntity, NonEmptyString
 from ffun.domain.datetime_intervals import LIFETIME_INTERVAL_END_MARKER
-from ffun.domain.entities import BenefitTransactionId, UserId
-from ffun.subscriptions.entities import SubscriptionId
+from ffun.domain.entities import BenefitTransactionId, SubscriptionId, UserId
 
 
 class EntitlementSourceId(NonEmptyString):
@@ -107,6 +106,7 @@ class SourceEntitlement(BaseEntity):
             and self.starts_at == other.starts_at
             and self.expires_at == other.expires_at
         )
+
 
 class EffectiveEntitlementInterval(BaseEntity):
     user_id: UserId

@@ -715,9 +715,7 @@ class TestApplySubscriptionTransaction:
         retry_command = make_benefit_command(
             source_id=command.source_id,
             source_transaction_id=command.source_transaction_id,
-            subscription_target=InternalSubscriptionTarget(
-                subscription_id=subscription_domain.new_subscription_id()
-            ),
+            subscription_target=InternalSubscriptionTarget(subscription_id=subscription_domain.new_subscription_id()),
         )
 
         with capture_logs() as logs:

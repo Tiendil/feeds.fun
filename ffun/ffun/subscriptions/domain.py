@@ -7,14 +7,13 @@ from ffun.audit import domain as audit_domain
 from ffun.audit.entities import AuditEntityKind, AuditEventName
 from ffun.core import logging
 from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
-from ffun.domain.entities import BenefitTransactionId, SerializedId, UserId
+from ffun.domain.entities import BenefitTransactionId, SerializedId, SubscriptionId, UserId
 from ffun.locks.domain import Lock
 from ffun.locks.entities import LockKind
 from ffun.subscriptions import errors, operations
 from ffun.subscriptions.entities import (
     SaveSubscriptionOutcome,
     Subscription,
-    SubscriptionId,
     SubscriptionSaveResult,
     SubscriptionSnapshot,
     SubscriptionStatusId,

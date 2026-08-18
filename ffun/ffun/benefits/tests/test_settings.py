@@ -50,8 +50,6 @@ class TestSettings:
                 benefit_id=BenefitId("configured"),
                 title="Configured package",
                 description="Loaded from the environment",
-                entitlements=(
-                    EntitlementGuarantee(kind_id=EntitlementKindId.month_tokens, value=42),
-                ),
+                entitlements=(EntitlementGuarantee(kind_id=EntitlementKindId.month_tokens, value=42),),
             ),
         )
