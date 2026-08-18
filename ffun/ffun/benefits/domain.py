@@ -20,7 +20,7 @@ from ffun.benefits.entities import (
 from ffun.benefits.settings import settings
 from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
 from ffun.domain.entities import BenefitId, SerializedId
-from ffun.entitlements import domain as entitlement_domain, errors as entitlement_errors
+from ffun.entitlements import domain as entitlement_domain
 from ffun.entitlements.entities import EntitlementSourceId
 from ffun.subscriptions import domain as subscription_domain
 from ffun.subscriptions.entities import SubscriptionId, SubscriptionSnapshot
@@ -176,44 +176,13 @@ async def _accept_subscription_transaction(
     return callback
 
 
-async def _grant_benefit(
-    execute: ExecuteType,
-    benefit_transaction: BenefitTransaction,
-    package: BenefitPackage,
-    effect: GrantBenefitEffect,
-    *,
-    evaluation_time: datetime.datetime,
-    actor_kind: AuditEntityKind,
-    actor_id: SerializedId,
-) -> list[Callable[[], None]]:
-    try:
-        _, callbacks = await entitlement_domain.grant_source_entitlements(
-            execute,
-            source_id=BENEFITS_ENTITLEMENT_SOURCE_ID,
-            grant_transaction_id=benefit_transaction.id,
-            user_id=benefit_transaction.user_id,
-            guarantees=package.entitlements,
-            starts_at=effect.starts_at,
-            expires_at=effect.expires_at,
-            evaluation_time=evaluation_time,
-            actor_kind=actor_kind,
-            actor_id=actor_id,
-        )
-    except entitlement_errors.InvalidSourceEntitlement as error:
-        raise errors.InvalidBenefitGrant(
-            transaction_id=str(benefit_transaction.id),
-            reason=str(error),
-        ) from error
-
-    return callbacks
-
-
 async def _revoke_benefit(
     execute: ExecuteType,
     benefit_transaction: BenefitTransaction,
     grant_transaction: BenefitTransaction,
     package: BenefitPackage,
     *,
+    revoked_at: datetime.datetime,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
@@ -225,11 +194,49 @@ async def _revoke_benefit(
         revoked_by_transaction_id=benefit_transaction.id,
         user_id=grant_transaction.user_id,
         kind_ids=[guarantee.kind_id for guarantee in package.entitlements],
-        revoked_at=benefit_transaction.effective_at,
+        revoked_at=revoked_at,
         evaluation_time=evaluation_time,
         actor_kind=actor_kind,
         actor_id=actor_id,
     )
+    return callbacks
+
+
+async def _replace_benefit(
+    execute: ExecuteType,
+    benefit_transaction: BenefitTransaction,
+    package: BenefitPackage,
+    effect: GrantBenefitEffect,
+    *,
+    evaluation_time: datetime.datetime,
+    actor_kind: AuditEntityKind,
+    actor_id: SerializedId,
+) -> list[Callable[[], None]]:
+    _, callbacks = await entitlement_domain.revoke_subscription_entitlements(
+        execute,
+        subscription_id=benefit_transaction.subscription_id,
+        revoked_by_transaction_id=benefit_transaction.id,
+        revoked_at=effect.starts_at,
+        evaluation_time=evaluation_time,
+        actor_kind=actor_kind,
+        actor_id=actor_id,
+    )
+
+    _, grant_callbacks = await entitlement_domain.grant_source_entitlements(
+        execute,
+        source_id=BENEFITS_ENTITLEMENT_SOURCE_ID,
+        grant_transaction_id=benefit_transaction.id,
+        user_id=benefit_transaction.user_id,
+        subscription_id=benefit_transaction.subscription_id,
+        guarantees=package.entitlements,
+        starts_at=effect.starts_at,
+        expires_at=effect.expires_at,
+        evaluation_time=evaluation_time,
+        actor_kind=actor_kind,
+        actor_id=actor_id,
+    )
+
+    callbacks.extend(grant_callbacks)
     return callbacks
 
 
@@ -282,7 +289,7 @@ async def _apply_grant_transaction(
         actor_kind=actor_kind,
         actor_id=actor_id,
     )
-    callbacks = await _grant_benefit(
+    callbacks = await _replace_benefit(
         execute,
         benefit_transaction,
         package,
@@ -340,6 +347,7 @@ async def _apply_revoke_transaction(
         benefit_transaction,
         grant_transaction,
         grant_package,
+        revoked_at=benefit_transaction.effective_at,
         evaluation_time=evaluation_time,
         actor_kind=actor_kind,
         actor_id=actor_id,

@@ -24,6 +24,7 @@ from ffun.entitlements.entities import (
 )
 from ffun.locks.domain import Lock
 from ffun.locks.entities import LockKind
+from ffun.subscriptions.entities import SubscriptionId
 
 logger = logging.get_module_logger()
 
@@ -174,6 +175,9 @@ async def _rebuild_after_source_change(  # noqa: CFQ002
         subject_id=SerializedId(str(new_source_state.user_id)),
         attributes={
             "source_id": new_source_state.source_id,
+            "subscription_id": (
+                str(new_source_state.subscription_id) if new_source_state.subscription_id is not None else None
+            ),
             "grant_transaction_id": str(new_source_state.grant_transaction_id),
             "revoked_by_transaction_id": (
                 str(new_source_state.revoked_by_transaction_id)
@@ -300,7 +304,7 @@ async def _apply_source_revocation(  # noqa: CFQ002
             grant_transaction_id=grant_transaction_id,
         )
 
-    if previous_source_state.revoked_at is not None:
+    if previous_source_state.revoked_at is not None and previous_source_state.revoked_at <= revoked_at:
         return _unchanged_outcome(previous_source_state, previous_effective_intervals, evaluation_time)
 
     new_source_state = await operations.revoke_source_entitlement(
@@ -327,6 +331,7 @@ def _emit_source_change_events(outcome: SourceEntitlementChange) -> None:
         "source_entitlement_changed",
         user_id=source_state.user_id,
         source_id=source_state.source_id,
+        subscription_id=source_state.subscription_id,
         grant_transaction_id=source_state.grant_transaction_id,
         kind_id=source_state.kind_id,
         granted=source_state.granted,
@@ -435,6 +440,7 @@ async def grant_source_entitlements(
     source_id: EntitlementSourceId,
     grant_transaction_id: BenefitTransactionId,
     user_id: UserId,
+    subscription_id: SubscriptionId | None,
     guarantees: Sequence[EntitlementGuarantee],
     starts_at: datetime.datetime,
     expires_at: datetime.datetime,
@@ -452,6 +458,7 @@ async def grant_source_entitlements(
                 source_id=source_id,
                 grant_transaction_id=grant_transaction_id,
                 user_id=user_id,
+                subscription_id=subscription_id,
                 kind_id=guarantee.kind_id,
                 value=guarantee.value,
                 starts_at=starts_at,
@@ -463,6 +470,43 @@ async def grant_source_entitlements(
         outcome, callback = await grant_source_entitlement(
             execute,
             entitlement,
+            evaluation_time=evaluation_time,
+            actor_kind=actor_kind,
+            actor_id=actor_id,
+        )
+        outcomes.append(outcome)
+        event_callbacks.append(callback)
+
+    return outcomes, event_callbacks
+
+
+async def revoke_subscription_entitlements(
+    execute: ExecuteType,
+    *,
+    subscription_id: SubscriptionId,
+    revoked_by_transaction_id: BenefitTransactionId,
+    revoked_at: datetime.datetime,
+    evaluation_time: datetime.datetime,
+    actor_kind: AuditEntityKind,
+    actor_id: SerializedId,
+) -> tuple[list[SourceEntitlementChange], list[Callable[[], None]]]:
+    source_entitlements = await operations.load_source_entitlements_for_subscription(
+        execute,
+        subscription_id,
+        active_at=evaluation_time,
+    )
+    outcomes: list[SourceEntitlementChange] = []
+    event_callbacks: list[Callable[[], None]] = []
+
+    for source_entitlement in source_entitlements:
+        outcome, callback = await revoke_source_entitlement(
+            execute,
+            source_id=source_entitlement.source_id,
+            grant_transaction_id=source_entitlement.grant_transaction_id,
+            revoked_by_transaction_id=revoked_by_transaction_id,
+            user_id=source_entitlement.user_id,
+            kind_id=source_entitlement.kind_id,
+            revoked_at=revoked_at,
             evaluation_time=evaluation_time,
             actor_kind=actor_kind,
             actor_id=actor_id,

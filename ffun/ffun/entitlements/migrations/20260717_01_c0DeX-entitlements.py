@@ -16,6 +16,7 @@ CREATE TABLE en_source_entitlements (
     source_id TEXT NOT NULL,
     grant_transaction_id UUID NOT NULL,
     user_id UUID NOT NULL,
+    subscription_id UUID DEFAULT NULL,
     kind_id SMALLINT NOT NULL,
     value BIGINT NOT NULL,
     starts_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -26,6 +27,12 @@ CREATE TABLE en_source_entitlements (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, kind_id, source_id, grant_transaction_id)
 )
+"""
+
+sql_create_source_entitlements_subscription_idx = """
+CREATE INDEX en_source_entitlements_subscription_id_idx
+ON en_source_entitlements (subscription_id)
+WHERE subscription_id IS NOT NULL
 """
 
 sql_create_entitlements = """
@@ -51,6 +58,7 @@ CREATE INDEX en_entitlements_expires_at_idx ON en_entitlements (expires_at)
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
     cursor.execute(sql_create_source_entitlements)
+    cursor.execute(sql_create_source_entitlements_subscription_idx)
     cursor.execute(sql_create_entitlements)
     cursor.execute(sql_create_entitlements_expires_at_idx)
 

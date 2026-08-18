@@ -15,6 +15,7 @@ from ffun.entitlements.entities import (
     EntitlementSourceId,
     SourceEntitlement,
 )
+from ffun.subscriptions.entities import SubscriptionId
 
 
 def row_to_source_entitlement(row: Mapping[str, object]) -> SourceEntitlement:
@@ -73,6 +74,7 @@ async def insert_source_entitlement(execute: ExecuteType, entitlement: SourceEnt
         source_id,
         grant_transaction_id,
         user_id,
+        subscription_id,
         kind_id,
         value,
         starts_at,
@@ -84,6 +86,7 @@ async def insert_source_entitlement(execute: ExecuteType, entitlement: SourceEnt
         %(source_id)s,
         %(grant_transaction_id)s,
         %(user_id)s,
+        %(subscription_id)s,
         %(kind_id)s,
         %(value)s,
         %(starts_at)s,
@@ -100,6 +103,7 @@ async def insert_source_entitlement(execute: ExecuteType, entitlement: SourceEnt
                 "source_id": entitlement.source_id,
                 "grant_transaction_id": entitlement.grant_transaction_id,
                 "user_id": entitlement.user_id,
+                "subscription_id": entitlement.subscription_id,
                 "kind_id": entitlement.kind_id,
                 "value": entitlement.value,
                 "starts_at": entitlement.starts_at,
@@ -133,7 +137,7 @@ async def revoke_source_entitlement(
       AND kind_id = %(kind_id)s
       AND source_id = %(source_id)s
       AND grant_transaction_id = %(grant_transaction_id)s
-      AND revoked_at IS NULL
+      AND (revoked_at IS NULL OR revoked_at > %(revoked_at)s)
     RETURNING *
     """
 
@@ -156,6 +160,31 @@ async def revoke_source_entitlement(
         )
 
     return row_to_source_entitlement(rows[0])
+
+
+async def load_source_entitlements_for_subscription(
+    execute: ExecuteType,
+    subscription_id: SubscriptionId,
+    *,
+    active_at: datetime.datetime,
+) -> list[SourceEntitlement]:
+    sql = """
+    SELECT *
+    FROM en_source_entitlements
+    WHERE subscription_id = %(subscription_id)s
+      AND starts_at <= %(active_at)s
+      AND %(active_at)s < expires_at
+      AND (revoked_at IS NULL OR %(active_at)s < revoked_at)
+    ORDER BY kind_id, grant_transaction_id
+    """
+    rows = await execute(
+        sql,
+        {
+            "subscription_id": subscription_id,
+            "active_at": active_at,
+        },
+    )
+    return [row_to_source_entitlement(row) for row in rows]
 
 
 async def load_source_entitlements(
