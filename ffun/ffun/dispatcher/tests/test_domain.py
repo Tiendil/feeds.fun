@@ -9,6 +9,7 @@ import pytest_asyncio
 from pytest_mock import MockerFixture
 
 from ffun.audit.entities import AuditEntityKind
+from ffun.core.postgresql import transaction
 from ffun.core.tests.helpers import TableSizeNotChanged
 from ffun.dispatcher import domain, entries_cache, errors, operations
 from ffun.dispatcher.entities import (
@@ -31,9 +32,9 @@ from ffun.domain.datetime_intervals import (
     month_interval_start,
 )
 from ffun.domain.domain import new_entry_id, new_user_id
-from ffun.domain.entities import EntryId, ProcessorId, SerializedId, UserId
+from ffun.domain.entities import BenefitTransactionId, EntryId, ProcessorId, SerializedId, UserId
 from ffun.entitlements import domain as e_domain
-from ffun.entitlements.entities import EntitlementKindId, EntitlementTransactionId
+from ffun.entitlements.entities import EntitlementKindId
 from ffun.entitlements.tests import make as e_make
 from ffun.feeds.entities import Feed
 from ffun.feeds_collections.collections import collections
@@ -72,17 +73,24 @@ async def grant_tokens(
     *,
     value: int = 10,
 ) -> None:
-    await e_domain.grant_source_entitlement(
-        e_make.make_source_entitlement(
-            user_id=user_id,
-            kind_id=kind_id,
-            value=value,
-            transaction_id=EntitlementTransactionId(uuid.uuid4().hex),
-            expires_at=(LIFETIME_INTERVAL_END_MARKER if kind_id == EntitlementKindId.lifetime_tokens else None),
-        ),
-        actor_kind=AuditEntityKind.admin,
-        actor_id=SerializedId("dispatcher-tests"),
+    source_entitlement = e_make.make_source_entitlement(
+        user_id=user_id,
+        kind_id=kind_id,
+        value=value,
+        grant_transaction_id=BenefitTransactionId(uuid.uuid4()),
+        expires_at=(LIFETIME_INTERVAL_END_MARKER if kind_id == EntitlementKindId.lifetime_tokens else None),
     )
+
+    async with transaction() as transaction_execute:
+        _, callback = await e_domain.grant_source_entitlement(
+            transaction_execute,
+            source_entitlement,
+            evaluation_time=datetime.datetime.now(tz=datetime.UTC),
+            actor_kind=AuditEntityKind.admin,
+            actor_id=SerializedId("dispatcher-tests"),
+        )
+
+    callback()
 
 
 def make_entries_cache(

@@ -43,7 +43,7 @@ class TestRowToEffectiveInterval:
     def test_converts_row(self) -> None:
         interval = make_effective_entitlement_interval()
 
-        assert operations.row_to_effective_interval(interval.model_dump()) == interval
+        assert operations.row_to_effective_interval(cast(dict[str, object], interval.model_dump())) == interval
 
     def test_invalid_row_raises_module_error(self) -> None:
         with pytest.raises(errors.InvalidStoredEntitlement) as exception_info:

@@ -13,6 +13,7 @@ from ffun.api.spa.http_handlers import (
 )
 from ffun.audit.entities import AuditEntityKind
 from ffun.core import utils
+from ffun.core.postgresql import transaction
 from ffun.domain.entities import SerializedId, UserId
 from ffun.feeds.entities import Feed
 from ffun.feeds_links import domain as fl_domain
@@ -153,11 +154,17 @@ class TestApiGetProductState:
             ends_at=utils.now(),
         )
         for subscription in (alive_subscription, ended_subscription):
-            await sub_domain.save_subscription(
-                subscription,
-                actor_kind=AuditEntityKind.system,
-                actor_id=SerializedId("spa-api-test"),
-            )
+            async with transaction() as transaction_execute:
+                _, callback = await sub_domain.save_subscription(
+                    transaction_execute,
+                    subscription.id,
+                    subscription.state_transaction_id,
+                    subscription,
+                    actor_kind=AuditEntityKind.system,
+                    actor_id=SerializedId("spa-api-test"),
+                )
+
+            callback()
 
         response = await api_get_product_state(entities.GetProductStateRequest(), User(id=internal_user_id))
 

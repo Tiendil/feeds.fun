@@ -18,6 +18,7 @@ from ffun.benefits.entities import (
     RevokeBenefitEffect,
     SubscriptionTarget,
 )
+from ffun.core.entities import NonEmptyString
 from ffun.domain.domain import new_user_id
 from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId, UserId
 from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId
@@ -41,7 +42,7 @@ def make_benefit_package(
 
     return BenefitPackage(
         id=benefit_id,
-        title=title,
+        title=NonEmptyString(title),
         description=description,
         entitlements=entitlements,
     )
@@ -64,7 +65,11 @@ def make_external_subscription_target(
     reference: ProviderSubscriptionReference | None = None,
 ) -> ExternalSubscriptionTarget:
     reference = reference or make_provider_subscription_reference()
-    return ExternalSubscriptionTarget(**reference.model_dump())
+    return ExternalSubscriptionTarget(
+        provider_id=reference.provider_id,
+        provider_account_id=reference.provider_account_id,
+        provider_subscription_id=reference.provider_subscription_id,
+    )
 
 
 def make_grant_effect(

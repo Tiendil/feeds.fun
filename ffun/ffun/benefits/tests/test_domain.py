@@ -1,5 +1,6 @@
 import datetime
 import uuid
+from collections.abc import Callable
 
 import pytest
 from pytest_mock import MockerFixture
@@ -45,7 +46,7 @@ _ACTOR_KIND = AuditEntityKind.psp
 _ACTOR_ID = SerializedId("provider-hook")
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore[misc]
 def package(mocker: MockerFixture) -> BenefitPackage:
     configured = make_benefit_package()
     mocker.patch.object(domain.settings, "packages", (configured,))
@@ -85,7 +86,7 @@ class TestGetBenefit:
         with pytest.raises(errors.UnknownBenefit) as exception_info:
             domain.get_benefit(BenefitId("unknown"))
 
-        assert exception_info.value.benefit_id == BenefitId("unknown")
+        assert "benefit_id=unknown" in str(exception_info.value)
 
 
 class TestResolveSubscriptionTarget:
@@ -377,13 +378,17 @@ class TestRevokeBenefit:
         )
 
         assert callbacks == [callback]
+        kind_ids: list[EntitlementKindId] = [
+            EntitlementKindId.month_tokens,
+            EntitlementKindId.day_tokens,
+        ]
         revoke.assert_awaited_once_with(
             execute,
             source_id=domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
             grant_transaction_id=grant.id,
             revoked_by_transaction_id=revocation.id,
             user_id=grant.user_id,
-            kind_ids=[EntitlementKindId.month_tokens, EntitlementKindId.day_tokens],
+            kind_ids=kind_ids,
             revoked_at=now,
             evaluation_time=now,
             actor_kind=_ACTOR_KIND,
@@ -473,8 +478,8 @@ class TestApplyGrantTransaction:
         command = make_benefit_command(effect=effect)
         subscription_id = subscription_domain.new_subscription_id()
         transaction_id = BenefitTransactionId(uuid.uuid4())
-        subscription_callback = mocker.stub(name="subscription_callback")
-        entitlement_callback = mocker.stub(name="entitlement_callback")
+        subscription_callback: Callable[[], None] = mocker.stub(name="subscription_callback")
+        entitlement_callback: Callable[[], None] = mocker.stub(name="entitlement_callback")
         mocker.patch.object(
             domain,
             "_resolve_regular_subscription_target",
@@ -486,7 +491,8 @@ class TestApplyGrantTransaction:
             "_accept_subscription_transaction",
             return_value=subscription_callback,
         )
-        mocker.patch.object(domain, "_replace_benefit", return_value=[entitlement_callback])
+        entitlement_callbacks: list[Callable[[], None]] = [entitlement_callback]
+        mocker.patch.object(domain, "_replace_benefit", return_value=entitlement_callbacks)
 
         benefit_transaction, callbacks = await domain._apply_grant_transaction(
             effect,
@@ -529,8 +535,8 @@ class TestApplyRevokeTransaction:
             effect=effect,
         )
         transaction_id = BenefitTransactionId(uuid.uuid4())
-        subscription_callback = mocker.stub(name="subscription_callback")
-        entitlement_callback = mocker.stub(name="entitlement_callback")
+        subscription_callback: Callable[[], None] = mocker.stub(name="subscription_callback")
+        entitlement_callback: Callable[[], None] = mocker.stub(name="entitlement_callback")
         mocker.patch.object(domain, "_load_grant_to_revoke", return_value=grant)
         mocker.patch.object(
             domain,
@@ -543,14 +549,17 @@ class TestApplyRevokeTransaction:
             "_accept_subscription_transaction",
             return_value=subscription_callback,
         )
-        revoke = mocker.patch.object(domain, "_revoke_benefit", return_value=[entitlement_callback])
+        entitlement_callbacks: list[Callable[[], None]] = [entitlement_callback]
+        revoke = mocker.patch.object(domain, "_revoke_benefit", return_value=entitlement_callbacks)
+
+        evaluation_time = datetime.datetime.now(tz=datetime.UTC)
 
         benefit_transaction, callbacks = await domain._apply_revoke_transaction(
             effect,
             execute,
             snapshot,
             command,
-            evaluation_time=datetime.datetime.now(tz=datetime.UTC),
+            evaluation_time=evaluation_time,
             actor_kind=_ACTOR_KIND,
             actor_id=_ACTOR_ID,
         )
@@ -567,7 +576,16 @@ class TestApplyRevokeTransaction:
             revokes_transaction_id=grant.id,
         )
         assert callbacks == [subscription_callback, entitlement_callback]
-        assert revoke.await_args.args[3] == original_package
+        revoke.assert_awaited_once_with(
+            execute,
+            benefit_transaction,
+            grant,
+            original_package,
+            revoked_at=benefit_transaction.effective_at,
+            evaluation_time=evaluation_time,
+            actor_kind=_ACTOR_KIND,
+            actor_id=_ACTOR_ID,
+        )
 
 
 class TestApplySubscriptionTransaction:

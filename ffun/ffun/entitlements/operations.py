@@ -116,7 +116,7 @@ async def insert_source_entitlement(execute: ExecuteType, entitlement: SourceEnt
             user_id=str(entitlement.user_id),
             kind_id=entitlement.kind_id,
             source_id=entitlement.source_id,
-            grant_transaction_id=entitlement.grant_transaction_id,
+            grant_transaction_id=str(entitlement.grant_transaction_id),
         ) from exception
 
 

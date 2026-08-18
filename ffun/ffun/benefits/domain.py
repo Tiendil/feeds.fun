@@ -38,7 +38,7 @@ def get_benefit(benefit_id: BenefitId) -> BenefitPackage:
     raise errors.UnknownBenefit(benefit_id=benefit_id)
 
 
-@singledispatch
+@singledispatch  # type: ignore[misc]
 async def _resolve_subscription_target(
     target: object,
     execute: ExecuteType,
@@ -46,7 +46,7 @@ async def _resolve_subscription_target(
     raise NotImplementedError(f"Unsupported subscription target: {target!r}")
 
 
-@_resolve_subscription_target.register
+@_resolve_subscription_target.register  # type: ignore[misc]
 async def _resolve_internal_subscription_target(
     target: InternalSubscriptionTarget,
     _execute: ExecuteType,
@@ -54,7 +54,7 @@ async def _resolve_internal_subscription_target(
     return target.subscription_id
 
 
-@_resolve_subscription_target.register
+@_resolve_subscription_target.register  # type: ignore[misc]
 async def _resolve_external_subscription_target(
     target: ExternalSubscriptionTarget,
     execute: ExecuteType,
@@ -65,7 +65,7 @@ async def _resolve_external_subscription_target(
     )
 
 
-@_resolve_subscription_target.register
+@_resolve_subscription_target.register  # type: ignore[misc]
 async def _resolve_new_subscription_target(
     _target: NewSubscriptionTarget,
     _execute: ExecuteType,
@@ -240,7 +240,7 @@ async def _replace_benefit(  # noqa: CFQ002
     return callbacks
 
 
-@singledispatch
+@singledispatch  # type: ignore[misc]
 async def _apply_effect_transaction(  # noqa: CFQ002
     effect: object,
     execute: ExecuteType,
@@ -254,7 +254,7 @@ async def _apply_effect_transaction(  # noqa: CFQ002
     raise NotImplementedError(f"Unsupported benefit effect: {effect!r}")
 
 
-@_apply_effect_transaction.register
+@_apply_effect_transaction.register  # type: ignore[misc]
 async def _apply_grant_transaction(  # noqa: CFQ002
     effect: GrantBenefitEffect,
     execute: ExecuteType,
@@ -301,7 +301,7 @@ async def _apply_grant_transaction(  # noqa: CFQ002
     return benefit_transaction, [subscription_callback, *callbacks]
 
 
-@_apply_effect_transaction.register
+@_apply_effect_transaction.register  # type: ignore[misc]
 async def _apply_revoke_transaction(  # noqa: CFQ002
     effect: RevokeBenefitEffect,
     execute: ExecuteType,

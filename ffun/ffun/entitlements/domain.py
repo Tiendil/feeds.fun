@@ -57,6 +57,10 @@ def get_entitlement_kind(kind_id: EntitlementKindId) -> EntitlementKind:
     raise errors.UnknownEntitlementKind(kind_id=kind_id)
 
 
+def _guarantee_kind_id(guarantee: EntitlementGuarantee) -> EntitlementKindId:
+    return guarantee.kind_id
+
+
 def merge_values(policy: MergePolicy, values: Sequence[int]) -> int:
     if not values:
         raise errors.InvalidMergeValues(reason="At least one entitlement value is required for merging")
@@ -251,7 +255,7 @@ async def _apply_source_grant(
             user_id=str(source_state.user_id),
             kind_id=source_state.kind_id,
             source_id=source_state.source_id,
-            grant_transaction_id=source_state.grant_transaction_id,
+            grant_transaction_id=str(source_state.grant_transaction_id),
         )
 
     await operations.insert_source_entitlement(execute, source_state)
@@ -300,7 +304,7 @@ async def _apply_source_revocation(  # noqa: CFQ002
             user_id=str(user_id),
             kind_id=kind.id,
             source_id=source_id,
-            grant_transaction_id=grant_transaction_id,
+            grant_transaction_id=str(grant_transaction_id),
         )
 
     if previous_source_state.revoked_at is not None and previous_source_state.revoked_at <= revoked_at:
@@ -450,7 +454,7 @@ async def grant_source_entitlements(  # noqa: CFQ002
     outcomes: list[SourceEntitlementChange] = []
     event_callbacks: list[Callable[[], None]] = []
 
-    for guarantee in sorted(guarantees, key=lambda value: value.kind_id):
+    for guarantee in sorted(guarantees, key=_guarantee_kind_id):
         kind = get_entitlement_kind(guarantee.kind_id)
         try:
             entitlement = SourceEntitlement(

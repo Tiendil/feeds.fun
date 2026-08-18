@@ -685,7 +685,7 @@ class TestGrantSourceEntitlement:
         await _grant(source_entitlement, emit_event=False)
 
         lock_factory.assert_called_once_with(
-            mocker.ANY,
+            cast(object, mocker.ANY),
             LockKind("entitlements_user_kind"),
             source_entitlement.user_id,
             source_entitlement.kind_id,
@@ -909,7 +909,7 @@ class TestRevokeSourceEntitlement:
         await _revoke(source_entitlement, emit_event=False)
 
         lock_factory.assert_called_once_with(
-            mocker.ANY,
+            cast(object, mocker.ANY),
             LockKind("entitlements_user_kind"),
             source_entitlement.user_id,
             source_entitlement.kind_id,

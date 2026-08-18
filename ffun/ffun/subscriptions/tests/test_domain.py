@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import uuid
 from collections.abc import Callable
+from typing import cast
 
 import pytest
 from pytest_mock import MockerFixture
@@ -190,7 +191,7 @@ class TestSaveSubscription:
         await _save_subscription(subscription, emit_event=False)
 
         lock_factory.assert_called_once_with(
-            mocker.ANY,
+            cast(object, mocker.ANY),
             LockKind("subscription_state"),
             subscription.id,
         )

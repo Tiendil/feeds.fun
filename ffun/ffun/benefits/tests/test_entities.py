@@ -20,7 +20,8 @@ from ffun.benefits.tests.make import (
     make_grant_effect,
     make_provider_subscription_reference,
 )
-from ffun.domain.entities import BenefitTransactionId
+from ffun.core.entities import NonEmptyString
+from ffun.domain.entities import BenefitId, BenefitTransactionId
 from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId
 from ffun.subscriptions.domain import new_subscription_id
 
@@ -35,7 +36,11 @@ class TestBenefitTransactionKind:
 
 class TestBenefitPackage:
     def test_entitlements__defaults_to_empty(self) -> None:
-        package = BenefitPackage(id="empty", title="Empty", description="No guarantees")
+        package = BenefitPackage(
+            id=BenefitId("empty"),
+            title=NonEmptyString("Empty"),
+            description="No guarantees",
+        )
 
         assert package.entitlements == ()
 
