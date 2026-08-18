@@ -23,7 +23,7 @@ CREATE TABLE b_transactions (
     effective_at TIMESTAMP WITH TIME ZONE NOT NULL,
     starts_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     expires_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    reverses_transaction_id UUID DEFAULT NULL REFERENCES b_transactions (id),
+    revokes_transaction_id UUID DEFAULT NULL REFERENCES b_transactions (id),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT b_transactions_source_identity_unique
         UNIQUE (source_id, source_transaction_id)

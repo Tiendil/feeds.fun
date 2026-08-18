@@ -1,7 +1,7 @@
 import datetime
 import enum
 import uuid
-from typing import Annotated, Literal, NewType, TypeAlias
+from typing import Annotated, ClassVar, Literal, NewType, TypeAlias
 
 import pydantic
 
@@ -81,10 +81,12 @@ SubscriptionTarget: TypeAlias = Annotated[
 
 
 class SubscriptionUpdateEffect(BaseEntity):
+    transaction_kind: ClassVar[BenefitTransactionKind] = BenefitTransactionKind.subscription_update
     kind: Literal["subscription_update"] = "subscription_update"
 
 
 class GrantBenefitEffect(BaseEntity):
+    transaction_kind: ClassVar[BenefitTransactionKind] = BenefitTransactionKind.grant
     kind: Literal["grant"] = "grant"
     starts_at: datetime.datetime
     expires_at: datetime.datetime
@@ -101,8 +103,9 @@ class GrantBenefitEffect(BaseEntity):
 
 
 class RevokeBenefitEffect(BaseEntity):
+    transaction_kind: ClassVar[BenefitTransactionKind] = BenefitTransactionKind.revoke
     kind: Literal["revoke"] = "revoke"
-    reverses_transaction_id: BenefitTransactionId
+    revokes_transaction_id: BenefitTransactionId
 
 
 BenefitEffect: TypeAlias = Annotated[
@@ -144,7 +147,7 @@ class BenefitTransaction(BaseEntity):
     effective_at: datetime.datetime
     starts_at: datetime.datetime | None = None
     expires_at: datetime.datetime | None = None
-    reverses_transaction_id: BenefitTransactionId | None = None
+    revokes_transaction_id: BenefitTransactionId | None = None
 
     @property
     def source_identity(
@@ -175,10 +178,10 @@ class BenefitTransaction(BaseEntity):
             raise ValueError("Only a benefit grant transaction may define an entitlement interval")
 
         if self.kind == BenefitTransactionKind.revoke:
-            if self.reverses_transaction_id is None:
-                raise ValueError("A benefit revocation transaction must identify the grant it reverses")
-        elif self.reverses_transaction_id is not None:
-            raise ValueError("Only a benefit revocation transaction may reverse another transaction")
+            if self.revokes_transaction_id is None:
+                raise ValueError("A benefit revocation transaction must identify the grant it revokes")
+        elif self.revokes_transaction_id is not None:
+            raise ValueError("Only a benefit revocation transaction may revoke another transaction")
 
         return self
 

@@ -1,5 +1,6 @@
 import datetime
 from collections.abc import Callable
+from typing import assert_never
 
 from ffun.audit.entities import AuditEntityKind
 from ffun.benefits import errors, operations
@@ -14,6 +15,7 @@ from ffun.benefits.entities import (
     InternalSubscriptionTarget,
     NewSubscriptionTarget,
     RevokeBenefitEffect,
+    SubscriptionTarget,
     SubscriptionUpdateEffect,
 )
 from ffun.benefits.settings import settings
@@ -37,37 +39,68 @@ def get_benefit(benefit_id: BenefitId) -> BenefitPackage:
     raise errors.UnknownBenefit(benefit_id=benefit_id)
 
 
-async def _load_reversed_transaction(
+async def _resolve_regular_subscription_target(
     execute: ExecuteType,
-    effect: SubscriptionUpdateEffect | GrantBenefitEffect | RevokeBenefitEffect,
-) -> BenefitTransaction | None:
-    if not isinstance(effect, RevokeBenefitEffect):
-        return None
+    target: SubscriptionTarget,
+) -> tuple[SubscriptionId, ExternalSubscriptionTarget | None]:
+    if isinstance(target, InternalSubscriptionTarget):
+        return target.subscription_id, None
 
-    reversed_transaction = await operations.load_benefit_transaction(
+    if isinstance(target, ExternalSubscriptionTarget):
+        reference = await operations.load_provider_subscription_reference(
+            execute,
+            provider_id=target.provider_id,
+            provider_account_id=target.provider_account_id,
+            provider_subscription_id=target.provider_subscription_id,
+        )
+
+        if reference is not None:
+            return reference, None
+
+        return subscription_domain.new_subscription_id(), target
+
+    if isinstance(target, NewSubscriptionTarget):
+        return subscription_domain.new_subscription_id(), None
+
+    assert_never(target)
+
+
+async def _load_grant_to_revoke(
+    execute: ExecuteType,
+    effect: RevokeBenefitEffect,
+    subscription: SubscriptionSnapshot,
+) -> BenefitTransaction:
+    grant_transaction = await operations.load_benefit_transaction(
         execute,
-        effect.reverses_transaction_id,
+        effect.revokes_transaction_id,
     )
 
-    if reversed_transaction is None:
-        raise errors.BenefitTransactionNotFound(transaction_id=str(effect.reverses_transaction_id))
+    if grant_transaction is None:
+        raise errors.BenefitTransactionNotFound(transaction_id=str(effect.revokes_transaction_id))
 
-    return reversed_transaction
+    if grant_transaction.kind != BenefitTransactionKind.grant:
+        raise errors.InvalidBenefitRevocation(
+            transaction_id=str(grant_transaction.id),
+            reason="Only a benefit grant transaction can be revoked",
+        )
+
+    if grant_transaction.user_id != subscription.user_id:
+        raise errors.InvalidBenefitRevocation(
+            transaction_id=str(grant_transaction.id),
+            reason="The grant to revoke belongs to another subscription",
+        )
+
+    return grant_transaction
 
 
-async def _resolve_subscription_id(
+async def _resolve_revoke_subscription_target(
     execute: ExecuteType,
-    command: BenefitTransactionCommand,
-    reversed_transaction: BenefitTransaction | None,
-) -> tuple[SubscriptionId, bool]:
-    expected_subscription_id = (
-        reversed_transaction.subscription_id if reversed_transaction is not None else None
-    )
-    target = command.subscription_target
-    create_external_reference = False
-
+    target: SubscriptionTarget,
+    grant_transaction: BenefitTransaction,
+) -> tuple[SubscriptionId, ExternalSubscriptionTarget | None]:
     if isinstance(target, InternalSubscriptionTarget):
         subscription_id = target.subscription_id
+        provider_reference = None
 
     elif isinstance(target, ExternalSubscriptionTarget):
         reference = await operations.load_provider_subscription_reference(
@@ -78,90 +111,25 @@ async def _resolve_subscription_id(
         )
 
         if reference is None:
-            subscription_id = expected_subscription_id or subscription_domain.new_subscription_id()
-            create_external_reference = True
+            subscription_id = grant_transaction.subscription_id
+            provider_reference = target
         else:
             subscription_id = reference
+            provider_reference = None
 
     elif isinstance(target, NewSubscriptionTarget):
-        if expected_subscription_id is not None:
-            raise errors.InvalidBenefitTransactionReversal(
-                transaction_id=str(reversed_transaction.id),
-                reason="A revocation cannot create a new subscription",
-            )
-
-        subscription_id = subscription_domain.new_subscription_id()
+        raise errors.InvalidBenefitRevocation(
+            transaction_id=str(grant_transaction.id),
+            reason="A revocation cannot create a new subscription",
+        )
 
     else:
-        raise AssertionError(f"Unsupported subscription target: {target!r}")
+        assert_never(target)
 
-    if expected_subscription_id is not None and subscription_id != expected_subscription_id:
+    if subscription_id != grant_transaction.subscription_id:
         raise errors.InvalidBenefitSubscription(reason="The transaction targets another subscription")
 
-    return subscription_id, create_external_reference
-
-
-def _validate_reversed_transaction(
-    reversed_transaction: BenefitTransaction,
-    *,
-    subscription_id: SubscriptionId,
-    subscription: SubscriptionSnapshot,
-) -> None:
-    if reversed_transaction.kind != BenefitTransactionKind.grant:
-        raise errors.InvalidBenefitTransactionReversal(
-            transaction_id=str(reversed_transaction.id),
-            reason="Only a benefit grant transaction can be reversed",
-        )
-
-    if (
-        reversed_transaction.subscription_id != subscription_id
-        or reversed_transaction.user_id != subscription.user_id
-    ):
-        raise errors.InvalidBenefitTransactionReversal(
-            transaction_id=str(reversed_transaction.id),
-            reason="The reversed grant belongs to another subscription",
-        )
-
-
-def _transaction_kind(
-    effect: SubscriptionUpdateEffect | GrantBenefitEffect | RevokeBenefitEffect,
-) -> BenefitTransactionKind:
-    if isinstance(effect, SubscriptionUpdateEffect):
-        return BenefitTransactionKind.subscription_update
-
-    if isinstance(effect, GrantBenefitEffect):
-        return BenefitTransactionKind.grant
-
-    if isinstance(effect, RevokeBenefitEffect):
-        return BenefitTransactionKind.revoke
-
-    raise AssertionError(f"Unsupported benefit effect: {effect!r}")
-
-
-def _new_benefit_transaction(
-    command: BenefitTransactionCommand,
-    subscription: SubscriptionSnapshot,
-    *,
-    subscription_id: SubscriptionId,
-    benefit_id: BenefitId,
-) -> BenefitTransaction:
-    effect = command.effect
-
-    return BenefitTransaction(
-        id=operations.new_benefit_transaction_id(),
-        source_id=command.source_id,
-        source_transaction_id=command.source_transaction_id,
-        kind=_transaction_kind(effect),
-        user_id=subscription.user_id,
-        benefit_id=benefit_id,
-        subscription_id=subscription_id,
-        effective_at=command.effective_at,
-        starts_at=effect.starts_at if isinstance(effect, GrantBenefitEffect) else None,
-        expires_at=effect.expires_at if isinstance(effect, GrantBenefitEffect) else None,
-        reverses_transaction_id=(
-            effect.reverses_transaction_id if isinstance(effect, RevokeBenefitEffect) else None
-        ),
-    )
+    return subscription_id, provider_reference
 
 
 def _application_result(
@@ -176,17 +144,51 @@ def _application_result(
     )
 
 
+async def _accept_subscription_transaction(
+    execute: ExecuteType,
+    benefit_transaction: BenefitTransaction,
+    subscription: SubscriptionSnapshot,
+    provider_reference: ExternalSubscriptionTarget | None,
+    *,
+    actor_kind: AuditEntityKind,
+    actor_id: SerializedId,
+) -> Callable[[], None]:
+    if not await operations.insert_benefit_transaction(execute, benefit_transaction):
+        raise errors.ConcurrentBenefitTransaction(
+            source_id=int(benefit_transaction.source_id),
+            source_transaction_id=str(benefit_transaction.source_transaction_id),
+        )
+
+    if provider_reference is not None:
+        await operations.insert_provider_subscription_reference(
+            execute,
+            provider_id=provider_reference.provider_id,
+            provider_account_id=provider_reference.provider_account_id,
+            provider_subscription_id=provider_reference.provider_subscription_id,
+            subscription_id=benefit_transaction.subscription_id,
+        )
+
+    _, callback = await subscription_domain.save_subscription(
+        execute,
+        benefit_transaction.subscription_id,
+        benefit_transaction.id,
+        subscription,
+        actor_kind=actor_kind,
+        actor_id=actor_id,
+    )
+    return callback
+
+
 async def _grant_benefit(
     execute: ExecuteType,
     benefit_transaction: BenefitTransaction,
+    package: BenefitPackage,
     effect: GrantBenefitEffect,
     *,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> list[Callable[[], None]]:
-    package = get_benefit(benefit_transaction.benefit_id)
-
     try:
         _, callbacks = await entitlement_domain.grant_source_entitlements(
             execute,
@@ -212,20 +214,19 @@ async def _grant_benefit(
 async def _revoke_benefit(
     execute: ExecuteType,
     benefit_transaction: BenefitTransaction,
-    reversed_transaction: BenefitTransaction,
+    grant_transaction: BenefitTransaction,
+    package: BenefitPackage,
     *,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> list[Callable[[], None]]:
-    package = get_benefit(reversed_transaction.benefit_id)
-
     _, callbacks = await entitlement_domain.revoke_source_entitlements(
         execute,
         source_id=BENEFITS_ENTITLEMENT_SOURCE_ID,
-        grant_transaction_id=reversed_transaction.id,
+        grant_transaction_id=grant_transaction.id,
         revoked_by_transaction_id=benefit_transaction.id,
-        user_id=reversed_transaction.user_id,
+        user_id=grant_transaction.user_id,
         kind_ids=[guarantee.kind_id for guarantee in package.entitlements],
         revoked_at=benefit_transaction.effective_at,
         evaluation_time=evaluation_time,
@@ -235,38 +236,110 @@ async def _revoke_benefit(
     return callbacks
 
 
-async def _apply_entitlement_effect(
+async def _apply_regular_subscription_transaction(
     execute: ExecuteType,
-    benefit_transaction: BenefitTransaction,
-    effect: SubscriptionUpdateEffect | GrantBenefitEffect | RevokeBenefitEffect,
-    reversed_transaction: BenefitTransaction | None,
+    subscription: SubscriptionSnapshot,
+    command: BenefitTransactionCommand,
+    effect: SubscriptionUpdateEffect | GrantBenefitEffect,
     *,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
-) -> list[Callable[[], None]]:
-    if isinstance(effect, SubscriptionUpdateEffect):
-        return []
-
-    if isinstance(effect, GrantBenefitEffect):
-        return await _grant_benefit(
-            execute,
-            benefit_transaction,
-            effect,
-            evaluation_time=evaluation_time,
-            actor_kind=actor_kind,
-            actor_id=actor_id,
-        )
-
-    assert reversed_transaction is not None
-    return await _revoke_benefit(
+) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
+    package = get_benefit(subscription.benefit_id)
+    subscription_id, provider_reference = await _resolve_regular_subscription_target(
+        execute,
+        command.subscription_target,
+    )
+    benefit_transaction = BenefitTransaction(
+        id=operations.new_benefit_transaction_id(),
+        source_id=command.source_id,
+        source_transaction_id=command.source_transaction_id,
+        kind=effect.transaction_kind,
+        user_id=subscription.user_id,
+        benefit_id=package.id,
+        subscription_id=subscription_id,
+        effective_at=command.effective_at,
+        starts_at=effect.starts_at if isinstance(effect, GrantBenefitEffect) else None,
+        expires_at=effect.expires_at if isinstance(effect, GrantBenefitEffect) else None,
+    )
+    subscription_callback = await _accept_subscription_transaction(
         execute,
         benefit_transaction,
-        reversed_transaction,
+        subscription,
+        provider_reference,
+        actor_kind=actor_kind,
+        actor_id=actor_id,
+    )
+    callbacks = [subscription_callback]
+
+    if isinstance(effect, GrantBenefitEffect):
+        callbacks.extend(
+            await _grant_benefit(
+                execute,
+                benefit_transaction,
+                package,
+                effect,
+                evaluation_time=evaluation_time,
+                actor_kind=actor_kind,
+                actor_id=actor_id,
+            )
+        )
+
+    return benefit_transaction, callbacks
+
+
+async def _apply_revoke_subscription_transaction(
+    execute: ExecuteType,
+    subscription: SubscriptionSnapshot,
+    command: BenefitTransactionCommand,
+    effect: RevokeBenefitEffect,
+    *,
+    evaluation_time: datetime.datetime,
+    actor_kind: AuditEntityKind,
+    actor_id: SerializedId,
+) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
+    subscription_package = get_benefit(subscription.benefit_id)
+    grant_transaction = await _load_grant_to_revoke(execute, effect, subscription)
+    grant_package = (
+        subscription_package
+        if subscription_package.id == grant_transaction.benefit_id
+        else get_benefit(grant_transaction.benefit_id)
+    )
+    subscription_id, provider_reference = await _resolve_revoke_subscription_target(
+        execute,
+        command.subscription_target,
+        grant_transaction,
+    )
+    benefit_transaction = BenefitTransaction(
+        id=operations.new_benefit_transaction_id(),
+        source_id=command.source_id,
+        source_transaction_id=command.source_transaction_id,
+        kind=effect.transaction_kind,
+        user_id=subscription.user_id,
+        benefit_id=grant_package.id,
+        subscription_id=subscription_id,
+        effective_at=command.effective_at,
+        revokes_transaction_id=effect.revokes_transaction_id,
+    )
+    subscription_callback = await _accept_subscription_transaction(
+        execute,
+        benefit_transaction,
+        subscription,
+        provider_reference,
+        actor_kind=actor_kind,
+        actor_id=actor_id,
+    )
+    callbacks = await _revoke_benefit(
+        execute,
+        benefit_transaction,
+        grant_transaction,
+        grant_package,
         evaluation_time=evaluation_time,
         actor_kind=actor_kind,
         actor_id=actor_id,
     )
+    return benefit_transaction, [subscription_callback, *callbacks]
 
 
 async def apply_subscription_transaction(
@@ -292,75 +365,31 @@ async def apply_subscription_transaction(
             # Trusted callers never reuse a source identity; the stored transaction is authoritative.
             return _application_result(stored, created=False)
 
-        subscription_benefit = get_benefit(subscription.benefit_id)
-        reversed_transaction = await _load_reversed_transaction(execute, command.effect)
-
-        # The source identity constraint prevents duplicated operations. If concurrent first
+        # Source identity uniqueness prevents duplicated operations. If concurrent first
         # operations for one external subscription become likely, lock its provider identity
-        # while resolving and creating the provider subscription reference.
-        subscription_id, create_external_reference = await _resolve_subscription_id(
-            execute,
-            command,
-            reversed_transaction,
-        )
+        # from target resolution through provider reference creation.
+        effect = command.effect
 
-        if reversed_transaction is not None:
-            _validate_reversed_transaction(
-                reversed_transaction,
-                subscription_id=subscription_id,
-                subscription=subscription,
-            )
-
-        transaction_benefit_id = (
-            reversed_transaction.benefit_id
-            if reversed_transaction is not None
-            else subscription_benefit.id
-        )
-        candidate = _new_benefit_transaction(
-            command,
-            subscription,
-            subscription_id=subscription_id,
-            benefit_id=transaction_benefit_id,
-        )
-        if not await operations.insert_benefit_transaction(execute, candidate):
-            raise errors.ConcurrentBenefitTransaction(
-                source_id=int(candidate.source_id),
-                source_transaction_id=str(candidate.source_transaction_id),
-            )
-
-        benefit_transaction = candidate
-
-        target = command.subscription_target
-        if create_external_reference:
-            assert isinstance(target, ExternalSubscriptionTarget)
-            await operations.insert_provider_subscription_reference(
+        if isinstance(effect, RevokeBenefitEffect):
+            benefit_transaction, business_event_callbacks = await _apply_revoke_subscription_transaction(
                 execute,
-                provider_id=target.provider_id,
-                provider_account_id=target.provider_account_id,
-                provider_subscription_id=target.provider_subscription_id,
-                subscription_id=subscription_id,
-            )
-
-        _, subscription_callback = await subscription_domain.save_subscription(
-            execute,
-            subscription_id,
-            benefit_transaction.id,
-            subscription,
-            actor_kind=actor_kind,
-            actor_id=actor_id,
-        )
-        business_event_callbacks.append(subscription_callback)
-        business_event_callbacks.extend(
-            await _apply_entitlement_effect(
-                execute,
-                benefit_transaction,
-                command.effect,
-                reversed_transaction,
+                subscription,
+                command,
+                effect,
                 evaluation_time=evaluation_time,
                 actor_kind=actor_kind,
                 actor_id=actor_id,
             )
-        )
+        else:
+            benefit_transaction, business_event_callbacks = await _apply_regular_subscription_transaction(
+                execute,
+                subscription,
+                command,
+                effect,
+                evaluation_time=evaluation_time,
+                actor_kind=actor_kind,
+                actor_id=actor_id,
+            )
 
     for callback in business_event_callbacks:
         callback()

@@ -22,7 +22,7 @@ Applying benefits to one-time purchases is also out of scope until a purchase-ow
 - `benefit transaction identifier` - the internally generated UUID that canonically identifies one benefit transaction.
 - `transaction source identity` - the `source_id` and `source_transaction_id` tuple that identifies one durable operation at its origin.
 - `internal subscription identifier` - the generated UUID that identifies one provider-independent subscription projection.
-- `reversed transaction` - the earlier benefit grant transaction targeted by a benefit revocation transaction.
+- `grant transaction to revoke` - the earlier benefit grant transaction targeted by a benefit revocation transaction.
 
 ## Module responsibility
 
@@ -108,8 +108,8 @@ Guarantees created by different internal transactions MUST coexist as immutable 
 
 ### Revocations
 
-A revocation MUST be a new benefit transaction and MUST identify the internal benefit grant transaction it reverses.
-The reversed transaction MUST exist, MUST be a grant, and MUST belong to the same user and internal subscription.
+A revocation MUST be a new benefit transaction and MUST identify the internal benefit grant transaction it revokes.
+The grant transaction to revoke MUST exist, MUST be a grant, and MUST belong to the same user and internal subscription.
 
 The workflow MUST resolve the package recorded on the original grant and revoke each corresponding source entitlement by the original grant transaction identifier at the revocation transaction's effective time.
 Each changed source entitlement MUST retain the original transaction as its grant transaction identifier and record the new revocation transaction as its revoking transaction identifier.
@@ -122,7 +122,7 @@ Attempting to revoke a grant whose expected source entitlements are missing MUST
 
 Every transaction accepted by `apply_subscription_transaction` MUST be associated with one internal subscription identifier.
 The command MUST select the subscription by supplying an existing internal subscription identifier, supplying a complete provider subscription identity, or explicitly requesting a new subscription.
-For a revocation, the command MUST NOT request a new subscription, and the selected subscription MUST match the reversed grant transaction.
+For a revocation, the command MUST NOT request a new subscription, and the selected subscription MUST match the grant transaction being revoked.
 For another transaction with a provider subscription identity, the workflow MUST resolve the internal subscription from the dedicated provider-subscription reference; when no reference exists, it MUST generate a new internal subscription identifier and persist the reference atomically.
 When the command explicitly requests a new subscription, the workflow MUST generate a new internal subscription identifier and MUST reuse it when the same source transaction is retried.
 One provider subscription identity MUST NOT resolve to multiple internal subscriptions.
@@ -153,7 +153,7 @@ The public interface MUST provide these operations:
 - `apply_subscription_transaction` atomically applies one subscription-related benefit transaction and one complete subscription snapshot.
 
 `apply_subscription_transaction` MUST accept one complete provider-neutral subscription snapshot, one benefit transaction command, and the audit actor.
-The command MUST contain the `source_id` and `source_transaction_id` transaction identity, subscription selection, stable transaction kind, effective time, and the operation-specific interval or reversed transaction identifier.
+The command MUST contain the `source_id` and `source_transaction_id` transaction identity, subscription selection, stable transaction kind, effective time, and the operation-specific interval or grant transaction identifier to revoke.
 
 The result MUST contain the internal benefit transaction identifier, the internal subscription identifier, and whether the transaction was newly created.
 An idempotent transaction retry MUST report that the transaction was not created because its original atomic effects already committed.

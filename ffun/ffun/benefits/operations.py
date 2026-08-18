@@ -45,7 +45,7 @@ async def insert_benefit_transaction(execute: ExecuteType, transaction: BenefitT
         effective_at,
         starts_at,
         expires_at,
-        reverses_transaction_id
+        revokes_transaction_id
     )
     VALUES (
         %(id)s,
@@ -58,7 +58,7 @@ async def insert_benefit_transaction(execute: ExecuteType, transaction: BenefitT
         %(effective_at)s,
         %(starts_at)s,
         %(expires_at)s,
-        %(reverses_transaction_id)s
+        %(revokes_transaction_id)s
     )
     ON CONFLICT (source_id, source_transaction_id)
     DO NOTHING

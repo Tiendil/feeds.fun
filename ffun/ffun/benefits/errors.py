@@ -17,7 +17,7 @@ class ConcurrentBenefitTransaction(Error):
     pass
 
 
-class InvalidBenefitTransactionReversal(Error):
+class InvalidBenefitRevocation(Error):
     pass
 
 
