@@ -35,7 +35,6 @@ class ProviderSubscriptionReference(BaseEntity):
 
 
 class BenefitTransactionKind(enum.IntEnum):
-    subscription_update = 1
     grant = 2
     revoke = 3
 
@@ -102,11 +101,6 @@ SubscriptionTarget: TypeAlias = Annotated[
 ]
 
 
-class SubscriptionUpdateEffect(BaseEntity):
-    transaction_kind: ClassVar[BenefitTransactionKind] = BenefitTransactionKind.subscription_update
-    kind: Literal["subscription_update"] = "subscription_update"
-
-
 class GrantBenefitEffect(BaseEntity):
     transaction_kind: ClassVar[BenefitTransactionKind] = BenefitTransactionKind.grant
     kind: Literal["grant"] = "grant"
@@ -131,7 +125,7 @@ class RevokeBenefitEffect(BaseEntity):
 
 
 BenefitEffect: TypeAlias = Annotated[
-    SubscriptionUpdateEffect | GrantBenefitEffect | RevokeBenefitEffect,
+    GrantBenefitEffect | RevokeBenefitEffect,
     pydantic.Field(discriminator="kind"),
 ]
 

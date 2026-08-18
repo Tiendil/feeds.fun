@@ -16,7 +16,6 @@ from ffun.benefits.entities import (
     NewSubscriptionTarget,
     RevokeBenefitEffect,
     SubscriptionTarget,
-    SubscriptionUpdateEffect,
 )
 from ffun.benefits.settings import settings
 from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
@@ -246,42 +245,6 @@ async def _apply_effect_transaction(
     actor_id: SerializedId,
 ) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
     raise NotImplementedError(f"Unsupported benefit effect: {effect!r}")
-
-
-@_apply_effect_transaction.register
-async def _apply_subscription_update_transaction(
-    effect: SubscriptionUpdateEffect,
-    execute: ExecuteType,
-    subscription: SubscriptionSnapshot,
-    command: BenefitTransactionCommand,
-    *,
-    evaluation_time: datetime.datetime,
-    actor_kind: AuditEntityKind,
-    actor_id: SerializedId,
-) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
-    package = get_benefit(subscription.benefit_id)
-    subscription_id = await _resolve_regular_subscription_target(
-        execute,
-        command.subscription_target,
-    )
-    benefit_transaction = BenefitTransaction(
-        id=operations.new_benefit_transaction_id(),
-        source_id=command.source_id,
-        source_transaction_id=command.source_transaction_id,
-        kind=effect.transaction_kind,
-        user_id=subscription.user_id,
-        benefit_id=package.id,
-        subscription_id=subscription_id,
-        effective_at=command.effective_at,
-    )
-    subscription_callback = await _accept_subscription_transaction(
-        execute,
-        benefit_transaction,
-        subscription,
-        actor_kind=actor_kind,
-        actor_id=actor_id,
-    )
-    return benefit_transaction, [subscription_callback]
 
 
 @_apply_effect_transaction.register
