@@ -1,5 +1,6 @@
 import datetime
 from collections.abc import Callable
+from functools import singledispatch
 from typing import assert_never
 
 from ffun.audit.entities import AuditEntityKind
@@ -236,11 +237,26 @@ async def _revoke_benefit(
     return callbacks
 
 
-async def _apply_regular_subscription_transaction(
+@singledispatch
+async def _apply_effect_transaction(
+    effect: object,
     execute: ExecuteType,
     subscription: SubscriptionSnapshot,
     command: BenefitTransactionCommand,
-    effect: SubscriptionUpdateEffect | GrantBenefitEffect,
+    *,
+    evaluation_time: datetime.datetime,
+    actor_kind: AuditEntityKind,
+    actor_id: SerializedId,
+) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
+    raise NotImplementedError(f"Unsupported benefit effect: {effect!r}")
+
+
+@_apply_effect_transaction.register
+async def _apply_subscription_update_transaction(
+    effect: SubscriptionUpdateEffect,
+    execute: ExecuteType,
+    subscription: SubscriptionSnapshot,
+    command: BenefitTransactionCommand,
     *,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
@@ -260,8 +276,6 @@ async def _apply_regular_subscription_transaction(
         benefit_id=package.id,
         subscription_id=subscription_id,
         effective_at=command.effective_at,
-        starts_at=effect.starts_at if isinstance(effect, GrantBenefitEffect) else None,
-        expires_at=effect.expires_at if isinstance(effect, GrantBenefitEffect) else None,
     )
     subscription_callback = await _accept_subscription_transaction(
         execute,
@@ -271,29 +285,63 @@ async def _apply_regular_subscription_transaction(
         actor_kind=actor_kind,
         actor_id=actor_id,
     )
-    callbacks = [subscription_callback]
-
-    if isinstance(effect, GrantBenefitEffect):
-        callbacks.extend(
-            await _grant_benefit(
-                execute,
-                benefit_transaction,
-                package,
-                effect,
-                evaluation_time=evaluation_time,
-                actor_kind=actor_kind,
-                actor_id=actor_id,
-            )
-        )
-
-    return benefit_transaction, callbacks
+    return benefit_transaction, [subscription_callback]
 
 
-async def _apply_revoke_subscription_transaction(
+@_apply_effect_transaction.register
+async def _apply_grant_transaction(
+    effect: GrantBenefitEffect,
     execute: ExecuteType,
     subscription: SubscriptionSnapshot,
     command: BenefitTransactionCommand,
+    *,
+    evaluation_time: datetime.datetime,
+    actor_kind: AuditEntityKind,
+    actor_id: SerializedId,
+) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
+    package = get_benefit(subscription.benefit_id)
+    subscription_id, provider_reference = await _resolve_regular_subscription_target(
+        execute,
+        command.subscription_target,
+    )
+    benefit_transaction = BenefitTransaction(
+        id=operations.new_benefit_transaction_id(),
+        source_id=command.source_id,
+        source_transaction_id=command.source_transaction_id,
+        kind=effect.transaction_kind,
+        user_id=subscription.user_id,
+        benefit_id=package.id,
+        subscription_id=subscription_id,
+        effective_at=command.effective_at,
+        starts_at=effect.starts_at,
+        expires_at=effect.expires_at,
+    )
+    subscription_callback = await _accept_subscription_transaction(
+        execute,
+        benefit_transaction,
+        subscription,
+        provider_reference,
+        actor_kind=actor_kind,
+        actor_id=actor_id,
+    )
+    callbacks = await _grant_benefit(
+        execute,
+        benefit_transaction,
+        package,
+        effect,
+        evaluation_time=evaluation_time,
+        actor_kind=actor_kind,
+        actor_id=actor_id,
+    )
+    return benefit_transaction, [subscription_callback, *callbacks]
+
+
+@_apply_effect_transaction.register
+async def _apply_revoke_transaction(
     effect: RevokeBenefitEffect,
+    execute: ExecuteType,
+    subscription: SubscriptionSnapshot,
+    command: BenefitTransactionCommand,
     *,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
@@ -369,27 +417,15 @@ async def apply_subscription_transaction(
         # operations for one external subscription become likely, lock its provider identity
         # from target resolution through provider reference creation.
         effect = command.effect
-
-        if isinstance(effect, RevokeBenefitEffect):
-            benefit_transaction, business_event_callbacks = await _apply_revoke_subscription_transaction(
-                execute,
-                subscription,
-                command,
-                effect,
-                evaluation_time=evaluation_time,
-                actor_kind=actor_kind,
-                actor_id=actor_id,
-            )
-        else:
-            benefit_transaction, business_event_callbacks = await _apply_regular_subscription_transaction(
-                execute,
-                subscription,
-                command,
-                effect,
-                evaluation_time=evaluation_time,
-                actor_kind=actor_kind,
-                actor_id=actor_id,
-            )
+        benefit_transaction, business_event_callbacks = await _apply_effect_transaction(
+            effect,
+            execute,
+            subscription,
+            command,
+            evaluation_time=evaluation_time,
+            actor_kind=actor_kind,
+            actor_id=actor_id,
+        )
 
     for callback in business_event_callbacks:
         callback()
