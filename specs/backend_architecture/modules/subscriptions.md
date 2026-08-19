@@ -50,7 +50,6 @@ Every subscription MUST have one internally generated UUID.
 The identifier MUST remain stable for the lifetime of the subscription projection and MUST NOT encode a provider identity.
 
 Every persisted subscription MUST reference the internal benefit transaction that created or most recently changed its stored snapshot.
-The reference is a logical cross-module identifier and MUST NOT be implemented as a database foreign key to a table owned by another module.
 
 Each subscription MUST be associated with exactly one Feeds Fun user.
 The user association MUST remain immutable after creation.
@@ -62,7 +61,6 @@ A user MAY have multiple subscriptions, and different internal subscription iden
 ### Provider subscription references
 
 Every provider subscription identity component MUST be non-empty.
-Provider subscription references MUST be persisted separately from subscription snapshots and benefit transactions.
 One provider subscription identity MUST map to at most one internal subscription identifier.
 One internal subscription identifier MUST map from at most one provider subscription identity.
 Recreating the same mapping MUST be a no-op.
