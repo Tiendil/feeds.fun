@@ -21,6 +21,7 @@ Route resolution, component-specific behavior, styling, state-management design,
 Components SHOULD expose data through typed properties and interactions through typed events.
 Components SHOULD keep their public contract independent of the identity of their parent component.
 Reusable components MUST NOT depend on page-level views.
+Typed contracts make component integration statically checkable, while parent-independent boundaries reduce coupling so components remain safe to compose and refactor.
 
 ## Screen-reader support
 
