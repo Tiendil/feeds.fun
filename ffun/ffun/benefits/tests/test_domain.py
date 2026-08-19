@@ -80,6 +80,14 @@ class TestGetBenefitTransaction:
         assert await domain.get_benefit_transaction(benefit_transaction.id) == benefit_transaction
 
 
+class TestFindBenefit:
+    def test_returns_configured_package(self, package: BenefitPackage) -> None:
+        assert domain._find_benefit(package.id) == package
+
+    def test_unknown_identifier(self, package: BenefitPackage) -> None:
+        assert domain._find_benefit(BenefitId("unknown")) is None
+
+
 class TestGetBenefit:
     def test_returns_configured_package(self, package: BenefitPackage) -> None:
         assert domain.get_benefit(package.id) == package
@@ -105,6 +113,8 @@ class TestResolveSubscriptionTarget:
         with pytest.raises(NotImplementedError, match="Unsupported subscription target"):
             await domain._resolve_subscription_target(object(), execute)
 
+
+class TestResolveInternalSubscriptionTarget:
     @pytest.mark.asyncio
     async def test_internal_target_preserves_identity(self) -> None:
         subscription_id = subscription_domain.new_subscription_id()
@@ -117,6 +127,8 @@ class TestResolveSubscriptionTarget:
             == subscription_id
         )
 
+
+class TestResolveExternalSubscriptionTarget:
     @pytest.mark.asyncio
     async def test_unknown_external_target_has_no_identity(self) -> None:
         assert await domain._resolve_subscription_target(make_external_subscription_target(), execute) is None
@@ -133,6 +145,8 @@ class TestResolveSubscriptionTarget:
 
         assert await domain._resolve_subscription_target(target, execute) == subscription_id
 
+
+class TestResolveNewSubscriptionTarget:
     @pytest.mark.asyncio
     async def test_new_target_has_no_identity(self) -> None:
         assert await domain._resolve_subscription_target(NewSubscriptionTarget(), execute) is None
