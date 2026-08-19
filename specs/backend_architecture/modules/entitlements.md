@@ -82,8 +82,8 @@ The revocation time and revoking transaction identifier MUST either both be pres
 Revoking an already revoked grant MUST be a no-op and preserve its original revocation time and revoking transaction identifier.
 Revoking a missing grant MUST fail.
 
-A subscription-owned revocation MUST load every source entitlement associated with one internal subscription that is active at the evaluation time or can become active afterward.
-It MUST process the loaded grants in deterministic user, entitlement-kind, source, and grant-transaction order.
+A subscription-owned revocation MUST revoke every source entitlement associated with one internal subscription that is active at the evaluation time or can become active afterward.
+The returned source-change results and callbacks MUST be ordered deterministically by user, entitlement kind, source, and grant transaction.
 When the subscription has no current or future source entitlements, the operation MUST return an empty result.
 
 Future-dated and multiple same-source grants MUST coexist.
