@@ -132,6 +132,14 @@ Operation functions MAY communicate with PostgreSQL, third-party services, provi
 
 Operation functions SHOULD contain communication protocol details, low-level error translation, raw response handling, SQL, row-to-entity mapping, storage idempotency, and technical maintenance helpers owned by the module.
 
+Operation function names MUST describe caller-visible semantics rather than SQL statements or other implementation mechanisms.
+
+- `load_<object>` MUST be used to retrieve or materialize data from storage or an external system. The object name SHOULD use singular or plural form according to the result cardinality. Selection qualifiers SHOULD follow the object as `_by_<key>` or `_for_<scope>`, while state qualifiers SHOULD precede it, as in `load_active_intervals`.
+- `save_<object>` MUST be used to make a complete logical value durable when the operation may create, replace, reuse existing data, or perform an idempotent no-op.
+- `update_<object-or-aspect>` MUST be used to mutate existing logical state. When only part of an object is changed, the name SHOULD identify that aspect, as in `update_feed_info`.
+
+An operation that uses an upsert internally SHOULD still use `save_` or `update_` according to its caller-visible contract and SHOULD NOT expose the storage mechanism in its name.
+
 Operation functions SHOULD NOT own high-level business workflows. They SHOULD provide small communication primitives that the module's `domain.py` can compose.
 
 Operation functions SHOULD NOT be imported by other top-level modules. Cross-module callers SHOULD use the owning module's `domain`, `entities`, or `errors` boundary instead.
