@@ -42,17 +42,16 @@ When one or more `--status` options are supplied, the command MUST return only s
 The `--alive` option MUST NOT be combined with `--status`.
 
 By default, the command MUST print a human-readable grid table with one row for every returned subscription in subscription-domain order.
-The table MUST contain provider, merchant, subscription, and customer identifiers; normalized and provider statuses; and subscription start, current-period start, current-period end, expected-renewal, end, and provider-update timestamps.
+The table MUST contain the internal subscription identifier, benefit identifier, normalized and provider statuses, subscription start, current-period start, current-period end, expected-renewal, end, and provider-update timestamps.
 Missing expected-renewal and end timestamps MUST be rendered as `-`.
 
 When `--json` is supplied, the command MUST print one JSON object on its own line for every returned subscription in subscription-domain order.
 Every JSON object MUST contain these fields:
 
-- `provider_id` — subscription provider identifier.
-- `provider_merchant_id` — provider merchant identifier.
-- `provider_subscription_id` — provider subscription identifier.
+- `id` — internal subscription identifier serialized as a UUID string.
+- `state_transaction_id` — causal benefit transaction identifier serialized as a UUID string.
 - `user_id` — affected user id serialized as a UUID string.
-- `provider_customer_id` — provider customer identifier.
+- `benefit_id` — configured benefit identifier.
 - `status` — normalized subscription status enum member name.
 - `status_id` — stable integer value of the normalized subscription status.
 - `provider_status` — provider-supplied status.
