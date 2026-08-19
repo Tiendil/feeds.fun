@@ -117,6 +117,8 @@ The originating PSP, administrator, support tool, or system component MUST remai
 All non-lifetime guarantees MUST use the accepted grant transaction's persisted subscription period.
 Lifetime guarantees MUST use `period_starts_at` and the project's stable lifetime interval-end marker.
 Actualization MUST replace prior entitlement state owned by the same subscription as required to make its current and future entitlement state match the newly accepted transaction.
+Actualization MUST revoke every subscription-owned entitlement that is active at the evaluation time or can become active afterward.
+It MUST ignore entitlements whose effective lifetime ended before the evaluation time.
 The superseded source-entitlement grants MUST remain immutable except for their revocation state and audit history.
 
 ### Revocations

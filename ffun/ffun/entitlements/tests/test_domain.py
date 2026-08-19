@@ -1174,10 +1174,11 @@ class TestRevokeSubscriptionEntitlements:
         assert callbacks == []
 
     @pytest.mark.asyncio
-    async def test_revokes_active_grants_linked_to_subscription(self) -> None:
+    async def test_revokes_active_and_future_grants_linked_to_subscription(self) -> None:
         user_id = new_user_id()
         subscription_id = new_subscription_id()
         now = datetime.datetime.now(tz=datetime.UTC)
+        future_transaction_id = BenefitTransactionId(uuid.UUID(int=3))
         async with transaction() as transaction_execute:
             granted, _ = await domain.grant_source_entitlements(
                 transaction_execute,
@@ -1195,6 +1196,19 @@ class TestRevokeSubscriptionEntitlements:
                 actor_kind=_ACTOR_KIND,
                 actor_id=_ACTOR_ID,
             )
+            future_granted, _ = await domain.grant_source_entitlements(
+                transaction_execute,
+                source_id=_SOURCE_ID,
+                grant_transaction_id=future_transaction_id,
+                user_id=user_id,
+                subscription_id=subscription_id,
+                guarantees=[EntitlementGuarantee(kind_id=_DAY_TOKENS, value=30)],
+                starts_at=now + datetime.timedelta(days=1),
+                expires_at=now + datetime.timedelta(days=2),
+                evaluation_time=now,
+                actor_kind=_ACTOR_KIND,
+                actor_id=_ACTOR_ID,
+            )
 
         async with transaction() as transaction_execute:
             outcomes, callbacks = await domain.revoke_subscription_entitlements(
@@ -1207,10 +1221,16 @@ class TestRevokeSubscriptionEntitlements:
                 actor_id=_ACTOR_ID,
             )
 
-        assert [outcome.source_state.kind_id for outcome in outcomes] == [_DAY_TOKENS, _MONTH_TOKENS]
+        assert [
+            (outcome.source_state.kind_id, outcome.source_state.grant_transaction_id) for outcome in outcomes
+        ] == [
+            (_DAY_TOKENS, _GRANT_TRANSACTION_ID),
+            (_DAY_TOKENS, future_transaction_id),
+            (_MONTH_TOKENS, _GRANT_TRANSACTION_ID),
+        ]
         assert all(not outcome.source_state.granted for outcome in outcomes)
         assert all(outcome.source_state.revoked_by_transaction_id == _REVOKING_TRANSACTION_ID for outcome in outcomes)
-        assert len(callbacks) == len(granted)
+        assert len(callbacks) == len(granted) + len(future_granted)
 
 
 class TestRevokeSourceEntitlements:

@@ -243,7 +243,7 @@ class TestRevokeSourceEntitlement:
 
 class TestLoadSourceEntitlementsForSubscription:
     @pytest.mark.asyncio
-    async def test_returns_only_active_linked_grants_in_kind_and_transaction_order(self) -> None:
+    async def test_returns_active_and_future_linked_grants_in_kind_and_transaction_order(self) -> None:
         subscription_id = new_subscription_id()
         now = datetime.datetime.now(tz=datetime.UTC)
         active_month = make_source_entitlement(
@@ -266,10 +266,23 @@ class TestLoadSourceEntitlementsForSubscription:
             starts_at=now - datetime.timedelta(days=2),
             expires_at=now,
         )
-        future = make_source_entitlement(
+        future_day = make_source_entitlement(
             subscription_id=subscription_id,
+            grant_transaction_id=_transaction_id(3),
+            user_id=active_month.user_id,
+            kind_id=EntitlementKindId.day_tokens,
             starts_at=now + datetime.timedelta(days=1),
-            expires_at=now + datetime.timedelta(days=2),
+            expires_at=now + datetime.timedelta(days=3),
+            revoked_at=now + datetime.timedelta(days=2),
+        )
+        never_active_future = make_source_entitlement(
+            subscription_id=subscription_id,
+            grant_transaction_id=_transaction_id(4),
+            user_id=active_month.user_id,
+            kind_id=EntitlementKindId.day_tokens,
+            starts_at=now + datetime.timedelta(days=2),
+            expires_at=now + datetime.timedelta(days=3),
+            revoked_at=now + datetime.timedelta(days=1),
         )
         revoked = make_source_entitlement(
             subscription_id=subscription_id,
@@ -281,16 +294,24 @@ class TestLoadSourceEntitlementsForSubscription:
             starts_at=now - datetime.timedelta(days=1),
             expires_at=now + datetime.timedelta(days=1),
         )
-        for entitlement in (active_month, active_day, expired, future, revoked, unlinked):
+        for entitlement in (
+            active_month,
+            active_day,
+            expired,
+            future_day,
+            never_active_future,
+            revoked,
+            unlinked,
+        ):
             await operations.insert_source_entitlement(execute, entitlement)
 
         loaded = await operations.load_source_entitlements_for_subscription(
             execute,
             subscription_id,
-            active_at=now,
+            evaluation_time=now,
         )
 
-        assert loaded == [active_day, active_month]
+        assert loaded == [active_day, future_day, active_month]
 
 
 class TestLoadSourceEntitlements:

@@ -496,7 +496,7 @@ async def revoke_subscription_entitlements(  # noqa: CFQ002
     source_entitlements = await operations.load_source_entitlements_for_subscription(
         execute,
         subscription_id,
-        active_at=evaluation_time,
+        evaluation_time=evaluation_time,
     )
     outcomes: list[SourceEntitlementChange] = []
     event_callbacks: list[Callable[[], None]] = []

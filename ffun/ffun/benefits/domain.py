@@ -187,6 +187,14 @@ async def _revoke_benefit(  # noqa: CFQ002
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> list[Callable[[], None]]:
+    # Benefit packages are mutable configuration, but this explicit revocation targets an
+    # immutable historical grant. Enumerating the package's current guarantees is therefore
+    # unsafe: a newly added kind has no row under the old grant transaction and makes strict
+    # revocation fail, while a removed kind is not enumerated and leaves its old row unrevoked.
+    # Revoking every row for the subscription would be too broad because a late revocation
+    # could then revoke newer grants. A future refactor should instead load and revoke the
+    # rows owned by this subscription and the original grant transaction, independently of
+    # current package contents, with an explicit decision about missing-row idempotency.
     _, callbacks = await entitlement_domain.revoke_source_entitlements(
         execute,
         source_id=BENEFITS_ENTITLEMENT_SOURCE_ID,

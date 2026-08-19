@@ -887,6 +887,42 @@ class TestApplySubscriptionTransaction:
         assert replacement_source.starts_at == replacement_snapshot.period_starts_at
 
     @pytest.mark.asyncio
+    async def test_new_grant_revokes_scheduled_future_source_grant(
+        self,
+        package: BenefitPackage,
+    ) -> None:
+        now = datetime.datetime.now(tz=datetime.UTC)
+        scheduled_snapshot = make_subscription_snapshot(
+            benefit_id=package.id,
+            period_starts_at=now + datetime.timedelta(days=1),
+            period_ends_at=now + datetime.timedelta(days=2),
+        )
+        scheduled = await _apply(scheduled_snapshot, make_grant_command())
+        replacement_snapshot = scheduled_snapshot.replace(
+            period_starts_at=now,
+            period_ends_at=now + datetime.timedelta(days=3),
+            provider_updated_at=scheduled_snapshot.provider_updated_at + datetime.timedelta(seconds=1),
+        )
+        replacement = await _apply(
+            replacement_snapshot,
+            make_grant_command(
+                subscription_target=InternalSubscriptionTarget(subscription_id=scheduled.subscription_id),
+            ),
+        )
+
+        scheduled_source = await entitlement_operations.load_source_entitlement(
+            execute,
+            scheduled_snapshot.user_id,
+            EntitlementKindId.day_tokens,
+            domain.BENEFITS_ENTITLEMENT_SOURCE_ID,
+            scheduled.transaction_id,
+        )
+
+        assert scheduled_source is not None
+        assert scheduled_source.revoked_at == replacement_snapshot.period_starts_at
+        assert scheduled_source.revoked_by_transaction_id == replacement.transaction_id
+
+    @pytest.mark.asyncio
     async def test_revocation_uses_original_package_and_updates_subscription(
         self,
         mocker: MockerFixture,
