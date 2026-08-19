@@ -6,8 +6,8 @@ from ffun.core.settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # Until benefits become persisted entities, this configuration is append-only:
-    # never remove or change an existing package; introduce a new id instead.
+    # Keep package ids stable: do not reuse an id for an unrelated product or
+    # remove one while a current subscription can reference it.
     packages: tuple[BenefitPackage, ...] = ()
 
     @pydantic.model_validator(mode="after")
