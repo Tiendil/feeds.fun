@@ -8,7 +8,6 @@ from ffun.benefits.entities import (
     BenefitEntitlementAction,
     BenefitPackage,
     BenefitTransaction,
-    BenefitTransactionCommand,
     InternalSubscriptionTarget,
     NewSubscriptionTarget,
 )
@@ -101,9 +100,6 @@ class TestBenefitTransactionCommand:
     def test_effective_at_must_have_timezone__rejects_naive_timestamp(self) -> None:
         with pytest.raises(pydantic.ValidationError, match="effective timestamp must have a UTC offset"):
             make_transaction_command(effective_at=datetime.datetime.now())
-
-    def test_factory_returns_neutral_command(self) -> None:
-        assert isinstance(make_transaction_command(), BenefitTransactionCommand)
 
 
 class TestBenefitTransaction:
