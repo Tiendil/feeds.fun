@@ -75,7 +75,7 @@ class TestGetBenefitTransaction:
     @pytest.mark.asyncio
     async def test_loads_persisted_transaction(self) -> None:
         benefit_transaction = make_benefit_transaction()
-        await operations.insert_benefit_transaction(execute, benefit_transaction)
+        await operations.save_benefit_transaction(execute, benefit_transaction)
 
         assert await domain.get_benefit_transaction(benefit_transaction.id) == benefit_transaction
 
@@ -201,10 +201,10 @@ class TestApplicationResult:
 
 class TestAcceptSubscriptionTransaction:
     @pytest.mark.asyncio
-    async def test_concurrent_source_insert_raises_before_subscription_save(self, mocker: MockerFixture) -> None:
+    async def test_concurrent_source_save_raises_before_subscription_save(self, mocker: MockerFixture) -> None:
         benefit_transaction = make_benefit_transaction()
-        insert = mocker.patch.object(operations, "insert_benefit_transaction", return_value=False)
-        save = mocker.patch.object(subscription_domain, "save_subscription")
+        save_transaction = mocker.patch.object(operations, "save_benefit_transaction", return_value=False)
+        save_subscription = mocker.patch.object(subscription_domain, "save_subscription")
 
         with pytest.raises(errors.ConcurrentBenefitTransaction):
             await domain._accept_subscription_transaction(
@@ -215,8 +215,8 @@ class TestAcceptSubscriptionTransaction:
                 actor_id=_ACTOR_ID,
             )
 
-        insert.assert_awaited_once_with(execute, benefit_transaction)
-        save.assert_not_awaited()
+        save_transaction.assert_awaited_once_with(execute, benefit_transaction)
+        save_subscription.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_persists_transaction_and_subscription(self) -> None:
@@ -711,7 +711,7 @@ class TestApplySubscriptionTransaction:
     ) -> None:
         reference = make_provider_subscription_reference()
         target = make_external_subscription_target(reference)
-        mocker.patch.object(operations, "insert_benefit_transaction", return_value=False)
+        mocker.patch.object(operations, "save_benefit_transaction", return_value=False)
 
         with capture_logs() as logs:
             async with (

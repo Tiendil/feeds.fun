@@ -127,7 +127,7 @@ async def _accept_subscription_transaction(
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> tuple[SubscriptionSaveResult, Callable[[], None]]:
-    if not await operations.insert_benefit_transaction(execute, benefit_transaction):
+    if not await operations.save_benefit_transaction(execute, benefit_transaction):
         raise errors.ConcurrentBenefitTransaction(
             source_id=int(benefit_transaction.source_id),
             source_transaction_id=str(benefit_transaction.source_transaction_id),

@@ -47,13 +47,13 @@ class TestRowToBenefitTransaction:
         assert isinstance(exception_info.value.__cause__, ValidationError)
 
 
-class TestInsertBenefitTransaction:
+class TestSaveBenefitTransaction:
     @pytest.mark.asyncio
     async def test_inserts_complete_transaction(self) -> None:
         transaction = make_benefit_transaction()
 
         async with TableSizeDelta("b_transactions", delta=1):
-            created = await operations.insert_benefit_transaction(execute, transaction)
+            created = await operations.save_benefit_transaction(execute, transaction)
 
         assert created
         assert await operations.load_benefit_transaction(execute, transaction.id) == transaction
@@ -65,10 +65,10 @@ class TestInsertBenefitTransaction:
             source_id=first.source_id,
             source_transaction_id=first.source_transaction_id,
         )
-        assert await operations.insert_benefit_transaction(execute, first)
+        assert await operations.save_benefit_transaction(execute, first)
 
         async with TableSizeNotChanged("b_transactions"):
-            created = await operations.insert_benefit_transaction(execute, duplicate)
+            created = await operations.save_benefit_transaction(execute, duplicate)
 
         assert not created
         assert (
@@ -89,7 +89,7 @@ class TestLoadBenefitTransaction:
     @pytest.mark.asyncio
     async def test_loads_exact_identity(self) -> None:
         transaction = make_benefit_transaction()
-        await operations.insert_benefit_transaction(execute, transaction)
+        await operations.save_benefit_transaction(execute, transaction)
 
         assert await operations.load_benefit_transaction(execute, transaction.id) == transaction
 
@@ -109,7 +109,7 @@ class TestLoadBenefitTransactionBySource:
     @pytest.mark.asyncio
     async def test_loads_exact_source_identity(self) -> None:
         transaction = make_benefit_transaction()
-        await operations.insert_benefit_transaction(execute, transaction)
+        await operations.save_benefit_transaction(execute, transaction)
 
         assert (
             await operations.load_benefit_transaction_by_source(

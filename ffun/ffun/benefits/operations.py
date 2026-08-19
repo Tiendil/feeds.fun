@@ -27,7 +27,7 @@ def row_to_benefit_transaction(row: Mapping[str, object]) -> BenefitTransaction:
         raise errors.InvalidStoredBenefitTransaction() from exception
 
 
-async def insert_benefit_transaction(execute: ExecuteType, transaction: BenefitTransaction) -> bool:
+async def save_benefit_transaction(execute: ExecuteType, transaction: BenefitTransaction) -> bool:
     sql = """
     INSERT INTO b_transactions (
         id,
