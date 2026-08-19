@@ -187,7 +187,8 @@ Schema changes MUST be implemented as yoyo migrations in the owning module's `mi
 Migration files SHOULD stay close to the module that owns the changed tables.
 
 Before adding a migration on a development branch, developers and agents MUST check whether that branch already introduces an unreleased migration for the same feature or schema change.
-When it does, they MUST amend that branch migration instead of adding another incremental migration.
+When it does, they SHOULD amend that branch migration instead of adding another incremental migration.
+Consolidating unreleased changes avoids unnecessary migration-chain noise and keeps one feature's apply and rollback behavior coherent; a separate migration MAY be used when it has a justified independent maintenance or review boundary.
 A new migration MUST be added when the earlier migration may already have been applied outside the development branch, or when the new change has an independent compatibility or ordering boundary.
 
 Cross-module schema changes SHOULD live in the module that owns the main business reason for the change. If there is no single owner, the `meta` module MAY own the migration.
