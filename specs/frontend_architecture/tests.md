@@ -156,6 +156,7 @@ Logic tests MAY use spies when they verify integration with a third-party librar
 
 Component tests MUST NOT be added unless the developer explicitly requests component-level testing.
 Component behavior SHOULD be extracted into frontend logic and covered by logic tests when practical.
+Requiring explicit approval keeps the component-test surface intentional; extracting render-independent behavior produces smaller, faster tests that are less coupled to Vue mounting details.
 Architecture tests that inspect component source or registration without mounting or rendering components are not component tests under this restriction.
 When component tests are explicitly requested, the following component-test rules apply.
 
