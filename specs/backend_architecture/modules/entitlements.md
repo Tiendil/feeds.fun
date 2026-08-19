@@ -82,6 +82,10 @@ The revocation time and revoking transaction identifier MUST either both be pres
 Revoking an already revoked grant MUST be a no-op and preserve its original revocation time and revoking transaction identifier.
 Revoking a missing grant MUST fail.
 
+An exact grant-transaction revocation MUST load every source entitlement created by one globally unique grant transaction identifier without consulting current benefit-package configuration.
+It MUST include expired and already revoked source entitlements and process the loaded grants in deterministic user and entitlement-kind order.
+When the grant transaction identifier created no source entitlements, the exact revocation MUST return an empty result because a valid grant transaction MAY have granted no entitlement guarantees.
+
 Future-dated and multiple same-source grants MUST coexist.
 The `lifetime_tokens` effective value MUST be the sum of all active lifetime grants.
 
@@ -140,6 +144,7 @@ The public interface MUST provide these operations:
 - `get_entitlement_kind` returns the stable metadata for one entitlement kind and fails for an unknown kind.
 - `grant_source_entitlement` creates or retries one source-owned grant.
 - `revoke_source_entitlement` revokes or retries revocation of one source-owned grant.
+- `revoke_by_grant_transaction_id` revokes every source entitlement created by one globally unique grant transaction identifier.
 - `get_entitlements` returns current effective intervals for requested users and kinds.
 - `cleanup_expired_entitlements` removes expired effective intervals and returns the number removed.
 
@@ -149,12 +154,16 @@ It MUST return a source-change result describing whether state changed and the r
 `revoke_source_entitlement` MUST accept a caller-owned transaction, identify the grant by `source_id`, grant transaction identifier, user id, and kind id, and accept the revoking transaction identifier, caller-captured evaluation time, and audit actor.
 It MUST return a source-change result and corresponding zero-argument business-event callback, and fail when the identified grant is missing.
 
-Both change operations MUST use the supplied transaction for source state, effective state, locking, and audit records and MUST NOT emit business events before commit.
+`revoke_by_grant_transaction_id` MUST accept a caller-owned transaction, the original globally unique grant transaction identifier, the revoking transaction identifier, the revocation time, the caller-captured evaluation time, and the audit actor.
+It MUST return the ordered source-change results and corresponding zero-argument business-event callbacks produced for every loaded source entitlement.
+It MUST return empty collections when the grant transaction identifier created no source entitlements.
+
+These change operations MUST use the supplied transaction for source state, effective state, locking, and audit records and MUST NOT emit business events before commit.
 When a change operation is a no-op, its returned business-event callback MUST also be a no-op.
 After commit, the caller MUST invoke every returned business-event callback; after rollback, it MUST discard the callbacks without invoking them.
 Post-commit callback invocation is best-effort: callback failure MUST NOT invalidate or roll back the committed source, effective, or audit state, and this module does not guarantee durable callback replay.
 
-`ffun.entitlements.grant_source_entitlement` and `ffun.entitlements.revoke_source_entitlement` are explicitly approved to participate in the database transaction owned by `ffun.benefits.apply_subscription_transaction`.
+`ffun.entitlements.grant_source_entitlement`, `ffun.entitlements.revoke_source_entitlement`, and `ffun.entitlements.revoke_by_grant_transaction_id` are explicitly approved to participate in the database transaction owned by `ffun.benefits.apply_subscription_transaction`.
 They MAY accept and use that workflow's execute callable for source-entitlement persistence, effective-state persistence, locking, and audit records.
 This exception does not allow benefits to import entitlement operations or access entitlement tables directly, and it does not approve transaction sharing for unrelated workflows.
 

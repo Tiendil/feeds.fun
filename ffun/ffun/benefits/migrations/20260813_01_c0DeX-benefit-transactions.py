@@ -30,21 +30,6 @@ CREATE TABLE b_transactions (
 )
 """
 
-sql_create_subscription_refs = """
--- Resolves an external provider subscription to its internal subscription projection.
-CREATE TABLE b_subscription_refs (
-    provider_id TEXT NOT NULL,
-    provider_account_id TEXT NOT NULL,
-    provider_subscription_id TEXT NOT NULL,
-    subscription_id UUID NOT NULL,
-    PRIMARY KEY (provider_id, provider_account_id, provider_subscription_id)
-)
-"""
-
-sql_create_subscription_refs_subscription_idx = """
-CREATE INDEX b_subscription_refs_subscription_id_idx ON b_subscription_refs (subscription_id)
-"""
-
 sql_create_subscription_idx = """
 -- Supports tracing the immutable transactions that produced one subscription projection.
 CREATE INDEX b_transactions_subscription_id_idx ON b_transactions (subscription_id)
@@ -55,14 +40,11 @@ WHERE subscription_id IS NOT NULL
 def apply_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
     cursor.execute(sql_create_benefit_transactions)
-    cursor.execute(sql_create_subscription_refs)
-    cursor.execute(sql_create_subscription_refs_subscription_idx)
     cursor.execute(sql_create_subscription_idx)
 
 
 def rollback_step(conn: Connection[dict[str, Any]]) -> None:
     cursor = conn.cursor()
-    cursor.execute("DROP TABLE b_subscription_refs")
     cursor.execute("DROP TABLE b_transactions")
 
 

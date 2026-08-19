@@ -11,7 +11,7 @@ from ffun.domain.domain import new_user_id
 from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId
 from ffun.subscriptions import errors, operations
 from ffun.subscriptions.entities import SubscriptionStatusId
-from ffun.subscriptions.tests.make import make_subscription
+from ffun.subscriptions.tests.make import make_provider_subscription_reference, make_subscription
 
 
 class TestNewSubscriptionId:
@@ -64,6 +64,103 @@ class TestLoadSubscription:
 
         assert await operations.load_subscription(execute, subscription.id) == subscription
         assert await operations.load_subscription(execute, operations.new_subscription_id()) is None
+
+
+class TestLoadProviderSubscriptionReference:
+    @pytest.mark.asyncio
+    async def test_missing(self) -> None:
+        reference = make_provider_subscription_reference()
+
+        assert await operations.load_provider_subscription_reference(execute, reference) is None
+
+    @pytest.mark.asyncio
+    async def test_loads_exact_external_identity(self) -> None:
+        reference = make_provider_subscription_reference()
+        subscription_id = operations.new_subscription_id()
+        await operations.insert_provider_subscription_reference(
+            execute,
+            reference,
+            subscription_id=subscription_id,
+        )
+
+        assert await operations.load_provider_subscription_reference(execute, reference) == subscription_id
+
+
+class TestInsertProviderSubscriptionReference:
+    @pytest.mark.asyncio
+    async def test_inserts_reference(self) -> None:
+        reference = make_provider_subscription_reference()
+        subscription_id = operations.new_subscription_id()
+
+        async with TableSizeDelta("sb_subscription_refs", delta=1):
+            await operations.insert_provider_subscription_reference(
+                execute,
+                reference,
+                subscription_id=subscription_id,
+            )
+
+        assert await operations.load_provider_subscription_reference(execute, reference) == subscription_id
+
+    @pytest.mark.asyncio
+    async def test_same_mapping_is_no_op(self) -> None:
+        reference = make_provider_subscription_reference()
+        subscription_id = operations.new_subscription_id()
+        await operations.insert_provider_subscription_reference(
+            execute,
+            reference,
+            subscription_id=subscription_id,
+        )
+
+        async with TableSizeNotChanged("sb_subscription_refs"):
+            await operations.insert_provider_subscription_reference(
+                execute,
+                reference,
+                subscription_id=subscription_id,
+            )
+
+        assert await operations.load_provider_subscription_reference(execute, reference) == subscription_id
+
+    @pytest.mark.asyncio
+    async def test_different_mapping_fails_without_changing_reference(self) -> None:
+        reference = make_provider_subscription_reference()
+        stored_subscription_id = operations.new_subscription_id()
+        await operations.insert_provider_subscription_reference(
+            execute,
+            reference,
+            subscription_id=stored_subscription_id,
+        )
+
+        async with TableSizeNotChanged("sb_subscription_refs"):
+            with pytest.raises(errors.ProviderSubscriptionReferenceConflict):
+                await operations.insert_provider_subscription_reference(
+                    execute,
+                    reference,
+                    subscription_id=operations.new_subscription_id(),
+                )
+
+        assert await operations.load_provider_subscription_reference(execute, reference) == stored_subscription_id
+
+    @pytest.mark.asyncio
+    async def test_same_subscription_different_reference_fails_without_creating_reference(self) -> None:
+        subscription_id = operations.new_subscription_id()
+        stored_reference = make_provider_subscription_reference()
+        requested_reference = make_provider_subscription_reference()
+        await operations.insert_provider_subscription_reference(
+            execute,
+            stored_reference,
+            subscription_id=subscription_id,
+        )
+
+        async with TableSizeNotChanged("sb_subscription_refs"):
+            with pytest.raises(errors.ProviderSubscriptionReferenceConflict):
+                await operations.insert_provider_subscription_reference(
+                    execute,
+                    requested_reference,
+                    subscription_id=subscription_id,
+                )
+
+        assert await operations.load_provider_subscription_reference(execute, stored_reference) == subscription_id
+        assert await operations.load_provider_subscription_reference(execute, requested_reference) is None
 
 
 class TestUpsertSubscription:

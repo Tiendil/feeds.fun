@@ -6,13 +6,15 @@ This document describes the public contract and observable behavior of the `ffun
 
 ## Scope
 
-This specification applies to provider-independent current-state projections of purchased subscriptions owned by `ffun.subscriptions`.
+This specification applies to provider-independent current-state projections and provider-to-local identity references for purchased subscriptions owned by `ffun.subscriptions`.
 
-Payment collection, provider APIs and notification protocols, provider object identities, checkout and customer-portal workflows, invoices and payment attempts, product catalogs and pricing, benefit-package configuration, benefit-transaction history, entitlement derivation, resource accounting, and frontend presentation are out of scope.
+Payment collection, provider APIs and notification protocols, provider objects other than subscription identities, checkout and customer-portal workflows, invoices and payment attempts, product catalogs and pricing, benefit-package configuration, benefit-transaction history, entitlement derivation, resource accounting, and frontend presentation are out of scope.
 
 ## Dictionary
 
 - `subscription identifier` - the internally generated UUID that identifies one subscription projection.
+- `provider subscription identity` - the provider identifier, provider account identifier, and provider subscription identifier tuple that identifies one external subscription.
+- `provider subscription reference` - the persistent mapping from one provider subscription identity to one internal subscription identifier.
 - `state transaction identifier` - the internal benefit transaction UUID whose application most recently changed the persisted subscription projection.
 - `subscription status` - the normalized provider-neutral lifecycle state stored for a subscription.
 - `alive subscription` - a subscription whose latest stored status and end time indicate that it has not ended at the evaluation time.
@@ -28,7 +30,7 @@ Payment collection, provider APIs and notification protocols, provider object id
 
 ## Module responsibility
 
-The module MUST own internal subscription identifiers, current subscription snapshots, their causal state-transaction references, benefit identifiers, normalized statuses, provider statuses, lifecycle timestamps, durable state replacement, current-state queries, audit records, and business events.
+The module MUST own internal subscription identifiers, provider-subscription references, current subscription snapshots, their causal state-transaction references, benefit identifiers, normalized statuses, provider statuses, lifecycle timestamps, durable state replacement, current-state queries, audit records, and business events.
 
 The external subscription provider remains authoritative for commercial subscription state.
 The module MUST represent the latest accepted state locally and MUST NOT independently infer provider-side state transitions.
@@ -36,8 +38,7 @@ The module MUST represent the latest accepted state locally and MUST NOT indepen
 Callers MUST read and change locally persisted subscription state through the public module boundary.
 They MUST NOT reproduce validation, freshness, ownership, or replacement behavior.
 
-The module MUST NOT own payment-provider communication or provider object identities, subscription items, product catalogs or pricing, provider-product-to-benefit resolution, benefit-package configuration, benefit-transaction history, payment or invoice state, application of entitlement grants, resource limits, or access decisions.
-Provider provenance and the mapping from provider subscription references to internal subscription identifiers belong to immutable benefit transactions.
+The module MUST NOT own payment-provider communication, provider objects beyond the provider subscription identity tuple, subscription items, product catalogs or pricing, provider-product-to-benefit resolution, benefit-package configuration, benefit-transaction history, payment or invoice state, application of entitlement grants, resource limits, or access decisions.
 The module MUST NOT persist benefit titles, descriptions, or entitlement guarantees.
 Callers MUST resolve benefit details and apply guarantees through the benefits domain boundary.
 
@@ -57,6 +58,22 @@ Reusing an existing subscription identifier with a different user MUST fail.
 
 The benefit identifier is mutable because the external authority MAY move one subscription to another product.
 A user MAY have multiple subscriptions, and different internal subscription identifiers MUST be stored and queried independently.
+
+### Provider subscription references
+
+Every provider subscription identity component MUST be non-empty.
+Provider subscription references MUST be persisted separately from subscription snapshots and benefit transactions.
+One provider subscription identity MUST map to at most one internal subscription identifier.
+One internal subscription identifier MUST map from at most one provider subscription identity.
+Recreating the same mapping MUST be a no-op.
+Attempting to map the same provider subscription identity to another internal subscription identifier MUST fail without changing the stored reference.
+Attempting to map another provider subscription identity to the same internal subscription identifier MUST fail without changing the stored reference.
+
+Provider subscription references MUST be immutable after creation.
+They MUST record their creation time and MAY omit an update time because normal workflows never change them.
+
+Provider adapters and higher-level workflows MUST use the subscriptions public domain boundary to resolve and persist provider subscription references.
+They MUST NOT maintain provider-specific subscription-identity tables or reproduce mapping behavior.
 
 ### Subscription statuses
 
@@ -150,6 +167,8 @@ Queries MUST be read-only and MUST NOT produce audit records or business events.
 The public interface MUST provide these operations:
 
 - `new_subscription_id` generates one internal subscription identifier.
+- `load_provider_subscription_reference` returns the internal subscription identifier mapped from one exact provider subscription identity, or no value when it is unknown.
+- `insert_provider_subscription_reference` creates or retries one exact provider-to-internal subscription mapping inside a caller-owned transaction.
 - `save_subscription` creates, retries, or replaces one complete subscription snapshot inside a caller-owned transaction and returns the resulting current and previous subscriptions together with the save outcome.
 - `get_subscription` returns the current subscription for one exact internal subscription identifier.
 - `get_subscriptions_for_user` returns current subscriptions for one requested user.
@@ -160,6 +179,12 @@ It MUST return the resulting current subscription, the previous subscription for
 For a `refreshed`, `same`, or `stale` outcome, the returned callback MUST be a no-op.
 It MUST use the supplied transaction for the subscription state, lock, and audit record and MUST NOT emit a business event before commit.
 
+`load_provider_subscription_reference` MUST accept a caller-owned transaction and one complete provider subscription identity.
+It MUST return the mapped internal subscription identifier or no value without changing state.
+
+`insert_provider_subscription_reference` MUST accept a caller-owned transaction, one complete provider subscription identity, and one internal subscription identifier.
+It MUST create a missing mapping, treat the same existing mapping as a no-op, and fail when either the provider subscription identity or internal subscription identifier already participates in another mapping.
+
 `get_subscription` MUST accept the internal subscription identifier.
 
 `get_subscriptions_for_user` MUST accept one user identifier and an optional collection of normalized statuses, defaulting to no status filter.
@@ -167,14 +192,14 @@ It MUST return the subscription list described by the current-state query contra
 
 `get_alive_subscriptions_for_user` MUST accept one user identifier and return the alive-only subscription list described by the current-state query contract.
 
-Each query operation MUST own the transaction boundary around all persistence work it performs and MUST execute independently of caller-owned transactions.
+Each current-state or provider-reference query operation that does not explicitly accept a caller-owned transaction MUST own the transaction boundary around all persistence work it performs and MUST execute independently of caller-owned transactions.
 
 `save_subscription` MUST be called by the approved `ffun.benefits` subscription-application workflow so the causal benefit transaction, subscription snapshot, and any entitlement effects share one transaction.
 After a successful commit, that caller MUST invoke the returned business-event callback; after rollback, it MUST discard the callback without invoking it.
 Post-commit callback invocation is best-effort: callback failure MUST NOT invalidate or roll back the committed subscription and audit state, and this module does not guarantee durable callback replay.
 
-`ffun.subscriptions.save_subscription` is explicitly approved to participate in the database transaction owned by `ffun.benefits.apply_subscription_transaction`.
-It MAY accept and use that workflow's execute callable for subscription persistence, locking, and audit records.
+`ffun.subscriptions.load_provider_subscription_reference`, `ffun.subscriptions.insert_provider_subscription_reference`, and `ffun.subscriptions.save_subscription` are explicitly approved to participate in the database transaction owned by `ffun.benefits.apply_subscription_transaction`.
+They MAY accept and use that workflow's execute callable for provider-reference lookup and persistence, subscription persistence, locking, and audit records.
 This exception does not allow benefits to import subscription operations or access subscription tables directly, and it does not approve transaction sharing for unrelated workflows.
 
 ## Audit records

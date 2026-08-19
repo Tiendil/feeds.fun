@@ -20,6 +20,8 @@ from ffun.subscriptions.entities import (
 )
 
 get_subscription = run_in_transaction(operations.load_subscription)
+load_provider_subscription_reference = operations.load_provider_subscription_reference
+insert_provider_subscription_reference = operations.insert_provider_subscription_reference
 new_subscription_id = operations.new_subscription_id
 
 logger = logging.get_module_logger()

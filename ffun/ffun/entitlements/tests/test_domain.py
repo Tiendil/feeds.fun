@@ -1231,17 +1231,14 @@ class TestRevokeSubscriptionEntitlements:
         assert len(callbacks) == len(granted) + len(future_granted)
 
 
-class TestRevokeSourceEntitlements:
+class TestRevokeByGrantTransactionId:
     @pytest.mark.asyncio
-    async def test_empty_kinds_return_empty_results(self) -> None:
+    async def test_missing_grant_returns_empty_results(self) -> None:
         async with transaction() as transaction_execute:
-            outcomes, callbacks = await domain.revoke_source_entitlements(
+            outcomes, callbacks = await domain.revoke_by_grant_transaction_id(
                 transaction_execute,
-                source_id=_SOURCE_ID,
-                grant_transaction_id=_GRANT_TRANSACTION_ID,
+                grant_transaction_id=BenefitTransactionId(uuid.uuid4()),
                 revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
-                user_id=new_user_id(),
-                kind_ids=[],
                 revoked_at=datetime.datetime.now(tz=datetime.UTC),
                 evaluation_time=datetime.datetime.now(tz=datetime.UTC),
                 actor_kind=_ACTOR_KIND,
@@ -1252,14 +1249,16 @@ class TestRevokeSourceEntitlements:
         assert callbacks == []
 
     @pytest.mark.asyncio
-    async def test_revokes_selected_kinds_in_stable_order(self) -> None:
+    async def test_revokes_every_row_created_by_grant_transaction(self) -> None:
         user_id = new_user_id()
+        source_id = EntitlementSourceId(f"test-{uuid.uuid4()}")
+        grant_transaction_id = BenefitTransactionId(uuid.uuid4())
         now = datetime.datetime.now(tz=datetime.UTC)
         async with transaction() as transaction_execute:
             await domain.grant_source_entitlements(
                 transaction_execute,
-                source_id=_SOURCE_ID,
-                grant_transaction_id=_GRANT_TRANSACTION_ID,
+                source_id=source_id,
+                grant_transaction_id=grant_transaction_id,
                 user_id=user_id,
                 subscription_id=None,
                 guarantees=[
@@ -1274,13 +1273,10 @@ class TestRevokeSourceEntitlements:
             )
 
         async with transaction() as transaction_execute:
-            outcomes, callbacks = await domain.revoke_source_entitlements(
+            outcomes, callbacks = await domain.revoke_by_grant_transaction_id(
                 transaction_execute,
-                source_id=_SOURCE_ID,
-                grant_transaction_id=_GRANT_TRANSACTION_ID,
+                grant_transaction_id=grant_transaction_id,
                 revoked_by_transaction_id=_REVOKING_TRANSACTION_ID,
-                user_id=user_id,
-                kind_ids=[_MONTH_TOKENS, _DAY_TOKENS],
                 revoked_at=now,
                 evaluation_time=now,
                 actor_kind=_ACTOR_KIND,

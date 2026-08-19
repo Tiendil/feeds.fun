@@ -7,13 +7,9 @@ from pydantic import ValidationError
 
 from ffun.benefits import errors, operations
 from ffun.benefits.entities import BenefitSourceId, BenefitSourceTransactionId
-from ffun.benefits.tests.make import (
-    make_benefit_transaction,
-    make_provider_subscription_reference,
-)
+from ffun.benefits.tests.make import make_benefit_transaction
 from ffun.core.postgresql import execute
 from ffun.core.tests.helpers import TableSizeDelta, TableSizeNotChanged
-from ffun.subscriptions.domain import new_subscription_id
 
 
 class TestNewBenefitTransactionId:
@@ -123,78 +119,3 @@ class TestLoadBenefitTransactionBySource:
             )
             == transaction
         )
-
-
-class TestLoadProviderSubscriptionReference:
-    @pytest.mark.asyncio
-    async def test_missing(self) -> None:
-        reference = make_provider_subscription_reference()
-
-        assert await operations.load_provider_subscription_reference(execute, reference) is None
-
-    @pytest.mark.asyncio
-    async def test_loads_exact_external_identity(self) -> None:
-        reference = make_provider_subscription_reference()
-        subscription_id = new_subscription_id()
-        await operations.insert_provider_subscription_reference(
-            execute,
-            reference,
-            subscription_id=subscription_id,
-        )
-
-        assert await operations.load_provider_subscription_reference(execute, reference) == subscription_id
-
-
-class TestInsertProviderSubscriptionReference:
-    @pytest.mark.asyncio
-    async def test_inserts_reference(self) -> None:
-        reference = make_provider_subscription_reference()
-        subscription_id = new_subscription_id()
-
-        async with TableSizeDelta("b_subscription_refs", delta=1):
-            await operations.insert_provider_subscription_reference(
-                execute,
-                reference,
-                subscription_id=subscription_id,
-            )
-
-        assert await operations.load_provider_subscription_reference(execute, reference) == subscription_id
-
-    @pytest.mark.asyncio
-    async def test_same_mapping_is_no_op(self) -> None:
-        reference = make_provider_subscription_reference()
-        subscription_id = new_subscription_id()
-        await operations.insert_provider_subscription_reference(
-            execute,
-            reference,
-            subscription_id=subscription_id,
-        )
-
-        async with TableSizeNotChanged("b_subscription_refs"):
-            await operations.insert_provider_subscription_reference(
-                execute,
-                reference,
-                subscription_id=subscription_id,
-            )
-
-        assert await operations.load_provider_subscription_reference(execute, reference) == subscription_id
-
-    @pytest.mark.asyncio
-    async def test_different_mapping_fails_without_changing_reference(self) -> None:
-        reference = make_provider_subscription_reference()
-        stored_subscription_id = new_subscription_id()
-        await operations.insert_provider_subscription_reference(
-            execute,
-            reference,
-            subscription_id=stored_subscription_id,
-        )
-
-        async with TableSizeNotChanged("b_subscription_refs"):
-            with pytest.raises(errors.InvalidBenefitSubscription):
-                await operations.insert_provider_subscription_reference(
-                    execute,
-                    reference,
-                    subscription_id=new_subscription_id(),
-                )
-
-        assert await operations.load_provider_subscription_reference(execute, reference) == stored_subscription_id

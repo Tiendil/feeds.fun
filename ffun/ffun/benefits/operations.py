@@ -1,6 +1,5 @@
 import uuid
 from collections.abc import Mapping
-from typing import cast
 
 from pydantic import ValidationError
 
@@ -9,10 +8,9 @@ from ffun.benefits.entities import (
     BenefitSourceId,
     BenefitSourceTransactionId,
     BenefitTransaction,
-    ProviderSubscriptionReference,
 )
 from ffun.core.postgresql import ExecuteType
-from ffun.domain.entities import BenefitTransactionId, SubscriptionId
+from ffun.domain.entities import BenefitTransactionId
 
 
 def new_benefit_transaction_id() -> BenefitTransactionId:
@@ -106,68 +104,3 @@ async def load_benefit_transaction_by_source(
         return None
 
     return row_to_benefit_transaction(rows[0])
-
-
-async def load_provider_subscription_reference(
-    execute: ExecuteType,
-    reference: ProviderSubscriptionReference,
-) -> SubscriptionId | None:
-    sql = """
-    SELECT subscription_id
-    FROM b_subscription_refs
-    WHERE provider_id = %(provider_id)s
-      AND provider_account_id = %(provider_account_id)s
-      AND provider_subscription_id = %(provider_subscription_id)s
-    """
-    rows = await execute(
-        sql,
-        reference.model_dump(),
-    )
-
-    if not rows:
-        return None
-
-    return cast(SubscriptionId, rows[0]["subscription_id"])
-
-
-async def insert_provider_subscription_reference(
-    execute: ExecuteType,
-    reference: ProviderSubscriptionReference,
-    *,
-    subscription_id: SubscriptionId,
-) -> None:
-    sql = """
-    INSERT INTO b_subscription_refs (
-        provider_id,
-        provider_account_id,
-        provider_subscription_id,
-        subscription_id
-    )
-    VALUES (
-        %(provider_id)s,
-        %(provider_account_id)s,
-        %(provider_subscription_id)s,
-        %(subscription_id)s
-    )
-    ON CONFLICT (provider_id, provider_account_id, provider_subscription_id)
-    DO NOTHING
-    RETURNING subscription_id
-    """
-    rows = await execute(
-        sql,
-        {**reference.model_dump(), "subscription_id": subscription_id},
-    )
-
-    if rows:
-        return
-
-    stored_subscription_id = await load_provider_subscription_reference(
-        execute,
-        reference,
-    )
-    assert stored_subscription_id is not None
-
-    if stored_subscription_id != subscription_id:
-        raise errors.InvalidBenefitSubscription(
-            reason="The external subscription already maps to another subscription"
-        )

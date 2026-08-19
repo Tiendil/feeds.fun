@@ -10,10 +10,6 @@ from ffun.benefits.entities import (
     ExternalSubscriptionTarget,
     GrantBenefitTransactionCommand,
     NewSubscriptionTarget,
-    ProviderAccountId,
-    ProviderId,
-    ProviderSubscriptionId,
-    ProviderSubscriptionReference,
     RevokeBenefitTransactionCommand,
     SubscriptionTarget,
 )
@@ -24,9 +20,11 @@ from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId
 from ffun.subscriptions.domain import new_subscription_id
 from ffun.subscriptions.entities import (
     ProviderStatus,
+    ProviderSubscriptionReference,
     SubscriptionSnapshot,
     SubscriptionStatusId,
 )
+from ffun.subscriptions.tests.make import make_provider_subscription_reference
 
 
 def make_benefit_package(
@@ -44,19 +42,6 @@ def make_benefit_package(
         title=NonEmptyString(title),
         description=description,
         entitlements=entitlements,
-    )
-
-
-def make_provider_subscription_reference(
-    *,
-    provider_id: str = "test-provider",
-    provider_account_id: str = "test-account",
-    provider_subscription_id: str | None = None,
-) -> ProviderSubscriptionReference:
-    return ProviderSubscriptionReference(
-        provider_id=ProviderId(provider_id),
-        provider_account_id=ProviderAccountId(provider_account_id),
-        provider_subscription_id=ProviderSubscriptionId(provider_subscription_id or str(uuid.uuid4())),
     )
 
 

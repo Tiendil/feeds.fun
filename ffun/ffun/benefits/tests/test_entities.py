@@ -19,13 +19,13 @@ from ffun.benefits.tests.make import (
     make_benefit_transaction,
     make_external_subscription_target,
     make_grant_command,
-    make_provider_subscription_reference,
     make_revoke_command,
 )
 from ffun.core.entities import NonEmptyString
 from ffun.domain.entities import BenefitId, BenefitTransactionId
 from ffun.entitlements.entities import EntitlementGuarantee, EntitlementKindId
 from ffun.subscriptions.domain import new_subscription_id
+from ffun.subscriptions.tests.make import make_provider_subscription_reference
 
 
 class TestBenefitTransactionKind:

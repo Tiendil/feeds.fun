@@ -185,6 +185,26 @@ async def load_source_entitlements_for_subscription(
     return [row_to_source_entitlement(row) for row in rows]
 
 
+async def load_source_entitlements_by_grant_transaction_id(
+    execute: ExecuteType,
+    *,
+    grant_transaction_id: BenefitTransactionId,
+) -> list[SourceEntitlement]:
+    sql = """
+    SELECT *
+    FROM en_source_entitlements
+    WHERE grant_transaction_id = %(grant_transaction_id)s
+    ORDER BY user_id, kind_id
+    """
+    rows = await execute(
+        sql,
+        {
+            "grant_transaction_id": grant_transaction_id,
+        },
+    )
+    return [row_to_source_entitlement(row) for row in rows]
+
+
 async def load_source_entitlements(
     execute: ExecuteType, user_id: UserId, kind_id: EntitlementKindId
 ) -> list[SourceEntitlement]:

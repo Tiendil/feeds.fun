@@ -1,12 +1,13 @@
 import uuid
 from collections.abc import Mapping
+from typing import cast
 
 from pydantic import ValidationError
 
 from ffun.core.postgresql import ExecuteType
 from ffun.domain.entities import SubscriptionId, UserId
 from ffun.subscriptions import errors
-from ffun.subscriptions.entities import Subscription, SubscriptionStatusId
+from ffun.subscriptions.entities import ProviderSubscriptionReference, Subscription, SubscriptionStatusId
 
 
 def new_subscription_id() -> SubscriptionId:
@@ -39,6 +40,69 @@ WHERE subscriptions.id = %(subscription_id)s
         return None
 
     return row_to_subscription(rows[0])
+
+
+async def load_provider_subscription_reference(
+    execute: ExecuteType,
+    reference: ProviderSubscriptionReference,
+) -> SubscriptionId | None:
+    sql = """
+    SELECT subscription_id
+    FROM sb_subscription_refs
+    WHERE provider_id = %(provider_id)s
+      AND provider_account_id = %(provider_account_id)s
+      AND provider_subscription_id = %(provider_subscription_id)s
+    """
+    rows = await execute(sql, reference.model_dump())
+
+    if not rows:
+        return None
+
+    return cast(SubscriptionId, rows[0]["subscription_id"])
+
+
+async def insert_provider_subscription_reference(
+    execute: ExecuteType,
+    reference: ProviderSubscriptionReference,
+    *,
+    subscription_id: SubscriptionId,
+) -> None:
+    sql = """
+    INSERT INTO sb_subscription_refs (
+        provider_id,
+        provider_account_id,
+        provider_subscription_id,
+        subscription_id
+    )
+    VALUES (
+        %(provider_id)s,
+        %(provider_account_id)s,
+        %(provider_subscription_id)s,
+        %(subscription_id)s
+    )
+    ON CONFLICT DO NOTHING
+    RETURNING subscription_id
+    """
+    rows = await execute(
+        sql,
+        {**reference.model_dump(), "subscription_id": subscription_id},
+    )
+
+    if rows:
+        return
+
+    stored_subscription_id = await load_provider_subscription_reference(execute, reference)
+
+    if stored_subscription_id == subscription_id:
+        return
+
+    raise errors.ProviderSubscriptionReferenceConflict(
+        provider_id=reference.provider_id,
+        provider_account_id=reference.provider_account_id,
+        provider_subscription_id=reference.provider_subscription_id,
+        stored_subscription_id=(str(stored_subscription_id) if stored_subscription_id is not None else None),
+        requested_subscription_id=str(subscription_id),
+    )
 
 
 async def upsert_subscription(execute: ExecuteType, subscription: Subscription) -> None:

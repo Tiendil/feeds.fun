@@ -30,10 +30,23 @@ BENEFITS_ENTITLEMENT_SOURCE_ID = EntitlementSourceId("benefits")
 get_benefit_transaction = run_in_transaction(operations.load_benefit_transaction)
 
 
-def get_benefit(benefit_id: BenefitId) -> BenefitPackage:
+def _find_benefit(benefit_id: BenefitId) -> BenefitPackage | None:
     for package in settings.packages:
         if package.id == benefit_id:
             return package
+
+    return None
+
+
+def has_benefit(benefit_id: BenefitId) -> bool:
+    return _find_benefit(benefit_id) is not None
+
+
+def get_benefit(benefit_id: BenefitId) -> BenefitPackage:
+    package = _find_benefit(benefit_id)
+
+    if package is not None:
+        return package
 
     raise errors.UnknownBenefit(benefit_id=benefit_id)
 
@@ -59,7 +72,7 @@ async def _resolve_external_subscription_target(
     target: ExternalSubscriptionTarget,
     execute: ExecuteType,
 ) -> SubscriptionId | None:
-    return await operations.load_provider_subscription_reference(
+    return await subscription_domain.load_provider_subscription_reference(
         execute,
         target.provider_reference,
     )
@@ -83,7 +96,7 @@ async def _resolve_regular_subscription_target(
         subscription_id = subscription_domain.new_subscription_id()
 
     if target.provider_reference is not None:
-        await operations.insert_provider_subscription_reference(
+        await subscription_domain.insert_provider_subscription_reference(
             execute,
             target.provider_reference,
             subscription_id=subscription_id,
@@ -179,28 +192,16 @@ async def _revoke_benefit(  # noqa: CFQ002
     execute: ExecuteType,
     benefit_transaction: BenefitTransaction,
     grant_transaction: BenefitTransaction,
-    package: BenefitPackage,
     *,
     revoked_at: datetime.datetime,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> list[Callable[[], None]]:
-    # Benefit packages are mutable configuration, but this explicit revocation targets an
-    # immutable historical grant. Enumerating the package's current guarantees is therefore
-    # unsafe: a newly added kind has no row under the old grant transaction and makes strict
-    # revocation fail, while a removed kind is not enumerated and leaves its old row unrevoked.
-    # Revoking every row for the subscription would be too broad because a late revocation
-    # could then revoke newer grants. A future refactor should instead load and revoke the
-    # rows owned by this subscription and the original grant transaction, independently of
-    # current package contents, with an explicit decision about missing-row idempotency.
-    _, callbacks = await entitlement_domain.revoke_source_entitlements(
+    _, callbacks = await entitlement_domain.revoke_by_grant_transaction_id(
         execute,
-        source_id=BENEFITS_ENTITLEMENT_SOURCE_ID,
         grant_transaction_id=grant_transaction.id,
         revoked_by_transaction_id=benefit_transaction.id,
-        user_id=grant_transaction.user_id,
-        kind_ids=[guarantee.kind_id for guarantee in package.entitlements],
         revoked_at=revoked_at,
         evaluation_time=evaluation_time,
         actor_kind=actor_kind,
@@ -323,13 +324,10 @@ async def _apply_revoke_transaction(  # noqa: CFQ002
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
-    subscription_package = get_benefit(subscription.benefit_id)
+    if not has_benefit(subscription.benefit_id):
+        raise errors.UnknownBenefit(benefit_id=subscription.benefit_id)
+
     grant_transaction = await _load_grant_to_revoke(execute, command.revokes_transaction_id, subscription)
-    grant_package = (
-        subscription_package
-        if subscription_package.id == grant_transaction.benefit_id
-        else get_benefit(grant_transaction.benefit_id)
-    )
     subscription_id = await _resolve_revoke_subscription_target(
         execute,
         command.subscription_target,
@@ -341,7 +339,7 @@ async def _apply_revoke_transaction(  # noqa: CFQ002
         source_transaction_id=command.source_transaction_id,
         kind=BenefitTransactionKind.revoke,
         user_id=subscription.user_id,
-        benefit_id=grant_package.id,
+        benefit_id=grant_transaction.benefit_id,
         subscription_id=subscription_id,
         effective_at=command.effective_at,
         revokes_transaction_id=command.revokes_transaction_id,
@@ -357,7 +355,6 @@ async def _apply_revoke_transaction(  # noqa: CFQ002
         execute,
         benefit_transaction,
         grant_transaction,
-        grant_package,
         revoked_at=benefit_transaction.effective_at,
         evaluation_time=evaluation_time,
         actor_kind=actor_kind,

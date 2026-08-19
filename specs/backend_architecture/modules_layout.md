@@ -38,7 +38,7 @@ For example, `ffun.user_settings` owns the generic user settings machinery, whil
 - `ffun.application` owns application construction and application-wide settings.
 - `ffun.audit` owns append-only audit records created transactionally by backend modules.
 - `ffun.auth` owns authentication and authorization logic.
-- `ffun.benefits` owns configured user-facing benefit packages, the immutable all-source ledger of causal benefit transactions and provider provenance, and workflows that atomically apply those transactions to purchased states and entitlements.
+- `ffun.benefits` owns configured user-facing benefit packages, the immutable all-source ledger of causal benefit transactions and their source provenance, and workflows that atomically apply those transactions to purchased states and entitlements.
 - `ffun.cli` owns command-line commands for managing the application.
 - `ffun.core` owns framework-level base classes, utilities, logging, metrics, PostgreSQL helpers, plugins, and shared infrastructure.
 - `ffun.data_protection` owns data protection and privacy-related behavior.
@@ -67,7 +67,7 @@ For example, `ffun.user_settings` owns the generic user settings machinery, whil
 - `ffun.resources` owns per-user quotas and resource accounting.
 - `ffun.scores` owns score rules and score calculation.
 - `ffun.site` owns backend support for serving or integrating with the site when present.
-- `ffun.subscriptions` owns durable provider-independent purchased-subscription projections and lifecycle snapshots linked to causal benefit transactions.
+- `ffun.subscriptions` owns durable provider-independent purchased-subscription identities, provider-subscription references, and lifecycle snapshots linked to causal benefit transactions.
 - `ffun.tags` owns tag normalization and validation logic that is not ontology storage.
 - `ffun.users` owns user storage and management.
 - `ffun.user_settings` owns user-specific settings storage and behavior.

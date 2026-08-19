@@ -314,6 +314,53 @@ class TestLoadSourceEntitlementsForSubscription:
         assert loaded == [active_day, future_day, active_month]
 
 
+class TestLoadSourceEntitlementsByGrantTransactionId:
+    @pytest.mark.asyncio
+    async def test_missing(self) -> None:
+        assert (
+            await operations.load_source_entitlements_by_grant_transaction_id(
+                execute,
+                grant_transaction_id=BenefitTransactionId(uuid.uuid4()),
+            )
+            == []
+        )
+
+    @pytest.mark.asyncio
+    async def test_loads_all_grant_rows_in_user_and_kind_order(self) -> None:
+        user_id = new_user_id()
+        source_id = EntitlementSourceId(f"test-{uuid.uuid4()}")
+        grant_transaction_id = BenefitTransactionId(uuid.uuid4())
+        month = make_source_entitlement(
+            user_id=user_id,
+            source_id=source_id,
+            grant_transaction_id=grant_transaction_id,
+            kind_id=EntitlementKindId.month_tokens,
+        )
+        day = make_source_entitlement(
+            user_id=user_id,
+            source_id=source_id,
+            grant_transaction_id=grant_transaction_id,
+            kind_id=EntitlementKindId.day_tokens,
+            expires_at=datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(seconds=1),
+            starts_at=datetime.datetime.now(tz=datetime.UTC) - datetime.timedelta(days=2),
+        )
+        other_transaction = make_source_entitlement(
+            user_id=user_id,
+            source_id=source_id,
+            grant_transaction_id=BenefitTransactionId(uuid.uuid4()),
+            kind_id=EntitlementKindId.lifetime_tokens,
+        )
+        for entitlement in (month, day, other_transaction):
+            await operations.insert_source_entitlement(execute, entitlement)
+
+        loaded = await operations.load_source_entitlements_by_grant_transaction_id(
+            execute,
+            grant_transaction_id=grant_transaction_id,
+        )
+
+        assert loaded == [day, month]
+
+
 class TestLoadSourceEntitlements:
     @pytest.mark.asyncio
     async def test_no_source_entitlements(self) -> None:

@@ -9,6 +9,24 @@ from ffun.core.entities import BaseEntity, NonEmptyString
 from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId, UserId
 
 
+class ProviderId(NonEmptyString):
+    __slots__ = ()
+
+
+class ProviderAccountId(NonEmptyString):
+    __slots__ = ()
+
+
+class ProviderSubscriptionId(NonEmptyString):
+    __slots__ = ()
+
+
+class ProviderSubscriptionReference(BaseEntity):
+    provider_id: ProviderId
+    provider_account_id: ProviderAccountId
+    provider_subscription_id: ProviderSubscriptionId
+
+
 class ProviderStatus(NonEmptyString):
     __slots__ = ()
 

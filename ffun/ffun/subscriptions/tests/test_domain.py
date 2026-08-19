@@ -543,6 +543,16 @@ class TestNewSubscriptionId:
         assert domain.new_subscription_id is operations.new_subscription_id
 
 
+class TestLoadProviderSubscriptionReference:
+    def test_reexports_operation(self) -> None:
+        assert domain.load_provider_subscription_reference is operations.load_provider_subscription_reference
+
+
+class TestInsertProviderSubscriptionReference:
+    def test_reexports_operation(self) -> None:
+        assert domain.insert_provider_subscription_reference is operations.insert_provider_subscription_reference
+
+
 class TestGetSubscription:
     @pytest.mark.asyncio
     async def test_returns_exact_snapshot_or_none(self) -> None:

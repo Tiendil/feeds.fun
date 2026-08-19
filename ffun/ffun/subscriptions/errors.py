@@ -9,5 +9,9 @@ class SubscriptionConflict(Error):
     pass
 
 
+class ProviderSubscriptionReferenceConflict(Error):
+    pass
+
+
 class InvalidStoredSubscription(Error):
     pass

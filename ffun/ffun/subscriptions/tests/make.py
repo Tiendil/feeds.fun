@@ -4,10 +4,27 @@ import uuid
 from ffun.domain.domain import new_user_id
 from ffun.domain.entities import BenefitId, BenefitTransactionId, SubscriptionId, UserId
 from ffun.subscriptions.entities import (
+    ProviderAccountId,
+    ProviderId,
     ProviderStatus,
+    ProviderSubscriptionId,
+    ProviderSubscriptionReference,
     Subscription,
     SubscriptionStatusId,
 )
+
+
+def make_provider_subscription_reference(
+    *,
+    provider_id: str = "test-provider",
+    provider_account_id: str = "test-account",
+    provider_subscription_id: str | None = None,
+) -> ProviderSubscriptionReference:
+    return ProviderSubscriptionReference(
+        provider_id=ProviderId(provider_id),
+        provider_account_id=ProviderAccountId(provider_account_id),
+        provider_subscription_id=ProviderSubscriptionId(provider_subscription_id or str(uuid.uuid4())),
+    )
 
 
 def make_subscription(  # noqa: CFQ002
