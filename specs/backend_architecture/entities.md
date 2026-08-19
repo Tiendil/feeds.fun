@@ -75,6 +75,7 @@ Entities SHOULD use Pydantic field metadata and validators for local field const
 Pydantic validators SHOULD be atomic: each validator SHOULD enforce one cohesive invariant or one closely related family of constraints.
 Independent concerns, such as field representation, cross-field interval validity, and conditional references, SHOULD use separate validators instead of one branching validator that coordinates unrelated rules.
 A single validator MAY inspect or validate multiple fields when those fields jointly define one invariant.
+Separating independent validation concerns keeps invariants locally understandable, independently testable, and easier to diagnose.
 
 Entities SHOULD use Pydantic serialization methods at boundaries that need model dumps or JSON.
 

@@ -149,10 +149,14 @@ Adding, changing, or removing an instance of an extensible concept SHOULD NOT re
 
 ## Implementation neutrality
 
-Specifications MUST define required behavior and stable observable contracts without prescribing an implementation mechanism when multiple implementations can satisfy the contract.
+Specifications MUST distinguish required behavior and architectural constraints from recommended implementation practices.
 
-A specification MAY require a concrete mechanism, such as a class, function, decorator, inheritance hierarchy, or specific helper, only when that mechanism is itself an architectural requirement or an observable caller contract.
-The specification MUST state why the mechanism matters or which required property an alternative implementation would violate.
+A specification MUST NOT require an implementation mechanism when multiple implementations can satisfy the same required behavior and stable observable contracts, unless that mechanism is itself an intentional architectural requirement or an observable caller contract.
+When a specification requires a concrete mechanism, such as a class, function, decorator, inheritance hierarchy, or specific helper, it MUST state why the mechanism matters or which required property an alternative implementation would violate.
+
+A specification MAY recommend a durable project-wide implementation practice when it promotes a stated quality such as maintainability, diagnosability, security, testability, or consistency, even when alternative implementations can satisfy the same observable contract.
+A recommended implementation practice MUST use `SHOULD` or `SHOULD NOT`, MUST state its intended benefit, and MUST permit justified exceptions.
+Specifications MUST NOT present a local, temporary, or purely stylistic implementation preference as a project-wide practice.
 
 Specifications MUST NOT resolve an implementation choice merely to make a requirement or example more concrete.
-When the implementation choice does not affect the required behavior or stable contract, the specification MUST omit that choice.
+When an implementation choice does not affect the required behavior or stable contract and is not a qualified recommended practice, the specification MUST omit that choice.
