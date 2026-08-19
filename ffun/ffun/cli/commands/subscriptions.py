@@ -62,7 +62,11 @@ def subscription_record(subscription: Subscription) -> dict[str, object]:
         "status_id": subscription.status.value,
         "provider_status": subscription.provider_status,
         "started_at": subscription.started_at.isoformat(),
-        "renews_at": subscription.renews_at.isoformat() if subscription.renews_at is not None else None,
+        "period_starts_at": subscription.period_starts_at.isoformat(),
+        "period_ends_at": subscription.period_ends_at.isoformat(),
+        "expected_renewal_at": (
+            subscription.expected_renewal_at.isoformat() if subscription.expected_renewal_at is not None else None
+        ),
         "ends_at": subscription.ends_at.isoformat() if subscription.ends_at is not None else None,
         "provider_updated_at": subscription.provider_updated_at.isoformat(),
     }
@@ -76,7 +80,9 @@ def subscriptions_table(subscriptions: list[Subscription]) -> str:
             subscription.status.name,
             subscription.provider_status,
             subscription.started_at.isoformat(),
-            subscription.renews_at.isoformat() if subscription.renews_at is not None else "-",
+            subscription.period_starts_at.isoformat(),
+            subscription.period_ends_at.isoformat(),
+            subscription.expected_renewal_at.isoformat() if subscription.expected_renewal_at is not None else "-",
             subscription.ends_at.isoformat() if subscription.ends_at is not None else "-",
             subscription.provider_updated_at.isoformat(),
         ]
@@ -90,7 +96,9 @@ def subscriptions_table(subscriptions: list[Subscription]) -> str:
             "status",
             "provider status",
             "started",
-            "renews",
+            "period starts",
+            "period ends",
+            "expected renewal",
             "ends",
             "provider updated",
         ],

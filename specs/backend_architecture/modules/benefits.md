@@ -18,7 +18,7 @@ Applying benefits to one-time purchases is also out of scope until a purchase-ow
 - `provider subscription reference` - the persistent mapping from one provider subscription identity to one internal subscription identifier.
 - `benefit package` - configured user-facing title and description together with the entitlement guarantees sold as one product benefit.
 - `entitlement guarantee` - one entitlement kind and integer value promised by a benefit package.
-- `benefit transaction` - one immutable, accepted business operation that may update a subscription, grant a package, or revoke an earlier grant.
+- `benefit transaction` - one immutable, accepted business operation that grants a package or revokes an earlier grant while recording the associated subscription state.
 - `benefit transaction identifier` - the internally generated UUID that canonically identifies one benefit transaction.
 - `transaction source identity` - the `source_id` and `source_transaction_id` tuple that identifies one durable operation at its origin.
 - `internal subscription identifier` - the generated UUID that identifies one provider-independent subscription projection.
@@ -26,10 +26,11 @@ Applying benefits to one-time purchases is also out of scope until a purchase-ow
 
 ## Module responsibility
 
-The module MUST own benefit-package configuration, benefit lookup by stable local identifier, benefit-transaction persistence and idempotency, provider-subscription references, and atomic coordination of subscription state with explicitly requested entitlement effects.
+The module MUST own benefit-package configuration, benefit lookup by stable local identifier, benefit-transaction persistence and idempotency, provider-subscription references, and atomic coordination of subscription state with explicitly requested grant or revocation operations.
 
-Provider adapters and other trusted callers MUST resolve a benefit identifier from authoritative metadata and explicitly classify each accepted operation as a subscription update, benefit grant, or benefit revocation.
-The module MUST NOT infer an entitlement effect from a subscription status.
+Provider adapters and other trusted callers MUST resolve a benefit identifier from authoritative metadata and explicitly classify each accepted operation as a benefit grant or benefit revocation by choosing the corresponding command type.
+The supplied subscription snapshot MUST be authoritative for both the benefit identifier and the current subscription period.
+The module MUST NOT infer a grant or revocation from a subscription status.
 
 The module MUST NOT communicate with a provider or maintain a second mapping from provider product or price identifiers to benefits.
 It MUST NOT own provider prices, currencies, amounts, tax behavior, billing periods, or checkout configuration.
@@ -70,6 +71,7 @@ Configured titles, descriptions, and entitlement guarantees MUST remain locally 
 ### Benefit transactions
 
 Each benefit transaction currently accepted by the module MUST have an internally generated UUID, one transaction source identity, one stable transaction kind, one user, one benefit identifier, one internal subscription identifier, and one effective time.
+A grant transaction MUST additionally persist the subscription period start and end copied from its supplied subscription snapshot.
 The source identifier MUST be a stable `SMALLINT` identifying the source subsystem.
 The source transaction identifier MUST be a UUID identifying a durable source-owned operation, not an identifier generated independently for each retry or webhook delivery attempt.
 For example, a Stripe adapter may supply the UUID of its persisted webhook record while retaining the original Stripe event identifier and payload in that record.
@@ -78,7 +80,6 @@ A future purchase workflow MUST introduce a distinct purchase identifier rather 
 
 The supported benefit transaction kinds and stable values MUST be:
 
-- `subscription_update`, stable value `1`, which changes no entitlement state.
 - `grant`, stable value `2`, which grants every entitlement guarantee in one benefit package.
 - `revoke`, stable value `3`, which revokes the guarantees created by one earlier grant transaction.
 
@@ -95,15 +96,17 @@ Benefit transactions MUST be append-only and MUST NOT be updated or deleted by n
 
 ### Grants
 
-A grant transaction MUST contain timezone-aware activation and expiration times with activation earlier than expiration.
-These times MUST come from the causal granting operation; subscription status and renewal fields MUST NOT be used to infer them.
+A grant command MUST NOT contain a separate grant marker or entitlement interval.
+Its command type MUST identify the operation as a grant.
+The supplied subscription snapshot MUST contain timezone-aware `period_starts_at` and `period_ends_at` values with the start earlier than the end.
+The accepted grant transaction MUST persist those values unchanged under the same field names.
 
 The workflow MUST resolve the package recorded by the grant transaction and create one source entitlement for every package guarantee.
 Every resulting source entitlement MUST use `benefits` as its semantic entitlement source and the internal benefit transaction UUID as its grant transaction identifier.
 The originating PSP, administrator, support tool, or system component MUST remain identifiable through the corresponding benefit transaction's source identity and source-owned operation record.
 
-All non-lifetime guarantees MUST use the grant transaction's explicit interval.
-Lifetime guarantees MUST use the grant activation and the project's stable lifetime interval-end marker.
+All non-lifetime guarantees MUST use the accepted grant transaction's persisted subscription period.
+Lifetime guarantees MUST use `period_starts_at` and the project's stable lifetime interval-end marker.
 Guarantees created by different internal transactions MUST coexist as immutable grants, including consecutive subscription periods.
 
 ### Revocations
@@ -130,7 +133,8 @@ The source identity constraint MUST prevent concurrent retries from applying one
 The initial implementation MAY reject one of two different operations concurrently creating the same provider subscription reference; it need not serialize this unlikely race until provider-identity locking is required in practice.
 
 For each newly accepted benefit transaction, the workflow MUST apply the supplied subscription snapshot through the subscriptions domain boundary.
-A new grant or revocation transaction MUST apply its explicit entitlement effect even when the supplied subscription snapshot is stale, because subscription freshness and the causal entitlement operation are separate decisions.
+A new grant MUST resolve the package and entitlement interval from that same snapshot.
+A new grant or revocation transaction MUST apply its commanded entitlement change even when the supplied subscription snapshot is stale, because subscription freshness and the causal entitlement operation are separate decisions.
 
 The benefit transaction, subscription snapshot, changed source entitlements, derived effective entitlement intervals, and all required audit records MUST commit or roll back as one unit.
 Changes for the same transaction source identity, internal subscription identity, and affected user and entitlement kind MUST retain the serialization guarantees of the participating modules.
@@ -152,8 +156,9 @@ The public interface MUST provide these operations:
 - `get_benefit_transaction` returns one benefit transaction for an internal transaction identifier, or no value when it is unknown.
 - `apply_subscription_transaction` atomically applies one subscription-related benefit transaction and one complete subscription snapshot.
 
-`apply_subscription_transaction` MUST accept one complete provider-neutral subscription snapshot, one benefit transaction command, and the audit actor.
-The command MUST contain the `source_id` and `source_transaction_id` transaction identity, subscription selection, stable transaction kind, effective time, and the operation-specific interval or grant transaction identifier to revoke.
+`apply_subscription_transaction` MUST accept one complete provider-neutral subscription snapshot, one grant or revocation command, and the audit actor.
+Both command types MUST contain the `source_id` and `source_transaction_id` transaction identity, subscription selection, and effective time.
+The concrete command type MUST identify the operation without a separate kind or effect marker; a revocation command MUST additionally contain the grant transaction identifier to revoke.
 
 The result MUST contain the internal benefit transaction identifier, the internal subscription identifier, and whether the transaction was newly created.
 An idempotent transaction retry MUST report that the transaction was not created because its original atomic effects already committed.

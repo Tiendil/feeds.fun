@@ -70,7 +70,7 @@ class TestUpsertSubscription:
     @pytest.mark.asyncio
     async def test_inserts_complete_snapshot(self) -> None:
         subscription = make_subscription(
-            renews_at=datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(days=30)
+            expected_renewal_at=datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(days=30)
         )
 
         async with TableSizeDelta("sb_subscriptions", delta=1):

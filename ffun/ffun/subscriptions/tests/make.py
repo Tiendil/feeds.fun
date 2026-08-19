@@ -19,7 +19,9 @@ def make_subscription(  # noqa: CFQ002
     status: SubscriptionStatusId = SubscriptionStatusId.active,
     provider_status: ProviderStatus = ProviderStatus("active"),
     started_at: datetime.datetime | None = None,
-    renews_at: datetime.datetime | None = None,
+    period_starts_at: datetime.datetime | None = None,
+    period_ends_at: datetime.datetime | None = None,
+    expected_renewal_at: datetime.datetime | None = None,
     ends_at: datetime.datetime | None = None,
     provider_updated_at: datetime.datetime | None = None,
 ) -> Subscription:
@@ -32,7 +34,9 @@ def make_subscription(  # noqa: CFQ002
         status=status,
         provider_status=provider_status,
         started_at=started_at or now - datetime.timedelta(days=30),
-        renews_at=renews_at,
+        period_starts_at=period_starts_at or now - datetime.timedelta(days=1),
+        period_ends_at=period_ends_at or now + datetime.timedelta(days=30),
+        expected_renewal_at=expected_renewal_at,
         ends_at=ends_at,
         provider_updated_at=provider_updated_at or now,
     )

@@ -412,7 +412,9 @@ class SubscriptionStatus(enum.StrEnum):
 class ProductStateSubscription(pydantic.BaseModel):
     status: SubscriptionStatus
     startedAt: datetime.datetime
-    renewsAt: datetime.datetime | None
+    periodStartsAt: datetime.datetime
+    periodEndsAt: datetime.datetime
+    expectedRenewalAt: datetime.datetime | None
     endsAt: datetime.datetime | None
 
     @classmethod
@@ -420,7 +422,9 @@ class ProductStateSubscription(pydantic.BaseModel):
         return cls(
             status=SubscriptionStatus.from_internal(subscription.status),
             startedAt=subscription.started_at,
-            renewsAt=subscription.renews_at,
+            periodStartsAt=subscription.period_starts_at,
+            periodEndsAt=subscription.period_ends_at,
+            expectedRenewalAt=subscription.expected_renewal_at,
             endsAt=subscription.ends_at,
         )
 

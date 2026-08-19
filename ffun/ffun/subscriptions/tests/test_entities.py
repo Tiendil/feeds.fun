@@ -40,7 +40,9 @@ class TestSubscriptionSnapshot:
         "field_name",
         [
             "started_at",
-            "renews_at",
+            "period_starts_at",
+            "period_ends_at",
+            "expected_renewal_at",
             "ends_at",
             "provider_updated_at",
         ],
@@ -51,6 +53,13 @@ class TestSubscriptionSnapshot:
 
         with pytest.raises(pydantic.ValidationError, match=f"{field_name} must have a UTC offset"):
             make_subscription(**arguments)  # type: ignore[arg-type]
+
+    @pytest.mark.parametrize("offset", [datetime.timedelta(), datetime.timedelta(seconds=1)])
+    def test_init__period_start_must_be_before_period_end(self, offset: datetime.timedelta) -> None:
+        now = datetime.datetime.now(tz=datetime.UTC)
+
+        with pytest.raises(pydantic.ValidationError, match="period start must be earlier than period end"):
+            make_subscription(period_starts_at=now + offset, period_ends_at=now)
 
     def test_has_same_business_state_as__ignores_only_provider_update_time(self) -> None:
         subscription = make_subscription()

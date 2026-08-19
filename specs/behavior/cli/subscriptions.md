@@ -48,8 +48,8 @@ When one or more `--status` options are supplied, the command MUST return only s
 The `--alive` option MUST NOT be combined with `--status`.
 
 By default, the command MUST print a human-readable grid table with one row for every returned subscription in subscription-domain order.
-The table MUST contain provider, merchant, subscription, and customer identifiers; normalized and provider statuses; and subscription start, renewal, end, and provider-update timestamps.
-Missing renewal and end timestamps MUST be rendered as `-`.
+The table MUST contain provider, merchant, subscription, and customer identifiers; normalized and provider statuses; and subscription start, current-period start, current-period end, expected-renewal, end, and provider-update timestamps.
+Missing expected-renewal and end timestamps MUST be rendered as `-`.
 
 When `--json` is supplied, the command MUST print one JSON object on its own line for every returned subscription in subscription-domain order.
 Every JSON object MUST contain these fields:
@@ -63,7 +63,9 @@ Every JSON object MUST contain these fields:
 - `status_id` — stable integer value of the normalized subscription status.
 - `provider_status` — provider-supplied status.
 - `started_at` — subscription start as an ISO 8601 timestamp with an explicit UTC offset.
-- `renews_at` — next renewal as an ISO 8601 timestamp with an explicit UTC offset, or `null`.
+- `period_starts_at` — current subscription-period start as an ISO 8601 timestamp with an explicit UTC offset.
+- `period_ends_at` — current subscription-period end as an ISO 8601 timestamp with an explicit UTC offset.
+- `expected_renewal_at` — externally reported expected renewal as an ISO 8601 timestamp with an explicit UTC offset, or `null`.
 - `ends_at` — subscription end as an ISO 8601 timestamp with an explicit UTC offset, or `null`.
 - `provider_updated_at` — provider update time as an ISO 8601 timestamp with an explicit UTC offset.
 
@@ -81,7 +83,9 @@ Parameters:
 - `--status NAME` — normalized subscription status name; defaults to `active`.
 - `--provider-status STATUS` — provider-supplied status; defaults to the resolved normalized status name.
 - `--started-at TIMESTAMP` — subscription start time; defaults to the captured current timestamp.
-- `--renews-at TIMESTAMP` — next renewal time; defaults to no renewal.
+- `--period-starts-at TIMESTAMP` — current subscription-period start; defaults to the resolved subscription start time.
+- `--period-ends-at TIMESTAMP` — current subscription-period end; defaults to 31 days after the resolved period start.
+- `--expected-renewal-at TIMESTAMP` — externally reported expected renewal time; defaults to no expected renewal.
 - `--ends-at TIMESTAMP` — subscription end time; defaults to 31 days after the resolved subscription start time.
 - `--provider-updated-at TIMESTAMP` — provider update time; defaults to the captured current timestamp.
 - `--json` — prints structured JSON instead of the default human-readable result.
@@ -103,8 +107,10 @@ Parameters:
 - `--status NAME` — optional replacement normalized subscription status name.
 - `--provider-status STATUS` — optional replacement provider-supplied status.
 - `--started-at TIMESTAMP` — optional replacement subscription start time.
-- `--renews-at TIMESTAMP` — optional replacement next renewal time.
-- `--clear-renews-at` — clears the next renewal time and MUST NOT be combined with `--renews-at`.
+- `--period-starts-at TIMESTAMP` — optional replacement current subscription-period start.
+- `--period-ends-at TIMESTAMP` — optional replacement current subscription-period end.
+- `--expected-renewal-at TIMESTAMP` — optional replacement externally reported expected renewal time.
+- `--clear-expected-renewal-at` — clears the expected renewal time and MUST NOT be combined with `--expected-renewal-at`.
 - `--ends-at TIMESTAMP` — optional replacement subscription end time.
 - `--clear-ends-at` — clears the subscription end time and MUST NOT be combined with `--ends-at`.
 - `--provider-updated-at TIMESTAMP` — optional provider update time.

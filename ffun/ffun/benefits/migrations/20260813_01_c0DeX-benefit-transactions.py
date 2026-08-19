@@ -21,8 +21,8 @@ CREATE TABLE b_transactions (
     benefit_id TEXT NOT NULL,
     subscription_id UUID DEFAULT NULL,
     effective_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    starts_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    expires_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    period_starts_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    period_ends_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     revokes_transaction_id UUID DEFAULT NULL REFERENCES b_transactions (id),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT b_transactions_source_identity_unique

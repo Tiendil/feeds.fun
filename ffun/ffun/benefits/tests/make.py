@@ -6,16 +6,15 @@ from ffun.benefits.entities import (
     BenefitSourceId,
     BenefitSourceTransactionId,
     BenefitTransaction,
-    BenefitTransactionCommand,
     BenefitTransactionKind,
     ExternalSubscriptionTarget,
-    GrantBenefitEffect,
+    GrantBenefitTransactionCommand,
     NewSubscriptionTarget,
     ProviderAccountId,
     ProviderId,
     ProviderSubscriptionId,
     ProviderSubscriptionReference,
-    RevokeBenefitEffect,
+    RevokeBenefitTransactionCommand,
     SubscriptionTarget,
 )
 from ffun.core.entities import NonEmptyString
@@ -72,25 +71,6 @@ def make_external_subscription_target(
     )
 
 
-def make_grant_effect(
-    *,
-    starts_at: datetime.datetime | None = None,
-    expires_at: datetime.datetime | None = None,
-) -> GrantBenefitEffect:
-    now = datetime.datetime.now(tz=datetime.UTC)
-    return GrantBenefitEffect(
-        starts_at=starts_at or now - datetime.timedelta(days=1),
-        expires_at=expires_at or now + datetime.timedelta(days=1),
-    )
-
-
-def make_revoke_effect(
-    *,
-    revokes_transaction_id: BenefitTransactionId | None = None,
-) -> RevokeBenefitEffect:
-    return RevokeBenefitEffect(revokes_transaction_id=revokes_transaction_id or BenefitTransactionId(uuid.uuid4()))
-
-
 def make_benefit_transaction(  # noqa: CCR001, CFQ002
     *,
     transaction_id: BenefitTransactionId | None = None,
@@ -101,15 +81,15 @@ def make_benefit_transaction(  # noqa: CCR001, CFQ002
     benefit_id: BenefitId = BenefitId("test-benefit"),
     subscription_id: SubscriptionId | None = None,
     effective_at: datetime.datetime | None = None,
-    starts_at: datetime.datetime | None = None,
-    expires_at: datetime.datetime | None = None,
+    period_starts_at: datetime.datetime | None = None,
+    period_ends_at: datetime.datetime | None = None,
     revokes_transaction_id: BenefitTransactionId | None = None,
 ) -> BenefitTransaction:
     now = effective_at or datetime.datetime.now(tz=datetime.UTC)
 
     if kind == BenefitTransactionKind.grant:
-        starts_at = starts_at or now - datetime.timedelta(days=1)
-        expires_at = expires_at or now + datetime.timedelta(days=1)
+        period_starts_at = period_starts_at or now - datetime.timedelta(days=1)
+        period_ends_at = period_ends_at or now + datetime.timedelta(days=1)
     else:
         revokes_transaction_id = revokes_transaction_id or BenefitTransactionId(uuid.uuid4())
 
@@ -122,26 +102,41 @@ def make_benefit_transaction(  # noqa: CCR001, CFQ002
         benefit_id=benefit_id,
         subscription_id=subscription_id or new_subscription_id(),
         effective_at=now,
-        starts_at=starts_at,
-        expires_at=expires_at,
+        period_starts_at=period_starts_at,
+        period_ends_at=period_ends_at,
         revokes_transaction_id=revokes_transaction_id,
     )
 
 
-def make_benefit_command(
+def make_grant_command(
     *,
     source_id: BenefitSourceId = BenefitSourceId(17),
     source_transaction_id: BenefitSourceTransactionId | None = None,
     subscription_target: SubscriptionTarget | None = None,
-    effect: GrantBenefitEffect | RevokeBenefitEffect | None = None,
     effective_at: datetime.datetime | None = None,
-) -> BenefitTransactionCommand:
-    return BenefitTransactionCommand(
+) -> GrantBenefitTransactionCommand:
+    return GrantBenefitTransactionCommand(
         source_id=source_id,
         source_transaction_id=source_transaction_id or BenefitSourceTransactionId(uuid.uuid4()),
         subscription_target=subscription_target or NewSubscriptionTarget(),
-        effect=effect or make_grant_effect(),
         effective_at=effective_at or datetime.datetime.now(tz=datetime.UTC),
+    )
+
+
+def make_revoke_command(
+    *,
+    source_id: BenefitSourceId = BenefitSourceId(17),
+    source_transaction_id: BenefitSourceTransactionId | None = None,
+    subscription_target: SubscriptionTarget | None = None,
+    effective_at: datetime.datetime | None = None,
+    revokes_transaction_id: BenefitTransactionId | None = None,
+) -> RevokeBenefitTransactionCommand:
+    return RevokeBenefitTransactionCommand(
+        source_id=source_id,
+        source_transaction_id=source_transaction_id or BenefitSourceTransactionId(uuid.uuid4()),
+        subscription_target=subscription_target or NewSubscriptionTarget(),
+        effective_at=effective_at or datetime.datetime.now(tz=datetime.UTC),
+        revokes_transaction_id=revokes_transaction_id or BenefitTransactionId(uuid.uuid4()),
     )
 
 
@@ -152,7 +147,9 @@ def make_subscription_snapshot(  # noqa: CFQ002
     status: SubscriptionStatusId = SubscriptionStatusId.active,
     provider_status: str = "active",
     started_at: datetime.datetime | None = None,
-    renews_at: datetime.datetime | None = None,
+    period_starts_at: datetime.datetime | None = None,
+    period_ends_at: datetime.datetime | None = None,
+    expected_renewal_at: datetime.datetime | None = None,
     ends_at: datetime.datetime | None = None,
     provider_updated_at: datetime.datetime | None = None,
 ) -> SubscriptionSnapshot:
@@ -163,7 +160,9 @@ def make_subscription_snapshot(  # noqa: CFQ002
         status=status,
         provider_status=ProviderStatus(provider_status),
         started_at=started_at or now - datetime.timedelta(days=30),
-        renews_at=renews_at,
+        period_starts_at=period_starts_at or now - datetime.timedelta(days=1),
+        period_ends_at=period_ends_at or now + datetime.timedelta(days=30),
+        expected_renewal_at=expected_renewal_at,
         ends_at=ends_at,
         provider_updated_at=provider_updated_at or now,
     )

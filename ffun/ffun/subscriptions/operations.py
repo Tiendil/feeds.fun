@@ -51,7 +51,9 @@ async def upsert_subscription(execute: ExecuteType, subscription: Subscription) 
         status,
         provider_status,
         started_at,
-        renews_at,
+        period_starts_at,
+        period_ends_at,
+        expected_renewal_at,
         ends_at,
         provider_updated_at
     )
@@ -63,7 +65,9 @@ async def upsert_subscription(execute: ExecuteType, subscription: Subscription) 
         %(status)s,
         %(provider_status)s,
         %(started_at)s,
-        %(renews_at)s,
+        %(period_starts_at)s,
+        %(period_ends_at)s,
+        %(expected_renewal_at)s,
         %(ends_at)s,
         %(provider_updated_at)s
     )
@@ -74,7 +78,9 @@ async def upsert_subscription(execute: ExecuteType, subscription: Subscription) 
         status = EXCLUDED.status,
         provider_status = EXCLUDED.provider_status,
         started_at = EXCLUDED.started_at,
-        renews_at = EXCLUDED.renews_at,
+        period_starts_at = EXCLUDED.period_starts_at,
+        period_ends_at = EXCLUDED.period_ends_at,
+        expected_renewal_at = EXCLUDED.expected_renewal_at,
         ends_at = EXCLUDED.ends_at,
         provider_updated_at = EXCLUDED.provider_updated_at,
         updated_at = CURRENT_TIMESTAMP

@@ -585,14 +585,18 @@ export type ProductStateToken = {
 export type RawProductStateSubscription = {
   readonly status: e.SubscriptionStatus;
   readonly startedAt: string;
-  readonly renewsAt: string | null;
+  readonly periodStartsAt: string;
+  readonly periodEndsAt: string;
+  readonly expectedRenewalAt: string | null;
   readonly endsAt: string | null;
 };
 
 export type ProductStateSubscription = {
   readonly status: e.SubscriptionStatus;
   readonly startedAt: Date;
-  readonly renewsAt: Date | null;
+  readonly periodStartsAt: Date;
+  readonly periodEndsAt: Date;
+  readonly expectedRenewalAt: Date | null;
   readonly endsAt: Date | null;
 };
 
@@ -618,7 +622,10 @@ function productStateSubscriptionFromJSON(subscription: RawProductStateSubscript
   return {
     status: subscription.status,
     startedAt: new Date(subscription.startedAt),
-    renewsAt: subscription.renewsAt === null ? null : new Date(subscription.renewsAt),
+    periodStartsAt: new Date(subscription.periodStartsAt),
+    periodEndsAt: new Date(subscription.periodEndsAt),
+    expectedRenewalAt:
+      subscription.expectedRenewalAt === null ? null : new Date(subscription.expectedRenewalAt),
     endsAt: subscription.endsAt === null ? null : new Date(subscription.endsAt)
   };
 }

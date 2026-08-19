@@ -16,13 +16,12 @@ from ffun.benefits.entities import (
     NewSubscriptionTarget,
 )
 from ffun.benefits.tests.make import (
-    make_benefit_command,
     make_benefit_package,
     make_benefit_transaction,
     make_external_subscription_target,
-    make_grant_effect,
+    make_grant_command,
     make_provider_subscription_reference,
-    make_revoke_effect,
+    make_revoke_command,
     make_subscription_snapshot,
 )
 from ffun.core.postgresql import execute, transaction
@@ -181,10 +180,10 @@ class TestResolveRegularSubscriptionTarget:
 class TestLoadGrantToRevoke:
     @pytest.mark.asyncio
     async def test_missing_transaction(self) -> None:
-        effect = make_revoke_effect()
+        grant_transaction_id = BenefitTransactionId(uuid.uuid4())
 
         with pytest.raises(errors.BenefitTransactionNotFound):
-            await domain._load_grant_to_revoke(execute, effect, make_subscription_snapshot())
+            await domain._load_grant_to_revoke(execute, grant_transaction_id, make_subscription_snapshot())
 
     @pytest.mark.asyncio
     async def test_rejects_non_grant_transaction(self) -> None:
@@ -201,7 +200,7 @@ class TestLoadGrantToRevoke:
         with pytest.raises(errors.InvalidBenefitRevocation, match="Only a benefit grant"):
             await domain._load_grant_to_revoke(
                 execute,
-                make_revoke_effect(revokes_transaction_id=revocation.id),
+                revocation.id,
                 make_subscription_snapshot(user_id=grant.user_id),
             )
 
@@ -213,7 +212,7 @@ class TestLoadGrantToRevoke:
         with pytest.raises(errors.InvalidBenefitRevocation, match="belongs to another subscription"):
             await domain._load_grant_to_revoke(
                 execute,
-                make_revoke_effect(revokes_transaction_id=grant.id),
+                grant.id,
                 make_subscription_snapshot(user_id=new_user_id()),
             )
 
@@ -225,7 +224,7 @@ class TestLoadGrantToRevoke:
         assert (
             await domain._load_grant_to_revoke(
                 execute,
-                make_revoke_effect(revokes_transaction_id=grant.id),
+                grant.id,
                 make_subscription_snapshot(user_id=grant.user_id),
             )
             == grant
@@ -401,7 +400,7 @@ class TestReplaceBenefit:
     async def test_revokes_subscription_then_grants_package(self, mocker: MockerFixture) -> None:
         benefit_transaction = make_benefit_transaction()
         package = make_benefit_package()
-        effect = make_grant_effect()
+        snapshot = make_subscription_snapshot(user_id=benefit_transaction.user_id, benefit_id=package.id)
         revoke_callback = mocker.stub(name="revoke_callback")
         grant_callback = mocker.stub(name="grant_callback")
         revoke = mocker.patch.object(
@@ -420,7 +419,7 @@ class TestReplaceBenefit:
             execute,
             benefit_transaction,
             package,
-            effect,
+            snapshot,
             evaluation_time=evaluation_time,
             actor_kind=_ACTOR_KIND,
             actor_id=_ACTOR_ID,
@@ -431,7 +430,7 @@ class TestReplaceBenefit:
             execute,
             subscription_id=benefit_transaction.subscription_id,
             revoked_by_transaction_id=benefit_transaction.id,
-            revoked_at=effect.starts_at,
+            revoked_at=snapshot.period_starts_at,
             evaluation_time=evaluation_time,
             actor_kind=_ACTOR_KIND,
             actor_id=_ACTOR_ID,
@@ -443,23 +442,22 @@ class TestReplaceBenefit:
             user_id=benefit_transaction.user_id,
             subscription_id=benefit_transaction.subscription_id,
             guarantees=package.entitlements,
-            starts_at=effect.starts_at,
-            expires_at=effect.expires_at,
+            starts_at=snapshot.period_starts_at,
+            expires_at=snapshot.period_ends_at,
             evaluation_time=evaluation_time,
             actor_kind=_ACTOR_KIND,
             actor_id=_ACTOR_ID,
         )
 
 
-class TestApplyEffectTransaction:
+class TestApplyTransactionCommand:
     @pytest.mark.asyncio
-    async def test_unsupported_effect(self) -> None:
-        with pytest.raises(NotImplementedError, match="Unsupported benefit effect"):
-            await domain._apply_effect_transaction(
+    async def test_unsupported_command(self) -> None:
+        with pytest.raises(NotImplementedError, match="Unsupported benefit transaction command"):
+            await domain._apply_transaction_command(
                 object(),
                 execute,
                 make_subscription_snapshot(),
-                make_benefit_command(),
                 evaluation_time=datetime.datetime.now(tz=datetime.UTC),
                 actor_kind=_ACTOR_KIND,
                 actor_id=_ACTOR_ID,
@@ -474,8 +472,7 @@ class TestApplyGrantTransaction:
         mocker: MockerFixture,
     ) -> None:
         snapshot = make_subscription_snapshot(benefit_id=package.id)
-        effect = make_grant_effect()
-        command = make_benefit_command(effect=effect)
+        command = make_grant_command()
         subscription_id = subscription_domain.new_subscription_id()
         transaction_id = BenefitTransactionId(uuid.uuid4())
         subscription_callback: Callable[[], None] = mocker.stub(name="subscription_callback")
@@ -495,10 +492,9 @@ class TestApplyGrantTransaction:
         mocker.patch.object(domain, "_replace_benefit", return_value=entitlement_callbacks)
 
         benefit_transaction, callbacks = await domain._apply_grant_transaction(
-            effect,
+            command,
             execute,
             snapshot,
-            command,
             evaluation_time=datetime.datetime.now(tz=datetime.UTC),
             actor_kind=_ACTOR_KIND,
             actor_id=_ACTOR_ID,
@@ -512,8 +508,8 @@ class TestApplyGrantTransaction:
             benefit_id=package.id,
             subscription_id=subscription_id,
             effective_at=command.effective_at,
-            starts_at=effect.starts_at,
-            expires_at=effect.expires_at,
+            period_starts_at=snapshot.period_starts_at,
+            period_ends_at=snapshot.period_ends_at,
         )
         assert callbacks == [subscription_callback, entitlement_callback]
 
@@ -529,10 +525,9 @@ class TestApplyRevokeTransaction:
         mocker.patch.object(domain.settings, "packages", (original_package, current_package))
         grant = make_benefit_transaction(benefit_id=original_package.id)
         snapshot = make_subscription_snapshot(user_id=grant.user_id, benefit_id=current_package.id)
-        effect = make_revoke_effect(revokes_transaction_id=grant.id)
-        command = make_benefit_command(
+        command = make_revoke_command(
             subscription_target=InternalSubscriptionTarget(subscription_id=grant.subscription_id),
-            effect=effect,
+            revokes_transaction_id=grant.id,
         )
         transaction_id = BenefitTransactionId(uuid.uuid4())
         subscription_callback: Callable[[], None] = mocker.stub(name="subscription_callback")
@@ -555,10 +550,9 @@ class TestApplyRevokeTransaction:
         evaluation_time = datetime.datetime.now(tz=datetime.UTC)
 
         benefit_transaction, callbacks = await domain._apply_revoke_transaction(
-            effect,
+            command,
             execute,
             snapshot,
-            command,
             evaluation_time=evaluation_time,
             actor_kind=_ACTOR_KIND,
             actor_id=_ACTOR_ID,
@@ -599,8 +593,7 @@ class TestApplySubscriptionTransaction:
         )
         mocker.patch.object(domain.settings, "packages", (package,))
         snapshot = make_subscription_snapshot(benefit_id=package.id)
-        effect = make_grant_effect()
-        command = make_benefit_command(effect=effect)
+        command = make_grant_command()
 
         with capture_logs() as logs:
             async with (
@@ -618,8 +611,8 @@ class TestApplySubscriptionTransaction:
         assert stored_transaction.source_identity == command.source_identity
         assert stored_transaction.kind == BenefitTransactionKind.grant
         assert stored_transaction.benefit_id == package.id
-        assert stored_transaction.starts_at == effect.starts_at
-        assert stored_transaction.expires_at == effect.expires_at
+        assert stored_transaction.period_starts_at == snapshot.period_starts_at
+        assert stored_transaction.period_ends_at == snapshot.period_ends_at
         assert await subscription_domain.get_subscription(result.subscription_id) == snapshot.with_identity(
             subscription_id=result.subscription_id,
             state_transaction_id=result.transaction_id,
@@ -642,11 +635,11 @@ class TestApplySubscriptionTransaction:
         assert day_source is not None
         assert day_source.subscription_id == result.subscription_id
         assert day_source.value == 10
-        assert day_source.starts_at == effect.starts_at
-        assert day_source.expires_at == effect.expires_at
+        assert day_source.starts_at == snapshot.period_starts_at
+        assert day_source.expires_at == snapshot.period_ends_at
         assert lifetime_source is not None
         assert lifetime_source.value == 100
-        assert lifetime_source.starts_at == effect.starts_at
+        assert lifetime_source.starts_at == snapshot.period_starts_at
         assert lifetime_source.expires_at == LIFETIME_INTERVAL_END_MARKER
 
         assert_logs_has_business_event(
@@ -686,7 +679,7 @@ class TestApplySubscriptionTransaction:
                 TableSizeNotChanged("en_entitlements"),
                 TableSizeDelta("a_records", delta=1),
             ):
-                result = await _apply(snapshot, make_benefit_command())
+                result = await _apply(snapshot, make_grant_command())
 
         assert result.transaction_created
         assert_logs_has_business_event(logs, "subscription_changed", user_id=snapshot.user_id)
@@ -706,13 +699,13 @@ class TestApplySubscriptionTransaction:
         async with TableSizeDelta("b_subscription_refs", delta=1):
             first = await _apply(
                 first_snapshot,
-                make_benefit_command(subscription_target=target),
+                make_grant_command(subscription_target=target),
             )
 
         async with TableSizeNotChanged("b_subscription_refs"):
             second = await _apply(
                 second_snapshot,
-                make_benefit_command(subscription_target=target),
+                make_grant_command(subscription_target=target),
             )
 
         assert second.subscription_id == first.subscription_id
@@ -727,10 +720,10 @@ class TestApplySubscriptionTransaction:
         package: BenefitPackage,
     ) -> None:
         first_snapshot = make_subscription_snapshot(benefit_id=package.id)
-        command = make_benefit_command()
+        command = make_grant_command()
         first = await _apply(first_snapshot, command)
         retry_snapshot = make_subscription_snapshot(benefit_id=BenefitId("unknown"))
-        retry_command = make_benefit_command(
+        retry_command = make_grant_command(
             source_id=command.source_id,
             source_transaction_id=command.source_transaction_id,
             subscription_target=InternalSubscriptionTarget(subscription_id=subscription_domain.new_subscription_id()),
@@ -770,7 +763,7 @@ class TestApplySubscriptionTransaction:
                 TableSizeNotChanged("a_records"),
             ):
                 with pytest.raises(errors.UnknownBenefit):
-                    await _apply(snapshot, make_benefit_command(subscription_target=target))
+                    await _apply(snapshot, make_grant_command(subscription_target=target))
 
         assert await operations.load_provider_subscription_reference(execute, reference) is None
         assert_logs_has_no_business_event(logs, "subscription_changed")
@@ -798,7 +791,7 @@ class TestApplySubscriptionTransaction:
                 with pytest.raises(errors.ConcurrentBenefitTransaction):
                     await _apply(
                         make_subscription_snapshot(benefit_id=package.id),
-                        make_benefit_command(subscription_target=target),
+                        make_grant_command(subscription_target=target),
                     )
 
         assert await operations.load_provider_subscription_reference(execute, reference) is None
@@ -814,7 +807,7 @@ class TestApplySubscriptionTransaction:
     ) -> None:
         reference = make_provider_subscription_reference()
         target = make_external_subscription_target(reference)
-        command = make_benefit_command(subscription_target=target)
+        command = make_grant_command(subscription_target=target)
         mocker.patch.object(
             entitlement_domain,
             "grant_source_entitlements",
@@ -852,26 +845,23 @@ class TestApplySubscriptionTransaction:
         package: BenefitPackage,
     ) -> None:
         now = datetime.datetime.now(tz=datetime.UTC)
-        snapshot = make_subscription_snapshot(benefit_id=package.id)
-        first_effect = make_grant_effect(
-            starts_at=now - datetime.timedelta(days=2),
-            expires_at=now + datetime.timedelta(days=2),
+        snapshot = make_subscription_snapshot(
+            benefit_id=package.id,
+            period_starts_at=now - datetime.timedelta(days=2),
+            period_ends_at=now + datetime.timedelta(days=2),
         )
-        first = await _apply(snapshot, make_benefit_command(effect=first_effect))
-        replacement_effect = make_grant_effect(
-            starts_at=now,
-            expires_at=now + datetime.timedelta(days=3),
-        )
+        first = await _apply(snapshot, make_grant_command())
         replacement_snapshot = snapshot.replace(
+            period_starts_at=now,
+            period_ends_at=now + datetime.timedelta(days=3),
             provider_updated_at=snapshot.provider_updated_at + datetime.timedelta(seconds=1)
         )
 
         async with TableSizeDelta("en_source_entitlements", delta=1):
             replacement = await _apply(
                 replacement_snapshot,
-                make_benefit_command(
+                make_grant_command(
                     subscription_target=InternalSubscriptionTarget(subscription_id=first.subscription_id),
-                    effect=replacement_effect,
                 ),
             )
 
@@ -890,11 +880,11 @@ class TestApplySubscriptionTransaction:
             replacement.transaction_id,
         )
         assert previous_source is not None
-        assert previous_source.revoked_at == replacement_effect.starts_at
+        assert previous_source.revoked_at == replacement_snapshot.period_starts_at
         assert previous_source.revoked_by_transaction_id == replacement.transaction_id
         assert replacement_source is not None
         assert replacement_source.revoked_at is None
-        assert replacement_source.starts_at == replacement_effect.starts_at
+        assert replacement_source.starts_at == replacement_snapshot.period_starts_at
 
     @pytest.mark.asyncio
     async def test_revocation_uses_original_package_and_updates_subscription(
@@ -914,7 +904,7 @@ class TestApplySubscriptionTransaction:
         )
         mocker.patch.object(domain.settings, "packages", (original_package, current_package))
         original_snapshot = make_subscription_snapshot(benefit_id=original_package.id)
-        grant = await _apply(original_snapshot, make_benefit_command())
+        grant = await _apply(original_snapshot, make_grant_command())
         revoked_at = datetime.datetime.now(tz=datetime.UTC)
         current_snapshot = original_snapshot.replace(
             benefit_id=current_package.id,
@@ -923,9 +913,9 @@ class TestApplySubscriptionTransaction:
             ends_at=revoked_at,
             provider_updated_at=original_snapshot.provider_updated_at + datetime.timedelta(seconds=1),
         )
-        command = make_benefit_command(
+        command = make_revoke_command(
             subscription_target=InternalSubscriptionTarget(subscription_id=grant.subscription_id),
-            effect=make_revoke_effect(revokes_transaction_id=grant.transaction_id),
+            revokes_transaction_id=grant.transaction_id,
             effective_at=revoked_at,
         )
 
@@ -979,7 +969,7 @@ class TestApplySubscriptionTransaction:
         package: BenefitPackage,
     ) -> None:
         snapshot = make_subscription_snapshot(benefit_id=package.id)
-        grant = await _apply(snapshot, make_benefit_command())
+        grant = await _apply(snapshot, make_grant_command())
         stale_snapshot = snapshot.replace(
             status=SubscriptionStatusId.ended,
             provider_status="canceled",
@@ -989,9 +979,9 @@ class TestApplySubscriptionTransaction:
 
         revocation = await _apply(
             stale_snapshot,
-            make_benefit_command(
+            make_revoke_command(
                 subscription_target=InternalSubscriptionTarget(subscription_id=grant.subscription_id),
-                effect=make_revoke_effect(revokes_transaction_id=grant.transaction_id),
+                revokes_transaction_id=grant.transaction_id,
                 effective_at=revoked_at,
             ),
         )
@@ -1017,13 +1007,13 @@ class TestApplySubscriptionTransaction:
         package: BenefitPackage,
     ) -> None:
         snapshot = make_subscription_snapshot(benefit_id=package.id)
-        grant = await _apply(snapshot, make_benefit_command())
+        grant = await _apply(snapshot, make_grant_command())
         first_revoked_at = datetime.datetime.now(tz=datetime.UTC)
         first_revocation = await _apply(
             snapshot,
-            make_benefit_command(
+            make_revoke_command(
                 subscription_target=InternalSubscriptionTarget(subscription_id=grant.subscription_id),
-                effect=make_revoke_effect(revokes_transaction_id=grant.transaction_id),
+                revokes_transaction_id=grant.transaction_id,
                 effective_at=first_revoked_at,
             ),
         )
@@ -1032,9 +1022,9 @@ class TestApplySubscriptionTransaction:
         with capture_logs() as logs:
             second_revocation = await _apply(
                 snapshot,
-                make_benefit_command(
+                make_revoke_command(
                     subscription_target=InternalSubscriptionTarget(subscription_id=grant.subscription_id),
-                    effect=make_revoke_effect(revokes_transaction_id=grant.transaction_id),
+                    revokes_transaction_id=grant.transaction_id,
                     effective_at=later_revoked_at,
                 ),
             )
@@ -1061,15 +1051,15 @@ class TestApplySubscriptionTransaction:
         mocker: MockerFixture,
     ) -> None:
         snapshot = make_subscription_snapshot(benefit_id=package.id)
-        grant = await _apply(snapshot, make_benefit_command())
+        grant = await _apply(snapshot, make_grant_command())
         updated_snapshot = snapshot.replace(
             status=SubscriptionStatusId.ended,
             provider_status="canceled",
             provider_updated_at=snapshot.provider_updated_at + datetime.timedelta(seconds=1),
         )
-        command = make_benefit_command(
+        command = make_revoke_command(
             subscription_target=InternalSubscriptionTarget(subscription_id=grant.subscription_id),
-            effect=make_revoke_effect(revokes_transaction_id=grant.transaction_id),
+            revokes_transaction_id=grant.transaction_id,
         )
         mocker.patch.object(
             entitlement_domain,

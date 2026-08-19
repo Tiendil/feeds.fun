@@ -19,6 +19,8 @@ Payment collection, provider APIs and notification protocols, provider object id
 - `provider status` - the open-ended status value supplied by the external subscription authority.
 - `subscription snapshot` - the complete provider-independent caller-supplied state of one subscription at one provider update time.
 - `benefit identifier` - the stable local identifier of the configured benefit package associated with a subscription.
+- `subscription period` - the required start and end timestamps of the current benefit-bearing subscription period.
+- `expected renewal` - the optional externally reported time at which the subscription is expected to renew; it is an observation, not a renewal scheduled or managed by this module.
 - `business state` - every subscription snapshot field except the provider update time.
 - `audit state` - every subscription snapshot field except the Feeds Fun user identifier represented separately by the audit record.
 - `business event attributes` - the subscription identifier, state transaction identifier, and every subscription snapshot field except the Feeds Fun user identifier represented separately by the business event.
@@ -89,12 +91,14 @@ Time passage MAY cause an alive-subscription query to stop returning a subscript
 
 ### Lifecycle timestamps
 
-Every subscription snapshot MUST contain timezone-aware subscription-start and provider-update timestamps.
+Every subscription snapshot MUST contain timezone-aware subscription-start, current-period start, current-period end, and provider-update timestamps.
+The current-period start MUST be earlier than the current-period end.
 
-The next renewal and end timestamps MAY be absent.
+The expected-renewal and end timestamps MAY be absent.
 When present, each MUST be timezone-aware.
 
-The next renewal timestamp MUST describe when the subscription is expected to renew and MUST be absent when no renewal is expected.
+The expected-renewal timestamp MUST record an expectation received from the external subscription authority.
+The module MUST NOT interpret it as a locally managed renewal schedule, and it MUST be absent when no renewal is expected.
 The end timestamp MUST describe either the scheduled end of a subscription that has not ended yet or the actual end reported for an ended subscription.
 Callers MUST interpret the end timestamp together with the normalized status.
 
@@ -122,7 +126,7 @@ A snapshot whose provider update time is later than the stored provider update t
 When only the provider update time differs, the module MAY advance that time and the state transaction identifier but MUST produce the `skipped` save outcome because the business state did not change.
 A stale or idempotent no-op MUST preserve the stored state transaction identifier.
 
-Replacement of a subscription's state transaction identifier, benefit identifier, status, provider status, lifecycle timestamps, and provider update time MUST be atomic.
+Replacement of a subscription's state transaction identifier, benefit identifier, status, provider status, subscription period, lifecycle timestamps, and provider update time MUST be atomic.
 Concurrent replacements for the same internal subscription identifier MUST serialize their freshness decisions so older state cannot overwrite newer state.
 
 Failure at any point in a business-state replacement MUST leave the previous snapshot and audit history unchanged.
@@ -189,7 +193,7 @@ The record attributes MUST include:
 - `new_state`, containing the complete resulting audit state.
 
 Each audit state MUST be serialized from the complete subscription snapshot by excluding only the Feeds Fun user identifier.
-Consequently, each audit state MUST include the benefit identifier, normalized status, provider status, subscription start, next renewal, end, and provider update values, as well as any future subscription snapshot fields not explicitly excluded above.
+Consequently, each audit state MUST include the benefit identifier, normalized status, provider status, subscription start, current-period start, current-period end, expected renewal, end, and provider update values, as well as any future subscription snapshot fields not explicitly excluded above.
 
 A stale snapshot, idempotent retry, freshness-only update, or failed request MUST NOT append an audit record.
 
@@ -201,6 +205,6 @@ Every successful creation or business-state replacement MUST emit one `subscript
 
 The event MUST use the affected user as the business-event user and include the previous normalized status or `null` separately from the current subscription attributes.
 The business event attributes MUST include the internal subscription identifier and state transaction identifier and be serialized from the complete current snapshot by excluding only the Feeds Fun user identifier.
-Consequently, they MUST include the benefit identifier, provider update time, resulting normalized status, provider status, subscription start, next renewal, and end values, as well as any future subscription snapshot fields not explicitly excluded above.
+Consequently, they MUST include the benefit identifier, provider update time, resulting normalized status, provider status, subscription start, current-period start, current-period end, expected renewal, and end values, as well as any future subscription snapshot fields not explicitly excluded above.
 
 A stale snapshot, idempotent retry, freshness-only update, failed request, or query MUST NOT emit the event.

@@ -220,12 +220,12 @@ class TestProductStateSubscription:
     def test_from_internal__user_facing_fields(self) -> None:
         now = utils.now()
         started_at = now - datetime.timedelta(days=30)
-        renews_at = now + datetime.timedelta(days=1)
+        expected_renewal_at = now + datetime.timedelta(days=1)
         ends_at = now + datetime.timedelta(days=31)
         subscription = make_subscription(
             status=SubscriptionStatusId.past_due,
             started_at=started_at,
-            renews_at=renews_at,
+            expected_renewal_at=expected_renewal_at,
             ends_at=ends_at,
         )
 
@@ -234,19 +234,23 @@ class TestProductStateSubscription:
         assert serialized == {
             "status": SubscriptionStatus.past_due,
             "startedAt": started_at,
-            "renewsAt": renews_at,
+            "periodStartsAt": subscription.period_starts_at,
+            "periodEndsAt": subscription.period_ends_at,
+            "expectedRenewalAt": expected_renewal_at,
             "endsAt": ends_at,
         }
 
     def test_from_internal__optional_fields_absent(self) -> None:
-        subscription = make_subscription(renews_at=None, ends_at=None)
+        subscription = make_subscription(expected_renewal_at=None, ends_at=None)
 
         serialized = cast(dict[str, object], ProductStateSubscription.from_internal(subscription).model_dump())
 
         assert serialized == {
             "status": SubscriptionStatus.active,
             "startedAt": subscription.started_at,
-            "renewsAt": None,
+            "periodStartsAt": subscription.period_starts_at,
+            "periodEndsAt": subscription.period_ends_at,
+            "expectedRenewalAt": None,
             "endsAt": None,
         }
 

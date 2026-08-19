@@ -98,12 +98,16 @@ class TestSubscriptionStatusFromName:
 class TestSubscriptionRecord:
     def test_serializes_subscription(self) -> None:
         started_at = datetime.datetime.now(tz=datetime.UTC)
-        renews_at = started_at + datetime.timedelta(days=30)
-        ends_at = renews_at + datetime.timedelta(days=1)
+        period_starts_at = started_at + datetime.timedelta(days=1)
+        period_ends_at = period_starts_at + datetime.timedelta(days=30)
+        expected_renewal_at = period_ends_at
+        ends_at = period_ends_at + datetime.timedelta(days=1)
         subscription = make_subscription(
             status=SubscriptionStatusId.past_due,
             started_at=started_at,
-            renews_at=renews_at,
+            period_starts_at=period_starts_at,
+            period_ends_at=period_ends_at,
+            expected_renewal_at=expected_renewal_at,
             ends_at=ends_at,
             provider_updated_at=started_at + datetime.timedelta(seconds=1),
         )
@@ -117,7 +121,9 @@ class TestSubscriptionRecord:
             "status_id": 4,
             "provider_status": subscription.provider_status,
             "started_at": started_at.isoformat(),
-            "renews_at": renews_at.isoformat(),
+            "period_starts_at": period_starts_at.isoformat(),
+            "period_ends_at": period_ends_at.isoformat(),
+            "expected_renewal_at": expected_renewal_at.isoformat(),
             "ends_at": ends_at.isoformat(),
             "provider_updated_at": subscription.provider_updated_at.isoformat(),
         }
@@ -125,20 +131,24 @@ class TestSubscriptionRecord:
     def test_serializes_missing_optional_timestamps(self) -> None:
         record = subscriptions.subscription_record(make_subscription())
 
-        assert record["renews_at"] is None
+        assert record["expected_renewal_at"] is None
         assert record["ends_at"] is None
 
 
 class TestSubscriptionsTable:
     def test_renders_subscription_fields(self) -> None:
         started_at = datetime.datetime.now(tz=datetime.UTC)
-        renews_at = started_at + datetime.timedelta(days=30)
-        ends_at = renews_at + datetime.timedelta(days=1)
+        period_starts_at = started_at + datetime.timedelta(days=1)
+        period_ends_at = period_starts_at + datetime.timedelta(days=30)
+        expected_renewal_at = period_ends_at
+        ends_at = period_ends_at + datetime.timedelta(days=1)
         subscription = make_subscription(
             status=SubscriptionStatusId.paused,
             provider_status=ProviderStatus("paused at provider"),
             started_at=started_at,
-            renews_at=renews_at,
+            period_starts_at=period_starts_at,
+            period_ends_at=period_ends_at,
+            expected_renewal_at=expected_renewal_at,
             ends_at=ends_at,
         )
 
@@ -150,7 +160,9 @@ class TestSubscriptionsTable:
             "paused",
             "paused at provider",
             started_at.isoformat(),
-            renews_at.isoformat(),
+            period_starts_at.isoformat(),
+            period_ends_at.isoformat(),
+            expected_renewal_at.isoformat(),
             ends_at.isoformat(),
         ):
             assert value in table

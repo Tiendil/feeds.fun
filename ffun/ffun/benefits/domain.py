@@ -11,15 +11,15 @@ from ffun.benefits.entities import (
     BenefitTransactionCommand,
     BenefitTransactionKind,
     ExternalSubscriptionTarget,
-    GrantBenefitEffect,
+    GrantBenefitTransactionCommand,
     InternalSubscriptionTarget,
     NewSubscriptionTarget,
-    RevokeBenefitEffect,
+    RevokeBenefitTransactionCommand,
     SubscriptionTarget,
 )
 from ffun.benefits.settings import settings
 from ffun.core.postgresql import ExecuteType, run_in_transaction, transaction
-from ffun.domain.entities import BenefitId, SerializedId, SubscriptionId
+from ffun.domain.entities import BenefitId, BenefitTransactionId, SerializedId, SubscriptionId
 from ffun.entitlements import domain as entitlement_domain
 from ffun.entitlements.entities import EntitlementSourceId
 from ffun.subscriptions import domain as subscription_domain
@@ -94,16 +94,16 @@ async def _resolve_regular_subscription_target(
 
 async def _load_grant_to_revoke(
     execute: ExecuteType,
-    effect: RevokeBenefitEffect,
+    revokes_transaction_id: BenefitTransactionId,
     subscription: SubscriptionSnapshot,
 ) -> BenefitTransaction:
     grant_transaction = await operations.load_benefit_transaction(
         execute,
-        effect.revokes_transaction_id,
+        revokes_transaction_id,
     )
 
     if grant_transaction is None:
-        raise errors.BenefitTransactionNotFound(transaction_id=str(effect.revokes_transaction_id))
+        raise errors.BenefitTransactionNotFound(transaction_id=str(revokes_transaction_id))
 
     if grant_transaction.kind != BenefitTransactionKind.grant:
         raise errors.InvalidBenefitRevocation(
@@ -206,7 +206,7 @@ async def _replace_benefit(  # noqa: CFQ002
     execute: ExecuteType,
     benefit_transaction: BenefitTransaction,
     package: BenefitPackage,
-    effect: GrantBenefitEffect,
+    subscription: SubscriptionSnapshot,
     *,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
@@ -216,7 +216,7 @@ async def _replace_benefit(  # noqa: CFQ002
         execute,
         subscription_id=benefit_transaction.subscription_id,
         revoked_by_transaction_id=benefit_transaction.id,
-        revoked_at=effect.starts_at,
+        revoked_at=subscription.period_starts_at,
         evaluation_time=evaluation_time,
         actor_kind=actor_kind,
         actor_id=actor_id,
@@ -229,8 +229,8 @@ async def _replace_benefit(  # noqa: CFQ002
         user_id=benefit_transaction.user_id,
         subscription_id=benefit_transaction.subscription_id,
         guarantees=package.entitlements,
-        starts_at=effect.starts_at,
-        expires_at=effect.expires_at,
+        starts_at=subscription.period_starts_at,
+        expires_at=subscription.period_ends_at,
         evaluation_time=evaluation_time,
         actor_kind=actor_kind,
         actor_id=actor_id,
@@ -241,25 +241,23 @@ async def _replace_benefit(  # noqa: CFQ002
 
 
 @singledispatch  # type: ignore[misc]
-async def _apply_effect_transaction(  # noqa: CFQ002
-    effect: object,
+async def _apply_transaction_command(  # noqa: CFQ002
+    command: object,
     execute: ExecuteType,
     subscription: SubscriptionSnapshot,
-    command: BenefitTransactionCommand,
     *,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
-    raise NotImplementedError(f"Unsupported benefit effect: {effect!r}")
+    raise NotImplementedError(f"Unsupported benefit transaction command: {command!r}")
 
 
-@_apply_effect_transaction.register  # type: ignore[misc]
+@_apply_transaction_command.register  # type: ignore[misc]
 async def _apply_grant_transaction(  # noqa: CFQ002
-    effect: GrantBenefitEffect,
+    command: GrantBenefitTransactionCommand,
     execute: ExecuteType,
     subscription: SubscriptionSnapshot,
-    command: BenefitTransactionCommand,
     *,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
@@ -274,13 +272,13 @@ async def _apply_grant_transaction(  # noqa: CFQ002
         id=operations.new_benefit_transaction_id(),
         source_id=command.source_id,
         source_transaction_id=command.source_transaction_id,
-        kind=effect.transaction_kind,
+        kind=BenefitTransactionKind.grant,
         user_id=subscription.user_id,
         benefit_id=package.id,
         subscription_id=subscription_id,
         effective_at=command.effective_at,
-        starts_at=effect.starts_at,
-        expires_at=effect.expires_at,
+        period_starts_at=subscription.period_starts_at,
+        period_ends_at=subscription.period_ends_at,
     )
     subscription_callback = await _accept_subscription_transaction(
         execute,
@@ -293,7 +291,7 @@ async def _apply_grant_transaction(  # noqa: CFQ002
         execute,
         benefit_transaction,
         package,
-        effect,
+        subscription,
         evaluation_time=evaluation_time,
         actor_kind=actor_kind,
         actor_id=actor_id,
@@ -301,19 +299,18 @@ async def _apply_grant_transaction(  # noqa: CFQ002
     return benefit_transaction, [subscription_callback, *callbacks]
 
 
-@_apply_effect_transaction.register  # type: ignore[misc]
+@_apply_transaction_command.register  # type: ignore[misc]
 async def _apply_revoke_transaction(  # noqa: CFQ002
-    effect: RevokeBenefitEffect,
+    command: RevokeBenefitTransactionCommand,
     execute: ExecuteType,
     subscription: SubscriptionSnapshot,
-    command: BenefitTransactionCommand,
     *,
     evaluation_time: datetime.datetime,
     actor_kind: AuditEntityKind,
     actor_id: SerializedId,
 ) -> tuple[BenefitTransaction, list[Callable[[], None]]]:
     subscription_package = get_benefit(subscription.benefit_id)
-    grant_transaction = await _load_grant_to_revoke(execute, effect, subscription)
+    grant_transaction = await _load_grant_to_revoke(execute, command.revokes_transaction_id, subscription)
     grant_package = (
         subscription_package
         if subscription_package.id == grant_transaction.benefit_id
@@ -328,12 +325,12 @@ async def _apply_revoke_transaction(  # noqa: CFQ002
         id=operations.new_benefit_transaction_id(),
         source_id=command.source_id,
         source_transaction_id=command.source_transaction_id,
-        kind=effect.transaction_kind,
+        kind=BenefitTransactionKind.revoke,
         user_id=subscription.user_id,
         benefit_id=grant_package.id,
         subscription_id=subscription_id,
         effective_at=command.effective_at,
-        revokes_transaction_id=effect.revokes_transaction_id,
+        revokes_transaction_id=command.revokes_transaction_id,
     )
     subscription_callback = await _accept_subscription_transaction(
         execute,
@@ -381,12 +378,10 @@ async def apply_subscription_transaction(
         # Source identity uniqueness prevents duplicated operations. If concurrent first
         # operations for one external subscription become likely, lock its provider identity
         # from target resolution through provider reference creation.
-        effect = command.effect
-        benefit_transaction, business_event_callbacks = await _apply_effect_transaction(
-            effect,
+        benefit_transaction, business_event_callbacks = await _apply_transaction_command(
+            command,
             execute,
             subscription,
-            command,
             evaluation_time=evaluation_time,
             actor_kind=actor_kind,
             actor_id=actor_id,

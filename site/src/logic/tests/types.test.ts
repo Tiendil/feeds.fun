@@ -201,7 +201,9 @@ describe("productStateFromJSON", () => {
         {
           status: e.SubscriptionStatus.Active,
           startedAt: "2026-07-01T00:00:00Z",
-          renewsAt: "2026-09-01T00:00:00Z",
+          periodStartsAt: "2026-08-01T00:00:00Z",
+          periodEndsAt: "2026-09-01T00:00:00Z",
+          expectedRenewalAt: "2026-09-01T00:00:00Z",
           endsAt: null
         }
       ],
@@ -212,7 +214,9 @@ describe("productStateFromJSON", () => {
       {
         status: e.SubscriptionStatus.Active,
         startedAt: new Date("2026-07-01T00:00:00Z"),
-        renewsAt: new Date("2026-09-01T00:00:00Z"),
+        periodStartsAt: new Date("2026-08-01T00:00:00Z"),
+        periodEndsAt: new Date("2026-09-01T00:00:00Z"),
+        expectedRenewalAt: new Date("2026-09-01T00:00:00Z"),
         endsAt: null
       }
     ]);
@@ -250,7 +254,9 @@ describe("productStateFromJSON", () => {
         {
           status: e.SubscriptionStatus.Paused,
           startedAt: "2026-07-01T00:00:00Z",
-          renewsAt: null,
+          periodStartsAt: "2026-08-01T00:00:00Z",
+          periodEndsAt: "2026-09-01T00:00:00Z",
+          expectedRenewalAt: null,
           endsAt: "2026-09-01T00:00:00Z"
         }
       ],
@@ -261,7 +267,9 @@ describe("productStateFromJSON", () => {
       {
         status: e.SubscriptionStatus.Paused,
         startedAt: new Date("2026-07-01T00:00:00Z"),
-        renewsAt: null,
+        periodStartsAt: new Date("2026-08-01T00:00:00Z"),
+        periodEndsAt: new Date("2026-09-01T00:00:00Z"),
+        expectedRenewalAt: null,
         endsAt: new Date("2026-09-01T00:00:00Z")
       }
     ]);

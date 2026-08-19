@@ -1,7 +1,7 @@
 import datetime
 import enum
 import uuid
-from typing import Annotated, ClassVar, Literal, NewType, TypeAlias
+from typing import Annotated, Literal, NewType, TypeAlias
 
 import pydantic
 
@@ -99,40 +99,10 @@ SubscriptionTarget: TypeAlias = Annotated[
 ]
 
 
-class GrantBenefitEffect(BaseEntity):
-    transaction_kind: ClassVar[BenefitTransactionKind] = BenefitTransactionKind.grant
-    kind: Literal["grant"] = "grant"
-    starts_at: datetime.datetime
-    expires_at: datetime.datetime
-
-    @pydantic.model_validator(mode="after")
-    def validate_interval(self) -> "GrantBenefitEffect":
-        if not utils.has_timezone(self.starts_at) or not utils.has_timezone(self.expires_at):
-            raise ValueError("Benefit grant timestamps must have a UTC offset")
-
-        if self.starts_at >= self.expires_at:
-            raise ValueError("Benefit grant activation must be earlier than expiration")
-
-        return self
-
-
-class RevokeBenefitEffect(BaseEntity):
-    transaction_kind: ClassVar[BenefitTransactionKind] = BenefitTransactionKind.revoke
-    kind: Literal["revoke"] = "revoke"
-    revokes_transaction_id: BenefitTransactionId
-
-
-BenefitEffect: TypeAlias = Annotated[
-    GrantBenefitEffect | RevokeBenefitEffect,
-    pydantic.Field(discriminator="kind"),
-]
-
-
-class BenefitTransactionCommand(BaseEntity):
+class BaseBenefitTransactionCommand(BaseEntity):
     source_id: BenefitSourceId
     source_transaction_id: BenefitSourceTransactionId
     subscription_target: SubscriptionTarget
-    effect: BenefitEffect
     effective_at: datetime.datetime
 
     @property
@@ -150,6 +120,17 @@ class BenefitTransactionCommand(BaseEntity):
         return timestamp
 
 
+class GrantBenefitTransactionCommand(BaseBenefitTransactionCommand):
+    pass
+
+
+class RevokeBenefitTransactionCommand(BaseBenefitTransactionCommand):
+    revokes_transaction_id: BenefitTransactionId
+
+
+BenefitTransactionCommand: TypeAlias = GrantBenefitTransactionCommand | RevokeBenefitTransactionCommand
+
+
 class BenefitTransaction(BaseEntity):
     id: BenefitTransactionId
     source_id: BenefitSourceId
@@ -159,8 +140,8 @@ class BenefitTransaction(BaseEntity):
     benefit_id: BenefitId
     subscription_id: SubscriptionId
     effective_at: datetime.datetime
-    starts_at: datetime.datetime | None = None
-    expires_at: datetime.datetime | None = None
+    period_starts_at: datetime.datetime | None = None
+    period_ends_at: datetime.datetime | None = None
     revokes_transaction_id: BenefitTransactionId | None = None
 
     @property
@@ -169,7 +150,7 @@ class BenefitTransaction(BaseEntity):
     ) -> tuple[BenefitSourceId, BenefitSourceTransactionId]:
         return self.source_id, self.source_transaction_id
 
-    @pydantic.field_validator("effective_at", "starts_at", "expires_at")
+    @pydantic.field_validator("effective_at", "period_starts_at", "period_ends_at")
     @classmethod
     def timestamp_must_have_timezone(
         cls,
@@ -182,15 +163,28 @@ class BenefitTransaction(BaseEntity):
         return timestamp
 
     @pydantic.model_validator(mode="after")
-    def validate_shape(self) -> "BenefitTransaction":  # noqa: CCR001
+    def validate_period_presence(self) -> "BenefitTransaction":
         if self.kind == BenefitTransactionKind.grant:
-            if self.starts_at is None or self.expires_at is None:
-                raise ValueError("A benefit grant transaction must define its entitlement interval")
-            if self.starts_at >= self.expires_at:
-                raise ValueError("Benefit grant activation must be earlier than expiration")
-        elif self.starts_at is not None or self.expires_at is not None:
-            raise ValueError("Only a benefit grant transaction may define an entitlement interval")
+            if self.period_starts_at is None or self.period_ends_at is None:
+                raise ValueError("A benefit grant transaction must define its subscription period")
+        elif self.period_starts_at is not None or self.period_ends_at is not None:
+            raise ValueError("Only a benefit grant transaction may define a subscription period")
 
+        return self
+
+    @pydantic.model_validator(mode="after")
+    def validate_period_order(self) -> "BenefitTransaction":
+        if (
+            self.period_starts_at is not None
+            and self.period_ends_at is not None
+            and self.period_starts_at >= self.period_ends_at
+        ):
+            raise ValueError("Benefit grant period start must be earlier than period end")
+
+        return self
+
+    @pydantic.model_validator(mode="after")
+    def validate_revocation_reference(self) -> "BenefitTransaction":
         if self.kind == BenefitTransactionKind.revoke:
             if self.revokes_transaction_id is None:
                 raise ValueError("A benefit revocation transaction must identify the grant it revokes")

@@ -35,7 +35,9 @@ class SubscriptionSnapshot(BaseEntity):
     status: SubscriptionStatusId
     provider_status: ProviderStatus
     started_at: datetime.datetime
-    renews_at: datetime.datetime | None = None
+    period_starts_at: datetime.datetime
+    period_ends_at: datetime.datetime
+    expected_renewal_at: datetime.datetime | None = None
     ends_at: datetime.datetime | None = None
     provider_updated_at: datetime.datetime
 
@@ -43,12 +45,17 @@ class SubscriptionSnapshot(BaseEntity):
     def validate_timestamps(self) -> "SubscriptionSnapshot":
         for field_name, timestamp in (
             ("started_at", self.started_at),
-            ("renews_at", self.renews_at),
+            ("period_starts_at", self.period_starts_at),
+            ("period_ends_at", self.period_ends_at),
+            ("expected_renewal_at", self.expected_renewal_at),
             ("ends_at", self.ends_at),
             ("provider_updated_at", self.provider_updated_at),
         ):
             if timestamp is not None and not utils.has_timezone(timestamp):
                 raise ValueError(f"Subscription timestamp {field_name} must have a UTC offset")
+
+        if self.period_starts_at >= self.period_ends_at:
+            raise ValueError("Subscription period start must be earlier than period end")
 
         return self
 
@@ -79,7 +86,9 @@ class SubscriptionSnapshot(BaseEntity):
             status=self.status,
             provider_status=self.provider_status,
             started_at=self.started_at,
-            renews_at=self.renews_at,
+            period_starts_at=self.period_starts_at,
+            period_ends_at=self.period_ends_at,
+            expected_renewal_at=self.expected_renewal_at,
             ends_at=self.ends_at,
             provider_updated_at=self.provider_updated_at,
         )

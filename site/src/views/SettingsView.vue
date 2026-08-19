@@ -66,8 +66,19 @@
                 </div>
 
                 <div class="flex gap-1.5">
-                  <dt class="font-medium text-slate-500">Renews</dt>
-                  <dd class="m-0 text-slate-800">{{ formatSubscriptionDate(subscription.renewsAt) }}</dd>
+                  <dt class="font-medium text-slate-500">Period</dt>
+                  <dd class="m-0 text-slate-800">
+                    {{ formatSubscriptionDate(subscription.periodStartsAt) }}–{{
+                      formatSubscriptionDate(subscription.periodEndsAt)
+                    }}
+                  </dd>
+                </div>
+
+                <div class="flex gap-1.5">
+                  <dt class="font-medium text-slate-500">Expected renewal</dt>
+                  <dd class="m-0 text-slate-800">
+                    {{ formatSubscriptionDate(subscription.expectedRenewalAt) }}
+                  </dd>
                 </div>
 
                 <div class="flex gap-1.5">
